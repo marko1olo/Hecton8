@@ -1,17 +1,20 @@
-namespace Hecton.Items
+// ============================================================================
+// HECTON-8 — HectonItem.cs
+// Подбираемый предмет в мире. Реализует IInteractable.
+// Использует Data-Driven подход: вся информация — в ItemData.
+// При взаимодействии:
+//   1. Публикует событие через InteractionEvents.
+//   2. Уничтожает свой GameObject.
+// Будущая система инвентаря подписывается на InteractionEvents.OnItemCollected
+// и обрабатывает добавление в рюкзак.
+// ============================================================================
+
+using Hecton8.Interaction;
+
+namespace Hecton8.Items
 {
-    using Hecton.Interaction;
     using UnityEngine;
 
-    /// <summary>
-    /// Подбираемый предмет в мире. Реализует IInteractable.
-    /// Использует Data-Driven подход: вся информация — в <see cref="ItemData"/>.
-    /// При взаимодействии:
-    ///   1. Публикует событие через <see cref="InteractionEvents"/>.
-    ///   2. Уничтожает свой GameObject.
-    /// Будущая система инвентаря подписывается на InteractionEvents.OnItemCollected
-    /// и обрабатывает добавление в рюкзак.
-    /// </summary>
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
