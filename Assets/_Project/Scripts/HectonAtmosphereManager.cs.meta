@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 99382565fddd3ae4c80961b53c66a591
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _sunLight: {instanceID: 0}
+  - _profileDay: {fileID: 11400000, guid: c7300d65ab765cb40bd9fb323fe5735c, type: 2}
+  - _profileNight: {fileID: 11400000, guid: 63325d7bcbe739240af89ae8eb8d0060, type: 2}
+  - _profileUnderwater: {fileID: 11400000, guid: cc4167890a234e042be6ff37a6451f71, type: 2}
+  - _profileEclipse: {fileID: 11400000, guid: ad0ea32e6e03e0d429794470a73138b2, type: 2}
+  - _playerTransform: {instanceID: 0}
+  - _globalVolume: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
