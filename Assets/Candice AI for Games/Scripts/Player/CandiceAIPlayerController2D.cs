@@ -46,7 +46,7 @@ public class CandiceAIPlayerController2D : MonoBehaviour
 
         // Move
         if (!rolling)
-            rb.velocity = new Vector2(inputX * speed, rb.velocity.y);
+            rb.linearVelocity = new Vector2(inputX * speed, rb.linearVelocity.y);
 
         //Jump
         if (Input.GetKeyDown("space"))
@@ -55,7 +55,7 @@ public class CandiceAIPlayerController2D : MonoBehaviour
             //audioManager.Play("GruntVoice02");
             //grounded = false;
             //m_animator.SetBool("Grounded", grounded);
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             //m_groundSensor.Disable(0.2f);
         }
 

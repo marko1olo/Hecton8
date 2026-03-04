@@ -636,7 +636,7 @@ namespace CandiceAIforGames.AI
                 thisRigidbody = thisAgent.GetComponent<Rigidbody>();
                 if (thisRigidbody != null) {
                     //walk and no attack
-                    if (thisRigidbody.velocity.magnitude != 0f && !isAttack)
+                    if (thisRigidbody.linearVelocity.magnitude != 0f && !isAttack)
                     {
                         isWalking = true;
                         standardActions.Walk();
@@ -647,7 +647,7 @@ namespace CandiceAIforGames.AI
                         }
                     }
                     //walk and attack
-                    else if ((thisRigidbody.velocity.magnitude != 0f && isAttack) || (thisRigidbody.velocity.magnitude == 0f && isAttack)) {
+                    else if ((thisRigidbody.linearVelocity.magnitude != 0f && isAttack) || (thisRigidbody.linearVelocity.magnitude == 0f && isAttack)) {
                         isWalking = false;
                         standardActions.Attack();
                         candiceCamera.ShakeData = shakeData;
@@ -663,7 +663,7 @@ namespace CandiceAIforGames.AI
             }
             else {
                 //walk and no attack
-                if (thisRigidbody.velocity.magnitude != 0f && !isAttack)
+                if (thisRigidbody.linearVelocity.magnitude != 0f && !isAttack)
                 {
                     isWalking = true;
                     standardActions.Walk();
@@ -674,7 +674,7 @@ namespace CandiceAIforGames.AI
                     }
                 }
                 //walk and attack
-                else if ((thisRigidbody.velocity.magnitude != 0f && isAttack) || (thisRigidbody.velocity.magnitude == 0f && isAttack))
+                else if ((thisRigidbody.linearVelocity.magnitude != 0f && isAttack) || (thisRigidbody.linearVelocity.magnitude == 0f && isAttack))
                 {
                     isWalking = false;
                     standardActions.Attack();

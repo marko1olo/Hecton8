@@ -54,7 +54,7 @@ namespace CandiceAIforGames.AI
         private void Move()
         {
             if(useForce)
-                rb.velocity = transform.forward * moveSpeed * Time.deltaTime;
+                rb.linearVelocity = transform.forward * moveSpeed * Time.deltaTime;
             else
                 transform.position += transform.forward * 10 * Time.deltaTime;
         }
