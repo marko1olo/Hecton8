@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 13a43ba541a5d5b4c95c2e81679f21ce
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 148441
+  packageName: Candice AI for Games
+  packageVersion: 2.1.1
+  assetPath: Assets/Candice AI for Games/Scripts/Editor/CandiceAIManager_Editor.cs
+  uploadId: 610837

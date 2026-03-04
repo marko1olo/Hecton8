@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3b58ab0fa82e75f41a2fb8d2710c0b5c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 148441
+  packageName: Candice AI for Games
+  packageVersion: 2.1.1
+  assetPath: Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Camera/ShakeData/Cataclysm.asset
+  uploadId: 610837

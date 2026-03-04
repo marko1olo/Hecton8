@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f3efdbeefbf709442ba9f1566db7e542
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 148441
+  packageName: Candice AI for Games
+  packageVersion: 2.1.1
+  assetPath: Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Plugins/sqlite3.def
+  uploadId: 610837

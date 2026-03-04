@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b96ffb89e5a1c1340a4bc2d589deded8
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 148441
+  packageName: Candice AI for Games
+  packageVersion: 2.1.1
+  assetPath: Assets/Candice AI for Games/Scripts/Libs/Candice Behavior Tree/CandiceBehaviorStates.cs
+  uploadId: 610837

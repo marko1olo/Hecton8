@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5b213c07e76f8494c9fd7c34a04dd89b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 148441
+  packageName: Candice AI for Games
+  packageVersion: 2.1.1
+  assetPath: Assets/Candice AI for Games/Scripts/Player/CandiceAIPlayerController2D.cs
+  uploadId: 610837
