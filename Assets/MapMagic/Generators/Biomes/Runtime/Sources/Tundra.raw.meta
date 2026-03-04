@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: eb3f4528af18a5240a036257ab96f0da
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Generators/Biomes/Runtime/Sources/Tundra.raw
+  uploadId: 683294

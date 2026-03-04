@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 595e683320d630e4881919d4b3428b1a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Generators/Biomes/Runtime/Resources/MapMagic/Whittaker/Desert.asset
+  uploadId: 683294

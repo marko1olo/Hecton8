@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: fb53b2b01d9c011488ad229895b665b5
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 71142
+  packageName: Eazy Sound Manager
+  packageVersion: 1.3.0
+  assetPath: Assets/Hellmade/Eazy Sound Manager/Scripts/Audio.cs
+  uploadId: 324501

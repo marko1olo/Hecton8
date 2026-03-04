@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8729d45892eade942ad898f1f18a9d9c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Brush/Presets/Blur.asset
+  uploadId: 683294

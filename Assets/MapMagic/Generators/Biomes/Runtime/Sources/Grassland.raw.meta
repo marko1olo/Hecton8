@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 64da9354af03d4f47a3338dcbec4ec08
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Generators/Biomes/Runtime/Sources/Grassland.raw
+  uploadId: 683294

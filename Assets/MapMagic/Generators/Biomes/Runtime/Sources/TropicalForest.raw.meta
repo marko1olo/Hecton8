@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 59c3d50256bd66147b097d38b323e1b0
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Generators/Biomes/Runtime/Sources/TropicalForest.raw
+  uploadId: 683294

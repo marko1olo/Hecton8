@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 84e96bd05f2ab204ea3866b95f5bae15
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Brush/Presets/Erosion.asset
+  uploadId: 683294

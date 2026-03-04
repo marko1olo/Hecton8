@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: da60f10bafba4c940aee0caecb3f055b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178682
+  packageName: MapMagic 2 Bundle
+  packageVersion: 2.1.17
+  assetPath: Assets/MapMagic/Brush/Presets/Forest.asset
+  uploadId: 683294
