@@ -12,7 +12,6 @@
   <Project Path="GPUInstancer.csproj" />
   <Project Path="AmplifyImpostors.Editor.csproj" />
   <Project Path="AstarPathfindingProject.csproj" />
-  <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
   <Project Path="ShapesEditor.csproj" />
   <Project Path="Den.Tools.csproj" />
   <Project Path="MapMagic.csproj" />

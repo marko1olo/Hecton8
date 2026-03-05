@@ -16,7 +16,6 @@ MonoBehaviour:
   shader: {fileID: 4800000, guid: c9391e295126842e589edc35e6cfa61a, type: 3}
   renderPassEvent: 450
   cameraLayerMask:
-    serializedVersion: 2
     m_Bits: 255
   ignoreReflectionProbes: 1
 --- !u!114 &11400000
@@ -47,9 +46,8 @@ MonoBehaviour:
   - {fileID: 7833122117494664109}
   - {fileID: 58536412019685547}
   - {fileID: 7270194210237144737}
-  - {fileID: -6796828001377540157}
   - {fileID: 1886482717959882929}
-  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464c3a776a2f1d0aca1b188e97609222e1a
+  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1a
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
