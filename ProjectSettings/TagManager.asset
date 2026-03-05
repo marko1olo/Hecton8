@@ -3,7 +3,12 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Interactable
+  - BaseModule
+  - Vehicle
+  - Loot
+  - Hazard
   layers:
   - Default
   - TransparentFX
@@ -11,17 +16,17 @@ TagManager:
   - Interactable
   - Water
   - UI
-  - Celestial
-  - AtmosphereControl
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - 'Player '
+  - 'Terrain '
+  - 'BaseModule  '
+  - 'DroppedItem '
+  - 'Creature '
+  - 'Vehicle '
+  - 'VoxelCave '
+  - 'TriggerZone '
+  - Debris
+  - 'Celestial '
+  - 'PostProcess '
   - 
   - 
   - 

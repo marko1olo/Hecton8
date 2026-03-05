@@ -30,8 +30,11 @@ MonoBehaviour:
     referenceMode: 2
     serializationDepthLimit: 64
     assemblyNames:
+    - AmplifyImpostors.Runtime
     - Assembly-CSharp
     - Assembly-CSharp-firstpass
+    - AstarPathfindingProject
+    - BakeryRuntimeAssembly
     - Crest
     - Den.Tools
     - GPUInstancer
@@ -53,6 +56,7 @@ MonoBehaviour:
     - NaughtyAttributes.Core
     - NaughtyAttributes.Test
     - ShapesRuntime
+    - Tayx.Graphy
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1
