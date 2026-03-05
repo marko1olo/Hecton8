@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1789954730819557395}
-  m_Layer: 0
-  m_Name: "\u0425\u0423\u0418\u0422\u0410"
+  m_Layer: 14
+  m_Name: TECH_DEBRIS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
