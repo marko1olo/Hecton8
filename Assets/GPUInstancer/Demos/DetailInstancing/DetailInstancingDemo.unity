@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 615071256}
-  m_IndirectSpecularColor: {r: 0.35980064, g: 0.32573017, b: 0.35680246, a: 1}
+  m_IndirectSpecularColor: {r: 0.35979348, g: 0.32566902, b: 0.35669434, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -326,7 +326,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.16862746, g: 0.32156864, b: 0.015686275, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -431,6 +430,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 103651597}
     m_Modifications:
+    - target: {fileID: 0}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: af7712f337bdf1f42a74310e69e9feec, type: 3}
     - target: {fileID: 1311916809718332, guid: 3e2e9e87417d47545978af503168e41b, type: 3}
       propertyPath: m_Name
       value: Fence
@@ -711,7 +714,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1098,9 +1100,35 @@ MonoBehaviour:
   autoSelectCamera: 0
   cameraData:
     mainCamera: {fileID: 1912560266}
+    hiZOcclusionGenerator: {fileID: 0}
+    mvpMatrixFloats:
+    - 0.71091723
+    - 0.5627713
+    - 0.72637254
+    - 0.72636527
+    - 0.000009225945
+    - 1.5403657
+    - -0.41596547
+    - -0.4159613
+    - -0.9437715
+    - 0.42393544
+    - 0.5471525
+    - 0.54714704
+    - 15.520619
+    - -239.47064
+    - -304.17017
+    - -304.07953
+    mvpMatrix2Floats: []
+    cameraPosition: {x: 259.94043, y: 2.0792007, z: 212.25136}
+    hasOcclusionGenerator: 1
+    halfAngle: 0.2679492
     renderOnlySelectedCamera: 0
   useFloatingOriginHandler: 0
   floatingOriginTransform: {fileID: 0}
+  floatingOriginHandler: {fileID: 0}
+  instancingBounds:
+    m_Center: {x: 259.94043, y: 2.0792007, z: 212.25136}
+    m_Extent: {x: 5000, y: 5000, z: 5000}
   isFrustumCulling: 1
   isOcclusionCulling: 1
   minCullingDistance: 0
@@ -1114,19 +1142,21 @@ MonoBehaviour:
   showGlobalValuesBox: 1
   showRegisteredPrefabsBox: 1
   showPrototypesBox: 1
-  keepSimulationLive: 1
-  updateSimulation: 1
+  keepSimulationLive: 0
+  maxThreads: 3
+  isInitialized: 0
+  playModeState: 0
+  isQuiting: 0
   layerMask:
     serializedVersion: 2
     m_Bits: 4294967295
   lightProbeDisabled: 0
   _terrain: {fileID: 632178601}
-  additionalTerrains: []
   terrainSettings: {fileID: 11400000, guid: ca72f5a416041ee41b76ad06876ab7da, type: 2}
   detailLayer: 0
   runInThreads: 1
-  threadHeightResolution: 513
-  threadDetailResolution: 1024
+  threadHeightResolution: 0
+  threadDetailResolution: 0
 --- !u!4 &189874516
 Transform:
   m_ObjectHideFlags: 0
@@ -1316,7 +1346,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.09731833, g: 0.7849004, b: 0.88235295, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1397,7 +1426,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1559,9 +1587,9 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 4
+  serializedVersion: 3
   m_Convex: 1
-  m_CookingOptions: 30
+  m_CookingOptions: 14
   m_Mesh: {fileID: 4300000, guid: 4ffce14caa7564b4a92e152b2ae87f5b, type: 3}
 --- !u!23 &327763382
 MeshRenderer:
@@ -2228,7 +2256,7 @@ Terrain:
   m_TreeBillboardDistance: 50
   m_TreeCrossFadeLength: 5
   m_TreeMaximumFullLODCount: 50
-  m_DetailObjectDistance: 0
+  m_DetailObjectDistance: 250
   m_DetailObjectDensity: 1
   m_HeightmapPixelError: 5
   m_SplatMapDistance: 1000
@@ -2238,7 +2266,7 @@ Terrain:
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
   m_ReflectionProbeUsage: 1
-  m_MaterialTemplate: {fileID: 10652, guid: 0000000000000000f000000000000000, type: 0}
+  m_MaterialTemplate: {fileID: 2100000, guid: 594ea882c5a793440b60ff72d896021e, type: 2}
   m_BakeLightProbesForTrees: 1
   m_PreserveTreePrototypeLayers: 0
   m_DeringLightProbesForTrees: 1
@@ -8148,7 +8176,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.16862746, g: 0.32156864, b: 0.015686275, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -8634,7 +8661,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -8937,7 +8963,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.06420559, g: 0.015686277, b: 0.3215686, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -9365,7 +9390,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 2.25, y: 2, z: 4}
+  m_Size: {x: 1.75, y: 1.56, z: 4.082382}
   m_Center: {x: -0.000000004346794, y: 0.05, z: 0.08101655}
 --- !u!4 &1444655579 stripped
 Transform:
@@ -14439,7 +14464,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -14595,7 +14619,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -14970,7 +14993,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -15160,7 +15182,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.16862746, g: 0.32156864, b: 0.015686275, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -15245,7 +15266,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.16862746, g: 0.32156864, b: 0.015686275, a: 1}
   m_RaycastTarget: 0
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []

@@ -112,6 +112,5 @@ MonoBehaviour:
       dependentPackageVersion: 10.0.0
   storeImportedDataExternally: 1
   importedPackageInfos: []
-  importedDataFolder: {fileID: 102900000, guid: 278488c193e2fcd4c8865f7542ffdc1c,
-    type: 3}
+  importedDataFolder: {fileID: 102900000, guid: 278488c193e2fcd4c8865f7542ffdc1c, type: 3}
   importedDataSubFolder: Settings

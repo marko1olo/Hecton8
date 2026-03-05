@@ -367,7 +367,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -441,7 +440,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -479,7 +477,6 @@ GameObject:
   - component: {fileID: 657804499}
   - component: {fileID: 657804498}
   - component: {fileID: 657804497}
-  - component: {fileID: 657804501}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -560,21 +557,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 24.616001, y: 0, z: 0}
---- !u!114 &657804501
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 657804496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f338086da686f2b448c504616315994a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainSpeed: 10
-  shiftSpeed: 30
-  rotationSpeed: 5
 --- !u!1 &962757473
 GameObject:
   m_ObjectHideFlags: 0
@@ -627,7 +609,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -689,14 +670,40 @@ MonoBehaviour:
   autoSelectCamera: 1
   cameraData:
     mainCamera: {fileID: 657804499}
+    hiZOcclusionGenerator: {fileID: 0}
+    mvpMatrixFloats:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    mvpMatrix2Floats: []
+    cameraPosition: {x: 0, y: 0, z: 0}
+    hasOcclusionGenerator: 0
+    halfAngle: 0.2679492
     renderOnlySelectedCamera: 0
   useFloatingOriginHandler: 0
-  applyFloatingOriginRotationAndScale: 0
   floatingOriginTransform: {fileID: 0}
+  floatingOriginHandler: {fileID: 0}
+  instancingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isFrustumCulling: 1
   isOcclusionCulling: 1
   minCullingDistance: 0
-  selectedPrototypeList: []
+  selectedPrototypeList:
+  - {fileID: 114665392261735216, guid: 169e2af60473a244c8f8a1c9e8f56ab6, type: 2}
   isPrototypeTextMode: 0
   showSceneSettingsBox: 1
   showPrototypeBox: 1
@@ -707,13 +714,15 @@ MonoBehaviour:
   showRegisteredPrefabsBox: 1
   showPrototypesBox: 1
   keepSimulationLive: 0
-  updateSimulation: 1
+  maxThreads: 3
+  isInitialized: 0
+  playModeState: 0
+  isQuiting: 0
   layerMask:
     serializedVersion: 2
     m_Bits: 4294967295
   lightProbeDisabled: 0
   _terrain: {fileID: 1832306915}
-  additionalTerrains: []
   terrainSettings: {fileID: 11400000, guid: 169e2af60473a244c8f8a1c9e8f56ab6, type: 2}
   initializeWithCoroutine: 1
 --- !u!4 &984413229
@@ -782,7 +791,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1056,7 +1064,7 @@ Terrain:
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
   m_ReflectionProbeUsage: 0
-  m_MaterialTemplate: {fileID: 10652, guid: 0000000000000000f000000000000000, type: 0}
+  m_MaterialTemplate: {fileID: 2100000, guid: 594ea882c5a793440b60ff72d896021e, type: 2}
   m_BakeLightProbesForTrees: 1
   m_PreserveTreePrototypeLayers: 0
   m_DeringLightProbesForTrees: 1
@@ -1147,7 +1155,6 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 1, b: 0, a: 1}
   m_RaycastTarget: 1
-  m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []

@@ -47,7 +47,8 @@ MonoBehaviour:
       dependentPackageExpression: 0
       dependentPackageVersion: 10.0.0
   storeImportedDataExternally: 0
-  importedPackageInfos: []
-  importedDataFolder: {fileID: 102900000, guid: 278488c193e2fcd4c8865f7542ffdc1c,
-    type: 3}
+  importedPackageInfos:
+  - packageURL: com.gurbu.gpui.DemosURP10
+    importedVersion: 1.0.0
+  importedDataFolder: {fileID: 102900000, guid: 278488c193e2fcd4c8865f7542ffdc1c, type: 3}
   importedDataSubFolder: Settings

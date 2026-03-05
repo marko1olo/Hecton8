@@ -25,7 +25,7 @@ namespace Shapes {
 			string GetKeywordsStrWithoutInstancing( ShaderCompilerData set ) {
 				return string.Join( ",", set.shaderKeywordSet.GetShaderKeywords()
 				#if UNITY_2019_3_OR_NEWER
-					.Select( ShaderKeyword.GetGlobalKeywordName ).Where( a => a != ShaderKeyword.GetGlobalKeywordName( inst ) )
+					.Select( k => k.name ).Where( a => a != inst.name )
 				#else
 					.Select( a => a.GetKeywordName() ).Where( a => a != inst.GetKeywordName() )
 				#endif
