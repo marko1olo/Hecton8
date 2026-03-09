@@ -73,7 +73,7 @@ Material:
     - _InnerPower: 2
     - _OuterPower: 5
     - _PlanetPhase: 0.52
-    - _PolarMultiplier: 0.4
+    - _PolarMultiplier: 0
     - _QueueControl: 0
     - _QueueOffset: 0
     - _StormEmission: 3.12
