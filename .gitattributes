@@ -1,145 +1,24 @@
-# ============================================================================
-# Unity 6 (URP) 3D Project - .gitignore
-# ============================================================================
+# Автоматически определять текстовые файлы и нормализовать окончания строк
+* text=auto
 
-# ---- Unity generated folders ----
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Uu]serSettings/
-
-# ---- Unity generated files ----
-/[Mm]emoryCaptures/
-/[Rr]ecordings/
-/[Aa]ssets/AssetStoreTools*
-
-# ---- Auto-generated VS/MD/Rider solution and project files ----
-ExportedObj/
-.consoleapp.meta
-*.csproj
-*.unityproj
-*.sln
-*.suo
-*.tmp
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-
-# ---- Unity3D generated meta files (should be committed, but not these) ----
-# NOTE: We DO commit .meta files. This section only covers edge cases.
-
-# ---- Crashlytics / crash reports ----
-crashlytics-build.properties
-sysinfo.txt
-
-# ---- Builds ----
-*.apk
-*.aab
-*.unitypackage
-*.app
-
-# ============================================================================
-# OS-specific files
-# ============================================================================
-
-# ---- macOS ----
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-
-# ---- Windows ----
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-# ---- Linux ----
-*~
-.directory
-
-# ============================================================================
-# Visual Studio
-# ============================================================================
-.vs/
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Ll]og/
-[Ll]ogs/
-
-# Visual Studio cache/options directory
-.vs/
-*.vsconfig
-
-# Rider auto-generated files
-*.DotSettings.user
-
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# ============================================================================
-# JetBrains Rider
-# ============================================================================
-.idea/
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/**/usage.statistics.xml
-.idea/**/dictionaries
-.idea/**/shelf
-.idea/**/contentModel.xml
-.idea/**/dataSources/
-.idea/**/dataSources.ids
-.idea/**/dataSources.local.xml
-.idea/**/sqlDataSources.xml
-.idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
-.idea/**/dbnavigator.xml
-.idea/**/httpRequests
-.idea/.idea.*.dir/
-*.sln.iml
-
-# ============================================================================
-# Plastic SCM (Unity version control - ignore if not used)
-# ============================================================================
-ignore.conf
-*.private.0
-*.private
-
-# ============================================================================
-# Gradle (Android builds)
-# ============================================================================
-*.gradle
-.gradle/
-local.properties
+# Исключить эти файлы из нормализации, так как Unity очень чувствителен к ним
+*.meta -text
+*.asset -text
+*.unity -text
+*.prefab -text
+*.mat -text
+*.anim -text
+*.controller -text
+*.overrideController -text
+*.physicMaterial -text
+*.physicsMaterial2D -text
+*.playable -text
+*.mask -text
+*.brush -text
+*.flare -text
+*.fontsettings -text
+*.guiskin -text
+*.giparams -text
+*.renderTexture -text
+*.spriteatlas -text
+*.terrainlayer -text
