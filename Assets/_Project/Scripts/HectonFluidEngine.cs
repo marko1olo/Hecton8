@@ -63,7 +63,27 @@ public class HectonFluidEngine : MonoBehaviour
     [Tooltip("Кривая затухания: X = глубина 0→1, Y = множитель 1→0")]
     public AnimationCurve attenuationCurve =
         AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+    [Header("═══════════ Подводный туман (Fog) ═══════════")]
+    [Tooltip("Плотность атмосферного тумана над водой")]
+    [SerializeField] private float _aboveWaterFogDensity = 0.0001f;
 
+    [Tooltip("Базовая плотность тумана у поверхности воды (минимальная)")]
+    [SerializeField] private float _underwaterFogDensityBase = 0.0008f;
+
+    [Tooltip("Максимальная плотность тумана на предельной глубине")]
+    [SerializeField] private float _underwaterFogDensityMax = 0.02f;
+
+    [Tooltip("Глубина полного затухания тумана (метры). Отдельно от maxLightDepth для гибкости.")]
+    [Min(10f)]
+    [SerializeField] private float _maxFogDepth = 700f;
+
+    [Tooltip("Коэффициент крутизны экспоненты. 3=мягко, 4.5=оптимально, 6=резко")]
+    [Range(1f, 10f)]
+    [SerializeField] private float _fogExponentialK = 4.5f;
+
+    [Tooltip("Скорость плавного перехода плотности тумана (выше = быстрее)")]
+    [Range(0.5f, 15f)]
+    [SerializeField] private float _fogLerpSpeed = 3f;
     [Header("═══════════ Звуковые фильтры ═══════════")]
     [Tooltip("AudioMixer с exposed-параметром LowPass Cutoff")]
     public AudioMixer audioMixer;
@@ -284,7 +304,19 @@ public class HectonFluidEngine : MonoBehaviour
     }
 
     // ================================================================
-    //  LIGHT ATTENUATION — поглощение света средой
+    //  LIGHT ATTENUATION — поглощение света средой + экспоненциальный туман
+    //
+    //  Шейдерные глобалы: прозрачность по AnimationCurve (как было).
+    //  RenderSettings.fogDensity: экспоненциальная кривая по глубине.
+    //
+    //  Формула тумана:
+    //    density = base + (max - base) × (1 - exp(-k × d²))
+    //    где d = normalizedDepth = clamp(depth / maxFogDepth, 0, 1)
+    //
+    //  При k = 4.5:
+    //    0-100м   → почти прозрачно (~3-5% от максимума)
+    //    300-400м → начинается резкое нарастание
+    //    600м+    → ~98% максимальной плотности
     // ================================================================
 
     void UpdateLightAttenuation()
@@ -295,16 +327,51 @@ public class HectonFluidEngine : MonoBehaviour
 
         float depth = math.max(0f, waterLevel - cameraY);
 
-        float normalizedDepth = math.saturate(
+        // ──── 1. Шейдерные глобалы (прозрачность) — без изменений ────
+        float normalizedDepthShader = math.saturate(
             depth / math.max(maxLightDepth, 0.001f));
 
-        float curveValue   = attenuationCurve.Evaluate(normalizedDepth);
+        float curveValue   = attenuationCurve.Evaluate(normalizedDepthShader);
         float transparency = math.lerp(deepTransparency,
                                         surfaceTransparency,
                                         curveValue);
 
         Shader.SetGlobalFloat(_idTransparency, transparency);
         Shader.SetGlobalFloat(_idDepth,        depth);
+
+        // ──── 2. Экспоненциальный туман (RenderSettings) ────
+        if (depth <= 0f)
+        {
+            // Над водой — атмосферный туман
+            RenderSettings.fogDensity = math.lerp(
+                RenderSettings.fogDensity,
+                _aboveWaterFogDensity,
+                _fogLerpSpeed * Time.deltaTime);
+            return;
+        }
+
+        // Нормализация глубины для тумана (отдельная шкала от шейдера)
+        float normalizedDepthFog = math.saturate(depth / math.max(_maxFogDepth, 1f));
+
+        // Квадрат глубины → "прижимает" начало кривой к нулю
+        // Первые ~100м остаются почти прозрачными
+        float depthSquared = normalizedDepthFog * normalizedDepthFog;
+
+        // Экспоненциальный фактор: 0 у поверхности → 1 на глубине
+        float exponentialFactor = 1f - math.exp(-_fogExponentialK * depthSquared);
+
+        // Целевая плотность: от базовой подводной до максимальной на дне
+        float targetDensity = math.lerp(_underwaterFogDensityBase,
+                                        _underwaterFogDensityMax,
+                                        exponentialFactor);
+
+        // Плавная интерполяция между кадрами (без рывков)
+        float smoothFactor = 1f - math.exp(-_fogLerpSpeed * Time.deltaTime);
+
+        RenderSettings.fogDensity = math.lerp(
+            RenderSettings.fogDensity,
+            targetDensity,
+            smoothFactor);
     }
 
     // ================================================================

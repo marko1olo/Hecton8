@@ -27,8 +27,8 @@ TagManager:
   - Debris
   - 'Celestial '
   - 'PostProcess '
-  - 
-  - 
+  - HUD_Internal
+  - FirstPersonTools
   - 
   - 
   - 

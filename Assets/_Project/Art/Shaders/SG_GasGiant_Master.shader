@@ -12,10 +12,15 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
         [HDR] _AtmosColorOuter ("Atmos Outer", Color) = (0.5, 0.4, 0.9, 1)
 
         [Header(Differential Rotation)]
+        _GlobalRotation ("Global Rotation (set from C#)", Float) = 0.0
         _EquatorialSpeed ("Equatorial Speed", Float) = 0.02
         _PolarMultiplier ("Polar Multiplier", Range(0, 1)) = 0.4
+        _VerticalWiggleFreq ("Vertical Wiggle Frequency", Float) = 6.0
+        _VerticalWiggleAmp ("Vertical Wiggle Amplitude", Float) = 0.003
+
+        [Header(Detail Layer)]
         _DetailTiling ("Detail Tiling", Vector) = (3, 3, 0, 0)
-        _DetailSpeed ("Detail Drift Speed", Float) = 0.005
+        _DetailSpeedMult ("Detail Speed Multiplier", Range(1.0, 2.0)) = 1.4
         _DetailStrength ("Detail Strength", Range(0, 1)) = 0.3
 
         [Header(Lighting)]
@@ -52,6 +57,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Geometry"
             "UniversalMaterialType" = "Unlit"
+            "ForceNoShadowCasting" = "True"
         }
 
         LOD 200
@@ -76,6 +82,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             #pragma multi_compile _ DOTS_INSTANCING_ON
             #pragma multi_compile_instancing
 
+            // Explicitly NO fog multi_compile — space object
+            // #pragma multi_compile_fog  ← intentionally omitted
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -97,10 +106,14 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
 
+                float  _GlobalRotation;
                 half   _EquatorialSpeed;
                 half   _PolarMultiplier;
+                half   _VerticalWiggleFreq;
+                half   _VerticalWiggleAmp;
+
                 float4 _DetailTiling;
-                half   _DetailSpeed;
+                half   _DetailSpeedMult;
                 half   _DetailStrength;
 
                 half   _BacklitIntensity;
@@ -127,7 +140,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             // ─────────────────────────────────
             // GLOBALS (set from C#)
             // ─────────────────────────────────
-            float4 _SunDirection; // Shader.SetGlobalVector — direction FROM sun (normalized)
+            float4 _SunDirection;
 
             // ─────────────────────────────────
             // STRUCTS
@@ -144,75 +157,78 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             {
                 float4 positionCS  : SV_POSITION;
                 float2 uv          : TEXCOORD0;
-                float3 normalWS    : TEXCOORD1;
-                float3 viewDirWS   : TEXCOORD2;
+                half3  normalWS    : TEXCOORD1;
+                half3  viewDirWS   : TEXCOORD2;
                 float3 positionWS  : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            // ─────────────────────────────────
-            // DIFFERENTIAL ROTATION
-            // ─────────────────────────────────
-            float2 DifferentialRotation(float2 uv, float time)
+            // ─────────────────────────────────────────────────────────
+            // DIFFERENTIAL ROTATION (precision-safe)
+            //
+            // Uses _GlobalRotation (set from C# as fractional accumulator)
+            // instead of _Time.y to prevent float precision degradation.
+            //
+            // speedMultiplier: allows detail layer to spin faster (1.3-1.5x)
+            //
+            // Returns UV with:
+            //   - Latitude-dependent horizontal rotation (Jupiter cosĀ²)
+            //   - Vertical sin-wiggle to break "perfect ruler" banding
+            // ─────────────────────────────────────────────────────────
+            float2 DifferentialRotation(float2 uv, half speedMultiplier)
             {
-                // Latitude: UV.y 0..1, equator at 0.5
-                float latitude = abs(uv.y - 0.5) * 2.0;   // 0 at equator, 1 at poles
-                float latitudeMask = 1.0 - latitude;        // 1 at equator, 0 at poles
+                // Latitude: 0 at equator, 1 at poles
+                half latitude = abs(uv.y - 0.5h) * 2.0h;
+                half latitudeMask = 1.0h - latitude;
 
-                // Jupiter-like cos²-modulated speed
-                float polarSpeed = _EquatorialSpeed * _PolarMultiplier;
-                float speed = lerp(polarSpeed, _EquatorialSpeed, latitudeMask);
-                speed *= latitudeMask;
+                // Jupiter-like cosĀ²-modulated speed
+                half polarSpeed = _EquatorialSpeed * _PolarMultiplier;
+                half speed = lerp(polarSpeed, _EquatorialSpeed, latitudeMask);
+                speed *= latitudeMask * speedMultiplier;
 
-                return float2(uv.x + time * speed, uv.y);
+                // ── Precision-safe horizontal rotation ──
+                // frac() keeps the value in [0,1], preventing precision loss
+                // _GlobalRotation is already fractional from C#
+                float rotatedX = frac(uv.x + _GlobalRotation * speed);
+
+                // ── Vertical wiggle (NASA-punk realism) ──
+                // Breaks the "perfect horizontal lines" artifact.
+                // sin(latitude * freq) creates organic turbulence in flow bands.
+                // Amplitude is tiny (0.002-0.005) — just enough to add life.
+                half wiggle = sin(uv.y * _VerticalWiggleFreq) * _VerticalWiggleAmp;
+                rotatedX = frac(rotatedX + wiggle);
+
+                return float2(rotatedX, uv.y);
             }
 
             // ─────────────────────────────────
-            // TERMINATOR SCATTER FUNCTION
-            // ─────────────────────────────────
-            // Physically-motivated terminator with Rayleigh-like
-            // color shift. Returns:
-            //   .rgb = terminator scatter color contribution
-            //   .a   = soft daylight factor (0 = full night, 1 = full day)
+            // TERMINATOR SCATTER
             // ─────────────────────────────────
             struct TerminatorResult
             {
-                half3 scatterColor;    // Rayleigh scatter tint at terminator
-                half  daylightFactor;  // smooth day/night ramp
-                half  terminatorMask;  // peaks at the terminator line itself
+                half3 scatterColor;
+                half  daylightFactor;
+                half  terminatorMask;
             };
 
-            TerminatorResult TerminatorScatter(float3 N, float3 L, half3 albedo)
+            TerminatorResult TerminatorScatter(half3 N, half3 L, half3 albedo)
             {
                 TerminatorResult result;
 
-                float NdotL = dot(N, L);
-                float tw = _TerminatorWidth;
+                half NdotL = dot(N, L);
+                half tw = _TerminatorWidth;
 
-                // ── Smooth daylight ramp ──
-                // Remaps NdotL from [-tw, +tw] → [0, 1] with smoothstep
-                // This gives a physically softer gradient than a linear remap
-                float rampMin = -tw;
-                float rampMax =  tw;
-                float t = saturate((NdotL - rampMin) / (rampMax - rampMin + 0.0001));
-                result.daylightFactor = smoothstep(0.0, 1.0, t);
+                half rampMin = -tw;
+                half rampMax =  tw;
+                half t = saturate((NdotL - rampMin) / (rampMax - rampMin + 0.0001h));
+                result.daylightFactor = smoothstep(0.0h, 1.0h, t);
 
-                // ── Terminator zone mask ──
-                // Gaussian-like falloff centered at NdotL ≈ 0 (the geometric terminator)
-                // Width controlled by _TerminatorWidth
-                float distFromTerminator = NdotL / (tw + 0.0001);
-                float gaussianMask = exp(-distFromTerminator * distFromTerminator * 2.0);
+                half distFromTerminator = NdotL / (tw + 0.0001h);
+                half gaussianMask = exp(-distFromTerminator * distFromTerminator * 2.0h);
                 result.terminatorMask = gaussianMask;
 
-                // ── Rayleigh color shift ──
-                // At the terminator, sunlight passes through maximum atmospheric depth.
-                // Short wavelengths (blue) scatter away → remaining light is orange/red.
-                // We blend the tint color based on how deep into the terminator we are.
                 half3 tintColor = _TerminatorTintColor.rgb;
-
-                // The scatter contribution is strongest right at the terminator
-                // and tints the existing albedo
                 half3 tintedAlbedo = lerp(albedo, albedo * tintColor, gaussianMask);
                 result.scatterColor = tintedAlbedo * gaussianMask * _TerminatorTintStrength;
 
@@ -220,13 +236,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             }
 
             // ─────────────────────────────────
-            // CORRECTED FRESNEL FUNCTION
-            // ─────────────────────────────────
-            // Key fix: Fresnel rim is gated by sun-facing geometry.
-            // The rim should ONLY appear:
-            //   1. On the sun-lit hemisphere (normal lighting)
-            //   2. When the sun is directly behind (eclipse backlight)
-            // It must NOT bleed onto the dark side during normal phases.
+            // CORRECTED FRESNEL
             // ─────────────────────────────────
             struct FresnelResult
             {
@@ -235,9 +245,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             };
 
             FresnelResult ComputeCorrectedFresnel(
-                float3 N,
-                float3 V,
-                float3 L,           // direction TO sun
+                half3  N,
+                half3  V,
+                half3  L,
                 half3  innerColor,
                 half3  outerColor,
                 half   sunBacklitFactor
@@ -245,56 +255,30 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             {
                 FresnelResult result;
 
-                float NdotV = saturate(dot(N, V));
-                float fresnel = 1.0 - NdotV;
+                half NdotV = saturate(dot(N, V));
+                half fresnel = 1.0h - NdotV;
 
-                float innerFresnel = pow(fresnel, _InnerPower);
-                float outerFresnel = pow(fresnel, _OuterPower);
+                half innerFresnel = pow(fresnel, _InnerPower);
+                half outerFresnel = pow(fresnel, _OuterPower);
 
-                // ── Sun-side visibility gate ──
-                // dot(L, V): +1 when viewer looks toward sun (sun behind planet = eclipse)
-                //            -1 when viewer looks away from sun (sun in front of planet = normal)
-                //
-                // For the Fresnel rim on the lit side, we need NdotL > 0 on rim pixels.
-                // But rim pixels have N nearly perpendicular to V, so NdotL is the real gate.
-                //
-                // We use a combination:
-                //   sunVisibility = how much the surface normal faces the sun
-                //   backlitVisibility = how much the sun is behind the planet from camera's view
-                //
-                // Normal phase: rim only where NdotL > bias (sun-lit limb)
-                // Eclipse phase: rim everywhere (sunBacklitFactor drives this)
+                half NdotL = dot(N, L);
+                half sunGate = saturate(
+                    (NdotL + _FresnelSunBias) / (0.3h + abs(_FresnelSunBias)));
 
-                float NdotL = dot(N, L);
+                half LdotV = dot(L, V);
+                half backlitGate = saturate(LdotV * 2.0h + 0.5h);
 
-                // Gate 1: Surface-level sun visibility for this pixel's rim
-                // _FresnelSunBias shifts the cutoff slightly into shadow for a thin scatter rim
-                float sunGate = saturate((NdotL + _FresnelSunBias) / (0.3 + abs(_FresnelSunBias)));
+                half normalVisibility = sunGate;
+                half eclipseVisibility = backlitGate * sunBacklitFactor;
+                half fresnelGate = max(normalVisibility, eclipseVisibility);
 
-                // Gate 2: Backlit/eclipse visibility
-                // dot(L, V) > 0 means sun is somewhat behind the planet from viewer's perspective
-                float LdotV = dot(L, V);
-                float backlitGate = saturate(LdotV * 2.0 + 0.5); // ramps from 0 to 1
-
-                // Combine: during normal viewing, sunGate dominates.
-                // During eclipse (sunBacklitFactor → 1), we bypass sunGate and use backlitGate.
-                float normalVisibility = sunGate;
-                float eclipseVisibility = backlitGate * sunBacklitFactor;
-
-                // Final gate: whichever is stronger
-                float fresnelGate = max(normalVisibility, eclipseVisibility);
-
-                // Apply gate to fresnel
                 innerFresnel *= fresnelGate;
                 outerFresnel *= fresnelGate;
 
-                // ── Eclipse rim boost ──
-                // When _SunBacklitFactor = 1, the outer atmosphere glows intensely & uniformly
-                float eclipseFresnel = pow(fresnel, _EclipseRimPower);
+                half eclipseFresnel = pow(fresnel, _EclipseRimPower);
                 half3 eclipseContrib = _EclipseRimColor.rgb * eclipseFresnel
                                      * _EclipseRimIntensity * sunBacklitFactor;
 
-                // ── Composite ──
                 half3 inner = innerColor * innerFresnel;
                 half3 outer = outerColor * outerFresnel;
 
@@ -316,96 +300,126 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
-                VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS);
+                VertexPositionInputs vertexInput =
+                    GetVertexPositionInputs(input.positionOS.xyz);
+                VertexNormalInputs normalInput =
+                    GetVertexNormalInputs(input.normalOS);
 
-                output.positionCS  = vertexInput.positionCS;
-                output.positionWS  = vertexInput.positionWS;
-                output.normalWS    = normalInput.normalWS;
-                output.viewDirWS   = GetWorldSpaceNormalizeViewDir(vertexInput.positionWS);
-                output.uv          = TRANSFORM_TEX(input.uv, _MainTex);
+                output.positionCS = vertexInput.positionCS;
+                output.positionWS = vertexInput.positionWS;
+                output.normalWS   = (half3)normalInput.normalWS;
+                output.viewDirWS  = (half3)GetWorldSpaceNormalizeViewDir(
+                                        vertexInput.positionWS);
+                output.uv         = TRANSFORM_TEX(input.uv, _MainTex);
 
                 return output;
             }
 
-            // ─────────────────────────────────
+            // ─────────────────────────────────────────────────────────
             // FRAGMENT
-            // ─────────────────────────────────
+            //
+            // Two-layer pseudo-volume cloud system:
+            //   Layer 1 (Base):  _MainTex at standard rotation speed
+            //   Layer 2 (Haze):  _DetailTex at 1.3-1.5x speed, own tiling
+            //
+            // The detail layer's alpha drives the blend ratio,
+            // creating the illusion of upper-atmosphere haze
+            // drifting faster than the deep cloud deck below.
+            // ─────────────────────────────────────────────────────────
             half4 GasGiantFrag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float3 N = normalize(input.normalWS);
-                float3 V = normalize(input.viewDirWS);
-                float3 sunDir = normalize(_SunDirection.xyz);
-                float3 L = -sunDir;  // direction TO sun
-                float  time = _Time.y;
+                half3 N = normalize(input.normalWS);
+                half3 V = normalize(input.viewDirWS);
+                half3 sunDir = (half3)normalize(_SunDirection.xyz);
+                half3 L = -sunDir;  // direction TO sun
 
-                // ═══ DIFFERENTIAL ROTATION UV ═══
-                float2 rotatedUV = DifferentialRotation(input.uv, time);
+                // ═══════════════════════════════════════
+                // LAYER 1: BASE CLOUD DECK
+                // Standard differential rotation speed
+                // ═══════════════════════════════════════
+                float2 baseUV = DifferentialRotation(input.uv, 1.0h);
+                half4 baseColor = SAMPLE_TEXTURE2D(
+                    _MainTex, sampler_MainTex, baseUV);
 
-                // ═══ SAMPLE MAIN CLOUDS ═══
-                half4 mainColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, rotatedUV);
+                // ═══════════════════════════════════════
+                // LAYER 2: UPPER HAZE / CLOUDS
+                // Faster rotation (1.3-1.5x) + own tiling
+                // Simulates high-altitude ammonia ice clouds
+                // drifting above the main cloud deck
+                // ═══════════════════════════════════════
+                float2 hazeUV = DifferentialRotation(
+                    input.uv * _DetailTiling.xy,
+                    _DetailSpeedMult);
+                half4 hazeColor = SAMPLE_TEXTURE2D(
+                    _DetailTex, sampler_DetailTex, hazeUV);
 
-                // ═══ SAMPLE DETAIL CLOUDS ═══
-                float2 detailUV = rotatedUV * _DetailTiling.xy + float2(time * _DetailSpeed, 0);
-                half4 detailColor = SAMPLE_TEXTURE2D(_DetailTex, sampler_DetailTex, detailUV);
-
-                // ═══ COMBINE ALBEDO ═══
-                half3 combinedAlbedo = mainColor.rgb + detailColor.rgb * _DetailStrength;
+                // ═══════════════════════════════════════
+                // COMBINE: Pseudo-volume blend
+                //
+                // hazeColor.a controls how much the upper
+                // layer "covers" the base. This creates
+                // depth: thin haze (low alpha) lets the
+                // base show through; thick clouds (high
+                // alpha) dominate.
+                //
+                // _DetailStrength is the artist's master
+                // control over the effect intensity.
+                // ═══════════════════════════════════════
+                half hazeMask = hazeColor.a * _DetailStrength;
+                half3 combinedAlbedo = lerp(
+                    baseColor.rgb,
+                    hazeColor.rgb,
+                    hazeMask);
 
                 // ═══ TERMINATOR SCATTER ═══
-                TerminatorResult terminator = TerminatorScatter(N, L, combinedAlbedo);
+                TerminatorResult terminator =
+                    TerminatorScatter(N, L, combinedAlbedo);
 
                 // ═══ PRIMARY DAYLIGHT ═══
                 half3 daylight = combinedAlbedo * terminator.daylightFactor;
 
-                // ═══ TERMINATOR RAYLEIGH CONTRIBUTION ═══
+                // ═══ TERMINATOR RAYLEIGH ═══
                 half3 terminatorContrib = terminator.scatterColor;
 
                 // ═══ BACKLIT AMBIENT (shadow side) ═══
-                float NdotL = dot(N, L);
-                float shadowSide = saturate(-NdotL);
-                half3 backlitAmbient = half3(0.02, 0.025, 0.05) * shadowSide * _BacklitIntensity;
+                half NdotL = dot(N, L);
+                half shadowSide = saturate(-NdotL);
+                half3 backlitAmbient = half3(0.02h, 0.025h, 0.05h)
+                                     * shadowSide * _BacklitIntensity;
 
                 // ═══ CORRECTED FRESNEL RIM ═══
                 FresnelResult rim = ComputeCorrectedFresnel(
                     N, V, L,
                     _AtmosColorInner.rgb,
                     _AtmosColorOuter.rgb,
-                    _SunBacklitFactor
-                );
+                    _SunBacklitFactor);
 
                 // ═══ STORM EMISSION ═══
-                float2 stormUV = rotatedUV * _StormTiling.xy + float2(time * _StormSpeed, 0);
-                half4 stormRaw = SAMPLE_TEXTURE2D(_EmissionTex, sampler_EmissionTex, stormUV);
+                // Storms use base rotation (they're deep atmosphere)
+                float2 stormUV = baseUV * _StormTiling.xy
+                               + float2(_GlobalRotation * _StormSpeed, 0.0);
+                stormUV.x = frac(stormUV.x);
 
-                // Storms glow on the night side (lightning in deep atmosphere)
-                // Fade them out on the fully lit side so they don't wash out
-                float stormDayFade = saturate(1.0 - terminator.daylightFactor * 1.5);
-                half3 stormEmission = stormRaw.rgb * _StormEmission * stormDayFade;
+                half4 stormRaw = SAMPLE_TEXTURE2D(
+                    _EmissionTex, sampler_EmissionTex, stormUV);
+
+                half stormDayFade = saturate(
+                    1.0h - terminator.daylightFactor * 1.5h);
+                half3 stormEmission = stormRaw.rgb
+                                    * _StormEmission * stormDayFade;
 
                 // ═══ FINAL COMPOSITE ═══
-                half3 finalColor = half3(0, 0, 0);
+                half3 finalColor = daylight
+                                 + terminatorContrib
+                                 + backlitAmbient
+                                 + rim.rimColor
+                                 + stormEmission;
 
-                // Day/night lit surface
-                finalColor += daylight;
-
-                // Rayleigh scatter at terminator
-                finalColor += terminatorContrib;
-
-                // Minimal backlit ambient on shadow side
-                finalColor += backlitAmbient;
-
-                // Atmospheric rim (correctly gated)
-                finalColor += rim.rimColor;
-
-                // Storm emission
-                finalColor += stormEmission;
-
-                // No fog applied — space objects must not receive scene fog
-                return half4(finalColor, 1.0);
+                // No fog — space objects must never receive scene fog
+                return half4(finalColor, 1.0h);
             }
 
             ENDHLSL
@@ -451,7 +465,6 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 return output;
             }
@@ -496,7 +509,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 normalWS   : TEXCOORD0;
+                half3  normalWS   : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -507,10 +520,10 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS);
-                output.normalWS = normalInput.normalWS;
+                VertexNormalInputs normalInput =
+                    GetVertexNormalInputs(input.normalOS);
+                output.normalWS = (half3)normalInput.normalWS;
                 return output;
             }
 
@@ -518,16 +531,15 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-
-                float3 normalWS = normalize(input.normalWS);
-                return half4(normalWS, 0.0);
+                half3 normalWS = normalize(input.normalWS);
+                return half4(normalWS, 0.0h);
             }
 
             ENDHLSL
         }
 
         // ═══════════════════════════════════════════
-        // PASS 3: META (for lightmapping / GI)
+        // PASS 3: META
         // ═══════════════════════════════════════════
         Pass
         {
@@ -552,10 +564,13 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float4 _EmissionTex_ST;
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
+                float  _GlobalRotation;
                 half   _EquatorialSpeed;
                 half   _PolarMultiplier;
+                half   _VerticalWiggleFreq;
+                half   _VerticalWiggleAmp;
                 float4 _DetailTiling;
-                half   _DetailSpeed;
+                half   _DetailSpeedMult;
                 half   _DetailStrength;
                 half   _BacklitIntensity;
                 half   _TerminatorWidth;
@@ -593,8 +608,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 output.positionCS = UnityMetaVertexPosition(
                     input.positionOS.xyz,
                     input.uvLM,
-                    input.uvLM
-                );
+                    input.uvLM);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 return output;
             }
@@ -604,18 +618,13 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 MetaInput metaInput;
                 metaInput.Albedo = half3(0, 0, 0);
                 metaInput.Emission = SAMPLE_TEXTURE2D(
-                    _MainTex, sampler_MainTex, input.uv
-                ).rgb * 0.1;
-
+                    _MainTex, sampler_MainTex, input.uv).rgb * 0.1h;
                 return UnityMetaFragment(metaInput);
             }
 
             ENDHLSL
         }
-
-        // Shadow Caster intentionally omitted — gas giants cast no mesh shadows
     }
 
     FallBack "Universal Render Pipeline/Unlit"
-    CustomEditor "UnityEditor.Rendering.Universal.ShaderGUI.UnlitShaderGUI"
 }

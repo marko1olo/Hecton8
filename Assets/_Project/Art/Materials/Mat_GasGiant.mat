@@ -65,11 +65,13 @@ Material:
     m_Floats:
     - _BacklitIntensity: 0.08
     - _DetailSpeed: 0.005
-    - _DetailStrength: 0.3
+    - _DetailSpeedMult: 1.249
+    - _DetailStrength: 0.289
     - _EclipseRimIntensity: 5
     - _EclipseRimPower: 6
     - _EquatorialSpeed: 0.02
     - _FresnelSunBias: -0.1
+    - _GlobalRotation: 0
     - _InnerPower: 2
     - _OuterPower: 5
     - _PlanetPhase: 0.52
@@ -81,6 +83,8 @@ Material:
     - _SunBacklitFactor: 0
     - _TerminatorTintStrength: 0.6
     - _TerminatorWidth: 0.15
+    - _VerticalWiggleAmp: 0.003
+    - _VerticalWiggleFreq: 10
     m_Colors:
     - _AtmosColorInner: {r: 0.4, g: 0.3, b: 0.7, a: 1}
     - _AtmosColorOuter: {r: 0.5, g: 0.4, b: 0.9, a: 1}

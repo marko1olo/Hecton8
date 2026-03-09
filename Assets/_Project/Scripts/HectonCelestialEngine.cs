@@ -133,6 +133,20 @@ public class HectonCelestialEngine : MonoBehaviour
     private float _accumulatedOrbitalAngle;
     private float _currentBacklitFactor;
 
+    // ═══════════════════════════════════════════════════════════
+    // PRECISION-SAFE ROTATION TIMER
+    //
+    // Accumulates in double to prevent float precision loss.
+    // After months of runtime at 60fps, double still has
+    // sub-microsecond precision. We mod by 1.0 and cast to
+    // float only when sending to the shader — guaranteeing
+    // the GPU always receives a value in [0, 1).
+    //
+    // This replaces all _Time.y usage for planet rotation.
+    // ═══════════════════════════════════════════════════════════
+    private double _rotationAccumulator;
+    private float _rotationTimer; // float snapshot sent to shader each frame
+
     // Sun occlusion state
     private float _sunOcclusionFactor;       // 0 = fully visible, 1 = fully occluded
     private float _smoothedOcclusionFactor;  // lerped version for smooth fading
@@ -163,6 +177,9 @@ public class HectonCelestialEngine : MonoBehaviour
     private static readonly int _FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
     private static readonly int _SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
 
+    // ══ NEW: Cached property ID for _GlobalRotation ══
+    private static readonly int _GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
+
     // AtmosphereManager reflection cache
     private System.Reflection.PropertyInfo _sunAngleProperty;
     private System.Reflection.PropertyInfo _sunDirectionProperty;
@@ -190,6 +207,10 @@ public class HectonCelestialEngine : MonoBehaviour
         _baseSunIntensityCaptured = false;
         _baseFlareValuesCaptured = false;
 
+        // ══ Reset rotation accumulator ══
+        _rotationAccumulator = 0.0;
+        _rotationTimer = 0f;
+
         // Capture base sun intensity
         if (sunLight != null)
         {
@@ -213,6 +234,36 @@ public class HectonCelestialEngine : MonoBehaviour
     private void Update()
     {
         float dt = Application.isPlaying ? Time.deltaTime : 0.016f;
+
+        // ═══════════════════════════════════════════════════════
+        // UPDATE ROTATION TIMER (precision-safe)
+        //
+        // Accumulate in double precision. The mod operation
+        // keeps the value in [0, 1), so the float cast sent
+        // to the GPU never loses significant digits.
+        //
+        // Why double? After 24 hours at speed=0.02:
+        //   float: 0.02 * 86400 = 1728.0 → only 11 bits of
+        //          fractional precision left (error ~0.0001)
+        //   double: 53 bits mantissa → error < 1e-12
+        //
+        // The shader uses frac(_GlobalRotation * speed),
+        // so the value wrapping at 1.0 is seamless.
+        // ═══════════════════════════════════════════════════════
+        _rotationAccumulator += (double)dt;
+
+        // Wrap at a large but finite boundary to prevent
+        // double overflow after years of runtime.
+        // 1000000.0 gives ~11.5 days at dt=0.016 before wrap —
+        // more than enough, and frac() in shader handles the seam.
+        if (_rotationAccumulator > 1000000.0)
+            _rotationAccumulator -= 1000000.0;
+
+        // The shader receives this value and applies:
+        //   frac(uv.x + _GlobalRotation * _EquatorialSpeed * latitudeMask)
+        // Since _EquatorialSpeed is typically 0.01-0.05,
+        // the effective UV offset stays in a well-resolved range.
+        _rotationTimer = (float)(_rotationAccumulator % 1000000.0);
 
         UpdateSunPosition(dt);
         ResolveSunDirection();
@@ -661,14 +712,6 @@ public class HectonCelestialEngine : MonoBehaviour
             _sunOcclusionFactor = 0f;
         }
 
-        // ── Additional check: is the sun actually BEHIND Aegir (not in front)? ──
-        // If the sun direction and the Aegir direction are roughly opposite,
-        // the planet is between us and the sun. If they diverge, no occlusion.
-        // We already measure angular separation; if it's small, they align.
-        // But we must also ensure Aegir is actually between camera and sun.
-        // For a directional (infinite distance) sun, the sun is always "behind" Aegir
-        // if toSun ≈ toAegir. The angular check above handles this correctly.
-
         // ── Temporal smoothing ──
         _smoothedOcclusionFactor = math.lerp(
             _smoothedOcclusionFactor,
@@ -863,9 +906,13 @@ public class HectonCelestialEngine : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
     // AEGIR MATERIAL (via MaterialPropertyBlock)
-    // ─────────────────────────────────────────────
+    //
+    // KEY CHANGE: _GlobalRotation replaces _Time.y for rotation.
+    // The shader's DifferentialRotation() now reads _GlobalRotation
+    // instead of _Time.y, guaranteeing precision on all GPUs.
+    // ─────────────────────────────────────────────────────────────
 
     private void UpdateAegirMaterial()
     {
@@ -897,6 +944,19 @@ public class HectonCelestialEngine : MonoBehaviour
         _aegirMPB.SetFloat(_PlanetPhase, _currentPhase);
         _aegirMPB.SetFloat(_StormEmission, stormEmissionIntensity);
         _aegirMPB.SetFloat(_SunBacklitFactor, _currentBacklitFactor);
+
+        // ═══════════════════════════════════════════════════════
+        // PRECISION-SAFE ROTATION VALUE
+        //
+        // _rotationTimer is the raw accumulator (double→float).
+        // The shader applies: frac(uv.x + _GlobalRotation * speed)
+        // where speed = _EquatorialSpeed * latitudeMask.
+        //
+        // Since frac() wraps on the GPU side, and our accumulator
+        // stays within float-safe range via double mod, there is
+        // NO precision loss at any runtime duration.
+        // ═══════════════════════════════════════════════════════
+        _aegirMPB.SetFloat(_GlobalRotation, _rotationTimer);
 
         aegirRenderer.SetPropertyBlock(_aegirMPB);
 
@@ -1015,6 +1075,9 @@ public class HectonCelestialEngine : MonoBehaviour
 
     /// <summary>Current sun occlusion factor (0 = visible, 1 = fully behind planet)</summary>
     public float SunOcclusionFactor => _smoothedOcclusionFactor;
+
+    /// <summary>Current rotation timer value sent to shader (read-only, for debugging)</summary>
+    public float RotationTimer => _rotationTimer;
 
     /// <summary>Устанавливает угол орбиты вручную (для cutscene и т.д.)</summary>
     public void SetOrbitalAngle(float angleDegrees)

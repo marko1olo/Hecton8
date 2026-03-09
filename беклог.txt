@@ -1,0 +1,45 @@
+Беклог история изменений
+
+ТЕХНИЧЕСКИЙ ОТЧЕТ СЕССИИ (10.03.2026)
+Проект: Submerge (ex. HECTON-8)
+Целевое железо: NVIDIA MX350 (2GB VRAM) / Core i5
+Статус: Смена архитектуры HUD и стабилизация среды.
+1. Глобальная среда и рельеф (Environment Sync)
+Синхронизация высот: Уровень моря зафиксирован на отметке 5000 (согласно графу MapMagic). Значение прописано в инспекторах на объекте [MANAGERS] для скриптов: HectonAtmosphereManager, HectonFluidEngine, HectonSurvivalSystem.
+Логика текстурирования: В биоме пиков (Biome_Peak) исправлена нода SLOPE. Диапазон изменен с 7.5-15 на 0-15 градусов. Это убрало дефолтный песок с плоских вершин плато и заменило его на скалу.
+Адаптивное затухание света: В HectonFluidEngine.cs внедрена экспоненциальная модель тумана (1 - exp(-k * d²)). Вода теперь прозрачная в первых 100-200м и плавно уходит в «глубокий мрак» к 700м.
+2. Небесные тела (Celestial Systems — Aegir)
+Precision Fix: Вращение газового гиганта переведено с _Time.y на C#-драйвер. Это предотвращает распад текстуры на полосы через 30+ минут игры на MX350.
+Multi-Layer Clouds: Шейдер SG_GasGiant_Master переписан под двухслойную систему. Теперь верхние облака (_DetailTex) вращаются в 1.4 раза быстрее базы, создавая эффект параллакса и объема без доп. геометрии.
+Новый компонент: GasGiantRotationDriver.cs (управляет вращением через MaterialPropertyBlock).
+3. Диегетический интерфейс (The Optics Pipeline / Hecton-OS)
+Реализован переход от 2D Canvas к физической симуляции шлема.
+Оптический тракт:
+HUD_Render_Camera: Специальная камера, вынесенная за пределы карты. Видит только слой HUD_Internal.
+RT_HUD_Display: Render Texture (1024x1024), в которую рисует HUD-камера.
+Suit_Visor: Физическая линза (сплющенная сфера) перед глазами игрока в слое FirstPersonTools.
+Векторный рендер (Shapes): Скрипт HectonSuitHUD.cs полностью переписан. Вся отрисовка идет через библиотеку Shapes в Immediate Mode. Это убрало нагрузку на Unity UI Rebuild и дало четкость NASA-Punk интерфейса.
+Шейдер стекла: SuitVisor.shader. Реализует рефракцию (искажение по краям), Emission от HUD-текстуры и подсвечивание «царапин» на стекле.
+Новый компонент: VisorHUDController.cs (связующее звено между RT, камерой и материалом).
+4. Системы геймплея и спавна
+Безопасный спавн: Внедрен скрипт HectonPlayerSpawner.cs. Он асинхронно ждет генерации террейна и ищет точку на поверхности воды у берега (глубина ~150м) для высадки игрока.
+Input System: Параметры проекта переведены в режим Both (New + Old), что позволило оживить управление игроком на базе CharacterController.
+5. Оптимизация под MX350 (2GB VRAM Limit)
+Crest Fix: В URP Asset включено 2 каскада теней и выключен Opaque Downsampling (убраны артефакты воды).
+Renderer Features: В Universal Renderer Data добавлена Shapes Render Feature, необходимая для работы векторного HUD.
+Cleanup: Пакет Adaptive Performance удален как мусорный для ПК-платформы.
+ТЕКУЩАЯ СТРУКТУРА ПРОЕКТА (Hierarchy)
+--- SYSTEMS ---
+[MANAGERS]: Центр управления. Скрипты: AtmosphereManager, FluidEngine, SurvivalSystem, PlayerSpawner.
+[CELESTIAL_ENGINE]: Газовый гигант и циклы.
+--- WORLD ---
+GasGiant_Aegir: Меш планеты + GasGiantRotationDriver.
+Ocean_Crest: Рендерер воды.
+Terrain generator: MapMagic 2.
+--- GAMEPLAY ---
+Player: Главный объект.
+Main Camera: Видит мир.
+HUD_Render_Camera: Рисует интерфейс в текстуру.
+Suit_Visor: Физическое стекло шлема.
+--- UI ---
+Suit_HUD_Canvas — DEPRECATED (выключен).
