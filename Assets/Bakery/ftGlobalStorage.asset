@@ -400,7 +400,40 @@ MonoBehaviour:
   assetList:
   - Assets/Bakery/examples/content/sponza/bush.FBX
   - Assets/Bakery/examples/content/floor_lamp.FBX
-  uvOverlapAssetList: 00000000ffffffff
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_04.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_2x3_a.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_05.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_large_8x8.fbx
+  - Assets/ScifiFacility/Models/structural/floor/duct_01 1.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_03.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_01_4x4.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/floor_large_8x8.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/duct_02.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_02a.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/duct_01.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_part_01.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_02.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_05.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_crosssection_01.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_part_03.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_06.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/floor_05.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_03.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_02.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_02.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/ceiling_10.fbx
+  - Assets/_Project/_PROLOGUE_CONTENT/Models/wall_04_3x6_d.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_small_4x4.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_part_02.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_01.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_01.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_04.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/duct_03.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_06.fbx
+  - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_01.fbx
+  uvOverlapAssetList: 00000000ffffffff000000000101000000000000000000000000000001010000000000000101000000000000000000000000000001010000000000000101000001010000010100000000000000000000000000000101000000000000010100000000000001010000000000000000000001010000000000000101000001010000000000000101000000000000
   xatlasWarningShown: 0
   foundCompatibleSetup: 0
   gpuName: 

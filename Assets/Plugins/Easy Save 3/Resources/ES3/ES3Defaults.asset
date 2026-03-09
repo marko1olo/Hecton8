@@ -53,6 +53,8 @@ MonoBehaviour:
     - MoreMountains.Feedbacks.TextMeshPro
     - MoreMountains.Feedbacks.URP
     - MoreMountains.Tools
+    - NaughtyAttributes.Core
+    - NaughtyAttributes.Test
     - ShapesRuntime
     - Tayx.Graphy
     showAdvancedSettings: 0
