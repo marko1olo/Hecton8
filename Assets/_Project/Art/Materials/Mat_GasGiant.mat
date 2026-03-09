@@ -72,11 +72,11 @@ Material:
     - _FresnelSunBias: -0.1
     - _InnerPower: 2
     - _OuterPower: 5
-    - _PlanetPhase: 0
+    - _PlanetPhase: 0.52
     - _PolarMultiplier: 0.4
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _StormEmission: 1
+    - _StormEmission: 3.12
     - _StormSpeed: 0.01
     - _SunBacklitFactor: 0
     - _TerminatorTintStrength: 0.6
