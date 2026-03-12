@@ -25,7 +25,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3241845006263921339}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1710.9995, y: -0.00013999999, z: -858.9952}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -84,4 +84,5 @@ MonoBehaviour:
       seed: 888
     wallNoiseAmplitude: 3
   voxelMaterial: {fileID: 2100000, guid: 31740cd9f20bb52439e9afc378dc9785, type: 2}
-  worldGenerator: {fileID: 0}
+  mapMagicBridge: {fileID: 0}
+  voxelVolumePrefab: {fileID: 0}

@@ -1,591 +1,617 @@
 // ============================================================================
-//  HectonFluidEngine.cs — Ядро системы физики плотной среды.
+// HECTON-8 — HectonFluidEngine.cs
+// Высокопроизводительная система плавучести и сопротивления среды.
 //
-//  • Batch-расчёт плавучести через IJobParallelFor + [BurstCompile]
-//  • Течения на основе simplex noise (CurrentManager)
-//  • Поглощение света → Shader.SetGlobalFloat
-//  • LowPass-фильтр AudioMixer при погружении
+// Singleton, IFixedTickable. Использует C# Job System + Burst Compiler
+// для параллельного вычисления сил на сотнях объектов.
 //
-//  Singleton. Один экземпляр на сцену.
+// АРХИТЕКТУРА:
+//   1. Gather: копируем позиции/скорости из Rigidbody → NativeArrays
+//   2. Schedule: запускаем BurstCompiled IJobParallelFor
+//   3. Complete: ждём завершения (синхронно в FixedTick)
+//   4. Apply: применяем силы к Rigidbody через AddForce
+//
+// ПРОИЗВОДИТЕЛЬНОСТЬ (ожидаемая):
+//   500 объектов → < 0.3 мс на FixedTick (Burst + SIMD)
+//   NativeArrays реаллоцируются ТОЛЬКО когда count превышает capacity.
+//   Capacity Doubling: минимум 128, удвоение при нехватке.
+//
+// ZERO GC:
+//   • Managed списки (_objects, _bodies) — Add/Remove, без per-frame аллокаций.
+//   • NativeArrays — Allocator.Persistent, dispose при Shutdown/Resize.
+//   • Job struct — stack allocated, Burst compiled.
+//
+// СУХИЕ ЗОНЫ:
+//   BuoyancyParams.isInAir копируется из BuoyancyObject.IsInAir.
+//   Если true — BuoyancyJob выдаёт float3.zero для сил и моментов.
+//   Объект "висит в воздухе" внутри модуля без водной физики.
+//
+// ТЕЧЕНИЯ (CURRENTS):
+//   Глобальный вектор течения (currentVector) применяется ко всем объектам.
+//   Будущее: пространственная карта течений (Flowmap).
 // ============================================================================
+
 using System.Collections.Generic;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Audio;
 
-[DefaultExecutionOrder(-100)]
-[AddComponentMenu("Hecton/Fluid Engine")]
-public class HectonFluidEngine : MonoBehaviour
+namespace Hecton8.Physics
 {
-    // ====================== SINGLETON ======================
-
-    public static HectonFluidEngine Instance { get; private set; }
-
-    // ====================== INSPECTOR ======================
-
-    [Header("═══════════ Поверхность воды ═══════════")]
-    [Tooltip("Глобальный уровень воды по оси Y (world-space)")]
-    public float waterLevel = 0f;
-
-    [Header("═══════════ Течения ═══════════")]
-    [Tooltip("Базовая сила течения (м/с²)")]
-    [Range(0f, 15f)]
-    public float currentStrength = 1.5f;
-
-    [Tooltip("Пространственный масштаб шума. Меньше → крупнее вихри.")]
-    [Range(0.001f, 1f)]
-    public float currentNoiseScale = 0.04f;
-
-    [Tooltip("Скорость эволюции течений во времени")]
-    [Range(0f, 3f)]
-    public float currentTimeScale = 0.15f;
-
-    [Tooltip("Множитель вертикальной составляющей (0 = горизонтально)")]
-    [Range(0f, 1f)]
-    public float currentVerticalFactor = 0.08f;
-
-    [Header("═══════════ Поглощение света ═══════════")]
-    [Tooltip("Глубина полного гашения света (м)")]
-    [Min(1f)]
-    public float maxLightDepth = 40f;
-
-    [Tooltip("Прозрачность на поверхности (1 = прозрачно)")]
-    [Range(0f, 1f)]
-    public float surfaceTransparency = 1f;
-
-    [Tooltip("Прозрачность на максимальной глубине")]
-    [Range(0f, 1f)]
-    public float deepTransparency = 0.01f;
-
-    [Tooltip("Кривая затухания: X = глубина 0→1, Y = множитель 1→0")]
-    public AnimationCurve attenuationCurve =
-        AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
-    [Header("═══════════ Подводный туман (Fog) ═══════════")]
-    [Tooltip("Плотность атмосферного тумана над водой")]
-    [SerializeField] private float _aboveWaterFogDensity = 0.0001f;
-
-    [Tooltip("Базовая плотность тумана у поверхности воды (минимальная)")]
-    [SerializeField] private float _underwaterFogDensityBase = 0.0008f;
-
-    [Tooltip("Максимальная плотность тумана на предельной глубине")]
-    [SerializeField] private float _underwaterFogDensityMax = 0.02f;
-
-    [Tooltip("Глубина полного затухания тумана (метры). Отдельно от maxLightDepth для гибкости.")]
-    [Min(10f)]
-    [SerializeField] private float _maxFogDepth = 700f;
-
-    [Tooltip("Коэффициент крутизны экспоненты. 3=мягко, 4.5=оптимально, 6=резко")]
-    [Range(1f, 10f)]
-    [SerializeField] private float _fogExponentialK = 4.5f;
-
-    [Tooltip("Скорость плавного перехода плотности тумана (выше = быстрее)")]
-    [Range(0.5f, 15f)]
-    [SerializeField] private float _fogLerpSpeed = 3f;
-    [Header("═══════════ Звуковые фильтры ═══════════")]
-    [Tooltip("AudioMixer с exposed-параметром LowPass Cutoff")]
-    public AudioMixer audioMixer;
-
-    [Tooltip("Имя exposed-параметра в AudioMixer")]
-    public string lowPassParameterName = "LowPassCutoff";
-
-    [Tooltip("Частота среза над водой (Гц)")]
-    public float surfaceCutoffHz = 22000f;
-
-    [Tooltip("Частота среза под водой (Гц)")]
-    public float underwaterCutoffHz = 400f;
-
-    [Tooltip("Глубина перехода фильтра (м)")]
-    [Min(0.1f)]
-    public float audioTransitionDepth = 2f;
-
-    [Tooltip("Плавность перехода (выше = быстрее)")]
-    [Range(0.5f, 25f)]
-    public float audioSmoothSpeed = 5f;
-
-    [Header("═══════════ Shader Globals ═══════════")]
-    public string shaderParamTransparency = "_HectonFluidTransparency";
-    public string shaderParamDepth        = "_HectonFluidDepth";
-    public string shaderParamWaterLevel   = "_HectonWaterLevel";
-
-    // ====================== PRIVATE STATE ======================
-
-    private readonly List<BuoyancyObject> _objects =
-        new List<BuoyancyObject>(256);
-
-    private Transform _listenerTransform;
-    private float     _currentCutoffHz;
-
-    // Кеш Shader.PropertyToID — хешируем один раз
-    private int _idTransparency;
-    private int _idDepth;
-    private int _idWaterLevel;
-
-    // ====================== LIFECYCLE ======================
-
-    void Awake()
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-5000)]
+    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable
     {
-        if (Instance != null && Instance != this)
+        // ══════════════════════════════════════════════════════════
+        //  SINGLETON
+        // ══════════════════════════════════════════════════════════
+
+        private static HectonFluidEngine _instance;
+
+        public static HectonFluidEngine Instance
         {
-            Debug.LogWarning(
-                $"[HectonFluidEngine] Дубликат на '{name}' уничтожен.");
-            Destroy(this);
-            return;
-        }
-        Instance = this;
-
-        _currentCutoffHz = surfaceCutoffHz;
-        _idTransparency  = Shader.PropertyToID(shaderParamTransparency);
-        _idDepth         = Shader.PropertyToID(shaderParamDepth);
-        _idWaterLevel    = Shader.PropertyToID(shaderParamWaterLevel);
-    }
-
-    void Start()
-    {
-        AudioListener listener = Object.FindFirstObjectByType<AudioListener>();
-        _listenerTransform = listener != null
-            ? listener.transform
-            : Camera.main != null ? Camera.main.transform : null;
-
-        BuoyancyObject.FlushPending(this);
-
-        Shader.SetGlobalFloat(_idWaterLevel,   waterLevel);
-        Shader.SetGlobalFloat(_idTransparency, surfaceTransparency);
-        Shader.SetGlobalFloat(_idDepth,        0f);
-    }
-
-    void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
-    }
-
-    void FixedUpdate()
-    {
-        BatchProcessBuoyancy();
-    }
-
-    void Update()
-    {
-        UpdateLightAttenuation();
-        UpdateAudioFilter();
-        Shader.SetGlobalFloat(_idWaterLevel, waterLevel);
-    }
-
-    // ====================== REGISTRATION ======================
-
-    public void Register(BuoyancyObject obj)
-    {
-        if (obj != null && !_objects.Contains(obj))
-            _objects.Add(obj);
-    }
-
-    public void Unregister(BuoyancyObject obj)
-    {
-        _objects.Remove(obj);
-    }
-
-    public int RegisteredCount => _objects.Count;
-
-    // ================================================================
-    //  BATCH BUOYANCY — основной расчёт
-    //  Все объекты обрабатываются одним Burst-Job параллельно.
-    //  На главном потоке — только копирование данных и AddForce.
-    // ================================================================
-
-    void BatchProcessBuoyancy()
-    {
-        // 1. Компактификация: удаляем уничтоженные объекты
-        int writeIdx = 0;
-        for (int i = 0; i < _objects.Count; i++)
-        {
-            BuoyancyObject obj = _objects[i];
-            if (obj != null && obj.Rb != null)
-                _objects[writeIdx++] = obj;
-        }
-        if (writeIdx < _objects.Count)
-            _objects.RemoveRange(writeIdx, _objects.Count - writeIdx);
-
-        int count = _objects.Count;
-        if (count == 0) return;
-
-        // 2. Аллокация NativeArray (TempJob)
-        var positions = new NativeArray<float3>(count, Allocator.TempJob,
-                            NativeArrayOptions.UninitializedMemory);
-        var masses    = new NativeArray<float>(count, Allocator.TempJob,
-                            NativeArrayOptions.UninitializedMemory);
-        var heights   = new NativeArray<float>(count, Allocator.TempJob,
-                            NativeArrayOptions.UninitializedMemory);
-        var buoyMults = new NativeArray<float>(count, Allocator.TempJob,
-                            NativeArrayOptions.UninitializedMemory);
-
-        var outForces     = new NativeArray<float3>(count, Allocator.TempJob,
-                                NativeArrayOptions.UninitializedMemory);
-        var outSubmersion = new NativeArray<float>(count, Allocator.TempJob,
-                                NativeArrayOptions.UninitializedMemory);
-        var outCurrents   = new NativeArray<float3>(count, Allocator.TempJob,
-                                NativeArrayOptions.UninitializedMemory);
-
-        // 3. Заполнение входных данных
-        for (int i = 0; i < count; i++)
-        {
-            BuoyancyObject obj = _objects[i];
-            positions[i] = (float3)obj.transform.position;
-            masses[i]    = obj.Rb.mass;
-            heights[i]   = obj.objectHeight;
-            buoyMults[i] = obj.buoyancyMultiplier;
-        }
-
-        // 4. Запуск Job
-        var job = new BuoyancyBatchJob
-        {
-            Positions  = positions,
-            Masses     = masses,
-            Heights    = heights,
-            BuoyMults  = buoyMults,
-
-            WaterLevel        = waterLevel,
-            Gravity           = math.abs(Physics.gravity.y),
-            CurrentStrength   = currentStrength,
-            CurrentNoiseScale = currentNoiseScale,
-            CurrentTimeScale  = currentTimeScale,
-            VerticalFactor    = currentVerticalFactor,
-            Time              = Time.fixedTime,
-
-            OutForces     = outForces,
-            OutSubmersion = outSubmersion,
-            OutCurrents   = outCurrents
-        };
-
-        JobHandle handle = job.Schedule(count, 64);
-        handle.Complete();
-
-        // 5. Применение результатов (главный поток)
-        float dt = Time.fixedDeltaTime;
-
-        for (int i = 0; i < count; i++)
-        {
-            BuoyancyObject obj = _objects[i];
-            Rigidbody rb       = obj.Rb;
-
-            float submersion = outSubmersion[i];
-            obj.SubmersionRatio = submersion;
-            obj.CurrentVector   = outCurrents[i];
-
-            if (submersion > 0f)
+            get
             {
-                // Выталкивающая сила + течение
-                rb.AddForce((Vector3)outForces[i], ForceMode.Force);
-
-                // Damping: затухание скорости и вращения
-                // Экспоненциальное затухание ∝ погружению × коэффициенту
-                //   v *= (1 − clamp(submersion · drag · dt, 0, 1))
-                // При drag=3, submersion=1: за 1 с скорость → ~5% (e^{-3})
-
-                float linearFactor = 1f - math.saturate(
-                    submersion * obj.underwaterDrag * dt);
-                float angularFactor = 1f - math.saturate(
-                    submersion * obj.underwaterAngularDrag * dt);
-
-                rb.linearVelocity        *= linearFactor;
-                rb.angularVelocity *= angularFactor;
+#if UNITY_EDITOR
+                if (_instance == null && !Application.isPlaying)
+                    return null;
+#endif
+                return _instance;
             }
         }
 
-        // 6. Освобождение памяти
-        positions.Dispose();
-        masses.Dispose();
-        heights.Dispose();
-        buoyMults.Dispose();
-        outForces.Dispose();
-        outSubmersion.Dispose();
-        outCurrents.Dispose();
-    }
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — WATER
+        // ══════════════════════════════════════════════════════════
 
-    // ================================================================
-    //  LIGHT ATTENUATION — поглощение света средой + экспоненциальный туман
-    //
-    //  Шейдерные глобалы: прозрачность по AnimationCurve (как было).
-    //  RenderSettings.fogDensity: экспоненциальная кривая по глубине.
-    //
-    //  Формула тумана:
-    //    density = base + (max - base) × (1 - exp(-k × d²))
-    //    где d = normalizedDepth = clamp(depth / maxFogDepth, 0, 1)
-    //
-    //  При k = 4.5:
-    //    0-100м   → почти прозрачно (~3-5% от максимума)
-    //    300-400м → начинается резкое нарастание
-    //    600м+    → ~98% максимальной плотности
-    // ================================================================
+        [Header("── Water ─────────────────────────────────────")]
+        [Tooltip("Y-координата поверхности воды (world space)")]
+        [SerializeField] private float waterLevel = 5000f;
 
-    void UpdateLightAttenuation()
-    {
-        float cameraY = _listenerTransform != null
-            ? _listenerTransform.position.y
-            : waterLevel + 1f;
+        [Tooltip("Плотность воды (кг/м³). Пресная = 1000, Морская = 1025")]
+        [SerializeField] private float waterDensity = 1000f;
 
-        float depth = math.max(0f, waterLevel - cameraY);
+        [Tooltip("Коэффициент вязкого сопротивления. " +
+                 "Чем больше — тем сильнее торможение под водой.")]
+        [SerializeField] private float viscousDrag = 3f;
 
-        // ──── 1. Шейдерные глобалы (прозрачность) — без изменений ────
-        float normalizedDepthShader = math.saturate(
-            depth / math.max(maxLightDepth, 0.001f));
+        [Tooltip("Коэффициент углового сопротивления. " +
+                 "Замедляет вращение объектов под водой.")]
+        [SerializeField] private float angularDrag = 1f;
 
-        float curveValue   = attenuationCurve.Evaluate(normalizedDepthShader);
-        float transparency = math.lerp(deepTransparency,
-                                        surfaceTransparency,
-                                        curveValue);
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — CURRENTS
+        // ══════════════════════════════════════════════════════════
 
-        Shader.SetGlobalFloat(_idTransparency, transparency);
-        Shader.SetGlobalFloat(_idDepth,        depth);
+        [Header("── Currents ──────────────────────────────────")]
+        [Tooltip("Глобальный вектор подводного течения (м/с). " +
+                 "Применяется ко всем погружённым объектам.")]
+        [SerializeField] private Vector3 currentVector = Vector3.zero;
 
-        // ──── 2. Экспоненциальный туман (RenderSettings) ────
-        if (depth <= 0f)
+        [Tooltip("Сила воздействия течения (множитель)")]
+        [SerializeField] private float currentStrength = 1f;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — PERFORMANCE
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Performance ───────────────────────────────")]
+        [Tooltip("Минимальный batch size для Job. " +
+                 "Меньше = больше параллелизма, больше = меньше overhead.")]
+        [SerializeField] private int jobBatchSize = 32;
+
+        [Header("── Diagnostics ───────────────────────────────")]
+        [SerializeField] private int _debugObjectCount;
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>Y-координата поверхности воды.</summary>
+        public float WaterLevel
         {
-            // Над водой — атмосферный туман
-            RenderSettings.fogDensity = math.lerp(
-                RenderSettings.fogDensity,
-                _aboveWaterFogDensity,
-                _fogLerpSpeed * Time.deltaTime);
-            return;
+            get => waterLevel;
+            set => waterLevel = value;
         }
 
-        // Нормализация глубины для тумана (отдельная шкала от шейдера)
-        float normalizedDepthFog = math.saturate(depth / math.max(_maxFogDepth, 1f));
-
-        // Квадрат глубины → "прижимает" начало кривой к нулю
-        // Первые ~100м остаются почти прозрачными
-        float depthSquared = normalizedDepthFog * normalizedDepthFog;
-
-        // Экспоненциальный фактор: 0 у поверхности → 1 на глубине
-        float exponentialFactor = 1f - math.exp(-_fogExponentialK * depthSquared);
-
-        // Целевая плотность: от базовой подводной до максимальной на дне
-        float targetDensity = math.lerp(_underwaterFogDensityBase,
-                                        _underwaterFogDensityMax,
-                                        exponentialFactor);
-
-        // Плавная интерполяция между кадрами (без рывков)
-        float smoothFactor = 1f - math.exp(-_fogLerpSpeed * Time.deltaTime);
-
-        RenderSettings.fogDensity = math.lerp(
-            RenderSettings.fogDensity,
-            targetDensity,
-            smoothFactor);
-    }
-
-    // ================================================================
-    //  AUDIO — подводный LowPass-фильтр
-    // ================================================================
-
-    void UpdateAudioFilter()
-    {
-        if (audioMixer == null || _listenerTransform == null) return;
-
-        float listenerY = _listenerTransform.position.y;
-        float depth     = math.max(0f, waterLevel - listenerY);
-
-        // Нормализуем по глубине перехода
-        float t = math.saturate(depth / audioTransitionDepth);
-
-        // Smoothstep — плавный S-образный переход
-        t = t * t * (3f - 2f * t);
-
-        float targetCutoff = math.lerp(surfaceCutoffHz,
-                                        underwaterCutoffHz,
-                                        t);
-
-        // Frame-rate independent exponential smoothing
-        float smoothFactor = 1f - math.exp(
-            -audioSmoothSpeed * Time.unscaledDeltaTime);
-
-        _currentCutoffHz = math.lerp(_currentCutoffHz,
-                                      targetCutoff,
-                                      smoothFactor);
-
-        _currentCutoffHz = math.clamp(_currentCutoffHz, 10f, 22000f);
-
-        audioMixer.SetFloat(lowPassParameterName, _currentCutoffHz);
-    }
-
-    // ================================================================
-    //  PUBLIC API
-    // ================================================================
-
-    /// <summary>Вектор течения в произвольной мировой точке.</summary>
-    public float3 GetCurrentAt(float3 worldPosition)
-    {
-        return CurrentManager.SampleCurrent(
-            worldPosition, Time.time,
-            currentNoiseScale, currentTimeScale,
-            currentStrength,   currentVerticalFactor);
-    }
-
-    /// <summary>Только горизонтальная составляющая течения.</summary>
-    public float3 GetHorizontalCurrentAt(float3 worldPosition)
-    {
-        return CurrentManager.SampleHorizontal(
-            worldPosition, Time.time,
-            currentNoiseScale, currentTimeScale,
-            currentStrength);
-    }
-
-    /// <summary>Находится ли точка под уровнем воды.</summary>
-    public bool IsUnderwater(Vector3 worldPos)
-    {
-        return worldPos.y < waterLevel;
-    }
-
-    /// <summary>Степень погружения (0..1).</summary>
-    public float CalculateSubmersion(Vector3 worldPos, float objHeight)
-    {
-        float bottom = worldPos.y - objHeight * 0.5f;
-        if (bottom >= waterLevel) return 0f;
-
-        float top = worldPos.y + objHeight * 0.5f;
-        if (top <= waterLevel) return 1f;
-
-        return (waterLevel - bottom) / objHeight;
-    }
-
-    /// <summary>Прозрачность среды на абсолютной глубине.</summary>
-    public float GetTransparencyAtDepth(float absoluteDepth)
-    {
-        float norm  = math.saturate(
-            absoluteDepth / math.max(maxLightDepth, 0.001f));
-        float curve = attenuationCurve.Evaluate(norm);
-        return math.lerp(deepTransparency, surfaceTransparency, curve);
-    }
-
-    // ================================================================
-    //  GIZMOS
-    // ================================================================
-
-#if UNITY_EDITOR
-    void OnDrawGizmos()
-    {
-        Vector3 center = new Vector3(0f, waterLevel, 0f);
-
-        Gizmos.color = new Color(0.1f, 0.4f, 0.85f, 0.10f);
-        Gizmos.DrawCube(center, new Vector3(500f, 0.02f, 500f));
-
-        Gizmos.color = new Color(0.2f, 0.6f, 1f, 0.45f);
-        Gizmos.DrawWireCube(center, new Vector3(100f, 0.01f, 100f));
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        if (!Application.isPlaying) return;
-
-        Camera sceneCam = UnityEditor.SceneView.lastActiveSceneView?.camera;
-        if (sceneCam == null) return;
-
-        Vector3 camPos = sceneCam.transform.position;
-        Gizmos.color = new Color(0f, 0.9f, 1f, 0.7f);
-
-        const float step  = 5f;
-        const int   range = 6;
-
-        for (int x = -range; x <= range; x++)
-        for (int z = -range; z <= range; z++)
+        /// <summary>Плотность воды (кг/м³).</summary>
+        public float WaterDensity
         {
-            float3 pos = new float3(
-                camPos.x + x * step,
-                waterLevel,
-                camPos.z + z * step);
-
-            float3 current = GetCurrentAt(pos);
-            Gizmos.DrawRay((Vector3)pos, (Vector3)(current * 1.5f));
+            get => waterDensity;
+            set => waterDensity = math.max(0.01f, value);
         }
-    }
-#endif
 
-    // ================================================================
-    //  BURST JOB — параллельный расчёт плавучести и течений
-    //
-    //  Формула Архимеда (упрощённая):
-    //    F_buoyancy = submersion × buoyancyMult × mass × g
-    //
-    //  При buoyancyMult = 1.5 равновесие:
-    //    submersion_eq = 1 / 1.5 ≈ 67% погружения
-    //
-    //  Течение × mass → одинаковое ускорение для всех объектов
-    //  (аналогия с гравитацией).
-    // ================================================================
-
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
-    private struct BuoyancyBatchJob : IJobParallelFor
-    {
-        // Входные данные
-        [ReadOnly] public NativeArray<float3> Positions;
-        [ReadOnly] public NativeArray<float>  Masses;
-        [ReadOnly] public NativeArray<float>  Heights;
-        [ReadOnly] public NativeArray<float>  BuoyMults;
-
-        // Параметры среды
-        public float WaterLevel;
-        public float Gravity;
-        public float CurrentStrength;
-        public float CurrentNoiseScale;
-        public float CurrentTimeScale;
-        public float VerticalFactor;
-        public float Time;
-
-        // Выходные данные
-        [WriteOnly] public NativeArray<float3> OutForces;
-        [WriteOnly] public NativeArray<float>  OutSubmersion;
-        [WriteOnly] public NativeArray<float3> OutCurrents;
-
-        public void Execute(int index)
+        /// <summary>Вектор течения (м/с). Изменяется в рантайме.</summary>
+        public Vector3 CurrentVector
         {
-            float3 pos    = Positions[index];
-            float  height = Heights[index];
-            float  mass   = Masses[index];
+            get => currentVector;
+            set => currentVector = value;
+        }
 
-            // ──── Степень погружения ────
-            float bottom = pos.y - height * 0.5f;
-            float top    = pos.y + height * 0.5f;
+        /// <summary>Количество зарегистрированных объектов.</summary>
+        public int ObjectCount => _objects.Count;
 
-            float submersion;
-            if (top <= WaterLevel)
-                submersion = 1f;
-            else if (bottom >= WaterLevel)
-                submersion = 0f;
-            else
-                submersion = math.saturate(
-                    (WaterLevel - bottom) / math.max(height, 0.001f));
+        // ══════════════════════════════════════════════════════════
+        //  MANAGED REGISTRY (parallel lists)
+        // ══════════════════════════════════════════════════════════
 
-            OutSubmersion[index] = submersion;
+        /// <summary>Список зарегистрированных BuoyancyObject.</summary>
+        private readonly List<BuoyancyObject> _objects = new List<BuoyancyObject>(256);
 
-            if (submersion <= 0f)
+        /// <summary>Параллельный список Rigidbody (индексы совпадают с _objects).</summary>
+        private readonly List<Rigidbody> _bodies = new List<Rigidbody>(256);
+
+        // ══════════════════════════════════════════════════════════
+        //  NATIVE ARRAYS (Job data)
+        // ══════════════════════════════════════════════════════════
+
+        private NativeArray<float3>         _positions;
+        private NativeArray<float3>         _velocities;
+        private NativeArray<BuoyancyParams> _params;
+        private NativeArray<float3>         _resultForces;
+        private NativeArray<float3>         _resultTorques;
+
+        /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
+        private int _nativeCapacity;
+
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
             {
-                OutForces[index]   = float3.zero;
-                OutCurrents[index] = float3.zero;
+                Destroy(gameObject);
                 return;
             }
 
-            // ──── Выталкивающая сила (Архимед) ────
-            //  Гравитацию Unity применяет автоматически (F = −m·g).
-            //  buoyancyMult > 1 → объект всплывает.
-            //  Равновесие при submersion_eq = 1 / buoyancyMult.
-            float buoyancyMagnitude =
-                submersion * BuoyMults[index] * mass * Gravity;
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
 
-            float3 totalForce = new float3(0f, buoyancyMagnitude, 0f);
+        private void OnEnable()
+        {
+            GameTickManager.Instance?.Register((IFixedTickable)this);
+        }
 
-            // ──── Течение ────
-            //  Сила ∝ mass → ускорение не зависит от массы.
-            float3 current = CurrentManager.SampleCurrent(
-                pos, Time,
-                CurrentNoiseScale, CurrentTimeScale,
-                CurrentStrength,   VerticalFactor);
+        private void OnDisable()
+        {
+            GameTickManager.Instance?.Unregister((IFixedTickable)this);
+        }
 
-            OutCurrents[index] = current;
+        private void OnDestroy()
+        {
+            DisposeNativeArrays();
 
-            // Сила течения пропорциональна погружению
-            totalForce += current * mass * submersion;
+            if (_instance == this)
+                _instance = null;
+        }
 
-            OutForces[index] = totalForce;
+        // ══════════════════════════════════════════════════════════
+        //  REGISTRATION
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Регистрирует BuoyancyObject. Вызывается из OnEnable.
+        /// Кэширует Rigidbody в параллельном списке.
+        /// </summary>
+        public void Register(BuoyancyObject obj)
+        {
+            if (obj == null || obj.Body == null) return;
+
+            // Проверка дубликатов (линейный поиск — O(n), но вызывается редко)
+            for (int i = 0, count = _objects.Count; i < count; i++)
+            {
+                if (ReferenceEquals(_objects[i], obj))
+                    return;
+            }
+
+            _objects.Add(obj);
+            _bodies.Add(obj.Body);
+
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Снимает BuoyancyObject с регистрации. Вызывается из OnDisable.
+        /// Swap-remove для O(1).
+        /// </summary>
+        public void Unregister(BuoyancyObject obj)
+        {
+            if (obj == null) return;
+
+            int count = _objects.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(_objects[i], obj))
+                {
+                    int last = count - 1;
+
+                    // Swap with last
+                    _objects[i] = _objects[last];
+                    _bodies[i]  = _bodies[last];
+
+                    // Remove last
+                    _objects.RemoveAt(last);
+                    _bodies.RemoveAt(last);
+
+                    break;
+                }
+            }
+
+            UpdateDiagnostics();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  IFixedTickable — MAIN PHYSICS LOOP
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Вызывается GameTickManager в FixedUpdate.
+        ///
+        /// Pipeline:
+        ///   1. Resize NativeArrays если count > capacity (Capacity Doubling)
+        ///   2. Gather: копируем данные из Rigidbody → NativeArrays
+        ///   3. Schedule: BuoyancyJob (Burst, parallel)
+        ///   4. Complete: синхронное ожидание
+        ///   5. Apply: AddForce к каждому Rigidbody
+        ///
+        /// Все шаги кроме Job — main thread.
+        /// Job — worker threads, Burst compiled, SIMD.
+        /// </summary>
+        public void FixedTick(float fixedDeltaTime)
+        {
+            int count = _objects.Count;
+            if (count == 0) return;
+
+            // ── 1. Ensure capacity (Capacity Doubling) ──
+            if (count > _nativeCapacity)
+            {
+                ReallocateNativeArrays(count);
+            }
+
+            // ── 2. Gather (может уменьшить _objects.Count при очистке null) ──
+            GatherData();
+
+            // Пересчитываем count после очистки destroyed объектов
+            count = _objects.Count;
+            if (count == 0) return;
+
+            // ── 3. Schedule Job ──
+            BuoyancyJob job = new BuoyancyJob
+            {
+                positions        = _positions,
+                velocities       = _velocities,
+                objParams        = _params,
+                resultForces     = _resultForces,
+                resultTorques    = _resultTorques,
+
+                waterLevel       = waterLevel,
+                waterDensity     = waterDensity,
+                viscousDrag      = viscousDrag,
+                angularDragCoeff = angularDrag,
+                gravity          = math.abs(UnityEngine.Physics.gravity.y),
+                currentForce     = new float3(
+                    currentVector.x * currentStrength,
+                    currentVector.y * currentStrength,
+                    currentVector.z * currentStrength),
+                dt               = fixedDeltaTime
+            };
+
+            JobHandle handle = job.Schedule(count, jobBatchSize);
+
+            // ── 4. Complete ──
+            handle.Complete();
+
+            // ── 5. Apply forces ──
+            ApplyForces();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  GATHER — Copy Rigidbody data → NativeArrays
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Копирует позиции, скорости и параметры из managed Rigidbody
+        /// в NativeArrays для Job. Main thread.
+        ///
+        /// Удаляет null/destroyed объекты на лету (swap-remove в обратном цикле).
+        ///
+        /// ИЗМЕНЕНИЕ (Dry Zones):
+        ///   Копирует BuoyancyObject.IsInAir → BuoyancyParams.isInAir.
+        ///   BuoyancyJob проверяет этот флаг и обнуляет силы, если true.
+        /// </summary>
+        private void GatherData()
+        {
+            for (int i = _objects.Count - 1; i >= 0; i--)
+            {
+                BuoyancyObject obj = _objects[i];
+                Rigidbody rb = _bodies[i];
+
+                // ── Защита от destroyed объектов (fake null check) ──
+                if (obj == null || rb == null)
+                {
+                    int last = _objects.Count - 1;
+                    _objects[i] = _objects[last];
+                    _bodies[i]  = _bodies[last];
+                    _objects.RemoveAt(last);
+                    _bodies.RemoveAt(last);
+                    continue;
+                }
+
+                Vector3 com = rb.worldCenterOfMass;
+                Vector3 vel = rb.linearVelocity;
+
+                _positions[i]  = new float3(com.x, com.y, com.z);
+                _velocities[i] = new float3(vel.x, vel.y, vel.z);
+                _params[i]     = new BuoyancyParams
+                {
+                    density = obj.Density,
+                    volume  = obj.Volume,
+                    height  = obj.Height > 0f ? obj.Height : 0.01f,
+                    mass    = rb.mass,
+                    isInAir = obj.IsInAir
+                };
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  APPLY — Write forces back to Rigidbody
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Применяет вычисленные силы к Rigidbody. Main thread.
+        /// AddForce(ForceMode.Force) — корректно для FixedUpdate.
+        /// </summary>
+        private void ApplyForces()
+        {
+            int actualCount = _objects.Count;
+
+            for (int i = 0; i < actualCount; i++)
+            {
+                Rigidbody rb = _bodies[i];
+                if (rb == null) continue;
+
+                float3 force  = _resultForces[i];
+                float3 torque = _resultTorques[i];
+
+                // Пропускаем нулевые силы (объект над водой или в сухой зоне)
+                if (math.lengthsq(force) > 0.0001f)
+                {
+                    rb.AddForce(
+                        new Vector3(force.x, force.y, force.z),
+                        ForceMode.Force);
+                }
+
+                if (math.lengthsq(torque) > 0.0001f)
+                {
+                    rb.AddTorque(
+                        new Vector3(torque.x, torque.y, torque.z),
+                        ForceMode.Force);
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  NATIVE ARRAY MANAGEMENT
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Пересоздаёт NativeArrays с увеличенной ёмкостью (Capacity Doubling).
+        /// </summary>
+        private void ReallocateNativeArrays(int requiredCount)
+        {
+            int newCapacity = math.max(128, _nativeCapacity * 2);
+
+            while (newCapacity < requiredCount)
+            {
+                newCapacity *= 2;
+            }
+
+            DisposeNativeArrays();
+
+            _positions     = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            _velocities    = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            _params        = new NativeArray<BuoyancyParams>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            _resultForces  = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            _resultTorques = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+
+            _nativeCapacity = newCapacity;
+        }
+
+        /// <summary>
+        /// Освобождает NativeArrays. Вызывается при Destroy и Resize.
+        /// </summary>
+        private void DisposeNativeArrays()
+        {
+            if (_positions.IsCreated)     _positions.Dispose();
+            if (_velocities.IsCreated)    _velocities.Dispose();
+            if (_params.IsCreated)        _params.Dispose();
+            if (_resultForces.IsCreated)  _resultForces.Dispose();
+            if (_resultTorques.IsCreated) _resultTorques.Dispose();
+
+            _nativeCapacity = 0;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  DIAGNOSTICS
+        // ══════════════════════════════════════════════════════════
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateDiagnostics()
+        {
+            _debugObjectCount = _objects.Count;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (waterDensity < 0.01f) waterDensity = 0.01f;
+            if (viscousDrag  < 0f)    viscousDrag  = 0f;
+            if (angularDrag  < 0f)    angularDrag  = 0f;
+            if (jobBatchSize < 1)     jobBatchSize = 1;
+        }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = new Color(0f, 0.3f, 0.8f, 0.1f);
+            Vector3 center = new Vector3(0f, waterLevel, 0f);
+            Gizmos.DrawCube(center, new Vector3(200f, 0.02f, 200f));
+        }
+#endif
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  BuoyancyParams — данные объекта для Job (blittable struct)
+    // ══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Параметры одного объекта для BuoyancyJob.
+    /// Blittable struct — безопасен для NativeArray и Burst.
+    ///
+    /// ИЗМЕНЕНИЕ: добавлено поле isInAir для системы Сухих Зон.
+    /// bool в struct для Burst — допустимо (blittable, 1 byte).
+    /// </summary>
+    public struct BuoyancyParams
+    {
+        /// <summary>Плотность объекта (кг/м³).</summary>
+        public float density;
+
+        /// <summary>Объём объекта (м³).</summary>
+        public float volume;
+
+        /// <summary>Высота объекта (м) для частичного погружения.</summary>
+        public float height;
+
+        /// <summary>Масса Rigidbody (кг).</summary>
+        public float mass;
+
+        /// <summary>
+        /// Объект находится в сухой зоне (внутри незатопленного модуля).
+        /// Если true — все водные силы обнуляются в BuoyancyJob.
+        /// </summary>
+        public bool isInAir;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  BuoyancyJob — Burst Compiled, IJobParallelFor
+    // ══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Параллельный Job для вычисления сил плавучести, сопротивления
+    /// и подводных течений.
+    ///
+    /// [BurstCompile] — SIMD-оптимизация, нет managed code, нет GC.
+    ///
+    /// ИЗМЕНЕНИЕ (Dry Zones):
+    ///   Первая проверка в Execute: если p.isInAir == true,
+    ///   результирующие силы и моменты = float3.zero.
+    ///   Объект внутри базы не испытывает никаких водных сил.
+    ///
+    /// ФИЗИКА:
+    ///   Архимед:    F_buoy  = ρ_water × V_submerged × g  (вверх)
+    ///   Drag:       F_drag  = -v × C_drag × subRatio     (против движения)
+    ///   Течение:    F_curr  = currentForce × subRatio     (по направлению)
+    ///   AngDrag:    T_drag  = -ω × C_angDrag × subRatio  (против вращения)
+    /// </summary>
+    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+    public struct BuoyancyJob : IJobParallelFor
+    {
+        // ── Input (ReadOnly) ──
+        [ReadOnly] public NativeArray<float3>         positions;
+        [ReadOnly] public NativeArray<float3>         velocities;
+        [ReadOnly] public NativeArray<BuoyancyParams> objParams;
+
+        // ── Output (WriteOnly) ──
+        [WriteOnly] public NativeArray<float3> resultForces;
+        [WriteOnly] public NativeArray<float3> resultTorques;
+
+        // ── Shared parameters (uniform) ──
+        public float  waterLevel;
+        public float  waterDensity;
+        public float  viscousDrag;
+        public float  angularDragCoeff;
+        public float  gravity;
+        public float3 currentForce;
+        public float  dt;
+
+        public void Execute(int i)
+        {
+            BuoyancyParams p = objParams[i];
+
+            // ══════════════════════════════════════════════
+            //  DRY ZONE CHECK — объект внутри незатопленного модуля
+            // ══════════════════════════════════════════════
+            // Мгновенное отключение всей водной физики.
+            // Объект подчиняется только Unity gravity.
+            if (p.isInAir)
+            {
+                resultForces[i]  = float3.zero;
+                resultTorques[i] = float3.zero;
+                return;
+            }
+
+            float3 pos = positions[i];
+            float3 vel = velocities[i];
+
+            // ── Глубина погружения центра масс ──
+            float depthBelowSurface = waterLevel - pos.y;
+
+            // ── Объект над водой → нулевые силы ──
+            if (depthBelowSurface <= 0f)
+            {
+                resultForces[i]  = float3.zero;
+                resultTorques[i] = float3.zero;
+                return;
+            }
+
+            // ── Коэффициент погружения (0..1) ──
+            float subRatio = math.saturate(depthBelowSurface / p.height);
+
+            // ══════════════════════════════════════════════
+            //  1. СИЛА АРХИМЕДА (Buoyancy)
+            // ══════════════════════════════════════════════
+            float displacedVolume = p.volume * subRatio;
+            float buoyancyMagnitude = waterDensity * displacedVolume * gravity;
+            float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
+
+            // ══════════════════════════════════════════════
+            //  2. ВЯЗКОЕ СОПРОТИВЛЕНИЕ (Drag)
+            // ══════════════════════════════════════════════
+            float dragFactor = viscousDrag * subRatio;
+            float3 dragForce = -vel * dragFactor * p.mass;
+
+            // ══════════════════════════════════════════════
+            //  3. ПОДВОДНОЕ ТЕЧЕНИЕ (Current)
+            // ══════════════════════════════════════════════
+            float3 currentF = currentForce * subRatio * p.mass;
+
+            // ══════════════════════════════════════════════
+            //  4. ДЕМПФИРОВАНИЕ ПОКАЧИВАНИЯ
+            // ══════════════════════════════════════════════
+            float dampingForce = 0f;
+            if (subRatio < 1f)
+            {
+                dampingForce = -vel.y * waterDensity * displacedVolume * 0.5f;
+            }
+
+            float3 dampingVec = new float3(0f, dampingForce, 0f);
+
+            // ══════════════════════════════════════════════
+            //  ИТОГ
+            // ══════════════════════════════════════════════
+
+            resultForces[i] = buoyancyForce + dragForce + currentF + dampingVec;
+            resultTorques[i] = float3.zero;
         }
     }
 }

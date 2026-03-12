@@ -28,7 +28,7 @@ MonoBehaviour:
   m_Name: WebGL Settings
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.AdaptivePerformance.AdaptivePerformanceGeneralSettings
   m_LoaderManagerInstance: {fileID: 8048901631506756498}
-  m_InitManagerOnStart: 1
+  m_InitManagerOnStart: 0
   m_LastSelectedProvider: 
 --- !u!114 &11400000
 MonoBehaviour:
@@ -46,7 +46,7 @@ MonoBehaviour:
   Values:
   - {fileID: 7606370793636339053}
   - {fileID: -871124458000041771}
-  m_EnableAdaptivePerformance: 1
+  m_EnableAdaptivePerformance: 0
   m_Version: 6000.3
 --- !u!114 &7606370793636339053
 MonoBehaviour:

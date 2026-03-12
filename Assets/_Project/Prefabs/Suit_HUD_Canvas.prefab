@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4640316111039491594}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Gauge_PWR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -36,9 +36,9 @@ RectTransform:
   - {fileID: 2494882003495683762}
   m_Father: {fileID: 721035632741632229}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 200, y: -75}
   m_SizeDelta: {x: 120, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &25748074382242944
@@ -52,7 +52,7 @@ GameObject:
   - component: {fileID: 673499285484317517}
   - component: {fileID: 8649339076597648293}
   - component: {fileID: 3248748436924962385}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Label_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -189,7 +189,7 @@ GameObject:
   - component: {fileID: 8374350075167815976}
   - component: {fileID: 2384209073991334860}
   - component: {fileID: 334047992288236196}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Label_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -326,7 +326,7 @@ GameObject:
   - component: {fileID: 5185536811999527767}
   - component: {fileID: 1131333690317754588}
   - component: {fileID: 4577011360495507465}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon_Bot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -401,7 +401,7 @@ GameObject:
   - component: {fileID: 8281971635914452209}
   - component: {fileID: 5720251214437786555}
   - component: {fileID: 1703324733085165552}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -475,7 +475,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4674757599401924609}
   - component: {fileID: 2174949913581219864}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Right_Telemetry
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -541,7 +541,7 @@ GameObject:
   - component: {fileID: 8058388372540575445}
   - component: {fileID: 9042427844351046176}
   - component: {fileID: 8582401351345644894}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text_Depth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -562,10 +562,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 4674757599401924609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 46}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 297.94, y: -37}
+  m_SizeDelta: {x: 204.12, y: 46}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9042427844351046176
 CanvasRenderer:
@@ -678,7 +678,7 @@ GameObject:
   - component: {fileID: 110720467651215360}
   - component: {fileID: 4144193115391080343}
   - component: {fileID: 3503342534328626730}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Ring_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -753,7 +753,7 @@ GameObject:
   - component: {fileID: 2732059687152754342}
   - component: {fileID: 8347666677279925433}
   - component: {fileID: 1077150186694341557}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -826,7 +826,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4030903996324136371}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Gauge_O2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -853,9 +853,9 @@ RectTransform:
   - {fileID: 7608365105908051549}
   m_Father: {fileID: 721035632741632229}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 60, y: -75}
   m_SizeDelta: {x: 120, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1997659718008617564
@@ -869,7 +869,7 @@ GameObject:
   - component: {fileID: 2287142585309940307}
   - component: {fileID: 1701349419576455357}
   - component: {fileID: 280863273734652501}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Label_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1006,7 +1006,7 @@ GameObject:
   - component: {fileID: 7078708184181678471}
   - component: {fileID: 3528282227923631076}
   - component: {fileID: 1761144449508281755}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Ring_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1081,7 +1081,7 @@ GameObject:
   - component: {fileID: 8066370830461875257}
   - component: {fileID: 8913320763500138104}
   - component: {fileID: 1590963090895708935}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Ring_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1156,7 +1156,7 @@ GameObject:
   - component: {fileID: 2571448451435385550}
   - component: {fileID: 7057552079958202840}
   - component: {fileID: 4233209649571388036}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Ring_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1239,7 +1239,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6203717398458511907
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1324,7 +1324,7 @@ MonoBehaviour:
   m_BlockingObjects: 0
   m_BlockingMask:
     serializedVersion: 2
-    m_Bits: 131071
+    m_Bits: 255
 --- !u!114 &1313306488501293246
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1337,24 +1337,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d4b45afee6f39c41bb282d2da1041b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUD
+  useCullingMasks: 0
   survival: {fileID: 0}
-  oxygenLabel: {fileID: 3088553190985568391}
-  energyLabel: {fileID: 2865163502512527607}
-  integrityLabel: {fileID: 7801718607794997673}
-  oxygenBar: {fileID: 3503342534328626730}
-  energyBar: {fileID: 4233209649571388036}
-  integrityBar: {fileID: 8294608686479154977}
-  statusLabel: {fileID: 0}
-  depthLabel: {fileID: 8582401351345644894}
-  pressureLabel: {fileID: 4665550218235889382}
+  hudCamera: {fileID: 0}
+  hudFont: {fileID: 0}
   normalColor: {r: 0, g: 0.898, b: 1, a: 1}
   warningColor: {r: 1, g: 0.878, b: 0, a: 1}
   criticalColor: {r: 1, g: 0.384, b: 0, a: 1}
-  alertOverlay: {fileID: 0}
+  frameColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
+  gridColor: {r: 0, g: 0.5, b: 0.7, a: 0.15}
+  depthScaleColor: {r: 0, g: 0.8, b: 1, a: 0.4}
+  textDimColor: {r: 0, g: 0.7, b: 0.9, a: 0.5}
+  bgPanelColor: {r: 0, g: 0.05, b: 0.1, a: 0.25}
+  lineThickness: 1.5
+  thinLine: 1
+  fontSize: 14
+  fontSizeSmall: 10
+  fontSizeTiny: 8
+  arcRadius: 38
+  arcThickness: 4
+  arcSpacing: 90
   pulsePeriod: 1.2
   noiseMinInterval: 5
   noiseMaxInterval: 10
   noiseDuration: 0.1
+  promptBracketHalfW: 120
+  promptBracketHalfH: 26
+  promptBracketArm: 18
 --- !u!1 &2686821459172600369
 GameObject:
   m_ObjectHideFlags: 0
@@ -1402,7 +1411,7 @@ GameObject:
   - component: {fileID: 5186533548247607776}
   - component: {fileID: 7101537683130471819}
   - component: {fileID: 2865163502512527607}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text_Value
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1539,7 +1548,7 @@ GameObject:
   - component: {fileID: 1725342213052469996}
   - component: {fileID: 5068524636605535252}
   - component: {fileID: 2195492063199520950}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Deco_Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1560,9 +1569,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 4674757599401924609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 400, y: -67}
   m_SizeDelta: {x: 0, y: 4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5068524636605535252
@@ -1614,7 +1623,7 @@ GameObject:
   - component: {fileID: 7608365105908051549}
   - component: {fileID: 3288872375505188424}
   - component: {fileID: 5649637558078228090}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon_Bot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1777,7 +1786,7 @@ GameObject:
   - component: {fileID: 665845056334569828}
   - component: {fileID: 9209165765036532506}
   - component: {fileID: 8294608686479154977}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Ring_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1852,7 +1861,7 @@ GameObject:
   - component: {fileID: 4293748926326239787}
   - component: {fileID: 1756746155284767743}
   - component: {fileID: 1907658262776383195}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Ring_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1926,7 +1935,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4412544012116848978}
   - component: {fileID: 7970675794362998672}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: HUD_Master_V2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1979,7 +1988,7 @@ GameObject:
   m_Component:
   - component: {fileID: 721035632741632229}
   - component: {fileID: 4056468612775128029}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Left_Gauges
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2045,7 +2054,7 @@ GameObject:
   - component: {fileID: 5138943965749653779}
   - component: {fileID: 8743499824329868621}
   - component: {fileID: 3193843868917940515}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2120,7 +2129,7 @@ GameObject:
   - component: {fileID: 8023729816975483204}
   - component: {fileID: 5298560533686131990}
   - component: {fileID: 4665550218235889382}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text_Pressure
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2141,10 +2150,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 4674757599401924609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 32}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 312.72, y: -90}
+  m_SizeDelta: {x: 174.56, y: 32}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5298560533686131990
 CanvasRenderer:
@@ -2255,7 +2264,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8103573279348597868}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Gauge_HLT
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2282,9 +2291,9 @@ RectTransform:
   - {fileID: 5185536811999527767}
   m_Father: {fileID: 721035632741632229}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 340, y: -75}
   m_SizeDelta: {x: 120, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &8264212978662409320
@@ -2298,7 +2307,7 @@ GameObject:
   - component: {fileID: 378813051206971312}
   - component: {fileID: 8662595051833329895}
   - component: {fileID: 3088553190985568391}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text_Value
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2572,7 +2581,7 @@ GameObject:
   - component: {fileID: 2494882003495683762}
   - component: {fileID: 242821702411001680}
   - component: {fileID: 2159738743057788522}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon_Bot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2647,7 +2656,7 @@ GameObject:
   - component: {fileID: 6398991257310980678}
   - component: {fileID: 1361207280879216311}
   - component: {fileID: 7801718607794997673}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Text_Value
   m_TagString: Untagged
   m_Icon: {fileID: 0}

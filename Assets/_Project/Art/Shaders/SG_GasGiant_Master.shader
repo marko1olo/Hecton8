@@ -82,9 +82,6 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             #pragma multi_compile _ DOTS_INSTANCING_ON
             #pragma multi_compile_instancing
 
-            // Explicitly NO fog multi_compile — space object
-            // #pragma multi_compile_fog  ← intentionally omitted
-
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -95,9 +92,15 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             TEXTURE2D(_DetailTex);      SAMPLER(sampler_DetailTex);
             TEXTURE2D(_EmissionTex);    SAMPLER(sampler_EmissionTex);
 
-            // ─────────────────────────────────
+            // ─────────────────────────────────────────────────────────
             // CBUFFER (SRP Batcher compatible)
-            // ─────────────────────────────────
+            //
+            // _GlobalRotation: float (full 32-bit precision).
+            // This value is a fractional accumulator set from C#.
+            // Using half (16-bit) here would cause visible UV jitter
+            // on low-end GPUs (MX series, Mali, Adreno) after ~10 min
+            // of gameplay due to mantissa exhaustion.
+            // ─────────────────────────────────────────────────────────
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _DetailTex_ST;
@@ -106,7 +109,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
 
-                float  _GlobalRotation;
+                float  _GlobalRotation;          // float — precision-critical
                 half   _EquatorialSpeed;
                 half   _PolarMultiplier;
                 half   _VerticalWiggleFreq;
@@ -165,41 +168,56 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             };
 
             // ─────────────────────────────────────────────────────────
-            // DIFFERENTIAL ROTATION (precision-safe)
+            // DIFFERENTIAL ROTATION (precision-safe, simplified)
             //
-            // Uses _GlobalRotation (set from C# as fractional accumulator)
-            // instead of _Time.y to prevent float precision degradation.
+            // Uses _GlobalRotation (fractional accumulator from C#)
+            // instead of _Time.y to prevent float precision loss.
             //
-            // speedMultiplier: allows detail layer to spin faster (1.3-1.5x)
+            // speedMultiplier: allows detail layer to spin faster.
             //
-            // Returns UV with:
-            //   - Latitude-dependent horizontal rotation (Jupiter cosĀ²)
-            //   - Vertical sin-wiggle to break "perfect ruler" banding
+            // ALL local math uses float (32-bit) to prevent UV jitter
+            // on MX-series and mobile GPUs. half is PROHIBITED here.
+            //
+            // SIMPLIFIED: No latitude/polar logic. Pure linear scroll.
+            // The visual banding comes from the texture itself, not
+            // from differential math — cleaner and artifact-free.
             // ─────────────────────────────────────────────────────────
-            float2 DifferentialRotation(float2 uv, half speedMultiplier)
+            float2 DifferentialRotation(float2 uv, float speedMultiplier)
             {
-                // Latitude: 0 at equator, 1 at poles
-                half latitude = abs(uv.y - 0.5h) * 2.0h;
-                half latitudeMask = 1.0h - latitude;
-
-                // Jupiter-like cosĀ²-modulated speed
-                half polarSpeed = _EquatorialSpeed * _PolarMultiplier;
-                half speed = lerp(polarSpeed, _EquatorialSpeed, latitudeMask);
-                speed *= latitudeMask * speedMultiplier;
-
-                // ── Precision-safe horizontal rotation ──
-                // frac() keeps the value in [0,1], preventing precision loss
-                // _GlobalRotation is already fractional from C#
+                // Full 32-bit precision chain — no half anywhere.
+                float speed    = (float)_EquatorialSpeed * speedMultiplier;
                 float rotatedX = frac(uv.x + _GlobalRotation * speed);
 
-                // ── Vertical wiggle (NASA-punk realism) ──
-                // Breaks the "perfect horizontal lines" artifact.
-                // sin(latitude * freq) creates organic turbulence in flow bands.
-                // Amplitude is tiny (0.002-0.005) — just enough to add life.
-                half wiggle = sin(uv.y * _VerticalWiggleFreq) * _VerticalWiggleAmp;
-                rotatedX = frac(rotatedX + wiggle);
-
                 return float2(rotatedX, uv.y);
+            }
+
+            // ─────────────────────────────────────────────────────────
+            // RESOLVE SUN DIRECTION — Fallback-safe.
+            //
+            // If _SunDirection is zero (C# script not running, editor
+            // preview, prefab isolation, etc.), we use a hardcoded
+            // fallback vector so the planet is always visible.
+            //
+            // The fallback direction (1, 0.5, 1) is chosen to produce
+            // a pleasant 3/4 lit view in the editor scene view.
+            //
+            // Returns: normalized direction FROM the sun (towards planet).
+            //          To get direction TO the sun, negate the result.
+            // ─────────────────────────────────────────────────────────
+            static const float3 FALLBACK_SUN_DIR = normalize(float3(1.0, 0.5, 1.0));
+            static const float  SUN_DIR_THRESHOLD = 0.001;
+
+            half3 ResolveSunDirection()
+            {
+                float3 raw = _SunDirection.xyz;
+                float  len = length(raw);
+
+                // If the global isn't set or is effectively zero, use fallback.
+                float3 resolved = (len < SUN_DIR_THRESHOLD)
+                    ? FALLBACK_SUN_DIR
+                    : raw / len;       // manual normalize — we already have length
+
+                return (half3)resolved;
             }
 
             // ─────────────────────────────────
@@ -250,8 +268,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half3  L,
                 half3  innerColor,
                 half3  outerColor,
-                half   sunBacklitFactor
-            )
+                half   sunBacklitFactor)
             {
                 FresnelResult result;
 
@@ -317,14 +334,6 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
             // ─────────────────────────────────────────────────────────
             // FRAGMENT
-            //
-            // Two-layer pseudo-volume cloud system:
-            //   Layer 1 (Base):  _MainTex at standard rotation speed
-            //   Layer 2 (Haze):  _DetailTex at 1.3-1.5x speed, own tiling
-            //
-            // The detail layer's alpha drives the blend ratio,
-            // creating the illusion of upper-atmosphere haze
-            // drifting faster than the deep cloud deck below.
             // ─────────────────────────────────────────────────────────
             half4 GasGiantFrag(Varyings input) : SV_Target
             {
@@ -333,40 +342,39 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
                 half3 N = normalize(input.normalWS);
                 half3 V = normalize(input.viewDirWS);
-                half3 sunDir = (half3)normalize(_SunDirection.xyz);
-                half3 L = -sunDir;  // direction TO sun
+
+                // ═════════════════════════════════════════════════════
+                // SUN DIRECTION — Fallback-safe resolution.
+                //
+                // ResolveSunDirection() returns the direction FROM sun.
+                // L = direction TO sun (negated) for standard NdotL.
+                //
+                // This ensures the planet is always lit, even when:
+                //   - C# scripts haven't set _SunDirection yet
+                //   - Viewing prefab in isolation
+                //   - Editor scene view without play mode
+                // ═════════════════════════════════════════════════════
+                half3 sunDir = ResolveSunDirection();
+                half3 L = -sunDir;    // direction TO the sun
 
                 // ═══════════════════════════════════════
                 // LAYER 1: BASE CLOUD DECK
-                // Standard differential rotation speed
                 // ═══════════════════════════════════════
-                float2 baseUV = DifferentialRotation(input.uv, 1.0h);
+                float2 baseUV = DifferentialRotation(input.uv, 1.0);
                 half4 baseColor = SAMPLE_TEXTURE2D(
                     _MainTex, sampler_MainTex, baseUV);
 
                 // ═══════════════════════════════════════
                 // LAYER 2: UPPER HAZE / CLOUDS
-                // Faster rotation (1.3-1.5x) + own tiling
-                // Simulates high-altitude ammonia ice clouds
-                // drifting above the main cloud deck
                 // ═══════════════════════════════════════
                 float2 hazeUV = DifferentialRotation(
                     input.uv * _DetailTiling.xy,
-                    _DetailSpeedMult);
+                    (float)_DetailSpeedMult);
                 half4 hazeColor = SAMPLE_TEXTURE2D(
                     _DetailTex, sampler_DetailTex, hazeUV);
 
                 // ═══════════════════════════════════════
                 // COMBINE: Pseudo-volume blend
-                //
-                // hazeColor.a controls how much the upper
-                // layer "covers" the base. This creates
-                // depth: thin haze (low alpha) lets the
-                // base show through; thick clouds (high
-                // alpha) dominate.
-                //
-                // _DetailStrength is the artist's master
-                // control over the effect intensity.
                 // ═══════════════════════════════════════
                 half hazeMask = hazeColor.a * _DetailStrength;
                 half3 combinedAlbedo = lerp(
@@ -398,9 +406,8 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     _SunBacklitFactor);
 
                 // ═══ STORM EMISSION ═══
-                // Storms use base rotation (they're deep atmosphere)
                 float2 stormUV = baseUV * _StormTiling.xy
-                               + float2(_GlobalRotation * _StormSpeed, 0.0);
+                               + float2(_GlobalRotation * (float)_StormSpeed, 0.0);
                 stormUV.x = frac(stormUV.x);
 
                 half4 stormRaw = SAMPLE_TEXTURE2D(
@@ -418,7 +425,6 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                  + rim.rimColor
                                  + stormEmission;
 
-                // No fog — space objects must never receive scene fog
                 return half4(finalColor, 1.0h);
             }
 

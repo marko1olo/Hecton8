@@ -1,121 +1,175 @@
 // ============================================================================
-//  BuoyancyObject.cs — Компонент плавучести.
-//  Вешается на любой GameObject с Rigidbody.
-//  Автоматически регистрируется в HectonFluidEngine для batch-обработки.
+// HECTON-8 — BuoyancyObject.cs
+// Маркер плавучести. Вешается на любой GameObject с Rigidbody.
+//
+// При OnEnable регистрируется в HectonFluidEngine.
+// При OnDisable — отписывается.
+//
+// Rigidbody кэшируется в Awake — zero GetComponent в рантайме.
+// Никакого Update — все силы применяет HectonFluidEngine через Job.
+//
+// ФИЗИЧЕСКИЕ ПАРАМЕТРЫ:
+//   density — плотность объекта (кг/м³).
+//             Вода = 1000. Если density < waterDensity → объект всплывает.
+//   volume  — объём объекта (м³). Определяет силу Архимеда.
+//   height  — высота объекта (м). Для расчёта частичного погружения.
+//
+// СУХИЕ ЗОНЫ:
+//   IsInAir — устанавливается BaseModule, когда объект находится внутри
+//   незатопленного модуля. При IsInAir == true HectonFluidEngine
+//   обнуляет все силы плавучести/сопротивления для этого объекта.
 // ============================================================================
-using System.Collections.Generic;
-using Unity.Mathematics;
+
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
-[DisallowMultipleComponent]
-[AddComponentMenu("Hecton/Buoyancy Object")]
-public class BuoyancyObject : MonoBehaviour
+namespace Hecton8.Physics
 {
-    // ======================== INSPECTOR ========================
-
-    [Header("═══════ Плавучесть ═══════")]
-
-    [Tooltip(
-        "Множитель выталкивающей силы Архимеда:\n" +
-        "  > 1.0 — всплывает  (дерево ~ 2.0)\n" +
-        "  = 1.0 — нейтрально\n" +
-        "  < 1.0 — тонет      (металл ~ 0.13)")]
-    [Range(0.01f, 5f)]
-    public float buoyancyMultiplier = 1.5f;
-
-    [Tooltip("Приблизительная высота объекта (м).\n" +
-             "Определяет расчёт частичного погружения.")]
-    [Min(0.01f)]
-    public float objectHeight = 1f;
-
-    [Header("═══════ Сопротивление среды ═══════")]
-
-    [Tooltip("Линейное затухание скорости под водой")]
-    [Range(0f, 25f)]
-    public float underwaterDrag = 3f;
-
-    [Tooltip("Угловое затухание вращения под водой")]
-    [Range(0f, 25f)]
-    public float underwaterAngularDrag = 1.5f;
-
-    // ======================== RUNTIME ========================
-
-    /// <summary>0 = над водой, 1 = полностью под водой.</summary>
-    [System.NonSerialized] public float  SubmersionRatio;
-
-    /// <summary>Вектор течения в позиции объекта (м/с).</summary>
-    [System.NonSerialized] public float3 CurrentVector;
-
-    /// <summary>Кешированная ссылка на Rigidbody.</summary>
-    public Rigidbody Rb { get; private set; }
-
-    public bool IsSubmerged      => SubmersionRatio > 0f;
-    public bool IsFullySubmerged => SubmersionRatio >= 0.999f;
-
-    // ============= ОТЛОЖЕННАЯ РЕГИСТРАЦИЯ =============
-    private static readonly List<BuoyancyObject> _pending =
-        new List<BuoyancyObject>(64);
-
-    internal static void FlushPending(HectonFluidEngine engine)
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(Rigidbody))]
+    [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
+    public sealed class BuoyancyObject : MonoBehaviour
     {
-        for (int i = 0; i < _pending.Count; i++)
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Physical Properties ───────────────────────")]
+        [Tooltip("Плотность объекта (кг/м³). " +
+                 "Вода ≈ 1000, Дерево ≈ 600, Железо ≈ 7800, Титан ≈ 4500")]
+        [SerializeField] private float density = 500f;
+
+        [Tooltip("Объём объекта (м³). Определяет выталкивающую силу. " +
+                 "Куб 10см = 0.001 м³")]
+        [SerializeField] private float volume = 0.01f;
+
+        [Tooltip("Высота объекта (м). Для расчёта частичного погружения. " +
+                 "0 = считать полностью погружённым")]
+        [SerializeField] private float height = 0.3f;
+
+        // ══════════════════════════════════════════════════════════
+        //  CACHED
+        // ══════════════════════════════════════════════════════════
+
+        private Rigidbody _rb;
+
+        // ══════════════════════════════════════════════════════════
+        //  DRY ZONE STATE
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Счётчик вложенности «сухих зон».
+        /// Объект может находиться в перекрывающихся модулях одновременно.
+        /// IsInAir == true, когда _dryZoneRefCount > 0.
+        ///
+        /// Инкремент: BaseModule при входе в незатопленный триггер.
+        /// Декремент: BaseModule при выходе или затоплении.
+        ///
+        /// Использование ref-count вместо bool предотвращает баг,
+        /// когда выход из одного модуля сбрасывает флаг,
+        /// хотя объект всё ещё внутри другого.
+        /// </summary>
+        private int _dryZoneRefCount;
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>Плотность объекта (кг/м³).</summary>
+        public float Density => density;
+
+        /// <summary>Объём (м³).</summary>
+        public float Volume => volume;
+
+        /// <summary>Высота (м).</summary>
+        public float Height => height;
+
+        /// <summary>Кэшированный Rigidbody. Гарантированно не-null (RequireComponent).</summary>
+        public Rigidbody Body => _rb;
+
+        /// <summary>
+        /// Объект находится «в воздухе» — внутри незатопленного модуля базы.
+        /// Когда true, HectonFluidEngine обнуляет все водные силы.
+        /// Устанавливается через EnterDryZone / ExitDryZone.
+        /// </summary>
+        public bool IsInAir => _dryZoneRefCount > 0;
+
+        /// <summary>
+        /// Вызывается BaseModule при входе объекта в сухую зону.
+        /// Увеличивает ref-count. Thread-safe не требуется (main thread only).
+        /// </summary>
+        public void EnterDryZone()
         {
-            var obj = _pending[i];
-            if (obj != null && obj.isActiveAndEnabled)
-                engine.Register(obj);
+            _dryZoneRefCount++;
         }
-        _pending.Clear();
-    }
 
-    // ======================== LIFECYCLE ========================
+        /// <summary>
+        /// Вызывается BaseModule при выходе объекта из сухой зоны
+        /// или при затоплении модуля.
+        /// Уменьшает ref-count. Clamp к 0 для защиты от некорректных вызовов.
+        /// </summary>
+        public void ExitDryZone()
+        {
+            _dryZoneRefCount--;
+            if (_dryZoneRefCount < 0)
+                _dryZoneRefCount = 0;
+        }
 
-    void Awake()
-    {
-        Rb = GetComponent<Rigidbody>();
-    }
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
 
-    void OnEnable()
-    {
-        if (HectonFluidEngine.Instance != null)
-            HectonFluidEngine.Instance.Register(this);
-        else
-            _pending.Add(this);
-    }
+        private void Awake()
+        {
+            TryGetComponent(out _rb);
+        }
 
-    void OnDisable()
-    {
-        if (HectonFluidEngine.Instance != null)
-            HectonFluidEngine.Instance.Unregister(this);
+        private void OnEnable()
+        {
+            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            if (engine != null)
+                engine.Register(this);
+        }
 
-        _pending.Remove(this);
-        SubmersionRatio = 0f;
-        CurrentVector   = float3.zero;
-    }
+        private void OnDisable()
+        {
+            // Сбрасываем ref-count — объект больше не в зоне
+            _dryZoneRefCount = 0;
 
-    // ======================== GIZMOS ========================
+            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            if (engine != null)
+                engine.Unregister(this);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  EDITOR
+        // ══════════════════════════════════════════════════════════
 
 #if UNITY_EDITOR
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = IsSubmerged
-            ? new Color(0f, 0.7f, 1f, 0.35f)
-            : new Color(1f, 1f, 0f, 0.25f);
-        Gizmos.DrawWireCube(transform.position,
-                            new Vector3(0.4f, objectHeight, 0.4f));
-
-        if (HectonFluidEngine.Instance != null)
+        private void OnValidate()
         {
-            float wl = HectonFluidEngine.Instance.waterLevel;
-            Vector3 mark = new Vector3(
-                transform.position.x,
-                wl,
-                transform.position.z);
-
-            Gizmos.color = new Color(0f, 0.4f, 1f, 0.8f);
-            Gizmos.DrawLine(mark + Vector3.left,    mark + Vector3.right);
-            Gizmos.DrawLine(mark + Vector3.back,    mark + Vector3.forward);
+            if (density < 0.01f) density = 0.01f;
+            if (volume  < 0.0001f) volume = 0.0001f;
+            if (height  < 0f) height = 0f;
         }
-    }
+
+        private void OnDrawGizmosSelected()
+        {
+            float waterY = HectonFluidEngine.Instance != null
+                ? HectonFluidEngine.Instance.WaterLevel
+                : 5000f;
+
+            bool submerged = transform.position.y < waterY;
+
+            // Зелёный = в сухой зоне, синий = под водой, жёлтый = над водой
+            if (IsInAir)
+                Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+            else if (submerged)
+                Gizmos.color = new Color(0f, 0.5f, 1f, 0.3f);
+            else
+                Gizmos.color = new Color(1f, 1f, 0f, 0.3f);
+
+            Gizmos.DrawWireSphere(transform.position, Mathf.Pow(volume, 1f / 3f));
+        }
 #endif
+    }
 }

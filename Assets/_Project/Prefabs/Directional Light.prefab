@@ -179,7 +179,7 @@ Light:
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
-  m_ColorTemperature: 5000
+  m_ColorTemperature: 8231
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
@@ -314,7 +314,7 @@ MonoBehaviour:
   environmentOcclusion: 0
   useWaterOcclusion: 0
   occlusionRadius: 0.1
-  sampleCount: 32
+  sampleCount: 12
   occlusionOffset: 0.05
   scale: 1
   allowOffScreen: 0

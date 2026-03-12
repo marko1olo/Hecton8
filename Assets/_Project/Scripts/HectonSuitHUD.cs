@@ -1,25 +1,16 @@
 using System;
 using System.Collections;
 using System.Text;
+using Hecton8.Interaction;
 using Shapes;
 using TMPro;
 using UnityEngine;
 using Unity.Mathematics;
 using Random = UnityEngine.Random;
 
-/// <summary>
-/// NASA-Punk HUD скафандра Hecton — Shapes Edition.
-///
-/// АРХИТЕКТУРА:
-/// • Вся отрисовка через Shapes (Draw.*) в OnPostRender, вызываемом камерой HUD_Render_Camera.
-/// • Никакого Canvas, Image, UnityEngine.UI.
-/// • Подписка на события HectonSurvivalSystem — в обработчиках обновляются только float/Color.
-/// • Zero GC: PolylinePath создаются один раз в Awake, StringBuilder переиспользуется.
-/// • NASA-Punk: угловатые рамки, координатная сетка, шкала глубины, часы, мерцание.
-/// </summary>
 [DisallowMultipleComponent]
 [ExecuteAlways]
-public sealed class HectonSuitHUD : MonoBehaviour
+public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 {
     // ══════════════════════════════════════════════════════════════════
     //  INSPECTOR — CORE
@@ -81,6 +72,20 @@ public sealed class HectonSuitHUD : MonoBehaviour
     [SerializeField, Range(0.05f, 0.3f)] private float noiseDuration  = 0.1f;
 
     // ══════════════════════════════════════════════════════════════════
+    //  INSPECTOR — INTERACT PROMPT
+    // ══════════════════════════════════════════════════════════════════
+
+    [Header("── Interact Prompt ───────────────────────────────")]
+    [Tooltip("Полуширина прицельной рамки в пикселях")]
+    [SerializeField] private float promptBracketHalfW = 120f;
+
+    [Tooltip("Полувысота прицельной рамки в пикселях")]
+    [SerializeField] private float promptBracketHalfH = 26f;
+
+    [Tooltip("Длина «плеча» угловой скобки")]
+    [SerializeField] private float promptBracketArm = 18f;
+
+    // ══════════════════════════════════════════════════════════════════
     //  THRESHOLDS
     // ══════════════════════════════════════════════════════════════════
 
@@ -88,7 +93,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     private const float CriticalThreshold = 0.15f;
 
     // ══════════════════════════════════════════════════════════════════
-    //  RUNTIME STATE — обновляется обработчиками, читается в Draw
+    //  RUNTIME STATE
     // ══════════════════════════════════════════════════════════════════
 
     private float _oxygenNorm    = 1f;
@@ -115,6 +120,12 @@ public sealed class HectonSuitHUD : MonoBehaviour
     private float _depthScaleTarget;
 
     // ══════════════════════════════════════════════════════════════════
+    //  INTERACT PROMPT STATE
+    // ══════════════════════════════════════════════════════════════════
+
+    private string _interactPromptText;
+
+    // ══════════════════════════════════════════════════════════════════
     //  ZERO-GC STRING CACHE
     // ══════════════════════════════════════════════════════════════════
 
@@ -131,16 +142,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     private readonly StringBuilder _sb       = new StringBuilder(64);
     private readonly StringBuilder _sbGlitch = new StringBuilder(64);
 
-    // Кэш последней секунды для избежания аллокации _timeStr каждый кадр
     private int _lastSecond = -1;
-
-    // ══════════════════════════════════════════════════════════════════
-    //  PRE-DEFINED POLYLINES (аллокация один раз)
-    // ══════════════════════════════════════════════════════════════════
-
-    private PolylinePath _leftPanelOutline;
-    private PolylinePath _rightPanelOutline;
-    private readonly PolylinePath[] _cornerBrackets = new PolylinePath[4];
 
     private const int GridLinesPerCorner = 5;
 
@@ -150,8 +152,8 @@ public sealed class HectonSuitHUD : MonoBehaviour
 
     private static readonly char[] Glyphs =
     {
-        '&', '%', '$', '#', '@', '¥', '§', '†',
-        '∆', '◊', '░', '▒', '█', '¿', '⌂', 'Ω'
+        '&', '%', '$', '#', '@', '!', '?', 'X',
+        '+', '=', '<', '>', '/', ':', '*'
     };
 
     // ══════════════════════════════════════════════════════════════════
@@ -164,23 +166,22 @@ public sealed class HectonSuitHUD : MonoBehaviour
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════════
 
-    private void Awake()
+    public override void OnEnable()
     {
-        BuildPolylines();
-    }
-
-    private void OnEnable()
-    {
+        base.OnEnable();
         if (hudCamera == null)
             hudCamera = GetComponent<Camera>();
 
         Subscribe();
         ForceRefreshAll();
         _noiseHandle = StartCoroutine(NoiseLoop());
+
+        InteractionEvents.OnHoverChanged += HandleHoverChanged;
     }
 
-    private void OnDisable()
+    public override void OnDisable()
     {
+        base.OnDisable();
         Unsubscribe();
 
         if (_noiseHandle != null)
@@ -191,104 +192,29 @@ public sealed class HectonSuitHUD : MonoBehaviour
 
         _o2Critical = false;
         _integrityCritical = false;
+
+        InteractionEvents.OnHoverChanged -= HandleHoverChanged;
+        _interactPromptText = null;
     }
 
-    /// <summary>
-    /// Shapes отрисовка — вызывается камерой автоматически после рендеринга.
-    /// Скрипт ДОЛЖЕН висеть на том же GameObject, что и hudCamera,
-    /// либо hudCamera должна быть назначена вручную, а этот GO — на той же камере.
-    /// </summary>
-    private void OnPostRender()
+    // ══════════════════════════════════════════════════════════════════
+    //  URP ENTRY POINT — ImmediateModeShapeDrawer
+    // ══════════════════════════════════════════════════════════════════
+
+    public override void DrawShapes(Camera cam)
     {
+        if (hudCamera != null && cam != hudCamera) return;
         DrawHUD();
     }
 
     private void LateUpdate()
     {
-        // Pulse timer для критических мерцаний
         _pulseTimer += Time.deltaTime / pulsePeriod;
         if (_pulseTimer > 1f) _pulseTimer -= 1f;
 
-        // Плавная прокрутка шкалы глубины
         _depthScaleOffset = Mathf.Lerp(_depthScaleOffset, _depthScaleTarget, Time.deltaTime * 3f);
 
-        // Обновляем строку времени (аллокация только при смене секунды)
         UpdateTimeString();
-    }
-
-    // ══════════════════════════════════════════════════════════════════
-    //  POLYLINE CONSTRUCTION (one-time)
-    // ══════════════════════════════════════════════════════════════════
-
-    private void BuildPolylines()
-    {
-        for (int i = 0; i < 4; i++)
-            _cornerBrackets[i] = new PolylinePath();
-
-        _leftPanelOutline  = new PolylinePath();
-        _rightPanelOutline = new PolylinePath();
-    }
-
-    private void ComputeLayoutPaths(float w, float h)
-    {
-        float bracketLen = Mathf.Min(w, h) * 0.06f;
-        float margin = 12f;
-
-        // TL
-        SetCornerBracket(_cornerBrackets[0],
-            new Vector2(margin, h - margin),
-            new Vector2(margin, h - margin - bracketLen),
-            new Vector2(margin + bracketLen, h - margin));
-
-        // TR
-        SetCornerBracket(_cornerBrackets[1],
-            new Vector2(w - margin, h - margin),
-            new Vector2(w - margin, h - margin - bracketLen),
-            new Vector2(w - margin - bracketLen, h - margin));
-
-        // BL
-        SetCornerBracket(_cornerBrackets[2],
-            new Vector2(margin, margin),
-            new Vector2(margin, margin + bracketLen),
-            new Vector2(margin + bracketLen, margin));
-
-        // BR
-        SetCornerBracket(_cornerBrackets[3],
-            new Vector2(w - margin, margin),
-            new Vector2(w - margin, margin + bracketLen),
-            new Vector2(w - margin - bracketLen, margin));
-
-        // Left panel (Life Support)
-        float lpX = margin + 20f;
-        float lpY = margin + 30f;
-        float lpW = 220f;
-        float lpH = 180f;
-        SetRectPath(_leftPanelOutline, lpX, lpY, lpW, lpH);
-
-        // Right panel (Environment)
-        float rpW = 200f;
-        float rpX = w - margin - 20f - rpW;
-        float rpY = margin + 30f;
-        float rpH = 120f;
-        SetRectPath(_rightPanelOutline, rpX, rpY, rpW, rpH);
-    }
-
-    private static void SetCornerBracket(PolylinePath path, Vector2 corner, Vector2 armA, Vector2 armB)
-    {
-        path.ClearAllPoints();
-        path.AddPoint(armA);
-        path.AddPoint(corner);
-        path.AddPoint(armB);
-    }
-
-    private static void SetRectPath(PolylinePath path, float x, float y, float w, float h)
-    {
-        path.ClearAllPoints();
-        path.AddPoint(new Vector2(x, y));
-        path.AddPoint(new Vector2(x + w, y));
-        path.AddPoint(new Vector2(x + w, y + h));
-        path.AddPoint(new Vector2(x, y + h));
-        path.AddPoint(new Vector2(x, y));
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -302,29 +228,22 @@ public sealed class HectonSuitHUD : MonoBehaviour
         float w = hudCamera.pixelWidth;
         float h = hudCamera.pixelHeight;
 
-        ComputeLayoutPaths(w, h);
-
         using (Draw.Command(hudCamera))
         {
-            // ── Сброс всех состояний перед отрисовкой ──
             Draw.ResetAllDrawStates();
             Draw.BlendMode = ShapesBlendMode.Transparent;
-
-            // Ортографическая матрица: пиксельные координаты экрана
             Draw.Matrix = Matrix4x4.Ortho(0, w, 0, h, -1, 1);
-
-            // ── Шрифт по умолчанию для всех Draw.Text в этом блоке ──
             Draw.Font = hudFont;
 
-            // ── Отрисовка слоёв ──
             DrawCornerGrid(w, h);
-            DrawCornerBrackets();
+            DrawCornerBrackets(w, h);
             DrawLeftPanel(w, h);
             DrawRightPanel(w, h);
             DrawArcIndicators(w, h);
             DrawDepthScale(w, h);
             DrawTimeDisplay(w, h);
             DrawStatusBar(w, h);
+            DrawInteractPrompt(w, h);
             DrawCriticalOverlay(w, h);
         }
     }
@@ -342,40 +261,29 @@ public sealed class HectonSuitHUD : MonoBehaviour
         Draw.LineEndCaps = LineEndCap.None;
         Draw.Thickness = thinLine * 0.5f;
 
-        // Top-Left
         for (int i = 0; i <= GridLinesPerCorner; i++)
         {
             float offset = i * step;
+
+            // Top-Left
             Draw.Line(new Vector3(margin, h - margin - offset, 0),
                       new Vector3(margin + gridLen, h - margin - offset, 0), gridColor);
             Draw.Line(new Vector3(margin + offset, h - margin, 0),
                       new Vector3(margin + offset, h - margin - gridLen, 0), gridColor);
-        }
 
-        // Top-Right
-        for (int i = 0; i <= GridLinesPerCorner; i++)
-        {
-            float offset = i * step;
+            // Top-Right
             Draw.Line(new Vector3(w - margin - gridLen, h - margin - offset, 0),
                       new Vector3(w - margin, h - margin - offset, 0), gridColor);
             Draw.Line(new Vector3(w - margin - offset, h - margin, 0),
                       new Vector3(w - margin - offset, h - margin - gridLen, 0), gridColor);
-        }
 
-        // Bottom-Left
-        for (int i = 0; i <= GridLinesPerCorner; i++)
-        {
-            float offset = i * step;
+            // Bottom-Left
             Draw.Line(new Vector3(margin, margin + offset, 0),
                       new Vector3(margin + gridLen, margin + offset, 0), gridColor);
             Draw.Line(new Vector3(margin + offset, margin, 0),
                       new Vector3(margin + offset, margin + gridLen, 0), gridColor);
-        }
 
-        // Bottom-Right
-        for (int i = 0; i <= GridLinesPerCorner; i++)
-        {
-            float offset = i * step;
+            // Bottom-Right
             Draw.Line(new Vector3(w - margin - gridLen, margin + offset, 0),
                       new Vector3(w - margin, margin + offset, 0), gridColor);
             Draw.Line(new Vector3(w - margin - offset, margin, 0),
@@ -384,16 +292,40 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — CORNER BRACKETS
+    //  DRAW — CORNER BRACKETS (Draw.Line, no PolylinePath)
     // ══════════════════════════════════════════════════════════════════
 
-    private void DrawCornerBrackets()
+    private void DrawCornerBrackets(float w, float h)
     {
+        float bracketLen = Mathf.Min(w, h) * 0.06f;
+        float margin = 12f;
+
         Draw.Thickness = lineThickness;
         Draw.LineEndCaps = LineEndCap.None;
 
-        for (int i = 0; i < 4; i++)
-            Draw.Polyline(_cornerBrackets[i], closed: false, thickness: lineThickness, frameColor);
+        // Top-Left
+        Draw.Line(new Vector3(margin, h - margin - bracketLen, 0),
+                  new Vector3(margin, h - margin, 0), frameColor);
+        Draw.Line(new Vector3(margin, h - margin, 0),
+                  new Vector3(margin + bracketLen, h - margin, 0), frameColor);
+
+        // Top-Right
+        Draw.Line(new Vector3(w - margin, h - margin - bracketLen, 0),
+                  new Vector3(w - margin, h - margin, 0), frameColor);
+        Draw.Line(new Vector3(w - margin, h - margin, 0),
+                  new Vector3(w - margin - bracketLen, h - margin, 0), frameColor);
+
+        // Bottom-Left
+        Draw.Line(new Vector3(margin, margin + bracketLen, 0),
+                  new Vector3(margin, margin, 0), frameColor);
+        Draw.Line(new Vector3(margin, margin, 0),
+                  new Vector3(margin + bracketLen, margin, 0), frameColor);
+
+        // Bottom-Right
+        Draw.Line(new Vector3(w - margin, margin + bracketLen, 0),
+                  new Vector3(w - margin, margin, 0), frameColor);
+        Draw.Line(new Vector3(w - margin, margin, 0),
+                  new Vector3(w - margin - bracketLen, margin, 0), frameColor);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -411,8 +343,9 @@ public sealed class HectonSuitHUD : MonoBehaviour
         // Background
         Draw.Rectangle(new Vector3(lpX + lpW * 0.5f, lpY + lpH * 0.5f, 0), lpW, lpH, bgPanelColor);
 
-        // Outline
-        Draw.Polyline(_leftPanelOutline, closed: false, thickness: lineThickness, frameColor);
+        // Outline (RectangleBorder instead of PolylinePath)
+        Draw.RectangleBorder(new Vector3(lpX + lpW * 0.5f, lpY + lpH * 0.5f, 0),
+                             lpW, lpH, lineThickness, frameColor);
 
         // Header
         float headerY = lpY + lpH - 18f;
@@ -447,21 +380,15 @@ public sealed class HectonSuitHUD : MonoBehaviour
     private void DrawBarRow(string label, string valueStr, float barX, float y,
                             float barW, float barH, float norm, Color col, float labelX)
     {
-        // Label
         DrawText(label, new Vector3(labelX + 8f, y + 2f, 0), fontSizeSmall, textDimColor);
-
-        // Value
         DrawText(valueStr, new Vector3(barX + barW + 6f, y + 2f, 0), fontSizeSmall, col);
 
-        // Bar background
         Draw.Rectangle(new Vector3(barX + barW * 0.5f, y + barH * 0.5f, 0),
                        barW, barH, new Color(1f, 1f, 1f, 0.05f));
 
-        // Bar outline
         Draw.RectangleBorder(new Vector3(barX + barW * 0.5f, y + barH * 0.5f, 0),
                              barW, barH, thinLine * 0.5f, frameColor * 0.5f);
 
-        // Bar fill
         float fillW = barW * Mathf.Clamp01(norm);
         if (fillW > 0.5f)
         {
@@ -469,7 +396,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
                            fillW, barH - 2f, col * 0.8f);
         }
 
-        // Tick marks (25%, 50%, 75%)
         Draw.Thickness = thinLine * 0.5f;
         for (int i = 1; i < 4; i++)
         {
@@ -492,7 +418,10 @@ public sealed class HectonSuitHUD : MonoBehaviour
         float rpH = 120f;
 
         Draw.Rectangle(new Vector3(rpX + rpW * 0.5f, rpY + rpH * 0.5f, 0), rpW, rpH, bgPanelColor);
-        Draw.Polyline(_rightPanelOutline, closed: false, thickness: lineThickness, frameColor);
+
+        // Outline (RectangleBorder instead of PolylinePath)
+        Draw.RectangleBorder(new Vector3(rpX + rpW * 0.5f, rpY + rpH * 0.5f, 0),
+                             rpW, rpH, lineThickness, frameColor);
 
         float headerY = rpY + rpH - 18f;
         DrawText("ENVIRONMENT", new Vector3(rpX + 8f, headerY, 0), fontSizeSmall, frameColor);
@@ -500,19 +429,17 @@ public sealed class HectonSuitHUD : MonoBehaviour
         Draw.Line(new Vector3(rpX, rpY + rpH - 26f, 0),
                   new Vector3(rpX + rpW, rpY + rpH - 26f, 0), lineThickness * 0.5f, frameColor);
 
-        // Depth
         float rowY = rpY + rpH - 52f;
         string depthDisplay = GetSlotDisplay(3, _depthStr);
         DrawText(depthDisplay, new Vector3(rpX + 10f, rowY, 0), fontSize, normalColor);
 
-        // Pressure
         rowY -= 32f;
         string pressDisplay = GetSlotDisplay(4, _pressureStr);
         DrawText(pressDisplay, new Vector3(rpX + 10f, rowY, 0), fontSize, normalColor);
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — ARC INDICATORS (circular progress O2 & Energy)
+    //  DRAW — ARC INDICATORS
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawArcIndicators(float w, float h)
@@ -520,12 +447,10 @@ public sealed class HectonSuitHUD : MonoBehaviour
         float centerX = w * 0.5f;
         float arcY = h - 60f;
 
-        // O2 Arc
         Vector3 o2Center = new Vector3(centerX - arcSpacing, arcY, 0);
         Color o2Col = GetPulsedColor(_o2Color, _o2Critical);
         DrawArcIndicator(o2Center, _oxygenNorm, o2Col, "O2", _o2Str);
 
-        // Energy Arc
         Vector3 enCenter = new Vector3(centerX + arcSpacing, arcY, 0);
         DrawArcIndicator(enCenter, _energyNorm, _energyColor, "PWR", _energyStr);
     }
@@ -533,16 +458,13 @@ public sealed class HectonSuitHUD : MonoBehaviour
     private void DrawArcIndicator(Vector3 center, float norm, Color col,
                                    string label, string valueStr)
     {
-        // Background ring
         Draw.Arc(center, arcRadius, arcThickness,
                  0f, Mathf.PI * 2f, new Color(1f, 1f, 1f, 0.05f));
 
-        // Track ring (dim)
         Draw.Arc(center, arcRadius, arcThickness * 0.5f,
                  Mathf.PI * 0.5f, Mathf.PI * 0.5f - Mathf.PI * 2f,
                  frameColor * 0.2f);
 
-        // Value arc
         float angle = Mathf.Clamp01(norm) * Mathf.PI * 2f;
         if (angle > 0.01f)
         {
@@ -550,16 +472,13 @@ public sealed class HectonSuitHUD : MonoBehaviour
                      Mathf.PI * 0.5f, Mathf.PI * 0.5f - angle, col);
         }
 
-        // Center value text
         DrawText(valueStr, new Vector3(center.x - 16f, center.y - 4f, 0), fontSizeSmall, col);
-
-        // Label below arc
         DrawText(label, new Vector3(center.x - 8f, center.y - arcRadius - 14f, 0),
                  fontSizeTiny, textDimColor);
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — DEPTH SCALE (vertical scrolling ruler, right edge)
+    //  DRAW — DEPTH SCALE
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawDepthScale(float w, float h)
@@ -569,13 +488,10 @@ public sealed class HectonSuitHUD : MonoBehaviour
         float scaleBot = h * 0.25f;
         float scaleH = scaleTop - scaleBot;
 
-        // Vertical axis
         Draw.Line(new Vector3(scaleX, scaleBot, 0),
                   new Vector3(scaleX, scaleTop, 0), thinLine, depthScaleColor);
 
-        // Ticks — каждые 10 м
         float tickSpacing = 8f;
-        if (tickSpacing < 8f) tickSpacing = 8f;
 
         float offset = (_depthScaleOffset % 10f) * (tickSpacing / 10f);
         int tickCount = (int)(scaleH / tickSpacing) + 2;
@@ -604,7 +520,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
             }
         }
 
-        // Current depth marker (triangle)
         float markerY = (scaleTop + scaleBot) * 0.5f;
         Draw.Triangle(new Vector3(scaleX + 4f, markerY + 5f, 0),
                       new Vector3(scaleX + 4f, markerY - 5f, 0),
@@ -615,7 +530,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — TIME DISPLAY (top center)
+    //  DRAW — TIME DISPLAY
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawTimeDisplay(float w, float h)
@@ -625,7 +540,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
 
         DrawText(_timeStr, new Vector3(cx - 24f, ty, 0), fontSizeSmall, textDimColor);
 
-        // Декоративные линии по бокам часов
         float lineW = 40f;
         Draw.Line(new Vector3(cx - 60f, ty + 5f, 0),
                   new Vector3(cx - 60f + lineW, ty + 5f, 0), thinLine * 0.5f, frameColor * 0.3f);
@@ -634,7 +548,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — STATUS BAR (bottom center)
+    //  DRAW — STATUS BAR
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawStatusBar(float w, float h)
@@ -648,7 +562,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
 
         DrawText(_statusText, new Vector3(cx - 80f, sy, 0), fontSizeSmall, statusCol);
 
-        // Flanking brackets
         Draw.Line(new Vector3(cx - 120f, sy + 5f, 0),
                   new Vector3(cx - 90f, sy + 5f, 0), thinLine, frameColor * 0.5f);
         Draw.Line(new Vector3(cx + 90f, sy + 5f, 0),
@@ -656,7 +569,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — CRITICAL OVERLAY (full-screen red pulse)
+    //  DRAW — CRITICAL OVERLAY
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawCriticalOverlay(float w, float h)
@@ -669,7 +582,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
         Color overlay = new Color(criticalColor.r, criticalColor.g, criticalColor.b, alpha);
         Draw.Rectangle(new Vector3(w * 0.5f, h * 0.5f, 0), w, h, overlay);
 
-        // Edge glow
         float edgeAlpha = pulse01 * 0.4f;
         Color edgeCol = new Color(criticalColor.r, criticalColor.g, criticalColor.b, edgeAlpha);
         float edgeThick = 3f;
@@ -681,37 +593,113 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  ★ TEXT HELPER — ИСПРАВЛЕННАЯ СИГНАТУРА ★
+    //  DRAW — INTERACT PROMPT
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Обёртка над Draw.Text с правильным порядком аргументов Shapes API.
-    ///
-    /// Сигнатура Shapes:
-    ///   Draw.Text(Vector3 pos, Quaternion rot, string content,
-    ///             TextAlign align, float fontSize,
-    ///             TMP_FontAsset font, Color color)
-    ///
-    /// Шрифт берётся из Draw.Font (установлен в DrawHUD перед всеми вызовами).
-    /// </summary>
+    private void DrawInteractPrompt(float w, float h)
+    {
+        if (string.IsNullOrEmpty(_interactPromptText)) return;
+
+        float cx = w * 0.5f;
+        float cy = h * 0.5f;
+
+        float hw  = promptBracketHalfW;
+        float hh  = promptBracketHalfH;
+        float arm = promptBracketArm;
+
+        float l = cx - hw;
+        float r = cx + hw;
+        float t = cy + hh;
+        float b = cy - hh;
+
+        Draw.LineEndCaps = LineEndCap.None;
+
+        Draw.Rectangle(
+            new Vector3(cx, cy, 0), hw * 2f, hh * 2f,
+            new Color(bgPanelColor.r, bgPanelColor.g, bgPanelColor.b,
+                      bgPanelColor.a * 0.4f));
+
+        Draw.Thickness = lineThickness;
+
+        // Top-Left
+        Draw.Line(new Vector3(l, t, 0), new Vector3(l + arm, t, 0), normalColor);
+        Draw.Line(new Vector3(l, t, 0), new Vector3(l, t - arm, 0), normalColor);
+
+        // Top-Right
+        Draw.Line(new Vector3(r - arm, t, 0), new Vector3(r, t, 0), normalColor);
+        Draw.Line(new Vector3(r, t, 0),       new Vector3(r, t - arm, 0), normalColor);
+
+        // Bottom-Left
+        Draw.Line(new Vector3(l, b + arm, 0), new Vector3(l, b, 0), normalColor);
+        Draw.Line(new Vector3(l, b, 0),       new Vector3(l + arm, b, 0), normalColor);
+
+        // Bottom-Right
+        Draw.Line(new Vector3(r, b + arm, 0), new Vector3(r, b, 0), normalColor);
+        Draw.Line(new Vector3(r - arm, b, 0), new Vector3(r, b, 0), normalColor);
+
+        // Crosshair
+        float crossLen = 8f;
+        float crossGap = 3f;
+        Draw.Thickness = thinLine;
+
+        Draw.Line(new Vector3(cx - crossLen, cy, 0), new Vector3(cx - crossGap, cy, 0), normalColor);
+        Draw.Line(new Vector3(cx + crossGap, cy, 0), new Vector3(cx + crossLen, cy, 0), normalColor);
+        Draw.Line(new Vector3(cx, cy + crossLen, 0), new Vector3(cx, cy + crossGap, 0), normalColor);
+        Draw.Line(new Vector3(cx, cy - crossGap, 0), new Vector3(cx, cy - crossLen, 0), normalColor);
+
+        // Side tick marks
+        float tick = 5f;
+        Color tickC = normalColor * 0.35f;
+
+        Draw.Line(new Vector3(l, cy, 0),        new Vector3(l + tick, cy, 0), tickC);
+        Draw.Line(new Vector3(r - tick, cy, 0), new Vector3(r, cy, 0),        tickC);
+        Draw.Line(new Vector3(cx, t, 0),        new Vector3(cx, t - tick, 0), tickC);
+        Draw.Line(new Vector3(cx, b, 0),        new Vector3(cx, b + tick, 0), tickC);
+
+        float qTick = 3f;
+        float q1 = cx - hw * 0.5f;
+        float q3 = cx + hw * 0.5f;
+
+        Draw.Line(new Vector3(q1, t, 0), new Vector3(q1, t - qTick, 0), tickC);
+        Draw.Line(new Vector3(q3, t, 0), new Vector3(q3, t - qTick, 0), tickC);
+        Draw.Line(new Vector3(q1, b, 0), new Vector3(q1, b + qTick, 0), tickC);
+        Draw.Line(new Vector3(q3, b, 0), new Vector3(q3, b + qTick, 0), tickC);
+
+        float textY = b - fontSize - 6f;
+        DrawTextCentered(_interactPromptText, new Vector3(cx, textY, 0),
+                         fontSize, normalColor);
+
+        float flankLen = 30f;
+        float flankGap = 90f;
+        Draw.Thickness = thinLine * 0.5f;
+        Color flankCol = frameColor * 0.4f;
+
+        float flankY = textY + fontSize * 0.4f;
+        Draw.Line(new Vector3(cx - flankGap - flankLen, flankY, 0),
+                  new Vector3(cx - flankGap, flankY, 0), flankCol);
+        Draw.Line(new Vector3(cx + flankGap, flankY, 0),
+                  new Vector3(cx + flankGap + flankLen, flankY, 0), flankCol);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  TEXT HELPERS
+    // ══════════════════════════════════════════════════════════════════
+
     private void DrawText(string text, Vector3 position, float size, Color color)
     {
         if (string.IsNullOrEmpty(text)) return;
 
         Draw.Text(
-            position,           // Vector3   — позиция в пиксельных координатах
-            Quaternion.identity, // Quaternion — без вращения
-            text,               // string    — отображаемый текст
-            TextAlign.Left,     // TextAlign — выравнивание по левому краю
-            size,               // float     — размер шрифта
-            hudFont,            // TMP_FontAsset — шрифт (назначается в Inspector)
-            color               // Color     — цвет текста
+            position,
+            Quaternion.identity,
+            text,
+            TextAlign.Left,
+            size,
+            hudFont,
+            color
         );
     }
 
-    /// <summary>
-    /// Перегрузка с выравниванием для центрированного текста.
-    /// </summary>
     private void DrawTextCentered(string text, Vector3 position, float size, Color color)
     {
         if (string.IsNullOrEmpty(text)) return;
@@ -756,13 +744,13 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  TIME STRING (аллокация только при смене секунды)
+    //  TIME STRING
     // ══════════════════════════════════════════════════════════════════
 
     private void UpdateTimeString()
     {
         var now = DateTime.Now;
-        if (now.Second == _lastSecond) return; // аллокация не чаще 1 раз/сек
+        if (now.Second == _lastSecond) return;
         _lastSecond = now.Second;
 
         _sb.Clear();
@@ -809,7 +797,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  EVENT HANDLERS — обновляют только данные, НЕ рисуют
+    //  EVENT HANDLERS
     // ══════════════════════════════════════════════════════════════════
 
     private void HandleOxygen(float value)
@@ -903,6 +891,15 @@ public sealed class HectonSuitHUD : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════════
+    //  INTERACTION HOVER HANDLER
+    // ══════════════════════════════════════════════════════════════════
+
+    private void HandleHoverChanged(IInteractable target)
+    {
+        _interactPromptText = target != null ? target.GetInteractText() : null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
     //  FORCE REFRESH
     // ══════════════════════════════════════════════════════════════════
 
@@ -924,7 +921,7 @@ public sealed class HectonSuitHUD : MonoBehaviour
     private IEnumerator NoiseLoop()
     {
         var glitchPause = new WaitForSeconds(noiseDuration);
-        int[] picks = new int[3]; // reusable, zero alloc per iteration
+        int[] picks = new int[3];
 
         while (true)
         {
@@ -934,7 +931,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
             for (int i = 0; i < count; i++)
                 picks[i] = Random.Range(0, SlotCount);
 
-            // Apply glitch
             for (int i = 0; i < count; i++)
             {
                 int idx = picks[i];
@@ -945,7 +941,6 @@ public sealed class HectonSuitHUD : MonoBehaviour
 
             yield return glitchPause;
 
-            // Restore
             for (int i = 0; i < count; i++)
                 _glitchOverlay[picks[i]] = null;
         }

@@ -1,0 +1,652 @@
+// ============================================================================
+// HECTON-8 — BoidSimulation.compute
+// ============================================================================
+//
+// GPU Compute Shader: Flocking Simulation (Reynolds Boids Algorithm)
+// Target Platform:    NVIDIA GeForce MX350 (Pascal GP108, 2GB GDDR5)
+// Engine:             Unity 6, Universal Render Pipeline
+// Domain:             Underwater environment — fish schooling
+//
+// ============================================================================
+// ARCHITECTURE OVERVIEW
+// ============================================================================
+//
+//   This shader implements a fully-parallel boid simulation for N agents
+//   (target: 5000) with the following architectural pillars:
+//
+//   [1] PING-PONG DOUBLE BUFFERING
+//       Two separate buffers eliminate all Read-After-Write (RAW) hazards.
+//       Frame N reads from BufferRead, writes to BufferWrite.
+//       The C# host swaps buffer bindings each frame.
+//       Result: deterministic, race-condition-free simulation.
+//
+//   [2] TILE-BASED SHARED MEMORY (LDS) NEIGHBOR SEARCH
+//       The O(N²) brute-force neighbor scan is restructured into tiles
+//       of size THREAD_GROUP_SIZE (256). Each tile:
+//         a) Cooperatively loads 256 boids into groupshared LDS.
+//         b) Synchronizes via GroupMemoryBarrierWithGroupSync().
+//         c) Each thread scans the 256 LDS entries (fast L1 access).
+//         d) Synchronizes again before loading the next tile.
+//       Net effect: global memory reads reduced from N² to N²/256.
+//       On MX350 (64 GB/s bandwidth), this is the difference between
+//       feasible and infeasible at 5000 boids.
+//
+//   [3] ZERO-BRANCHING INNER LOOP (WARP DIVERGENCE ELIMINATION)
+//       All radius/distance checks inside the inner loop use
+//       step() and saturate() intrinsics instead of if-statements.
+//       This guarantees uniform warp execution across all 32 lanes.
+//       Branch divergence cost on Pascal: ~2x slowdown per divergent
+//       branch. With 256 iterations per tile, this matters.
+//
+//   [4] BRANCHLESS SPEED CLAMPING & FORCE NORMALIZATION
+//       Final velocity integration uses lerp + step combinations
+//       to avoid conditional branches in the integration stage.
+//
+// ============================================================================
+// DATA STRUCTURE — BoidData (32 bytes, 16-byte aligned)
+// ============================================================================
+//
+//   Offset  Size   Field
+//   ------  ----   -----
+//   0       12     float3 position   — world-space position (meters)
+//   12      12     float3 velocity   — world-space velocity (m/s)
+//   24      4      float  pad0       — alignment padding (reserved)
+//   28      4      float  pad1       — alignment padding (reserved)
+//   ------  ----
+//   TOTAL:  32 bytes per boid
+//
+//   Stride is power-of-two friendly. 256 boids in LDS = 8192 bytes.
+//   MX350 has 48KB shared memory per SM. Comfortable fit.
+//
+// ============================================================================
+// PERFORMANCE BUDGET (MX350, 5000 boids)
+// ============================================================================
+//
+//   Dispatch:        ceil(5000 / 256) = 20 thread groups
+//   Tiles per boid:  ceil(5000 / 256) = 20 tile iterations
+//   LDS per group:   256 × 32 = 8192 bytes (8 KB)
+//   Global reads:    5000 × 20 tiles × 1 load/thread = 100,000 loads
+//                    vs. old: 5000 × 5000 = 25,000,000 loads
+//                    Reduction factor: 250×
+//   Target frame:    < 0.5ms compute time
+//
+// ============================================================================
+// REVISION HISTORY
+// ============================================================================
+//
+//   v1.0  — Initial brute-force O(N²) single-buffer implementation.
+//   v2.0  — [THIS FILE] Complete rewrite:
+//           • Ping-Pong double buffering (race condition elimination)
+//           • Tile-based LDS neighbor search (250× bandwidth reduction)
+//           • Zero-branching inner loop (warp divergence elimination)
+//           • Branchless speed clamping and force normalization
+//
+// ============================================================================
+
+#pragma kernel CSMain
+
+// ============================================================================
+// SECTION 1: DATA STRUCTURE
+// ============================================================================
+
+struct BoidData
+{
+    float3 position;    // World-space position              [12 bytes]
+    float3 velocity;    // World-space velocity              [12 bytes]
+    float  pad0;        // Alignment padding (reserved)      [ 4 bytes]
+    float  pad1;        // Alignment padding (reserved)      [ 4 bytes]
+};                      //                            TOTAL: [32 bytes]
+
+// ============================================================================
+// SECTION 2: BUFFER DECLARATIONS — PING-PONG ARCHITECTURE
+// ============================================================================
+//
+// CRITICAL CONTRACT:
+//   The C# host MUST swap these bindings every frame:
+//     Frame N:   Read = BufferA,  Write = BufferB
+//     Frame N+1: Read = BufferB,  Write = BufferA
+//
+//   This guarantees:
+//     • No thread reads data that another thread has already modified.
+//     • Deterministic results regardless of thread scheduling order.
+//     • Zero race conditions without any atomic operations.
+// ============================================================================
+
+StructuredBuffer<BoidData>   _BoidsBufferRead;   // SOURCE: previous frame state (READ-ONLY)
+RWStructuredBuffer<BoidData> _BoidsBufferWrite;  // DESTINATION: current frame state (WRITE-ONLY)
+
+// ============================================================================
+// SECTION 3: UNIFORM PARAMETERS — Set from C# MonoBehaviour each frame
+// ============================================================================
+
+// ── Simulation Control ──────────────────────────────────────────────────────
+uint   _BoidCount;                  // Total number of active boids
+float  _DeltaTime;                  // Frame delta time (seconds)
+
+// ── Boid Rule Weights ───────────────────────────────────────────────────────
+float  _SeparationWeight;           // Weight: collision avoidance force
+float  _AlignmentWeight;            // Weight: velocity matching force
+float  _CohesionWeight;             // Weight: center-of-mass attraction
+float  _TargetWeight;               // Weight: global target following
+float  _ObstacleWeight;             // Weight: terrain/surface avoidance
+float  _BoundsWeight;               // Weight: simulation zone containment
+
+// ── Boid Rule Radii ─────────────────────────────────────────────────────────
+float  _PerceptionRadius;           // Radius for alignment + cohesion (meters)
+float  _SeparationRadius;           // Radius for separation — must be < perception (meters)
+float  _ObstacleAvoidRadius;        // Height threshold for terrain avoidance (meters)
+
+// ── Speed Limits ────────────────────────────────────────────────────────────
+float  _MinSpeed;                   // Minimum velocity magnitude (m/s)
+float  _MaxSpeed;                   // Maximum velocity magnitude (m/s)
+
+// ── Target ──────────────────────────────────────────────────────────────────
+float3 _TargetPosition;             // Global attraction point (player or swarm center)
+
+// ── Simulation Bounds ───────────────────────────────────────────────────────
+float3 _BoundsCenter;               // Center of simulation volume
+float3 _BoundsSize;                 // Half-extents of simulation volume
+
+// ── Heightmap (Terrain) ─────────────────────────────────────────────────────
+Texture2D<float4> _HeightMap;       // Terrain heightmap texture, R channel = [0..1]
+SamplerState sampler_HeightMap;     // Bilinear sampler for smooth terrain queries
+float2 _WorldOffset;                // Terrain world-space origin (XZ plane)
+float2 _WorldSize;                  // Terrain world-space extent (XZ plane)
+float  _HeightScale;                // Terrain maximum height (Y axis multiplier)
+float  _WaterSurfaceY;              // Water surface Y coordinate
+
+// ============================================================================
+// SECTION 4: THREAD CONFIGURATION
+// ============================================================================
+
+#define THREAD_GROUP_SIZE 256        // Threads per group — must match C# Dispatch call
+                                     // Chosen for: LDS budget (8KB), MX350 occupancy,
+                                     // warp alignment (256 = 8 warps of 32)
+
+// ============================================================================
+// SECTION 5: SHARED MEMORY (LDS) — TILE CACHE
+// ============================================================================
+//
+// Each thread group cooperatively loads tiles of boid data into this
+// fast on-chip memory. Access latency: ~1 cycle (vs ~400 cycles for VRAM).
+//
+// Memory footprint: 256 × 32 bytes = 8,192 bytes = 8 KB
+// MX350 SM budget:  48 KB → occupancy is NOT limited by LDS.
+// ============================================================================
+
+groupshared BoidData sharedBoids[THREAD_GROUP_SIZE];
+
+// ============================================================================
+// SECTION 6: NUMERICAL SAFETY CONSTANTS
+// ============================================================================
+
+#define EPSILON          0.0001      // Minimum distance² to avoid division by zero
+#define NORM_EPSILON     0.0001      // Minimum vector length for safe normalization
+#define SOFTENING        0.001       // Separation force denominator softening term
+
+// ============================================================================
+// SECTION 7: HELPER FUNCTIONS
+// ============================================================================
+
+// ────────────────────────────────────────────────────────────────────────────
+// SampleTerrainHeight
+// ────────────────────────────────────────────────────────────────────────────
+// Samples the heightmap at a given world XZ position and returns the
+// world-space Y coordinate of the terrain surface.
+//
+// Pipeline: World XZ → UV [0,1] → Texture Sample → Scale to world height
+// ────────────────────────────────────────────────────────────────────────────
+float SampleTerrainHeight(float x, float z)
+{
+    // World-space to UV-space transformation
+    float2 uv;
+    uv.x = (x - _WorldOffset.x) / _WorldSize.x;
+    uv.y = (z - _WorldOffset.y) / _WorldSize.y;
+
+    // Clamp to texture bounds — prevents sampling artifacts at terrain edges
+    uv = saturate(uv);
+
+    // Sample heightmap R channel (normalized height [0..1])
+    // SampleLevel with mip 0 — compute shaders have no implicit LOD
+    float h = _HeightMap.SampleLevel(sampler_HeightMap, uv, 0).r;
+
+    return h * _HeightScale;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// ComputeBoundsForce
+// ────────────────────────────────────────────────────────────────────────────
+// Generates a soft steering force that pushes boids back toward the
+// simulation volume center when they exceed 80% of the half-extents.
+//
+// The 80→100% zone provides a smooth ramp (linear in overshoot ratio),
+// avoiding discontinuous force jumps at the boundary.
+// ────────────────────────────────────────────────────────────────────────────
+float3 ComputeBoundsForce(float3 position)
+{
+    float3 offset   = position - _BoundsCenter;
+    float3 halfSize = _BoundsSize;
+    float3 force    = float3(0.0, 0.0, 0.0);
+
+    // X axis — soft boundary enforcement
+    if (abs(offset.x) > halfSize.x * 0.8)
+    {
+        float overshoot = (abs(offset.x) - halfSize.x * 0.8) / (halfSize.x * 0.2 + 0.001);
+        force.x = -sign(offset.x) * saturate(overshoot);
+    }
+
+    // Y axis — soft boundary enforcement
+    if (abs(offset.y) > halfSize.y * 0.8)
+    {
+        float overshoot = (abs(offset.y) - halfSize.y * 0.8) / (halfSize.y * 0.2 + 0.001);
+        force.y = -sign(offset.y) * saturate(overshoot);
+    }
+
+    // Z axis — soft boundary enforcement
+    if (abs(offset.z) > halfSize.z * 0.8)
+    {
+        float overshoot = (abs(offset.z) - halfSize.z * 0.8) / (halfSize.z * 0.2 + 0.001);
+        force.z = -sign(offset.z) * saturate(overshoot);
+    }
+
+    return force;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SafeNormalize
+// ────────────────────────────────────────────────────────────────────────────
+// Returns normalized vector, or zero vector if input length < NORM_EPSILON.
+// Entirely branchless: uses step() to produce a 0/1 multiplier.
+// ────────────────────────────────────────────────────────────────────────────
+float3 SafeNormalize(float3 v)
+{
+    float len = length(v);
+    float valid = step(NORM_EPSILON, len);          // 1.0 if len >= epsilon, else 0.0
+    return v * valid / (len + (1.0 - valid));       // Avoid /0 when valid=0: denom becomes 1.0
+}
+
+// ============================================================================
+// SECTION 8: MAIN KERNEL
+// ============================================================================
+//
+// Execution model:
+//   DispatchCompute(ceil(BoidCount / 256), 1, 1)
+//   Each thread processes exactly ONE boid.
+//   SV_DispatchThreadID.x = global boid index.
+//   SV_GroupIndex         = local thread index within group [0..255].
+//
+// Data flow:
+//   _BoidsBufferRead[*]  →  accumulate forces  →  integrate  →  _BoidsBufferWrite[index]
+//
+// ============================================================================
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void CSMain(
+    uint3 id : SV_DispatchThreadID,
+    uint  GI : SV_GroupIndex
+)
+{
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 0: THREAD IDENTIFICATION & GUARD
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // Threads beyond _BoidCount are idle but MUST still participate in
+    // GroupMemoryBarrierWithGroupSync() calls to avoid deadlocks.
+    // We use a validity mask instead of early-return.
+    // ════════════════════════════════════════════════════════════════════════
+
+    uint index = id.x;
+
+    // Validity flag: 1.0 if this thread maps to a real boid, 0.0 otherwise.
+    // Used to mask writes at the end — thread still participates in barriers.
+    float isValid = step((float)index + 0.5, (float)_BoidCount);
+
+    // Load this boid's state from the READ buffer (previous frame).
+    // For out-of-range threads, this reads garbage — doesn't matter,
+    // the write will be masked by isValid.
+    uint safeIndex = min(index, _BoidCount - 1);
+    BoidData selfBoid = _BoidsBufferRead[safeIndex];
+    float3 pos = selfBoid.position;
+    float3 vel = selfBoid.velocity;
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 1: TILE-BASED NEIGHBOR ACCUMULATION
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // Instead of N global memory reads per boid (25,000,000 total for N=5000),
+    // we load tiles of 256 boids into groupshared memory (LDS).
+    //
+    // Per tile:
+    //   1. Each thread loads one boid from global → LDS     (256 coalesced reads)
+    //   2. Barrier — ensure all 256 entries are visible
+    //   3. Each thread reads all 256 LDS entries             (fast, ~1 cycle each)
+    //   4. Barrier — ensure no thread starts overwriting LDS prematurely
+    //
+    // Total global reads: N × ceil(N/256) × 1 = N²/256
+    // For N=5000: 100,000 global reads vs 25,000,000. Factor: 250×.
+    //
+    // ════════════════════════════════════════════════════════════════════════
+
+    // ── Accumulators (initialized to zero) ──────────────────────────────────
+    float3 separationForce = float3(0.0, 0.0, 0.0);    // Weighted repulsion vectors
+    float3 alignmentSum    = float3(0.0, 0.0, 0.0);    // Sum of neighbor velocities
+    float3 cohesionSum     = float3(0.0, 0.0, 0.0);    // Sum of neighbor positions
+
+    float  separationCount = 0.0;    // Using float for branchless accumulation
+    float  neighbourCount  = 0.0;    // Using float for branchless accumulation
+
+    // ── Pre-squared radii (avoid sqrt in inner loop where possible) ─────────
+    float perceptionSqr = _PerceptionRadius * _PerceptionRadius;
+    float separationSqr = _SeparationRadius * _SeparationRadius;
+
+    // ── Tile count ──────────────────────────────────────────────────────────
+    // Number of tiles needed to cover all boids.
+    // Last tile may be partially filled — handled by clamping.
+    uint tileCount = (_BoidCount + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE;
+
+    // ────────────────────────────────────────────────────────────────────────
+    // OUTER LOOP: Iterate over tiles
+    // ────────────────────────────────────────────────────────────────────────
+    for (uint tile = 0; tile < tileCount; tile++)
+    {
+        // ── Step 1: Cooperative Load ────────────────────────────────────────
+        //
+        // Each thread loads exactly one boid from global memory into LDS.
+        // Thread GI in this group loads boid at global index (tile*256 + GI).
+        //
+        // If that index exceeds _BoidCount, we load a sentinel boid at
+        // an impossible position (far away) so it never passes radius checks.
+        // This avoids branches in the inner loop.
+        // ────────────────────────────────────────────────────────────────────
+
+        uint loadIndex = tile * THREAD_GROUP_SIZE + GI;
+
+        // Clamp to valid range to prevent out-of-bounds global read.
+        // For out-of-range indices, we load boid 0 but then zero it out.
+        uint  clampedLoadIndex = min(loadIndex, _BoidCount - 1);
+        float loadValid = step((float)loadIndex + 0.5, (float)_BoidCount);
+
+        BoidData loadedBoid = _BoidsBufferRead[clampedLoadIndex];
+
+        // For invalid slots, place boid at "infinity" so distance checks
+        // always fail (contribution = 0). This is cheaper than branching.
+        // We use a very large offset that guarantees distSqr > any radius².
+        loadedBoid.position = lerp(float3(1e10, 1e10, 1e10), loadedBoid.position, loadValid);
+        loadedBoid.velocity = lerp(float3(0.0, 0.0, 0.0),    loadedBoid.velocity, loadValid);
+
+        sharedBoids[GI] = loadedBoid;
+
+        // ── Step 2: Synchronization Barrier ─────────────────────────────────
+        //
+        // ALL threads in the group (including out-of-range ones) must hit
+        // this barrier. This is why we don't early-return for invalid threads.
+        // ────────────────────────────────────────────────────────────────────
+
+        GroupMemoryBarrierWithGroupSync();
+
+        // ── Step 3: Inner Loop — Scan all 256 boids in this tile ────────────
+        //
+        // ZERO-BRANCHING DESIGN:
+        //   All radius checks are computed as float masks using step().
+        //   Contributions are multiplied by the mask — branchless.
+        //   This eliminates warp divergence entirely within this loop.
+        //
+        // Self-exclusion is also branchless: when j maps to our own index,
+        //   diff = (0,0,0), distSqr = 0, and step(EPSILON, 0) = 0.
+        //   So our own data contributes zero to all accumulators.
+        // ────────────────────────────────────────────────────────────────────
+
+        [unroll(16)]  // Hint: partial unroll for instruction-level parallelism
+        for (uint j = 0; j < THREAD_GROUP_SIZE; j++)
+        {
+            // Load neighbor data from LDS (1 cycle latency)
+            float3 otherPos = sharedBoids[j].position;
+            float3 otherVel = sharedBoids[j].velocity;
+
+            // Vector from neighbor to self
+            float3 diff    = pos - otherPos;
+            float  distSqr = dot(diff, diff);
+
+            // ── Branchless distance masks ───────────────────────────────────
+            //
+            // step(edge, x) = (x >= edge) ? 1.0 : 0.0
+            //
+            // notSelf:       1 if distSqr >= EPSILON       (excludes self & coincident)
+            // inSeparation:  1 if distSqr < separationSqr  (within separation radius)
+            // inPerception:  1 if distSqr < perceptionSqr  (within perception radius)
+            //
+            // Combined masks ensure all conditions are met simultaneously.
+            // ────────────────────────────────────────────────────────────────
+
+            float notSelf      = step(EPSILON, distSqr);
+            float inSeparation = notSelf * (1.0 - step(separationSqr, distSqr));
+            float inPerception = notSelf * (1.0 - step(perceptionSqr, distSqr));
+
+            // ── Separation accumulation ─────────────────────────────────────
+            //
+            // Force = diff / (distSqr + softening)
+            // This approximates inverse-distance weighting:
+            //   closer neighbors exert stronger repulsion.
+            //
+            // The softening term prevents singularity at distSqr → 0
+            // (which is already masked out by notSelf, but belt-and-suspenders).
+            // ────────────────────────────────────────────────────────────────
+
+            separationForce += (diff / (distSqr + SOFTENING)) * inSeparation;
+            separationCount += inSeparation;
+
+            // ── Alignment & Cohesion accumulation ───────────────────────────
+            //
+            // Alignment: sum neighbor velocities (averaged later)
+            // Cohesion:  sum neighbor positions  (averaged later to get COM)
+            // ────────────────────────────────────────────────────────────────
+
+            alignmentSum += otherVel * inPerception;
+            cohesionSum  += otherPos * inPerception;
+            neighbourCount += inPerception;
+        }
+
+        // ── Step 4: Synchronization Barrier ─────────────────────────────────
+        //
+        // Ensure all threads have finished reading from sharedBoids[]
+        // before the next tile iteration overwrites it.
+        // ────────────────────────────────────────────────────────────────────
+
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 2: COMPUTE STEERING FORCES
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // Convert accumulated neighbor data into steering accelerations.
+    // Each rule produces a desired velocity, then we compute the steering
+    // force as: steer = desired - current_velocity (Reynolds model).
+    //
+    // Branchless: divisions by count use max(count, 1.0) to avoid /0,
+    // and we multiply by step(0.5, count) to zero-out when no neighbors.
+    // ════════════════════════════════════════════════════════════════════════
+
+    float3 acceleration = float3(0.0, 0.0, 0.0);
+
+    // ── Safe reciprocals (branchless divide-by-count) ───────────────────────
+    float hasNeighbours  = step(0.5, neighbourCount);    // 1.0 if any neighbor found
+    float hasSeparation  = step(0.5, separationCount);   // 1.0 if any separation neighbor
+    float invNeighbours  = 1.0 / max(neighbourCount, 1.0);
+    float invSeparation  = 1.0 / max(separationCount, 1.0);
+
+    // ── 1. SEPARATION ──────────────────────────────────────────────────────
+    //
+    // Average the separation vectors, normalize to desired speed,
+    // then compute steering force = desired - velocity.
+    // ────────────────────────────────────────────────────────────────────────
+    {
+        float3 avgSep    = separationForce * invSeparation;
+        float3 desired   = SafeNormalize(avgSep) * _MaxSpeed;
+        float3 steer     = (desired - vel) * hasSeparation;
+        acceleration    += steer * _SeparationWeight;
+    }
+
+    // ── 2. ALIGNMENT ───────────────────────────────────────────────────────
+    //
+    // Average neighbor velocities → normalize → desired velocity → steer.
+    // ────────────────────────────────────────────────────────────────────────
+    {
+        float3 avgVel    = alignmentSum * invNeighbours;
+        float3 desired   = SafeNormalize(avgVel) * _MaxSpeed;
+        float3 steer     = (desired - vel) * hasNeighbours;
+        acceleration    += steer * _AlignmentWeight;
+    }
+
+    // ── 3. COHESION ────────────────────────────────────────────────────────
+    //
+    // Center of mass = avgPosition → direction to COM → desired → steer.
+    // ────────────────────────────────────────────────────────────────────────
+    {
+        float3 centerOfMass = cohesionSum * invNeighbours;
+        float3 toCenter     = centerOfMass - pos;
+        float3 desired      = SafeNormalize(toCenter) * _MaxSpeed;
+        float3 steer        = (desired - vel) * hasNeighbours;
+        acceleration       += steer * _CohesionWeight;
+    }
+
+    // ── 4. TARGET FOLLOWING ────────────────────────────────────────────────
+    //
+    // Seek behavior: steer toward global target position.
+    // ────────────────────────────────────────────────────────────────────────
+    {
+        float3 toTarget     = _TargetPosition - pos;
+        float3 desired      = SafeNormalize(toTarget) * _MaxSpeed;
+        float3 steer        = desired - vel;
+        // SafeNormalize returns zero if toTarget is zero-length,
+        // so steer gracefully degrades to -vel (acceptable).
+        acceleration       += steer * _TargetWeight;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 3: ENVIRONMENTAL FORCES (Post-accumulation)
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // These forces depend only on the boid's own position, not neighbors.
+    // Computed after the tile loop to keep the hot loop clean.
+    // ════════════════════════════════════════════════════════════════════════
+
+    // ── 5. OBSTACLE AVOIDANCE — Terrain (heightmap) ────────────────────────
+    //
+    // Sample terrain height beneath the boid.
+    // Apply upward force when boid approaches the ocean floor.
+    // Emergency correction if boid is inside terrain geometry.
+    // ────────────────────────────────────────────────────────────────────────
+    {
+        float terrainY          = SampleTerrainHeight(pos.x, pos.z);
+        float heightAboveBottom = pos.y - terrainY;
+
+        // Normal avoidance: smooth quadratic ramp as boid descends toward floor
+        // urgency ∈ [0, 1]: 0 at avoidRadius, 1 at terrain surface
+        float normalUrgency = 1.0 - saturate(heightAboveBottom / (_ObstacleAvoidRadius + NORM_EPSILON));
+        normalUrgency       = normalUrgency * normalUrgency;  // Quadratic: gentle far, aggressive close
+
+        // Mask: active only when above terrain but within avoidance zone
+        float inAvoidZone   = step(0.0, heightAboveBottom) * step(heightAboveBottom, _ObstacleAvoidRadius);
+
+        // Emergency: boid is AT or BELOW terrain surface
+        float isSubmerged   = 1.0 - step(0.0, heightAboveBottom);
+
+        // Combined terrain force
+        float3 terrainForce = float3(0.0, 1.0, 0.0) * (
+            normalUrgency * _MaxSpeed * inAvoidZone +
+            _MaxSpeed * 3.0 * isSubmerged
+        );
+        acceleration += terrainForce * _ObstacleWeight;
+
+        // ── Water Surface Avoidance ─────────────────────────────────────────
+        //
+        // Symmetric to terrain avoidance but pushes downward.
+        // Active zone: [WaterSurfaceY - avoidRadius*0.5, WaterSurfaceY]
+        // ────────────────────────────────────────────────────────────────────
+
+        float depthBelowSurface   = _WaterSurfaceY - pos.y;
+        float halfAvoidRadius     = _ObstacleAvoidRadius * 0.5;
+
+        float surfaceUrgency      = 1.0 - saturate(depthBelowSurface / (halfAvoidRadius + NORM_EPSILON));
+        surfaceUrgency            = surfaceUrgency * surfaceUrgency;  // Quadratic
+
+        // Mask: active only when below surface but within avoidance zone
+        float inSurfaceZone       = step(0.0, depthBelowSurface) * step(depthBelowSurface, halfAvoidRadius);
+
+        // Emergency: boid is AT or ABOVE water surface
+        float isAboveSurface      = 1.0 - step(0.0, depthBelowSurface);
+
+        // Combined surface force
+        float3 surfaceForce       = float3(0.0, -1.0, 0.0) * (
+            surfaceUrgency * _MaxSpeed * inSurfaceZone +
+            _MaxSpeed * 3.0 * isAboveSurface
+        );
+        acceleration += surfaceForce * _ObstacleWeight;
+    }
+
+    // ── 6. BOUNDS FORCE ────────────────────────────────────────────────────
+    //
+    // Soft containment within the simulation volume.
+    // ComputeBoundsForce returns a normalized direction with magnitude [0,1].
+    // ────────────────────────────────────────────────────────────────────────
+    {
+        float3 boundsForce = ComputeBoundsForce(pos);
+        acceleration      += boundsForce * _MaxSpeed * _BoundsWeight;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 4: VELOCITY & POSITION INTEGRATION
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // Semi-implicit Euler integration:
+    //   v(t+dt) = v(t) + a(t) × dt
+    //   p(t+dt) = p(t) + v(t+dt) × dt
+    //
+    // Speed clamping is fully branchless using clamp + SafeNormalize.
+    // ════════════════════════════════════════════════════════════════════════
+
+    vel += acceleration * _DeltaTime;
+
+    // ── Branchless Speed Clamping ───────────────────────────────────────────
+    //
+    // Strategy:
+    //   1. Compute current speed.
+    //   2. Clamp speed to [_MinSpeed, _MaxSpeed].
+    //   3. Reconstruct velocity = normalize(vel) × clampedSpeed.
+    //   4. If speed ≈ 0 (no meaningful direction), keep velocity as-is
+    //      (SafeNormalize returns zero, so vel becomes zero — acceptable
+    //       because the boid will be pushed by environmental forces next frame).
+    // ────────────────────────────────────────────────────────────────────────
+
+    float speed        = length(vel);
+    float hasSpeed     = step(NORM_EPSILON, speed);           // 1.0 if speed is meaningful
+    float clampedSpeed = clamp(speed, _MinSpeed, _MaxSpeed);
+    float3 direction   = SafeNormalize(vel);
+
+    // Reconstruct velocity: use clamped speed if we have direction,
+    // otherwise keep original (near-zero) velocity.
+    vel = lerp(vel, direction * clampedSpeed, hasSpeed);
+
+    // ── Position Update ─────────────────────────────────────────────────────
+    pos += vel * _DeltaTime;
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 5: WRITE RESULTS TO DESTINATION BUFFER
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // Only valid threads (index < _BoidCount) write to the output buffer.
+    // Invalid threads have participated in all barriers but produce no output.
+    // ════════════════════════════════════════════════════════════════════════
+
+    if (index < _BoidCount)
+    {
+        BoidData result;
+        result.position = pos;
+        result.velocity = vel;
+        result.pad0     = selfBoid.pad0;    // Preserve padding data (may carry metadata)
+        result.pad1     = selfBoid.pad1;    // Preserve padding data (may carry metadata)
+
+        _BoidsBufferWrite[index] = result;
+    }
+}

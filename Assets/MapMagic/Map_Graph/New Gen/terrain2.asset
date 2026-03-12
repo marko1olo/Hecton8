@@ -46,7 +46,7 @@ MonoBehaviour:
       - t: 255
         v: 212
       - t: 1
-        v: 12345
+        v: 1
       - t: 255
         v: 213
       - t: 255
@@ -200,7 +200,7 @@ MonoBehaviour:
       - t: 11
         v: -6057655959138861055
       - t: 11
-        v: 14
+        v: 21
       - t: 255
         v: 7
       - t: 255
@@ -219,7 +219,7 @@ MonoBehaviour:
       fields: []
       values: []
       special: 
-      uniObj: {fileID: 11400000, guid: 450dff9d61edc324e939f324c1d5a862, type: 2}
+      uniObj: {fileID: 11400000, guid: 0f51089f244a765428731114d01436ab, type: 2}
     - refId: 5
       type: Den.Tools.CoordRect+TileMode, Den.Tools, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
@@ -254,9 +254,9 @@ MonoBehaviour:
       - y
       values:
       - t: 2
-        v: 3305504768
+        v: 3306508288
       - t: 2
-        v: 1128429095
+        v: 1130954752
       special: 
       uniObj: {fileID: 0}
     - refId: 8
@@ -1271,7 +1271,7 @@ MonoBehaviour:
       - t: 11
         v: -5128805028668112872
       - t: 11
-        v: 18
+        v: 25
       - t: 255
         v: 64
       - t: 255
@@ -2246,7 +2246,7 @@ MonoBehaviour:
       - t: 11
         v: -1450636268059754476
       - t: 11
-        v: 7
+        v: 9
       - t: 255
         v: 100
       - t: 255
@@ -2486,7 +2486,7 @@ MonoBehaviour:
       - t: 11
         v: -1132340845958135784
       - t: 11
-        v: 6
+        v: 8
       - t: 255
         v: 113
       - t: 255
@@ -3174,7 +3174,7 @@ MonoBehaviour:
       - t: 11
         v: -500170038498557916
       - t: 11
-        v: 4
+        v: 6
       - t: 255
         v: 142
       - t: 255
@@ -3269,9 +3269,9 @@ MonoBehaviour:
       - y
       values:
       - t: 2
-        v: 3298820096
+        v: 3297659173
       - t: 2
-        v: 1141032172
+        v: 1141150281
       special: 
       uniObj: {fileID: 0}
     - refId: 146
@@ -3312,7 +3312,7 @@ MonoBehaviour:
       - t: 11
         v: 604433427625672743
       - t: 11
-        v: 67
+        v: 68
       - t: 255
         v: 147
       - t: 255
@@ -3474,7 +3474,7 @@ MonoBehaviour:
       - t: 255
         v: 68
       - t: 1
-        v: 12345
+        v: 1
       - t: 2
         v: 1065353216
       - t: 2
@@ -3490,7 +3490,7 @@ MonoBehaviour:
       - t: 11
         v: 725850297657720877
       - t: 11
-        v: 4
+        v: 6
       - t: 255
         v: 154
       - t: 255
@@ -4767,8 +4767,6 @@ MonoBehaviour:
       - t: 255
         v: 185
       - t: 255
-        v: 146
-      - t: 255
         v: 199
       - t: 255
         v: 197
@@ -4863,8 +4861,6 @@ MonoBehaviour:
         v: 187
       - t: 255
         v: 168
-      - t: 255
-        v: 143
       - t: 255
         v: 168
       - t: 255

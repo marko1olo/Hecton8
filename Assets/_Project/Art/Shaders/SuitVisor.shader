@@ -308,5 +308,5 @@ Shader "NASAPunk/SuitVisor"
     }
 
     FallBack "Universal Render Pipeline/Lit"
-    CustomEditor "UnityEditor.Rendering.Universal.ShaderGUI.LitShaderGUI"
+    // CustomEditor "UnityEditor.Rendering.Universal.ShaderGUI.LitShaderGUI"
 }

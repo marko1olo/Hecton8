@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3403889588987942057
+--- !u!1 &8209430670174248936
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,13 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2279105065362377882}
-  - component: {fileID: 1518262917431728515}
-  - component: {fileID: 6526814292420600784}
+  - component: {fileID: 1342121906950029394}
+  - component: {fileID: 7708331952162077753}
+  - component: {fileID: 8699850174127364278}
+  - component: {fileID: 2760208560575084952}
+  - component: {fileID: 19336647242332347}
+  - component: {fileID: 5856769925989962686}
+  - component: {fileID: 4334505745138054749}
   m_Layer: 0
   m_Name: '[MANAGERS]'
   m_TagString: Untagged
@@ -18,38 +22,38 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2279105065362377882
+--- !u!4 &1342121906950029394
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3403889588987942057}
+  m_GameObject: {fileID: 8209430670174248936}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1813.425, y: 0.00006, z: -724.65356}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1710.9994, y: -0.0001, z: 863.9985}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1518262917431728515
+--- !u!114 &7708331952162077753
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3403889588987942057}
+  m_GameObject: {fileID: 8209430670174248936}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99382565fddd3ae4c80961b53c66a591, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HectonAtmosphereManager
   _sunLight: {fileID: 0}
-  _cycleDuration: 30
+  _cycleDuration: 3600
   _initialTimeOfDay: 0.092
   _sunOrbitalYAngle: 11
-  _orbitalInclination: 90
+  _orbitalInclination: 22.2
   _nightThresholdAngle: 10
   _sunHorizonFadeAngle: 10
   _profileDay: {fileID: 11400000, guid: c7300d65ab765cb40bd9fb323fe5735c, type: 2}
@@ -58,59 +62,119 @@ MonoBehaviour:
   _profileEclipse: {fileID: 11400000, guid: ad0ea32e6e03e0d429794470a73138b2, type: 2}
   _transitionSpeed: 1.5
   _playerTransform: {fileID: 0}
-  _waterSurfaceY: 0
+  _waterSurfaceY: 4900
   _useAutoUnderwaterDetection: 1
+  mainCamera: {fileID: 0}
   _globalVolume: {fileID: 0}
---- !u!114 &6526814292420600784
+--- !u!114 &8699850174127364278
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3403889588987942057}
+  m_GameObject: {fileID: 8209430670174248936}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 995657ccfead993419fe1b0d6378b3f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HectonFluidEngine
-  waterLevel: 0
+  waterLevel: 4900
+  waterDensity: 1000
+  viscousDrag: 3
+  angularDrag: 1
+  currentVector: {x: 0, y: 0, z: 0}
   currentStrength: 1.5
-  currentNoiseScale: 0.04
-  currentTimeScale: 0.15
-  currentVerticalFactor: 0.08
-  maxLightDepth: 40
-  surfaceTransparency: 1
-  deepTransparency: 0.01
-  attenuationCurve:
+  jobBatchSize: 32
+  _debugObjectCount: 0
+--- !u!114 &2760208560575084952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eaafa4c661a665841810a6d6e15e56f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.FaunaDirector
+  biomeDatasets: []
+  globalMaxCount: 30
+  maxSpawnsPerTick: 3
+  spawnRingInner: 50
+  spawnRingOuter: 150
+  killDistance: 200
+  hordeCountMin: 3
+  hordeCountMax: 5
+  hordeRadiusInner: 10
+  hordeRadiusOuter: 15
+  _debugActiveCount: 0
+  _debugCurrentBiome: -1
+  _debugSpawnAttempts: 0
+  _debugCullCount: 0
+  _debugPressureEnabled: 1
+  _debugLastHordeSpawned: 0
+--- !u!114 &19336647242332347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d10d1f46cff164d448916323158811cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.ScavengePopulator
+  resourcePrefabs: []
+  tileSize: 512
+  maxSpawnsPerTick: 20
+  unloadDistance: 300
+  priorityLoadRadius: 150
+  idPrefix: rn
+  _debugActiveChunks: 0
+  _debugTotalActiveNodes: 0
+  _debugPendingSpawns: 0
+  _debugSkippedDepleted: 0
+  _debugLastHighlightedId: 
+--- !u!114 &5856769925989962686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 560e83b763132d2418e071332d17b172, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HectonPlayerSpawner
+  playerRigidbody: {fileID: 0}
+  waterLevel: 4900
+  minSeaFloorHeight: 4800
+  raycastOriginHeight: 10000
+  terrainLayerMask:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  audioMixer: {fileID: 0}
-  lowPassParameterName: LowPassCutoff
-  surfaceCutoffHz: 22000
-  underwaterCutoffHz: 400
-  audioTransitionDepth: 2
-  audioSmoothSpeed: 5
-  shaderParamTransparency: _HectonFluidTransparency
-  shaderParamDepth: _HectonFluidDepth
-  shaderParamWaterLevel: _HectonWaterLevel
+    m_Bits: 524287
+  searchOrigin: {x: 0, y: 0}
+  spiralStep: 75
+  maxSpiralPoints: 500
+  spawnHeightOffset: 2
+  retryDelay: 0.5
+  maxWaitTime: 60
+--- !u!114 &4334505745138054749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dab45852f6983b14693ae1cb8398e1f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.GameTickManager
+  slowTickInterval: 0.5
+  _debugTickCount: 0
+  _debugFixedCount: 0
+  _debugSlowCount: 0

@@ -1,0 +1,561 @@
+// ============================================================================
+// HECTON-8 — PlayerToolManager.cs
+// Контроллер переключения инструментов в руках игрока.
+//
+// Ответственности:
+//   1. Слушает ввод (кнопки 1-4) через ITickable.Tick().
+//   2. Проверяет наличие инструмента в PlayerInventory.
+//   3. Спавнит/деспавнит инструменты через ObjectPoolManager.
+//   4. Управляет плавной анимацией смены (lower → raise).
+//   5. Делегирует UsePrimary/UseSecondary текущему инструменту.
+//
+// ZERO GC:
+//   • Кэшированные KeyCode[] — нет аллокаций при проверке ввода.
+//   • Spawn/Despawn через пул — никаких Instantiate/Destroy.
+//   • Никаких строковых операций в горячих путях.
+//   • math.lerp для анимации — zero GC.
+//
+// ЗАВИСИМОСТИ:
+//   • GameTickManager (регистрация ITickable)
+//   • ObjectPoolManager (спавн/деспавн инструментов)
+//   • PlayerInventory (проверка наличия инструмента)
+//   • PlayerTool (базовый класс инструментов)
+// ============================================================================
+
+namespace Hecton8.Gameplay
+{
+    using Hecton8.Core;
+    using Hecton8.Inventory;
+    using Hecton8.Items;
+    using UnityEngine;
+
+    [DisallowMultipleComponent]
+    public sealed class PlayerToolManager : MonoBehaviour, ITickable
+    {
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── References ────────────────────────────────")]
+        [Tooltip("Transform точки крепления инструмента (дочерний объект камеры).")]
+        [SerializeField] private Transform handAnchor;
+
+        [Tooltip("Ссылка на инвентарь игрока для проверки наличия инструментов.")]
+        [SerializeField] private PlayerInventory playerInventory;
+
+        [Header("── Tool Prefabs (слоты 1-4) ──────────────────")]
+        [Tooltip("Префабы инструментов, привязанные к кнопкам 1-4. " +
+                 "Пустые слоты — оставить null.")]
+        [SerializeField] private GameObject[] toolPrefabs = new GameObject[4];
+
+        [Header("── Swap Animation ────────────────────────────")]
+        [Tooltip("Скорость анимации смены инструмента (lerp factor per second). " +
+                 "Больше = быстрее.")]
+        [SerializeField] private float swapSpeed = 8f;
+
+        [Tooltip("Смещение инструмента вниз при анимации смены (локальные координаты).")]
+        [SerializeField] private Vector3 lowerOffset = new Vector3(0f, -0.5f, 0f);
+
+        [Header("── Diagnostics ───────────────────────────────")]
+        [SerializeField] private int _debugCurrentSlot = -1;
+        [SerializeField] private string _debugStateName;
+
+        // ══════════════════════════════════════════════════════════
+        //  CACHED INPUT — zero GC
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Кэшированные KeyCode для слотов 1-4.
+        /// Аллокация один раз при загрузке класса. Проверка в Tick — O(4).
+        /// </summary>
+        private static readonly KeyCode[] SlotKeys =
+        {
+            KeyCode.Alpha1,
+            KeyCode.Alpha2,
+            KeyCode.Alpha3,
+            KeyCode.Alpha4
+        };
+
+        // ══════════════════════════════════════════════════════════
+        //  RUNTIME STATE
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>Текущий активный экземпляр инструмента (из пула).</summary>
+        private GameObject _currentInstance;
+
+        /// <summary>Компонент PlayerTool на текущем экземпляре.</summary>
+        private PlayerTool _currentTool;
+
+        /// <summary>Индекс текущего активного слота (-1 = ничего).</summary>
+        private int _currentSlotIndex = -1;
+
+        /// <summary>Индекс слота, на который переключаемся (-1 = нет запроса).</summary>
+        private int _pendingSlotIndex = -1;
+
+        /// <summary>Текущее состояние конечного автомата смены инструмента.</summary>
+        private SwapState _swapState = SwapState.Idle;
+
+        /// <summary>Прогресс анимации [0..1]. 0 = начало, 1 = завершено.</summary>
+        private float _swapProgress;
+
+        /// <summary>
+        /// Начальная локальная позиция handAnchor.
+        /// Запоминаем при Awake — это «нормальное» положение инструмента.
+        /// </summary>
+        private Vector3 _anchorRestPosition;
+
+        /// <summary>Целевая позиция при опускании (rest + offset).</summary>
+        private Vector3 _anchorLoweredPosition;
+
+        // ══════════════════════════════════════════════════════════
+        //  SWAP STATE MACHINE
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Конечный автомат анимации смены инструмента.
+        /// 
+        /// Idle → Lowering → Raising → Idle
+        ///
+        /// Lowering: инструмент плавно уходит вниз. По завершении —
+        ///           деспавн старого, спавн нового.
+        /// Raising:  новый инструмент плавно поднимается в рабочую позицию.
+        /// </summary>
+        private enum SwapState
+        {
+            /// <summary>Инструмент на месте, анимация не идёт.</summary>
+            Idle,
+
+            /// <summary>Опускаем текущий инструмент вниз перед сменой.</summary>
+            Lowering,
+
+            /// <summary>Поднимаем новый инструмент вверх после спавна.</summary>
+            Raising
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
+
+        private void Awake()
+        {
+            if (handAnchor != null)
+            {
+                _anchorRestPosition    = handAnchor.localPosition;
+                _anchorLoweredPosition = _anchorRestPosition + lowerOffset;
+            }
+        }
+
+        private void OnEnable()
+        {
+            GameTickManager.Instance?.Register((ITickable)this);
+        }
+
+        private void OnDisable()
+        {
+            GameTickManager.Instance?.Unregister((ITickable)this);
+
+            // Деспавним текущий инструмент при отключении менеджера
+            DespawnCurrentTool();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ITickable — MAIN LOOP (вызывается каждый кадр)
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Главный цикл менеджера инструментов.
+        /// Порядок: Input → SwapAnimation → ToolTick → UseInput.
+        /// </summary>
+        public void Tick(float deltaTime)
+        {
+            // ── 1. Обработка ввода переключения слотов ──
+            ProcessSlotInput();
+
+            // ── 2. Анимация смены инструмента ──
+            ProcessSwapAnimation(deltaTime);
+
+            // ── 3. Если инструмент активен и анимация завершена — обновляем ──
+            if (_currentTool != null && _swapState == SwapState.Idle)
+            {
+                // ── Tick инструмента (idle-анимация, покачивание) ──
+                _currentTool.ToolTick(deltaTime);
+
+                // ── Основное действие (ЛКМ) ──
+                if (Input.GetButton("Fire1"))
+                {
+                    _currentTool.UsePrimary(deltaTime);
+                }
+
+                // ── Альтернативное действие (ПКМ) ──
+                if (Input.GetButton("Fire2"))
+                {
+                    _currentTool.UseSecondary(deltaTime);
+                }
+            }
+
+#if UNITY_EDITOR
+            _debugCurrentSlot = _currentSlotIndex;
+            _debugStateName   = _swapState.ToString();
+#endif
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Программное переключение на слот по индексу (0-3).
+        /// Можно вызвать из других систем (например, при потере инструмента).
+        /// </summary>
+        /// <param name="slotIndex">Индекс слота (0-based). -1 = убрать инструмент.</param>
+        public void SwitchToSlot(int slotIndex)
+        {
+            if (slotIndex < -1 || slotIndex >= toolPrefabs.Length)
+                return;
+
+            RequestSwap(slotIndex);
+        }
+
+        /// <summary>
+        /// Принудительно убирает текущий инструмент из рук.
+        /// Запускает анимацию опускания, после чего деспавнит.
+        /// </summary>
+        public void Holster()
+        {
+            RequestSwap(-1);
+        }
+
+        /// <summary>Текущий активный инструмент (может быть null).</summary>
+        public PlayerTool CurrentTool => _currentTool;
+
+        /// <summary>Индекс текущего слота (-1 = нет инструмента).</summary>
+        public int CurrentSlotIndex => _currentSlotIndex;
+
+        /// <summary>Идёт ли сейчас анимация смены инструмента.</summary>
+        public bool IsSwapping => _swapState != SwapState.Idle;
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — INPUT PROCESSING
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Проверяет нажатие кнопок 1-4.
+        /// При нажатии уже активного слота — убирает инструмент (toggle).
+        /// </summary>
+        private void ProcessSlotInput()
+        {
+            // Не принимаем ввод во время анимации смены
+            if (_swapState != SwapState.Idle)
+                return;
+
+            for (int i = 0; i < SlotKeys.Length; i++)
+            {
+                if (i >= toolPrefabs.Length) break;
+
+                if (Input.GetKeyDown(SlotKeys[i]))
+                {
+                    // Toggle: повторное нажатие = убрать
+                    if (_currentSlotIndex == i)
+                    {
+                        RequestSwap(-1);
+                    }
+                    else
+                    {
+                        RequestSwap(i);
+                    }
+
+                    return; // Обрабатываем только одно нажатие за кадр
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — SWAP LOGIC
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Запрашивает смену инструмента.
+        /// Если текущий инструмент есть — начинает анимацию опускания.
+        /// Если нет — сразу спавнит новый (анимация подъёма).
+        /// </summary>
+        private void RequestSwap(int newSlotIndex)
+        {
+            // Уже на этом слоте и не holster
+            if (newSlotIndex == _currentSlotIndex)
+                return;
+
+            // Проверяем наличие в инвентаре (только для валидных слотов)
+            if (newSlotIndex >= 0)
+            {
+                GameObject prefab = toolPrefabs[newSlotIndex];
+                if (prefab == null)
+                {
+                    Debug.LogWarning(
+                        $"[PlayerToolManager] Slot {newSlotIndex + 1}: no prefab assigned.");
+                    return;
+                }
+
+                // Проверяем ItemData на префабе
+                if (!HasToolInInventory(prefab))
+                {
+                    Debug.Log(
+                        $"[PlayerToolManager] Slot {newSlotIndex + 1}: " +
+                        "tool not found in inventory.");
+                    return;
+                }
+            }
+
+            _pendingSlotIndex = newSlotIndex;
+
+            // Если есть текущий инструмент — опускаем сначала
+            if (_currentTool != null)
+            {
+                _swapState    = SwapState.Lowering;
+                _swapProgress = 0f;
+            }
+            else
+            {
+                // Нет текущего — сразу спавним
+                PerformSwap();
+            }
+        }
+
+        /// <summary>
+        /// Выполняет фактическую смену: деспавн старого → спавн нового.
+        /// Вызывается после завершения анимации опускания (или сразу,
+        /// если инструмента не было).
+        /// </summary>
+        private void PerformSwap()
+        {
+            // ── Деспавн текущего ──
+            DespawnCurrentTool();
+
+            // ── Спавн нового ──
+            if (_pendingSlotIndex >= 0 && _pendingSlotIndex < toolPrefabs.Length)
+            {
+                GameObject prefab = toolPrefabs[_pendingSlotIndex];
+
+                if (prefab != null && handAnchor != null)
+                {
+                    SpawnNewTool(prefab, _pendingSlotIndex);
+                }
+            }
+
+            _currentSlotIndex = _pendingSlotIndex;
+            _pendingSlotIndex = -1;
+
+            // Если спавнили новый — запускаем анимацию подъёма
+            if (_currentTool != null)
+            {
+                _swapState    = SwapState.Raising;
+                _swapProgress = 0f;
+
+                // Начинаем из нижней позиции
+                if (handAnchor != null)
+                    handAnchor.localPosition = _anchorLoweredPosition;
+            }
+            else
+            {
+                // Holster — возвращаем anchor в нормальную позицию
+                _swapState = SwapState.Idle;
+                if (handAnchor != null)
+                    handAnchor.localPosition = _anchorRestPosition;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — SWAP ANIMATION
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Обрабатывает анимацию смены инструмента (state machine).
+        /// Использует Mathf.Lerp — zero GC, frame-independent.
+        /// </summary>
+        private void ProcessSwapAnimation(float deltaTime)
+        {
+            if (_swapState == SwapState.Idle)
+                return;
+
+            if (handAnchor == null)
+            {
+                // Нет anchor — пропускаем анимацию, выполняем мгновенно
+                if (_swapState == SwapState.Lowering)
+                    PerformSwap();
+                else
+                    _swapState = SwapState.Idle;
+                return;
+            }
+
+            // Продвигаем прогресс
+            _swapProgress += deltaTime * swapSpeed;
+
+            // Clamp
+            if (_swapProgress > 1f)
+                _swapProgress = 1f;
+
+            switch (_swapState)
+            {
+                // ── LOWERING: rest → lowered ──
+                case SwapState.Lowering:
+                {
+                    handAnchor.localPosition = Vector3.Lerp(
+                        _anchorRestPosition,
+                        _anchorLoweredPosition,
+                        _swapProgress);
+
+                    if (_swapProgress >= 1f)
+                    {
+                        PerformSwap();
+                    }
+
+                    break;
+                }
+
+                // ── RAISING: lowered → rest ──
+                case SwapState.Raising:
+                {
+                    handAnchor.localPosition = Vector3.Lerp(
+                        _anchorLoweredPosition,
+                        _anchorRestPosition,
+                        _swapProgress);
+
+                    if (_swapProgress >= 1f)
+                    {
+                        handAnchor.localPosition = _anchorRestPosition;
+                        _swapState = SwapState.Idle;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — SPAWN / DESPAWN
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Спавнит инструмент из пула и настраивает его.
+        /// </summary>
+        private void SpawnNewTool(GameObject prefab, int slotIndex)
+        {
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+            {
+                Debug.LogError("[PlayerToolManager] ObjectPoolManager.Instance is null!");
+                return;
+            }
+
+            // Спавним через пул в позицию anchor
+            _currentInstance = pool.Spawn(
+                prefab,
+                handAnchor.position,
+                handAnchor.rotation);
+
+            if (_currentInstance == null)
+            {
+                Debug.LogError(
+                    $"[PlayerToolManager] Failed to spawn tool from slot {slotIndex + 1}.");
+                return;
+            }
+
+            // Привязываем к anchor
+            _currentInstance.transform.SetParent(handAnchor, false);
+            _currentInstance.transform.localPosition = Vector3.zero;
+            _currentInstance.transform.localRotation = Quaternion.identity;
+
+            // Получаем компонент PlayerTool
+            if (_currentInstance.TryGetComponent(out PlayerTool tool))
+            {
+                _currentTool = tool;
+                _currentTool.OnEquip();
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[PlayerToolManager] Prefab '{prefab.name}' " +
+                    "has no PlayerTool component!");
+                _currentTool = null;
+            }
+        }
+
+        /// <summary>
+        /// Деспавнит текущий инструмент (возврат в пул).
+        /// Безопасно вызывать при отсутствии инструмента.
+        /// </summary>
+        private void DespawnCurrentTool()
+        {
+            if (_currentTool != null)
+            {
+                _currentTool.OnUnequip();
+                _currentTool = null;
+            }
+
+            if (_currentInstance != null)
+            {
+                // Отцепляем от anchor перед деспавном
+                _currentInstance.transform.SetParent(null, false);
+
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool != null)
+                {
+                    pool.Despawn(_currentInstance);
+                }
+
+                _currentInstance = null;
+            }
+
+            _currentSlotIndex = -1;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — INVENTORY CHECK
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Проверяет наличие инструмента в инвентаре игрока.
+        /// Сканирует InventoryGrid на предмет совпадения ItemData.
+        ///
+        /// Время: O(cols × rows) в worst case, но вызывается только
+        /// при нажатии кнопки (не каждый кадр).
+        /// </summary>
+        private bool HasToolInInventory(GameObject toolPrefab)
+        {
+            if (playerInventory == null)
+            {
+                Debug.LogWarning("[PlayerToolManager] PlayerInventory reference is null!");
+                return false;
+            }
+
+            // Получаем ItemData с префаба
+            if (!toolPrefab.TryGetComponent(out PlayerTool prefabTool))
+                return false;
+
+            ItemData targetData = prefabTool.ToolData;
+            if (targetData == null)
+                return false;
+
+            // Сканируем инвентарь
+            InventoryGrid grid = playerInventory.Grid;
+            if (grid == null)
+                return false;
+
+            int cols = grid.Columns;
+            int rows = grid.Rows;
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    ItemData cell = grid.GetCell(x, y);
+
+                    // Сравниваем по ссылке — ScriptableObjects уникальны
+                    if (ReferenceEquals(cell, targetData))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+    }
+}

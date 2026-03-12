@@ -31,6 +31,14 @@ namespace Hecton8.Items
         public bool       stackable = true;
         public int        maxStack  = 64;
 
+        // ─────────────────────── Grid ────────────────────────────
+        // ◆ NEW — габариты для тетрис-инвентаря
+        [Header("Grid")]
+        [Tooltip("Ширина предмета в ячейках сетки инвентаря (≥ 1)")]
+        public int        width  = 1;
+        [Tooltip("Высота предмета в ячейках сетки инвентаря (≥ 1)")]
+        public int        height = 1;
+
         // ─────────────────────── Interaction ─────────────────────
         [Header("Interaction")]
         [Tooltip("Глагол для подсказки: 'Забрать', 'Подобрать', 'Взять'")]
@@ -63,10 +71,15 @@ namespace Hecton8.Items
         /// Editor-only: rebuilds the cache whenever a field is changed
         /// in the Inspector so GetInteractText() stays accurate during
         /// design time without waiting for a domain reload.
+        /// Also clamps grid dimensions to sane minimums.
         /// Stripped from builds — zero overhead in production.
         /// </summary>
         private void OnValidate()
         {
+            // ◆ NEW — не допускаем нулевые/отрицательные габариты
+            if (width  < 1) width  = 1;
+            if (height < 1) height = 1;
+
             RebuildCache();
         }
 #endif
@@ -90,6 +103,12 @@ namespace Hecton8.Items
 
             return _cachedInteractText;
         }
+
+        /// <summary>
+        /// ◆ NEW — Площадь предмета в ячейках сетки.
+        /// Удобно для быстрых проверок вместимости.
+        /// </summary>
+        public int CellArea => width * height;
 
         // ═════════════════════════════════════════════════════════
         // Private Helpers

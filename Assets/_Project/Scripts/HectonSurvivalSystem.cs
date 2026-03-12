@@ -1,4 +1,6 @@
 using System;
+using Hecton8.Core;
+using Hecton8.SaveSystem;
 using UnityEngine;
 using Unity.Mathematics;
 
@@ -6,17 +8,35 @@ using Unity.Mathematics;
 /// Core survival simulation for the Hecton diving suit.
 /// Attach to the player GameObject and assign a SurvivalStats asset.
 ///
-/// Performance guarantees:
-/// ─ Zero GC allocations in Update (no string ops, no boxing, no LINQ).
-/// ─ Events are throttled: only fire when |current − lastPublished| > ε.
-/// ─ All math uses Unity.Mathematics (burst-friendly, no Mathf overhead).
+/// РЕФАКТОРИНГ v2 — GameTickManager:
+///   • ITickable   → Tick(dt):   depth/pressure + event publishing (каждый кадр)
+///   • ISlowTickable → SlowTick(): O₂/energy drain + pressure damage (2 раза/сек)
+///   • НЕТ Update() — вся логика через централизованный тик-менеджер.
 ///
-/// Data-driven: every tunable parameter comes from the SurvivalStats
-/// ScriptableObject, so designers can create multiple difficulty profiles
-/// without touching code.
+/// РЕФАКТОРИНГ v3 — ISaveable:
+///   • SavePriority/LoadPriority = 10 (игрок загружается первым).
+///   • PopulateSaveData: записывает статы + позицию.
+///   • LoadFromSaveData: восстанавливает статы + позицию, force-dirty events.
+///
+/// РЕФАКТОРИНГ v4 — TakeDamage:
+///   • Публичный метод TakeDamage(float) для нанесения урона извне
+///     (существа, ловушки, среда).
+///   • Уменьшает integrity, публикует событие, проверяет смерть.
+///
+/// Обоснование разделения:
+///   • Depth/Pressure зависят от transform.position → нужны каждый кадр
+///     для плавной шкалы глубины в UI.
+///   • O₂/Energy drain — линейные процессы, 2fps неотличимо от 60fps
+///     при правильном dt (slowTickInterval).
+///   • CheckLethalConditions — в Tick, чтобы смерть наступала мгновенно.
+///
+/// Performance guarantees:
+/// ─ Zero GC allocations in Tick/SlowTick.
+/// ─ Events throttled: fire only when |current − lastPublished| > ε.
+/// ─ All math uses Unity.Mathematics.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class HectonSurvivalSystem : MonoBehaviour
+public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickable, ISaveable
 {
     // ─── Inspector ───────────────────────────────────────────
 
@@ -28,6 +48,16 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
     [Tooltip("World-space Y coordinate of the water surface.")]
     [SerializeField] private float surfaceWorldY;
 
+    // ─── SlowTick Configuration ──────────────────────────────
+
+    /// <summary>
+    /// Интервал SlowTick в секундах. Используется как deltaTime
+    /// для расчётов drain/damage в SlowTick().
+    /// Синхронизируется с GameTickManager в OnEnable.
+    /// Fallback: 0.5f (2 тика в секунду).
+    /// </summary>
+    private float _slowTickDt = 0.5f;
+
     // ─── Runtime state (stack-allocated, no GC) ──────────────
 
     private float oxygen;
@@ -35,12 +65,11 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
     private float depth;
     private float integrity;
     private float pressure;
-    private float weight;          // set externally by inventory system
+    private float weight;
 
     private bool  alive = true;
 
     // ─── Throttling: last published values ───────────────────
-    //     Event fires only when |current − last| > Epsilon.
 
     private float lastPubOxygen;
     private float lastPubEnergy;
@@ -48,15 +77,7 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
     private float lastPubIntegrity;
     private float lastPubPressure;
 
-    /// <summary>
-    /// Absolute-unit threshold for event throttling.
-    /// 0.1 ≈ 0.1 % when max stat value is 100.
-    /// </summary>
-    private const float Epsilon = 0.1f;
-
-    /// <summary>
-    /// Sentinel value that guarantees the first event always fires.
-    /// </summary>
+    private const float Epsilon       = 0.1f;
     private const float DirtySentinel = -9999f;
 
     // ─── Public events ───────────────────────────────────────
@@ -76,7 +97,7 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
     /// <summary>Current pressure in ATM (≥ 1).</summary>
     public event Action<float> OnPressureChanged;
 
-    /// <summary>Equipment weight in kg. Set via SetWeight().</summary>
+    /// <summary>Equipment weight in kg.</summary>
     public event Action<float> OnWeightChanged;
 
     /// <summary>
@@ -87,7 +108,6 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
 
     /// <summary>
     /// Player has died (O₂ = 0 or Integrity = 0).
-    /// Component disables itself after this event.
     /// </summary>
     public event Action OnDeath;
 
@@ -112,7 +132,6 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
 
     private void Awake()
     {
-        // ── Guard: missing asset ─────────────────────────────
         if (stats == null)
         {
             Debug.LogError(
@@ -122,7 +141,6 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
             return;
         }
 
-        // ── Initialise runtime state from data asset ─────────
         oxygen    = stats.MaxOxygen;
         energy    = stats.MaxEnergy;
         integrity = stats.MaxIntegrity;
@@ -131,7 +149,6 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
         weight    = 0f;
         alive     = true;
 
-        // Force-dirty so the very first PublishDirty() fires all events
         lastPubOxygen    = DirtySentinel;
         lastPubEnergy    = DirtySentinel;
         lastPubDepth     = DirtySentinel;
@@ -139,62 +156,143 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
         lastPubPressure  = DirtySentinel;
     }
 
-    private void Update()
+    private void OnEnable()
+    {
+        // ── Регистрация в GameTickManager ──
+        GameTickManager instance = GameTickManager.Instance;
+        if (instance != null)
+        {
+            instance.RegisterAll(this);
+            _slowTickDt = 0.5f;
+        }
+
+        // ── Регистрация в SaveManager ──
+        SaveManager.Instance?.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        // ── Отписка от GameTickManager ──
+        GameTickManager.Instance?.UnregisterAll(this);
+
+        // ── Отписка от SaveManager ──
+        SaveManager.Instance?.Unregister(this);
+    }
+
+    // ═════════════════════════════════════════════════════════
+    //  ITickable — КАЖДЫЙ КАДР (замена Update)
+    // ═════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Вызывается GameTickManager каждый кадр.
+    /// </summary>
+    public void Tick(float deltaTime)
     {
         if (!alive) return;
 
-        float dt = Time.deltaTime;
-
-        // ── Simulation pipeline (order matters) ──────────────
         ComputeDepthAndPressure();
+        PublishDirty();
+        CheckLethalConditions();
+    }
+
+    // ═════════════════════════════════════════════════════════
+    //  ISlowTickable — 2 РАЗА В СЕКУНДУ
+    // ═════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Вызывается GameTickManager с частотой slowTickInterval (≈0.5 сек).
+    /// </summary>
+    public void SlowTick()
+    {
+        if (!alive) return;
+
+        float dt = _slowTickDt;
+
         DrainOxygen(dt);
         DrainEnergy(dt);
         ApplyPressureDamage(dt);
+    }
 
-        // ── Output ───────────────────────────────────────────
-        PublishDirty();
-        CheckLethalConditions();
+    // ═════════════════════════════════════════════════════════
+    //  ISaveable — SAVE / LOAD
+    // ═════════════════════════════════════════════════════════
+
+    /// <summary>Player stats загружаются первыми.</summary>
+    public int SavePriority => 10;
+    public int LoadPriority => 10;
+
+    /// <summary>
+    /// Записывает текущие статы и позицию в SaveData.
+    /// </summary>
+    public void PopulateSaveData(SaveData data)
+    {
+        ref PlayerStatsDTO dto = ref data.playerStats;
+
+        dto.oxygen    = oxygen;
+        dto.energy    = energy;
+        dto.integrity = integrity;
+        dto.weight    = weight;
+
+        dto.SetPosition(transform.position);
+        dto.SetRotation(transform.rotation);
+    }
+
+    /// <summary>
+    /// Восстанавливает статы и позицию из SaveData.
+    /// </summary>
+    public void LoadFromSaveData(SaveData data)
+    {
+        PlayerStatsDTO dto = data.playerStats;
+
+        // ── Восстановление статов с клампингом ──
+        oxygen    = Mathf.Clamp(dto.oxygen,    0f, stats.MaxOxygen);
+        energy    = Mathf.Clamp(dto.energy,    0f, stats.MaxEnergy);
+        integrity = Mathf.Clamp(dto.integrity, 0f, stats.MaxIntegrity);
+        weight    = Mathf.Max(0f, dto.weight);
+        alive     = oxygen > 0f && integrity > 0f;
+
+        // ── Восстановление позиции ──
+        Vector3 loadedPos = dto.GetPosition();
+        Quaternion loadedRot = dto.GetRotation();
+
+        // Валидация: не NaN, не бесконечность
+        if (!float.IsNaN(loadedPos.x) && !float.IsInfinity(loadedPos.x) &&
+            !float.IsNaN(loadedPos.y) && !float.IsInfinity(loadedPos.y) &&
+            !float.IsNaN(loadedPos.z) && !float.IsInfinity(loadedPos.z))
+        {
+            transform.SetPositionAndRotation(loadedPos, loadedRot);
+        }
+
+        // ── Force-dirty все публикации ──
+        lastPubOxygen    = DirtySentinel;
+        lastPubEnergy    = DirtySentinel;
+        lastPubDepth     = DirtySentinel;
+        lastPubIntegrity = DirtySentinel;
+        lastPubPressure  = DirtySentinel;
     }
 
     // ═════════════════════════════════════════════════════════
     //  SIMULATION STEPS (private, zero-alloc)
     // ═════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Derives depth from world position and computes ambient pressure.
-    /// Simplified model: +1 ATM per 10 m of water column.
-    /// </summary>
     private void ComputeDepthAndPressure()
     {
         depth    = math.max(0f, surfaceWorldY - transform.position.y);
         pressure = 1f + depth * 0.1f;
     }
 
-    /// <summary>
-    /// Drains oxygen proportional to ambient pressure.
-    /// At 1 ATM factor = 1.0, at 6 ATM factor = 3.0.
-    /// Formula: drain = OxygenConsumptionRate × max(1, pressure × 0.5) × dt
-    /// </summary>
     private void DrainOxygen(float dt)
     {
         float pressureFactor = math.max(1f, pressure * 0.5f);
         oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * dt);
     }
 
-    /// <summary>
-    /// Drains energy proportional to carried equipment weight.
-    /// Formula: drain = EnergyConsumptionRate × (1 + weight × 0.005) × dt
-    /// </summary>
     private void DrainEnergy(float dt)
     {
         float weightFactor = 1f + weight * 0.005f;
         energy = math.max(0f, energy - stats.EnergyConsumptionRate * weightFactor * dt);
     }
 
-    /// <summary>
-    /// Damages hull integrity when depth exceeds the safe threshold.
-    /// Formula: damage = PressureDamageRate × (1 + excess × PressureScalePerMeter) × dt
-    /// </summary>
     private void ApplyPressureDamage(float dt)
     {
         if (depth <= stats.SafeDepth) return;
@@ -205,15 +303,11 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
     }
 
     // ═════════════════════════════════════════════════════════
-    //  EVENT PUBLISHING  (throttled — fires only on meaningful change)
+    //  EVENT PUBLISHING (throttled)
     // ═════════════════════════════════════════════════════════
 
     private void PublishDirty()
     {
-        // Each block: compare with last published value → invoke only on delta > ε.
-        // Null-conditional (?.) on delegate — zero cost when no listeners.
-
-        // ── Oxygen ───────────────────────────────────────────
         if (math.abs(oxygen - lastPubOxygen) > Epsilon)
         {
             lastPubOxygen = oxygen;
@@ -223,28 +317,24 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
                 OnOxygenCritical?.Invoke(OxygenNormalized);
         }
 
-        // ── Energy ───────────────────────────────────────────
         if (math.abs(energy - lastPubEnergy) > Epsilon)
         {
             lastPubEnergy = energy;
             OnEnergyChanged?.Invoke(energy);
         }
 
-        // ── Depth ────────────────────────────────────────────
         if (math.abs(depth - lastPubDepth) > Epsilon)
         {
             lastPubDepth = depth;
             OnDepthChanged?.Invoke(depth);
         }
 
-        // ── Integrity ────────────────────────────────────────
         if (math.abs(integrity - lastPubIntegrity) > Epsilon)
         {
             lastPubIntegrity = integrity;
             OnIntegrityChanged?.Invoke(integrity);
         }
 
-        // ── Pressure ─────────────────────────────────────────
         if (math.abs(pressure - lastPubPressure) > Epsilon)
         {
             lastPubPressure = pressure;
@@ -252,37 +342,32 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Checks for lethal conditions and triggers death sequence.
-    /// </summary>
     private void CheckLethalConditions()
     {
         if (oxygen > 0f && integrity > 0f) return;
 
         alive = false;
         OnDeath?.Invoke();
-        enabled = false;          // stop further Updates
+
+        enabled = false;
     }
 
     // ═════════════════════════════════════════════════════════
-    //  PUBLIC API  (items, inventory, triggers)
+    //  PUBLIC API (items, inventory, triggers)
     // ═════════════════════════════════════════════════════════
 
-    /// <summary>Replenish O₂ (e.g., from an oxygen tank pickup).</summary>
     public void RefillOxygen(float amount)
     {
         oxygen = math.min(stats.MaxOxygen, oxygen + math.max(0f, amount));
         ForceDirty(ref lastPubOxygen);
     }
 
-    /// <summary>Recharge the suit battery.</summary>
     public void RechargeEnergy(float amount)
     {
-        energy = math.min(stats.MaxEnergy, energy + math.max(0f, amount));
+        energy = math.clamp(energy + amount, 0f, stats.MaxEnergy);
         ForceDirty(ref lastPubEnergy);
     }
 
-    /// <summary>Repair hull integrity (e.g., repair kit).</summary>
     public void Repair(float amount)
     {
         integrity = math.min(stats.MaxIntegrity, integrity + math.max(0f, amount));
@@ -290,22 +375,36 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// Sets current equipment weight in kg.
-    /// Called by the inventory system when items are added or removed.
+    /// Наносит урон целостности костюма (integrity).
+    /// Вызывается извне: существами (HectonBaseAI), ловушками, средой.
+    ///
+    /// <param name="amount">Абсолютное значение урона (положительное число).
+    /// Отрицательные значения игнорируются (используй Repair для лечения).</param>
+    ///
+    /// Zero-GC: никаких аллокаций. Проверка смерти — через throttled events.
     /// </summary>
+    public void TakeDamage(float amount)
+    {
+        if (!alive)  return;
+        if (amount <= 0f) return;
+
+        integrity = math.max(0f, integrity - amount);
+        ForceDirty(ref lastPubIntegrity);
+
+        // ── Немедленная проверка смерти ──
+        // Не ждём следующий Tick — игрок может умереть между кадрами
+        // при множественных попаданиях за один кадр.
+        CheckLethalConditions();
+    }
+
     public void SetWeight(float kg)
     {
         weight = math.max(0f, kg);
         OnWeightChanged?.Invoke(weight);
     }
 
-    /// <summary>Update the water surface Y-coordinate at runtime.</summary>
     public void SetSurfaceY(float y) => surfaceWorldY = y;
 
-    /// <summary>
-    /// Swap the stats profile at runtime (e.g., suit upgrade).
-    /// Re-initialises all values from the new asset.
-    /// </summary>
     public void OverrideStats(SurvivalStats newStats)
     {
         if (newStats == null)
@@ -319,7 +418,6 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
         energy    = math.min(energy,    stats.MaxEnergy);
         integrity = math.min(integrity, stats.MaxIntegrity);
 
-        // Force all events to re-publish with the new data context
         lastPubOxygen    = DirtySentinel;
         lastPubEnergy    = DirtySentinel;
         lastPubDepth     = DirtySentinel;
@@ -329,9 +427,5 @@ public sealed class HectonSurvivalSystem : MonoBehaviour
 
     // ─── Internal utility ────────────────────────────────────
 
-    /// <summary>
-    /// Resets a last-published tracker to the dirty sentinel,
-    /// ensuring the next PublishDirty() call fires the corresponding event.
-    /// </summary>
     private static void ForceDirty(ref float lastPub) => lastPub = DirtySentinel;
 }

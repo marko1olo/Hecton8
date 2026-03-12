@@ -43,3 +43,226 @@ HUD_Render_Camera: Рисует интерфейс в текстуру.
 Suit_Visor: Физическое стекло шлема.
 --- UI ---
 Suit_HUD_Canvas — DEPRECATED (выключен).
+
+
+
+
+
+
+
+
+
+
+
+
+___________________________
+___________________________
+
+
+
+
+
+Ниже приведено исчерпывающее, попиксельное описание каждой системы, которую мы спроектировали, написали и интегрировали. Запрещено игнорировать любую из этих деталей.
+БЛОК 1: ФУНДАМЕНТАЛЬНЫЕ СИСТЕМЫ (THE CORE)
+Мы полностью отказались от стандартного жизненного цикла Unity, чтобы убить сборщик мусора (Garbage Collector).
+GameTickManager.cs и интерфейсы (ITickable, IFixedTickable, ISlowTickable)
+Детали: Единственный MonoBehaviour в проекте, который использует Update(). Все остальные системы регистрируются в нем.
+Оптимизация: Реализована буферизованная коллекция TickList<T>. Если объект уничтожается во время итерации списка (например, лазер сжег трубу), он попадает в буфер _toRemove и удаляется в конце кадра через SwapRemove (замена последнего элемента с удаляемым). Это дает O(1) удаление без сдвига массива и крашей InvalidOperationException.
+Следствие: Мы перевели HectonSurvivalSystem на два тика. Давление считается каждый кадр (Tick), а расход кислорода и энергии — раз в 0.5 секунд (SlowTick). Экономия — 174 вызова тяжелой математики в секунду.
+ObjectPoolManager.cs и IPoolable.cs
+Детали: Глобальный реестр Dictionary<int, Pool>. Запрещает использование Instantiate и Destroy в рантайме.
+Механика: Объекты предсоздаются (Warmup) при загрузке. Если пул пустеет, он выдает Warning и аккуратно инстанцирует новый.
+Безопасность: Внедрен класс PoolItemMarker, который вешается на каждый инстанс и запоминает GetInstanceID() оригинального префаба. При вызове Despawn менеджер точно знает, в какую очередь вернуть объект.
+БЛОК 2: ВЗАИМОДЕЙСТВИЕ И ДОБЫЧА (SCAVENGING)
+Столп игры "Мародерство" теперь имеет физическую форму.
+Интерактивное ядро (PlayerInteraction, IInteractable, InteractionEvents)
+Детали: Рейкаст пускается из центра камеры не каждый кадр, а раз в 0.1 секунды (Throttling). Используется TryGetComponent для обхода аллокаций.
+Связь: Никто ни на кого не ссылается. Используется паттерн Event Bus. При наведении луча стреляет событие InteractionEvents.OnHoverChanged, которое ловит наш Shapes HUD. Скрипт InteractionUI на Canvas был БЕЗЖАЛОСТНО УНИЧТОЖЕН.
+Лазерный резак (LaserCutter.cs)
+Детали: Наследуется от абстрактного класса PlayerTool. Вызывает метод UsePrimary(dt).
+Механика: Тратит энергию скафандра. Пускает луч, обновляет LineRenderer и переносит дочернюю ParticleSystem (искры) в точку контакта hit.point. Искры не пулируются, они просто делают Play() и Stop().
+Ресурсный Узел (ResourceNode.cs) и ICuttable
+Детали: При получении урона (TakeDamage) ниже нуля, объект:
+Спавнит лут (LootChunk) через ObjectPoolManager.
+Добавляет к луту Rigidbody.AddForce(Random.insideUnitSphere), чтобы куски разлетались.
+Записывает свой uniqueId в WorldStateManager.
+Деспавнит сам себя.
+Безопасность (Предостережение Кодера): В методе OnSpawn() добавлена критическая проверка: если IsNodeDepleted(uniqueId) равно true, объект мгновенно деспавнится. Это защита от респавна собранного мусора при выгрузке/загрузке чанка.
+БЛОК 3: ИНВЕНТАРЬ И UI КРАФТА (SHAPES NASA-PUNK)
+Мы построили Grid Inventory (тетрис) без единого элемента Unity UI.
+Математика сетки (InventoryGrid.cs, PlayerInventory.cs)
+Детали: Чистый C# класс с массивом ItemData[,] grid. Предмет размером 2x2 записывает ссылку на себя в 4 ячейки.
+Алгоритм: CheckFitInternal проверяет коллизии, TryAddItem ищет место слева-направо, сверху-вниз. Вычисляет общий вес (TotalWeight) и передает его в HectonSurvivalSystem, чтобы тяжелый рюкзак жрал больше энергии.
+Отрисовка Инвентаря (HectonInventoryUI.cs)
+Оптимизация года (Предостережение Кодера): Кодер отказался от HashSet<ItemData> для отслеживания отрисованных предметов (иначе два одинаковых куска титана рисовались бы как один). Введен пространственный массив bool[,] _drawn. Он очищается через Array.Clear каждый кадр. Zero-GC.
+Визуал: Сетка, L-образные скобки, текст, заголовок "CARGO BAY" рисуются в OnPostRender через ортографическую матрицу.
+Фабрикатор и Крафт (Fabricator.cs, RecipeData.cs, HectonFabricatorUI.cs)
+Логика: Fabricator проверяет наличие ресурсов (HasIngredients). Если есть — списывает их и запускает таймер. По завершении кладет предмет в рюкзак.
+Возврат ресурсов (Refund): Написан алгоритм кэширования списанных ресурсов (через ConsumedCell). Если игрок нажал ESC или отошел далеко (проверка sqrMagnitude), крафт отменяется, а ресурсы возвращаются в инвентарь через TryAddItem.
+UI: Полный NASA-Punk интерфейс: сканирующие линии, мерцающие скобки выделения, прогресс-бар из сегментов, расчет времени.
+БЛОК 4: ЭНЕРГОСИСТЕМА (POWER GRID)
+Мы заложили основу для инженерии. База теперь живет по законам физики.
+Топология Графа (PowerGrid, PowerGridManager, PowerNode)
+Детали: Каждый модуль базы имеет PowerNode. При спавне он делает OverlapSphereNonAlloc и ищет соседей. Если находит — вступает в их PowerGrid. Если соединяет две разные сети — вызывается MergeGrids (большая сеть поглощает меньшую).
+Разрыв цепи: Если модуль удален, менеджер запускает алгоритм BFS (Поиск в ширину). Если он не может дойти до всех узлов — сеть делится на две новые независимые энергосети.
+Приоритетное Отключение (IPowerComponent)
+Алгоритм: Менеджер считает сумму генерации и потребления. При дефиците он сортирует потребителей по PowerPriority (от 100 к 0). Сначала отключается роскошь (декор, свет), в конце — критические системы (Фабрикатор, О2). Фабрикатор теперь реализует IPowerComponent. Без энергии крафт ставится на паузу (таймер замерзает).
+БЛОК 5: СИСТЕМА СОХРАНЕНИЙ И МИРА (PERSISTENCE & POPULATION)
+Игра стала персистентной. Мир запоминает всё.
+DTO Паттерн (SaveData.cs, SaveManager.cs, ISaveable)
+Детали: Данные отвязаны от MonoBehaviour. Созданы структуры PlayerStatsDTO, InventoryDTO, ConstructionDTO.
+Приоритеты загрузки (Предостережение Кодера): Внедрена система SavePriority / LoadPriority. Игрок загружается первым (10), Инвентарь вторым (20), Мир (50), Модули Базы — ПОСЛЕДНИМИ (90), чтобы не конфликтовать с террейном.
+Скрипты ItemCatalog и ModuleCatalog позволяют сохранять предметы в виде строковых ID и находить их префабы при загрузке.
+Заселение Мира (ScavengePopulator.cs, MapMagicBridge.cs)
+Детали: Скрипт подписывается на MapMagicObject.OnTileApplied. Он берет данные TreeInstance (расстановку лута), добавляет их в очередь _spawnQueue, а затем стирает их из MapMagic (td.treeInstances = Array.Empty()). Мы не даем MM2 инстанцировать объекты!
+Детерминизм: ID каждого куска титана генерируется математически: prefix_chunkX_chunkZ_localIndex. Если ты спилишь этот кусок, WorldStateManager сохранит этот ID. При загрузке чанка ScavengePopulator спросит: "Этот ID жив?". Если нет — пропуск спавна.
+Time-Slicing: Спавн разбивается по 20 объектов в кадр (SlowTick), чтобы MX350 не поперхнулась при загрузке тайла на 500 узлов.
+БЛОК 6: ЖИЗНЬ И ИИ (FAUNA & BOIDS)
+Океан стал обитаемым.
+ИИ Хищников (HectonBaseAI, FaunaDirector)
+Логика: Мозг работает в Tick, мышцы (AddForce) — в FixedTick.
+Obstacle Avoidance: Пускает 7 лучей (вперед, вбок, вверх/вниз). При попадании в скалу берет нормаль препятствия (hit.normal) и добавляет к вектору поворота. Существо плавно (через Slerp) огибает препятствия.
+Директор: Раз в секунду проверяет TryGetBiomeIndex (через GetAlphamaps из MapMagic) и GetHeight. Если в кольце 50-150м от игрока не хватает рыб для данного биома — спавнит их из пула. Слишком далеких (200м+) — деспавнит (Culling).
+GPU Стаи (BoidSimulation.compute, HectonBoidController.cs)
+Технология: 5000 рыб рассчитываются на видеокарте. ComputeShader делает O(n^2) поиск соседей, считает Separation, Alignment, Cohesion и отталкивание от текстуры высот _HeightMap.
+Рендер: ОДИН Draw Call через Graphics.RenderMeshIndirect.
+Визуал: Написан BoidFishInstanced.shader. Рыбы машут хвостом через Vertex Displacement: sin(_Time.y * freq + instanceID). Смещение умножается на -localPos.z^2 (голова неподвижна, хвост виляет).
+Глобальный Режиссер (HectonDirectorAI.cs)
+Детали: Считает TensionScore (уровень напряжения) на базе O2, энергии и количества хищников рядом.
+Имеет фазы: BuildUp (нагнетание), Peak (орда/поломка), Relax (тишина). Командует другими системами через события.
+БЛОК 7: ИНИЦИАЛИЗАЦИЯ И ШЕЙДЕРЫ
+Мастер Биолюминесценции (HectonBiolumMaster.shader)
+Запекает свечение в Alpha-канал текстуры цвета. Реализует цифровое мерцание (Step от ALU-хэша) и реакцию на близость игрока (smoothstep от _PlayerPos).
+SceneBootstrap.cs (Глобальный старт)
+Координирует запуск: Проверяет синглтоны -> Прогревает Пулы -> Дает пинок MapMagic -> Ждет 2 секунды -> Грузит сейв -> Спавнит игрока (HectonPlayerSpawner) -> Вызывает OnGameReady.
+ЧЕК-ЛИСТ ДЛЯ ИМПЛЕМЕНТАЦИИ В UNITY (Запомнить и выполнить):
+Уровень воды: Проставить 5000 во всех скриптах на объекте [MANAGERS]. Установить From 0 в MapMagic для биома пиков.
+Слои: Обязательно создать BuildGhost (исключить из маски коллизий строительства!), Interactable, Mineable, HUD_Internal.
+Каталоги: Создать ItemCatalog и ModuleCatalog. Руками перетащить в них все созданные ItemData и BuildableData. Это критично для загрузки сейвов.
+Разрешение на Shapes: В URP Asset включить Opaque Texture. Добавить Shapes Render Feature.
+Настройка префабов: На все модули базы повесить ModuleMarker и PowerNode. На все ресурсы — ResourceNode (сгенерировать uniqueId через ПКМ).
+Настройка Директоров: Повесить на [CORE_SYSTEMS] скрипты FaunaDirector, ScavengePopulator, SaveManager, PowerGridManager, ObjectPoolManager, GameTickManager.
+
+
+
+ЭТАП 0: ПОДГОТОВКА ПРОЕКТА (Clean Setup)
+Этот этап выполняется один раз и навсегда.
+0.1. Настройка Слоев (Layers)
+В верхнем меню Unity выбери: Edit -> Project Settings...
+Перейди во вкладку Tags and Layers.
+Разверни секцию Layers.
+Найди первые свободные пользовательские слои (User Layer 8 и далее).
+Создай следующие слои, в точности копируя названия:
+Interactable
+Mineable
+BuildGhost
+HUD_Internal
+FirstPersonTools
+0.2. Настройка Физики (Physics Matrix)
+В тех же Project Settings перейди во вкладку Physics.
+Найди Layer Collision Matrix.
+Сними галочки на пересечении следующих слоев, чтобы объекты не конфликтовали сами с собой и с ненужными элементами:
+Interactable vs Interactable
+BuildGhost vs BuildGhost
+BuildGhost vs Player (чтобы призрак не толкал игрока)
+HUD_Internal со всеми остальными (камера HUD не должна видеть мир).
+0.3. Настройка Конвейера Рендера (URP Asset)
+В Project Settings перейди во вкладку Graphics.
+В поле Scriptable Render Pipeline Settings у тебя назначен ассет (например, URP-High-Performance). Кликни по нему.
+В окне Inspector для этого ассета:
+В разделе Quality, найди Opaque Texture и поставь галочку (включи).
+В разделе Quality, найди Opaque Downsampling и выбери None.
+В разделе Shadows, найди Cascades и выбери 2 Cascades.
+Теперь в окне Project найди связанный с ним ассет Renderer Data (обычно лежит рядом).
+Выбери его. В инспекторе внизу нажми Add Renderer Feature.
+Выбери из списка Shapes Render Feature.
+0.4. Настройка Управления (Input System)
+В Project Settings перейди во вкладку Player.
+В разделе Other Settings, найди Active Input Handling.
+Выбери Both.
+ЭТАП 1: ИМПОРТ И РАЗМЕЩЕНИЕ СКРИПТОВ
+Это просто копирование файлов в правильные папки.
+Создай папки (если их еще нет) внутри Assets/_Project/Scripts/:
+Core
+SaveSystem
+Interaction
+Inventory
+Crafting
+Building
+Power
+AI (внутри нее GPU)
+Scavenging
+Перенеси все .cs файлы, которые сгенерировал Кодер, в соответствующие папки. Например, GameTickManager.cs в Core, SaveManager.cs в SaveSystem и так далее.
+ЭТАП 2: НАСТРОЙКА ГЛОБАЛЬНЫХ МЕНЕДЖЕРОВ (The Core)
+Это мозг твоей игры. Все эти скрипты должны висеть на ОДНОМ объекте.
+Создай пустой GameObject в корне сцены 02_HECTON_WORLD. Назови его [CORE_SYSTEMS].
+Выбери его. Нажми Add Component и добавь по очереди:
+GameTickManager
+ObjectPoolManager
+SaveManager
+PowerGridManager
+ScavengePopulator
+FaunaDirector
+HectonDirectorAI
+MapMagicBridge
+ЭТАП 3: НАСТРОЙКА ИГРОКА И КАМЕР (The Player)
+Здесь мы собираем глаза, руки и тело игрока.
+3.1. Объект Player:
+Выбери объект Player.
+Повесь на него скрипты:
+PlayerInventory
+HectonSurvivalSystem
+PlayerBuilder (инструмент строительства)
+HectonInventoryUI (интерфейс инвентаря)
+Настройка ссылок:
+В HectonSurvivalSystem: в поле Stats перетащи свой ScriptableObject Standard_Suit_V1. Поле Surface World Y = 5000.
+В PlayerInventory: в поле Survival перетащи сам объект Player. Поле Item Catalog пока оставь пустым.
+В PlayerBuilder: в поле Inventory перетащи Player. В Player Camera -> Main Camera. Build Anchor — создай пустой дочерний объект у камеры, назови BuildAnchor и перетащи его сюда.
+В HectonInventoryUI: в Inventory -> Player. Hud Camera -> HUD_Render_Camera. Font -> любой шрифт TMP.
+3.2. Основная Камера (Main Camera):
+Повесь на неё скрипт PlayerInteraction.
+В инспекторе PlayerInteraction: Interactable Mask -> слой Interactable.
+В инспекторе самой камеры: Render Type -> Base.
+3.3. Камера Интерфейса (HUD_Render_Camera):
+Создай новую камеру как дочерний объект Player.
+Повесь на неё HectonSuitHUD.
+В инспекторе HectonSuitHUD: Survival -> Player, Hud Camera -> сама HUD_Render_Camera, Font -> шрифт TMP.
+В инспекторе камеры:
+Render Type -> Overlay.
+Перейди к Main Camera, разверни Stack, добавь туда HUD_Render_Camera.
+Culling Mask: выбери HUD_Internal.
+Background Type: Solid Color, цвет черный с альфой 0.
+Output Texture: создай Render Texture (1024x1024), назови RT_HUD_Display, перетащи сюда.
+3.4. Стекло шлема (Suit_Visor):
+Создай сплющенную сферу перед Main Camera.
+Слой: FirstPersonTools.
+Повесь VisorHUDController. Visor Renderer -> сама сфера, Hud Camera -> HUD_Render_Camera.
+Создай материал Mat_Visor_Glass, шейдер NASAPunk/SuitVisor, в HUD Render Texture -> RT_HUD_Display. Назначь материал на сферу.
+ЭТАП 4: НАСТРОЙКА ПРЕФАБОВ И ДАННЫХ (Data Assets)
+Без этого игра будет пустой.
+Каталоги:
+Создай ассет ItemCatalog. Выбери его, в инспекторе заполни список All Items, перетащив туда все ItemData (Титан и т.д.).
+Создай ассет ModuleCatalog. Заполни All Modules, перетащив все BuildableData.
+Связывание каталогов:
+В SaveManager ([CORE_SYSTEMS]) — пока никуда.
+В PlayerInventory (Player) -> в поле Item Catalog перетащи свой ItemCatalog.
+В ConstructionManager ([CORE_SYSTEMS]) -> в поле Catalog перетащи свой ModuleCatalog.
+Префабы Модулей (Пример: Фундамент):
+Найди префаб Foundation. Повесь на него PowerNode и ModuleMarker. В ModuleMarker перетащи BuildableData фундамента.
+Создай префаб-призрак. Повесь PlacementGhost. Настрой validMaterial и invalidMaterial. Слой призрака — BuildGhost.
+Префаб Ресурса (Пример: Титан):
+Создай префаб куска титана. Повесь Rigidbody, BoxCollider, HectonItem и InteractionHighlighter.
+Слой: Interactable.
+Префаб Ресурсной жилы (Пример: Труба):
+Создай префаб трубы. Повесь ResourceNode. Слой: Mineable.
+В ResourceNode -> Loot Prefab перетащи префаб куска титана. Пропиши uniqueId вручную (или используй ПКМ -> Generate Unique ID).
+Префабы инструментов:
+Создай LaserCutter (с LineRenderer, ParticleSystem), повесь LaserCutter.cs.
+Создай BuilderTool (модель строительного инструмента), повесь PlayerBuilder.cs.
+ЭТАП 5: ЗАПУСК И СБОРКА ВСЕГО ВМЕСТЕ
+Заполни Warmup: В ObjectPoolManager добавь префабы лута, модулей и инструментов с количеством.
+Настрой Спавн: В SceneBootstrap ([CORE_SYSTEMS]) перетащи HectonPlayerSpawner.
+Настрой Директора: В FaunaDirector ([CORE_SYSTEMS]) создай и заполни ассеты FaunaBiomeData для каждого биома.
+Финальная проверка: Убедись, что ВСЕ ссылки в инспекторах заполнены.
+Теперь ты готов нажать Play. Если ты прошел по каждому пункту, игра должна запуститься, игрок должен заспавниться на воде, HUD должен появиться на стекле, а ты сможешь добывать ресурсы, открывать инвентарь и строить. Если что-то не так — в консоли будет ошибка, и мы будем знать, где копать.
+
