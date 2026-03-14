@@ -120,9 +120,9 @@ namespace Shapes {
 				using( new EditorGUI.DisabledScope( true ) ) {
 					using( new EditorGUILayout.HorizontalScope() ) {
 						EditorGUILayout.PrefixLabel( new GUIContent( "Style", "3D lines support basic dashes only" ) );
-						GUILayout.Toggle( true, UIAssets.LineDashButtonContents[0], ShapesUI.GetMiniButtonStyle( 0, 3 ), GUILayout.MinHeight( 20 ) );
-						GUILayout.Toggle( false, UIAssets.LineDashButtonContents[1], ShapesUI.GetMiniButtonStyle( 1, 3 ), GUILayout.MinHeight( 20 ) );
-						GUILayout.Toggle( false, UIAssets.LineDashButtonContents[2], ShapesUI.GetMiniButtonStyle( 2, 3 ), GUILayout.MinHeight( 20 ) );
+						const int COUNT = 4;
+						for( int i = 0; i < COUNT; i++ )
+							GUILayout.Toggle( i == 0, UIAssets.LineDashButtonContents[i], ShapesUI.GetMiniButtonStyle( i, COUNT ), GUILayout.MinHeight( 20 ) );
 					}
 				}
 			}

@@ -11,12 +11,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
         [HDR] _AtmosColorInner ("Atmos Inner", Color) = (0.4, 0.3, 0.7, 1)
         [HDR] _AtmosColorOuter ("Atmos Outer", Color) = (0.5, 0.4, 0.9, 1)
 
-        [Header(Differential Rotation)]
+        [Header(Rotation)]
         _GlobalRotation ("Global Rotation (set from C#)", Float) = 0.0
         _EquatorialSpeed ("Equatorial Speed", Float) = 0.02
-        _PolarMultiplier ("Polar Multiplier", Range(0, 1)) = 0.4
-        _VerticalWiggleFreq ("Vertical Wiggle Frequency", Float) = 6.0
-        _VerticalWiggleAmp ("Vertical Wiggle Amplitude", Float) = 0.003
 
         [Header(Detail Layer)]
         _DetailTiling ("Detail Tiling", Vector) = (3, 3, 0, 0)
@@ -95,11 +92,26 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             // ─────────────────────────────────────────────────────────
             // CBUFFER (SRP Batcher compatible)
             //
-            // _GlobalRotation: float (full 32-bit precision).
-            // This value is a fractional accumulator set from C#.
-            // Using half (16-bit) here would cause visible UV jitter
-            // on low-end GPUs (MX series, Mali, Adreno) after ~10 min
-            // of gameplay due to mantissa exhaustion.
+            // PRECISION POLICY:
+            //   _GlobalRotation: MUST be float (32-bit).
+            //   This is a fractional accumulator set from C# every frame.
+            //   Using half (16-bit, 10-bit mantissa) would cause visible
+            //   UV jitter after ~10 minutes on low-end GPUs (MX series,
+            //   Mali, Adreno) due to mantissa exhaustion at large values.
+            //
+            //   _EquatorialSpeed: float (participates in _GlobalRotation math).
+            //   _DetailSpeedMult: float (participates in _GlobalRotation math).
+            //   _StormSpeed: float (participates in _GlobalRotation math).
+            //
+            //   All other parameters: half (visual params, no precision risk).
+            //
+            // REMOVED PROPERTIES (v2 cleanup):
+            //   _PolarMultiplier — latitude-based speed was producing
+            //     visible seams at UV poles and adding complexity for
+            //     minimal visual benefit. Banding comes from textures.
+            //   _VerticalWiggleFreq / _VerticalWiggleAmp — removed for
+            //     the same reason. Vertical turbulence is better achieved
+            //     through texture authoring.
             // ─────────────────────────────────────────────────────────
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
@@ -110,13 +122,11 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half4  _AtmosColorOuter;
 
                 float  _GlobalRotation;          // float — precision-critical
-                half   _EquatorialSpeed;
-                half   _PolarMultiplier;
-                half   _VerticalWiggleFreq;
-                half   _VerticalWiggleAmp;
+                float  _EquatorialSpeed;         // float — used in rotation math
+                float  _DetailSpeedMult;         // float — used in rotation math
 
                 float4 _DetailTiling;
-                half   _DetailSpeedMult;
+
                 half   _DetailStrength;
 
                 half   _BacklitIntensity;
@@ -135,13 +145,13 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
                 half   _StormEmission;
                 float4 _StormTiling;
-                half   _StormSpeed;
+                float  _StormSpeed;              // float — used in rotation math
 
                 half   _PlanetPhase;
             CBUFFER_END
 
             // ─────────────────────────────────
-            // GLOBALS (set from C#)
+            // GLOBALS (set from C# HectonAtmosphereManager)
             // ─────────────────────────────────
             float4 _SunDirection;
 
@@ -168,43 +178,61 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             };
 
             // ─────────────────────────────────────────────────────────
-            // DIFFERENTIAL ROTATION (precision-safe, simplified)
+            // CONSTANT-SPEED ROTATION (precision-safe)
             //
-            // Uses _GlobalRotation (fractional accumulator from C#)
-            // instead of _Time.y to prevent float precision loss.
+            // _GlobalRotation is a fractional accumulator from C#:
+            //   _GlobalRotation += speed * Time.deltaTime;
+            //   _GlobalRotation = frac(_GlobalRotation);
             //
-            // speedMultiplier: allows detail layer to spin faster.
+            // C# keeps _GlobalRotation in [0,1) via frac(), so the GPU
+            // never sees large float values — zero precision loss.
             //
-            // ALL local math uses float (32-bit) to prevent UV jitter
-            // on MX-series and mobile GPUs. half is PROHIBITED here.
+            // speedMultiplier: allows detail/storm layers to scroll
+            // at different rates relative to the base cloud deck.
             //
-            // SIMPLIFIED: No latitude/polar logic. Pure linear scroll.
-            // The visual banding comes from the texture itself, not
-            // from differential math — cleaner and artifact-free.
+            // ALL math uses float (32-bit). half is PROHIBITED in
+            // rotation/UV chains to prevent jitter on MX350/Mali GPUs.
+            //
+            // SIMPLIFIED vs v1:
+            //   - No latitude/polar speed logic (removed _PolarMultiplier).
+            //   - No vertical wiggle (removed _VerticalWiggleFreq/Amp).
+            //   - Pure linear horizontal scroll — clean, artifact-free.
+            //   - Visual banding comes from texture authoring, not math.
             // ─────────────────────────────────────────────────────────
-            float2 DifferentialRotation(float2 uv, float speedMultiplier)
+            float2 ConstantRotation(float2 uv, float speedMultiplier)
             {
-                // Full 32-bit precision chain — no half anywhere.
-                float speed    = (float)_EquatorialSpeed * speedMultiplier;
-                float rotatedX = frac(uv.x + _GlobalRotation * speed);
-
+                // Full 32-bit chain: _GlobalRotation (float) * speed (float)
+                float offset = _GlobalRotation * _EquatorialSpeed * speedMultiplier;
+                float rotatedX = frac(uv.x + offset);
                 return float2(rotatedX, uv.y);
             }
 
             // ─────────────────────────────────────────────────────────
-            // RESOLVE SUN DIRECTION — Fallback-safe.
+            // RESOLVE SUN DIRECTION — Fallback-safe
             //
-            // If _SunDirection is zero (C# script not running, editor
-            // preview, prefab isolation, etc.), we use a hardcoded
-            // fallback vector so the planet is always visible.
+            // PROBLEM: _SunDirection is set by HectonAtmosphereManager
+            // via Shader.SetGlobalVector. During the first frame(s),
+            // or in editor preview / prefab isolation, _SunDirection
+            // may be (0,0,0). This causes dot(N, L) = 0 for all
+            // fragments → the planet renders pitch black.
             //
-            // The fallback direction (1, 0.5, 1) is chosen to produce
-            // a pleasant 3/4 lit view in the editor scene view.
+            // SOLUTION: Check length(_SunDirection.xyz). If near zero,
+            // substitute a hardcoded "fake sun" direction that produces
+            // a pleasant 3/4 lit view (warm upper-right illumination).
             //
-            // Returns: normalized direction FROM the sun (towards planet).
-            //          To get direction TO the sun, negate the result.
+            // The fallback direction (1, 0.5, 0.2) is chosen to:
+            //   - Light the planet from an upper-right angle
+            //   - Produce visible terminator and atmosphere
+            //   - Look natural in both editor and runtime
+            //
+            // Returns: direction FROM the sun (towards planet surface).
+            //          Negate for standard NdotL lighting (L = -result).
+            //
+            // PERFORMANCE: length() + branch costs ~2 ALU ops per fragment.
+            // Negligible compared to texture sampling. Branch is coherent
+            // (all fragments take the same path) so no divergence penalty.
             // ─────────────────────────────────────────────────────────
-            static const float3 FALLBACK_SUN_DIR = normalize(float3(1.0, 0.5, 1.0));
+            static const float3 FALLBACK_SUN_DIR = normalize(float3(1.0, 0.5, 0.2));
             static const float  SUN_DIR_THRESHOLD = 0.001;
 
             half3 ResolveSunDirection()
@@ -212,10 +240,12 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float3 raw = _SunDirection.xyz;
                 float  len = length(raw);
 
-                // If the global isn't set or is effectively zero, use fallback.
+                // Coherent branch: either ALL fragments use fallback or none.
+                // On the first frame _SunDirection is (0,0,0) → all fallback.
+                // After AtmosphereManager starts → all use real direction.
                 float3 resolved = (len < SUN_DIR_THRESHOLD)
                     ? FALLBACK_SUN_DIR
-                    : raw / len;       // manual normalize — we already have length
+                    : raw / len;       // manual normalize — we already computed length
 
                 return (half3)resolved;
             }
@@ -334,6 +364,16 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
             // ─────────────────────────────────────────────────────────
             // FRAGMENT
+            //
+            // CHANGES v2:
+            //   [FIX] ResolveSunDirection() prevents black planet when
+            //         _SunDirection is (0,0,0) during init.
+            //   [FIX] All rotation uses ConstantRotation() with float
+            //         precision — no half jitter at large values.
+            //   [DEL] Removed polarRotationMultiplier / latitude logic.
+            //   [DEL] Removed vertical wiggle.
+            //   [FIX] _EquatorialSpeed, _DetailSpeedMult, _StormSpeed
+            //         declared as float in CBUFFER (not half).
             // ─────────────────────────────────────────────────────────
             half4 GasGiantFrag(Varyings input) : SV_Target
             {
@@ -345,31 +385,29 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
                 // ═════════════════════════════════════════════════════
                 // SUN DIRECTION — Fallback-safe resolution.
-                //
-                // ResolveSunDirection() returns the direction FROM sun.
-                // L = direction TO sun (negated) for standard NdotL.
-                //
-                // This ensures the planet is always lit, even when:
-                //   - C# scripts haven't set _SunDirection yet
-                //   - Viewing prefab in isolation
-                //   - Editor scene view without play mode
+                // Guarantees the planet is ALWAYS lit, even when:
+                //   - C# AtmosphereManager hasn't started
+                //   - Prefab isolation / editor scene view
+                //   - First frame race condition
                 // ═════════════════════════════════════════════════════
                 half3 sunDir = ResolveSunDirection();
                 half3 L = -sunDir;    // direction TO the sun
 
                 // ═══════════════════════════════════════
                 // LAYER 1: BASE CLOUD DECK
+                // Constant-speed rotation, full float precision.
                 // ═══════════════════════════════════════
-                float2 baseUV = DifferentialRotation(input.uv, 1.0);
+                float2 baseUV = ConstantRotation(input.uv, 1.0);
                 half4 baseColor = SAMPLE_TEXTURE2D(
                     _MainTex, sampler_MainTex, baseUV);
 
                 // ═══════════════════════════════════════
-                // LAYER 2: UPPER HAZE / CLOUDS
+                // LAYER 2: UPPER HAZE / DETAIL CLOUDS
+                // Rotates faster by _DetailSpeedMult factor.
                 // ═══════════════════════════════════════
-                float2 hazeUV = DifferentialRotation(
+                float2 hazeUV = ConstantRotation(
                     input.uv * _DetailTiling.xy,
-                    (float)_DetailSpeedMult);
+                    _DetailSpeedMult);
                 half4 hazeColor = SAMPLE_TEXTURE2D(
                     _DetailTex, sampler_DetailTex, hazeUV);
 
@@ -406,9 +444,11 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     _SunBacklitFactor);
 
                 // ═══ STORM EMISSION ═══
-                float2 stormUV = baseUV * _StormTiling.xy
-                               + float2(_GlobalRotation * (float)_StormSpeed, 0.0);
-                stormUV.x = frac(stormUV.x);
+                // Uses ConstantRotation with storm-specific speed.
+                // _StormSpeed is float — no precision loss.
+                float stormSpeedRatio = _StormSpeed / (_EquatorialSpeed + 0.0001);
+                float2 stormBaseUV = input.uv * _StormTiling.xy;
+                float2 stormUV = ConstantRotation(stormBaseUV, stormSpeedRatio);
 
                 half4 stormRaw = SAMPLE_TEXTURE2D(
                     _EmissionTex, sampler_EmissionTex, stormUV);
@@ -571,12 +611,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
                 float  _GlobalRotation;
-                half   _EquatorialSpeed;
-                half   _PolarMultiplier;
-                half   _VerticalWiggleFreq;
-                half   _VerticalWiggleAmp;
+                float  _EquatorialSpeed;
+                float  _DetailSpeedMult;
                 float4 _DetailTiling;
-                half   _DetailSpeedMult;
                 half   _DetailStrength;
                 half   _BacklitIntensity;
                 half   _TerminatorWidth;
@@ -591,7 +628,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half   _EclipseRimPower;
                 half   _StormEmission;
                 float4 _StormTiling;
-                half   _StormSpeed;
+                float  _StormSpeed;
                 half   _PlanetPhase;
             CBUFFER_END
 

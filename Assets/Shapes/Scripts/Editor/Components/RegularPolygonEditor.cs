@@ -39,10 +39,13 @@ namespace Shapes {
 
 		void OnSceneGUI() {
 			RegularPolygon rp = target as RegularPolygon;
+			GradientFill fill = rp.Fill;
 			bool changed = discEditor.DoSceneHandles( rp );
-			changed |= fillEditor.DoSceneHandles( rp.UseFill, rp, rp.Fill, rp.transform );
-			if( changed )
+			changed |= fillEditor.DoSceneHandles( rp.UseFill, rp, ref fill, rp.transform );
+			if( changed ) {
+				rp.Fill = fill;
 				rp.UpdateAllMaterialProperties();
+			}
 		}
 
 		int[] indexToPolygonPreset = { 3, 4, 5, 6, 8 };

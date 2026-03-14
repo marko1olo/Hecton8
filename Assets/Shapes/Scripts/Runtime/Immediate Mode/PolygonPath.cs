@@ -31,7 +31,7 @@ namespace Shapes {
 		/// </summary>
 		public void BezierTo( Vector2 startTangent, Vector2 endTangent, Vector2 end, float pointsPerTurn ) {
 			int sampleCount = ShapesConfig.Instance.polylineBezierAngularSumAccuracy * 2 + 1;
-			float curveSumDeg = ShapesMath.GetApproximateCurveSum( LastPoint, startTangent, endTangent, end, sampleCount );
+			float curveSumDeg = ShapesMath.GetApproximateAngularCurveSumDegrees( LastPoint, startTangent, endTangent, end, sampleCount );
 			float angSpanTurns = curveSumDeg / 360f;
 			int pointCount = Mathf.Max( 2, Mathf.RoundToInt( angSpanTurns * ShapesConfig.Instance.polylineDefaultPointsPerTurn ) );
 			BezierTo( startTangent, endTangent, end, pointCount );

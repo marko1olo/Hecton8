@@ -19,7 +19,7 @@ namespace Shapes {
 			get {
 				if( instance == null ) {
 					// no cached one, see if we can find it in the scene
-					if( ( instance = FindObjectOfType<HDRPCustomPassManager>() ) == null ) {
+					if( ( instance = FindFirstObjectByType<HDRPCustomPassManager>() ) == null ) {
 						// nothing in the scene, create it
 						GameObject go = new GameObject( "Shapes HDRP Manager" ) { hideFlags = HideFlags.DontSave };
 						instance = go.AddComponent<HDRPCustomPassManager>();

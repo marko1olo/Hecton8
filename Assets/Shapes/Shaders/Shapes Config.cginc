@@ -5,6 +5,6 @@
 // Please use the Shapes settings window instead
 
 #define FRAG_OUTPUT_V4 half4
-#define LOCAL_ANTI_ALIASING_QUALITY 2
-#define QUAD_INTERPOLATION_QUALITY 1
+#define LOCAL_ANTI_ALIASING_QUALITY 1
+#define QUAD_INTERPOLATION_QUALITY 0
 #define NOOTS_ACROSS_SCREEN 100

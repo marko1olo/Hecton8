@@ -142,7 +142,9 @@ namespace Hecton8.Bootstrap
         [Header("── Debug ─────────────────────────────────────")]
         [SerializeField] private bool verboseLogging = true;
         [SerializeField] private string _debugCurrentStep = "Not started";
+#pragma warning disable CS0414 // Inspector-only diagnostic
         [SerializeField] private bool _debugCompleted;
+#pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS

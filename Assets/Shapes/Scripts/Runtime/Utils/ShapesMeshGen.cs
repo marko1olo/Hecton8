@@ -18,13 +18,28 @@ namespace Shapes {
 			return delta < 0.00001f;
 		}
 
+		static readonly ExpandoList<Color> meshColors = new ExpandoList<Color>();
+		static readonly ExpandoList<Vector3> meshVertices = new ExpandoList<Vector3>();
+		static readonly ExpandoList<Vector4> meshUv0 = new ExpandoList<Vector4>(); // UVs for masking. z contains endpoint status, w is thickness
+		static readonly ExpandoList<Vector3> meshUv1Prevs = new ExpandoList<Vector3>();
+		static readonly ExpandoList<Vector3> meshUv2Nexts = new ExpandoList<Vector3>();
+		static readonly ExpandoList<int> meshTriangles = new ExpandoList<int>();
+		static readonly ExpandoList<int> meshJoinsTriangles = new ExpandoList<int>();
+
 		public static void GenPolylineMesh( Mesh mesh, IList<PolylinePoint> path, bool closed, PolylineJoins joins, bool flattenZ, bool useColors ) {
-			mesh.Clear(); // todo maybe not always do this you know?
+			meshColors.Clear();
+			meshVertices.Clear();
+			meshUv0.Clear();
+			meshUv1Prevs.Clear();
+			meshUv2Nexts.Clear();
+			meshTriangles.Clear();
+			meshJoinsTriangles.Clear();
 
 			int pointCount = path.Count;
-
-			if( pointCount < 2 )
+			if( pointCount < 2 ) {
+				mesh.Clear(); // fixes 628-polyline-does-not-clear-mesh-when-point-count-2, 604-polyline-rendering-after-all-points-have-been-removed
 				return;
+			}
 			if( pointCount == 2 && closed )
 				closed = false;
 
@@ -43,44 +58,10 @@ namespace Shapes {
 			bool separateJoinMesh = joins.HasJoinMesh();
 			bool isSimpleJoin = joins.HasSimpleJoin(); // only used when join meshes exist
 			int vertsPerPathPoint = separateJoinMesh ? 5 : 2;
-			int trianglesPerSegment = separateJoinMesh ? 4 : 2;
 			int vertexCount = pointCount * vertsPerPathPoint;
-			int vertexCountTotal = vertexCount;
-			int segmentCount = closed ? pointCount : pointCount - 1;
-			int triangleCount = segmentCount * trianglesPerSegment;
-			int triangleIndexCount = triangleCount * 3;
 
 			// Joins mesh data
-			int[] meshJoinsTriangles = default;
-			int joinVertsPerJoin = default;
-			if( separateJoinMesh ) {
-				joinVertsPerJoin = isSimpleJoin ? 3 : 5;
-				int joinCount = closed ? pointCount : pointCount - 2;
-				int joinTrianglesPerJoin = isSimpleJoin ? 1 : 3;
-				int joinTriangleIndexCount = joinCount * joinTrianglesPerJoin * 3;
-				int vertexCountJoins = joinCount * joinVertsPerJoin;
-				vertexCountTotal += vertexCountJoins;
-				meshJoinsTriangles = new int[joinTriangleIndexCount];
-			}
-
-
-			Color[] meshColors = useColors ? new Color[vertexCountTotal] : null;
-			Vector3[] meshVertices = new Vector3[vertexCountTotal];
-
-			#if UNITY_2019_3_OR_NEWER
-			Vector4[] meshUv0 = new Vector4[vertexCountTotal]; // UVs for masking. z contains endpoint status, w is thickness
-			Vector3[] meshUv1Prevs = new Vector3[vertexCountTotal];
-			Vector3[] meshUv2Nexts = new Vector3[vertexCountTotal];
-			#else
-			// List<> is the only supported vec3 UV assignment method prior to Unity 2019.3
-			List<Vector4> meshUv0 = new List<Vector4>( new Vector4[vertexCountTotal] );
-			List<Vector3> meshUv1Prevs = new List<Vector3>( new Vector3[vertexCountTotal] );
-			List<Vector3> meshUv2Nexts = new List<Vector3>( new Vector3[vertexCountTotal] );
-			#endif
-
-
-			int[] meshTriangles = new int[triangleIndexCount];
-
+			int joinVertsPerJoin = isSimpleJoin ? 3 : 5;
 
 			// indices used per triangle
 			int iv0, iv1, iv2 = 0, iv3 = 0, iv4 = 0;
@@ -93,8 +74,7 @@ namespace Shapes {
 				bool makeJoin = closed || ( !isLast && !isFirst );
 				bool isEndpoint = closed == false && ( isFirst || isLast );
 				float uvEndpointValue = isEndpoint ? ( isFirst ? -1 : 1 ) : 0;
-				void SetUv0( int id, float x, float y ) => meshUv0[id] = new Vector4( x, y, uvEndpointValue, path[i].thickness );
-
+				float pathThickness = path[i].thickness;
 
 				// Indices & verts
 				Vector3 vert = flattenZ ? new Vector3( path[i].point.x, path[i].point.y, 0f ) : path[i].point;
@@ -192,27 +172,28 @@ namespace Shapes {
 					}
 				}
 
+				void SetUv0( ExpandoList<Vector4> uvArr, float uvEndpointVal, float pathThicc, int id, float x, float y ) => uvArr[id] = new Vector4( x, y, uvEndpointVal, pathThicc );
 				if( separateJoinMesh ) {
-					SetUv0( iv0, 0, 0 );
-					SetUv0( iv1, -1, -1 );
-					SetUv0( iv2, -1, 1 );
-					SetUv0( iv3, 1, -1 );
-					SetUv0( iv4, 1, 1 );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv0, 0, 0 );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv1, -1, -1 );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv2, -1, 1 );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv3, 1, -1 );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv4, 1, 1 );
 					if( makeJoin ) {
-						SetUv0( ivj0, 0, 0 );
+						SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj0, 0, 0 );
 						if( isSimpleJoin ) {
-							SetUv0( ivj1, 1, -1 );
-							SetUv0( ivj2, 1, 1 );
+							SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj1, 1, -1 );
+							SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj2, 1, 1 );
 						} else {
-							SetUv0( ivj1, 1, -1 );
-							SetUv0( ivj2, -1, -1 );
-							SetUv0( ivj3, -1, 1 );
-							SetUv0( ivj4, 1, 1 );
+							SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj1, 1, -1 );
+							SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj2, -1, -1 );
+							SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj3, -1, 1 );
+							SetUv0( meshUv0, uvEndpointValue, pathThickness, ivj4, 1, 1 );
 						}
 					}
 				} else {
-					SetUv0( iv0, -1, i );
-					SetUv0( iv1, 1, i );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv0, -1, i );
+					SetUv0( meshUv0, uvEndpointValue, pathThickness, iv1, 1, i );
 				}
 
 
@@ -263,15 +244,17 @@ namespace Shapes {
 			}
 
 			// assign to segments mesh
-			mesh.vertices = meshVertices;
-			mesh.subMeshCount = 2;
-			mesh.SetTriangles( meshTriangles, 0 );
-			mesh.SetTriangles( meshJoinsTriangles, 1 );
-			mesh.SetUVs( 0, meshUv0 );
-			mesh.SetUVs( 1, meshUv1Prevs );
-			mesh.SetUVs( 2, meshUv2Nexts );
+			mesh.Clear(); // todo maybe not always do this you know?
+			mesh.SetVertices( meshVertices.list );
+			mesh.subMeshCount = separateJoinMesh ? 2 : 1;
+			mesh.SetTriangles( meshTriangles.list, 0 );
+			if( separateJoinMesh )
+				mesh.SetTriangles( meshJoinsTriangles.list, 1 );
+			mesh.SetUVs( 0, meshUv0.list );
+			mesh.SetUVs( 1, meshUv1Prevs.list );
+			mesh.SetUVs( 2, meshUv2Nexts.list );
 			if( useColors )
-				mesh.colors = meshColors;
+				mesh.SetColors( meshColors.list );
 		}
 
 		enum ReflexState {

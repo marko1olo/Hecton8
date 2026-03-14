@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Crest::Crest.OceanRenderer
   _version: 0
-  _globalWindSpeed: 150
+  _globalWindSpeed: 30
   _viewpoint: {fileID: 0}
   _camera: {fileID: 0}
   _teleportThreshold: 10

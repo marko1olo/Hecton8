@@ -7,6 +7,11 @@ namespace Hellmade.Sound
 {
     /// <summary>
     /// Static class responsible for playing and managing audio and sounds.
+    ///
+    /// UNITY 6 FIX:
+    ///   FindObjectOfType → FindFirstObjectByType (non-deprecated API).
+    ///   FindFirstObjectByType uses FindObjectsSortMode.None by default
+    ///   which is faster than the sorted variant.
     /// </summary>
     public class EazySoundManager : MonoBehaviour
     {
@@ -59,13 +64,29 @@ namespace Hellmade.Sound
 
         private static bool initialized = false;
 
+        /// <summary>
+        /// Singleton accessor.
+        ///
+        /// UNITY 6 FIX: FindObjectOfType(typeof(T)) replaced with
+        /// FindFirstObjectByType&lt;T&gt;(). The generic variant is:
+        ///   - Non-deprecated in Unity 6
+        ///   - Type-safe (no cast needed)
+        ///   - Uses FindObjectsSortMode.None (faster — no InstanceID sort)
+        ///
+        /// FindFirstObjectByType returns the first found instance
+        /// with no guaranteed order — identical behavior to the
+        /// previous FindObjectOfType for singleton patterns.
+        /// </summary>
         private static EazySoundManager Instance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = (EazySoundManager)FindObjectOfType(typeof(EazySoundManager));
+                    // ── Unity 6 API: FindFirstObjectByType<T>() ──
+                    // Replaces deprecated FindObjectOfType(typeof(T))
+                    instance = FindFirstObjectByType<EazySoundManager>();
+
                     if (instance == null)
                     {
                         // Create gameObject and add component
@@ -404,19 +425,19 @@ namespace Hellmade.Sound
             foreach (int key in keys)
             {
                 Audio audio = null;
-				if (audioDict.ContainsKey(key))
-				{
-					audio = audioDict[key];
-				}
-				else if(audioPool.ContainsKey(key))
-				{
-					audio = audioPool[key];
-				}
-				if (audio == null)
-				{
-					return null;
-				}
-				if (audio.Clip == audioClip && audio.Type == audioType)
+                if (audioDict.ContainsKey(key))
+                {
+                    audio = audioDict[key];
+                }
+                else if(audioPool.ContainsKey(key))
+                {
+                    audio = audioPool[key];
+                }
+                if (audio == null)
+                {
+                    return null;
+                }
+                if (audio.Clip == audioClip && audio.Type == audioType)
                 {
                     return audio;
                 }

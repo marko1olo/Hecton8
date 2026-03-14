@@ -16,6 +16,7 @@ namespace Shapes {
 				zTest = ShapeRenderer.DEFAULT_ZTEST,
 				zOffsetFactor = ShapeRenderer.DEFAULT_ZOFS_FACTOR,
 				zOffsetUnits = ShapeRenderer.DEFAULT_ZOFS_UNITS,
+				colorMask = ShapeRenderer.DEFAULT_COLOR_MASK,
 				stencilComp = ShapeRenderer.DEFAULT_STENCIL_COMP,
 				stencilOpPass = ShapeRenderer.DEFAULT_STENCIL_OP,
 				stencilRefID = ShapeRenderer.DEFAULT_STENCIL_REF_ID,

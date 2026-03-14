@@ -4,6 +4,8 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using Object = UnityEngine.Object;
 
+// Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
+// Website & Documentation - https://acegikmo.com/shapes/
 namespace Shapes {
 
 	public class SceneFillEditor : SceneEditGizmos {
@@ -44,7 +46,7 @@ namespace Shapes {
 
 
 		// this runs per object selected
-		public bool DoSceneHandles( bool useFill, Object component, GradientFill fill, Transform tf ) {
+		public bool DoSceneHandles( bool useFill, Object component, ref GradientFill fill, Transform tf ) {
 			CheckForCancelEditAction();
 
 			if( useFill == false )

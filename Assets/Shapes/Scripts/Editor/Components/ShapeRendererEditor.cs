@@ -16,12 +16,14 @@ namespace Shapes {
 
 		static bool showDepth = false;
 		static bool showStencil = false;
+		static bool showCulling = false;
 
 		// ShapeRenderer
 		protected SerializedProperty propColor;
 		SerializedProperty propZTest = null;
 		SerializedProperty propZOffsetFactor = null;
 		SerializedProperty propZOffsetUnits = null;
+		SerializedProperty propColorMask = null;
 		SerializedProperty propStencilComp = null;
 		SerializedProperty propStencilOpPass = null;
 		SerializedProperty propStencilRefID = null;
@@ -31,6 +33,8 @@ namespace Shapes {
 		SerializedProperty propScaleMode = null;
 		SerializedProperty propDetailLevel = null;
 		SerializedProperty propRenderQueue = null;
+		SerializedProperty propCulling = null;
+		SerializedProperty propBoundsPadding = null;
 
 		// MeshRenderer
 		SerializedObject soRnd;
@@ -85,11 +89,20 @@ namespace Shapes {
 			"I've never found much use of this one, seems like a bad version of Z offset factor? It's mostly here for completeness I guess"
 		);
 
+		static GUIContent colorMaskGuiContent = new GUIContent(
+			"Color Mask",
+			"The color channels to render to (default is RGBA)\n\n" +
+			"This is useful when you want to specifically exclude writing to alpha, or, when you want it to not render color at all, and only render to stencil"
+		);
+
 		static GUIContent stencilCompGuiContent = new GUIContent( "Compare", "Stencil compare function" );
 		static GUIContent stencilOpPassGuiContent = new GUIContent( "Pass", "Stencil Op Pass" );
 		static GUIContent stencilIDGuiContent = new GUIContent( "Ref", "Stencil reference ID" );
 		static GUIContent stencilReadMaskGuiContent = new GUIContent( "Read Mask", "Bitmask for reading stencil values" );
 		static GUIContent stencilWriteMaskGuiContent = new GUIContent( "Write Mask", "Bitmask for writing stencil values" );
+
+		static GUIContent cullingContent = new GUIContent( "Culling", "Whether to use a calculated local space bounding box for frustum culling, or the global bounds setting" );
+		static GUIContent boundsPaddingContent = new GUIContent( "Padding", "Amount of local space padding in meters, to add to the bounds used for culling, when using CalculatedLocal culling" );
 
 		public virtual void OnEnable() {
 			soRnd = new SerializedObject( targets.Select( t => ( (Component)t ).GetComponent<MeshRenderer>() as Object ).ToArray() );
@@ -102,6 +115,26 @@ namespace Shapes {
 			// hide mesh filter/renderer components
 			foreach( ShapeRenderer shape in targets.Cast<ShapeRenderer>() )
 				shape.HideMeshFilterRenderer();
+
+			SceneView.duringSceneGui += SceneViewOnduringSceneGui;
+		}
+
+		public virtual void OnDisable() {
+			SceneView.duringSceneGui -= SceneViewOnduringSceneGui;
+		}
+
+		void SceneViewOnduringSceneGui( SceneView obj ) {
+			if( showCulling == false )
+				return;
+			foreach( ShapeRenderer shape in targets.OfType<ShapeRenderer>() ) {
+				Renderer r = shape.GetComponent<Renderer>();
+				if( r == null )
+					return;
+				Bounds bounds = r.localBounds;
+				Handles.matrix = shape.transform.localToWorldMatrix;
+				Handles.color = Color.white;
+				Handles.DrawWireCube( bounds.center, bounds.extents * 2 );
+			}
 		}
 
 		void FindAllProperties() {
@@ -123,7 +156,7 @@ namespace Shapes {
 
 		bool updateMeshFromEditorChange = false;
 
-		protected void BeginProperties( bool showColor = true, bool canEditDetailLevel = true ) {
+		protected void BeginProperties( bool showColor = true, bool canEditDetailLevel = true, bool isCustomMesh = false ) {
 			soRnd.Update();
 
 			using( new ShapesUI.GroupScope() ) {
@@ -149,12 +182,28 @@ namespace Shapes {
 
 				// stencil
 				using( new EditorGUI.IndentLevelScope( 1 ) ) {
-					if( showStencil = EditorGUILayout.Foldout( showStencil, "Stencil Buffer" ) ) {
+					if( showStencil = EditorGUILayout.Foldout( showStencil, "Masking" ) ) {
+						DrawColorMaskButtons();
 						EditorGUILayout.PropertyField( propStencilComp, stencilCompGuiContent );
 						EditorGUILayout.PropertyField( propStencilOpPass, stencilOpPassGuiContent );
 						EditorGUILayout.PropertyField( propStencilRefID, stencilIDGuiContent );
 						EditorGUILayout.PropertyField( propStencilReadMask, stencilReadMaskGuiContent );
 						EditorGUILayout.PropertyField( propStencilWriteMask, stencilWriteMaskGuiContent );
+					}
+				}
+				// Culling/bounds
+				using( new EditorGUI.IndentLevelScope( 1 ) ) {
+					if( showCulling = EditorGUILayout.Foldout( showCulling, "Culling" ) ) {
+						if( isCustomMesh == false )
+							EditorGUILayout.PropertyField( propCulling, cullingContent );
+						using( new EditorGUI.DisabledScope( isCustomMesh == false && propCulling.enumValueIndex == 1 ) )
+							EditorGUILayout.PropertyField( propBoundsPadding, boundsPaddingContent );
+						if( targets.Length == 1 && target is ShapeRenderer sh ) {
+							using( new EditorGUI.IndentLevelScope( 1 ) ) {
+								using( new EditorGUI.DisabledScope( true ) )
+									EditorGUILayout.BoundsField( sh.GetComponent<MeshRenderer>().localBounds );
+							}
+						}
 					}
 				}
 
@@ -175,7 +224,7 @@ namespace Shapes {
 					else // mixed selection
 						infix = "some of these objects are";
 
-					string label = $"Note: {infix} not GPU instanced due to custom depth/stencil settings";
+					string label = $"Note: {infix} not GPU instanced due to custom depth/mask settings";
 
 					GUIStyle wrapLabel = new GUIStyle( EditorStyles.miniLabel );
 					wrapLabel.wordWrap = true;
@@ -187,6 +236,7 @@ namespace Shapes {
 							propZTest.enumValueIndex = (int)ShapeRenderer.DEFAULT_ZTEST;
 							propZOffsetFactor.floatValue = ShapeRenderer.DEFAULT_ZOFS_FACTOR;
 							propZOffsetUnits.intValue = ShapeRenderer.DEFAULT_ZOFS_UNITS;
+							propColorMask.intValue = (int)ShapeRenderer.DEFAULT_COLOR_MASK;
 							propStencilComp.enumValueIndex = (int)ShapeRenderer.DEFAULT_STENCIL_COMP;
 							propStencilOpPass.enumValueIndex = (int)ShapeRenderer.DEFAULT_STENCIL_OP;
 							propStencilRefID.intValue = ShapeRenderer.DEFAULT_STENCIL_REF_ID;
@@ -230,6 +280,40 @@ namespace Shapes {
 		protected void PropertyFieldColor() => EditorGUILayout.PropertyField( propColor );
 		protected void PropertyFieldColor( string s ) => EditorGUILayout.PropertyField( propColor, new GUIContent( s ) );
 		protected void PropertyFieldColor( GUIContent content ) => EditorGUILayout.PropertyField( propColor, content );
+
+		const string colorCh = "RGBA";
+		const float COLOR_BTN_SAT = 0.5f;
+
+		static Color[] channelColors = new Color[] {
+			Color.HSVToRGB( 0, COLOR_BTN_SAT, 1 ),
+			Color.HSVToRGB( 1f / 3f, COLOR_BTN_SAT, 1 ),
+			Color.HSVToRGB( 2f / 3f, COLOR_BTN_SAT, 1 ),
+			Color.HSVToRGB( 0, 0, 1 ),
+		};
+
+		static Color channelUnsetColor = new Color( 0.5f, 0.5f, 0.5f, 1f );
+
+		void DrawColorMaskButtons() {
+			int value = propColorMask.intValue;
+
+			void DoButton( int i ) {
+				int flagValue = 1 << ( 3 - i ); // enum is in ABGR order
+				bool prevBit = ( value & flagValue ) > 0;
+				GUI.color = prevBit ? channelColors[i] : channelUnsetColor;
+				bool newBit = GUILayout.Toggle( prevBit, colorCh[i].ToString(), ShapesUI.GetMiniButtonStyle( i, 4 ), GUILayout.Width( 28 ) );
+				GUI.color = Color.white;
+				if( prevBit != newBit ) {
+					int sign = prevBit == false ? 1 : -1;
+					propColorMask.intValue += sign * flagValue;
+				}
+			}
+
+			GUILayout.BeginHorizontal();
+			EditorGUILayout.PrefixLabel( colorMaskGuiContent );
+			for( int i = 0; i < 4; i++ )
+				DoButton( i );
+			GUILayout.EndHorizontal();
+		}
 
 		public bool HasFrameBounds() => true;
 

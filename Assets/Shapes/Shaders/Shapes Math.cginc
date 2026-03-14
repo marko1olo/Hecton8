@@ -66,6 +66,10 @@ inline float Round( float a, float divs ){
 float Determinant( in float2 a, in float2 b ) {
     return a.x * b.y - a.y * b.x;
 }
+float2 SqDist(float2 a, float2 b) {
+    const float2 d = b-a;
+    return dot(d,d);
+}
 float2 Rotate( float2 v, float ang ){
 	float2 a = float2( cos(ang), sin(ang) );
 	return float2(

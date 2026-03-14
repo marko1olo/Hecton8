@@ -7,19 +7,20 @@ namespace Shapes {
 	public enum DashType {
 		/// <summary>Standard dashes</summary>	
 		Basic,
-
 		/// <summary>Angled dashes, similar to hazard stripes</summary>
 		Angled,
-
 		/// <summary>Rounded dashes</summary>
-		Rounded
+		Rounded,
+		/// <summary>Chevron/arrow-like dashes</summary>
+		Chevron
 	}
 
 	public static class DashTypeExtensions {
 		public static bool HasModifier( this DashType type ) {
 			switch( type ) {
-				case DashType.Angled: return true;
-				default:              return false;
+				case DashType.Angled:  return true;
+				case DashType.Chevron: return true;
+				default:               return false;
 			}
 		}
 	}

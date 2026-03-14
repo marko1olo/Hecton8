@@ -8,10 +8,12 @@ Shader "Shapes/Texture Darken" {
 		_StencilID ("Stencil ID", int) = 0
 		_StencilReadMask ("Stencil Read Mask", int) = 255
 		_StencilWriteMask ("Stencil Write Mask", int) = 255
+		_ColorMask ("Color Mask", int) = 15
 		_MainTex ("Texture", 2D) = "white" {}
 	}
 	SubShader {
 		Tags {
+			"ForceNoShadowCasting" = "True"
 			"RenderPipeline" = "UniversalPipeline"
 			"IgnoreProjector" = "True"
 			"Queue" = "Transparent"
@@ -31,6 +33,7 @@ Shader "Shapes/Texture Darken" {
 			Cull Off
 			ZTest [_ZTest]
 			Offset [_ZOffsetFactor], [_ZOffsetUnits]
+			ColorMask [_ColorMask]
 			ZWrite Off
 			BlendOp Min
 			Blend One One

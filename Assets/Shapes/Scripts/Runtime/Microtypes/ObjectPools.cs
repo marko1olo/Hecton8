@@ -16,7 +16,7 @@ namespace Shapes {
 		public static void Free( T obj ) => pool.Push( obj );
 	}
 
-	internal static class ListPool<T> where T : new() {
+	internal static class ListPool<T> {
 		static readonly Stack<List<T>> pool = new Stack<List<T>>();
 		public static List<T> Alloc() => pool.Count == 0 ? new List<T>() : pool.Pop();
 

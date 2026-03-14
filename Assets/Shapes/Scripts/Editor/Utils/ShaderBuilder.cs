@@ -63,6 +63,7 @@ namespace Shapes {
 					AppendLine( "_StencilID (\"Stencil ID\", int) = 0" );
 					AppendLine( "_StencilReadMask (\"Stencil Read Mask\", int) = 255" );
 					AppendLine( "_StencilWriteMask (\"Stencil Write Mask\", int) = 255" );
+					AppendLine( "_ColorMask (\"Color Mask\", int) = 15" );
 					if( name == "Texture" )
 						AppendLine( "_MainTex (\"Texture\", 2D) = \"white\" {}" );
 				}
@@ -100,10 +101,10 @@ namespace Shapes {
 					AppendLine( "WriteMask [_StencilWriteMask]" );
 				}
 
-				// culling/blend mode
-				if( pass == ShaderPassType.Render )
+				// culling/blend mode etc
+				if( pass == ShaderPassType.Render ) {
 					AppendLines( blendMode.GetPassRenderStates() );
-				else
+				} else
 					AppendLine( "Cull Off" ); // todo: might be incorrect for DepthOnly
 
 				// hlsl program

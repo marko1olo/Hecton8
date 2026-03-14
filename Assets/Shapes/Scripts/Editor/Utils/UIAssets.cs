@@ -19,6 +19,7 @@ namespace Shapes {
 		[Header( "Dashes" )] public Texture2D lineDashStyleBasic;
 		public Texture2D lineDashStyleAngled;
 		public Texture2D lineDashStyleRound;
+		public Texture2D lineDashStyleChevron;
 
 		[Header( "Rect Types" )] public Texture2D rectIconHardSolid;
 		public Texture2D rectIconHardHollow;
@@ -110,7 +111,8 @@ namespace Shapes {
 					lineDashButtonContents = new GUIContent[] {
 						new GUIContent( Instance.lineDashStyleBasic, "Basic dashes" ),
 						new GUIContent( Instance.lineDashStyleAngled, "Angled dashes" ),
-						new GUIContent( Instance.lineDashStyleRound, "Round dashes" )
+						new GUIContent( Instance.lineDashStyleRound, "Round dashes" ),
+						new GUIContent( Instance.lineDashStyleChevron, "Chevron dashes" ),
 					};
 				}
 

@@ -44,6 +44,7 @@ namespace Shapes {
 		}
 
 		public static IEnumerable<string> GetSubshaderTags( this RenderPipeline rp ) {
+			yield return (ShaderTag)( "ForceNoShadowCasting", "True" );
 			if( rp == RenderPipeline.Legacy )
 				yield break; // this is due to a bug where SRP sometimes picks the legacy pipeline. Putting it last and without a tag fixes this 
 			yield return (ShaderTag)( "RenderPipeline", rp.PipelineSubshaderTagValue() );

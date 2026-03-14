@@ -25,10 +25,13 @@ namespace Shapes {
 
 		public enum DrawType {
 			Shape,
-			Text
+			Custom,
+			TextAssetClone,
+			TextPooledAuto,
+			TextPooledPersistent
 		}
 
-		public IMDrawer( MetaMpb metaMpb, Material sourceMat, Mesh sourceMesh, int submesh = 0, DrawType drawType = DrawType.Shape, bool allowInstancing = true ) {
+		public IMDrawer( MetaMpb metaMpb, Material sourceMat, Mesh sourceMesh, int submesh = 0, DrawType drawType = DrawType.Shape, bool allowInstancing = true, int textAutoDisposeId = -1 ) {
 			this.mtx = Draw.Matrix;
 			this.metaMpb = metaMpb;
 			this.allowInstancing = allowInstancing && ShapesConfig.Instance.useImmediateModeInstancing;
@@ -40,25 +43,34 @@ namespace Shapes {
 			if( DrawCommand.IsAddingDrawCommandsToBuffer ) {
 				Draw.style.renderState.shader = sourceMat.shader;
 				Draw.style.renderState.keywords = GetMaterialKeywords( sourceMat );
+				Draw.style.renderState.isTextMaterial = drawType == DrawType.TextPooledPersistent || drawType == DrawType.TextAssetClone;
 
-				bool cacheMaterial = drawType == DrawType.Text;
-				bool cacheMesh = drawType == DrawType.Text;
-
-				if( cacheMaterial ) {
-					// instantiate and then delete it after this DrawCommand has been executed
-					drawState.mat = Object.Instantiate( sourceMat );
-					if( drawType == DrawType.Text )
+				switch( drawType ) {
+					// clone material if needed
+					case DrawType.TextAssetClone:
+						// instantiate and then delete it after this DrawCommand has been executed
+						drawState.mat = Object.Instantiate( sourceMat );
 						ApplyGlobalPropertiesTMP( drawState.mat ); // a lil gross but sfine
-					else
-						ApplyGlobalProperties( drawState.mat );
-					DrawCommand.CurrentWritingCommandBuffer.cachedAssets.Add( drawState.mat );
-				} else {
-					drawState.mat = IMMaterialPool.GetMaterial( ref Draw.style.renderState );
+						DrawCommand.CurrentWritingCommandBuffer.cachedAssets.Add( drawState.mat );
+						break;
+					case DrawType.TextPooledPersistent:
+						// ApplyGlobalPropertiesTMP( sourceMat ); // I can't really edit this because *groans*
+						drawState.mat = sourceMat;
+						break;
+					case DrawType.TextPooledAuto:
+						drawState.mat = sourceMat;
+						DrawCommand.CurrentWritingCommandBuffer.cachedTextIds.Add( textAutoDisposeId );
+						break;
+					case DrawType.Custom:
+						drawState.mat = sourceMat;
+						break;
+					default:
+						drawState.mat = IMMaterialPool.GetMaterial( ref Draw.style.renderState );
+						break;
 				}
 
-				// Debug.Log( drawState.mat.mainTexture );
-
-				if( cacheMesh ) {
+				// cache mesh
+				if( drawType == DrawType.TextAssetClone ) {
 					// instantiate the mesh and then delete it after this DrawCommand has been executed
 					drawState.mesh = Object.Instantiate( sourceMesh );
 					DrawCommand.CurrentWritingCommandBuffer.cachedAssets.Add( drawState.mesh );
@@ -76,7 +88,8 @@ namespace Shapes {
 				// see if we can merge with the current mpb (which may or may not be equal to prevMpb)
 				if( metaMpb.PreAppendCheck( drawState, mtx ) == false ) {
 					// we can't append it for whatever reason
-					DrawCommand.CurrentWritingCommandBuffer.drawCalls.Add( metaMpb.ExtractDrawCall() ); // finalize previous buffer
+					ShapeDrawCall drawCall = metaMpb.ExtractDrawCall();
+					DrawCommand.CurrentWritingCommandBuffer.drawCalls.Add( drawCall ); // finalize previous buffer
 					if( metaMpb.PreAppendCheck( drawState, mtx ) == false ) // append again now that the call has been dispatched
 						Debug.LogWarning( "MetaMpb somehow not ready to be initialized" ); // really should never happen
 				}
@@ -88,7 +101,8 @@ namespace Shapes {
 				drawState.submesh = submesh;
 				if( metaMpb.PreAppendCheck( drawState, mtx ) == false )
 					Debug.LogError( "Somehow PreAppendCheck failed for this draw" );
-				ApplyGlobalProperties( drawState.mat ); // this will set render state of the material. todo: will this modify the assets? this seems bad
+				if( drawType != DrawType.Custom )
+					ApplyGlobalProperties( drawState.mat ); // this will set render state of the material. todo: will this modify the assets? this seems bad
 			}
 		}
 
@@ -97,6 +111,7 @@ namespace Shapes {
 				m.SetFloat( ShapesMaterialUtils.propZTest, (float)Draw.ZTest );
 				m.SetFloat( ShapesMaterialUtils.propZOffsetFactor, Draw.ZOffsetFactor );
 				m.SetFloat( ShapesMaterialUtils.propZOffsetUnits, Draw.ZOffsetUnits );
+				m.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)Draw.ColorMask );
 				m.SetFloat( ShapesMaterialUtils.propStencilComp, (float)Draw.StencilComp );
 				m.SetFloat( ShapesMaterialUtils.propStencilOpPass, (float)Draw.StencilOpPass );
 				m.SetFloat( ShapesMaterialUtils.propStencilID, Draw.StencilRefID );
@@ -107,14 +122,15 @@ namespace Shapes {
 
 		// this is a little gross because it's duplicated, kinda, but we have to deal with gross things sometimes
 		static void ApplyGlobalPropertiesTMP( Material m ) {
-			m.SetInt( ShapesMaterialUtils.propZTestTMP, (int)Draw.ZTest );
+			m.SetInt_Shapes( ShapesMaterialUtils.propZTestTMP, (int)Draw.ZTest );
 			// m.SetFloat( ShapesMaterialUtils.propZOffsetFactor, Draw.ZOffsetFactor ); // not supported by TMP shaders
-			// m.SetInt( ShapesMaterialUtils.propZOffsetUnits, Draw.ZOffsetUnits ); // not supported by TMP shaders
-			m.SetInt( ShapesMaterialUtils.propStencilComp, (int)Draw.StencilComp );
-			m.SetInt( ShapesMaterialUtils.propStencilOpPass, (int)Draw.StencilOpPass );
-			m.SetInt( ShapesMaterialUtils.propStencilIDTMP, Draw.StencilRefID );
-			m.SetInt( ShapesMaterialUtils.propStencilReadMask, Draw.StencilReadMask );
-			m.SetInt( ShapesMaterialUtils.propStencilWriteMask, Draw.StencilWriteMask );
+			// m.SetInt_Shapes( ShapesMaterialUtils.propZOffsetUnits, Draw.ZOffsetUnits ); // not supported by TMP shaders
+			m.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)Draw.ColorMask );
+			m.SetInt_Shapes( ShapesMaterialUtils.propStencilComp, (int)Draw.StencilComp );
+			m.SetInt_Shapes( ShapesMaterialUtils.propStencilOpPass, (int)Draw.StencilOpPass );
+			m.SetInt_Shapes( ShapesMaterialUtils.propStencilIDTMP, Draw.StencilRefID );
+			m.SetInt_Shapes( ShapesMaterialUtils.propStencilReadMask, Draw.StencilReadMask );
+			m.SetInt_Shapes( ShapesMaterialUtils.propStencilWriteMask, Draw.StencilWriteMask );
 		}
 
 		public void Dispose() {
@@ -125,7 +141,8 @@ namespace Shapes {
 				Graphics.DrawMeshNow( drawState.mesh, mtx, drawState.submesh );
 			} else if( allowInstancing == false ) {
 				// finalize the draw if we're not using instancing
-				DrawCommand.CurrentWritingCommandBuffer.drawCalls.Add( metaMpb.ExtractDrawCall() );
+				ShapeDrawCall drawCall = metaMpb.ExtractDrawCall();
+				DrawCommand.CurrentWritingCommandBuffer.drawCalls.Add( drawCall );
 			}
 		}
 

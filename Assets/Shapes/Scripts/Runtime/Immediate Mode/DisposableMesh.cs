@@ -26,7 +26,7 @@ namespace Shapes {
 			}
 
 			if( hasMesh == false || mesh == null ) {
-				mesh = new Mesh { name = "Disposable Mesh", hideFlags = HideFlags.DontSave };
+				mesh = ShapesMeshPool.GetMesh(); // new Mesh()
 				activeMeshCount++;
 				hasMesh = true;
 			}
@@ -71,7 +71,7 @@ namespace Shapes {
 
 			// if a mesh exists, and no commands are using it, remove it
 			if( hasMesh && hasCommandList == false ) {
-				mesh.DestroyEndOfFrameEmulated(); // Object.Destroy( mesh );
+				ShapesMeshPool.Release( mesh ); // Destroy()
 				activeMeshCount--;
 				hasMesh = false;
 			}

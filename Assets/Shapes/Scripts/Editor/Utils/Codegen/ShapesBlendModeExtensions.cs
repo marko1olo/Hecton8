@@ -13,7 +13,7 @@ namespace Shapes {
 		static string Queue( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque ? "AlphaTest" : "Transparent";
 		static bool HasSpecialBlendMode( this ShapesBlendMode blendMode ) => blendMode != ShapesBlendMode.Opaque;
 
-		public static string BlendShaderDefine( this ShapesBlendMode blendMode ) => blendMode.ToString().ToUpper();
+		public static string BlendShaderDefine( this ShapesBlendMode blendMode ) => blendMode.ToString().ToUpperInvariant();
 
 		static string GetShaderBlendMode( this ShapesBlendMode blendMode ) {
 			switch( blendMode ) {
@@ -43,6 +43,7 @@ namespace Shapes {
 			yield return "Cull Off";
 			yield return "ZTest [_ZTest]";
 			yield return "Offset [_ZOffsetFactor], [_ZOffsetUnits]";
+			yield return "ColorMask [_ColorMask]";
 			if( blendMode.ZWrite() == false )
 				yield return "ZWrite Off";
 			if( blendMode.AlphaToMask() )

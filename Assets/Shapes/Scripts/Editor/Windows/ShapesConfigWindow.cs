@@ -207,17 +207,28 @@ public class ShapesConfigWindow : EditorWindow {
 
 			// Render Feature check
 			#if SHAPES_URP
-			EditorGUILayout.Space(8);
+			EditorGUILayout.Space( 8 );
 			GUILayout.Label( "URP renderers detected:", EditorStyles.boldLabel );
 			foreach( URP_RND_DATA data in urpRenderers ) {
-				EditorGUILayout.ObjectField( GUIContent.none, data, typeof(URP_RND_DATA), false/*, GUILayout.Width( 120 )*/ );
+				EditorGUILayout.ObjectField( GUIContent.none, data, typeof(URP_RND_DATA), false /*, GUILayout.Width( 120 )*/ );
 				bool hasShapesRenderer = data.rendererFeatures.Any( x => x.GetType() == typeof(ShapesRenderFeature) );
 				if( hasShapesRenderer ) {
 					EditorGUILayout.HelpBox( "✔ Immediate mode ready", MessageType.None );
 				} else {
+					if( GUILayout.Button( "Add Shapes Render Feature" ) ) {
+						const string UNDO_STR = "Add Shapes render feature";
+						Undo.RecordObject( data, UNDO_STR );
+						ShapesRenderFeature srf = CreateInstance<ShapesRenderFeature>();
+						Undo.RegisterCreatedObjectUndo( srf, UNDO_STR );
+						AssetDatabase.AddObjectToAsset( srf, data );
+						srf.name = "Shapes Render Feature";
+						EditorUtility.SetDirty( data );
+						data.SetDirty();
+						data.rendererFeatures.Add( srf );
+					}
 					EditorGUILayout.HelpBox( $"{data.name} is missing a ShapesRenderFeature.\nImmediate mode drawing will not be supported unless you select this object and add the ShapesRenderFeature to it", MessageType.Error );
 				}
-				EditorGUILayout.Space(8);
+				EditorGUILayout.Space( 8 );
 			}
 			#endif
 

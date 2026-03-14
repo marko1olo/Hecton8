@@ -64,48 +64,47 @@ namespace Shapes {
 
 		#region Stencil & Depth Testing
 
-		/// <summary>Current depth buffer compare function. Default is CompareFunction.LessEqual</summary>
+		/// <inheritdoc cref="RenderState.zTest"/>
 		public static CompareFunction ZTest {
 			[MethodImpl( INLINE )] get => style.renderState.zTest;
 			[MethodImpl( INLINE )] set => style.renderState.zTest = value;
 		}
-		/// <summary>This ZOffsetFactor scales the maximum Z slope, with respect to X or Y of the polygon, while the other ZOffsetUnits, scales the minimum resolvable depth buffer value.
-		/// This allows you to force one polygon to be drawn on top of another although they are actually in the same position.
-		/// For example, if ZOffsetFactor = 0 &amp; ZOffsetUnits = -1, it pulls the polygon closer to the camera,
-		/// ignoring the polygon’s slope, whereas if ZOffsetFactor = -1 &amp; ZOffsetUnits = -1, it will pull the polygon even closer when looking at a grazing angle.</summary>
+		/// <inheritdoc cref="RenderState.zOffsetFactor"/>
 		public static float ZOffsetFactor {
 			[MethodImpl( INLINE )] get => style.renderState.zOffsetFactor;
 			[MethodImpl( INLINE )] set => style.renderState.zOffsetFactor = value;
 		}
-		/// <summary>this ZOffsetUnits value scales the minimum resolvable depth buffer value, while the other ZOffsetFactor scales the maximum Z slope, with respect to X or Y of the polygon.
-		/// This allows you to force one polygon to be drawn on top of another although they are actually in the same position.
-		/// For example, if ZOffsetFactor = 0 &amp; ZOffsetUnits = -1, it pulls the polygon closer to the camera,
-		/// ignoring the polygon’s slope, whereas if ZOffsetFactor = -1 &amp; ZOffsetUnits = -1, it will pull the polygon even closer when looking at a grazing angle.</summary>
+		/// <inheritdoc cref="RenderState.zOffsetUnits"/>
 		public static int ZOffsetUnits {
 			[MethodImpl( INLINE )] get => style.renderState.zOffsetUnits;
 			[MethodImpl( INLINE )] set => style.renderState.zOffsetUnits = value;
 		}
-		/// <summary> The stencil buffer function used to compare the reference value to the current contents of the buffer. Default: always </summary>
+		/// <inheritdoc cref="RenderState.colorMask"/>
+		public static ColorWriteMask ColorMask {
+			[MethodImpl( INLINE )] get => style.renderState.colorMask;
+			[MethodImpl( INLINE )] set => style.renderState.colorMask = value;
+		}
+		/// <inheritdoc cref="RenderState.stencilComp"/>
 		public static CompareFunction StencilComp {
 			[MethodImpl( INLINE )] get => style.renderState.stencilComp;
 			[MethodImpl( INLINE )] set => style.renderState.stencilComp = value;
 		}
-		/// <summary>What to do with the contents of the stencil buffer if the stencil test (and the depth test) passes. Default: keep</summary>
+		/// <inheritdoc cref="RenderState.stencilOpPass"/>
 		public static StencilOp StencilOpPass {
 			[MethodImpl( INLINE )] get => style.renderState.stencilOpPass;
 			[MethodImpl( INLINE )] set => style.renderState.stencilOpPass = value;
 		}
-		/// <summary>The stencil buffer id/reference value to be compared against</summary>
+		/// <inheritdoc cref="RenderState.stencilRefID"/>
 		public static byte StencilRefID {
 			[MethodImpl( INLINE )] get => style.renderState.stencilRefID;
 			[MethodImpl( INLINE )] set => style.renderState.stencilRefID = value;
 		}
-		/// <summary>A stencil buffer 8 bit mask as an 0–255 integer, used when comparing the reference value with the contents of the buffer. Default: 255</summary>
+		/// <inheritdoc cref="RenderState.stencilReadMask"/>
 		public static byte StencilReadMask {
 			[MethodImpl( INLINE )] get => style.renderState.stencilReadMask;
 			[MethodImpl( INLINE )] set => style.renderState.stencilReadMask = value;
 		}
-		/// <summary>A stencil buffer 8 bit mask as an 0–255 integer, used when writing to the buffer. Note that, like other write masks, it specifies which bits of stencil buffer will be affected by write (i.e. WriteMask 0 means that no bits are affected and not that 0 will be written). Default: 255</summary>
+		/// <inheritdoc cref="RenderState.stencilWriteMask"/>
 		public static byte StencilWriteMask {
 			[MethodImpl( INLINE )] get => style.renderState.stencilWriteMask;
 			[MethodImpl( INLINE )] set => style.renderState.stencilWriteMask = value;
@@ -421,6 +420,30 @@ namespace Shapes {
 		public static Vector4 TextMargins {
 			[MethodImpl( INLINE )] get => style.textStyle.margins;
 			[MethodImpl( INLINE )] set => style.textStyle.margins = value;
+		}
+
+		/// <inheritdoc cref="Shapes.TextStyle.wrap"/>
+		public static TextWrappingModes TextWrap {
+			[MethodImpl( INLINE )] get => style.textStyle.wrap;
+			[MethodImpl( INLINE )] set => style.textStyle.wrap = value;
+		}
+
+		/// <inheritdoc cref="Shapes.TextStyle.overflow"/>
+		public static TextOverflowModes TextOverflow {
+			[MethodImpl( INLINE )] get => style.textStyle.overflow;
+			[MethodImpl( INLINE )] set => style.textStyle.overflow = value;
+		}
+
+		/// <inheritdoc cref="Shapes.TextStyle.curvature"/>
+		public static float TextCurvature {
+			[MethodImpl( INLINE )] get => style.textStyle.curvature;
+			[MethodImpl( INLINE )] set => style.textStyle.curvature = value;
+		}
+		
+		/// <inheritdoc cref="Shapes.TextStyle.curvaturePivot"/>
+		public static Vector2 TextCurvaturePivot {
+			[MethodImpl( INLINE )] get => style.textStyle.curvaturePivot;
+			[MethodImpl( INLINE )] set => style.textStyle.curvaturePivot = value;
 		}
 
 		#endregion

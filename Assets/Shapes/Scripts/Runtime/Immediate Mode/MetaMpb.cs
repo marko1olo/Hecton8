@@ -13,6 +13,7 @@ namespace Shapes {
 		public bool HasContent => initialized;
 		int instanceCount = 0;
 		ShapeDrawState drawState;
+		public MaterialPropertyBlock mpbOverride = null;
 		Matrix4x4[] matrices = ArrayPool<Matrix4x4>.Alloc( UnityInfo.INSTANCES_MAX );
 		bool HasMultipleInstances => instanceCount > 1;
 		bool directMaterialApply = false;
@@ -89,18 +90,16 @@ namespace Shapes {
 
 			listFloat.Clear();
 		}
-		
-		protected void Transfer( int propertyID, List<Texture> listTex ) {
+
+		protected void Transfer( int propertyID, ref Texture tex ) {
 			if( directMaterialApply ) {
-				drawState.mat.SetTexture( propertyID, listTex[0] ); // direct draw
+				drawState.mat.SetTexture( propertyID, tex ); // direct draw
 			} else {
-				if( HasMultipleInstances )
-					Debug.LogError( "no GPU instancing support for textures" );
-				else
-					sdc.mpb.SetTexture( propertyID, listTex[0] ); // single draw command
+				// even if it has multiple instances, textures auto-disallow using multiple textures anyway
+				sdc.mpb.SetTexture( propertyID, tex ); // single draw command
 			}
 
-			listTex.Clear();
+			tex = null;
 		}
 
 		public bool PreAppendCheck( ShapeDrawState additionDrawState, Matrix4x4 mtx ) {
@@ -123,13 +122,16 @@ namespace Shapes {
 		ShapeDrawCall sdc;
 
 		public ShapeDrawCall ExtractDrawCall() {
+			bool useOverrideMpb = mpbOverride != null && this is MpbCustomMesh;
+
 			if( HasMultipleInstances ) {
-				sdc = new ShapeDrawCall( drawState, instanceCount, matrices );
+				sdc = new ShapeDrawCall( drawState, instanceCount, matrices, useOverrideMpb ? mpbOverride : null );
 				matrices = ArrayPool<Matrix4x4>.Alloc( UnityInfo.INSTANCES_MAX ); // passed it off to the instanced call
 			} else
-				sdc = new ShapeDrawCall( drawState, matrices[0] );
+				sdc = new ShapeDrawCall( drawState, matrices[0], useOverrideMpb ? mpbOverride : null );
 
-			TransferAllProperties();
+			if( useOverrideMpb == false )
+				TransferAllProperties();
 			Dispose();
 			return sdc;
 		}
@@ -143,9 +145,10 @@ namespace Shapes {
 
 		internal void TransferAllProperties() {
 			// all shapes have a color property (except TMP text)
+			if( this is MpbCustomMesh )
+				return; // nothing to transfer. todo: transfer maybe color at least
 			if( this is MpbText == false )
 				Transfer( ShapesMaterialUtils.propColor, color );
-
 
 			if( this is IFillableMpb fillable ) {
 				Transfer( ShapesMaterialUtils.propFillType, fillable.fillType );

@@ -120,8 +120,8 @@ namespace Shapes {
 						List<string> keywordPermutations = new List<string>();
 						foreach( IEnumerable<string> perm in GetPermutations( multis.Select( m => m.Enumerate() ) ) ) {
 							string[] validKeywords = perm.Where( p => string.IsNullOrEmpty( p ) == false ).ToArray();
-							string kws = $" [{string.Join( "][", validKeywords )}]";
-							if( kws.Contains( "[]" ) ) // this means it has no permutations
+							string kws = $" ({string.Join( ")(", validKeywords )})";
+							if( kws.Contains( "()" ) ) // this means it has no permutations
 								kws = "";
 							pathMaterials.Add( GetPathMaterial( nameWithBlendMode + kws, shader, validKeywords ) );
 						}

@@ -38,9 +38,12 @@ namespace Shapes {
 		void OnSceneGUI() {
 			Rectangle rect = target as Rectangle;
 			bool changed = rectEditor.DoSceneHandles( rect );
-			changed |= fillEditor.DoSceneHandles( rect.UseFill, rect, rect.Fill, rect.transform );
-			if( changed )
+			GradientFill fill = rect.Fill;
+			changed |= fillEditor.DoSceneHandles( rect.UseFill, rect, ref fill, rect.transform );
+			if( changed ) {
+				rect.Fill = fill;
 				rect.UpdateAllMaterialProperties();
+			}
 		}
 
 		public override void OnInspectorGUI() {

@@ -69,8 +69,10 @@ namespace Hecton8.SaveSystem
 
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugRegisteredCount;
+#pragma warning disable CS0414 // Inspector-only diagnostics
         [SerializeField] private bool _debugIsSaving;
         [SerializeField] private bool _debugIsLoading;
+#pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
         //  REGISTRY

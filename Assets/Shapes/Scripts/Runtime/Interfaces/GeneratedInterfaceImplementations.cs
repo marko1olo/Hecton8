@@ -412,6 +412,7 @@ namespace Shapes {
 			set {
 				useFill = value;
 				SetIntNow( ShapesMaterialUtils.propFillType, fill.GetShaderFillTypeInt( useFill ) );
+				SetAllMaterialProperties();
 			}
 		}
 		public FillType FillType {

@@ -10,9 +10,9 @@ using UnityEngine.SceneManagement;
 
 #if SHAPES_URP
 using UnityEngine.Rendering.Universal;
+
 #elif SHAPES_HDRP
 using UnityEngine.Rendering.HighDefinition;
-
 #endif
 
 
@@ -115,6 +115,7 @@ namespace Shapes {
 		internal int id;
 		bool pushPopState;
 		Camera cam;
+		internal readonly List<int> cachedTextIds = new List<int>();
 		internal readonly List<Object> cachedAssets = new List<Object>();
 		internal readonly List<DisposableMesh> cachedMeshes = new List<DisposableMesh>();
 		internal readonly List<ShapeDrawCall> drawCalls = new List<ShapeDrawCall>();
@@ -147,8 +148,12 @@ namespace Shapes {
 				Draw.Push();
 			return this;
 		}
-
-
+#if SHAPES_URP && UNITY_6000_0_OR_NEWER
+		internal void AppendToBuffer( RasterCommandBuffer cmd ) {
+			foreach( ShapeDrawCall draw in drawCalls )
+				draw.AddToCommandBuffer( cmd );
+		}
+#endif
 		internal void AppendToBuffer( CommandBuffer cmd ) {
 			foreach( ShapeDrawCall draw in drawCalls )
 				draw.AddToCommandBuffer( cmd );
@@ -167,6 +172,9 @@ namespace Shapes {
 		}
 
 		void CleanupCachedAssetsAndMeshes() {
+			foreach( int i in cachedTextIds )
+				ShapesTextPool.Instance.ReleaseElement( i );
+			cachedTextIds.Clear();
 			foreach( Object asset in cachedAssets )
 				asset.DestroyBranched();
 			cachedAssets.Clear();
@@ -192,7 +200,6 @@ namespace Shapes {
 		}
 
 		#if !(SHAPES_URP || SHAPES_HDRP)
-
 		private bool CheckIfRenderIsDone() {
 			if( hasRendered ) return true; // done
 			hasRendered = true;

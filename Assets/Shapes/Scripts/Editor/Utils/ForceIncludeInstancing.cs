@@ -24,8 +24,10 @@ namespace Shapes {
 			// find variants that don't have an instancing counterpart, copy them, and add instancing
 			string GetKeywordsStrWithoutInstancing( ShaderCompilerData set ) {
 				return string.Join( ",", set.shaderKeywordSet.GetShaderKeywords()
-				#if UNITY_2019_3_OR_NEWER
-					.Select( k => k.name ).Where( a => a != inst.name )
+				#if UNITY_2021_2_OR_NEWER
+					.Select( a => a.name ).Where( a => a != inst.name )
+				#elif UNITY_2019_3_OR_NEWER
+					.Select( ShaderKeyword.GetGlobalKeywordName ).Where( a => a != ShaderKeyword.GetGlobalKeywordName( inst ) )
 				#else
 					.Select( a => a.GetKeywordName() ).Where( a => a != inst.GetKeywordName() )
 				#endif

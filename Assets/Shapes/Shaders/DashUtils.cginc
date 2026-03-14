@@ -4,6 +4,7 @@
 #define DASH_TYPE_BASIC 0
 #define DASH_TYPE_ANGLED 1
 #define DASH_TYPE_ROUND 2
+#define DASH_TYPE_CHEVRON 3
 
 #define DASH_SPACE_FIXED_COUNT -2
 #define DASH_SPACE_RELATIVE -1
@@ -71,7 +72,9 @@ inline void ApplyDashMask( inout half shape_mask, DashCoordinates dashCoords, ha
         half2 coord = half2( coordAcross, dashCoords.coord );
         
         if( type == DASH_TYPE_ANGLED )
-            coord.y += 0.5*coord.x*thicknessPerPeriod*dashModifier; // 45° angle skewing        
+            coord.y += 0.5*coord.x*thicknessPerPeriod*dashModifier; // 45° angle skewing
+    	else if( type == DASH_TYPE_CHEVRON )
+    		coord.y += 0.5*abs(coord.x)*thicknessPerPeriod*dashModifier; // mirrored 45° angle skewing
 		half dashSdf = abs(frac(coord.y) * 2 - 1); // triangle wave
 		dashSdf = InverseLerp( spacePerPeriod, 1, dashSdf ); // convert to SDF matching dash ratio
 		
@@ -80,7 +83,7 @@ inline void ApplyDashMask( inout half shape_mask, DashCoordinates dashCoords, ha
             half dashPerPeriod = 1.0-spacePerPeriod;
             half dashPerThickness = dashPerPeriod/thicknessPerPeriod;
 		    half lenCoord = 1.0 - dashSdf*dashPerThickness;
-		    half2 roundnoot = half2(saturate(lenCoord), coord.x);
+		    // half2 roundnoot = half2(saturate(lenCoord), coord.x);
             half sdfRound = length(half2(lenCoord, coord.x))-1;
             half maskRounds = 1.0-saturate( sdfRound / fwidth(sdfRound) + 0.5 ); // 0.5 offset to center on pixel bounds
             half maskFill = saturate( (dashSdf - 1/dashPerThickness) / fwidth(dashSdf) + 0.5 ); // 0.5 offset to center on pixel bounds
@@ -102,7 +105,7 @@ inline half DashSnap( half periodCount, half spacePerPeriod, int snapMode ){
 		case DASH_SNAP_ENDTOEND_PERIODIC:
 			return max( 1, round( periodCount ) );
 		case DASH_SNAP_ENDTOEND:
-			return max( 1, round( periodCount + spacePerPeriod ) ) - spacePerPeriod;
+			return max( 1, floor( periodCount + spacePerPeriod ) ) - spacePerPeriod;
 		default:
 			return 0;
 	}

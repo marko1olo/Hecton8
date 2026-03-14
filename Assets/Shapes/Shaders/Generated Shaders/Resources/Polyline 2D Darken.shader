@@ -8,9 +8,11 @@ Shader "Shapes/Polyline 2D Darken" {
 		_StencilID ("Stencil ID", int) = 0
 		_StencilReadMask ("Stencil Read Mask", int) = 255
 		_StencilWriteMask ("Stencil Write Mask", int) = 255
+		_ColorMask ("Color Mask", int) = 15
 	}
 	SubShader {
 		Tags {
+			"ForceNoShadowCasting" = "True"
 			"RenderPipeline" = "UniversalPipeline"
 			"IgnoreProjector" = "True"
 			"Queue" = "Transparent"
@@ -30,6 +32,7 @@ Shader "Shapes/Polyline 2D Darken" {
 			Cull Off
 			ZTest [_ZTest]
 			Offset [_ZOffsetFactor], [_ZOffsetUnits]
+			ColorMask [_ColorMask]
 			ZWrite Off
 			BlendOp Min
 			Blend One One

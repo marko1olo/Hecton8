@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using UnityEditor;
 
 // Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
 // Website & Documentation - https://acegikmo.com/shapes/
@@ -24,6 +22,33 @@ namespace Shapes {
 		static readonly (int, string)[] fillTypesShort = {
 			( GradientFill.FILL_NONE, "" ),
 			( FILL_CUSTOM, "Fill" ) // specify fill with the type thingy. also default
+		};
+
+		public enum TextDrawMode {
+			Simple,
+			RegionSizePivot,
+			RegionRect
+		}
+
+		struct TextDrawInfo {
+
+			public TextDrawMode mode;
+			public string methodNameTarget;
+			public string methodNameSelf;
+
+			public bool IsRect => mode != TextDrawMode.Simple;
+
+			public TextDrawInfo( TextDrawMode mode, string methodNameSelf, string methodNameTarget ) {
+				this.mode = mode;
+				this.methodNameTarget = methodNameTarget;
+				this.methodNameSelf = methodNameSelf;
+			}
+		}
+
+		static TextDrawInfo[] textDrawModes = {
+			new TextDrawInfo( TextDrawMode.Simple, "Text", "Text_Internal" ),
+			new TextDrawInfo( TextDrawMode.RegionSizePivot, "TextRect", "Text_Internal" ),
+			new TextDrawInfo( TextDrawMode.RegionRect, "TextRect", "TextRect_Internal" )
 		};
 
 		public static void GenerateDrawOverloadsScript() {
@@ -134,6 +159,10 @@ namespace Shapes {
 
 		const string DOC_TEXT = "Draws text using Text Mesh Pro";
 		const string DOC_TEXT_CONTENT = "The text to display";
+		const string DOC_TEXT_ELEMENT = "The text element to use when drawing this text";
+		const string DOC_TEXT_RECT = "The local space rectangle to display text within";
+		const string DOC_TEXT_PIVOT = "The normalized pivot of the local space rectangle for text positioning, like Unity's RectTransform";
+		const string DOC_TEXT_SIZE = "The local space size of the rectangle to draw text the in";
 		const string DOC_TEXT_ALIGN = "The text alignment to use";
 		const string DOC_TEXT_ANGLE = "The angular offset of the text, in radians";
 		const string DOC_TEXT_FONT = "The font to use";
@@ -173,7 +202,7 @@ namespace Shapes {
 
 			// shared things
 			OverloadGenerator g;
-			bool[] positionedAndNonPositioned = { true, false };
+			bool[] bools = { true, false };
 			OrSelectorParams rotIdentityNormalQuat = new OrSelectorParams(
 				null,
 				new[] { new Param( $"Vector3 normal // {DOC_NORMAL}" ) { mtxFlags = Param.MtxFlags.Normal } },
@@ -213,7 +242,7 @@ namespace Shapes {
 
 			// Regular Polygon
 			foreach( ( bool hollow, string hollownessSuffix ) in new[] { ( false, "" ), ( true, "Border" ) } ) {
-				foreach( bool usePositioning in positionedAndNonPositioned ) {
+				foreach( bool usePositioning in bools ) {
 					g = new OverloadGenerator( "RegularPolygon" + hollownessSuffix, callTargets["RegularPolygon_Internal"], DOC_REGPOL ) { objectName = "regular polygon" };
 					g.constAssigns["hollow"] = hollow.ToString().ToLowerInvariant();
 					if( usePositioning ) {
@@ -258,7 +287,7 @@ namespace Shapes {
 				string discType = discTypeNames[idt];
 				bool hollow = idt == 1 || idt == 3; // ring or arc
 				bool angles = idt == 2 || idt == 3;
-				foreach( bool usePositioning in positionedAndNonPositioned ) {
+				foreach( bool usePositioning in bools ) {
 					g = new OverloadGenerator( discType, callTargets[discType + "_Internal"], shapeDoc[idt] ) { objectName = discType };
 					if( usePositioning ) {
 						g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
@@ -382,7 +411,7 @@ namespace Shapes {
 			g.GenerateAndAppend( lines );
 
 			// Sphere
-			foreach( bool usePositioning in positionedAndNonPositioned ) {
+			foreach( bool usePositioning in bools ) {
 				g = new OverloadGenerator( "Sphere", callTargets["Sphere_Internal"], DOC_SPHERE );
 				if( usePositioning )
 					g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
@@ -392,7 +421,7 @@ namespace Shapes {
 
 			// Cuboid / Cube
 			foreach( ( bool cube, string name ) in new[] { ( false, "Cuboid" ), ( true, "Cube" ) } ) {
-				foreach( bool usePositioning in positionedAndNonPositioned ) {
+				foreach( bool usePositioning in bools ) {
 					g = new OverloadGenerator( name, callTargets["Cuboid_Internal"], cube ? DOC_CUBE : DOC_CUBOID );
 					if( usePositioning ) {
 						g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
@@ -410,7 +439,7 @@ namespace Shapes {
 			}
 
 			// Cone
-			foreach( bool usePositioning in positionedAndNonPositioned ) {
+			foreach( bool usePositioning in bools ) {
 				g = new OverloadGenerator( "Cone", callTargets["Cone_Internal"], DOC_CONE );
 				if( usePositioning ) {
 					g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
@@ -426,7 +455,7 @@ namespace Shapes {
 			// Torus
 			bool[] optionalAngleParams = { false, true };
 			foreach( bool useAngles in optionalAngleParams ) {
-				foreach( bool usePositioning in positionedAndNonPositioned ) {
+				foreach( bool usePositioning in bools ) {
 					g = new OverloadGenerator( "Torus", callTargets["Torus_Internal"], DOC_TORUS );
 					if( usePositioning ) {
 						g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
@@ -447,21 +476,44 @@ namespace Shapes {
 			}
 
 			// Text
-			foreach( bool usePositioning in positionedAndNonPositioned ) {
-				g = new OverloadGenerator( "Text", callTargets["Text_Internal"], DOC_TEXT );
-				if( usePositioning ) {
-					g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
-					g += new OrSelectorParams(
-						null,
-						new[] { new Param( $"Vector3 normal // {DOC_NORMAL}" ) { mtxFlags = Param.MtxFlags.Normal } },
-						new[] { new Param( $"Quaternion rot // {DOC_ROT}" ) { mtxFlags = Param.MtxFlags.Rotation } },
-						new[] { new Param( $"float angle // {DOC_TEXT_ANGLE}" ) { mtxFlags = Param.MtxFlags.Angle } }
-					);
-				}
+			foreach( TextDrawInfo textMode in textDrawModes ) {
+				foreach( bool manualElement in bools ) {
+					foreach( bool usePositioning in bools ) {
+						if( usePositioning && textMode.mode == TextDrawMode.RegionRect )
+							continue; // region rects don't use positioning overloads
+						g = new OverloadGenerator( textMode.methodNameSelf, callTargets[textMode.methodNameTarget], DOC_TEXT );
 
-				g += $"string content // {DOC_TEXT_CONTENT}";
-				g += new CombinatorialParams( $"TextAlign align // {DOC_TEXT_ALIGN}", $"float fontSize // {DOC_TEXT_FONT_SIZE}", $"TMP_FontAsset font // {DOC_TEXT_FONT}", $"Color color // {DOC_COLOR}" );
-				g.GenerateAndAppend( lines );
+						// TextRect_Internal doesn't have the isRect param
+						if( textMode.mode != TextDrawMode.RegionRect )
+							g.constAssigns["isRect"] = textMode.IsRect.ToString().ToLowerInvariant();
+
+						if( manualElement )
+							g += $"TextElement element // {DOC_TEXT_ELEMENT}";
+
+						if( usePositioning && textMode.mode != TextDrawMode.RegionRect ) {
+							g += new Param( $"Vector3 pos // {DOC_POS}" ) { mtxFlags = Param.MtxFlags.Position };
+							g += new CombinatorialParams( new Param( $"Quaternion rot // {DOC_ROT}" ) { mtxFlags = Param.MtxFlags.Rotation } );
+						}
+
+						if( textMode.mode == TextDrawMode.RegionSizePivot ) {
+							g += $"Vector2 pivot // {DOC_TEXT_PIVOT}";
+							g += $"Vector2 size // {DOC_TEXT_SIZE}";
+						} else if( textMode.mode == TextDrawMode.RegionRect ) {
+							g += new Param( $"Rect rect // {DOC_TEXT_RECT}" );
+						}
+
+						string contentParam = $"string content // {DOC_TEXT_CONTENT}";
+						if( manualElement ) {
+							// when using elements, you don't have to specify the text
+							g += new CombinatorialParams( contentParam );
+						} else {
+							g += contentParam;
+						}
+
+						g += new CombinatorialParams( $"TextAlign align // {DOC_TEXT_ALIGN}", $"float fontSize // {DOC_TEXT_FONT_SIZE}", $"TMP_FontAsset font // {DOC_TEXT_FONT}", $"Color color // {DOC_COLOR}" );
+						g.GenerateAndAppend( lines );
+					}
+				}
 			}
 
 			// Texture

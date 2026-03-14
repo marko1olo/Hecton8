@@ -36,12 +36,15 @@
 //   - [FIX] Registration tracking flag prevents double-register/unregister.
 //   - [REFACTOR] Deferred registration: OnEnable → attempt, Start → fallback,
 //     Debug.LogError only if Instance still null at Start.
+//   - [REFACTOR v3] Unity.Mathematics for raycast origin offset calculation.
+//     float3 arithmetic replaces Vector3 operator+ (same perf, consistent style).
 // ============================================================================
 
 namespace Hecton8.Interaction
 {
     using Hecton8.Core;
     using Hecton8.UI;
+    using Unity.Mathematics;
     using UnityEngine;
     using Hecton8.Audio;
 
@@ -55,37 +58,52 @@ namespace Hecton8.Interaction
 
         [Header("Raycast Settings")]
 
-        [SerializeField, Tooltip("Maximum interaction reach in meters.")]
+        [SerializeField,
+         Tooltip("Maximum interaction reach in meters.")]
         private float reachDistance = 3.5f;
 
-        [SerializeField, Tooltip("Seconds between raycast ticks. 0.05 = 20 checks/sec for smooth hover.")]
+        [SerializeField,
+         Tooltip("Seconds between raycast ticks. " +
+                 "0.05 = 20 checks/sec for smooth hover.")]
         private float raycastInterval = 0.05f;
 
-        [SerializeField, Tooltip("REQUIRED: Set to 'Interactable' layer. Never leave as Everything.")]
+        [SerializeField,
+         Tooltip("REQUIRED: Set to 'Interactable' layer. " +
+                 "Never leave as Everything.")]
         private LayerMask interactableMask = 0;
 
-        [SerializeField, Tooltip("Small offset to push ray origin forward, avoiding the player's own collider.")]
+        [SerializeField,
+         Tooltip("Small offset to push ray origin forward, " +
+                 "avoiding the player's own collider.")]
         private float rayOriginOffset = 0.1f;
 
         [Header("Audio Feedback")]
 
-        [SerializeField, Tooltip("Quiet metallic click played when hovering over a new interactable.")]
+        [SerializeField,
+         Tooltip("Quiet metallic click played when hovering " +
+                 "over a new interactable.")]
         private AudioClip hoverSound;
 
-        [SerializeField, Tooltip("Firm confirmation sound played on successful interaction.")]
+        [SerializeField,
+         Tooltip("Firm confirmation sound played on " +
+                 "successful interaction.")]
         private AudioClip interactSound;
 
         [Header("References")]
 
-        [SerializeField, Tooltip("Assign the main camera. Auto-resolves via Camera.main if null.")]
+        [SerializeField,
+         Tooltip("Assign the main camera. Auto-resolves " +
+                 "via Camera.main if null.")]
         private Camera playerCamera;
 
         [Header("Debug")]
 
-        [SerializeField, Tooltip("Debug ray color when nothing is hovered.")]
+        [SerializeField,
+         Tooltip("Debug ray color when nothing is hovered.")]
         private Color debugRayMissColor = Color.yellow;
 
-        [SerializeField, Tooltip("Debug ray color when an interactable is hovered.")]
+        [SerializeField,
+         Tooltip("Debug ray color when an interactable is hovered.")]
         private Color debugRayHitColor = Color.green;
 
         // ====================================================================
@@ -99,11 +117,9 @@ namespace Hecton8.Interaction
         private RaycastHit    _hitInfo;
 
         /// <summary>
-        /// Tracks whether this component successfully registered with GameTickManager.
-        /// Prevents:
-        ///   - Double-register (OnEnable + Start both succeeding).
-        ///   - Unregister when we never registered in the first place.
-        ///   - Double-unregister during scene teardown.
+        /// Tracks whether this component successfully registered
+        /// with GameTickManager. Prevents double-register (OnEnable +
+        /// Start both succeeding) and orphan unregister.
         /// </summary>
         private bool          _registeredToTickManager;
 
@@ -119,70 +135,72 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
-            // ----------------------------------------------------------------
+            // ────────────────────────────────────────────────────
             // Camera resolution — done once, cached forever.
-            // ----------------------------------------------------------------
+            // ────────────────────────────────────────────────────
             if (playerCamera == null)
             {
                 playerCamera = Camera.main;
 
-                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (playerCamera == null)
                 {
                     Debug.LogError(
-                        "[PlayerInteraction] No camera assigned and Camera.main is null. " +
-                        "Assign the player camera in the Inspector.", this);
+                        "[PlayerInteraction] No camera assigned and " +
+                        "Camera.main is null. Assign the player camera " +
+                        "in the Inspector.", this);
                     enabled = false;
                     return;
                 }
-                #endif
+#endif
             }
 
             _cameraTransform = playerCamera.transform;
-            _raycastTimer = 0f;
+            _raycastTimer    = 0f;
             _registeredToTickManager = false;
 
-            // ----------------------------------------------------------------
+            // ────────────────────────────────────────────────────
             // Layer mask validation — catch misconfiguration early.
-            // ----------------------------------------------------------------
-            #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // ────────────────────────────────────────────────────
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (interactableMask.value == 0)
             {
                 Debug.LogWarning(
-                    "[PlayerInteraction] interactableMask is set to Nothing. " +
-                    "Raycasts will hit nothing. Set it to the 'Interactable' layer.", this);
+                    "[PlayerInteraction] interactableMask is set to " +
+                    "Nothing. Raycasts will hit nothing. Set it to " +
+                    "the 'Interactable' layer.", this);
             }
             else if (interactableMask.value == ~0)
             {
                 Debug.LogWarning(
-                    "[PlayerInteraction] interactableMask is set to Everything. " +
-                    "For performance, narrow it to the 'Interactable' layer only.", this);
+                    "[PlayerInteraction] interactableMask is set to " +
+                    "Everything. For performance, narrow it to the " +
+                    "'Interactable' layer only.", this);
             }
-            #endif
+#endif
         }
 
         // ====================================================================
         // TICK REGISTRATION — Deferred two-phase pattern.
         //
-        // Phase 1 (OnEnable): Attempt registration. If GameTickManager.Instance
-        //   is null (script execution order, scene loading), silently skip.
-        //   No warning, no error — Start will handle it.
+        // Phase 1 (OnEnable): Attempt registration. If Instance is null
+        //   (script execution order, scene loading), silently skip.
         //
-        // Phase 2 (Start): If OnEnable failed to register, retry here.
-        //   By Start(), all Awake() calls have completed — Instance should exist.
-        //   Debug.LogError ONLY if Instance is still null at this point.
+        // Phase 2 (Start): Guaranteed retry. All Awake() calls completed.
+        //   Debug.LogError ONLY if Instance still null.
         //
-        // The _registeredToTickManager flag guarantees:
-        //   - Registration happens exactly once (no double-tick).
-        //   - Unregister only if we actually registered.
-        //   - Safe during scene teardown (OnDisable checks flag + Instance).
+        // _registeredToTickManager flag guarantees:
+        //   - Registration exactly once (no double-tick).
+        //   - Unregister only if registered.
+        //   - Safe during scene teardown.
         // ====================================================================
 
         private void OnEnable()
         {
-            // Phase 1: early registration attempt.
-            // GameTickManager may not have initialized yet — that's OK.
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
+            // Guard: GameTickManager may not exist yet (execution order).
+            if (GameTickManager.Instance == null) return;
+
+            if (!_registeredToTickManager)
             {
                 GameTickManager.Instance.Register(this);
                 _registeredToTickManager = true;
@@ -191,8 +209,7 @@ namespace Hecton8.Interaction
 
         private void Start()
         {
-            // Phase 2: deferred registration fallback.
-            // All Awake() calls have completed by now.
+            // Phase 2: deferred fallback. All Awake() calls completed.
             if (_registeredToTickManager)
                 return;
 
@@ -204,23 +221,25 @@ namespace Hecton8.Interaction
             else
             {
                 Debug.LogError(
-                    "[PlayerInteraction] GameTickManager.Instance is null even at Start(). " +
-                    "Tick-based interaction will NOT work. " +
-                    "Ensure GameTickManager exists in the scene and is active.", this);
+                    "[PlayerInteraction] GameTickManager.Instance is " +
+                    "null even at Start(). Tick-based interaction will " +
+                    "NOT work. Ensure GameTickManager exists in the " +
+                    "scene and is active.", this);
             }
         }
 
         private void OnDisable()
         {
-            // Guard: Only unregister if we actually registered AND the manager still exists.
-            // During scene teardown, singletons may be destroyed before this component.
-            if (_registeredToTickManager && GameTickManager.Instance != null)
+            // Guard: singleton may be destroyed before this component.
+            if (GameTickManager.Instance == null) return;
+
+            if (_registeredToTickManager)
             {
                 GameTickManager.Instance.Unregister(this);
                 _registeredToTickManager = false;
             }
 
-            // Clean up hover state if component is disabled mid-hover.
+            // Clean up hover state if disabled mid-hover.
             ClearHover();
         }
 
@@ -228,14 +247,24 @@ namespace Hecton8.Interaction
         // ITickable IMPLEMENTATION — Replaces native Update().
         // ====================================================================
 
+        /// <summary>
+        /// Main tick loop. Called by GameTickManager every frame.
+        ///
+        /// Phase 1: Throttled raycast (20Hz) — target acquisition.
+        ///          NOT blocked by UI state — hover prompt must be
+        ///          visible the instant a menu closes.
+        ///
+        /// Phase 2: Input poll (every tick) — action execution.
+        ///          Blocked by UI state (HectonFabricatorUI.IsMenuOpen).
+        ///
+        /// Zero GC: Physics.Raycast (non-alloc), TryGetComponent,
+        ///          ReferenceEquals, Input.GetKeyDown — all allocation-free.
+        /// </summary>
         public void Tick(float deltaTime)
         {
-            // ================================================================
+            // ════════════════════════════════════════════════════
             // PHASE 1: THROTTLED RAYCAST — Target acquisition.
-            // Runs at 20Hz (0.05s interval). Updates _currentHovered.
-            // Raycasts are NOT blocked by UI state — the hover prompt
-            // must be visible the instant a menu closes.
-            // ================================================================
+            // ════════════════════════════════════════════════════
             _raycastTimer += deltaTime;
 
             if (_raycastTimer >= raycastInterval)
@@ -244,15 +273,11 @@ namespace Hecton8.Interaction
                 PerformRaycast();
             }
 
-            // ================================================================
+            // ════════════════════════════════════════════════════
             // PHASE 2: INPUT POLL — Action execution.
-            // Runs EVERY tick for zero-latency response.
-            //
-            // UI STATE GUARD: If any menu is open, the interaction key
-            // is silently consumed. HectonFabricatorUI.IsMenuOpen is a
-            // static property — safe to read even if the instance is null
-            // (static fields persist independently of MonoBehaviour lifecycle).
-            // ================================================================
+            // UI STATE GUARD: HectonFabricatorUI.IsMenuOpen is a
+            // static property — safe even if instance is null.
+            // ════════════════════════════════════════════════════
             if (_currentHovered != null
                 && !HectonFabricatorUI.IsMenuOpen
                 && Input.GetKeyDown(KeyCode.E))
@@ -267,27 +292,32 @@ namespace Hecton8.Interaction
 
         private void PerformRaycast()
         {
-            Vector3 origin    = _cameraTransform.position + _cameraTransform.forward * rayOriginOffset;
-            Vector3 direction = _cameraTransform.forward;
+            // ── Unity.Mathematics for offset calculation ──
+            float3 camPos = _cameraTransform.position;
+            float3 camFwd = _cameraTransform.forward;
+
+            float3 origin = camPos + camFwd * rayOriginOffset;
 
             _ray.origin    = origin;
-            _ray.direction = direction;
+            _ray.direction = camFwd;
 
             float effectiveReach = reachDistance - rayOriginOffset;
 
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             Debug.DrawRay(
-                origin,
-                direction * effectiveReach,
+                (Vector3)origin,
+                (Vector3)(camFwd * effectiveReach),
                 _currentHovered != null ? debugRayHitColor : debugRayMissColor,
                 raycastInterval,
                 false);
-            #endif
+#endif
 
-            if (Physics.Raycast(_ray, out _hitInfo, effectiveReach, interactableMask,
-                                QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(
+                    _ray, out _hitInfo, effectiveReach,
+                    interactableMask, QueryTriggerInteraction.Ignore))
             {
-                if (_hitInfo.collider.TryGetComponent(out IInteractable interactable))
+                if (_hitInfo.collider.TryGetComponent(
+                        out IInteractable interactable))
                 {
                     if (ReferenceEquals(interactable, _currentHovered))
                         return;
@@ -314,10 +344,11 @@ namespace Hecton8.Interaction
             _currentHovered.OnHoverStart();
 
             // Audio: subtle metallic click on hover acquisition.
-            // Guard: SpatialAudioManager may not exist in minimal test scenes.
-            if (hoverSound != null && SpatialAudioManager.Instance != null)
+            if (hoverSound != null
+                && SpatialAudioManager.Instance != null)
             {
-                SpatialAudioManager.Instance.PlayStatic2D(hoverSound, 0.3f);
+                SpatialAudioManager.Instance.PlayStatic2D(
+                    hoverSound, 0.3f);
             }
 
             InteractionEvents.RaiseHoverChanged(_currentHovered);
@@ -341,20 +372,22 @@ namespace Hecton8.Interaction
         private void ExecuteInteraction()
         {
             // Audio: firm metallic confirmation.
-            // Guard: SpatialAudioManager may not exist in minimal test scenes.
-            if (interactSound != null && SpatialAudioManager.Instance != null)
+            if (interactSound != null
+                && SpatialAudioManager.Instance != null)
             {
-                SpatialAudioManager.Instance.PlayStatic2D(interactSound, 0.6f);
+                SpatialAudioManager.Instance.PlayStatic2D(
+                    interactSound, 0.6f);
             }
 
             _currentHovered.Interact(transform);
-            InteractionEvents.RaiseInteractionStarted(_currentHovered, transform);
+            InteractionEvents.RaiseInteractionStarted(
+                _currentHovered, transform);
         }
 
         // ====================================================================
         // EDITOR GIZMO
         // ====================================================================
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             if (_cameraTransform == null && playerCamera != null)
@@ -363,21 +396,27 @@ namespace Hecton8.Interaction
             if (_cameraTransform == null)
                 return;
 
-            Vector3 origin = _cameraTransform.position + _cameraTransform.forward * rayOriginOffset;
+            Vector3 origin =
+                _cameraTransform.position +
+                _cameraTransform.forward * rayOriginOffset;
             float effectiveReach = reachDistance - rayOriginOffset;
 
             Gizmos.color = _currentHovered != null
                 ? debugRayHitColor
                 : new Color(1f, 1f, 0f, 0.5f);
 
-            Gizmos.DrawRay(origin, _cameraTransform.forward * effectiveReach);
+            Gizmos.DrawRay(
+                origin,
+                _cameraTransform.forward * effectiveReach);
 
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(origin, 0.03f);
 
             Gizmos.color = new Color(0f, 1f, 0f, 0.15f);
-            Gizmos.DrawWireSphere(origin + _cameraTransform.forward * effectiveReach, 0.05f);
+            Gizmos.DrawWireSphere(
+                origin + _cameraTransform.forward * effectiveReach,
+                0.05f);
         }
-        #endif
+#endif
     }
 }

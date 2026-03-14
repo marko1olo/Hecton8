@@ -135,15 +135,18 @@ VertexOutput vert (VertexInput v) {
 	
 
 	if( PROP(_Alignment) == ALIGNMENT_BILLBOARD ) {
-		half3 frw = WorldToLocalVec( -DirectionToNearPlanePos( OBJ_ORIGIN ) );
-		half3 camRightLocal = WorldToLocalVec( CAM_RIGHT );
-		half3 up = normalize( cross( frw, camRightLocal ) );
-		half3 right = cross( up, frw ); // already normalized
-		v.vertex.xyz = v.vertex.x * right + v.vertex.y * up;
+		const half3 frw = -DirectionToNearPlanePos( OBJ_ORIGIN );
+		const half3 right = normalize(cross(CAM_UP,frw));
+		const half3 up = cross(frw,right); // already normalized
+		const half3 rightLocal = WorldToLocalVec(right);
+		const half3 upLocal = WorldToLocalVec(up);
+		v.vertex.xyz = v.vertex.x * rightLocal + v.vertex.y * upLocal;
+		o.pos = UnityObjectToClipPos( v.vertex ); // scale already taken into account
+	} else {
+		o.pos = UnityObjectToClipPos( v.vertex / uniformScale );	
 	}
 	
 	o.IP_uv0 = v.uv0;
-    o.pos = UnityObjectToClipPos( v.vertex / uniformScale );
 	UNITY_TRANSFER_FOG(o,o.pos);
 
     return o;

@@ -28,6 +28,8 @@ public class ImmediateModeMonitor : EditorWindow {
 
 		using( ShapesUI.Group ) {
 			CountSuffixLabel( IMMaterialPool.pool.Count, "{0} material{1} in the material cache" );
+			CountSuffixLabel( ShapesTextPool.InstanceElementCount, $"{{0}} text element{{1}} in the text cache. Usage: {ShapesTextPool.InstanceElementCountActive}/{ShapesTextPool.InstanceElementCount}" );
+			CountSuffixLabel( ShapesMeshPool.MeshesAllocatedCount, $"{{0}} mesh object{{1}} in the mesh pool. Usage: {ShapesMeshPool.MeshCountInUse}/{ShapesMeshPool.MeshesAllocatedCount}" );
 			CountSuffixLabel( DisposableMesh.ActiveMeshCount, "{0} polygon/polyline path asset{1}" );
 			CountSuffixLabel( DrawCommand.cBuffersRendering.Count, "{0} camera{1} registered" );
 			CountSuffixLabel( DrawCommand.cBuffersRendering.Values.Sum( list => list.Count ), "{0} active command buffer{1}" );

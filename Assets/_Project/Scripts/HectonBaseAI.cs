@@ -336,6 +336,13 @@ namespace Hecton8.AI
         /// </summary>
         private Vector3 _cachedAvoidance;
 
+        /// <summary>
+        /// Tracks whether this component successfully registered
+        /// with GameTickManager. Prevents double-register (OnEnable +
+        /// Start both succeeding) and orphan unregister during teardown.
+        /// </summary>
+        private bool _registeredToTickManager;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -358,12 +365,25 @@ namespace Hecton8.AI
 
             // ── Initial state ──
             ResetInternalState();
+
+            _registeredToTickManager = false;
         }
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ITickable)this);
-            GameTickManager.Instance?.Register((IFixedTickable)this);
+            // Phase 1: early registration attempt.
+            // GameTickManager may not have initialized yet — that's OK.
+            // Start() will retry if this fails.
+            if (GameTickManager.Instance == null) goto skipRegister;
+
+            if (!_registeredToTickManager)
+            {
+                GameTickManager.Instance.Register((ITickable)this);
+                GameTickManager.Instance.Register((IFixedTickable)this);
+                _registeredToTickManager = true;
+            }
+
+            skipRegister:
 
             // ── Поиск игрока (ленивый, один раз) ──
             if (_playerTransform == null)
@@ -372,10 +392,42 @@ namespace Hecton8.AI
             }
         }
 
+        /// <summary>
+        /// Phase 2: deferred registration fallback.
+        /// All Awake() calls have completed by now.
+        /// </summary>
+        private void Start()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            if (GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Register((ITickable)this);
+                GameTickManager.Instance.Register((IFixedTickable)this);
+                _registeredToTickManager = true;
+            }
+            else
+            {
+                Debug.LogError(
+                    "[HectonBaseAI] GameTickManager.Instance is null " +
+                    "even at Start(). AI will NOT tick. " +
+                    "Ensure GameTickManager exists in the scene.",
+                    this);
+            }
+        }
+
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ITickable)this);
-            GameTickManager.Instance?.Unregister((IFixedTickable)this);
+            // Guard: singleton may be destroyed before this component.
+            if (GameTickManager.Instance == null) return;
+
+            if (_registeredToTickManager)
+            {
+                GameTickManager.Instance.Unregister((ITickable)this);
+                GameTickManager.Instance.Unregister((IFixedTickable)this);
+                _registeredToTickManager = false;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -397,6 +449,16 @@ namespace Hecton8.AI
 
             // ── Сброс внутреннего состояния ──
             ResetInternalState();
+
+            // ── Re-register with tick manager if needed ──
+            // Pooled objects go through OnDisable → OnEnable cycle,
+            // but OnEnable may fire before GameTickManager is ready.
+            if (!_registeredToTickManager && GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Register((ITickable)this);
+                GameTickManager.Instance.Register((IFixedTickable)this);
+                _registeredToTickManager = true;
+            }
 
             // ── Ленивый поиск игрока (если ещё не найден) ──
             if (_playerTransform == null)

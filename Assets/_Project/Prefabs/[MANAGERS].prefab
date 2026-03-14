@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 19336647242332347}
   - component: {fileID: 5856769925989962686}
   - component: {fileID: 4334505745138054749}
+  - component: {fileID: 9140334739692092775}
   m_Layer: 0
   m_Name: '[MANAGERS]'
   m_TagString: Untagged
@@ -64,8 +65,13 @@ MonoBehaviour:
   _playerTransform: {fileID: 0}
   _waterSurfaceY: 4900
   _useAutoUnderwaterDetection: 1
+  _shallowFogDensity: 0.001
+  _shallowDepthThreshold: 50
+  _lightAbsorptionCoeff: 0.005
+  _deepFogDepthRange: 300
+  _survivalSystemRef: {fileID: 0}
   mainCamera: {fileID: 0}
-  _globalVolume: {fileID: 0}
+  _biomeOverrides: []
 --- !u!114 &8699850174127364278
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,8 +132,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d10d1f46cff164d448916323158811cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.ScavengePopulator
-  resourcePrefabs: []
-  tileSize: 512
+  resourcePrefabs:
+  - {fileID: 0}
+  tileSize: 999
   maxSpawnsPerTick: 20
   unloadDistance: 300
   priorityLoadRadius: 150
@@ -178,3 +185,23 @@ MonoBehaviour:
   _debugTickCount: 0
   _debugFixedCount: 0
   _debugSlowCount: 0
+--- !u!114 &9140334739692092775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f42f5124e78be92438b8a69780992864, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.MapMagicBridge
+  mapMagicObject: {fileID: 0}
+  waterSurfaceLevel: 4900
+  playerTransform: {fileID: 0}
+  maxBiomeCount: 8
+  _debugMapMagicFound: 0
+  _debugTileCount: 0
+  _debugCurrentBiome: -1
+  _debugPlayerFound: 0

@@ -151,12 +151,9 @@ VertexOutput vert (VertexInput v) {
         // all these boys use proper miters
         #if defined(JOIN_MITER) || defined(JOIN_ROUND) || defined(JOIN_BEVEL) 
             GetMiterOffset( /*out*/ miterDir, /*out*/ miterLength, normalPrev, normalNext, vertexRadius );
-            // make sure miter length doesn't overshoot line length
-            // or not you know because it turns out~ this is more complicated than this
-            // (because it changes thickness) so, uh, nevermind for now
-            // miterLength = lerp(miterLength, min(miterLength, min(length(pt - ptPrev),length(ptNext - pt)) ),(-v.uv0.x*turnDirection + 1)/2 );
-            //float3 midpt = (ptNext + ptPrev)/2;
-            //miterLength = min(miterLength, min( distance( pt, ptNext ), distance( pt, ptPrev ) ) );
+            // make sure miter length doesn't overshoot line length:
+            float closestNeighborDist = sqrt( min( SqDist( pt, ptNext ), SqDist( pt, ptPrev ) ) );
+            miterLength = min( miterLength, closestNeighborDist + thickness/2 );
         #else
             // simple joins
             GetSimpleOffset( /*out*/ miterDir, /*out*/ miterLength, normalPrev, normalNext, vertexRadius );

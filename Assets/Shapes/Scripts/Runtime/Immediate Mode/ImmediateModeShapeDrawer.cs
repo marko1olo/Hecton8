@@ -1,14 +1,11 @@
-﻿using UnityEngine;
-
-#if UNITY_2019_1_OR_NEWER
-using UnityEngine.Rendering;
-
-#endif
-
-// Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
+﻿// Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
 // Website & Documentation - https://acegikmo.com/shapes/
+
 namespace Shapes {
 
+	using UnityEngine;
+
+	/// <summary>A helper type to inherit from when you want a component that draws immediate mode shapes</summary>
 	public class ImmediateModeShapeDrawer : MonoBehaviour {
 
 		/// <summary>Whether or not to only draw in cameras that can see the layer of this GameObject</summary>
@@ -35,9 +32,9 @@ namespace Shapes {
 
 		#if (SHAPES_URP || SHAPES_HDRP)
 			#if UNITY_2019_1_OR_NEWER
-				public virtual void OnEnable() => RenderPipelineManager.beginCameraRendering += DrawShapesSRP;
-				public virtual void OnDisable() => RenderPipelineManager.beginCameraRendering -= DrawShapesSRP;
-				void DrawShapesSRP( ScriptableRenderContext ctx, Camera cam ) => OnCameraPreRender( cam );
+				public virtual void OnEnable() => UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering += DrawShapesSRP;
+				public virtual void OnDisable() => UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering -= DrawShapesSRP;
+				void DrawShapesSRP( UnityEngine.Rendering.ScriptableRenderContext ctx, Camera cam ) => OnCameraPreRender( cam );
 			#else
 				public virtual void OnEnable() => Debug.LogWarning( "URP/HDRP immediate mode doesn't really work pre-Unity 2019.1, as there is no OnPreRender or beginCameraRendering callback" );
 			#endif

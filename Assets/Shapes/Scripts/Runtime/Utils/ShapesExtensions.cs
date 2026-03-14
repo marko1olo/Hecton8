@@ -7,6 +7,7 @@ using UnityEditor;
 #endif
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Object = UnityEngine.Object;
 
 // Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
@@ -25,6 +26,22 @@ namespace Shapes {
 		public static float TaxicabMagnitude( this Vector3 v ) => Mathf.Abs( v.x ) + Mathf.Abs( v.y ) + Mathf.Abs( v.z );
 		public static float AvgComponentMagnitude( this Vector3 v ) => ( Mathf.Abs( v.x ) + Mathf.Abs( v.y ) + Mathf.Abs( v.z ) ) / 3;
 		internal static Color ColorSpaceAdjusted( this Color c ) => QualitySettings.activeColorSpace == ColorSpace.Linear ? c.linear : c;
+
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] public static void SetInt_Shapes( this Material m, int id, int value ) {
+			// #if UNITY_2021_1_OR_NEWER
+			// m.SetInteger( id, value );
+			// #else
+			m.SetInt( id, value );
+			// #endif
+		}
+
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] public static void SetInt_Shapes( this MaterialPropertyBlock mpb, int id, int value ) {
+			// #if UNITY_2021_1_OR_NEWER
+			// mpb.SetInteger( id, value );
+			// #else
+			mpb.SetInt( id, value );
+			// #endif
+		}
 
 		// because outside of play mode, we have to use DestroyImmediate, but we want to use Destroy otherwise
 		public static void DestroyBranched( this Object obj ) {

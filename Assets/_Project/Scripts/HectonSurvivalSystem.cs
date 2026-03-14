@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using Unity.Mathematics;
+using Hecton8.Atmosphere;
 
 /// <summary>
 /// Core survival simulation for the Hecton diving suit.
@@ -36,7 +37,7 @@ using Unity.Mathematics;
 /// ─ All math uses Unity.Mathematics.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickable, ISaveable
+public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickable, ISaveable, HectonAtmosphereManager.IDepthProvider
 {
     // ─── Inspector ───────────────────────────────────────────
 
@@ -110,7 +111,8 @@ public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickab
     /// Player has died (O₂ = 0 or Integrity = 0).
     /// </summary>
     public event Action OnDeath;
-
+    // Реализация IDepthProvider для AtmosphereManager
+    public float CurrentDepth => this.depth;
     // ─── Public read-only properties ─────────────────────────
 
     public float Oxygen              => oxygen;

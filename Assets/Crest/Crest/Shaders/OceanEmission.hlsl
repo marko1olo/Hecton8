@@ -5,6 +5,66 @@
 #ifndef CREST_OCEAN_EMISSION_INCLUDED
 #define CREST_OCEAN_EMISSION_INCLUDED
 
+// ═══════════════════════════════════════════════════════════════════
+// FOVEATED RENDERING FALLBACK — Unity 6 Compatibility Fix
+//
+// Unity 6 (URP 17+) removed or relocated foveated rendering macros
+// that were previously available in earlier URP versions.
+//
+// FoveatedRemapLinearToNonUniform(uv):
+//   Remaps linear UV coordinates to non-uniform space for foveated
+//   rendering on VR devices. When foveated rendering is not active
+//   or the macro is not defined, it should be a no-op (identity).
+//
+// This guard ensures Crest compiles on:
+//   - Unity 6 / URP 17+ (macro removed)
+//   - Unity 2022 / URP 14-16 (macro may or may not exist)
+//   - D3D11, Vulkan, Metal, OpenGL (all backends)
+//   - Non-VR builds where _FOVEATED_RENDERING_NON_UNIFORM is never defined
+//
+// The #ifndef check is safe because:
+//   - If the macro IS defined by a future URP version, we don't override it.
+//   - If it's NOT defined, we provide a no-op fallback.
+//   - CREST_MULTISAMPLE_SCENE_DEPTH and other Crest macros that call this
+//     will compile without modification.
+// ═══════════════════════════════════════════════════════════════════
+
+#ifndef FoveatedRemapLinearToNonUniform
+    #define FoveatedRemapLinearToNonUniform(uv) (uv)
+#endif
+
+// ═══════════════════════════════════════════════════════════════════
+// Additional foveated rendering macros that may be referenced by
+// Crest shaders in other .hlsl files. Define fallbacks for all
+// known variants to prevent compile errors across the Crest package.
+// ═══════════════════════════════════════════════════════════════════
+
+#ifndef FoveatedRemapNonUniformToLinear
+    #define FoveatedRemapNonUniformToLinear(uv) (uv)
+#endif
+
+#ifndef FoveatedRemapDensity
+    #define FoveatedRemapDensity(uv) (1.0)
+#endif
+
+// ═══════════════════════════════════════════════════════════════════
+// _FOVEATED_RENDERING_NON_UNIFORM keyword safety:
+//
+// Some Crest code paths check #if defined(_FOVEATED_RENDERING_NON_UNIFORM)
+// before calling FoveatedRemapLinearToNonUniform. This keyword is set
+// by URP when foveated rendering is active on the platform.
+//
+// On D3D11/MX350 and non-VR platforms, this keyword is NEVER defined,
+// so foveated code paths are compiled out at the preprocessor level.
+// The fallback macros above are a safety net for code paths that
+// call the function WITHOUT checking the keyword first (like Crest does
+// in the transparency/refraction section below).
+//
+// No action needed for _FOVEATED_RENDERING_NON_UNIFORM itself —
+// it's a shader_feature/multi_compile keyword managed by URP, not a macro.
+// ═══════════════════════════════════════════════════════════════════
+
+
 half3 ScatterColour
 (
 	in const half i_surfaceOceanDepth,
@@ -42,13 +102,11 @@ half3 ScatterColour
 
 		// Approximate subsurface scattering - add light when surface faces viewer. Use geometry normal - don't need high freqs.
 		half towardsSun = pow(max(0., dot(i_lightDir, -i_view)), _SubSurfaceSunFallOff);
-		// URP version was: col += (_SubSurfaceBase + _SubSurfaceSun * towardsSun) * _SubSurfaceColour.rgb * i_lightCol * shadow;
 		half3 subsurface = (_SubSurfaceBase + _SubSurfaceSun * towardsSun) * _SubSurfaceColour.rgb * i_lightCol * i_shadow;
 		if (!i_underwater)
 		{
 			subsurface *= (1.0 - v * v) * sss;
 #if _ADDITIONAL_LIGHTS
-			// Already includes attenuation from distance and shadows. Exclude from underwater.
 			subsurface += _SubSurfaceColour.rgb * i_additionalLightCol;
 #endif
 		}
@@ -75,25 +133,14 @@ void ApplyCaustics
 	in const CascadeParams cascadeData
 )
 {
-	// could sample from the screen space shadow texture to attenuate this..
-	// underwater caustics - dedicated to P
 	const float3 scenePosUV = WorldToUV(i_scenePos.xz, cascadeData, i_sliceIndex);
 
 	float3 disp = 0.0;
-	// this gives height at displaced position, not exactly at query position.. but it helps. i cant pass this from vert shader
-	// because i dont know it at scene pos.
 	SampleDisplacements(_LD_TexArray_AnimatedWaves, scenePosUV, 1.0, disp);
 	half seaLevelOffset = _LD_TexArray_SeaFloorDepth.SampleLevel(LODData_linear_clamp_sampler, scenePosUV, 0.0).y;
 	half waterHeight = _OceanCenterPosWorld.y + disp.y + seaLevelOffset;
 	half sceneDepth = waterHeight - i_scenePos.y;
-	// Compute mip index manually, with bias based on sea floor depth. We compute it manually because if it is computed automatically it produces ugly patches
-	// where samples are stretched/dilated. The bias is to give a focusing effect to caustics - they are sharpest at a particular depth. This doesn't work amazingly
-	// well and could be replaced.
 	float mipLod = log2(max(i_sceneZ, 1.0)) + abs(sceneDepth - _CausticsFocalDepth) / _CausticsDepthOfField;
-	// project along light dir, but multiply by a fudge factor reduce the angle bit - compensates for fact that in real life
-	// caustics come from many directions and don't exhibit such a strong directonality
-	// Removing the fudge factor (4.0) will cause the caustics to move around more with the waves. But this will also
-	// result in stretched/dilated caustics in certain areas. This is especially noticeable on angled surfaces.
 	float2 lightProjection = i_lightDir.xz * sceneDepth / (4.0 * i_lightDir.y);
 
 	float3 cuv1 = 0.0; float3 cuv2 = 0.0;
@@ -102,9 +149,7 @@ void ApplyCaustics
 		float surfacePosScale = 1.37;
 
 #if CREST_FLOATING_ORIGIN
-		// Apply tiled shifting origin offset. Always needed.
 		surfacePosXZ -= i_causticsTexture.FloatingOriginOffset();
-		// Scale was causing popping.
 		surfacePosScale = 1.0;
 #endif
 
@@ -122,7 +167,6 @@ void ApplyCaustics
 		);
 	}
 
-	// We'll use this distortion code for above water in single pass due to refraction bug.
 #if !defined(UNITY_SINGLE_PASS_STEREO) && !defined(UNITY_STEREO_INSTANCING_ENABLED)
 	if (i_underwater)
 #endif
@@ -130,7 +174,6 @@ void ApplyCaustics
 		float2 surfacePosXZ = i_scenePos.xz;
 
 #if CREST_FLOATING_ORIGIN
-		// Apply tiled shifting origin offset. Always needed.
 		surfacePosXZ -= i_distortionTexture.FloatingOriginOffset();
 #endif
 
@@ -146,9 +189,7 @@ void ApplyCaustics
 #if _SHADOWS_ON
 #if defined(UNIVERSAL_PIPELINE_CORE_INCLUDED)
 	{
-		// Apply shadow maps to caustics.
 		{
-			// We could skip GetMainLight but this is recommended approach which is likely more robust to API changes.
 			float4 shadowCoord = TransformWorldToShadowCoord(i_scenePos);
 			Light mainLight = GetMainLight(TransformWorldToShadowCoord(i_scenePos));
 			causticsStrength *= mainLight.shadowAttenuation;
@@ -196,8 +237,6 @@ half3 OceanEmission
 
 #if _TRANSPARENCY_ON
 
-	// View ray intersects geometry surface either above or below ocean surface
-
 	const half2 uvBackground = i_grabPosXYW.xy / i_grabPosXYW.z;
 	half3 sceneColour;
 	half3 alpha = 0.;
@@ -216,17 +255,14 @@ half3 OceanEmission
 
 	bool caustics = true;
 #if CREST_WATER_VOLUME_HAS_BACKFACE
-	// Using uvDepthRefract works sometimes but not others.
 	bool backface = ApplyVolumeToOceanSurfaceRefractions(i_positionSS + (refractOffset * _ScreenSize.xy), i_rawDepth, i_underwater, rawDepth, caustics);
 #endif
 
-	// Depth fog & caustics - only if view ray starts from above water
 	if (!i_underwater)
 	{
 		half2 uvBackgroundRefract;
 		float sceneZ = i_sceneZ;
 
-		// Compute depth fog alpha based on refracted position if it landed on an underwater surface, or on unrefracted depth otherwise
 		if (rawDepth < i_rawPixelZ)
 		{
 			uvBackgroundRefract = uvBackground + refractOffset;
@@ -243,7 +279,6 @@ half3 OceanEmission
 		}
 		else
 		{
-			// We have refracted onto a surface in front of the water. Cancel the refraction offset.
 			uvBackgroundRefract = uvBackground;
 			uvBackgroundRefract = FoveatedRemapLinearToNonUniform(uvBackgroundRefract);
 
@@ -255,7 +290,6 @@ half3 OceanEmission
 				rawDepth = CREST_MULTISAMPLE_SCENE_DEPTH(uvBackground, rawDepth);
 			}
 			sceneZ = CrestLinearEyeDepth(rawDepth);
-			// It seems that when MSAA is enabled this can sometimes be negative
 			depthFogDistance = max(sceneZ - i_pixelZ, 0.0);
 		}
 
@@ -265,7 +299,6 @@ half3 OceanEmission
 		if (caustics)
 #endif
 		{
-		// Refractions don't work correctly in single pass. Use same code from underwater instead for now.
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED)
 			float3 scenePos = _WorldSpaceCameraPos - i_view * sceneZ / dot(UNITY_MATRIX_I_V._13_23_33, i_view);
 #else
@@ -281,11 +314,8 @@ half3 OceanEmission
 		const half2 uvBackgroundRefract = rawDepth < i_rawPixelZ ? uvBackground + refractOffset : uvBackground;
 		sceneColour = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, uvBackgroundRefract).rgb;
 		depthFogDistance = i_pixelZ;
-		// keep alpha at 0 as UnderwaterReflection shader handles the blend
-		// appropriately when looking at water from below
 	}
 
-	// blend from water colour to the scene colour
 	col = lerp(sceneColour, col, alpha);
 
 #endif // _TRANSPARENCY_ON

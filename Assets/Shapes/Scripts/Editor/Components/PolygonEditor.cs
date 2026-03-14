@@ -42,7 +42,7 @@ namespace Shapes {
 		}
 
 		public override void OnInspectorGUI() {
-			base.BeginProperties();
+			base.BeginProperties( isCustomMesh: true );
 			EditorGUILayout.PropertyField( propTriangulation );
 
 			bool changed = fillEditor.DrawProperties( this );
@@ -62,9 +62,11 @@ namespace Shapes {
 
 		void OnSceneGUI() {
 			Polygon p = target as Polygon;
-			bool changed = fillEditor.DoSceneHandles( p.UseFill, p, p.Fill, p.transform );
+			GradientFill fill = p.Fill;
+			bool changed = fillEditor.DoSceneHandles( p.UseFill, p, ref fill, p.transform );
 			changed |= scenePointEditor.DoSceneHandles( closed: true, p, p.points, p.transform );
 			if( changed ) {
+				p.Fill = fill;
 				p.UpdateMesh( true );
 				p.UpdateAllMaterialProperties();
 			}

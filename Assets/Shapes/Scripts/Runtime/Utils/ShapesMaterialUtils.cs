@@ -13,6 +13,7 @@ namespace Shapes {
 		public static readonly int propZTestTMP = Shader.PropertyToID( "unity_GUIZTestMode" ); // TMP only
 		public static readonly int propZOffsetFactor = Shader.PropertyToID( "_ZOffsetFactor" ); // used for all shapes
 		public static readonly int propZOffsetUnits = Shader.PropertyToID( "_ZOffsetUnits" ); // used for all shapes
+		public static readonly int propColorMask = Shader.PropertyToID( "_ColorMask" ); // used for all shapes
 		public static readonly int propStencilComp = Shader.PropertyToID( "_StencilComp" ); // used for all shapes
 		public static readonly int propStencilOpPass = Shader.PropertyToID( "_StencilOpPass" ); // used for all shapes
 		public static readonly int propStencilID = Shader.PropertyToID( "_StencilID" ); // used for all shapes
@@ -64,9 +65,11 @@ namespace Shapes {
 		public static readonly int propFillStart = Shader.PropertyToID( "_FillStart" ); // polygon (so far), .w is radius if we're radial
 		public static readonly int propFillEnd = Shader.PropertyToID( "_FillEnd" ); // polygon (so far), endpoint of linear gradient
 		public static readonly int propFillSpace = Shader.PropertyToID( "_FillSpace" ); // polygon (so far). local vs world
-		
+
 		public static readonly int propMainTex = Shader.PropertyToID( "_MainTex" ); // texture
 		public static readonly int propUvs = Shader.PropertyToID( "_Uvs" ); // texture
+
+		public static readonly int propScreenParams = Shader.PropertyToID( "_ScreenParams" ); // used for IMGUI support
 
 		// materials
 		static readonly ShapesMaterials matDisc = new ShapesMaterials( "Disc" );
@@ -114,7 +117,7 @@ namespace Shapes {
 		};
 
 		// helper functions
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		public static ShapesMaterials GetDiscMaterial( bool hollow, bool sector ) {
 			if( hollow )
 				return sector ? matRingSector : matRing;

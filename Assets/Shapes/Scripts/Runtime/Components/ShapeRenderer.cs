@@ -18,7 +18,7 @@ namespace Shapes {
 		MeshFilter mf;
 		int meshOwnerID;
 		MaterialPropertyBlock mpb;
-		MaterialPropertyBlock Mpb => mpb ?? ( mpb = new MaterialPropertyBlock() ); // hecking, gosh, I want the C#8 ??= operator
+		MaterialPropertyBlock Mpb => mpb ??= new MaterialPropertyBlock();
 		Material[] instancedMaterials = null; // used when pass tags are anything but the default (eg ZTest != Less Equal, or scale offset is set, or a weird blend mode)
 		internal bool IsUsingUniqueMaterials => IsInstanced == false;
 
@@ -76,11 +76,29 @@ namespace Shapes {
 				UpdateMesh( force: true );
 			}
 		}
+		[SerializeField] private protected ShapeCulling culling = ShapeCulling.CalculatedLocal;
+		/// <summary>Whether to cull this shape when off-screen</summary>
+		public ShapeCulling Culling {
+			get => culling;
+			set {
+				culling = value;
+				UpdateBounds();
+			}
+		}
+		[SerializeField] private protected float boundsPadding = 0f;
+		/// <summary>How much to pad this bounding box in local space meters</summary>
+		public float BoundsPadding {
+			get => boundsPadding;
+			set {
+				boundsPadding = value;
+				UpdateBounds();
+			}
+		}
 
 		#region instancing breaking pass tags
 
 		// if and only if all are set to their default values
-		bool IsInstanced => UsingDefaultZTests && UsingDefaultStencil && UsingDefaultRenderQueue;
+		bool IsInstanced => UsingDefaultZTests && UsingDefaultMasking && UsingDefaultRenderQueue;
 
 		// render queue offset
 		bool UsingDefaultRenderQueue => renderQueue == DEFAULT_RENDER_QUEUE_AUTO;
@@ -96,7 +114,7 @@ namespace Shapes {
 			}
 		}
 		[SerializeField] int renderQueue = DEFAULT_RENDER_QUEUE_AUTO;
-		
+
 		/// <summary>The default render queue, which is auto-set based on blend mode</summary>
 		public const int DEFAULT_RENDER_QUEUE_AUTO = -1;
 
@@ -110,32 +128,34 @@ namespace Shapes {
 		/// <summary>The default Z offset units of 0</summary>
 		public const int DEFAULT_ZOFS_UNITS = 0;
 
+		/// <summary>The default ColorMask of 15 (RGBA)</summary>
+		public const ColorWriteMask DEFAULT_COLOR_MASK = ColorWriteMask.All;
+
 		bool UsingDefaultZTests => zTest == DEFAULT_ZTEST && zOffsetFactor == DEFAULT_ZOFS_FACTOR && zOffsetUnits == DEFAULT_ZOFS_UNITS;
 		[SerializeField] CompareFunction zTest = DEFAULT_ZTEST;
-		/// <summary>Current depth buffer compare function. Default is CompareFunction.LessEqual</summary>
+		/// <inheritdoc cref="RenderState.zTest"/>
 		public CompareFunction ZTest {
 			get => zTest;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propZTest, (int)( zTest = value ) );
 		}
 		[SerializeField] float zOffsetFactor = DEFAULT_ZOFS_FACTOR;
-		/// <summary>This ZOffsetFactor scales the maximum Z slope, with respect to X or Y of the polygon,
-		/// while the other ZOffsetUnits, scales the minimum resolvable depth buffer value.
-		/// This allows you to force one polygon to be drawn on top of another although they are actually in the same position.
-		/// For example, if ZOffsetFactor = 0 &amp; ZOffsetUnits = -1, it pulls the polygon closer to the camera,
-		/// ignoring the polygon’s slope, whereas if ZOffsetFactor = -1 &amp; ZOffsetUnits = -1, it will pull the polygon even closer when looking at a grazing angle.</summary>
+		/// <inheritdoc cref="RenderState.zOffsetFactor"/>
 		public float ZOffsetFactor {
 			get => zOffsetFactor;
 			set => SetFloatOnAllInstancedMaterials( ShapesMaterialUtils.propZOffsetFactor, zOffsetFactor = value );
 		}
 		[SerializeField] int zOffsetUnits = DEFAULT_ZOFS_UNITS;
-		/// <summary>this ZOffsetUnits value scales the minimum resolvable depth buffer value,
-		/// while the other ZOffsetFactor scales the maximum Z slope, with respect to X or Y of the polygon.
-		/// This allows you to force one polygon to be drawn on top of another although they are actually in the same position.
-		/// For example, if ZOffsetFactor = 0 &amp; ZOffsetUnits = -1, it pulls the polygon closer to the camera,
-		/// ignoring the polygon’s slope, whereas if ZOffsetFactor = -1 &amp; ZOffsetUnits = -1, it will pull the polygon even closer when looking at a grazing angle.</summary>
+		/// <inheritdoc cref="RenderState.zOffsetUnits"/>
 		public int ZOffsetUnits {
 			get => zOffsetUnits;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propZOffsetUnits, zOffsetUnits = value );
+		}
+
+		[SerializeField] ColorWriteMask colorMask = DEFAULT_COLOR_MASK;
+		/// <inheritdoc cref="RenderState.colorMask"/>
+		public ColorWriteMask ColorMask {
+			get => colorMask;
+			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propColorMask, (int)( colorMask = value ) );
 		}
 
 		// stencil
@@ -151,33 +171,33 @@ namespace Shapes {
 		/// <summary>The default stencil mask of 255</summary>
 		public const byte DEFAULT_STENCIL_MASK = 255; // read & write
 
-		bool UsingDefaultStencil => stencilComp == DEFAULT_STENCIL_COMP && stencilOpPass == DEFAULT_STENCIL_OP && stencilRefID == DEFAULT_STENCIL_REF_ID && stencilReadMask == DEFAULT_STENCIL_MASK && stencilWriteMask == DEFAULT_STENCIL_MASK;
+		bool UsingDefaultMasking => stencilComp == DEFAULT_STENCIL_COMP && stencilOpPass == DEFAULT_STENCIL_OP && stencilRefID == DEFAULT_STENCIL_REF_ID && stencilReadMask == DEFAULT_STENCIL_MASK && stencilWriteMask == DEFAULT_STENCIL_MASK && colorMask == DEFAULT_COLOR_MASK;
 		[SerializeField] CompareFunction stencilComp = DEFAULT_STENCIL_COMP;
-		/// <summary> The stencil buffer function used to compare the reference value to the current contents of the buffer. Default: always </summary>
+		/// <inheritdoc cref="RenderState.stencilComp"/>
 		public CompareFunction StencilComp {
 			get => stencilComp;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propStencilComp, (int)( stencilComp = value ) );
 		}
 		[SerializeField] StencilOp stencilOpPass = DEFAULT_STENCIL_OP;
-		/// <summary>What to do with the contents of the stencil buffer if the stencil test (and the depth test) passes. Default: keep</summary>
+		/// <inheritdoc cref="RenderState.stencilOpPass"/>
 		public StencilOp StencilOpPass {
 			get => stencilOpPass;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propStencilOpPass, (int)( stencilOpPass = value ) );
 		}
 		[SerializeField] byte stencilRefID = DEFAULT_STENCIL_REF_ID;
-		/// <summary>The stencil buffer id/reference value to be compared against</summary>
+		/// <inheritdoc cref="RenderState.stencilRefID"/>
 		public byte StencilRefID {
 			get => stencilRefID;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propStencilID, stencilRefID = value );
 		}
 		[SerializeField] byte stencilReadMask = DEFAULT_STENCIL_MASK;
-		/// <summary>A stencil buffer 8 bit mask as an 0–255 integer, used when comparing the reference value with the contents of the buffer. Default: 255</summary>
+		/// <inheritdoc cref="RenderState.stencilReadMask"/>
 		public byte StencilReadMask {
 			get => stencilReadMask;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propStencilReadMask, stencilReadMask = value );
 		}
 		[SerializeField] byte stencilWriteMask = DEFAULT_STENCIL_MASK;
-		/// <summary>A stencil buffer 8 bit mask as an 0–255 integer, used when writing to the buffer. Note that, like other write masks, it specifies which bits of stencil buffer will be affected by write (i.e. WriteMask 0 means that no bits are affected and not that 0 will be written). Default: 255</summary>
+		/// <inheritdoc cref="RenderState.stencilWriteMask"/>
 		public byte StencilWriteMask {
 			get => stencilWriteMask;
 			set => SetIntOnAllInstancedMaterials( ShapesMaterialUtils.propStencilWriteMask, stencilWriteMask = value );
@@ -228,13 +248,17 @@ namespace Shapes {
 				initializedComponents = true;
 				MakeSureComponentExists( ref mf, out _ );
 				MakeSureComponentExists( ref rnd, out bool createdRnd );
-				if( createdRnd ) {
-					rnd.receiveShadows = false;
-					rnd.shadowCastingMode = ShadowCastingMode.Off;
-					rnd.lightProbeUsage = LightProbeUsage.Off;
-					rnd.reflectionProbeUsage = ReflectionProbeUsage.Off;
-				}
 			}
+
+			// these have to be turned off aggressively, otherwise batching can break
+			if( rnd.receiveShadows )
+				rnd.receiveShadows = false;
+			if( rnd.shadowCastingMode != ShadowCastingMode.Off )
+				rnd.shadowCastingMode = ShadowCastingMode.Off;
+			if( rnd.lightProbeUsage != LightProbeUsage.Off )
+				rnd.lightProbeUsage = LightProbeUsage.Off;
+			if( rnd.reflectionProbeUsage != ReflectionProbeUsage.Off )
+				rnd.reflectionProbeUsage = ReflectionProbeUsage.Off;
 		}
 
 		public virtual void Awake() {
@@ -315,10 +339,11 @@ namespace Shapes {
 			TryDestroyInstancedMaterials( inOnDestroy: true );
 		}
 
-		private protected abstract Bounds GetBounds_Internal();
+		private protected abstract Bounds GetUnpaddedLocalBounds_Internal();
 		private protected abstract void SetAllMaterialProperties();
 		private protected virtual void ShapeClampRanges() => _ = 0;
-		private protected abstract Material[] GetMaterials();
+		private protected abstract void GetMaterials( Material[] mats );
+		private protected virtual int MaterialCount => 1;
 		private protected virtual void GenerateMesh() => _ = 0;
 		private protected virtual Mesh GetInitialMeshAsset() => ShapesMeshUtils.QuadMesh[HasDetailLevels ? (int)DetailLevel.Medium : 0];
 		private protected virtual MeshUpdateMode MeshUpdateMode => MeshUpdateMode.UseAsset;
@@ -327,8 +352,17 @@ namespace Shapes {
 		private protected virtual bool UseCamOnPreCull => false;
 		internal virtual void CamOnPreCull() => _ = 0;
 
-		void UpdateMeshBounds() => Mesh.bounds = GetBounds_Internal();
-
+		void UpdateBounds() {
+			Bounds b = GetBounds();
+			if( MeshUpdateMode is MeshUpdateMode.UseAssetCopy or MeshUpdateMode.SelfGenerated && Mesh != null ) {
+				Mesh.bounds = b;
+				rnd.ResetLocalBounds(); // don't override through instance
+			} else if( Culling == ShapeCulling.CalculatedLocal ) {
+				rnd.localBounds = b;
+			} else if( Culling == ShapeCulling.SimpleGlobal ) {
+				rnd.ResetLocalBounds(); // use mesh primitive bounds instead
+			}
+		}
 
 		void TryDestroyInstancedMaterials( bool inOnDestroy = false ) {
 			if( instancedMaterials != null ) {
@@ -382,24 +416,29 @@ namespace Shapes {
 			}
 		}
 
+		Material[] mats;
+
 		private protected void UpdateMaterial() {
-			Material[] targetMats = GetMaterials();
+			if( mats == null || mats.Length != MaterialCount )
+				mats = new Material[MaterialCount];
+			GetMaterials( mats );
 
 			// this means we have unique material properties for this shape, so, instantiate them
 			// but! only when they're in the scene
 			if( IsUsingUniqueMaterials ) {
-				MakeSureMaterialInstancesAreGood( targetMats );
-				targetMats = instancedMaterials;
+				MakeSureMaterialInstancesAreGood( mats );
+				for( int i = 0; i < mats.Length; i++ )
+					mats[i] = instancedMaterials[i];
 			}
 
 			VerifyComponents();
 
 			#if UNITY_EDITOR
 			if( EditorApplication.isPlaying == false )
-				UpdateMaterialsEditorMode( targetMats );
+				UpdateMaterialsEditorMode( mats );
 			else
 				#endif
-				rnd.sharedMaterials = targetMats;
+				rnd.sharedMaterials = mats;
 		}
 
 		#if UNITY_EDITOR
@@ -456,16 +495,21 @@ namespace Shapes {
 			} else if( force && mode == MeshUpdateMode.SelfGenerated ) {
 				GenerateMesh(); // update existing mesh
 			}
+			UpdateBounds();
 		}
 
-		/// <summary><para>Returns the local space bounds</para>
+		/// <summary><para>Returns the local space bounds, including the user specified padding</para>
 		/// <para>Note: This does not take into account screen space sizing, so it will only behave as you expect when using meters only</para></summary>
-		public Bounds GetBounds() => GetBounds_Internal();
+		public Bounds GetBounds() {
+			Bounds b = GetUnpaddedLocalBounds_Internal();
+			b.Expand( boundsPadding );
+			return b;
+		}
 
 		/// <summary><para>Returns the world space bounds of the local space bounds</para>
 		/// <para>Note: This does not take into account screen space sizing, so it will only behave as you expect when using meters only</para></summary>
 		public Bounds GetWorldBounds() {
-			Bounds localBounds = GetBounds_Internal();
+			Bounds localBounds = GetBounds();
 			Vector3 min = Vector3.one * float.MaxValue;
 			Vector3 max = Vector3.one * float.MinValue;
 
@@ -478,7 +522,7 @@ namespace Shapes {
 						max = Vector3.Max( max, wPt );
 					}
 
-			return new Bounds( ( max + min ) / 2f, max - min );
+			return new Bounds( ( max + min ) / 2f, ShapesMath.Abs( max - min ) );
 		}
 
 		void OnDidApplyAnimationProperties() => UpdateAllMaterialProperties(); // so this is not great but it works don't judge
@@ -487,7 +531,7 @@ namespace Shapes {
 			if( IsUsingUniqueMaterials ) {
 				UpdateMaterial();
 				foreach( Material instancedMaterial in instancedMaterials )
-					instancedMaterial.SetInt( property, value );
+					instancedMaterial.SetInt_Shapes( property, value );
 			}
 		}
 
@@ -507,14 +551,15 @@ namespace Shapes {
 
 			if( IsUsingUniqueMaterials ) // I wish we could material property block these ;-;
 				foreach( Material instancedMaterial in instancedMaterials ) {
-					instancedMaterial.SetInt( ShapesMaterialUtils.propZTest, (int)zTest );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propZTest, (int)zTest );
 					instancedMaterial.SetFloat( ShapesMaterialUtils.propZOffsetFactor, zOffsetFactor );
-					instancedMaterial.SetInt( ShapesMaterialUtils.propZOffsetUnits, zOffsetUnits );
-					instancedMaterial.SetInt( ShapesMaterialUtils.propStencilComp, (int)stencilComp );
-					instancedMaterial.SetInt( ShapesMaterialUtils.propStencilOpPass, (int)stencilOpPass );
-					instancedMaterial.SetInt( ShapesMaterialUtils.propStencilID, stencilRefID );
-					instancedMaterial.SetInt( ShapesMaterialUtils.propStencilReadMask, stencilReadMask );
-					instancedMaterial.SetInt( ShapesMaterialUtils.propStencilWriteMask, stencilWriteMask );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propZOffsetUnits, zOffsetUnits );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)colorMask );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propStencilComp, (int)stencilComp );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propStencilOpPass, (int)stencilOpPass );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propStencilID, stencilRefID );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propStencilReadMask, stencilReadMask );
+					instancedMaterial.SetInt_Shapes( ShapesMaterialUtils.propStencilWriteMask, stencilWriteMask );
 					instancedMaterial.renderQueue = renderQueue;
 				}
 
@@ -528,8 +573,7 @@ namespace Shapes {
 		private protected void ApplyProperties() {
 			VerifyComponents(); // make sure components exists. rnd can be uninitialized if you modify an object that has never had awake called
 			rnd.SetPropertyBlock( Mpb );
-			if( MeshUpdateMode == MeshUpdateMode.UseAssetCopy )
-				UpdateMeshBounds();
+			UpdateBounds();
 		}
 
 		private protected void SetAllDashValues( DashStyle style, bool dashed, bool matchSpacingToSize, float thickness, bool setType, bool now ) {
@@ -571,7 +615,7 @@ namespace Shapes {
 		}
 
 		private protected void SetFloat( int prop, float value ) => Mpb.SetFloat( prop, value );
-		private protected void SetInt( int prop, int value ) => Mpb.SetInt( prop, value );
+		private protected void SetInt( int prop, int value ) => Mpb.SetInt_Shapes( prop, value );
 		private protected void SetVector3( int prop, Vector3 value ) => Mpb.SetVector( prop, value );
 		private protected void SetVector4( int prop, Vector4 value ) => Mpb.SetVector( prop, value );
 
@@ -586,7 +630,7 @@ namespace Shapes {
 		}
 
 		private protected void SetIntNow( int prop, int value ) {
-			Mpb.SetInt( prop, value );
+			Mpb.SetInt_Shapes( prop, value );
 			ApplyProperties();
 		}
 

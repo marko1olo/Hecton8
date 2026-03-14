@@ -29,6 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _ColorMask: 15
     - _StencilComp: 8
     - _StencilID: 0
     - _StencilOpPass: 0

@@ -2,36 +2,65 @@
 // HECTON-8 — MapMagicBridge.cs
 // Информационный слой между игровыми системами и MapMagic 2.1.18.
 //
+// ═══════════════════════════════════════════════════════════════
+// REFACTORED v2 — BIOME EVENT SYSTEM + SLOW TICK + ATMOSPHERE SYNC
+// ═══════════════════════════════════════════════════════════════
+//
 // ОТВЕТСТВЕННОСТИ:
 //   1. Быстрый запрос высоты дна в мировых координатах.
 //   2. Определение активного биома в мировых координатах.
-//   3. Безопасная обработка отсутствующих/незагруженных тайлов.
+//   3. Biome Event System: уведомление при смене биома игрока.
+//   4. Безопасная обработка отсутствующих/незагруженных тайлов.
+//
+// НОВОЕ В v2:
+//   [ADD] ISlowTickable — проверка биома игрока каждые ~0.5с.
+//   [ADD] OnBiomeChanged static event — уведомление при смене биома.
+//   [ADD] GetCurrentBiome(float3) — запрос биома по позиции через
+//         terrain splat maps (горизонтальные маски Biomes Set).
+//   [ADD] _playerTransform кэш — позиция игрока без GameObject.Find.
+//   [ADD] _lastBiomeID — edge detection для событий.
 //
 // АРХИТЕКТУРА:
 //   • Singleton MonoBehaviour (не static — нужна ссылка на MapMagicObject).
+//   • ISlowTickable — биом-проверка через GameTickManager (2 Hz).
 //   • Все методы возвращают bool success + out value.
-//   • Zero GC в горячих путях.
-//   • Кэш ссылки на MapMagicObject — один GetComponent при старте.
+//   • Zero GC в горячих путях (SlowTick).
+//   • Кэш ссылки на MapMagicObject — один FindAnyObjectByType при старте.
 //
 // ИНТЕГРАЦИЯ С MapMagic 2.1.18:
-//   • MapMagicObject.instance — глобальный доступ к террейн-системе.
-//   • MapMagicObject.tiles — коллекция активных тайлов.
-//   • TerrainTile → Terrain → TerrainData.GetInterpolatedHeight().
-//   • Biome определяется через Graph outputs или terrain layers.
+//   • MapMagic записывает биомы в terrain splat maps (alphamaps).
+//   • Каждый splat layer = один биом (по индексу в Biomes Set).
+//   • GetAlphamaps(x, z, 1, 1) — минимальная выборка (1 пиксель).
+//   • Доминирующий слой = активный биом.
+//
+// BIOME EVENT FLOW:
+//   SlowTick → GetCurrentBiome(playerPos) → compare with _lastBiomeID
+//   → if changed: _lastBiomeID = new, OnBiomeChanged.Invoke(new)
+//   → HectonAtmosphereManager.HandleBiomeChanged(id) → profile transition
 //
 // БЕЗОПАСНОСТЬ:
 //   • Если тайл не сгенерирован — методы возвращают false.
 //   • Если MapMagicObject отсутствует — методы возвращают false.
+//   • Если игрок не назначен — SlowTick skip (no crash).
 //   • Никаких исключений, никаких null reference — только ранний выход.
+//
+// ZERO GC:
+//   • SlowTick: TryGetBiomeIndex вызывает GetAlphamaps (одна аллокация).
+//     Это unavoidable Unity API limitation. Частота: 2 Hz — допустимо.
+//   • TryGetHeight: SampleHeight — zero GC.
+//   • FindTerrainAt: Terrain.activeTerrains — Unity cached array.
 // ============================================================================
 
+using System;
+using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class MapMagicBridge : MonoBehaviour
+    public sealed class MapMagicBridge : MonoBehaviour, ISlowTickable
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -52,6 +81,24 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
+        //  GLOBAL EVENT — BIOME CHANGE
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Fires when the player enters a new biome zone.
+        /// Parameter: biome index (matches terrain splat layer index
+        /// from MapMagic Biomes Set node).
+        ///
+        /// Subscribers:
+        ///   - HectonAtmosphereManager → switches atmosphere profile.
+        ///   - Future: ambient sound, music, fauna density, etc.
+        ///
+        /// Fires at SlowTick frequency (~2 Hz). NOT per-frame.
+        /// First fire happens at Start() with the initial biome.
+        /// </summary>
+        public static event Action<int> OnBiomeChanged;
+
+        // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
@@ -65,14 +112,24 @@ namespace Hecton8.Core
                  "Используется для определения 'под водой'.")]
         [SerializeField] private float waterSurfaceLevel = 0f;
 
+        [Header("── Player Reference ──────────────────────────")]
+        [Tooltip("Transform игрока для биом-детекции в SlowTick.\n" +
+                 "Если не назначен — ищется по тегу 'Player' при старте.")]
+        [SerializeField] private Transform playerTransform;
+
         [Header("── Biome Detection ───────────────────────────")]
-        [Tooltip("Максимальное количество биомов в Biomes Set MapMagic. " +
-                 "Определяет размер кэшированного массива весов.")]
+        [Tooltip("Максимальное количество биомов в Biomes Set MapMagic.\n" +
+                 "Определяет размер кэшированного массива весов.\n" +
+                 "Должно совпадать с количеством выходов Biomes Set ноды.")]
         [SerializeField] private int maxBiomeCount = 8;
 
         [Header("── Diagnostics ───────────────────────────────")]
+#pragma warning disable CS0414
         [SerializeField] private bool _debugMapMagicFound;
-        [SerializeField] private int _debugTileCount;
+        [SerializeField] private int  _debugTileCount;
+        [SerializeField] private int  _debugCurrentBiome = -1;
+        [SerializeField] private bool _debugPlayerFound;
+#pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
@@ -85,6 +142,17 @@ namespace Hecton8.Core
         /// </summary>
         private float[] _biomeWeights;
 
+        /// <summary>
+        /// Last known biome ID. Used for edge detection in SlowTick.
+        /// -1 = not yet determined (forces first event fire).
+        /// </summary>
+        private int _lastBiomeID = -1;
+
+        /// <summary>
+        /// Registration tracking flag for GameTickManager.
+        /// </summary>
+        private bool _registeredToTickManager;
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
@@ -94,6 +162,12 @@ namespace Hecton8.Core
 
         /// <summary>MapMagic найден и доступен.</summary>
         public bool IsAvailable => mapMagicObject != null;
+
+        /// <summary>
+        /// Current biome ID under the player.
+        /// -1 if not yet determined or player not found.
+        /// </summary>
+        public int CurrentBiomeID => _lastBiomeID;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -116,16 +190,136 @@ namespace Hecton8.Core
             // ── Поиск MapMagicObject ──
             if (mapMagicObject == null)
             {
-                mapMagicObject = FindAnyObjectByType<MapMagic.Core.MapMagicObject>();
+                mapMagicObject =
+                    FindAnyObjectByType<MapMagic.Core.MapMagicObject>();
             }
 
+            // ── Поиск игрока ──
+            if (playerTransform == null)
+            {
+                GameObject playerGO = GameObject.FindWithTag("Player");
+                if (playerGO != null)
+                {
+                    playerTransform = playerGO.transform;
+                }
+            }
+
+            _lastBiomeID = -1;
+            _registeredToTickManager = false;
+
             UpdateDiagnostics();
+        }
+
+        // ════════════════════════════════════════════════════════
+        // TICK REGISTRATION — Deferred two-phase pattern.
+        // ════════════════════════════════════════════════════════
+
+        private void OnEnable()
+        {
+            if (GameTickManager.Instance == null) return;
+
+            if (!_registeredToTickManager)
+            {
+                GameTickManager.Instance.Register((ISlowTickable)this);
+                _registeredToTickManager = true;
+            }
+        }
+
+        private void Start()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            if (GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Register((ISlowTickable)this);
+                _registeredToTickManager = true;
+            }
+            else
+            {
+                Debug.LogError(
+                    "[MapMagicBridge] GameTickManager.Instance is null " +
+                    "even at Start(). Biome detection will NOT work.",
+                    this);
+            }
+
+            // ── Initial biome detection ──
+            // Fire first event so subscribers get initial state.
+            DetectAndPublishBiome();
+        }
+
+        private void OnDisable()
+        {
+            if (GameTickManager.Instance == null) return;
+
+            if (_registeredToTickManager)
+            {
+                GameTickManager.Instance.Unregister((ISlowTickable)this);
+                _registeredToTickManager = false;
+            }
         }
 
         private void OnDestroy()
         {
             if (_instance == this)
+            {
                 _instance = null;
+                OnBiomeChanged = null;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ISlowTickable — BIOME DETECTION (2 Hz)
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Called by GameTickManager at slowTickInterval (~0.5s).
+        ///
+        /// Checks the biome under the player's current position.
+        /// If biome changed since last check → fires OnBiomeChanged.
+        ///
+        /// COST: One GetAlphamaps call (small allocation, 1x1 pixel).
+        /// Acceptable at 2 Hz. Not suitable for per-frame.
+        ///
+        /// SAFETY: Null-safe for playerTransform and MapMagicObject.
+        /// </summary>
+        public void SlowTick()
+        {
+            DetectAndPublishBiome();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — BIOME DETECTION + EVENT PUBLISHING
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Core biome detection logic. Separated from SlowTick for
+        /// reuse in Start() (initial detection).
+        ///
+        /// Flow:
+        ///   1. Get player world position.
+        ///   2. Query terrain alphamaps for dominant biome.
+        ///   3. Compare with _lastBiomeID.
+        ///   4. If changed → update cache, fire event.
+        /// </summary>
+        private void DetectAndPublishBiome()
+        {
+            if (playerTransform == null) return;
+
+            float3 pos = playerTransform.position;
+
+            if (!TryGetBiomeIndex(pos.x, pos.z, out int biomeID))
+                return;
+
+            // ── Edge detection: only fire on change ──
+            if (biomeID == _lastBiomeID)
+                return;
+
+            _lastBiomeID = biomeID;
+
+            OnBiomeChanged?.Invoke(biomeID);
+
+            UpdateBiomeDiagnostics(biomeID);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -142,14 +336,9 @@ namespace Hecton8.Core
         ///
         /// БЕЗОПАСНОСТЬ:
         ///   Если тайл не найден (не сгенерирован) — returns false.
-        ///   Caller должен пропустить спавн.
         ///
-        /// ZERO GC: SampleHeight returns float (struct). No allocations.
+        /// ZERO GC: SampleHeight returns float (struct).
         /// </summary>
-        /// <param name="x">Мировая X-координата.</param>
-        /// <param name="z">Мировая Z-координата.</param>
-        /// <param name="height">Высота дна (мировая Y).</param>
-        /// <returns>true если данные доступны.</returns>
         public bool TryGetHeight(float x, float z, out float height)
         {
             height = 0f;
@@ -157,19 +346,11 @@ namespace Hecton8.Core
             if (mapMagicObject == null)
                 return false;
 
-            // ── Поиск террейна через Unity API ──
-            // Terrain.activeTerrain — быстрый, но возвращает только один.
-            // Для multi-tile нужен поиск по позиции.
             Terrain terrain = FindTerrainAt(x, z);
 
-            if (terrain == null)
+            if (terrain == null || terrain.terrainData == null)
                 return false;
 
-            if (terrain.terrainData == null)
-                return false;
-
-            // SampleHeight принимает world-space Vector3, 
-            // возвращает высоту относительно terrain.transform.position.y
             float localHeight = terrain.SampleHeight(new Vector3(x, 0f, z));
             height = localHeight + terrain.transform.position.y;
 
@@ -177,9 +358,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Быстрая версия GetHeight без out-параметра.
-        /// Возвращает 0 если данные недоступны.
-        /// Используй только когда безопасность проверена заранее.
+        /// Быстрая версия без out. Возвращает 0 при ошибке.
         /// </summary>
         public float GetHeight(float x, float z)
         {
@@ -189,29 +368,21 @@ namespace Hecton8.Core
 
         /// <summary>
         /// Проверяет, находится ли точка под водой.
-        /// Сравнивает запрошенную Y-координату с waterSurfaceLevel.
         /// </summary>
-        /// <param name="x">Мировая X.</param>
-        /// <param name="y">Мировая Y (высота точки спавна).</param>
-        /// <param name="z">Мировая Z.</param>
-        /// <returns>true если точка под поверхностью воды.</returns>
         public bool IsUnderwater(float x, float y, float z)
         {
             return y < waterSurfaceLevel;
         }
 
         /// <summary>
-        /// Комбинированная проверка: получает высоту дна и
-        /// проверяет, что указанная Y-позиция под водой.
+        /// Комбинированная проверка для спавн-систем.
         /// </summary>
-        public bool IsValidSpawnPoint(float x, float y, float z, out float bottomHeight)
+        public bool IsValidSpawnPoint(
+            float x, float y, float z, out float bottomHeight)
         {
             if (!TryGetHeight(x, z, out bottomHeight))
                 return false;
 
-            // Точка должна быть:
-            // 1. Под поверхностью воды
-            // 2. Выше дна (не внутри террейна)
             return y < waterSurfaceLevel && y > bottomHeight;
         }
 
@@ -222,25 +393,25 @@ namespace Hecton8.Core
         /// <summary>
         /// Возвращает индекс доминирующего биома в мировых координатах.
         ///
-        /// РЕАЛИЗАЦИЯ через Terrain Layers (Splat Maps):
-        ///   MapMagic 2 записывает результат биомов в terrain splat maps.
-        ///   Каждый splat layer соответствует биому (по индексу).
+        /// РЕАЛИЗАЦИЯ через Terrain Splat Maps (Alphamaps):
+        ///   MapMagic 2 записывает результат Biomes Set ноды в
+        ///   terrain splat maps. Каждый splat layer соответствует
+        ///   биому (по индексу выхода Biomes Set ноды).
         ///   Мы читаем alphamaps и находим слой с максимальным весом.
         ///
-        /// БЕЗОПАСНОСТЬ:
-        ///   Если тайл не найден или alphamaps пусты — returns false.
+        /// ПОЧЕМУ НЕ MapMagic.Tiles.GetBiome():
+        ///   MapMagic 2.1.18 не предоставляет публичный API GetBiome()
+        ///   на уровне Tiles. Результат биомов финализируется в terrain
+        ///   splat maps через Apply node. Чтение alphamaps — это
+        ///   стандартный способ получить горизонтальные маски биомов.
         ///
-        /// ZERO GC:
-        ///   GetAlphamaps возвращает float[,,] — ОДНА аллокация.
-        ///   Это unavoidable Unity API limitation.
-        ///   Для per-frame вызовов используй кэширование (см. FaunaDirector).
-        ///   FaunaDirector вызывает это раз в секунду — допустимо.
+        /// ZERO GC WARNING:
+        ///   GetAlphamaps(x, z, 1, 1) аллоцирует float[1,1,N].
+        ///   Unavoidable Unity API limitation.
+        ///   Call frequency: 2 Hz (SlowTick) — acceptable.
         /// </summary>
-        /// <param name="x">Мировая X.</param>
-        /// <param name="z">Мировая Z.</param>
-        /// <param name="biomeIndex">Индекс самого сильного биома.</param>
-        /// <returns>true если данные доступны.</returns>
-        public bool TryGetBiomeIndex(float x, float z, out int biomeIndex)
+        public bool TryGetBiomeIndex(
+            float x, float z, out int biomeIndex)
         {
             biomeIndex = 0;
 
@@ -254,49 +425,43 @@ namespace Hecton8.Core
 
             TerrainData td = terrain.terrainData;
 
-            // ── Конвертация мировых координат в alphamap координаты ──
-            Vector3 terrainPos = terrain.transform.position;
+            // ── World → alphamap coordinates ──
+            Vector3 terrainPos  = terrain.transform.position;
             Vector3 terrainSize = td.size;
 
-            // Нормализация [0..1]
             float normalizedX = (x - terrainPos.x) / terrainSize.x;
             float normalizedZ = (z - terrainPos.z) / terrainSize.z;
 
-            // Clamp
-            if (normalizedX < 0f) normalizedX = 0f;
-            if (normalizedX > 1f) normalizedX = 1f;
-            if (normalizedZ < 0f) normalizedZ = 0f;
-            if (normalizedZ > 1f) normalizedZ = 1f;
+            normalizedX = math.saturate(normalizedX);
+            normalizedZ = math.saturate(normalizedZ);
 
             int alphamapWidth  = td.alphamapWidth;
             int alphamapHeight = td.alphamapHeight;
 
-            // Alphamap indices
-            int mapX = Mathf.FloorToInt(normalizedX * (alphamapWidth - 1));
-            int mapZ = Mathf.FloorToInt(normalizedZ * (alphamapHeight - 1));
+            int mapX = (int)math.floor(
+                normalizedX * (alphamapWidth - 1));
+            int mapZ = (int)math.floor(
+                normalizedZ * (alphamapHeight - 1));
 
             int layerCount = td.alphamapLayers;
             if (layerCount <= 0)
                 return false;
 
-            // ── Получение весов слоёв ──
-            // GetAlphamaps(x, z, 1, 1) — минимальная выборка (1 пиксель).
-            // Возвращает float[1, 1, layerCount].
-            // ОДНА аллокация — допустимо для SlowTick (раз в секунду).
+            // ── Get weights (1x1 pixel sample) ──
             float[,,] alphas = td.GetAlphamaps(mapX, mapZ, 1, 1);
 
-            // ── Поиск доминирующего слоя ──
+            // ── Find dominant layer ──
             float maxWeight = -1f;
-            int maxIndex    = 0;
+            int   maxIndex  = 0;
 
-            int searchCount = layerCount < maxBiomeCount ? layerCount : maxBiomeCount;
+            int searchCount = math.min(layerCount, maxBiomeCount);
 
             for (int i = 0; i < searchCount; i++)
             {
-                float weight = alphas[0, 0, i];
-                if (weight > maxWeight)
+                float w = alphas[0, 0, i];
+                if (w > maxWeight)
                 {
-                    maxWeight = weight;
+                    maxWeight = w;
                     maxIndex  = i;
                 }
             }
@@ -314,6 +479,37 @@ namespace Hecton8.Core
             return idx;
         }
 
+        /// <summary>
+        /// Convenience overload accepting float3 position.
+        /// Uses x and z components.
+        /// </summary>
+        public int GetCurrentBiome(float3 position)
+        {
+            TryGetBiomeIndex(position.x, position.z, out int idx);
+            return idx;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API — RUNTIME SETTERS
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Assigns player transform at runtime.
+        /// Called by player initialization if Inspector ref is empty.
+        /// </summary>
+        public void SetPlayerTransform(Transform player)
+        {
+            playerTransform = player;
+        }
+
+        /// <summary>
+        /// Updates water surface level at runtime.
+        /// </summary>
+        public void SetWaterSurfaceLevel(float y)
+        {
+            waterSurfaceLevel = y;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — TERRAIN LOOKUP
         // ══════════════════════════════════════════════════════════
@@ -322,25 +518,18 @@ namespace Hecton8.Core
         /// Находит Terrain, покрывающий мировые координаты (x, z).
         ///
         /// Стратегия:
-        ///   1. Проверяем Terrain.activeTerrain (быстро, если один тайл).
+        ///   1. Проверяем Terrain.activeTerrain (быстро, один тайл).
         ///   2. Если не подходит — перебираем activeTerrains.
         ///
-        /// ZERO GC: Terrain.activeTerrains возвращает кэшированный массив
-        /// (Unity кэширует его внутренне, не аллоцирует каждый вызов
-        /// начиная с Unity 2021+).
-        ///
-        /// Вызывается из TryGetHeight/TryGetBiomeIndex (не per-frame).
+        /// ZERO GC: Terrain.activeTerrains — Unity cached array
+        /// (не аллоцирует каждый вызов, начиная с Unity 2021+).
         /// </summary>
         private static Terrain FindTerrainAt(float x, float z)
         {
-            // ── Быстрая проверка активного террейна ──
             Terrain active = Terrain.activeTerrain;
             if (active != null && IsPointInTerrain(active, x, z))
                 return active;
 
-            // ── Перебор всех террейнов ──
-            // Terrain.activeTerrains — Unity cached array.
-            // Для MapMagic с 9-16 тайлами — O(16) максимум.
             Terrain[] terrains = Terrain.activeTerrains;
             int count = terrains.Length;
 
@@ -356,9 +545,9 @@ namespace Hecton8.Core
 
         /// <summary>
         /// Проверяет, попадает ли точка (x, z) в bounds террейна.
-        /// Struct math — zero GC.
         /// </summary>
-        private static bool IsPointInTerrain(Terrain terrain, float x, float z)
+        private static bool IsPointInTerrain(
+            Terrain terrain, float x, float z)
         {
             if (terrain.terrainData == null)
                 return false;
@@ -378,9 +567,16 @@ namespace Hecton8.Core
         private void UpdateDiagnostics()
         {
             _debugMapMagicFound = mapMagicObject != null;
+            _debugPlayerFound   = playerTransform != null;
             _debugTileCount     = Terrain.activeTerrains != null
                 ? Terrain.activeTerrains.Length
                 : 0;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateBiomeDiagnostics(int biomeID)
+        {
+            _debugCurrentBiome = biomeID;
         }
     }
 }
