@@ -74,7 +74,7 @@ Material:
         m_Scale: {x: 0.1, y: 0.1}
         m_Offset: {x: 0, y: 0}
     - _MainCloudTex:
-        m_Texture: {fileID: 2800000, guid: 97dacc0c8637b304f9451ecd290acffb, type: 3}
+        m_Texture: {fileID: 2800000, guid: 161f2ad7f77e8bf408b29aa7e3d29966, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -144,7 +144,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 568.5004
+    - _GameTime: 314.33466
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -184,7 +184,7 @@ Material:
     - _BacklitColor: {r: 1, g: 0.8, b: 0.4, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _CirrusColor: {r: 0.7, g: 0.7, b: 0.9, a: 1}
-    - _CirrusTiling: {r: 0.3, g: 0.3, b: 0, a: 0}
+    - _CirrusTiling: {r: 0.2, g: 0.2, b: 0, a: 0}
     - _CloudColorLit: {r: 0.9, g: 0.85, b: 0.8, a: 1}
     - _CloudColorShadow: {r: 1, g: 1, b: 1, a: 1}
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
