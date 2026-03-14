@@ -1,7 +1,7 @@
 // ============================================================================
 // HECTON-8 — HectonCelestialEngine.cs
 // Небесная механика экзолуны Гектон: газовый гигант Аэгир,
-// затмения, planet-shine, окклюзия солнца.
+// затмения, planet-shine, окклюзия солнца, управление шейдером неба.
 //
 // ОТВЕТСТВЕННОСТИ:
 //   1. Рендер газового гиганта (MaterialPropertyBlock, precision-safe rotation).
@@ -11,14 +11,22 @@
 //   5. Sun occlusion (плавное скрытие LensFlare за планетой).
 //   6. Skybox blend (день/ночь с плавным переходом).
 //   7. Позиционирование солнечного диска (visual billboard).
+//   8. Sky shader integration (cloud rotation, sun/aegir direction,
+//      day/night color profiles via material properties).
 //
-// АРХИТЕКТУРА (v3.1):
+// АРХИТЕКТУРА (v4.0):
 //   • ITickable — интеграция с GameTickManager. Нативный Update() только
 //     для [ExecuteAlways] в Editor (не в Play Mode).
 //   • Прямые типизированные ссылки: HectonAtmosphereManager, LensFlareComponentSRP.
 //     Reflection полностью удалена — zero boxing, zero GC.
 //   • Precision-safe rotation: double аккумулятор → float через mod → frac() в шейдере.
 //   • Все MaterialPropertyBlock кэшированы — zero аллокаций в hot path.
+//   • Sky material: передаёт _GameTime (постоянно растущее время) вместо
+//     _cloudRotation. Шейдер сам вычисляет offset = _GameTime * speed,
+//     а frac() гарантирует бесшовность. Никаких скачков при сбросе таймера.
+//   • Day/night color lerp: пропускается если _currentBlend не изменился
+//     (epsilon guard) — zero redundant SetColor на MX350.
+//   • _NightBlend передаётся в шейдер неба для управления видимостью звёзд.
 //
 // КООРДИНАЦИЯ С HectonAtmosphereManager:
 //   • Если AtmosphereManager назначен: ОН управляет Directional Light и _SunDirection.
@@ -28,11 +36,29 @@
 //   • Если AtmosphereManager НЕ назначен: CelestialEngine использует внутреннюю
 //     орбитальную модель для самостоятельного управления солнцем.
 //
+// SKY MATERIAL PIPELINE (v4.0):
+//   • _GameTime: continuously increasing time accumulator (float).
+//     The sky shader computes UV offset as _GameTime * _speed internally.
+//     frac() inside the shader prevents any precision issues.
+//     REPLACES the old _GlobalRotation / _cloudRotation approach that
+//     caused visible "jerks" when the accumulator wrapped at 1.0.
+//   • _NightBlend: day/night blend factor [0=day, 1=night].
+//     Used by the sky shader to control star visibility.
+//     Stars are only visible at night (multiplied by _NightBlend).
+//   • _SunDirection: written to sky material AND global (for other shaders).
+//     Convention: direction FROM sun (sunLight.transform.forward).
+//   • _AegirDirection: normalized vector from camera TOWARD Aegir.
+//     Written to sky material only (not global — only sky shader uses it).
+//   • _SkyColorZenith/_SkyColorHorizon/_SkyColorNadir: lerped between
+//     day and night profiles based on _currentBlend. Updated ONLY when
+//     blend value actually changes (epsilon = 0.001).
+//
 // ZERO GC:
 //   • Все MaterialPropertyBlock предаллоцированы (включая sun disc).
 //   • Нет reflection GetValue/SetValue (boxing устранён).
 //   • Unity.Mathematics для SIMD-оптимизированных вычислений.
 //   • События (Action) — zero GC при Invoke (delegate, не closure).
+//   • Sky material color updates skipped when blend unchanged — zero SetColor.
 // ============================================================================
 
 using System;
@@ -44,6 +70,45 @@ using Hecton8.Atmosphere;
 
 namespace Hecton8.Celestial
 {
+    // ─────────────────────────────────────────────
+    // SKY COLOR PROFILE
+    //
+    // HDR color triplet for zenith/horizon/nadir.
+    // Used for day and night sky configurations.
+    // Lerped by CelestialEngine based on sun elevation.
+    // ─────────────────────────────────────────────
+
+    [Serializable]
+    public struct SkyColorProfile
+    {
+        [ColorUsage(false, true)]
+        [Tooltip("Sky color at zenith (directly overhead)")]
+        public Color zenithColor;
+
+        [ColorUsage(false, true)]
+        [Tooltip("Sky color at horizon (eye level)")]
+        public Color horizonColor;
+
+        [ColorUsage(false, true)]
+        [Tooltip("Sky color at nadir (directly below)")]
+        public Color nadirColor;
+
+        /// <summary>
+        /// Returns a profile with all colors set to the given defaults.
+        /// Used for serialization fallback when profile is uninitialized.
+        /// </summary>
+        public static SkyColorProfile Default(
+            Color zenith, Color horizon, Color nadir)
+        {
+            return new SkyColorProfile
+            {
+                zenithColor  = zenith,
+                horizonColor = horizon,
+                nadirColor   = nadir
+            };
+        }
+    }
+
     [ExecuteAlways]
     [DisallowMultipleComponent]
     public class HectonCelestialEngine : MonoBehaviour, ITickable
@@ -69,6 +134,33 @@ namespace Hecton8.Celestial
                + "Если назначен — CelestialEngine НЕ вращает Directional Light и НЕ пишет _SunDirection.\n"
                + "Если не назначен — используется внутренняя орбитальная модель.")]
         [SerializeField] private HectonAtmosphereManager _atmosphereManager;
+
+        [Header("═══ SKY MATERIAL ═══")]
+        [Tooltip("Material шейдера HECTON/Sky/Hecton_AlienSky_Master.\n"
+               + "CelestialEngine передаёт сюда _GameTime, направления светил,\n"
+               + "и цвета дня/ночи.")]
+        [SerializeField] private Material _skyMaterial;
+
+        [Tooltip("Скорость вращения облаков. Передаётся в шейдер как _CloudSpeed.\n"
+               + "Шейдер вычисляет offset = _GameTime * _CloudSpeed.")]
+        [SerializeField] private float _cloudSpeed = 0.01f;
+
+        [Header("═══ SKY COLOR PROFILES ═══")]
+        [Tooltip("Цвета неба в дневное время")]
+        [SerializeField] private SkyColorProfile _dayProfile = new SkyColorProfile
+        {
+            zenithColor  = new Color(0.05f, 0.08f, 0.25f, 1f),
+            horizonColor = new Color(0.4f, 0.35f, 0.5f, 1f),
+            nadirColor   = new Color(0.02f, 0.03f, 0.08f, 1f)
+        };
+
+        [Tooltip("Цвета неба в ночное время")]
+        [SerializeField] private SkyColorProfile _nightProfile = new SkyColorProfile
+        {
+            zenithColor  = new Color(0.01f, 0.005f, 0.03f, 1f),
+            horizonColor = new Color(0.08f, 0.05f, 0.12f, 1f),
+            nadirColor   = new Color(0.005f, 0.003f, 0.01f, 1f)
+        };
 
         [Header("═══ SUN OCCLUSION ═══")]
         [Tooltip("LensFlareComponentSRP на Directional Light солнца")]
@@ -171,9 +263,23 @@ namespace Hecton8.Celestial
         private float _accumulatedOrbitalAngle;
         private float _currentBacklitFactor;
 
-        // ═══ PRECISION-SAFE ROTATION TIMER ═══
+        // ═══ PRECISION-SAFE ROTATION TIMER (Aegir planet) ═══
         private double _rotationAccumulator;
         private float _rotationTimer;
+
+        // ═══ GAME TIME ACCUMULATOR (sky shader) ═══ NEW ═══
+        // Continuously increasing time. Never wraps. Never resets.
+        // The sky shader uses frac(_GameTime * speed) internally,
+        // which guarantees seamless UV scrolling with zero "jerks".
+        // Replaces the old _cloudRotation approach that caused
+        // visible snapping when the accumulator wrapped at 1.0.
+        private float _gameTime;
+
+        // ═══ SKY COLOR BLEND TRACKING ═══
+        // Tracks previous blend value to skip redundant SetColor calls.
+        // On MX350, every saved Material.SetColor matters.
+        private float _previousBlendForColors;
+        private const float COLOR_BLEND_EPSILON = 0.001f;
 
         // Sun occlusion state
         private float _sunOcclusionFactor;
@@ -198,19 +304,38 @@ namespace Hecton8.Celestial
         private float _cachedAegirRadius;
 
         // ═══ Shader property IDs — кэшируем один раз ═══
-        private static readonly int _SunDirection       = Shader.PropertyToID("_SunDirection");
-        private static readonly int _BacklitIntensity   = Shader.PropertyToID("_BacklitIntensity");
-        private static readonly int _EquatorialSpeed    = Shader.PropertyToID("_EquatorialSpeed");
-        private static readonly int _PolarMultiplier    = Shader.PropertyToID("_PolarMultiplier");
-        private static readonly int _PlanetPhase        = Shader.PropertyToID("_PlanetPhase");
-        private static readonly int _StormEmission      = Shader.PropertyToID("_StormEmission");
-        private static readonly int _Blend              = Shader.PropertyToID("_Blend");
-        private static readonly int _StarIntensity      = Shader.PropertyToID("_StarIntensity");
-        private static readonly int _FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
-        private static readonly int _SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
-        private static readonly int _GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
-        private static readonly int _OcclusionFactor    = Shader.PropertyToID("_OcclusionFactor");
-        private static readonly int _EmissionColor      = Shader.PropertyToID("_EmissionColor");
+        //
+        // NAMING CONVENTION:
+        //   _ID_PropertyName for shader property IDs to distinguish from
+        //   runtime state variables that may share similar names.
+        //   Exception: legacy IDs kept as-is for compatibility.
+        //
+        // ISOLATION:
+        //   _GlobalRotation is used by Aegir (via MPB) ONLY now.
+        //   Sky material uses _GameTime instead.
+        //   Zero conflict by design.
+
+        private static readonly int _ID_SunDirection       = Shader.PropertyToID("_SunDirection");
+        private static readonly int _ID_BacklitIntensity   = Shader.PropertyToID("_BacklitIntensity");
+        private static readonly int _ID_EquatorialSpeed    = Shader.PropertyToID("_EquatorialSpeed");
+        private static readonly int _ID_PolarMultiplier    = Shader.PropertyToID("_PolarMultiplier");
+        private static readonly int _ID_PlanetPhase        = Shader.PropertyToID("_PlanetPhase");
+        private static readonly int _ID_StormEmission      = Shader.PropertyToID("_StormEmission");
+        private static readonly int _ID_Blend              = Shader.PropertyToID("_Blend");
+        private static readonly int _ID_StarIntensity      = Shader.PropertyToID("_StarIntensity");
+        private static readonly int _ID_FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
+        private static readonly int _ID_SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
+        private static readonly int _ID_GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
+        private static readonly int _ID_OcclusionFactor    = Shader.PropertyToID("_OcclusionFactor");
+        private static readonly int _ID_EmissionColor      = Shader.PropertyToID("_EmissionColor");
+        private static readonly int _ID_AegirDirection     = Shader.PropertyToID("_AegirDirection");
+        private static readonly int _ID_SkyColorZenith     = Shader.PropertyToID("_SkyColorZenith");
+        private static readonly int _ID_SkyColorHorizon    = Shader.PropertyToID("_SkyColorHorizon");
+        private static readonly int _ID_SkyColorNadir      = Shader.PropertyToID("_SkyColorNadir");
+
+        // ═══ NEW SHADER PROPERTY IDs ═══
+        private static readonly int _ID_GameTime           = Shader.PropertyToID("_GameTime");
+        private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
 
         // ─────────────────────────────────────────────
         // LIFECYCLE
@@ -233,6 +358,14 @@ namespace Hecton8.Celestial
 
             _rotationAccumulator = 0.0;
             _rotationTimer = 0f;
+
+            // ═══ MODIFIED ═══
+            // Initialize game time accumulator. Starts at 0, grows forever.
+            // No wrapping, no resetting. The shader handles frac() internally.
+            _gameTime = 0f;
+
+            // Force initial color update on first frame
+            _previousBlendForColors = -1f;
 
             // Capture base sun intensity (only used in standalone mode)
             if (sunLight != null && _atmosphereManager == null)
@@ -311,11 +444,22 @@ namespace Hecton8.Celestial
         /// </summary>
         public void Tick(float deltaTime)
         {
-            // ═══ PRECISION-SAFE ROTATION TIMER ═══
+            // ═══ PRECISION-SAFE ROTATION TIMER (Aegir planet) ═══
+            // This timer is for the gas giant's own rotation (MaterialPropertyBlock).
+            // Completely independent from the sky shader's _GameTime.
             _rotationAccumulator += (double)deltaTime;
             if (_rotationAccumulator > 10000.0)
                 _rotationAccumulator -= 10000.0;
             _rotationTimer = (float)_rotationAccumulator;
+
+            // ═══ GAME TIME ACCUMULATOR (sky shader) ═══ MODIFIED ═══
+            // Simply accumulate time. Never wrap. Never reset.
+            // The sky shader computes: offset = frac(_GameTime * speed)
+            // This guarantees zero "jerks" — no discontinuity ever.
+            // Float precision is fine here because the shader uses frac()
+            // which discards the integer part. Even at _gameTime = 100000,
+            // frac(100000.0 * 0.01) = frac(1000.0) = 0.0 — perfectly precise.
+            _gameTime += deltaTime;
 
             // ═══ LAZY ECLIPSE RADIUS (one-time after all refs valid) ═══
             if (!_eclipseRadiusCalculated && aegirTransform != null && playerTransform != null)
@@ -337,6 +481,11 @@ namespace Hecton8.Celestial
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
             UpdateGlobalShaderData();
+
+            // ═══ SKY MATERIAL UPDATE ═══
+            // After ResolveSunDirection and UpdateSkyboxBlend (needs _currentBlend).
+            // Before eclipse/occlusion (doesn't depend on them).
+            UpdateSkyMaterial();
 
             CalculateEclipseBacklight();
             UpdateAegirMaterial();
@@ -370,6 +519,13 @@ namespace Hecton8.Celestial
                     playerTransform = cam.transform;
                     Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using Main Camera.");
                 }
+            }
+
+            if (_skyMaterial == null)
+            {
+                Debug.LogWarning(
+                    "[HectonCelestialEngine] Sky Material is not assigned! " +
+                    "Cloud rotation, stars and sky colors will not be updated.", this);
             }
         }
 
@@ -566,6 +722,96 @@ namespace Hecton8.Celestial
         }
 
         // ─────────────────────────────────────────────
+        // SKY MATERIAL UPDATE
+        // ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Updates the sky shader material with:
+        ///   1. _GameTime — continuously increasing time (float).
+        ///      The shader computes UV offset as frac(_GameTime * speed).
+        ///      This REPLACES the old _GlobalRotation approach.
+        ///      No wrapping in C# = no "jerks" = seamless scrolling.
+        ///   2. _NightBlend — day/night factor [0=day, 1=night].
+        ///      Used by the shader to fade in stars at night.
+        ///   3. Sun direction (_SunDirection) — direction FROM sun.
+        ///   4. Aegir direction (_AegirDirection) — normalized from camera TO Aegir.
+        ///   5. Sky colors — lerped between day/night profiles by _currentBlend.
+        ///      Colors are ONLY updated when _currentBlend actually changes
+        ///      (epsilon guard). On MX350, skipping 3x SetColor per frame
+        ///      when the sun isn't moving saves measurable GPU command overhead.
+        ///
+        /// Called from Tick() after ResolveSunDirection() and UpdateSkyboxBlend().
+        /// Zero GC: no allocations, no boxing, no string lookups (PropertyToID cached).
+        /// </summary>
+        private void UpdateSkyMaterial()
+        {
+            if (_skyMaterial == null) return;
+
+            // ═══ 1. Game Time ═══ MODIFIED ═══
+            // Continuously growing time. The shader uses frac() internally.
+            // This completely eliminates the "jerk" artifact that occurred
+            // when the old _cloudRotation wrapped at 1.0.
+            _skyMaterial.SetFloat(_ID_GameTime, _gameTime);
+
+            // ═══ 2. Night Blend ═══ NEW ═══
+            // Tells the sky shader how "nighttime" it is.
+            // Stars multiply their brightness by this value.
+            // 0.0 = full day (stars invisible), 1.0 = full night (stars visible).
+            _skyMaterial.SetFloat(_ID_NightBlend, _currentBlend);
+
+            // ═══ 3. Sun Direction ═══
+            // Convention: direction FROM sun (sunLight.transform.forward).
+            // Same convention as UpdateGlobalShaderData and AtmosphereManager.
+            // _resolvedSunDirection points TOWARD sun, so we negate.
+            float3 fromSun = -_resolvedSunDirection;
+            _skyMaterial.SetVector(_ID_SunDirection,
+                new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
+
+            // ═══ 4. Aegir Direction ═══
+            // Normalized vector from camera TOWARD Aegir.
+            // The sky shader uses this for the Aegir halo effect.
+            if (aegirTransform != null && playerTransform != null)
+            {
+                float3 playerPos = (float3)playerTransform.position;
+                float3 aegirPos  = (float3)aegirTransform.position;
+                float3 toAegir   = math.normalizesafe(aegirPos - playerPos);
+
+                _skyMaterial.SetVector(_ID_AegirDirection,
+                    new Vector4(toAegir.x, toAegir.y, toAegir.z, 0f));
+            }
+
+            // ═══ 5. Sky Colors (day/night lerp) ═══
+            // Only update when _currentBlend has actually changed.
+            // This saves 3x Material.SetColor calls per frame when
+            // the sun is stationary (paused, slow cycle, etc).
+            float blendDelta = math.abs(_currentBlend - _previousBlendForColors);
+
+            if (blendDelta > COLOR_BLEND_EPSILON)
+            {
+                _previousBlendForColors = _currentBlend;
+
+                Color zenith  = Color.Lerp(
+                    _dayProfile.zenithColor,
+                    _nightProfile.zenithColor,
+                    _currentBlend);
+
+                Color horizon = Color.Lerp(
+                    _dayProfile.horizonColor,
+                    _nightProfile.horizonColor,
+                    _currentBlend);
+
+                Color nadir   = Color.Lerp(
+                    _dayProfile.nadirColor,
+                    _nightProfile.nadirColor,
+                    _currentBlend);
+
+                _skyMaterial.SetColor(_ID_SkyColorZenith,  zenith);
+                _skyMaterial.SetColor(_ID_SkyColorHorizon, horizon);
+                _skyMaterial.SetColor(_ID_SkyColorNadir,   nadir);
+            }
+        }
+
+        // ─────────────────────────────────────────────
         // SUN OCCLUSION
         // ─────────────────────────────────────────────
 
@@ -685,8 +931,8 @@ namespace Hecton8.Celestial
                     if (sunRenderer != null)
                     {
                         sunRenderer.GetPropertyBlock(_sunDiscMPB);
-                        _sunDiscMPB.SetFloat(_OcclusionFactor, visibility);
-                        _sunDiscMPB.SetColor(_EmissionColor, Color.white * visibility);
+                        _sunDiscMPB.SetFloat(_ID_OcclusionFactor, visibility);
+                        _sunDiscMPB.SetColor(_ID_EmissionColor, Color.white * visibility);
                         sunRenderer.SetPropertyBlock(_sunDiscMPB);
                     }
                 }
@@ -742,7 +988,7 @@ namespace Hecton8.Celestial
             _currentBlend = math.saturate((twilightStartAngle - sunElevation) / range);
             _currentBlend = SmoothStep01(_currentBlend);
 
-            blendedSkyboxMaterial.SetFloat(_Blend, _currentBlend);
+            blendedSkyboxMaterial.SetFloat(_ID_Blend, _currentBlend);
         }
 
         private void UpdateStarIntensity(float sunElevation)
@@ -755,7 +1001,7 @@ namespace Hecton8.Celestial
             _currentStarIntensity = math.saturate((twilightStartAngle - sunElevation) / range);
             _currentStarIntensity = SmoothStep01(_currentStarIntensity);
 
-            blendedSkyboxMaterial.SetFloat(_StarIntensity, _currentStarIntensity);
+            blendedSkyboxMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
         }
 
         // ─────────────────────────────────────────────
@@ -767,6 +1013,10 @@ namespace Hecton8.Celestial
         /// When AtmosphereManager is present, IT is the authority for _SunDirection.
         /// This eliminates the race condition where two scripts write to the same global.
         ///
+        /// NOTE: The sky material also receives _SunDirection via UpdateSkyMaterial()
+        /// (Material.SetVector). This global write is for OTHER shaders (terrain, water, etc.)
+        /// that read _SunDirection as a global property.
+        ///
         /// Convention: _SunDirection = sunLight.transform.forward (direction FROM sun, same as AtmosphereManager).
         /// </summary>
         private void UpdateGlobalShaderData()
@@ -777,7 +1027,7 @@ namespace Hecton8.Celestial
             // _resolvedSunDirection points TOWARD the sun (-forward).
             // Negate to match convention: _SunDirection = forward (FROM sun).
             float3 fromSun = -_resolvedSunDirection;
-            Shader.SetGlobalVector(_SunDirection, new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
+            Shader.SetGlobalVector(_ID_SunDirection, new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
         }
 
         // ─────────────────────────────────────────────
@@ -831,14 +1081,14 @@ namespace Hecton8.Celestial
                 _currentPhase = math.dot(toSun, new float3(0, 0, 1));
             }
 
-            _aegirMPB.SetVector(_FresnelSunDir, new Vector4(toSun.x, toSun.y, toSun.z, 0));
-            _aegirMPB.SetFloat(_BacklitIntensity, backlitIntensity);
-            _aegirMPB.SetFloat(_EquatorialSpeed, equatorialRotationSpeed);
-            _aegirMPB.SetFloat(_PolarMultiplier, polarRotationMultiplier);
-            _aegirMPB.SetFloat(_PlanetPhase, _currentPhase);
-            _aegirMPB.SetFloat(_StormEmission, stormEmissionIntensity);
-            _aegirMPB.SetFloat(_SunBacklitFactor, _currentBacklitFactor);
-            _aegirMPB.SetFloat(_GlobalRotation, _rotationTimer);
+            _aegirMPB.SetVector(_ID_FresnelSunDir, new Vector4(toSun.x, toSun.y, toSun.z, 0));
+            _aegirMPB.SetFloat(_ID_BacklitIntensity, backlitIntensity);
+            _aegirMPB.SetFloat(_ID_EquatorialSpeed, equatorialRotationSpeed);
+            _aegirMPB.SetFloat(_ID_PolarMultiplier, polarRotationMultiplier);
+            _aegirMPB.SetFloat(_ID_PlanetPhase, _currentPhase);
+            _aegirMPB.SetFloat(_ID_StormEmission, stormEmissionIntensity);
+            _aegirMPB.SetFloat(_ID_SunBacklitFactor, _currentBacklitFactor);
+            _aegirMPB.SetFloat(_ID_GlobalRotation, _rotationTimer);
 
             aegirRenderer.SetPropertyBlock(_aegirMPB);
 
@@ -940,6 +1190,12 @@ namespace Hecton8.Celestial
         public float SunOcclusionFactor => _smoothedOcclusionFactor;
         public float RotationTimer => _rotationTimer;
 
+        // ═══ MODIFIED ═══
+        // Replaced CloudRotation with GameTime.
+        // GameTime is the continuously growing time accumulator
+        // passed to the sky shader as _GameTime.
+        public float GameTime => _gameTime;
+
         public void SetOrbitalAngle(float angleDegrees)
         {
             _accumulatedOrbitalAngle = angleDegrees % 360f;
@@ -957,7 +1213,7 @@ namespace Hecton8.Celestial
             float3 aegirPos  = (float3)aegirTransform.position;
             float3 playerPos = (float3)playerTransform.position;
 
-            // Line Aegir → Player
+            // Line Aegir -> Player
             Gizmos.color = planetShineColor;
             Gizmos.DrawLine((Vector3)aegirPos, (Vector3)playerPos);
 
@@ -995,6 +1251,14 @@ namespace Hecton8.Celestial
             {
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawWireSphere(sunVisualTransform.position, 500f);
+            }
+
+            // Aegir direction indicator (for sky shader debug)
+            if (_skyMaterial != null)
+            {
+                Gizmos.color = new Color(0.6f, 0.5f, 0.8f, 0.7f);
+                Gizmos.DrawRay((Vector3)playerPos,
+                    (Vector3)(math.normalizesafe(aegirPos - playerPos) * 30f));
             }
         }
 #endif

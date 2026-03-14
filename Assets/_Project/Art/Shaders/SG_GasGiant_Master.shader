@@ -1,3 +1,88 @@
+// ============================================================================
+// HECTON-8 -- SG_GasGiant_Master.shader
+// Gas giant atmospheric shader for Aegir (Hecton's parent planet).
+// Unity 6 | URP 17+ | SRP Batcher Compatible
+//
+// ===============================================================
+// VISUAL ARCHITECTURE
+// ===============================================================
+//
+// Layer 1 (BASE CLOUD DECK):
+//   Main cloud bands sampled from _MainTex.
+//   Constant-speed horizontal rotation via _GlobalRotation.
+//   Provides the base albedo for the planet surface.
+//
+// Layer 2 (DETAIL CLOUDS / UPPER HAZE):
+//   Higher-frequency cloud detail from _DetailTex.
+//   Rotates faster by _DetailSpeedMult factor.
+//   Blended with base deck via alpha-weighted lerp.
+//
+// Layer 3 (STORM EMISSION):
+//   Self-illuminating storm systems from _EmissionTex.
+//   Visible primarily on the dark side (fades on lit side).
+//   Drifts at its own speed (_StormSpeed).
+//
+// Layer 4 (EMISSION MAP) -- NEW:
+//   General atmospheric glow / aurora / energy emission.
+//   Sampled from _EmissionMap with base cloud UVs.
+//   Multiplied by HDR _EmissionColor for artist control.
+//   Added to final composite unconditionally (always visible).
+//   Makes the planet look like a luminous gas giant rather
+//   than a dark ball with a backlight halo.
+//
+// ===============================================================
+// LIGHTING MODEL
+// ===============================================================
+//
+// TERMINATOR SCATTER:
+//   Soft day/night transition with Gaussian-weighted color tint.
+//   Simulates atmospheric scattering at the terminator line.
+//
+// FRESNEL RIM:
+//   Dual-power atmosphere rim (inner + outer).
+//   Sun-gated: visible on lit side, fades on dark side.
+//   Eclipse mode: backlit Fresnel visible during occultation.
+//
+// BACKLIT AMBIENT:
+//   Faint illumination on the shadow side.
+//   Prevents pure black silhouette.
+//
+// ===============================================================
+// EMISSION MAP USAGE GUIDE
+// ===============================================================
+//
+// The _EmissionMap texture should contain:
+//   - Swirling atmospheric bands and vortices (grayscale)
+//   - Bright regions = active atmospheric glow
+//   - Dark regions = no emission
+//   - Seamless tileable (same UV space as _MainTex)
+//
+// _EmissionColor (HDR) controls:
+//   - Hue: the color of the atmospheric glow
+//   - Intensity (>1): how bright the glow is (feeds into Bloom)
+//   - Set to black to disable emission entirely
+//
+// The emission scrolls with the base cloud deck rotation,
+// so glowing features track with the visible cloud bands.
+// This is intentional -- emission represents atmospheric
+// phenomena bound to the gas layers, not a static overlay.
+//
+// ===============================================================
+// PERFORMANCE
+// ===============================================================
+//
+// 5 texture samples total:
+//   1x _MainTex (base clouds)
+//   1x _DetailTex (upper haze)
+//   1x _EmissionTex (storms)
+//   1x _EmissionMap (atmospheric glow) -- NEW
+//   = 4 in forward pass (detail uses same ConstantRotation)
+//
+// All rotation uses float (32-bit) precision.
+// All color math uses half (16-bit) for ALU efficiency.
+// SRP Batcher compatible (single CBUFFER per pass).
+// ============================================================================
+
 Shader "HECTON/Celestial/SG_GasGiant_Master"
 {
     Properties
@@ -6,6 +91,10 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
         _MainTex ("Cloud Albedo", 2D) = "gray" {}
         _DetailTex ("Detail Clouds", 2D) = "gray" {}
         _EmissionTex ("Storm Emission", 2D) = "black" {}
+
+        [Header(Emission Map)]
+        _EmissionMap ("Emission Map (Atmospheric Glow)", 2D) = "black" {}
+        [HDR] _EmissionColor ("Emission Color HDR", Color) = (0.5, 0.3, 0.8, 1)
 
         [Header(Atmosphere Colors HDR)]
         [HDR] _AtmosColorInner ("Atmos Inner", Color) = (0.4, 0.3, 0.7, 1)
@@ -88,42 +177,32 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             TEXTURE2D(_MainTex);        SAMPLER(sampler_MainTex);
             TEXTURE2D(_DetailTex);      SAMPLER(sampler_DetailTex);
             TEXTURE2D(_EmissionTex);    SAMPLER(sampler_EmissionTex);
+            TEXTURE2D(_EmissionMap);    SAMPLER(sampler_EmissionMap);    // ═══ NEW ═══
 
             // ─────────────────────────────────────────────────────────
             // CBUFFER (SRP Batcher compatible)
             //
             // PRECISION POLICY:
             //   _GlobalRotation: MUST be float (32-bit).
-            //   This is a fractional accumulator set from C# every frame.
-            //   Using half (16-bit, 10-bit mantissa) would cause visible
-            //   UV jitter after ~10 minutes on low-end GPUs (MX series,
-            //   Mali, Adreno) due to mantissa exhaustion at large values.
-            //
-            //   _EquatorialSpeed: float (participates in _GlobalRotation math).
-            //   _DetailSpeedMult: float (participates in _GlobalRotation math).
-            //   _StormSpeed: float (participates in _GlobalRotation math).
-            //
+            //   _EquatorialSpeed, _DetailSpeedMult, _StormSpeed: float.
             //   All other parameters: half (visual params, no precision risk).
             //
-            // REMOVED PROPERTIES (v2 cleanup):
-            //   _PolarMultiplier — latitude-based speed was producing
-            //     visible seams at UV poles and adding complexity for
-            //     minimal visual benefit. Banding comes from textures.
-            //   _VerticalWiggleFreq / _VerticalWiggleAmp — removed for
-            //     the same reason. Vertical turbulence is better achieved
-            //     through texture authoring.
+            // ═══ NEW: _EmissionMap_ST and _EmissionColor added ═══
             // ─────────────────────────────────────────────────────────
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _DetailTex_ST;
                 float4 _EmissionTex_ST;
+                float4 _EmissionMap_ST;             // ═══ NEW ═══
+
+                half4  _EmissionColor;              // ═══ NEW ═══
 
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
 
-                float  _GlobalRotation;          // float — precision-critical
-                float  _EquatorialSpeed;         // float — used in rotation math
-                float  _DetailSpeedMult;         // float — used in rotation math
+                float  _GlobalRotation;
+                float  _EquatorialSpeed;
+                float  _DetailSpeedMult;
 
                 float4 _DetailTiling;
 
@@ -145,7 +224,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
                 half   _StormEmission;
                 float4 _StormTiling;
-                float  _StormSpeed;              // float — used in rotation math
+                float  _StormSpeed;
 
                 half   _PlanetPhase;
             CBUFFER_END
@@ -192,16 +271,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             //
             // ALL math uses float (32-bit). half is PROHIBITED in
             // rotation/UV chains to prevent jitter on MX350/Mali GPUs.
-            //
-            // SIMPLIFIED vs v1:
-            //   - No latitude/polar speed logic (removed _PolarMultiplier).
-            //   - No vertical wiggle (removed _VerticalWiggleFreq/Amp).
-            //   - Pure linear horizontal scroll — clean, artifact-free.
-            //   - Visual banding comes from texture authoring, not math.
             // ─────────────────────────────────────────────────────────
             float2 ConstantRotation(float2 uv, float speedMultiplier)
             {
-                // Full 32-bit chain: _GlobalRotation (float) * speed (float)
                 float offset = _GlobalRotation * _EquatorialSpeed * speedMultiplier;
                 float rotatedX = frac(uv.x + offset);
                 return float2(rotatedX, uv.y);
@@ -210,27 +282,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             // ─────────────────────────────────────────────────────────
             // RESOLVE SUN DIRECTION — Fallback-safe
             //
-            // PROBLEM: _SunDirection is set by HectonAtmosphereManager
-            // via Shader.SetGlobalVector. During the first frame(s),
-            // or in editor preview / prefab isolation, _SunDirection
-            // may be (0,0,0). This causes dot(N, L) = 0 for all
-            // fragments → the planet renders pitch black.
-            //
-            // SOLUTION: Check length(_SunDirection.xyz). If near zero,
+            // Check length(_SunDirection.xyz). If near zero,
             // substitute a hardcoded "fake sun" direction that produces
-            // a pleasant 3/4 lit view (warm upper-right illumination).
-            //
-            // The fallback direction (1, 0.5, 0.2) is chosen to:
-            //   - Light the planet from an upper-right angle
-            //   - Produce visible terminator and atmosphere
-            //   - Look natural in both editor and runtime
-            //
-            // Returns: direction FROM the sun (towards planet surface).
-            //          Negate for standard NdotL lighting (L = -result).
-            //
-            // PERFORMANCE: length() + branch costs ~2 ALU ops per fragment.
-            // Negligible compared to texture sampling. Branch is coherent
-            // (all fragments take the same path) so no divergence penalty.
+            // a pleasant 3/4 lit view.
             // ─────────────────────────────────────────────────────────
             static const float3 FALLBACK_SUN_DIR = normalize(float3(1.0, 0.5, 0.2));
             static const float  SUN_DIR_THRESHOLD = 0.001;
@@ -240,12 +294,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float3 raw = _SunDirection.xyz;
                 float  len = length(raw);
 
-                // Coherent branch: either ALL fragments use fallback or none.
-                // On the first frame _SunDirection is (0,0,0) → all fallback.
-                // After AtmosphereManager starts → all use real direction.
                 float3 resolved = (len < SUN_DIR_THRESHOLD)
                     ? FALLBACK_SUN_DIR
-                    : raw / len;       // manual normalize — we already computed length
+                    : raw / len;
 
                 return (half3)resolved;
             }
@@ -364,16 +415,6 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
             // ─────────────────────────────────────────────────────────
             // FRAGMENT
-            //
-            // CHANGES v2:
-            //   [FIX] ResolveSunDirection() prevents black planet when
-            //         _SunDirection is (0,0,0) during init.
-            //   [FIX] All rotation uses ConstantRotation() with float
-            //         precision — no half jitter at large values.
-            //   [DEL] Removed polarRotationMultiplier / latitude logic.
-            //   [DEL] Removed vertical wiggle.
-            //   [FIX] _EquatorialSpeed, _DetailSpeedMult, _StormSpeed
-            //         declared as float in CBUFFER (not half).
             // ─────────────────────────────────────────────────────────
             half4 GasGiantFrag(Varyings input) : SV_Target
             {
@@ -385,13 +426,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
                 // ═════════════════════════════════════════════════════
                 // SUN DIRECTION — Fallback-safe resolution.
-                // Guarantees the planet is ALWAYS lit, even when:
-                //   - C# AtmosphereManager hasn't started
-                //   - Prefab isolation / editor scene view
-                //   - First frame race condition
                 // ═════════════════════════════════════════════════════
                 half3 sunDir = ResolveSunDirection();
-                half3 L = -sunDir;    // direction TO the sun
+                half3 L = -sunDir;
 
                 // ═══════════════════════════════════════
                 // LAYER 1: BASE CLOUD DECK
@@ -444,8 +481,6 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     _SunBacklitFactor);
 
                 // ═══ STORM EMISSION ═══
-                // Uses ConstantRotation with storm-specific speed.
-                // _StormSpeed is float — no precision loss.
                 float stormSpeedRatio = _StormSpeed / (_EquatorialSpeed + 0.0001);
                 float2 stormBaseUV = input.uv * _StormTiling.xy;
                 float2 stormUV = ConstantRotation(stormBaseUV, stormSpeedRatio);
@@ -458,12 +493,40 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half3 stormEmission = stormRaw.rgb
                                     * _StormEmission * stormDayFade;
 
+                // ═══════════════════════════════════════════════════════
+                // ═══ NEW: EMISSION MAP (Atmospheric Glow) ═══
+                //
+                // Sampled at the same UV as the base cloud deck so that
+                // emission features track with visible cloud bands.
+                // This makes glowing atmospheric phenomena (auroras,
+                // deep atmospheric lightning, chemical luminescence)
+                // appear bound to the gas layers.
+                //
+                // The emission is NOT gated by daylightFactor — it's
+                // always visible. This is intentional: the gas giant
+                // should glow from within, visible from any angle.
+                // Artist controls brightness via _EmissionColor (HDR).
+                // Set _EmissionColor to black to disable completely.
+                //
+                // Uses TRANSFORM_TEX with _EmissionMap_ST for
+                // independent tiling/offset control in the inspector.
+                // ═══════════════════════════════════════════════════════
+                float2 emissionMapUV = TRANSFORM_TEX(baseUV, _EmissionMap);
+                half4 emissionMapSample = SAMPLE_TEXTURE2D(
+                    _EmissionMap, sampler_EmissionMap, emissionMapUV);
+
+                // Multiply by HDR color for artist control.
+                // emissionMapSample.rgb contains grayscale intensity.
+                // _EmissionColor.rgb contains the desired hue and HDR intensity.
+                half3 emissionMapContrib = emissionMapSample.rgb * _EmissionColor.rgb;
+
                 // ═══ FINAL COMPOSITE ═══
                 half3 finalColor = daylight
                                  + terminatorContrib
                                  + backlitAmbient
                                  + rim.rimColor
-                                 + stormEmission;
+                                 + stormEmission
+                                 + emissionMapContrib;    // ═══ NEW ═══
 
                 return half4(finalColor, 1.0h);
             }
@@ -586,6 +649,12 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
         // ═══════════════════════════════════════════
         // PASS 3: META
+        //
+        // ═══ MODIFIED: Added _EmissionMap_ST and _EmissionColor
+        // to the Meta pass CBUFFER for SRP Batcher compatibility.
+        // The Meta pass CBUFFER must match the Forward pass CBUFFER
+        // exactly (same properties, same order) or SRP Batcher
+        // will break batching between passes.
         // ═══════════════════════════════════════════
         Pass
         {
@@ -608,6 +677,8 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float4 _MainTex_ST;
                 float4 _DetailTex_ST;
                 float4 _EmissionTex_ST;
+                float4 _EmissionMap_ST;             // ═══ NEW ═══
+                half4  _EmissionColor;              // ═══ NEW ═══
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
                 float  _GlobalRotation;

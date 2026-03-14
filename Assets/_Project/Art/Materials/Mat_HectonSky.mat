@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Mat_AlienSky
-  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+  m_Name: Mat_HectonSky
+  m_Shader: {fileID: 4800000, guid: 6302a783d2378694c9db8d0036358965, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -30,8 +30,7 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap:
-    RenderType: Opaque
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   m_LockedProperties: 
@@ -62,6 +61,22 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _HighCloudTex:
+        m_Texture: {fileID: 2800000, guid: 97dacc0c8637b304f9451ecd290acffb, type: 3}
+        m_Scale: {x: 0.1, y: 0.1}
+        m_Offset: {x: 0, y: 0}
+    - _HorizonGradientTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainCloudAtlas:
+        m_Texture: {fileID: 2800000, guid: 161f2ad7f77e8bf408b29aa7e3d29966, type: 3}
+        m_Scale: {x: 0.1, y: 0.1}
+        m_Offset: {x: 0, y: 0}
+    - _MainCloudTex:
+        m_Texture: {fileID: 2800000, guid: 97dacc0c8637b304f9451ecd290acffb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -82,6 +97,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _StarTex:
+        m_Texture: {fileID: 2800000, guid: 13a5b68ec75a4bc4b804b409e2ddcfe2, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -97,24 +116,47 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
+    - _AegirHaloIntensity: 1.28
+    - _AegirHaloPower: 3.22
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _BacklitIntensity: 3
+    - _BacklitPower: 4
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
+    - _CirrusOpacity: 1
+    - _CirrusParallaxStrength: 0.15
+    - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
+    - _CloudDensityThreshold: 0
+    - _CloudSoftness: 0.5
+    - _CloudSpeedMult: 0.5
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
+    - _DetailStrength: 1
+    - _DitherScale: 4
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
+    - _FlowCycleSpeed: 0.05
+    - _FlowStrength: 0.178
+    - _GameTime: 568.5004
+    - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _HazeFalloff: 3
+    - _HazeIntensity: 1.5
+    - _HazeSunTintStrength: 0.8
+    - _HighCloudOpacity: 0.885
+    - _HighCloudParallaxStrength: 0
+    - _HighCloudSpeedMult: 0.08
     - _Metallic: 0
+    - _NightBlend: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
@@ -124,14 +166,42 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
+    - _StarIntensity: 1.61
+    - _StarIntensityMax: 2
+    - _StarSkyExposure: 1.5
+    - _StarTiling: 8
+    - _StarTwinkleSpeed: 1.5
+    - _SunEdgeSoftness: 0.00244
+    - _SunScatterIntensity: 2
+    - _SunScatterPower: 8
+    - _SunSize: 0.001
     - _Surface: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
+    - _AegirHaloColor: {r: 0.6, g: 0.5, b: 0.8, a: 1}
+    - _BacklitColor: {r: 1, g: 0.8, b: 0.4, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CirrusColor: {r: 0.7, g: 0.7, b: 0.9, a: 1}
+    - _CirrusTiling: {r: 0.3, g: 0.3, b: 0, a: 0}
+    - _CloudColorLit: {r: 0.9, g: 0.85, b: 0.8, a: 1}
+    - _CloudColorShadow: {r: 1, g: 1, b: 1, a: 1}
+    - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _HazeColor: {r: 0.5, g: 0.45, b: 0.55, a: 1}
+    - _HighCloudColor: {r: 0.75, g: 0.75, b: 0.95, a: 1}
+    - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
+    - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
+    - _SkyColorHorizon: {r: 0.8, g: 0.7, b: 1, a: 1}
+    - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
+    - _SkyColorZenith: {r: 0.1, g: 0.16, b: 0.5, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _StarColor: {r: 1, g: 1, b: 1, a: 1}
+    - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
+    - _SunDiscColor: {r: 20, g: 18, b: 12, a: 1}
+    - _SunScatterColor: {r: 1, g: 0.7, b: 0.3, a: 1}
+    - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
