@@ -24,9 +24,11 @@
   <Project Path="AmplifyImpostors.Runtime.csproj" />
   <Project Path="Den.Tools.Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.HDRP.csproj" />
+  <Project Path="MeshBakerEditor.csproj" />
   <Project Path="BakeryEditorAssembly.csproj" />
   <Project Path="PackageToolsEditor.csproj" />
   <Project Path="MoreMountains.Feedbacks.URP.csproj" />
+  <Project Path="MeshBakerCore.csproj" />
   <Project Path="MapMagic.Editor.csproj" />
   <Project Path="JBooth.MicroSplat.Core.Editor.csproj" />
   <Project Path="AstarPathfindingProjectEditor.csproj" />
