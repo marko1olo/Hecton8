@@ -37,7 +37,7 @@ using Hecton8.Atmosphere;
 /// ─ All math uses Unity.Mathematics.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickable, ISaveable, HectonAtmosphereManager.IDepthProvider
+public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickable, ISaveable
 {
     // ─── Inspector ───────────────────────────────────────────
 
@@ -111,8 +111,8 @@ public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickab
     /// Player has died (O₂ = 0 or Integrity = 0).
     /// </summary>
     public event Action OnDeath;
-    // Реализация IDepthProvider для AtmosphereManager
-    public float CurrentDepth => this.depth;
+    /// <summary>Current depth in metres below water surface.</summary>
+    public float CurrentDepth => depth;
     // ─── Public read-only properties ─────────────────────────
 
     public float Oxygen              => oxygen;

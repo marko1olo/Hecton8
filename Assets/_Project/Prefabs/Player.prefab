@@ -420,7 +420,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d480f5510764cb74982243ff9d0a6dbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.BuoyancyObject
-  density: 500
+  density: 900
   volume: 0.01
   height: 0.3
   groundCheckInterval: 3
@@ -652,7 +652,7 @@ Camera:
   m_GameObject: {fileID: 7338754024745434685}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 2
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
