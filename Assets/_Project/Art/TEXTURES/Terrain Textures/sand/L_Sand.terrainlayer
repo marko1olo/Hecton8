@@ -9,7 +9,7 @@ TerrainLayer:
   m_Name: L_Sand
   m_DiffuseTexture: {fileID: 2800000, guid: b30a2ce580153e945ab7e734d5094b43, type: 3}
   m_NormalMapTexture: {fileID: 2800000, guid: b696535e46c634949914f6635f6c15cd, type: 3}
-  m_MaskMapTexture: {fileID: 0}
+  m_MaskMapTexture: {fileID: 2800000, guid: 49c26ffbb9971c748b8966f2693e475a, type: 3}
   m_TileSize: {x: 50, y: 50}
   m_TileOffset: {x: 0, y: 0}
   m_Specular: {r: 0, g: 0, b: 0, a: 0}
@@ -19,5 +19,5 @@ TerrainLayer:
   m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
   m_DiffuseRemapMax: {x: 1, y: 1, z: 1, w: 1}
   m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
-  m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 1}
+  m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 0.3}
   m_SmoothnessSource: 1
