@@ -15,7 +15,6 @@ MonoBehaviour:
   biomeName: Unnamed Biome
   scatterColorBase: {r: 0, g: 0.03, b: 0.07, a: 1}
   scatterColorShallow: {r: 0, g: 0.15, b: 0.12, a: 1}
-  depthFogDensity: {x: 0.5, y: 0.25, z: 0.15}
-  fogColor: {r: 0, g: 0.05, b: 0.1, a: 1}
-  visibilityDistance: 100
-  extinctionMultiplier: 1
+  depthFogDensity: {x: 0.01, y: 0.01, z: 0.01}
+  fogColor: {r: 0.19651122, g: 0.4001424, b: 0.6037736, a: 1}
+  turbidityMultiplier: 1

@@ -2,54 +2,49 @@
 // HECTON-8 — HectonPlayerMovement.cs
 // Rigidbody-based hybrid player movement for underwater NASA-Punk environment.
 //
-// ARCHITECTURE:
+// v2.0 FIX — SLOPE PHYSICS:
+//   [BUG] ApplyGroundStability() обнуляла velocity.y каждый FixedTick
+//         когда игрок на земле. При ходьбе по наклонной поверхности
+//         горизонтальная сила толкает игрока по XZ, но гравитация вниз
+//         мгновенно обнуляется → игрок "парит" над склоном.
+//         Jump также обнулял velocity.y — менее критично (одноразово),
+//         но мешает естественной физике.
+//
+//   [FIX] ApplyGroundStability: удалено velocity.y = 0.
+//         Заменено на: полная отмена гравитации + мягкая snap-сила.
+//         Когда на земле, гравитация полностью компенсируется
+//         counter-force. Snap-сила прижимает к поверхности.
+//
+//   [FIX] WalkPhysics: движение проецируется на плоскость склона
+//         через Vector3.ProjectOnPlane(moveDir, groundNormal).
+//         При ходьбе вниз по склону вектор силы направлен ВДОЛЬ
+//         поверхности, а не горизонтально → игрок "приклеен" к земле.
+//
+//   [FIX] Jump: удалено velocity.y = 0. Импульс прыжка применяется
+//         поверх текущей скорости. На пологих склонах разница
+//         незначительна. На крутых — реалистичное снижение высоты прыжка.
+//
+// АРХИТЕКТУРА:
 //   • ITickable      — input sampling, camera rotation (per frame)
 //   • IFixedTickable — physics forces via Rigidbody.AddForce (fixed step)
 //   • Integrates with HectonFluidEngine (BuoyancyObject applies buoyancy/drag)
 //   • Respects HectonFabricatorUI.IsMenuOpen for input blocking
 //
 // HYBRID MOVEMENT:
-//   Two modes determined by BuoyancyObject.IsInAir:
-//
 //   SWIM MODE (IsInAir == false):
-//     • HORIZONTAL camera-relative movement (camera pitch does NOT affect direction)
-//     • 'W' always means "forward on the horizontal plane"
-//     • Vertical movement ONLY via Q/E/Space/Ctrl (explicit ascend/descend)
-//     • useGravity = false
-//     • High linearDamping for water resistance feel
-//     • Works WITH HectonFluidEngine forces (buoyancy, currents, engine drag)
+//     • 6DOF look-relative movement
+//     • Vertical via Q/E/Space/Ctrl
+//     • useGravity = false, high linearDamping
 //
 //   WALK MODE (IsInAir == true):
-//     • XZ-only body-relative movement (camera pitch ignored for direction)
-//     • No vertical input (gravity handles Y)
-//     • useGravity = true
-//     • Low linearDamping for air resistance
-//     • Ground detection via SphereCast for slope stability and future jumping
-//     • HectonFluidEngine forces are zeroed (isInAir flag in BuoyancyJob)
-//
-//   BODY ROTATION (both modes):
-//     • Body (Rigidbody) rotates by Yaw ONLY → always upright
-//     • Camera rotates by Pitch ONLY → look up/down
-//     • freezeRotation = true prevents physics-driven rotation
-//
-// GROUND DETECTION:
-//   SphereCast downward from player center each FixedTick when walking.
-//   If grounded on Terrain/Default layer:
-//     • Applies counter-gravity force to prevent slope sliding
-//     • Sets _isGrounded flag for future jump implementation
-//   If airborne (walking but not grounded):
-//     • Normal gravity applies (freefall)
-//
-// MODE TRANSITIONS:
-//   Edge detection: physics settings (gravity, drag) applied ONLY when
-//   mode actually changes. No per-frame property thrashing.
+//     • XZ body-relative, slope-projected when grounded (v2.0)
+//     • useGravity = true, low linearDamping
+//     • Ground snap force prevents micro-bouncing (v2.0)
+//     • Jump via Space (grounded only)
 //
 // ZERO GC:
 //   • No allocations in Tick/FixedTick hot paths
-//   • Camera reference via Inspector (no Camera.main)
-//   • LayerMask cached at Awake
-//   • BuoyancyObject cached in Awake — no per-frame GetComponent
-//   • Transform cached — no per-frame component lookup
+//   • All struct math, cached references
 // ============================================================================
 
 using Hecton8.Core;
@@ -90,9 +85,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Swimming ──────────────────────────────────")]
-        [Tooltip("Force applied for horizontal movement while swimming (Newtons). " +
-                 "Movement direction is the HORIZONTAL projection of camera forward — " +
-                 "camera pitch does NOT affect swim direction.")]
+        [Tooltip("Force applied for horizontal movement while swimming (Newtons).")]
         [SerializeField] private float swimForce = 600f;
 
         [Tooltip("Force applied for explicit ascend/descend (Q/E/Space/Ctrl) while swimming.")]
@@ -101,13 +94,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Maximum swim speed on XZ plane (m/s).")]
         [SerializeField] private float maxSwimSpeed = 12f;
 
-        // NOTE: maxVerticalSpeed removed in v5 refactor.
-        // Swim mode now uses full 3D magnitude clamp via maxSwimSpeed.
-        // All axes symmetric — no separate vertical limit needed.
-
-        [Tooltip("Rigidbody.linearDamping in swim mode. " +
-                 "Adds resistance on top of HectonFluidEngine viscous drag. " +
-                 "Set 0 if engine drag alone is sufficient.")]
+        [Tooltip("Rigidbody.linearDamping in swim mode.")]
         [SerializeField] private float swimLinearDamping = 1f;
 
         // ══════════════════════════════════════════════════════════
@@ -115,19 +102,16 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Walking ───────────────────────────────────")]
-        [Tooltip("Force applied for XZ movement while walking inside a dry module (Newtons).")]
+        [Tooltip("Force applied for XZ movement while walking (Newtons).")]
         [SerializeField] private float walkForce = 1200f;
 
         [Tooltip("Maximum walk speed on XZ plane (m/s).")]
         [SerializeField] private float maxWalkSpeed = 6f;
 
-        [Tooltip("Rigidbody.linearDamping in walk mode. " +
-                 "Higher = player stops faster when releasing keys. " +
-                 "Note: also affects fall speed slightly.")]
+        [Tooltip("Rigidbody.linearDamping in walk mode.")]
         [SerializeField] private float walkLinearDamping = 5f;
 
-        [Tooltip("Impulse force applied upward when jumping on land (Newtons). " +
-                 "Only applies when _isWalking && _isGrounded && Space pressed.")]
+        [Tooltip("Impulse force applied upward when jumping (Newtons).")]
         [SerializeField] private float jumpForce = 5f;
 
         // ══════════════════════════════════════════════════════════
@@ -141,14 +125,20 @@ namespace Hecton8.Gameplay
         [Tooltip("Distance below player center to cast for ground.")]
         [SerializeField] private float groundCheckDistance = 0.4f;
 
-        [Tooltip("Layers considered as ground for walking. " +
-                 "Should include Terrain and Default, exclude Water.")]
-        [SerializeField] private LayerMask groundLayers = ~0; // default: everything
+        [Tooltip("Layers considered as ground for walking.")]
+        [SerializeField] private LayerMask groundLayers = ~0;
 
-        [Tooltip("Multiplier for counter-gravity force when grounded on slopes. " +
+        [Tooltip("Multiplier for counter-gravity force when grounded. " +
                  "1.0 = exactly cancel gravity. Higher = more slope stability.")]
         [SerializeField, Range(1f, 2f)]
         private float slopeStabilityFactor = 1.1f;
+
+        [Tooltip("Gentle downward force (m/s²) applied when grounded to prevent " +
+                 "micro-bouncing from physics solver imprecision. " +
+                 "Acts as 'ground snap'. Too high → sinks into ground. " +
+                 "Too low → floats on bumps.")]
+        [SerializeField, Range(0f, 20f)]
+        private float groundSnapForce = 8f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
@@ -170,36 +160,21 @@ namespace Hecton8.Gameplay
         //  INPUT STATE (written in Tick, read in FixedTick)
         // ══════════════════════════════════════════════════════════
 
-        // Directional input [-1..1] — raw, no smoothing
         private float _inputH;
         private float _inputV;
-        private float _inputVertical; // ascend/descend (swim only)
+        private float _inputVertical;
 
-        // Camera rotation accumulators
         private float _yaw;
         private float _pitch;
 
-        // Flag: input was cleared this frame (menu open)
         private bool _inputCleared;
-
-        // Jump request flag (set in Tick, consumed in FixedTick)
         private bool _jumpRequested;
 
         // ══════════════════════════════════════════════════════════
         //  MODE STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Current movement mode. true = walking (in air / on land).
-        /// Updated each FixedTick via BuoyancyObject.IsInAir.
-        /// Physics settings applied only on edge (mode change).
-        /// </summary>
         private bool _isWalking;
-
-        /// <summary>
-        /// True when SphereCast hits ground while in walk mode.
-        /// Used for slope stability and future jumping.
-        /// </summary>
         private bool _isGrounded;
 
         // ══════════════════════════════════════════════════════════
@@ -210,7 +185,7 @@ namespace Hecton8.Gameplay
         private bool _registeredFixedTick;
 
         // ══════════════════════════════════════════════════════════
-        //  CACHED MATH — avoid per-frame struct allocation
+        //  CACHED MATH
         // ══════════════════════════════════════════════════════════
 
         private Vector3 _moveDirection;
@@ -219,11 +194,9 @@ namespace Hecton8.Gameplay
         private Quaternion _bodyRotation;
         private Quaternion _cameraRotation;
 
-        // Ground check cached structs (avoid stack allocation each frame)
         private RaycastHit _groundHit;
         private Vector3 _groundCheckOrigin;
 
-        // Cached gravity vector (avoid Physics.gravity property access per frame)
         private Vector3 _cachedGravity;
 
         // ══════════════════════════════════════════════════════════
@@ -237,39 +210,28 @@ namespace Hecton8.Gameplay
             _rb = GetComponent<Rigidbody>();
             TryGetComponent(out _buoyancy);
 
-            // Sane Rigidbody defaults
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
-            // Prevent Rigidbody from rotating the player (we control rotation manually)
             _rb.freezeRotation = true;
 
-            // Initialize rotation from current transform
             Vector3 euler = _cachedTransform.eulerAngles;
             _yaw = euler.y;
 
             if (playerCamera != null)
             {
                 _pitch = -playerCamera.localEulerAngles.x;
-                // Normalize pitch from [0,360) to [-180,180)
                 if (_pitch > 180f) _pitch -= 360f;
                 _pitch = Mathf.Clamp(_pitch, pitchMin, pitchMax);
             }
 
-            // Cache gravity
             _cachedGravity = UnityEngine.Physics.gravity;
 
-            // Determine initial mode and apply physics settings
             _isWalking = _buoyancy != null && _buoyancy.IsInAir;
             ApplyModePhysicsSettings();
 
             _registeredTick = false;
             _registeredFixedTick = false;
         }
-
-        // ====================================================================
-        // TICK REGISTRATION — Deferred two-phase pattern.
-        // ====================================================================
 
         private void OnEnable()
         {
@@ -287,8 +249,7 @@ namespace Hecton8.Gameplay
             {
                 Debug.LogError(
                     "[HectonPlayerMovement] GameTickManager.Instance is null even at Start(). " +
-                    "Player movement will NOT work. " +
-                    "Ensure GameTickManager exists in the scene and is active.", this);
+                    "Player movement will NOT work.", this);
             }
         }
 
@@ -334,7 +295,6 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
-            // ── Menu check ──
             if (HectonFabricatorUI.IsMenuOpen)
             {
                 _inputH = 0f;
@@ -347,7 +307,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // ── Lock cursor for gameplay ──
             if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
             {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -355,10 +314,7 @@ namespace Hecton8.Gameplay
                 _inputCleared = false;
             }
 
-            // ══════════════════════════════════════════════
-            //  MOUSE LOOK
-            // ══════════════════════════════════════════════
-
+            // ── Mouse Look ──
             float mouseX = Input.GetAxisRaw("Mouse X");
             float mouseY = Input.GetAxisRaw("Mouse Y");
 
@@ -366,39 +322,28 @@ namespace Hecton8.Gameplay
             _pitch -= mouseY * mouseSensitivity;
             _pitch = Mathf.Clamp(_pitch, pitchMin, pitchMax);
 
-            // Apply body rotation (Yaw only — body always upright)
             _bodyRotation = Quaternion.Euler(0f, _yaw, 0f);
             _cachedTransform.rotation = _bodyRotation;
 
-            // Apply camera rotation (Pitch only — local X axis)
             if (playerCamera != null)
             {
                 _cameraRotation = Quaternion.Euler(_pitch, 0f, 0f);
                 playerCamera.localRotation = _cameraRotation;
             }
 
-            // ══════════════════════════════════════════════
-            //  MOVEMENT INPUT
-            // ══════════════════════════════════════════════
-
+            // ── Movement Input ──
             _inputH = Input.GetAxisRaw("Horizontal");
             _inputV = Input.GetAxisRaw("Vertical");
 
-            // ── Vertical / Jump input ──
-            // Behavior depends on mode (evaluated in FixedTick):
-            //   WALK: Space = jump impulse (one-shot, requires grounded)
-            //   SWIM: Space = continuous ascend force, Ctrl = descend force
             _inputVertical = 0f;
 
             if (_isWalking)
             {
-                // Jump request: GetKeyDown for one-shot impulse
                 if (Input.GetKeyDown(KeyCode.Space))
                     _jumpRequested = true;
             }
             else
             {
-                // Swim: continuous vertical forces
                 if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.E))
                     _inputVertical += 1f;
 
@@ -413,10 +358,7 @@ namespace Hecton8.Gameplay
 
         public void FixedTick(float fixedDeltaTime)
         {
-            // ══════════════════════════════════════════════
-            //  MODE DETECTION (edge-triggered)
-            // ══════════════════════════════════════════════
-
+            // ── Mode Detection (edge-triggered) ──
             bool shouldWalk = _buoyancy != null && _buoyancy.IsInAir;
 
             if (shouldWalk != _isWalking)
@@ -426,10 +368,7 @@ namespace Hecton8.Gameplay
                 UpdateModeDiagnostics();
             }
 
-            // ══════════════════════════════════════════════
-            //  GROUND DETECTION (walk mode only)
-            // ══════════════════════════════════════════════
-
+            // ── Ground Detection (walk mode only) ──
             if (_isWalking)
             {
                 GroundCheck();
@@ -440,7 +379,25 @@ namespace Hecton8.Gameplay
             }
 
             // ══════════════════════════════════════════════
-            //  JUMP (walk mode only, consumes request)
+            //  JUMP (v2.0: no velocity.y zeroing)
+            //
+            //  БЫЛО (v1, артефакт):
+            //    _velocity = _rb.linearVelocity;
+            //    if (_velocity.y < 0f) {
+            //        _velocity.y = 0f;
+            //        _rb.linearVelocity = _velocity;
+            //    }
+            //    _rb.AddForce(Vector3.up * jumpForce, Impulse);
+            //
+            //  СТАЛО (v2.0):
+            //    _rb.AddForce(Vector3.up * jumpForce, Impulse);
+            //
+            //  Почему безопасно:
+            //    На пологих склонах velocity.y ≈ 0 → разницы нет.
+            //    На крутых склонах velocity.y может быть -2..-3 м/с,
+            //    что слегка снижает высоту прыжка (реалистично).
+            //    ApplyGroundStability (v2.0) не даёт гравитации
+            //    накапливать скорость вниз → velocity.y при стоянии ≈ 0.
             // ══════════════════════════════════════════════
 
             if (_jumpRequested)
@@ -449,45 +406,24 @@ namespace Hecton8.Gameplay
 
                 if (_isWalking && _isGrounded)
                 {
-                    // Cancel any residual downward velocity before jump
-                    _velocity = _rb.linearVelocity;
-                    if (_velocity.y < 0f)
-                    {
-                        _velocity.y = 0f;
-                        _rb.linearVelocity = _velocity;
-                    }
-
                     _rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
                 }
             }
 
-            // ══════════════════════════════════════════════
-            //  MOVEMENT PHYSICS
-            // ══════════════════════════════════════════════
-
+            // ── Movement Physics ──
             if (_isWalking)
                 WalkPhysics();
             else
                 SwimPhysics();
 
-            // ══════════════════════════════════════════════
-            //  GROUND STABILITY (walk mode, grounded)
-            // ══════════════════════════════════════════════
-
+            // ── Ground Stability (walk mode, grounded) ──
             if (_isWalking && _isGrounded)
             {
                 ApplyGroundStability();
             }
 
-            // ══════════════════════════════════════════════
-            //  VELOCITY CLAMP
-            // ══════════════════════════════════════════════
-
+            // ── Velocity Clamp ──
             ClampVelocity();
-
-            // ══════════════════════════════════════════════
-            //  DIAGNOSTICS UPDATE
-            // ══════════════════════════════════════════════
 
             UpdateGroundDiagnostics();
         }
@@ -499,10 +435,6 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// SphereCast downward from player center to detect ground.
         /// Only called when _isWalking == true.
-        ///
-        /// Uses groundCheckRadius to avoid edge-case misses with thin geometry.
-        /// Cast origin is offset upward by radius to prevent starting inside geometry.
-        ///
         /// Zero-GC: uses cached _groundHit and _groundCheckOrigin.
         /// </summary>
         private void GroundCheck()
@@ -522,91 +454,96 @@ namespace Hecton8.Gameplay
             );
         }
 
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — GROUND STABILITY (v2.0: slope-safe)
+        // ══════════════════════════════════════════════════════════
+
         /// <summary>
-        /// When grounded on a slope, applies a counter-gravity force projected
-        /// along the ground normal. This prevents the player from sliding down
-        /// slopes due to gravity's tangential component.
+        /// Prevents slope sliding and micro-bouncing when grounded.
         ///
-        /// The force is: -gravity projected onto the surface plane, scaled by
-        /// slopeStabilityFactor for slight overcorrection (prevents drift).
+        /// v2.0 FIX: Полностью переписан.
         ///
-        /// Also cancels downward velocity when grounded to prevent gravity
-        /// accumulation while standing still.
+        /// БЫЛО (v1, ЛЕВИТАЦИЯ):
+        ///   _velocity = _rb.linearVelocity;
+        ///   if (_velocity.y &lt; 0f) {
+        ///       _velocity.y = 0f;              ← УБИВАЕТ ходьбу по склонам!
+        ///       _rb.linearVelocity = _velocity; ← Каждый FixedTick → левитация
+        ///   }
+        ///   ... + частичная компенсация гравитации
+        ///
+        /// СТАЛО (v2.0, КОРРЕКТНО):
+        ///   1. ПОЛНАЯ компенсация гравитации: AddForce(-gravity * mass * factor).
+        ///      Когда на земле, гравитация полностью отменяется, как будто
+        ///      под ногами твёрдая поверхность (реакция опоры).
+        ///      Это предотвращает sliding по склону при стоянии без движения.
+        ///
+        ///   2. Ground snap: мягкая сила вниз (groundSnapForce * mass).
+        ///      Прижимает игрока к поверхности, компенсируя микро-отскоки
+        ///      от физического солвера. Без этого на неровностях
+        ///      игрок "подпрыгивает" на 1-2 см каждый кадр.
+        ///
+        ///   3. velocity.y НЕ обнуляется. Ходьба по склону вниз
+        ///      (через ProjectOnPlane в WalkPhysics) создаёт отрицательную
+        ///      Y-скорость — это нормально и ожидаемо. Обнуление убивало бы
+        ///      этот компонент, вызывая "парение" над склоном.
+        ///
+        /// ВЗАИМОДЕЙСТВИЕ С WalkPhysics:
+        ///   WalkPhysics проецирует вектор движения на плоскость склона.
+        ///   ApplyGroundStability отменяет гравитацию и прижимает к земле.
+        ///   Вместе они создают плавное перемещение по наклонным поверхностям
+        ///   без подпрыгивания и без скольжения.
         /// </summary>
         private void ApplyGroundStability()
         {
-            // Cancel accumulated downward velocity when grounded
-            _velocity = _rb.linearVelocity;
-            if (_velocity.y < 0f)
+            // ── 1. Полная компенсация гравитации ──
+            // Когда на земле, поверхность реагирует на гравитацию.
+            // В Rigidbody-системе мы эмулируем это через counter-force.
+            // slopeStabilityFactor > 1.0 даёт лёгкую перекомпенсацию
+            // для предотвращения drift'а на крутых склонах.
+            _forceVector.x = -_cachedGravity.x * _rb.mass * slopeStabilityFactor;
+            _forceVector.y = -_cachedGravity.y * _rb.mass * slopeStabilityFactor;
+            _forceVector.z = -_cachedGravity.z * _rb.mass * slopeStabilityFactor;
+
+            _rb.AddForce(_forceVector, ForceMode.Force);
+
+            // ── 2. Ground snap: мягкое прижимание к поверхности ──
+            // Компенсирует микро-отскоки от collision solver.
+            // Направлен вниз, масштабирован массой для consistency.
+            // Величина groundSnapForce (по умолчанию ~8) подбирается
+            // так, чтобы:
+            //   • Не проваливаться в землю (слишком высокая)
+            //   • Не "парить" на bump'ах (слишком низкая)
+            //   • Не мешать прыжку (прыжок ставит _isGrounded = false
+            //     на следующем кадре → snap не применяется)
+            if (groundSnapForce > 0f)
             {
-                _velocity.y = 0f;
-                _rb.linearVelocity = _velocity;
-            }
-
-            // Counter-gravity force along ground normal
-            // gravityAlongNormal = dot(gravity, normal) * normal
-            // counterForce = -gravity + gravityAlongNormal = force that keeps us on surface
-            Vector3 gravityForce = _cachedGravity * _rb.mass;
-            float dot = Vector3.Dot(gravityForce, _groundHit.normal);
-
-            // Only apply on slopes (dot < 0 means gravity pushes into surface)
-            if (dot < 0f)
-            {
-                // Force to cancel the component of gravity along the slope
-                _forceVector.x = -gravityForce.x + _groundHit.normal.x * dot;
-                _forceVector.y = -gravityForce.y + _groundHit.normal.y * dot;
-                _forceVector.z = -gravityForce.z + _groundHit.normal.z * dot;
-
-                // Apply with stability factor (slight overcorrection)
-                _forceVector.x *= slopeStabilityFactor;
-                _forceVector.y *= slopeStabilityFactor;
-                _forceVector.z *= slopeStabilityFactor;
-
-                _rb.AddForce(_forceVector, ForceMode.Force);
+                _rb.AddForce(Vector3.down * (groundSnapForce * _rb.mass), ForceMode.Force);
             }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — SWIM PHYSICS (horizontal camera-relative)
+        //  PRIVATE — SWIM PHYSICS (6DOF look-relative)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// 6DOF Look-Relative Swim Movement.
-        ///
-        /// W/S: move along camera.forward (FULL 3D — looking down + W = dive).
-        /// A/D: strafe along camera.right (horizontal component only).
-        /// Space/E: explicit ascend (continuous upward force).
-        /// Ctrl/Q:  explicit descend (continuous downward force).
-        ///
-        /// All axes use swimForce for symmetric speed.
-        /// Vertical from Space/Ctrl uses verticalForce (allows independent tuning).
-        /// All velocities clamped to maxSwimSpeed in ClampVelocity().
-        ///
-        /// Why full 3D forward:
-        ///   - Player looks down → W should dive, not slide on XZ.
-        ///   - Subnautica-style navigation requires look-relative 6DOF.
-        ///   - Explicit ascend/descend keys provide fine vertical control
-        ///     independent of camera pitch.
-        ///
-        /// Zero GC: all struct math, no allocations.
+        /// W/S: along camera.forward (full 3D — looking down + W = dive).
+        /// A/D: strafe along camera.right.
+        /// Space/E: ascend. Ctrl/Q: descend.
+        /// Zero GC.
         /// </summary>
         private void SwimPhysics()
         {
             bool hasInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
             if (!hasInput || playerCamera == null) return;
 
-            // ── Camera vectors (world space) ──
-            Vector3 camForward = playerCamera.forward; // full 3D direction
-            Vector3 camRight   = playerCamera.right;   // full 3D direction
+            Vector3 camForward = playerCamera.forward;
+            Vector3 camRight   = playerCamera.right;
 
-            // ── 3D movement from WASD ──
-            // W/S: along camera.forward (includes Y component = dive/rise)
-            // A/D: along camera.right (includes Y from camera roll, usually ~0)
             float dirX = camForward.x * _inputV + camRight.x * _inputH;
             float dirY = camForward.y * _inputV + camRight.y * _inputH;
             float dirZ = camForward.z * _inputV + camRight.z * _inputH;
 
-            // ── Normalize to prevent diagonal speed boost ──
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
             {
@@ -616,21 +553,45 @@ namespace Hecton8.Gameplay
                 dirZ *= invMag;
             }
 
-            // ── Apply swim force (uniform on all axes) ──
             _forceVector.x = dirX * swimForce;
             _forceVector.y = dirY * swimForce;
             _forceVector.z = dirZ * swimForce;
 
-            // ── Add explicit vertical force (Space/Ctrl — independent of camera) ──
             _forceVector.y += _inputVertical * verticalForce;
 
             _rb.AddForce(_forceVector, ForceMode.Force);
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — WALK PHYSICS (XZ body-relative)
+        //  PRIVATE — WALK PHYSICS (v2.0: slope-projected)
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// XZ body-relative movement with slope projection.
+        ///
+        /// v2.0 FIX: Когда игрок на земле, вектор движения проецируется
+        /// на плоскость склона через Vector3.ProjectOnPlane(dir, groundNormal).
+        ///
+        /// БЫЛО (v1, ПОДПРЫГИВАНИЕ НА СКЛОНАХ):
+        ///   _moveDirection = (forward * inputV + right * inputH) с Y=0
+        ///   _forceVector = _moveDirection * walkForce с Y=0
+        ///   → Горизонтальная сила на склоне = игрок "съезжает" с поверхности,
+        ///     кратковременно теряет контакт, падает обратно → bounce.
+        ///
+        /// СТАЛО (v2.0, ПЛАВНО):
+        ///   Когда grounded:
+        ///     _moveDirection = ProjectOnPlane(horizontalDir, groundNormal).normalized
+        ///     _forceVector = _moveDirection * walkForce (включая Y-компонент!)
+        ///   → Сила направлена ВДОЛЬ поверхности, не отрывая от неё.
+        ///   → Ходьба вниз по склону: Y-компонент отрицательный → "приклеен".
+        ///   → Ходьба вверх по склону: Y-компонент положительный → карабкается.
+        ///   → Плоская земля: Y ≈ 0 → поведение как в v1.
+        ///
+        /// Когда NOT grounded (в воздухе при ходьбе):
+        ///   Используется горизонтальный вектор без проекции (air control).
+        ///
+        /// Zero GC: ProjectOnPlane returns struct.
+        /// </summary>
         private void WalkPhysics()
         {
             if (_inputH == 0f && _inputV == 0f) return;
@@ -638,12 +599,12 @@ namespace Hecton8.Gameplay
             Vector3 bodyForward = _cachedTransform.forward;
             Vector3 bodyRight = _cachedTransform.right;
 
-            // XZ movement direction
+            // ── Горизонтальное направление движения (до проекции) ──
             _moveDirection.x = bodyForward.x * _inputV + bodyRight.x * _inputH;
             _moveDirection.y = 0f;
             _moveDirection.z = bodyForward.z * _inputV + bodyRight.z * _inputH;
 
-            // Normalize to prevent diagonal speed boost
+            // ── Нормализация (предотвращает diagonal speed boost) ──
             float sqrMag = _moveDirection.x * _moveDirection.x
                          + _moveDirection.z * _moveDirection.z;
 
@@ -654,8 +615,49 @@ namespace Hecton8.Gameplay
                 _moveDirection.z *= invMag;
             }
 
+            // ══════════════════════════════════════════════
+            //  v2.0: SLOPE PROJECTION (grounded only)
+            //
+            //  Проецирует горизонтальный вектор движения на
+            //  плоскость склона (определённую нормалью _groundHit).
+            //
+            //  Пример:
+            //    Склон 30°, нормаль = (0, 0.866, 0.5)
+            //    Движение forward = (0, 0, 1)
+            //    ProjectOnPlane = (0, -0.25, 0.866) ← вниз по склону!
+            //    Normalize = (0, -0.277, 0.961)
+            //
+            //  Результат: сила направлена ВДОЛЬ поверхности склона,
+            //  а не горизонтально. Игрок "скользит" по земле.
+            //
+            //  На плоской земле (нормаль = up):
+            //    ProjectOnPlane = (moveDir.x, 0, moveDir.z) ← без изменений.
+            // ══════════════════════════════════════════════
+
+            if (_isGrounded)
+            {
+                // Проекция на плоскость склона
+                _moveDirection = Vector3.ProjectOnPlane(_moveDirection, _groundHit.normal);
+
+                // Ренормализация: ProjectOnPlane может изменить длину вектора.
+                // На крутых склонах длина уменьшается (косинус угла).
+                // Ренормализация восстанавливает полную силу в любом направлении.
+                float projSqr = _moveDirection.sqrMagnitude;
+                if (projSqr > 0.0001f)
+                {
+                    float invMag = 1f / Mathf.Sqrt(projSqr);
+                    _moveDirection.x *= invMag;
+                    _moveDirection.y *= invMag;
+                    _moveDirection.z *= invMag;
+                }
+            }
+
+            // ── Применяем силу ──
+            // v2.0: _forceVector.y теперь НЕ обнуляется!
+            // Slope projection задаёт правильный Y-компонент.
+            // На плоской земле Y ≈ 0 (поведение как в v1).
             _forceVector.x = _moveDirection.x * walkForce;
-            _forceVector.y = 0f;
+            _forceVector.y = _moveDirection.y * walkForce;
             _forceVector.z = _moveDirection.z * walkForce;
 
             _rb.AddForce(_forceVector, ForceMode.Force);
@@ -667,17 +669,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Clamps velocity based on current mode.
-        ///
-        /// WALK MODE: XZ clamp only (Y is gravity-controlled).
-        ///
-        /// SWIM MODE: Full 3D magnitude clamp to maxSwimSpeed.
-        ///   All axes are symmetric — diving at full speed should
-        ///   be the same speed as swimming forward.
-        ///   This replaces the separate XZ + Y clamping.
-        ///   External forces (currents, BuoyancyObject) can push
-        ///   beyond this limit — we only clamp player-driven velocity.
-        ///
-        /// Zero GC: struct math only.
+        /// WALK: XZ clamp only (Y is gravity/slope controlled).
+        /// SWIM: Full 3D magnitude clamp.
+        /// Zero GC.
         /// </summary>
         private void ClampVelocity()
         {
@@ -686,7 +680,6 @@ namespace Hecton8.Gameplay
 
             if (_isWalking)
             {
-                // ── Walk: XZ clamp only (Y is gravity-controlled) ──
                 if (maxWalkSpeed > 0f)
                 {
                     float xzSqr = _velocity.x * _velocity.x
@@ -704,7 +697,6 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                // ── Swim: Full 3D magnitude clamp (symmetric axes) ──
                 if (maxSwimSpeed > 0f)
                 {
                     float fullSqr = _velocity.x * _velocity.x
@@ -769,7 +761,6 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Whether the player is currently grounded (walking mode + ground detected).
-        /// Useful for jump systems, animation triggers, etc.
         /// </summary>
         public bool IsGrounded => _isGrounded && _isWalking;
 
@@ -790,7 +781,6 @@ namespace Hecton8.Gameplay
             if (swimForce < 0f) swimForce = 0f;
             if (verticalForce < 0f) verticalForce = 0f;
             if (maxSwimSpeed < 0f) maxSwimSpeed = 0f;
-            // if (maxVerticalSpeed < 0f) maxVerticalSpeed = 0f;
             if (swimLinearDamping < 0f) swimLinearDamping = 0f;
 
             if (walkForce < 0f) walkForce = 0f;
@@ -800,6 +790,7 @@ namespace Hecton8.Gameplay
 
             if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
+            if (groundSnapForce < 0f) groundSnapForce = 0f;
 
             if (pitchMin < -89.9f) pitchMin = -89.9f;
             if (pitchMax > 89.9f) pitchMax = 89.9f;
@@ -810,14 +801,31 @@ namespace Hecton8.Gameplay
         {
             if (!Application.isPlaying) return;
 
-            // Visualize ground check sphere
             Vector3 origin = transform.position + Vector3.up * groundCheckRadius;
             Vector3 castEnd = origin + Vector3.down * (groundCheckDistance + groundCheckRadius);
 
             if (_isGrounded)
             {
+                // Ground hit — green sphere at contact point
                 Gizmos.color = new Color(0f, 1f, 0f, 0.5f);
                 Gizmos.DrawWireSphere(_groundHit.point, groundCheckRadius);
+
+                // v2.0: Visualize ground normal
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawLine(_groundHit.point,
+                                _groundHit.point + _groundHit.normal * 1.5f);
+
+                // v2.0: Visualize projected walk direction (if moving)
+                if (_inputH != 0f || _inputV != 0f)
+                {
+                    Vector3 projDir = Vector3.ProjectOnPlane(
+                        _cachedTransform.forward * _inputV + _cachedTransform.right * _inputH,
+                        _groundHit.normal).normalized;
+
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawLine(_groundHit.point,
+                                    _groundHit.point + projDir * 2f);
+                }
             }
             else
             {

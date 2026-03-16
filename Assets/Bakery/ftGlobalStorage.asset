@@ -433,7 +433,19 @@ MonoBehaviour:
   - Assets/ScifiFacility/Models/structural/floor/floor/duct_03.fbx
   - Assets/ScifiFacility/Models/structural/floor/floor/floor_06.fbx
   - Assets/ScifiFacility/Models/structural/floor/floor/floor_border_01.fbx
-  uvOverlapAssetList: 00000000ffffffff000000000101000000000000000000000000000001010000000000000101000000000000000000000000000001010000000000000101000001010000010100000000000000000000000000000101000000000000010100000000000001010000000000000000000001010000000000000101000001010000000000000101000000000000
+  - Assets/_Project/Art/Models/Rocks/Rock 1/Forest_Rock_Shelf_wgpqfjl_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 1/Forest_Rock_Shelf_wgpqfjl_Low.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 2/Nordic_Beach_Rock_vbumba2fa_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 3/Nordic_Beach_Rock_vbumba2fa_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 4/Nordic_Beach_Rock_vbumba2fa_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 5/Nordic_Forest_Ledge_Rock_Large_xfpjeie_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 5/River_Rock_FBX.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 6/Nordic_Beach_Rock_Formation_vd4iecjva_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 6/Nordic_Beach_Rock_uknoehp_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 7/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx
+  - Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx
+  uvOverlapAssetList: 00000000ffffffff000000000101000000000000000000000000000001010000000000000101000000000000000000000000000001010000000000000101000001010000010100000000000000000000000000000101000000000000010100000000000001010000000000000000000001010000000000000101000001010000000000000101000000000000000000000000000000000000000000000000000000000000010100000000000000000000010100000000000000000000
   xatlasWarningShown: 0
   foundCompatibleSetup: 0
   gpuName: 

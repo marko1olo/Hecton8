@@ -1,9 +1,16 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HectonVoxelEngine.cs — Project HECTON-8 Localized Voxel Volumes           ║
 // ║  Unity 6 (URP) | Burst + Jobs | Marching Cubes | SDF + 3D Noise           ║
-// ║  v3.1 — MapMagicBridge integration, removed HectonWorldGenerator dep      ║
+// ║  v3.2 — Awaitable API migration (Unity 6 native async)                    ║
 // ║                                                                             ║
-// ║  CHANGES v3.1:                                                              ║
+// ║  CHANGES v3.2:                                                              ║
+// ║  ─────────────                                                              ║
+// ║  1. Removed System.Threading.Tasks dependency                              ║
+// ║  2. GenerateVolumeAsync returns Awaitable<GameObject> (not Task<GO>)        ║
+// ║  3. All await Task.Yield() replaced with Awaitable.NextFrameAsync(ct)      ║
+// ║  4. Zero GC from async: Awaitable is pooled by Unity, no heap alloc        ║
+// ║                                                                             ║
+// ║  CHANGES v3.1 (preserved):                                                 ║
 // ║  ─────────────                                                              ║
 // ║  1. Replaced HectonWorldGenerator → MapMagicBridge for terrain heights     ║
 // ║  2. TryGetHeight with safe fallback (center.y - 10m)                       ║
@@ -16,7 +23,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
@@ -979,14 +985,19 @@ public class HectonVoxelEngine : MonoBehaviour
     /// Fully asynchronous volume generation. Heavy computation runs via Job System
     /// with async awaiting (no main-thread blocking). Mesh finalization happens on
     /// main thread after all jobs complete.
-    /// 
+    ///
+    /// v3.2: Uses Unity 6 Awaitable API instead of System.Threading.Tasks.Task.
+    ///   • Awaitable is pooled by Unity runtime — zero GC per await.
+    ///   • NextFrameAsync yields to Unity Player Loop (not ThreadPool).
+    ///   • CancellationToken properly threaded through all await points.
+    ///
     /// Terrain heights are sampled from MapMagicBridge.TryGetHeight() on the main
     /// thread BEFORE any Burst jobs are scheduled (Unity Terrain API is main-thread only).
     /// </summary>
-    public async Task<GameObject> GenerateVolumeAsync(Vector3 worldCenter,
-                                                      VoxelPOIType poiType,
-                                                      Vector3 sdfSizeOverride = default,
-                                                      CancellationToken ct = default)
+    public async Awaitable<GameObject> GenerateVolumeAsync(Vector3 worldCenter,
+                                                            VoxelPOIType poiType,
+                                                            Vector3 sdfSizeOverride = default,
+                                                            CancellationToken ct = default)
     {
         if (mapMagicBridge == null)
         {
@@ -1116,11 +1127,11 @@ public class HectonVoxelEngine : MonoBehaviour
                 vertexCounter = counter
             }.Schedule(totalCells, JOB_BATCH, densityHandle);
 
-            // Await MC completion asynchronously
+            // Await MC completion asynchronously (v3.2: Awaitable.NextFrameAsync)
             while (!mcHandle.IsCompleted)
             {
                 ct.ThrowIfCancellationRequested();
-                await Task.Yield();
+                await Awaitable.NextFrameAsync(ct);
             }
             mcHandle.Complete();
 
@@ -1148,7 +1159,7 @@ public class HectonVoxelEngine : MonoBehaviour
             while (!weldHandle.IsCompleted)
             {
                 ct.ThrowIfCancellationRequested();
-                await Task.Yield();
+                await Awaitable.NextFrameAsync(ct);
             }
             weldHandle.Complete();
 
@@ -1209,11 +1220,11 @@ public class HectonVoxelEngine : MonoBehaviour
                     colors      = colors
                 }.Schedule(weldedCount, JOB_BATCH, colorDeps);
 
-                // Await full chain
+                // Await full chain (v3.2: Awaitable.NextFrameAsync)
                 while (!colorHandle.IsCompleted)
                 {
                     ct.ThrowIfCancellationRequested();
-                    await Task.Yield();
+                    await Awaitable.NextFrameAsync(ct);
                 }
                 colorHandle.Complete();
 
@@ -1299,7 +1310,38 @@ public class HectonVoxelEngine : MonoBehaviour
             SafeDestroy(volume);
         }
     }
+    // ══════════════════════════════════════════════════════════
+    //  PUBLIC API — PURGE NULL VOLUMES (v3.3)
+    // ══════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// Удаляет все null-ссылки из _activeVolumes.
+    /// Reverse swap-remove — O(n), zero GC, zero сдвигов массива.
+    ///
+    /// КОГДА ВЫЗЫВАТЬ:
+    ///   • HectonWorldGenerator.DestroyChunk через DespawnVolume (штатный путь).
+    ///   • ClearAllVolumes (safety cleanup).
+    ///   • Внешний код, если подозревает утечку ссылок.
+    ///
+    /// ПОЧЕМУ НУЖЕН:
+    ///   Если внешний код уничтожает вокс-объект через Destroy()
+    ///   напрямую (минуя DespawnVolume), ссылка в _activeVolumes
+    ///   становится "fake null" (Unity destroyed object).
+    ///   PurgeNullVolumes чистит такие записи.
+    /// </summary>
+    public void PurgeNullVolumes()
+    {
+        for (int i = _activeVolumes.Count - 1; i >= 0; i--)
+        {
+            if (_activeVolumes[i] == null)
+            {
+                // Swap-remove: O(1) per element, no array shift
+                int last = _activeVolumes.Count - 1;
+                _activeVolumes[i] = _activeVolumes[last];
+                _activeVolumes.RemoveAt(last);
+            }
+        }
+    }
     public void ClearAllVolumes()
     {
         for (int i = _activeVolumes.Count - 1; i >= 0; i--)
@@ -1328,6 +1370,10 @@ public class HectonVoxelEngine : MonoBehaviour
             }
         }
         _activeVolumes.Clear();
+
+        // v3.3: Safety — в случае если Clear не поможет
+        // (теоретически невозможно после Clear, но belt & suspenders)
+        // PurgeNullVolumes(); // не нужен после Clear(), но оставляем комментарий
     }
 
     public int ActiveVolumeCount => _activeVolumes.Count;
@@ -1661,7 +1707,8 @@ public class HectonVoxelEngineEditor : Editor
                 $"Active Volumes: {engine.ActiveVolumeCount}\n" +
                 $"MC Tables: {(MCTables.IsReady ? "Ready" : "Not Init")}\n" +
                 $"Height Source: MapMagicBridge\n" +
-                $"Abyssal Depth: 5000m",
+                $"Abyssal Depth: 5000m\n" +
+                $"Async: Unity 6 Awaitable (Zero GC)",
                 MessageType.Info);
         }
 
@@ -1694,11 +1741,11 @@ public class HectonVoxelEngineEditor : Editor
 
         EditorGUILayout.Space(3);
         EditorGUILayout.HelpBox(
-            "HectonVoxelEngine v3.1\n" +
+            "HectonVoxelEngine v3.2\n" +
             "Height Source: MapMagicBridge (TryGetHeight)\n" +
-            "Async Pipeline | Zero-GC Welding | Pool Integration\n" +
-            "NativeParallelHashMap | Burst + Jobs | SDF + 3D Noise\n" +
-            "Thread-safe MCTables | Full dependency chain",
+            "Async: Unity 6 Awaitable (Zero GC) | Burst + Jobs\n" +
+            "NativeParallelHashMap | Zero-GC Welding | Pool Integration\n" +
+            "Thread-safe MCTables | Full dependency chain | SDF + 3D Noise",
             MessageType.None);
     }
 }

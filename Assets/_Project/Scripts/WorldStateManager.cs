@@ -28,8 +28,11 @@
 //
 // ИНТЕГРАЦИЯ:
 //   • ResourceNode вызывает RegisterDepletedNode(uniqueId) при разрушении.
+//   • ResourceNode.OnEnable / OnSpawn проверяет IsNodeDepleted для самодеактивации.
+//   • ResourceNode (v4.1) авто-генерирует uniqueId из координат
+//     при autoGenerateId=true, обеспечивая детерминизм
+//     при регенерации чанков MapMagic.
 //   • SaveManager вызывает PopulateSaveData / LoadFromSaveData.
-//   • ResourceNode.OnEnable проверяет IsNodeDepleted для самодеактивации.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -94,8 +97,10 @@ namespace Hecton8.World
         /// Проверяет, был ли узел с данным ID уже уничтожен/собран.
         /// O(1), Zero GC.
         ///
-        /// Вызывается ResourceNode.OnEnable для самодеактивации
-        /// при загрузке сцены / респавне.
+        /// Вызывается:
+        ///   • ResourceNode.OnEnable — для самодеактивации scene-объектов.
+        ///   • ResourceNode.OnSpawn — для деспавна pool-объектов.
+        ///   • Любая внешняя система, проверяющая состояние мира.
         /// </summary>
         /// <param name="uniqueId">Уникальный ID узла.</param>
         /// <returns>true если узел уже уничтожен.</returns>
@@ -126,6 +131,17 @@ namespace Hecton8.World
             _depletedNodeIds.Add(uniqueId);
 
             UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Алиас для RegisterDepletedNode.
+        /// Предоставляет альтернативное имя API для читаемости.
+        /// Функционально идентичен RegisterDepletedNode.
+        /// </summary>
+        /// <param name="uniqueId">Уникальный ID узла.</param>
+        public void MarkNodeDepleted(string uniqueId)
+        {
+            RegisterDepletedNode(uniqueId);
         }
 
         /// <summary>

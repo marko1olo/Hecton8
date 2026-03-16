@@ -31,6 +31,14 @@
 //   не может превышать waterSurfaceY. Это гарантирует, что стая
 //   погружается вместе с игроком, но никогда не пробивает поверхность.
 //
+// GPU MEMORY SAFETY (v2.2):
+//   • InitializeBuffers() вызывает Release() на старые буферы перед
+//     созданием новых. Предотвращает утечку VRAM при повторном вызове.
+//   • _fallbackHeightMap создаётся ТОЛЬКО если == null. Переиспользуется
+//     при повторных вызовах. Уничтожается только в ReleaseBuffers().
+//   • Awake() защищён от double-init: если _initialized — сначала Release.
+//   • NativeArray<byte> для заполнения fallback текстуры (zero managed alloc).
+//
 // PERFORMANCE на MX350 (целевое железо):
 //   5000 boids: Compute ~0.5ms, Draw ~0.3ms = ~0.8ms total.
 //   Instanced draw: 1 draw call (vs 5000 GameObjects = 5000 calls).
@@ -240,13 +248,13 @@ namespace Hecton8.AI.GPU
 
         /// <summary>
         /// Ping-Pong buffer A. On even frames: Read. On odd frames: Write.
-        /// Created in Awake, released in OnDestroy.
+        /// Created in InitializeBuffers, released in ReleaseBuffers.
         /// </summary>
         private ComputeBuffer _boidsBufferA;
 
         /// <summary>
         /// Ping-Pong buffer B. On even frames: Write. On odd frames: Read.
-        /// Created in Awake, released in OnDestroy.
+        /// Created in InitializeBuffers, released in ReleaseBuffers.
         /// </summary>
         private ComputeBuffer _boidsBufferB;
 
@@ -311,15 +319,50 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private RenderParams _renderParams;
 
-        /// <summary>Fallback heightmap (white = max height) if none assigned.</summary>
+        /// <summary>
+        /// Fallback heightmap (black = height 0, flat plane) if none assigned.
+        /// Created once, reused across InitializeBuffers() calls.
+        /// Destroyed only in ReleaseBuffers().
+        /// </summary>
         private Texture2D _fallbackHeightMap;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Initialization entry point.
+        ///
+        /// v2.2 FIX: Добавлена защита от повторного вызова через _initialized.
+        /// Если Awake вызывается повторно (edge case: скрипт пересоздан
+        /// через Reset в Inspector, или ошибка в наследнике), старые
+        /// GPU-ресурсы корректно освобождаются перед созданием новых.
+        ///
+        /// БЕЗ ЗАЩИТЫ: каждый повторный вызов создаёт новые ComputeBuffer
+        /// и Texture2D без Release/Destroy старых. Unity НЕ собирает
+        /// GPU-ресурсы через GC — они утекают навсегда до перезапуска.
+        /// На MX350 (2GB VRAM): 5000 boids × 32 bytes × 2 buffers = 320KB
+        /// за каждый вызов. 10 вызовов = 3.2MB.
+        /// </summary>
         private void Awake()
         {
+            // ── Защита от повторной инициализации (v2.2) ──
+            // Если уже инициализирован — сначала освобождаем старые ресурсы.
+            // Покрывает edge cases:
+            //   • Reset компонента в Inspector во время Play Mode
+            //   • Ошибочный вызов из наследника
+            //   • Unity internal re-Awake (крайне редко, но возможно
+            //     при AddComponent на уже существующий GO)
+            if (_initialized)
+            {
+                Debug.LogWarning(
+                    "[HectonBoidController] Awake() called while already initialized. " +
+                    "Releasing old GPU resources before re-init.",
+                    this);
+                ReleaseBuffers();
+                _initialized = false;
+            }
+
             if (boidShader == null || fishMesh == null || fishMaterial == null)
             {
                 Debug.LogError("[HectonBoidController] Missing required references!");
@@ -428,7 +471,7 @@ namespace Hecton8.AI.GPU
         }
 
         // ══════════════════════════════════════════════════════════
-        //  INITIALIZATION
+        //  INITIALIZATION — COMPUTE
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
@@ -450,9 +493,23 @@ namespace Hecton8.AI.GPU
 #endif
         }
 
+        // ══════════════════════════════════════════════════════════
+        //  INITIALIZATION — BUFFERS (v2.2 — GPU Memory Leak Fix)
+        // ══════════════════════════════════════════════════════════
+
         /// <summary>
         /// Creates both Ping-Pong ComputeBuffers, fills with identical initial positions,
         /// uploads to GPU. Creates args buffer for indirect draw.
+        ///
+        /// v2.2 FIX: Перед созданием каждого GPU-ресурса вызывается Release/Destroy
+        /// для старого, если он не null. Это предотвращает утечку VRAM при:
+        ///   • Повторном вызове InitializeBuffers() (hot reload, redesign).
+        ///   • Пересоздании системы через public API (SetBoidCount в будущем).
+        ///   • Edge case с Awake (см. комментарий в Awake).
+        ///
+        /// ПОРЯДОК: Release old → Create new → SetData.
+        /// Если Release вызван на уже released буфер — Unity просто игнорирует.
+        /// Null-check обязателен, т.к. Release() на null = NullReferenceException.
         ///
         /// ALLOCATION: One-time. BoidData[] on managed heap (released by GC after upload).
         /// Both ComputeBuffers live on GPU until Release().
@@ -465,11 +522,50 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void InitializeBuffers()
         {
-            // ── Ping-Pong boids buffers ──
+            // ═══════════════════════════════════════════════════
+            //  STEP 1: Release existing GPU resources (if any)
+            //
+            //  ComputeBuffer и GraphicsBuffer — unmanaged GPU memory.
+            //  Unity GC их НЕ освобождает. Без Release() — прямая
+            //  утечка VRAM. На MX350 с 2GB это критично.
+            //
+            //  Texture2D — managed, но GPU-сторона (native texture)
+            //  освобождается только через Destroy(). Без Destroy() —
+            //  native texture утекает до выхода из Play Mode.
+            // ═══════════════════════════════════════════════════
+
+            // ── Release old Ping-Pong buffers ──
+            if (_boidsBufferA != null)
+            {
+                _boidsBufferA.Release();
+                _boidsBufferA = null;
+            }
+
+            if (_boidsBufferB != null)
+            {
+                _boidsBufferB.Release();
+                _boidsBufferB = null;
+            }
+
+            // ── Release old args buffer ──
+            if (_argsBuffer != null)
+            {
+                _argsBuffer.Release();
+                _argsBuffer = null;
+            }
+
+            // ═══════════════════════════════════════════════════
+            //  STEP 2: Create Ping-Pong boids buffers
+            // ═══════════════════════════════════════════════════
+
             _boidsBufferA = new ComputeBuffer(boidCount, BoidStride);
             _boidsBufferB = new ComputeBuffer(boidCount, BoidStride);
 
-            // ── Fill initial data (one array, uploaded to BOTH buffers) ──
+            // ═══════════════════════════════════════════════════
+            //  STEP 3: Fill initial data
+            //  One array, uploaded to BOTH buffers.
+            // ═══════════════════════════════════════════════════
+
             BoidData[] initialData = new BoidData[boidCount];
 
             for (int i = 0; i < boidCount; i++)
@@ -502,21 +598,59 @@ namespace Hecton8.AI.GPU
             _boidsBufferA.SetData(initialData);
             _boidsBufferB.SetData(initialData);
 
-            // ── Initialize frame index ──
+            // ═══════════════════════════════════════════════════
+            //  STEP 4: Initialize frame index
+            // ═══════════════════════════════════════════════════
+
             _frameIndex = 0;
 
-            // ── Fallback heightmap ──
-            if (heightMap == null)
+            // ═══════════════════════════════════════════════════
+            //  STEP 5: Fallback heightmap (v2.2 — reuse if exists)
+            //
+            //  Текстура создаётся ТОЛЬКО если ещё не существует.
+            //  При повторном вызове InitializeBuffers() старая текстура
+            //  переиспользуется — zero VRAM leak.
+            //
+            //  Если heightMap назначена в Inspector — fallback не нужен,
+            //  но мы его НЕ уничтожаем (он может понадобиться если
+            //  heightMap будет снят в рантайме через SetHeightMap(null, ...)).
+            //
+            //  Уничтожение _fallbackHeightMap — ТОЛЬКО в ReleaseBuffers()
+            //  (вызывается из OnDestroy).
+            // ═══════════════════════════════════════════════════
+
+            if (heightMap == null && _fallbackHeightMap == null)
             {
-                _fallbackHeightMap = new Texture2D(4, 4, TextureFormat.R8, false);
-                Color[] black = new Color[16];
-                for (int i = 0; i < 16; i++) black[i] = Color.black;
-                _fallbackHeightMap.SetPixels(black);
-                _fallbackHeightMap.Apply();
+                // Создаём минимальную текстуру 4×4 (R8 = 16 байт на GPU).
+                // Чёрная = высота 0 = плоское дно.
+                // hideFlags предотвращает появление в Project/Hierarchy.
+                _fallbackHeightMap = new Texture2D(4, 4, TextureFormat.R8, false)
+                {
+                    name       = "[HectonBoid] FallbackHeightMap",
+                    hideFlags  = HideFlags.HideAndDontSave,
+                    wrapMode   = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear
+                };
+
+                // NativeArray path: zero managed Color[] allocation.
+                // GetRawTextureData returns existing native buffer — zero GC.
+                NativeArray<byte> rawData = _fallbackHeightMap.GetRawTextureData<byte>();
+                for (int i = 0; i < rawData.Length; i++)
+                {
+                    rawData[i] = 0; // Black = height 0
+                }
+
+                _fallbackHeightMap.Apply(false, false);
+                // makeNoLongerReadable=false: сохраняем CPU-копию
+                // для возможного перечитывания при hot reload.
             }
 
-            // ── Args buffer for RenderMeshIndirect ──
-            // GraphicsBuffer.IndirectDrawIndexedArgs: 5 uints
+            // ═══════════════════════════════════════════════════
+            //  STEP 6: Args buffer for RenderMeshIndirect
+            //  (old buffer already released in STEP 1)
+            // ═══════════════════════════════════════════════════
+
+            // GraphicsBuffer.IndirectDrawIndexedArgs: 5 uints = 20 bytes
             _argsBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments,
                 1,
@@ -533,6 +667,10 @@ namespace Hecton8.AI.GPU
             };
             _argsBuffer.SetData(args);
         }
+
+        // ══════════════════════════════════════════════════════════
+        //  INITIALIZATION — RENDERING
+        // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// Sets up MaterialPropertyBlock and RenderParams.
@@ -557,10 +695,23 @@ namespace Hecton8.AI.GPU
             };
         }
 
+        // ══════════════════════════════════════════════════════════
+        //  BUFFER RELEASE (v2.2 — Safe for repeated calls)
+        // ══════════════════════════════════════════════════════════
+
         /// <summary>
-        /// Releases all GPU resources. Called in OnDestroy.
-        /// CRITICAL: ComputeBuffer MUST be released manually.
+        /// Releases all GPU resources. Called in OnDestroy and
+        /// as safety cleanup before re-initialization in Awake.
+        ///
+        /// CRITICAL: ComputeBuffer и GraphicsBuffer MUST be released manually.
         /// Unity does NOT garbage collect GPU buffers.
+        /// Texture2D native side must be destroyed via Object.Destroy().
+        ///
+        /// Паттерн: null-check → Release/Destroy → null assignment.
+        /// Null assignment предотвращает double-Release при повторных вызовах.
+        ///
+        /// Безопасно вызывать многократно — все ветки проверяют null.
+        /// Порядок не критичен — буферы независимы друг от друга.
         /// </summary>
         private void ReleaseBuffers()
         {

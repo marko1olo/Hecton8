@@ -877,10 +877,22 @@ namespace Hecton8.Celestial
         /// Direct typed access — no reflection, no boxing, zero GC.
         /// Sun disc uses cached MaterialPropertyBlock (_sunDiscMPB).
         ///
-        /// INTENSITY COORDINATION:
-        ///   WITH AtmosphereManager: reads current sunLight.intensity (already set by AtmosphereManager)
-        ///   and MODULATES it by occlusion visibility. Does NOT overwrite with _baseSunIntensity.
-        ///   WITHOUT AtmosphereManager: uses captured _baseSunIntensity as base.
+        /// INTENSITY COORDINATION (v4.1):
+        ///   WITH AtmosphereManager (normal operation):
+        ///     By this point in the Tick chain, UnderwaterVisuals has already
+        ///     written sunLight.intensity = profile × horizon × depthFactor.
+        ///     We MULTIPLY by (1 - occlusion) = visibility.
+        ///     This is the FINAL write to sunLight.intensity this frame.
+        ///
+        ///     Execution order (deterministic via GameTickManager registration):
+        ///       1. AtmosphereManager.Tick() → computes values, NO light write
+        ///       2. UnderwaterVisuals.Tick() → writes sunLight.intensity
+        ///       3. CelestialEngine.Tick()   → multiplies sunLight.intensity
+        ///
+        ///   WITHOUT AtmosphereManager (standalone):
+        ///     Uses captured _baseSunIntensity. UnderwaterVisuals fallback
+        ///     reads sunLight.intensity directly (no ProfileSunIntensity).
+        ///     CelestialEngine is the sole intensity controller.
         /// </summary>
         private void ApplySunOcclusion()
         {

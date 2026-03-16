@@ -61,7 +61,7 @@ using System.Text;
 using Hecton8.Core;
 using Hecton8.Scavenging;
 using Hecton8.World;
-using Hecton.Interaction;
+using Hecton8.Interaction;
 using UnityEngine;
 
 namespace Hecton8.Core

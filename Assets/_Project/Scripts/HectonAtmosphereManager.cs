@@ -1,29 +1,52 @@
 // ══════════════════════════════════════════════════════════════════
-// HectonAtmosphereManager.cs  v4.0
+// HectonAtmosphereManager.cs  v4.2
 // Орбитальная модель солнца + время суток + затмения + _SunDirection
 //
-// ОТВЕТСТВЕННОСТИ (ТОЛЬКО):
+// ═══════════════════════════════════════════════════════════════
+// v4.2 CHANGES:
+// ═══════════════════════════════════════════════════════════════
+//
+//   [TASK #1] EDITOR SCENE VIEW SUPPORT:
+//     Added [ExecuteAlways] attribute.
+//     Added Update() with #if UNITY_EDITOR guard:
+//       If !Application.isPlaying, calls Tick() with safe deltaTime.
+//       This ensures ProfileSunIntensity and ComputedHorizonFade
+//       are computed when flying the Scene View camera in Edit Mode.
+//     Protected singleton, event subscriptions, and GameTickManager
+//       registration from running in Edit Mode.
+//
+// ═══════════════════════════════════════════════════════════════
+// v4.1 FIXES (preserved):
+// ═══════════════════════════════════════════════════════════════
+//
+//   [FIX] sunLight.intensity NO LONGER WRITTEN by AtmosphereManager.
+//     ComputeSunValues() stores results in _computedSunIntensity
+//     and _computedHorizonFade. sunLight.intensity is NOT touched.
+//     UnderwaterVisuals is SOLE AUTHORITY for sunLight.intensity.
+//
+// ОТВЕТСТВЕННОСТИ (v4.2 — CLARIFIED):
 //   • Цикл дня/ночи (вращение Directional Light)
 //   • Расчёт TimeOfDay, SunAngle, SunElevation
 //   • Детекция EnvironmentState (DAY/NIGHT/ECLIPSE/UNDERWATER)
 //   • Передача _SunDirection в глобальные шейдеры
-//   • Расчёт sunLight.intensity = profile × horizonFade
-//     (БЕЗ поглощения водой — это делает UnderwaterVisuals)
+//   • Расчёт ProfileSunIntensity = profile × transition
+//   • Расчёт ComputedHorizonFade = smoothstep по SunElevation
 //   • Уведомление через OnStateChanged
 //   • Biome atmosphere overrides (profile switching)
+//   • Edit Mode: Tick via Update() for Scene View preview
 //
-// НЕ ДЕЛАЕТ (v4 — УДАЛЕНО):
+// НЕ ДЕЛАЕТ (v4.2 — EXPLICIT):
+//   ✗ sunLight.intensity — NEVER WRITES (UnderwaterVisuals is authority)
 //   ✗ RenderSettings.fog / fogColor / fogDensity
 //   ✗ RenderSettings.ambientLight
 //   ✗ Camera.clearFlags / backgroundColor
 //   ✗ Depth-based fog
-//   ✗ ApplyCameraClearFlags
-//   Всем этим управляет HectonUnderwaterVisuals.
 //
-// КООРДИНАЦИЯ:
-//   AtmosphereManager → sunLight.intensity (profile × horizon)
-//   UnderwaterVisuals → reads CurrentSunIntensity, multiplies by Beer-Lambert
-//   CelestialEngine   → reads intensity, modulates by occlusion
+// КООРДИНАЦИЯ (v4.2):
+//   AtmosphereManager → ProfileSunIntensity (data only, no light write)
+//                     → ComputedHorizonFade (data only)
+//   UnderwaterVisuals → reads both → sunLight.intensity = profile × horizon × depth
+//   CelestialEngine   → reads sunLight.intensity → *= occlusion
 // ══════════════════════════════════════════════════════════════════
 
 using System;
@@ -37,6 +60,7 @@ namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere Manager")]
+    [ExecuteAlways] // v4.2: Scene View support in Edit Mode
     public class HectonAtmosphereManager : MonoBehaviour, ITickable
     {
         #region ══════════ AtmosphereSnapshot ══════════
@@ -176,6 +200,11 @@ namespace Hecton8.Atmosphere
         private AtmosphereProfile _activeBiomeProfile;
         private int _currentBiomeID = -1;
 
+        // ═══ v4.1: Computed values (read by other systems) ═══
+
+        private float _computedHorizonFade;
+        private float _computedSunIntensity;
+
         #endregion
 
         #region ══════════ Biome Override Struct ══════════
@@ -202,21 +231,22 @@ namespace Hecton8.Atmosphere
         public float OrbitalInclination        => _orbitalInclination;
 
         /// <summary>
-        /// Sun intensity as computed by AtmosphereManager:
-        /// profile.sunIntensity × horizonFade.
-        /// Does NOT include depth absorption — that's UnderwaterVisuals' job.
-        /// CelestialEngine reads this to modulate by occlusion.
-        /// UnderwaterVisuals reads this for Beer-Lambert base value.
-        /// </summary>
-        public float CurrentSunIntensity =>
-            _sunLight != null ? _sunLight.intensity : 0f;
-
-        /// <summary>
-        /// Raw profile sun intensity (before horizon fade).
-        /// Used by UnderwaterVisuals as the "full daylight" baseline
-        /// for depth-based attenuation.
+        /// Raw profile sun intensity AFTER transition interpolation,
+        /// BEFORE horizon fade and depth absorption.
         /// </summary>
         public float ProfileSunIntensity => _currentValues.sunIntensity;
+
+        /// <summary>
+        /// Horizon fade factor [0..1].
+        /// 0 = sun below horizon (night), 1 = sun fully above (day).
+        /// </summary>
+        public float ComputedHorizonFade => _computedHorizonFade;
+
+        /// <summary>
+        /// Computed sun intensity = profile × horizonFade.
+        /// NOT written to sunLight.intensity.
+        /// </summary>
+        public float CurrentSunIntensity => _computedSunIntensity;
 
         #endregion
 
@@ -224,12 +254,21 @@ namespace Hecton8.Atmosphere
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            // v4.2: Singleton only in Play Mode to avoid Edit Mode conflicts
+            if (Application.isPlaying)
             {
-                Destroy(this);
-                return;
+                if (_instance != null && _instance != this)
+                {
+                    Destroy(this);
+                    return;
+                }
+                _instance = this;
             }
-            _instance = this;
+            else
+            {
+                // Edit Mode: set instance for property access but don't destroy duplicates
+                _instance = this;
+            }
 
             _registeredToTickManager = false;
 
@@ -239,17 +278,23 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
+            // v4.2: Only register tick manager and events in Play Mode
+            if (Application.isPlaying)
             {
-                GameTickManager.Instance.Register((ITickable)this);
-                _registeredToTickManager = true;
-            }
+                if (!_registeredToTickManager && GameTickManager.Instance != null)
+                {
+                    GameTickManager.Instance.Register((ITickable)this);
+                    _registeredToTickManager = true;
+                }
 
-            MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
+                MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
+            }
         }
 
         private void Start()
         {
+            if (!Application.isPlaying) return;
+
             if (_registeredToTickManager) return;
 
             if (GameTickManager.Instance != null)
@@ -267,21 +312,51 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
-            if (_registeredToTickManager && GameTickManager.Instance != null)
+            if (Application.isPlaying)
             {
-                GameTickManager.Instance.Unregister((ITickable)this);
-                _registeredToTickManager = false;
-            }
+                if (_registeredToTickManager && GameTickManager.Instance != null)
+                {
+                    GameTickManager.Instance.Unregister((ITickable)this);
+                    _registeredToTickManager = false;
+                }
 
-            MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
+                MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
+            }
         }
 
         private void OnDestroy()
         {
             if (_instance != this) return;
             _instance = null;
-            OnStateChanged = null;
+
+            // v4.2: Only clear events in Play Mode
+            if (Application.isPlaying)
+                OnStateChanged = null;
         }
+
+        // ═══════════════════════════════════════════════════════════
+        // v4.2 TASK #1: EDIT MODE UPDATE
+        // ═══════════════════════════════════════════════════════════
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// v4.2: In Edit Mode, Unity calls Update() thanks to [ExecuteAlways].
+        /// We use this to drive Tick() so that ProfileSunIntensity,
+        /// ComputedHorizonFade, sun rotation, and _SunDirection shader global
+        /// are all computed when flying the Scene View camera.
+        ///
+        /// In Play Mode, Tick() is driven by GameTickManager — this does nothing.
+        /// </summary>
+        private void Update()
+        {
+            if (Application.isPlaying) return;
+
+            float dt = Time.deltaTime;
+            if (dt <= 0f) dt = 0.016f; // safety fallback for edit mode
+
+            Tick(dt);
+        }
+#endif
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -358,7 +433,8 @@ namespace Hecton8.Atmosphere
             ProcessStateTransition(resolved);
 
             InterpolateAtmosphere(deltaTime);
-            ApplySunIntensity();
+
+            ComputeSunValues();
         }
 
         #endregion
@@ -379,6 +455,15 @@ namespace Hecton8.Atmosphere
                 : AtmosphereSnapshot.Default;
             _transitionOrigin   = _currentValues;
             _transitionProgress = 1f;
+
+            _computedHorizonFade = 1f;
+            _computedSunIntensity = _currentValues.sunIntensity;
+
+            // FIX: вычислить позицию солнца и derived values немедленно,
+            // чтобы первое чтение ProfileSunIntensity другими скриптами
+            // получило корректные данные до первого Tick().
+            RotateSun();
+            ComputeSunValues();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -470,7 +555,10 @@ namespace Hecton8.Atmosphere
             _transitionProgress = 0f;
 
             _currentState = newState;
-            OnStateChanged?.Invoke(_currentState);
+
+            // v4.2: Only fire events in Play Mode
+            if (Application.isPlaying)
+                OnStateChanged?.Invoke(_currentState);
         }
 
         #endregion
@@ -497,37 +585,28 @@ namespace Hecton8.Atmosphere
 
         #endregion
 
-        #region ══════════ Sun Intensity (ONLY — no fog, no camera) ══════════
+        #region ══════════ Sun Values (COMPUTE ONLY, NO WRITE) ══════════
 
-        /// <summary>
-        /// Applies sun intensity = profile × horizonFade.
-        /// NO depth absorption here — UnderwaterVisuals handles that.
-        /// NO fog writes — UnderwaterVisuals is sole authority.
-        /// NO camera writes — UnderwaterVisuals handles clearFlags.
-        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ApplySunIntensity()
+        private void ComputeSunValues()
         {
-            if (_sunLight == null) return;
-
             float fadeThreshold = math.sin(math.radians(_sunHorizonFadeAngle));
 
-            float horizonFactor;
             if (_sunElevationDot <= 0f)
             {
-                horizonFactor = 0f;
+                _computedHorizonFade = 0f;
             }
             else if (_sunElevationDot >= fadeThreshold)
             {
-                horizonFactor = 1f;
+                _computedHorizonFade = 1f;
             }
             else
             {
                 float st = _sunElevationDot / fadeThreshold;
-                horizonFactor = st * st * (3f - 2f * st);
+                _computedHorizonFade = st * st * (3f - 2f * st);
             }
 
-            _sunLight.intensity = _currentValues.sunIntensity * horizonFactor;
+            _computedSunIntensity = _currentValues.sunIntensity * _computedHorizonFade;
         }
 
         #endregion

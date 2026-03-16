@@ -1,23 +1,20 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HectonWorldGenerator.cs — Project HECTON-8 World Engine                   ║
 // ║  Unity 6 (URP) | Burst + Jobs | Async Chunk Streaming | LOD System         ║
-// ║  v2.0 — Fully Asynchronous Job Pipeline (Zero Main-Thread Blocks)          ║
+// ║  v2.1 — Voxel volume lifecycle fix (DestroyChunk → DespawnVolume)          ║
 // ║                                                                             ║
-// ║  REQUIRED PACKAGES (Package Manager):                                       ║
-// ║  • com.unity.burst           — Burst Compiler                               ║
-// ║  • com.unity.mathematics     — Unity.Mathematics (noise, math)              ║
-// ║  • com.unity.collections     — NativeArray, NativeList                      ║
-// ║                                                                             ║
-// ║  ARCHITECTURE:                                                              ║
+// ║  CHANGES v2.1:                                                              ║
 // ║  ─────────────                                                              ║
-// ║  1. Central Spine (archipelago) runs along Z with domain-warped centerline. ║
-// ║  2. West slope (X < spine): gentle 6 km descent, stepped terraces.          ║
-// ║  3. East slope (X > spine): aggressive 1.5 km cliff into the Abyss.        ║
-// ║  4. LOD0 chunks (2 m spacing, 500 m radius) — full detail + colliders.     ║
-// ║  5. LOD1 chunks (16 m spacing, 2000 m radius) — visual only.               ║
-// ║  6. Vertex Colors encode Slope / Depth / Cave Edge / Biome for shaders.    ║
-// ║  7. POI hooks: potentialBaseLocations, resourceNodes — for gameplay.        ║
-// ║  8. Async pipeline: ScheduleChunkJob → GPU work → FinalizeChunk next frame ║
+// ║  [FIX] DestroyChunk: voxel child objects (Voxel_Cave_*, Voxel_Rift_*)      ║
+// ║        now destroyed via voxelEngine.DespawnVolume() instead of direct      ║
+// ║        SafeDestroy(). This ensures HectonVoxelEngine._activeVolumes is      ║
+// ║        properly cleaned up, preventing null reference accumulation.         ║
+// ║  [FIX] Fallback: if voxelEngine is null at destruction time, falls back     ║
+// ║        to manual mesh cleanup + SafeDestroy (same as v2.0 behavior).       ║
+// ║                                                                             ║
+// ║  PREVIOUS (v2.0):                                                           ║
+// ║  ─────────────                                                              ║
+// ║  Fully Asynchronous Job Pipeline (Zero Main-Thread Blocks)                  ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using UnityEngine;
@@ -36,7 +33,6 @@ using UnityEditor;
 // ════════════════════════════════════════════════════════════════════════════════
 #region Data Structures
 
-// ── Managed noise layer (Inspector-friendly) ────────────────────────────────
 [System.Serializable]
 public class HectonNoiseLayer
 {
@@ -55,7 +51,6 @@ public class HectonNoiseLayer
     public int seed;
 }
 
-// ── Blittable noise data for Burst Jobs ─────────────────────────────────────
 public struct NoiseData
 {
     public float scale;
@@ -80,43 +75,34 @@ public struct NoiseData
     }
 }
 
-// ── Settings: Spine (Central Ridge / Archipelago) ───────────────────────────
 [System.Serializable]
 public class SpineSettings
 {
     [Tooltip("Max island height above sea level (Y=0).")]
     public float maxHeight = 400f;
 
-    [Tooltip("Half-width of spine influence zone (m). Determines how wide the ridge is.")]
+    [Tooltip("Half-width of spine influence zone (m).")]
     public float width = 600f;
 
     [Tooltip("Max lateral displacement of spine centerline by domain warp (m).")]
     public float warpStrength = 1500f;
 
-    [Tooltip("Noise that bends the spine left/right along its length.")]
     public HectonNoiseLayer warpNoise = new HectonNoiseLayer
         { scale = 0.0003f, octaves = 3, lacunarity = 2f, persistence = 0.5f, seed = 111 };
 
-    [Tooltip("Noise that determines WHERE islands appear along the spine.")]
     public HectonNoiseLayer islandNoise = new HectonNoiseLayer
         { scale = 0.0004f, octaves = 2, lacunarity = 2f, persistence = 0.5f, seed = 222 };
 
-    [Tooltip("Noise threshold for islands. Lower = more islands (0.3–0.6).")]
     [Range(0.2f, 0.8f)]
     public float islandThreshold = 0.45f;
 }
 
-// ── Settings: Slope Profiles ────────────────────────────────────────────────
 [System.Serializable]
 public class SlopeSettings
 {
-    [Tooltip("Length of western gentle slope from spine edge (m).")]
     public float westLength = 6000f;
-
-    [Tooltip("Length of eastern cliff from spine edge (m).")]
     public float eastLength = 1500f;
 
-    [Tooltip("West curve: X=0 (spine)→1 (far). Y=1 (sea level)→0 (max depth).")]
     public AnimationCurve westCurve = new AnimationCurve(
         new Keyframe(0.00f, 1.00f,  0.0f,  0.0f),
         new Keyframe(0.15f, 0.92f, -0.3f, -0.3f),
@@ -126,7 +112,6 @@ public class SlopeSettings
         new Keyframe(1.00f, 0.00f,  0.0f,  0.0f)
     );
 
-    [Tooltip("East curve: steep cliff. Same axes as West.")]
     public AnimationCurve eastCurve = new AnimationCurve(
         new Keyframe(0.00f, 1.00f,  0.0f,  0.0f),
         new Keyframe(0.10f, 0.70f, -4.0f, -4.0f),
@@ -135,28 +120,22 @@ public class SlopeSettings
         new Keyframe(1.00f, 0.00f,  0.0f,  0.0f)
     );
 
-    [Tooltip("Maximum ocean depth (m). The Abyss.")]
     public float maxDepth = 5000f;
 
     [Header("Terraces (West Only)")]
-    [Tooltip("Number of flat terrace steps on the west slope. 0 = smooth.")]
     [Range(0, 16)]
     public int terraceCount = 8;
 
-    [Tooltip("Strength of terrace quantization. 0 = smooth, 1 = hard steps.")]
     [Range(0f, 1f)]
     public float terraceStrength = 0.5f;
 }
 
-// ── Settings: Biome Surface Noise ───────────────────────────────────────────
 [System.Serializable]
 public class BiomeSettings
 {
-    [Tooltip("Large-scale noise mask: 0 = flat sand, 1 = aggressive rock.")]
     public HectonNoiseLayer biomeNoise = new HectonNoiseLayer
         { scale = 0.00015f, octaves = 2, lacunarity = 2f, persistence = 0.5f, seed = 555 };
 
-    [Tooltip("Remap curve for biome mask. Linear = smooth blend, step = sharp borders.")]
     public AnimationCurve biomeRemapCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
     [Header("Flat Biome (Sand / Dunes)")]
@@ -169,46 +148,37 @@ public class BiomeSettings
         { scale = 0.005f, octaves = 5, lacunarity = 2f, persistence = 0.45f, seed = 444 };
     public float aggressiveSurfaceAmplitude = 40f;
 
-    [Tooltip("Displacement multiplier in flat biome (0 = none, 1 = full).")]
     [Range(0f, 1f)]
     public float flatDisplacementFactor = 0.1f;
 }
 
-// ── Settings: 3D Displacement ───────────────────────────────────────────────
 [System.Serializable]
 public class DisplacementSettings
 {
     public HectonNoiseLayer noise = new HectonNoiseLayer
         { scale = 0.008f, octaves = 3, lacunarity = 2f, persistence = 0.5f, seed = 666 };
 
-    [Tooltip("Displacement strength per axis (m).")]
     public Vector3 scale = new Vector3(20f, 15f, 20f);
 
-    [Tooltip("Displacement is stronger on steep slopes.")]
     [Range(0f, 5f)]
     public float slopeWeight = 2f;
 }
 
-// ── Settings: Caves ─────────────────────────────────────────────────────────
 [System.Serializable]
 public class CaveSettings
 {
     public HectonNoiseLayer noise = new HectonNoiseLayer
         { scale = 0.02f, octaves = 3, lacunarity = 2.2f, persistence = 0.5f, seed = 777 };
 
-    [Tooltip("Noise value above this = hole. Lower = more caves.")]
     [Range(0.3f, 0.9f)]
     public float threshold = 0.62f;
 
-    [Tooltip("Soft-edge width for vertex color B channel.")]
     [Range(0.01f, 0.2f)]
     public float edgeWidth = 0.05f;
 
-    [Tooltip("Caves only appear below this Y depth.")]
     public float minDepth = -30f;
 }
 
-// ── Runtime Chunk Data ──────────────────────────────────────────────────────
 public class HectonChunkData
 {
     public int2 coord;
@@ -217,7 +187,6 @@ public class HectonChunkData
     public Mesh mesh;
 }
 
-// ── Generation Request ──────────────────────────────────────────────────────
 public struct HectonChunkRequest
 {
     public int2 coord;
@@ -289,45 +258,35 @@ public static class HectonNoise
 // ════════════════════════════════════════════════════════════════════════════════
 #region Jobs
 
-// ── JOB 1: Terrain Vertex Generation ────────────────────────────────────────
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct HectonVertexJob : IJobParallelFor
 {
-    // Grid
     public int resX, resZ;
     public float originX, originZ;
     public float spacing;
     public int lodLevel;
 
-    // Map
     public float mapHalfSize;
 
-    // Spine
     public float spineMaxHeight, spineWidth, spineWarpStrength, islandThreshold;
     public NoiseData warpNoise, islandNoise;
 
-    // Slopes
     public float westLen, eastLen, maxDepth;
     public int terraceCount;
     public float terraceStrength;
 
-    // Biome
     public float flatAmp, aggrAmp, flatDispFactor;
     public NoiseData biomeNoise, flatSurfNoise, aggrSurfNoise;
 
-    // Displacement
     public float3 dispScale;
     public float slopeDispW;
     public NoiseData dispNoise;
 
-    // Caves
     public float caveThresh, caveMinY;
     public NoiseData caveNoise;
 
-    // LUTs (ReadOnly)
     [ReadOnly] public NativeArray<float> westLUT, eastLUT, biomeLUT;
 
-    // Output
     [WriteOnly] public NativeArray<Vector3> outVerts;
     [WriteOnly] public NativeArray<Vector2> outUVs;
     [WriteOnly] public NativeArray<float>   outCave;
@@ -423,7 +382,6 @@ public struct HectonVertexJob : IJobParallelFor
     }
 }
 
-// ── JOB 2: Normal Calculation (finite differences) ──────────────────────────
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct HectonNormalJob : IJobParallelFor
 {
@@ -446,8 +404,6 @@ public struct HectonNormalJob : IJobParallelFor
     }
 }
 
-// ── JOB 3: Vertex Colors ───────────────────────────────────────────────────
-// R = Slope | G = Depth | B = Cave Edge | A = Biome
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct HectonColorJob : IJobParallelFor
 {
@@ -509,36 +465,25 @@ public class HectonWorldGenerator : MonoBehaviour
     public CaveSettings caves = new CaveSettings();
 
     [Header("═══ STREAMING ═══")]
-    [Tooltip("Transform to track (player camera or sub).")]
     public Transform viewer;
-
-    [Tooltip("Chunk world size (m). Power of 2 recommended.")]
     public float chunkSize = 256f;
 
-    [Tooltip("Vertex spacing for LOD0 (m). 2–4 = detailed.")]
     [Range(1f, 8f)]
     public float lod0Spacing = 2f;
 
-    [Tooltip("Vertex spacing for LOD1 (m). 12–24 = low poly.")]
     [Range(8f, 32f)]
     public float lod1Spacing = 16f;
 
-    [Tooltip("LOD0 radius around viewer (m).")]
     public float activeRadius = 500f;
-
-    [Tooltip("LOD1 radius around viewer (m).")]
     public float distantRadius = 2000f;
 
-    [Tooltip("Max chunks scheduled per frame (into async pipeline).")]
     [Range(1, 8)]
     public int maxChunksPerFrame = 2;
 
     [Header("═══ ASYNC PIPELINE ═══")]
-    [Tooltip("Max chunks in-flight (scheduled but not yet finalized). Prevents RAM exhaustion.")]
     [Range(1, 8)]
     public int maxPendingChunks = 4;
 
-    [Tooltip("Max chunk finalizations (mesh creation) per frame. 1-2 recommended.")]
     [Range(1, 4)]
     public int maxFinalizationsPerFrame = 2;
 
@@ -551,7 +496,6 @@ public class HectonWorldGenerator : MonoBehaviour
     public HectonVoxelEngine voxelEngine;
 
     [Header("═══ MAP ═══")]
-    [Tooltip("Total map side length (m). 15000 = 15 km.")]
     public float mapSize = 15000f;
 
     #endregion
@@ -562,12 +506,6 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #region Internal State
 
-    // ── Async Pending Chunk ─────────────────────────────────────────────────
-    /// <summary>
-    /// Holds all state for an in-flight asynchronous chunk generation.
-    /// NativeArrays use Allocator.Persistent to survive across frames.
-    /// MUST be disposed explicitly in FinalizeChunk or cleanup paths.
-    /// </summary>
     private class PendingChunk
     {
         public int2 coord;
@@ -584,9 +522,6 @@ public class HectonWorldGenerator : MonoBehaviour
         public NativeArray<float>   biomeV;
         public JobHandle combinedHandle;
 
-        /// <summary>
-        /// Disposes all 7 NativeArrays safely. Idempotent.
-        /// </summary>
         public void DisposeArrays()
         {
             if (verts.IsCreated)  verts.Dispose();
@@ -599,36 +534,28 @@ public class HectonWorldGenerator : MonoBehaviour
         }
     }
 
-    // Chunks
     readonly Dictionary<int2, HectonChunkData> _active = new Dictionary<int2, HectonChunkData>();
     readonly List<HectonChunkRequest> _queue = new List<HectonChunkRequest>();
     int _queueHead;
 
-    // Async pipeline
     private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>();
 
-    // Physics batch
     readonly List<Mesh>       _bakeMeshes  = new List<Mesh>();
     readonly List<GameObject> _bakeObjects = new List<GameObject>();
     int _bakeHead;
     const int MAX_BAKES_PER_FRAME = 2;
 
-    // POI
     readonly Dictionary<int2, List<Vector3>> _poiBases     = new Dictionary<int2, List<Vector3>>();
     readonly Dictionary<int2, List<Vector3>> _poiResources = new Dictionary<int2, List<Vector3>>();
 
-    // LUTs
     NativeArray<float> _westLUT, _eastLUT, _biomeLUT;
     bool _lutsReady;
 
-    // Streaming state
     int2 _lastChunk = new int2(int.MinValue, int.MinValue);
     bool _streaming;
 
-    // Preview
     [HideInInspector] public GameObject previewObj;
 
-    // Constants
     const int LUT_RES   = 1024;
     const int JOB_BATCH = 64;
 
@@ -664,7 +591,6 @@ public class HectonWorldGenerator : MonoBehaviour
         ProcessQueue();
         ProcessPendingChunks();
 
-        // Incremental physics bake — non-blocking
         if (_bakeHead < _bakeMeshes.Count)
             BakePhysicsBatch();
     }
@@ -683,7 +609,6 @@ public class HectonWorldGenerator : MonoBehaviour
         _queue.Clear();
         _queueHead = 0;
 
-        // ── CRITICAL: Complete and dispose ALL in-flight async chunks ──
         FlushPendingChunks();
 
         foreach (var kvp in _active) DestroyChunk(kvp.Value);
@@ -696,10 +621,6 @@ public class HectonWorldGenerator : MonoBehaviour
         DisposeLUTs();
     }
 
-    /// <summary>
-    /// Forces completion and disposal of all pending async chunks.
-    /// MUST be called before shutdown or scene change to prevent memory leaks.
-    /// </summary>
     void FlushPendingChunks()
     {
         for (int i = _pendingChunks.Count - 1; i >= 0; i--)
@@ -748,7 +669,6 @@ public class HectonWorldGenerator : MonoBehaviour
         return lut;
     }
 
-    /// <summary>Rebake LUTs after curve edits. Call from Editor or at runtime.</summary>
     public void RefreshLUTs()
     {
         DisposeLUTs();
@@ -773,7 +693,6 @@ public class HectonWorldGenerator : MonoBehaviour
         float3 vp = viewer.position;
         float2 vxz = new float2(vp.x, vp.z);
 
-        // Build desired set
         var desired = new Dictionary<int2, int>();
         int rMax = Mathf.CeilToInt(distantRadius / chunkSize) + 1;
 
@@ -788,7 +707,6 @@ public class HectonWorldGenerator : MonoBehaviour
                 desired[c] = dSq <= activeRadius * activeRadius ? 0 : 1;
         }
 
-        // Remove outdated chunks
         var remove = new List<int2>();
         foreach (var kvp in _active)
         {
@@ -797,21 +715,17 @@ public class HectonWorldGenerator : MonoBehaviour
         }
         foreach (var c in remove) { DestroyChunk(_active[c]); _active.Remove(c); }
 
-        // Cancel pending chunks that are no longer desired or have wrong LOD
         for (int i = _pendingChunks.Count - 1; i >= 0; i--)
         {
             var pc = _pendingChunks[i];
             if (!desired.TryGetValue(pc.coord, out int wantLod) || wantLod != pc.lod)
             {
-                // Force complete and dispose — can't cancel a scheduled job
                 pc.combinedHandle.Complete();
                 pc.DisposeArrays();
                 _pendingChunks.RemoveAt(i);
             }
         }
 
-        // Queue new chunks sorted by distance
-        // Exclude chunks that are already pending
         var pendingSet = new HashSet<int2>();
         for (int i = 0; i < _pendingChunks.Count; i++)
             pendingSet.Add(_pendingChunks[i].coord);
@@ -837,11 +751,6 @@ public class HectonWorldGenerator : MonoBehaviour
         _queueHead = 0;
     }
 
-    /// <summary>
-    /// Schedules new chunk jobs from the queue into the async pipeline.
-    /// Respects maxPendingChunks to prevent RAM exhaustion.
-    /// Respects maxChunksPerFrame to limit scheduling overhead per frame.
-    /// </summary>
     void ProcessQueue()
     {
         int scheduled = 0;
@@ -851,7 +760,6 @@ public class HectonWorldGenerator : MonoBehaviour
         {
             var req = _queue[_queueHead++];
 
-            // Skip if chunk already exists with correct LOD
             if (_active.TryGetValue(req.coord, out var existing))
             {
                 if (existing.lod == req.lod) continue;
@@ -859,7 +767,6 @@ public class HectonWorldGenerator : MonoBehaviour
                 _active.Remove(req.coord);
             }
 
-            // Skip if already pending
             bool alreadyPending = false;
             for (int i = 0; i < _pendingChunks.Count; i++)
             {
@@ -876,12 +783,6 @@ public class HectonWorldGenerator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Polls all pending chunks. If a chunk's combined JobHandle is complete,
-    /// finalizes it (builds mesh, creates GameObject). Processes at most
-    /// maxFinalizationsPerFrame per call to avoid main-thread spikes.
-    /// Iterates in reverse for safe removal.
-    /// </summary>
     void ProcessPendingChunks()
     {
         int finalized = 0;
@@ -893,15 +794,12 @@ public class HectonWorldGenerator : MonoBehaviour
             if (!pc.combinedHandle.IsCompleted)
                 continue;
 
-            // Complete is required by Unity even after IsCompleted returns true
-            // (releases safety handles). This is instantaneous since work is done.
             pc.combinedHandle.Complete();
 
             var cd = FinalizeChunk(pc);
             if (cd != null)
                 _active[pc.coord] = cd;
 
-            // Dispose is called inside FinalizeChunk
             _pendingChunks.RemoveAt(i);
             finalized++;
         }
@@ -915,11 +813,6 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #region Async Chunk Generation
 
-    /// <summary>
-    /// PHASE 1: Allocates NativeArrays (Persistent) and schedules the full
-    /// job chain (Vertex → Normal → Color) without calling .Complete().
-    /// The combined JobHandle is stored in a PendingChunk for later polling.
-    /// </summary>
     void ScheduleChunkJob(int2 coord, int lod)
     {
         float sp  = lod == 0 ? lod0Spacing : lod1Spacing;
@@ -927,7 +820,6 @@ public class HectonWorldGenerator : MonoBehaviour
         int   vc  = res * res;
         float2 org = ChunkOrigin(coord);
 
-        // ── Allocate with Persistent — arrays survive across frames ──
         var verts  = new NativeArray<Vector3>(vc, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         var norms  = new NativeArray<Vector3>(vc, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         var uvs    = new NativeArray<Vector2>(vc, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
@@ -936,12 +828,10 @@ public class HectonWorldGenerator : MonoBehaviour
         var caveB  = new NativeArray<byte>(vc,    Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         var biomeV = new NativeArray<float>(vc,   Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
-        // ── Job 1: Terrain Vertices (no dependency — starts immediately) ──
         var vertexJob = MakeVertexJob(res, res, org.x, org.y, sp, lod,
                                        verts, uvs, caveV, caveB, biomeV);
         JobHandle h1 = vertexJob.Schedule(vc, JOB_BATCH);
 
-        // ── Job 2: Normals (depends on vertex job) ──
         var normalJob = new HectonNormalJob
         {
             resX = res, resZ = res,
@@ -950,7 +840,6 @@ public class HectonWorldGenerator : MonoBehaviour
         };
         JobHandle h2 = normalJob.Schedule(vc, JOB_BATCH, h1);
 
-        // ── Job 3: Vertex Colors (depends on normals) ──
         var colorJob = new HectonColorJob
         {
             maxDepth   = slopes.maxDepth,
@@ -965,7 +854,6 @@ public class HectonWorldGenerator : MonoBehaviour
         };
         JobHandle h3 = colorJob.Schedule(vc, JOB_BATCH, h2);
 
-        // ── Store pending chunk ──
         var pc = new PendingChunk
         {
             coord          = coord,
@@ -986,12 +874,6 @@ public class HectonWorldGenerator : MonoBehaviour
         _pendingChunks.Add(pc);
     }
 
-    /// <summary>
-    /// PHASE 2: Called when combinedHandle.IsCompleted == true.
-    /// Reads computed data from NativeArrays, builds triangles, mesh,
-    /// GameObject, triggers POI extraction, and queues physics bake.
-    /// ALWAYS disposes all 7 NativeArrays before returning.
-    /// </summary>
     HectonChunkData FinalizeChunk(PendingChunk pc)
     {
         try
@@ -999,7 +881,6 @@ public class HectonWorldGenerator : MonoBehaviour
             int res = pc.resX;
             int vc  = res * pc.resZ;
 
-            // ── Build Triangles ──
             int maxTri = (res - 1) * (pc.resZ - 1) * 6;
             var tris = new int[maxTri];
             int tc = 0;
@@ -1038,7 +919,6 @@ public class HectonWorldGenerator : MonoBehaviour
                 tris = trimmed;
             }
 
-            // ── Build Mesh ──
             var mesh = new Mesh();
             mesh.name = $"Hecton_{pc.coord.x}_{pc.coord.y}_L{pc.lod}";
             if (vc > 65535) mesh.indexFormat = IndexFormat.UInt32;
@@ -1051,7 +931,6 @@ public class HectonWorldGenerator : MonoBehaviour
             mesh.RecalculateTangents();
             mesh.RecalculateBounds();
 
-            // ── Create GameObject ──
             var go = new GameObject(mesh.name);
             go.transform.SetParent(transform, false);
             go.isStatic = true;
@@ -1064,14 +943,12 @@ public class HectonWorldGenerator : MonoBehaviour
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows    = true;
 
-            // ── Queue physics bake (LOD0 only) ──
             if (pc.lod == 0 && generateColliders)
             {
                 _bakeMeshes.Add(mesh);
                 _bakeObjects.Add(go);
             }
 
-            // ── Extract POI & spawn voxel volumes (LOD0 only) ──
             if (pc.lod == 0)
             {
                 ExtractPOI(pc.coord, pc.verts, pc.norms, pc.caveB);
@@ -1088,12 +965,10 @@ public class HectonWorldGenerator : MonoBehaviour
         }
         finally
         {
-            // ── CRITICAL: Always dispose all NativeArrays ──
             pc.DisposeArrays();
         }
     }
 
-    /// <summary>Creates a fully-configured HectonVertexJob from current settings.</summary>
     HectonVertexJob MakeVertexJob(int resX, int resZ,
                                    float orgX, float orgZ,
                                    float spacing, int lod,
@@ -1156,7 +1031,7 @@ public class HectonWorldGenerator : MonoBehaviour
         };
     }
 
-    #endregion // Async Chunk Generation
+    #endregion
 
     // ╔═══════════════════════════════════════════════╗
     // ║            VOXEL POI SPAWNING                 ║
@@ -1164,11 +1039,6 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #region Voxel POI
 
-    /// <summary>
-    /// Scans cave vertices in a freshly generated LOD0 chunk.
-    /// Clusters them into POI centers and spawns voxel volumes.
-    /// Also checks for tectonic rift conditions at the chunk center.
-    /// </summary>
     void SpawnVoxelPOIs(int2 coord,
                         NativeArray<Vector3> verts,
                         NativeArray<byte> caveB,
@@ -1183,10 +1053,6 @@ public class HectonWorldGenerator : MonoBehaviour
         float2 chunkOrg = ChunkOrigin(coord);
         float chunkCenterX = chunkOrg.x + chunkSize * 0.5f;
         float chunkCenterZ = chunkOrg.y + chunkSize * 0.5f;
-
-        // ════════════════════════════════════════
-        //  CAVE POI: cluster cave vertices → spawn sphere volumes
-        // ════════════════════════════════════════
 
         var cavePositions = new List<Vector3>(64);
         for (int i = 0; i < verts.Length; i++)
@@ -1253,10 +1119,6 @@ public class HectonWorldGenerator : MonoBehaviour
             }
         }
 
-        // ════════════════════════════════════════
-        //  RIFT POI: noise-based check at chunk center
-        // ════════════════════════════════════════
-
         NoiseData riftND = new NoiseData
         {
             scale = 0.00008f, octaves = 2, lacunarity = 2f,
@@ -1280,10 +1142,6 @@ public class HectonWorldGenerator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Scans generated vertex data and records gameplay-relevant locations.
-    /// Called once per LOD0 chunk after all jobs complete.
-    /// </summary>
     void ExtractPOI(int2 coord,
                     NativeArray<Vector3> verts,
                     NativeArray<Vector3> norms,
@@ -1320,7 +1178,7 @@ public class HectonWorldGenerator : MonoBehaviour
         if (res != null)   _poiResources[coord] = res;
     }
 
-    #endregion // Voxel POI
+    #endregion
 
     // ╔═══════════════════════════════════════════════╗
     // ║       PARALLEL PHYSICS BAKING                 ║
@@ -1328,11 +1186,6 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #region Physics
 
-    /// <summary>
-    /// Bakes up to MAX_BAKES_PER_FRAME meshes per frame on the main thread.
-    /// After baking each mesh, immediately assigns MeshCollider.
-    /// Skips null meshes/objects. Clears the queue when fully processed.
-    /// </summary>
     void BakePhysicsBatch()
     {
         int baked = 0;
@@ -1366,33 +1219,68 @@ public class HectonWorldGenerator : MonoBehaviour
     #endregion
 
     // ╔═══════════════════════════════════════════════╗
-    // ║           CHUNK LIFECYCLE                     ║
+    // ║           CHUNK LIFECYCLE (v2.1 FIX)          ║
     // ╚═══════════════════════════════════════════════╝
 
     #region Chunk Lifecycle
 
+    /// <summary>
+    /// Destroys a chunk and all its associated voxel volumes.
+    ///
+    /// v2.1 FIX: Voxel child objects are now destroyed through
+    /// voxelEngine.DespawnVolume() instead of direct SafeDestroy().
+    ///
+    /// БЫЛО (v2.0, УТЕЧКА):
+    ///   SafeDestroy(child.gameObject)
+    ///   → HectonVoxelEngine._activeVolumes[i] becomes null
+    ///   → null accumulates infinitely
+    ///   → O(n) degradation in DespawnVolume/ClearAll
+    ///
+    /// СТАЛО (v2.1, КОРРЕКТНО):
+    ///   voxelEngine.DespawnVolume(child.gameObject)
+    ///   → removes from _activeVolumes
+    ///   → cleans mesh + collider
+    ///   → returns to pool or destroys
+    ///   → zero null references
+    ///
+    /// FALLBACK: если voxelEngine == null (уничтожен раньше,
+    /// смена сцены), используется прямой SafeDestroy (как в v2.0).
+    /// Это безопасно — _activeVolumes тоже уничтожен вместе с engine.
+    /// </summary>
     void DestroyChunk(HectonChunkData cd)
     {
         if (cd == null) return;
 
-        // ── Destroy child voxel volumes ──
+        // ── Destroy child voxel volumes (v2.1: через DespawnVolume) ──
         if (cd.go != null)
         {
-            string prefix = $"Voxel_Cave_{cd.coord.x}_{cd.coord.y}";
+            string cavePrefix = $"Voxel_Cave_{cd.coord.x}_{cd.coord.y}";
             string riftPrefix = $"Voxel_Rift_{cd.coord.x}_{cd.coord.y}";
 
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i);
-                if (child.name.StartsWith(prefix) || child.name.StartsWith(riftPrefix))
+                if (child.name.StartsWith(cavePrefix) || child.name.StartsWith(riftPrefix))
                 {
-                    var mf = child.GetComponent<MeshFilter>();
-                    if (mf != null && mf.sharedMesh != null)
+                    // v2.1: Делегируем очистку VoxelEngine.
+                    // DespawnVolume удаляет из _activeVolumes,
+                    // чистит mesh/collider, возвращает в пул.
+                    if (voxelEngine != null)
                     {
-                        mf.sharedMesh.Clear();
-                        SafeDestroy(mf.sharedMesh);
+                        voxelEngine.DespawnVolume(child.gameObject);
                     }
-                    SafeDestroy(child.gameObject);
+                    else
+                    {
+                        // Fallback: engine уже уничтожен (смена сцены).
+                        // Ручная очистка как в v2.0.
+                        var mf = child.GetComponent<MeshFilter>();
+                        if (mf != null && mf.sharedMesh != null)
+                        {
+                            mf.sharedMesh.Clear();
+                            SafeDestroy(mf.sharedMesh);
+                        }
+                        SafeDestroy(child.gameObject);
+                    }
                 }
             }
         }
@@ -1440,9 +1328,6 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #region Public API
 
-    /// <summary>
-    /// Returns biome mask at world (x, z). 0 = flat/sand, 1 = aggressive/rock.
-    /// </summary>
     public float GetBiomeAt(float x, float z)
     {
         EnsureLUTs();
@@ -1451,10 +1336,6 @@ public class HectonWorldGenerator : MonoBehaviour
         return HectonNoise.SampleLUT(_biomeLUT, bRaw);
     }
 
-    /// <summary>
-    /// Query base terrain height at any world position (x, z).
-    /// Returns height WITHOUT displacement or cave carving.
-    /// </summary>
     public float GetWorldHeight(float x, float z)
     {
         EnsureLUTs();
@@ -1515,11 +1396,6 @@ public class HectonWorldGenerator : MonoBehaviour
         return y;
     }
 
-    /// <summary>
-    /// Generates a single low-resolution mesh covering the entire world.
-    /// Uses LOD1 (no caves, no displacement) for a fast shape overview.
-    /// This is a SYNCHRONOUS editor tool — uses .Complete() intentionally.
-    /// </summary>
     [ContextMenu("▶ Generate World Preview")]
     public void GenerateWorldPreview()
     {
@@ -1531,20 +1407,13 @@ public class HectonWorldGenerator : MonoBehaviour
         int   res = Mathf.CeilToInt(mapSize / previewSpacing) + 1;
         int   vc  = res * res;
 
-        var verts  = new NativeArray<Vector3>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
-        var norms  = new NativeArray<Vector3>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
-        var uvs    = new NativeArray<Vector2>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
-        var cols   = new NativeArray<Color>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
-        var caveV  = new NativeArray<float>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
-        var caveB  = new NativeArray<byte>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
-        var biomeV = new NativeArray<float>(vc, Allocator.TempJob,
-                         NativeArrayOptions.UninitializedMemory);
+        var verts  = new NativeArray<Vector3>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var norms  = new NativeArray<Vector3>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var uvs    = new NativeArray<Vector2>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var cols   = new NativeArray<Color>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var caveV  = new NativeArray<float>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var caveB  = new NativeArray<byte>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var biomeV = new NativeArray<float>(vc, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
         try
         {
@@ -1638,10 +1507,6 @@ public class HectonWorldGenerator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Destroys ALL generated content: streaming chunks, pending async jobs,
-    /// preview, POI, LUTs. Safe to call multiple times.
-    /// </summary>
     [ContextMenu("✕ Clear All")]
     public void ClearAll()
     {
@@ -1652,7 +1517,7 @@ public class HectonWorldGenerator : MonoBehaviour
             SafeDestroy(transform.GetChild(i).gameObject);
     }
 
-    #endregion // Public API
+    #endregion
 
     // ╔═══════════════════════════════════════════════╗
     // ║                 GIZMOS                        ║
@@ -1739,7 +1604,7 @@ public class HectonWorldGenerator : MonoBehaviour
         }
     }
 
-    #endregion // Gizmos
+    #endregion
 
     // ╔═══════════════════════════════════════════════╗
     // ║              UTILITIES                        ║
@@ -1747,28 +1612,19 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #region Utilities
 
-    /// <summary>Returns the count of currently loaded (finalized) chunks.</summary>
     public int ActiveChunkCount => _active.Count;
-
-    /// <summary>Returns the count of chunks currently in the async pipeline.</summary>
     public int PendingChunkCount => _pendingChunks.Count;
 
-    /// <summary>Total base locations across all loaded chunks.</summary>
     public int BaseLocationCount
     {
         get { int n = 0; foreach (var kv in _poiBases) n += kv.Value.Count; return n; }
     }
 
-    /// <summary>Total resource nodes across all loaded chunks.</summary>
     public int ResourceNodeCount
     {
         get { int n = 0; foreach (var kv in _poiResources) n += kv.Value.Count; return n; }
     }
 
-    /// <summary>
-    /// Copies all active base locations into the provided list.
-    /// Clears the list first. Allocation-free if list has enough capacity.
-    /// </summary>
     public void GetAllBaseLocations(List<Vector3> result)
     {
         result.Clear();
@@ -1776,9 +1632,6 @@ public class HectonWorldGenerator : MonoBehaviour
             result.AddRange(kv.Value);
     }
 
-    /// <summary>
-    /// Copies all active resource nodes into the provided list.
-    /// </summary>
     public void GetAllResourceNodes(List<Vector3> result)
     {
         result.Clear();
@@ -1786,7 +1639,6 @@ public class HectonWorldGenerator : MonoBehaviour
             result.AddRange(kv.Value);
     }
 
-    /// <summary>Sums vertex count across all child meshes.</summary>
     public long CountTotalVertices()
     {
         long total = 0;
@@ -1799,7 +1651,6 @@ public class HectonWorldGenerator : MonoBehaviour
         return total;
     }
 
-    /// <summary>Sums triangle count across all child meshes.</summary>
     public long CountTotalTriangles()
     {
         long total = 0;
@@ -1814,17 +1665,13 @@ public class HectonWorldGenerator : MonoBehaviour
 
     #endregion
 
-    // ╔═══════════════════════════════════════════════╗
-    // ║              CLEANUP                          ║
-    // ╚═══════════════════════════════════════════════╝
-
     void OnDestroy()
     {
         ClearAll();
     }
 }
 
-#endregion // HectonWorldGenerator
+#endregion
 
 // ════════════════════════════════════════════════════════════════════════════════
 //  CUSTOM EDITOR
@@ -1843,9 +1690,6 @@ public class HectonWorldGeneratorEditor : Editor
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
-        // ════════════════════════════════════
-        //  ESTIMATED LOAD
-        // ════════════════════════════════════
         int lod0Res = Mathf.CeilToInt(gen.chunkSize / gen.lod0Spacing) + 1;
         int lod1Res = Mathf.CeilToInt(gen.chunkSize / gen.lod1Spacing) + 1;
         int r0 = Mathf.CeilToInt(gen.activeRadius / gen.chunkSize);
@@ -1876,9 +1720,6 @@ public class HectonWorldGeneratorEditor : Editor
 
         EditorGUILayout.Space(5);
 
-        // ════════════════════════════════════
-        //  BUTTONS
-        // ════════════════════════════════════
         GUI.backgroundColor = new Color(0.4f, 0.85f, 1f);
         if (GUILayout.Button("▶  Generate World Preview  (15 km Low-Res)",
                              GUILayout.Height(36)))
@@ -1904,9 +1745,6 @@ public class HectonWorldGeneratorEditor : Editor
 
         GUI.backgroundColor = Color.white;
 
-        // ════════════════════════════════════
-        //  RUNTIME / SCENE STATISTICS
-        // ════════════════════════════════════
         bool hasContent = gen.transform.childCount > 0;
         if (hasContent || (Application.isPlaying && gen.ActiveChunkCount > 0))
         {
@@ -1942,10 +1780,10 @@ public class HectonWorldGeneratorEditor : Editor
 
         EditorGUILayout.Space(3);
         EditorGUILayout.HelpBox(
-            "Project HECTON-8 World Engine v2.0\n" +
+            "Project HECTON-8 World Engine v2.1\n" +
             "Burst + Jobs + Async Chunk Pipeline + LOD + Parallel PhysX\n" +
-            "Zero main-thread blocks during streaming.\n" +
-            "Required: com.unity.burst, com.unity.mathematics, com.unity.collections",
+            "v2.1: Voxel lifecycle fix (DespawnVolume integration)\n" +
+            "Zero main-thread blocks during streaming.",
             MessageType.None);
     }
 }

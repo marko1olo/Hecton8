@@ -1,35 +1,30 @@
 // ============================================================================
 // HECTON-8 — ResourceNode.cs
-// Ресурсный узел — пулируемый, Zero GC, ICuttable, WorldStateManager.
+// Ресурсный узел — пулируемый, Zero GC, ICuttable, WorldStateManager, Melt VFX.
 //
-// РЕФАКТОРИНГ v4:
-//   • Реализует ICuttable (из Hecton8.Gameplay) для интеграции
-//     с LaserCutter и любым другим инструментом резки.
-//   • ApplyCutDamage() делегирует в TakeDamage().
-//   • uniqueId для идентификации в системе сохранений.
-//   • При разрушении: регистрация в WorldStateManager.
-//   • При OnSpawn(): проверка IsNodeDepleted → самодеспавн через пул.
-//   • При OnEnable(): проверка IsNodeDepleted → самодеактивация
-//     (для scene-объектов, не проходящих через пул).
-//   • IPoolable — корректная работа с ObjectPoolManager.
-//   • Лут спавнится через ObjectPoolManager.Spawn().
-//   • НЕТ Update().
+// v5.0 — MELT EFFECT (GPU-driven dissolve):
+//   [ADD] MaterialPropertyBlock интеграция для эффекта плавления.
+//   [ADD] В ApplyCutDamage: передаёт _MeltCenter (local space) и
+//         _MeltRadius (1 - healthNormalized) в шейдер через PropertyBlock.
+//   [ADD] _MeltRadius сбрасывается в 0 при OnSpawn, OnDespawn, ResetState.
+//   [ADD] Кэшированный Renderer + MaterialPropertyBlock в Awake (zero GC per-frame).
+//   [ADD] Статические Shader.PropertyToID для zero-GC SetVector/SetFloat.
 //
-// УНИКАЛЬНЫЙ ID:
-//   Назначается в Inspector (вручную или Editor-скриптом).
-//   Рекомендация: формат "scene_objectName" или координатный хэш.
-//   Пустой ID = узел не отслеживается системой сохранений.
+//   ШЕЙДЕР (URP):
+//     Получает _MeltCenter и _MeltRadius.
+//     distance(objectPos, _MeltCenter) < _MeltRadius → clip(-1) (отсечение).
+//     На границе среза → HDR emission (жёлтый→красный градиент).
+//     Zero CPU overhead — вся визуализация на GPU.
 //
-// ПОРЯДОК ВЫЗОВОВ ПРИ СПАВНЕ ИЗ ПУЛА:
-//   1. Instantiate (только при Warmup/Expand)
-//   2. Awake()
-//   3. SetActive(true)         — ObjectPoolManager.Spawn
-//   4. OnEnable()              — Unity callback
-//   5. OnSpawn()               — IPoolable callback от ObjectPoolManager
-//   6. [Если depleted] → OnDespawn() + SetActive(false)
+// ПРЕДЫДУЩИЕ ВЕРСИИ (сохранены):
+//   v4.1: Детерминированная генерация ID, autoGenerateId, chunkSize.
+//   v4.0: ICuttable, IPoolable, WorldStateManager, лут через пул.
 //
-// Таким образом, проверка в OnSpawn() гарантирует деспавн
-// ПОСЛЕ полной инициализации.
+// ZERO GC В RUNTIME:
+//   • ApplyCutDamage: MaterialPropertyBlock.SetVector/SetFloat — zero GC.
+//   • Renderer.GetPropertyBlock/SetPropertyBlock — zero GC.
+//   • Shader.PropertyToID — cached static, zero GC.
+//   • Все per-frame пути: zero GC.
 // ============================================================================
 
 using Hecton8.Core;
@@ -43,18 +38,40 @@ namespace Hecton8.Scavenging
     public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable
     {
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
+        //  SHADER PROPERTY IDs — cached once, zero GC
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly int _MeltCenterID = Shader.PropertyToID("_MeltCenter");
+        private static readonly int _MeltRadiusID = Shader.PropertyToID("_MeltRadius");
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — IDENTITY (v4.1)
         // ══════════════════════════════════════════════════════════
 
         [Header("── Identity ──────────────────────────────────")]
         [Tooltip("Уникальный ID для системы сохранений. " +
-                 "Пустой = узел не сохраняется. " +
-                 "Формат: 'zone_pipe_01' или 'hull_panel_north_03'")]
+                 "Если autoGenerateId=true, заполняется автоматически из координат. " +
+                 "Если autoGenerateId=false, назначается вручную. " +
+                 "Пустой ID = узел не сохраняется.")]
         [SerializeField] private string uniqueId;
+
+        [Tooltip("Автоматически генерировать uniqueId из мировых координат.")]
+        [SerializeField] private bool autoGenerateId = true;
+
+        [Tooltip("Размер чанка MapMagic (метры).")]
+        [SerializeField] private float chunkSize = 1000f;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — HEALTH
+        // ══════════════════════════════════════════════════════════
 
         [Header("── Health ────────────────────────────────────")]
         [Tooltip("Максимальное здоровье узла. Определяет время резки.")]
         [SerializeField] private float maxHealth = 100f;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — LOOT
+        // ══════════════════════════════════════════════════════════
 
         [Header("── Loot ──────────────────────────────────────")]
         [Tooltip("Префаб куска ресурса (должен быть прогрет в ObjectPoolManager)")]
@@ -65,6 +82,10 @@ namespace Hecton8.Scavenging
 
         [Tooltip("Время жизни лута (сек). После — автовозврат в пул.")]
         [SerializeField] private float lootLifetime = 30f;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — SCATTER
+        // ══════════════════════════════════════════════════════════
 
         [Header("── Scatter ───────────────────────────────────")]
         [Tooltip("Радиус случайного смещения точки спавна лута")]
@@ -77,44 +98,62 @@ namespace Hecton8.Scavenging
         [SerializeField] private float upwardBias = 1.5f;
 
         // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — MELT VFX (v5.0)
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Melt VFX (v5.0) ──────────────────────────")]
+        [Tooltip("Максимальный радиус плавления в локальных единицах. " +
+                 "При health=0 → _MeltRadius = maxMeltRadius. " +
+                 "Зависит от масштаба меша. Для 1м трубы: ~0.5.")]
+        [SerializeField] private float maxMeltRadius = 0.5f;
+
+        [Tooltip("Целевой Renderer для MaterialPropertyBlock. " +
+                 "Если не назначен — ищется автоматически в Awake.")]
+        [SerializeField] private Renderer targetRenderer;
+
+        // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
+        private Transform _transform;
         private float _currentHealth;
         private bool  _isDepleted;
+        private bool  _despawnRequested;
 
         /// <summary>
-        /// Флаг: объект уже запрошен на деспавн через пул.
-        /// Предотвращает двойной Despawn (из TakeDamage + из OnSpawn).
+        /// Кэшированный MaterialPropertyBlock. Создаётся один раз в Awake.
+        /// Переиспользуется во всех вызовах ApplyCutDamage — zero GC.
         /// </summary>
-        private bool _despawnRequested;
+        private MaterialPropertyBlock _propBlock;
+
+        /// <summary>
+        /// Последняя точка попадания лазера в локальных координатах.
+        /// Обновляется каждый кадр при резке. Передаётся в шейдер как _MeltCenter.
+        /// Vector4 (x, y, z, 0) для совместимости с SetVector.
+        /// </summary>
+        private Vector4 _localHitPoint;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Уникальный ID узла для системы сохранений.</summary>
         public string UniqueId => uniqueId;
-        /// <summary>
-        /// Устанавливает уникальный ID извне.
-        /// Вызывается ScavengePopulator при спавне из пула.
-        /// 
-        /// ВАЖНО: вызывать ПОСЛЕ OnSpawn() и ДО любой логики,
-        /// зависящей от uniqueId.
-        /// 
-        /// Безопасно вызывать повторно (перезапись).
-        /// </summary>
+
         public void SetUniqueId(string id)
         {
+#if UNITY_EDITOR
+            if (autoGenerateId)
+            {
+                Debug.LogWarning(
+                    $"[ResourceNode] SetUniqueId() called while autoGenerateId=true " +
+                    $"on '{gameObject.name}'.", this);
+            }
+#endif
             uniqueId = id;
         }
-        /// <summary>Текущее здоровье узла (0 = разрушен).</summary>    
+
         public float CurrentHealth => _currentHealth;
-
-        /// <summary>Нормализованное здоровье [0..1] для UI / VFX.</summary>
         public float HealthNormalized => maxHealth > 0f ? _currentHealth / maxHealth : 0f;
-
-        /// <summary>true после разрушения.</summary>
         public bool IsDepleted => _isDepleted;
 
         // ══════════════════════════════════════════════════════════
@@ -123,19 +162,27 @@ namespace Hecton8.Scavenging
 
         private void Awake()
         {
+            _transform = transform;
+
+            // ── MaterialPropertyBlock: один раз, zero GC в рантайме ──
+            _propBlock = new MaterialPropertyBlock();
+
+            // ── Авто-поиск Renderer ──
+            if (targetRenderer == null)
+            {
+                targetRenderer = GetComponentInChildren<Renderer>();
+            }
+
             ResetState();
         }
 
-        /// <summary>
-        /// OnEnable: проверяет WorldStateManager.
-        /// Если узел уже был уничтожен в предыдущей сессии —
-        /// самодеактивируется немедленно.
-        ///
-        /// Обеспечивает совместимость со scene-объектами (не из пула).
-        /// Для пулированных объектов основная проверка — в OnSpawn().
-        /// </summary>
         private void OnEnable()
         {
+            if (autoGenerateId && string.IsNullOrEmpty(uniqueId))
+            {
+                GenerateDeterministicId();
+            }
+
             if (!string.IsNullOrEmpty(uniqueId))
             {
                 WorldStateManager wsm = WorldStateManager.Instance;
@@ -149,33 +196,23 @@ namespace Hecton8.Scavenging
         }
 
         // ══════════════════════════════════════════════════════════
-        //  IPoolable — ЖИЗНЕННЫЙ ЦИКЛ ПУЛА
+        //  IPoolable
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Вызывается ObjectPoolManager ПОСЛЕ SetActive(true) и OnEnable().
-        ///
-        /// Содержит критическую проверку: если узел уже depleted
-        /// в WorldStateManager, объект немедленно деспавнится обратно
-        /// в пул. Это защита от появления уже собранных ресурсов
-        /// при загрузке чанка.
-        ///
-        /// ПОРЯДОК: SetActive(true) → OnEnable() → OnSpawn()
-        /// Если OnEnable() уже деактивировал — OnSpawn() не вызовется
-        /// (ObjectPoolManager вызывает OnSpawn после SetActive).
-        /// Но на всякий случай проверяем и здесь (belt and suspenders).
-        /// </summary>
         public void OnSpawn()
         {
             ResetState();
 
-            // ── Проверка: был ли узел уже уничтожен (из сейва)? ──
+            if (autoGenerateId && string.IsNullOrEmpty(uniqueId))
+            {
+                GenerateDeterministicId();
+            }
+
             if (!string.IsNullOrEmpty(uniqueId))
             {
                 WorldStateManager wsm = WorldStateManager.Instance;
                 if (wsm != null && wsm.IsNodeDepleted(uniqueId))
                 {
-                    // Узел уже собран — деспавним обратно в пул
                     _isDepleted       = true;
                     _despawnRequested = true;
 
@@ -194,46 +231,119 @@ namespace Hecton8.Scavenging
             }
         }
 
-        /// <summary>
-        /// Вызывается ObjectPoolManager ПЕРЕД SetActive(false).
-        /// Сбрасывает состояние для переиспользования.
-        /// </summary>
         public void OnDespawn()
         {
             ResetState();
+
+            if (autoGenerateId)
+            {
+                uniqueId = null;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ICuttable — ИНТЕГРАЦИЯ С LaserCutter
+        //  ICuttable — LASER CUTTER INTEGRATION + MELT VFX (v5.0)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// Реализация ICuttable.ApplyCutDamage.
-        /// Делегирует в TakeDamage. Параметр hitPoint доступен
-        /// для будущего расширения (декали, направленные VFX).
         ///
-        /// Вызывается LaserCutter.UsePrimary() при рейкаст-попадании.
+        /// v5.0: Помимо делегирования в TakeDamage, обновляет
+        /// MaterialPropertyBlock для GPU-эффекта плавления:
+        ///
+        ///   _MeltCenter — точка попадания лазера в ЛОКАЛЬНЫХ координатах меша.
+        ///     InverseTransformPoint(hitPoint) переводит мировую координату
+        ///     в object-space, совпадающий с вершинами меша.
+        ///     Шейдер использует IN.positionOS для Distance().
+        ///
+        ///   _MeltRadius — радиус расплавленной зоны [0..maxMeltRadius].
+        ///     Формула: (1.0 - HealthNormalized) × maxMeltRadius.
+        ///     При полном здоровье → 0 (нет эффекта).
+        ///     При health=0 → maxMeltRadius (максимальное разрушение).
+        ///     Шейдер: distance &lt; _MeltRadius → clip(-1) (отсечение).
+        ///
+        /// ZERO GC:
+        ///   • InverseTransformPoint — struct math (Vector3 → Vector3).
+        ///   • MaterialPropertyBlock.SetVector/SetFloat — zero GC.
+        ///   • Renderer.GetPropertyBlock/SetPropertyBlock — zero GC.
+        ///   • Shader.PropertyToID — cached static readonly int.
+        ///
+        /// ПОРЯДОК ОПЕРАЦИЙ:
+        ///   1. TakeDamage (уменьшает health, может вызвать DestroyNode).
+        ///   2. Если не depleted → обновляем MaterialPropertyBlock.
+        ///   3. GetPropertyBlock → SetVector + SetFloat → SetPropertyBlock.
+        ///      GetPropertyBlock необходим для сохранения других свойств
+        ///      (текстуры, цвета), которые могли быть установлены ранее.
         /// </summary>
-        /// <param name="damage">Урон за кадр (damagePerSecond × deltaTime).</param>
-        /// <param name="hitPoint">Мировая точка попадания луча.</param>
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
             TakeDamage(damage);
+
+            // ── Обновляем мельт-параметры шейдера (v5.0) ──
+            // Только если объект ещё жив И рендерер доступен.
+            // После TakeDamage объект мог быть depleted → не трогаем.
+            if (!_isDepleted && targetRenderer != null)
+            {
+                UpdateMeltProperties(hitPoint);
+            }
+        }
+
+        /// <summary>
+        /// Обновляет MaterialPropertyBlock с параметрами плавления.
+        /// Вызывается из ApplyCutDamage каждый кадр при резке.
+        ///
+        /// Zero GC: все операции на struct'ах + cached PropertyBlock.
+        /// CPU cost: ~0.001ms (InverseTransformPoint + 2× Set + Apply).
+        /// </summary>
+        private void UpdateMeltProperties(Vector3 worldHitPoint)
+        {
+            // ── Мировые → локальные координаты ──
+            // InverseTransformPoint учитывает position, rotation, scale объекта.
+            // Результат совпадает с vertex position в object-space шейдера.
+            Vector3 localPos = _transform.InverseTransformPoint(worldHitPoint);
+            _localHitPoint.x = localPos.x;
+            _localHitPoint.y = localPos.y;
+            _localHitPoint.z = localPos.z;
+            _localHitPoint.w = 0f;
+
+            // ── Радиус плавления: растёт по мере уменьшения здоровья ──
+            // healthNorm = 1.0 (полное здоровье) → meltRadius = 0 (нет эффекта)
+            // healthNorm = 0.5 (половина) → meltRadius = 0.5 × maxMeltRadius
+            // healthNorm = 0.0 (уничтожен) → meltRadius = maxMeltRadius
+            float meltRadius = (1f - HealthNormalized) * maxMeltRadius;
+
+            // ── Передаём в шейдер через MaterialPropertyBlock ──
+            // GetPropertyBlock: загружает текущие override'ы (сохраняет чужие свойства).
+            // SetVector/SetFloat: обновляет только наши 2 свойства.
+            // SetPropertyBlock: применяет блок к рендереру.
+            targetRenderer.GetPropertyBlock(_propBlock);
+            _propBlock.SetVector(_MeltCenterID, _localHitPoint);
+            _propBlock.SetFloat(_MeltRadiusID, meltRadius);
+            targetRenderer.SetPropertyBlock(_propBlock);
+        }
+
+        /// <summary>
+        /// Сбрасывает melt-параметры шейдера в исходное состояние.
+        /// Вызывается из ResetState (→ Awake, OnSpawn, OnDespawn).
+        ///
+        /// _MeltRadius = 0 → шейдер ничего не отсекает и не подсвечивает.
+        /// _MeltCenter = origin (0,0,0) → безопасное значение.
+        /// </summary>
+        private void ResetMeltProperties()
+        {
+            if (targetRenderer == null) return;
+            if (_propBlock == null) return;
+
+            targetRenderer.GetPropertyBlock(_propBlock);
+            _propBlock.SetVector(_MeltCenterID, Vector4.zero);
+            _propBlock.SetFloat(_MeltRadiusID, 0f);
+            targetRenderer.SetPropertyBlock(_propBlock);
         }
 
         // ══════════════════════════════════════════════════════════
         //  DAMAGE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Наносит урон узлу. При health ≤ 0:
-        ///   1. Спавнит лут через пул.
-        ///   2. Регистрирует уничтожение в WorldStateManager.
-        ///   3. Деспавнит себя.
-        ///
-        /// Защита от двойного вызова: если _isDepleted или
-        /// _despawnRequested — ранний выход.
-        /// </summary>
         public void TakeDamage(float amount)
         {
             if (_isDepleted)        return;
@@ -249,7 +359,6 @@ namespace Hecton8.Scavenging
 
                 SpawnLoot();
 
-                // ── Регистрация в WorldStateManager ──
                 if (!string.IsNullOrEmpty(uniqueId))
                 {
                     WorldStateManager wsm = WorldStateManager.Instance;
@@ -264,15 +373,9 @@ namespace Hecton8.Scavenging
         }
 
         // ══════════════════════════════════════════════════════════
-        //  LOOT SPAWNING — через ObjectPoolManager
+        //  LOOT SPAWNING
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Спавнит лут через ObjectPoolManager.
-        /// Каждый кусок получает случайное направление разброса.
-        ///
-        /// Zero GC: Random struct methods, TryGetComponent.
-        /// </summary>
         private void SpawnLoot()
         {
             if (lootPrefab == null) return;
@@ -285,7 +388,7 @@ namespace Hecton8.Scavenging
                 return;
             }
 
-            Vector3 origin = transform.position;
+            Vector3 origin = _transform.position;
 
             for (int i = 0; i < lootCount; i++)
             {
@@ -315,13 +418,9 @@ namespace Hecton8.Scavenging
             }
         }
 
-        /// <summary>
-        /// Fallback для спавна лута, если ObjectPoolManager недоступен.
-        /// Использует Instantiate (нарушает Zero GC — только для safety).
-        /// </summary>
         private void SpawnLootFallback()
         {
-            Vector3 origin = transform.position;
+            Vector3 origin = _transform.position;
 
             for (int i = 0; i < lootCount; i++)
             {
@@ -342,11 +441,6 @@ namespace Hecton8.Scavenging
         //  SELF-DESPAWN
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Деспавнит себя через ObjectPoolManager, если объект из пула.
-        /// Иначе — просто деактивирует.
-        /// Защита от двойного деспавна через _despawnRequested.
-        /// </summary>
         private void DespawnSelf()
         {
             if (_despawnRequested) return;
@@ -365,18 +459,41 @@ namespace Hecton8.Scavenging
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — STATE RESET
+        //  DETERMINISTIC ID GENERATION (v4.1)
+        // ══════════════════════════════════════════════════════════
+
+        private void GenerateDeterministicId()
+        {
+            Vector3 pos = _transform.position;
+
+            float safeChunkSize = chunkSize > 0f ? chunkSize : 1000f;
+            int chunkX = Mathf.FloorToInt(pos.x / safeChunkSize);
+            int chunkZ = Mathf.FloorToInt(pos.z / safeChunkSize);
+
+            int mmX = Mathf.RoundToInt(pos.x * 1000f);
+            int mmY = Mathf.RoundToInt(pos.y * 1000f);
+            int mmZ = Mathf.RoundToInt(pos.z * 1000f);
+
+            uniqueId = $"rn_{chunkX}_{chunkZ}_{mmX}_{mmY}_{mmZ}";
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — STATE RESET (v5.0: + melt reset)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// Полный сброс состояния для переиспользования.
-        /// Вызывается в Awake, OnSpawn, OnDespawn.
+        /// v5.0: Добавлен ResetMeltProperties() — сбрасывает
+        /// _MeltRadius в 0 на MaterialPropertyBlock.
         /// </summary>
         private void ResetState()
         {
             _currentHealth    = maxHealth;
             _isDepleted       = false;
             _despawnRequested = false;
+
+            // v5.0: Сброс мельт-эффекта
+            ResetMeltProperties();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -386,36 +503,56 @@ namespace Hecton8.Scavenging
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (maxHealth     < 1f)  maxHealth     = 1f;
-            if (lootCount     < 0)   lootCount     = 0;
-            if (lootLifetime  < 0f)  lootLifetime  = 0f;
-            if (scatterRadius < 0f)  scatterRadius = 0f;
-            if (scatterForce  < 0f)  scatterForce  = 0f;
+            if (maxHealth      < 1f)  maxHealth      = 1f;
+            if (lootCount      < 0)   lootCount      = 0;
+            if (lootLifetime   < 0f)  lootLifetime   = 0f;
+            if (scatterRadius  < 0f)  scatterRadius  = 0f;
+            if (scatterForce   < 0f)  scatterForce   = 0f;
+            if (chunkSize      < 1f)  chunkSize      = 1f;
+            if (maxMeltRadius  < 0f)  maxMeltRadius  = 0f;
         }
 
-        /// <summary>
-        /// Контекстное меню: генерирует uniqueId из имени объекта + позиции.
-        /// Правый клик на компоненте → Generate Unique ID.
-        /// </summary>
-        [ContextMenu("Generate Unique ID")]
-        private void GenerateUniqueId()
+        [ContextMenu("Generate Deterministic ID")]
+        private void EditorGenerateDeterministicId()
+        {
+            Vector3 pos = transform.position;
+            float safeChunkSize = chunkSize > 0f ? chunkSize : 1000f;
+            int chX = Mathf.FloorToInt(pos.x / safeChunkSize);
+            int chZ = Mathf.FloorToInt(pos.z / safeChunkSize);
+            int mmX = Mathf.RoundToInt(pos.x * 1000f);
+            int mmY = Mathf.RoundToInt(pos.y * 1000f);
+            int mmZ = Mathf.RoundToInt(pos.z * 1000f);
+            uniqueId = $"rn_{chX}_{chZ}_{mmX}_{mmY}_{mmZ}";
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log($"[ResourceNode] Generated deterministic ID: {uniqueId}", this);
+        }
+
+        [ContextMenu("Generate Legacy ID (name + position)")]
+        private void EditorGenerateLegacyId()
         {
             Vector3 pos = transform.position;
             uniqueId = $"{gameObject.name}_{pos.x:F1}_{pos.y:F1}_{pos.z:F1}";
             UnityEditor.EditorUtility.SetDirty(this);
-            Debug.Log($"[ResourceNode] Generated ID: {uniqueId}");
+            Debug.Log($"[ResourceNode] Generated legacy ID: {uniqueId}", this);
         }
 
-        /// <summary>
-        /// Визуализация узла в Scene View.
-        /// Зелёный = есть ID. Серый = нет ID (не сохраняется).
-        /// </summary>
         private void OnDrawGizmos()
         {
             bool hasId = !string.IsNullOrEmpty(uniqueId);
-            Gizmos.color = hasId
-                ? new Color(0f, 1f, 0.5f, 0.3f)
-                : new Color(0.5f, 0.5f, 0.5f, 0.2f);
+
+            if (autoGenerateId)
+            {
+                Gizmos.color = hasId
+                    ? new Color(0f, 0.8f, 1f, 0.3f)
+                    : new Color(0f, 0.5f, 0.8f, 0.15f);
+            }
+            else
+            {
+                Gizmos.color = hasId
+                    ? new Color(0f, 1f, 0.5f, 0.3f)
+                    : new Color(0.5f, 0.5f, 0.5f, 0.2f);
+            }
+
             Gizmos.DrawWireSphere(transform.position, 0.3f);
 
             if (hasId)
@@ -426,7 +563,9 @@ namespace Hecton8.Scavenging
                     new GUIStyle
                     {
                         fontSize  = 9,
-                        normal    = { textColor = new Color(0f, 1f, 0.5f, 0.7f) }
+                        normal    = { textColor = autoGenerateId
+                            ? new Color(0f, 0.8f, 1f, 0.7f)
+                            : new Color(0f, 1f, 0.5f, 0.7f) }
                     });
             }
         }

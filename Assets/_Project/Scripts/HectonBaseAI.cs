@@ -13,12 +13,12 @@
 //
 // АРХИТЕКТУРА:
 //   • ITickable — регистрация в GameTickManager. Нет Update().
-//   • IFixedTickable — физическое перемещение (AddForce).
+//   • IFixedTickable — физическое перемещение (AddForce + MoveRotation).
 //   • IPoolable — интеграция с ObjectPoolManager.
 //   • Zero GC в Tick: кэшированные массивы, struct math, no LINQ.
 //   • Настройки в Inspector (Data-Driven).
 //
-// ОПТИМИЗАЦИИ (v2.1):
+// ОПТИМИЗАЦИИ (v2.2):
 //   • Obstacle Avoidance троттлинг: рейкасты пускаются каждые 0.15с
 //     вместо каждого кадра. Случайный начальный сдвиг таймера
 //     предотвращает синхронный рейкаст-спам при массовом спавне.
@@ -27,6 +27,13 @@
 //     текущая скорость вперёд < лимита. Velocity НЕ перезаписывается.
 //     Это позволяет HectonFluidEngine (течения) толкать рыбу быстрее
 //     собственного лимита, но сама рыба не превысит его.
+//   • RaycastNonAlloc вместо Physics.Raycast — строго Zero-GC policy.
+//   • Динамическая длина лучей: avoidanceRange + velocity × lookAheadFactor.
+//     Быстрая рыба (Escape) смотрит дальше и успевает среагировать.
+//   • Алгоритм "лучший свободный луч" вместо суммы нормалей.
+//     Корректно работает в узких проходах (пещеры, каньоны между скалами).
+//   • Поворот через Rigidbody.MoveRotation (физически корректный).
+//     Коллайдер всегда синхронизирован с визуалом.
 //
 // СОВМЕСТИМОСТЬ:
 //   На том же GameObject должен быть:
@@ -108,12 +115,21 @@ namespace Hecton8.AI
         [SerializeField] private float aggressiveTurnMultiplier = 2.5f;
 
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — OBSTACLE AVOIDANCE
+        //  INSPECTOR — OBSTACLE AVOIDANCE (v2.2)
         // ══════════════════════════════════════════════════════════
 
         [Header("── Obstacle Avoidance ────────────────────────")]
-        [Tooltip("Дальность рейкастов для обнаружения препятствий (метры).")]
+        [Tooltip("Базовая дальность рейкастов для обнаружения препятствий (метры). " +
+                 "К ней прибавляется velocity × lookAheadFactor.")]
         [SerializeField] private float avoidanceRange = 8f;
+
+        [Tooltip("Множитель скорости для удлинения лучей. " +
+                 "0.5 = при скорости 10 м/с луч удлиняется на 5м.")]
+        [SerializeField] private float lookAheadFactor = 0.5f;
+
+        [Tooltip("Максимальная длина луча (метры). Предотвращает чрезмерное " +
+                 "удлинение при высокой скорости.")]
+        [SerializeField] private float maxRayLength = 20f;
 
         [Tooltip("Максимальный угол веера рейкастов от forward (градусы). " +
                  "Общий угол = spreadAngle × 2.")]
@@ -213,6 +229,8 @@ namespace Hecton8.AI
         [SerializeField] private bool _debugIsSleeping;
         [SerializeField] private float _debugDistanceToPlayer;
         [SerializeField] private float _debugCurrentHealth;
+        [SerializeField] private float _debugCurrentRayLength;
+        [SerializeField] private int _debugBestRayIndex;
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -231,6 +249,12 @@ namespace Hecton8.AI
         /// синхронный рейкаст-шторм при массовом спавне 50+ рыб.
         /// </summary>
         private const float AVOIDANCE_UPDATE_INTERVAL = 0.15f;
+
+        /// <summary>
+        /// Размер буфера для RaycastNonAlloc.
+        /// 1 = нам нужен только ближайший хит на каждый луч.
+        /// </summary>
+        private const int RAYCAST_BUFFER_SIZE = 1;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE — zero GC
@@ -302,7 +326,7 @@ namespace Hecton8.AI
         /// <summary>Флаг: существо мертво (HP ≤ 0, ожидает деспавна).</summary>
         private bool _isDead;
 
-        // ── Obstacle Avoidance: pre-allocated + throttled ──
+        // ── Obstacle Avoidance: pre-allocated + throttled (v2.2) ──
 
         /// <summary>
         /// Кэшированные локальные направления рейкастов.
@@ -311,16 +335,22 @@ namespace Hecton8.AI
         private Vector3[] _rayDirectionsLocal;
 
         /// <summary>
-        /// Pre-allocated буфер для результатов рейкастов.
-        /// RaycastHit — struct. Переиспользуется каждый Tick.
+        /// Pre-allocated буфер для RaycastNonAlloc.
+        /// Один элемент — нам нужен только ближайший хит.
+        /// Переиспользуется каждый вызов ComputeAvoidanceVector.
+        ///
+        /// ВАЖНО: RaycastHit — struct. Array аллоцирован один раз в Awake.
+        /// RaycastNonAlloc записывает в него без аллокаций.
         /// </summary>
-        private RaycastHit[] _rayHits;
+        private RaycastHit[] _nonAllocBuffer;
 
         /// <summary>
-        /// Флаги попадания для каждого луча.
-        /// Позволяет избежать проверки distance==0 на RaycastHit.
+        /// Расстояния попадания для каждого луча.
+        /// -1 = луч свободен (ничего не задел).
+        /// >0 = дистанция до ближайшего хита.
+        /// Используется алгоритмом "лучший свободный луч" и Gizmos.
         /// </summary>
-        private bool[] _rayDidHit;
+        private float[] _rayHitDistances;
 
         /// <summary>
         /// Таймер троттлинга obstacle avoidance.
@@ -335,6 +365,25 @@ namespace Hecton8.AI
         /// Применяется каждый кадр, пересчитывается каждые AVOIDANCE_UPDATE_INTERVAL.
         /// </summary>
         private Vector3 _cachedAvoidance;
+
+        /// <summary>
+        /// Текущая динамическая длина лучей.
+        /// Вычисляется в ComputeAvoidanceVector, используется в Gizmos.
+        /// </summary>
+        private float _currentRayLength;
+
+        /// <summary>
+        /// Целевая ротация, вычисленная в Tick.
+        /// Применяется в FixedTick через Rigidbody.MoveRotation
+        /// для физически корректного поворота (коллайдер синхронизирован).
+        /// </summary>
+        private Quaternion _targetRotation;
+
+        /// <summary>
+        /// Флаг: целевая ротация обновлена в этом кадре.
+        /// Предотвращает применение устаревшей ротации в FixedTick.
+        /// </summary>
+        private bool _rotationDirty;
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -356,10 +405,10 @@ namespace Hecton8.AI
             // ── Pre-compute squared distances ──
             CacheSquaredDistances();
 
-            // ── Pre-allocate raycast arrays ──
+            // ── Pre-allocate raycast arrays (v2.2) ──
             _rayDirectionsLocal = new Vector3[RayCount];
-            _rayHits            = new RaycastHit[RayCount];
-            _rayDidHit          = new bool[RayCount];
+            _nonAllocBuffer     = new RaycastHit[RAYCAST_BUFFER_SIZE];
+            _rayHitDistances    = new float[RayCount];
 
             ComputeRayDirections();
 
@@ -485,8 +534,12 @@ namespace Hecton8.AI
             _attackCooldownTimer = 0f;
 
             // ── Сброс кэша avoidance ──
-            _cachedAvoidance = Vector3.zero;
-            _avoidanceTimer  = 0f;
+            _cachedAvoidance  = Vector3.zero;
+            _avoidanceTimer   = 0f;
+            _currentRayLength = avoidanceRange;
+
+            // ── Сброс ротации (v2.2) ──
+            _rotationDirty = false;
 
             // ── Сброс кэша survival системы игрока ──
             // (при следующем спавне игрок может быть другим объектом)
@@ -506,7 +559,8 @@ namespace Hecton8.AI
         ///   5. State behavior (обновление целевого направления).
         ///   6. Obstacle avoidance (троттлинг: пересчёт каждые 0.15с,
         ///      применение кэша каждый кадр).
-        ///   7. Smooth rotation (Slerp к желаемому направлению).
+        ///   7. Compute target rotation (применяется в FixedTick
+        ///      через MoveRotation для физической корректности).
         ///
         /// ZERO GC: все вычисления на struct'ах. Нет аллокаций.
         /// </summary>
@@ -579,12 +633,15 @@ namespace Hecton8.AI
             }
 
             // ══════════════════════════════════════════════════════
-            //  5. OBSTACLE AVOIDANCE (THROTTLED)
+            //  5. OBSTACLE AVOIDANCE (THROTTLED, v2.2)
             //
             //  Рейкасты пересчитываются каждые AVOIDANCE_UPDATE_INTERVAL.
             //  Между пересчётами используется кэшированный результат.
-            //  Это снижает CPU нагрузку на Physics.Raycast ~85%
+            //  Это снижает CPU нагрузку на Physics.RaycastNonAlloc ~85%
             //  при сохранении визуально плавного избегания препятствий.
+            //
+            //  v2.2: RaycastNonAlloc, динамическая длина лучей,
+            //  алгоритм "лучший свободный луч".
             // ══════════════════════════════════════════════════════
 
             _avoidanceTimer -= deltaTime;
@@ -600,7 +657,16 @@ namespace Hecton8.AI
             }
 
             // ══════════════════════════════════════════════════════
-            //  6. SMOOTH ROTATION
+            //  6. COMPUTE TARGET ROTATION (v2.2)
+            //
+            //  Вместо прямой записи transform.rotation мы вычисляем
+            //  целевую ротацию здесь и применяем через MoveRotation
+            //  в FixedTick. Это физически корректно — Rigidbody знает
+            //  о повороте, коллайдер синхронизирован.
+            //
+            //  Exponential Slerp: 1 - exp(-speed * dt) обеспечивает
+            //  frame-rate-independent плавность. При 30 FPS и 120 FPS
+            //  существо поворачивается с одинаковой визуальной скоростью.
             // ══════════════════════════════════════════════════════
 
             if (_desiredDirection.sqrMagnitude > 0.001f)
@@ -614,10 +680,12 @@ namespace Hecton8.AI
 
                 Quaternion targetRotation = Quaternion.LookRotation(_desiredDirection, Vector3.up);
 
-                _transform.rotation = Quaternion.Slerp(
+                _targetRotation = Quaternion.Slerp(
                     _transform.rotation,
                     targetRotation,
                     1f - Mathf.Exp(-currentTurnSpeed * deltaTime));
+
+                _rotationDirty = true;
             }
 
             UpdateDiagnostics(distSqrToPlayer);
@@ -628,12 +696,18 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Применяет физическую силу движения.
+        /// Применяет физическую силу движения и ротацию.
         /// Вызывается в FixedUpdate через GameTickManager.
         ///
         /// Разделение Tick/FixedTick:
         ///   • Tick — мозг (направление, состояния, рейкасты).
-        ///   • FixedTick — мышцы (AddForce, мягкое ограничение скорости).
+        ///   • FixedTick — мышцы (AddForce, MoveRotation).
+        ///
+        /// v2.2: РОТАЦИЯ ЧЕРЕЗ MoveRotation:
+        ///   Вместо прямой записи transform.rotation (которая является
+        ///   "телепортацией" с точки зрения физики) используем
+        ///   Rigidbody.MoveRotation. Rigidbody корректно интерполирует
+        ///   поворот, коллайдер остаётся синхронизированным с визуалом.
         ///
         /// МЯГКОЕ ОГРАНИЧЕНИЕ СКОРОСТИ:
         ///   Сила применяется ТОЛЬКО если текущая скорость существа
@@ -654,8 +728,21 @@ namespace Hecton8.AI
         /// </summary>
         public void FixedTick(float fixedDeltaTime)
         {
-            // Если спим, мертвы или в Idle — не прикладываем силу
-            if (_isSleeping || _isDead || _currentState == AIState.Idle)
+            // Если спим или мертвы — ничего не делаем
+            if (_isSleeping || _isDead)
+                return;
+
+            // ── Применяем ротацию через MoveRotation (v2.2) ──
+            // Физически корректный поворот: Rigidbody знает о нём,
+            // коллайдер синхронизирован, интерполяция работает.
+            if (_rotationDirty)
+            {
+                _rb.MoveRotation(_targetRotation);
+                _rotationDirty = false;
+            }
+
+            // Если в Idle — не прикладываем тягу (дрейф по инерции)
+            if (_currentState == AIState.Idle)
                 return;
 
             // ── Вычисляем силу и лимит скорости по состоянию ──
@@ -958,20 +1045,40 @@ namespace Hecton8.AI
         protected virtual void OnStateExit(AIState state) { }
 
         // ══════════════════════════════════════════════════════════
-        //  OBSTACLE AVOIDANCE
+        //  OBSTACLE AVOIDANCE (v2.2 — "ЛУЧШИЙ СВОБОДНЫЙ ЛУЧ")
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Вычисляет avoidance-вектор на основе веера рейкастов.
+        /// Вычисляет avoidance-вектор через алгоритм "лучший свободный луч".
         ///
-        /// АЛГОРИТМ:
-        ///   1. Пускаем 7 лучей из позиции существа по кэшированным
-        ///      направлениям (в мировых координатах через TransformDirection).
-        ///   2. Для каждого попадания — добавляем обратный вектор,
-        ///      взвешенный обратно пропорционально дистанции.
-        ///      Чем ближе препятствие, тем сильнее отталкивание.
-        ///   3. Результат — ненормализованный вектор отклонения.
-        ///      Нормализуется в вызывающем коде при blend с desired direction.
+        /// АЛГОРИТМ (v2.2):
+        ///   1. Вычисляем динамическую длину лучей:
+        ///      rayLength = clamp(avoidanceRange + speed × lookAheadFactor,
+        ///                        avoidanceRange, maxRayLength)
+        ///      → Быстрая рыба (Escape, 12 м/с) смотрит дальше (8+6=14м).
+        ///      → Медленная рыба (Wander, 3 м/с) смотрит ближе (8+1.5=9.5м).
+        ///
+        ///   2. Пускаем 7 лучей через RaycastNonAlloc (строго zero GC).
+        ///      Записываем дистанцию хита или -1 (свободен) в _rayHitDistances.
+        ///
+        ///   3. Если центральный луч (индекс 0) свободен → return Vector3.zero.
+        ///      Препятствий впереди нет — уклоняться незачем.
+        ///
+        ///   4. Если центральный заблокирован — ищем лучший боковой:
+        ///      • Приоритет 1: свободные лучи (distance = -1).
+        ///        Берём первый свободный — он ближе к forward (минимальный доворот).
+        ///      • Приоритет 2: лучи с максимальной дистанцией хита
+        ///        (больше пространства для манёвра).
+        ///
+        ///   5. Результат = мировое направление лучшего луча × urgency.
+        ///      Urgency = (1 - centerHitDist / rayLength). Ближе стена — сильнее доворот.
+        ///
+        /// ПОЧЕМУ НЕ СУММА НОРМАЛЕЙ (v2.1):
+        ///   В узком проходе (пещера, каньон между скалами MapMagic)
+        ///   нормали с двух стен компенсируют друг друга → вектор ≈ 0
+        ///   → рыба застревает, тычась носом в стену.
+        ///   "Лучший свободный луч" всегда находит выход, даже если
+        ///   свободно только одно направление.
         ///
         /// ТРОТТЛИНГ:
         ///   Этот метод вызывается НЕ каждый кадр, а каждые
@@ -980,46 +1087,158 @@ namespace Hecton8.AI
         ///   Снижение CPU нагрузки на Physics.Raycast ~85%.
         ///
         /// ZERO GC:
-        ///   • Кэшированные _rayDirectionsLocal (Vector3[]).
-        ///   • Pre-allocated _rayHits (RaycastHit[]).
-        ///   • Pre-allocated _rayDidHit (bool[]).
-        ///   • Physics.Raycast — zero GC (single hit, struct out).
-        ///   • Все вычисления — struct math.
+        ///   • RaycastNonAlloc → pre-allocated _nonAllocBuffer[1].
+        ///   • _rayHitDistances[7] — pre-allocated float array.
+        ///   • _rayDirectionsLocal[7] — pre-allocated Vector3 array.
+        ///   • TransformDirection — struct math, zero alloc.
+        ///   • Никаких List, LINQ, лямбд, замыканий.
         /// </summary>
         private Vector3 ComputeAvoidanceVector()
         {
-            Vector3 avoidance = Vector3.zero;
-            Vector3 position  = _transform.position;
+            Vector3 position = _transform.position;
+
+            // ═══════════════════════════════════════════════════
+            //  STEP 1: Динамическая длина лучей (v2.2)
+            //
+            //  Быстрая рыба в Escape-режиме (12 м/с) не успевает
+            //  среагировать на стену, если луч всего 8м.
+            //  С lookAheadFactor=0.5: 8 + 12*0.5 = 14м — достаточно.
+            // ═══════════════════════════════════════════════════
+
+            float speed = _rb.linearVelocity.magnitude;
+            float rayLength = avoidanceRange + speed * lookAheadFactor;
+
+            // Clamp: не меньше базы, не больше максимума
+            if (rayLength > maxRayLength) rayLength = maxRayLength;
+            if (rayLength < avoidanceRange) rayLength = avoidanceRange;
+
+            _currentRayLength = rayLength;
+
+            // ═══════════════════════════════════════════════════
+            //  STEP 2: Пускаем 7 лучей (RaycastNonAlloc)
+            //
+            //  RaycastNonAlloc записывает результат в pre-allocated
+            //  буфер _nonAllocBuffer[1]. Возвращает количество хитов
+            //  (0 или 1 при буфере размера 1).
+            //  ZERO GC: нет аллокации массива, RaycastHit — struct.
+            // ═══════════════════════════════════════════════════
 
             for (int i = 0; i < RayCount; i++)
             {
                 // Конвертируем локальное направление в мировое
                 Vector3 worldDir = _transform.TransformDirection(_rayDirectionsLocal[i]);
 
-                _rayDidHit[i] = UnityEngine.Physics.Raycast(
+                int hitCount = UnityEngine.Physics.RaycastNonAlloc(
                     position,
                     worldDir,
-                    out _rayHits[i],
-                    avoidanceRange,
+                    _nonAllocBuffer,
+                    rayLength,
                     obstacleMask,
                     QueryTriggerInteraction.Ignore);
 
-                if (_rayDidHit[i])
+                if (hitCount > 0)
                 {
-                    float hitDistance = _rayHits[i].distance;
-
-                    // Вес: обратно пропорционален расстоянию.
-                    // Ближе = сильнее отталкивание.
-                    // (1 - distance/range) даёт 1.0 при distance=0, 0.0 при distance=range.
-                    float weight = 1f - (hitDistance / avoidanceRange);
-
-                    // Отталкивающий вектор: нормаль поверхности × вес
-                    // Нормаль указывает ОТ препятствия — именно то, что нужно.
-                    avoidance += _rayHits[i].normal * weight;
+                    _rayHitDistances[i] = _nonAllocBuffer[0].distance;
+                }
+                else
+                {
+                    _rayHitDistances[i] = -1f; // Свободен
                 }
             }
 
-            return avoidance;
+            // ═══════════════════════════════════════════════════
+            //  STEP 3: Центральный луч свободен? → Нет проблем
+            //
+            //  Если впереди чисто — avoidance не нужен.
+            //  Существо продолжает плыть по _desiredDirection.
+            // ═══════════════════════════════════════════════════
+
+            if (_rayHitDistances[0] < 0f)
+            {
+#if UNITY_EDITOR
+                _debugBestRayIndex = -1;
+#endif
+                return Vector3.zero;
+            }
+
+            // ═══════════════════════════════════════════════════
+            //  STEP 4: Ищем лучший боковой луч
+            //
+            //  Критерий "лучший":
+            //    1. Свободный луч (distance = -1) всегда лучше
+            //       заблокированного.
+            //    2. Среди свободных — первый по порядку (ближе к
+            //       forward = минимальный доворот).
+            //    3. Если ВСЕ заблокированы — тот, у которого
+            //       distance максимальна (больше пространства).
+            //
+            //  Порядок лучей (из ComputeRayDirections):
+            //    [0] forward (центральный — уже проверен)
+            //    [1] вправо 15°  ← внутренняя пара (минимальный доворот)
+            //    [2] влево 15°
+            //    [3] вправо 30°  ← внешняя пара
+            //    [4] влево 30°
+            //    [5] вверх 22.5° ← вертикальные
+            //    [6] вниз 22.5°
+            // ═══════════════════════════════════════════════════
+
+            int bestIndex = -1;
+            float bestScore = -1f;
+
+            // Начинаем с 1 — пропускаем центральный (индекс 0)
+            for (int i = 1; i < RayCount; i++)
+            {
+                float dist = _rayHitDistances[i];
+
+                if (dist < 0f)
+                {
+                    // Свободный луч — лучший кандидат.
+                    // Берём первый свободный и прекращаем поиск.
+                    // (Лучи упорядочены: внутренние пары первыми,
+                    //  т.е. предпочитаем минимальный доворот.)
+                    bestIndex = i;
+                    break;
+                }
+
+                // Все заблокированы — ищем максимальную дистанцию
+                if (dist > bestScore)
+                {
+                    bestScore = dist;
+                    bestIndex = i;
+                }
+            }
+
+            // ═══════════════════════════════════════════════════
+            //  STEP 5: Формируем avoidance вектор
+            // ═══════════════════════════════════════════════════
+
+            if (bestIndex < 0)
+            {
+                // Все лучи заблокированы, даже боковые.
+                // Аварийный манёвр: разворот назад + вверх.
+                // Это крайне редкая ситуация (существо зажато в яме).
+#if UNITY_EDITOR
+                _debugBestRayIndex = -1;
+#endif
+                return (_transform.up - _transform.forward).normalized;
+            }
+
+            // Направление лучшего луча в мировых координатах
+            Vector3 bestDir = _transform.TransformDirection(_rayDirectionsLocal[bestIndex]);
+
+            // Вес avoidance: чем ближе центральный хит, тем сильнее уклонение.
+            // (1 - distance/rayLength) → 1.0 при distance=0, 0.0 при distance=rayLength.
+            float urgency = 1f - (_rayHitDistances[0] / rayLength);
+
+            // Масштабируем направление urgency-ем.
+            // Результат НЕ нормализуется здесь — нормализация в Tick
+            // после blend с _desiredDirection.
+
+#if UNITY_EDITOR
+            _debugBestRayIndex = bestIndex;
+#endif
+
+            return bestDir * urgency;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1170,11 +1389,14 @@ namespace Hecton8.AI
             _currentState        = AIState.Idle;
             _stateTimer          = Random.Range(idleTimeMin, idleTimeMax);
             _desiredDirection    = _transform.forward;
+            _targetRotation      = _transform.rotation;
+            _rotationDirty       = false;
             _currentHealth       = maxHealth;
             _attackCooldownTimer = 0f;
             _isDead              = false;
             _isSleeping          = false;
             _wanderTimer         = 0f;
+            _currentRayLength    = avoidanceRange;
 
             // ── Avoidance throttle: случайный начальный сдвиг ──
             _avoidanceTimer  = Random.Range(0f, AVOIDANCE_UPDATE_INTERVAL);
@@ -1186,9 +1408,13 @@ namespace Hecton8.AI
         ///
         /// Расположение: веер в горизонтальной + вертикальной плоскостях.
         ///   Луч 0: forward (центральный).
-        ///   Лучи 1-2: горизонтально влево/вправо (1/3 угла).
-        ///   Лучи 3-4: горизонтально влево/вправо (2/3 угла).
+        ///   Лучи 1-2: горизонтально вправо/влево (1/3 угла) — внутренняя пара.
+        ///   Лучи 3-4: горизонтально вправо/влево (2/3 угла) — внешняя пара.
         ///   Лучи 5-6: вертикально вверх/вниз (1/2 угла).
+        ///
+        /// Порядок важен (v2.2): алгоритм "лучший свободный луч"
+        /// предпочитает лучи с меньшим индексом при равных условиях,
+        /// т.е. минимальный доворот от forward.
         ///
         /// Направления нормализованы. Хранятся в локальном пространстве,
         /// конвертируются в мировое через TransformDirection в Tick.
@@ -1200,7 +1426,7 @@ namespace Hecton8.AI
             // Центральный луч
             _rayDirectionsLocal[0] = Vector3.forward;
 
-            // Горизонтальные — внутренняя пара
+            // Горизонтальные — внутренняя пара (минимальный доворот)
             _rayDirectionsLocal[1] = Quaternion.Euler(0f, step, 0f)  * Vector3.forward;
             _rayDirectionsLocal[2] = Quaternion.Euler(0f, -step, 0f) * Vector3.forward;
 
@@ -1290,6 +1516,7 @@ namespace Hecton8.AI
             _debugIsSleeping       = _isSleeping;
             _debugDistanceToPlayer = Mathf.Sqrt(distSqrToPlayer);
             _debugCurrentHealth    = _currentHealth;
+            _debugCurrentRayLength = _currentRayLength;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1324,29 +1551,45 @@ namespace Hecton8.AI
                 Gizmos.DrawWireSphere(transform.position, attackRange);
             }
 
-            // Рейкасты (только в Play Mode)
-            if (Application.isPlaying && _rayDirectionsLocal != null)
+            // Рейкасты (только в Play Mode, v2.2)
+            if (Application.isPlaying && _rayDirectionsLocal != null && _rayHitDistances != null)
             {
+                float drawLength = _currentRayLength > 0f ? _currentRayLength : avoidanceRange;
+
                 for (int i = 0; i < RayCount; i++)
                 {
                     Vector3 worldDir = transform.TransformDirection(_rayDirectionsLocal[i]);
 
-                    if (_rayDidHit != null && _rayDidHit[i])
+                    if (_rayHitDistances[i] >= 0f)
                     {
-                        // Попадание — красный
+                        // Попадание — красный до хита
                         Gizmos.color = Color.red;
                         Gizmos.DrawLine(transform.position,
-                                        transform.position + worldDir * _rayHits[i].distance);
+                                        transform.position + worldDir * _rayHitDistances[i]);
 
-                        Gizmos.color = Color.yellow;
-                        Gizmos.DrawSphere(_rayHits[i].point, 0.1f);
+                        // Лучший луч — подсвечиваем циан, остальные — жёлтым
+                        if (i == _debugBestRayIndex)
+                        {
+                            Gizmos.color = Color.cyan;
+                            Gizmos.DrawSphere(
+                                transform.position + worldDir * _rayHitDistances[i], 0.15f);
+                        }
+                        else
+                        {
+                            Gizmos.color = Color.yellow;
+                            Gizmos.DrawSphere(
+                                transform.position + worldDir * _rayHitDistances[i], 0.1f);
+                        }
                     }
                     else
                     {
-                        // Свободно — зелёный
-                        Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+                        // Свободно — лучший в циан, остальные зелёные
+                        Gizmos.color = (i == _debugBestRayIndex)
+                            ? Color.cyan
+                            : new Color(0f, 1f, 0f, 0.3f);
+
                         Gizmos.DrawLine(transform.position,
-                                        transform.position + worldDir * avoidanceRange);
+                                        transform.position + worldDir * drawLength);
                     }
                 }
             }
@@ -1362,21 +1605,23 @@ namespace Hecton8.AI
 
         private void OnValidate()
         {
-            if (swimForce       < 0f) swimForce       = 0f;
-            if (maxSpeed        < 0.1f) maxSpeed       = 0.1f;
-            if (maxEscapeSpeed  < maxSpeed) maxEscapeSpeed = maxSpeed;
-            if (maxAggressiveSpeed < maxSpeed) maxAggressiveSpeed = maxSpeed;
-            if (turnSpeed       < 0.1f) turnSpeed      = 0.1f;
-            if (avoidanceRange  < 0.5f) avoidanceRange = 0.5f;
-            if (spreadAngle     < 5f) spreadAngle      = 5f;
-            if (spreadAngle     > 85f) spreadAngle     = 85f;
-            if (wanderRadius    < 1f) wanderRadius     = 1f;
-            if (escapeDistance   < 1f) escapeDistance   = 1f;
-            if (sleepDistance    < escapeDistance) sleepDistance = escapeDistance * 2f;
-            if (attackDamage    < 0f) attackDamage     = 0f;
-            if (attackRange     < 0.1f) attackRange    = 0.1f;
-            if (attackCooldown  < 0.1f) attackCooldown = 0.1f;
-            if (maxHealth       < 1f) maxHealth        = 1f;
+            if (swimForce              < 0f)    swimForce              = 0f;
+            if (maxSpeed               < 0.1f)  maxSpeed               = 0.1f;
+            if (maxEscapeSpeed         < maxSpeed) maxEscapeSpeed      = maxSpeed;
+            if (maxAggressiveSpeed     < maxSpeed) maxAggressiveSpeed  = maxSpeed;
+            if (turnSpeed              < 0.1f)  turnSpeed              = 0.1f;
+            if (avoidanceRange         < 0.5f)  avoidanceRange         = 0.5f;
+            if (lookAheadFactor        < 0f)    lookAheadFactor        = 0f;
+            if (maxRayLength           < avoidanceRange) maxRayLength  = avoidanceRange;
+            if (spreadAngle            < 5f)    spreadAngle            = 5f;
+            if (spreadAngle            > 85f)   spreadAngle            = 85f;
+            if (wanderRadius           < 1f)    wanderRadius           = 1f;
+            if (escapeDistance          < 1f)    escapeDistance         = 1f;
+            if (sleepDistance           < escapeDistance) sleepDistance = escapeDistance * 2f;
+            if (attackDamage           < 0f)    attackDamage           = 0f;
+            if (attackRange            < 0.1f)  attackRange            = 0.1f;
+            if (attackCooldown         < 0.1f)  attackCooldown         = 0.1f;
+            if (maxHealth              < 1f)    maxHealth              = 1f;
 
             if (escapeSafeDistance < escapeDistance)
                 escapeSafeDistance = escapeDistance * 2f;

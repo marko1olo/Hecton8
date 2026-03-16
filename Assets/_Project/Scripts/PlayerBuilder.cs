@@ -2,30 +2,33 @@
 // HECTON-8 — PlayerBuilder.cs
 // Контроллер строительства модульной базы.
 //
-// РЕФАКТОРИНГ v2 — НАСЛЕДНИК PlayerTool:
-//   • Больше НЕ реализует ITickable. Управляется PlayerToolManager.
-//   • OnEquip()    → вход в режим строительства (спавн призрака).
-//   • OnUnequip()  → выход из режима строительства (деспавн призрака).
-//   • ToolTick(dt) → обновление позиции призрака (каждый кадр).
-//   • UsePrimary(dt)   → размещение модуля (ЛКМ / Fire1).
-//   • UseSecondary(dt) → вращение призрака на 90° (ПКМ / Fire2).
+// v3.0 — SOCKET SNAP SYSTEM:
+//   [ADD] Система магнитного прилипания к точкам стыковки (ModuleSocket).
+//   [ADD] Поиск сокетов через Physics.OverlapSphereNonAlloc (zero GC).
+//   [ADD] Гистерезис: snapRadius=2m, unsnapRadius=2.5m (без мерцания).
+//   [ADD] Плавный snap/unsnap через экспоненциальное сглаживание.
+//   [ADD] Занятые сокеты (IsOccupied) пропускаются при поиске.
+//   [ADD] При размещении: ближайший сокет помечается как occupied.
+//   [ADD] socketLayerMask для фильтрации (Layer "Sockets").
 //
-// АРХИТЕКТУРА:
-//   • PlayerTool (базовый класс) + IPoolable.
-//   • ObjectPoolManager — спавн/деспавн призраков и финальных модулей.
-//   • Ресурсы проверяются через InventoryGrid (1x1 ресурсы).
-//   • Frame-rate independent lerp для плавного следования.
+//   ПОВЕДЕНИЕ:
+//     1. Raycast из камеры → hitPoint на поверхности.
+//     2. OverlapSphereNonAlloc вокруг hitPoint на слое Sockets.
+//     3. Если найден свободный сокет ≤ snapRadius → snap mode:
+//        - Позиция призрака = socket.position
+//        - Ротация призрака = socket.rotation × yawOffset
+//     4. Если расстояние до снапнутого сокета > unsnapRadius → unsnap:
+//        - Плавный переход обратно к raycast-позиции.
+//     5. Гистерезис (snap=2m, unsnap=2.5m) предотвращает мерцание.
 //
-// ПЕРЕКЛЮЧЕНИЕ:
-//   • Игрок переключается на Builder через PlayerToolManager (кнопки 1-4).
-//   • Кнопка [B] УДАЛЕНА — весь ввод через систему инструментов.
-//   • [Escape] для отмены тоже удалён — снятие инструмента через
-//     PlayerToolManager (повторное нажатие слота = holster).
+//   ZERO GC:
+//     • OverlapSphereNonAlloc → предаллоцированный Collider[16].
+//     • TryGetComponent<ModuleSocket> → zero GC.
+//     • Все struct math, никаких List/LINQ/лямбд.
 //
-// ОГРАНИЧЕНИЯ MVP:
-//   • Стоимость постройки: только 1×1 ресурсы (Titanium, Glass, etc.)
-//   • Один активный модуль (activeBuildable). Меню выбора — будущее.
-//   • Нет системы snap-точек (будущее расширение).
+// ПРЕДЫДУЩИЕ ВЕРСИИ (сохранены):
+//   v2.0: PlayerTool inheritance, ghost pool lifecycle.
+//   v1.0: Basic placement.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -60,8 +63,7 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         [Header("── Building ──────────────────────────────────")]
-        [Tooltip("Активный модуль для строительства. " +
-                 "Будущее: заменится на меню выбора модулей.")]
+        [Tooltip("Активный модуль для строительства.")]
         [SerializeField] private BuildableData activeBuildable;
 
         [Tooltip("Максимальная дальность размещения (метры)")]
@@ -78,68 +80,98 @@ namespace Hecton8.Building
         [SerializeField] private float rotationStep = 90f;
 
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — AUDIO (optional)
+        //  INSPECTOR — SOCKET SNAP (v3.0)
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Socket Snap (v3.0) ────────────────────────")]
+        [Tooltip("Радиус обнаружения сокетов вокруг точки луча (метры).\n" +
+                 "Когда hitPoint ≤ snapRadius от свободного сокета → snap.")]
+        [SerializeField] private float snapRadius = 2f;
+
+        [Tooltip("Радиус отрыва от сокета (метры).\n" +
+                 "Должен быть > snapRadius для гистерезиса.\n" +
+                 "Когда hitPoint > unsnapRadius от снапнутого сокета → unsnap.")]
+        [SerializeField] private float unsnapRadius = 2.5f;
+
+        [Tooltip("Слой сокетов для OverlapSphereNonAlloc.\n" +
+                 "Создай Layer 'Sockets' в Project Settings → Tags & Layers.\n" +
+                 "На каждом ModuleSocket: SphereCollider(trigger) + Layer=Sockets.")]
+        [SerializeField] private LayerMask socketLayerMask;
+
+        [Tooltip("Скорость прилипания к сокету (Lerp factor per second).\n" +
+                 "Выше = резче snap. 20 = почти мгновенно.")]
+        [SerializeField] private float snapSpeed = 20f;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — AUDIO
         // ══════════════════════════════════════════════════════════
 
         [Header("── Audio ─────────────────────────────────────")]
-        [Tooltip("Источник звука для строительных эффектов")]
         [SerializeField] private AudioSource audioSource;
-
-        [Tooltip("Звук успешной постройки")]
         [SerializeField] private AudioClip buildSound;
-
-        [Tooltip("Звук ошибки (нет ресурсов, нельзя строить)")]
         [SerializeField] private AudioClip errorSound;
-
-        [Tooltip("Звук поворота призрака")]
         [SerializeField] private AudioClip rotateSound;
+
+        [Tooltip("Звук прилипания к сокету (опционально).")]
+        [SerializeField] private AudioClip snapSound;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Экземпляр призрака (из пула).</summary>
         private GameObject _currentGhostObj;
-
-        /// <summary>Компонент PlacementGhost на призраке.</summary>
         private PlacementGhost _currentGhost;
-
-        /// <summary>Кэшированный RaycastHit. Struct — zero GC.</summary>
         private RaycastHit _hit;
+        private float _ghostYawOffset;
+        private bool _secondaryWasPressed;
+        private bool _primaryWasPressed;
 
-        /// <summary>Кэшированный center-viewport вектор.</summary>
         private static readonly Vector3 ViewportCenter = new Vector3(0.5f, 0.5f, 0f);
 
-        /// <summary>
-        /// Дополнительный поворот призрака, накопленный через UseSecondary.
-        /// Сбрасывается при OnUnequip/OnDespawn.
-        /// </summary>
-        private float _ghostYawOffset;
+        // ══════════════════════════════════════════════════════════
+        //  SOCKET SNAP STATE (v3.0)
+        // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Защита от многократного вращения за один кадр.
-        /// UseSecondary вызывается каждый кадр при зажатой кнопке,
-        /// но вращение должно происходить однократно при нажатии.
+        /// Pre-allocated buffer for OverlapSphereNonAlloc.
+        /// 16 сокетов — покрывает даже хаб с 8 выходами.
+        /// Zero GC: массив создаётся один раз.
         /// </summary>
-        private bool _secondaryWasPressed;
+        private readonly Collider[] _socketBuffer = new Collider[16];
 
         /// <summary>
-        /// Защита от многократного размещения.
-        /// UsePrimary вызывается каждый кадр при зажатой кнопке.
+        /// true когда призрак "прилип" к сокету.
+        /// Используется для гистерезиса (snap/unsnap разные радиусы).
         /// </summary>
-        private bool _primaryWasPressed;
+        private bool _isSnapped;
+
+        /// <summary>
+        /// Transform сокета, к которому прилип призрак.
+        /// null когда не в snap-режиме.
+        /// Кэшируется для: позиции, ротации, и отметки occupied при размещении.
+        /// </summary>
+        private Transform _snappedSocketTransform;
+
+        /// <summary>
+        /// Кэшированный ModuleSocket компонент снапнутого сокета.
+        /// Используется для проверки IsOccupied и SetOccupied при размещении.
+        /// </summary>
+        private ModuleSocket _snappedSocket;
+
+        /// <summary>
+        /// Предыдущий snap-статус. Для edge detection (звук при snap/unsnap).
+        /// </summary>
+        private bool _wasSnapped;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Текущий активный модуль.</summary>
         public BuildableData ActiveBuildable => activeBuildable;
 
-        /// <summary>
-        /// Программная смена активного модуля.
-        /// Если инструмент экипирован — пересоздаёт призрак.
-        /// </summary>
+        /// <summary>Сейчас призрак прилип к сокету.</summary>
+        public bool IsSnapped => _isSnapped;
+
         public void SetActiveBuildable(BuildableData data)
         {
             if (data == null) return;
@@ -156,128 +188,65 @@ namespace Hecton8.Building
         }
 
         // ══════════════════════════════════════════════════════════
-        //  IPoolable — POOL LIFECYCLE
+        //  IPoolable
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Вызывается ObjectPoolManager при извлечении из пула.
-        /// Сбрасывает всё состояние строителя.
-        /// </summary>
         public override void OnSpawn()
         {
             base.OnSpawn();
-
-            _ghostYawOffset     = 0f;
-            _secondaryWasPressed = false;
-            _primaryWasPressed   = false;
+            ResetBuilderState();
         }
 
-        /// <summary>
-        /// Вызывается ObjectPoolManager при возврате в пул.
-        /// Гарантирует деспавн призрака.
-        /// </summary>
         public override void OnDespawn()
         {
-            // base.OnDespawn() вызовет OnUnequip() если IsEquipped
             DespawnGhost();
-
-            _ghostYawOffset      = 0f;
-            _secondaryWasPressed = false;
-            _primaryWasPressed   = false;
-
+            ResetBuilderState();
             base.OnDespawn();
         }
 
         // ══════════════════════════════════════════════════════════
-        //  TOOL LIFECYCLE — вызывается PlayerToolManager
+        //  TOOL LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Вход в режим строительства.
-        /// Вызывается PlayerToolManager при экипировке инструмента.
-        /// Спавнит призрак постройки.
-        /// </summary>
         public override void OnEquip()
         {
             base.OnEquip();
-
-            _ghostYawOffset      = 0f;
-            _secondaryWasPressed = false;
-            _primaryWasPressed   = false;
-
+            ResetBuilderState();
             SpawnGhost();
         }
 
-        /// <summary>
-        /// Выход из режима строительства.
-        /// Вызывается PlayerToolManager при снятии инструмента.
-        /// Деспавнит призрак постройки.
-        /// </summary>
         public override void OnUnequip()
         {
             DespawnGhost();
-
-            _ghostYawOffset      = 0f;
-            _secondaryWasPressed = false;
-            _primaryWasPressed   = false;
-
+            ResetBuilderState();
             base.OnUnequip();
         }
 
-        /// <summary>
-        /// Вызывается каждый кадр через PlayerToolManager.Tick().
-        /// Обновляет позицию призрака (плавное следование за взглядом).
-        ///
-        /// Также сбрасывает флаги однократного нажатия, если кнопки
-        /// были отпущены (для корректной работы UsePrimary/UseSecondary).
-        /// </summary>
         public override void ToolTick(float deltaTime)
         {
-            // ── Сброс флагов при отпускании кнопок ──
             if (!Input.GetButton("Fire1"))
                 _primaryWasPressed = false;
 
             if (!Input.GetButton("Fire2"))
                 _secondaryWasPressed = false;
 
-            // ── Обновление позиции призрака ──
             if (_currentGhostObj != null)
                 UpdateGhostPosition(deltaTime);
         }
 
-        /// <summary>
-        /// Основное действие: размещение модуля (ЛКМ / Fire1).
-        /// Вызывается каждый кадр, пока зажата кнопка.
-        /// Размещение происходит однократно при первом нажатии.
-        /// </summary>
         public override void UsePrimary(float deltaTime)
         {
-            // ── Защита от многократного размещения ──
-            if (_primaryWasPressed)
-                return;
-
+            if (_primaryWasPressed) return;
             _primaryWasPressed = true;
-
             TryPlaceModule();
         }
 
-        /// <summary>
-        /// Альтернативное действие: вращение призрака (ПКМ / Fire2).
-        /// Вызывается каждый кадр, пока зажата кнопка.
-        /// Поворот происходит однократно при первом нажатии.
-        /// </summary>
         public override void UseSecondary(float deltaTime)
         {
-            // ── Защита от многократного вращения ──
-            if (_secondaryWasPressed)
-                return;
-
+            if (_secondaryWasPressed) return;
             _secondaryWasPressed = true;
 
-            // ── Вращение призрака по оси Y ──
             _ghostYawOffset += rotationStep;
-
-            // Нормализация (0-360)
             if (_ghostYawOffset >= 360f)
                 _ghostYawOffset -= 360f;
 
@@ -285,12 +254,24 @@ namespace Hecton8.Building
         }
 
         // ══════════════════════════════════════════════════════════
-        //  GHOST MANAGEMENT — через ObjectPoolManager
+        //  PRIVATE — STATE RESET
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Спавнит призрак постройки из пула.
-        /// </summary>
+        private void ResetBuilderState()
+        {
+            _ghostYawOffset      = 0f;
+            _secondaryWasPressed = false;
+            _primaryWasPressed   = false;
+            _isSnapped           = false;
+            _wasSnapped          = false;
+            _snappedSocketTransform = null;
+            _snappedSocket       = null;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  GHOST MANAGEMENT
+        // ══════════════════════════════════════════════════════════
+
         private void SpawnGhost()
         {
             if (activeBuildable == null || activeBuildable.ghostPrefab == null)
@@ -299,7 +280,6 @@ namespace Hecton8.Building
                 return;
             }
 
-            // ── Начальная позиция призрака ──
             Vector3 spawnPos;
             if (buildAnchor != null)
             {
@@ -315,7 +295,6 @@ namespace Hecton8.Building
                 spawnPos = transform.position + Vector3.forward * buildDistance;
             }
 
-            // ── Spawn через пул (fallback: Instantiate) ──
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool != null)
             {
@@ -328,17 +307,12 @@ namespace Hecton8.Building
                     activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
             }
 
-            // ── Кэш компонента PlacementGhost ──
             if (_currentGhostObj != null)
             {
                 _currentGhostObj.TryGetComponent(out _currentGhost);
             }
         }
 
-        /// <summary>
-        /// Деспавнит призрак (возврат в пул).
-        /// Безопасно вызывать при отсутствии призрака.
-        /// </summary>
         private void DespawnGhost()
         {
             if (_currentGhostObj == null) return;
@@ -358,21 +332,30 @@ namespace Hecton8.Building
         }
 
         // ══════════════════════════════════════════════════════════
-        //  GHOST POSITIONING — Raycast + Smooth Follow
+        //  GHOST POSITIONING (v3.0: Socket Snap System)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// Обновляет позицию призрака каждый кадр.
         ///
-        /// Алгоритм:
-        ///   1. Raycast из центра камеры на surfaceMask.
-        ///   2. Если попал — целевая позиция = hit.point,
-        ///      ориентация по hit.normal + ghostYawOffset.
-        ///   3. Если промах — целевая позиция = buildAnchor или
-        ///      camera.forward × buildDistance.
-        ///   4. Плавная интерполяция (frame-rate independent).
+        /// v3.0 АЛГОРИТМ:
+        ///   1. Raycast из центра камеры → hitPoint.
+        ///   2. OverlapSphereNonAlloc вокруг hitPoint на socketLayerMask.
+        ///   3. Найти ближайший свободный ModuleSocket.
+        ///   4. ГИСТЕРЕЗИС:
+        ///      - Если НЕ снапнут и dist ≤ snapRadius → SNAP.
+        ///      - Если снапнут и dist > unsnapRadius → UNSNAP.
+        ///      - Между snapRadius и unsnapRadius → сохранять текущий статус.
+        ///   5. Если SNAP → целевая позиция = socket.position,
+        ///      целевая ротация = socket.rotation × yawOffset.
+        ///   6. Если НЕ SNAP → обычное поведение (raycast surface).
+        ///   7. Плавная интерполяция (exp smoothing).
         ///
-        /// Zero GC: struct Ray/RaycastHit, кэшированный ViewportCenter.
+        /// ZERO GC:
+        ///   • OverlapSphereNonAlloc → _socketBuffer[16] (pre-allocated).
+        ///   • TryGetComponent → zero GC.
+        ///   • Struct Ray, RaycastHit, Vector3, Quaternion — stack.
+        ///   • Никаких List, LINQ, лямбд, new.
         /// </summary>
         private void UpdateGhostPosition(float dt)
         {
@@ -383,20 +366,144 @@ namespace Hecton8.Building
             Vector3    targetPos;
             Quaternion targetRot;
 
-            if (UnityEngine.Physics.Raycast(ray, out _hit, buildDistance, surfaceMask,
-                                QueryTriggerInteraction.Ignore))
+            bool rayHit = UnityEngine.Physics.Raycast(
+                ray, out _hit, buildDistance, surfaceMask,
+                QueryTriggerInteraction.Ignore);
+
+            // ── Точка луча (для поиска сокетов и fallback) ──
+            Vector3 hitPoint = rayHit
+                ? _hit.point
+                : ray.origin + ray.direction * buildDistance;
+
+            // ═══════════════════════════════════════════════════
+            //  SOCKET SEARCH (v3.0)
+            //
+            //  OverlapSphereNonAlloc: ищет коллайдеры на слое Sockets
+            //  в радиусе вокруг hitPoint. Pre-allocated buffer → zero GC.
+            //
+            //  Радиус поиска = unsnapRadius (больший из двух) для того,
+            //  чтобы поймать сокет, от которого мы могли бы отрываться.
+            //  Фактическая проверка snap/unsnap — по дистанции ниже.
+            // ═══════════════════════════════════════════════════
+
+            float searchRadius = unsnapRadius; // ищем в большем радиусе
+            int socketCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                hitPoint,
+                searchRadius,
+                _socketBuffer,
+                socketLayerMask,
+                QueryTriggerInteraction.Collide // сокеты = trigger colliders
+            );
+
+            // ── Найти ближайший свободный сокет ──
+            float   bestDist      = float.MaxValue;
+            Transform bestTransform = null;
+            ModuleSocket bestSocket = null;
+
+            for (int i = 0; i < socketCount; i++)
             {
-                // ── Попали в поверхность: размещаем на ней ──
+                Collider col = _socketBuffer[i];
+                if (col == null) continue;
+
+                // ── Получаем ModuleSocket (zero GC) ──
+                if (!col.TryGetComponent(out ModuleSocket socket))
+                    continue;
+
+                // ── Пропускаем занятые ──
+                if (socket.IsOccupied)
+                    continue;
+
+                // ── Дистанция от hitPoint до сокета ──
+                float dist = Vector3.Distance(hitPoint, col.transform.position);
+
+                if (dist < bestDist)
+                {
+                    bestDist      = dist;
+                    bestTransform = col.transform;
+                    bestSocket    = socket;
+                }
+            }
+
+            // ── Очистка буфера (предотвращает удержание ссылок) ──
+            for (int i = 0; i < socketCount; i++)
+                _socketBuffer[i] = null;
+
+            // ═══════════════════════════════════════════════════
+            //  SNAP / UNSNAP DECISION (HYSTERESIS)
+            //
+            //  Два радиуса предотвращают мерцание:
+            //    snapRadius (2m):   hitPoint ≤ 2m от сокета → SNAP
+            //    unsnapRadius (2.5m): hitPoint > 2.5m от сокета → UNSNAP
+            //    Между 2m и 2.5m: сохраняем текущий статус.
+            //
+            //  Без гистерезиса: на расстоянии ровно 2m призрак
+            //  каждый кадр snap→unsnap→snap→unsnap (flicker).
+            // ═══════════════════════════════════════════════════
+
+            if (_isSnapped)
+            {
+                // ── Сейчас снапнут: проверяем условие ОТРЫВА ──
+                if (bestTransform == null || bestDist > unsnapRadius)
+                {
+                    // Отрываемся: нет сокетов поблизости ИЛИ слишком далеко
+                    _isSnapped = false;
+                    _snappedSocketTransform = null;
+                    _snappedSocket = null;
+                }
+                else
+                {
+                    // Обновляем: возможно, ближайший сокет сменился
+                    // (игрок навёл на другой сокет того же модуля)
+                    _snappedSocketTransform = bestTransform;
+                    _snappedSocket = bestSocket;
+                }
+            }
+            else
+            {
+                // ── Сейчас НЕ снапнут: проверяем условие ПРИЛИПАНИЯ ──
+                if (bestTransform != null && bestDist <= snapRadius)
+                {
+                    _isSnapped = true;
+                    _snappedSocketTransform = bestTransform;
+                    _snappedSocket = bestSocket;
+                }
+            }
+
+            // ── Звук snap/unsnap (edge detection) ──
+            if (_isSnapped && !_wasSnapped)
+            {
+                PlaySound(snapSound);
+            }
+            _wasSnapped = _isSnapped;
+
+            // ═══════════════════════════════════════════════════
+            //  TARGET POSITION / ROTATION
+            // ═══════════════════════════════════════════════════
+
+            if (_isSnapped && _snappedSocketTransform != null)
+            {
+                // ── SNAP MODE: позиция и ротация от сокета ──
+                targetPos = _snappedSocketTransform.position;
+
+                // Socket.forward = направление стыковки.
+                // YawOffset позволяет игроку вращать модуль
+                // вокруг оси стыковки (если нужно).
+                Quaternion socketRot = _snappedSocketTransform.rotation;
+                Quaternion yawRot    = Quaternion.Euler(0f, _ghostYawOffset, 0f);
+                targetRot = socketRot * yawRot;
+            }
+            else if (rayHit)
+            {
+                // ── SURFACE MODE: обычное поведение (raycast) ──
                 targetPos = _hit.point;
 
-                // Ориентация по нормали + пользовательский поворот
                 Quaternion surfaceRot = Quaternion.FromToRotation(Vector3.up, _hit.normal);
                 Quaternion yawRot     = Quaternion.Euler(0f, _ghostYawOffset, 0f);
                 targetRot = surfaceRot * yawRot;
             }
             else
             {
-                // ── Промах: призрак висит перед камерой ──
+                // ── FALLBACK: призрак висит перед камерой ──
                 if (buildAnchor != null)
                 {
                     targetPos = buildAnchor.position;
@@ -409,17 +516,26 @@ namespace Hecton8.Building
                 }
             }
 
-            // ── Frame-rate independent exponential smoothing ──
-            // 1 - exp(-speed × dt) даёт одинаковую скорость при любом fps
+            // ═══════════════════════════════════════════════════
+            //  SMOOTH INTERPOLATION
+            //
+            //  Используем разную скорость для snap и non-snap:
+            //    Snap: snapSpeed (быстрый, ~20) — "щёлк" к позиции.
+            //    Non-snap: ghostFollowSpeed (плавный, ~12) — обычное следование.
+            //
+            //  Exp smoothing: 1 - exp(-speed * dt) = frame-rate independent.
+            // ═══════════════════════════════════════════════════
+
             Transform t = _currentGhostObj.transform;
-            float lerpFactor = 1f - Mathf.Exp(-ghostFollowSpeed * dt);
+            float speed = _isSnapped ? snapSpeed : ghostFollowSpeed;
+            float lerpFactor = 1f - Mathf.Exp(-speed * dt);
 
             t.position = Vector3.Lerp(t.position, targetPos, lerpFactor);
             t.rotation = Quaternion.Slerp(t.rotation, targetRot, lerpFactor);
         }
 
         // ══════════════════════════════════════════════════════════
-        //  MODULE PLACEMENT
+        //  MODULE PLACEMENT (v3.0: socket occupied marking)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
@@ -428,11 +544,11 @@ namespace Hecton8.Building
         ///   2. Проверка ресурсов в инвентаре
         ///   3. Списание ресурсов
         ///   4. Деспавн призрака → спавн финального модуля
-        ///   5. Пересоздание призрака для продолжения строительства
+        ///   5. v3.0: если снапнуты к сокету → пометить его как occupied
+        ///   6. Пересоздание призрака для продолжения строительства
         /// </summary>
         private void TryPlaceModule()
         {
-            // ── Guard: нет призрака или нельзя строить ──
             if (_currentGhost == null || !_currentGhost.CanBuild)
             {
                 PlaySound(errorSound);
@@ -445,7 +561,6 @@ namespace Hecton8.Building
                 return;
             }
 
-            // ── Guard: недостаточно ресурсов ──
             if (!HasResources(activeBuildable))
             {
                 PlaySound(errorSound);
@@ -453,12 +568,16 @@ namespace Hecton8.Building
                 return;
             }
 
-            // ── Списание ресурсов ──
             ConsumeResources(activeBuildable);
 
-            // ── Запоминаем трансформ призрака ──
             Vector3    placePos = _currentGhostObj.transform.position;
             Quaternion placeRot = _currentGhostObj.transform.rotation;
+
+            // ── v3.0: Пометить сокет как занятый ──
+            if (_isSnapped && _snappedSocket != null)
+            {
+                _snappedSocket.SetOccupied(true);
+            }
 
             // ── Спавн финального модуля ──
             if (activeBuildable.finalPrefab != null)
@@ -476,28 +595,20 @@ namespace Hecton8.Building
 
             PlaySound(buildSound);
 
-            // ── Пересоздаём призрак для продолжения строительства ──
-            // (деспавн старого + спавн нового)
+            // ── Сброс snap-состояния ──
+            _isSnapped = false;
+            _snappedSocketTransform = null;
+            _snappedSocket = null;
+
+            // ── Пересоздаём призрак ──
             DespawnGhost();
             SpawnGhost();
         }
 
         // ══════════════════════════════════════════════════════════
-        //  RESOURCE CHECKING — сканирование InventoryGrid
+        //  RESOURCE CHECKING
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Проверяет наличие всех ресурсов для постройки.
-        ///
-        /// Сканирует InventoryGrid, считает ячейки с нужным ItemData.
-        /// Для 1×1 ресурсов: одна ячейка = один ресурс.
-        ///
-        /// ОГРАНИЧЕНИЕ: корректно работает только с 1×1 ресурсами.
-        /// Для multi-cell ресурсов потребуется anchor-tracking.
-        ///
-        /// Zero GC: for-циклы, ReferenceEquals, no LINQ.
-        /// Вызывается ОДНОКРАТНО при нажатии ЛКМ (не per-frame).
-        /// </summary>
         private bool HasResources(BuildableData data)
         {
             if (data.buildCost == null || data.buildCost.Count == 0) return true;
@@ -524,12 +635,11 @@ namespace Hecton8.Building
                         {
                             found++;
                             if (found >= required)
-                                goto nextCost; // ранний выход
+                                goto nextCost;
                         }
                     }
                 }
 
-                // Недостаточно данного ресурса
                 if (found < required)
                     return false;
 
@@ -539,16 +649,6 @@ namespace Hecton8.Building
             return true;
         }
 
-        /// <summary>
-        /// Списывает ресурсы из инвентаря.
-        ///
-        /// Сканирует сетку, находит ячейки с нужным ItemData,
-        /// удаляет через PlayerInventory.RemoveItem (с пересчётом веса).
-        ///
-        /// ВАЖНО: вызывать ТОЛЬКО после успешного HasResources().
-        ///
-        /// ОГРАНИЧЕНИЕ: корректно работает только с 1×1 ресурсами.
-        /// </summary>
         private void ConsumeResources(BuildableData data)
         {
             if (data.buildCost == null) return;
@@ -572,7 +672,6 @@ namespace Hecton8.Building
                     {
                         if (ReferenceEquals(grid.GetCell(x, y), cost.item))
                         {
-                            // RemoveItem обновляет TotalWeight и survival
                             inventory.RemoveItem(cost.item, x, y);
                             remaining--;
                         }
@@ -601,6 +700,9 @@ namespace Hecton8.Building
             if (buildDistance     < 1f) buildDistance     = 1f;
             if (ghostFollowSpeed < 1f) ghostFollowSpeed = 1f;
             if (rotationStep     < 1f) rotationStep     = 1f;
+            if (snapRadius       < 0.1f) snapRadius     = 0.1f;
+            if (unsnapRadius     <= snapRadius) unsnapRadius = snapRadius + 0.5f;
+            if (snapSpeed        < 1f) snapSpeed        = 1f;
         }
 
         private void OnDrawGizmosSelected()
@@ -610,6 +712,19 @@ namespace Hecton8.Building
             // Визуализация дальности строительства
             Gizmos.color = new Color(0f, 1f, 0.5f, 0.15f);
             Gizmos.DrawWireSphere(playerCamera.transform.position, buildDistance);
+
+            // Визуализация snap-зоны (только в Play Mode при наличии призрака)
+            if (Application.isPlaying && _currentGhostObj != null)
+            {
+                if (_isSnapped && _snappedSocketTransform != null)
+                {
+                    // Snap active — зелёная линия к сокету
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawLine(_currentGhostObj.transform.position,
+                                    _snappedSocketTransform.position);
+                    Gizmos.DrawWireSphere(_snappedSocketTransform.position, 0.2f);
+                }
+            }
         }
 #endif
     }
