@@ -28,16 +28,73 @@ namespace Hecton8.Items
 
         // ─────────────────────── Cached ──────────────────────────
         private InteractionHighlighter _highlighter;
+        private Rigidbody _rb;
 
         // ═════════════════════════════════════════════════════════
         private void Awake()
         {
             _highlighter = GetComponent<InteractionHighlighter>();
+            _rb = GetComponent<Rigidbody>();
 
             if (itemData == null)
                 Debug.LogError($"[HectonItem] ItemData не назначен на {gameObject.name}!", this);
         }
+                // ─────────────────────── Physics Sleep (v3.0) ────────────
+        // When loot is spawned (scattered from ResourceNode), it has
+        // Rigidbody with impulse force. After settling on cave floor,
+        // we force-sleep the Rigidbody to prevent perpetual micro-physics
+        // updates on uneven voxel mesh surfaces.
+        //
+        // Uses Unity 6 Awaitable — pooled, zero GC, auto-cancelled
+        // via destroyCancellationToken when object is despawned/destroyed.
 
+        private void OnEnable()
+        {
+            if (_rb != null)
+            {
+                // Wake up in case it was sleeping from previous pool cycle
+                _rb.WakeUp();
+
+                // Fire and forget — auto-cancelled if despawned before 2s
+                _ = SettleAndSleepAsync();
+            }
+        }
+
+        /// <summary>
+        /// Waits 2 seconds, then force-sleeps Rigidbody if velocity is near zero.
+        /// If the object is still moving (player kicked it, water current), retries once.
+        ///
+        /// Awaitable is pooled by Unity 6 runtime — zero heap allocation.
+        /// destroyCancellationToken auto-cancels if GameObject is destroyed/despawned.
+        /// </summary>
+        private async Awaitable SettleAndSleepAsync()
+        {
+            try
+            {
+                // Wait for initial scatter impulse to settle
+                await Awaitable.WaitForSecondsAsync(2f, destroyCancellationToken);
+
+                if (_rb == null) return;
+
+                if (_rb.linearVelocity.sqrMagnitude < 0.01f)
+                {
+                    _rb.Sleep();
+                    return;
+                }
+
+                // Still moving — wait one more second and try again
+                await Awaitable.WaitForSecondsAsync(1f, destroyCancellationToken);
+
+                if (_rb != null && _rb.linearVelocity.sqrMagnitude < 0.01f)
+                {
+                    _rb.Sleep();
+                }
+            }
+            catch (System.OperationCanceledException)
+            {
+                // Object was despawned/destroyed before settling — normal, ignore
+            }
+        }
         // ─────────────────────── Public API ──────────────────────
 
         /// <summary>

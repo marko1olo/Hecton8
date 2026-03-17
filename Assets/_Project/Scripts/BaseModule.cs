@@ -146,7 +146,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioClip floodClip;
         [SerializeField] private AudioClip drainClip;
         [SerializeField] private AudioClip deconstructClip;
-
+        [Header("── Life Support ──────────────────────────────")]
+        [Tooltip("Oxygen refill rate (units per second) when player is inside,\n" +
+                 "module is powered, and not flooded.\n" +
+                 "15 = full O2 tank (~100 units) refilled in ~7 seconds.")]
+        [SerializeField] private float oxygenRefillRate = 15f;
         [Header("── Power Fallback ────────────────────────────")]
         [Tooltip("Fallback power draw, если BuildableData / ModuleMarker отсутствуют.")]
         [SerializeField] private float fallbackPowerRating = -10f;
@@ -184,7 +188,14 @@ namespace Hecton8.Gameplay
         /// одновременно разбирают модуль в будущем мультиплеере).
         /// </summary>
         private bool _isDeconstructing;
+        // ── Life Support State ──
 
+        /// <summary>
+        /// Cached reference to player's survival system.
+        /// Set when player enters interior trigger, cleared on exit.
+        /// Null = player is not inside this module.
+        /// </summary>
+        private HectonSurvivalSystem _trackedPlayerSurvival;
         // ══════════════════════════════════════════════════════════
         //  INTERIOR ZONE — TRACKED OBJECTS
         // ══════════════════════════════════════════════════════════
@@ -318,6 +329,7 @@ namespace Hecton8.Gameplay
             SetLightsEnabled(true);
 
             _isDeconstructing = false;
+            _trackedPlayerSurvival = null;
 
             ReleaseAllTrackedObjects();
         }
@@ -335,6 +347,20 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SlowTick()
         {
+            // ── Life Support: O2 refill ──
+            // Conditions: player inside + powered + not flooded.
+            // Runs BEFORE power check so we can skip everything else
+            // if power is off, but still need the player-inside check
+            // to be evaluated every tick.
+            if (_trackedPlayerSurvival != null && _hasPower && !isFlooded)
+            {
+                _trackedPlayerSurvival.RefillOxygen(oxygenRefillRate * SLOW_TICK_DT);
+            }
+            // v3.0: Notify HUD of module entry  . IS THIS FRAGMENT LOCATED RIGHT, IS IT OK? CHECK PLS
+            if (other.CompareTag("Player"))
+            {
+                ModuleStatusEvents.NotifyEnter(this);
+            }
             if (!_hasPower)
                 return;
 
@@ -397,6 +423,17 @@ namespace Hecton8.Gameplay
         {
             if (other == null) return;
 
+            // ── Life Support: detect player entry ──
+            // CompareTag is zero GC (no string allocation).
+            // Player check runs BEFORE BuoyancyObject check —
+            // player may or may not have BuoyancyObject,
+            // but life support must work regardless.
+            if (other.CompareTag("Player") && _trackedPlayerSurvival == null)
+            {
+                other.TryGetComponent(out _trackedPlayerSurvival);
+            }
+
+            // ── Interior Zone: BuoyancyObject tracking ──
             if (!other.TryGetComponent(out BuoyancyObject buoyancy))
                 return;
 
@@ -418,6 +455,17 @@ namespace Hecton8.Gameplay
         {
             if (other == null) return;
 
+            // ── Life Support: detect player exit ──
+            if (other.CompareTag("Player"))
+            {
+                _trackedPlayerSurvival = null;
+            }
+            // v3.0: Notify HUD of module exit  | is this fragment located right? analyze
+            if (other.CompareTag("Player"))
+            {
+                ModuleStatusEvents.NotifyExit(this);
+            }
+            // ── Interior Zone: BuoyancyObject tracking ──
             int key = other.GetInstanceID();
 
             if (_trackedObjects.TryGetValue(key, out BuoyancyObject buoyancy))

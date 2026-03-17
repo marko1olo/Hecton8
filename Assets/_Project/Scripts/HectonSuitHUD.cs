@@ -2,32 +2,30 @@
 // HECTON-8 — HectonSuitHUD.cs
 // Sci-fi костюмный HUD через Shapes (Immediate Mode).
 //
-// v2.0 — ZERO-GC STRING CACHE:
-//   • Три статических пре-аллоцированных массива строк:
-//       PercentStrings[101]  — "0 %" .. "100 %"
-//       DepthStrings[5001]   — "DEPTH: 0 m" .. "DEPTH: 5000 m"
-//       PressureStrings[501] — "ATM: 0 atm" .. "ATM: 500 atm"
-//   • HandleOxygen/Energy/Integrity — lookup из PercentStrings.
-//   • HandleDepth — lookup из DepthStrings. Zero StringBuilder.
-//   • HandlePressure — lookup из PressureStrings. Zero StringBuilder.
-//   • DrawDepthScale tick labels — lookup из IntStrings[5001].
-//   • StringBuilder остаётся ТОЛЬКО для:
-//       - UpdateTimeString (1 раз/сек, допустимо).
-//       - Corrupt/Glitch (редко, по таймеру ~каждые 5-10 сек).
-//   • Суммарная экономия: ~60 string аллокаций/сек при движении → 0.
+// v3.0 — MODULE STATUS PANEL:
+//   [ADD] ModuleStatusPanel — показывает статус текущего BaseModule:
+//         питание (HasPower), затопление (IsFlooded), O2 (IsLifeSupport).
+//   [ADD] ModuleStatusEvents.cs интеграция — подписка на OnModuleEnter/Exit.
+//   [ADD] Pre-allocated module status strings (Zero GC).
+//   [ADD] DrawModulePanel() — нижняя правая панель с иконками и статусом.
 //
-// ПАМЯТЬ:
-//   PercentStrings:  101 строк × ~10 chars = ~2 KB
-//   DepthStrings:    5001 строк × ~16 chars = ~160 KB
-//   PressureStrings: 501 строк × ~14 chars  = ~14 KB
-//   IntStrings:      5001 строк × ~5 chars  = ~50 KB
-//   ИТОГО: ~226 KB одноразовая аллокация в static ctor.
-//   На MX350 (2GB RAM): 0.01% — ничтожно.
+// v2.0 — ZERO-GC STRING CACHE (preserved):
+//   • PercentStrings[101], DepthStrings[5001], PressureStrings[501], IntStrings[5001]
+//   • ~226 KB one-time allocation. Zero GC at runtime.
+//
+// PRESERVED FROM v2.0:
+//   ✓ CornerGrid, CornerBrackets, LeftPanel, RightPanel
+//   ✓ ArcIndicators, DepthScale, TimeDisplay, StatusBar
+//   ✓ InteractPrompt, CriticalOverlay
+//   ✓ All event handlers (Oxygen, Energy, Depth, Integrity, Pressure)
+//   ✓ Digital Noise / Glitch coroutine
+//   ✓ ImmediateModeShapeDrawer pattern
 // ============================================================================
 
 using System;
 using System.Collections;
 using System.Text;
+using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Shapes;
 using TMPro;
@@ -40,68 +38,41 @@ using Random = UnityEngine.Random;
 public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 {
     // ══════════════════════════════════════════════════════════════════
-    //  STATIC PRE-ALLOCATED STRING CACHE (v2.0)
+    //  STATIC PRE-ALLOCATED STRING CACHE
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>Max depth in game (meters). Defines DepthStrings array size.</summary>
-    private const int MaxDepth = 5000;
-
-    /// <summary>Max pressure in game (atm). Defines PressureStrings array size.</summary>
+    private const int MaxDepth    = 5000;
     private const int MaxPressure = 500;
 
-    /// <summary>
-    /// Pre-allocated percent strings: "0 %" .. "100 %".
-    /// Indexed by integer percent [0..100].
-    /// One-time allocation in static ctor. Zero GC at runtime.
-    /// </summary>
+    public  static readonly string[] IntStrings;
     private static readonly string[] PercentStrings;
-
-    /// <summary>
-    /// Pre-allocated depth strings: "DEPTH: 0 m" .. "DEPTH: 5000 m".
-    /// Indexed by integer depth [0..5000].
-    /// One-time allocation in static ctor. Zero GC at runtime.
-    /// </summary>
     private static readonly string[] DepthStrings;
-
-    /// <summary>
-    /// Pre-allocated pressure strings: "ATM: 0 atm" .. "ATM: 500 atm".
-    /// Indexed by integer pressure [0..500].
-    /// One-time allocation in static ctor. Zero GC at runtime.
-    /// </summary>
     private static readonly string[] PressureStrings;
 
-    /// <summary>
-    /// Pre-allocated integer-to-string: "0" .. "5000".
-    /// Used for depth scale tick labels. Eliminates StringBuilder
-    /// in DrawDepthScale hot path (~5-10 labels per frame).
-    /// </summary>
-    private static readonly string[] IntStrings;
+    // Module status strings — pre-allocated, zero GC
+    private static readonly string STR_MODULE_POWERED    = "POWERED";
+    private static readonly string STR_MODULE_NO_POWER   = "NO POWER";
+    private static readonly string STR_MODULE_DRY        = "DRY";
+    private static readonly string STR_MODULE_FLOODED    = "FLOODED";
+    private static readonly string STR_MODULE_O2_ACTIVE  = "O2 ACTIVE";
+    private static readonly string STR_MODULE_O2_OFFLINE = "O2 OFFLINE";
+    private static readonly string STR_MODULE_LABEL      = "BASE MODULE";
+    private static readonly string STR_NO_MODULE         = "EXTERIOR";
 
-    /// <summary>
-    /// Static constructor. Runs once per domain load.
-    /// Allocates all string caches. ~226 KB total.
-    /// After this — zero string allocations in HandleDepth,
-    /// HandlePressure, HandleOxygen, HandleEnergy, HandleIntegrity,
-    /// and DrawDepthScale.
-    /// </summary>
     static HectonSuitHUD()
     {
-        // ── Percent: "0 %" .. "100 %" ──
         PercentStrings = new string[101];
         for (int i = 0; i <= 100; i++)
             PercentStrings[i] = $"{i} %";
 
-        // ── Depth: "DEPTH: 0 m" .. "DEPTH: 5000 m" ──
         DepthStrings = new string[MaxDepth + 1];
         for (int i = 0; i <= MaxDepth; i++)
             DepthStrings[i] = $"DEPTH: {i} m";
 
-        // ── Pressure: "ATM: 0 atm" .. "ATM: 500 atm" ──
         PressureStrings = new string[MaxPressure + 1];
         for (int i = 0; i <= MaxPressure; i++)
             PressureStrings[i] = $"ATM: {i} atm";
 
-        // ── IntStrings: "0" .. "5000" (for depth scale tick labels) ──
         IntStrings = new string[MaxDepth + 1];
         for (int i = 0; i <= MaxDepth; i++)
             IntStrings[i] = i.ToString();
@@ -113,11 +84,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
     [Header("── Core ──────────────────────────────────────────")]
     [SerializeField] private HectonSurvivalSystem survival;
-
-    [Tooltip("Камера HUD_Render_Camera, к которой привязана отрисовка")]
     [SerializeField] private Camera hudCamera;
-
-    [Tooltip("Шрифт TMP для Draw.Text (обязательно назначить!)")]
     [SerializeField] private TMP_FontAsset hudFont;
 
     // ══════════════════════════════════════════════════════════════════
@@ -125,22 +92,21 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     // ══════════════════════════════════════════════════════════════════
 
     [Header("── Color Coding ──────────────────────────────────")]
-    [ColorUsage(true, true)]
-    [SerializeField] private Color normalColor    = new Color(0f, 0.898f, 1f, 1f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color warningColor   = new Color(1f, 0.878f, 0f, 1f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color criticalColor  = new Color(1f, 0.384f, 0f, 1f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color frameColor     = new Color(0f, 0.6f, 0.8f, 0.6f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color gridColor      = new Color(0f, 0.5f, 0.7f, 0.15f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color depthScaleColor = new Color(0f, 0.8f, 1f, 0.4f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color textDimColor   = new Color(0f, 0.7f, 0.9f, 0.5f);
-    [ColorUsage(true, true)]
-    [SerializeField] private Color bgPanelColor   = new Color(0f, 0.05f, 0.1f, 0.25f);
+    [ColorUsage(true, true)] [SerializeField] private Color normalColor     = new Color(0f, 0.898f, 1f, 1f);
+    [ColorUsage(true, true)] [SerializeField] private Color warningColor    = new Color(1f, 0.878f, 0f, 1f);
+    [ColorUsage(true, true)] [SerializeField] private Color criticalColor   = new Color(1f, 0.384f, 0f, 1f);
+    [ColorUsage(true, true)] [SerializeField] private Color frameColor      = new Color(0f, 0.6f, 0.8f, 0.6f);
+    [ColorUsage(true, true)] [SerializeField] private Color gridColor       = new Color(0f, 0.5f, 0.7f, 0.15f);
+    [ColorUsage(true, true)] [SerializeField] private Color depthScaleColor = new Color(0f, 0.8f, 1f, 0.4f);
+    [ColorUsage(true, true)] [SerializeField] private Color textDimColor    = new Color(0f, 0.7f, 0.9f, 0.5f);
+    [ColorUsage(true, true)] [SerializeField] private Color bgPanelColor    = new Color(0f, 0.05f, 0.1f, 0.25f);
+
+    // Module status colors
+    [Header("── Module Status Colors ──────────────────────────")]
+    [ColorUsage(true, true)] [SerializeField] private Color modulePoweredColor = new Color(0f, 1f, 0.4f, 1f);
+    [ColorUsage(true, true)] [SerializeField] private Color moduleFloodedColor = new Color(0.2f, 0.5f, 1f, 1f);
+    [ColorUsage(true, true)] [SerializeField] private Color moduleOfflineColor = new Color(1f, 0.384f, 0f, 1f);
+    [ColorUsage(true, true)] [SerializeField] private Color moduleNeutralColor = new Color(0f, 0.6f, 0.8f, 0.6f);
 
     // ══════════════════════════════════════════════════════════════════
     //  INSPECTOR — LAYOUT
@@ -162,23 +128,18 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     [SerializeField] private float pulsePeriod = 1.2f;
 
     [Header("── Digital Noise ─────────────────────────────────")]
-    [SerializeField, Range(3f, 15f)]    private float noiseMinInterval = 5f;
-    [SerializeField, Range(5f, 20f)]    private float noiseMaxInterval = 10f;
-    [SerializeField, Range(0.05f, 0.3f)] private float noiseDuration  = 0.1f;
+    [SerializeField, Range(3f, 15f)]     private float noiseMinInterval = 5f;
+    [SerializeField, Range(5f, 20f)]     private float noiseMaxInterval = 10f;
+    [SerializeField, Range(0.05f, 0.3f)] private float noiseDuration    = 0.1f;
 
     // ══════════════════════════════════════════════════════════════════
     //  INSPECTOR — INTERACT PROMPT
     // ══════════════════════════════════════════════════════════════════
 
     [Header("── Interact Prompt ───────────────────────────────")]
-    [Tooltip("Полуширина прицельной рамки в пикселях")]
     [SerializeField] private float promptBracketHalfW = 120f;
-
-    [Tooltip("Полувысота прицельной рамки в пикселях")]
     [SerializeField] private float promptBracketHalfH = 26f;
-
-    [Tooltip("Длина «плеча» угловой скобки")]
-    [SerializeField] private float promptBracketArm = 18f;
+    [SerializeField] private float promptBracketArm   = 18f;
 
     // ══════════════════════════════════════════════════════════════════
     //  THRESHOLDS
@@ -188,7 +149,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private const float CriticalThreshold = 0.15f;
 
     // ══════════════════════════════════════════════════════════════════
-    //  RUNTIME STATE
+    //  RUNTIME STATE — SURVIVAL
     // ══════════════════════════════════════════════════════════════════
 
     private float _oxygenNorm    = 1f;
@@ -215,17 +176,23 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private float _depthScaleTarget;
 
     // ══════════════════════════════════════════════════════════════════
-    //  INTERACT PROMPT STATE
+    //  RUNTIME STATE — MODULE STATUS (v3.0)
     // ══════════════════════════════════════════════════════════════════
 
-    private string _interactPromptText;
+    /// <summary>Current module player is inside. Null = exterior.</summary>
+    private BaseModule _currentModule;
+
+    /// <summary>Cached module state — updated every frame in LateUpdate.</summary>
+    private bool _moduleHasPower;
+    private bool _moduleIsFlooded;
+    private bool _moduleIsLifeSupport;
+    private bool _playerInsideModule;
+
+    /// <summary>Module panel fade [0..1]. Animates in/out on enter/exit.</summary>
+    private float _modulePanelAlpha;
 
     // ══════════════════════════════════════════════════════════════════
-    //  ZERO-GC STRING CACHE (instance — v2.0: reduced role)
-    //
-    //  v2.0: _o2Str, _energyStr, _integrityStr, _depthStr, _pressureStr
-    //  теперь указывают на элементы статических массивов.
-    //  Никаких new string — только переприсвоение ссылки.
+    //  RUNTIME STATE — STRINGS
     // ══════════════════════════════════════════════════════════════════
 
     private string _o2Str        = "100 %";
@@ -235,25 +202,14 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private string _pressureStr  = "ATM: 0 atm";
     private string _timeStr      = "00:00:00";
 
+    private string _interactPromptText;
+
+    // ══════════════════════════════════════════════════════════════════
+    //  GLITCH
+    // ══════════════════════════════════════════════════════════════════
+
     private const int SlotCount = 5;
     private readonly string[] _glitchOverlay = new string[SlotCount];
-
-    /// <summary>
-    /// StringBuilder — used ONLY for:
-    ///   1. UpdateTimeString (1 call/sec — acceptable).
-    ///   2. Corrupt/Glitch (rare, every 5-10 sec — acceptable).
-    /// NOT used in HandleDepth/HandlePressure/HandleOxygen etc.
-    /// </summary>
-    private readonly StringBuilder _sb       = new StringBuilder(64);
-    private readonly StringBuilder _sbGlitch = new StringBuilder(64);
-
-    private int _lastSecond = -1;
-
-    private const int GridLinesPerCorner = 5;
-
-    // ══════════════════════════════════════════════════════════════════
-    //  GLITCH GLYPHS
-    // ══════════════════════════════════════════════════════════════════
 
     private static readonly char[] Glyphs =
     {
@@ -261,19 +217,21 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         '+', '=', '<', '>', '/', ':', '*'
     };
 
-    // ══════════════════════════════════════════════════════════════════
-    //  COROUTINE HANDLE
-    // ══════════════════════════════════════════════════════════════════
-
-    private Coroutine _noiseHandle;
+    private readonly StringBuilder _sb       = new StringBuilder(64);
+    private readonly StringBuilder _sbGlitch = new StringBuilder(64);
+    private int _lastSecond = -1;
+    private const int GridLinesPerCorner = 5;
 
     // ══════════════════════════════════════════════════════════════════
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════════
 
+    private Coroutine _noiseHandle;
+
     public override void OnEnable()
     {
         base.OnEnable();
+
         if (hudCamera == null)
             hudCamera = GetComponent<Camera>();
 
@@ -282,6 +240,10 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         _noiseHandle = StartCoroutine(NoiseLoop());
 
         InteractionEvents.OnHoverChanged += HandleHoverChanged;
+
+        // v3.0: Subscribe to module zone events
+        ModuleStatusEvents.OnModuleEnter += HandleModuleEnter;
+        ModuleStatusEvents.OnModuleExit  += HandleModuleExit;
     }
 
     public override void OnDisable()
@@ -299,11 +261,18 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         _integrityCritical = false;
 
         InteractionEvents.OnHoverChanged -= HandleHoverChanged;
-        _interactPromptText = null;
+
+        // v3.0: Unsubscribe module events
+        ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
+        ModuleStatusEvents.OnModuleExit  -= HandleModuleExit;
+
+        _currentModule = null;
+        _playerInsideModule = false;
+        _modulePanelAlpha = 0f;
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  URP ENTRY POINT — ImmediateModeShapeDrawer
+    //  URP ENTRY POINT
     // ══════════════════════════════════════════════════════════════════
 
     public override void DrawShapes(Camera cam)
@@ -317,9 +286,38 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         _pulseTimer += Time.deltaTime / pulsePeriod;
         if (_pulseTimer > 1f) _pulseTimer -= 1f;
 
-        _depthScaleOffset = Mathf.Lerp(_depthScaleOffset, _depthScaleTarget, Time.deltaTime * 3f);
+        _depthScaleOffset = Mathf.Lerp(
+            _depthScaleOffset, _depthScaleTarget, Time.deltaTime * 3f);
 
         UpdateTimeString();
+
+        // v3.0: Poll module state + animate panel alpha
+        UpdateModuleState();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  MODULE STATE UPDATE (v3.0)
+    // ══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Called every LateUpdate. Reads module state properties — no GC.
+    /// Animates panel fade in/out.
+    /// </summary>
+    private void UpdateModuleState()
+    {
+        if (_currentModule != null)
+        {
+            _moduleHasPower      = _currentModule.HasPower;
+            _moduleIsFlooded     = _currentModule.IsFlooded;
+
+            // Life support active = powered + not flooded + player inside
+            _moduleIsLifeSupport = _moduleHasPower && !_moduleIsFlooded;
+        }
+
+        // Animate alpha: fade in when inside, fade out when outside
+        float targetAlpha = _playerInsideModule ? 1f : 0f;
+        _modulePanelAlpha = Mathf.MoveTowards(
+            _modulePanelAlpha, targetAlpha, Time.deltaTime * 3f);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -350,6 +348,142 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
             DrawStatusBar(w, h);
             DrawInteractPrompt(w, h);
             DrawCriticalOverlay(w, h);
+
+            // v3.0: Module status panel (bottom-right, fades in/out)
+            if (_modulePanelAlpha > 0.01f)
+                DrawModulePanel(w, h, _modulePanelAlpha);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  DRAW — MODULE STATUS PANEL (v3.0)
+    //
+    //  Layout (bottom-right corner):
+    //
+    //  ┌─────────────────────────────────┐
+    //  │ BASE MODULE                     │
+    //  ├─────────────────────────────────┤
+    //  │ [●] POWERED    [◌] NO POWER     │
+    //  │ [~] DRY        [≋] FLOODED      │
+    //  │ [O] O2 ACTIVE  [X] O2 OFFLINE   │
+    //  └─────────────────────────────────┘
+    //
+    //  Panel fades in on module enter, fades out on exit.
+    //  Colors: green = good, orange = warn, cyan = info.
+    // ══════════════════════════════════════════════════════════════════
+
+    private void DrawModulePanel(float w, float h, float alpha)
+    {
+        const float panelW = 210f;
+        const float panelH = 130f;
+        const float margin  = 12f;
+
+        float panelX = w - margin - 20f - panelW;
+        float panelY = margin + 30f + 130f + 8f; // below RightPanel
+
+        // ── Background ──
+        Color bg = ScaleAlpha(bgPanelColor, alpha);
+        Color border = ScaleAlpha(frameColor, alpha);
+
+        Draw.Rectangle(
+            new Vector3(panelX + panelW * 0.5f, panelY + panelH * 0.5f, 0),
+            panelW, panelH, bg);
+
+        Draw.RectangleBorder(
+            new Vector3(panelX + panelW * 0.5f, panelY + panelH * 0.5f, 0),
+            panelW, panelH, lineThickness, border);
+
+        // ── Header ──
+        float headerY = panelY + panelH - 18f;
+        DrawText(STR_MODULE_LABEL,
+                 new Vector3(panelX + 8f, headerY, 0),
+                 fontSizeSmall,
+                 ScaleAlpha(frameColor, alpha));
+
+        Draw.Line(
+            new Vector3(panelX, panelY + panelH - 26f, 0),
+            new Vector3(panelX + panelW, panelY + panelH - 26f, 0),
+            lineThickness * 0.5f, ScaleAlpha(frameColor, alpha));
+
+        // ── Row 1: Power status ──
+        float rowY = panelY + panelH - 52f;
+        DrawModuleStatusRow(
+            panelX, rowY, panelW,
+            _moduleHasPower ? STR_MODULE_POWERED : STR_MODULE_NO_POWER,
+            _moduleHasPower ? modulePoweredColor : moduleOfflineColor,
+            _moduleHasPower ? "●" : "◌",
+            alpha);
+
+        // ── Row 2: Flood status ──
+        rowY -= 30f;
+        DrawModuleStatusRow(
+            panelX, rowY, panelW,
+            _moduleIsFlooded ? STR_MODULE_FLOODED : STR_MODULE_DRY,
+            _moduleIsFlooded ? moduleFloodedColor : modulePoweredColor,
+            _moduleIsFlooded ? "≋" : "~",
+            alpha);
+
+        // ── Row 3: Life support status ──
+        rowY -= 30f;
+        DrawModuleStatusRow(
+            panelX, rowY, panelW,
+            _moduleIsLifeSupport ? STR_MODULE_O2_ACTIVE : STR_MODULE_O2_OFFLINE,
+            _moduleIsLifeSupport ? modulePoweredColor : moduleOfflineColor,
+            _moduleIsLifeSupport ? "○" : "×",
+            alpha);
+
+        // ── Pulse dot on active life support ──
+        if (_moduleIsLifeSupport)
+        {
+            float pulse = PulseSin01();
+            float dotAlpha = Mathf.Lerp(0.3f, 1f, pulse) * alpha;
+            float dotX = panelX + 8f + 10f; // align with icon column
+            float dotY = panelY + panelH - 112f; // row 3
+
+            Color dotColor = ScaleAlpha(modulePoweredColor, dotAlpha);
+            Draw.Disc(new Vector3(dotX, dotY + 5f, 0), 3f, dotColor);
+        }
+    }
+
+    /// <summary>Draws one status row: [icon] status text.</summary>
+    private void DrawModuleStatusRow(float panelX, float rowY, float panelW,
+                                      string statusText, Color statusColor,
+                                      string icon, float alpha)
+    {
+        Color iconCol   = ScaleAlpha(statusColor, alpha);
+        Color statusCol = ScaleAlpha(statusColor, alpha * 0.9f);
+        Color dimCol    = ScaleAlpha(textDimColor, alpha);
+
+        // Horizontal separator
+        Draw.Line(
+            new Vector3(panelX + 6f, rowY + 22f, 0),
+            new Vector3(panelX + panelW - 6f, rowY + 22f, 0),
+            thinLine * 0.3f,
+            ScaleAlpha(frameColor, alpha * 0.2f));
+
+        // Icon
+        DrawText(icon,       new Vector3(panelX + 8f,  rowY + 4f, 0), fontSizeSmall, iconCol);
+        // Status text
+        DrawText(statusText, new Vector3(panelX + 24f, rowY + 4f, 0), fontSizeSmall, statusCol);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  MODULE EVENT HANDLERS (v3.0)
+    // ══════════════════════════════════════════════════════════════════
+
+    private void HandleModuleEnter(BaseModule module)
+    {
+        _currentModule     = module;
+        _playerInsideModule = true;
+    }
+
+    private void HandleModuleExit(BaseModule module)
+    {
+        // Only clear if it's the same module we're tracking
+        if (_currentModule == module)
+        {
+            _currentModule     = null;
+            _playerInsideModule = false;
         }
     }
 
@@ -359,9 +493,9 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
     private void DrawCornerGrid(float w, float h)
     {
-        float margin = 12f;
+        float margin  = 12f;
         float gridLen = Mathf.Min(w, h) * 0.08f;
-        float step = gridLen / GridLinesPerCorner;
+        float step    = gridLen / GridLinesPerCorner;
 
         Draw.LineEndCaps = LineEndCap.None;
         Draw.Thickness = thinLine * 0.5f;
@@ -370,21 +504,22 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         {
             float offset = i * step;
 
+            // Top-left
             Draw.Line(new Vector3(margin, h - margin - offset, 0),
                       new Vector3(margin + gridLen, h - margin - offset, 0), gridColor);
             Draw.Line(new Vector3(margin + offset, h - margin, 0),
                       new Vector3(margin + offset, h - margin - gridLen, 0), gridColor);
-
+            // Top-right
             Draw.Line(new Vector3(w - margin - gridLen, h - margin - offset, 0),
                       new Vector3(w - margin, h - margin - offset, 0), gridColor);
             Draw.Line(new Vector3(w - margin - offset, h - margin, 0),
                       new Vector3(w - margin - offset, h - margin - gridLen, 0), gridColor);
-
+            // Bottom-left
             Draw.Line(new Vector3(margin, margin + offset, 0),
                       new Vector3(margin + gridLen, margin + offset, 0), gridColor);
             Draw.Line(new Vector3(margin + offset, margin, 0),
                       new Vector3(margin + offset, margin + gridLen, 0), gridColor);
-
+            // Bottom-right
             Draw.Line(new Vector3(w - margin - gridLen, margin + offset, 0),
                       new Vector3(w - margin, margin + offset, 0), gridColor);
             Draw.Line(new Vector3(w - margin - offset, margin, 0),
@@ -404,21 +539,22 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         Draw.Thickness = lineThickness;
         Draw.LineEndCaps = LineEndCap.None;
 
+        // Top-left
         Draw.Line(new Vector3(margin, h - margin - bracketLen, 0),
                   new Vector3(margin, h - margin, 0), frameColor);
         Draw.Line(new Vector3(margin, h - margin, 0),
                   new Vector3(margin + bracketLen, h - margin, 0), frameColor);
-
+        // Top-right
         Draw.Line(new Vector3(w - margin, h - margin - bracketLen, 0),
                   new Vector3(w - margin, h - margin, 0), frameColor);
         Draw.Line(new Vector3(w - margin, h - margin, 0),
                   new Vector3(w - margin - bracketLen, h - margin, 0), frameColor);
-
+        // Bottom-left
         Draw.Line(new Vector3(margin, margin + bracketLen, 0),
                   new Vector3(margin, margin, 0), frameColor);
         Draw.Line(new Vector3(margin, margin, 0),
                   new Vector3(margin + bracketLen, margin, 0), frameColor);
-
+        // Bottom-right
         Draw.Line(new Vector3(w - margin, margin + bracketLen, 0),
                   new Vector3(w - margin, margin, 0), frameColor);
         Draw.Line(new Vector3(w - margin, margin, 0),
@@ -426,7 +562,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — LEFT PANEL (Life Support: O2, Energy, Integrity)
+    //  DRAW — LEFT PANEL
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawLeftPanel(float w, float h)
@@ -438,13 +574,11 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         float lpH = 180f;
 
         Draw.Rectangle(new Vector3(lpX + lpW * 0.5f, lpY + lpH * 0.5f, 0), lpW, lpH, bgPanelColor);
-
         Draw.RectangleBorder(new Vector3(lpX + lpW * 0.5f, lpY + lpH * 0.5f, 0),
                              lpW, lpH, lineThickness, frameColor);
 
         float headerY = lpY + lpH - 18f;
         DrawText("LIFE SUPPORT", new Vector3(lpX + 8f, headerY, 0), fontSizeSmall, frameColor);
-
         Draw.Line(new Vector3(lpX, lpY + lpH - 26f, 0),
                   new Vector3(lpX + lpW, lpY + lpH - 26f, 0), lineThickness * 0.5f, frameColor);
 
@@ -468,14 +602,13 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     private void DrawBarRow(string label, string valueStr, float barX, float y,
-                            float barW, float barH, float norm, Color col, float labelX)
+                             float barW, float barH, float norm, Color col, float labelX)
     {
         DrawText(label, new Vector3(labelX + 8f, y + 2f, 0), fontSizeSmall, textDimColor);
         DrawText(valueStr, new Vector3(barX + barW + 6f, y + 2f, 0), fontSizeSmall, col);
 
         Draw.Rectangle(new Vector3(barX + barW * 0.5f, y + barH * 0.5f, 0),
                        barW, barH, new Color(1f, 1f, 1f, 0.05f));
-
         Draw.RectangleBorder(new Vector3(barX + barW * 0.5f, y + barH * 0.5f, 0),
                              barW, barH, thinLine * 0.5f, frameColor * 0.5f);
 
@@ -496,7 +629,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — RIGHT PANEL (Environment: Depth, Pressure)
+    //  DRAW — RIGHT PANEL
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawRightPanel(float w, float h)
@@ -508,13 +641,11 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         float rpH = 120f;
 
         Draw.Rectangle(new Vector3(rpX + rpW * 0.5f, rpY + rpH * 0.5f, 0), rpW, rpH, bgPanelColor);
-
         Draw.RectangleBorder(new Vector3(rpX + rpW * 0.5f, rpY + rpH * 0.5f, 0),
                              rpW, rpH, lineThickness, frameColor);
 
         float headerY = rpY + rpH - 18f;
         DrawText("ENVIRONMENT", new Vector3(rpX + 8f, headerY, 0), fontSizeSmall, frameColor);
-
         Draw.Line(new Vector3(rpX, rpY + rpH - 26f, 0),
                   new Vector3(rpX + rpW, rpY + rpH - 26f, 0), lineThickness * 0.5f, frameColor);
 
@@ -567,41 +698,39 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DRAW — DEPTH SCALE (v2.0: IntStrings lookup for tick labels)
+    //  DRAW — DEPTH SCALE
     // ══════════════════════════════════════════════════════════════════
 
     private void DrawDepthScale(float w, float h)
     {
-        float scaleX = w - 40f;
+        float scaleX   = w - 40f;
         float scaleTop = h * 0.75f;
         float scaleBot = h * 0.25f;
-        float scaleH = scaleTop - scaleBot;
+        float scaleH   = scaleTop - scaleBot;
 
         Draw.Line(new Vector3(scaleX, scaleBot, 0),
                   new Vector3(scaleX, scaleTop, 0), thinLine, depthScaleColor);
 
         float tickSpacing = 8f;
-
-        float offset = (_depthScaleOffset % 10f) * (tickSpacing / 10f);
-        int tickCount = (int)(scaleH / tickSpacing) + 2;
-        float baseDepth = Mathf.Floor(_depthScaleOffset / 10f) * 10f;
+        float offset      = (_depthScaleOffset % 10f) * (tickSpacing / 10f);
+        int   tickCount   = (int)(scaleH / tickSpacing) + 2;
+        float baseDepth   = Mathf.Floor(_depthScaleOffset / 10f) * 10f;
 
         for (int i = -1; i < tickCount; i++)
         {
             float tickY = scaleBot + i * tickSpacing + offset;
             if (tickY < scaleBot || tickY > scaleTop) continue;
 
-            float depth = baseDepth + (tickCount - 1 - i) * 10f;
-            bool majorTick = (Mathf.Abs(depth % 50f) < 0.1f);
-            float tickW = majorTick ? 12f : 6f;
-            Color tickCol = majorTick ? depthScaleColor : depthScaleColor * 0.5f;
+            float depth     = baseDepth + (tickCount - 1 - i) * 10f;
+            bool  majorTick = (Mathf.Abs(depth % 50f) < 0.1f);
+            float tickW     = majorTick ? 12f : 6f;
+            Color tickCol   = majorTick ? depthScaleColor : depthScaleColor * 0.5f;
 
             Draw.Line(new Vector3(scaleX - tickW, tickY, 0),
                       new Vector3(scaleX, tickY, 0), thinLine, tickCol);
 
             if (majorTick)
             {
-                // v2.0: Zero-GC lookup from IntStrings instead of StringBuilder
                 int depthIdx = Mathf.Clamp((int)depth, 0, MaxDepth);
                 DrawText(IntStrings[depthIdx],
                          new Vector3(scaleX - tickW - 30f, tickY - 4f, 0),
@@ -652,8 +781,8 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         DrawText(_statusText, new Vector3(cx - 80f, sy, 0), fontSizeSmall, statusCol);
 
         Draw.Line(new Vector3(cx - 120f, sy + 5f, 0),
-                  new Vector3(cx - 90f, sy + 5f, 0), thinLine, frameColor * 0.5f);
-        Draw.Line(new Vector3(cx + 90f, sy + 5f, 0),
+                  new Vector3(cx - 90f,  sy + 5f, 0), thinLine, frameColor * 0.5f);
+        Draw.Line(new Vector3(cx + 90f,  sy + 5f, 0),
                   new Vector3(cx + 120f, sy + 5f, 0), thinLine, frameColor * 0.5f);
     }
 
@@ -666,13 +795,13 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         if (!_o2Critical && !_integrityCritical) return;
 
         float pulse01 = PulseSin01();
-        float alpha = pulse01 * 0.15f;
+        float alpha   = pulse01 * 0.15f;
 
         Color overlay = new Color(criticalColor.r, criticalColor.g, criticalColor.b, alpha);
         Draw.Rectangle(new Vector3(w * 0.5f, h * 0.5f, 0), w, h, overlay);
 
         float edgeAlpha = pulse01 * 0.4f;
-        Color edgeCol = new Color(criticalColor.r, criticalColor.g, criticalColor.b, edgeAlpha);
+        Color edgeCol   = new Color(criticalColor.r, criticalColor.g, criticalColor.b, edgeAlpha);
         float edgeThick = 3f;
 
         Draw.Line(new Vector3(0, 0, 0), new Vector3(w, 0, 0), edgeThick, edgeCol);
@@ -691,7 +820,6 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
         float cx = w * 0.5f;
         float cy = h * 0.5f;
-
         float hw  = promptBracketHalfW;
         float hh  = promptBracketHalfH;
         float arm = promptBracketArm;
@@ -702,25 +830,18 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         float b = cy - hh;
 
         Draw.LineEndCaps = LineEndCap.None;
-
-        Draw.Rectangle(
-            new Vector3(cx, cy, 0), hw * 2f, hh * 2f,
-            new Color(bgPanelColor.r, bgPanelColor.g, bgPanelColor.b,
-                      bgPanelColor.a * 0.4f));
-
+        Draw.Rectangle(new Vector3(cx, cy, 0), hw * 2f, hh * 2f,
+                       new Color(bgPanelColor.r, bgPanelColor.g, bgPanelColor.b, bgPanelColor.a * 0.4f));
         Draw.Thickness = lineThickness;
 
-        Draw.Line(new Vector3(l, t, 0), new Vector3(l + arm, t, 0), normalColor);
-        Draw.Line(new Vector3(l, t, 0), new Vector3(l, t - arm, 0), normalColor);
-
-        Draw.Line(new Vector3(r - arm, t, 0), new Vector3(r, t, 0), normalColor);
-        Draw.Line(new Vector3(r, t, 0),       new Vector3(r, t - arm, 0), normalColor);
-
-        Draw.Line(new Vector3(l, b + arm, 0), new Vector3(l, b, 0), normalColor);
-        Draw.Line(new Vector3(l, b, 0),       new Vector3(l + arm, b, 0), normalColor);
-
-        Draw.Line(new Vector3(r, b + arm, 0), new Vector3(r, b, 0), normalColor);
-        Draw.Line(new Vector3(r - arm, b, 0), new Vector3(r, b, 0), normalColor);
+        Draw.Line(new Vector3(l, t, 0),        new Vector3(l + arm, t, 0),  normalColor);
+        Draw.Line(new Vector3(l, t, 0),        new Vector3(l, t - arm, 0),  normalColor);
+        Draw.Line(new Vector3(r - arm, t, 0),  new Vector3(r, t, 0),        normalColor);
+        Draw.Line(new Vector3(r, t, 0),        new Vector3(r, t - arm, 0),  normalColor);
+        Draw.Line(new Vector3(l, b + arm, 0),  new Vector3(l, b, 0),        normalColor);
+        Draw.Line(new Vector3(l, b, 0),        new Vector3(l + arm, b, 0),  normalColor);
+        Draw.Line(new Vector3(r, b + arm, 0),  new Vector3(r, b, 0),        normalColor);
+        Draw.Line(new Vector3(r - arm, b, 0),  new Vector3(r, b, 0),        normalColor);
 
         float crossLen = 8f;
         float crossGap = 3f;
@@ -749,15 +870,14 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         Draw.Line(new Vector3(q3, b, 0), new Vector3(q3, b + qTick, 0), tickC);
 
         float textY = b - fontSize - 6f;
-        DrawTextCentered(_interactPromptText, new Vector3(cx, textY, 0),
-                         fontSize, normalColor);
+        DrawTextCentered(_interactPromptText, new Vector3(cx, textY, 0), fontSize, normalColor);
 
         float flankLen = 30f;
         float flankGap = 90f;
         Draw.Thickness = thinLine * 0.5f;
         Color flankCol = frameColor * 0.4f;
-
         float flankY = textY + fontSize * 0.4f;
+
         Draw.Line(new Vector3(cx - flankGap - flankLen, flankY, 0),
                   new Vector3(cx - flankGap, flankY, 0), flankCol);
         Draw.Line(new Vector3(cx + flankGap, flankY, 0),
@@ -771,31 +891,13 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private void DrawText(string text, Vector3 position, float size, Color color)
     {
         if (string.IsNullOrEmpty(text)) return;
-
-        Draw.Text(
-            position,
-            Quaternion.identity,
-            text,
-            TextAlign.Left,
-            size,
-            hudFont,
-            color
-        );
+        Draw.Text(position, Quaternion.identity, text, TextAlign.Left, size, hudFont, color);
     }
 
     private void DrawTextCentered(string text, Vector3 position, float size, Color color)
     {
         if (string.IsNullOrEmpty(text)) return;
-
-        Draw.Text(
-            position,
-            Quaternion.identity,
-            text,
-            TextAlign.Center,
-            size,
-            hudFont,
-            color
-        );
+        Draw.Text(position, Quaternion.identity, text, TextAlign.Center, size, hudFont, color);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -803,9 +905,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     // ══════════════════════════════════════════════════════════════════
 
     private float PulseSin01()
-    {
-        return (Mathf.Sin(_pulseTimer * Mathf.PI * 2f) + 1f) * 0.5f;
-    }
+        => (Mathf.Sin(_pulseTimer * Mathf.PI * 2f) + 1f) * 0.5f;
 
     private Color GetPulsedColor(Color baseCol, bool critical)
     {
@@ -822,12 +922,14 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     private string GetSlotDisplay(int slot, string clean)
-    {
-        return _glitchOverlay[slot] ?? clean;
-    }
+        => _glitchOverlay[slot] ?? clean;
+
+    /// <summary>Returns color with alpha scaled by factor. Zero GC (struct).</summary>
+    private static Color ScaleAlpha(Color c, float alpha)
+        => new Color(c.r, c.g, c.b, c.a * alpha);
 
     // ══════════════════════════════════════════════════════════════════
-    //  TIME STRING (StringBuilder retained — 1 call/sec, acceptable)
+    //  TIME STRING
     // ══════════════════════════════════════════════════════════════════
 
     private void UpdateTimeString()
@@ -880,22 +982,15 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  EVENT HANDLERS (v2.0: Zero-GC via pre-allocated string lookup)
+    //  EVENT HANDLERS
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// v2.0: PercentStrings lookup instead of StringBuilder.
-    /// Zero string allocation. Just array index + reference assign.
-    /// </summary>
     private void HandleOxygen(float value)
     {
         _oxygenNorm = value / survival.Stats.MaxOxygen;
         _oxygenPct  = Mathf.Clamp((int)(_oxygenNorm * 100f), 0, 100);
-
-        // v2.0: Zero-GC lookup from pre-allocated PercentStrings
-        _o2Str = PercentStrings[_oxygenPct];
-
-        _o2Color = EvalStatColor(_oxygenNorm);
+        _o2Str      = PercentStrings[_oxygenPct];
+        _o2Color    = EvalStatColor(_oxygenNorm);
 
         if (_oxygenNorm >= CriticalThreshold && _o2Critical)
         {
@@ -904,79 +999,35 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         }
     }
 
-    /// <summary>
-    /// v2.0: PercentStrings lookup instead of StringBuilder.
-    /// </summary>
     private void HandleEnergy(float value)
     {
-        _energyNorm = value / survival.Stats.MaxEnergy;
-        _energyPct  = Mathf.Clamp((int)(_energyNorm * 100f), 0, 100);
-
-        // v2.0: Zero-GC lookup
-        _energyStr = PercentStrings[_energyPct];
-
+        _energyNorm  = value / survival.Stats.MaxEnergy;
+        _energyPct   = Mathf.Clamp((int)(_energyNorm * 100f), 0, 100);
+        _energyStr   = PercentStrings[_energyPct];
         _energyColor = EvalStatColor(_energyNorm);
     }
 
-    /// <summary>
-    /// v2.0: PercentStrings lookup instead of StringBuilder.
-    /// </summary>
     private void HandleIntegrity(float value)
     {
-        _integrityNorm = value / survival.Stats.MaxIntegrity;
-        _integrityPct  = Mathf.Clamp((int)(_integrityNorm * 100f), 0, 100);
-
-        // v2.0: Zero-GC lookup
-        _integrityStr = PercentStrings[_integrityPct];
-
-        _integrityColor = EvalStatColor(_integrityNorm);
+        _integrityNorm     = value / survival.Stats.MaxIntegrity;
+        _integrityPct      = Mathf.Clamp((int)(_integrityNorm * 100f), 0, 100);
+        _integrityStr      = PercentStrings[_integrityPct];
+        _integrityColor    = EvalStatColor(_integrityNorm);
         _integrityCritical = _integrityNorm < CriticalThreshold;
     }
 
-    /// <summary>
-    /// v2.0: DepthStrings lookup instead of StringBuilder.
-    /// Zero string allocation. Clamp to [0, MaxDepth].
-    ///
-    /// БЫЛО (v1):
-    ///   _sb.Clear();
-    ///   _sb.Append("DEPTH: ");
-    ///   _sb.Append(_depthInt);
-    ///   _sb.Append(" m");
-    ///   _depthStr = _sb.ToString();  ← GC ALLOC каждый вызов!
-    ///
-    /// СТАЛО (v2.0):
-    ///   _depthStr = DepthStrings[clampedIndex];  ← Zero GC. Array lookup.
-    /// </summary>
     private void HandleDepth(float value)
     {
-        _depthInt = (int)value;
+        _depthInt         = (int)value;
         _depthScaleTarget = value;
-
-        // v2.0: Zero-GC lookup from pre-allocated DepthStrings
-        int idx = Mathf.Clamp(_depthInt, 0, MaxDepth);
-        _depthStr = DepthStrings[idx];
+        int idx           = Mathf.Clamp(_depthInt, 0, MaxDepth);
+        _depthStr         = DepthStrings[idx];
     }
 
-    /// <summary>
-    /// v2.0: PressureStrings lookup instead of StringBuilder.
-    /// Zero string allocation. Clamp to [0, MaxPressure].
-    ///
-    /// БЫЛО (v1):
-    ///   _sb.Clear();
-    ///   _sb.Append("ATM: ");
-    ///   _sb.Append(_pressureInt);
-    ///   _sb.Append(" atm");
-    ///   _pressureStr = _sb.ToString();  ← GC ALLOC каждый вызов!
-    ///
-    /// СТАЛО (v2.0):
-    ///   _pressureStr = PressureStrings[clampedIndex];  ← Zero GC. Array lookup.
-    /// </summary>
     private void HandlePressure(float value)
     {
         _pressureInt = (int)value;
-
-        // v2.0: Zero-GC lookup from pre-allocated PressureStrings
-        int idx = Mathf.Clamp(_pressureInt, 0, MaxPressure);
+        int idx      = Mathf.Clamp(_pressureInt, 0, MaxPressure);
         _pressureStr = PressureStrings[idx];
     }
 
@@ -995,20 +1046,13 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
             StopCoroutine(_noiseHandle);
             _noiseHandle = null;
         }
-
-        _o2Critical = false;
+        _o2Critical        = false;
         _integrityCritical = false;
-        _statusText = ">> SIGNAL LOST <<";
+        _statusText        = ">> SIGNAL LOST <<";
     }
-
-    // ══════════════════════════════════════════════════════════════════
-    //  INTERACTION HOVER HANDLER
-    // ══════════════════════════════════════════════════════════════════
 
     private void HandleHoverChanged(IInteractable target)
-    {
-        _interactPromptText = target != null ? target.GetInteractText() : null;
-    }
+        => _interactPromptText = target != null ? target.GetInteractText() : null;
 
     // ══════════════════════════════════════════════════════════════════
     //  FORCE REFRESH
@@ -1026,8 +1070,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DIGITAL NOISE — GLITCH COROUTINE
-    //  (StringBuilder retained — rare calls every 5-10 sec, acceptable)
+    //  DIGITAL NOISE — GLITCH
     // ══════════════════════════════════════════════════════════════════
 
     private IEnumerator NoiseLoop()
@@ -1037,7 +1080,8 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
         while (true)
         {
-            yield return new WaitForSeconds(Random.Range(noiseMinInterval, noiseMaxInterval));
+            yield return new WaitForSeconds(
+                Random.Range(noiseMinInterval, noiseMaxInterval));
 
             int count = Random.Range(1, math.min(4, SlotCount + 1));
             for (int i = 0; i < count; i++)
@@ -1075,14 +1119,12 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     {
         _sbGlitch.Clear();
         _sbGlitch.Append(src);
-
         int hits = math.max(1, _sbGlitch.Length / 3);
         for (int i = 0; i < hits; i++)
         {
             int pos = Random.Range(0, _sbGlitch.Length);
             _sbGlitch[pos] = Glyphs[Random.Range(0, Glyphs.Length)];
         }
-
         return _sbGlitch.ToString();
     }
 }

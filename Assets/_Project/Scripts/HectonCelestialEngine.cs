@@ -336,6 +336,7 @@ namespace Hecton8.Celestial
         // ═══ NEW SHADER PROPERTY IDs ═══
         private static readonly int _ID_GameTime           = Shader.PropertyToID("_GameTime");
         private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
+        private static readonly int _ID_SunElevation       = Shader.PropertyToID("_SunElevation");
 
         // ─────────────────────────────────────────────
         // LIFECYCLE
@@ -758,6 +759,12 @@ namespace Hecton8.Celestial
             // Stars multiply their brightness by this value.
             // 0.0 = full day (stars invisible), 1.0 = full night (stars visible).
             _skyMaterial.SetFloat(_ID_NightBlend, _currentBlend);
+
+            // ═══ 3. Sun Elevation (v4.1) ═══
+            // Normalized sun altitude: +1 = zenith, 0 = horizon, -1 = nadir.
+            // Drives sunset gradient mask and star elevation fade in sky shader.
+            _skyMaterial.SetFloat(_ID_SunElevation,
+                math.clamp(_currentSunAngle / 90f, -1f, 1f));
 
             // ═══ 3. Sun Direction ═══
             // Convention: direction FROM sun (sunLight.transform.forward).

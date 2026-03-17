@@ -62,6 +62,7 @@ using Hecton8.Core;
 using Hecton8.Scavenging;
 using Hecton8.World;
 using Hecton8.Interaction;
+using Hecton8.Caves;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -102,13 +103,31 @@ namespace Hecton8.Core
         /// </summary>
         private struct SpawnRequest
         {
-            public Vector3    position;
-            public Quaternion rotation;
-            public Vector3    scale;
-            public Vector2Int chunkCoord;
-            public int        localIndex;
+            public Vector3      position;
+            public Quaternion    rotation;
+            public Vector3      scale;
+            public Vector2Int   chunkCoord;
+            public int          localIndex;
+            public SpawnContext  context;
         }
+        /// <summary>
+        /// Maps a SpawnContext to an array of resource prefabs.
+        /// Configured in Inspector. ScavengePopulator selects from
+        /// the matching table when spawning a ResourceNode.
+        ///
+        /// If no table matches the requested context, the first
+        /// table in the list is used as fallback (typically Surface).
+        /// </summary>
+        [System.Serializable]
+        public struct LootTableEntry
+        {
+            [Tooltip("Which spawn context this table covers.")]
+            public SpawnContext context;
 
+            [Tooltip("ResourceNode prefabs for this context.\n" +
+                     "Selected deterministically: localIndex % count.")]
+            public GameObject[] resourcePrefabs;
+        }
         /// <summary>
         /// Запись об активном узле. Struct — zero GC в List.
         /// </summary>
@@ -142,10 +161,13 @@ namespace Hecton8.Core
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Resource Prefabs ──────────────────────────")]
-        [Tooltip("Префабы ResourceNode для спавна. " +
-                 "Выбираются детерминированно из списка при спавне (localIndex % count).")]
-        [SerializeField] private GameObject[] resourcePrefabs;
+        [Header("── Loot Tables ───────────────────────────────")]
+        [Tooltip("Таблицы ресурсов по контексту спавна.\n" +
+                 "Surface = поверхность дна (трубы, титан).\n" +
+                 "CaveShallow = неглубокие пещеры (кварц, грибы).\n" +
+                 "CaveDeep = глубокие пещеры (уран, кристаллы).\n" +
+                 "Если контекст не найден — используется первая таблица.")]
+        [SerializeField] private LootTableEntry[] lootTables;
 
         [Header("── Spawn Settings ────────────────────────────")]
         [Tooltip("Размер тайла MapMagic (метры). " +
@@ -280,12 +302,21 @@ namespace Hecton8.Core
         /// <param name="scale">Масштаб из scatter-данных.</param>
         /// <param name="chunkCoord">Координата чанка (tile grid).</param>
         /// <param name="localIndex">Индекс внутри чанка (для детерминированного ID).</param>
+        /// <summary>
+        /// Регистрирует одну точку спавна ресурсного узла.
+        ///
+        /// v4.2: Added SpawnContext parameter for context-aware loot tables.
+        /// Default = Surface for backward compatibility with HectonScatterOutput.
+        ///
+        /// ZERO GC: SpawnRequest — struct, Enqueue — zero GC.
+        /// </summary>
         public void RegisterSpawnPoint(
-            Vector3    position,
-            Quaternion rotation,
-            Vector3    scale,
-            Vector2Int chunkCoord,
-            int        localIndex)
+            Vector3      position,
+            Quaternion   rotation,
+            Vector3      scale,
+            Vector2Int   chunkCoord,
+            int          localIndex,
+            SpawnContext  context = SpawnContext.Surface)
         {
             // Ensure chunk tracking entry exists
             GetOrCreateChunk(chunkCoord, 256);
@@ -296,7 +327,8 @@ namespace Hecton8.Core
                 rotation   = rotation,
                 scale      = scale,
                 chunkCoord = chunkCoord,
-                localIndex = localIndex
+                localIndex = localIndex,
+                context    = context
             };
 
             _spawnQueue.Enqueue(request);
@@ -392,8 +424,8 @@ namespace Hecton8.Core
                     continue; // Skip — already harvested
                 }
 
-                // ── Select prefab ──
-                GameObject prefab = SelectResourcePrefab(request.localIndex);
+                // ── Select prefab from context-appropriate loot table ──
+                GameObject prefab = SelectResourcePrefab(request.localIndex, request.context);
                 if (prefab == null) continue;
 
                 // ── Spawn via pool ──
@@ -682,17 +714,50 @@ namespace Hecton8.Core
         /// Детерминированный выбор: localIndex % count.
         /// Одинаковый индекс → одинаковый префаб (после reload).
         /// </summary>
-        private GameObject SelectResourcePrefab(int localIndex)
+        /// <summary>
+        /// Selects a ResourceNode prefab from the loot table matching the given context.
+        ///
+        /// Lookup: linear scan over lootTables[] (typically 2-3 entries — negligible).
+        /// Fallback: if no matching context found, uses first table (index 0).
+        /// Deterministic: same localIndex + same table = same prefab.
+        ///
+        /// ZERO GC: array access only, no LINQ, no Dictionary.
+        /// </summary>
+        private GameObject SelectResourcePrefab(int localIndex, SpawnContext context)
         {
-            if (resourcePrefabs == null || resourcePrefabs.Length == 0)
+            if (lootTables == null || lootTables.Length == 0)
                 return null;
 
-            int prefabIndex = localIndex % resourcePrefabs.Length;
+            // ── Find matching loot table ──
+            GameObject[] prefabs = null;
 
+            for (int i = 0; i < lootTables.Length; i++)
+            {
+                if (lootTables[i].context == context)
+                {
+                    prefabs = lootTables[i].resourcePrefabs;
+                    break;
+                }
+            }
+
+            // ── Fallback: use first table ──
+            if (prefabs == null || prefabs.Length == 0)
+            {
+                prefabs = lootTables[0].resourcePrefabs;
+            }
+
+            if (prefabs == null || prefabs.Length == 0)
+                return null;
+
+            // ── Deterministic selection ──
+            int prefabIndex = localIndex % prefabs.Length;
+
+            // Handle negative localIndex (hashId can be any positive int,
+            // but defensive coding for edge cases)
             if (prefabIndex < 0)
-                prefabIndex += resourcePrefabs.Length;
+                prefabIndex += prefabs.Length;
 
-            return resourcePrefabs[prefabIndex];
+            return prefabs[prefabIndex];
         }
 
         // ══════════════════════════════════════════════════════════

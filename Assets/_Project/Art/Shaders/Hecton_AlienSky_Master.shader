@@ -3,175 +3,36 @@
 // Atmospheric sky dome shader for the exomoon Hecton.
 // Unity 6 | URP 17+ | SRP Batcher Compatible
 //
-// ===============================================================
-// UV PROJECTION MODEL -- PLANAR CEILING
-// ===============================================================
+// v4.1 — DYNAMIC SUNSET / NIGHT LIGHTING
 //
-// UV is derived from the view direction vector:
-//     float2 skyUV = V.xz / max(V.y, 0.05)
+//   [ADD] Sunset gradient: sunsetFactor × sunsetSpot masks fire when
+//         sun is near horizon, injecting _SunsetHorizonColor into
+//         horizon band in sun direction. Belt of Venus on opposite side.
+//   [ADD] Contextual cloud lighting: _CloudColorLit lerped with
+//         _SunsetCloudColor (sunset) and _NightCloudColor (night).
+//   [ADD] Aegir cloud illumination: purple-violet glow on clouds
+//         at night, proportional to Aegir alignment × _AegirGlowIntensity.
+//   [ADD] Star elevation fade: stars vanish when _SunElevation > -0.1
+//         (pre-dawn), independent of _NightBlend.
+//   [ADD] Star NASA-Punk flicker: per-star sin() oscillation using
+//         _GameTime + hash-derived phase offset.
+//   [ADD] Aegir halo night boost: halo intensifies at night.
+//   [ADD] Properties: _SunsetHorizonColor, _SunsetCloudColor,
+//         _NightCloudColor, _AegirGlowIntensity, _SunElevation.
+//   [PERF] Zero new texture samples. ~45 extra ALU instructions.
 //
-//   This projects the cloud texture as if it were an infinite flat
-//   plane above the camera (like a ceiling). Benefits:
-//     - No pole pinching (no poles exist in a plane)
-//     - Clouds translate linearly (wind), not rotationally
-//     - Natural perspective foreshortening at the horizon
-//     - Horizon clamping via max(V.y, 0.05) prevents infinity
-//
-// Wind is now linear translation using _GameTime:
-//   skyUV += _WindDirection * _GameTime * speedMult
-//   The shader uses frac() internally where needed.
-//   _GameTime is a continuously growing float from C#.
-//   No wrapping in C# = zero "jerks" = seamless scrolling.
-//
-// ===============================================================
-// VISUAL ARCHITECTURE -- FOUR-LAYER SYSTEM (v4.0)
-// ===============================================================
-//
-// Layer 0 (STARS):
-//   Background star field visible at night.
-//   Sampled from _StarTex with high tiling on spherical UVs.
-//   Multiplied by _NightBlend (0=day, 1=night) for fade.
-//   Per-star twinkling via hash(UV) + sin(_GameTime + phase).
-//   Added to sky gradient BEFORE clouds (clouds occlude stars).
-//
-// Layer 1 (CIRRUS):
-//   High-altitude, thin, fast-moving ice crystal clouds.
-//   High UV tiling, low opacity. Adds visual complexity at zenith.
-//   PARALLAX: Moves faster than main clouds + view-dependent shift.
-//   Driven by _GameTime * cirrusSpeedMult.
-//
-// Layer 2 (MAIN CLOUDS):
-//   Dense gas giant-reflected cloud formations.
-//   Flowmap-based UV distortion for morphing (not just scrolling).
-//   Packed texture: R=Density, G=Detail noise.
-//   Dual-phase cycling eliminates flowmap seam artifacts.
-//
-// Layer 3 (HORIZON HAZE):
-//   Thick atmospheric haze at the horizon line.
-//   Hides water/terrain seam. Fresnel-based falloff.
-//   Color tinted by sun position for sunrise/sunset feel.
-//
-// ===============================================================
-// LIGHTING MODEL -- ANALYTICAL ATMOSPHERIC SCATTERING
-// ===============================================================
-//
-// 1. BACKLIT GLOW:
-//    When sun is behind a cloud, edges glow with HDR intensity.
-//    Implementation: pow(1 - NdotL, backlitPower) x density x HDR color.
-//    Feeds into URP Bloom post-process for cinematic rim lighting.
-//
-// 2. AEGIR HALO:
-//    The gas giant Aegir casts a diffuse gradient glow across the sky.
-//    Implementation: saturate(dot(viewDir, _AegirDirection)) raised to
-//    a power, tinted by Aegir atmospheric color.
-//    Visible even at night -- Aegir reflects sunlight.
-//
-// 3. SUN DISC + SCATTERING:
-//    Sharp solar disc rendered as a bright point with _SunSize radius.
-//    Rayleigh-approximation color shift near sun position.
-//    Warm tones around sun, cool tones opposite.
-//
-// ===============================================================
-// STAR TWINKLING MODEL
-// ===============================================================
-//
-// Each star gets a unique phase from hash(floor(starUV)).
-// Brightness is modulated by: 0.7 + 0.3 * sin(_GameTime * twinkleSpeed + phase)
-// This creates gentle, asynchronous pulsing across the star field.
-// Zero texture samples -- pure math on top of star texture lookup.
-//
-// ===============================================================
-// PARALLAX MODEL
-// ===============================================================
-//
-// Two mechanisms create depth illusion:
-//
-// 1. SPEED PARALLAX:
-//    Cirrus layer moves faster than main cloud layer.
-//    _CirrusSpeedMult > _CloudSpeedMult by default.
-//    This mimics atmospheric layers at different altitudes.
-//
-// 2. VIEW-DEPENDENT PARALLAX:
-//    A small UV shift proportional to V.xz is added to cirrus UVs.
-//    When the camera rotates horizontally, cirrus clouds shift
-//    slightly relative to main clouds, creating motion parallax.
-//    _CirrusParallaxStrength controls the effect magnitude.
-//
-// ===============================================================
-// TIMING MODEL -- _GameTime (v4.0)
-// ===============================================================
-//
-// PREVIOUS: _GlobalRotation was a [0,1) accumulator that wrapped.
-//   The wrap caused a UV discontinuity = visible "jerk" every cycle.
-//
-// NEW: _GameTime is a continuously increasing float from C#.
-//   _gameTime += deltaTime; // never wraps, never resets
-//
-// The shader computes offsets as:
-//   offset = _GameTime * speed
-// And uses frac() where UV wrapping is needed.
-// frac() discards the integer part, so large _GameTime values
-// are perfectly safe -- no precision loss in the fractional part.
-//
-// This eliminates ALL timing discontinuities.
-//
-// ===============================================================
-// PERFORMANCE -- DESIGNED FOR WEAK GPUs (MX350, Mali, Adreno)
-// ===============================================================
-//
-// OPAQUE render queue -- zero overdraw, zero alpha blending cost.
-// 4 texture samples total (1x stars + 1x cirrus + 2x flowmap dual-phase).
-// Flow direction is extracted from phase 0 sample -- no extra fetch.
-// All UV math uses float (32-bit) to prevent jitter.
-// All color math uses half (16-bit) for ALU efficiency.
-// SRP Batcher compatible (single CBUFFER).
-// Star twinkling is pure ALU (hash + sin) -- no extra texture.
-//
-// ===============================================================
-// FLOWMAP UV DISTORTION -- DUAL-PHASE CYCLING
-// ===============================================================
-//
-// Standard flowmap scrolling creates visible reset artifacts
-// when the UV offset wraps. Dual-phase cycling solves this:
-//
-//   Phase A: sample at time T with flowmap offset
-//   Phase B: sample at time T+0.5 with flowmap offset
-//   Blend:   lerp(A, B, abs(frac(T) x 2 - 1))
-//
-// The blend factor creates a smooth crossfade between phases,
-// hiding the reset point. Result: continuous cloud morphing
-// without any visible snapping or repetition.
-//
-// OPTIMIZATION: Flow direction is read from the Phase A sample
-// BA channels, eliminating the need for a separate flow-read fetch.
-// Total flowmap cost: exactly 2 texture samples.
-//
-// ===============================================================
-// INPUT TEXTURES
-// ===============================================================
-//
-// _MainCloudTex (RGBA packed atlas):
-//   R = Cloud density mask (main cloud shapes)
-//   G = Detail noise (high-frequency turbulence)
-//   B = Flowmap X component (horizontal distortion direction)
-//   A = Flowmap Y component (vertical distortion direction)
-//
-// _StarTex (RGB):
-//   Star field texture. Bright pixels = stars on black background.
-//   Sampled with high tiling for dense star coverage.
-//
-// ===============================================================
-// GLOBAL INPUTS (set from C# scripts)
-// ===============================================================
-//
-// _SunDirection    (float4) -- from HectonAtmosphereManager
-// _AegirDirection  (float4) -- from HectonCelestialEngine
-// _GameTime        (float)  -- from HectonCelestialEngine
-//                             Continuously increasing time accumulator.
-//                             C# does: _gameTime += deltaTime (never wraps).
-// _NightBlend      (float)  -- from HectonCelestialEngine
-//                             Day/night factor [0=day, 1=night].
-//                             Controls star visibility.
+// PRESERVED FROM v4.0:
+//   ✓ Planar ceiling UV projection (zero pole pinch)
+//   ✓ Flowmap dual-phase cycling (2 samples, zero jerk)
+//   ✓ _GameTime accumulator (replaces _GlobalRotation)
+//   ✓ _NightBlend star visibility
+//   ✓ Cirrus parallax
+//   ✓ Star twinkling via hash
+//   ✓ Backlit glow, Aegir halo, sun disc, sun scattering
+//   ✓ Horizon haze with sun tint
+//   ✓ Dithered alpha clip
+//   ✓ SRP Batcher compatible (single CBUFFER)
+//   ✓ 4 texture samples total
 // ============================================================================
 
 Shader "HECTON/Sky/Hecton_AlienSky_Master"
@@ -193,6 +54,12 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         [HDR] _SkyColorHorizon ("Horizon Color", Color) = (0.4, 0.35, 0.5, 1)
         [HDR] _SkyColorNadir ("Nadir Color", Color) = (0.02, 0.03, 0.08, 1)
 
+        [Header(Sunset and Night Colors)]
+        [HDR] _SunsetHorizonColor ("Sunset Horizon Color", Color) = (3.5, 0.6, 0.05, 1)
+        [HDR] _SunsetCloudColor ("Sunset Cloud Color", Color) = (2.0, 0.7, 0.2, 1)
+        _NightCloudColor ("Night Cloud Color", Color) = (0.04, 0.03, 0.08, 1)
+        _AegirGlowIntensity ("Aegir Night Glow", Range(0, 5)) = 1.5
+
         [Header(Cirrus Layer)]
         _CirrusTiling ("Cirrus Tiling", Vector) = (8, 4, 0, 0)
         _CirrusSpeedMult ("Cirrus Speed Mult", Range(0.0, 1.0)) = 0.1
@@ -202,7 +69,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
         [Header(Main Cloud Layer)]
         _CloudTiling ("Cloud Tiling", Vector) = (3, 2, 0, 0)
-        _CloudSpeedMult ("Cloud Speed Mult", Range(0.0, 3.0)) = 0.
+        _CloudSpeedMult ("Cloud Speed Mult", Range(0.0, 3.0)) = 0.3
         _FlowStrength ("Flow Distortion", Range(0, 0.5)) = 0.15
         _FlowCycleSpeed ("Flow Cycle Speed", Range(0.05, 1.0)) = 0.2
         _CloudDensityThreshold ("Density Threshold", Range(0, 1)) = 0.3
@@ -240,6 +107,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         [Header(Wind and Timing)]
         _GameTime ("Game Time (set from C#)", Float) = 0.0
         _NightBlend ("Night Blend (set from C#)", Range(0, 1)) = 0.0
+        _SunElevation ("Sun Elevation (set from C#)", Range(-1, 1)) = 0.5
         _WindDirection ("Wind Direction XZ", Vector) = (1, 0.2, 0, 0)
 
         [Header(Dither)]
@@ -283,7 +151,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             // TEXTURES
             // ---------------------------------
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
-            TEXTURE2D(_StarTex);            SAMPLER(sampler_StarTex);       // ═══ NEW ═══
+            TEXTURE2D(_StarTex);            SAMPLER(sampler_StarTex);
 
             // ---------------------------------------------------------
             // CBUFFER -- SRP Batcher compatible
@@ -291,7 +159,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainCloudTex_ST;
 
-                // ═══ NEW: Star field parameters ═══
                 float4 _StarTex_ST;
                 float4 _StarTiling;
                 half4  _StarColor;
@@ -302,11 +169,17 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half4  _SkyColorHorizon;
                 half4  _SkyColorNadir;
 
+                // v4.1: Sunset and night
+                half4  _SunsetHorizonColor;
+                half4  _SunsetCloudColor;
+                half4  _NightCloudColor;
+                half   _AegirGlowIntensity;
+
                 float4 _CirrusTiling;
                 float  _CirrusSpeedMult;
                 half   _CirrusOpacity;
                 half4  _CirrusColor;
-                half   _CirrusParallaxStrength;     // ═══ NEW ═══
+                half   _CirrusParallaxStrength;
 
                 float4 _CloudTiling;
                 float  _CloudSpeedMult;
@@ -339,9 +212,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _SunScatterIntensity;
                 half4  _SunScatterColor;
 
-                // ═══ MODIFIED: _GameTime replaces _GlobalRotation ═══
                 float  _GameTime;
-                float  _NightBlend;                 // ═══ NEW ═══
+                float  _NightBlend;
+                float  _SunElevation;   // v4.1: sun altitude -1..+1
                 float4 _WindDirection;
 
                 half   _DitherScale;
@@ -362,8 +235,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             static const float3 FALLBACK_SUN_DIR   = float3(0.57735, 0.57735, 0.57735);
             static const float3 FALLBACK_AEGIR_DIR = float3(0.0, 0.93633, -0.35112);
             static const float  DIR_THRESHOLD      = 0.001;
-
-            // Minimum V.y for planar projection to prevent infinity at horizon
             static const float  HORIZON_CLAMP      = 0.05;
 
             // ---------------------------------
@@ -378,14 +249,14 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             struct Varyings
             {
                 float4 positionCS    : SV_POSITION;
-                float3 viewDirWS     : TEXCOORD0;  // full precision for UV math
+                float3 viewDirWS     : TEXCOORD0;
                 half   horizonFactor : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
             // ---------------------------------------------------------
-            // UTILITY: Safe normalize with fallback
+            // UTILITY
             // ---------------------------------------------------------
             float3 SafeNormalizeDir(float3 v, float3 fallback)
             {
@@ -395,14 +266,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     : v * rsqrt(lenSq);
             }
 
-            // ---------------------------------------------------------
-            // ═══ NEW: HASH FUNCTION FOR STAR TWINKLING ═══
-            //
-            // Pseudo-random number generator for 2D input.
-            // Returns a value in [0, 1). Used to give each star
-            // a unique phase offset for its twinkling animation.
-            // Classic frac(sin(dot)) hash -- fast, good distribution.
-            // ---------------------------------------------------------
             float hash(float2 p)
             {
                 float3 p3 = frac(float3(p.xyx) * 0.1031);
@@ -412,125 +275,52 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             // ---------------------------------------------------------
             // PLANAR CEILING PROJECTION
-            //
-            // Projects a flat texture plane above the camera.
-            // V.xz / max(V.y, HORIZON_CLAMP) gives natural perspective:
-            //   - Directly overhead (V.y=1): UV near origin, full detail
-            //   - Toward horizon (V.y->0): UV stretches outward
-            //   - HORIZON_CLAMP prevents division by zero / infinity
-            //
-            // Result is then scaled by tiling and offset by wind.
-            //
-            // ═══ MODIFIED: Uses _GameTime * speed instead of _GlobalRotation ═══
-            // _GameTime is continuously increasing. frac() is applied only
-            // where UV wrapping is needed (inside texture sampling).
-            // The raw offset can be any large float -- GPU texture units
-            // handle wrapping automatically (Repeat mode).
             // ---------------------------------------------------------
             float2 ComputeSkyUV(float3 V, float2 tiling, float speedMult)
             {
-                // Planar projection: treat sky as infinite ceiling
                 float projY = max(V.y, HORIZON_CLAMP);
                 float2 skyUV = V.xz / projY;
-
-                // Apply tiling (compresses texture at horizon)
                 skyUV *= tiling;
-
-                // ═══ MODIFIED ═══
-                // Linear wind translation using _GameTime.
-                // _GameTime grows forever. The GPU texture sampler handles
-                // UV wrapping (Repeat mode), so no manual frac() needed here.
-                // This eliminates the "jerk" that occurred when _GlobalRotation
-                // wrapped at 1.0 in the old C# code.
                 skyUV += _WindDirection.xy * _GameTime * speedMult;
-
                 return skyUV;
             }
 
-            // ---------------------------------------------------------
-            // ═══ NEW: PARALLAX-ENHANCED PLANAR PROJECTION (Cirrus) ═══
-            //
-            // Same as ComputeSkyUV but with two additions for parallax:
-            //   1. Higher speed multiplier (cirrus moves faster = higher altitude feel)
-            //   2. View-dependent horizontal shift (V.xz offset)
-            //      When the camera rotates, the cirrus layer shifts slightly
-            //      relative to the main cloud layer, creating motion parallax.
-            //      This fakes the effect of clouds at different altitudes
-            //      without actual 3D geometry.
-            //
-            // The parallax shift is proportional to V.xz (horizontal view
-            // component) and controlled by _CirrusParallaxStrength.
-            // At zenith (V.y=1, V.xz=0), there's no parallax.
-            // At angles, parallax increases -- matching real perspective.
-            // ---------------------------------------------------------
             float2 ComputeCirrusUV(float3 V, float2 tiling, float speedMult)
             {
                 float projY = max(V.y, HORIZON_CLAMP);
                 float2 skyUV = V.xz / projY;
-
-                // Apply tiling
                 skyUV *= tiling;
-
-                // Wind translation (faster for cirrus = altitude parallax)
                 skyUV += _WindDirection.xy * _GameTime * speedMult;
-
-                // ═══ NEW: View-dependent parallax shift ═══
-                // V.xz represents the horizontal component of the view direction.
-                // At zenith, V.xz ≈ (0,0) -- no shift.
-                // At horizon, V.xz is large -- maximum shift.
-                // This creates the illusion that cirrus clouds are at a
-                // different altitude than main clouds.
                 skyUV += V.xz * _CirrusParallaxStrength;
-
                 return skyUV;
             }
 
             // ---------------------------------------------------------
-            // FLOWMAP -- DUAL-PHASE CYCLING (2 SAMPLES)
-            //
-            // Phase A sampled at baseUV serves double duty:
-            //   - BA channels provide flow direction
-            //   - RG channels provide density and detail
-            // Phase B sampled at distorted UV.
-            // Triangular blend wave hides reset artifacts.
-            //
-            // ═══ MODIFIED: Uses _GameTime instead of _GlobalRotation ═══
-            // The flow cycle time is derived from _GameTime * _FlowCycleSpeed.
-            // frac() is used explicitly here because the dual-phase cycling
-            // algorithm REQUIRES fractional time for its blend wave.
+            // FLOWMAP -- DUAL-PHASE CYCLING
             // ---------------------------------------------------------
             half2 SampleFlowmap(
                 TEXTURE2D_PARAM(flowTex, flowSampler),
                 float2 baseUV)
             {
-                // ═══ MODIFIED ═══
-                // Use _GameTime * _FlowCycleSpeed for flow cycle timing.
-                // frac() is applied where the algorithm needs it.
                 float time = _GameTime * (float)_FlowCycleSpeed;
                 float phase1 = frac(time + 0.5);
 
-                // Phase A at baseUV (flow source + density)
                 half4 sample0 = SAMPLE_TEXTURE2D(flowTex, flowSampler, baseUV);
-
-                // Flow direction from BA channels
                 half2 flowDir = sample0.ba * 2.0h - 1.0h;
 
-                // Phase B at distorted UV
                 float2 uv1 = baseUV + (float2)(flowDir * _FlowStrength) * phase1;
                 half4 sample1 = SAMPLE_TEXTURE2D(flowTex, flowSampler, uv1);
 
-                // Triangular blend wave
                 half blend = abs(frac((half)time) * 2.0h - 1.0h);
 
                 half2 result;
                 result.x = lerp(sample0.r, sample1.r, blend);
                 result.y = lerp(sample0.g, sample1.g, blend);
-
                 return result;
             }
 
             // ---------------------------------------------------------
-            // DITHERED ALPHA CLIP (Bayer 4x4)
+            // DITHER
             // ---------------------------------------------------------
             static const half BAYER_MATRIX[16] =
             {
@@ -554,7 +344,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             Varyings SkyVert(Attributes input)
             {
                 Varyings output;
-
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
@@ -563,16 +352,10 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     GetVertexPositionInputs(input.positionOS.xyz);
 
                 output.positionCS = posInputs.positionCS;
-
-                // View direction in world space -- full float3 precision
-                // for accurate planar UV projection in fragment shader.
-                // Normalized per-pixel in fragment for correctness.
                 output.viewDirWS = posInputs.positionWS - GetCameraPositionWS();
 
-                // Horizon factor computed from normalized direction
                 float3 normDir = normalize(output.viewDirWS);
                 output.horizonFactor = (half)normDir.y;
-
                 return output;
             }
 
@@ -584,9 +367,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                // Normalize view direction per-pixel (interpolation denormalizes)
-                float3 Vf = normalize(input.viewDirWS); // float for UV math
-                half3  V  = (half3)Vf;                   // half for color math
+                float3 Vf = normalize(input.viewDirWS);
+                half3  V  = (half3)Vf;
                 half   horizonFactor = input.horizonFactor;
 
                 // =======================================
@@ -599,8 +381,30 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half3 aegirDir = (half3)SafeNormalizeDir(
                     _AegirDirection.xyz, FALLBACK_AEGIR_DIR);
 
+                half sunViewDot = saturate(dot(V, L));
+
+                // =======================================
+                // v4.1: SUNSET / GOLDEN HOUR MASKS
+                //
+                // sunsetFactor: narrow band at horizon.
+                //   _SunElevation = 0   → 1.0 (peak)
+                //   _SunElevation = ±0.125 → ≈ 0
+                //
+                // sunsetSpot: directional — in sun direction.
+                //   pow(4) creates tight warm spot.
+                //
+                // beltOfVenus: opposite to sun.
+                //   Subtle pink/purple counter-glow.
+                // =======================================
+                half sunElevation   = (half)_SunElevation;
+                half sunsetFactor   = saturate(1.0h - abs(sunElevation) * 8.0h);
+                half sunsetSpot     = pow(sunViewDot, 4.0h) * sunsetFactor;
+                half beltOfVenus    = pow(saturate(dot(V, sunDir)), 3.0h)
+                                    * sunsetFactor * 0.4h;
+
                 // =======================================
                 // BASE SKY GRADIENT
+                // v4.1: Sunset horizon injection
                 // =======================================
                 half zenithMask  = saturate(horizonFactor);
                 half nadirMask   = saturate(-horizonFactor);
@@ -610,78 +414,61 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                + _SkyColorHorizon.rgb * horizonMask
                                + _SkyColorNadir.rgb   * nadirMask;
 
+                // v4.1: Warm sunset glow at horizon in sun direction
+                half3 sunsetHorizonContrib = _SunsetHorizonColor.rgb
+                                           * sunsetSpot
+                                           * horizonMask;
+                skyColor += sunsetHorizonContrib;
+
+                // v4.1: Belt of Venus (anti-solar pink band)
+                half3 beltColor = half3(0.6h, 0.3h, 0.5h) * beltOfVenus * horizonMask;
+                skyColor += beltColor;
+
                 // =======================================
-                // ═══ NEW: LAYER 0 -- STAR FIELD ═══
-                //
-                // Stars are rendered BEFORE clouds so that
-                // clouds naturally occlude them.
-                //
-                // UV projection: spherical (not planar ceiling)
-                // because stars are at "infinity" -- they should
-                // not exhibit the perspective foreshortening that
-                // clouds have. Using atan2/asin gives uniform
-                // distribution across the dome.
-                //
-                // Twinkling: Each star cell gets a unique phase
-                // via hash(). Brightness oscillates gently with
-                // sin(_GameTime * speed + phase).
-                //
-                // Visibility: Multiplied by _NightBlend so stars
-                // are invisible during day, fade in at twilight,
-                // and reach full brightness at night.
-                //
-                // Only computed above horizon (zenithMask > 0).
+                // LAYER 0: STAR FIELD
+                // v4.1: Elevation fade + NASA-Punk flicker
                 // =======================================
                 half3 starContrib = half3(0.0h, 0.0h, 0.0h);
-
-                // Only compute stars if it's at least partially night
-                // AND we're looking above the horizon.
-                // This branch is coherent (all fragments in the sky dome
-                // above horizon take the same path), so no divergence cost.
                 half nightFactor = (half)_NightBlend;
 
                 if (nightFactor > 0.01h && zenithMask > 0.01h)
                 {
-                    // Spherical UV for stars (uniform distribution, no pole pinch
-                    // because star texture is sparse dots -- pinching is invisible)
                     float2 starUV;
                     starUV.x = atan2(Vf.z, Vf.x) * (0.5 / 3.14159265) + 0.5;
                     starUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
                     starUV *= _StarTiling.xy;
 
-                    // Sample star texture
                     half4 starSample = SAMPLE_TEXTURE2D(
                         _StarTex, sampler_StarTex, starUV);
 
-                    // Per-star twinkling
-                    // hash() uses the floored UV cell to give each star a unique phase.
-                    // The floor size depends on tiling -- higher tiling = more unique cells.
-                    float2 starCell = floor(starUV * 64.0); // 64 = twinkle cell resolution
-                    float starPhase = hash(starCell) * 6.28318; // [0, 2π)
-                    float twinkleWave = 0.7 + 0.3 * sin(
+                    float2 starCell = floor(starUV * 64.0);
+                    float starPhase = hash(starCell) * 6.28318;
+
+                    // v4.1: Elevation-based star fade
+                    // Stars vanish when sun rises above -0.1 elevation
+                    half starDayFade = saturate(-sunElevation * 10.0h);
+                    half starVisibility = nightFactor * starDayFade;
+
+                    // v4.1: NASA-Punk flicker using _GameTime
+                    half flicker = 0.8h + 0.2h * (half)sin(
                         _GameTime * (float)_StarTwinkleSpeed + starPhase);
 
-                    // Combine: texture * tint * intensity * twinkle * night * zenith
-                    half twinkle = (half)twinkleWave;
                     starContrib = starSample.rgb
                                 * _StarColor.rgb
                                 * _StarIntensity
-                                * twinkle
-                                * nightFactor
-                                * zenithMask;  // fade out at horizon
+                                * flicker
+                                * starVisibility
+                                * zenithMask;
                 }
 
-                // Add stars to sky (additive -- stars are bright points on dark sky)
                 skyColor += starContrib;
 
                 // =======================================
                 // LAYER 3: HORIZON HAZE
-                // Applied before clouds so clouds render ON TOP.
                 // =======================================
                 half hazeRaw = 1.0h - abs(horizonFactor);
                 half hazeMask = pow(hazeRaw, _HazeFalloff) * _HazeIntensity;
 
-                half sunViewDot = saturate(dot(V, L));
                 half3 hazeSunTint = lerp(
                     HALF_ONE,
                     _SunScatterColor.rgb,
@@ -692,13 +479,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // =======================================
                 // LAYER 1: CIRRUS CLOUDS
-                // Texture sample 1 of 4
-                //
-                // ═══ MODIFIED: Uses ComputeCirrusUV with parallax ═══
-                // Planar ceiling projection with high tiling,
-                // fast wind speed, AND view-dependent parallax shift.
-                // The parallax makes cirrus appear at a different
-                // altitude than main clouds when the camera rotates.
                 // =======================================
                 float2 cirrusUV = ComputeCirrusUV(
                     Vf, _CirrusTiling.xy, _CirrusSpeedMult);
@@ -722,13 +502,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // =======================================
                 // LAYER 2: MAIN CLOUDS
-                // Texture samples 2-3 of 4
-                //
-                // Planar ceiling projection with main tiling.
-                // Flowmap dual-phase cycling receives projected
-                // UVs -- works identically to before, just
-                // UV source changed from mesh to projection.
-                // ═══ MODIFIED: Uses _GameTime internally ═══
+                // v4.1: Contextual lighting + Aegir glow
                 // =======================================
                 float2 cloudBaseUV = ComputeSkyUV(
                     Vf, _CloudTiling.xy, _CloudSpeedMult);
@@ -748,34 +522,51 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 half cloudNdotL = saturate(dot(V, L));
 
+                // v4.1: Contextual cloud lighting
+                // Day → sunset → night color chain
+                half3 cloudLitDay     = _CloudColorLit.rgb;
+                half3 cloudLitSunset  = lerp(cloudLitDay,
+                                             _SunsetCloudColor.rgb,
+                                             sunsetSpot);
+                half3 cloudLitFinal   = lerp(cloudLitSunset,
+                                             _NightCloudColor.rgb,
+                                             (half)_NightBlend);
+
+                // v4.1: Aegir night illumination of clouds
+                half aegirDotForClouds = saturate(dot(V, aegirDir));
+                half3 aegirCloudGlow   = half3(0.4h, 0.2h, 0.8h)
+                                       * aegirDotForClouds
+                                       * (half)_NightBlend
+                                       * _AegirGlowIntensity
+                                       * cloudMask;
+
                 half3 cloudBaseColor = lerp(
                     _CloudColorShadow.rgb,
-                    _CloudColorLit.rgb,
+                    cloudLitFinal,
                     cloudNdotL);
 
+                // Aegir glow is additive (it's a light source)
+                cloudBaseColor += aegirCloudGlow;
+
+                // v4.1: Backlit intensifies at sunset (sun is low = more rim light)
+                half backlitSunsetBoost = 1.0h + sunsetFactor * 1.5h;
                 half backlitFactor = pow(
                     saturate(sunViewDot),
                     _BacklitPower);
                 half3 backlitGlow = _BacklitColor.rgb
                                   * backlitFactor
                                   * cloudMask
-                                  * _BacklitIntensity;
+                                  * _BacklitIntensity
+                                  * backlitSunsetBoost;
 
                 half3 cloudColor = cloudBaseColor + backlitGlow;
 
-                // Fade clouds near horizon (prevent hard cutoff
-                // where projection stretches to infinity)
                 half cloudHeightFade = saturate(horizonFactor * 3.0h);
-
                 half finalCloudMask = cloudMask * cloudHeightFade;
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
 
                 // =======================================
                 // SUN DISC
-                //
-                // Angular size ~0.002 radians (~0.1 degrees).
-                // smoothstep anti-aliases the edge.
-                // Occluded by dense clouds.
                 // =======================================
                 half sunDist = 1.0h - sunViewDot;
                 half sunDisc = 1.0h - smoothstep(
@@ -801,10 +592,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // =======================================
                 // AEGIR HALO
+                // v4.1: Night boost via _AegirGlowIntensity
                 // =======================================
                 half aegirDot = saturate(dot(V, aegirDir));
+
+                // v4.1: At night, Aegir halo intensifies
+                half nightBoost = 1.0h + (half)_NightBlend * _AegirGlowIntensity;
+
                 half aegirHalo = pow(aegirDot, _AegirHaloPower)
-                               * _AegirHaloIntensity;
+                               * _AegirHaloIntensity
+                               * nightBoost;
 
                 aegirHalo *= (1.0h - finalCloudMask * 0.5h);
                 skyColor += _AegirHaloColor.rgb * aegirHalo;
