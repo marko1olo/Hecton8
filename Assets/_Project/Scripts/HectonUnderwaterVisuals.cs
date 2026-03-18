@@ -495,7 +495,12 @@ namespace Hecton8.Environment
                 {
                     float baseSun = ResolveProfileSunIntensity();
                     float horizon = ResolveHorizonFade();
-                    sunLight.intensity = baseSun * horizon;
+                    // Если AtmosphereManager ещё не инициализирован (Editor race),
+                    // не обнуляем свет — оставляем как есть
+                    if (baseSun > 0.001f)
+                    {
+                        sunLight.intensity = baseSun * horizon;
+                    }
                 }
 
                 return;

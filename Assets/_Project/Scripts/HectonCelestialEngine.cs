@@ -337,6 +337,7 @@ namespace Hecton8.Celestial
         private static readonly int _ID_GameTime           = Shader.PropertyToID("_GameTime");
         private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
         private static readonly int _ID_SunElevation       = Shader.PropertyToID("_SunElevation");
+        private static readonly int _ID_EclipseOcclusion   = Shader.PropertyToID("_EclipseOcclusion");
 
         // ─────────────────────────────────────────────
         // LIFECYCLE
@@ -479,21 +480,21 @@ namespace Hecton8.Celestial
             float sunElevation = CalculateSunElevation();
             _currentSunAngle = sunElevation;
 
+            // ═══ v5.1: Occlusion BEFORE sky blend ═══
+            CalculateEclipseBacklight();
+            DetectEclipse();
+            UpdateSunOcclusion(deltaTime);
+
+            // Sky blend now sees current-frame occlusion (zero lag)
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
             UpdateGlobalShaderData();
 
-            // ═══ SKY MATERIAL UPDATE ═══
-            // After ResolveSunDirection and UpdateSkyboxBlend (needs _currentBlend).
-            // Before eclipse/occlusion (doesn't depend on them).
             UpdateSkyMaterial();
 
-            CalculateEclipseBacklight();
             UpdateAegirMaterial();
             UpdatePlanetShine();
-            DetectEclipse();
 
-            UpdateSunOcclusion(deltaTime);
             ApplySunOcclusion();
 
             OnSunAngleChanged?.Invoke(_currentSunAngle);
@@ -765,6 +766,8 @@ namespace Hecton8.Celestial
             // Drives sunset gradient mask and star elevation fade in sky shader.
             _skyMaterial.SetFloat(_ID_SunElevation,
                 math.clamp(_currentSunAngle / 90f, -1f, 1f));
+            // v5.1: Eclipse occlusion for shader (sun disc/glow fade)
+            _skyMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
 
             // ═══ 3. Sun Direction ═══
             // Convention: direction FROM sun (sunLight.transform.forward).
@@ -910,10 +913,13 @@ namespace Hecton8.Celestial
             {
                 if (_atmosphereManager != null)
                 {
-                    // AtmosphereManager already set intensity (with horizon fade).
-                    // We MODULATE it by occlusion — multiplicative, not overwrite.
-                    // Read current value (set by AtmosphereManager this frame), multiply by visibility.
-                    sunLight.intensity *= visibility;
+                    float baseIntensity = _atmosphereManager.ProfileSunIntensity
+                                        * _atmosphereManager.ComputedHorizonFade;
+                    // Не обнуляем свет если менеджер ещё не инициализирован
+                    if (baseIntensity > 0.001f || visibility < 0.999f)
+                    {
+                        sunLight.intensity = baseIntensity * visibility;
+                    }
                 }
                 else if (_baseSunIntensityCaptured)
                 {
@@ -1004,8 +1010,13 @@ namespace Hecton8.Celestial
             float range = twilightStartAngle - twilightEndAngle;
             if (range < 0.001f) range = 10f;
 
-            _currentBlend = math.saturate((twilightStartAngle - sunElevation) / range);
-            _currentBlend = SmoothStep01(_currentBlend);
+            // Time-based blend (sunset/sunrise)
+            float timeBlend = math.saturate((twilightStartAngle - sunElevation) / range);
+            timeBlend = SmoothStep01(timeBlend);
+
+            // v5.1: Eclipse also triggers night sky.
+            // Night comes from whichever is darker: sunset or eclipse.
+            _currentBlend = math.max(timeBlend, _smoothedOcclusionFactor);
 
             blendedSkyboxMaterial.SetFloat(_ID_Blend, _currentBlend);
         }
@@ -1017,8 +1028,11 @@ namespace Hecton8.Celestial
             float range = twilightStartAngle - twilightEndAngle;
             if (range < 0.001f) range = 10f;
 
-            _currentStarIntensity = math.saturate((twilightStartAngle - sunElevation) / range);
-            _currentStarIntensity = SmoothStep01(_currentStarIntensity);
+            float timeStars = math.saturate((twilightStartAngle - sunElevation) / range);
+            timeStars = SmoothStep01(timeStars);
+
+            // v5.1: Stars appear during eclipse too
+            _currentStarIntensity = math.max(timeStars, _smoothedOcclusionFactor);
 
             blendedSkyboxMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
         }

@@ -16,5 +16,5 @@ MonoBehaviour:
   scatterColorBase: {r: 0, g: 0.03, b: 0.07, a: 1}
   scatterColorShallow: {r: 0, g: 0.15, b: 0.12, a: 1}
   depthFogDensity: {x: 0.01, y: 0.01, z: 0.01}
-  fogColor: {r: 0.072668225, g: 0.37123975, b: 0.6698113, a: 1}
+  fogColor: {r: 0.10702208, g: 0.22803934, b: 0.3490566, a: 1}
   turbidityMultiplier: 1

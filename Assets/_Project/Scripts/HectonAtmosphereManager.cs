@@ -199,6 +199,7 @@ namespace Hecton8.Atmosphere
 
         private AtmosphereProfile _activeBiomeProfile;
         private int _currentBiomeID = -1;
+        private bool _editorInitialized;
 
         // ═══ v4.1: Computed values (read by other systems) ═══
 
@@ -351,8 +352,15 @@ namespace Hecton8.Atmosphere
         {
             if (Application.isPlaying) return;
 
+            if (!_editorInitialized)
+            {
+                InitializeCycleTimer();
+                InitializeAtmosphereValues();
+                _editorInitialized = true;
+            }
+
             float dt = Time.deltaTime;
-            if (dt <= 0f) dt = 0.016f; // safety fallback for edit mode
+            if (dt <= 0f) dt = 0.016f;
 
             Tick(dt);
         }
@@ -361,6 +369,7 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            _editorInitialized = false;
             _cycleDuration = math.max(_cycleDuration, 1f);
 
             if (_sunLight == null)
@@ -459,9 +468,7 @@ namespace Hecton8.Atmosphere
             _computedHorizonFade = 1f;
             _computedSunIntensity = _currentValues.sunIntensity;
 
-            // FIX: вычислить позицию солнца и derived values немедленно,
-            // чтобы первое чтение ProfileSunIntensity другими скриптами
-            // получило корректные данные до первого Tick().
+            // ═══ FIX: сразу вычислить позицию солнца ═══
             RotateSun();
             ComputeSunValues();
         }

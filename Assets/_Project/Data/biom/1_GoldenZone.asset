@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: 1_GoldenZone
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
   biomeName: Unnamed Biome
-  scatterColorBase: {r: 0, g: 0.12578617, b: 0.2830189, a: 1}
-  scatterColorShallow: {r: 0, g: 0.15, b: 0.12, a: 1}
+  scatterColorBase: {r: 0, g: 0.062893085, b: 0.14150944, a: 1}
+  scatterColorShallow: {r: 0, g: 0.075, b: 0.06, a: 1}
   depthFogDensity: {x: 0.022, y: 0.013, z: 0.013}
-  fogColor: {r: 0.19651122, g: 0.4001424, b: 0.6037736, a: 1}
+  fogColor: {r: 0.10684408, g: 0.28455412, b: 0.46226418, a: 1}
   turbidityMultiplier: 1

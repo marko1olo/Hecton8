@@ -108,6 +108,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _GameTime ("Game Time (set from C#)", Float) = 0.0
         _NightBlend ("Night Blend (set from C#)", Range(0, 1)) = 0.0
         _SunElevation ("Sun Elevation (set from C#)", Range(-1, 1)) = 0.5
+        _EclipseOcclusion ("Eclipse Occlusion (set from C#)", Range(0, 1)) = 0.0
         _WindDirection ("Wind Direction XZ", Vector) = (1, 0.2, 0, 0)
 
         [Header(Dither)]
@@ -215,6 +216,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float  _GameTime;
                 float  _NightBlend;
                 float  _SunElevation;   // v4.1: sun altitude -1..+1
+                float  _EclipseOcclusion; // v5.1: 0=no eclipse, 1=full eclipse
                 float4 _WindDirection;
 
                 half   _DitherScale;
@@ -397,7 +399,11 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 //   Subtle pink/purple counter-glow.
                 // =======================================
                 half sunElevation   = (half)_SunElevation;
+                // v5.1: Eclipse visibility — 0 when fully eclipsed
+                half eclipseVis = 1.0h - (half)_EclipseOcclusion;
                 half sunsetFactor   = saturate(1.0h - abs(sunElevation) * 8.0h);
+                // v5.1: No sunset glow during eclipse
+                sunsetFactor *= eclipseVis;
                 half sunsetSpot     = pow(sunViewDot, 4.0h) * sunsetFactor;
                 half beltOfVenus    = pow(saturate(dot(V, sunDir)), 3.0h)
                                     * sunsetFactor * 0.4h;
@@ -447,7 +453,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     // v4.1: Elevation-based star fade
                     // Stars vanish when sun rises above -0.1 elevation
                     half starDayFade = saturate(-sunElevation * 10.0h);
-                    half starVisibility = nightFactor * starDayFade;
+                    // v5.1: Stars visible during eclipse even in "daytime"
+                    half starVisibility = nightFactor * max(starDayFade, (half)_EclipseOcclusion);
 
                     // v4.1: NASA-Punk flicker using _GameTime
                     half flicker = 0.8h + 0.2h * (half)sin(
@@ -574,7 +581,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     _SunSize + _SunEdgeSoftness,
                     sunDist);
 
-                sunDisc *= (1.0h - finalCloudMask);
+                sunDisc *= (1.0h - finalCloudMask) * eclipseVis;
                 skyColor += _SunDiscColor.rgb * sunDisc;
 
                 // =======================================
@@ -587,7 +594,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                               * sunScatter
                               * _SunScatterIntensity;
 
-                sunGlow *= (1.0h - finalCloudMask * 0.7h);
+                sunGlow *= (1.0h - finalCloudMask * 0.7h) * eclipseVis;
                 skyColor += sunGlow;
 
                 // =======================================
