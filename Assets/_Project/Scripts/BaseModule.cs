@@ -356,11 +356,6 @@ namespace Hecton8.Gameplay
             {
                 _trackedPlayerSurvival.RefillOxygen(oxygenRefillRate * SLOW_TICK_DT);
             }
-            // v3.0: Notify HUD of module entry  . IS THIS FRAGMENT LOCATED RIGHT, IS IT OK? CHECK PLS
-            if (other.CompareTag("Player"))
-            {
-                ModuleStatusEvents.NotifyEnter(this);
-            }
             if (!_hasPower)
                 return;
 

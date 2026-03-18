@@ -2216,11 +2216,10 @@ public class HectonVoxelEngineEditor : Editor
         float maxPts = (dim + 1f) * (dim + 1f) * (dim + 1f);
         float maxCells = (float)dim * dim * dim;
         float densityMB = maxPts * 4f / (1024f * 1024f);
+        const int MC_BUFFER_MULTIPLIER = 2;
         float rawMB = maxCells * MC_BUFFER_MULTIPLIER * 20f / (1024f * 1024f);
         float weldMapMB = maxCells * MC_BUFFER_MULTIPLIER * 12f / (1024f * 1024f);
         float totalMB = densityMB + rawMB + weldMapMB;
-
-        const int MC_BUFFER_MULTIPLIER = 2;
 
         EditorGUILayout.HelpBox(
             $"═══ CURRENT PRESET: {preset.presetName} ═══\n" +

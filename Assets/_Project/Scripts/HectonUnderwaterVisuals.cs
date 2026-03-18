@@ -307,6 +307,9 @@ namespace Hecton8.Environment
 
         private float _transitionProgress;
 
+        /// <summary>Кэшированная плотность тумана для URP коллбэка</summary>
+        private float _cachedFogDensity;
+
         // Base values (for surface restore)
         private float _baseFlareIntensity;
         private bool  _baseValuesCaptured;
@@ -340,7 +343,8 @@ namespace Hecton8.Environment
             CaptureBaseValues();
             CaptureSkyBaseColors();
             InitializeCurrentValues();
-
+            // ── Перехват рендера (подавление Crest в Editor) ──
+            RenderPipelineManager.beginCameraRendering += EnforceFogState;
             if (Application.isPlaying)
             {
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
@@ -374,6 +378,8 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
+            // ── Отписка от рендера ──
+            RenderPipelineManager.beginCameraRendering -= EnforceFogState;
             if (Application.isPlaying)
             {
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
@@ -482,6 +488,16 @@ namespace Hecton8.Environment
                     RestoreSkyMaterialDefaults();
                     _wasUnderwater = false;
                 }
+
+                // ── Свет на поверхности: обновляем каждый кадр ──
+                // Без этого солнце не реагирует на закат/рассвет
+                if (sunLight != null)
+                {
+                    float baseSun = ResolveProfileSunIntensity();
+                    float horizon = ResolveHorizonFade();
+                    sunLight.intensity = baseSun * horizon;
+                }
+
                 return;
             }
 
@@ -513,7 +529,7 @@ namespace Hecton8.Environment
             ApplySunColorFade(lightFactor);
 
             // ══ 9. FOG (derived from lightFactor + turbidity) ══
-            ApplyUnderwaterFog(lightFactor);
+            ApplyUnderwaterFog(lightFactor, depth);
 
             // ══ 10. AMBIENT LIGHT (per-frame, clamped) ══
             ApplyUnderwaterAmbient();
@@ -870,45 +886,61 @@ namespace Hecton8.Environment
                     0f));
         }
 
-        // ══════════════════════════════════════════════════════════
+                // ══════════════════════════════════════════════════════════
         //  URP FOG — in Tick()
-        //  v5.0: fog density derived from lightFactor + turbidity
-        //  ONE formula, perfectly synced with light curve.
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// v5.0: Fog density is derived from lightFactor.
-        ///
-        /// fogDensity = lerp(minFogDensity, maxFogDensity, 1 - lightFactor)
-        ///            × biome.turbidityMultiplier
-        ///
-        /// lightFactor=1.0 → minFogDensity (clear surface water)
-        /// lightFactor=0.0 → maxFogDensity (impenetrable deep)
-        /// turbidity=1.0   → no change
-        /// turbidity=2.0   → 2x murkier (dirty biome)
-        /// turbidity=0.5   → half as murky (crystal clear biome)
-        ///
-        /// Artist controls:
-        ///   • Shape of transition: globalLightCurve
-        ///   • Min/max fog range: minFogDensity, maxFogDensity
-        ///   • Per-biome murkiness: turbidityMultiplier [0.5..2.0]
-        /// </summary>
-        private void ApplyUnderwaterFog(float lightFactor)
+        private void ApplyUnderwaterFog(float lightFactor, float currentDepth)
         {
             RenderSettings.fogColor = _currentFogColor;
 
-            // Remap lightFactor to fog density range
-            // lightFactor=1 → min fog, lightFactor=0 → max fog
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
+            float targetDensity = baseDensity * _currentTurbidity;
 
-            // Apply biome turbidity
-            float finalDensity = baseDensity * _currentTurbidity;
+            // Плавное нарастание тумана в первые 0.5 метра под водой (Zero Jerk)
+            float smoothSubmerge = math.saturate(currentDepth / 0.5f);
+            float surfaceDensity = enableSurfaceFog ? surfaceFogDensity : 0.0001f;
 
-            RenderSettings.fogDensity = finalDensity;
+            _cachedFogDensity = Mathf.Lerp(surfaceDensity, targetDensity, smoothSubmerge);
+            RenderSettings.fogDensity = _cachedFogDensity;
 
 #if UNITY_EDITOR
-            _debugFogDensity = finalDensity;
+            _debugFogDensity = _cachedFogDensity;
 #endif
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  URP RENDER CALLBACK — OVERRIDE CREST
+        //  Вызывается ПЕРЕД отрисовкой каждой камеры.
+        // ══════════════════════════════════════════════════════════
+        private void EnforceFogState(ScriptableRenderContext context, Camera cam)
+        {
+            // Игнорируем UI камеры, рендер-текстуры и прочее
+            if (cam.cameraType != CameraType.Game && cam.cameraType != CameraType.SceneView)
+                return;
+
+            if (playerCamera == null) return;
+
+            // Если мы под водой — жестко вбиваем наши закэшированные настройки
+            if (playerCamera.position.y < ResolveWaterLevel())
+            {
+                RenderSettings.fog = true;
+                RenderSettings.fogColor = _currentFogColor;
+                RenderSettings.fogDensity = _cachedFogDensity;
+            }
+            else
+            {
+                // Над водой — гарантируем наши надводные настройки
+                if (enableSurfaceFog)
+                {
+                    RenderSettings.fog = true;
+                    RenderSettings.fogColor = surfaceFogColor;
+                    RenderSettings.fogDensity = surfaceFogDensity;
+                }
+                else
+                {
+                    RenderSettings.fog = false;
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════

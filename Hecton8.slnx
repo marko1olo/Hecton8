@@ -1,6 +1,7 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="MoreMountains.Feedbacks.csproj" />
+  <Project Path="RealtimeCSG.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
   <Project Path="Crest.csproj" />
   <Project Path="ShapesRuntime.csproj" />

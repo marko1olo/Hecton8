@@ -1114,7 +1114,8 @@ public class HectonWorldGenerator : MonoBehaviour
                 poiGO.transform.position = spawnPos;
                 poiGO.isStatic = true;
 
-                voxelEngine.GenerateVolume(poiGO, spawnPos, VoxelPOIType.Cave);
+                uint caveSeed = (uint)(coord.x * 73856 ^ coord.y * 19349) + (uint)ci;
+                _ = voxelEngine.GenerateVolumeAsync(spawnPos, caveSeed, null);
                 spawned++;
             }
         }
@@ -1138,7 +1139,8 @@ public class HectonWorldGenerator : MonoBehaviour
             riftGO.transform.position = riftCenter;
             riftGO.isStatic = true;
 
-            voxelEngine.GenerateVolume(riftGO, riftCenter, VoxelPOIType.DeepRift);
+            uint riftSeed = (uint)(coord.x * 39384 ^ coord.y * 39483);
+            _ = voxelEngine.GenerateVolumeAsync(riftCenter, riftSeed, null);
         }
     }
 

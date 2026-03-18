@@ -36,6 +36,7 @@ using Hecton8.Core;
 using Shapes;
 using Unity.Mathematics;
 using UnityEngine;
+using TMPro;
 
 namespace Hecton8.Gameplay
 {
@@ -160,14 +161,16 @@ namespace Hecton8.Gameplay
                 _playerTransform = playerGO.transform;
         }
 
-        private void OnEnable()
+        public override void OnEnable()
         {
+            base.OnEnable(); // Добавить это!
             ScanEvents.OnNodeFound += HandleNodeFound;
             GameTickManager.Instance?.Register((ITickable)this);
         }
 
-        private void OnDisable()
+        public override void OnDisable()
         {
+            base.OnDisable(); // Добавить это!
             ScanEvents.OnNodeFound -= HandleNodeFound;
             GameTickManager.Instance?.Unregister((ITickable)this);
         }
@@ -332,7 +335,7 @@ namespace Hecton8.Gameplay
                 new Vector3(screenPos.x, screenPos.y, cam.nearClipPlane + 0.01f));
 
             // ── Draw diamond (4-sided regular polygon, hollow) ──
-            Draw.RegularPolygonHollow(
+            Draw.RegularPolygonBorder(
                 worldMarkerPos,
                 cam.transform.rotation,
                 4,                              // sides = diamond

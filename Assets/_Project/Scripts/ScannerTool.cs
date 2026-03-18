@@ -1,25 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  ScannerTool.cs — Project HECTON-8 Hydroacoustic Scanner                   ║
 // ║  Unity 6 (URP) | Shapes 4.x | Zero GC                                    ║
-// ║  v1.0 — Sonar pulse with world-space ring visualization                    ║
-// ║                                                                             ║
-// ║  GAMEPLAY:                                                                  ║
-// ║  ─────────                                                                  ║
-// ║  Primary fire (LKM): Emits a sonar ping. Expanding spherical wavefront    ║
-// ║  detects all ResourceNodes within radius. Results are broadcast via        ║
-// ║  ScanEvents for HUD marker display. Cooldown prevents spam.               ║
-// ║                                                                             ║
-// ║  NASA-PUNK FEEL:                                                            ║
-// ║  ───────────────                                                            ║
-// ║  • Low-frequency sonar ping via SpatialAudioManager (2D, in-helmet).       ║
-// ║  • Cyan expanding ring in world space via Shapes ImmediateModeShapeDrawer. ║
-// ║  • Ring fades out as it expands — like a real sonar pulse dissipating.     ║
-// ║                                                                             ║
-// ║  ZERO GC:                                                                   ║
-// ║  ─────────                                                                  ║
-// ║  • OverlapSphereNonAlloc with static Collider[64] buffer.                  ║
-// ║  • No List, no LINQ, no string operations in hot path.                     ║
-// ║  • Shapes Draw.Ring — immediate mode, zero allocation.                     ║
+// ║  v1.1 — Fixed: composition instead of multiple inheritance                 ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using Hecton8.Audio;
@@ -31,7 +13,7 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class ScannerTool : PlayerTool, ImmediateModeShapeDrawer
+    public sealed class ScannerTool : PlayerTool
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -76,31 +58,25 @@ namespace Hecton8.Gameplay
         //  STATIC BUFFER — Zero GC OverlapSphere
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Pre-allocated collider buffer for Physics.OverlapSphereNonAlloc.
-        /// 64 entries = max 64 scannable objects per pulse.
-        /// Static: shared across all ScannerTool instances (only one active at a time).
-        /// </summary>
         private static readonly Collider[] s_HitBuffer = new Collider[64];
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Time.time when last scan completed. Used for cooldown.</summary>
         private float _lastScanTime = -999f;
-
-        /// <summary>Is a pulse animation currently playing.</summary>
-        private bool _pulseActive;
-
-        /// <summary>World-space origin of the current pulse.</summary>
-        private float3 _pulseOrigin;
-
-        /// <summary>Time.time when current pulse started.</summary>
-        private float _pulseStartTime;
-
-        /// <summary>Cached transform for world position.</summary>
         private Transform _cachedTransform;
+
+        // ── Pulse state (read by ScannerPulseDrawer) ──
+        internal bool  PulseActive    { get; private set; }
+        internal float3 PulseOrigin   { get; private set; }
+        internal float PulseStartTime { get; private set; }
+
+        // ── Config accessors (read by ScannerPulseDrawer) ──
+        internal float PulseDuration   => pulseDuration;
+        internal float ScanRadius      => scanRadius;
+        internal Color PulseColor      => pulseColor;
+        internal float PulseThickness  => pulseThickness;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -109,76 +85,62 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+
+            // Auto-create the Shapes drawer component on this GameObject
+            if (GetComponent<ScannerPulseDrawer>() == null)
+            {
+                var drawer = gameObject.AddComponent<ScannerPulseDrawer>();
+                drawer.Init(this);
+            }
         }
 
         public override void OnEquip()
         {
             base.OnEquip();
-            _pulseActive = false;
+            PulseActive = false;
         }
 
         public override void OnUnequip()
         {
             base.OnUnequip();
-            _pulseActive = false;
+            PulseActive = false;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  TOOL USAGE — Called by PlayerToolManager every frame
+        //  TOOL USAGE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Primary fire: Emit sonar pulse.
-        /// Called every frame while Fire1 is held — we gate with cooldown.
-        /// </summary>
         public override void UsePrimary(float deltaTime)
         {
             if (!IsEquipped) return;
 
             float now = Time.time;
 
-            // ── Cooldown check ──
             if (now - _lastScanTime < scanCooldown)
-            {
-                // Optional: play "not ready" sound on first frame of press
-                // (PlayerToolManager calls this every frame while held)
                 return;
-            }
 
             _lastScanTime = now;
 
-            // ── Execute scan ──
             float3 origin = _cachedTransform.position;
             PerformScan(origin);
 
-            // ── Start pulse visual ──
-            _pulseActive = true;
-            _pulseOrigin = origin;
-            _pulseStartTime = now;
+            PulseActive    = true;
+            PulseOrigin    = origin;
+            PulseStartTime = now;
 
-            // ── Audio ──
             if (pingClip != null && SpatialAudioManager.Instance != null)
-            {
                 SpatialAudioManager.Instance.PlayStatic2D(pingClip, pingVolume);
-            }
 
-            // ── Broadcast scan trigger ──
             ScanEvents.OnScanTriggered?.Invoke(origin, scanRadius);
         }
 
-        /// <summary>
-        /// Update pulse animation. Called every frame by PlayerToolManager.
-        /// </summary>
         public override void ToolTick(float deltaTime)
         {
-            // Auto-deactivate pulse after duration
-            if (_pulseActive)
+            if (PulseActive)
             {
-                float elapsed = Time.time - _pulseStartTime;
+                float elapsed = Time.time - PulseStartTime;
                 if (elapsed > pulseDuration)
-                {
-                    _pulseActive = false;
-                }
+                    PulseActive = false;
             }
         }
 
@@ -186,22 +148,12 @@ namespace Hecton8.Gameplay
         //  SCAN LOGIC — Zero GC
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Performs physics overlap and broadcasts found nodes.
-        ///
-        /// Zero GC:
-        /// - OverlapSphereNonAlloc uses static s_HitBuffer
-        /// - No List, no LINQ
-        /// - TryGetComponent is non-allocating
-        /// - ScanEvents.OnNodeFound passes float3 (struct)
-        /// </summary>
         private void PerformScan(float3 origin)
         {
-            int hitCount = Physics.OverlapSphereNonAlloc(
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 origin, scanRadius, s_HitBuffer, scanLayerMask,
                 QueryTriggerInteraction.Collide);
 
-            // Clamp to buffer size
             if (hitCount > s_HitBuffer.Length)
                 hitCount = s_HitBuffer.Length;
 
@@ -212,8 +164,6 @@ namespace Hecton8.Gameplay
                 Collider col = s_HitBuffer[i];
                 if (col == null) continue;
 
-                // ── Check for ResourceNode ──
-                // TryGetComponent checks the same GameObject — zero GC
                 if (col.TryGetComponent(out ResourceNode node))
                 {
                     if (node.IsDepleted) continue;
@@ -223,7 +173,6 @@ namespace Hecton8.Gameplay
                     foundCount++;
                 }
 
-                // Clear buffer slot to prevent stale references
                 s_HitBuffer[i] = null;
             }
 
@@ -232,57 +181,76 @@ namespace Hecton8.Gameplay
                       $"({hitCount} colliders checked, radius {scanRadius}m)");
 #endif
         }
+    }
 
-        // ══════════════════════════════════════════════════════════
-        //  SHAPES VISUALIZATION — World-space sonar ring
-        // ══════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════
+    //  SHAPES DRAWER — separate component on same GameObject
+    //  Inherits ImmediateModeShapeDrawer (Shapes 4.x class).
+    //  Reads pulse state from ScannerTool via internal properties.
+    //  Zero GC: immediate mode drawing, no allocations.
+    // ══════════════════════════════════════════════════════════════
+
+    [DisallowMultipleComponent]
+    public sealed class ScannerPulseDrawer : ImmediateModeShapeDrawer
+    {
+        private ScannerTool _scanner;
 
         /// <summary>
-        /// ImmediateModeShapeDrawer callback. Called by Shapes for each camera.
-        /// Draws expanding ring in world space — visible from all cameras.
+        /// Called by ScannerTool.Awake() after AddComponent.
         /// </summary>
+        internal void Init(ScannerTool scanner)
+        {
+            _scanner = scanner;
+        }
+
+        private void Awake()
+        {
+            // If Init wasn't called (e.g. component already existed on prefab),
+            // find ScannerTool on same GameObject.
+            if (_scanner == null)
+                _scanner = GetComponent<ScannerTool>();
+        }
+
         public override void DrawShapes(Camera cam)
         {
-            if (!_pulseActive) return;
-            if (!IsEquipped) return;
+            if (_scanner == null) return;
+            if (!_scanner.PulseActive) return;
+            if (!_scanner.IsEquipped) return;
 
-            float elapsed = Time.time - _pulseStartTime;
-            float t = math.saturate(elapsed / pulseDuration);
+            float elapsed = Time.time - _scanner.PulseStartTime;
+            float t = math.saturate(elapsed / _scanner.PulseDuration);
 
-            // ── Ring radius: 0 → scanRadius over duration ──
-            float currentRadius = math.lerp(0f, scanRadius, t);
+            float currentRadius = math.lerp(0f, _scanner.ScanRadius, t);
 
-            // ── Alpha: full → 0 with easing ──
-            float alpha = pulseColor.a * (1f - t * t); // Quadratic fade
+            Color baseColor = _scanner.PulseColor;
+            float alpha = baseColor.a * (1f - t * t);
 
             if (alpha < 0.01f) return;
 
-            Color ringColor = new Color(pulseColor.r, pulseColor.g, pulseColor.b, alpha);
+            Color ringColor = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
 
-            // ── Thickness: starts thick, thins as it expands ──
-            float thickness = math.lerp(pulseThickness, pulseThickness * 0.3f, t);
+            float baseThickness = _scanner.PulseThickness;
+            float thickness = math.lerp(baseThickness, baseThickness * 0.3f, t);
 
-            // ── Draw ring in world space (horizontal plane at scan origin Y) ──
             using (Draw.Command(cam))
             {
                 Draw.Ring(
-                    (Vector3)_pulseOrigin,
-                    Quaternion.Euler(90f, 0f, 0f), // Horizontal ring
+                    (Vector3)_scanner.PulseOrigin,
+                    Quaternion.Euler(90f, 0f, 0f),
                     currentRadius,
                     thickness,
                     ringColor
                 );
 
-                // Second thinner ring slightly behind for depth
                 if (t < 0.8f)
                 {
                     float innerRadius = currentRadius * 0.85f;
                     float innerAlpha = alpha * 0.3f;
                     Color innerColor = new Color(
-                        pulseColor.r, pulseColor.g, pulseColor.b, innerAlpha);
+                        baseColor.r, baseColor.g, baseColor.b, innerAlpha);
 
                     Draw.Ring(
-                        (Vector3)_pulseOrigin,
+                        (Vector3)_scanner.PulseOrigin,
                         Quaternion.Euler(90f, 0f, 0f),
                         innerRadius,
                         thickness * 0.5f,

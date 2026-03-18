@@ -230,7 +230,7 @@ public static class CaveGraphGenerator
 
         for (int i = 1; i < targetCount; i++)
         {
-            bool placed = false;
+            // bool placed = false;
 
             for (int attempt = 0; attempt < PLACEMENT_ATTEMPTS; attempt++)
             {
@@ -284,7 +284,7 @@ public static class CaveGraphGenerator
                     }
                 }
 
-                placed = true;
+                // placed = true;
                 break;
             }
         }

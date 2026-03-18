@@ -116,6 +116,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
+    - _AegirGlowIntensity: 1.5
     - _AegirHaloIntensity: 1
     - _AegirHaloPower: 2.9
     - _AlphaClip: 0
@@ -144,7 +145,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 330.03674
+    - _GameTime: 7.8093777
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -172,6 +173,7 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
+    - _SunElevation: -0.3909966
     - _SunScatterIntensity: 1.49
     - _SunScatterPower: 11.9
     - _SunSize: 0.002
@@ -193,6 +195,7 @@ Material:
     - _HazeColor: {r: 0.4509804, g: 0.4846907, b: 0.54901963, a: 1}
     - _HighCloudColor: {r: 0.75, g: 0.75, b: 0.95, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
+    - _NightCloudColor: {r: 0.04, g: 0.03, b: 0.079999976, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
     - _SkyColorHorizon: {r: 0.8, g: 0.7, b: 1, a: 1}
     - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
@@ -202,6 +205,8 @@ Material:
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
     - _SunDiscColor: {r: 20, g: 18, b: 12, a: 1}
     - _SunScatterColor: {r: 1, g: 0.7, b: 0.3, a: 1}
+    - _SunsetCloudColor: {r: 2, g: 0.7, b: 0.2, a: 1}
+    - _SunsetHorizonColor: {r: 3.5, g: 0.6, b: 0.05, a: 1}
     - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
