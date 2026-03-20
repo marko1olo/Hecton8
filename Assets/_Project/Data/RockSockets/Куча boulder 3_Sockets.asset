@@ -1,0 +1,193 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba55ecec2b447f5448d3a41930d1fab9, type: 3}
+  m_Name: "\u041A\u0443\u0447\u0430 boulder 3_Sockets"
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.RockAttachmentData
+  sockets:
+  - localPos:
+      x: -0.5642259
+      y: 2.3901305
+      z: -1.7495041
+    localRot:
+      value:
+        x: 0.15433368
+        y: 0.8347717
+        z: 0.29279807
+        w: -0.4400076
+    type: 0
+  - localPos:
+      x: 1.7441477
+      y: 1.3045816
+      z: -1.5158138
+    localRot:
+      value:
+        x: -0.23903966
+        y: 0.61106664
+        z: 0.20080541
+        w: 0.7274165
+    type: 0
+  - localPos:
+      x: 0.6538837
+      y: 1.5234971
+      z: 0.28106117
+    localRot:
+      value:
+        x: -0.02170476
+        y: -0.09476847
+        z: -0.0020667224
+        w: 0.9952606
+    type: 1
+  - localPos:
+      x: -0.23038006
+      y: 0.7986437
+      z: -3.5698643
+    localRot:
+      value:
+        x: -0.124191955
+        y: 0.8594633
+        z: 0.42891762
+        w: 0.24885532
+    type: 0
+  - localPos:
+      x: -1.0707877
+      y: 0.5751387
+      z: 0.32011223
+    localRot:
+      value:
+        x: 0.08902567
+        y: 0.047982406
+        z: -0.0042937193
+        w: 0.9948637
+    type: 1
+  - localPos:
+      x: -2.6114335
+      y: 0.2136964
+      z: 0.21996689
+    localRot:
+      value:
+        x: -0.43707007
+        y: -0.45399633
+        z: -0.27299187
+        w: 0.7268649
+    type: 0
+  - localPos:
+      x: -0.20290995
+      y: 0.22251941
+      z: -4.258464
+    localRot:
+      value:
+        x: -0.032249037
+        y: 0.96541613
+        z: 0.21386947
+        w: 0.14557357
+    type: 1
+  - localPos:
+      x: 2.1595874
+      y: 1.0849266
+      z: -1.960495
+    localRot:
+      value:
+        x: -0.3691303
+        y: 0.49842188
+        z: 0.24713026
+        w: 0.7444764
+    type: 0
+  - localPos:
+      x: -1.5262294
+      y: 0.9168742
+      z: -1.2467842
+    localRot:
+      value:
+        x: -0.55625093
+        y: -0.39403987
+        z: -0.33769605
+        w: 0.6490601
+    type: 0
+  - localPos:
+      x: 3.3035223
+      y: 0.21526612
+      z: -1.9557171
+    localRot:
+      value:
+        x: -0.09439545
+        y: 0.8841249
+        z: 0.20365249
+        w: 0.40980285
+    type: 1
+  - localPos:
+      x: -2.220107
+      y: 0.32879788
+      z: -1.8573036
+    localRot:
+      value:
+        x: 0.11656969
+        y: 0.8827053
+        z: 0.34037644
+        w: -0.3023026
+    type: 0
+  - localPos:
+      x: 2.84083
+      y: -0.42483532
+      z: -2.3323822
+    localRot:
+      value:
+        x: 0.03670795
+        y: 0.9298935
+        z: -0.096702
+        w: 0.35298634
+    type: 2
+  - localPos:
+      x: -0.14206243
+      y: 1.3300707
+      z: -2.2823715
+    localRot:
+      value:
+        x: -0.053299498
+        y: 0.76049805
+        z: 0.64408183
+        w: 0.06293326
+    type: 0
+  - localPos:
+      x: -0.53743315
+      y: 1.1513119
+      z: -2.9667978
+    localRot:
+      value:
+        x: 0.065211296
+        y: 0.8160291
+        z: 0.566589
+        w: -0.09392049
+    type: 0
+  - localPos:
+      x: 2.740047
+      y: 0.92546517
+      z: -1.4347916
+    localRot:
+      value:
+        x: -0.20203353
+        y: 0.79319936
+        z: 0.4520384
+        w: 0.35451162
+    type: 0
+  - localPos:
+      x: 2.2531826
+      y: 1.2183787
+      z: -0.9895592
+    localRot:
+      value:
+        x: -0.19882171
+        y: 0.77826643
+        z: 0.5139234
+        w: 0.3010882
+    type: 0
+  sourceGroupName: "\u041A\u0443\u0447\u0430 boulder 3"
+  exportTimestamp: 2026-03-21 02:11:59

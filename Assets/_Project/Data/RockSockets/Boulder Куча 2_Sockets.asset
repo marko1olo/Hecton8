@@ -1,0 +1,325 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba55ecec2b447f5448d3a41930d1fab9, type: 3}
+  m_Name: "Boulder \u041A\u0443\u0447\u0430 2_Sockets"
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.RockAttachmentData
+  sockets:
+  - localPos:
+      x: -0.0007120371
+      y: 1.1411983
+      z: -0.31790257
+    localRot:
+      value:
+        x: -0.3429015
+        y: -0.6522997
+        z: -0.42654127
+        w: 0.52439135
+    type: 0
+  - localPos:
+      x: 0.030673862
+      y: 1.0728297
+      z: -0.8769412
+    localRot:
+      value:
+        x: -0.33900356
+        y: -0.5247882
+        z: -0.23937076
+        w: 0.74321973
+    type: 0
+  - localPos:
+      x: 1.4728321
+      y: 0.29042056
+      z: -3.2629576
+    localRot:
+      value:
+        x: -0.09871904
+        y: 0.8967641
+        z: 0.3487681
+        w: 0.2538297
+    type: 0
+  - localPos:
+      x: 0.68619573
+      y: 1.5370715
+      z: 0.85220337
+    localRot:
+      value:
+        x: -0.54346377
+        y: 0.14955416
+        z: 0.09911442
+        w: 0.8200348
+    type: 0
+  - localPos:
+      x: 1.7363147
+      y: 1.0532113
+      z: -2.2032962
+    localRot:
+      value:
+        x: 0.038340818
+        y: 0.9492854
+        z: 0.28467765
+        w: -0.12785119
+    type: 0
+  - localPos:
+      x: 3.04916
+      y: 1.3219185
+      z: -1.2158136
+    localRot:
+      value:
+        x: -0.004276794
+        y: 0.8500949
+        z: 0.52656686
+        w: 0.0069045005
+    type: 0
+  - localPos:
+      x: -0.58852696
+      y: 0.42686448
+      z: -2.3574128
+    localRot:
+      value:
+        x: 0.09016567
+        y: 0.88724333
+        z: 0.19626006
+        w: -0.40761673
+    type: 1
+  - localPos:
+      x: 0.6924809
+      y: 1.2811368
+      z: 1.8315563
+    localRot:
+      value:
+        x: -0.2984161
+        y: -0.3296161
+        z: -0.110662915
+        w: 0.8888503
+    type: 0
+  - localPos:
+      x: 6.3538976
+      y: 0.21035358
+      z: 0.2760048
+    localRot:
+      value:
+        x: 0.12073276
+        y: 0.8453643
+        z: 0.4736579
+        w: -0.21547866
+    type: 0
+  - localPos:
+      x: 0.42349684
+      y: 1.4094845
+      z: 1.2756672
+    localRot:
+      value:
+        x: -0.5224067
+        y: 0.19268766
+        z: 0.122525595
+        w: 0.8215535
+    type: 0
+  - localPos:
+      x: 0.3037647
+      y: 0.4624751
+      z: 3.2981386
+    localRot:
+      value:
+        x: -0.19954868
+        y: -0.20743562
+        z: -0.04326687
+        w: 0.95670205
+    type: 1
+  - localPos:
+      x: 5.270769
+      y: 0.29649794
+      z: 1.0711145
+    localRot:
+      value:
+        x: 0.24843001
+        y: 0.7200512
+        z: 0.56544393
+        w: -0.3163573
+    type: 0
+  - localPos:
+      x: 3.6973243
+      y: 0.21859992
+      z: 0.9475231
+    localRot:
+      value:
+        x: 0.106874615
+        y: 0.69193
+        z: -0.10470139
+        w: 0.706292
+    type: 2
+  - localPos:
+      x: 3.5652003
+      y: 0.33276963
+      z: 1.6765194
+    localRot:
+      value:
+        x: 0.102224104
+        y: 0.4657493
+        z: -0.054268733
+        w: 0.87731564
+    type: 2
+  - localPos:
+      x: 0.9991225
+      y: 0.36398935
+      z: -3.4061213
+    localRot:
+      value:
+        x: -0.044333644
+        y: 0.9340246
+        z: 0.33174086
+        w: 0.12482247
+    type: 0
+  - localPos:
+      x: 0.46496427
+      y: 0.8268752
+      z: -2.654181
+    localRot:
+      value:
+        x: 0.20567432
+        y: 0.78955704
+        z: 0.35714772
+        w: -0.45469028
+    type: 0
+  - localPos:
+      x: 3.7732968
+      y: 0.64432317
+      z: 1.2631245
+    localRot:
+      value:
+        x: 0.05114224
+        y: 0.6477206
+        z: -0.043649554
+        w: 0.7589053
+    type: 1
+  - localPos:
+      x: 4.3131366
+      y: 0.70931435
+      z: -0.84530926
+    localRot:
+      value:
+        x: -0.19330972
+        y: 0.8065905
+        z: 0.40199584
+        w: 0.38786918
+    type: 0
+  - localPos:
+      x: -0.4960909
+      y: 0.73841447
+      z: -1.571044
+    localRot:
+      value:
+        x: -0.29896763
+        y: -0.5952145
+        z: -0.25370398
+        w: 0.70140743
+    type: 0
+  - localPos:
+      x: 3.1945462
+      y: 0.28667754
+      z: -0.8138337
+    localRot:
+      value:
+        x: 0.23505151
+        y: 0.7596953
+        z: -0.47684395
+        w: 0.3744779
+    type: 2
+  - localPos:
+      x: 3.114242
+      y: 0.31826243
+      z: -2.0556092
+    localRot:
+      value:
+        x: -0.09876882
+        y: 0.88856465
+        z: 0.38601452
+        w: 0.22735539
+    type: 0
+  - localPos:
+      x: 2.62467
+      y: 0.61590135
+      z: -1.8571892
+    localRot:
+      value:
+        x: -0.14600015
+        y: 0.832637
+        z: 0.46629795
+        w: 0.2607027
+    type: 0
+  - localPos:
+      x: 2.860839
+      y: 1.6234378
+      z: 1.643384
+    localRot:
+      value:
+        x: 0.057153452
+        y: 0.81691784
+        z: 0.5679982
+        w: -0.08220041
+    type: 0
+  - localPos:
+      x: 2.002905
+      y: 1.5217588
+      z: 2.4315681
+    localRot:
+      value:
+        x: -0.3250348
+        y: -0.32489866
+        z: -0.12000444
+        w: 0.8799956
+    type: 0
+  - localPos:
+      x: 4.727669
+      y: -0.02717142
+      z: 0.71946526
+    localRot:
+      value:
+        x: -0.2561729
+        y: -0.67117286
+        z: -0.26780787
+        w: 0.64201355
+    type: 0
+  - localPos:
+      x: -0.6768949
+      y: 0.42757106
+      z: -1.0848799
+    localRot:
+      value:
+        x: -0.23663935
+        y: -0.7474597
+        z: -0.3410335
+        w: 0.518654
+    type: 0
+  - localPos:
+      x: 0.072325826
+      y: 0.72248363
+      z: 2.8676357
+    localRot:
+      value:
+        x: -0.39697117
+        y: -0.48191267
+        z: -0.2596751
+        w: 0.7367109
+    type: 0
+  - localPos:
+      x: 3.699205
+      y: 1.4426106
+      z: 0.57240105
+    localRot:
+      value:
+        x: -0.2847499
+        y: 0.71118975
+        z: 0.49727005
+        w: 0.40724593
+    type: 0
+  sourceGroupName: "Boulder \u041A\u0443\u0447\u0430 2"
+  exportTimestamp: 2026-03-21 03:08:03

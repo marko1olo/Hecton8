@@ -1,0 +1,204 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba55ecec2b447f5448d3a41930d1fab9, type: 3}
+  m_Name: "\u041A\u0443\u0447\u04301     _   8_8_3 \u043C\u0435\u0442\u0440\u0430_Sockets"
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.RockAttachmentData
+  sockets:
+  - localPos:
+      x: 2.3804994
+      y: 0.9720822
+      z: 4.1735077
+    localRot:
+      value:
+        x: -0.5377579
+        y: -0.19147274
+        z: -0.12693062
+        w: 0.8111987
+    type: 0
+  - localPos:
+      x: 2.328
+      y: 0.90599996
+      z: 3.1150017
+    localRot:
+      value:
+        x: -0.6490727
+        y: 0
+        z: 0
+        w: 0.7607264
+    type: 0
+  - localPos:
+      x: 1.4000001
+      y: 1.47
+      z: 1.3499985
+    localRot:
+      value:
+        x: 0
+        y: 0
+        z: 0
+        w: 1
+    type: 1
+  - localPos:
+      x: 3.104
+      y: 1.47
+      z: -1.1529999
+    localRot:
+      value:
+        x: 0
+        y: 0.99842584
+        z: -0
+        w: 0.056087684
+    type: 1
+  - localPos:
+      x: 1.2139997
+      y: 1.098
+      z: -0.9220009
+    localRot:
+      value:
+        x: 0
+        y: 0.99517703
+        z: 0
+        w: -0.09809504
+    type: 1
+  - localPos:
+      x: 3.263
+      y: 1.666
+      z: 1.2989998
+    localRot:
+      value:
+        x: 0
+        y: 0
+        z: 0
+        w: 1
+    type: 1
+  - localPos:
+      x: 4.570999
+      y: 0.528
+      z: -2.998001
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 1.3699999
+      y: 1.519
+      z: 0.55799866
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 5.65
+      y: 2.503
+      z: 0.41199875
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 5.743
+      y: 0.684
+      z: 2.7840004
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 4.465
+      y: 0.784
+      z: 3.8720016
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 7.174
+      y: 1.317
+      z: 1.2249985
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: -0.59000015
+      y: 0.81
+      z: 1.3899994
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: -1.1099997
+      y: 0.21
+      z: -1.1300011
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 6.851
+      y: 0.649
+      z: 2.8260002
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 1.552
+      y: 1.656
+      z: -0.5779991
+    localRot:
+      value:
+        x: -0.65954167
+        y: 0
+        z: 0
+        w: 0.751668
+    type: 0
+  - localPos:
+      x: 5.551999
+      y: 1.746
+      z: -0.5720024
+    localRot:
+      value:
+        x: 0
+        y: 0.9894377
+        z: -0
+        w: 0.14495878
+    type: 1
+  sourceGroupName: "\u041A\u0443\u0447\u04301     /   8*8*3 \u043C\u0435\u0442\u0440\u0430"
+  exportTimestamp: 2026-03-21 01:43:08
