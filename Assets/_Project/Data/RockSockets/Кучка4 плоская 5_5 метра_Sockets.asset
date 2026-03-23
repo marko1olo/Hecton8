@@ -1,0 +1,206 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba55ecec2b447f5448d3a41930d1fab9, type: 3}
+  m_Name: "\u041A\u0443\u0447\u043A\u04304 \u043F\u043B\u043E\u0441\u043A\u0430\u044F
+    5_5 \u043C\u0435\u0442\u0440\u0430_Sockets"
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.RockAttachmentData
+  sockets:
+  - localPos:
+      x: 3.7327385
+      y: 0.12155562
+      z: -1.7437583
+    localRot:
+      value:
+        x: -0.4454931
+        y: 0.5544317
+        z: 0.49088788
+        w: 0.50316066
+    type: 0
+  - localPos:
+      x: 1.8259392
+      y: 0.2554636
+      z: -1.9367332
+    localRot:
+      value:
+        x: 0.24529508
+        y: 0.6963649
+        z: 0.6145272
+        w: -0.27796143
+    type: 0
+  - localPos:
+      x: 2.8267307
+      y: 0.12273007
+      z: 1.5290606
+    localRot:
+      value:
+        x: -0.44966748
+        y: -0.5491159
+        z: -0.47286505
+        w: 0.5221777
+    type: 0
+  - localPos:
+      x: 5.3995037
+      y: -0.02286535
+      z: -1.7495098
+    localRot:
+      value:
+        x: -0.32097647
+        y: 0.6447699
+        z: 0.34331992
+        w: 0.60280794
+    type: 0
+  - localPos:
+      x: 4.020729
+      y: 0.03149318
+      z: 1.5478714
+    localRot:
+      value:
+        x: 0.43460187
+        y: 0.56466347
+        z: 0.51491547
+        w: -0.47659048
+    type: 0
+  - localPos:
+      x: 2.2946262
+      y: 0.018709384
+      z: 3.491689
+    localRot:
+      value:
+        x: -0.44812483
+        y: -0.15958755
+        z: -0.081655726
+        w: 0.87581295
+    type: 0
+  - localPos:
+      x: 0.894783
+      y: 0.09207716
+      z: 0.33630365
+    localRot:
+      value:
+        x: -0.4788252
+        y: -0.5070339
+        z: -0.4160127
+        w: 0.5835894
+    type: 0
+  - localPos:
+      x: 2.0040092
+      y: 0.052232116
+      z: 1.7290862
+    localRot:
+      value:
+        x: -0.5725445
+        y: -0.30985743
+        z: -0.24719232
+        w: 0.7176888
+    type: 0
+  - localPos:
+      x: 4.557968
+      y: -0.004820846
+      z: -1.9010636
+    localRot:
+      value:
+        x: -0.4996391
+        y: -0.5015952
+        z: -0.4983997
+        w: 0.50036067
+    type: 0
+  - localPos:
+      x: 2.4757538
+      y: 0.3752547
+      z: -0.82305026
+    localRot:
+      value:
+        x: -0.38330224
+        y: -0.6152407
+        z: -0.45938358
+        w: 0.5133469
+    type: 0
+  - localPos:
+      x: 4.8603153
+      y: -0.055073407
+      z: -0.7507169
+    localRot:
+      value:
+        x: -0.031764366
+        y: 0.664281
+        z: 0.028274484
+        w: 0.74627227
+    type: 1
+  - localPos:
+      x: 3.6152992
+      y: 0.3474501
+      z: -0.891091
+    localRot:
+      value:
+        x: -0.14824714
+        y: 0.7462199
+        z: 0.17719124
+        w: 0.6243253
+    type: 1
+  - localPos:
+      x: 4.11792
+      y: 0.18891954
+      z: 0.46098924
+    localRot:
+      value:
+        x: -0.44516286
+        y: 0.53857064
+        z: 0.407997
+        w: 0.5876309
+    type: 0
+  - localPos:
+      x: 4.1303024
+      y: 0.02002336
+      z: -3.213187
+    localRot:
+      value:
+        x: 0.15344173
+        y: 0.7746685
+        z: 0.5779683
+        w: -0.20566261
+    type: 0
+  - localPos:
+      x: 1.5023365
+      y: 0.24708012
+      z: -0.8045205
+    localRot:
+      value:
+        x: -0.61418
+        y: -0.3179687
+        z: -0.29652336
+        w: 0.6585991
+    type: 0
+  - localPos:
+      x: 4.788538
+      y: -0.06893843
+      z: -0.1670456
+    localRot:
+      value:
+        x: -0.13040546
+        y: 0.8524042
+        z: 0.43825814
+        w: 0.25363624
+    type: 0
+  - localPos:
+      x: 3.2850304
+      y: 0.42458975
+      z: -0.18783805
+    localRot:
+      value:
+        x: -0.4653304
+        y: 0.35961264
+        z: 0.21459016
+        w: 0.779806
+    type: 0
+  sourceGroupName: "\u041A\u0443\u0447\u043A\u04304 \u043F\u043B\u043E\u0441\u043A\u0430\u044F
+    5*5 \u043C\u0435\u0442\u0440\u0430"
+  exportTimestamp: 2026-03-23 21:02:06

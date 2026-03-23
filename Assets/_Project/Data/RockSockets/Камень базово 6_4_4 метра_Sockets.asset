@@ -1,0 +1,294 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba55ecec2b447f5448d3a41930d1fab9, type: 3}
+  m_Name: "\u041A\u0430\u043C\u0435\u043D\u044C \u0431\u0430\u0437\u043E\u0432\u043E
+    6_4_4 \u043C\u0435\u0442\u0440\u0430_Sockets"
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.RockAttachmentData
+  sockets:
+  - localPos:
+      x: -1.6073475
+      y: 0.47434527
+      z: -4.0096626
+    localRot:
+      value:
+        x: -0.018024215
+        y: 0.9110635
+        z: 0.40991914
+        w: 0.04005961
+    type: 0
+  - localPos:
+      x: -1.0810661
+      y: 0.15924251
+      z: -4.328457
+    localRot:
+      value:
+        x: -0.0121138
+        y: 0.91277957
+        z: 0.4073697
+        w: 0.027142985
+    type: 0
+  - localPos:
+      x: -0.11846733
+      y: 0.17368704
+      z: -4.2837677
+    localRot:
+      value:
+        x: -0.04894636
+        y: 0.9096965
+        z: 0.39681974
+        w: 0.112207964
+    type: 0
+  - localPos:
+      x: -0.21060562
+      y: 0.8042163
+      z: -3.5922089
+    localRot:
+      value:
+        x: -0.15996103
+        y: 0.7974455
+        z: 0.2408599
+        w: 0.52960336
+    type: 0
+  - localPos:
+      x: -1.3395271
+      y: 0.78008527
+      z: -3.654274
+    localRot:
+      value:
+        x: -0.052974127
+        y: 0.9453921
+        z: 0.25417453
+        w: 0.19703518
+    type: 0
+  - localPos:
+      x: -1.5497894
+      y: 1.1833351
+      z: -2.8314629
+    localRot:
+      value:
+        x: -0.18193324
+        y: 0.8140006
+        z: 0.43250063
+        w: 0.34241286
+    type: 0
+  - localPos:
+      x: -0.5458317
+      y: 1.2594924
+      z: -3.3406029
+    localRot:
+      value:
+        x: -0.09337104
+        y: 0.83293563
+        z: 0.52492803
+        w: 0.1481576
+    type: 0
+  - localPos:
+      x: -0.79613113
+      y: 1.7954974
+      z: -2.1804848
+    localRot:
+      value:
+        x: -0.2813398
+        y: 0.7140187
+        z: 0.4026556
+        w: 0.49889252
+    type: 0
+  - localPos:
+      x: -0.84747314
+      y: 2.1863437
+      z: -0.72850037
+    localRot:
+      value:
+        x: -0.22437042
+        y: 0.5906888
+        z: 0.175556
+        w: 0.7549336
+    type: 0
+  - localPos:
+      x: -0.5146179
+      y: 1.7797844
+      z: -0.7399101
+    localRot:
+      value:
+        x: -0.3982973
+        y: 0.51542014
+        z: 0.29338366
+        w: 0.69973385
+    type: 0
+  - localPos:
+      x: 0.24910164
+      y: 0.20623612
+      z: 0.17797852
+    localRot:
+      value:
+        x: -0.0839345
+        y: 0.6444156
+        z: 0.07148102
+        w: 0.7566862
+    type: 1
+  - localPos:
+      x: 0.5986557
+      y: 1.3240881
+      z: -1.0104523
+    localRot:
+      value:
+        x: -0.23776835
+        y: 0.5793321
+        z: 0.18168165
+        w: 0.758177
+    type: 0
+  - localPos:
+      x: 1.0493145
+      y: 0.32049567
+      z: -0.6916809
+    localRot:
+      value:
+        x: -0.44532582
+        y: 0.44792792
+        z: 0.2752219
+        w: 0.7247747
+    type: 0
+  - localPos:
+      x: 0.74967766
+      y: 1.732014
+      z: -1.994091
+    localRot:
+      value:
+        x: -0.16760626
+        y: 0.7827137
+        z: 0.23858428
+        w: 0.5498591
+    type: 0
+  - localPos:
+      x: 0.4271946
+      y: 1.3722944
+      z: -2.7729034
+    localRot:
+      value:
+        x: 0.029097145
+        y: 0.93048924
+        z: 0.35720924
+        w: -0.07579475
+    type: 0
+  - localPos:
+      x: 0.6635666
+      y: 0.36863738
+      z: -2.588932
+    localRot:
+      value:
+        x: -0.12878586
+        y: 0.77064914
+        z: 0.16488224
+        w: 0.6019369
+    type: 1
+  - localPos:
+      x: -1.8788738
+      y: 1.4283247
+      z: -2.3344727
+    localRot:
+      value:
+        x: -0.22874263
+        y: -0.7413945
+        z: -0.3080196
+        w: 0.5505769
+    type: 0
+  - localPos:
+      x: -2.128765
+      y: 0.866085
+      z: -3.6018105
+    localRot:
+      value:
+        x: 0.018782817
+        y: 0.90327334
+        z: 0.42680717
+        w: -0.039751016
+    type: 0
+  - localPos:
+      x: -1.7249756
+      y: 1.520263
+      z: -1.5882301
+    localRot:
+      value:
+        x: -0.48794392
+        y: -0.44506368
+        z: -0.31961176
+        w: 0.67946845
+    type: 0
+  - localPos:
+      x: -1.6838989
+      y: 1.7118752
+      z: -0.65815353
+    localRot:
+      value:
+        x: 0.07442747
+        y: 0.8923104
+        z: 0.15980771
+        w: -0.415577
+    type: 1
+  - localPos:
+      x: -1.361517
+      y: 2.0217233
+      z: -1.08564
+    localRot:
+      value:
+        x: -0.12014779
+        y: -0.7812394
+        z: -0.15864559
+        w: 0.59165967
+    type: 1
+  - localPos:
+      x: -0.7663307
+      y: 1.8688438
+      z: -0.22660065
+    localRot:
+      value:
+        x: -0.41533515
+        y: 0.24387205
+        z: 0.116614595
+        w: 0.868576
+    type: 0
+  - localPos:
+      x: -1.3712234
+      y: 1.2286496
+      z: 0.24108505
+    localRot:
+      value:
+        x: -0.046690784
+        y: -0.3714561
+        z: -0.018707601
+        w: 0.92708707
+    type: 1
+  - localPos:
+      x: -1.8435078
+      y: 0.9282411
+      z: 0.19105911
+    localRot:
+      value:
+        x: -0.4073718
+        y: -0.30167648
+        z: -0.14461927
+        w: 0.8497793
+    type: 0
+  - localPos:
+      x: -1.9892025
+      y: 0.56815344
+      z: -1.2626038
+    localRot:
+      value:
+        x: -0.18764949
+        y: -0.67071867
+        z: -0.181274
+        w: 0.6943082
+    type: 0
+  sourceGroupName: "\u041A\u0430\u043C\u0435\u043D\u044C \u0431\u0430\u0437\u043E\u0432\u043E
+    6*4*4 \u043C\u0435\u0442\u0440\u0430"
+  exportTimestamp: 2026-03-23 21:19:04
