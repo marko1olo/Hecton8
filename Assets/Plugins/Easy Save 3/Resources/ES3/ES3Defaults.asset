@@ -59,6 +59,7 @@ MonoBehaviour:
     - RealtimeCSG
     - ShapesRuntime
     - Tayx.Graphy
+    - TechniePhysicsCreator
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1
