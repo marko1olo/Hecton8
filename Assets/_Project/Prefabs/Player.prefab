@@ -47,8 +47,8 @@ Camera:
   m_GameObject: {fileID: 2193605564943894971}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 4
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.056781795, g: 0.28103197, b: 0.41509444, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -287,6 +287,7 @@ GameObject:
   - component: {fileID: 8339093750577122443}
   - component: {fileID: 3954223694506301739}
   - component: {fileID: 8889624962428220854}
+  - component: {fileID: 1176052483651863644}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -357,7 +358,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5334833049046775397}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 90
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -392,10 +393,11 @@ MonoBehaviour:
   mouseSensitivity: 2
   pitchMin: -85
   pitchMax: 85
-  swimForce: 600
+  swimForce: 1500
   verticalForce: 400
   maxSwimSpeed: 12
-  swimLinearDamping: 1
+  swimLinearDamping: 3
+  swimBrakeForce: 8
   walkForce: 1200
   maxWalkSpeed: 6
   walkLinearDamping: 5
@@ -404,8 +406,9 @@ MonoBehaviour:
   groundCheckDistance: 0.4
   groundLayers:
     serializedVersion: 2
-    m_Bits: 524271
+    m_Bits: 129
   slopeStabilityFactor: 1.2
+  groundSnapForce: 8
   _debugIsWalking: 0
   _debugIsGrounded: 0
 --- !u!114 &8339093750577122443
@@ -420,14 +423,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d480f5510764cb74982243ff9d0a6dbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.BuoyancyObject
-  density: 900
-  volume: 0.01
+  density: 1000
+  volume: 0.09
   height: 0.3
   groundCheckInterval: 3
   groundCheckDistance: 1
   groundLayers:
     serializedVersion: 2
-    m_Bits: 524271
+    m_Bits: 129
 --- !u!114 &3954223694506301739
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -467,6 +470,29 @@ MonoBehaviour:
   rows: 6
   survival: {fileID: 9217988090672240742}
   itemCatalog: {fileID: 0}
+--- !u!136 &1176052483651863644
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.3
+  m_Height: 1.8
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!1 &6946316403666172561
 GameObject:
   m_ObjectHideFlags: 0
@@ -893,6 +919,10 @@ MonoBehaviour:
   depthScaleColor: {r: 0, g: 0.8, b: 1, a: 0.4}
   textDimColor: {r: 0, g: 0.7, b: 0.9, a: 0.5}
   bgPanelColor: {r: 0, g: 0.05, b: 0.1, a: 0.25}
+  modulePoweredColor: {r: 0, g: 1, b: 0.4, a: 1}
+  moduleFloodedColor: {r: 0.2, g: 0.5, b: 1, a: 1}
+  moduleOfflineColor: {r: 1, g: 0.384, b: 0, a: 1}
+  moduleNeutralColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
   lineThickness: 1.5
   thinLine: 1
   fontSize: 14

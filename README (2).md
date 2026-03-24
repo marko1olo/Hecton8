@@ -4925,3 +4925,425 @@ Lead Dev Verdict: Работа идет по графику. Ты усвоил E
 
 
 
+
+
+Movement System v6.0 (Hybrid Fluid Dynamics):
+Управление игроком разделено на рендер-поток (камера) и физический поток (тело) для устранения джиттера. Внедрена Data-Driven система SuitData (ScriptableObject), описывающая массу, сопротивление, скорость и "Juice"-эффекты для каждого скафандра.
+Водная среда использует квадратичное сопротивление (Quadratic Drag) и систему плавного погружения (Immersion Ratio 0..1), устраняя резкие переходы "суша-вода".
+Camera Juice: Все движения камеры (Head Bob, Idle Breathing Sway, Landing Impact, Acceleration Pitch Sway, Turn Sway) вычисляются через критически затухающие пружины (Critically Damped Springs) в CameraJuiceProcessor (Zero-GC).
+
+
+Lighting & Atmosphere Pipeline:
+Жесткий контроль порядка исполнения (Execution Order) для устранения состояний гонки (Race Conditions).
+HectonAtmosphereManager [-6000] считает базовое солнце → HectonUnderwaterVisuals [-4000] умножает на кривую глубины → HectonCelestialEngine[-3000] умножает на фактор окклюзии (затмения). Никакой перезаписи, только мультипликация факторов.
+Единая кривая глубины (Global Light Curve) синхронно управляет светом, цветом, туманом и свечением.
+
+1. Архитектурный фундамент: "Decoupled Look & Physics"
+Zero-Rotation Rigidbody: Физическая капсула игрока жестко заблокирована по всем осям вращения. Это исключает конфликты интерполяции PhysX и рендер-потока.
+Render-Rate Camera: Вращение камеры (Yaw/Pitch) происходит в Tick() на частоте кадров монитора (144Гц+), что дает нулевой инпут-лаг.
+Body-Lag Simulation: Тело игрока (« Yaw ») догоняет направление взгляда через критически затухающие пружины (Critically Damped Springs), создавая ощущение массы и инерции тяжелого снаряжения.
+2. Симуляция водной среды (Fluid Dynamics)
+Quadratic Drag: Сопротивление воды рассчитывается по формуле 
+F
+=
+−
+C
+⋅
+v
+2
+F=−C⋅v 
+2
+ 
+. Это обеспечивает «густоту» среды: чем быстрее плывешь, тем сильнее сопротивление.
+Immersion-Based Gravity: Гравитация не переключается бинарно (вкл/выкл), а плавно затухает по мере погружения тела (Immersion Ratio 0..1). На мелководье игрок чувствует вес, в глубине — полную невесомость.
+Crest Ocean Integration: Система в реальном времени сэмплирует высоту волн Crest. Поверхность воды — это живая, движущаяся среда. Игрок физически поднимается и опускается вместе с гребнями волн.
+3. Visceral Feedback (Camera Juice)
+Swim Bobbing: Ритмичные гребки при плавании транслируются в мягкое покачивание камеры по трем осям.
+Depth Pressure: С глубиной FOV (поле зрения) сужается, имитируя давление на визор и клаустрофобию.
+Exhale Rhythm: Процедурный цикл дыхания. Каждый выдох сопровождается микро-дипом камеры и событием для генерации пузырей.
+Collision Feedback: При ударах о дно или скалы камера получает импульсное сотрясение (Shake) с затуханием, интенсивность которого зависит от силы удара.
+
+
+
+
+# HECTON-8 — ПОЛНЫЙ СВОД ВЫПОЛНЕННЫХ РАБОТ
+
+## Сессия: Camera Juice Immersion Pack + MapMagic→GPUI Rock Pipeline
+
+---
+
+## ЧАСТЬ 1: CAMERA JUICE IMMERSION PACK (v7.0 → v7.0a)
+
+### 1.1 Что было на входе
+
+Система HectonPlayerMovement v6.3 с базовой иммерсией:
+- Rigidbody-based movement, zero-jitter camera
+- Crest Ocean integration (wave height sampling)
+- Surface lock, graduated gravity, smoothed immersion
+- Body yaw lag underwater
+- CameraJuiceProcessor v6.1 с head bob, idle sway, surface bob, roll, momentum pitch, turn sway, landing impact
+
+### 1.2 Что было реализовано — 10 фич
+
+#### Фича 1: Swim Bobbing (гребковое покачивание)
+**Файл:** `CameraJuiceProcessor.cs` → `ProcessSwimBob()`
+**Суть:** Ритмичное покачивание камеры при плавании с инпутом, имитирующее гребки.
+**Компоненты:**
+- Вертикальный bob (основной stroke)
+- Forward/back body undulation (половинная частота)
+- Alternating arm roll (сдвиг фазы π/2)
+- Интенсивность масштабируется по скорости плавания (min 0.3 при движении)
+- Плавный fade in/out через exponential blend
+
+**Параметры SuitData:**
+- `enableSwimBob` (bool)
+- `swimBobFrequency` (0.3–3 Hz, default 0.9)
+- `swimBobVerticalAmplitude` (0–0.15m, default 0.04)
+- `swimBobForwardAmplitude` (0–0.08m, default 0.015)
+- `swimBobRollAmplitude` (0–3°, default 0.8)
+- `swimBobTransitionSpeed` (1–15, default 4)
+
+#### Фича 2: Pitch Inertia Underwater (инерция шлема)
+**Статус:** Реализована в v7.0, **ОТКЛЮЧЕНА в v7.0a**.
+**Причина отключения:** При вертикальном движении мыши spring-damped pitch создавал эффект "reverse jerk" — камера сначала дёргалась в противоположную сторону, потом догоняла. Ощущалось как сопротивление. Body yaw lag уже достаточно для ощущения массы.
+**Параметры остались в SuitData** (не ломают сериализацию):
+- `enableUnderwaterPitchInertia` (bool)
+- `underwaterPitchSpringOmega` (5–40, default 18)
+
+**Код:** `ProcessPitchInertia()` удалён из pipeline. `ApplyCameraState()` использует `_cameraPitch` напрямую.
+
+#### Фича 3: Collision Camera Shake (удар о скалу)
+**Файл:** `HectonPlayerMovement.cs` → `OnCollisionEnter()`, `CameraJuiceProcessor.cs` → `RegisterCollisionImpulse()`, `ProcessCollisionShake()`
+**Суть:** При столкновении Rigidbody с объектом на скорости выше порога — damped oscillation на камере.
+**Реализация:**
+- `OnCollisionEnter` извлекает `collision.relativeVelocity.magnitude`
+- Нормализует 0–1 по диапазону threshold→max
+- Pseudo-random sign per axis (deterministic от Time.time, zero GC)
+- Три канала shake: Y position, X position, pitch
+- Все три восстанавливаются через spring-damped к нулю
+
+**Параметры SuitData:**
+- `enableCollisionShake` (bool)
+- `collisionShakeThreshold` (0.5–10 m/s, default 2)
+- `collisionShakeMaxVelocity` (3–30 m/s, default 12)
+- `collisionShakeMaxAmplitude` (0–0.15m, default 0.05)
+- `collisionShakeMaxPitch` (0–5°, default 2)
+- `collisionShakeRecoveryOmega` (4–25, default 10)
+
+#### Фича 4: Splash Events (вход/выход из воды)
+**Файл:** `CameraJuiceProcessor.cs` → `DetectWaterEvents()`
+**Суть:** Детекция быстрого пересечения поверхности воды для звука/VFX.
+**Механика:**
+- Вычисляет `immersionRate = |Δimmersion| / dt`
+- Если rate ≥ threshold → splash
+- Intensity = max(verticalSpeedFactor, rateFactor), clamped 0–1
+- Auto-triggers `RegisterSplash()` → camera dip через spring
+
+**Events (pollable, zero GC):**
+- `SplashThisFrame` (bool) — был ли splash в этом кадре
+- `SplashIntensity` (float 0–1) — сила для звука/VFX
+
+**Movement events (delegate-based):**
+- `OnWaterSplash(float intensity)` — для аудио/VFX систем
+- Splash camera dip через `_splashDipCurrent` + spring recovery
+
+**Параметры SuitData:**
+- `splashImmersionRateThreshold` (0.1–5, default 0.8)
+- `splashMinVerticalSpeed` (0.5–5 m/s, default 1.5)
+- `splashCameraDip` (0–0.1m, default 0.03)
+
+#### Фича 5: Submerge Change Event (голова под водой)
+**Файл:** `CameraJuiceProcessor.cs` → `DetectWaterEvents()`
+**Суть:** Детекция момента, когда голова пересекает порог погружения.
+**Events:**
+- `SubmergeChangedThisFrame` (bool)
+- `IsSubmerged` (bool)
+- `OnSubmergeChange(bool isSubmerged)` — delegate в HectonPlayerMovement
+
+**Параметр SuitData:**
+- `submergeThreshold` (0.7–0.98, default 0.85)
+
+#### Фича 6: Depth Sway Multiplier (азотный наркоз)
+**Файл:** `CameraJuiceProcessor.cs` → `ComputeDepthMultiplier()` applied to idle sway
+**Суть:** С глубиной idle sway амплитуда увеличивается, имитируя потерю устойчивости.
+**Реализация:** Линейная интерполяция множителя 1.0→max по диапазону depth start→end.
+
+**Параметры SuitData:**
+- `depthSwayStart` (0–100m, default 10)
+- `depthSwayEnd` (10–300m, default 80)
+- `depthSwayMultiplierMax` (1.0–3.0, default 1.6)
+
+#### Фича 7: Depth Roll Multiplier (потеря горизонта)
+**Файл:** `CameraJuiceProcessor.cs` → `ComputeDepthMultiplier()` applied to swim roll
+**Суть:** На глубине roll от стрейфа/мыши усиливается — нет визуальной привязки к горизонту.
+**Реализация:** Тот же `ComputeDepthMultiplier` но для rollScale.
+
+**Параметр SuitData:**
+- `depthRollMultiplierMax` (1.0–2.5, default 1.4)
+
+#### Фича 8: Depth Swim Slowdown (давление)
+**Файл:** `HectonPlayerMovement.cs` → `SwimPhysics()`
+**Суть:** На глубине swimForce уменьшается и drag увеличивается.
+**Реализация:**
+- `depthSlowdown` = 1 - saturate((depth-start)/(end-start)) × max
+- `effectiveSwimForce = swimForce × depthSlowdown`
+- `effectiveDragCoeff = swimDragCoefficient + depthDragAdd`
+- Применяется и к swimVerticalForce
+
+**Параметры SuitData:**
+- `depthSwimSlowdownStart` (0–100m, default 20)
+- `depthSwimSlowdownEnd` (20–500m, default 150)
+- `depthSwimSlowdownMax` (0–0.5, default 0.2) — максимальное снижение силы
+- `depthDragIncreaseMax` (0–3, default 0.8) — максимальное увеличение drag
+
+#### Фича 9: FOV Depth Compression (клаустрофобия)
+**Файл:** `CameraJuiceProcessor.cs` → `ProcessDepthFovCompression()`, `HectonPlayerMovement.cs` → `ApplyCameraState()`
+**Суть:** FOV сужается с глубиной, создавая ощущение давления.
+**Реализация:**
+- SmoothStep (t² × (3-2t)) для плавного нарастания
+- `fovOffset` — отрицательное значение, уменьшающее FOV
+- В `ApplyCameraState()`: `targetFov = baseFov + fovOffset`, применяется через exponential lerp
+
+**Новые поля в HectonPlayerMovement:**
+- `baseFov` (серialize, default = camera.fieldOfView при Awake)
+- `_cameraComponent` — кэшированная ссылка на Camera
+
+**Параметры SuitData:**
+- `enableDepthFovCompression` (bool)
+- `depthFovCompressionStart` (0–50m, default 5)
+- `depthFovCompressionEnd` (10–300m, default 100)
+- `depthFovCompressionMax` (0–20°, default 6)
+
+#### Фича 10: Exhale Rhythm (дыхание под водой)
+**Файл:** `CameraJuiceProcessor.cs` → `ProcessExhaleRhythm()`, `RecoverExhaleSpring()`
+**Суть:** Периодический выдох: micro camera dip + event для пузырей.
+**Реализация v7.0a (после фикса):**
+- Таймер с рандомизированным интервалом (deterministic от Time.time)
+- При trigger: impulse на `_exhaleDipCurrent` (без pitch — убран как дёрганый)
+- Spring recovery через `RecoverExhaleSpring()`
+- Активен только при immersion > 0.7
+
+**Events:**
+- `ExhaleThisFrame` (bool, pollable)
+- `OnExhale()` — delegate в HectonPlayerMovement
+
+**Параметры SuitData:**
+- `enableExhaleRhythm` (bool)
+- `exhaleIntervalBase` (2–10s, default 4.5)
+- `exhaleIntervalVariation` (0–3s, default 1)
+- `exhaleDipAmplitude` (0–0.04m, default 0.012)
+- `exhalePitchAmplitude` (0–2°, default 0.4) — существует но не используется в v7.0a
+- `exhaleDuration` (0.1–1s, default 0.4)
+
+### 1.3 Новые структуры данных
+
+**CameraJuiceInput** — добавлены поля:
+- `float depth` — метры ниже поверхности воды
+- `float swimSpeed` — полная 3D скорость плавания
+- `float cameraPitch` — текущий pitch камеры
+
+**CameraJuiceOutput** — добавлено поле:
+- `float fovOffset` — смещение FOV (отрицательное = сужение)
+
+### 1.4 Новые поля в HectonPlayerMovement
+
+- `float baseFov` — базовый FOV камеры (Inspector)
+- `Camera _cameraComponent` — кэш компонента
+- `float _currentDepth` — текущая глубина (вычисляется в FixedTick)
+- `ComputeDepth()` — метод вычисления глубины
+- `OnCollisionEnter(Collision)` — обработчик столкновений для shake
+- Events: `OnWaterSplash`, `OnSubmergeChange`, `OnExhale`
+- Public: `CurrentDepth`, `IsPlayerSubmerged`
+- Debug fields: `_debugDepth`, `_debugFovOffset`, `_debugSplashThisFrame`, `_debugExhaleThisFrame`, `_debugIsSubmerged`
+
+### 1.5 Баг-фиксы (v7.0 → v7.0a)
+
+| Баг | Причина | Фикс |
+|-----|---------|------|
+| Камера дёргается при вертикальном движении мыши на воде | Pitch Inertia spring создавал reverse-direction offset | Pitch inertia полностью отключена, `ApplyCameraState` использует `_cameraPitch` напрямую |
+| Дёрганый кивок при выдохе | Pitch impulse в exhale был слишком резким | Pitch компонент exhale убран, dip impulse смягчён (×0.8 вместо ×1.5) |
+
+### 1.6 Файлы (итоговые версии)
+
+| Файл | Версия | Статус |
+|------|--------|--------|
+| `SuitData.cs` | v7.0 | Полный, ~30 новых параметров |
+| `CameraJuiceProcessor.cs` | v7.0a | Полный, 10 новых эффектов, pitch inertia отключена |
+| `HectonPlayerMovement.cs` | v7.0a | Полный, depth calc, collision, events, FOV |
+
+---
+
+## ЧАСТЬ 2: MAPMAGIC → GPU INSTANCER ROCK PIPELINE
+
+### 2.1 Задача
+
+Спавн до 100,000 камней на процедурном дне без единого GameObject. MapMagic генерирует scatter points → наш код перехватывает → GPU Instancer рендерит → ProximityColliderSystem генерирует физику только рядом с игроком.
+
+**Hardware target:** NVIDIA MX350 (2GB VRAM).
+
+### 2.2 Архитектура
+
+```
+MapMagic Graph
+    │
+    ▼
+[Scatter] → [Adjust] → [HectonRockOutput]
+                              │
+                              │ Generate() — worker thread
+                              │   reads TransitionsList
+                              │
+                              │ Finalize() — worker thread
+                              │   converts Transition[] → Matrix4x4[]
+                              │   groups by layerID
+                              │
+                              │ Apply() — main thread
+                              ▼
+                    HectonRockManager.RegisterChunk()
+                              │
+                              │ SlowTick() — every 0.5s (ISlowTickable)
+                              │   aggregates all chunks per layer
+                              │
+                    ┌─────────┴──────────┐
+                    ▼                    ▼
+          GPUInstancerAPI          ProximityColliderSystem
+     .InitializeWithMatrix4x4Array()    .Initialize(Vector3[])
+     .UpdateVisibilityBuffer...()
+                    │                    │
+                    ▼                    ▼
+              GPU rendering        Burst Jobs + Object Pool
+              (no GameObjects)     (colliders only near player)
+```
+
+### 2.3 HectonRockOutput.cs
+
+**Путь:** `Assets/_Project/Scripts/HectonRockOutput.cs`
+**Тип:** MapMagic 2.1.18 Custom Output Node
+**Наследует:** `OutputGenerator`, реализует `IInlet<TransitionsList>`
+
+**Паттерн (скопирован с ObjectsOutput):**
+1. `Generate(TileData, StopToken)` — читает TransitionsList через `data.ReadInletProduct(this)`, сохраняет через `data.StoreOutput()`, помечает `data.MarkFinalize()`
+2. `Finalize(TileData, StopToken)` — static метод, итерирует все outputs этого типа через `data.Outputs<>()`, конвертирует `Transition.pos/rotation/scale` → `Matrix4x4.TRS()`, группирует по layerID, создаёт `HectonRockApplyData`, помечает `data.MarkApply()`
+3. `HectonRockApplyData.Apply(Terrain)` — main thread, вызывает `HectonRockManager.Instance.RegisterChunk()`
+4. `ClearApplied(TileData, Terrain)` — вызывает `HectonRockManager.Instance.UnregisterChunk()`
+
+**Свойства ноды:**
+- `int layerID` — ID слоя камней (соответствует конфигу менеджера)
+- `OutputLevel outputLevel` — Main (override abstract property)
+
+**Координата чанка:** вычисляется из `data.area.active.worldPos / worldSize`
+
+**Biome support:** базовая маска через `biomeMask.GetWorldValue()` с порогом 0.5
+
+**Ключевые решения:**
+- TransitionsList читается через `trns.arr[t].pos`, `.rotation`, `.scale` (прямой доступ к struct array)
+- `finalizeAction` — static delegate для MapMagic finalize system
+- Area check: `data.area.active.Contains(trn.pos)` — пропуск объектов вне активной области
+
+### 2.4 HectonRockManager.cs
+
+**Путь:** `Assets/_Project/Scripts/HectonRockManager.cs`
+**Тип:** MonoBehaviour, Singleton, ISlowTickable
+**Execution Order:** -5000
+
+**Конфигурация:**
+```csharp
+[Serializable]
+public struct RockLayerConfig
+{
+    public int layerId;                    // соответствует HectonRockOutput.layerID
+    public GPUInstancerPrefab prefabReference; // компонент на префабе камня
+}
+```
+
+**Runtime extraction:** В Awake из `GPUInstancerPrefab.prefabPrototype` извлекается `GPUInstancerPrefabPrototype` — именно этот тип требует GPU Instancer API.
+
+**Хранение данных:**
+- `Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>` — layerId → (chunkCoord → matrices)
+- Dirty flag — обновление только при изменениях
+
+**SlowTick (каждые 0.5с):**
+1. Проверяет dirty flag
+2. Per-layer: подсчёт total instances, grow buffer если нужно, `Array.Copy` всех чанков в flat array
+3. Push в GPUI: первый раз `InitializeWithMatrix4x4Array`, потом `UpdateVisibilityBufferWithMatrix4x4Array`
+4. Cross-layer: извлечение позиций из Matrix4x4 (m03, m13, m23), `Array.Copy` в trimmed array
+5. Push в ProximityColliderSystem: `Initialize(Vector3[])`
+
+**GPU Instancer API вызовы:**
+- `GPUInstancerAPI.InitializeWithMatrix4x4Array(GPUInstancerPrefabManager, GPUInstancerPrefabPrototype, Matrix4x4[])`
+- `GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(GPUInstancerPrefabManager, GPUInstancerPrefabPrototype, Matrix4x4[])`
+
+**Важный баг-фикс (v1.1):** GPU Instancer API принимает `GPUInstancerPrefabPrototype` (ScriptableObject), а НЕ `GPUInstancerPrefab` (MonoBehaviour). Первая версия передавала неправильный тип.
+
+**Память (100,000 rocks):**
+- Matrix4x4[] = ~6.1 MB
+- Vector3[] = ~1.2 MB
+- Dictionary overhead = negligible
+- Total: ~7.5 MB
+
+### 2.5 Баги и фиксы при интеграции
+
+| Ошибка | Причина | Фикс |
+|--------|---------|------|
+| `CS0246: disassemblyRecipient` | Несуществующий параметр GeneratorMenuAttribute | Убран из атрибута |
+| `CS0115: no suitable method to override GetApplyData` | MapMagic не имеет такого метода | Заменён на паттерн Generate→StoreOutput→MarkFinalize→Finalize→MarkApply |
+| `CS0534: does not implement ClearApplied` | Abstract method в OutputGenerator | Реализован: вычисляет chunkCoord, вызывает UnregisterChunk |
+| `CS0534: does not implement OutputLevel.get` | Abstract property в OutputGenerator | Реализован через поле + override |
+| `CS0246: ApplyData not found` | Тип назывался IApplyData в namespace MapMagic.Nodes | Исправлен using + правильное наследование |
+| `CS1503: cannot convert GPUInstancerPrefab to GPUInstancerPrefabPrototype` | API принимает Prototype, не Prefab component | Извлечение `.prefabPrototype` в Awake, хранение правильного типа |
+
+### 2.6 Файлы (итоговые версии)
+
+| Файл | Версия | Статус |
+|------|--------|--------|
+| `HectonRockOutput.cs` | v1.0 | Компилируется, интегрирован с MapMagic |
+| `HectonRockManager.cs` | v1.1 | Компилируется, GPUI type fix |
+
+---
+
+## ЧАСТЬ 3: BACKLOG — ЧТО НЕ СДЕЛАНО
+
+### 3.1 Иммерсия — следующий этап
+
+| ID | Фича | Приоритет | Заметки |
+|----|-------|-----------|---------|
+| IMM-01 | Crest Flow Integration | Высокий | Заменить синусоидальный ambient current на реальное течение из Crest IFlowProvider |
+| IMM-02 | Surface swim realism ("лежать на волне") | Высокий | Surface lock + Crest height уже работают, но нужна доводка ощущений |
+| IMM-03 | Pitch Inertia v2 | Средний | Переделать без reverse-jerk. Возможно через damped velocity multiplier, а не position offset |
+| IMM-04 | Thermocline layer | Низкий | Настраиваемая глубина с изменением drag, event для визуала |
+| IMM-05 | Visor condensation | Низкий | Post-process эффект при всплытии |
+| IMM-06 | Depth-dependent step sound | Низкий | OnDepthChanged event каждые 10м |
+
+### 3.2 Rock Pipeline — следующий этап
+
+| ID | Задача | Приоритет | Заметки |
+|----|--------|-----------|---------|
+| ROCK-01 | Тестирование в runtime | Критичный | Проверить что ноды появляются в MapMagic графе, данные доходят до менеджера |
+| ROCK-02 | Множественные типы камней | Высокий | Несколько RockLayerConfig с разными layerID и prefabs |
+| ROCK-03 | LOD для коллайдеров | Средний | Разный размер BoxCollider для разных distance bands |
+| ROCK-04 | ProximityColliderSystem оптимизация | Средний | ReinitializePositions без пересоздания NativeArray если длина совпадает |
+| ROCK-05 | MapMagic biome-aware rocks | Низкий | Полноценная BiomeBlend интеграция (сейчас базовый mask threshold 0.5) |
+| ROCK-06 | GPUI MapMagic2 Integration package | Информация | В папке Extras есть `GPUI_MapMagic2_Integration.unitypackage` — стоит изучить, может дублирует нашу работу |
+
+### 3.3 Известные риски
+
+| Риск | Описание | Митигация |
+|------|----------|-----------|
+| GPUI buffer size | При >100k инстансов может не хватить VRAM на MX350 | Мониторить `_debugTotalInstances`, ограничить scatter density |
+| ProximityColliderSystem reinit GC | Каждые 0.5с при dirty rebuild — new Vector3[] + NativeArray | Добавить метод ReinitializePositions (ROCK-04) |
+| MapMagic chunk coord collision | Если worldSize некорректен — два тайла могут дать одинаковый chunkCoord | Проверить с реальными тайлами, возможно нужен offset |
+| Exhale rhythm determinism | `math.frac(Time.time * 3.17f)` не истинно random, может давать паттерны | Для MVP достаточно, потом заменить на seeded PRNG |
+
+---
+
+## ЧАСТЬ 4: ТЕХНИЧЕСКИЕ ПРИНЦИПЫ (сохранять в следующих сессиях)
+
+1. **Zero GC** в горячих путях (Tick, FixedTick, SlowTick)
+2. **Tick** = input + camera (render framerate)
+3. **FixedTick** = physics only
+4. **SlowTick** = heavy operations (GPUI rebuild, biome detection)
+5. **Rigidbody** никогда не вращается — камера вращается отдельно
+6. Всё **data-driven** через SuitData
+7. **Spring-damped** поведение везде, никаких blunt lerp
+8. Каждый эффект **параметризуем и выключаем**
+9. NativeArray → **Dispose обязателен**
+10. MapMagic pattern: **Generate → StoreOutput → MarkFinalize → Finalize → MarkApply**

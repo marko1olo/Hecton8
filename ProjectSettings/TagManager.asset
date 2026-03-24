@@ -9,6 +9,11 @@ TagManager:
   - Vehicle
   - Loot
   - Hazard
+  - MetalFloor
+  - Sand
+  - Rock
+  - Grate
+  - Wet
   layers:
   - Default
   - TransparentFX

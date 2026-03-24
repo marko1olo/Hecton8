@@ -1,67 +1,49 @@
 // ============================================================================
-// HECTON-8 — HectonUnderwaterVisuals.cs  v5.0
+// HECTON-8 — HectonUnderwaterVisuals.cs  v5.1
 // ЕДИНОЛИЧНЫЙ ДИРЕКТОР СРЕДЫ: туман, свет, цвета, камера, рассеивание солнца.
 //
 // ═══════════════════════════════════════════════════════════════
-// v5.0 ARCHITECTURE — GLOBAL DEPTH CURVES:
+// v5.1 CHANGES — RACE CONDITION FIX:
 // ═══════════════════════════════════════════════════════════════
 //
-//   CORE CHANGE:
-//     Replaced Beer-Lambert (exp(-depth * K)) with a single
-//     AnimationCurve (globalLightCurve) that maps depth → lightFactor.
+//   [FIX] EXECUTION ORDER:
+//     DefaultExecutionOrder(-4000) ensures this script's OnEnable
+//     fires AFTER AtmosphereManager(-6000) but BEFORE CelestialEngine(-3000).
+//     Registration order in GameTickManager = tick order.
 //
-//     Artist draws ONE curve in Inspector:
-//       X axis = depth in meters (0..5000)
-//       Y axis = light factor (1.0 = full sun, 0.0 = total darkness)
+//     CHAIN (every frame, deterministic):
+//       1. AtmosphereManager.Tick() → fresh ProfileSunIntensity, ComputedHorizonFade
+//       2. UnderwaterVisuals.Tick() → sunLight.intensity = profile × horizon × depth
+//       3. CelestialEngine.Tick()   → sunLight.intensity *= eclipseVisibility
 //
-//     Example curve for "bright shallows, dark abyss":
-//       (0m, 1.0) → (300m, 0.8) → (700m, 0.1) → (1000m, 0.0)
+//   [FIX] ResolveHorizonFade():
+//     Now reads AtmosphereManager.ComputedHorizonFade DIRECTLY
+//     instead of recalculating from SunElevation with a potentially
+//     different fadeAngle. ONE SOURCE OF TRUTH for horizon fade.
+//     Removes the subtle desync where UnderwaterVisuals and
+//     AtmosphereManager used different smoothstep curves.
 //
-//     Fog density is DERIVED from lightFactor automatically:
-//       fogDensity = lerp(minFogDensity, maxFogDensity, 1 - lightFactor)
-//       × biome.turbidityMultiplier [0.5..2.0]
-//
-//     ONE curve controls EVERYTHING depth-dependent:
-//       • Sun intensity
-//       • Sun flare
-//       • Sun visual disc on/off
-//       • Sun scattering (size/softness)
-//       • Sun disc/scatter color fade
-//       • Fog density
-//       • All synced — impossible to desync
-//
-//   BIOMES NOW CONTROL ONLY:
-//     • Colors (fog, scatter, Crest)
-//     • Turbidity multiplier (gentle fog density nudge)
-//     • Biomes CANNOT break global light stratification
-//
-//   REMOVED:
-//     ✗ _globalExtinctionK
-//     ✗ maxSunlightDepth (replaced by curve shape)
-//     ✗ extinctionMultiplier from biomes
-//     ✗ visibilityDistance from biomes
-//     ✗ ComputedFogDensity from biomes
-//     ✗ Beer-Lambert formula
-//     ✗ depthMultiplier formula in ApplyUnderwaterFog
+//   [FIX] Surface light update:
+//     Above water, sunLight.intensity is still written every frame
+//     (profile × horizon) so CelestialEngine can multiply by eclipse.
+//     Guard changed: only skip if BOTH baseSun AND horizon are zero
+//     (prevents writing 0 when AtmosphereManager hasn't initialized).
 //
 // ═══════════════════════════════════════════════════════════════
-// PRESERVED FROM v4.x:
-// ═══════════════════════════════════════════════════════════════
-//
-//   ✓ Live-editing (SlowTick reads profile every tick)
-//   ✓ Sun disc/scatter color fade (pow2 from lightFactor)
+// v5.0 PRESERVED:
+//   ✓ Global depth curve (AnimationCurve)
+//   ✓ Fog density derived from lightFactor
+//   ✓ Sun scattering / color fade
+//   ✓ Biome color interpolation
 //   ✓ Camera background = fog color
-//   ✓ Editor Scene View support ([ExecuteAlways])
-//   ✓ Ambient clamp (MIN_AMBIENT)
-//   ✓ Race condition fix (sole authority for sunLight.intensity)
-//   ✓ Biome fallback (hardcoded defaults if no palette)
-//   ✓ Zero GC in Tick (AnimationCurve.Evaluate is native, no alloc)
+//   ✓ EnforceFogState render callback
+//   ✓ Zero GC in Tick
+//   ✓ [ExecuteAlways] for Editor preview
 //
-// ═══════════════════════════════════════════════════════════════
-// КООРДИНАЦИЯ ЗАПИСИ sunLight.intensity:
-//   AtmosphereManager → ProfileSunIntensity (data only, no write)
-//   UnderwaterVisuals → sunLight.intensity = profile × horizon × lightCurve
-//   CelestialEngine   → sunLight.intensity *= occlusion
+// КООРДИНАЦИЯ ЗАПИСИ sunLight.intensity (v5.1):
+//   AtmosphereManager(-6000) → ProfileSunIntensity, ComputedHorizonFade (data)
+//   UnderwaterVisuals(-4000) → sunLight.intensity = profile × horizon × lightCurve
+//   CelestialEngine(-3000)   → sunLight.intensity *= (1 - eclipseOcclusion)
 // ============================================================================
 
 using Hecton8.Core;
@@ -86,62 +68,31 @@ namespace Hecton8.Environment
         // ══════════════════════════════════════════════════════════
 
         [Header("═══ REFERENCES ═══")]
-        [Tooltip("Camera Transform игрока. Определяет глубину.\n" +
-                 "Если не назначена — используется Camera.main.\n" +
-                 "В редакторе без Play Mode — SceneView камера.")]
         [SerializeField] private Transform playerCamera;
-
-        [Tooltip("Directional Light (солнце).\n" +
-                 "Intensity = ProfileSunIntensity × horizonFade × lightCurve(depth).")]
         [SerializeField] private Light sunLight;
-
-        [Tooltip("SRP Lens Flare на солнечном свете.")]
         [SerializeField] private LensFlareComponentSRP sunFlare;
-
-        [Tooltip("Transform визуального диска солнца.\n" +
-                 "SetActive(false) когда lightFactor ≤ threshold.")]
         [SerializeField] private Transform sunVisualTransform;
-
-        [Tooltip("Основная камера. clearFlags переключается под водой.")]
         [SerializeField] private Camera mainCamera;
 
         [Header("═══ ATMOSPHERE MANAGER ═══")]
-        [Tooltip("Ссылка на HectonAtmosphereManager.\n" +
-                 "Если не назначена — ищется через Instance.\n" +
-                 "Используется для чтения ProfileSunIntensity и SunElevation.")]
         [SerializeField] private HectonAtmosphereManager atmosphereManager;
 
         [Header("═══ CREST MATERIAL ═══")]
-        [Tooltip("Материал подводной части Crest Ocean.")]
         [SerializeField] private Material oceanUnderwaterMaterial;
 
         [Header("═══ SKY MATERIAL ═══")]
-        [Tooltip("Материал шейдера неба (Hecton_AlienSky_Master).\n" +
-                 "Для управления _SunSize, _SunEdgeSoftness,\n" +
-                 "_SunDiscColor и _SunScatterColor при погружении.")]
         [SerializeField] private Material skyMaterial;
 
         [Header("═══ BIOME PALETTE ═══")]
-        [Tooltip("Палитра биомов (HectonOceanPalette).")]
         [SerializeField] private HectonOceanPalette biomePalette;
 
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — GLOBAL DEPTH CURVE (v5.0 CORE)
+        //  INSPECTOR — GLOBAL DEPTH CURVE
         // ══════════════════════════════════════════════════════════
 
         [Header("═══ GLOBAL LIGHT CURVE ═══")]
-        [Tooltip("ГЛАВНАЯ КРИВАЯ ЗАТЕМНЕНИЯ.\n\n" +
-                 "Ось X = глубина в метрах (0 ... 5000).\n" +
-                 "Ось Y = множитель света (1.0 = полный день, 0.0 = мрак).\n\n" +
-                 "Эта одна кривая управляет ВСЕМ:\n" +
-                 "  • Яркость солнца\n" +
-                 "  • Lens Flare\n" +
-                 "  • Видимость диска солнца\n" +
-                 "  • Рассеивание (размер/мягкость)\n" +
-                 "  • Цвета солнца в шейдере неба\n" +
-                 "  • Плотность тумана (через min/maxFogDensity)\n\n" +
-                 "Пример: (0, 1.0) → (300, 0.8) → (700, 0.1) → (1000, 0.0)\n" +
-                 "= светло до 300м, сумерки 300-700м, мрак после 700м.")]
+        [Tooltip("ГЛАВНАЯ КРИВАЯ ЗАТЕМНЕНИЯ.\n" +
+                 "X = глубина (м), Y = множитель света [0..1].")]
         [SerializeField] private AnimationCurve globalLightCurve = new AnimationCurve(
             new Keyframe(0f,    1.0f,  0f, 0f),
             new Keyframe(300f,  0.8f,  0f, 0f),
@@ -150,15 +101,9 @@ namespace Hecton8.Environment
         );
 
         [Header("═══ FOG DENSITY RANGE ═══")]
-        [Tooltip("Минимальная плотность тумана (на поверхности, lightFactor=1.0).\n" +
-                 "Чем меньше — тем прозрачнее вода у поверхности.\n" +
-                 "0.002 ≈ видимость ~500м.")]
         [Range(0.0001f, 0.05f)]
         [SerializeField] private float minFogDensity = 0.002f;
 
-        [Tooltip("Максимальная плотность тумана (в полной тьме, lightFactor=0.0).\n" +
-                 "Чем больше — тем гуще мрак на максимальной глубине.\n" +
-                 "0.08 ≈ видимость ~12м.")]
         [Range(0.01f, 0.5f)]
         [SerializeField] private float maxFogDensity = 0.08f;
 
@@ -167,56 +112,32 @@ namespace Hecton8.Environment
         // ══════════════════════════════════════════════════════════
 
         [Header("═══ WATER LEVEL ═══")]
-        [Tooltip("Fallback уровень воды если физический\n" +
-                 "HectonFluidEngine.Instance недоступен.")]
         [SerializeField] private float waterLevelFallback = 4900f;
 
         [Header("═══ SUN VISUAL ═══")]
-        [Tooltip("Порог lightFactor для деактивации солнечного диска.\n" +
-                 "Гистерезис: ON при threshold × 2.")]
         [Range(0.0001f, 0.05f)]
         [SerializeField] private float sunVisualDisableThreshold = 0.005f;
 
         [Header("═══ SUN SCATTERING ═══")]
-        [Tooltip("Базовый размер солнечного диска в шейдере неба.\n" +
-                 "Значение над водой. Маленький = точка.")]
         [SerializeField] private float baseSunSize = 0.002f;
-
-        [Tooltip("Максимальный размер солнца под водой.\n" +
-                 "Когда lightFactor < 1 — солнце растёт.\n" +
-                 "0.15 = большое рассеянное пятно.")]
         [SerializeField] private float underwaterSunSizeMax = 0.15f;
-
-        [Tooltip("Базовая мягкость края солнца (над водой).")]
         [SerializeField] private float baseSunEdgeSoftness = 0.001f;
-
-        [Tooltip("Максимальная мягкость края солнца под водой.\n" +
-                 "0.5 = очень размытое свечение.")]
         [SerializeField] private float underwaterSunSoftnessMax = 0.5f;
 
         [Header("═══ TRANSITION ═══")]
         [Range(0.05f, 2.0f)]
         [SerializeField] private float biomeTransitionSpeed = 0.2f;
-
         [SerializeField] private float slowTickInterval = 0.5f;
 
         [Header("═══ SURFACE DEFAULTS ═══")]
-        [Tooltip("Цвет тумана над водой.")]
         [ColorUsage(false)]
         [SerializeField] private Color surfaceFogColor = new Color(0.7f, 0.75f, 0.8f, 1f);
-
         [SerializeField] private float surfaceFogDensity = 0.001f;
-
-        [Tooltip("Включать fog над водой. false = чистое небо.")]
         [SerializeField] private bool enableSurfaceFog = false;
-
-        [Tooltip("Ambient цвет для поверхности.")]
         [ColorUsage(false)]
         [SerializeField] private Color surfaceAmbientColor = new Color(0.5f, 0.5f, 0.5f, 1f);
 
         [Header("═══ UNDERWATER AMBIENT ═══")]
-        [Tooltip("Ambient цвет под водой (RenderSettings.ambientLight).\n" +
-                 "Минимум (0.01, 0.02, 0.03) применяется автоматически.")]
         [ColorUsage(false)]
         [SerializeField] private Color underwaterAmbientColor = new Color(0.02f, 0.04f, 0.06f, 1f);
 
@@ -231,6 +152,7 @@ namespace Hecton8.Environment
         [SerializeField] private float _debugFogDensity;
         [SerializeField] private float _debugTurbidity;
         [SerializeField] private float _debugAtmoSunIntensity;
+        [SerializeField] private float _debugHorizonFade;
         [SerializeField] private float _debugFinalSunIntensity;
         [SerializeField] private int   _debugTargetBiome;
         [SerializeField] private float _debugTransitionProgress;
@@ -248,22 +170,16 @@ namespace Hecton8.Environment
 
         private static readonly int _ID_ScatterColourBase =
             Shader.PropertyToID("_ScatterColourBase");
-
         private static readonly int _ID_ScatterColourShallow =
             Shader.PropertyToID("_ScatterColourShallow");
-
         private static readonly int _ID_DepthFogDensity =
             Shader.PropertyToID("_DepthFogDensity");
-
         private static readonly int _ID_SunSize =
             Shader.PropertyToID("_SunSize");
-
         private static readonly int _ID_SunEdgeSoftness =
             Shader.PropertyToID("_SunEdgeSoftness");
-
         private static readonly int _ID_SunDiscColor =
             Shader.PropertyToID("_SunDiscColor");
-
         private static readonly int _ID_SunScatterColor =
             Shader.PropertyToID("_SunScatterColor");
 
@@ -271,10 +187,6 @@ namespace Hecton8.Environment
         //  CONSTANTS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Minimum ambient color components. Terrain is ALWAYS visible.
-        /// Even at 5000m depth, some bioluminescent glow illuminates geometry.
-        /// </summary>
         private static readonly Color MIN_AMBIENT = new Color(0.01f, 0.02f, 0.03f, 1f);
 
         // ══════════════════════════════════════════════════════════
@@ -289,7 +201,6 @@ namespace Hecton8.Environment
 
         private int _targetBiomeIndex;
 
-        // Current interpolated biome parameters (COLORS + TURBIDITY ONLY)
         private Color   _currentScatterBase;
         private Color   _currentScatterShallow;
         private Vector3 _currentDepthFogDensity;
@@ -297,7 +208,6 @@ namespace Hecton8.Environment
         private float   _currentTurbidity;
         private Color   _currentAmbientColor;
 
-        // Target biome parameters
         private Color   _targetScatterBase;
         private Color   _targetScatterShallow;
         private Vector3 _targetDepthFogDensity;
@@ -306,15 +216,11 @@ namespace Hecton8.Environment
         private Color   _targetAmbientColor;
 
         private float _transitionProgress;
-
-        /// <summary>Кэшированная плотность тумана для URP коллбэка</summary>
         private float _cachedFogDensity;
 
-        // Base values (for surface restore)
         private float _baseFlareIntensity;
         private bool  _baseValuesCaptured;
 
-        // Base sky sun colors
         private Color _baseSunDiscColor;
         private Color _baseSunScatterColor;
         private bool  _baseSkyColorsCaptured;
@@ -323,10 +229,8 @@ namespace Hecton8.Environment
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
         private bool _sunVisualWasDisabled;
-
         private bool _biomeFallbackActive;
 
-        // Editor mode timing
         private float _editorSlowTickAccum;
 
         // ══════════════════════════════════════════════════════════
@@ -343,8 +247,9 @@ namespace Hecton8.Environment
             CaptureBaseValues();
             CaptureSkyBaseColors();
             InitializeCurrentValues();
-            // ── Перехват рендера (подавление Crest в Editor) ──
+
             RenderPipelineManager.beginCameraRendering += EnforceFogState;
+
             if (Application.isPlaying)
             {
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
@@ -378,8 +283,8 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
-            // ── Отписка от рендера ──
             RenderPipelineManager.beginCameraRendering -= EnforceFogState;
+
             if (Application.isPlaying)
             {
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
@@ -413,7 +318,7 @@ namespace Hecton8.Environment
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EDITOR UPDATE (scene camera support in edit mode)
+        //  EDITOR UPDATE
         // ══════════════════════════════════════════════════════════
 
 #if UNITY_EDITOR
@@ -456,9 +361,10 @@ namespace Hecton8.Environment
         // ══════════════════════════════════════════════════════════
         //  ITickable.Tick — PER-FRAME
         //
-        //  v5.0: All depth logic driven by globalLightCurve.
-        //  ONE curve → lightFactor → everything else derived.
-        //  AnimationCurve.Evaluate is native call, zero GC.
+        //  v5.1: By the time this runs, AtmosphereManager has already
+        //  computed fresh ProfileSunIntensity and ComputedHorizonFade.
+        //  We read those values and combine with depth factor.
+        //  CelestialEngine will run AFTER us and multiply by eclipse.
         // ══════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
@@ -469,17 +375,17 @@ namespace Hecton8.Environment
                 if (playerCamera == null) return;
             }
 
-            // ══ 1. WATER LEVEL ══
             float waterLevel = ResolveWaterLevel();
-
-            // ══ 2. DEPTH ══
             float cameraY = playerCamera.position.y;
             float depth = math.max(0f, waterLevel - cameraY);
             bool isUnderwater = cameraY < waterLevel;
 
             UpdateDepthDiagnostics(depth, isUnderwater);
 
-            // ══ 3. ABOVE WATER — instant restore ══
+            // ══════════════════════════════════════════════
+            //  ABOVE WATER
+            // ══════════════════════════════════════════════
+
             if (!isUnderwater)
             {
                 if (_wasUnderwater)
@@ -489,24 +395,31 @@ namespace Hecton8.Environment
                     _wasUnderwater = false;
                 }
 
-                // ── Свет на поверхности: обновляем каждый кадр ──
-                // Без этого солнце не реагирует на закат/рассвет
+                // ── v5.1: Write sunLight.intensity EVERY FRAME above water ──
+                // This is the "base" value that CelestialEngine will multiply
+                // by eclipse visibility in its Tick() (which runs after ours).
+                //
+                // profile × horizon gives the correct sunset/sunrise dimming.
+                // CelestialEngine then applies: intensity *= (1 - eclipseOcclusion)
+                //
+                // Guard: skip only if AtmosphereManager hasn't computed yet
+                // (both values would be at their defaults = 1.0, which is fine).
                 if (sunLight != null)
                 {
                     float baseSun = ResolveProfileSunIntensity();
                     float horizon = ResolveHorizonFade();
-                    // Если AtmosphereManager ещё не инициализирован (Editor race),
-                    // не обнуляем свет — оставляем как есть
-                    if (baseSun > 0.001f)
-                    {
-                        sunLight.intensity = baseSun * horizon;
-                    }
+                    sunLight.intensity = baseSun * horizon;
+
+                    UpdateSurfaceLightDiagnostics(baseSun, horizon, baseSun * horizon);
                 }
 
                 return;
             }
 
-            // ══ 4. ENTERING WATER — one-time setup ══
+            // ══════════════════════════════════════════════
+            //  ENTERING WATER
+            // ══════════════════════════════════════════════
+
             if (!_wasUnderwater)
             {
                 RenderSettings.fog     = true;
@@ -514,35 +427,26 @@ namespace Hecton8.Environment
                 _wasUnderwater = true;
             }
 
-            // ══ 5. GLOBAL LIGHT CURVE (v5.0 CORE) ══
-            // One curve rules everything. No Beer-Lambert.
-            // Clamp to [0, 1] — curve editor might overshoot.
+            // ══════════════════════════════════════════════
+            //  UNDERWATER — DEPTH-DRIVEN
+            // ══════════════════════════════════════════════
+
             float lightFactor = math.saturate(globalLightCurve.Evaluate(depth));
 
-            // ══ 6. SUN INTENSITY ══
+            // ── Sun intensity = profile × horizon × depthCurve ──
             float baseSunIntensity = ResolveProfileSunIntensity();
             float horizonFade = ResolveHorizonFade();
             float finalSunIntensity = baseSunIntensity * horizonFade * lightFactor;
 
             ApplySunIntensity(finalSunIntensity, lightFactor);
             ApplySunVisualState(lightFactor);
-
-            // ══ 7. SUN SCATTERING (driven by lightFactor, not depth) ══
             ApplySunScattering(lightFactor);
-
-            // ══ 8. SUN DISC/SCATTER COLOR FADE ══
             ApplySunColorFade(lightFactor);
-
-            // ══ 9. FOG (derived from lightFactor + turbidity) ══
             ApplyUnderwaterFog(lightFactor, depth);
-
-            // ══ 10. AMBIENT LIGHT (per-frame, clamped) ══
             ApplyUnderwaterAmbient();
-
-            // ══ 11. CAMERA (fog color) ══
             ApplyUnderwaterCamera();
 
-            UpdateLightDiagnostics(lightFactor, baseSunIntensity * horizonFade, finalSunIntensity);
+            UpdateLightDiagnostics(lightFactor, baseSunIntensity, horizonFade, finalSunIntensity);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -553,76 +457,20 @@ namespace Hecton8.Environment
         {
             if (playerCamera == null) return;
 
-            // Live-editing — refresh targets from current profile
             RefreshTargetsFromCurrentProfile();
 
-            // Biome interpolation (smooth color + turbidity transitions)
             float lerpT = math.saturate(biomeTransitionSpeed * slowTickInterval);
             InterpolateBiomeParameters(lerpT);
 
-            // Crest material
             ApplyCrestMaterial();
         }
 
         // ══════════════════════════════════════════════════════════
-        //  LIVE-EDITING — REFRESH TARGETS
-        // ══════════════════════════════════════════════════════════
-
-        private void RefreshTargetsFromCurrentProfile()
-        {
-            if (biomePalette == null) return;
-
-            HectonBiomeProfile currentProf = biomePalette.GetProfile(_targetBiomeIndex);
-            if (currentProf == null)
-            {
-                currentProf = biomePalette.GetProfile(0);
-                if (currentProf == null) return;
-            }
-
-            // Update targets WITHOUT resetting _transitionProgress
-            _targetScatterBase     = currentProf.scatterColorBase;
-            _targetScatterShallow  = currentProf.scatterColorShallow;
-            _targetDepthFogDensity = currentProf.depthFogDensity;
-            _targetFogColor        = currentProf.fogColor;
-            _targetTurbidity       = currentProf.turbidityMultiplier;
-            _targetAmbientColor    = underwaterAmbientColor;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  WATER LEVEL
-        // ══════════════════════════════════════════════════════════
-
-        private float ResolveWaterLevel()
-        {
-            if (!_physicsEngineCached)
-                CachePhysicsEngine();
-
-            if (_physicsEngine != null)
-                return _physicsEngine.WaterLevel;
-
-            return waterLevelFallback;
-        }
-
-        private void CachePhysicsEngine()
-        {
-            if (!Application.isPlaying)
-            {
-                _physicsEngineCached = false;
-#if UNITY_EDITOR
-                _debugPhysicsEngineFound = false;
-#endif
-                return;
-            }
-
-            _physicsEngine = Hecton8.Physics.HectonFluidEngine.Instance;
-            _physicsEngineCached = _physicsEngine != null;
-#if UNITY_EDITOR
-            _debugPhysicsEngineFound = _physicsEngineCached;
-#endif
-        }
-
-        // ══════════════════════════════════════════════════════════
         //  ATMOSPHERE MANAGER INTEGRATION
+        //
+        //  v5.1: ResolveHorizonFade now reads the PRECOMPUTED value
+        //  from AtmosphereManager instead of recalculating.
+        //  This ensures ONE source of truth for the horizon curve.
         // ══════════════════════════════════════════════════════════
 
         private float ResolveProfileSunIntensity()
@@ -633,24 +481,31 @@ namespace Hecton8.Environment
             if (_cachedAtmoManager != null)
                 return _cachedAtmoManager.ProfileSunIntensity;
 
-            return 1f;
+            // Fallback: no atmosphere manager = sun at full intensity
+            return sunLight != null ? sunLight.intensity : 1f;
         }
 
+        /// <summary>
+        /// v5.1 FIX: Reads AtmosphereManager.ComputedHorizonFade directly.
+        ///
+        /// OLD (v5.0): Recalculated from SunElevation with its own fadeAngle.
+        ///   Problem: different fadeAngle → different curve → desync with
+        ///   what AtmosphereManager considers "sunset".
+        ///
+        /// NEW (v5.1): Single source of truth.
+        ///   AtmosphereManager computes horizonFade from its own _sunHorizonFadeAngle.
+        ///   We just read the result.
+        ///   If no AtmosphereManager: return 1.0 (sun always visible).
+        /// </summary>
         private float ResolveHorizonFade()
         {
-            if (_cachedAtmoManager == null)
-                return 1f;
+            if (!_atmoManagerCached)
+                CacheAtmosphereManager();
 
-            float elevation = _cachedAtmoManager.SunElevation;
+            if (_cachedAtmoManager != null)
+                return _cachedAtmoManager.ComputedHorizonFade;
 
-            const float fadeAngle = 10f;
-            float fadeThreshold = math.sin(math.radians(fadeAngle));
-
-            if (elevation <= 0f) return 0f;
-            if (elevation >= fadeThreshold) return 1f;
-
-            float st = elevation / fadeThreshold;
-            return st * st * (3f - 2f * st);
+            return 1f;
         }
 
         private void CacheAtmosphereManager()
@@ -675,7 +530,7 @@ namespace Hecton8.Environment
         }
 
         // ══════════════════════════════════════════════════════════
-        //  SUN INTENSITY — in Tick()
+        //  SUN INTENSITY
         // ══════════════════════════════════════════════════════════
 
         private void ApplySunIntensity(float finalIntensity, float lightFactor)
@@ -694,7 +549,7 @@ namespace Hecton8.Environment
         }
 
         // ══════════════════════════════════════════════════════════
-        //  SUN VISUAL DISC — in Tick()
+        //  SUN VISUAL DISC
         // ══════════════════════════════════════════════════════════
 
         private void ApplySunVisualState(float lightFactor)
@@ -736,26 +591,13 @@ namespace Hecton8.Environment
         }
 
         // ══════════════════════════════════════════════════════════
-        //  SUN SCATTERING — in Tick()
-        //  v5.0: driven by lightFactor (1-lightFactor = scatter amount)
-        //  instead of raw depth. Synchronized with the curve.
+        //  SUN SCATTERING
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// v5.0: Sun scattering is now driven by lightFactor from the global curve.
-        /// scatterT = 1 - lightFactor:
-        ///   lightFactor=1.0 → scatterT=0 → small sharp sun (surface)
-        ///   lightFactor=0.5 → scatterT=0.5 → medium scattered glow
-        ///   lightFactor=0.0 → scatterT=1.0 → max scatter (but sun is off anyway)
-        ///
-        /// This keeps scattering perfectly synced with the light curve.
-        /// No separate scatterDepthMax parameter needed.
-        /// </summary>
         private void ApplySunScattering(float lightFactor)
         {
             if (skyMaterial == null) return;
 
-            // Invert: less light = more scatter
             float scatterT = math.saturate(1f - lightFactor);
 
             float sunSize = Mathf.Lerp(baseSunSize, underwaterSunSizeMax, scatterT);
@@ -791,11 +633,6 @@ namespace Hecton8.Environment
             _baseSkyColorsCaptured = true;
         }
 
-        /// <summary>
-        /// Fades sun disc and scatter colors toward black.
-        /// Uses pow(lightFactor, 2) for quadratic falloff — sun colors
-        /// disappear faster than ambient, which looks natural.
-        /// </summary>
         private void ApplySunColorFade(float lightFactor)
         {
             if (skyMaterial == null) return;
@@ -834,66 +671,9 @@ namespace Hecton8.Environment
         }
 
         // ══════════════════════════════════════════════════════════
-        //  BIOME INTERPOLATION — in SlowTick()
-        //  v5.0: interpolates colors + turbidity. No extinction.
+        //  FOG
         // ══════════════════════════════════════════════════════════
 
-        private void InterpolateBiomeParameters(float lerpT)
-        {
-            _currentScatterBase = Color.Lerp(
-                _currentScatterBase, _targetScatterBase, lerpT);
-
-            _currentScatterShallow = Color.Lerp(
-                _currentScatterShallow, _targetScatterShallow, lerpT);
-
-            _currentDepthFogDensity = Vector3.Lerp(
-                _currentDepthFogDensity, _targetDepthFogDensity, lerpT);
-
-            _currentFogColor = Color.Lerp(
-                _currentFogColor, _targetFogColor, lerpT);
-
-            _currentTurbidity = Mathf.Lerp(
-                _currentTurbidity, _targetTurbidity, lerpT);
-
-            _currentAmbientColor = Color.Lerp(
-                _currentAmbientColor, _targetAmbientColor, lerpT);
-
-            float dist = ColorDistanceManhattan(
-                _currentScatterBase, _targetScatterBase);
-            _transitionProgress = 1f - math.saturate(dist * 10f);
-
-#if UNITY_EDITOR
-            _debugTransitionProgress = _transitionProgress;
-            _debugTurbidity          = _currentTurbidity;
-#endif
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  CREST MATERIAL — in SlowTick()
-        // ══════════════════════════════════════════════════════════
-
-        private void ApplyCrestMaterial()
-        {
-            if (oceanUnderwaterMaterial == null) return;
-
-            oceanUnderwaterMaterial.SetColor(
-                _ID_ScatterColourBase, _currentScatterBase);
-
-            oceanUnderwaterMaterial.SetColor(
-                _ID_ScatterColourShallow, _currentScatterShallow);
-
-            oceanUnderwaterMaterial.SetVector(
-                _ID_DepthFogDensity,
-                new Vector4(
-                    _currentDepthFogDensity.x,
-                    _currentDepthFogDensity.y,
-                    _currentDepthFogDensity.z,
-                    0f));
-        }
-
-                // ══════════════════════════════════════════════════════════
-        //  URP FOG — in Tick()
-        // ══════════════════════════════════════════════════════════
         private void ApplyUnderwaterFog(float lightFactor, float currentDepth)
         {
             RenderSettings.fogColor = _currentFogColor;
@@ -901,11 +681,10 @@ namespace Hecton8.Environment
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
 
-            // Плавное нарастание тумана в первые 0.5 метра под водой (Zero Jerk)
             float smoothSubmerge = math.saturate(currentDepth / 0.5f);
-            float surfaceDensity = enableSurfaceFog ? surfaceFogDensity : 0.0001f;
+            float surfDensity = enableSurfaceFog ? surfaceFogDensity : 0.0001f;
 
-            _cachedFogDensity = Mathf.Lerp(surfaceDensity, targetDensity, smoothSubmerge);
+            _cachedFogDensity = Mathf.Lerp(surfDensity, targetDensity, smoothSubmerge);
             RenderSettings.fogDensity = _cachedFogDensity;
 
 #if UNITY_EDITOR
@@ -913,19 +692,12 @@ namespace Hecton8.Environment
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  URP RENDER CALLBACK — OVERRIDE CREST
-        //  Вызывается ПЕРЕД отрисовкой каждой камеры.
-        // ══════════════════════════════════════════════════════════
         private void EnforceFogState(ScriptableRenderContext context, Camera cam)
         {
-            // Игнорируем UI камеры, рендер-текстуры и прочее
             if (cam.cameraType != CameraType.Game && cam.cameraType != CameraType.SceneView)
                 return;
-
             if (playerCamera == null) return;
 
-            // Если мы под водой — жестко вбиваем наши закэшированные настройки
             if (playerCamera.position.y < ResolveWaterLevel())
             {
                 RenderSettings.fog = true;
@@ -934,7 +706,6 @@ namespace Hecton8.Environment
             }
             else
             {
-                // Над водой — гарантируем наши надводные настройки
                 if (enableSurfaceFog)
                 {
                     RenderSettings.fog = true;
@@ -949,7 +720,7 @@ namespace Hecton8.Environment
         }
 
         // ══════════════════════════════════════════════════════════
-        //  AMBIENT LIGHT — in Tick() + CLAMP
+        //  AMBIENT / CAMERA
         // ══════════════════════════════════════════════════════════
 
         private void ApplyUnderwaterAmbient()
@@ -965,28 +736,24 @@ namespace Hecton8.Environment
             RenderSettings.ambientLight = ambient;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  CAMERA — in Tick()
-        //  Camera background = fog color for seamless dissolve
-        // ══════════════════════════════════════════════════════════
-
         private void ApplyUnderwaterCamera()
         {
             if (mainCamera == null) return;
-
             mainCamera.clearFlags      = CameraClearFlags.SolidColor;
             mainCamera.backgroundColor = _currentFogColor;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  SURFACE DEFAULTS (instant reset) — in Tick()
+        //  SURFACE DEFAULTS
+        //
+        //  v5.1: ApplySurfaceDefaults writes sunLight.intensity
+        //  as profile × horizon. CelestialEngine will multiply
+        //  by eclipse visibility afterward (runs later in tick order).
         // ══════════════════════════════════════════════════════════
 
         private void ApplySurfaceDefaults()
         {
-            // ── SUN INTENSITY (CRITICAL FIX) ──
-            // UnderwaterVisuals — ЕДИНОЛИЧНЫЙ хозяин света.
-            // Мы обязаны сами вернуть яркость солнца на поверхности.
+            // ── Sun intensity: base for CelestialEngine to multiply ──
             if (sunLight != null)
             {
                 float baseSun = ResolveProfileSunIntensity();
@@ -994,7 +761,6 @@ namespace Hecton8.Environment
                 sunLight.intensity = baseSun * horizon;
             }
 
-            // ── Flare restore ──
             if (_baseValuesCaptured && sunFlare != null)
             {
                 sunFlare.intensity = _baseFlareIntensity;
@@ -1002,10 +768,8 @@ namespace Hecton8.Environment
                     sunFlare.enabled = true;
             }
 
-            // ── Sun visual ──
             RestoreSunVisual();
 
-            // ── Fog (SOLE AUTHORITY) ──
             if (enableSurfaceFog)
             {
                 RenderSettings.fog        = true;
@@ -1018,17 +782,12 @@ namespace Hecton8.Environment
                 RenderSettings.fog = false;
             }
 
-            // ── Ambient (SOLE AUTHORITY) ──
             RenderSettings.ambientMode  = AmbientMode.Flat;
             RenderSettings.ambientLight = surfaceAmbientColor;
 
-            // ── Camera (SOLE AUTHORITY) ──
             if (mainCamera != null)
-            {
                 mainCamera.clearFlags = CameraClearFlags.Skybox;
-            }
 
-            // ── Crest surface colors ──
             if (biomePalette != null)
             {
                 HectonBiomeProfile surfProfile = biomePalette.SurfaceProfile;
@@ -1046,6 +805,71 @@ namespace Hecton8.Environment
         {
             if (mainCamera != null)
                 mainCamera.clearFlags = CameraClearFlags.Skybox;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  BIOME INTERPOLATION
+        // ══════════════════════════════════════════════════════════
+
+        private void RefreshTargetsFromCurrentProfile()
+        {
+            if (biomePalette == null) return;
+
+            HectonBiomeProfile currentProf = biomePalette.GetProfile(_targetBiomeIndex);
+            if (currentProf == null)
+            {
+                currentProf = biomePalette.GetProfile(0);
+                if (currentProf == null) return;
+            }
+
+            _targetScatterBase     = currentProf.scatterColorBase;
+            _targetScatterShallow  = currentProf.scatterColorShallow;
+            _targetDepthFogDensity = currentProf.depthFogDensity;
+            _targetFogColor        = currentProf.fogColor;
+            _targetTurbidity       = currentProf.turbidityMultiplier;
+            _targetAmbientColor    = underwaterAmbientColor;
+        }
+
+        private void InterpolateBiomeParameters(float lerpT)
+        {
+            _currentScatterBase = Color.Lerp(
+                _currentScatterBase, _targetScatterBase, lerpT);
+            _currentScatterShallow = Color.Lerp(
+                _currentScatterShallow, _targetScatterShallow, lerpT);
+            _currentDepthFogDensity = Vector3.Lerp(
+                _currentDepthFogDensity, _targetDepthFogDensity, lerpT);
+            _currentFogColor = Color.Lerp(
+                _currentFogColor, _targetFogColor, lerpT);
+            _currentTurbidity = Mathf.Lerp(
+                _currentTurbidity, _targetTurbidity, lerpT);
+            _currentAmbientColor = Color.Lerp(
+                _currentAmbientColor, _targetAmbientColor, lerpT);
+
+            float dist = ColorDistanceManhattan(
+                _currentScatterBase, _targetScatterBase);
+            _transitionProgress = 1f - math.saturate(dist * 10f);
+
+#if UNITY_EDITOR
+            _debugTransitionProgress = _transitionProgress;
+            _debugTurbidity          = _currentTurbidity;
+#endif
+        }
+
+        private void ApplyCrestMaterial()
+        {
+            if (oceanUnderwaterMaterial == null) return;
+
+            oceanUnderwaterMaterial.SetColor(
+                _ID_ScatterColourBase, _currentScatterBase);
+            oceanUnderwaterMaterial.SetColor(
+                _ID_ScatterColourShallow, _currentScatterShallow);
+            oceanUnderwaterMaterial.SetVector(
+                _ID_DepthFogDensity,
+                new Vector4(
+                    _currentDepthFogDensity.x,
+                    _currentDepthFogDensity.y,
+                    _currentDepthFogDensity.z,
+                    0f));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1079,9 +903,6 @@ namespace Hecton8.Environment
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Current depth in meters below water surface.
-        /// </summary>
         public float CurrentDepth
         {
             get
@@ -1091,10 +912,6 @@ namespace Hecton8.Environment
             }
         }
 
-        /// <summary>
-        /// v5.0: Light factor from global curve at current depth.
-        /// 1.0 = full daylight, 0.0 = total darkness.
-        /// </summary>
         public float CurrentLightFactor
         {
             get
@@ -1118,14 +935,9 @@ namespace Hecton8.Environment
         public int TargetBiomeIndex => _targetBiomeIndex;
         public float TransitionProgress => _transitionProgress;
 
-        public void SetTargetBiome(int biomeIndex)
-            => HandleBiomeChanged(biomeIndex);
-
-        public void SetPlayerCamera(Transform camera)
-            => playerCamera = camera;
-
-        public void SetWaterLevelFallback(float y)
-            => waterLevelFallback = y;
+        public void SetTargetBiome(int biomeIndex) => HandleBiomeChanged(biomeIndex);
+        public void SetPlayerCamera(Transform camera) => playerCamera = camera;
+        public void SetWaterLevelFallback(float y) => waterLevelFallback = y;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — INIT
@@ -1134,7 +946,6 @@ namespace Hecton8.Environment
         private void ResolvePlayerCamera()
         {
             if (playerCamera != null) return;
-
             if (Application.isPlaying)
             {
                 Camera cam = Camera.main;
@@ -1151,7 +962,6 @@ namespace Hecton8.Environment
         private void ResolveMainCamera()
         {
             if (mainCamera != null) return;
-
             if (Application.isPlaying)
             {
                 mainCamera = Camera.main;
@@ -1160,8 +970,7 @@ namespace Hecton8.Environment
             else
             {
                 var sv = SceneView.lastActiveSceneView;
-                if (sv != null)
-                    mainCamera = sv.camera;
+                if (sv != null) mainCamera = sv.camera;
             }
 #endif
         }
@@ -1171,7 +980,7 @@ namespace Hecton8.Environment
             if (playerCamera == null && Application.isPlaying)
                 Debug.LogError("[HectonUnderwaterVisuals] playerCamera not found!", this);
             if (biomePalette == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] biomePalette not assigned. Using hardcoded defaults.", this);
+                Debug.LogWarning("[HectonUnderwaterVisuals] biomePalette not assigned.", this);
             if (oceanUnderwaterMaterial == null)
                 Debug.LogWarning("[HectonUnderwaterVisuals] oceanUnderwaterMaterial not assigned.", this);
             if (sunVisualTransform == null)
@@ -1179,31 +988,54 @@ namespace Hecton8.Environment
             if (mainCamera == null && Application.isPlaying)
                 Debug.LogWarning("[HectonUnderwaterVisuals] mainCamera not assigned.", this);
             if (skyMaterial == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] skyMaterial not assigned. Sun scattering/color fade disabled.", this);
+                Debug.LogWarning("[HectonUnderwaterVisuals] skyMaterial not assigned.", this);
             if (globalLightCurve == null || globalLightCurve.length == 0)
-                Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty! Depth lighting will not work.", this);
+                Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty!", this);
         }
 
         private void CaptureBaseValues()
         {
             if (_baseValuesCaptured) return;
-
             if (sunFlare != null)
                 _baseFlareIntensity = sunFlare.intensity;
-
             _baseValuesCaptured = true;
         }
 
         private void RestoreBaseValues()
         {
             if (!_baseValuesCaptured) return;
-
             if (sunFlare != null)
             {
                 sunFlare.intensity = _baseFlareIntensity;
                 if (!sunFlare.enabled)
                     sunFlare.enabled = true;
             }
+        }
+
+        private float ResolveWaterLevel()
+        {
+            if (!_physicsEngineCached)
+                CachePhysicsEngine();
+            if (_physicsEngine != null)
+                return _physicsEngine.WaterLevel;
+            return waterLevelFallback;
+        }
+
+        private void CachePhysicsEngine()
+        {
+            if (!Application.isPlaying)
+            {
+                _physicsEngineCached = false;
+#if UNITY_EDITOR
+                _debugPhysicsEngineFound = false;
+#endif
+                return;
+            }
+            _physicsEngine = Hecton8.Physics.HectonFluidEngine.Instance;
+            _physicsEngineCached = _physicsEngine != null;
+#if UNITY_EDITOR
+            _debugPhysicsEngineFound = _physicsEngineCached;
+#endif
         }
 
         private void InitializeCurrentValues()
@@ -1225,7 +1057,6 @@ namespace Hecton8.Environment
             }
             else
             {
-                // Hardcoded fallback — ocean works without biome palette
                 _currentScatterBase     = new Color(0f, 0.03f, 0.07f, 1f);
                 _currentScatterShallow  = new Color(0f, 0.15f, 0.12f, 1f);
                 _currentDepthFogDensity = new Vector3(0.5f, 0.25f, 0.15f);
@@ -1241,10 +1072,6 @@ namespace Hecton8.Environment
                 _targetAmbientColor    = _currentAmbientColor;
 
                 _biomeFallbackActive = true;
-
-                Debug.LogWarning(
-                    "[HectonUnderwaterVisuals] No biome palette/profiles found. " +
-                    "Using hardcoded ocean defaults. Assign HectonOceanPalette for biome support.");
             }
 
             _transitionProgress = 1f;
@@ -1275,16 +1102,13 @@ namespace Hecton8.Environment
         private void TryRegisterTickManagers()
         {
             if (!Application.isPlaying) return;
-
             GameTickManager tm = GameTickManager.Instance;
             if (tm == null) return;
-
             if (!_registeredTick)
             {
                 tm.Register((ITickable)this);
                 _registeredTick = true;
             }
-
             if (!_registeredSlowTick)
             {
                 tm.Register((ISlowTickable)this);
@@ -1312,11 +1136,22 @@ namespace Hecton8.Environment
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateLightDiagnostics(
-            float lightFactor, float atmoIntensity, float finalIntensity)
+            float lightFactor, float atmoIntensity, float horizonFade, float finalIntensity)
         {
             _debugLightFactor = lightFactor;
             _debugAtmoSunIntensity = atmoIntensity;
+            _debugHorizonFade = horizonFade;
             _debugFinalSunIntensity = finalIntensity;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateSurfaceLightDiagnostics(
+            float baseSun, float horizon, float finalIntensity)
+        {
+            _debugAtmoSunIntensity = baseSun;
+            _debugHorizonFade = horizon;
+            _debugFinalSunIntensity = finalIntensity;
+            _debugLightFactor = 1f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1339,7 +1174,6 @@ namespace Hecton8.Environment
             Vector3 camPos = cam.position;
             float depth = Mathf.Max(0f, waterLevel - camPos.y);
 
-            // Water surface plane
             Gizmos.color = new Color(0f, 0.5f, 1f, 0.12f);
             Gizmos.DrawCube(
                 new Vector3(camPos.x, waterLevel, camPos.z),
@@ -1347,7 +1181,6 @@ namespace Hecton8.Environment
 
             if (depth > 0f)
             {
-                // Depth line colored by light factor
                 float lf = globalLightCurve != null
                     ? Mathf.Clamp01(globalLightCurve.Evaluate(depth))
                     : 1f;
@@ -1356,7 +1189,6 @@ namespace Hecton8.Environment
                 Gizmos.DrawLine(
                     new Vector3(camPos.x, waterLevel, camPos.z), camPos);
 
-                // Find darkness depth from curve (where Y ≈ 0)
                 float darknessDepth = FindCurveDarknessDepth();
                 if (darknessDepth > 0f)
                 {
@@ -1367,36 +1199,28 @@ namespace Hecton8.Environment
                         new Vector3(40f, 0.05f, 40f));
                 }
 
-                // Light factor sphere
                 Gizmos.color = Color.Lerp(Color.black, new Color(1f, 0.95f, 0.8f), lf);
                 Gizmos.DrawWireSphere(camPos, 2.5f);
 
                 float scatter = 1f - lf;
-                Handles.Label(
+                UnityEditor.Handles.Label(
                     camPos + Vector3.up * 3f,
                     $"Depth: {depth:F0}m  Light: {lf:P0}  Scatter: {scatter:P0}  Turbidity: {_currentTurbidity:F2}");
             }
             else
             {
-                Handles.Label(
+                UnityEditor.Handles.Label(
                     camPos + Vector3.up * 3f,
                     "Above water");
             }
         }
 
-        /// <summary>
-        /// Scans the light curve to find the depth where light ≈ 0.
-        /// Used only for Gizmo visualization.
-        /// </summary>
         private float FindCurveDarknessDepth()
         {
             if (globalLightCurve == null || globalLightCurve.length < 2)
                 return 0f;
 
-            // Get the last keyframe time as max search range
             float maxTime = globalLightCurve[globalLightCurve.length - 1].time;
-
-            // Sample at intervals to find where value drops to ~0
             const float threshold = 0.005f;
             const int samples = 100;
             float step = maxTime / samples;

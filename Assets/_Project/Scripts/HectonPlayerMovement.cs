@@ -1,55 +1,27 @@
 // ============================================================================
-// HECTON-8 — HectonPlayerMovement.cs
-// Rigidbody-based hybrid player movement for underwater NASA-Punk environment.
+// HECTON-8 — HectonPlayerMovement.cs  v7.0
+// Rigidbody-based hybrid player movement — FULL IMMERSION BUILD
 //
-// v2.0 FIX — SLOPE PHYSICS:
-//   [BUG] ApplyGroundStability() обнуляла velocity.y каждый FixedTick
-//         когда игрок на земле. При ходьбе по наклонной поверхности
-//         горизонтальная сила толкает игрока по XZ, но гравитация вниз
-//         мгновенно обнуляется → игрок "парит" над склоном.
-//         Jump также обнулял velocity.y — менее критично (одноразово),
-//         но мешает естественной физике.
+// v7.0 ADDITIONS:
+//   • Depth calculation + feeding to CameraJuiceInput
+//   • Depth-based swim slowdown (pressure resistance)
+//   • Collision camera shake via OnCollisionEnter
+//   • Splash / submerge events exposed as pollable properties
+//   • FOV offset applied from CameraJuiceProcessor
+//   • Visual pitch inertia fed through juice processor
+//   • Exhale event exposed
+//   • New diagnostic fields for depth, FOV, splash, exhale
 //
-//   [FIX] ApplyGroundStability: удалено velocity.y = 0.
-//         Заменено на: полная отмена гравитации + мягкая snap-сила.
-//         Когда на земле, гравитация полностью компенсируется
-//         counter-force. Snap-сила прижимает к поверхности.
-//
-//   [FIX] WalkPhysics: движение проецируется на плоскость склона
-//         через Vector3.ProjectOnPlane(moveDir, groundNormal).
-//         При ходьбе вниз по склону вектор силы направлен ВДОЛЬ
-//         поверхности, а не горизонтально → игрок "приклеен" к земле.
-//
-//   [FIX] Jump: удалено velocity.y = 0. Импульс прыжка применяется
-//         поверх текущей скорости. На пологих склонах разница
-//         незначительна. На крутых — реалистичное снижение высоты прыжка.
-//
-// АРХИТЕКТУРА:
-//   • ITickable      — input sampling, camera rotation (per frame)
-//   • IFixedTickable — physics forces via Rigidbody.AddForce (fixed step)
-//   • Integrates with HectonFluidEngine (BuoyancyObject applies buoyancy/drag)
-//   • Respects HectonFabricatorUI.IsMenuOpen for input blocking
-//
-// HYBRID MOVEMENT:
-//   SWIM MODE (IsInAir == false):
-//     • 6DOF look-relative movement
-//     • Vertical via Q/E/Space/Ctrl
-//     • useGravity = false, high linearDamping
-//
-//   WALK MODE (IsInAir == true):
-//     • XZ body-relative, slope-projected when grounded (v2.0)
-//     • useGravity = true, low linearDamping
-//     • Ground snap force prevents micro-bouncing (v2.0)
-//     • Jump via Space (grounded only)
-//
-// ZERO GC:
-//   • No allocations in Tick/FixedTick hot paths
-//   • All struct math, cached references
+// v6.3 PRESERVED:
+//   • Crest dynamic height, smoothed immersion, single GroundCheck
+//   • Surface lock, graduated gravity, ground snap, mode detection
+//   • Zero-rotation Rigidbody, zero-jitter camera
 // ============================================================================
 
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -59,86 +31,74 @@ namespace Hecton8.Gameplay
     public sealed class HectonPlayerMovement : MonoBehaviour, ITickable, IFixedTickable
     {
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — CAMERA
+        //  INSPECTOR — REFERENCES
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Camera ────────────────────────────────────")]
-        [Tooltip("Player camera Transform. Assign via Inspector — never Camera.main.")]
+        [Header("── References ────────────────────────────────")]
         [SerializeField] private Transform playerCamera;
+        [SerializeField] private SuitData currentSuitData;
+        [SerializeField] private bool leanIntoTurn = true;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — WATER CONFIGURATION
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Water Configuration ──────────────────────")]
+        [Tooltip("Fallback water surface Y when Crest is unavailable.")]
+        [SerializeField] private float waterSurfaceY = 4900f;
+
+        [SerializeField] private float playerHeight = 1.8f;
+
+        [SerializeField, Range(0.3f, 0.95f)]
+        [Tooltip("Immersion ratio above which player switches from walking to swimming.")]
+        private float swimTransitionThreshold = 0.7f;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — CREST OCEAN INTEGRATION
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Crest Ocean Integration ───────────────────")]
+        [Tooltip("Enable dynamic water height from Crest Ocean waves.")]
+        [SerializeField] private bool useCrestOceanHeight = true;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — GRADUATED GRAVITY
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Graduated Gravity ────────────────────────")]
+        [SerializeField, Range(1f, 3f)]
+        private float gravityFadeRate = 1.4f;
+
+        [SerializeField, Range(1f, 5f)]
+        private float snapFadeRate = 2.5f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — MOUSE LOOK
         // ══════════════════════════════════════════════════════════
 
         [Header("── Mouse Look ────────────────────────────────")]
-        [Tooltip("Mouse sensitivity multiplier.")]
         [SerializeField] private float mouseSensitivity = 2f;
-
-        [Tooltip("Minimum pitch angle (looking down).")]
         [SerializeField] private float pitchMin = -85f;
-
-        [Tooltip("Maximum pitch angle (looking up).")]
         [SerializeField] private float pitchMax = 85f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — SWIMMING
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Swimming ──────────────────────────────────")]
-        [Tooltip("Force applied for horizontal movement while swimming (Newtons).")]
-        [SerializeField] private float swimForce = 600f;
-
-        [Tooltip("Force applied for explicit ascend/descend (Q/E/Space/Ctrl) while swimming.")]
-        [SerializeField] private float verticalForce = 400f;
-
-        [Tooltip("Maximum swim speed on XZ plane (m/s).")]
-        [SerializeField] private float maxSwimSpeed = 12f;
-
-        [Tooltip("Rigidbody.linearDamping in swim mode.")]
-        [SerializeField] private float swimLinearDamping = 1f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — WALKING
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Walking ───────────────────────────────────")]
-        [Tooltip("Force applied for XZ movement while walking (Newtons).")]
-        [SerializeField] private float walkForce = 1200f;
-
-        [Tooltip("Maximum walk speed on XZ plane (m/s).")]
-        [SerializeField] private float maxWalkSpeed = 6f;
-
-        [Tooltip("Rigidbody.linearDamping in walk mode.")]
-        [SerializeField] private float walkLinearDamping = 5f;
-
-        [Tooltip("Impulse force applied upward when jumping (Newtons).")]
-        [SerializeField] private float jumpForce = 5f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — GROUND DETECTION
         // ══════════════════════════════════════════════════════════
 
         [Header("── Ground Detection ─────────────────────────")]
-        [Tooltip("Radius of the SphereCast used for ground detection.")]
         [SerializeField] private float groundCheckRadius = 0.3f;
-
-        [Tooltip("Distance below player center to cast for ground.")]
         [SerializeField] private float groundCheckDistance = 0.4f;
-
-        [Tooltip("Layers considered as ground for walking.")]
         [SerializeField] private LayerMask groundLayers = ~0;
+        [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
+        [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
 
-        [Tooltip("Multiplier for counter-gravity force when grounded. " +
-                 "1.0 = exactly cancel gravity. Higher = more slope stability.")]
-        [SerializeField, Range(1f, 2f)]
-        private float slopeStabilityFactor = 1.1f;
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — FOV
+        // ══════════════════════════════════════════════════════════
 
-        [Tooltip("Gentle downward force (m/s²) applied when grounded to prevent " +
-                 "micro-bouncing from physics solver imprecision. " +
-                 "Acts as 'ground snap'. Too high → sinks into ground. " +
-                 "Too low → floats on bumps.")]
-        [SerializeField, Range(0f, 20f)]
-        private float groundSnapForce = 8f;
+        [Header("── FOV ───────────────────────────────────────")]
+        [Tooltip("Base FOV of the camera. FOV compression applies relative to this.")]
+        [SerializeField] private float baseFov = 70f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
@@ -147,6 +107,24 @@ namespace Hecton8.Gameplay
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private bool _debugIsWalking;
         [SerializeField] private bool _debugIsGrounded;
+        [SerializeField] private float _debugImmersionRatio;
+        [SerializeField] private float _debugSmoothedImmersion;
+        [SerializeField] private float _debugGravityScale;
+        [SerializeField] private float _debugSnapScale;
+        [SerializeField] private float _debugBodyYaw;
+        [SerializeField] private float _debugCameraYaw;
+        [SerializeField] private float _debugCurrentRoll;
+        [SerializeField] private bool _debugStepEvent;
+        [SerializeField] private string _debugSuitName;
+        [SerializeField] private float _debugSpeed;
+        [SerializeField] private float _debugDynamicWaterY;
+        [SerializeField] private bool _debugCrestAvailable;
+        [SerializeField] private bool _debugCrestSampling;
+        [SerializeField] private float _debugDepth;
+        [SerializeField] private float _debugFovOffset;
+        [SerializeField] private bool _debugSplashThisFrame;
+        [SerializeField] private bool _debugExhaleThisFrame;
+        [SerializeField] private bool _debugIsSubmerged;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED REFERENCES
@@ -155,20 +133,47 @@ namespace Hecton8.Gameplay
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
         private Transform _cachedTransform;
+        private Camera _cameraComponent;
 
         // ══════════════════════════════════════════════════════════
-        //  INPUT STATE (written in Tick, read in FixedTick)
+        //  CREST OCEAN — runtime state
+        // ══════════════════════════════════════════════════════════
+
+        private Crest.SampleHeightHelper _crestHeightSampler;
+        private bool _crestAvailable;
+        private float _dynamicWaterSurfaceY;
+        private bool _crestSamplingSucceeded;
+
+        // ══════════════════════════════════════════════════════════
+        //  CAMERA JUICE
+        // ══════════════════════════════════════════════════════════
+
+        private CameraJuiceProcessor _juiceProcessor;
+        private CameraJuiceInput _juiceInput;
+        private CameraJuiceOutput _juiceOutput;
+        private Vector3 _cameraBaseLocalPos;
+
+        // ══════════════════════════════════════════════════════════
+        //  INPUT STATE
         // ══════════════════════════════════════════════════════════
 
         private float _inputH;
         private float _inputV;
         private float _inputVertical;
+        private float _mouseXDelta;
 
-        private float _yaw;
-        private float _pitch;
+        private float _cameraYaw;
+        private float _cameraPitch;
 
         private bool _inputCleared;
         private bool _jumpRequested;
+
+        // ══════════════════════════════════════════════════════════
+        //  BODY YAW (decoupled from camera)
+        // ══════════════════════════════════════════════════════════
+
+        private float _bodyYaw;
+        private float _bodyYawVelocity;
 
         // ══════════════════════════════════════════════════════════
         //  MODE STATE
@@ -176,9 +181,29 @@ namespace Hecton8.Gameplay
 
         private bool _isWalking;
         private bool _isGrounded;
+        private bool _wasGroundedLastFrame;
+        private float _waterImmersionRatio;
+        private float _smoothedImmersionRatio;
+        private float _currentLinearDamping;
+        private float _gravityScale;
+        private float _snapScale;
+        private float _currentDepth;  // v7.0: meters below water surface
 
         // ══════════════════════════════════════════════════════════
-        //  REGISTRATION FLAGS
+        //  AMBIENT CURRENT
+        // ══════════════════════════════════════════════════════════
+
+        private float _currentTimer;
+
+        // ══════════════════════════════════════════════════════════
+        //  SPEED TRACKING
+        // ══════════════════════════════════════════════════════════
+
+        private float _prevSpeed;
+        private float _prevYawForMomentum;
+
+        // ══════════════════════════════════════════════════════════
+        //  REGISTRATION
         // ══════════════════════════════════════════════════════════
 
         private bool _registeredTick;
@@ -191,13 +216,65 @@ namespace Hecton8.Gameplay
         private Vector3 _moveDirection;
         private Vector3 _forceVector;
         private Vector3 _velocity;
-        private Quaternion _bodyRotation;
-        private Quaternion _cameraRotation;
+        private Quaternion _cameraWorldRotation;
 
         private RaycastHit _groundHit;
         private Vector3 _groundCheckOrigin;
-
         private Vector3 _cachedGravity;
+        private Vector3 _smoothedGroundNormal;
+
+        // ══════════════════════════════════════════════════════════
+        //  EVENTS
+        // ══════════════════════════════════════════════════════════
+
+        public event System.Action OnFootstep;
+
+        /// <summary>Fired when a splash is detected. Float = intensity 0-1.</summary>
+        public event System.Action<float> OnWaterSplash;
+
+        /// <summary>Fired when head crosses submerge threshold. Bool = now submerged.</summary>
+        public event System.Action<bool> OnSubmergeChange;
+
+        /// <summary>Fired on each exhale cycle underwater. For bubble VFX / audio.</summary>
+        public event System.Action OnExhale;
+
+        // ══════════════════════════════════════════════════════════
+        //  CONSTANTS
+        // ══════════════════════════════════════════════════════════
+
+        private const float DEG_TO_RAD = 0.01745329f;
+
+        // ══════════════════════════════════════════════════════════
+        //  EFFECTIVE WATER SURFACE — Crest or fallback
+        // ══════════════════════════════════════════════════════════
+
+        private float EffectiveWaterSurfaceY => (_crestAvailable && useCrestOceanHeight)
+            ? _dynamicWaterSurfaceY
+            : waterSurfaceY;
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API
+        // ══════════════════════════════════════════════════════════
+
+        public void SetSuit(SuitData newSuit)
+        {
+            if (newSuit == null) { Debug.LogWarning("[HectonPlayerMovement] null suit.", this); return; }
+            currentSuitData = newSuit;
+            ApplySuitToRigidbody();
+            _juiceProcessor.Initialize(leanIntoTurn);
+            UpdateSuitDiagnostics();
+        }
+
+        public SuitData CurrentSuit => currentSuitData;
+        public float WaterImmersionRatio => _waterImmersionRatio;
+        public bool IsGrounded => _isGrounded && _isWalking;
+        public bool IsWalking => _isWalking;
+        public float CurrentRoll => _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
+        public float BodyYaw => _bodyYaw;
+        public float CameraYaw => _cameraYaw;
+        public float CurrentWaterSurfaceY => EffectiveWaterSurfaceY;
+        public float CurrentDepth => _currentDepth;
+        public bool IsPlayerSubmerged => _juiceProcessor != null && _juiceProcessor.IsSubmerged;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -213,97 +290,179 @@ namespace Hecton8.Gameplay
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             _rb.freezeRotation = true;
+            _rb.constraints = RigidbodyConstraints.FreezeRotation;
+            _rb.useGravity = false;
+
+            // Cache camera component for FOV manipulation
+            if (playerCamera != null)
+                _cameraComponent = playerCamera.GetComponent<Camera>();
 
             Vector3 euler = _cachedTransform.eulerAngles;
-            _yaw = euler.y;
+            _cameraYaw = euler.y;
+            _bodyYaw = euler.y;
+            _bodyYawVelocity = 0f;
 
             if (playerCamera != null)
             {
-                _pitch = -playerCamera.localEulerAngles.x;
-                if (_pitch > 180f) _pitch -= 360f;
-                _pitch = Mathf.Clamp(_pitch, pitchMin, pitchMax);
+                float camX = playerCamera.localEulerAngles.x;
+                _cameraPitch = camX > 180f ? camX - 360f : camX;
+                _cameraPitch = -_cameraPitch;
+                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
+                _cameraBaseLocalPos = playerCamera.localPosition;
             }
 
-            _cachedGravity = UnityEngine.Physics.gravity;
+            if (_cameraComponent != null)
+                baseFov = _cameraComponent.fieldOfView;
 
-            _isWalking = _buoyancy != null && _buoyancy.IsInAir;
-            ApplyModePhysicsSettings();
+            _cachedGravity = UnityEngine.Physics.gravity;
+            _smoothedGroundNormal = Vector3.up;
+
+            _juiceProcessor = new CameraJuiceProcessor();
+            _juiceProcessor.Initialize(leanIntoTurn);
+
+            // ── Crest integration ──
+            _dynamicWaterSurfaceY = waterSurfaceY;
+            _crestSamplingSucceeded = false;
+            InitCrest();
+
+            _waterImmersionRatio = ComputeImmersionRatio();
+            _smoothedImmersionRatio = _waterImmersionRatio;
+            _currentDepth = ComputeDepth();
+            _isWalking = _waterImmersionRatio < swimTransitionThreshold;
+            _prevSpeed = 0f;
+            _prevYawForMomentum = _cameraYaw;
+            _currentTimer = 0f;
+
+            ApplySuitToRigidbody();
 
             _registeredTick = false;
             _registeredFixedTick = false;
+
+            UpdateSuitDiagnostics();
         }
 
-        private void OnEnable()
-        {
-            TryRegisterToTickManager();
-        }
+        private void OnEnable() { TryRegisterToTickManager(); }
 
         private void Start()
         {
-            if (_registeredTick && _registeredFixedTick)
-                return;
-
+            if (_registeredTick && _registeredFixedTick) return;
             TryRegisterToTickManager();
-
             if (!_registeredTick || !_registeredFixedTick)
-            {
-                Debug.LogError(
-                    "[HectonPlayerMovement] GameTickManager.Instance is null even at Start(). " +
-                    "Player movement will NOT work.", this);
-            }
+                Debug.LogError("[HectonPlayerMovement] GameTickManager.Instance is null.", this);
+
+            if (useCrestOceanHeight && !_crestAvailable)
+                InitCrest();
         }
 
         private void OnDisable()
         {
             GameTickManager inst = GameTickManager.Instance;
             if (inst == null) return;
-
-            if (_registeredTick)
-            {
-                inst.Unregister((ITickable)this);
-                _registeredTick = false;
-            }
-
-            if (_registeredFixedTick)
-            {
-                inst.Unregister((IFixedTickable)this);
-                _registeredFixedTick = false;
-            }
+            if (_registeredTick) { inst.Unregister((ITickable)this); _registeredTick = false; }
+            if (_registeredFixedTick) { inst.Unregister((IFixedTickable)this); _registeredFixedTick = false; }
         }
 
         private void TryRegisterToTickManager()
         {
             GameTickManager inst = GameTickManager.Instance;
             if (inst == null) return;
-
-            if (!_registeredTick)
-            {
-                inst.Register((ITickable)this);
-                _registeredTick = true;
-            }
-
-            if (!_registeredFixedTick)
-            {
-                inst.Register((IFixedTickable)this);
-                _registeredFixedTick = true;
-            }
+            if (!_registeredTick) { inst.Register((ITickable)this); _registeredTick = true; }
+            if (!_registeredFixedTick) { inst.Register((IFixedTickable)this); _registeredFixedTick = true; }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable.Tick — INPUT SAMPLING (per frame)
+        //  COLLISION — camera shake integration
+        // ══════════════════════════════════════════════════════════
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (_juiceProcessor == null || currentSuitData == null) return;
+            if (!currentSuitData.enableCollisionShake) return;
+
+            float relSpeed = collision.relativeVelocity.magnitude;
+            _juiceProcessor.RegisterCollisionImpulse(relSpeed, currentSuitData);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  CREST OCEAN HEIGHT SAMPLING
+        // ══════════════════════════════════════════════════════════
+
+        private void InitCrest()
+        {
+            _crestAvailable = false;
+            if (!useCrestOceanHeight) return;
+
+            if (Crest.OceanRenderer.Instance != null)
+            {
+                _crestHeightSampler = new Crest.SampleHeightHelper();
+                _crestAvailable = true;
+                _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
+            }
+
+            UpdateCrestDiagnostics();
+        }
+
+        private void UpdateCrestWaterHeight()
+        {
+            if (!useCrestOceanHeight) return;
+
+            if (!_crestAvailable)
+            {
+                if (Crest.OceanRenderer.Instance != null)
+                {
+                    _crestHeightSampler = new Crest.SampleHeightHelper();
+                    _crestAvailable = true;
+                    _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
+                    UpdateCrestDiagnostics();
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            if (Crest.OceanRenderer.Instance == null)
+            {
+                _crestAvailable = false;
+                UpdateCrestDiagnostics();
+                return;
+            }
+
+            Vector3 samplePos = _rb.position;
+            _crestHeightSampler.Init(samplePos, 0f, true);
+
+            _crestSamplingSucceeded = _crestHeightSampler.Sample(out float waterHeight);
+
+            if (_crestSamplingSucceeded)
+            {
+                _dynamicWaterSurfaceY = waterHeight;
+            }
+            else
+            {
+                _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
+            }
+
+            UpdateCrestDiagnostics();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  Tick — INPUT + CAMERA (render framerate)
         // ══════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
         {
+            SuitData suit = currentSuitData;
+            if (suit == null) return;
+
             if (HectonFabricatorUI.IsMenuOpen)
             {
-                _inputH = 0f;
-                _inputV = 0f;
-                _inputVertical = 0f;
+                _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
                 _inputCleared = true;
-
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                BuildJuiceInput(deltaTime, suit);
+                _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+                ApplyCameraState();
                 return;
             }
 
@@ -317,24 +476,14 @@ namespace Hecton8.Gameplay
             // ── Mouse Look ──
             float mouseX = Input.GetAxisRaw("Mouse X");
             float mouseY = Input.GetAxisRaw("Mouse Y");
-
-            _yaw += mouseX * mouseSensitivity;
-            _pitch -= mouseY * mouseSensitivity;
-            _pitch = Mathf.Clamp(_pitch, pitchMin, pitchMax);
-
-            _bodyRotation = Quaternion.Euler(0f, _yaw, 0f);
-            _cachedTransform.rotation = _bodyRotation;
-
-            if (playerCamera != null)
-            {
-                _cameraRotation = Quaternion.Euler(_pitch, 0f, 0f);
-                playerCamera.localRotation = _cameraRotation;
-            }
+            _mouseXDelta = mouseX;
+            _cameraYaw += mouseX * mouseSensitivity;
+            _cameraPitch -= mouseY * mouseSensitivity;
+            _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
 
             // ── Movement Input ──
             _inputH = Input.GetAxisRaw("Horizontal");
             _inputV = Input.GetAxisRaw("Vertical");
-
             _inputVertical = 0f;
 
             if (_isWalking)
@@ -346,397 +495,655 @@ namespace Hecton8.Gameplay
             {
                 if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.E))
                     _inputVertical += 1f;
-
                 if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.Q))
                     _inputVertical -= 1f;
+            }
+
+            // ── Momentum tracking ──
+            _velocity = _rb.linearVelocity;
+            float currentSpeed = math.sqrt(
+                _velocity.x * _velocity.x +
+                _velocity.y * _velocity.y +
+                _velocity.z * _velocity.z);
+            float yawDelta = _cameraYaw - _prevYawForMomentum;
+
+            // ── Juice ──
+            BuildJuiceInput(deltaTime, suit);
+            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+            _juiceInput.yawDelta = yawDelta;
+            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+
+            _prevSpeed = currentSpeed;
+            _prevYawForMomentum = _cameraYaw;
+
+            // ── Poll juice events ──
+            if (_juiceOutput.stepEvent)
+            {
+                OnFootstep?.Invoke();
+                UpdateStepDiagnostics();
+            }
+
+            if (_juiceProcessor.SplashThisFrame)
+            {
+                OnWaterSplash?.Invoke(_juiceProcessor.SplashIntensity);
+            }
+
+            if (_juiceProcessor.SubmergeChangedThisFrame)
+            {
+                OnSubmergeChange?.Invoke(_juiceProcessor.IsSubmerged);
+            }
+
+            if (_juiceProcessor.ExhaleThisFrame)
+            {
+                OnExhale?.Invoke();
+            }
+
+            ApplyCameraState();
+            UpdateDiagnostics(currentSpeed);
+        }
+
+        private void BuildJuiceInput(float deltaTime, SuitData suit)
+        {
+            _velocity = _rb.linearVelocity;
+            _juiceInput.isWalking = _isWalking;
+            _juiceInput.isGrounded = _isGrounded;
+            _juiceInput.hasMovementInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
+            _juiceInput.inputH = _inputH;
+            _juiceInput.mouseXDelta = _mouseXDelta;
+            _juiceInput.horizontalSpeed = math.sqrt(_velocity.x * _velocity.x + _velocity.z * _velocity.z);
+            _juiceInput.verticalVelocity = _velocity.y;
+            _juiceInput.wasGroundedLastFrame = _wasGroundedLastFrame;
+            _juiceInput.deltaTime = deltaTime;
+            _juiceInput.immersionRatio = _waterImmersionRatio;
+
+            // v7.0 additions
+            _juiceInput.depth = _currentDepth;
+            _juiceInput.swimSpeed = math.sqrt(
+                _velocity.x * _velocity.x +
+                _velocity.y * _velocity.y +
+                _velocity.z * _velocity.z);
+            _juiceInput.cameraPitch = _cameraPitch;
+        }
+
+        private void ApplyCameraState()
+        {
+            if (playerCamera == null) return;
+
+            // v7.0a: direct camera pitch — pitch inertia removed (caused reverse jerk)
+            float finalPitch = _cameraPitch + _juiceOutput.pitchOffset;
+            finalPitch = math.clamp(finalPitch, pitchMin - 5f, pitchMax + 5f);
+            float finalRoll = _juiceOutput.rollOffset;
+
+            _cameraWorldRotation = Quaternion.Euler(finalPitch, _cameraYaw, finalRoll);
+            playerCamera.rotation = _cameraWorldRotation;
+
+            Vector3 finalPos;
+            finalPos.x = _cameraBaseLocalPos.x + _juiceOutput.localPositionOffset.x;
+            finalPos.y = _cameraBaseLocalPos.y + _juiceOutput.localPositionOffset.y;
+            finalPos.z = _cameraBaseLocalPos.z + _juiceOutput.localPositionOffset.z;
+            playerCamera.localPosition = finalPos;
+
+            // FOV compression
+            if (_cameraComponent != null)
+            {
+                float targetFov = baseFov + _juiceOutput.fovOffset;
+                _cameraComponent.fieldOfView = math.lerp(
+                    _cameraComponent.fieldOfView, targetFov,
+                    1f - math.exp(-8f * _juiceInput.deltaTime));
             }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  IFixedTickable.FixedTick — PHYSICS MOVEMENT (fixed step)
+        //  FixedTick — PHYSICS
         // ══════════════════════════════════════════════════════════
 
         public void FixedTick(float fixedDeltaTime)
         {
-            // ── Mode Detection (edge-triggered) ──
-            bool shouldWalk = _buoyancy != null && _buoyancy.IsInAir;
+            SuitData suit = currentSuitData;
+            if (suit == null) return;
+
+            // ═══════════════════════════════════════════════
+            //  1. FORCE-OVERRIDE: BuoyancyObject-proof
+            // ═══════════════════════════════════════════════
+            _rb.useGravity = false;
+
+            // ═══════════════════════════════════════════════
+            //  2. BODY YAW SPRING
+            // ═══════════════════════════════════════════════
+            if (_isWalking)
+            {
+                _bodyYaw = _cameraYaw;
+                _bodyYawVelocity = 0f;
+            }
+            else
+            {
+                _bodyYaw = SpringDamp(_bodyYaw, _cameraYaw, ref _bodyYawVelocity,
+                    suit.bodyYawSpringOmega, fixedDeltaTime);
+            }
+
+            // ═══════════════════════════════════════════════
+            //  3. PRE-IMPACT VELOCITY TRACKING
+            // ═══════════════════════════════════════════════
+            _juiceProcessor.TrackVerticalVelocity(_rb.linearVelocity.y);
+            _wasGroundedLastFrame = _isGrounded;
+
+            // ═══════════════════════════════════════════════
+            //  4. GROUND CHECK
+            // ═══════════════════════════════════════════════
+            GroundCheck();
+
+            // ═══════════════════════════════════════════════
+            //  5. CREST HEIGHT + WATER IMMERSION + DEPTH
+            // ═══════════════════════════════════════════════
+            UpdateCrestWaterHeight();
+            _waterImmersionRatio = ComputeImmersionRatio();
+            _currentDepth = ComputeDepth();
+
+            // ═══════════════════════════════════════════════
+            //  6. SMOOTHED IMMERSION + GROUNDED OVERRIDE
+            // ═══════════════════════════════════════════════
+            if (_waterImmersionRatio > _smoothedImmersionRatio)
+            {
+                float enterT = 1f - math.exp(-12f * fixedDeltaTime);
+                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
+            }
+            else
+            {
+                float exitT = 1f - math.exp(-3f * fixedDeltaTime);
+                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
+            }
+
+            float physicsImmersion = _smoothedImmersionRatio;
+            bool groundedOnShore = _isGrounded && physicsImmersion < swimTransitionThreshold;
+
+            // ═══════════════════════════════════════════════
+            //  7A. GRADUATED GRAVITY
+            // ═══════════════════════════════════════════════
+            if (groundedOnShore)
+            {
+                _gravityScale = 1f;
+            }
+            else
+            {
+                _gravityScale = 1f - math.saturate(physicsImmersion * gravityFadeRate);
+            }
+
+            if (_gravityScale > 0.001f)
+            {
+                float mass = _rb.mass;
+                _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+                _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+                _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+                _rb.AddForce(_forceVector, ForceMode.Force);
+            }
+
+            // ═══════════════════════════════════════════════
+            //  7B. GROUND SNAP SCALE
+            // ═══════════════════════════════════════════════
+            if (groundedOnShore)
+            {
+                _snapScale = 1f;
+            }
+            else
+            {
+                _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+            }
+
+            // ═══════════════════════════════════════════════
+            //  8. MODE DETECTION
+            // ═══════════════════════════════════════════════
+            bool inWater = physicsImmersion > 0.01f;
+            bool deepEnough = physicsImmersion >= swimTransitionThreshold;
+
+            bool shouldWalk;
+            if (!inWater)
+            {
+                shouldWalk = _isGrounded;
+            }
+            else if (deepEnough)
+            {
+                shouldWalk = false;
+            }
+            else
+            {
+                shouldWalk = _isGrounded;
+            }
 
             if (shouldWalk != _isWalking)
             {
                 _isWalking = shouldWalk;
-                ApplyModePhysicsSettings();
+                ApplyModePhysics(suit);
                 UpdateModeDiagnostics();
             }
 
-            // ── Ground Detection (walk mode only) ──
-            if (_isWalking)
-            {
-                GroundCheck();
-            }
-            else
-            {
-                _isGrounded = false;
-            }
+            // ═══════════════════════════════════════════════
+            //  9. DAMPING TRANSITION
+            // ═══════════════════════════════════════════════
+            SmoothDampingTransition(fixedDeltaTime, suit);
 
-            // ══════════════════════════════════════════════
-            //  JUMP (v2.0: no velocity.y zeroing)
-            //
-            //  БЫЛО (v1, артефакт):
-            //    _velocity = _rb.linearVelocity;
-            //    if (_velocity.y < 0f) {
-            //        _velocity.y = 0f;
-            //        _rb.linearVelocity = _velocity;
-            //    }
-            //    _rb.AddForce(Vector3.up * jumpForce, Impulse);
-            //
-            //  СТАЛО (v2.0):
-            //    _rb.AddForce(Vector3.up * jumpForce, Impulse);
-            //
-            //  Почему безопасно:
-            //    На пологих склонах velocity.y ≈ 0 → разницы нет.
-            //    На крутых склонах velocity.y может быть -2..-3 м/с,
-            //    что слегка снижает высоту прыжка (реалистично).
-            //    ApplyGroundStability (v2.0) не даёт гравитации
-            //    накапливать скорость вниз → velocity.y при стоянии ≈ 0.
-            // ══════════════════════════════════════════════
-
+            // ═══════════════════════════════════════════════
+            //  10. JUMP
+            // ═══════════════════════════════════════════════
             if (_jumpRequested)
             {
                 _jumpRequested = false;
-
                 if (_isWalking && _isGrounded)
-                {
-                    _rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-                }
+                    _rb.AddForce(Vector3.up * suit.jumpImpulse, ForceMode.Impulse);
             }
 
-            // ── Movement Physics ──
+            // ═══════════════════════════════════════════════
+            //  11. MOVEMENT + FORCES
+            // ═══════════════════════════════════════════════
             if (_isWalking)
-                WalkPhysics();
-            else
-                SwimPhysics();
-
-            // ── Ground Stability (walk mode, grounded) ──
-            if (_isWalking && _isGrounded)
             {
-                ApplyGroundStability();
+                WalkPhysics(suit, fixedDeltaTime);
+
+                if (_isGrounded && _snapScale > 0.001f)
+                    ApplyGroundStability(_snapScale);
+            }
+            else
+            {
+                SwimPhysics(suit, fixedDeltaTime);
+
+                if (_waterImmersionRatio > 0.3f && _waterImmersionRatio < 0.98f)
+                    ApplySurfaceLock(suit);
+
+                if (_waterImmersionRatio > 0.3f)
+                    ApplyAmbientCurrent(suit, fixedDeltaTime);
             }
 
-            // ── Velocity Clamp ──
-            ClampVelocity();
-
+            // ═══════════════════════════════════════════════
+            //  12. VELOCITY CLAMP
+            // ═══════════════════════════════════════════════
+            ClampVelocity(suit);
             UpdateGroundDiagnostics();
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — GROUND DETECTION
+        //  WATER IMMERSION + DEPTH
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// SphereCast downward from player center to detect ground.
-        /// Only called when _isWalking == true.
-        /// Zero-GC: uses cached _groundHit and _groundCheckOrigin.
-        /// </summary>
-        private void GroundCheck()
+        private float ComputeImmersionRatio()
         {
-            _groundCheckOrigin.x = _cachedTransform.position.x;
-            _groundCheckOrigin.y = _cachedTransform.position.y + groundCheckRadius;
-            _groundCheckOrigin.z = _cachedTransform.position.z;
+            float surfaceY = EffectiveWaterSurfaceY;
+            float feetY = _rb.position.y;
+            float headY = feetY + playerHeight;
 
-            _isGrounded = UnityEngine.Physics.SphereCast(
-                _groundCheckOrigin,
-                groundCheckRadius,
-                Vector3.down,
-                out _groundHit,
-                groundCheckDistance + groundCheckRadius,
-                groundLayers,
-                QueryTriggerInteraction.Ignore
-            );
+            if (feetY >= surfaceY) return 0f;
+            if (headY <= surfaceY) return 1f;
+
+            return math.clamp((surfaceY - feetY) / playerHeight, 0f, 1f);
+        }
+
+        /// <summary>
+        /// Depth in meters below water surface. 0 = at surface. Positive = deeper.
+        /// Returns 0 if above water.
+        /// </summary>
+        private float ComputeDepth()
+        {
+            float surfaceY = EffectiveWaterSurfaceY;
+            float headY = _rb.position.y + playerHeight * 0.85f;
+            float depth = surfaceY - headY;
+            return depth > 0f ? depth : 0f;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — GROUND STABILITY (v2.0: slope-safe)
+        //  SUIT APPLICATION
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Prevents slope sliding and micro-bouncing when grounded.
-        ///
-        /// v2.0 FIX: Полностью переписан.
-        ///
-        /// БЫЛО (v1, ЛЕВИТАЦИЯ):
-        ///   _velocity = _rb.linearVelocity;
-        ///   if (_velocity.y &lt; 0f) {
-        ///       _velocity.y = 0f;              ← УБИВАЕТ ходьбу по склонам!
-        ///       _rb.linearVelocity = _velocity; ← Каждый FixedTick → левитация
-        ///   }
-        ///   ... + частичная компенсация гравитации
-        ///
-        /// СТАЛО (v2.0, КОРРЕКТНО):
-        ///   1. ПОЛНАЯ компенсация гравитации: AddForce(-gravity * mass * factor).
-        ///      Когда на земле, гравитация полностью отменяется, как будто
-        ///      под ногами твёрдая поверхность (реакция опоры).
-        ///      Это предотвращает sliding по склону при стоянии без движения.
-        ///
-        ///   2. Ground snap: мягкая сила вниз (groundSnapForce * mass).
-        ///      Прижимает игрока к поверхности, компенсируя микро-отскоки
-        ///      от физического солвера. Без этого на неровностях
-        ///      игрок "подпрыгивает" на 1-2 см каждый кадр.
-        ///
-        ///   3. velocity.y НЕ обнуляется. Ходьба по склону вниз
-        ///      (через ProjectOnPlane в WalkPhysics) создаёт отрицательную
-        ///      Y-скорость — это нормально и ожидаемо. Обнуление убивало бы
-        ///      этот компонент, вызывая "парение" над склоном.
-        ///
-        /// ВЗАИМОДЕЙСТВИЕ С WalkPhysics:
-        ///   WalkPhysics проецирует вектор движения на плоскость склона.
-        ///   ApplyGroundStability отменяет гравитацию и прижимает к земле.
-        ///   Вместе они создают плавное перемещение по наклонным поверхностям
-        ///   без подпрыгивания и без скольжения.
-        /// </summary>
-        private void ApplyGroundStability()
+        private void ApplySuitToRigidbody()
         {
-            // ── 1. Полная компенсация гравитации ──
-            // Когда на земле, поверхность реагирует на гравитацию.
-            // В Rigidbody-системе мы эмулируем это через counter-force.
-            // slopeStabilityFactor > 1.0 даёт лёгкую перекомпенсацию
-            // для предотвращения drift'а на крутых склонах.
-            _forceVector.x = -_cachedGravity.x * _rb.mass * slopeStabilityFactor;
-            _forceVector.y = -_cachedGravity.y * _rb.mass * slopeStabilityFactor;
-            _forceVector.z = -_cachedGravity.z * _rb.mass * slopeStabilityFactor;
+            if (currentSuitData == null) return;
+            _rb.mass = currentSuitData.mass;
+            _rb.useGravity = false;
 
-            _rb.AddForce(_forceVector, ForceMode.Force);
-
-            // ── 2. Ground snap: мягкое прижимание к поверхности ──
-            // Компенсирует микро-отскоки от collision solver.
-            // Направлен вниз, масштабирован массой для consistency.
-            // Величина groundSnapForce (по умолчанию ~8) подбирается
-            // так, чтобы:
-            //   • Не проваливаться в землю (слишком высокая)
-            //   • Не "парить" на bump'ах (слишком низкая)
-            //   • Не мешать прыжку (прыжок ставит _isGrounded = false
-            //     на следующем кадре → snap не применяется)
-            if (groundSnapForce > 0f)
+            if (_isWalking)
             {
-                _rb.AddForce(Vector3.down * (groundSnapForce * _rb.mass), ForceMode.Force);
+                _currentLinearDamping = currentSuitData.walkDrag;
+                _rb.linearDamping = _currentLinearDamping;
+            }
+            else
+            {
+                _currentLinearDamping = 0f;
+                _rb.linearDamping = 0f;
+            }
+        }
+
+        private void ApplyModePhysics(SuitData suit)
+        {
+            if (!_isWalking)
+            {
+                _rb.linearDamping = 0f;
+                _currentLinearDamping = 0f;
+            }
+        }
+
+        private void SmoothDampingTransition(float fixedDeltaTime, SuitData suit)
+        {
+            float targetDamping;
+            if (_isWalking)
+            {
+                float wadeFactor = 1f + _waterImmersionRatio * suit.wadeSlowdownFactor;
+                targetDamping = suit.walkDrag * wadeFactor;
+            }
+            else
+            {
+                targetDamping = 0f;
+            }
+
+            if (math.abs(_currentLinearDamping - targetDamping) > 0.01f)
+            {
+                float t = 1f - math.exp(-suit.dampingTransitionSpeed * fixedDeltaTime);
+                _currentLinearDamping = math.lerp(_currentLinearDamping, targetDamping, t);
+                _rb.linearDamping = _currentLinearDamping;
+            }
+            else if (_currentLinearDamping != targetDamping)
+            {
+                _currentLinearDamping = targetDamping;
+                _rb.linearDamping = targetDamping;
             }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — SWIM PHYSICS (6DOF look-relative)
+        //  GROUND DETECTION + SMOOTHED NORMAL
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// 6DOF Look-Relative Swim Movement.
-        /// W/S: along camera.forward (full 3D — looking down + W = dive).
-        /// A/D: strafe along camera.right.
-        /// Space/E: ascend. Ctrl/Q: descend.
-        /// Zero GC.
-        /// </summary>
-        private void SwimPhysics()
+        private void GroundCheck()
         {
+            Vector3 rbPos = _rb.position;
+            _groundCheckOrigin.x = rbPos.x;
+            _groundCheckOrigin.y = rbPos.y + groundCheckRadius;
+            _groundCheckOrigin.z = rbPos.z;
+
+            _isGrounded = UnityEngine.Physics.SphereCast(
+                _groundCheckOrigin, groundCheckRadius,
+                Vector3.down, out _groundHit,
+                groundCheckDistance + groundCheckRadius,
+                groundLayers, QueryTriggerInteraction.Ignore);
+
+            if (_isGrounded)
+            {
+                float normalT = 1f - math.exp(-15f * Time.fixedDeltaTime);
+                _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, _groundHit.normal, normalT);
+
+                float sqrMag = _smoothedGroundNormal.sqrMagnitude;
+                if (sqrMag > 0.001f && math.abs(sqrMag - 1f) > 0.001f)
+                {
+                    _smoothedGroundNormal = _smoothedGroundNormal.normalized;
+                }
+            }
+            else
+            {
+                float resetT = 1f - math.exp(-5f * Time.fixedDeltaTime);
+                _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, Vector3.up, resetT);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  GROUND STABILITY
+        // ══════════════════════════════════════════════════════════
+
+        private void ApplyGroundStability(float scale)
+        {
+            if (scale <= 0.001f) return;
+
+            float mass = _rb.mass;
+
+            _forceVector.x = -_cachedGravity.x * mass * slopeStabilityFactor * scale;
+            _forceVector.y = -_cachedGravity.y * mass * slopeStabilityFactor * scale;
+            _forceVector.z = -_cachedGravity.z * mass * slopeStabilityFactor * scale;
+            _rb.AddForce(_forceVector, ForceMode.Force);
+
+            if (groundSnapForce > 0f)
+            {
+                _forceVector.x = 0f;
+                _forceVector.y = -groundSnapForce * mass * scale;
+                _forceVector.z = 0f;
+                _rb.AddForce(_forceVector, ForceMode.Force);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  SURFACE LOCK
+        // ══════════════════════════════════════════════════════════
+
+        private void ApplySurfaceLock(SuitData suit)
+        {
+            if (suit.surfaceLockStrength <= 0f) return;
+
+            bool isDiving = _inputV > 0.1f && _cameraPitch > 20f;
+            bool isDescending = _inputVertical < -0.1f;
+            if (isDiving || isDescending) return;
+
+            if (_isGrounded) return;
+
+            float surfaceY = EffectiveWaterSurfaceY;
+            float feetY = _rb.position.y;
+
+            if (feetY >= surfaceY - 0.1f) return;
+
+            float eyeY = feetY + playerHeight * 0.85f;
+            float error = eyeY - surfaceY;
+
+            if (math.abs(error) > suit.surfaceLockRange) return;
+
+            float shoreBlend = math.saturate((_waterImmersionRatio - 0.5f) * 2.5f);
+
+            float springForce = -error * suit.surfaceLockStrength * shoreBlend;
+            float dampForce = -_rb.linearVelocity.y * suit.surfaceLockDamping * shoreBlend;
+            float totalForce = (springForce + dampForce) * _rb.mass;
+
+            _forceVector.x = 0f;
+            _forceVector.y = totalForce;
+            _forceVector.z = 0f;
+            _rb.AddForce(_forceVector, ForceMode.Force);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  SWIM PHYSICS — with depth pressure resistance
+        // ══════════════════════════════════════════════════════════
+
+        private void SwimPhysics(SuitData suit, float fixedDeltaTime)
+        {
+            _velocity = _rb.linearVelocity;
+            float speed = math.sqrt(
+                _velocity.x * _velocity.x +
+                _velocity.y * _velocity.y +
+                _velocity.z * _velocity.z);
+
+            // ── Depth-based drag increase (v7.0) ──
+            float depthDragAdd = 0f;
+            if (_currentDepth > suit.depthSwimSlowdownStart && suit.depthDragIncreaseMax > 0f)
+            {
+                float depthT = math.saturate(
+                    (_currentDepth - suit.depthSwimSlowdownStart) /
+                    math.max(suit.depthSwimSlowdownEnd - suit.depthSwimSlowdownStart, 0.01f));
+                depthDragAdd = depthT * suit.depthDragIncreaseMax;
+            }
+
+            float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
+
+            // ── Quadratic drag ──
+            if (speed > 0.01f)
+            {
+                float dragMagnitude = effectiveDragCoeff * speed * speed;
+                float maxDrag = speed * _rb.mass * 0.9f / fixedDeltaTime;
+                if (dragMagnitude > maxDrag) dragMagnitude = maxDrag;
+
+                float invSpeed = 1f / speed;
+                _forceVector.x = -_velocity.x * invSpeed * dragMagnitude;
+                _forceVector.y = -_velocity.y * invSpeed * dragMagnitude;
+                _forceVector.z = -_velocity.z * invSpeed * dragMagnitude;
+                _rb.AddForce(_forceVector, ForceMode.Force);
+            }
+
+            // ── Swim thrust ──
             bool hasInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
-            if (!hasInput || playerCamera == null) return;
+            if (!hasInput) return;
 
-            Vector3 camForward = playerCamera.forward;
-            Vector3 camRight   = playerCamera.right;
+            // ── Depth-based swim force reduction (v7.0) ──
+            float depthSlowdown = 1f;
+            if (_currentDepth > suit.depthSwimSlowdownStart && suit.depthSwimSlowdownMax > 0f)
+            {
+                float slowT = math.saturate(
+                    (_currentDepth - suit.depthSwimSlowdownStart) /
+                    math.max(suit.depthSwimSlowdownEnd - suit.depthSwimSlowdownStart, 0.01f));
+                depthSlowdown = 1f - slowT * suit.depthSwimSlowdownMax;
+            }
 
-            float dirX = camForward.x * _inputV + camRight.x * _inputH;
-            float dirY = camForward.y * _inputV + camRight.y * _inputH;
-            float dirZ = camForward.z * _inputV + camRight.z * _inputH;
+            float effectiveSwimForce = suit.swimForce * depthSlowdown;
+
+            float bodyYawRad = _bodyYaw * DEG_TO_RAD;
+            float pitchRad = _cameraPitch * DEG_TO_RAD;
+
+            float sinBodyYaw = math.sin(bodyYawRad);
+            float cosBodyYaw = math.cos(bodyYawRad);
+            float sinPitch = math.sin(pitchRad);
+            float cosPitch = math.cos(pitchRad);
+
+            float fwdX = sinBodyYaw * cosPitch;
+            float fwdY = -sinPitch;
+            float fwdZ = cosBodyYaw * cosPitch;
+
+            float rightX = cosBodyYaw;
+            float rightZ = -sinBodyYaw;
+
+            float dirX = fwdX * _inputV + rightX * _inputH;
+            float dirY = fwdY * _inputV;
+            float dirZ = fwdZ * _inputV + rightZ * _inputH;
 
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
             {
-                float invMag = 1f / Mathf.Sqrt(sqrMag);
-                dirX *= invMag;
-                dirY *= invMag;
-                dirZ *= invMag;
+                float invMag = 1f / math.sqrt(sqrMag);
+                dirX *= invMag; dirY *= invMag; dirZ *= invMag;
             }
 
-            _forceVector.x = dirX * swimForce;
-            _forceVector.y = dirY * swimForce;
-            _forceVector.z = dirZ * swimForce;
-
-            _forceVector.y += _inputVertical * verticalForce;
+            _forceVector.x = dirX * effectiveSwimForce;
+            _forceVector.y = dirY * effectiveSwimForce;
+            _forceVector.z = dirZ * effectiveSwimForce;
+            _forceVector.y += _inputVertical * suit.swimVerticalForce * depthSlowdown;
 
             _rb.AddForce(_forceVector, ForceMode.Force);
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — WALK PHYSICS (v2.0: slope-projected)
+        //  WALK PHYSICS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// XZ body-relative movement with slope projection.
-        ///
-        /// v2.0 FIX: Когда игрок на земле, вектор движения проецируется
-        /// на плоскость склона через Vector3.ProjectOnPlane(dir, groundNormal).
-        ///
-        /// БЫЛО (v1, ПОДПРЫГИВАНИЕ НА СКЛОНАХ):
-        ///   _moveDirection = (forward * inputV + right * inputH) с Y=0
-        ///   _forceVector = _moveDirection * walkForce с Y=0
-        ///   → Горизонтальная сила на склоне = игрок "съезжает" с поверхности,
-        ///     кратковременно теряет контакт, падает обратно → bounce.
-        ///
-        /// СТАЛО (v2.0, ПЛАВНО):
-        ///   Когда grounded:
-        ///     _moveDirection = ProjectOnPlane(horizontalDir, groundNormal).normalized
-        ///     _forceVector = _moveDirection * walkForce (включая Y-компонент!)
-        ///   → Сила направлена ВДОЛЬ поверхности, не отрывая от неё.
-        ///   → Ходьба вниз по склону: Y-компонент отрицательный → "приклеен".
-        ///   → Ходьба вверх по склону: Y-компонент положительный → карабкается.
-        ///   → Плоская земля: Y ≈ 0 → поведение как в v1.
-        ///
-        /// Когда NOT grounded (в воздухе при ходьбе):
-        ///   Используется горизонтальный вектор без проекции (air control).
-        ///
-        /// Zero GC: ProjectOnPlane returns struct.
-        /// </summary>
-        private void WalkPhysics()
+        private void WalkPhysics(SuitData suit, float fixedDeltaTime)
         {
             if (_inputH == 0f && _inputV == 0f) return;
 
-            Vector3 bodyForward = _cachedTransform.forward;
-            Vector3 bodyRight = _cachedTransform.right;
+            float yawRad = _bodyYaw * DEG_TO_RAD;
+            float sinYaw = math.sin(yawRad);
+            float cosYaw = math.cos(yawRad);
 
-            // ── Горизонтальное направление движения (до проекции) ──
-            _moveDirection.x = bodyForward.x * _inputV + bodyRight.x * _inputH;
+            _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
             _moveDirection.y = 0f;
-            _moveDirection.z = bodyForward.z * _inputV + bodyRight.z * _inputH;
+            _moveDirection.z = cosYaw * _inputV - sinYaw * _inputH;
 
-            // ── Нормализация (предотвращает diagonal speed boost) ──
-            float sqrMag = _moveDirection.x * _moveDirection.x
-                         + _moveDirection.z * _moveDirection.z;
-
+            float sqrMag = _moveDirection.x * _moveDirection.x + _moveDirection.z * _moveDirection.z;
             if (sqrMag > 1.0001f)
             {
-                float invMag = 1f / Mathf.Sqrt(sqrMag);
+                float invMag = 1f / math.sqrt(sqrMag);
                 _moveDirection.x *= invMag;
                 _moveDirection.z *= invMag;
             }
 
-            // ══════════════════════════════════════════════
-            //  v2.0: SLOPE PROJECTION (grounded only)
-            //
-            //  Проецирует горизонтальный вектор движения на
-            //  плоскость склона (определённую нормалью _groundHit).
-            //
-            //  Пример:
-            //    Склон 30°, нормаль = (0, 0.866, 0.5)
-            //    Движение forward = (0, 0, 1)
-            //    ProjectOnPlane = (0, -0.25, 0.866) ← вниз по склону!
-            //    Normalize = (0, -0.277, 0.961)
-            //
-            //  Результат: сила направлена ВДОЛЬ поверхности склона,
-            //  а не горизонтально. Игрок "скользит" по земле.
-            //
-            //  На плоской земле (нормаль = up):
-            //    ProjectOnPlane = (moveDir.x, 0, moveDir.z) ← без изменений.
-            // ══════════════════════════════════════════════
-
             if (_isGrounded)
             {
-                // Проекция на плоскость склона
-                _moveDirection = Vector3.ProjectOnPlane(_moveDirection, _groundHit.normal);
-
-                // Ренормализация: ProjectOnPlane может изменить длину вектора.
-                // На крутых склонах длина уменьшается (косинус угла).
-                // Ренормализация восстанавливает полную силу в любом направлении.
+                _moveDirection = Vector3.ProjectOnPlane(_moveDirection, _smoothedGroundNormal);
                 float projSqr = _moveDirection.sqrMagnitude;
                 if (projSqr > 0.0001f)
                 {
-                    float invMag = 1f / Mathf.Sqrt(projSqr);
+                    float invMag = 1f / math.sqrt(projSqr);
                     _moveDirection.x *= invMag;
                     _moveDirection.y *= invMag;
                     _moveDirection.z *= invMag;
                 }
             }
 
-            // ── Применяем силу ──
-            // v2.0: _forceVector.y теперь НЕ обнуляется!
-            // Slope projection задаёт правильный Y-компонент.
-            // На плоской земле Y ≈ 0 (поведение как в v1).
-            _forceVector.x = _moveDirection.x * walkForce;
-            _forceVector.y = _moveDirection.y * walkForce;
-            _forceVector.z = _moveDirection.z * walkForce;
+            float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+            wadeMultiplier = math.max(wadeMultiplier, 0.2f);
+            float force = suit.walkForce * wadeMultiplier;
 
+            _forceVector.x = _moveDirection.x * force;
+            _forceVector.y = _moveDirection.y * force;
+            _forceVector.z = _moveDirection.z * force;
             _rb.AddForce(_forceVector, ForceMode.Force);
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — VELOCITY CLAMP
+        //  AMBIENT CURRENT
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Clamps velocity based on current mode.
-        /// WALK: XZ clamp only (Y is gravity/slope controlled).
-        /// SWIM: Full 3D magnitude clamp.
-        /// Zero GC.
-        /// </summary>
-        private void ClampVelocity()
+        private void ApplyAmbientCurrent(SuitData suit, float fixedDeltaTime)
+        {
+            if (suit.ambientCurrentStrength <= 0f) return;
+            _currentTimer += fixedDeltaTime;
+            if (_currentTimer > 100000f) _currentTimer -= 100000f;
+
+            float strength = suit.ambientCurrentStrength * _waterImmersionRatio;
+            _forceVector.x = math.sin(_currentTimer * 0.1f) * strength;
+            _forceVector.y = math.sin(_currentTimer * 0.07f) * strength * 0.3f;
+            _forceVector.z = math.cos(_currentTimer * 0.13f) * strength;
+            _rb.AddForce(_forceVector, ForceMode.Force);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  VELOCITY CLAMP
+        // ══════════════════════════════════════════════════════════
+
+        private void ClampVelocity(SuitData suit)
         {
             _velocity = _rb.linearVelocity;
-            bool clamped = false;
 
             if (_isWalking)
             {
-                if (maxWalkSpeed > 0f)
-                {
-                    float xzSqr = _velocity.x * _velocity.x
-                                 + _velocity.z * _velocity.z;
-                    float maxSqr = maxWalkSpeed * maxWalkSpeed;
+                float maxSpd = suit.maxWalkSpeed;
+                float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+                maxSpd *= math.max(wadeMultiplier, 0.2f);
 
+                if (maxSpd > 0f)
+                {
+                    float xzSqr = _velocity.x * _velocity.x + _velocity.z * _velocity.z;
+                    float maxSqr = maxSpd * maxSpd;
                     if (xzSqr > maxSqr)
                     {
-                        float scale = maxWalkSpeed / Mathf.Sqrt(xzSqr);
-                        _velocity.x *= scale;
-                        _velocity.z *= scale;
-                        clamped = true;
+                        float scale = maxSpd / math.sqrt(xzSqr);
+                        _velocity.x *= scale; _velocity.z *= scale;
+                        _rb.linearVelocity = _velocity;
                     }
                 }
             }
             else
             {
-                if (maxSwimSpeed > 0f)
+                float maxSpd = suit.maxSwimSpeed;
+                if (maxSpd > 0f)
                 {
-                    float fullSqr = _velocity.x * _velocity.x
-                                  + _velocity.y * _velocity.y
-                                  + _velocity.z * _velocity.z;
-                    float maxSqr = maxSwimSpeed * maxSwimSpeed;
-
+                    float fullSqr = _velocity.x * _velocity.x + _velocity.y * _velocity.y + _velocity.z * _velocity.z;
+                    float maxSqr = maxSpd * maxSpd;
                     if (fullSqr > maxSqr)
                     {
-                        float scale = maxSwimSpeed / Mathf.Sqrt(fullSqr);
-                        _velocity.x *= scale;
-                        _velocity.y *= scale;
-                        _velocity.z *= scale;
-                        clamped = true;
+                        float scale = maxSpd / math.sqrt(fullSqr);
+                        _velocity.x *= scale; _velocity.y *= scale; _velocity.z *= scale;
+                        _rb.linearVelocity = _velocity;
                     }
                 }
-            }
-
-            if (clamped)
-            {
-                _rb.linearVelocity = _velocity;
             }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — MODE TRANSITION
+        //  SPRING UTILITY
         // ══════════════════════════════════════════════════════════
 
-        private void ApplyModePhysicsSettings()
+        private static float SpringDamp(float current, float target, ref float velocity, float omega, float dt)
         {
-            if (_isWalking)
-            {
-                _rb.useGravity = true;
-                _rb.linearDamping = walkLinearDamping;
-            }
-            else
-            {
-                _rb.useGravity = false;
-                _rb.linearDamping = swimLinearDamping;
-            }
+            float n1 = velocity - (current - target) * (omega * omega * dt);
+            float n2 = 1f + omega * dt;
+            velocity = n1 / (n2 * n2);
+            return current + velocity * dt;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -744,57 +1151,64 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void UpdateModeDiagnostics()
+        private void UpdateModeDiagnostics() { _debugIsWalking = _isWalking; }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateGroundDiagnostics() { _debugIsGrounded = _isGrounded; }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateStepDiagnostics() { _debugStepEvent = true; }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateSuitDiagnostics()
         {
-            _debugIsWalking = _isWalking;
+            _debugSuitName = currentSuitData != null ? currentSuitData.name : "NONE";
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void UpdateGroundDiagnostics()
+        private void UpdateCrestDiagnostics()
         {
-            _debugIsGrounded = _isGrounded;
+            _debugCrestAvailable = _crestAvailable;
+            _debugDynamicWaterY = _dynamicWaterSurfaceY;
+            _debugCrestSampling = _crestSamplingSucceeded;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateDiagnostics(float speed)
+        {
+            _debugCurrentRoll = _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
+            _debugImmersionRatio = _waterImmersionRatio;
+            _debugSmoothedImmersion = _smoothedImmersionRatio;
+            _debugGravityScale = _gravityScale;
+            _debugSnapScale = _snapScale;
+            _debugBodyYaw = _bodyYaw;
+            _debugCameraYaw = _cameraYaw;
+            _debugSpeed = speed;
+            _debugDynamicWaterY = EffectiveWaterSurfaceY;
+            _debugCrestAvailable = _crestAvailable;
+            _debugCrestSampling = _crestSamplingSucceeded;
+            _debugDepth = _currentDepth;
+            _debugFovOffset = _juiceOutput.fovOffset;
+            _debugSplashThisFrame = _juiceProcessor != null && _juiceProcessor.SplashThisFrame;
+            _debugExhaleThisFrame = _juiceProcessor != null && _juiceProcessor.ExhaleThisFrame;
+            _debugIsSubmerged = _juiceProcessor != null && _juiceProcessor.IsSubmerged;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PUBLIC API
+        //  EDITOR
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Whether the player is currently grounded (walking mode + ground detected).
-        /// </summary>
-        public bool IsGrounded => _isGrounded && _isWalking;
-
-        /// <summary>
-        /// Whether the player is in walk mode (as opposed to swim mode).
-        /// </summary>
-        public bool IsWalking => _isWalking;
-
-        // ══════════════════════════════════════════════════════════
-        //  EDITOR VALIDATION
-        // ══════════════════════════════════════════════════════════
-
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (mouseSensitivity < 0.01f) mouseSensitivity = 0.01f;
-
-            if (swimForce < 0f) swimForce = 0f;
-            if (verticalForce < 0f) verticalForce = 0f;
-            if (maxSwimSpeed < 0f) maxSwimSpeed = 0f;
-            if (swimLinearDamping < 0f) swimLinearDamping = 0f;
-
-            if (walkForce < 0f) walkForce = 0f;
-            if (maxWalkSpeed < 0f) maxWalkSpeed = 0f;
-            if (walkLinearDamping < 0f) walkLinearDamping = 0f;
-            if (jumpForce < 0f) jumpForce = 0f;
-
             if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
-            if (groundSnapForce < 0f) groundSnapForce = 0f;
-
             if (pitchMin < -89.9f) pitchMin = -89.9f;
             if (pitchMax > 89.9f) pitchMax = 89.9f;
             if (pitchMin > pitchMax) pitchMin = pitchMax;
+            if (playerHeight < 0.5f) playerHeight = 0.5f;
+            if (baseFov < 30f) baseFov = 30f;
+            if (baseFov > 120f) baseFov = 120f;
         }
 
         private void OnDrawGizmosSelected()
@@ -804,28 +1218,33 @@ namespace Hecton8.Gameplay
             Vector3 origin = transform.position + Vector3.up * groundCheckRadius;
             Vector3 castEnd = origin + Vector3.down * (groundCheckDistance + groundCheckRadius);
 
+            // Water level
+            float effectiveY = EffectiveWaterSurfaceY;
+            Gizmos.color = new Color(0f, 0.5f, 1f, 0.3f);
+            Vector3 waterCenter = transform.position;
+            waterCenter.y = effectiveY;
+            Gizmos.DrawWireCube(waterCenter, new Vector3(6f, 0.02f, 6f));
+
+            // Immersion indicator
+            if (_waterImmersionRatio > 0.01f)
+            {
+                Gizmos.color = new Color(0f, 0.3f, 1f, 0.5f);
+                float immersedHeight = playerHeight * _waterImmersionRatio;
+                Vector3 immCenter = transform.position;
+                immCenter.y += immersedHeight * 0.5f;
+                Gizmos.DrawWireCube(immCenter, new Vector3(0.5f, immersedHeight, 0.5f));
+            }
+
             if (_isGrounded)
             {
-                // Ground hit — green sphere at contact point
                 Gizmos.color = new Color(0f, 1f, 0f, 0.5f);
                 Gizmos.DrawWireSphere(_groundHit.point, groundCheckRadius);
-
-                // v2.0: Visualize ground normal
                 Gizmos.color = Color.cyan;
+                Gizmos.DrawLine(_groundHit.point, _groundHit.point + _groundHit.normal * 1.5f);
+
+                Gizmos.color = Color.magenta;
                 Gizmos.DrawLine(_groundHit.point,
-                                _groundHit.point + _groundHit.normal * 1.5f);
-
-                // v2.0: Visualize projected walk direction (if moving)
-                if (_inputH != 0f || _inputV != 0f)
-                {
-                    Vector3 projDir = Vector3.ProjectOnPlane(
-                        _cachedTransform.forward * _inputV + _cachedTransform.right * _inputH,
-                        _groundHit.normal).normalized;
-
-                    Gizmos.color = Color.yellow;
-                    Gizmos.DrawLine(_groundHit.point,
-                                    _groundHit.point + projDir * 2f);
-                }
+                    _groundHit.point + _smoothedGroundNormal * 1.2f);
             }
             else
             {
@@ -835,6 +1254,27 @@ namespace Hecton8.Gameplay
 
             Gizmos.color = new Color(1f, 1f, 0f, 0.5f);
             Gizmos.DrawLine(origin, castEnd);
+
+            // Body vs camera yaw
+            if (!_isWalking)
+            {
+                Vector3 pos = transform.position + Vector3.up * 1.5f;
+                float camR = _cameraYaw * DEG_TO_RAD;
+                float bodR = _bodyYaw * DEG_TO_RAD;
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(pos, pos + new Vector3(math.sin(camR), 0f, math.cos(camR)) * 2f);
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(pos, pos + new Vector3(math.sin(bodR), 0f, math.cos(bodR)) * 1.5f);
+            }
+
+            // Depth indicator
+            if (_currentDepth > 0.5f)
+            {
+                Gizmos.color = new Color(0f, 0f, 0.8f, 0.4f);
+                Vector3 depthStart = transform.position;
+                depthStart.y = effectiveY;
+                Gizmos.DrawLine(depthStart, transform.position);
+            }
         }
 #endif
     }

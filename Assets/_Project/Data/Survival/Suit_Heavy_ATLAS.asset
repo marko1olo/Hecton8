@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 409ce0edd1bd758419184b36cd51ba27, type: 3}
+  m_Name: Suit_Heavy_ATLAS
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.SuitData
+  mass: 400
+  swimForce: 1200
+  swimVerticalForce: 600
+  maxSwimSpeed: 7
+  swimDrag: 5
+  swimBrakeForce: 3
+  walkForce: 2000
+  maxWalkSpeed: 4
+  walkDrag: 5
+  jumpImpulse: 5
+  bobFrequency: 1.2
+  bobVerticalAmplitude: 0.0914
+  bobHorizontalAmplitude: 0.0448
+  bobTransitionSpeed: 8
+  strafeRollAngle: 5
+  mouseRollAngle: 4
+  mouseRollSensitivity: 0.3
+  rollAttackSpeed: 8
+  rollDecaySpeed: 2.5
+  impactVelocityThreshold: 2.5
+  impactDipMaxDistance: 0.308
+  impactVelocityMax: 12
+  impactRecoverySpeed: 3
+  enableIdleSway: 1
+  idleSwayFrequencyY: 0.25
+  idleSwayFrequencyX: 0.17
+  idleSwayFrequencyRoll: 0.11
+  idleSwayAmplitudeY: 0.01
+  idleSwayAmplitudeX: 0.007
+  idleSwayAmplitudeRoll: 0.5
+  idleSwayTransitionSpeed: 2
+  dampingTransitionSpeed: 6
