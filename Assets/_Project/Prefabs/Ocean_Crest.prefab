@@ -57,8 +57,8 @@ MonoBehaviour:
   _waterTilePrefab: {fileID: 0}
   _layerName: 
   _layer: 4
-  _overrideGravity: 0
-  _gravity: -9.8
+  _overrideGravity: 1
+  _gravity: -8.8
   _gravityMultiplier: 1
   _waterBodyCulling: 1
   _minScale: 8
@@ -72,7 +72,7 @@ MonoBehaviour:
   _simSettingsAnimatedWaves: {fileID: 11400000, guid: 2e2bf04fba9811b438fd3258d5625fe9, type: 2}
   _createSeaFloorDepthData: 1
   _simSettingsSeaFloorDepth: {fileID: 11400000, guid: 1e737699687b26a46b81eb44cb8c13c4, type: 2}
-  _createFoamSim: 1
+  _createFoamSim: 0
   _simSettingsFoam: {fileID: 11400000, guid: 831063101a0b3db46b6f855a3dcf4e61, type: 2}
   _createDynamicWaveSim: 0
   _simSettingsDynamicWaves: {fileID: 0}
@@ -115,8 +115,8 @@ MonoBehaviour:
   _spectrumFixedAtRuntime: 1
   _waveDirectionHeadingAngle: 0
   _overrideGlobalWindSpeed: 0
-  _windSpeed: 20
-  _respectShallowWaterAttenuation: 1
+  _windSpeed: 36.9
+  _respectShallowWaterAttenuation: 0
   _weight: 1
   _blendMode: 0
   _queue: 0
@@ -127,7 +127,7 @@ MonoBehaviour:
   _subdivisions: 1
   _featherWaveStart: 0.1
   _version: 0
-  _windTurbulence: 0.145
+  _windTurbulence: 0.3
   _maxVerticalDisplacement: 10
   _maxHorizontalDisplacement: 15
   _enableBakedCollision: 0

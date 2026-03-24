@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 5856769925989962686}
   - component: {fileID: 4334505745138054749}
   - component: {fileID: 9140334739692092775}
+  - component: {fileID: 7530029900573544159}
   m_Layer: 0
   m_Name: '[MANAGERS]'
   m_TagString: Untagged
@@ -52,9 +53,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HectonAtmosphereManager
   _sunLight: {fileID: 0}
   _cycleDuration: 3600
-  _initialTimeOfDay: 0.092
-  _sunOrbitalYAngle: 11
-  _orbitalInclination: 22.2
+  _initialTimeOfDay: 0.241
+  _sunOrbitalYAngle: 40
+  _orbitalInclination: 29.9
   _nightThresholdAngle: 10
   _sunHorizonFadeAngle: 10
   _profileDay: {fileID: 11400000, guid: c7300d65ab765cb40bd9fb323fe5735c, type: 2}
@@ -65,12 +66,6 @@ MonoBehaviour:
   _playerTransform: {fileID: 0}
   _waterSurfaceY: 4900
   _useAutoUnderwaterDetection: 1
-  _shallowFogDensity: 0.001
-  _shallowDepthThreshold: 50
-  _lightAbsorptionCoeff: 0.005
-  _deepFogDepthRange: 300
-  _survivalSystemRef: {fileID: 0}
-  mainCamera: {fileID: 0}
   _biomeOverrides: []
 --- !u!114 &8699850174127364278
 MonoBehaviour:
@@ -132,8 +127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d10d1f46cff164d448916323158811cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.ScavengePopulator
-  resourcePrefabs:
-  - {fileID: 0}
+  lootTables: []
   tileSize: 999
   maxSpawnsPerTick: 20
   unloadDistance: 300
@@ -169,6 +163,8 @@ MonoBehaviour:
   spawnHeightOffset: 2
   retryDelay: 0.5
   maxWaitTime: 60
+  maxRetriesPerPoint: 10
+  globalTimeoutSec: 120
 --- !u!114 &4334505745138054749
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,3 +201,97 @@ MonoBehaviour:
   _debugTileCount: 0
   _debugCurrentBiome: -1
   _debugPlayerFound: 0
+  _debugBiomesAvailable: 0
+--- !u!114 &7530029900573544159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b8d6f3311640f64ba03f2b62d8a00cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonUnderwaterVisuals
+  playerCamera: {fileID: 0}
+  sunLight: {fileID: 0}
+  sunFlare: {fileID: 0}
+  sunVisualTransform: {fileID: 0}
+  mainCamera: {fileID: 0}
+  atmosphereManager: {fileID: 7708331952162077753}
+  oceanUnderwaterMaterial: {fileID: 2100000, guid: ef94c26e44a36e24a9dcbc5995a2bed1, type: 2}
+  skyMaterial: {fileID: 2100000, guid: c94a1beef2372b8458941c2ed9d05d5e, type: 2}
+  biomePalette: {fileID: 11400000, guid: 1ed7cad7d9660ec4898f244d19b99da4, type: 2}
+  globalLightCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 300
+      value: 0.8
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 700
+      value: 0.1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1000
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  minFogDensity: 0.002
+  maxFogDensity: 0.08
+  waterLevelFallback: 4900
+  sunVisualDisableThreshold: 0.001
+  baseSunSize: 0.002
+  underwaterSunSizeMax: 0.15
+  baseSunEdgeSoftness: 0.001
+  underwaterSunSoftnessMax: 0.5
+  biomeTransitionSpeed: 0.2
+  slowTickInterval: 0.5
+  surfaceFogColor: {r: 0.7, g: 0.75, b: 0.8, a: 1}
+  surfaceFogDensity: 0.001
+  enableSurfaceFog: 0
+  surfaceAmbientColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  underwaterAmbientColor: {r: 0.02, g: 0.04, b: 0.06, a: 1}
+  _debugDepth: 0
+  _debugLightFactor: 1
+  _debugFogDensity: 0.08
+  _debugTurbidity: 1
+  _debugAtmoSunIntensity: 1.79
+  _debugHorizonFade: 1
+  _debugFinalSunIntensity: 1.79
+  _debugTargetBiome: 0
+  _debugTransitionProgress: 0.99999917
+  _debugIsUnderwater: 0
+  _debugPhysicsEngineFound: 0
+  _debugAtmoManagerFound: 1
+  _debugSunVisualActive: 0
+  _debugSunScatter: 1
+  _debugEditorDriven: 1

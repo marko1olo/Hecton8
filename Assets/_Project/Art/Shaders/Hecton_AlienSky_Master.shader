@@ -3,25 +3,32 @@
 // Atmospheric sky dome shader for the exomoon Hecton.
 // Unity 6 | URP 17+ | SRP Batcher Compatible
 //
-// v5.1 — ECLIPSE SKY DARKENING
+// v5.3 — ATMOSPHERIC PERSPECTIVE HORIZON FIX
 //
-//   [FIX] Sky gradient dims during eclipse via eclipseVis multiplier.
-//         Without this, zenith/horizon/nadir stayed bright even with
-//         sun intensity at zero — the sky itself was a light source.
-//   [FIX] Horizon haze dims during eclipse. Bright haze at horizon
-//         was the primary "sky stays white" artifact.
-//   [FIX] Cloud lighting transitions to night during eclipse.
-//         Clouds looked sunlit even when the sun was occluded.
-//   [FIX] Backlit glow on clouds dims during eclipse.
-//   [FIX] Aegir halo intensifies during eclipse (same as nighttime).
-//   [PERF] Zero additional texture samples. ~8 extra ALU (multiplies).
+//   [FIX] Replaced v5.2's hard cloud cutoff with atmospheric perspective.
+//         v5.2 used smoothstep to REMOVE clouds near horizon → visible gap.
+//         v5.3 keeps clouds visible but blends them into sky/haze color.
+//         At horizon, clouds become a soft uniform layer matching the sky.
+//         This hides UV stretching artifacts naturally without gaps.
 //
-// PRESERVED FROM v4.1:
+//   [FIX] HORIZON_CLAMP set to 0.08 (v5.2 had 0.12, too aggressive).
+//
+//   [FIX] atmosClarity factor controls per-layer atmosphere:
+//         - Cloud detail fades (no mipmap aliasing source)
+//         - Cloud threshold lowers (continuous soft coverage)
+//         - Cloud softness widens (no sharp mask edges)
+//         - Cloud color → sky color (atmospheric perspective)
+//         - Backlit glow fades (no bright streaks)
+//         - Cirrus fades smoothly
+//
+//   [PERF] One smoothstep + two lerps added. Zero texture samples added.
+//
+// v5.1 PRESERVED:
+//   ✓ Eclipse sky darkening via eclipseVis
 //   ✓ All sunset/golden hour logic
 //   ✓ Belt of Venus
 //   ✓ Star NASA-Punk flicker + elevation fade
 //   ✓ Aegir cloud illumination at night
-//   ✓ All cloud, cirrus, haze systems
 //   ✓ Planar ceiling UV, flowmap, dither
 //   ✓ SRP Batcher compatible
 //   ✓ 4 texture samples total
@@ -140,15 +147,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            // ---------------------------------
-            // TEXTURES
-            // ---------------------------------
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
             TEXTURE2D(_StarTex);            SAMPLER(sampler_StarTex);
 
-            // ---------------------------------------------------------
-            // CBUFFER -- SRP Batcher compatible
-            // ---------------------------------------------------------
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainCloudTex_ST;
 
@@ -213,26 +214,17 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _DitherScale;
             CBUFFER_END
 
-            // ---------------------------------
-            // GLOBALS (set from C# scripts)
-            // ---------------------------------
             float4 _SunDirection;
             float4 _AegirDirection;
 
-            // ---------------------------------
-            // CONSTANTS
-            // ---------------------------------
             static const half  HALF_ZERO = 0.0h;
             static const half  HALF_ONE  = 1.0h;
 
             static const float3 FALLBACK_SUN_DIR   = float3(0.57735, 0.57735, 0.57735);
             static const float3 FALLBACK_AEGIR_DIR = float3(0.0, 0.93633, -0.35112);
             static const float  DIR_THRESHOLD      = 0.001;
-            static const float  HORIZON_CLAMP      = 0.05;
+            static const float  HORIZON_CLAMP      = 0.08;    // v5.3: was 0.12 (v5.2), 0.05 (v5.1)
 
-            // ---------------------------------
-            // STRUCTS
-            // ---------------------------------
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -248,9 +240,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            // ---------------------------------------------------------
-            // UTILITY
-            // ---------------------------------------------------------
             float3 SafeNormalizeDir(float3 v, float3 fallback)
             {
                 float lenSq = dot(v, v);
@@ -266,9 +255,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return frac((p3.x + p3.y) * p3.z);
             }
 
-            // ---------------------------------------------------------
-            // PLANAR CEILING PROJECTION
-            // ---------------------------------------------------------
             float2 ComputeSkyUV(float3 V, float2 tiling, float speedMult)
             {
                 float projY = max(V.y, HORIZON_CLAMP);
@@ -288,9 +274,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return skyUV;
             }
 
-            // ---------------------------------------------------------
-            // FLOWMAP -- DUAL-PHASE CYCLING
-            // ---------------------------------------------------------
             half2 SampleFlowmap(
                 TEXTURE2D_PARAM(flowTex, flowSampler),
                 float2 baseUV)
@@ -312,9 +295,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return result;
             }
 
-            // ---------------------------------------------------------
-            // DITHER
-            // ---------------------------------------------------------
             static const half BAYER_MATRIX[16] =
             {
                  0.0h/16.0h,  8.0h/16.0h,  2.0h/16.0h, 10.0h/16.0h,
@@ -331,9 +311,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 clip(alpha - threshold);
             }
 
-            // ---------------------------------
-            // VERTEX
-            // ---------------------------------
             Varyings SkyVert(Attributes input)
             {
                 Varyings output;
@@ -352,9 +329,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return output;
             }
 
-            // ---------------------------------------------------------
-            // FRAGMENT
-            // ---------------------------------------------------------
             half4 SkyFrag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -377,43 +351,24 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half sunViewDot = saturate(dot(V, L));
 
                 // =======================================
-                // v5.1: ECLIPSE + SUNSET MASKS
-                //
-                // eclipseVis: 1.0 = no eclipse, 0.0 = full eclipse.
-                //   Used to dim ALL sun-dependent effects.
-                //
-                // eclipseNight: effectively "is it dark?"
-                //   max(_NightBlend, _EclipseOcclusion)
-                //   Used for cloud night color and Aegir boost.
-                //   Eclipse at noon = clouds go dark like night.
-                //
-                // skyDimFactor: controls sky gradient brightness.
-                //   At full eclipse, sky dims to ~15% (not full black
-                //   because planet-shine and Aegir provide some light).
-                //   Uses smoothstep for gradual onset.
+                // ECLIPSE + SUNSET MASKS
                 // =======================================
                 half sunElevation = (half)_SunElevation;
                 half eclipseVis   = 1.0h - (half)_EclipseOcclusion;
 
-                // v5.1 FIX: Combined "darkness" factor from time-of-day AND eclipse.
-                // This drives cloud night color and Aegir boost during eclipse.
                 half eclipseNight = max((half)_NightBlend, (half)_EclipseOcclusion);
 
-                // v5.1 FIX: Sky gradient dimming during eclipse.
-                // smoothstep: starts dimming at 0.1 occlusion, fully dim at 0.9.
-                // Minimum 0.12 = never full black (planet-shine, Aegir ambient).
                 half skyDimFactor = lerp(1.0h, 0.12h,
                     smoothstep(0.1h, 0.9h, (half)_EclipseOcclusion));
 
                 half sunsetFactor = saturate(1.0h - abs(sunElevation) * 8.0h);
-                sunsetFactor *= eclipseVis;  // no sunset glow during eclipse
+                sunsetFactor *= eclipseVis;
                 half sunsetSpot     = pow(sunViewDot, 4.0h) * sunsetFactor;
                 half beltOfVenus    = pow(saturate(dot(V, sunDir)), 3.0h)
                                     * sunsetFactor * 0.4h;
 
                 // =======================================
                 // BASE SKY GRADIENT
-                // v5.1 FIX: multiply by skyDimFactor
                 // =======================================
                 half zenithMask  = saturate(horizonFactor);
                 half nadirMask   = saturate(-horizonFactor);
@@ -423,30 +378,22 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                + _SkyColorHorizon.rgb * horizonMask
                                + _SkyColorNadir.rgb   * nadirMask;
 
-                // v5.1 FIX: Dim the entire sky gradient during eclipse.
-                // Without this, the sky itself acts as a bright light source
-                // even when the sun is fully occluded → "white sky" artifact.
                 skyColor *= skyDimFactor;
 
-                // Sunset horizon (already gated by eclipseVis via sunsetFactor)
                 half3 sunsetHorizonContrib = _SunsetHorizonColor.rgb
                                            * sunsetSpot
                                            * horizonMask;
                 skyColor += sunsetHorizonContrib;
 
-                // Belt of Venus (already gated)
                 half3 beltColor = half3(0.6h, 0.3h, 0.5h) * beltOfVenus * horizonMask;
                 skyColor += beltColor;
 
                 // =======================================
                 // LAYER 0: STAR FIELD
-                // v5.1: Stars visible during eclipse
                 // =======================================
                 half3 starContrib = half3(0.0h, 0.0h, 0.0h);
                 half nightFactor = (half)_NightBlend;
 
-                // v5.1 FIX: Check eclipseNight instead of just nightFactor.
-                // Stars should appear during daytime eclipse.
                 if (eclipseNight > 0.01h && zenithMask > 0.01h)
                 {
                     float2 starUV;
@@ -461,7 +408,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     float starPhase = hash(starCell) * 6.28318;
 
                     half starDayFade = saturate(-sunElevation * 10.0h);
-                    // v5.1: Stars visible = max of natural night + eclipse
                     half starVisibility = max(nightFactor * starDayFade,
                                               (half)_EclipseOcclusion);
 
@@ -480,7 +426,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // =======================================
                 // LAYER 3: HORIZON HAZE
-                // v5.1 FIX: dim during eclipse
                 // =======================================
                 half hazeRaw = 1.0h - abs(horizonFactor);
                 half hazeMask = pow(hazeRaw, _HazeFalloff) * _HazeIntensity;
@@ -492,16 +437,30 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 half3 hazeColor = _HazeColor.rgb * hazeSunTint * hazeMask;
 
-                // v5.1 FIX: Haze is sun-dependent atmospheric scattering.
-                // During eclipse, no sun = no scattering = dim haze.
-                // skyDimFactor handles the gradual fade.
                 hazeColor *= skyDimFactor;
 
                 skyColor += hazeColor;
 
                 // =======================================
+                // v5.3: ATMOSPHERIC PERSPECTIVE
+                //
+                // Instead of cutting clouds at horizon (v5.2 gap),
+                // we simulate atmospheric scattering:
+                //   - Near horizon: air between viewer and clouds
+                //     scatters light, washing out detail and color
+                //   - Clouds become a soft uniform layer matching sky
+                //   - UV aliasing becomes invisible (no contrast)
+                //   - No gap, physically correct
+                //
+                // atmosClarity:
+                //   0.0 = at horizon (thick atmosphere, full wash)
+                //   1.0 = above ~17° (clear, full detail)
+                // =======================================
+                half atmosClarity = smoothstep(0.05h, 0.30h, horizonFactor);
+
+                // =======================================
                 // LAYER 1: CIRRUS CLOUDS
-                // v5.1 FIX: backlit dimmed during eclipse
+                // v5.3: dissolves into sky at horizon
                 // =======================================
                 float2 cirrusUV = ComputeCirrusUV(
                     Vf, _CirrusTiling.xy, _CirrusSpeedMult);
@@ -515,21 +474,20 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     saturate(1.0h - dot(V, -L)),
                     _BacklitPower * 0.5h) * cirrusDensity;
 
-                // v5.1 FIX: Cirrus backlit dims when sun is eclipsed
                 cirrusBacklit *= eclipseVis;
 
                 half3 cirrusColor = _CirrusColor.rgb
                                   + cirrusBacklit * _BacklitColor.rgb * 0.3h;
 
+                // v5.3: cirrus fades into sky at horizon
                 skyColor = lerp(
                     skyColor,
                     skyColor + cirrusColor,
-                    cirrusDensity * _CirrusOpacity * zenithMask);
+                    cirrusDensity * _CirrusOpacity * atmosClarity);
 
                 // =======================================
                 // LAYER 2: MAIN CLOUDS
-                // v5.1 FIX: Eclipse triggers night cloud color
-                //           + backlit dims + Aegir glow boosts
+                // v5.3: atmospheric perspective at horizon
                 // =======================================
                 float2 cloudBaseUV = ComputeSkyUV(
                     Vf, _CloudTiling.xy, _CloudSpeedMult);
@@ -541,35 +499,36 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half cloudDensity = cloudRG.x;
                 half cloudDetail  = cloudRG.y;
 
-                cloudDensity -= cloudDetail * _DetailStrength;
+                // v5.3: detail fades at horizon — kills mipmap aliasing source.
+                // Without fine detail, the stretched UV produces smooth gradients
+                // instead of high-frequency banding.
+                cloudDensity -= cloudDetail * _DetailStrength * atmosClarity;
 
-                half smoothLow  = _CloudDensityThreshold;
-                half smoothHigh = _CloudDensityThreshold + _CloudSoftness;
-                half cloudMask  = smoothstep(smoothLow, smoothHigh, cloudDensity);
+                // v5.3: at horizon — lower threshold (everything becomes cloud),
+                // wider softness (ultra-smooth edges). Result: continuous soft
+                // layer instead of flickering mask from aliased density values.
+                half adjThreshold = _CloudDensityThreshold * lerp(0.15h, 1.0h, atmosClarity);
+                half adjSoftness  = _CloudSoftness + (1.0h - atmosClarity) * 0.25h;
+                half cloudMask = smoothstep(adjThreshold, adjThreshold + adjSoftness, cloudDensity);
 
                 half cloudNdotL = saturate(dot(V, L));
 
-                // v5.1 FIX: Cloud lighting uses eclipseNight instead of _NightBlend.
-                // During eclipse at noon, clouds should look dark like night,
-                // not sunlit like daytime.
                 half3 cloudLitDay     = _CloudColorLit.rgb;
                 half3 cloudLitSunset  = lerp(cloudLitDay,
                                              _SunsetCloudColor.rgb,
                                              sunsetSpot);
-                // v5.1 FIX: eclipseNight drives night color transition
                 half3 cloudLitFinal   = lerp(cloudLitSunset,
                                              _NightCloudColor.rgb,
                                              eclipseNight);
 
-                // v5.1 FIX: Aegir cloud glow uses eclipseNight.
-                // During eclipse, Aegir becomes the dominant light source
-                // (planet-shine), so its cloud illumination should activate.
+                // v5.3: Aegir cloud glow fades at horizon (no purple streaks)
                 half aegirDotForClouds = saturate(dot(V, aegirDir));
                 half3 aegirCloudGlow   = half3(0.4h, 0.2h, 0.8h)
                                        * aegirDotForClouds
                                        * eclipseNight
                                        * _AegirGlowIntensity
-                                       * cloudMask;
+                                       * cloudMask
+                                       * atmosClarity;
 
                 half3 cloudBaseColor = lerp(
                     _CloudColorShadow.rgb,
@@ -578,31 +537,37 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 cloudBaseColor += aegirCloudGlow;
 
-                // v5.1 FIX: Backlit glow dims during eclipse.
-                // sunsetFactor already contains eclipseVis, but backlitSunsetBoost
-                // is additive on top of base backlit. We also multiply the entire
-                // backlit contribution by eclipseVis to fully extinguish rim light
-                // when the sun is hidden behind Aegir.
                 half backlitSunsetBoost = 1.0h + sunsetFactor * 1.5h;
                 half backlitFactor = pow(
                     saturate(sunViewDot),
                     _BacklitPower);
+
+                // v5.3: backlit fades at horizon (primary barcode source at night)
                 half3 backlitGlow = _BacklitColor.rgb
                                   * backlitFactor
                                   * cloudMask
                                   * _BacklitIntensity
                                   * backlitSunsetBoost
-                                  * eclipseVis;  // v5.1 FIX: dims with eclipse
+                                  * eclipseVis
+                                  * atmosClarity;
 
                 half3 cloudColor = cloudBaseColor + backlitGlow;
 
-                half cloudHeightFade = saturate(horizonFactor * 3.0h);
-                half finalCloudMask = cloudMask * cloudHeightFade;
+                // v5.3: ATMOSPHERIC PERSPECTIVE — the key fix.
+                // At horizon, cloud color becomes sky color.
+                // lerp(skyColor, cloudColor, 0) = skyColor → no contrast
+                // → no visible aliasing → no barcode → no gap.
+                // Above ~17°: clouds render normally.
+                cloudColor = lerp(skyColor, cloudColor, atmosClarity);
+
+                // v5.3: gentle height fade. Since cloudColor = skyColor at horizon,
+                // this is cosmetic — lerp(sky, sky, mask) = sky regardless.
+                // Prevents any residual edge at the very bottom of the dome.
+                half finalCloudMask = cloudMask * saturate(horizonFactor * 4.0h);
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
 
                 // =======================================
                 // SUN DISC
-                // (already had eclipseVis — preserved)
                 // =======================================
                 half sunDist = 1.0h - sunViewDot;
                 half sunDisc = 1.0h - smoothstep(
@@ -615,7 +580,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // =======================================
                 // SUN SCATTERING
-                // (already had eclipseVis — preserved)
                 // =======================================
                 half sunScatter = pow(
                     saturate(sunViewDot),
@@ -629,13 +593,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // =======================================
                 // AEGIR HALO
-                // v5.1 FIX: Eclipse boosts Aegir halo (same as night)
                 // =======================================
                 half aegirDot = saturate(dot(V, aegirDir));
 
-                // v5.1 FIX: eclipseNight drives the boost instead of just _NightBlend.
-                // During eclipse, Aegir halo intensifies because the sky is dark
-                // and Aegir's reflected light becomes the dominant sky feature.
                 half nightBoost = 1.0h + eclipseNight * _AegirGlowIntensity;
 
                 half aegirHalo = pow(aegirDot, _AegirHaloPower)

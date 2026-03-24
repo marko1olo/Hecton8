@@ -156,7 +156,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             Name "GasGiantForward"
             Tags { "LightMode" = "UniversalForward" }
 
-            Cull Back
+            Cull Front
             ZWrite On
             ZTest LEqual
             Blend One Zero
@@ -544,7 +544,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
             ZWrite On
             ColorMask 0
-            Cull Back
+            Cull Front
 
             HLSLPROGRAM
             #pragma vertex DepthOnlyVert
@@ -597,7 +597,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             Tags { "LightMode" = "DepthNormals" }
 
             ZWrite On
-            Cull Back
+            Cull Front
 
             HLSLPROGRAM
             #pragma vertex DepthNormalsVert

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2992800118758943225}
   - component: {fileID: 8921837575308527781}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: '[CELESTIAL_ENGINE]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25,7 +25,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6695652765958259786}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -29.128784, y: -0.00026, z: 1624.8291}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -48,15 +48,25 @@ MonoBehaviour:
   aegirTransform: {fileID: 0}
   aegirRenderer: {fileID: 0}
   playerTransform: {fileID: 0}
-  atmosphereManagerRef: {fileID: 0}
-  sunLensFlare: {fileID: 0}
+  _atmosphereManager: {fileID: 0}
+  _skyMaterial: {fileID: 2100000, guid: c94a1beef2372b8458941c2ed9d05d5e, type: 2}
+  _cloudSpeed: 0.01
+  _dayProfile:
+    zenithColor: {r: 0.1, g: 0.16, b: 0.5, a: 1}
+    horizonColor: {r: 0.8, g: 0.7, b: 1, a: 1}
+    nadirColor: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
+  _nightProfile:
+    zenithColor: {r: 0.01, g: 0.005, b: 0.03, a: 1}
+    horizonColor: {r: 0.08, g: 0.05, b: 0.12, a: 1}
+    nadirColor: {r: 0.005, g: 0.003, b: 0.01, a: 1}
+  _sunLensFlare: {fileID: 0}
   sunDistance: 100000
   sunVisualTransform: {fileID: 0}
   flareFadeMarginDegrees: 2
   flareFadeSpeed: 5
-  daySkybox: {fileID: 2100000, guid: adb9fe9be55e5c240a9028e61ecea987, type: 2}
-  nightSkybox: {fileID: 2100000, guid: e6841cd12af6d9b42a1016d5492aa4b1, type: 2}
-  blendedSkyboxMaterial: {fileID: 2100000, guid: 3e9eac0702ee74b4da0f9ae0d259d74f, type: 2}
+  daySkybox: {fileID: 0}
+  nightSkybox: {fileID: 0}
+  blendedSkyboxMaterial: {fileID: 0}
   orbitalPeriod: 3600
   sunOrbitAxis: {x: 1, y: 0, z: 0}
   sunStartAngle: 0
@@ -68,7 +78,7 @@ MonoBehaviour:
   planetShineMaxIntensity: 0.35
   planetShineColor: {r: 0.81, g: 0.71999997, b: 0.9, a: 1}
   planetShineNewMoonThreshold: 0.1
-  equatorialRotationSpeed: 0.02
+  equatorialRotationSpeed: 0.0005
   polarRotationMultiplier: 0.4
   backlitIntensity: 0.08
   stormEmissionIntensity: 1
