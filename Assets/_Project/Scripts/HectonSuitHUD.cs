@@ -32,6 +32,7 @@ using TMPro;
 using UnityEngine;
 using Unity.Mathematics;
 using Random = UnityEngine.Random;
+using Hecton.Localization;
 
 [DisallowMultipleComponent]
 [ExecuteAlways]
@@ -50,14 +51,14 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private static readonly string[] PressureStrings;
 
     // Module status strings — pre-allocated, zero GC
-    private static readonly string STR_MODULE_POWERED    = "POWERED";
-    private static readonly string STR_MODULE_NO_POWER   = "NO POWER";
-    private static readonly string STR_MODULE_DRY        = "DRY";
-    private static readonly string STR_MODULE_FLOODED    = "FLOODED";
-    private static readonly string STR_MODULE_O2_ACTIVE  = "O2 ACTIVE";
-    private static readonly string STR_MODULE_O2_OFFLINE = "O2 OFFLINE";
-    private static readonly string STR_MODULE_LABEL      = "BASE MODULE";
-    private static readonly string STR_NO_MODULE         = "EXTERIOR";
+    private static string STR_MODULE_POWERED    = "POWERED";
+    private static string STR_MODULE_NO_POWER   = "NO POWER";
+    private static string STR_MODULE_DRY        = "DRY";
+    private static string STR_MODULE_FLOODED    = "FLOODED";
+    private static string STR_MODULE_O2_ACTIVE  = "O2 ACTIVE";
+    private static string STR_MODULE_O2_OFFLINE = "O2 OFFLINE";
+    private static string STR_MODULE_LABEL      = "BASE MODULE";
+    private static string STR_NO_MODULE         = "EXTERIOR";
 
     static HectonSuitHUD()
     {
@@ -241,9 +242,38 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
         InteractionEvents.OnHoverChanged += HandleHoverChanged;
 
+        LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+        if (LocalizationManager.Instance != null)
+            HandleLanguageChanged(LocalizationManager.Instance.CurrentLanguage);
+
         // v3.0: Subscribe to module zone events
         ModuleStatusEvents.OnModuleEnter += HandleModuleEnter;
         ModuleStatusEvents.OnModuleExit  += HandleModuleExit;
+    }
+
+    private void HandleLanguageChanged(GameLanguage lang)
+    {
+        var loc = LocalizationManager.Instance;
+        if (loc == null) return;
+
+        STR_MODULE_POWERED = loc.Get(LocalizationKeys.HUD_MODULE_POWERED);
+        STR_MODULE_NO_POWER = loc.Get(LocalizationKeys.HUD_MODULE_NO_POWER);
+        STR_MODULE_DRY = loc.Get(LocalizationKeys.HUD_MODULE_DRY);
+        STR_MODULE_FLOODED = loc.Get(LocalizationKeys.HUD_MODULE_FLOODED);
+        STR_MODULE_O2_ACTIVE = loc.Get(LocalizationKeys.HUD_MODULE_O2_ACTIVE);
+        STR_MODULE_O2_OFFLINE = loc.Get(LocalizationKeys.HUD_MODULE_O2_OFFLINE);
+        STR_MODULE_LABEL = loc.Get(LocalizationKeys.HUD_MODULE_BASE);
+        STR_NO_MODULE = loc.Get(LocalizationKeys.HUD_MODULE_EXTERIOR);
+
+        string depthPrefix = loc.Get(LocalizationKeys.HUD_DEPTH);
+        for (int i = 0; i <= MaxDepth; i++)
+            DepthStrings[i] = $"{depthPrefix}: {i} m";
+
+        string atmPrefix = loc.Get(LocalizationKeys.HUD_ATM);
+        for (int i = 0; i <= MaxPressure; i++)
+            PressureStrings[i] = $"{atmPrefix}: {i} atm";
+            
+        _statusText = loc.Get(LocalizationKeys.HUD_SYS_NOMINAL);
     }
 
     public override void OnDisable()
@@ -261,6 +291,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         _integrityCritical = false;
 
         InteractionEvents.OnHoverChanged -= HandleHoverChanged;
+        LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
 
         // v3.0: Unsubscribe module events
         ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;

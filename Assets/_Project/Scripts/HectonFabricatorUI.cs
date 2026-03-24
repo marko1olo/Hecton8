@@ -81,6 +81,7 @@ using Shapes;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Hecton.Localization;
 
 namespace Hecton8.UI
 {
@@ -97,20 +98,20 @@ namespace Hecton8.UI
         /// <summary>Pre-cached integer strings "0" → "99". Zero GC at runtime.</summary>
         private static readonly string[] NumStrings;
 
-        /// <summary>Static labels — const, zero GC.</summary>
-        private const string LabelFabricator  = "FABRICATOR";
-        private const string LabelRecipes     = "RECIPES";
-        private const string LabelDetails     = "BLUEPRINT";
-        private const string LabelIngredients = "REQUIRED MATERIALS";
-        private const string LabelCraftTime   = "FABRICATION TIME";
-        private const string LabelResult      = "OUTPUT";
-        private const string LabelCrafting    = "FABRICATING...";
-        private const string LabelHintNav     = "[W/S] NAVIGATE";
-        private const string LabelHintCraft   = "[SPACE] FABRICATE";
-        private const string LabelHintClose   = "[ESC] CLOSE";
-        private const string LabelNoRecipes   = "NO BLUEPRINTS AVAILABLE";
-        private const string LabelInsufficient = "INSUFFICIENT";
-        private const string LabelReady       = "READY";
+        /// <summary>Localized labels — string, zero GC.</summary>
+        private string LabelFabricator  = "FABRICATOR";
+        private string LabelRecipes     = "RECIPES";
+        private string LabelDetails     = "BLUEPRINT";
+        private string LabelIngredients = "REQUIRED MATERIALS";
+        private string LabelCraftTime   = "FABRICATION TIME";
+        private string LabelResult      = "OUTPUT";
+        private string LabelCrafting    = "FABRICATING...";
+        private string LabelHintNav     = "[W/S] NAVIGATE";
+        private string LabelHintCraft   = "[SPACE] FABRICATE";
+        private string LabelHintClose   = "[ESC] CLOSE";
+        private string LabelNoRecipes   = "NO BLUEPRINTS AVAILABLE";
+        private string LabelInsufficient = "INSUFFICIENT";
+        private string LabelReady       = "READY";
         private const string LabelSeconds     = "s";
         private const string LabelSlash       = "/";
         private const string LabelDot         = "\u2022"; // bullet •
@@ -267,6 +268,11 @@ namespace Hecton8.UI
             base.OnEnable();
             GameTickManager.Instance?.Register((ITickable)this);
 
+            // ── Subscribe to explicit UI texts ──
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            if (LocalizationManager.Instance != null)
+                HandleLanguageChanged(LocalizationManager.Instance.CurrentLanguage);
+
             // ── Subscribe to crafting events ──
             CraftingEvents.OnFabricatorOpened    += HandleFabricatorOpened;
             CraftingEvents.OnFabricatorClosed    += HandleFabricatorClosed;
@@ -274,10 +280,36 @@ namespace Hecton8.UI
             CraftingEvents.OnCraftCompleted       += HandleCraftCompleted;
         }
 
+        private void HandleLanguageChanged(GameLanguage lang)
+        {
+            var loc = LocalizationManager.Instance;
+            if (loc == null) return;
+            
+            LabelFabricator = loc.Get(LocalizationKeys.UI_FABRICATOR);
+            LabelRecipes = loc.Get(LocalizationKeys.UI_RECIPES);
+            LabelDetails = loc.Get(LocalizationKeys.UI_BLUEPRINT);
+            LabelIngredients = loc.Get(LocalizationKeys.UI_REQUIRED_MATERIALS);
+            LabelCraftTime = loc.Get(LocalizationKeys.UI_FABRICATION_TIME);
+            LabelResult = loc.Get(LocalizationKeys.UI_OUTPUT);
+            LabelCrafting = loc.Get(LocalizationKeys.UI_FABRICATING);
+            LabelHintNav = loc.Get(LocalizationKeys.UI_HINT_NAVIGATE);
+            LabelHintCraft = loc.Get(LocalizationKeys.UI_HINT_FABRICATE);
+            LabelHintClose = loc.Get(LocalizationKeys.UI_HINT_CLOSE);
+            LabelNoRecipes = loc.Get(LocalizationKeys.UI_NO_BLUEPRINTS);
+            LabelInsufficient = loc.Get(LocalizationKeys.UI_INSUFFICIENT);
+            LabelReady = loc.Get(LocalizationKeys.UI_READY);
+            
+            // Rebuild string caches if they are currently displaying something that might have altered.
+            if (_recipes != null && _recipes.Count > 0 && _isOpen)
+                RebuildIngredientCache();
+        }
+
         public override void OnDisable()
         {
             base.OnDisable();
             GameTickManager.Instance?.Unregister((ITickable)this);
+
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
 
             CraftingEvents.OnFabricatorOpened    -= HandleFabricatorOpened;
             CraftingEvents.OnFabricatorClosed    -= HandleFabricatorClosed;
