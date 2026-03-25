@@ -43,6 +43,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Ссылка на инвентарь игрока для проверки наличия инструментов.")]
         [SerializeField] private PlayerInventory playerInventory;
 
+        [Tooltip("ControlScheme asset. Если назначен — слот-клавиши берутся из него.")]
+        [SerializeField] private ControlScheme controlScheme;
+
         [Header("── Tool Prefabs (слоты 1-4) ──────────────────")]
         [Tooltip("Префабы инструментов, привязанные к кнопкам 1-4. " +
                  "Пустые слоты — оставить null.")]
@@ -241,6 +244,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Проверяет нажатие кнопок 1-4.
         /// При нажатии уже активного слота — убирает инструмент (toggle).
+        /// Читает клавиши из ControlScheme если назначен, иначе из SlotKeys.
         /// </summary>
         private void ProcessSlotInput()
         {
@@ -252,21 +256,35 @@ namespace Hecton8.Gameplay
             {
                 if (i >= toolPrefabs.Length) break;
 
-                if (Input.GetKeyDown(SlotKeys[i]))
+                KeyCode key = GetSlotKey(i);
+
+                if (Input.GetKeyDown(key))
                 {
                     // Toggle: повторное нажатие = убрать
                     if (_currentSlotIndex == i)
-                    {
                         RequestSwap(-1);
-                    }
                     else
-                    {
                         RequestSwap(i);
-                    }
 
                     return; // Обрабатываем только одно нажатие за кадр
                 }
             }
+        }
+
+        /// <summary>Возвращает клавишу слота: из ControlScheme или из SlotKeys.</summary>
+        private KeyCode GetSlotKey(int index)
+        {
+            if (controlScheme != null)
+            {
+                switch (index)
+                {
+                    case 0: return controlScheme.toolSlot1;
+                    case 1: return controlScheme.toolSlot2;
+                    case 2: return controlScheme.toolSlot3;
+                    case 3: return controlScheme.toolSlot4;
+                }
+            }
+            return index < SlotKeys.Length ? SlotKeys[index] : KeyCode.None;
         }
 
         // ══════════════════════════════════════════════════════════

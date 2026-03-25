@@ -36,7 +36,8 @@ namespace Hecton8.Interaction
         private GameObject promptContainer;
 
         [Header("Formatting")]
-        [SerializeField, Tooltip("Input hint prefix prepended to the interact text. e.g. '[E]  '")]
+        [SerializeField,
+         Tooltip("Префикс в Edit Mode и до Play. В Play подхватывается PlayerInteraction.ActiveInteractKey.")]
         private string inputPrefix = "[E]  ";
 
         // ====================================================================
@@ -113,7 +114,8 @@ namespace Hecton8.Interaction
                 string interactText = target.GetInteractText();
 
                 // Zero-alloc text assembly using pre-allocated char buffer.
-                int totalLength = WriteToBuffer(inputPrefix, interactText);
+                // ResolveInteractPrefix() picks up ActiveInteractKey at runtime.
+                int totalLength = WriteToBuffer(ResolveInteractPrefix(), interactText);
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }
 
@@ -135,6 +137,16 @@ namespace Hecton8.Interaction
             }
 
             _lastDisplayedTarget = null;
+        }
+
+        private string ResolveInteractPrefix()
+        {
+            if (!Application.isPlaying)
+            {
+                return inputPrefix;
+            }
+
+            return "[" + PlayerInteraction.ActiveInteractKey.ToString() + "]  ";
         }
 
         // ====================================================================

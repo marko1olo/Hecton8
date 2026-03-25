@@ -2309,4 +2309,91 @@ public struct RockLayerConfig
 7. **Spring-damped** поведение везде, никаких blunt lerp
 8. Каждый эффект **параметризуем и выключаем**
 9. NativeArray → **Dispose обязателен**
-10. MapMagic pattern: **Generate → StoreOutput → MarkFinalize → Finalize → MarkApply**
+10. MapMagic pattern: **Generate → StoreOutput → MarkFinalize → Finalize → MarkApply*
+
+
+HECTON8 — BACKLOG
+================
+
+[x] Вынести swim keys в настраиваемые KeyCode в HectonPlayerMovement
+[x] interactKey вынести в PlayerInteraction + ActiveInteractKey для UI
+[x] InteractionUI.ShowPrompt — использовать ResolveInteractPrefix() (был баг)
+[x] ControlScheme ScriptableObject — единая точка настройки клавиш
+    — HectonPlayerMovement и PlayerInteraction читают из него (fallback на локальные поля)
+    — Создать asset: Assets → Create → Hecton8 → Control Scheme
+    — Назначить в инспекторе обоих компонентов
+
+[x] Подключить ControlScheme к остальным системам
+    — LaserCutter: deconstructModifier (R) из ControlScheme
+    — PlayerToolManager: слоты 1-4 из ControlScheme
+    — ScannerTool, BuilderTool: своих хардкодных клавиш нет
+    — HectonFabricatorUI: только UI-навигация (Escape/W/S/Space) — не трогаем
+
+[ ] Миграция на Unity Input System
+    — те же дефолты (WASD, Space, E, Ctrl/C)
+    — автогенерация экрана «Управление» в паузе/PDA из биндингов
+
+[x] Спринт — Left Shift
+    — SuitData: sprintMultiplier = 1.6 (настраивается)
+    — HectonPlayerMovement: _isSprinting, читает sprintKey из ControlScheme
+    — Применяется только на земле (не в воде)
+
+[x] Фонарь v2.0 ENTERPRISE — клавиша F
+    — PlayerFlashlight.cs: ITickable, плавный fade, читает flashlightKey из ControlScheme
+    — FlashlightEvents: OnToggled, OnBatteryDepleted, OnOverheat, OnFlickerStart
+    — Battery drain + Heat buildup + Flickering (Perlin noise)
+    — Overheat shutdown + cooldown period
+    — VolumetricLightBeam integration (optional, via reflection)
+    — Audio feedback (toggle/low battery/overheat)
+    — Zero GC design
+
+[x] Карта / PDA v2.0 ENTERPRISE — клавиша M
+    — PlayerPDA.cs: ITickable, статический IsOpen, 3 вкладки (Map/Log/Controls)
+    — PDAEvents: OnOpened, OnClosed, OnTabChanged, OnLowBatteryShutdown
+    — CanvasGroup fade animation (smooth alpha transition)
+    — Battery drain system + low battery auto-shutdown
+    — Tab history stack (Backspace = назад, pre-allocated 8 entries)
+    — Audio feedback (open/close/tab switch/low battery)
+    — HectonPlayerMovement + PlayerInteraction: гард || PlayerPDA.IsOpen
+    — Zero GC design
+
+[ ] HUD / Visor UX v4.0 ENTERPRISE
+    — HectonSuitHUDExtensions.cs: расширения для HUD (работает с HectonSuitHUD v3.0)
+    — FlashlightStatusIndicator: иконка + heat bar + overheat warning
+    — PDAStatusIndicator: иконка когда PDA открыт
+    — NotificationSystem: всплывающие уведомления (overheat, low battery, fade in/out)
+    — EquipmentStatusPanel: top-right панель с иконками инструментов
+    — Event integration: FlashlightEvents, PDAEvents
+    — Zero GC: pre-allocated notification queue (max 5), cached handlers
+    — HectonSurvivalSystem v5.0: EnergyPercent property + DrainEnergy(int) method
+    — Назначить HectonSuitHUDExtensions на HUD Camera (рядом с HectonSuitHUD)
+
+[x] Tool System v1.0 ENTERPRISE — Master Grade инструменты
+    — ToolMetadata.cs: расширенные данные (durability, upgrades, stats, tier, category)
+    — ToolUpgradeData.cs: модули улучшения (stat modifiers, special effects, crafting)
+    — ToolDurabilitySystem.cs: износ и ремонт (singleton, ISaveable, events)
+    — SaveData v2.0: toolDurabilityMap, toolBrokenMap (ES3SerializableDictionary)
+    — Zero GC: pre-allocated dictionaries, cached references, struct-based calculations
+    — Events: OnDurabilityChanged, OnToolBroken, OnToolRepaired
+    — Upgrade system: до 3 слотов, tier requirements, compatibility check
+    — Repair system: resource-based repair, cost calculation
+
+[x] Tool HUD Panel v2.0 ENTERPRISE
+    — ToolHUDPanel.cs: продвинутая панель инструмента в HUD
+    — Durability bar: визуальная шкала износа с цветовой индикацией (good/warning/critical)
+    — Upgrade slots display: показывает установленные улучшения (до 3 слотов)
+    — Real-time stats: efficiency, speed, energy consumption (с учётом upgrades)
+    — Tool name & tier: название и уровень (Basic/Advanced/Master)
+    — Warning indicators: critical durability, broken tool (pulse animation)
+    — Smooth animations: fade in/out, pulse effects
+    — Event integration: ToolDurabilitySystem events
+    — Zero GC: pre-allocated string cache, cached references, struct-based animation
+    — Назначить на HUD Camera (рядом с HectonSuitHUD и HectonSuitHUDExtensions)
+
+[ ] PDA Tool Management Tab
+    — Вкладка управления инструментами в PDA
+    — Список всех инструментов с фильтрацией (tier, category, broken)
+    — Установка/удаление улучшений
+    — Ремонт инструментов
+    — Детальная информация (stats, upgrades, durability history)
+*

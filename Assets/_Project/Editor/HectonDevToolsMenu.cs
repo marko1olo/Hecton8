@@ -9,7 +9,9 @@ using System.Text;
 using Hecton8.Audio;
 using UnityEditor;
 using UnityEditor.Build;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Editor
 {
@@ -37,6 +39,38 @@ namespace Hecton8.Editor
         {
             EditorGUIUtility.systemCopyBuffer = Application.persistentDataPath;
             Debug.Log("[Hecton Dev] Copied persistentDataPath:\n" + Application.persistentDataPath);
+        }
+
+        [MenuItem(MenuRoot + "Reveal Editor.log In OS", false, 12)]
+        public static void RevealEditorLog()
+        {
+            string path = Application.consoleLogPath;
+            if (string.IsNullOrEmpty(path))
+            {
+                Debug.LogWarning("[Hecton Dev] Application.consoleLogPath is empty.");
+                return;
+            }
+
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning("[Hecton Dev] Editor.log not found yet:\n" + path);
+            }
+
+            EditorUtility.RevealInFinder(path);
+        }
+
+        [MenuItem(MenuRoot + "Copy Editor.log Path", false, 13)]
+        public static void CopyEditorLogPath()
+        {
+            string path = Application.consoleLogPath;
+            if (string.IsNullOrEmpty(path))
+            {
+                Debug.LogWarning("[Hecton Dev] Application.consoleLogPath is empty.");
+                return;
+            }
+
+            EditorGUIUtility.systemCopyBuffer = path;
+            Debug.Log("[Hecton Dev] Copied Editor.log path:\n" + path);
         }
 
         [MenuItem(MenuRoot + "Reveal Project Root In OS", false, 20)]
@@ -186,6 +220,205 @@ namespace Hecton8.Editor
         public static bool CaptureScreenshotValidate()
         {
             return EditorApplication.isPlaying;
+        }
+
+        // ── Project Settings (Unity 6 SettingsService paths) ──────────────
+
+        [MenuItem(MenuRoot + "Project Settings/Audio", false, 100)]
+        public static void OpenPsAudio()
+        {
+            SettingsService.OpenProjectSettings("Project/Audio");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Player", false, 101)]
+        public static void OpenPsPlayer()
+        {
+            SettingsService.OpenProjectSettings("Project/Player");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Quality", false, 102)]
+        public static void OpenPsQuality()
+        {
+            SettingsService.OpenProjectSettings("Project/Quality");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Graphics (URP)", false, 103)]
+        public static void OpenPsGraphics()
+        {
+            SettingsService.OpenProjectSettings("Project/Graphics");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Time", false, 104)]
+        public static void OpenPsTime()
+        {
+            SettingsService.OpenProjectSettings("Project/Time");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Physics", false, 105)]
+        public static void OpenPsPhysics()
+        {
+            SettingsService.OpenProjectSettings("Project/Physics");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Input System Package", false, 106)]
+        public static void OpenPsInputSystem()
+        {
+            SettingsService.OpenProjectSettings("Project/Input System Package");
+        }
+
+        [MenuItem(MenuRoot + "Project Settings/Tags and Layers", false, 107)]
+        public static void OpenPsTagsAndLayers()
+        {
+            SettingsService.OpenProjectSettings("Project/Tags and Layers");
+        }
+
+        [MenuItem(MenuRoot + "Open Package Manager Window", false, 110)]
+        public static void OpenPackageManager()
+        {
+            EditorApplication.ExecuteMenuItem("Window/Package Manager");
+        }
+
+        [MenuItem(MenuRoot + "Open Console Window", false, 111)]
+        public static void OpenConsole()
+        {
+            EditorApplication.ExecuteMenuItem("Window/General/Console");
+        }
+
+        // ── Scene & assets ───────────────────────────────────────────────
+
+        [MenuItem(MenuRoot + "Scene/Copy Active Scene Path", false, 120)]
+        public static void CopyActiveScenePath()
+        {
+            Scene s = EditorSceneManager.GetActiveScene();
+            string path = s.path;
+            if (string.IsNullOrEmpty(path))
+            {
+                Debug.LogWarning("[Hecton Dev] Active scene is not saved (no path).");
+                return;
+            }
+
+            EditorGUIUtility.systemCopyBuffer = path;
+            Debug.Log("[Hecton Dev] Copied scene path: " + path);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Save Open Scenes + Assets", false, 121)]
+        public static void SaveOpenScenesAndAssets()
+        {
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveOpenScenes();
+            Debug.Log("[Hecton Dev] Saved assets and open scenes.");
+        }
+
+        [MenuItem(MenuRoot + "Scene/Validate Loaded Scenes (log)", false, 122)]
+        public static void ValidateLoadedScenes()
+        {
+            Scene[] scenes = GetLoadedScenesSnapshot();
+            if (scenes.Length == 0)
+            {
+                Debug.Log("[Hecton Dev] No loaded scenes.");
+                return;
+            }
+
+            var sb = new StringBuilder(256);
+            sb.AppendLine("── Hecton Dev — Loaded scenes ──");
+            for (int i = 0; i < scenes.Length; i++)
+            {
+                Scene s = scenes[i];
+                sb.Append("  • ").Append(s.name);
+                if (!string.IsNullOrEmpty(s.path))
+                {
+                    sb.Append("  (").Append(s.path).Append(')');
+                }
+
+                sb.AppendLine();
+            }
+
+            SpatialAudioManager[] sams = UnityEngine.Object.FindObjectsByType<SpatialAudioManager>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            sb.Append("SpatialAudioManager count: ").AppendLine(sams.Length.ToString());
+            if (sams.Length > 1)
+            {
+                Debug.LogWarning("[Hecton Dev] Несколько SpatialAudioManager — допустимо только при смене сцен; проверь DontDestroyOnLoad.");
+            }
+            else if (sams.Length == 0)
+            {
+                Debug.LogWarning("[Hecton Dev] SpatialAudioManager не найден в загруженных сценах (может быть ок в чистом sandbox).");
+            }
+
+            int missingTotal = LogMissingScriptsInLoadedScenes();
+            sb.Append("Missing script components: ").Append(missingTotal).AppendLine();
+
+            Debug.Log(sb.ToString());
+        }
+
+        private static Scene[] GetLoadedScenesSnapshot()
+        {
+            int count = SceneManager.sceneCount;
+            var list = new Scene[count];
+            for (int i = 0; i < count; i++)
+            {
+                list[i] = SceneManager.GetSceneAt(i);
+            }
+
+            return list;
+        }
+
+        /// <summary>Предупреждения с ping объектов; возвращает число missing *components*.</summary>
+        private static int LogMissingScriptsInLoadedScenes()
+        {
+            GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            int missing = 0;
+            for (int i = 0; i < gos.Length; i++)
+            {
+                GameObject go = gos[i];
+                if (go == null)
+                {
+                    continue;
+                }
+
+                Scene sc = go.scene;
+                if (!sc.IsValid() || !sc.isLoaded)
+                {
+                    continue;
+                }
+
+                int miss = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(go);
+                if (miss <= 0)
+                {
+                    continue;
+                }
+
+                missing += miss;
+                Debug.LogWarning(
+    "[Hecton Dev] Missing script (" + miss + "): " + BuildTransformPath(go.transform),
+    go);
+            }
+
+            return missing;
+        }
+
+        private static string BuildTransformPath(Transform t)
+        {
+            if (t == null)
+            {
+                return string.Empty;
+            }
+
+            var sb = new StringBuilder(128);
+            while (t != null)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Insert(0, '/');
+                }
+
+                sb.Insert(0, t.name);
+                t = t.parent;
+            }
+
+            return sb.ToString();
         }
     }
 }

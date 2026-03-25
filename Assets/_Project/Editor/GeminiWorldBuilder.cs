@@ -66,6 +66,7 @@ public class GeminiWorldBuilder
             for (int r = 0; r < 4; r++)
             {
                 tierMixer.layers[r] = new Blend200.Layer();
+                tierMixer.layers[r].inlet.SetGen(tierMixer);
                 tierMixer.layers[r].algorithm = Blend200.BlendAlgorithm.max;
 
                 // Region selector
@@ -130,6 +131,7 @@ public class GeminiWorldBuilder
         for (int i = 0; i < 27; i++)
         {
             finalMatrix.layers[i] = new Blend200.Layer();
+            finalMatrix.layers[i].inlet.SetGen(finalMatrix);
             finalMatrix.layers[i].algorithm = Blend200.BlendAlgorithm.max;
             targetGraph.Link((IOutlet<object>)tierOutputs[i], (IInlet<object>)finalMatrix.layers[i].inlet);
         }

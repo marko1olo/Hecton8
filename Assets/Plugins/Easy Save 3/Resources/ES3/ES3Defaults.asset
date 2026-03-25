@@ -43,6 +43,7 @@ MonoBehaviour:
     - Lofelt.NiceVibrations.Demo
     - MapMagic
     - MapMagic.MicroSplat
+    - MCPForUnity.Runtime
     - MeshBakerCore
     - MoreMountains.Feedbacks
     - MoreMountains.Feedbacks.Authorizations

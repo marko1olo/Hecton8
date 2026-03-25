@@ -63,6 +63,11 @@ namespace Hecton8.Gameplay
         public float walkDrag = 5f;
         public float jumpImpulse = 5f;
 
+        [Tooltip("Sprint force multiplier (applied to walkForce and maxWalkSpeed). " +
+                 "1.6 = 60% faster. Requires sprintKey held.")]
+        [Range(1f, 3f)]
+        public float sprintMultiplier = 1.6f;
+
         [Tooltip("How much shallow water slows walking. 0.6 = 60% slower at full wading.")]
         [Range(0f, 0.9f)]
         public float wadeSlowdownFactor = 0.6f;

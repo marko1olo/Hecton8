@@ -128,6 +128,9 @@ public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickab
     public float EnergyNormalized    => energy    / stats.MaxEnergy;
     public float IntegrityNormalized => integrity / stats.MaxIntegrity;
 
+    // v5.0 ENTERPRISE: Percent properties for UI/HUD (0-100 range)
+    public float EnergyPercent       => EnergyNormalized * 100f;
+
     // ═════════════════════════════════════════════════════════
     //  LIFECYCLE
     // ═════════════════════════════════════════════════════════
@@ -367,6 +370,18 @@ public sealed class HectonSurvivalSystem : MonoBehaviour, ITickable, ISlowTickab
     public void RechargeEnergy(float amount)
     {
         energy = math.clamp(energy + amount, 0f, stats.MaxEnergy);
+        ForceDirty(ref lastPubEnergy);
+    }
+
+    /// <summary>
+    /// Drains energy from the suit (used by Flashlight, PDA, tools).
+    /// v5.0 ENTERPRISE addition for equipment battery drain.
+    /// </summary>
+    /// <param name="amount">Amount to drain (positive number).</param>
+    public void DrainEnergy(int amount)
+    {
+        if (amount <= 0) return;
+        energy = math.max(0f, energy - amount);
         ForceDirty(ref lastPubEnergy);
     }
 

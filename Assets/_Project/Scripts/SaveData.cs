@@ -58,6 +58,12 @@ namespace Hecton8.SaveSystem
         /// <summary>Построенные модули базы.</summary>
         public ConstructionDTO construction;
 
+        /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
+        public ES3SerializableDictionary<string, float> toolDurabilityMap = new ES3SerializableDictionary<string, float>();
+
+        /// <summary>Сломанные инструменты (toolID → broken). v2.0 ENTERPRISE</summary>
+        public ES3SerializableDictionary<string, bool> toolBrokenMap = new ES3SerializableDictionary<string, bool>();
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════

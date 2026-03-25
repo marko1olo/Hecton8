@@ -43,6 +43,7 @@
 namespace Hecton8.Interaction
 {
     using Hecton8.Core;
+    using Hecton8.Gameplay;
     using Hecton8.UI;
     using Unity.Mathematics;
     using UnityEngine;
@@ -96,6 +97,17 @@ namespace Hecton8.Interaction
                  "via Camera.main if null.")]
         private Camera playerCamera;
 
+        [Header("Input")]
+
+        [SerializeField,
+         Tooltip("Назначьте ControlScheme asset для единой настройки клавиш. " +
+                 "Если null — используется поле interactKey ниже.")]
+        private ControlScheme controlScheme;
+
+        [SerializeField,
+         Tooltip("Fallback: клавиша взаимодействия если нет ControlScheme.")]
+        private KeyCode interactKey = KeyCode.E;
+
         [Header("Debug")]
 
         [SerializeField,
@@ -129,6 +141,15 @@ namespace Hecton8.Interaction
 
         public IInteractable CurrentHovered => _currentHovered;
 
+        /// <summary>Актуальная клавиша взаимодействия (из ControlScheme или fallback).</summary>
+        private KeyCode ResolvedInteractKey =>
+            controlScheme != null ? controlScheme.interactKey : interactKey;
+
+        /// <summary>
+        /// Актуальная клавиша взаимодействия для подсказок UI (обновляется в OnEnable).
+        /// </summary>
+        public static KeyCode ActiveInteractKey { get; private set; } = KeyCode.E;
+
         // ====================================================================
         // UNITY LIFECYCLE
         // ====================================================================
@@ -158,6 +179,7 @@ namespace Hecton8.Interaction
             _cameraTransform = playerCamera.transform;
             _raycastTimer    = 0f;
             _registeredToTickManager = false;
+            ActiveInteractKey = ResolvedInteractKey;
 
             // ────────────────────────────────────────────────────
             // Layer mask validation — catch misconfiguration early.
@@ -197,6 +219,8 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            ActiveInteractKey = ResolvedInteractKey;
+
             // Guard: GameTickManager may not exist yet (execution order).
             if (GameTickManager.Instance == null) return;
 
@@ -280,7 +304,8 @@ namespace Hecton8.Interaction
             // ════════════════════════════════════════════════════
             if (_currentHovered != null
                 && !HectonFabricatorUI.IsMenuOpen
-                && Input.GetKeyDown(KeyCode.E))
+                && !PlayerPDA.IsOpen
+                && Input.GetKeyDown(ResolvedInteractKey))
             {
                 ExecuteInteraction();
             }

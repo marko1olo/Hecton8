@@ -106,9 +106,11 @@ namespace Hecton8.Gameplay
                  "Progress resets if target changes or R/LKM released.")]
         [SerializeField] private float deconstructThreshold = 3f;
 
-        [Tooltip("Key modifier for deconstruct mode.\n" +
-                 "Hold together with LKM to switch to Deconstruct.")]
+        [Tooltip("Fallback: клавиша деконструкции если нет ControlScheme.")]
         [SerializeField] private KeyCode deconstructModifier = KeyCode.R;
+
+        [Tooltip("ControlScheme asset. Если назначен — deconstructModifier берётся из него.")]
+        [SerializeField] private ControlScheme controlScheme;
 
         [Header("── Visual References ─────────────────────────")]
         [Tooltip("LineRenderer for beam visualization.")]
@@ -300,7 +302,8 @@ namespace Hecton8.Gameplay
             // ── Damage / Deconstruct ──
             if (didHit)
             {
-                bool deconstructMode = Input.GetKey(deconstructModifier);
+                bool deconstructMode = Input.GetKey(
+                    controlScheme != null ? controlScheme.deconstructModifier : deconstructModifier);
 
                 if (deconstructMode)
                 {

@@ -82,6 +82,30 @@ namespace Hecton8.Gameplay
         [SerializeField] private float pitchMax = 85f;
 
         // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — SWIM VERTICAL (Subnautica-style defaults)
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Control Scheme ───────────────────────────")]
+        [Tooltip("Назначьте ControlScheme asset. Если null — используются поля ниже как fallback.")]
+        [SerializeField] private ControlScheme controlScheme;
+
+        [Header("── Swim Vertical (fallback если нет ControlScheme) ──")]
+        [Tooltip("Вверх в воде. Space как в Subnautica.")]
+        [SerializeField] private KeyCode swimAscendPrimary = KeyCode.Space;
+
+        [Tooltip("Доп. клавиша вверх (optional). None = отключено.")]
+        [SerializeField] private KeyCode swimAscendAlternate = KeyCode.None;
+
+        [Tooltip("Вниз: Ctrl — как удержание в Subnautica.")]
+        [SerializeField] private KeyCode swimDescendPrimary = KeyCode.LeftControl;
+
+        [Tooltip("Вниз: C — как в Subnautica.")]
+        [SerializeField] private KeyCode swimDescendAlternate = KeyCode.C;
+
+        [Tooltip("Запасной вниз (исторический Q).")]
+        [SerializeField] private KeyCode swimDescendLegacy = KeyCode.Q;
+
+        // ══════════════════════════════════════════════════════════
         //  INSPECTOR — GROUND DETECTION
         // ══════════════════════════════════════════════════════════
 
@@ -167,6 +191,7 @@ namespace Hecton8.Gameplay
 
         private bool _inputCleared;
         private bool _jumpRequested;
+        private bool _isSprinting;
 
         // ══════════════════════════════════════════════════════════
         //  BODY YAW (decoupled from camera)
@@ -454,9 +479,10 @@ namespace Hecton8.Gameplay
             SuitData suit = currentSuitData;
             if (suit == null) return;
 
-            if (HectonFabricatorUI.IsMenuOpen)
+            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
             {
                 _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+                _isSprinting = false;
                 _inputCleared = true;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -490,13 +516,23 @@ namespace Hecton8.Gameplay
             {
                 if (Input.GetKeyDown(KeyCode.Space))
                     _jumpRequested = true;
+
+                // Sprint
+                KeyCode sprintKey = controlScheme != null ? controlScheme.sprintKey : KeyCode.LeftShift;
+                _isSprinting = KeyHeld(sprintKey);
             }
             else
             {
-                if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.E))
+                _isSprinting = false;
+                if (SwimAscendHeld())
+                {
                     _inputVertical += 1f;
-                if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.Q))
+                }
+
+                if (SwimDescendHeld())
+                {
                     _inputVertical -= 1f;
+                }
             }
 
             // ── Momentum tracking ──
@@ -591,6 +627,26 @@ namespace Hecton8.Gameplay
                     _cameraComponent.fieldOfView, targetFov,
                     1f - math.exp(-8f * _juiceInput.deltaTime));
             }
+        }
+
+        private bool SwimAscendHeld()
+        {
+            KeyCode p = controlScheme != null ? controlScheme.swimAscendPrimary   : swimAscendPrimary;
+            KeyCode a = controlScheme != null ? controlScheme.swimAscendAlternate : swimAscendAlternate;
+            return KeyHeld(p) || KeyHeld(a);
+        }
+
+        private bool SwimDescendHeld()
+        {
+            KeyCode p = controlScheme != null ? controlScheme.swimDescendPrimary   : swimDescendPrimary;
+            KeyCode a = controlScheme != null ? controlScheme.swimDescendAlternate : swimDescendAlternate;
+            KeyCode l = controlScheme != null ? controlScheme.swimDescendLegacy    : swimDescendLegacy;
+            return KeyHeld(p) || KeyHeld(a) || KeyHeld(l);
+        }
+
+        private static bool KeyHeld(KeyCode key)
+        {
+            return key != KeyCode.None && Input.GetKey(key);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1066,7 +1122,8 @@ namespace Hecton8.Gameplay
 
             float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
             wadeMultiplier = math.max(wadeMultiplier, 0.2f);
-            float force = suit.walkForce * wadeMultiplier;
+            float sprintMult = (_isSprinting && _isGrounded) ? suit.sprintMultiplier : 1f;
+            float force = suit.walkForce * wadeMultiplier * sprintMult;
 
             _forceVector.x = _moveDirection.x * force;
             _forceVector.y = _moveDirection.y * force;
@@ -1104,6 +1161,7 @@ namespace Hecton8.Gameplay
                 float maxSpd = suit.maxWalkSpeed;
                 float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
+                if (_isSprinting && _isGrounded) maxSpd *= suit.sprintMultiplier;
 
                 if (maxSpd > 0f)
                 {
