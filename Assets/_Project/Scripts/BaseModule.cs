@@ -57,6 +57,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -542,7 +543,7 @@ namespace Hecton8.Gameplay
             StopDrain();
             SetFloodedVisual(true);
             SyncTrackedObjectsFloodState();
-            PlayOneShot(floodClip);
+            PlaySpatialSfx(floodClip);
         }
 
         /// <summary>
@@ -619,7 +620,7 @@ namespace Hecton8.Gameplay
             _isDeconstructing = true;
 
             // ── Audio ──
-            PlayOneShot(deconstructClip);
+            PlaySpatialSfx(deconstructClip);
 
             // ── Получение данных о стоимости ──
             BuildableData buildData = _moduleMarker != null ? _moduleMarker.Data : null;
@@ -798,7 +799,7 @@ namespace Hecton8.Gameplay
             SetLeakActive(true);
             SetFloodedVisual(true);
             SyncTrackedObjectsFloodState();
-            PlayOneShot(floodClip);
+            PlaySpatialSfx(floodClip);
         }
 
         private void TryStartDrain()
@@ -809,7 +810,7 @@ namespace Hecton8.Gameplay
 
             _isDraining = true;
             if (_drainTimer <= 0f)
-                PlayOneShot(drainClip);
+                PlaySpatialSfx(drainClip);
         }
 
         private void StopDrain()
@@ -956,10 +957,17 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void PlayOneShot(AudioClip clip)
+        /// <summary>
+        /// Одноразовый SFX у модуля через SpatialAudioManager (пул 3D). Луп утечки по-прежнему на <see cref="audioSource"/>.
+        /// </summary>
+        private void PlaySpatialSfx(AudioClip clip)
         {
-            if (audioSource != null && clip != null)
-                audioSource.PlayOneShot(clip);
+            if (clip == null)
+                return;
+
+            SpatialAudioManager sam = SpatialAudioManager.Instance;
+            if (sam != null)
+                sam.PlayAtPoint(clip, transform.position);
         }
 
         // ══════════════════════════════════════════════════════════

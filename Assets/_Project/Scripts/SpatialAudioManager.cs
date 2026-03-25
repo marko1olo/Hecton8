@@ -3,9 +3,9 @@
 // Высокопроизводительная система пространственного звука с пулингом.
 //
 // АРХИТЕКТУРА:
-//   • Синглтон с пулом AudioSource (настраиваемый размер, default 16).
+//   • Синглтон: пул 3D AudioSource + отдельный пул 2D (шлем/UI).
 //   • Zero-GC в hot path: массивы фиксированного размера, no LINQ, no allocations.
-//   • Поддержка 3D (PlayAtPoint) и 2D (PlayStatic2D) воспроизведения.
+//   • Поддержка 3D-пула (PlayAtPoint) и 2D-пула (PlayStatic2D).
 //   • Вытеснение самого старого звука при исчерпании пула.
 //   • AudioMixerGroup маршрутизация (SFX, Interface, Ambient).
 //
@@ -36,31 +36,14 @@
 //     • Spatial Blend = 1.0 (полностью 3D).
 //
 // ═══════════════════════════════════════════════════════════════
-//  ПЕРЕХОДНЫЙ ЭТАП — ТЗ ДЛЯ РЕФАКТОРИНГА:
-//
-//  TODO: Все вызовы audioSource.PlayOneShot(clip) и AudioSource.PlayClipAtPoint()
-//        в проекте заменить на:
-//
-//        SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
-//
-//  TODO: Все вызовы UI/HUD звуков заменить на:
-//
-//        SpatialAudioManager.Instance.PlayStatic2D(clip, volume);
-//
-//  Файлы для рефакторинга (искать по проекту):
-//    • grep -rn "PlayOneShot" Assets/Scripts/
-//    • grep -rn "PlayClipAtPoint" Assets/Scripts/
-//    • grep -rn "\.Play()" Assets/Scripts/ (проверить контекст AudioSource)
-//
-//  Приоритет рефакторинга:
-//    1. Creature AI scripts (много одновременных звуков — критично)
-//    2. Weapon / Tool scripts
-//    3. Environment triggers
-//    4. UI / HUD (переводить на PlayStatic2D)
+//  МАРШРУТИЗАЦИЯ (кастомный код в Assets/_Project):
+//    • Мир / объекты у позиции → PlayAtPoint
+//    • Шлем / HUD → PlayStatic2D (пул 2D, не разбрасывать PlayOneShot по MonoBehaviour)
+//  Плагины трогаем только при необходимости.
 // ═══════════════════════════════════════════════════════════════
 //
 // ESTIMATED COST:
-//   Memory: ~16 AudioSource components + manager overhead ≈ 2KB
+//   Memory: ~16 + pool2D AudioSource + manager overhead
 //   CPU per Play call: ~0.01ms (array scan + AudioSource setup)
 //   CPU idle: 0ms (no Update)
 // ============================================================================
@@ -107,10 +90,15 @@ namespace Hecton8.Audio
         //  INSPECTOR CONFIGURATION
         // ═══════════════════════════════════════════════════════
 
-        [Header("Pool Configuration")]
+        [Header("Pool Configuration — 3D World")]
         [Tooltip("Количество AudioSource в пуле. 16 оптимально для MX350. Max 32.")]
         [Range(4, 32)]
         [SerializeField] private int _poolSize = 16;
+
+        [Header("Pool Configuration — 2D Helmet / UI")]
+        [Tooltip("Голоса для коротких UI/шлемных звуков; перекрытие через вытеснение.")]
+        [Range(2, 16)]
+        [SerializeField] private int _pool2DSize = 8;
 
         [Header("3D Audio Defaults")]
         [Tooltip("Минимальная дистанция 3D звука (метры).")]
@@ -140,9 +128,11 @@ namespace Hecton8.Audio
         /// Используется для вытеснения самого старого звука.</summary>
         private float[] _startTimes;
 
-        /// <summary>Выделенный 2D источник для шлемных/интерфейсных звуков.
-        /// Отдельный от основного пула — гарантирует что HUD beeps не вытесняются.</summary>
-        private AudioSource _staticSource;
+        /// <summary>Пул 2D AudioSource (spatialBlend = 0).</summary>
+        private AudioSource[] _pool2D;
+
+        /// <summary>Время старта для вытеснения в 2D-пуле.</summary>
+        private float[] _startTimes2D;
 
         // ═══════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -163,7 +153,7 @@ namespace Hecton8.Audio
             DontDestroyOnLoad(gameObject);
 
             InitializePool();
-            InitializeStaticSource();
+            InitializePool2D();
         }
 
         private void OnDestroy()
@@ -204,25 +194,38 @@ namespace Hecton8.Audio
             }
         }
 
-        /// <summary>
-        /// Создаёт выделенный 2D AudioSource для шлемных/UI звуков.
-        /// Отдельный от пула — не конкурирует с 3D звуками.
-        /// </summary>
-        private void InitializeStaticSource()
+        /// <summary>Создаёт пул 2D источников (аналогично 3D, без PlayOneShot).</summary>
+        private void InitializePool2D()
         {
-            var staticChild = new GameObject("StaticAudio_2D");
-            staticChild.transform.SetParent(transform, false);
+            _pool2D = new AudioSource[_pool2DSize];
+            _startTimes2D = new float[_pool2DSize];
 
-            _staticSource = staticChild.AddComponent<AudioSource>();
-            _staticSource.spatialBlend = 0f; // Полностью 2D — "внутри шлема"
-            _staticSource.playOnAwake = false;
-            _staticSource.loop = false;
-            _staticSource.rolloffMode = AudioRolloffMode.Linear;
+            for (int i = 0; i < _pool2DSize; i++)
+            {
+                var child = new GameObject($"PooledAudio2D_{i:D2}");
+                child.transform.SetParent(transform, false);
 
-            // По умолчанию — Interface group
+                var source = child.AddComponent<AudioSource>();
+                ConfigureAs2D(source);
+
+                source.playOnAwake = false;
+                source.loop = false;
+
+                _pool2D[i] = source;
+                _startTimes2D[i] = -1f;
+            }
+        }
+
+        private void ConfigureAs2D(AudioSource source)
+        {
+            source.spatialBlend = 0f;
+            source.spread = 0f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.dopplerLevel = 0f;
+
             if (_interfaceGroup != null)
             {
-                _staticSource.outputAudioMixerGroup = _interfaceGroup;
+                source.outputAudioMixerGroup = _interfaceGroup;
             }
         }
 
@@ -312,8 +315,8 @@ namespace Hecton8.Audio
         /// Для звуков внутри шлема: HUD beeps, suit warnings, radio static,
         /// breath sounds, system alerts.
         ///
-        /// Использует PlayOneShot — позволяет накладывать несколько звуков
-        /// на одном источнике без прерывания. Не занимает слот в 3D пуле.
+        /// Использует пул 2D-источников — несколько коротких сигналов могут играть
+        /// параллельно до исчерпания пула; дальше — вытеснение по времени.
         ///
         /// Вызов: SpatialAudioManager.Instance.PlayStatic2D(beepClip, 0.5f);
         /// </summary>
@@ -337,12 +340,17 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (mixerGroup != null)
-            {
-                _staticSource.outputAudioMixerGroup = mixerGroup;
-            }
+            int index = Acquire2DSourceIndex();
+            AudioSource source = _pool2D[index];
 
-            _staticSource.PlayOneShot(clip, volume);
+            source.clip = clip;
+            source.volume = volume;
+            source.pitch = 1f;
+            source.spatialBlend = 0f;
+            source.outputAudioMixerGroup = mixerGroup != null ? mixerGroup : _interfaceGroup;
+
+            source.Play();
+            _startTimes2D[index] = Time.unscaledTime;
         }
 
         // ═══════════════════════════════════════════════════════
@@ -375,7 +383,12 @@ namespace Hecton8.Audio
                 _startTimes[i] = -1f;
             }
 
-            _staticSource.Stop();
+            for (int i = 0; i < _pool2DSize; i++)
+            {
+                _pool2D[i].Stop();
+                _pool2D[i].clip = null;
+                _startTimes2D[i] = -1f;
+            }
         }
 
         /// <summary>
@@ -444,6 +457,36 @@ namespace Hecton8.Audio
             return oldestIndex;
         }
 
+        private int Acquire2DSourceIndex()
+        {
+            int oldestIndex = 0;
+            float oldestTime = float.MaxValue;
+
+            for (int i = 0; i < _pool2DSize; i++)
+            {
+                if (!_pool2D[i].isPlaying)
+                {
+                    return i;
+                }
+
+                if (_startTimes2D[i] < oldestTime)
+                {
+                    oldestTime = _startTimes2D[i];
+                    oldestIndex = i;
+                }
+            }
+
+            _pool2D[oldestIndex].Stop();
+
+#if UNITY_EDITOR
+            Debug.Log(
+                "[SpatialAudioManager] 2D pool full (" + _pool2DSize + "). " +
+                "Evicting index " + oldestIndex + ".");
+#endif
+
+            return oldestIndex;
+        }
+
         // ═══════════════════════════════════════════════════════
         //  EDITOR VALIDATION
         // ═══════════════════════════════════════════════════════
@@ -452,6 +495,7 @@ namespace Hecton8.Audio
         private void OnValidate()
         {
             _poolSize = Mathf.Clamp(_poolSize, 4, 32);
+            _pool2DSize = Mathf.Clamp(_pool2DSize, 2, 16);
 
             if (_minDistance < 0.1f) _minDistance = 0.1f;
             if (_maxDistance < _minDistance) _maxDistance = _minDistance + 1f;
