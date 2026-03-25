@@ -96,6 +96,7 @@ namespace Hecton8.Core
 
         private Coroutine      _slowTickHandle;
         private WaitForSeconds _cachedWait;
+        private float _cachedWaitInterval = -1f;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -111,18 +112,24 @@ namespace Hecton8.Core
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+
+            if (Application.isPlaying)
+            {
+                if (transform.parent != null)
+                    transform.SetParent(null, true);
+
+                DontDestroyOnLoad(gameObject);
+            }
 
             // ── Initialize tick lists ──
             // Initial capacity: предполагаем ~100 тикабельных объектов.
             // List расширится автоматически, если нужно — одна аллокация.
-            _tickables      = new TickList<ITickable>(128);
-            _fixedTickables = new TickList<IFixedTickable>(64);
-            _slowTickables  = new TickList<ISlowTickable>(32);
+            EnsureInitialized();
         }
 
         private void OnEnable()
         {
+            EnsureInitialized();
             StartSlowTick();
         }
 
@@ -143,6 +150,8 @@ namespace Hecton8.Core
 
         private void Update()
         {
+            EnsureInitialized();
+
             float dt = Time.deltaTime;
 
             _tickables.BeginIteration();
@@ -153,6 +162,12 @@ namespace Hecton8.Core
             for (int i = 0; i < count; i++)
             {
                 var item = items[i];
+
+                if (item == null)
+                {
+                    _tickables.Remove(item);
+                    continue;
+                }
 
                 // ── Auto-Cleanup: "fake null" (уничтоженный MonoBehaviour) ──
                 if (item is UnityEngine.Object obj && obj == null)
@@ -177,6 +192,8 @@ namespace Hecton8.Core
 
         private void FixedUpdate()
         {
+            EnsureInitialized();
+
             float fdt = Time.fixedDeltaTime;
 
             _fixedTickables.BeginIteration();
@@ -187,6 +204,12 @@ namespace Hecton8.Core
             for (int i = 0; i < count; i++)
             {
                 var item = items[i];
+
+                if (item == null)
+                {
+                    _fixedTickables.Remove(item);
+                    continue;
+                }
 
                 // ── Auto-Cleanup: "fake null" (уничтоженный MonoBehaviour) ──
                 if (item is UnityEngine.Object obj && obj == null)
@@ -211,8 +234,19 @@ namespace Hecton8.Core
 
         private void StartSlowTick()
         {
-            // Кэшируем WaitForSeconds — одна аллокация навсегда
-            _cachedWait    = new WaitForSeconds(slowTickInterval);
+            EnsureInitialized();
+
+            if (_slowTickHandle != null)
+            {
+                return;
+            }
+
+            if (_cachedWait == null || !Mathf.Approximately(_cachedWaitInterval, slowTickInterval))
+            {
+                _cachedWait = new WaitForSeconds(slowTickInterval);
+                _cachedWaitInterval = slowTickInterval;
+            }
+
             _slowTickHandle = StartCoroutine(SlowTickRoutine());
         }
 
@@ -246,6 +280,12 @@ namespace Hecton8.Core
                 {
                     var item = items[i];
 
+                    if (item == null)
+                    {
+                        _slowTickables.Remove(item);
+                        continue;
+                    }
+
                     // ── Auto-Cleanup: "fake null" (уничтоженный MonoBehaviour) ──
                     if (item is UnityEngine.Object obj && obj == null)
                     {
@@ -271,36 +311,42 @@ namespace Hecton8.Core
         /// <summary>Регистрирует ITickable (каждый кадр).</summary>
         public void Register(ITickable tickable)
         {
+            EnsureInitialized();
             if (tickable != null) _tickables.Add(tickable);
         }
 
         /// <summary>Снимает ITickable с обновления.</summary>
         public void Unregister(ITickable tickable)
         {
+            EnsureInitialized();
             if (tickable != null) _tickables.Remove(tickable);
         }
 
         /// <summary>Регистрирует IFixedTickable (физический шаг).</summary>
         public void Register(IFixedTickable tickable)
         {
+            EnsureInitialized();
             if (tickable != null) _fixedTickables.Add(tickable);
         }
 
         /// <summary>Снимает IFixedTickable с обновления.</summary>
         public void Unregister(IFixedTickable tickable)
         {
+            EnsureInitialized();
             if (tickable != null) _fixedTickables.Remove(tickable);
         }
 
         /// <summary>Регистрирует ISlowTickable (медленный тик).</summary>
         public void Register(ISlowTickable tickable)
         {
+            EnsureInitialized();
             if (tickable != null) _slowTickables.Add(tickable);
         }
 
         /// <summary>Снимает ISlowTickable с обновления.</summary>
         public void Unregister(ISlowTickable tickable)
         {
+            EnsureInitialized();
             if (tickable != null) _slowTickables.Remove(tickable);
         }
 
@@ -317,6 +363,7 @@ namespace Hecton8.Core
         /// </summary>
         public void RegisterAll(object target)
         {
+            EnsureInitialized();
             if (target == null) return;
 
             if (target is ITickable t)
@@ -334,6 +381,7 @@ namespace Hecton8.Core
         /// </summary>
         public void UnregisterAll(object target)
         {
+            EnsureInitialized();
             if (target == null) return;
 
             if (target is ITickable t)
@@ -380,6 +428,24 @@ namespace Hecton8.Core
         ///   • Swap-remove: O(1) удаление без сдвига массива.
         ///   • Списки переиспользуются — Clear() не аллоцирует.
         /// </summary>
+        private void EnsureInitialized()
+        {
+            if (_instance == null)
+                _instance = this;
+
+            if (_tickables == null)
+                _tickables = new TickList<ITickable>(128);
+
+            if (_fixedTickables == null)
+                _fixedTickables = new TickList<IFixedTickable>(64);
+
+            if (_slowTickables == null)
+                _slowTickables = new TickList<ISlowTickable>(32);
+
+            if (slowTickInterval <= 0f)
+                slowTickInterval = 0.5f;
+        }
+
         private sealed class TickList<T> where T : class
         {
             // ── Основной список ──

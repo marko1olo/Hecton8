@@ -21,8 +21,10 @@
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.UI;
+using Hecton8.Input;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Hecton8.Gameplay
 {
@@ -37,6 +39,7 @@ namespace Hecton8.Gameplay
         [Header("── References ────────────────────────────────")]
         [SerializeField] private Transform playerCamera;
         [SerializeField] private SuitData currentSuitData;
+        [SerializeField] private ControlScheme controlScheme;
         [SerializeField] private bool leanIntoTurn = true;
 
         // ══════════════════════════════════════════════════════════
@@ -77,7 +80,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Mouse Look ────────────────────────────────")]
-        [SerializeField] private float mouseSensitivity = 2f;
+        [SerializeField] private float mouseSensitivity = 0.12f;
         [SerializeField] private float pitchMin = -85f;
         [SerializeField] private float pitchMax = 85f;
 
@@ -86,24 +89,14 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Control Scheme ───────────────────────────")]
-        [Tooltip("Назначьте ControlScheme asset. Если null — используются поля ниже как fallback.")]
-        [SerializeField] private ControlScheme controlScheme;
+        
+        [Header("── Input System ─────────────────────────────")]
 
         [Header("── Swim Vertical (fallback если нет ControlScheme) ──")]
-        [Tooltip("Вверх в воде. Space как в Subnautica.")]
-        [SerializeField] private KeyCode swimAscendPrimary = KeyCode.Space;
 
-        [Tooltip("Доп. клавиша вверх (optional). None = отключено.")]
-        [SerializeField] private KeyCode swimAscendAlternate = KeyCode.None;
 
-        [Tooltip("Вниз: Ctrl — как удержание в Subnautica.")]
-        [SerializeField] private KeyCode swimDescendPrimary = KeyCode.LeftControl;
 
-        [Tooltip("Вниз: C — как в Subnautica.")]
-        [SerializeField] private KeyCode swimDescendAlternate = KeyCode.C;
 
-        [Tooltip("Запасной вниз (исторический Q).")]
-        [SerializeField] private KeyCode swimDescendLegacy = KeyCode.Q;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — GROUND DETECTION
@@ -158,6 +151,8 @@ namespace Hecton8.Gameplay
         private BuoyancyObject _buoyancy;
         private Transform _cachedTransform;
         private Camera _cameraComponent;
+        private InputManager _inputManager;
+        private InputManager _subscribedInputManager;
 
         // ══════════════════════════════════════════════════════════
         //  CREST OCEAN — runtime state
@@ -363,10 +358,15 @@ namespace Hecton8.Gameplay
             _registeredTick = false;
             _registeredFixedTick = false;
 
+            _inputManager = InputManager.Instance;
             UpdateSuitDiagnostics();
         }
 
-        private void OnEnable() { TryRegisterToTickManager(); }
+        private void OnEnable() 
+        { 
+            RefreshInputManagerBinding();
+            TryRegisterToTickManager(); 
+        }
 
         private void Start()
         {
@@ -382,6 +382,8 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             GameTickManager inst = GameTickManager.Instance;
+            UnsubscribeFromInput();
+
             if (inst == null) return;
             if (_registeredTick) { inst.Unregister((ITickable)this); _registeredTick = false; }
             if (_registeredFixedTick) { inst.Unregister((IFixedTickable)this); _registeredFixedTick = false; }
@@ -471,6 +473,61 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
+        //  INPUT SYSTEM INTEGRATION (Zero GC)
+        // ══════════════════════════════════════════════════════════
+
+        private void SubscribeToInput()
+        {
+            if (_inputManager == null || _subscribedInputManager == _inputManager) return;
+
+            _inputManager.OnJump += HandleJumpInput;
+            _inputManager.OnSprint += HandleSprintStarted;
+            _inputManager.OnSprintCanceled += HandleSprintCanceled;
+            _subscribedInputManager = _inputManager;
+        }
+
+        private void UnsubscribeFromInput()
+        {
+            if (_subscribedInputManager == null) return;
+
+            _subscribedInputManager.OnJump -= HandleJumpInput;
+            _subscribedInputManager.OnSprint -= HandleSprintStarted;
+            _subscribedInputManager.OnSprintCanceled -= HandleSprintCanceled;
+            _subscribedInputManager = null;
+        }
+
+        private void RefreshInputManagerBinding()
+        {
+            InputManager currentManager = InputManager.Instance;
+            if (ReferenceEquals(_inputManager, currentManager) &&
+                ReferenceEquals(_subscribedInputManager, currentManager))
+            {
+                return;
+            }
+
+            UnsubscribeFromInput();
+            _inputManager = currentManager;
+            SubscribeToInput();
+        }
+
+        private void HandleJumpInput()
+        {
+            if (_isWalking && _isGrounded)
+                _jumpRequested = true;
+        }
+
+        private void HandleSprintStarted()
+        {
+            if (_isWalking)
+                _isSprinting = true;
+        }
+
+        private void HandleSprintCanceled()
+        {
+            _isSprinting = false;
+        }
+
+        // ══════════════════════════════════════════════════════════
         //  Tick — INPUT + CAMERA (render framerate)
         // ══════════════════════════════════════════════════════════
 
@@ -478,6 +535,8 @@ namespace Hecton8.Gameplay
         {
             SuitData suit = currentSuitData;
             if (suit == null) return;
+
+            RefreshInputManagerBinding();
 
             if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
             {
@@ -499,43 +558,41 @@ namespace Hecton8.Gameplay
                 _inputCleared = false;
             }
 
-            // ── Mouse Look ──
-            float mouseX = Input.GetAxisRaw("Mouse X");
-            float mouseY = Input.GetAxisRaw("Mouse Y");
-            _mouseXDelta = mouseX;
-            _cameraYaw += mouseX * mouseSensitivity;
-            _cameraPitch -= mouseY * mouseSensitivity;
-            _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
-
-            // ── Movement Input ──
-            _inputH = Input.GetAxisRaw("Horizontal");
-            _inputV = Input.GetAxisRaw("Vertical");
-            _inputVertical = 0f;
-
-            if (_isWalking)
+            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
             {
-                if (Input.GetKeyDown(KeyCode.Space))
-                    _jumpRequested = true;
+                Vector2 lookDelta = _inputManager.LookInput;
+                _mouseXDelta = lookDelta.x;
+                _cameraYaw += lookDelta.x * mouseSensitivity;
+                _cameraPitch -= lookDelta.y * mouseSensitivity;
+                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
 
-                // Sprint
-                KeyCode sprintKey = controlScheme != null ? controlScheme.sprintKey : KeyCode.LeftShift;
-                _isSprinting = KeyHeld(sprintKey);
+                Vector2 moveInput = _inputManager.MoveInput;
+                _inputH = moveInput.x;
+                _inputV = moveInput.y;
+                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+
+                if (!_isWalking)
+                    _isSprinting = false;
             }
             else
             {
-                _isSprinting = false;
-                if (SwimAscendHeld())
-                {
-                    _inputVertical += 1f;
-                }
+                Vector2 lookDelta = ReadLookFallback();
+                _mouseXDelta = lookDelta.x;
+                _cameraYaw += lookDelta.x * mouseSensitivity;
+                _cameraPitch -= lookDelta.y * mouseSensitivity;
+                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
 
-                if (SwimDescendHeld())
-                {
-                    _inputVertical -= 1f;
-                }
+                Vector2 moveInput = ReadMoveFallback();
+                _inputH = moveInput.x;
+                _inputV = moveInput.y;
+                _inputVertical = _isWalking ? 0f : ReadVerticalFallbackKeys();
+
+                if (_isWalking)
+                    _isSprinting = KeyHeld(KeyCode.LeftShift) || KeyHeld(KeyCode.RightShift);
+                else
+                    _isSprinting = false;
             }
 
-            // ── Momentum tracking ──
             _velocity = _rb.linearVelocity;
             float currentSpeed = math.sqrt(
                 _velocity.x * _velocity.x +
@@ -543,7 +600,6 @@ namespace Hecton8.Gameplay
                 _velocity.z * _velocity.z);
             float yawDelta = _cameraYaw - _prevYawForMomentum;
 
-            // ── Juice ──
             BuildJuiceInput(deltaTime, suit);
             _juiceInput.speedDelta = currentSpeed - _prevSpeed;
             _juiceInput.yawDelta = yawDelta;
@@ -552,7 +608,6 @@ namespace Hecton8.Gameplay
             _prevSpeed = currentSpeed;
             _prevYawForMomentum = _cameraYaw;
 
-            // ── Poll juice events ──
             if (_juiceOutput.stepEvent)
             {
                 OnFootstep?.Invoke();
@@ -576,6 +631,7 @@ namespace Hecton8.Gameplay
 
             ApplyCameraState();
             UpdateDiagnostics(currentSpeed);
+
         }
 
         private void BuildJuiceInput(float deltaTime, SuitData suit)
@@ -599,6 +655,76 @@ namespace Hecton8.Gameplay
                 _velocity.y * _velocity.y +
                 _velocity.z * _velocity.z);
             _juiceInput.cameraPitch = _cameraPitch;
+        }
+
+        private float ResolveVerticalInput()
+        {
+            float inputSystemVertical = _inputManager != null ? _inputManager.VerticalMovementInput : 0f;
+            if (math.abs(inputSystemVertical) > 0.01f)
+                return math.clamp(inputSystemVertical, -1f, 1f);
+
+            return ReadVerticalFallbackKeys();
+        }
+
+        private float ReadVerticalFallbackKeys()
+        {
+            bool ascend =
+                KeyHeld(controlScheme != null ? controlScheme.swimAscendPrimary : KeyCode.Space) ||
+                KeyHeld(controlScheme != null ? controlScheme.swimAscendAlternate : KeyCode.None);
+
+            bool descend =
+                KeyHeld(controlScheme != null ? controlScheme.swimDescendPrimary : KeyCode.LeftControl) ||
+                KeyHeld(controlScheme != null ? controlScheme.swimDescendAlternate : KeyCode.C) ||
+                KeyHeld(controlScheme != null ? controlScheme.swimDescendLegacy : KeyCode.Q);
+
+            if (ascend == descend)
+                return 0f;
+
+            return ascend ? 1f : -1f;
+        }
+
+        private static Vector2 ReadMoveFallback()
+        {
+            if (Keyboard.current == null)
+                return Vector2.zero;
+
+            float horizontal = 0f;
+            float vertical = 0f;
+
+            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
+                horizontal -= 1f;
+            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed)
+                horizontal += 1f;
+            if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed)
+                vertical -= 1f;
+            if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed)
+                vertical += 1f;
+
+            return Vector2.ClampMagnitude(new Vector2(horizontal, vertical), 1f);
+        }
+
+        private static Vector2 ReadLookFallback()
+        {
+            return Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
+        }
+
+        private static bool KeyHeld(KeyCode key)
+        {
+            if (key == KeyCode.None || Keyboard.current == null)
+                return false;
+
+            return key switch
+            {
+                KeyCode.Space => Keyboard.current.spaceKey.isPressed,
+                KeyCode.LeftControl => Keyboard.current.leftCtrlKey.isPressed,
+                KeyCode.RightControl => Keyboard.current.rightCtrlKey.isPressed,
+                KeyCode.C => Keyboard.current.cKey.isPressed,
+                KeyCode.Q => Keyboard.current.qKey.isPressed,
+                KeyCode.E => Keyboard.current.eKey.isPressed,
+                KeyCode.LeftShift => Keyboard.current.leftShiftKey.isPressed,
+                KeyCode.RightShift => Keyboard.current.rightShiftKey.isPressed,
+                _ => false,
+            };
         }
 
         private void ApplyCameraState()
@@ -627,26 +753,6 @@ namespace Hecton8.Gameplay
                     _cameraComponent.fieldOfView, targetFov,
                     1f - math.exp(-8f * _juiceInput.deltaTime));
             }
-        }
-
-        private bool SwimAscendHeld()
-        {
-            KeyCode p = controlScheme != null ? controlScheme.swimAscendPrimary   : swimAscendPrimary;
-            KeyCode a = controlScheme != null ? controlScheme.swimAscendAlternate : swimAscendAlternate;
-            return KeyHeld(p) || KeyHeld(a);
-        }
-
-        private bool SwimDescendHeld()
-        {
-            KeyCode p = controlScheme != null ? controlScheme.swimDescendPrimary   : swimDescendPrimary;
-            KeyCode a = controlScheme != null ? controlScheme.swimDescendAlternate : swimDescendAlternate;
-            KeyCode l = controlScheme != null ? controlScheme.swimDescendLegacy    : swimDescendLegacy;
-            return KeyHeld(p) || KeyHeld(a) || KeyHeld(l);
-        }
-
-        private static bool KeyHeld(KeyCode key)
-        {
-            return key != KeyCode.None && Input.GetKey(key);
         }
 
         // ══════════════════════════════════════════════════════════

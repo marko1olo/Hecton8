@@ -38,6 +38,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Input;
 using UnityEngine;
 
 namespace Hecton8.Building
@@ -123,8 +124,6 @@ namespace Hecton8.Building
         private PlacementGhost _currentGhost;
         private RaycastHit _hit;
         private float _ghostYawOffset;
-        private bool _secondaryWasPressed;
-        private bool _primaryWasPressed;
 
         private static readonly Vector3 ViewportCenter = new Vector3(0.5f, 0.5f, 0f);
 
@@ -212,11 +211,24 @@ namespace Hecton8.Building
         {
             base.OnEquip();
             ResetBuilderState();
+            
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.OnPrimaryAction   += HandlePrimaryAction;
+                InputManager.Instance.OnSecondaryAction += HandleSecondaryAction;
+            }
+
             SpawnGhost();
         }
 
         public override void OnUnequip()
         {
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.OnPrimaryAction   -= HandlePrimaryAction;
+                InputManager.Instance.OnSecondaryAction -= HandleSecondaryAction;
+            }
+
             DespawnGhost();
             ResetBuilderState();
             base.OnUnequip();
@@ -224,33 +236,36 @@ namespace Hecton8.Building
 
         public override void ToolTick(float deltaTime)
         {
-            if (!Input.GetButton("Fire1"))
-                _primaryWasPressed = false;
-
-            if (!Input.GetButton("Fire2"))
-                _secondaryWasPressed = false;
-
+            // Position update only — input handled via events
             if (_currentGhostObj != null)
                 UpdateGhostPosition(deltaTime);
         }
 
-        public override void UsePrimary(float deltaTime)
+        private void HandlePrimaryAction()
         {
-            if (_primaryWasPressed) return;
-            _primaryWasPressed = true;
+            if (!IsEquipped) return;
             TryPlaceModule();
         }
 
-        public override void UseSecondary(float deltaTime)
+        private void HandleSecondaryAction()
         {
-            if (_secondaryWasPressed) return;
-            _secondaryWasPressed = true;
+            if (!IsEquipped) return;
 
             _ghostYawOffset += rotationStep;
             if (_ghostYawOffset >= 360f)
                 _ghostYawOffset -= 360f;
 
             PlaySound(rotateSound);
+        }
+
+        public override void UsePrimary(float deltaTime)
+        {
+            // Logic moved to HandlePrimaryAction (one-shot event)
+        }
+
+        public override void UseSecondary(float deltaTime)
+        {
+            // Logic moved to HandleSecondaryAction (one-shot event)
         }
 
         // ══════════════════════════════════════════════════════════
@@ -260,8 +275,6 @@ namespace Hecton8.Building
         private void ResetBuilderState()
         {
             _ghostYawOffset      = 0f;
-            _secondaryWasPressed = false;
-            _primaryWasPressed   = false;
             _isSnapped           = false;
             _wasSnapped          = false;
             _snappedSocketTransform = null;

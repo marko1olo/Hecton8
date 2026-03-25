@@ -134,7 +134,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
 
         // Auto-resolve flashlight if not assigned
         if (flashlight == null)
-            flashlight = FindObjectOfType<PlayerFlashlight>();
+            flashlight = FindFirstObjectByType<PlayerFlashlight>();
 
         Subscribe();
         ForceRefresh();

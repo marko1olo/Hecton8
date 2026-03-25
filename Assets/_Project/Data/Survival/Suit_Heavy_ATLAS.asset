@@ -13,24 +13,69 @@ MonoBehaviour:
   m_Name: Suit_Heavy_ATLAS
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.SuitData
   mass: 400
+  hudProfile: {fileID: 11400000, guid: 927e40db136221c4a80aa685581a8bed, type: 2}
   swimForce: 1200
   swimVerticalForce: 600
   maxSwimSpeed: 7
   swimDrag: 5
   swimBrakeForce: 3
+  swimDragCoefficient: 2.5
   walkForce: 2000
   maxWalkSpeed: 4
   walkDrag: 5
   jumpImpulse: 5
+  sprintMultiplier: 1.6
+  wadeSlowdownFactor: 0.6
+  bodyYawSpringOmega: 10
+  surfaceLockStrength: 12
+  surfaceLockDamping: 6
+  surfaceLockRange: 1.5
   bobFrequency: 1.2
   bobVerticalAmplitude: 0.0914
   bobHorizontalAmplitude: 0.0448
   bobTransitionSpeed: 8
+  enableSwimBob: 1
+  swimBobFrequency: 0.9
+  swimBobVerticalAmplitude: 0.04
+  swimBobForwardAmplitude: 0.015
+  swimBobRollAmplitude: 0.8
+  swimBobTransitionSpeed: 4
   strafeRollAngle: 5
   mouseRollAngle: 4
   mouseRollSensitivity: 0.3
   rollAttackSpeed: 8
   rollDecaySpeed: 2.5
+  rollSpringOmega: 7
+  enableUnderwaterPitchInertia: 1
+  underwaterPitchSpringOmega: 18
+  enableCollisionShake: 1
+  collisionShakeThreshold: 2
+  collisionShakeMaxVelocity: 12
+  collisionShakeMaxAmplitude: 0.05
+  collisionShakeMaxPitch: 2
+  collisionShakeRecoveryOmega: 10
+  splashImmersionRateThreshold: 0.8
+  splashMinVerticalSpeed: 1.5
+  splashCameraDip: 0.03
+  submergeThreshold: 0.85
+  depthSwayStart: 10
+  depthSwayEnd: 80
+  depthSwayMultiplierMax: 1.6
+  depthRollMultiplierMax: 1.4
+  depthSwimSlowdownStart: 20
+  depthSwimSlowdownEnd: 150
+  depthSwimSlowdownMax: 0.2
+  depthDragIncreaseMax: 0.8
+  enableDepthFovCompression: 1
+  depthFovCompressionStart: 5
+  depthFovCompressionEnd: 100
+  depthFovCompressionMax: 6
+  enableExhaleRhythm: 1
+  exhaleIntervalBase: 4.5
+  exhaleIntervalVariation: 1
+  exhaleDipAmplitude: 0.012
+  exhalePitchAmplitude: 0.4
+  exhaleDuration: 0.4
   impactVelocityThreshold: 2.5
   impactDipMaxDistance: 0.308
   impactVelocityMax: 12
@@ -43,4 +88,7 @@ MonoBehaviour:
   idleSwayAmplitudeX: 0.007
   idleSwayAmplitudeRoll: 0.5
   idleSwayTransitionSpeed: 2
+  accelerationPitchFactor: 0.8
+  momentumPitchSpringOmega: 6
+  ambientCurrentStrength: 0.15
   dampingTransitionSpeed: 6

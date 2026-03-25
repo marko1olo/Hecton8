@@ -28,6 +28,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Rigidbody mass (kg). Light: 80. Heavy: 300-500.")]
         public float mass = 80f;
 
+        [Header("── HUD ───────────────────────────────────────")]
+        [Tooltip("Optional HUD profile for this suit. If null, HUD systems infer layout from suit physics.")]
+        [SerializeField] private SuitHUDProfile hudProfile;
+
         // ══════════════════════════════════════════════════════════
         //  PHYSICS — SWIMMING
         // ══════════════════════════════════════════════════════════
@@ -67,6 +71,8 @@ namespace Hecton8.Gameplay
                  "1.6 = 60% faster. Requires sprintKey held.")]
         [Range(1f, 3f)]
         public float sprintMultiplier = 1.6f;
+
+        public SuitHUDProfile HudProfile => hudProfile;
 
         [Tooltip("How much shallow water slows walking. 0.6 = 60% slower at full wading.")]
         [Range(0f, 0.9f)]

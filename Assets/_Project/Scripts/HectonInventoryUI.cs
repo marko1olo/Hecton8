@@ -31,6 +31,7 @@
 
 using System;
 using System.Text;
+using Hecton8.Input;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -164,17 +165,31 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
     //  LIFECYCLE — ImmediateModeShapeDrawer
     // ══════════════════════════════════════════════════════════════════
 
-    public override void OnEnable()
+public override void OnEnable()
     {
         base.OnEnable();
         GameTickManager.Instance?.Register((ITickable)this);
+
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.OnInventory += HandleInventoryToggle;
+            InputManager.Instance.OnNavigate  += HandleNavigate;
+            InputManager.Instance.OnCancel    += HandleCancel;
+        }
     }
 
-    public override void OnDisable()
+public override void OnDisable()
     {
-        base.OnDisable();
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.OnInventory -= HandleInventoryToggle;
+            InputManager.Instance.OnNavigate  -= HandleNavigate;
+            InputManager.Instance.OnCancel    -= HandleCancel;
+        }
+
         GameTickManager.Instance?.Unregister((ITickable)this);
         _isOpen = false;
+        base.OnDisable();
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -185,15 +200,9 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
     /// Вызывается GameTickManager каждый кадр.
     /// Только проверка ввода — минимальная нагрузка.
     /// </summary>
-    public void Tick(float deltaTime)
+public void Tick(float deltaTime)
     {
-        if (Input.GetKeyDown(toggleKey))
-            _isOpen = !_isOpen;
-
-        if (!_isOpen) return;
-
-        // ── Keyboard selection (стрелки) ──
-        HandleSelectionInput();
+        // Input is fully event-driven via InputManager
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -215,8 +224,39 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
     //  SELECTION INPUT
     // ══════════════════════════════════════════════════════════════════
 
-    private void HandleSelectionInput()
+private void HandleInventoryToggle()
     {
+        SetOpenState(!_isOpen);
+    }
+
+    private void HandleCancel()
+    {
+        if (!_isOpen) return;
+
+        if (_selectedCol >= 0)
+        {
+            _selectedCol = -1;
+            _selectedRow = -1;
+        }
+        else
+        {
+            SetOpenState(false);
+        }
+    }
+
+    private void SetOpenState(bool open)
+    {
+        _isOpen = open;
+
+        if (_isOpen)
+            InputManager.Instance?.SwitchToUIInput();
+        else
+            InputManager.Instance?.SwitchToPlayerInput();
+    }
+
+    private void HandleNavigate(Vector2 dir)
+    {
+        if (!_isOpen) return;
         if (inventory == null || inventory.Grid == null) return;
 
         InventoryGrid grid = inventory.Grid;
@@ -225,11 +265,7 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
 
         if (_selectedCol < 0 || _selectedRow < 0)
         {
-            // Первое нажатие — начинаем с (0,0)
-            if (Input.GetKeyDown(KeyCode.UpArrow)    ||
-                Input.GetKeyDown(KeyCode.DownArrow)  ||
-                Input.GetKeyDown(KeyCode.LeftArrow)  ||
-                Input.GetKeyDown(KeyCode.RightArrow))
+            if (dir.sqrMagnitude > 0.1f)
             {
                 _selectedCol = 0;
                 _selectedRow = 0;
@@ -237,17 +273,10 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))    _selectedRow = Mathf.Max(0, _selectedRow - 1);
-        if (Input.GetKeyDown(KeyCode.DownArrow))   _selectedRow = Mathf.Min(rows - 1, _selectedRow + 1);
-        if (Input.GetKeyDown(KeyCode.LeftArrow))   _selectedCol = Mathf.Max(0, _selectedCol - 1);
-        if (Input.GetKeyDown(KeyCode.RightArrow))  _selectedCol = Mathf.Min(cols - 1, _selectedCol + 1);
-
-        // Escape — сброс выделения
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            _selectedCol = -1;
-            _selectedRow = -1;
-        }
+        if (dir.x >  0.5f) _selectedCol = Mathf.Min(cols - 1, _selectedCol + 1);
+        if (dir.x < -0.5f) _selectedCol = Mathf.Max(0, _selectedCol - 1);
+        if (dir.y >  0.5f) _selectedRow = Mathf.Max(0, _selectedRow - 1);
+        if (dir.y < -0.5f) _selectedRow = Mathf.Min(rows - 1, _selectedRow + 1);
     }
 
     // ══════════════════════════════════════════════════════════════════

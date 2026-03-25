@@ -43,6 +43,7 @@ namespace Hecton8.Gameplay
     using System;
     using Hecton8.Core;
     using Hecton8.Inventory;
+    using Hecton8.Input;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -105,12 +106,6 @@ namespace Hecton8.Gameplay
         [Tooltip("Seconds of continuous cutting to fully deconstruct a module.\n" +
                  "Progress resets if target changes or R/LKM released.")]
         [SerializeField] private float deconstructThreshold = 3f;
-
-        [Tooltip("Fallback: клавиша деконструкции если нет ControlScheme.")]
-        [SerializeField] private KeyCode deconstructModifier = KeyCode.R;
-
-        [Tooltip("ControlScheme asset. Если назначен — deconstructModifier берётся из него.")]
-        [SerializeField] private ControlScheme controlScheme;
 
         [Header("── Visual References ─────────────────────────")]
         [Tooltip("LineRenderer for beam visualization.")]
@@ -302,8 +297,9 @@ namespace Hecton8.Gameplay
             // ── Damage / Deconstruct ──
             if (didHit)
             {
-                bool deconstructMode = Input.GetKey(
-                    controlScheme != null ? controlScheme.deconstructModifier : deconstructModifier);
+                InputManager inputManager = InputManager.Instance;
+                bool deconstructMode = inputManager != null
+                    && inputManager.IsSecondaryActionHeld;
 
                 if (deconstructMode)
                 {

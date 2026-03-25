@@ -38,6 +38,7 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Input;
 using System;
 using UnityEngine;
 
@@ -85,12 +86,6 @@ namespace Hecton8.UI
         [Tooltip("Вкладки PDA (карта, журнал, управление). " +
                  "Порядок: 0=Map, 1=Log, 2=Controls.")]
         [SerializeField] private GameObject[] tabs = new GameObject[3];
-
-        [Tooltip("ControlScheme asset. Если null — используется mapKey.")]
-        [SerializeField] private ControlScheme controlScheme;
-
-        [Tooltip("Fallback клавиша если нет ControlScheme.")]
-        [SerializeField] private KeyCode mapKey = KeyCode.M;
 
         [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
@@ -166,6 +161,8 @@ namespace Hecton8.UI
 
         private int _activeTab = -1;
         private bool _registered;
+        private bool _inputSubscribed;
+        private InputManager _subscribedInputManager;
 
         // Fade animation
         private float _targetAlpha;
@@ -223,7 +220,7 @@ namespace Hecton8.UI
             // Auto-resolve SurvivalSystem if not assigned
             if (survivalSystem == null && enableBatteryDrain)
             {
-                survivalSystem = FindObjectOfType<HectonSurvivalSystem>();
+                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
                 if (survivalSystem == null)
                 {
                     Debug.LogWarning(
@@ -240,6 +237,8 @@ namespace Hecton8.UI
             if (_registered) return;
             GameTickManager.Instance.Register(this);
             _registered = true;
+
+            SubscribeToInputManager();
         }
 
         private void Start()
@@ -250,7 +249,10 @@ namespace Hecton8.UI
                 GameTickManager.Instance.Register(this);
                 _registered = true;
             }
-            else
+
+            SubscribeToInputManager();
+
+            if (InputManager.Instance == null)
             {
                 Debug.LogError(
                     "[PlayerPDA] GameTickManager.Instance is null at Start(). " +
@@ -266,8 +268,44 @@ namespace Hecton8.UI
                 _registered = false;
             }
 
+            UnsubscribeFromInputManager();
+
             // Закрываем при отключении компонента
             if (IsOpen) ForceClose();
+        }
+
+        private void SubscribeToInputManager()
+        {
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
+                return;
+
+            if (_inputSubscribed && ReferenceEquals(_subscribedInputManager, inputManager))
+                return;
+
+            UnsubscribeFromInputManager();
+
+            inputManager.OnPDA += HandlePDAInput;
+            inputManager.OnCancel += HandleCancelInput;
+            inputManager.OnTabPrevious += HandleBackInput;
+            _subscribedInputManager = inputManager;
+            _inputSubscribed = true;
+        }
+
+        private void UnsubscribeFromInputManager()
+        {
+            if (!_inputSubscribed)
+                return;
+
+            if (_subscribedInputManager != null)
+            {
+                _subscribedInputManager.OnPDA -= HandlePDAInput;
+                _subscribedInputManager.OnCancel -= HandleCancelInput;
+                _subscribedInputManager.OnTabPrevious -= HandleBackInput;
+            }
+
+            _subscribedInputManager = null;
+            _inputSubscribed = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -276,19 +314,9 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            // ── Input ──
-            KeyCode key = controlScheme != null ? controlScheme.mapKey : mapKey;
+            SubscribeToInputManager();
 
-            if (Input.GetKeyDown(key))
-                Toggle();
-
-            // Escape закрывает PDA
-            if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
-                Close();
-
-            // Backspace = назад по tab history
-            if (IsOpen && enableTabHistory && Input.GetKeyDown(KeyCode.Backspace))
-                PopTabHistory();
+            // Input is now handled via events in HandlePDAInput, etc.
 
             // ── Fade animation ──
             if (_isFading)
@@ -327,6 +355,12 @@ namespace Hecton8.UI
 
             if (pdaPanel != null) pdaPanel.SetActive(true);
 
+            // Switch to UI input map
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.SwitchToUIInput();
+            }
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -355,7 +389,13 @@ namespace Hecton8.UI
 
             IsOpen = false;
 
-            Cursor.lockState = CursorLockMode.Locked;
+            // Switch back to Player input map
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.SwitchToPlayerInput();
+            }
+
+            Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
 
             // Start fade-out animation
@@ -422,6 +462,12 @@ namespace Hecton8.UI
                 pdaCanvasGroup.alpha = 0f;
                 pdaCanvasGroup.interactable = false;
                 pdaCanvasGroup.blocksRaycasts = false;
+            }
+
+            // Switch back to Player input map on force close
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.SwitchToPlayerInput();
             }
 
             PDAEvents.RaiseClosed(duration);
@@ -566,6 +612,35 @@ namespace Hecton8.UI
             _debugCurrentAlpha = _currentAlpha;
             _debugBatteryDrainAccum = _batteryDrainAccumulator;
             _debugTabHistoryDepth = _tabHistoryCount;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  INPUT CALLBACKS (ZERO GC)
+        // ══════════════════════════════════════════════════════════
+
+        private void HandlePDAInput()
+        {
+            // PDA toggle is usually a player-map action, but if PDA is open, 
+            // the UI map might also have a toggle or the Player map is disabled.
+            // In our case, Open() switches to UI, but UI map might not have "PDA" action.
+            // If InputManager handles "PDA" in both maps or if we stay in Player map for toggle:
+            Toggle();
+        }
+
+        private void HandleCancelInput()
+        {
+            if (IsOpen)
+            {
+                Close();
+            }
+        }
+
+        private void HandleBackInput()
+        {
+            if (IsOpen && enableTabHistory)
+            {
+                PopTabHistory();
+            }
         }
     }
 }

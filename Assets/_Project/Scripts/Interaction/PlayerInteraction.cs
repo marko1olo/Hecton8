@@ -48,6 +48,7 @@ namespace Hecton8.Interaction
     using Unity.Mathematics;
     using UnityEngine;
     using Hecton8.Audio;
+    using Hecton8.Input;
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
@@ -97,17 +98,6 @@ namespace Hecton8.Interaction
                  "via Camera.main if null.")]
         private Camera playerCamera;
 
-        [Header("Input")]
-
-        [SerializeField,
-         Tooltip("Назначьте ControlScheme asset для единой настройки клавиш. " +
-                 "Если null — используется поле interactKey ниже.")]
-        private ControlScheme controlScheme;
-
-        [SerializeField,
-         Tooltip("Fallback: клавиша взаимодействия если нет ControlScheme.")]
-        private KeyCode interactKey = KeyCode.E;
-
         [Header("Debug")]
 
         [SerializeField,
@@ -141,14 +131,19 @@ namespace Hecton8.Interaction
 
         public IInteractable CurrentHovered => _currentHovered;
 
-        /// <summary>Актуальная клавиша взаимодействия (из ControlScheme или fallback).</summary>
-        private KeyCode ResolvedInteractKey =>
-            controlScheme != null ? controlScheme.interactKey : interactKey;
-
         /// <summary>
-        /// Актуальная клавиша взаимодействия для подсказок UI (обновляется в OnEnable).
+        /// Актуальная клавиша взаимодействия для подсказок UI.
+        /// Возвращает строку (например, "E" или "Mouse0").
         /// </summary>
-        public static KeyCode ActiveInteractKey { get; private set; } = KeyCode.E;
+        public static string ActiveInteractKey
+        {
+            get
+            {
+                if (InputManager.Instance != null)
+                    return InputManager.Instance.GetBindingDisplayString("Interact");
+                return "E";
+            }
+        }
 
         // ====================================================================
         // UNITY LIFECYCLE
@@ -179,7 +174,6 @@ namespace Hecton8.Interaction
             _cameraTransform = playerCamera.transform;
             _raycastTimer    = 0f;
             _registeredToTickManager = false;
-            ActiveInteractKey = ResolvedInteractKey;
 
             // ────────────────────────────────────────────────────
             // Layer mask validation — catch misconfiguration early.
@@ -219,15 +213,17 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            ActiveInteractKey = ResolvedInteractKey;
-
             // Guard: GameTickManager may not exist yet (execution order).
-            if (GameTickManager.Instance == null) return;
-
-            if (!_registeredToTickManager)
+            if (GameTickManager.Instance != null && !_registeredToTickManager)
             {
                 GameTickManager.Instance.Register(this);
                 _registeredToTickManager = true;
+            }
+
+            // Subscribe to InputManager
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.OnInteract += HandleInteractInput;
             }
         }
 
@@ -255,16 +251,31 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             // Guard: singleton may be destroyed before this component.
-            if (GameTickManager.Instance == null) return;
-
-            if (_registeredToTickManager)
+            if (GameTickManager.Instance != null && _registeredToTickManager)
             {
                 GameTickManager.Instance.Unregister(this);
                 _registeredToTickManager = false;
             }
 
+            // Unsubscribe from InputManager
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.OnInteract -= HandleInteractInput;
+            }
+
             // Clean up hover state if disabled mid-hover.
             ClearHover();
+        }
+
+        private void HandleInteractInput()
+        {
+            if (_currentHovered == null)
+                return;
+
+            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
+                return;
+
+            ExecuteInteraction();
         }
 
         // ====================================================================
@@ -286,6 +297,8 @@ namespace Hecton8.Interaction
         /// </summary>
         public void Tick(float deltaTime)
         {
+            // Input is now handled via HandleInteractInput event callback.
+
             // ════════════════════════════════════════════════════
             // PHASE 1: THROTTLED RAYCAST — Target acquisition.
             // ════════════════════════════════════════════════════
@@ -295,19 +308,6 @@ namespace Hecton8.Interaction
             {
                 _raycastTimer = 0f;
                 PerformRaycast();
-            }
-
-            // ════════════════════════════════════════════════════
-            // PHASE 2: INPUT POLL — Action execution.
-            // UI STATE GUARD: HectonFabricatorUI.IsMenuOpen is a
-            // static property — safe even if instance is null.
-            // ════════════════════════════════════════════════════
-            if (_currentHovered != null
-                && !HectonFabricatorUI.IsMenuOpen
-                && !PlayerPDA.IsOpen
-                && Input.GetKeyDown(ResolvedInteractKey))
-            {
-                ExecuteInteraction();
             }
         }
 

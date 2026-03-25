@@ -136,15 +136,20 @@ namespace Crest
         public static void CleanUp(OceanRenderer ocean)
         {
             // Not every mesh is assigned to a chunk thus we should destroy all of them here.
-            for (int i = 0; i < s_Meshes.Length; i++)
+            if (s_Meshes != null)
             {
-                Helpers.Destroy(s_Meshes[i]);
+                for (int i = 0; i < s_Meshes.Length; i++)
+                {
+                    Helpers.Destroy(s_Meshes[i]);
+                }
+
+                s_Meshes = null;
             }
 
-            ocean.Tiles.Clear();
+            ocean?.Tiles?.Clear();
 
             // May not be present when entering play mode.
-            if (ocean.Root)
+            if (ocean != null && ocean.Root)
             {
                 Helpers.Destroy(ocean.Root.gameObject);
             }

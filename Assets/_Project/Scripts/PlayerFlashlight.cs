@@ -33,7 +33,9 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
+using Hecton8.Input;
 using System;
+using VLB;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -73,15 +75,6 @@ namespace Hecton8.Gameplay
         [Header("── References ──────────────────────────────")]
         [Tooltip("SpotLight на камере (дочерний объект).")]
         [SerializeField] private Light flashlightLight;
-
-        [Tooltip("Опционально: VolumetricLightBeam для sci-fi эффекта.")]
-        [SerializeField] private Component volumetricBeam; // VolumetricLightBeam
-
-        [Tooltip("ControlScheme asset. Если null — используется flashlightKey.")]
-        [SerializeField] private ControlScheme controlScheme;
-
-        [Tooltip("Fallback клавиша если нет ControlScheme.")]
-        [SerializeField] private KeyCode flashlightKey = KeyCode.F;
 
         [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
@@ -165,6 +158,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Громкость звуков фонаря.")]
         [SerializeField, Range(0f, 1f)] private float audioVolume = 0.5f;
 
+        [Header("— Volumetric Beam —")]
+        [Tooltip("Optional Volumetric Light Beam component for sci-fi beam rendering.")]
+        [SerializeField] private VolumetricLightBeamAbstractBase volumetricBeam;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -194,6 +191,8 @@ namespace Hecton8.Gameplay
         private bool _isOn;
         private float _currentIntensity;
         private bool _registered;
+        private bool _inputSubscribed;
+        private InputManager _subscribedInputManager;
 
         // Battery
         private float _batteryDrainAccumulator;
@@ -234,7 +233,7 @@ namespace Hecton8.Gameplay
             // Auto-resolve SurvivalSystem if not assigned
             if (survivalSystem == null && enableBatteryDrain)
             {
-                survivalSystem = FindObjectOfType<HectonSurvivalSystem>();
+                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
                 if (survivalSystem == null)
                 {
                     Debug.LogWarning(
@@ -251,6 +250,8 @@ namespace Hecton8.Gameplay
             if (_registered) return;
             GameTickManager.Instance.Register(this);
             _registered = true;
+
+            SubscribeToInputManager();
         }
 
         private void Start()
@@ -267,35 +268,40 @@ namespace Hecton8.Gameplay
                     "[PlayerFlashlight] GameTickManager.Instance is null at Start(). " +
                     "Flashlight will not function.");
             }
+
+            SubscribeToInputManager();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance == null) return;
-            if (!_registered) return;
-            GameTickManager.Instance.Unregister(this);
-            _registered = false;
+            if (GameTickManager.Instance != null && _registered)
+            {
+                GameTickManager.Instance.Unregister(this);
+                _registered = false;
+            }
+
+            UnsubscribeFromInputManager();
         }
 
         // ══════════════════════════════════════════════════════════
         //  TICK
         // ══════════════════════════════════════════════════════════
 
+        private void HandleFlashlightInput()
+        {
+            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
+                return;
+
+            Toggle();
+        }
+
         public void Tick(float deltaTime)
         {
-            // Блокируем ввод в меню
-            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
-            {
-                ProcessTransition(deltaTime);
-                UpdateDiagnostics();
-                return;
-            }
+            SubscribeToInputManager();
 
-            // ── Input ──
-            KeyCode key = controlScheme != null ? controlScheme.flashlightKey : flashlightKey;
-
-            if (Input.GetKeyDown(key))
-                Toggle();
+            // Блокируем логику в меню (хотя InputManager должен отключать Player map, 
+            // мы всё равно обрабатываем переходы и батарею)
+            bool isMenuOpen = HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen;
 
             // ── Overheat cooldown ──
             if (_isOverheated)
@@ -307,24 +313,18 @@ namespace Hecton8.Gameplay
                     _overheatCooldownTimer = 0f;
                 }
             }
-
-            // ── Heat buildup / cooldown ──
-            if (enableHeatBuildup)
+            else if (enableHeatBuildup && _isOn)
             {
-                if (_isOn)
+                _heatLevel += deltaTime / Mathf.Max(overheatTime, 0.01f);
+                if (_heatLevel >= 1f)
                 {
-                    _heatLevel += deltaTime / Mathf.Max(overheatTime, 1f);
-                    if (_heatLevel >= 1f)
-                    {
-                        _heatLevel = 1f;
-                        TriggerOverheat();
-                    }
+                    TriggerOverheat();
                 }
-                else
-                {
-                    _heatLevel -= deltaTime * cooldownRate;
-                    if (_heatLevel < 0f) _heatLevel = 0f;
-                }
+            }
+            else
+            {
+                _heatLevel -= deltaTime * cooldownRate;
+                if (_heatLevel < 0f) _heatLevel = 0f;
             }
 
             // ── Battery drain ──
@@ -382,6 +382,34 @@ namespace Hecton8.Gameplay
         {
             if (on) TurnOn();
             else TurnOff();
+        }
+
+        private void SubscribeToInputManager()
+        {
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
+                return;
+
+            if (_inputSubscribed && ReferenceEquals(_subscribedInputManager, inputManager))
+                return;
+
+            UnsubscribeFromInputManager();
+
+            inputManager.OnFlashlight += HandleFlashlightInput;
+            _subscribedInputManager = inputManager;
+            _inputSubscribed = true;
+        }
+
+        private void UnsubscribeFromInputManager()
+        {
+            if (!_inputSubscribed)
+                return;
+
+            if (_subscribedInputManager != null)
+                _subscribedInputManager.OnFlashlight -= HandleFlashlightInput;
+
+            _subscribedInputManager = null;
+            _inputSubscribed = false;
         }
 
         // ══════════════════════════════════════════════════════════

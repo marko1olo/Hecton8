@@ -27,6 +27,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Core;
     using Hecton8.Inventory;
     using Hecton8.Items;
+    using Hecton8.Input;
     using UnityEngine;
 
     [DisallowMultipleComponent]
@@ -42,9 +43,6 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Ссылка на инвентарь игрока для проверки наличия инструментов.")]
         [SerializeField] private PlayerInventory playerInventory;
-
-        [Tooltip("ControlScheme asset. Если назначен — слот-клавиши берутся из него.")]
-        [SerializeField] private ControlScheme controlScheme;
 
         [Header("── Tool Prefabs (слоты 1-4) ──────────────────")]
         [Tooltip("Префабы инструментов, привязанные к кнопкам 1-4. " +
@@ -63,21 +61,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private int _debugCurrentSlot = -1;
         [SerializeField] private string _debugStateName;
 
-        // ══════════════════════════════════════════════════════════
-        //  CACHED INPUT — zero GC
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Кэшированные KeyCode для слотов 1-4.
-        /// Аллокация один раз при загрузке класса. Проверка в Tick — O(4).
-        /// </summary>
-        private static readonly KeyCode[] SlotKeys =
-        {
-            KeyCode.Alpha1,
-            KeyCode.Alpha2,
-            KeyCode.Alpha3,
-            KeyCode.Alpha4
-        };
+        // SlotKeys removed — handled by InputManager events
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
@@ -109,6 +93,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Целевая позиция при опускании (rest + offset).</summary>
         private Vector3 _anchorLoweredPosition;
+        private InputManager _subscribedInputManager;
 
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE
@@ -151,14 +136,46 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             GameTickManager.Instance?.Register((ITickable)this);
+            RefreshInputSubscriptions();
         }
 
         private void OnDisable()
         {
             GameTickManager.Instance?.Unregister((ITickable)this);
+            UnsubscribeFromInputManager();
 
             // Деспавним текущий инструмент при отключении менеджера
             DespawnCurrentTool();
+        }
+
+        private void RefreshInputSubscriptions()
+        {
+            InputManager currentManager = InputManager.Instance;
+            if (ReferenceEquals(_subscribedInputManager, currentManager))
+                return;
+
+            UnsubscribeFromInputManager();
+
+            if (currentManager == null)
+                return;
+
+            currentManager.OnToolSlot1 += HandleToolSlot1;
+            currentManager.OnToolSlot2 += HandleToolSlot2;
+            currentManager.OnToolSlot3 += HandleToolSlot3;
+            currentManager.OnToolSlot4 += HandleToolSlot4;
+            _subscribedInputManager = currentManager;
+        }
+
+        private void UnsubscribeFromInputManager()
+        {
+            if (_subscribedInputManager == null)
+                return;
+
+            _subscribedInputManager.OnToolSlot1 -= HandleToolSlot1;
+            _subscribedInputManager.OnToolSlot2 -= HandleToolSlot2;
+            _subscribedInputManager.OnToolSlot3 -= HandleToolSlot3;
+            _subscribedInputManager.OnToolSlot4 -= HandleToolSlot4;
+            _subscribedInputManager = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -171,6 +188,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
+            RefreshInputSubscriptions();
             // ── 1. Обработка ввода переключения слотов ──
             ProcessSlotInput();
 
@@ -183,16 +201,19 @@ namespace Hecton8.Gameplay
                 // ── Tick инструмента (idle-анимация, покачивание) ──
                 _currentTool.ToolTick(deltaTime);
 
-                // ── Основное действие (ЛКМ) ──
-                if (Input.GetButton("Fire1"))
+                if (InputManager.Instance != null)
                 {
-                    _currentTool.UsePrimary(deltaTime);
-                }
+                    // ── Основное действие (ЛКМ) ──
+                    if (InputManager.Instance.IsPrimaryActionHeld)
+                    {
+                        _currentTool.UsePrimary(deltaTime);
+                    }
 
-                // ── Альтернативное действие (ПКМ) ──
-                if (Input.GetButton("Fire2"))
-                {
-                    _currentTool.UseSecondary(deltaTime);
+                    // ── Альтернативное действие (ПКМ) ──
+                    if (InputManager.Instance.IsSecondaryActionHeld)
+                    {
+                        _currentTool.UseSecondary(deltaTime);
+                    }
                 }
             }
 
@@ -237,54 +258,36 @@ namespace Hecton8.Gameplay
         /// <summary>Идёт ли сейчас анимация смены инструмента.</summary>
         public bool IsSwapping => _swapState != SwapState.Idle;
 
+        // ProcessSlotInput and GetSlotKey removed — handled via events
+
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — INPUT PROCESSING
+        //  INPUT CALLBACKS (ZERO GC)
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Проверяет нажатие кнопок 1-4.
-        /// При нажатии уже активного слота — убирает инструмент (toggle).
-        /// Читает клавиши из ControlScheme если назначен, иначе из SlotKeys.
-        /// </summary>
         private void ProcessSlotInput()
         {
-            // Не принимаем ввод во время анимации смены
+            // Input is delivered through InputManager events now.
+        }
+
+        private void HandleToolSlot1() => HandleToolSlot(0);
+        private void HandleToolSlot2() => HandleToolSlot(1);
+        private void HandleToolSlot3() => HandleToolSlot(2);
+        private void HandleToolSlot4() => HandleToolSlot(3);
+
+        private void HandleToolSlot(int index)
+        {
+            // Do not accept input during swap animation
             if (_swapState != SwapState.Idle)
                 return;
 
-            for (int i = 0; i < SlotKeys.Length; i++)
-            {
-                if (i >= toolPrefabs.Length) break;
+            if (index < 0 || index >= toolPrefabs.Length)
+                return;
 
-                KeyCode key = GetSlotKey(i);
-
-                if (Input.GetKeyDown(key))
-                {
-                    // Toggle: повторное нажатие = убрать
-                    if (_currentSlotIndex == i)
-                        RequestSwap(-1);
-                    else
-                        RequestSwap(i);
-
-                    return; // Обрабатываем только одно нажатие за кадр
-                }
-            }
-        }
-
-        /// <summary>Возвращает клавишу слота: из ControlScheme или из SlotKeys.</summary>
-        private KeyCode GetSlotKey(int index)
-        {
-            if (controlScheme != null)
-            {
-                switch (index)
-                {
-                    case 0: return controlScheme.toolSlot1;
-                    case 1: return controlScheme.toolSlot2;
-                    case 2: return controlScheme.toolSlot3;
-                    case 3: return controlScheme.toolSlot4;
-                }
-            }
-            return index < SlotKeys.Length ? SlotKeys[index] : KeyCode.None;
+            // Toggle logic: same slot = holster
+            if (_currentSlotIndex == index)
+                RequestSwap(-1);
+            else
+                RequestSwap(index);
         }
 
         // ══════════════════════════════════════════════════════════

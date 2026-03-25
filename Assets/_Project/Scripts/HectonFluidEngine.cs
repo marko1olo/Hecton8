@@ -170,7 +170,16 @@ namespace Hecton8.Physics
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+
+            if (Application.isPlaying)
+            {
+                // DontDestroyOnLoad works only on root objects. If the manager was nested
+                // under a scene organizer, detach it once for stable runtime persistence.
+                if (transform.parent != null)
+                    transform.SetParent(null, true);
+
+                DontDestroyOnLoad(gameObject);
+            }
         }
 
         private void OnEnable()

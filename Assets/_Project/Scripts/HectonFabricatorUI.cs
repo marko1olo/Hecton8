@@ -70,6 +70,7 @@
 //   }
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Hecton8.Core;
@@ -82,6 +83,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton.Localization;
+using Hecton8.Input;
 
 namespace Hecton8.UI
 {
@@ -268,6 +270,19 @@ namespace Hecton8.UI
             base.OnEnable();
             GameTickManager.Instance?.Register((ITickable)this);
 
+            // ── Subscribe to InputManager events ──
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.OnNavigate += HandleNavigateInput;
+                InputManager.Instance.OnSubmit   += HandleSubmitInput;
+                InputManager.Instance.OnCancel   += HandleCancelInput;
+            }
+
+            RebindingManager.Instance.OnRebindCompleted += HandleRebindCompleted;
+            RebindingManager.Instance.OnRebindCanceled += HandleRebindCanceled;
+            RebindingManager.Instance.OnOverridesLoaded += HandleRebindOverridesChanged;
+            RebindingManager.Instance.OnOverridesCleared += HandleRebindOverridesChanged;
+
             // ── Subscribe to explicit UI texts ──
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             if (LocalizationManager.Instance != null)
@@ -302,6 +317,9 @@ namespace Hecton8.UI
             // Rebuild string caches if they are currently displaying something that might have altered.
             if (_recipes != null && _recipes.Count > 0 && _isOpen)
                 RebuildIngredientCache();
+
+            // Update input hints as language might change key names
+            UpdateInputHints();
         }
 
         public override void OnDisable()
@@ -310,6 +328,19 @@ namespace Hecton8.UI
             GameTickManager.Instance?.Unregister((ITickable)this);
 
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+
+            // ── Unsubscribe from InputManager events ──
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.OnNavigate -= HandleNavigateInput;
+                InputManager.Instance.OnSubmit   -= HandleSubmitInput;
+                InputManager.Instance.OnCancel   -= HandleCancelInput;
+            }
+
+            RebindingManager.Instance.OnRebindCompleted -= HandleRebindCompleted;
+            RebindingManager.Instance.OnRebindCanceled -= HandleRebindCanceled;
+            RebindingManager.Instance.OnOverridesLoaded -= HandleRebindOverridesChanged;
+            RebindingManager.Instance.OnOverridesCleared -= HandleRebindOverridesChanged;
 
             CraftingEvents.OnFabricatorOpened    -= HandleFabricatorOpened;
             CraftingEvents.OnFabricatorClosed    -= HandleFabricatorClosed;
@@ -335,61 +366,7 @@ namespace Hecton8.UI
         /// </summary>
         public void Tick(float deltaTime)
         {
-            if (!_isOpen) return;
-
-            // ── ESCAPE → Close ──
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (_isCrafting && _currentFabricator != null)
-                {
-                    _currentFabricator.CancelCraft();
-                    _isCrafting    = false;
-                    _craftProgress = 0f;
-                }
-                else
-                {
-                    CloseMenu();
-                }
-                return;
-            }
-
-            // Не принимаем навигацию во время крафта
-            if (_isCrafting) return;
-            if (_recipes == null || _recipes.Count == 0) return;
-
-            // ── W / Up → Previous recipe ──
-            bool navUp = Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow);
-            if (navUp)
-            {
-                _selectedIndex--;
-                if (_selectedIndex < 0)
-                    _selectedIndex = _recipes.Count - 1; // wrap
-
-                RebuildIngredientCache();
-            }
-
-            // ── S / Down → Next recipe ──
-            bool navDown = Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow);
-            if (navDown)
-            {
-                _selectedIndex++;
-                if (_selectedIndex >= _recipes.Count)
-                    _selectedIndex = 0; // wrap
-
-                RebuildIngredientCache();
-            }
-
-            // ── Space / Enter → Craft ──
-            bool confirm = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return);
-            if (confirm && _canCraftCurrent)
-            {
-                if (_currentFabricator != null && _selectedIndex < _recipes.Count)
-                {
-                    _currentFabricator.StartCraft(_recipes[_selectedIndex]);
-                    _isCrafting    = true;
-                    _craftProgress = 0f;
-                }
-            }
+            // Input is now handled via HandleNavigateInput, etc. callbacks.
 
             UpdateDiagnostics();
         }
@@ -402,6 +379,100 @@ namespace Hecton8.UI
         /// Вызывается при открытии фабрикатора (игрок взаимодействовал).
         /// Инициализирует UI: загружает рецепты, кэширует данные.
         /// </summary>
+        private void HandleNavigateInput(Vector2 direction)
+        {
+            if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
+                return;
+
+            if (Mathf.Abs(direction.y) < 0.5f)
+                return;
+
+            int nextIndex = _selectedIndex + (direction.y > 0f ? -1 : 1);
+            SetSelectedIndex(nextIndex);
+        }
+
+        private void HandleSubmitInput()
+        {
+            if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
+                return;
+
+            if (_selectedIndex < 0 || _selectedIndex >= _recipes.Count)
+                return;
+
+            if (!_canCraftCurrent || _currentFabricator == null)
+                return;
+
+            RecipeData recipe = _recipes[_selectedIndex];
+            if (recipe == null)
+                return;
+
+            _currentFabricator.StartCraft(recipe);
+        }
+
+        private void HandleCancelInput()
+        {
+            if (!_isOpen)
+                return;
+
+            if (_isCrafting)
+            {
+                _currentFabricator?.CancelCraft();
+                return;
+            }
+
+            CloseMenu();
+        }
+
+        private void UpdateInputHints()
+        {
+            string navigateBinding = InputManager.Instance != null
+                ? InputManager.Instance.GetBindingDisplayString("Navigate")
+                : "W/S";
+            string submitBinding = InputManager.Instance != null
+                ? InputManager.Instance.GetBindingDisplayString("Submit")
+                : "Space";
+            string cancelBinding = InputManager.Instance != null
+                ? InputManager.Instance.GetBindingDisplayString("Cancel")
+                : "Esc";
+
+            LabelHintNav = $"[{navigateBinding}] NAVIGATE";
+            LabelHintCraft = $"[{submitBinding}] FABRICATE";
+            LabelHintClose = $"[{cancelBinding}] CLOSE";
+        }
+
+        private void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
+        {
+            if (!_isOpen) return;
+            if (!string.Equals(actionMap, "UI", StringComparison.OrdinalIgnoreCase)) return;
+            UpdateInputHints();
+        }
+
+        private void HandleRebindCanceled(string actionName, string actionMap, int bindingIndex)
+        {
+            if (!_isOpen) return;
+            if (!string.Equals(actionMap, "UI", StringComparison.OrdinalIgnoreCase)) return;
+            UpdateInputHints();
+        }
+
+        private void HandleRebindOverridesChanged()
+        {
+            if (!_isOpen) return;
+            UpdateInputHints();
+        }
+
+        private void SetSelectedIndex(int nextIndex)
+        {
+            if (_recipes == null || _recipes.Count == 0)
+                return;
+
+            int clamped = Mathf.Clamp(nextIndex, 0, _recipes.Count - 1);
+            if (_selectedIndex == clamped)
+                return;
+
+            _selectedIndex = clamped;
+            RebuildIngredientCache();
+        }
+
         private void HandleFabricatorOpened(Fabricator fabricator)
         {
             if (fabricator == null) return;
@@ -414,6 +485,13 @@ namespace Hecton8.UI
 
             _isOpen    = true;
             IsMenuOpen = true;
+
+            // ── Switch to UI input map ──
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.SwitchToUIInput();
+                UpdateInputHints();
+            }
 
             // ── Unlock cursor for menu ──
             Cursor.lockState = CursorLockMode.None;

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Suit_Light_Default
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.SuitData
   mass: 80
+  hudProfile: {fileID: 11400000, guid: e496a40111bab3d47884fd0ed5adb17b, type: 2}
   swimForce: 800
   swimVerticalForce: 400
   maxSwimSpeed: 9
@@ -23,6 +24,7 @@ MonoBehaviour:
   maxWalkSpeed: 7
   walkDrag: 5
   jumpImpulse: 5
+  sprintMultiplier: 1.6
   wadeSlowdownFactor: 0.6
   bodyYawSpringOmega: 10
   surfaceLockStrength: 12

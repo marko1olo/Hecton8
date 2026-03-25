@@ -150,7 +150,7 @@ namespace CandiceAIforGames.AI
                 TemplateAnimator.SetTrigger("JumpForwards");
         }
 
-        public Type GetType()
+        public new Type GetType()
         {
 
             return typeof(CandiceStandardActions);

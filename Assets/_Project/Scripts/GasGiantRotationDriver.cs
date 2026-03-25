@@ -18,10 +18,19 @@ public class GasGiantRotationDriver : MonoBehaviour
     void Awake()
     {
         _mpb = new MaterialPropertyBlock();
+
+        if (_planetRenderer == null)
+            _planetRenderer = GetComponent<Renderer>();
     }
 
     void Update()
     {
+        if (_planetRenderer == null)
+            return;
+
+        if (_mpb == null)
+            _mpb = new MaterialPropertyBlock();
+
         _accumulatedRotation += (double)_baseRotationSpeed * Time.deltaTime;
 
         float rotation = (float)(_accumulatedRotation % 1.0);

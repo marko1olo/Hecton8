@@ -16,6 +16,8 @@
 
 namespace Hecton8.Interaction
 {
+    using System;
+    using Hecton8.Input;
     using UnityEngine;
     using TMPro;
 
@@ -37,7 +39,7 @@ namespace Hecton8.Interaction
 
         [Header("Formatting")]
         [SerializeField,
-         Tooltip("Префикс в Edit Mode и до Play. В Play подхватывается PlayerInteraction.ActiveInteractKey.")]
+         Tooltip("Префикс в Edit Mode и до Play. В Play подхватывается binding из InputManager.")]
         private string inputPrefix = "[E]  ";
 
         // ====================================================================
@@ -60,6 +62,10 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             InteractionEvents.OnHoverChanged += HandleHoverChanged;
+            RebindingManager.Instance.OnRebindCompleted += HandleBindingChanged;
+            RebindingManager.Instance.OnRebindCanceled += HandleBindingCanceled;
+            RebindingManager.Instance.OnOverridesLoaded += HandleOverridesLoaded;
+            RebindingManager.Instance.OnOverridesCleared += HandleOverridesCleared;
 
             // Guarantee clean initial state — prompt hidden on enable.
             HidePrompt();
@@ -68,6 +74,10 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             InteractionEvents.OnHoverChanged -= HandleHoverChanged;
+            RebindingManager.Instance.OnRebindCompleted -= HandleBindingChanged;
+            RebindingManager.Instance.OnRebindCanceled -= HandleBindingCanceled;
+            RebindingManager.Instance.OnOverridesLoaded -= HandleOverridesLoaded;
+            RebindingManager.Instance.OnOverridesCleared -= HandleOverridesCleared;
 
             // Clean up visual state so re-enabling doesn't show stale prompt.
             HidePrompt();
@@ -97,6 +107,38 @@ namespace Hecton8.Interaction
             }
         }
 
+        private void HandleBindingChanged(string actionName, string actionMap, int bindingIndex, string display)
+        {
+            if (!Application.isPlaying) return;
+            if (!string.Equals(actionMap, "Player", StringComparison.OrdinalIgnoreCase)) return;
+            if (!string.Equals(actionName, "Interact", StringComparison.OrdinalIgnoreCase)) return;
+            RefreshCurrentPrompt();
+        }
+
+        private void HandleBindingCanceled(string actionName, string actionMap, int bindingIndex)
+        {
+            if (!Application.isPlaying) return;
+            if (!string.Equals(actionMap, "Player", StringComparison.OrdinalIgnoreCase)) return;
+            if (!string.Equals(actionName, "Interact", StringComparison.OrdinalIgnoreCase)) return;
+            RefreshCurrentPrompt();
+        }
+
+        private void HandleOverridesLoaded()
+        {
+            RefreshCurrentPrompt();
+        }
+
+        private void HandleOverridesCleared()
+        {
+            RefreshCurrentPrompt();
+        }
+
+        private void RefreshCurrentPrompt()
+        {
+            if (_lastDisplayedTarget == null) return;
+            ShowPrompt(_lastDisplayedTarget);
+        }
+
         // ====================================================================
         // INTERNAL — UI State Management
         // ====================================================================
@@ -114,7 +156,7 @@ namespace Hecton8.Interaction
                 string interactText = target.GetInteractText();
 
                 // Zero-alloc text assembly using pre-allocated char buffer.
-                // ResolveInteractPrefix() picks up ActiveInteractKey at runtime.
+                // ResolveInteractPrefix() picks up the current InputManager binding at runtime.
                 int totalLength = WriteToBuffer(ResolveInteractPrefix(), interactText);
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }
@@ -146,7 +188,16 @@ namespace Hecton8.Interaction
                 return inputPrefix;
             }
 
-            return "[" + PlayerInteraction.ActiveInteractKey.ToString() + "]  ";
+            string interactBinding = InputManager.Instance != null
+                ? InputManager.Instance.GetBindingDisplayString("Interact")
+                : string.Empty;
+
+            if (string.IsNullOrEmpty(interactBinding))
+            {
+                interactBinding = "E";
+            }
+
+            return "[" + interactBinding + "]  ";
         }
 
         // ====================================================================

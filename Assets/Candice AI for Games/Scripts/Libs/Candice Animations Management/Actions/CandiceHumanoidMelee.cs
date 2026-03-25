@@ -128,7 +128,7 @@ namespace CandiceAIforGames.AI
         }
 
         //return this type
-        public Type GetType() {
+        public new Type GetType() {
 
             return typeof(CandiceHumanoidMelee);
                 

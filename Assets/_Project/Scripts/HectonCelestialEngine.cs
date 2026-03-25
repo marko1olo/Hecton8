@@ -197,6 +197,7 @@ namespace Hecton8.Celestial
 
         private double _rotationAccumulator;
         private float _rotationTimer;
+        private float _rotationPhase;
         private float _gameTime;
 
         private float _previousBlendForColors;
@@ -332,6 +333,7 @@ namespace Hecton8.Celestial
             if (_rotationAccumulator > 10000.0)
                 _rotationAccumulator -= 10000.0;
             _rotationTimer = (float)_rotationAccumulator;
+            _rotationPhase = (float)(_rotationAccumulator % 1.0);
 
             _gameTime += deltaTime;
 
@@ -558,6 +560,7 @@ namespace Hecton8.Celestial
 
             _skyMaterial.SetFloat(_ID_GameTime, _gameTime);
             _skyMaterial.SetFloat(_ID_NightBlend, _currentBlend);
+            _skyMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
             _skyMaterial.SetFloat(_ID_SunElevation,
                 math.clamp(_currentSunAngle / 90f, -1f, 1f));
 
@@ -776,8 +779,6 @@ namespace Hecton8.Celestial
 
         private void UpdateSkyboxBlend(float sunElevation)
         {
-            if (blendedSkyboxMaterial == null) return;
-
             float range = twilightStartAngle - twilightEndAngle;
             if (range < 0.001f) range = 10f;
 
@@ -787,13 +788,12 @@ namespace Hecton8.Celestial
             // v5.1: Eclipse also triggers night sky.
             _currentBlend = math.max(timeBlend, _smoothedOcclusionFactor);
 
-            blendedSkyboxMaterial.SetFloat(_ID_Blend, _currentBlend);
+            if (blendedSkyboxMaterial != null)
+                blendedSkyboxMaterial.SetFloat(_ID_Blend, _currentBlend);
         }
 
         private void UpdateStarIntensity(float sunElevation)
         {
-            if (blendedSkyboxMaterial == null) return;
-
             float range = twilightStartAngle - twilightEndAngle;
             if (range < 0.001f) range = 10f;
 
@@ -802,7 +802,8 @@ namespace Hecton8.Celestial
 
             _currentStarIntensity = math.max(timeStars, _smoothedOcclusionFactor);
 
-            blendedSkyboxMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
+            if (blendedSkyboxMaterial != null)
+                blendedSkyboxMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
         }
 
         // ─────────────────────────────────────────────
@@ -878,7 +879,7 @@ namespace Hecton8.Celestial
             _aegirMPB.SetFloat(_ID_PlanetPhase, _currentPhase);
             _aegirMPB.SetFloat(_ID_StormEmission, stormEmissionIntensity);
             _aegirMPB.SetFloat(_ID_SunBacklitFactor, _currentBacklitFactor);
-            _aegirMPB.SetFloat(_ID_GlobalRotation, _rotationTimer);
+            _aegirMPB.SetFloat(_ID_GlobalRotation, _rotationPhase);
 
             aegirRenderer.SetPropertyBlock(_aegirMPB);
 

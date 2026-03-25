@@ -1,41 +1,75 @@
+using Hecton8.Input;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 10f;
-    public float sensitivity = 0.5f; // Поставил маленькую, чтобы не колбасило
-    public Transform cam;
+    [Header("Movement")]
+    [SerializeField] private float moveSpeed = 10f;
+    [SerializeField] private float sprintMultiplier = 1.5f;
+    [SerializeField] private float verticalSpeed = 6f;
 
-    private float rotX = 0f;
-    private float rotY = 0f;
+    [Header("Look")]
+    [SerializeField] private float sensitivity = 0.5f;
+    [SerializeField] private float minPitch = -80f;
+    [SerializeField] private float maxPitch = 80f;
+
+    [Header("References")]
+    [SerializeField] private Transform cam;
+
     private CharacterController controller;
+    private float rotX;
+    private float rotY;
 
-    void Start()
+    private void Awake()
     {
         controller = GetComponent<CharacterController>();
-        Cursor.lockState = CursorLockMode.Locked;
-        if (cam == null) cam = Camera.main.transform;
     }
 
-    void Update()
+    private void Start()
     {
-        // ПОВОРОТ
-        rotY += Input.GetAxisRaw("Mouse X") * sensitivity;
-        rotX -= Input.GetAxisRaw("Mouse Y") * sensitivity;
-        rotX = Mathf.Clamp(rotX, -80f, 80f);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
-        transform.rotation = Quaternion.Euler(0, rotY, 0);
-        cam.localRotation = Quaternion.Euler(rotX, 0, 0);
+        if (cam == null && Camera.main != null)
+        {
+            cam = Camera.main.transform;
+        }
+    }
 
-        // ДВИЖЕНИЕ
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
-        float up = 0;
-        if (Input.GetKey(KeyCode.E)) up = 1;
-        if (Input.GetKey(KeyCode.Q)) up = -1;
+    private void Update()
+    {
+        if (controller == null || cam == null)
+        {
+            return;
+        }
 
-        // Летим СТРОГО туда, куда смотрим
-        Vector3 move = cam.forward * v + cam.right * h + Vector3.up * up;
-        controller.Move(move * moveSpeed * Time.deltaTime);
+        InputManager inputManager = InputManager.Instance;
+        Vector2 lookInput = inputManager != null ? inputManager.LookInput : Vector2.zero;
+        Vector2 moveInput = inputManager != null ? inputManager.MoveInput : Vector2.zero;
+        float verticalInput = inputManager != null ? inputManager.VerticalMovementInput : 0f;
+        bool sprinting = inputManager != null && inputManager.IsSprinting;
+
+        UpdateLook(lookInput);
+        UpdateMovement(moveInput, verticalInput, sprinting);
+    }
+
+    private void UpdateLook(Vector2 lookInput)
+    {
+        rotY += lookInput.x * sensitivity;
+        rotX -= lookInput.y * sensitivity;
+        rotX = Mathf.Clamp(rotX, minPitch, maxPitch);
+
+        transform.rotation = Quaternion.Euler(0f, rotY, 0f);
+        cam.localRotation = Quaternion.Euler(rotX, 0f, 0f);
+    }
+
+    private void UpdateMovement(Vector2 moveInput, float verticalInput, bool sprinting)
+    {
+        float speedMultiplier = sprinting ? sprintMultiplier : 1f;
+        Vector3 planarMovement = cam.forward * moveInput.y + cam.right * moveInput.x;
+        Vector3 verticalMovement = Vector3.up * verticalInput * verticalSpeed;
+        Vector3 motion = planarMovement * moveSpeed * speedMultiplier + verticalMovement;
+
+        controller.Move(motion * Time.deltaTime);
     }
 }
