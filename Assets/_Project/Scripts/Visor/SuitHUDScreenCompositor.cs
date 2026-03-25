@@ -16,12 +16,13 @@ namespace NASAPunk.Visor
         [Header("Presentation")]
         [SerializeField] private string overlayName = "HUD_RT_Compositor";
         [SerializeField] [Range(0f, 1f)] private float overlayAlpha = 1f;
-        [SerializeField] private bool forceCanvasActive = true;
+        [SerializeField] private bool forceCanvasActive;
         [SerializeField] private bool forceScreenSpaceOverlay = true;
         [SerializeField] private bool forceSharedProjection = true;
         [SerializeField] private bool hideWhenTextureMissing;
         [SerializeField] private bool preserveExistingChildren = true;
         [SerializeField] private int overlaySortingOrder = 80;
+        [SerializeField] private bool manageCanvasInEditMode;
 
         [Header("Diagnostics")]
         [SerializeField] private bool debugCanvasReady;
@@ -34,13 +35,27 @@ namespace NASAPunk.Visor
         private void OnEnable()
         {
             AutoResolveReferences();
-            EnsureCanvasState();
-            EnsureOverlay();
-            EnsureProjection();
-            BindTexture();
+            RefreshCompositor();
+        }
+
+        private void OnDisable()
+        {
+            if (_overlayImage != null)
+                _overlayImage.enabled = false;
+
+            if (_overlayRect != null)
+                _overlayRect.gameObject.SetActive(false);
         }
 
         private void Update()
+        {
+            if (!Application.isPlaying && !manageCanvasInEditMode)
+                return;
+
+            RefreshCompositor();
+        }
+
+        private void RefreshCompositor()
         {
             AutoResolveReferences();
             EnsureCanvasState();
@@ -129,6 +144,9 @@ namespace NASAPunk.Visor
 
             if (_overlayRect == null || _overlayImage == null)
                 return;
+
+            if (!_overlayRect.gameObject.activeSelf)
+                _overlayRect.gameObject.SetActive(true);
 
             _overlayRect.anchorMin = Vector2.zero;
             _overlayRect.anchorMax = Vector2.one;

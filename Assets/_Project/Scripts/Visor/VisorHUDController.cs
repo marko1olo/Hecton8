@@ -1,4 +1,3 @@
-// File: Scripts/Visor/VisorHUDController.cs
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -19,6 +18,7 @@ namespace NASAPunk.Visor
         [SerializeField] private Renderer _visorRenderer;
         [SerializeField] private Camera _hudCamera;
         [SerializeField] private Camera _baseStackCamera;
+        [SerializeField] private Camera _referenceCamera;
         [SerializeField] private RenderTexture _sharedRenderTexture;
 
         [Header("Projection")]
@@ -36,12 +36,17 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 0.1f)] private float _distortion = 0.02f;
         [SerializeField] private bool _manualProjectionRender = true;
 
+        [Header("Pose Lock")]
+        [SerializeField] private bool _syncToReferenceCamera = true;
+        [SerializeField] private Vector3 _visorLocalOffset = new Vector3(0f, 0f, 0.3f);
+        [SerializeField] private Vector3 _hudCameraLocalOffset = Vector3.zero;
+        [SerializeField] private float _minimumVisorForwardOffset = 0.42f;
+
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
         private bool _ownsRuntimeTexture;
         private bool _isRenderingProjection;
 
-        // Shader property IDs (cached)
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
         private static readonly int ID_HUDColor = Shader.PropertyToID("_HUD_Color");
@@ -52,6 +57,7 @@ namespace NASAPunk.Visor
         {
             EnsurePropertyBlock();
             AutoResolveReferences();
+            SyncProjectionPose();
             RebuildProjection();
         }
 
@@ -63,6 +69,7 @@ namespace NASAPunk.Visor
         private void Update()
         {
             AutoResolveReferences();
+            SyncProjectionPose();
 
             if (_visorRenderer == null) return;
 
@@ -72,7 +79,10 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
             _mpb.SetFloat(ID_Distortion, _distortion);
             _visorRenderer.SetPropertyBlock(_mpb);
+        }
 
+        private void LateUpdate()
+        {
             if (_manualProjectionRender &&
                 Application.isPlaying &&
                 _projectionMode != ProjectionMode.Disabled &&
@@ -87,6 +97,7 @@ namespace NASAPunk.Visor
         {
             EnsurePropertyBlock();
             AutoResolveReferences();
+            SyncProjectionPose();
 
             if (!isActiveAndEnabled)
                 return;
@@ -122,6 +133,26 @@ namespace NASAPunk.Visor
                         if (spaceCameraTransform != null)
                             _baseStackCamera = spaceCameraTransform.GetComponent<Camera>();
                     }
+                }
+            }
+
+            if (_referenceCamera == null)
+            {
+                Transform parent = transform.parent;
+                if (parent != null)
+                {
+                    Transform mainCameraTransform = parent.Find("Main Camera");
+                    if (mainCameraTransform != null)
+                        _referenceCamera = mainCameraTransform.GetComponent<Camera>();
+                    else
+                        _referenceCamera = parent.GetComponent<Camera>();
+                }
+
+                if (_referenceCamera == null && _baseStackCamera != null)
+                {
+                    Transform baseParent = _baseStackCamera.transform.parent;
+                    if (baseParent != null)
+                        _referenceCamera = baseParent.GetComponent<Camera>();
                 }
             }
         }
@@ -241,6 +272,29 @@ namespace NASAPunk.Visor
             _hudCamera.enabled = true;
         }
 
+        private void SyncProjectionPose()
+        {
+            if (!_syncToReferenceCamera || _referenceCamera == null)
+                return;
+
+            Transform referenceTransform = _referenceCamera.transform;
+            Vector3 visorOffset = _visorLocalOffset;
+            float nearClipSafeOffset = _referenceCamera.nearClipPlane + 0.12f;
+            visorOffset.z = Mathf.Max(visorOffset.z, _minimumVisorForwardOffset, nearClipSafeOffset);
+
+            transform.SetPositionAndRotation(
+                referenceTransform.TransformPoint(visorOffset),
+                referenceTransform.rotation);
+
+            if (_hudCamera != null)
+            {
+                Transform hudTransform = _hudCamera.transform;
+                hudTransform.SetPositionAndRotation(
+                    referenceTransform.TransformPoint(_hudCameraLocalOffset),
+                    referenceTransform.rotation);
+            }
+        }
+
         private void RenderProjectionCamera()
         {
             if (_isRenderingProjection || _hudCamera == null)
@@ -249,6 +303,7 @@ namespace NASAPunk.Visor
             try
             {
                 _isRenderingProjection = true;
+                ClearProjectionTarget();
                 _hudCamera.Render();
             }
             finally
@@ -257,9 +312,17 @@ namespace NASAPunk.Visor
             }
         }
 
-        /// <summary>
-        /// Вызывается при смене режима HUD (напр. при переключении на карту)
-        /// </summary>
+        private void ClearProjectionTarget()
+        {
+            if (_hudRT == null)
+                return;
+
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = _hudRT;
+            GL.Clear(true, true, Color.clear);
+            RenderTexture.active = previous;
+        }
+
         public void SetHUDIntensity(float intensity)
         {
             _hudIntensity = Mathf.Clamp(intensity, 0f, 5f);
@@ -285,9 +348,6 @@ namespace NASAPunk.Visor
                 RebuildProjection();
         }
 
-        /// <summary>
-        /// «Зависание» HUD — мерцание
-        /// </summary>
         public void GlitchPulse(float duration = 0.3f)
         {
             StartCoroutine(GlitchCoroutine(duration));

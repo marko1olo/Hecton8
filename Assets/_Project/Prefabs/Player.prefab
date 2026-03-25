@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 9079297290110143596}
   - component: {fileID: 4480347836946963800}
   - component: {fileID: 3941918104802718226}
+  - component: {fileID: 8839750873754648490}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -49,8 +50,8 @@ Camera:
   m_GameObject: {fileID: 2193605564943894971}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.56256676, g: 0.7435475, b: 0.9245283, a: 1}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.056781795, g: 0.28103197, b: 0.41509444, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -307,6 +308,64 @@ MonoBehaviour:
   maxVignetteIntensity: 0.35
   recoverySpeed: 4
   holdDuration: 0.08
+--- !u!114 &8839750873754648490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 183f78654e3ec0c41b80a693b6de37b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUD_v4
+  useCullingMasks: 0
+  hudCamera: {fileID: 2887721374667799330}
+  hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
+  survival: {fileID: 9217988090672240742}
+  playerMovement: {fileID: 4126722323519124583}
+  flashlight: {fileID: 0}
+  underwaterVisuals: {fileID: 0}
+  defaultHudProfile: {fileID: 11400000, guid: afa020d643a1d0c4ca083efa623f8308, type: 2}
+  primaryColor: {r: 0.48, g: 1, b: 0.94, a: 1}
+  secondaryColor: {r: 0.18, g: 0.74, b: 0.66, a: 0.62}
+  dimColor: {r: 0.74, g: 1, b: 0.94, a: 0.28}
+  warningColor: {r: 1, g: 0.76, b: 0.24, a: 1}
+  criticalColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  glassGlowColor: {r: 0.26, g: 1, b: 0.84, a: 0.14}
+  lineThickness: 1.6
+  thinLine: 1
+  gaugeRadius: 42
+  gaugeThickness: 5
+  gaugeSpacing: 88
+  bottomOffset: 92
+  leftOffset: 82
+  rightOffset: 58
+  coldSurfaceTemp: 13.5
+  abyssTemp: 2.4
+  abyssReferenceDepth: 1450
+  tempSmoothing: 4
+  masterAlpha: 1.1
+  visorTintStrength: 0.08
+  edgeGlowStrength: 0.16
+  bootSequenceDuration: 2.8
+  _debugOxygenPct: 0
+  _debugPowerPct: 0
+  _debugHealthPct: 0
+  _debugDepthMeters: 0
+  _debugTemperature: 9.855774
+  _debugFlashlightOn: 0
+  _debugPdaOpen: 0
+  _debugDrawCallCount: 20761
+  _debugMatchedDrawCallCount: 3449
+  _debugRejectedDrawCallCount: 17312
+  _debugLastRenderedFrame: 5486
+  _debugLastRenderCameraId: -790074
+  _debugLastMatchedCameraId: 117800
+  _debugCameraMatched: 0
+  _debugForceVisibilityProbe: 1
+  _debugProbeOpacity: 0.92
 --- !u!1 &5129315572005764086
 GameObject:
   m_ObjectHideFlags: 0
@@ -628,6 +687,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.HectonPlayerMovement
   playerCamera: {fileID: 198848781283951679}
   currentSuitData: {fileID: 11400000, guid: 0ac4df6679641f2488e9fb8e11c34d5b, type: 2}
+  controlScheme: {fileID: 0}
   leanIntoTurn: 1
   waterSurfaceY: 4900
   playerHeight: 1.8
@@ -942,7 +1002,7 @@ GameObject:
   - component: {fileID: 2241469833112970620}
   - component: {fileID: 3891345003495999690}
   - component: {fileID: 1326198947048965599}
-  - component: {fileID: 775185490435312485}
+  - component: {fileID: 7392659766808570678}
   m_Layer: 18
   m_Name: Suit_Visor
   m_TagString: Untagged
@@ -958,8 +1018,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7083179055082406996}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.3}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.7998047, z: 0.2999878}
   m_LocalScale: {x: 1, y: 1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1043,7 +1103,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &775185490435312485
+--- !u!114 &7392659766808570678
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1057,8 +1117,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NASAPunk.Visor.VisorHUDController
   _visorRenderer: {fileID: 3891345003495999690}
   _hudCamera: {fileID: 4738717749101629275}
+  _baseStackCamera: {fileID: 523194245477129767}
+  _referenceCamera: {fileID: 2887721374667799330}
   _sharedRenderTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
-  _projectionMode: 0
+  _projectionMode: 1
   _rtWidth: 1024
   _rtHeight: 1024
   _filterMode: 1
@@ -1066,6 +1128,10 @@ MonoBehaviour:
   _hudTint: {r: 0.2, g: 1, b: 0.3, a: 1}
   _scratchBleed: 0.8
   _distortion: 0.02
+  _manualProjectionRender: 1
+  _syncToReferenceCamera: 1
+  _visorLocalOffset: {x: 0, y: 0, z: 0.3}
+  _hudCameraLocalOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &7338754024745434685
 GameObject:
   m_ObjectHideFlags: 0
@@ -1168,7 +1234,6 @@ MonoBehaviour:
   m_CameraType: 0
   m_Cameras:
   - {fileID: 2887721374667799330}
-  - {fileID: 4738717749101629275}
   m_RendererIndex: -1
   m_VolumeLayerMask:
     serializedVersion: 2
@@ -1208,8 +1273,8 @@ GameObject:
   - component: {fileID: 4738717749101629275}
   - component: {fileID: 2417417034809354582}
   - component: {fileID: 7685304760766666158}
-  - component: {fileID: 8067838337362863652}
-  - component: {fileID: 8874412365051902201}
+  - component: {fileID: 6316095183516097212}
+  - component: {fileID: 7485984485082269955}
   m_Layer: 6
   m_Name: HUD_Render_Camera
   m_TagString: Untagged
@@ -1225,8 +1290,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7350136928691967875}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1000, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.7998047, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1239,9 +1304,9 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7350136928691967875}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
-  m_ClearFlags: 4
+  m_ClearFlags: 2
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -1273,7 +1338,7 @@ Camera:
     serializedVersion: 2
     m_Bits: 131072
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
+  m_TargetTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
@@ -1298,7 +1363,7 @@ MonoBehaviour:
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
-  m_CameraType: 1
+  m_CameraType: 0
   m_Cameras: []
   m_RendererIndex: -1
   m_VolumeLayerMask:
@@ -1370,7 +1435,7 @@ MonoBehaviour:
   promptBracketHalfW: 120
   promptBracketHalfH: 26
   promptBracketArm: 18
---- !u!114 &8067838337362863652
+--- !u!114 &6316095183516097212
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1385,17 +1450,17 @@ MonoBehaviour:
   useCullingMasks: 0
   hudCamera: {fileID: 4738717749101629275}
   hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
-  survival: {fileID: 0}
-  playerMovement: {fileID: 0}
+  survival: {fileID: 9217988090672240742}
+  playerMovement: {fileID: 4126722323519124583}
   flashlight: {fileID: 0}
   underwaterVisuals: {fileID: 0}
   defaultHudProfile: {fileID: 11400000, guid: afa020d643a1d0c4ca083efa623f8308, type: 2}
-  primaryColor: {r: 0.26, g: 0.98, b: 1, a: 1}
-  secondaryColor: {r: 0.16, g: 0.62, b: 0.78, a: 0.62}
-  dimColor: {r: 0.7, g: 0.95, b: 1, a: 0.26}
+  primaryColor: {r: 0.48, g: 1, b: 0.94, a: 1}
+  secondaryColor: {r: 0.18, g: 0.74, b: 0.66, a: 0.62}
+  dimColor: {r: 0.74, g: 1, b: 0.94, a: 0.28}
   warningColor: {r: 1, g: 0.76, b: 0.24, a: 1}
   criticalColor: {r: 1, g: 0.36, b: 0.18, a: 1}
-  glassGlowColor: {r: 0.3, g: 0.95, b: 1, a: 0.12}
+  glassGlowColor: {r: 0.26, g: 1, b: 0.84, a: 0.14}
   lineThickness: 1.6
   thinLine: 1
   gaugeRadius: 42
@@ -1408,14 +1473,27 @@ MonoBehaviour:
   abyssTemp: 2.4
   abyssReferenceDepth: 1450
   tempSmoothing: 4
+  masterAlpha: 1.1
+  visorTintStrength: 0.08
+  edgeGlowStrength: 0.16
+  bootSequenceDuration: 2.8
   _debugOxygenPct: 0
   _debugPowerPct: 0
   _debugHealthPct: 0
   _debugDepthMeters: 0
-  _debugTemperature: 0
+  _debugTemperature: 1.6000011
   _debugFlashlightOn: 0
   _debugPdaOpen: 0
---- !u!114 &8874412365051902201
+  _debugDrawCallCount: 12869
+  _debugMatchedDrawCallCount: 176
+  _debugRejectedDrawCallCount: 11768
+  _debugLastRenderedFrame: 1
+  _debugLastRenderCameraId: -818046
+  _debugLastMatchedCameraId: 117800
+  _debugCameraMatched: 0
+  _debugForceVisibilityProbe: 1
+  _debugProbeOpacity: 0.92
+--- !u!114 &7485984485082269955
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1427,9 +1505,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 413d0a43e93c5564da334e37d575591c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NASAPunk.Visor.SuitHUDPresentationController
-  presentationMode: 1
+  presentationMode: 2
   legacyHud: {fileID: 7685304760766666158}
-  modernHud: {fileID: 8067838337362863652}
-  visorController: {fileID: 775185490435312485}
+  overlayModernHud: {fileID: 8839750873754648490}
+  projectedModernHud: {fileID: 6316095183516097212}
+  visorController: {fileID: 7392659766808570678}
   standardFallbackProfile: {fileID: 11400000, guid: afa020d643a1d0c4ca083efa623f8308, type: 2}
   sharedProjectionTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
+  overlayPresentationCamera: {fileID: 2887721374667799330}
+  visorProjectionCamera: {fileID: 4738717749101629275}
+  suppressAllLegacyHudInScene: 1
+  debugAppliedModeLabel: ModernProjectedSharedRT
+  debugLegacyEnabled: 0
+  debugModernEnabled: 1
+  debugProjectedModeActive: 1

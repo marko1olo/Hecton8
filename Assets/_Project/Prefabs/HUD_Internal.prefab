@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 256622288138001066}
+  - component: {fileID: 4632478377282301769}
   m_Layer: 17
   m_Name: HUD_Internal
   m_TagString: Untagged
@@ -31,3 +32,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4632478377282301769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1202138279822024766}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa123f4f120ae9b4b86dc8961cdd91e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NASAPunk.Visor.SuitHUDScreenCompositor
+  targetCanvas: {fileID: 0}
+  sharedProjectionTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
+  visorController: {fileID: 0}
+  overlayName: HUD_RT_Compositor
+  overlayAlpha: 1
+  forceCanvasActive: 0
+  forceScreenSpaceOverlay: 1
+  forceSharedProjection: 1
+  hideWhenTextureMissing: 0
+  preserveExistingChildren: 1
+  overlaySortingOrder: 80
+  manageCanvasInEditMode: 0
+  debugCanvasReady: 1
+  debugOverlayReady: 1
+  debugTextureAssigned: 1

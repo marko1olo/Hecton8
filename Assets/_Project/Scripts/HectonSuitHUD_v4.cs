@@ -60,6 +60,12 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     [SerializeField] private float leftOffset = 82f;
     [SerializeField] private float rightOffset = 58f;
 
+    [Header("Visor-Safe Area")]
+    [SerializeField] private bool useVisorSafeArea = true;
+    [SerializeField] [Range(0.05f, 0.35f)] private float visorSafeMarginX = 0.18f;
+    [SerializeField] [Range(0.05f, 0.35f)] private float visorSafeMarginY = 0.15f;
+    [SerializeField] [Range(0.5f, 1f)] private float visorSafeRadialLimit = 0.82f;
+
     [Header("Telemetry")]
     [SerializeField] private float coldSurfaceTemp = 13.5f;
     [SerializeField] private float abyssTemp = 2.4f;
@@ -118,6 +124,14 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     private Color _baseCriticalColor;
     private Color _baseGlassGlowColor;
     private float _timeSinceEnable;
+    private float _safeLeft;
+    private float _safeRight;
+    private float _safeBottom;
+    private float _safeTop;
+    private float _safeCenterX;
+    private float _safeCenterY;
+    private float _safeWidth;
+    private float _safeHeight;
 
     public override void OnEnable()
     {
@@ -185,6 +199,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 
         float w = hudCamera.pixelWidth;
         float h = hudCamera.pixelHeight;
+        ComputeVisorSafeBounds(w, h);
 
         using (Draw.Command(hudCamera))
         {
@@ -196,7 +211,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
             if (_debugForceVisibilityProbe)
                 DrawVisibilityProbe(w, h);
 
-            DrawVisorPresence(w, h);
+            DrawVisorEdgeGlow(w, h);
             DrawVisorFrame(w, h);
             DrawSuitHeader(w, h);
             DrawHeadingRibbon(w, h);
@@ -268,9 +283,41 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         _displayTemperature = Mathf.Lerp(_displayTemperature, _targetTemperature, 1f - Mathf.Exp(-tempSmoothing * dt));
     }
 
+    private void ComputeVisorSafeBounds(float w, float h)
+    {
+        if (!useVisorSafeArea)
+        {
+            _safeLeft = 0f;
+            _safeRight = w;
+            _safeBottom = 0f;
+            _safeTop = h;
+        }
+        else
+        {
+            _safeLeft = w * visorSafeMarginX;
+            _safeRight = w * (1f - visorSafeMarginX);
+            _safeBottom = h * visorSafeMarginY;
+            _safeTop = h * (1f - visorSafeMarginY);
+        }
+
+        float radialMarginX = w * Mathf.Clamp01((1f - visorSafeRadialLimit) * 0.5f);
+        float radialMarginY = h * Mathf.Clamp01((1f - visorSafeRadialLimit) * 0.5f);
+        _safeLeft = Mathf.Max(_safeLeft, radialMarginX);
+        _safeRight = Mathf.Min(_safeRight, w - radialMarginX);
+        _safeBottom = Mathf.Max(_safeBottom, radialMarginY);
+        _safeTop = Mathf.Min(_safeTop, h - radialMarginY);
+
+        _safeCenterX = (_safeLeft + _safeRight) * 0.5f;
+        _safeCenterY = (_safeBottom + _safeTop) * 0.5f;
+        _safeWidth = Mathf.Max(1f, _safeRight - _safeLeft);
+        _safeHeight = Mathf.Max(1f, _safeTop - _safeBottom);
+    }
+
     private void DrawGaugeCluster(float w, float h)
     {
-        Vector3 origin = new Vector3(leftOffset, bottomOffset, 0f);
+        float safeOffsetX = Mathf.Min(leftOffset, _safeWidth * 0.14f);
+        float safeOffsetY = Mathf.Min(bottomOffset, _safeHeight * 0.17f);
+        Vector3 origin = new Vector3(_safeLeft + safeOffsetX, _safeBottom + safeOffsetY, 0f);
         float spacing = gaugeSpacing * _gaugeScaleResolved;
         float radius = gaugeRadius * _gaugeScaleResolved;
         int gaugeIndex = 0;
@@ -323,8 +370,10 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 
     private void DrawTelemetryBlock(float w, float h)
     {
-        float blockRight = w - rightOffset;
-        float blockBaseY = bottomOffset + 8f;
+        float safeRightInset = Mathf.Min(rightOffset, _safeWidth * 0.1f);
+        float safeBottomInset = Mathf.Min(bottomOffset, _safeHeight * 0.14f);
+        float blockRight = _safeRight - safeRightInset;
+        float blockBaseY = _safeBottom + safeBottomInset;
         float rowStep = 24f * _telemetryScaleResolved;
         float pulse = (Mathf.Sin(_pulseTimer * 2.3f) + 1f) * 0.5f;
         Color telemetryColor = Color.Lerp(primaryColor, warningColor, Mathf.Clamp01((1f - _powerNorm) * 0.65f));
@@ -386,63 +435,82 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 
     private void DrawCyanVisorFrame(float w, float h)
     {
-        float topY = h - 24f;
-        float sideInset = 32f;
+        float topY = _safeTop;
+        float left = _safeLeft;
+        float right = _safeRight;
         float cornerSize = 48f;
 
-        Draw.Line(new Vector3(sideInset, topY, 0f), new Vector3(sideInset + cornerSize, topY, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.9f));
-        Draw.Line(new Vector3(sideInset, topY, 0f), new Vector3(sideInset, topY - cornerSize, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.6f));
+        Draw.Line(new Vector3(left, topY, 0f), new Vector3(left + cornerSize, topY, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.9f));
+        Draw.Line(new Vector3(left, topY, 0f), new Vector3(left, topY - cornerSize, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.6f));
 
-        Draw.Line(new Vector3(w - sideInset - cornerSize, topY, 0f), new Vector3(w - sideInset, topY, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.9f));
-        Draw.Line(new Vector3(w - sideInset, topY, 0f), new Vector3(w - sideInset, topY - cornerSize, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.6f));
+        Draw.Line(new Vector3(right - cornerSize, topY, 0f), new Vector3(right, topY, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.9f));
+        Draw.Line(new Vector3(right, topY, 0f), new Vector3(right, topY - cornerSize, 0f), lineThickness, ScaleAlpha(glassGlowColor, 0.6f));
 
-        float centerX = w * 0.5f;
-        Draw.Line(new Vector3(centerX - 22f, h - 40f, 0f), new Vector3(centerX + 22f, h - 40f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.4f));
-        Draw.Line(new Vector3(centerX, h - 50f, 0f), new Vector3(centerX, h - 32f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.28f));
+        Draw.Line(new Vector3(_safeCenterX - 22f, _safeTop - 16f, 0f), new Vector3(_safeCenterX + 22f, _safeTop - 16f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.4f));
+        Draw.Line(new Vector3(_safeCenterX, _safeTop - 26f, 0f), new Vector3(_safeCenterX, _safeTop - 8f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.28f));
     }
 
     private void DrawExpeditionVisorFrame(float w, float h)
     {
         DrawCyanVisorFrame(w, h);
 
-        float y = 34f;
-        float centerX = w * 0.5f;
-        Draw.Line(new Vector3(centerX - 120f, y, 0f), new Vector3(centerX - 52f, y, 0f), thinLine, ScaleAlpha(dimColor, 0.18f));
-        Draw.Line(new Vector3(centerX + 52f, y, 0f), new Vector3(centerX + 120f, y, 0f), thinLine, ScaleAlpha(dimColor, 0.18f));
-        Draw.Disc(new Vector3(centerX, y, 0f), 2f, ScaleAlpha(primaryColor, 0.7f));
+        float y = _safeBottom + 14f;
+        Draw.Line(new Vector3(_safeCenterX - 120f, y, 0f), new Vector3(_safeCenterX - 52f, y, 0f), thinLine, ScaleAlpha(dimColor, 0.18f));
+        Draw.Line(new Vector3(_safeCenterX + 52f, y, 0f), new Vector3(_safeCenterX + 120f, y, 0f), thinLine, ScaleAlpha(dimColor, 0.18f));
+        Draw.Disc(new Vector3(_safeCenterX, y, 0f), 2f, ScaleAlpha(primaryColor, 0.7f));
     }
 
     private void DrawIndustrialVisorFrame(float w, float h)
     {
-        float topY = h - 28f;
-        float sideInset = 26f;
+        float topY = _safeTop;
+        float left = _safeLeft;
+        float right = _safeRight;
         float railDepth = 66f;
-        float centerX = w * 0.5f;
 
-        Draw.Line(new Vector3(sideInset, topY, 0f), new Vector3(w - sideInset, topY, 0f), lineThickness * 1.2f, ScaleAlpha(glassGlowColor, 0.75f));
-        Draw.Line(new Vector3(sideInset, topY, 0f), new Vector3(sideInset, topY - railDepth, 0f), lineThickness * 1.2f, ScaleAlpha(glassGlowColor, 0.55f));
-        Draw.Line(new Vector3(w - sideInset, topY, 0f), new Vector3(w - sideInset, topY - railDepth, 0f), lineThickness * 1.2f, ScaleAlpha(glassGlowColor, 0.55f));
+        Draw.Line(new Vector3(left, topY, 0f), new Vector3(right, topY, 0f), lineThickness * 1.2f, ScaleAlpha(glassGlowColor, 0.75f));
+        Draw.Line(new Vector3(left, topY, 0f), new Vector3(left, topY - railDepth, 0f), lineThickness * 1.2f, ScaleAlpha(glassGlowColor, 0.55f));
+        Draw.Line(new Vector3(right, topY, 0f), new Vector3(right, topY - railDepth, 0f), lineThickness * 1.2f, ScaleAlpha(glassGlowColor, 0.55f));
 
-        DrawCornerBracket(sideInset + 10f, 26f, 80f, 38f, ScaleAlpha(secondaryColor, 0.32f));
-        DrawCornerBracket(w - sideInset - 90f, 26f, 80f, 38f, ScaleAlpha(secondaryColor, 0.32f));
+        DrawCornerBracket(left + 10f, _safeBottom + 12f, 80f, 38f, ScaleAlpha(secondaryColor, 0.32f));
+        DrawCornerBracket(right - 90f, _safeBottom + 12f, 80f, 38f, ScaleAlpha(secondaryColor, 0.32f));
 
-        Draw.Line(new Vector3(centerX - 36f, h - 46f, 0f), new Vector3(centerX + 36f, h - 46f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.42f));
-        Draw.Line(new Vector3(centerX, h - 58f, 0f), new Vector3(centerX, h - 28f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.32f));
+        Draw.Line(new Vector3(_safeCenterX - 36f, _safeTop - 18f, 0f), new Vector3(_safeCenterX + 36f, _safeTop - 18f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.42f));
+        Draw.Line(new Vector3(_safeCenterX, _safeTop - 30f, 0f), new Vector3(_safeCenterX, _safeTop, 0f), thinLine, ScaleAlpha(secondaryColor, 0.32f));
     }
 
-    private void DrawVisorPresence(float w, float h)
+    private void DrawVisorEdgeGlow(float w, float h)
     {
-        float centerX = w * 0.5f;
-        float centerY = h * 0.5f;
-        float maxDim = Mathf.Max(w, h);
+        float glowAlpha = visorTintStrength * 0.4f;
 
-        Draw.Disc(new Vector3(centerX, h + maxDim * 0.18f, 0f), maxDim * 0.34f, ScaleAlpha(glassGlowColor, visorTintStrength * 0.55f));
-        Draw.Disc(new Vector3(centerX, -maxDim * 0.14f, 0f), maxDim * 0.28f, ScaleAlpha(glassGlowColor, visorTintStrength * 0.45f));
-        Draw.Disc(new Vector3(-maxDim * 0.12f, centerY, 0f), maxDim * 0.30f, ScaleAlpha(glassGlowColor, edgeGlowStrength * 0.35f));
-        Draw.Disc(new Vector3(w + maxDim * 0.12f, centerY, 0f), maxDim * 0.30f, ScaleAlpha(glassGlowColor, edgeGlowStrength * 0.35f));
+        Draw.Line(
+            new Vector3(_safeLeft + 20f, _safeTop - 2f, 0f),
+            new Vector3(_safeRight - 20f, _safeTop - 2f, 0f),
+            2.5f,
+            ScaleAlpha(glassGlowColor, glowAlpha));
 
-        Draw.Line(new Vector3(38f, 24f, 0f), new Vector3(38f, h - 24f, 0f), thinLine, ScaleAlpha(dimColor, edgeGlowStrength * 0.22f));
-        Draw.Line(new Vector3(w - 38f, 24f, 0f), new Vector3(w - 38f, h - 24f, 0f), thinLine, ScaleAlpha(dimColor, edgeGlowStrength * 0.22f));
+        Draw.Line(
+            new Vector3(_safeLeft + 40f, _safeBottom + 2f, 0f),
+            new Vector3(_safeRight - 40f, _safeBottom + 2f, 0f),
+            2.5f,
+            ScaleAlpha(glassGlowColor, glowAlpha * 0.7f));
+
+        Draw.Line(
+            new Vector3(_safeLeft + 2f, _safeBottom + 40f, 0f),
+            new Vector3(_safeLeft + 2f, _safeTop - 40f, 0f),
+            1.5f,
+            ScaleAlpha(dimColor, edgeGlowStrength * 0.15f));
+
+        Draw.Line(
+            new Vector3(_safeRight - 2f, _safeBottom + 40f, 0f),
+            new Vector3(_safeRight - 2f, _safeTop - 40f, 0f),
+            1.5f,
+            ScaleAlpha(dimColor, edgeGlowStrength * 0.15f));
+
+        float dotAlpha = glowAlpha * 1.2f;
+        Draw.Disc(new Vector3(_safeLeft + 8f, _safeTop - 8f, 0f), 2.2f, ScaleAlpha(primaryColor, dotAlpha));
+        Draw.Disc(new Vector3(_safeRight - 8f, _safeTop - 8f, 0f), 2.2f, ScaleAlpha(primaryColor, dotAlpha));
+        Draw.Disc(new Vector3(_safeLeft + 8f, _safeBottom + 8f, 0f), 2.2f, ScaleAlpha(primaryColor, dotAlpha * 0.6f));
+        Draw.Disc(new Vector3(_safeRight - 8f, _safeBottom + 8f, 0f), 2.2f, ScaleAlpha(primaryColor, dotAlpha * 0.6f));
     }
 
     private void DrawBootSequence(float w, float h)
@@ -450,8 +518,8 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         float t = Mathf.Clamp01(_timeSinceEnable / Mathf.Max(bootSequenceDuration, 0.001f));
         float fade = 1f - t;
         float pulse = 0.6f + 0.4f * Mathf.Sin(_pulseTimer * 7.5f);
-        float centerX = w * 0.5f;
-        float centerY = h * 0.5f + 32f;
+        float centerX = _safeCenterX;
+        float centerY = _safeCenterY + 24f;
         Color accent = ScaleAlpha(primaryColor, fade * pulse * 0.95f);
         Color dim = ScaleAlpha(dimColor, fade * 0.8f);
 
@@ -468,24 +536,17 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     private void DrawVisibilityProbe(float w, float h)
     {
         float pulse = 0.72f + 0.28f * (Mathf.Sin(_pulseTimer * 4.8f) * 0.5f + 0.5f);
-        Color fill = ScaleAlpha(new Color(0.03f, 0.92f, 0.86f, 1f), _debugProbeOpacity * 0.17f * pulse);
-        Color edge = ScaleAlpha(new Color(0.66f, 1f, 0.96f, 1f), _debugProbeOpacity);
+        Color fill = ScaleAlpha(new Color(0.03f, 0.92f, 0.86f, 1f), _debugProbeOpacity * 0.12f * pulse);
+        Color edge = ScaleAlpha(new Color(0.66f, 1f, 0.96f, 1f), _debugProbeOpacity * 0.7f);
         Color hot = ScaleAlpha(new Color(1f, 0.92f, 0.42f, 1f), _debugProbeOpacity * 0.95f);
 
-        float inset = 22f;
-        Draw.Rectangle(new Rect(inset, inset, w - inset * 2f, h - inset * 2f), fill);
-        Draw.RectangleBorder(new Rect(inset, inset, w - inset * 2f, h - inset * 2f), 4f, edge);
+        Draw.Rectangle(new Rect(_safeLeft, _safeBottom, _safeWidth, _safeHeight), fill);
+        Draw.RectangleBorder(new Rect(_safeLeft, _safeBottom, _safeWidth, _safeHeight), 3f, edge);
 
-        float centerX = w * 0.5f;
-        float centerY = h * 0.5f;
-        Draw.Rectangle(new Rect(centerX - 150f, centerY - 26f, 300f, 52f), ScaleAlpha(new Color(0f, 0.08f, 0.1f, 1f), _debugProbeOpacity * 0.9f));
-        Draw.RectangleBorder(new Rect(centerX - 150f, centerY - 26f, 300f, 52f), 3f, hot);
-        Draw.Line(new Vector3(centerX - 220f, centerY, 0f), new Vector3(centerX - 164f, centerY, 0f), 4f, hot);
-        Draw.Line(new Vector3(centerX + 164f, centerY, 0f), new Vector3(centerX + 220f, centerY, 0f), 4f, hot);
-        Draw.Line(new Vector3(centerX, centerY - 84f, 0f), new Vector3(centerX, centerY - 42f, 0f), 4f, hot);
-        Draw.Line(new Vector3(centerX, centerY + 42f, 0f), new Vector3(centerX, centerY + 84f, 0f), 4f, hot);
-        DrawTextCentered("HUD V4 VISIBILITY PROBE", new Vector3(centerX, centerY + 2f, 0f), 18f, hot);
-        DrawTextCentered("IF YOU SEE THIS, THE OVERLAY PATH IS ALIVE", new Vector3(centerX, centerY - 18f, 0f), 10f, edge);
+        Draw.Rectangle(new Rect(_safeCenterX - 120f, _safeCenterY - 20f, 240f, 40f), ScaleAlpha(new Color(0f, 0.08f, 0.1f, 1f), _debugProbeOpacity * 0.85f));
+        Draw.RectangleBorder(new Rect(_safeCenterX - 120f, _safeCenterY - 20f, 240f, 40f), 2f, hot);
+        DrawTextCentered("V4 VISOR PROBE", new Vector3(_safeCenterX, _safeCenterY + 2f, 0f), 15f, hot);
+        DrawTextCentered("PROJECTED PATH ACTIVE", new Vector3(_safeCenterX, _safeCenterY - 14f, 0f), 9f, edge);
     }
 
     private void DrawSuitHeader(float w, float h)
@@ -493,8 +554,10 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         if (!HasTelemetry(SuitHUDProfile.TelemetryFlags.SuitLabel))
             return;
 
-        DrawText(_suitLabel, new Vector3(leftOffset, h - 44f, 0f), 11f, ScaleAlpha(dimColor, 0.92f));
-        Draw.Line(new Vector3(leftOffset, h - 52f, 0f), new Vector3(leftOffset + 94f, h - 52f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.35f));
+        float x = _safeLeft + 12f;
+        float y = _safeTop - 18f;
+        DrawText(_suitLabel, new Vector3(x, y, 0f), 10f, ScaleAlpha(dimColor, 0.92f));
+        Draw.Line(new Vector3(x, y - 8f, 0f), new Vector3(x + 94f, y - 8f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.35f));
     }
 
     private void DrawHeadingRibbon(float w, float h)
@@ -502,21 +565,20 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         if (!HasTelemetry(SuitHUDProfile.TelemetryFlags.Heading))
             return;
 
-        float centerX = w * 0.5f;
-        float y = h - 60f;
+        float y = _safeTop - 36f;
         string heading = Mathf.RoundToInt(_headingDegrees).ToString("000");
         string cardinal = ResolveCardinal(_headingDegrees);
 
-        DrawTextCentered(cardinal, new Vector3(centerX, y + 8f, 0f), 10f, ScaleAlpha(dimColor, 0.9f));
-        DrawTextCentered(heading, new Vector3(centerX, y - 8f, 0f), 13f, ScaleAlpha(primaryColor, 0.95f));
-        Draw.Line(new Vector3(centerX - 48f, y - 18f, 0f), new Vector3(centerX + 48f, y - 18f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.28f));
-        Draw.Line(new Vector3(centerX - 4f, y - 18f, 0f), new Vector3(centerX + 4f, y - 18f, 0f), lineThickness, ScaleAlpha(primaryColor, 0.42f));
+        DrawTextCentered(cardinal, new Vector3(_safeCenterX, y + 8f, 0f), 10f, ScaleAlpha(dimColor, 0.9f));
+        DrawTextCentered(heading, new Vector3(_safeCenterX, y - 8f, 0f), 13f, ScaleAlpha(primaryColor, 0.95f));
+        Draw.Line(new Vector3(_safeCenterX - 48f, y - 18f, 0f), new Vector3(_safeCenterX + 48f, y - 18f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.28f));
+        Draw.Line(new Vector3(_safeCenterX - 4f, y - 18f, 0f), new Vector3(_safeCenterX + 4f, y - 18f, 0f), lineThickness, ScaleAlpha(primaryColor, 0.42f));
     }
 
     private void DrawCenterReticle(float w, float h)
     {
-        float x = w * 0.5f;
-        float y = h * 0.48f;
+        float x = _safeCenterX;
+        float y = _safeCenterY * 0.97f;
         float arm = _visualStyleResolved == SuitHUDProfile.VisualStyle.AtlasIndustrial ? 20f : 14f;
         float gap = 8f;
 
@@ -529,8 +591,8 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 
     private void DrawStatusRibbon(float w, float h)
     {
-        float x = w * 0.5f;
-        float y = 72f;
+        float x = _safeCenterX;
+        float y = _safeBottom + 42f;
         string text = ResolveStatusRibbonText();
         Color color = ResolveStatusRibbonColor();
 
@@ -546,8 +608,8 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         if (!showLamp && !showPda)
             return;
 
-        float x = w * 0.5f;
-        float y = 48f;
+        float x = _safeCenterX;
+        float y = _safeBottom + 18f;
 
         string leftState = _flashlightOn ? "LAMP ONLINE" : "LAMP STANDBY";
         string rightState = _pdaOpen ? "PDA ACTIVE" : "SUIT LINK STABLE";

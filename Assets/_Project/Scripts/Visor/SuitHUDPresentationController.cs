@@ -1,4 +1,5 @@
 using Hecton8.Gameplay;
+using Hecton8.UI;
 using UnityEngine;
 
 namespace NASAPunk.Visor
@@ -17,22 +18,33 @@ namespace NASAPunk.Visor
         }
 
         [Header("Mode")]
-        [SerializeField] private PresentationMode presentationMode = PresentationMode.ModernOverlay;
+        [SerializeField] private PresentationMode presentationMode = PresentationMode.ModernProjectedSharedRT;
 
-        [Header("References")]
+        [Header("Core References")]
         [SerializeField] private HectonSuitHUD legacyHud;
-        [SerializeField] private HectonSuitHUD_v4 modernHud;
+        [SerializeField] private HectonSuitHUD_v4 overlayModernHud;
+        [SerializeField] private HectonSuitHUD_v4 projectedModernHud;
         [SerializeField] private VisorHUDController visorController;
         [SerializeField] private SuitHUDProfile standardFallbackProfile;
         [SerializeField] private RenderTexture sharedProjectionTexture;
         [SerializeField] private Camera overlayPresentationCamera;
         [SerializeField] private Camera visorProjectionCamera;
 
+        [Header("Overlay Suppression")]
+        [SerializeField] private SuitHUDV4CanvasOverlay canvasOverlay;
+        [SerializeField] private SuitHUDScreenCompositor screenCompositor;
+        [SerializeField] private bool suppressOverlaysInProjectedMode = true;
+        [SerializeField] private bool previewProjectedSourceOnScreen = true;
+
+        [Header("Safety")]
+        [SerializeField] private bool suppressAllLegacyHudInScene = true;
+
         [Header("Diagnostics")]
         [SerializeField] private string debugAppliedModeLabel;
         [SerializeField] private bool debugLegacyEnabled;
         [SerializeField] private bool debugModernEnabled;
         [SerializeField] private bool debugProjectedModeActive;
+        [SerializeField] private bool debugOverlaysSuppressed;
 
         private PresentationMode _appliedMode = (PresentationMode)(-1);
         private SuitHUDProfile _appliedFallbackProfile;
@@ -61,9 +73,6 @@ namespace NASAPunk.Visor
             if (legacyHud == null)
                 legacyHud = GetComponent<HectonSuitHUD>();
 
-            if (modernHud == null)
-                modernHud = GetComponent<HectonSuitHUD_v4>();
-
             if (visorProjectionCamera == null)
                 visorProjectionCamera = GetComponent<Camera>();
 
@@ -78,6 +87,12 @@ namespace NASAPunk.Visor
                 }
             }
 
+            if (projectedModernHud == null)
+                projectedModernHud = GetComponent<HectonSuitHUD_v4>();
+
+            if (overlayModernHud == null && overlayPresentationCamera != null)
+                overlayModernHud = overlayPresentationCamera.GetComponent<HectonSuitHUD_v4>();
+
             if (visorController == null)
             {
                 Transform parent = transform.parent;
@@ -88,6 +103,12 @@ namespace NASAPunk.Visor
                         visorController = visor.GetComponent<VisorHUDController>();
                 }
             }
+
+            if (canvasOverlay == null)
+                canvasOverlay = FindFirstObjectByType<SuitHUDV4CanvasOverlay>(FindObjectsInactive.Include);
+
+            if (screenCompositor == null)
+                screenCompositor = FindFirstObjectByType<SuitHUDScreenCompositor>(FindObjectsInactive.Include);
         }
 
         private void ApplyPresentation(bool force)
@@ -100,30 +121,24 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            if (modernHud != null && standardFallbackProfile != null)
-                modernHud.SetFallbackProfile(standardFallbackProfile);
+            bool projectedMode =
+                presentationMode == PresentationMode.ModernProjectedSharedRT ||
+                presentationMode == PresentationMode.ModernProjectedRuntimeRT;
 
-            if (modernHud != null)
-            {
-                bool projectedMode =
-                    presentationMode == PresentationMode.ModernProjectedSharedRT ||
-                    presentationMode == PresentationMode.ModernProjectedRuntimeRT;
-
-                Camera targetCamera = projectedMode
-                    ? visorProjectionCamera
-                    : ResolveOverlayHostCamera();
-
-                modernHud.SetHudCamera(targetCamera);
-            }
+            PrepareModernHud(overlayModernHud, ResolveOverlayHostCamera());
+            PrepareModernHud(projectedModernHud, visorProjectionCamera);
 
             bool useLegacy = presentationMode == PresentationMode.LegacyOverlay;
-            bool useModern = !useLegacy;
+            bool useOverlayModern = !useLegacy && !projectedMode;
+            bool useProjectedModern = !useLegacy && projectedMode;
 
-            if (legacyHud != null)
-                legacyHud.enabled = useLegacy;
+            ApplyLegacyHudState(useLegacy);
 
-            if (modernHud != null)
-                modernHud.enabled = useModern;
+            if (overlayModernHud != null)
+                overlayModernHud.enabled = useOverlayModern;
+
+            if (projectedModernHud != null)
+                projectedModernHud.enabled = useProjectedModern;
 
             if (visorController != null)
             {
@@ -131,16 +146,64 @@ namespace NASAPunk.Visor
                 visorController.SetProjectionMode(ResolveProjectionMode(presentationMode));
             }
 
+            SuppressOverlayPaths(projectedMode);
+
             debugAppliedModeLabel = presentationMode.ToString();
             debugLegacyEnabled = legacyHud != null && legacyHud.enabled;
-            debugModernEnabled = modernHud != null && modernHud.enabled;
-            debugProjectedModeActive =
-                presentationMode == PresentationMode.ModernProjectedSharedRT ||
-                presentationMode == PresentationMode.ModernProjectedRuntimeRT;
+            debugModernEnabled =
+                (overlayModernHud != null && overlayModernHud.enabled) ||
+                (projectedModernHud != null && projectedModernHud.enabled);
+            debugProjectedModeActive = projectedMode;
 
             _appliedMode = presentationMode;
             _appliedFallbackProfile = standardFallbackProfile;
             _appliedSharedTexture = sharedProjectionTexture;
+        }
+
+        private void SuppressOverlayPaths(bool projectedMode)
+        {
+            bool suppress = projectedMode && suppressOverlaysInProjectedMode;
+            bool showProjectionPreview = false;
+
+            if (canvasOverlay != null)
+                canvasOverlay.SetRenderPathProjectionSource(false);
+
+            if (screenCompositor != null)
+                screenCompositor.enabled = showProjectionPreview;
+
+            Transform canvasTransform = ResolveHudCanvasTransform();
+            if (canvasTransform != null)
+                SetChildActive(canvasTransform, "HUD_RT_Compositor", showProjectionPreview);
+
+            debugOverlaysSuppressed = false;
+        }
+
+        private Transform ResolveHudCanvasTransform()
+        {
+            if (canvasOverlay != null)
+                return canvasOverlay.transform;
+
+            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas candidate = canvases[i];
+                if (candidate != null && candidate.name == "Suit_HUD_Canvas")
+                    return candidate.transform;
+            }
+
+            return null;
+        }
+
+        private static void SetChildActive(Transform parent, string childName, bool active)
+        {
+            if (parent == null)
+                return;
+
+            Transform child = parent.Find(childName);
+            if (child == null || child.gameObject.activeSelf == active)
+                return;
+
+            child.gameObject.SetActive(active);
         }
 
         private static VisorHUDController.ProjectionMode ResolveProjectionMode(PresentationMode mode)
@@ -160,13 +223,49 @@ namespace NASAPunk.Visor
 
         private Camera ResolveOverlayHostCamera()
         {
-            if (visorProjectionCamera != null)
-                return visorProjectionCamera;
-
             if (overlayPresentationCamera != null)
                 return overlayPresentationCamera;
 
+            if (visorProjectionCamera != null)
+                return visorProjectionCamera;
+
             return GetComponent<Camera>();
+        }
+
+        private void PrepareModernHud(HectonSuitHUD_v4 hud, Camera targetCamera)
+        {
+            if (hud == null)
+                return;
+
+            if (standardFallbackProfile != null)
+                hud.SetFallbackProfile(standardFallbackProfile);
+
+            if (targetCamera != null)
+                hud.SetHudCamera(targetCamera);
+        }
+
+        private void ApplyLegacyHudState(bool useLegacy)
+        {
+            if (suppressAllLegacyHudInScene)
+            {
+                HectonSuitHUD[] allLegacyHud = FindObjectsByType<HectonSuitHUD>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+                for (int i = 0; i < allLegacyHud.Length; i++)
+                {
+                    HectonSuitHUD candidate = allLegacyHud[i];
+                    if (candidate == null)
+                        continue;
+
+                    candidate.enabled = useLegacy && candidate == legacyHud;
+                }
+
+                return;
+            }
+
+            if (legacyHud != null)
+                legacyHud.enabled = useLegacy;
         }
     }
 }
