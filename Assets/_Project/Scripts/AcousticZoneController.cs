@@ -35,7 +35,7 @@
 // ZERO GC:
 //   • Tick: один bool comparison + edge detection. Zero alloc.
 //   • TransitionTo: Unity internal, no managed alloc.
-//   • PlayStatic2D: PlayOneShot на cached AudioSource.
+//   • PlayStatic2D: пул 2D-голосов SpatialAudioManager.
 //   • Ленивый поиск игрока: FindWithTag один раз.
 //   • Нет Update, нет корутин, нет LINQ.
 //

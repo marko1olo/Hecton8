@@ -32,6 +32,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -107,7 +108,6 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
 
         [Header("── Audio ─────────────────────────────────────")]
-        [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip buildSound;
         [SerializeField] private AudioClip errorSound;
         [SerializeField] private AudioClip rotateSound;
@@ -686,8 +686,11 @@ namespace Hecton8.Building
 
         private void PlaySound(AudioClip clip)
         {
-            if (audioSource != null && clip != null)
-                audioSource.PlayOneShot(clip);
+            if (clip == null)
+                return;
+
+            if (SpatialAudioManager.Instance != null)
+                SpatialAudioManager.Instance.PlayStatic2D(clip);
         }
 
         // ══════════════════════════════════════════════════════════

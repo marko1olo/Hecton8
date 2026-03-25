@@ -32,6 +32,7 @@
 //      - Each entry can have BOTH fields set (matched independently).
 //   3. Assign audio clips to each entry.
 //   4. Set defaultFootstepClips as fallback.
+//   5. На сцене должен быть SpatialAudioManager (Bootstrap) — шаги идут в его 3D-пул.
 //
 // INSPECTOR EXAMPLE:
 //   Element 0: biomeIndex=0, tag="",          clips=[sand_01..04]  ← MapMagic sand biome
@@ -85,7 +86,6 @@ namespace Hecton8.Audio
     }
 
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(AudioSource))]
     public sealed class PlayerFootstepAudio : MonoBehaviour
     {
         // ══════════════════════════════════════════════════════════
@@ -158,10 +158,10 @@ namespace Hecton8.Audio
         //  CACHED
         // ══════════════════════════════════════════════════════════
 
-        private AudioSource _audioSource;
         private Rigidbody _playerRb;
         private float _lastStepTime;
         private RaycastHit _surfaceHit;
+        private bool _surfaceHitValid;
         private int _lastClipIndex = -1;
 
         // ══════════════════════════════════════════════════════════
@@ -170,13 +170,6 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            _audioSource = GetComponent<AudioSource>();
-
-            _audioSource.playOnAwake = false;
-            _audioSource.spatialBlend = 1f;
-            _audioSource.loop = false;
-            _audioSource.priority = 128;
-
             if (playerMovement != null)
             {
                 _playerRb = playerMovement.GetComponent<Rigidbody>();
@@ -220,6 +213,7 @@ namespace Hecton8.Audio
             // ── Select clip array based on surface ──
             AudioClip[] clips = defaultFootstepClips;
             float surfaceVolumeMult = 1f;
+            _surfaceHitValid = false;
 
             if (enableSurfaceDetection
                 && surfaceSounds != null
@@ -253,9 +247,6 @@ namespace Hecton8.Audio
             AudioClip clip = clips[clipIndex];
             if (clip == null) return;
 
-            // ── Pitch randomization ──
-            _audioSource.pitch = 1f + UnityEngine.Random.Range(-pitchVariation, pitchVariation);
-
             // ── Volume: base × surface × speed ──
             float finalVolume = baseVolume * surfaceVolumeMult;
 
@@ -273,7 +264,12 @@ namespace Hecton8.Audio
                 finalVolume *= speedVolume;
             }
 
-            _audioSource.PlayOneShot(clip, finalVolume);
+            float pitch = 1f + UnityEngine.Random.Range(-pitchVariation, pitchVariation);
+            Vector3 playPosition = _surfaceHitValid ? _surfaceHit.point : transform.position;
+
+            SpatialAudioManager sam = SpatialAudioManager.Instance;
+            if (sam != null)
+                sam.PlayAtPoint(clip, playPosition, finalVolume, pitch);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -310,6 +306,8 @@ namespace Hecton8.Audio
 
         private void DetectSurface(ref AudioClip[] clips, ref float volumeMult)
         {
+            _surfaceHitValid = false;
+
             Vector3 origin = transform.position + Vector3.up * 0.1f;
 
             // ── Raycast down ──
@@ -321,6 +319,8 @@ namespace Hecton8.Audio
                 UpdateSurfaceDiagnostics("raycast miss", -1, false);
                 return;
             }
+
+            _surfaceHitValid = true;
 
             GameObject hitObj = _surfaceHit.collider.gameObject;
             int hitLayer = hitObj.layer;

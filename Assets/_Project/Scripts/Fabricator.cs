@@ -31,6 +31,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Interaction;
@@ -74,7 +75,6 @@ namespace Hecton8.Crafting
         [SerializeField] private int powerPriority = 50;
 
         [Header("── Audio (optional) ──────────────────────────")]
-        [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip   craftStartSound;
         [SerializeField] private AudioClip   craftCompleteSound;
         [SerializeField] private AudioClip   craftCancelSound;
@@ -609,8 +609,11 @@ namespace Hecton8.Crafting
 
         private void PlaySound(AudioClip clip)
         {
-            if (audioSource != null && clip != null)
-                audioSource.PlayOneShot(clip);
+            if (clip == null)
+                return;
+
+            if (SpatialAudioManager.Instance != null)
+                SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
         }
 
         // ══════════════════════════════════════════════════════════
