@@ -18,7 +18,7 @@ namespace Hecton8.UI
             ProjectionSource
         }
 
-        private const int LayoutRevision = 4;
+        private const int LayoutRevision = 5;
         [Header("References")]
         [SerializeField] private Canvas targetCanvas;
         [SerializeField] private Camera projectionCamera;
@@ -516,7 +516,7 @@ namespace Hecton8.UI
             Color accent = percent <= 20 ? warning : primary;
 
             gauge.Root.localScale = Vector3.one;
-            gauge.Ring.text = "◯";
+                        gauge.Ring.text = "O";
             gauge.Ring.color = Alpha(accent, 0.78f);
             gauge.Label.text = label;
             gauge.Label.color = Alpha(dim, 0.84f);
@@ -565,6 +565,8 @@ namespace Hecton8.UI
             GameObject go = new GameObject(name, typeof(RectTransform));
             RectTransform rect = go.GetComponent<RectTransform>();
             rect.SetParent(parent, false);
+            if (parent != null)
+                go.layer = parent.gameObject.layer;
             rect.localScale = Vector3.one;
             return rect;
         }
@@ -631,6 +633,41 @@ namespace Hecton8.UI
                 return;
 
             renderPath = nextPath;
+            _layoutBuilt = false;
+        }
+
+        public void SetProjectionCamera(Camera camera)
+        {
+            if (projectionCamera == camera)
+                return;
+
+            projectionCamera = camera;
+            _layoutBuilt = false;
+        }
+
+        public void CopyConfigurationFrom(SuitHUDV4CanvasOverlay source)
+        {
+            if (source == null || ReferenceEquals(source, this))
+                return;
+
+            uiFont = source.uiFont;
+            survival = source.survival;
+            playerMovement = source.playerMovement;
+            flashlight = source.flashlight;
+            underwaterVisuals = source.underwaterVisuals;
+            defaultHudProfile = source.defaultHudProfile;
+            keepVisibleInEditMode = source.keepVisibleInEditMode;
+            overallScale = source.overallScale;
+            chromeAlpha = source.chromeAlpha;
+            projectionPlaneDistance = source.projectionPlaneDistance;
+            overlaySortingOrder = source.overlaySortingOrder;
+            headerOffset = source.headerOffset;
+            telemetryOffset = source.telemetryOffset;
+            telemetrySize = source.telemetrySize;
+            gaugeClusterOffset = source.gaugeClusterOffset;
+            gaugeClusterSize = source.gaugeClusterSize;
+            statusOffset = source.statusOffset;
+            reticleOffset = source.reticleOffset;
             _layoutBuilt = false;
         }
     }

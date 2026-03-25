@@ -115,19 +115,19 @@ Material:
     - _DistortionStrength: 0.02
     - _DstBlend: 10
     - _DstBlendAlpha: 10
-    - _EnvReflStrength: 0.15
+    - _EnvReflStrength: 0.03
     - _EnvironmentReflections: 1
     - _FingerprintStrength: 0.3
-    - _FresnelIntensity: 0.6
+    - _FresnelIntensity: 0.12
     - _FresnelPower: 3
-    - _GlassAlpha: 0.12
-    - _HUD_CurveStrength: 0.45
-    - _HUD_EdgeFade: 0.25
+    - _GlassAlpha: 0.03
+    - _HUD_CurveStrength: 0.38
+    - _HUD_EdgeFade: 0.18
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HUD_Intensity: 3.0
-    - _HUD_Scale: 0.68
+    - _HUD_Intensity: 4.6
+    - _HUD_Scale: 0.58
     - _HUD_ScratchBleed: 0.8
     - _IOR: 1.05
     - _Metallic: 0
@@ -150,8 +150,8 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FresnelColor: {r: 0.39999998, g: 0.6, b: 0.8, a: 1}
-    - _HUD_Color: {r: 0.19999996, g: 1, b: 0.29999998, a: 1}
-    - _HUD_Offset: {r: 0, g: 0, b: 0, a: 0}
+    - _HUD_Color: {r: 0.19899996, g: 1, b: 0.29999998, a: 1}
+    - _HUD_Offset: {r: 0, g: 0.1, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -25,8 +25,8 @@ namespace NASAPunk.Visor
         [SerializeField] private ProjectionMode _projectionMode = ProjectionMode.Disabled;
 
         [Header("Runtime Render Texture Settings")]
-        [SerializeField] private int _rtWidth = 1024;
-        [SerializeField] private int _rtHeight = 1024;
+        [SerializeField] private int _rtWidth = 1920;
+        [SerializeField] private int _rtHeight = 1080;
         [SerializeField] private FilterMode _filterMode = FilterMode.Bilinear;
 
         [Header("Runtime Tuning")]
@@ -35,12 +35,18 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 2f)] private float _scratchBleed = 0.8f;
         [SerializeField, Range(0f, 0.1f)] private float _distortion = 0.02f;
         [SerializeField] private bool _manualProjectionRender = true;
+        [SerializeField] private bool _previewInEditMode = true;
 
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
+        [SerializeField] private bool _syncPoseInEditMode = false;
         [SerializeField] private Vector3 _visorLocalOffset = new Vector3(0f, 0f, 0.3f);
+        [SerializeField] private Vector3 _visorLocalEulerOffset = Vector3.zero;
+        [SerializeField] private Vector3 _visorLocalScale = new Vector3(1f, 1f, 0.6f);
         [SerializeField] private Vector3 _hudCameraLocalOffset = Vector3.zero;
-        [SerializeField] private float _minimumVisorForwardOffset = 0.42f;
+        [SerializeField] private Vector3 _hudCameraLocalEulerOffset = Vector3.zero;
+        [SerializeField] private float _minimumVisorForwardOffset = 0.02f;
+        [SerializeField] private bool _enforceNearClipSafeOffset = false;
 
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
@@ -84,10 +90,10 @@ namespace NASAPunk.Visor
         private void LateUpdate()
         {
             if (_manualProjectionRender &&
-                Application.isPlaying &&
                 _projectionMode != ProjectionMode.Disabled &&
                 _hudCamera != null &&
-                _hudRT != null)
+                _hudRT != null &&
+                (Application.isPlaying || _previewInEditMode))
             {
                 RenderProjectionCamera();
             }
@@ -276,22 +282,31 @@ namespace NASAPunk.Visor
         {
             if (!_syncToReferenceCamera || _referenceCamera == null)
                 return;
+            if (!Application.isPlaying && !_syncPoseInEditMode)
+                return;
 
             Transform referenceTransform = _referenceCamera.transform;
             Vector3 visorOffset = _visorLocalOffset;
-            float nearClipSafeOffset = _referenceCamera.nearClipPlane + 0.12f;
-            visorOffset.z = Mathf.Max(visorOffset.z, _minimumVisorForwardOffset, nearClipSafeOffset);
+            visorOffset.z = Mathf.Max(visorOffset.z, _minimumVisorForwardOffset);
+            if (_enforceNearClipSafeOffset)
+            {
+                float nearClipSafeOffset = _referenceCamera.nearClipPlane + 0.12f;
+                visorOffset.z = Mathf.Max(visorOffset.z, nearClipSafeOffset);
+            }
+            Quaternion visorRotation = referenceTransform.rotation * Quaternion.Euler(_visorLocalEulerOffset);
 
             transform.SetPositionAndRotation(
                 referenceTransform.TransformPoint(visorOffset),
-                referenceTransform.rotation);
+                visorRotation);
+            transform.localScale = _visorLocalScale;
 
             if (_hudCamera != null)
             {
                 Transform hudTransform = _hudCamera.transform;
+                Quaternion hudRotation = referenceTransform.rotation * Quaternion.Euler(_hudCameraLocalEulerOffset);
                 hudTransform.SetPositionAndRotation(
                     referenceTransform.TransformPoint(_hudCameraLocalOffset),
-                    referenceTransform.rotation);
+                    hudRotation);
             }
         }
 

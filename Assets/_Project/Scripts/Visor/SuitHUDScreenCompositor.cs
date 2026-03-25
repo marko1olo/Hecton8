@@ -22,7 +22,10 @@ namespace NASAPunk.Visor
         [SerializeField] private bool hideWhenTextureMissing;
         [SerializeField] private bool preserveExistingChildren = true;
         [SerializeField] private int overlaySortingOrder = 80;
-        [SerializeField] private bool manageCanvasInEditMode;
+        [SerializeField] private bool manageCanvasInEditMode = true;
+        [SerializeField] private bool showAsInsetPreview = true;
+        [SerializeField] private Vector2 insetSize = new Vector2(340f, 340f);
+        [SerializeField] private Vector2 insetMargin = new Vector2(18f, 18f);
 
         [Header("Diagnostics")]
         [SerializeField] private bool debugCanvasReady;
@@ -133,11 +136,12 @@ namespace NASAPunk.Visor
                 GameObject overlayObject = new GameObject(overlayName, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
                 overlayObject.transform.SetParent(targetCanvas.transform, false);
                 overlayTransform = overlayObject.transform;
-                if (!preserveExistingChildren)
-                    overlayTransform.SetAsLastSibling();
-                else
-                    overlayTransform.SetAsFirstSibling();
             }
+
+            if (showAsInsetPreview || !preserveExistingChildren)
+                overlayTransform.SetAsLastSibling();
+            else
+                overlayTransform.SetAsFirstSibling();
 
             _overlayRect = overlayTransform as RectTransform;
             _overlayImage = overlayTransform.GetComponent<RawImage>();
@@ -148,16 +152,27 @@ namespace NASAPunk.Visor
             if (!_overlayRect.gameObject.activeSelf)
                 _overlayRect.gameObject.SetActive(true);
 
-            _overlayRect.anchorMin = Vector2.zero;
-            _overlayRect.anchorMax = Vector2.one;
-            _overlayRect.offsetMin = Vector2.zero;
-            _overlayRect.offsetMax = Vector2.zero;
+            if (showAsInsetPreview)
+            {
+                _overlayRect.anchorMin = new Vector2(1f, 1f);
+                _overlayRect.anchorMax = new Vector2(1f, 1f);
+                _overlayRect.pivot = new Vector2(1f, 1f);
+                _overlayRect.sizeDelta = insetSize;
+                _overlayRect.anchoredPosition = new Vector2(-insetMargin.x, -insetMargin.y);
+            }
+            else
+            {
+                _overlayRect.anchorMin = Vector2.zero;
+                _overlayRect.anchorMax = Vector2.one;
+                _overlayRect.offsetMin = Vector2.zero;
+                _overlayRect.offsetMax = Vector2.zero;
+                _overlayRect.anchoredPosition3D = Vector3.zero;
+            }
+
             _overlayRect.localScale = Vector3.one;
             _overlayRect.localRotation = Quaternion.identity;
-            _overlayRect.anchoredPosition3D = Vector3.zero;
 
-            Color color = Color.white;
-            color.a = overlayAlpha;
+            Color color = new Color(0.92f, 1f, 0.96f, overlayAlpha);
             _overlayImage.color = color;
             _overlayImage.raycastTarget = false;
             debugOverlayReady = true;

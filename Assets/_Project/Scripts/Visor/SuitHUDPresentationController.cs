@@ -1,6 +1,7 @@
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace NASAPunk.Visor
 {
@@ -32,9 +33,12 @@ namespace NASAPunk.Visor
 
         [Header("Overlay Suppression")]
         [SerializeField] private SuitHUDV4CanvasOverlay canvasOverlay;
+        [SerializeField] private SuitHUDV4CanvasOverlay projectionSourceOverlay;
         [SerializeField] private SuitHUDScreenCompositor screenCompositor;
         [SerializeField] private bool suppressOverlaysInProjectedMode = true;
         [SerializeField] private bool previewProjectedSourceOnScreen = true;
+        [SerializeField] private bool preferCanvasProjectionSource = true;
+        [SerializeField] private bool syncProjectionLayoutFromOverlay = false;
 
         [Header("Safety")]
         [SerializeField] private bool suppressAllLegacyHudInScene = true;
@@ -49,23 +53,28 @@ namespace NASAPunk.Visor
         private PresentationMode _appliedMode = (PresentationMode)(-1);
         private SuitHUDProfile _appliedFallbackProfile;
         private RenderTexture _appliedSharedTexture;
+        private bool _pendingApply = true;
+        private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
+        private const int ProjectionSourceLayer = 17;
 
         private void OnEnable()
         {
             AutoResolveReferences();
+            _pendingApply = true;
             ApplyPresentation(force: true);
         }
 
         private void OnValidate()
         {
             AutoResolveReferences();
-            ApplyPresentation(force: true);
+            _pendingApply = true;
         }
 
         private void LateUpdate()
         {
             AutoResolveReferences();
-            ApplyPresentation(force: false);
+            ApplyPresentation(force: _pendingApply);
+            _pendingApply = false;
         }
 
         private void AutoResolveReferences()
@@ -104,26 +113,29 @@ namespace NASAPunk.Visor
                 }
             }
 
-            if (canvasOverlay == null)
-                canvasOverlay = FindFirstObjectByType<SuitHUDV4CanvasOverlay>(FindObjectsInactive.Include);
+            SuitHUDV4CanvasOverlay[] overlays = FindObjectsByType<SuitHUDV4CanvasOverlay>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            canvasOverlay = FindOverlayByName(overlays, "Suit_HUD_Canvas", canvasOverlay);
 
             if (screenCompositor == null)
                 screenCompositor = FindFirstObjectByType<SuitHUDScreenCompositor>(FindObjectsInactive.Include);
+
+            projectionSourceOverlay = FindOverlayByName(overlays, ProjectionSourceCanvasName, projectionSourceOverlay);
         }
 
         private void ApplyPresentation(bool force)
         {
-            if (!force &&
-                _appliedMode == presentationMode &&
-                ReferenceEquals(_appliedFallbackProfile, standardFallbackProfile) &&
-                ReferenceEquals(_appliedSharedTexture, sharedProjectionTexture))
-            {
-                return;
-            }
-
             bool projectedMode =
                 presentationMode == PresentationMode.ModernProjectedSharedRT ||
                 presentationMode == PresentationMode.ModernProjectedRuntimeRT;
+
+            if (!force &&
+                _appliedMode == presentationMode &&
+                ReferenceEquals(_appliedFallbackProfile, standardFallbackProfile) &&
+                ReferenceEquals(_appliedSharedTexture, sharedProjectionTexture) &&
+                (!projectedMode || projectionSourceOverlay != null))
+            {
+                return;
+            }
 
             PrepareModernHud(overlayModernHud, ResolveOverlayHostCamera());
             PrepareModernHud(projectedModernHud, visorProjectionCamera);
@@ -134,17 +146,21 @@ namespace NASAPunk.Visor
 
             ApplyLegacyHudState(useLegacy);
 
-            if (overlayModernHud != null)
-                overlayModernHud.enabled = useOverlayModern;
-
-            if (projectedModernHud != null)
-                projectedModernHud.enabled = useProjectedModern;
-
             if (visorController != null)
             {
                 visorController.SetSharedRenderTexture(sharedProjectionTexture);
                 visorController.SetProjectionMode(ResolveProjectionMode(presentationMode));
             }
+
+            EnsureProjectionSource(projectedMode);
+            if (preferCanvasProjectionSource && projectedMode && projectionSourceOverlay != null)
+                useProjectedModern = false;
+
+            if (overlayModernHud != null)
+                overlayModernHud.enabled = useOverlayModern;
+
+            if (projectedModernHud != null)
+                projectedModernHud.enabled = useProjectedModern;
 
             SuppressOverlayPaths(projectedMode);
 
@@ -163,7 +179,7 @@ namespace NASAPunk.Visor
         private void SuppressOverlayPaths(bool projectedMode)
         {
             bool suppress = projectedMode && suppressOverlaysInProjectedMode;
-            bool showProjectionPreview = false;
+            bool showProjectionPreview = projectedMode && previewProjectedSourceOnScreen;
 
             if (canvasOverlay != null)
                 canvasOverlay.SetRenderPathProjectionSource(false);
@@ -175,7 +191,82 @@ namespace NASAPunk.Visor
             if (canvasTransform != null)
                 SetChildActive(canvasTransform, "HUD_RT_Compositor", showProjectionPreview);
 
-            debugOverlaysSuppressed = false;
+            debugOverlaysSuppressed = suppress && !showProjectionPreview;
+        }
+
+        private void EnsureProjectionSource(bool projectedMode)
+        {
+            if (!projectedMode)
+            {
+                if (projectionSourceOverlay != null)
+                    projectionSourceOverlay.gameObject.SetActive(false);
+
+                return;
+            }
+
+            if (canvasOverlay == null || visorProjectionCamera == null)
+                return;
+
+            bool createdThisPass = false;
+            if (projectionSourceOverlay == null)
+            {
+                projectionSourceOverlay = CreateProjectionSourceOverlay();
+                createdThisPass = projectionSourceOverlay != null;
+            }
+
+            if (projectionSourceOverlay == null)
+                return;
+
+            if (!projectionSourceOverlay.gameObject.activeSelf)
+                projectionSourceOverlay.gameObject.SetActive(true);
+
+            if (syncProjectionLayoutFromOverlay || createdThisPass)
+                projectionSourceOverlay.CopyConfigurationFrom(canvasOverlay);
+            projectionSourceOverlay.SetProjectionCamera(visorProjectionCamera);
+            projectionSourceOverlay.SetRenderPathProjectionSource(true);
+        }
+
+        private SuitHUDV4CanvasOverlay CreateProjectionSourceOverlay()
+        {
+            Transform parent = canvasOverlay != null ? canvasOverlay.transform.parent : null;
+            GameObject go = new GameObject(
+                ProjectionSourceCanvasName,
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster),
+                typeof(SuitHUDV4CanvasOverlay));
+
+            if (parent != null)
+            {
+                go.transform.SetParent(parent, false);
+            }
+
+            go.layer = ProjectionSourceLayer;
+
+            GraphicRaycaster raycaster = go.GetComponent<GraphicRaycaster>();
+            if (raycaster != null)
+                raycaster.enabled = false;
+
+            return go.GetComponent<SuitHUDV4CanvasOverlay>();
+        }
+
+        private static SuitHUDV4CanvasOverlay FindOverlayByName(
+            SuitHUDV4CanvasOverlay[] overlays,
+            string expectedName,
+            SuitHUDV4CanvasOverlay current)
+        {
+            if (current != null && current.name == expectedName)
+                return current;
+
+            for (int i = 0; i < overlays.Length; i++)
+            {
+                SuitHUDV4CanvasOverlay candidate = overlays[i];
+                if (candidate != null && candidate.name == expectedName)
+                    return candidate;
+            }
+
+            return current;
         }
 
         private Transform ResolveHudCanvasTransform()
