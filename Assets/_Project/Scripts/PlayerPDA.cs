@@ -185,6 +185,7 @@ namespace Hecton8.UI
         public int ActiveTab => _activeTab;
         public bool IsFading => _isFading;
         public float CurrentAlpha => _currentAlpha;
+        public GameObject PanelRoot => pdaPanel;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -286,8 +287,10 @@ namespace Hecton8.UI
             UnsubscribeFromInputManager();
 
             inputManager.OnPDA += HandlePDAInput;
+            inputManager.OnInventory += HandleInventoryInput;
             inputManager.OnCancel += HandleCancelInput;
             inputManager.OnTabPrevious += HandleBackInput;
+            inputManager.OnTabNext += HandleTabNextInput;
             _subscribedInputManager = inputManager;
             _inputSubscribed = true;
         }
@@ -300,8 +303,10 @@ namespace Hecton8.UI
             if (_subscribedInputManager != null)
             {
                 _subscribedInputManager.OnPDA -= HandlePDAInput;
+                _subscribedInputManager.OnInventory -= HandleInventoryInput;
                 _subscribedInputManager.OnCancel -= HandleCancelInput;
                 _subscribedInputManager.OnTabPrevious -= HandleBackInput;
+                _subscribedInputManager.OnTabNext -= HandleTabNextInput;
             }
 
             _subscribedInputManager = null;
@@ -474,6 +479,26 @@ namespace Hecton8.UI
             ClearTabHistory();
         }
 
+        /// <summary>
+        /// Allows runtime-generated UI to wire the PDA shell without reflection hacks.
+        /// </summary>
+        public void ConfigureUI(GameObject panelRoot, CanvasGroup panelCanvasGroup, GameObject[] configuredTabs)
+        {
+            pdaPanel = panelRoot;
+            pdaCanvasGroup = panelCanvasGroup;
+            tabs = configuredTabs ?? Array.Empty<GameObject>();
+
+            if (pdaPanel != null && !IsOpen)
+                pdaPanel.SetActive(false);
+
+            if (pdaCanvasGroup != null && !IsOpen)
+            {
+                pdaCanvasGroup.alpha = 0f;
+                pdaCanvasGroup.interactable = false;
+                pdaCanvasGroup.blocksRaycasts = false;
+            }
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — FADE ANIMATION
         // ══════════════════════════════════════════════════════════
@@ -627,6 +652,17 @@ namespace Hecton8.UI
             Toggle();
         }
 
+        private void HandleInventoryInput()
+        {
+            if (!IsOpen)
+            {
+                Open(0);
+                return;
+            }
+
+            SetActiveTab(0);
+        }
+
         private void HandleCancelInput()
         {
             if (IsOpen)
@@ -641,6 +677,15 @@ namespace Hecton8.UI
             {
                 PopTabHistory();
             }
+        }
+        private void HandleTabNextInput()
+        {
+            if (!IsOpen) return;
+            if (tabs == null || tabs.Length == 0) return;
+
+            int next = _activeTab + 1;
+            if (next >= tabs.Length) next = 0;
+            SetActiveTab(next);
         }
     }
 }

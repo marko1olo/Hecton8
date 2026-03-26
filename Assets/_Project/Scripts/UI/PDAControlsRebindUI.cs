@@ -107,6 +107,9 @@ namespace Hecton8.UI
             if (_subscribed) return;
 
             var input = InputManager.Instance;
+            if (input == null || RebindingManager.Instance == null)
+                return;
+
             input.OnNavigate += HandleNavigate;
             input.OnSubmit += HandleSubmit;
             input.OnCancel += HandleCancel;
@@ -128,15 +131,21 @@ namespace Hecton8.UI
             if (!_subscribed) return;
 
             var input = InputManager.Instance;
-            input.OnNavigate -= HandleNavigate;
-            input.OnSubmit -= HandleSubmit;
-            input.OnCancel -= HandleCancel;
-            input.OnTabNext -= HandleTabNext;
-            input.OnTabPrevious -= HandleTabPrevious;
+            if (input != null)
+            {
+                input.OnNavigate -= HandleNavigate;
+                input.OnSubmit -= HandleSubmit;
+                input.OnCancel -= HandleCancel;
+                input.OnTabNext -= HandleTabNext;
+                input.OnTabPrevious -= HandleTabPrevious;
+            }
 
-            RebindingManager.Instance.OnRebindStarted -= HandleRebindStarted;
-            RebindingManager.Instance.OnRebindCompleted -= HandleRebindCompleted;
-            RebindingManager.Instance.OnRebindCanceled -= HandleRebindCanceled;
+            if (RebindingManager.Instance != null)
+            {
+                RebindingManager.Instance.OnRebindStarted -= HandleRebindStarted;
+                RebindingManager.Instance.OnRebindCompleted -= HandleRebindCompleted;
+                RebindingManager.Instance.OnRebindCanceled -= HandleRebindCanceled;
+            }
 
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
             PDAEvents.OnOpened -= HandlePdaOpened;
@@ -441,6 +450,13 @@ namespace Hecton8.UI
             if (value >= max) return 0;
             if (value < 0) return max - 1;
             return value;
+        }
+
+        public void Configure(PlayerPDA pda, TextMeshProUGUI statusOutput, int tabIndex)
+        {
+            playerPda = pda;
+            statusText = statusOutput;
+            controlsTabIndex = tabIndex;
         }
     }
 }

@@ -3,6 +3,9 @@ using Hecton8.Gameplay;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.UI
 {
@@ -18,11 +21,16 @@ namespace Hecton8.UI
             ProjectionSource
         }
 
-        private const int LayoutRevision = 5;
+        private const int LayoutRevision = 12;
         [Header("References")]
         [SerializeField] private Canvas targetCanvas;
         [SerializeField] private Camera projectionCamera;
         [SerializeField] private TMP_FontAsset uiFont;
+        [SerializeField] private TMP_FontAsset labelFont;
+        [SerializeField] private TMP_FontAsset numericFont;
+        [SerializeField] private Texture2D oxygenIconTexture;
+        [SerializeField] private Texture2D healthIconTexture;
+        [SerializeField] private Texture2D energyIconTexture;
         [SerializeField] private HectonSurvivalSystem survival;
         [SerializeField] private HectonPlayerMovement playerMovement;
         [SerializeField] private PlayerFlashlight flashlight;
@@ -45,6 +53,14 @@ namespace Hecton8.UI
         [SerializeField] private Vector2 gaugeClusterSize = new Vector2(300f, 128f);
         [SerializeField] private Vector2 statusOffset = new Vector2(0f, 50f);
         [SerializeField] private Vector2 reticleOffset = Vector2.zero;
+
+        [Header("Gauge Ring Controls")]
+        [SerializeField] private float gaugeColumnSpacing = 82f;
+        [SerializeField] private float gaugeRingSize = 54f;
+        [SerializeField] private float gaugeRingThickness = 6f;
+        [SerializeField] private Vector2 gaugeIconSize = new Vector2(16f, 16f);
+        [SerializeField] private float gaugeValueOffsetY = 0f;
+        [SerializeField] private float gaugeLabelOffsetY = -34f;
 
         private const string RootName = "HUD_V4_CanvasRoot";
 
@@ -80,6 +96,11 @@ namespace Hecton8.UI
         private GaugeRefs _oxygenGauge;
         private GaugeRefs _powerGauge;
         private GaugeRefs _healthGauge;
+        private static Sprite s_ringFillSprite;
+        private static Sprite s_ringFrameSprite;
+        private static Sprite s_oxygenIconSprite;
+        private static Sprite s_healthIconSprite;
+        private static Sprite s_energyIconSprite;
 
         private SuitData _activeSuit;
         private SuitHUDProfile _activeProfile;
@@ -91,7 +112,10 @@ namespace Hecton8.UI
         private struct GaugeRefs
         {
             public RectTransform Root;
-            public TextMeshProUGUI Ring;
+            public Image Icon;
+            public Image RingBack;
+            public Image RingFill;
+            public Image RingFrame;
             public TextMeshProUGUI Label;
             public TextMeshProUGUI Value;
             public TextMeshProUGUI Sub;
@@ -144,8 +168,16 @@ namespace Hecton8.UI
                 }
             }
 
-            if (uiFont == null || uiFont.name.Contains("циф") || uiFont.name.Contains("Digit"))
+            if (uiFont == null)
                 uiFont = TMP_Settings.defaultFontAsset;
+
+            if (numericFont == null)
+                numericFont = uiFont;
+
+            if (labelFont == null)
+                labelFont = uiFont != null && !IsNumericOnlyFont(uiFont) ? uiFont : TMP_Settings.defaultFontAsset;
+
+            TryResolveDefaultIconTextures();
 
             if (survival == null)
                 survival = FindFirstObjectByType<HectonSurvivalSystem>();
@@ -330,13 +362,17 @@ namespace Hecton8.UI
             _statusLabel = CreateText("StatusLabel", _root, 16f, FontStyles.Bold, TextAlignmentOptions.Center, 0.84f);
             Anchor(_statusLabel.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), statusOffset, new Vector2(420f, 24f));
 
+            Vector2 resolvedGaugeClusterOffset = ResolveGaugeClusterOffset();
+            Vector2 resolvedGaugeClusterSize = ResolveGaugeClusterSize();
+            float resolvedGaugeColumnSpacing = ResolveGaugeColumnSpacing();
+
             _gaugeClusterRoot = CreateRect("GaugeClusterRoot", _root);
-            Anchor(_gaugeClusterRoot, new Vector2(0f, 0f), new Vector2(0f, 0f), gaugeClusterOffset, gaugeClusterSize);
+            Anchor(_gaugeClusterRoot, new Vector2(0f, 0f), new Vector2(0f, 0f), resolvedGaugeClusterOffset, resolvedGaugeClusterSize);
             _gaugeClusterRoot.localEulerAngles = Vector3.zero;
 
-            _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-92f, 0f));
-            _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(0f, 0f));
-            _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, new Vector2(92f, 0f));
+            _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), GetOxygenIconSprite());
+            _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, GetHealthIconSprite());
+            _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), GetEnergyIconSprite());
 
             _layoutBuilt = true;
         }
@@ -357,6 +393,21 @@ namespace Hecton8.UI
             return new Vector2(Mathf.Min(telemetrySize.x, 184f), Mathf.Min(telemetrySize.y, 124f));
         }
 
+        private Vector2 ResolveGaugeClusterOffset()
+        {
+            return new Vector2(Mathf.Max(gaugeClusterOffset.x, 132f), Mathf.Max(gaugeClusterOffset.y, 104f));
+        }
+
+        private Vector2 ResolveGaugeClusterSize()
+        {
+            return new Vector2(Mathf.Max(gaugeClusterSize.x, 290f), Mathf.Max(gaugeClusterSize.y, 116f));
+        }
+
+        private float ResolveGaugeColumnSpacing()
+        {
+            return Mathf.Max(gaugeColumnSpacing, 78f);
+        }
+
         private void RefreshVisuals(float dt)
         {
             if (_root == null)
@@ -365,12 +416,21 @@ namespace Hecton8.UI
             ResolveProfile();
             ResolvePalette(out Color primary, out Color secondary, out Color dim, out Color warning);
 
-            float oxygen = survival != null ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
-            float power = survival != null ? Mathf.Clamp01(survival.EnergyNormalized) : 1f;
-            float health = survival != null ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
+            bool hasSurvivalStats = survival != null && survival.Stats != null;
+            float oxygen = hasSurvivalStats ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
+            float power = hasSurvivalStats ? Mathf.Clamp01(survival.EnergyNormalized) : 1f;
+            float health = hasSurvivalStats ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
             float depth = survival != null ? Mathf.Max(0f, survival.Depth) : (playerMovement != null ? playerMovement.CurrentDepth : 0f);
             float pressure = survival != null ? Mathf.Max(1f, survival.Pressure) : 1f + depth / 10f;
             float heading = playerMovement != null ? Mathf.Repeat(playerMovement.CameraYaw, 360f) : 0f;
+            float safeDepth = hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f;
+            float safeDepthNormalized = ResolveSafeDepthNormalized(depth, safeDepth);
+            float oxygenCurrent = survival != null ? survival.Oxygen : oxygen * 100f;
+            float oxygenMax = hasSurvivalStats ? survival.Stats.MaxOxygen : 100f;
+            float energyCurrent = survival != null ? survival.Energy : power * 100f;
+            float energyMax = hasSurvivalStats ? survival.Stats.MaxEnergy : 100f;
+            float healthCurrent = survival != null ? survival.Integrity : health * 100f;
+            float healthMax = hasSurvivalStats ? survival.Stats.MaxIntegrity : 100f;
 
             float targetTemp = EstimateTemperature(depth);
             _displayTemperature = Mathf.Lerp(_displayTemperature, targetTemp, 1f - Mathf.Exp(-4f * dt));
@@ -399,14 +459,18 @@ namespace Hecton8.UI
 
             SetText(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f));
             SetText(_headingLabel, "HEADING " + Mathf.RoundToInt(heading).ToString("000") + " / " + ResolveCardinal(heading), Alpha(dim, 0.58f));
-            SetText(_depthLabel, "DEPTH: " + Mathf.RoundToInt(depth).ToString("N0") + " m", Alpha(primary, 0.96f));
-            SetText(_temperatureLabel, "TEMPERATURE: " + _displayTemperature.ToString("0.0") + " C", Alpha(dim, 0.84f));
-            SetText(_pressureLabel, "PRESSURE: " + pressure.ToString("0.0") + " atm", Alpha(dim, 0.64f));
-            SetText(_statusLabel, ResolveStatus(oxygen, power, health, depthDelta), PickAccent(oxygen, power, health, primary, warning));
+            SetMetricInt(_depthLabel, "DEPTH: -{0:0} m", Mathf.RoundToInt(depth), Alpha(primary, 0.96f));
+            SetMetricFloat(_temperatureLabel, "TEMPERATURE: {0:0.0} C", _displayTemperature, Alpha(dim, 0.84f));
+            SetMetricFloat(_pressureLabel, "PRESSURE: {0:0.0} atm", pressure, Alpha(dim, 0.64f));
+            SetText(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, primary, warning));
 
-            UpdateGauge(_oxygenGauge, "O2", "LIFE SUPPORT", oxygen, primary, secondary, dim, warning);
-            UpdateGauge(_powerGauge, "PWR", "CELL ARRAY", power, primary, secondary, dim, warning);
-            UpdateGauge(_healthGauge, "HLT", "HULL", health, primary, secondary, dim, warning);
+            Color oxygenAccent = primary;
+            Color healthAccent = Color.Lerp(primary, dim, 0.24f);
+            Color energyAccent = Color.Lerp(primary, warning, 0.28f);
+
+            UpdateGauge(_oxygenGauge, "OXYGEN", string.Empty, oxygen, oxygenCurrent, oxygenMax, oxygenAccent, secondary, dim, warning);
+            UpdateGauge(_healthGauge, "HEALTH", string.Empty, health, healthCurrent, healthMax, healthAccent, secondary, dim, warning);
+            UpdateGauge(_powerGauge, "ENERGY", string.Empty, power, energyCurrent, energyMax, energyAccent, secondary, dim, warning);
         }
 
         private void ResolveProfile()
@@ -487,10 +551,14 @@ namespace Hecton8.UI
             return "STABLE";
         }
 
-        private string ResolveStatus(float oxygen, float power, float health, float depthDelta)
+        private string ResolveStatus(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta)
         {
-            if (health <= 0.18f)
-                return "HULL INTEGRITY CRITICAL";
+            if (safeDepthNormalized <= 0.08f || depth >= safeDepth)
+                return "PRESSURE LIMIT EXCEEDED";
+            if (safeDepthNormalized <= 0.22f)
+                return "APPROACHING SAFE DEPTH LIMIT";
+            if (health <= 0.2f)
+                return "SUIT DAMAGE CRITICAL";
             if (oxygen <= 0.2f)
                 return "OXYGEN RESERVE LOW";
             if (power <= 0.2f)
@@ -499,53 +567,244 @@ namespace Hecton8.UI
                 return "LAMP THERMAL LIMIT";
             if (PlayerPDA.IsOpen)
                 return "SUIT LINK ROUTING PDA";
-            return ResolveTrend(depthDelta);
+            return "LIFE SUPPORT NOMINAL / " + ResolveTrend(depthDelta);
         }
 
-        private static Color PickAccent(float oxygen, float power, float health, Color primary, Color warning)
+        private static Color PickAccent(float oxygen, float power, float health, float safeDepthNormalized, Color primary, Color warning)
         {
-            if (oxygen <= 0.2f || power <= 0.2f || health <= 0.18f)
+            if (oxygen <= 0.2f || power <= 0.2f || health <= 0.2f || safeDepthNormalized <= 0.18f)
                 return Alpha(warning, 0.94f);
 
             return Alpha(primary, 0.88f);
         }
 
-        private static void UpdateGauge(GaugeRefs gauge, string label, string subLabel, float normalized, Color primary, Color secondary, Color dim, Color warning)
+        private static float ResolveSafeDepthNormalized(float depth, float safeDepth)
         {
-            int percent = Mathf.RoundToInt(Mathf.Clamp01(normalized) * 100f);
-            Color accent = percent <= 20 ? warning : primary;
+            if (safeDepth <= 0.01f)
+                return 1f;
 
-            gauge.Root.localScale = Vector3.one;
-                        gauge.Ring.text = "O";
-            gauge.Ring.color = Alpha(accent, 0.78f);
-            gauge.Label.text = label;
-            gauge.Label.color = Alpha(dim, 0.84f);
-            gauge.Value.text = percent + "%";
-            gauge.Value.color = Alpha(accent, 0.96f);
-            gauge.Sub.text = subLabel;
-            gauge.Sub.color = Alpha(secondary, 0.82f);
+            return 1f - Mathf.Clamp01(depth / safeDepth);
         }
 
-        private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition)
+        private static void UpdateGauge(GaugeRefs gauge, string label, string subLabel, float normalized, float currentValue, float maxValue, Color primary, Color secondary, Color dim, Color warning)
+        {
+            float clamped = Mathf.Clamp01(normalized);
+            Color accent = clamped <= 0.2f ? warning : primary;
+
+            gauge.Root.localScale = Vector3.one;
+            if (gauge.Icon != null)
+                gauge.Icon.color = Alpha(accent, 0.94f);
+
+            if (gauge.RingBack != null)
+                gauge.RingBack.color = Alpha(primary, 0.08f);
+
+            if (gauge.RingFill != null)
+            {
+                gauge.RingFill.color = Alpha(accent, 0.94f);
+                gauge.RingFill.fillAmount = clamped;
+            }
+
+            if (gauge.RingFrame != null)
+                gauge.RingFrame.color = Alpha(dim, 0.28f);
+
+            gauge.Label.text = label;
+            gauge.Label.color = Alpha(dim, 0.84f);
+            SetMetricInt(gauge.Value, "{0:0}", Mathf.RoundToInt(currentValue), Alpha(accent, 0.98f));
+            gauge.Sub.text = subLabel;
+            gauge.Sub.color = Alpha(secondary, 0.55f);
+        }
+
+        private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition, Sprite iconSprite)
         {
             GaugeRefs refs = new GaugeRefs();
 
             refs.Root = CreateRect(name, parent);
-            Anchor(refs.Root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, new Vector2(92f, 112f));
+            Anchor(refs.Root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, new Vector2(86f, 92f));
 
-            refs.Ring = CreateText(name + "_Ring", refs.Root, 108f, FontStyles.Normal, TextAlignmentOptions.Center, 0.65f);
-            Stretch(refs.Ring.rectTransform, 0f, 0f, 0f, 0f);
+            RectTransform iconRect = CreateRect(name + "_Icon", refs.Root);
+            Anchor(iconRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-26f, 28f), gaugeIconSize);
+            refs.Icon = iconRect.gameObject.AddComponent<Image>();
+            refs.Icon.sprite = iconSprite;
+            refs.Icon.preserveAspect = true;
+            refs.Icon.raycastTarget = false;
 
-            refs.Label = CreateText(name + "_Label", refs.Root, 18f, FontStyles.Bold, TextAlignmentOptions.Top, 0.82f);
-            Anchor(refs.Label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(84f, 22f));
+            Sprite fillSprite = GetRingFillSprite();
+            Sprite frameSprite = GetRingFrameSprite();
 
-            refs.Value = CreateText(name + "_Value", refs.Root, 30f, FontStyles.Bold, TextAlignmentOptions.Center, 0.96f);
-            Anchor(refs.Value.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(84f, 34f));
+            float resolvedRingSize = Mathf.Max(gaugeRingSize, 50f);
+            float resolvedRingThickness = Mathf.Clamp(gaugeRingThickness, 4f, 10f);
+            float resolvedValueOffsetY = Mathf.Clamp(gaugeValueOffsetY, -4f, 4f);
+            float resolvedLabelOffsetY = Mathf.Clamp(gaugeLabelOffsetY, -42f, -24f);
 
-            refs.Sub = CreateText(name + "_Sub", refs.Root, 11f, FontStyles.Normal, TextAlignmentOptions.Bottom, 0.52f);
-            Anchor(refs.Sub.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(84f, 18f));
+            RectTransform backRect = CreateRect(name + "_RingBack", refs.Root);
+            Anchor(backRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
+            refs.RingBack = backRect.gameObject.AddComponent<Image>();
+            refs.RingBack.sprite = fillSprite;
+            refs.RingBack.type = Image.Type.Filled;
+            refs.RingBack.fillMethod = Image.FillMethod.Radial360;
+            refs.RingBack.fillOrigin = (int)Image.Origin360.Top;
+            refs.RingBack.fillClockwise = true;
+            refs.RingBack.fillAmount = 1f;
+            refs.RingBack.raycastTarget = false;
+
+            RectTransform fillRect = CreateRect(name + "_RingFill", refs.Root);
+            Anchor(fillRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
+            refs.RingFill = fillRect.gameObject.AddComponent<Image>();
+            refs.RingFill.sprite = fillSprite;
+            refs.RingFill.type = Image.Type.Filled;
+            refs.RingFill.fillMethod = Image.FillMethod.Radial360;
+            refs.RingFill.fillOrigin = (int)Image.Origin360.Top;
+            refs.RingFill.fillClockwise = true;
+            refs.RingFill.fillAmount = 1f;
+            refs.RingFill.raycastTarget = false;
+
+            RectTransform frameRect = CreateRect(name + "_RingFrame", refs.Root);
+            Anchor(frameRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
+            refs.RingFrame = frameRect.gameObject.AddComponent<Image>();
+            refs.RingFrame.sprite = frameSprite;
+            refs.RingFrame.type = Image.Type.Simple;
+            refs.RingFrame.raycastTarget = false;
+
+            refs.Label = CreateText(name + "_Label", refs.Root, 10f, FontStyles.Bold, TextAlignmentOptions.Center, 0.82f, ResolveLabelFontAsset());
+            Anchor(refs.Label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, resolvedLabelOffsetY), new Vector2(86f, 16f));
+
+            refs.Value = CreateText(name + "_Value", refs.Root, 15f, FontStyles.Bold, TextAlignmentOptions.Center, 0.98f, ResolveNumericFontAsset());
+            Anchor(refs.Value.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f + resolvedValueOffsetY), new Vector2(44f, 22f));
+
+            refs.Sub = CreateText(name + "_Sub", refs.Root, 10f, FontStyles.Normal, TextAlignmentOptions.Center, 0.52f, ResolveLabelFontAsset());
+            Anchor(refs.Sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -48f), new Vector2(86f, 12f));
+            refs.Sub.gameObject.SetActive(false);
 
             return refs;
+        }
+
+        private static Sprite GetRingFillSprite()
+        {
+            if (s_ringFillSprite != null)
+                return s_ringFillSprite;
+
+            s_ringFillSprite = CreateRingSprite("HUDRingFillRuntime", 128, 14, false);
+            return s_ringFillSprite;
+        }
+
+        private static Sprite GetRingFrameSprite()
+        {
+            if (s_ringFrameSprite != null)
+                return s_ringFrameSprite;
+
+            s_ringFrameSprite = CreateRingSprite("HUDRingFrameRuntime", 128, 14, true);
+            return s_ringFrameSprite;
+        }
+
+        private static Sprite CreateRingSprite(string name, int size, int thickness, bool outlineOnly)
+        {
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = name,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            Color clear = new Color(1f, 1f, 1f, 0f);
+            Color solid = Color.white;
+            float center = (size - 1) * 0.5f;
+            float outerRadius = center - 1f;
+            float innerRadius = Mathf.Max(outerRadius - thickness, 0f);
+            float frameInnerRadius = Mathf.Max(innerRadius - 1.5f, 0f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - center;
+                    float dy = y - center;
+                    float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                    bool insideRing = distance <= outerRadius && distance >= innerRadius;
+                    if (!insideRing)
+                    {
+                        texture.SetPixel(x, y, clear);
+                        continue;
+                    }
+
+                    if (!outlineOnly)
+                    {
+                        texture.SetPixel(x, y, solid);
+                        continue;
+                    }
+
+                    bool edge = distance >= outerRadius - 2f || distance <= frameInnerRadius;
+
+                    texture.SetPixel(x, y, edge ? solid : clear);
+                }
+            }
+
+            texture.Apply(false, true);
+            Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+            sprite.name = name;
+            return sprite;
+        }
+
+        private void TryResolveDefaultIconTextures()
+        {
+#if UNITY_EDITOR
+            bool changed = false;
+
+            if (oxygenIconTexture == null)
+            {
+                oxygenIconTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Sprites/oxygen-tank.png");
+                changed |= oxygenIconTexture != null;
+            }
+
+            if (healthIconTexture == null)
+            {
+                healthIconTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Sprites/cardiogram.png");
+                changed |= healthIconTexture != null;
+            }
+
+            if (energyIconTexture == null)
+            {
+                energyIconTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Sprites/thunder.png");
+                changed |= energyIconTexture != null;
+            }
+
+            if (changed)
+                EditorUtility.SetDirty(this);
+#endif
+        }
+
+        private Sprite GetOxygenIconSprite()
+        {
+            if (s_oxygenIconSprite == null)
+                s_oxygenIconSprite = CreateIconSprite(oxygenIconTexture, "HUD_OxygenIcon");
+
+            return s_oxygenIconSprite;
+        }
+
+        private Sprite GetHealthIconSprite()
+        {
+            if (s_healthIconSprite == null)
+                s_healthIconSprite = CreateIconSprite(healthIconTexture, "HUD_HealthIcon");
+
+            return s_healthIconSprite;
+        }
+
+        private Sprite GetEnergyIconSprite()
+        {
+            if (s_energyIconSprite == null)
+                s_energyIconSprite = CreateIconSprite(energyIconTexture, "HUD_EnergyIcon");
+
+            return s_energyIconSprite;
+        }
+
+        private static Sprite CreateIconSprite(Texture2D texture, string name)
+        {
+            if (texture == null)
+                return null;
+
+            Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
+            sprite.name = name;
+            return sprite;
         }
 
         private void ClearChildren(RectTransform root)
@@ -581,9 +840,14 @@ namespace Hecton8.UI
 
         private TextMeshProUGUI CreateText(string name, RectTransform parent, float size, FontStyles style, TextAlignmentOptions alignment, float alpha)
         {
+            return CreateText(name, parent, size, style, alignment, alpha, ResolveLabelFontAsset());
+        }
+
+        private TextMeshProUGUI CreateText(string name, RectTransform parent, float size, FontStyles style, TextAlignmentOptions alignment, float alpha, TMP_FontAsset fontAsset)
+        {
             RectTransform rect = CreateRect(name, parent);
             TextMeshProUGUI label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font = uiFont;
+            label.font = fontAsset != null ? fontAsset : ResolveLabelFontAsset();
             label.fontSize = size;
             label.fontStyle = style;
             label.alignment = alignment;
@@ -592,6 +856,25 @@ namespace Hecton8.UI
             label.color = Alpha(Color.white, alpha);
             label.text = name;
             return label;
+        }
+
+        private TMP_FontAsset ResolveLabelFontAsset()
+        {
+            return labelFont != null ? labelFont : (uiFont != null ? uiFont : TMP_Settings.defaultFontAsset);
+        }
+
+        private TMP_FontAsset ResolveNumericFontAsset()
+        {
+            return numericFont != null ? numericFont : ResolveLabelFontAsset();
+        }
+
+        private static bool IsNumericOnlyFont(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset == null)
+                return false;
+
+            string fontName = fontAsset.name;
+            return fontName.Contains("Digit") || fontName.Contains("циф");
         }
 
         private static Color Alpha(Color color, float alpha)
@@ -607,6 +890,24 @@ namespace Hecton8.UI
 
             label.text = text;
             label.color = color;
+        }
+
+        private static void SetMetricInt(TextMeshProUGUI label, string pattern, int value, Color color)
+        {
+            if (label == null)
+                return;
+
+            label.color = color;
+            label.SetText(pattern, value);
+        }
+
+        private static void SetMetricFloat(TextMeshProUGUI label, string pattern, float value, Color color)
+        {
+            if (label == null)
+                return;
+
+            label.color = color;
+            label.SetText(pattern, value);
         }
 
         private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
@@ -651,6 +952,11 @@ namespace Hecton8.UI
                 return;
 
             uiFont = source.uiFont;
+            labelFont = source.labelFont;
+            numericFont = source.numericFont;
+            oxygenIconTexture = source.oxygenIconTexture;
+            healthIconTexture = source.healthIconTexture;
+            energyIconTexture = source.energyIconTexture;
             survival = source.survival;
             playerMovement = source.playerMovement;
             flashlight = source.flashlight;

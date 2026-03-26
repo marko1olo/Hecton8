@@ -7,7 +7,19 @@
 namespace Hecton8.Items
 {
     using UnityEngine;
-
+    /// <summary>
+    /// Категория предмета. Используется для фильтрации,
+    /// отображения в UI и будущих крафт-правил.
+    /// </summary>
+    public enum ItemCategory
+    {
+        Miscellaneous = 0,
+        Material      = 1,
+        Tool          = 2,
+        Equipment     = 3,
+        Consumable    = 4,
+        Component     = 5
+    }
     /// <summary>
     /// Чистые данные предмета. Никакой логики — только описание.
     /// Создаётся через контекстное меню: Hecton → Item Data.
@@ -30,6 +42,9 @@ namespace Hecton8.Items
         public float      weight    = 1f;
         public bool       stackable = true;
         public int        maxStack  = 64;
+        [Header("Classification")]
+        [Tooltip("Категория предмета для UI фильтрации и крафт-правил")]
+        public ItemCategory category = ItemCategory.Miscellaneous;
 
         // ─────────────────────── Grid ────────────────────────────
         // ◆ NEW — габариты для тетрис-инвентаря
@@ -38,6 +53,23 @@ namespace Hecton8.Items
         public int        width  = 1;
         [Tooltip("Высота предмета в ячейках сетки инвентаря (≥ 1)")]
         public int        height = 1;
+
+        // ─────────────────────── Consumable ──────────────────────
+        [Header("Consumable")]
+        [Tooltip("Можно ли использовать (потребить) этот предмет")]
+        public bool isConsumable = false;
+
+        [Tooltip("Количество кислорода при использовании")]
+        public float oxygenRestore = 0f;
+
+        [Tooltip("Количество энергии при использовании")]
+        public float energyRestore = 0f;
+
+        [Tooltip("Количество прочности костюма при использовании")]
+        public float integrityRestore = 0f;
+
+        [Tooltip("Звук при использовании")]
+        public AudioClip useSound;
 
         // ─────────────────────── Interaction ─────────────────────
         [Header("Interaction")]

@@ -50,9 +50,9 @@ Shader "NASAPunk/SuitVisor"
         }
 
         ZWrite Off
-        ZTest Always
+        ZTest LEqual
         Blend SrcAlpha OneMinusSrcAlpha
-        Cull Off
+        Cull Front
 
         Pass
         {

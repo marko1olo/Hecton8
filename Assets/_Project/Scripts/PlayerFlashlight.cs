@@ -224,25 +224,37 @@ namespace Hecton8.Gameplay
             _isOverheated = false;
             _overheatCooldownTimer = 0f;
 
+            ResolveReferences();
+
             if (flashlightLight != null)
             {
+                ConfigureFlashlightLight();
                 flashlightLight.intensity = _currentIntensity;
                 flashlightLight.enabled = _isOn;
             }
 
-            // Auto-resolve SurvivalSystem if not assigned
-            if (survivalSystem == null && enableBatteryDrain)
+            ValidateSurvivalSystemBinding();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+                return;
+
+            _isOn = onByDefault;
+            _currentIntensity = _isOn ? baseIntensity : 0f;
+
+            ResolveReferences();
+
+            if (flashlightLight != null)
             {
-                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
-                if (survivalSystem == null)
-                {
-                    Debug.LogWarning(
-                        "[PlayerFlashlight] Battery drain enabled but no HectonSurvivalSystem found. " +
-                        "Disabling battery drain.");
-                    enableBatteryDrain = false;
-                }
+                ConfigureFlashlightLight();
+                flashlightLight.intensity = _currentIntensity;
+                flashlightLight.enabled = _isOn;
             }
         }
+#endif
 
         private void OnEnable()
         {
@@ -410,6 +422,74 @@ namespace Hecton8.Gameplay
 
             _subscribedInputManager = null;
             _inputSubscribed = false;
+        }
+
+        private void ResolveReferences()
+        {
+            ResolveFlashlightLight();
+
+            if (survivalSystem == null && enableBatteryDrain)
+                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
+        }
+
+        private void ResolveFlashlightLight()
+        {
+            if (flashlightLight != null)
+                return;
+
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+                return;
+
+            Transform namedChild = mainCamera.transform.Find("DiveLamp_Light");
+            if (namedChild != null && namedChild.TryGetComponent(out Light namedLight))
+            {
+                flashlightLight = namedLight;
+                return;
+            }
+
+            Light[] candidateLights = mainCamera.GetComponentsInChildren<Light>(true);
+            for (int i = 0; i < candidateLights.Length; i++)
+            {
+                Light candidate = candidateLights[i];
+                if (candidate == null)
+                    continue;
+
+                if (candidate.type == LightType.Spot)
+                {
+                    flashlightLight = candidate;
+                    return;
+                }
+            }
+        }
+
+        private void ConfigureFlashlightLight()
+        {
+            if (flashlightLight == null)
+                return;
+
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null && flashlightLight.transform.IsChildOf(mainCamera.transform))
+            {
+                flashlightLight.transform.localPosition = new Vector3(0f, 0f, 0.08f);
+                flashlightLight.transform.localRotation = Quaternion.identity;
+            }
+
+            flashlightLight.type = LightType.Spot;
+            flashlightLight.range = 18f;
+            flashlightLight.spotAngle = 42f;
+            flashlightLight.shadows = LightShadows.None;
+        }
+
+        private void ValidateSurvivalSystemBinding()
+        {
+            if (survivalSystem != null || !enableBatteryDrain)
+                return;
+
+            Debug.LogWarning(
+                "[PlayerFlashlight] Battery drain enabled but no HectonSurvivalSystem found. " +
+                "Disabling battery drain.");
+            enableBatteryDrain = false;
         }
 
         // ══════════════════════════════════════════════════════════

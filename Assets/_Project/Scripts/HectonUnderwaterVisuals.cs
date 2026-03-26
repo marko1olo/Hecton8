@@ -348,12 +348,16 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying) return;
 
+            Camera gameCamera = Camera.main;
+            if (gameCamera != null)
+                playerCamera = gameCamera.transform;
+
             var sv = SceneView.lastActiveSceneView;
             if (sv != null && sv.camera != null)
             {
-                playerCamera = sv.camera.transform;
-                if (mainCamera == null)
-                    mainCamera = sv.camera;
+                mainCamera = sv.camera;
+                if (playerCamera == null)
+                    playerCamera = sv.camera.transform;
             }
         }
 #endif

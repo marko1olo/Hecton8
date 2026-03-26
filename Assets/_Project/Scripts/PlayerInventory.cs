@@ -14,6 +14,7 @@
 
 namespace Hecton8.Inventory
 {
+    using System;
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.SaveSystem;
@@ -45,7 +46,11 @@ namespace Hecton8.Inventory
         // ══════════════════════════════════════════════════════════
 
         private InventoryGrid _grid;
-
+        /// <summary>
+        /// Количество предметов в стеке для каждой якорной ячейки.
+        /// Индекс = y * columns + x. Не-якорные ячейки = 0.
+        /// </summary>
+        private int[] _stackCounts;
         // ══════════════════════════════════════════════════════════
         //  SAVE HELPERS (pre-allocated, reused)
         // ══════════════════════════════════════════════════════════
@@ -71,6 +76,18 @@ namespace Hecton8.Inventory
         /// </summary>
         public InventoryGrid Grid => _grid;
 
+        /// <summary>
+        /// Fired whenever inventory contents change and UI must refresh.
+        /// Event is raised only after a completed mutation of the grid.
+        /// </summary>
+        public event Action InventoryChanged;
+
+        /// <summary>
+        /// Fired when an item pickup fails due to full inventory.
+        /// Parameter: ItemData that couldn't fit.
+        /// </summary>
+        public event Action<ItemData> InventoryFull;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -78,6 +95,8 @@ namespace Hecton8.Inventory
         private void Awake()
         {
             _grid = new InventoryGrid(columns, rows);
+            _stackCounts = new int[columns * rows];
+            _sortBuffer = new ItemPlacement[columns * rows];
         }
 
         private void OnEnable()
@@ -109,15 +128,112 @@ namespace Hecton8.Inventory
         /// <param name="y">Строка якорной ячейки.</param>
         public void RemoveItem(ItemData item, int x, int y)
         {
+            int idx = AnchorIndex(x, y);
+            int count = _stackCounts[idx];
+            if (count < 1) count = 1;
+
             _grid.RemoveItem(x, y, item.width, item.height);
-            TotalWeight -= item.weight;
+            _stackCounts[idx] = 0;
+            TotalWeight -= item.weight * count;
 
             if (TotalWeight < 0f) TotalWeight = 0f;
-
             if (survival != null)
                 survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+        }
+        /// <summary>
+        /// Удаляет одну единицу из стека. Если стек становится пуст —
+        /// очищает ячейки. Возвращает удалённый ItemData (для спавна в мир).
+        /// </summary>
+        public ItemData RemoveOneItem(int anchorX, int anchorY)
+        {
+            ItemData item = _grid.GetCell(anchorX, anchorY);
+            if (item == null) return null;
+
+            int idx = AnchorIndex(anchorX, anchorY);
+            int count = _stackCounts[idx];
+
+            if (count > 1)
+            {
+                _stackCounts[idx]--;
+            }
+            else
+            {
+                _grid.RemoveItem(anchorX, anchorY, item.width, item.height);
+                _stackCounts[idx] = 0;
+            }
+
+            TotalWeight -= item.weight;
+            if (TotalWeight < 0f) TotalWeight = 0f;
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+            return item;
         }
 
+        /// <summary>
+        /// Потребляет одну единицу предмета из стека.
+        /// Применяет эффект через HectonSurvivalSystem.
+        /// Возвращает true если предмет был потреблён.
+        /// </summary>
+        public bool ConsumeOneItem(int anchorX, int anchorY)
+        {
+            ItemData item = _grid.GetCell(anchorX, anchorY);
+            if (item == null || !item.isConsumable) return false;
+
+            // Применяем эффекты
+            if (survival != null)
+            {
+                if (item.oxygenRestore > 0f)    survival.RefillOxygen(item.oxygenRestore);
+                if (item.energyRestore > 0f)    survival.RechargeEnergy(item.energyRestore);
+                if (item.integrityRestore > 0f) survival.Repair(item.integrityRestore);
+            }
+
+            // Удаляем единицу
+            RemoveOneItem(anchorX, anchorY);
+            return true;
+        }
+
+        /// <summary>Количество предметов в стеке по координатам якоря.</summary>
+        public int GetStackCount(int anchorX, int anchorY)
+        {
+            if (_stackCounts == null) return 0;
+            int idx = AnchorIndex(anchorX, anchorY);
+            if (idx < 0 || idx >= _stackCounts.Length) return 0;
+            return _stackCounts[idx];
+        }
+
+        /// <summary>
+        /// Суммарное количество единиц предмета по всем стекам.
+        /// Используется крафтом для проверки «есть ли 3 титана».
+        /// </summary>
+        public int CountTotal(ItemData item)
+        {
+            if (item == null || _grid == null) return 0;
+
+            int total = 0;
+            int cols = _grid.Columns;
+            int rws = _grid.Rows;
+
+            for (int y = 0; y < rws; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    ItemData cell = _grid.GetCell(x, y);
+                    if (!ReferenceEquals(cell, item)) continue;
+
+                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item)) continue;
+                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item)) continue;
+
+                    int idx = AnchorIndex(x, y);
+                    total += Mathf.Max(1, _stackCounts[idx]);
+                }
+            }
+
+            return total;
+        }
         /// <summary>
         /// Прибавляет вес напрямую (без прохода через RemoveItem).
         /// Используется Fabricator при возврате ингредиентов / добавлении результата.
@@ -129,6 +245,49 @@ namespace Hecton8.Inventory
 
             if (survival != null)
                 survival.SetWeight(TotalWeight);
+        }
+
+        /// <summary>
+        /// Returns true if at least one anchor instance of the item is present in the grid.
+        /// Safe for UI / hotbar availability checks.
+        /// </summary>
+        public bool ContainsItem(ItemData item)
+        {
+            return CountAnchors(item) > 0;
+        }
+
+        /// <summary>
+        /// Counts top-left anchor placements of a specific item.
+        /// Multi-cell items are counted once.
+        /// </summary>
+        public int CountAnchors(ItemData item)
+        {
+            if (item == null || _grid == null)
+                return 0;
+
+            int count = 0;
+            int cols = _grid.Columns;
+            int rows = _grid.Rows;
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    ItemData cell = _grid.GetCell(x, y);
+                    if (!ReferenceEquals(cell, item))
+                        continue;
+
+                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item))
+                        continue;
+
+                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item))
+                        continue;
+
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -185,9 +344,10 @@ namespace Hecton8.Inventory
                     {
                         dto.cells[cellIndex] = new InventoryCellDTO
                         {
-                            x      = x,
-                            y      = y,
-                            itemId = item.name // ScriptableObject.name = asset filename
+                            x          = x,
+                            y          = y,
+                            itemId     = item.name,
+                            stackCount = _stackCounts[y * cols + x]
                         };
                         cellIndex++;
                     }
@@ -196,7 +356,6 @@ namespace Hecton8.Inventory
 
             dto.cellCount = cellIndex;
         }
-
         /// <summary>
         /// Восстанавливает инвентарь из SaveData.
         /// Очищает текущую сетку, затем размещает предметы по координатам.
@@ -213,6 +372,7 @@ namespace Hecton8.Inventory
 
             // ── Очистка текущего инвентаря ──
             _grid.Clear();
+            System.Array.Clear(_stackCounts, 0, _stackCounts.Length);
             TotalWeight = 0f;
 
             if (dto.cells == null || dto.cellCount <= 0) return;
@@ -236,8 +396,11 @@ namespace Hecton8.Inventory
                 // ── Размещение по сохранённым координатам ──
                 if (_grid.CheckFit(cell.x, cell.y, item.width, item.height))
                 {
-                    _grid.PlaceAt(item, cell.x, cell.y);
-                    TotalWeight += item.weight;
+                    _grid.PlaceAt(item, cell.x, cell.y); //это надо или нет? я не понял нейронка не сказала точно. подумай надо или нет!
+                    // После успешного _grid.CheckFit / PlaceAt:
+                    int loadedCount = cell.stackCount > 0 ? cell.stackCount : 1;
+                    _stackCounts[AnchorIndex(cell.x, cell.y)] = loadedCount;
+                    TotalWeight += item.weight * loadedCount;
                 }
                 else
                 {
@@ -245,7 +408,9 @@ namespace Hecton8.Inventory
                     int px, py;
                     if (_grid.TryAddItem(item, out px, out py))
                     {
-                        TotalWeight += item.weight;
+                        int loadedCount = cell.stackCount > 0 ? cell.stackCount : 1;
+                        _stackCounts[AnchorIndex(px, py)] = loadedCount;
+                        TotalWeight += item.weight * loadedCount;
                         Debug.LogWarning(
                             $"[PlayerInventory] '{cell.itemId}' repositioned " +
                             $"from ({cell.x},{cell.y}) to ({px},{py}).");
@@ -261,6 +426,8 @@ namespace Hecton8.Inventory
             // ── Синхронизация веса с survival ──
             if (survival != null)
                 survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -279,12 +446,21 @@ namespace Hecton8.Inventory
 
             for (int i = 0; i < quantity; i++)
             {
-                int placedX, placedY;
-
-                if (_grid.TryAddItem(item, out placedX, out placedY))
+                // Сначала пытаемся добавить в существующий стек
+                if (item.stackable && TryStackItem(item))
                 {
                     TotalWeight += item.weight;
+                    if (survival != null)
+                        survival.SetWeight(TotalWeight);
+                    continue;
+                }
 
+                // Иначе — новое размещение
+                int placedX, placedY;
+                if (_grid.TryAddItem(item, out placedX, out placedY))
+                {
+                    _stackCounts[AnchorIndex(placedX, placedY)] = 1;
+                    TotalWeight += item.weight;
                     if (survival != null)
                         survival.SetWeight(TotalWeight);
                 }
@@ -295,11 +471,44 @@ namespace Hecton8.Inventory
                         $"Не удалось разместить: {item.itemName} " +
                         $"({item.width}×{item.height}), " +
                         $"осталось {quantity - i} шт.");
+                    InventoryFull?.Invoke(item);
                     break;
                 }
             }
-        }
 
+            NotifyInventoryChanged();
+        }
+        /// <summary>
+        /// Ищет существующий неполный стек того же предмета.
+        /// Если найден — инкрементирует count и возвращает true.
+        /// </summary>
+        private bool TryStackItem(ItemData item)
+        {
+            int cols = _grid.Columns;
+            int rows = _grid.Rows;
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    ItemData cell = _grid.GetCell(x, y);
+                    if (!ReferenceEquals(cell, item)) continue;
+
+                    // Проверяем что это якорная ячейка
+                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item)) continue;
+                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item)) continue;
+
+                    int idx = AnchorIndex(x, y);
+                    if (_stackCounts[idx] < item.maxStack)
+                    {
+                        _stackCounts[idx]++;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — SAVE HELPERS
         // ══════════════════════════════════════════════════════════
@@ -315,6 +524,156 @@ namespace Hecton8.Inventory
             _saveDrawn     = new bool[cols, rows];
             _saveDrawnCols = cols;
             _saveDrawnRows = rows;
+        }
+        /// <summary>
+        /// Сортирует инвентарь: собирает все предметы, сортирует по
+        /// категории → имени → весу, заново размещает. Zero-alloc
+        /// кроме одноразового массива.
+        /// </summary>
+        public void SortInventory()
+        {
+            // Собираем все размещения
+            int count = GetPlacements(_sortBuffer);
+            if (count <= 0) return;
+
+            // Собираем данные для сортировки
+            if (_sortEntries == null || _sortEntries.Length < count)
+                _sortEntries = new SortEntry[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                _sortEntries[i] = new SortEntry
+                {
+                    item = _sortBuffer[i].item,
+                    stackCount = _sortBuffer[i].stackCount
+                };
+            }
+
+            // Сортируем
+            System.Array.Sort(_sortEntries, 0, count, SortEntryComparer.Instance);
+
+            // Очищаем сетку
+            _grid.Clear();
+            System.Array.Clear(_stackCounts, 0, _stackCounts.Length);
+            TotalWeight = 0f;
+
+            // Заново размещаем
+            for (int i = 0; i < count; i++)
+            {
+                SortEntry entry = _sortEntries[i];
+                int px, py;
+                if (_grid.TryAddItem(entry.item, out px, out py))
+                {
+                    _stackCounts[AnchorIndex(px, py)] = entry.stackCount;
+                    TotalWeight += entry.item.weight * entry.stackCount;
+                }
+            }
+
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+        }
+
+        private struct SortEntry
+        {
+            public ItemData item;
+            public int stackCount;
+        }
+
+        private sealed class SortEntryComparer : System.Collections.Generic.IComparer<SortEntry>
+        {
+            public static readonly SortEntryComparer Instance = new SortEntryComparer();
+
+            public int Compare(SortEntry a, SortEntry b)
+            {
+                // По категории
+                int cat = ((int)a.item.category).CompareTo((int)b.item.category);
+                if (cat != 0) return cat;
+
+                // По имени
+                int name = string.Compare(a.item.itemName, b.item.itemName,
+                    System.StringComparison.Ordinal);
+                if (name != 0) return name;
+
+                // По весу (тяжёлые первыми)
+                return b.item.weight.CompareTo(a.item.weight);
+            }
+        }
+
+        private SortEntry[] _sortEntries;
+        private PlayerInventory.ItemPlacement[] _sortBuffer;
+
+        private int AnchorIndex(int x, int y) => y * _grid.Columns + x;
+        private void NotifyInventoryChanged()
+        {
+            InventoryChanged?.Invoke();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  SNAPSHOT FOR UI (zero-mutation read)
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Описывает один предмет, размещённый в сетке.
+        /// Координаты — якорная (верхняя-левая) ячейка.
+        /// </summary>
+        public struct ItemPlacement
+        {
+            public ItemData item;
+            public int x;
+            public int y;
+            public int stackCount;
+        }
+
+        /// <summary>
+        /// Заполняет буфер якорными размещениями предметов.
+        /// Не мутирует сетку. Zero GC если буфер достаточного размера.
+        /// </summary>
+        /// <param name="buffer">Pre-allocated массив. Рекомендуемый размер: columns * rows.</param>
+        /// <returns>Количество записанных элементов.</returns>
+        public int GetPlacements(ItemPlacement[] buffer)
+        {
+            if (buffer == null || _grid == null) return 0;
+
+            int cols = _grid.Columns;
+            int rws = _grid.Rows;
+
+            EnsureSaveDrawn(cols, rws);
+            System.Array.Clear(_saveDrawn, 0, _saveDrawn.Length);
+
+            int count = 0;
+
+            for (int y = 0; y < rws; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    if (_saveDrawn[x, y]) continue;
+
+                    ItemData item = _grid.GetCell(x, y);
+                    if (item == null) continue;
+
+                    int endX = Mathf.Min(x + item.width, cols);
+                    int endY = Mathf.Min(y + item.height, rws);
+                    for (int iy = y; iy < endY; iy++)
+                        for (int ix = x; ix < endX; ix++)
+                            _saveDrawn[ix, iy] = true;
+
+                    if (count < buffer.Length)
+                    {
+                        int idx = AnchorIndex(x, y);
+                        buffer[count++] = new ItemPlacement
+                        {
+                            item = item,
+                            x = x,
+                            y = y,
+                            stackCount = Mathf.Max(1, _stackCounts[idx])
+                        };
+                    }
+                }
+            }
+
+            return count;
         }
     }
 }

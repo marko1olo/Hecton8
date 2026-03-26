@@ -568,11 +568,11 @@ namespace Crest
                 return false;
             }
 
-            // Only use for scene and game preview cameras.
-            if (camera.cameraType != CameraType.SceneView)
-            {
+            // Project override:
+            // Scene View should stay readable above water and should not inherit
+            // editor-only underwater post from Crest. Keep Game cameras untouched.
+            if (camera.cameraType == CameraType.SceneView)
                 return false;
-            }
 
             return true;
         }

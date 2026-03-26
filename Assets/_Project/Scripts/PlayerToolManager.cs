@@ -24,6 +24,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using System;
     using Hecton8.Core;
     using Hecton8.Inventory;
     using Hecton8.Items;
@@ -95,6 +96,8 @@ namespace Hecton8.Gameplay
         private Vector3 _anchorLoweredPosition;
         private InputManager _subscribedInputManager;
 
+        public event Action<int> ActiveSlotChanged;
+
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE
         // ══════════════════════════════════════════════════════════
@@ -137,12 +140,18 @@ namespace Hecton8.Gameplay
         {
             GameTickManager.Instance?.Register((ITickable)this);
             RefreshInputSubscriptions();
+
+            if (playerInventory != null)
+                playerInventory.InventoryChanged += HandleInventoryChanged;
         }
 
         private void OnDisable()
         {
             GameTickManager.Instance?.Unregister((ITickable)this);
             UnsubscribeFromInputManager();
+
+            if (playerInventory != null)
+                playerInventory.InventoryChanged -= HandleInventoryChanged;
 
             // Деспавним текущий инструмент при отключении менеджера
             DespawnCurrentTool();
@@ -258,6 +267,25 @@ namespace Hecton8.Gameplay
         /// <summary>Идёт ли сейчас анимация смены инструмента.</summary>
         public bool IsSwapping => _swapState != SwapState.Idle;
 
+        public int SlotCount => toolPrefabs != null ? toolPrefabs.Length : 0;
+
+        public GameObject GetAssignedToolPrefab(int slotIndex)
+        {
+            if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
+                return null;
+
+            return toolPrefabs[slotIndex];
+        }
+
+        public bool IsToolAvailableInSlot(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= SlotCount)
+                return false;
+
+            GameObject prefab = toolPrefabs[slotIndex];
+            return prefab != null && HasToolInInventory(prefab);
+        }
+
         // ProcessSlotInput and GetSlotKey removed — handled via events
 
         // ══════════════════════════════════════════════════════════
@@ -364,6 +392,7 @@ namespace Hecton8.Gameplay
 
             _currentSlotIndex = _pendingSlotIndex;
             _pendingSlotIndex = -1;
+            ActiveSlotChanged?.Invoke(_currentSlotIndex);
 
             // Если спавнили новый — запускаем анимацию подъёма
             if (_currentTool != null)
@@ -527,6 +556,7 @@ namespace Hecton8.Gameplay
             }
 
             _currentSlotIndex = -1;
+            ActiveSlotChanged?.Invoke(_currentSlotIndex);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -577,6 +607,18 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        private void HandleInventoryChanged()
+        {
+            if (_currentSlotIndex < 0 || _swapState != SwapState.Idle)
+                return;
+
+            GameObject currentPrefab = GetAssignedToolPrefab(_currentSlotIndex);
+            if (currentPrefab == null || HasToolInInventory(currentPrefab))
+                return;
+
+            Holster();
         }
     }
 }

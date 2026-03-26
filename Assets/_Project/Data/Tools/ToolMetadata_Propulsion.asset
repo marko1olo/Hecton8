@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08bf591172857124b9c2b86356d84407, type: 3}
+  m_Name: ToolMetadata_Propulsion
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Tools.ToolMetadata
+  toolID: tool_propulsion
+  tier: 1
+  category: 0
+  maxDurability: 950
+  durabilityDrainRate: 1.2
+  durabilityDrainRateSecondary: 0.8
+  criticalDurabilityThreshold: 20
+  efficiency: 1
+  speed: 1
+  energyConsumptionRate: 2
+  maxUpgradeSlots: 2
+  installedUpgrades:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  repairCostFull: 11
+  repairResourceID: titanium
+  nameLocKey: TOOL_PROPULSION_NAME
+  descriptionLocKey: TOOL_PROPULSION_DESC

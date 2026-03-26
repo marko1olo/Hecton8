@@ -2499,6 +2499,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.UI.SuitHUDV4CanvasOverlay
   targetCanvas: {fileID: 7915165240633007945}
   uiFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
+  labelFont: {fileID: 11400000, guid: b044c82a00dac654f932b348b6b9516d, type: 2}
+  numericFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
   survival: {fileID: 0}
   playerMovement: {fileID: 0}
   flashlight: {fileID: 0}
