@@ -3,6 +3,7 @@ using Hecton8.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
@@ -14,6 +15,15 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Controls Rebind UI")]
     public sealed class PDAControlsRebindUI : MonoBehaviour
     {
+        private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.8f);
+        private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.18f);
+        private static readonly Color RowBg = new Color(0.05f, 0.12f, 0.14f, 0.62f);
+        private static readonly Color BindingBg = new Color(0.08f, 0.18f, 0.2f, 0.75f);
+        private static readonly Color LabelColor = new Color(0.8f, 0.95f, 0.92f, 0.92f);
+        private static readonly Color BindingColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
+        private static readonly Color HintColor = new Color(0.58f, 0.78f, 0.74f, 0.72f);
+        private static readonly Color SelectionColor = new Color(0.46f, 0.98f, 0.94f, 0.9f);
+
         [Serializable]
         public sealed class RebindRow
         {
@@ -42,6 +52,8 @@ namespace Hecton8.UI
         [Header("References")]
         [SerializeField] private PlayerPDA playerPda;
         [SerializeField] private TextMeshProUGUI statusText;
+        [SerializeField] private TMP_FontAsset labelFont;
+        [SerializeField] private TMP_FontAsset bindingFont;
 
         [Header("Settings")]
         [Tooltip("PDA tab index where controls panel is shown.")]
@@ -64,6 +76,7 @@ namespace Hecton8.UI
         [SerializeField] private string rebindingPrefix = "Press a key...";
         [SerializeField] private string resetHint = "TabNext = reset selected, TabPrevious = reset all";
 
+        private bool _built;
         private int _selectedIndex;
         private bool _subscribed;
 
@@ -81,8 +94,14 @@ namespace Hecton8.UI
                 playerPda = GetComponentInParent<PlayerPDA>();
             }
 
+            if (labelFont == null)
+                labelFont = TMP_Settings.defaultFontAsset;
+            if (bindingFont == null)
+                bindingFont = labelFont;
+
             if (rows == null) rows = Array.Empty<RebindRow>();
             EnsureRowsConfigured();
+            EnsureBuilt();
             if (autoResolveRowReferences)
             {
                 ResolveRowReferencesByName();
@@ -276,10 +295,128 @@ namespace Hecton8.UI
 
         private void RefreshAll()
         {
+            EnsureBuilt();
             RefreshLabels();
             RefreshSelectionVisuals();
             RefreshAllBindings();
             UpdateStatusForSelected();
+        }
+
+        private void EnsureBuilt()
+        {
+            if (_built) return;
+
+            RectTransform self = transform as RectTransform;
+            if (self == null) return;
+
+            if (rows == null || rows.Length == 0)
+                return;
+
+            bool alreadyHasRowRefs = true;
+            for (int i = 0; i < rows.Length; i++)
+            {
+                if (rows[i] == null ||
+                    rows[i].labelText == null ||
+                    rows[i].bindingText == null ||
+                    rows[i].selectedIndicator == null)
+                {
+                    alreadyHasRowRefs = false;
+                    break;
+                }
+            }
+
+            if (alreadyHasRowRefs && statusText != null)
+            {
+                _built = true;
+                return;
+            }
+
+            ClearChildren(self);
+
+            Image bg = EnsureImage(self.gameObject);
+            bg.color = PanelBg;
+            bg.raycastTarget = false;
+
+            CreateRule(self, new Vector2(0.08f, 1f), new Vector2(0.92f, 1f), -52f);
+
+            TextMeshProUGUI title = CreateText(self, "Title", labelFont, 18f, FontStyles.Bold, TextAlignmentOptions.Left);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(18f, -18f), new Vector2(-18f, 24f));
+            title.color = BindingColor;
+            title.SetText("CONTROL MATRIX");
+
+            TextMeshProUGUI hint = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Right);
+            Anchor(hint.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(18f, -18f), new Vector2(-18f, 24f));
+            hint.color = HintColor;
+            hint.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+
+            RectTransform listRoot = CreateRect(self, "Rows");
+            Anchor(listRoot, new Vector2(0f, 0f), new Vector2(1f, 1f),
+                new Vector2(18f, 72f), new Vector2(-18f, -72f));
+
+            const float rowHeight = 30f;
+            const float rowGap = 6f;
+            float totalHeight = rows.Length * rowHeight + Mathf.Max(0, rows.Length - 1) * rowGap;
+            float startY = -Mathf.Max(0f, (listRoot.rect.height - totalHeight) * 0.5f);
+
+            for (int i = 0; i < rows.Length; i++)
+            {
+                RebindRow row = rows[i];
+                if (row == null)
+                    continue;
+
+                RectTransform rowRoot = CreateRect(listRoot, $"Row_{row.actionName}");
+                Anchor(rowRoot, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                    new Vector2(0f, startY - i * (rowHeight + rowGap)),
+                    new Vector2(0f, rowHeight));
+
+                Image rowBg = EnsureImage(rowRoot.gameObject);
+                rowBg.color = RowBg;
+                rowBg.raycastTarget = false;
+
+                RectTransform selected = CreateRect(rowRoot, $"Selected_{row.actionName}");
+                Anchor(selected, new Vector2(0f, 0f), new Vector2(0f, 1f),
+                    new Vector2(0f, 0f), new Vector2(3f, 0f));
+                Image selImg = EnsureImage(selected.gameObject);
+                selImg.color = SelectionColor;
+                selImg.raycastTarget = false;
+
+                TextMeshProUGUI label = CreateText(rowRoot, $"Label_{row.actionName}",
+                    labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
+                Anchor(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.55f, 1f),
+                    new Vector2(14f, 0f), new Vector2(-12f, 0f));
+                label.color = LabelColor;
+
+                RectTransform bindingBox = CreateRect(rowRoot, $"BindingBox_{row.actionName}");
+                Anchor(bindingBox, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                    new Vector2(-12f, 0f), new Vector2(164f, 22f));
+                Image bindingBg = EnsureImage(bindingBox.gameObject);
+                bindingBg.color = BindingBg;
+                bindingBg.raycastTarget = false;
+
+                TextMeshProUGUI binding = CreateText(bindingBox, $"Binding_{row.actionName}",
+                    bindingFont, 11.5f, FontStyles.Bold, TextAlignmentOptions.Center);
+                Stretch(binding.rectTransform, 0f, 0f, 0f, 0f);
+                binding.color = BindingColor;
+
+                row.labelText = label;
+                row.bindingText = binding;
+                row.selectedIndicator = selected.gameObject;
+            }
+
+            RectTransform statusRoot = CreateRect(self, "Status");
+            Anchor(statusRoot, new Vector2(0f, 0f), new Vector2(1f, 0f),
+                new Vector2(18f, 18f), new Vector2(-18f, 36f));
+            Image statusBg = EnsureImage(statusRoot.gameObject);
+            statusBg.color = new Color(0.05f, 0.1f, 0.12f, 0.82f);
+            statusBg.raycastTarget = false;
+
+            statusText = CreateText(statusRoot, "StatusText", labelFont, 11f, FontStyles.Normal, TextAlignmentOptions.Left);
+            Stretch(statusText.rectTransform, 12f, 0f, 12f, 0f);
+            statusText.color = HintColor;
+
+            _built = true;
         }
 
         private void EnsureRowsConfigured()
@@ -457,6 +594,86 @@ namespace Hecton8.UI
             playerPda = pda;
             statusText = statusOutput;
             controlsTabIndex = tabIndex;
+        }
+
+        private static void ClearChildren(Transform parent)
+        {
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (Application.isPlaying)
+                    Destroy(child.gameObject);
+                else
+                    DestroyImmediate(child.gameObject);
+            }
+        }
+
+        private static RectTransform CreateRect(Transform parent, string name)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.layer = parent.gameObject.layer;
+            RectTransform rect = go.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.localScale = Vector3.one;
+            return rect;
+        }
+
+        private static Image EnsureImage(GameObject target)
+        {
+            Image image = target.GetComponent<Image>();
+            if (image == null)
+                image = target.AddComponent<Image>();
+            return image;
+        }
+
+        private static TextMeshProUGUI CreateText(Transform parent, string name, TMP_FontAsset font,
+            float size, FontStyles style, TextAlignmentOptions alignment)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.layer = parent.gameObject.layer;
+            RectTransform rect = go.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.localScale = Vector3.one;
+
+            TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
+            text.font = font;
+            text.fontSize = size;
+            text.fontStyle = style;
+            text.alignment = alignment;
+            text.raycastTarget = false;
+            text.enableWordWrapping = false;
+            return text;
+        }
+
+        private static void Anchor(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax,
+            Vector2 anchoredPosition, Vector2 size)
+        {
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = new Vector2((anchorMin.x + anchorMax.x) * 0.5f, (anchorMin.y + anchorMax.y) * 0.5f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+        }
+
+        private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
+        {
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static void CreateRule(RectTransform parent, Vector2 anchorMin, Vector2 anchorMax, float y)
+        {
+            RectTransform rect = CreateRect(parent, "Rule");
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            rect.sizeDelta = new Vector2(0f, 1f);
+            Image img = EnsureImage(rect.gameObject);
+            img.color = RuleColor;
+            img.raycastTarget = false;
         }
     }
 }

@@ -1,40 +1,36 @@
 // ============================================================================
-// HECTON-8 — HectonBiolumMaster.shader  (v2 — Vertex-Stage Optimized)
+// HECTON-8 — HectonBiolumMaster.shader  (v3 — LOD + Optimized)
 // Мастер-шейдер биолюминесценции для подводной флоры и фауны.
 //
-// АРХИТЕКТУРА v2:
+// АРХИТЕКТУРА v3:
 //   • URP Lit (PBR) с полной поддержкой Normal Map и Metallic/Smoothness.
 //   • HDR Emission: пульсация, proximity, digital flicker — ВСЁ в Vertex Stage.
 //   • Результат передаётся как single half emissionFactor : TEXCOORD8.
 //   • Fragment только умножает emissionFactor × emissionMask из текстуры.
 //   • NASA-Punk цифровое мерцание через step + дешёвый frac-hash (без sin).
 //
-// ОПТИМИЗАЦИИ (MX350, 20-30% экономия GPU):
-//   1. Emission ALU перенесён из Fragment (~25 ALU) в Vertex (~12 ALU).
-//      Fragment emission cost: 1 MUL. Экономия ~20 ALU на пиксель.
-//   2. FastHash заменён на frac-based pseudo-random (без sin трансцендентной).
-//      Стоимость: 2 ALU (frac, mul) вместо 3 ALU (sin, mul, frac).
-//   3. Proximity: distance вычисляется в Vertex (per-vertex vs per-pixel).
-//      На mesh с 500 tri / 250k пикселей — экономия ~249k distance ops.
-//   4. ReactionMode: if-branching в Vertex (почти бесплатно vs Fragment).
-//   5. half precision везде где возможно — критично для MX350 register throughput.
-//   6. ShadowCaster / DepthOnly — нулевая emission логика, минимальный ALU.
+// ОПТИМИЗАЦИИ v3 (поверх v2):
+//   1. _LODLevel float (0=High, 1=Med, 2=Low) вместо keyword variants.
+//      Один вариант шейдера, LOD branching в Vertex (почти бесплатно).
+//      Low: ~3 ALU (static emission). Med: ~8 ALU (no flicker). High: ~12 ALU (full).
+//   2. _PlayerPos.w validity flag — proximity skipped if C# не выставил позицию.
+//   3. DepthNormals: encoded normals (×0.5+0.5) для корректного SSAO.
+//   4. MetaInput zero-init для safety.
+//   5. half precision everywhere — критично для MX350 register throughput.
 //
-// EMISSION FORMULA (computed in Vertex):
-//   pulsation  = saturate(sin(time × speed + worldPos.xz × desync) × amp + offset)
-//   flicker    = lerp(flickerDip, 1.0, step(threshold, fracHash(time, worldPos)))
-//   proximity  = mode-dependent smoothstep reaction
-//   emissionFactor = intensity × pulsation × flicker × proximity
+// LOD TIERS:
+//   High (_LODLevel=0): Full pulsation + flicker + proximity. ~12 ALU vertex.
+//   Med  (_LODLevel=1): Pulsation + proximity, no flicker.   ~8  ALU vertex.
+//   Low  (_LODLevel=2): Static average emission.              ~3  ALU vertex.
 //
-// Fragment:
-//   emission = emissionMask(from texture A) × emissionColor × emissionFactor
-//
-// ESTIMATED COST v2:
-//   Vertex:   ~18 ALU (standard URP Lit transforms + emission compute)
-//   Fragment: ~12 ALU (PBR + 1 MUL emission blend)
-//   Textures: 3 samples (base + normal + metallic)
-//   Total per object: ~0.003ms on MX350
-//   500 objects: ~1.5ms (40% improvement vs v1)
+// ESTIMATED COST v3:
+//   Vertex (High): ~18 ALU (URP transforms + full emission)
+//   Vertex (Low):  ~9  ALU (URP transforms + static emission)
+//   Fragment:      ~12 ALU (PBR + 1 MUL emission blend)
+//   Textures:      3 samples (base + normal + metallic)
+//   Total per object (High): ~0.003ms on MX350
+//   Total per object (Low):  ~0.002ms on MX350
+//   500 objects (mixed LOD):  ~1.1ms (55% improvement vs v1)
 // ============================================================================
 
 Shader "Hecton8/BiolumMaster"
@@ -82,6 +78,14 @@ Shader "Hecton8/BiolumMaster"
 
         [Enum(Fear, 0, Aggro, 1, Neutral, 2)]
         _ReactionMode ("Reaction Mode", Float) = 0
+
+        // ═══════════════════════════════════════════════════════
+        //  LOD
+        // ═══════════════════════════════════════════════════════
+
+        [Header(LOD)]
+        [Tooltip("0 = High (full effects), 1 = Med (no flicker), 2 = Low (static emission)")]
+        _LODLevel ("LOD Level", Range(0, 2)) = 0
 
         // ═══════════════════════════════════════════════════════
         //  RENDERING
@@ -178,6 +182,9 @@ Shader "Hecton8/BiolumMaster"
                 half   _ReactionIntensity;
                 half   _ReactionMode;
 
+                // LOD
+                half   _LODLevel;
+
                 // Alpha
                 half   _Cutoff;
             CBUFFER_END
@@ -188,7 +195,8 @@ Shader "Hecton8/BiolumMaster"
             TEXTURE2D(_MetallicGlossMap); SAMPLER(sampler_MetallicGlossMap);
 
             // ── Global uniform: player position ──
-            // Set from C# via Shader.SetGlobalVector("_PlayerPos", ...)
+            // Set from C# via Shader.SetGlobalVector("_PlayerPos", vec4(x,y,z,1))
+            // w component: 1.0 = valid position, 0.0 = not set (skip proximity)
             float4 _PlayerPos;
 
             // ══════════════════════════════════════════════════
@@ -231,7 +239,6 @@ Shader "Hecton8/BiolumMaster"
 
             /// Cheap frac-based pseudo-random. Returns [0..1].
             /// Cost: 2 ALU (mul, frac). No transcendentals.
-            /// Uses large primes for good distribution.
             half CheapHash(half x)
             {
                 return frac(x * 127.7731h + 58.5453h);
@@ -244,16 +251,58 @@ Shader "Hecton8/BiolumMaster"
                 return frac((a * 61.7731h + b * 173.2389h) * 43.3747h);
             }
 
-            /// Computes FULL emission factor in vertex shader.
-            /// Combines: pulsation × flicker × proximity × intensity.
-            /// Fragment just multiplies this by texture mask.
+            /// Computes proximity reaction factor.
+            /// Extracted for clarity and LOD gating.
+            /// Cost: ~4 ALU (sub, dot, sqrt, smoothstep) + branch
+            half ComputeProximityFactor(float3 worldPos)
+            {
+                // Skip if player position not published from C#
+                if (_PlayerPos.w < 0.5)
+                    return 1.0h;
+
+                int mode = (int)(_ReactionMode + 0.5h);
+
+                // Neutral mode: no reaction
+                if (mode == 2)
+                    return 1.0h;
+
+                float3 delta = worldPos - _PlayerPos.xyz;
+                half dist = (half)sqrt(dot(delta, delta));
+
+                half innerEdge = _ReactionDistance * _ReactionFalloff;
+                half outerEdge = _ReactionDistance;
+
+                // closeness: 1.0 at innerEdge, 0.0 at outerEdge+
+                half closeness = 1.0h - smoothstep(innerEdge, outerEdge, dist);
+
+                // Fear (mode 0): dims when player is close
+                if (mode == 0)
+                    return saturate(1.0h - closeness * _ReactionIntensity);
+
+                // Aggro (mode 1): brightens when player is close
+                return saturate(1.0h + closeness * _ReactionIntensity);
+            }
+
+            /// Computes FULL emission factor in vertex shader with LOD tiers.
             ///
-            /// Cost: ~12 ALU total (sin, frac-hash, step, smoothstep, branch).
+            /// LOD 0 (High): Full pulsation + flicker + proximity. ~12 ALU.
+            /// LOD 1 (Med):  Pulsation + proximity, no flicker.   ~8  ALU.
+            /// LOD 2 (Low):  Static average emission.             ~3  ALU.
+            ///
+            /// Fragment just multiplies result by texture mask.
             half ComputeEmissionFactorVertex(float3 worldPos, float time)
             {
                 // ────────────────────────────────────────────
+                //  LOD LOW: static average emission
+                //  Cost: 1 MUL. Skip everything else.
+                // ────────────────────────────────────────────
+                if (_LODLevel > 1.5h)
+                    return _EmissionIntensity * _PulseOffset;
+
+                // ────────────────────────────────────────────
                 //  1. PULSATION: sin wave with world desync
                 //     Cost: ~4 ALU (mad, sin, mad, saturate)
+                //     Used by both High and Med
                 // ────────────────────────────────────────────
                 half phase = (half)time * _PulseSpeed
                            + (half)worldPos.x * _DesyncScale
@@ -262,55 +311,35 @@ Shader "Hecton8/BiolumMaster"
                 half pulsation = saturate(sin(phase) * _PulseAmplitude + _PulseOffset);
 
                 // ────────────────────────────────────────────
-                //  2. NASA-PUNK DIGITAL FLICKER
+                //  2. NASA-PUNK DIGITAL FLICKER (High only)
                 //     Sharp on/off via step + cheap frac hash.
                 //     Emulates unstable bioluminescent cells
-                //     that cut out for 1-2 frames (digital glitch).
+                //     that cut out for 1-2 frames.
                 //     Cost: ~4 ALU (mad, frac-hash, step, lerp)
+                //     Skipped entirely on Med/Low.
                 // ────────────────────────────────────────────
-                half worldSeed = (half)worldPos.x * 7.13h + (half)worldPos.z * 13.7h;
-                half flickerInput = (half)time * _FlickerSpeed + worldSeed;
+                half flicker = 1.0h;
 
-                // Multi-octave frac hash for less patterned flicker
-                half noise = CheapHash2(flickerInput, worldSeed);
-
-                // step: 1.0 when noise >= threshold (normal), 0.0 when below (glitch frame)
-                half isNormal = step(_FlickerThreshold, noise);
-
-                // During glitch: drop to _FlickerIntensity (e.g. 0.15)
-                // During normal: full brightness 1.0
-                half flicker = lerp(_FlickerIntensity, 1.0h, isNormal);
-
-                // ────────────────────────────────────────────
-                //  3. PROXIMITY REACTION (per-vertex distance)
-                //     Branching in VS is nearly free.
-                //     Cost: ~4 ALU (sub, dot, sqrt, smoothstep) + branch
-                // ────────────────────────────────────────────
-                half proximity = 1.0h;
-
-                // Round to int for clean branching
-                int mode = (int)(_ReactionMode + 0.5h);
-
-                if (mode != 2) // Skip entirely for Neutral — zero cost
+                if (_LODLevel < 0.5h) // High only
                 {
-                    float3 delta = worldPos - _PlayerPos.xyz;
-                    half dist = (half)sqrt(dot(delta, delta));
+                    half worldSeed = (half)worldPos.x * 7.13h + (half)worldPos.z * 13.7h;
+                    half flickerInput = (half)time * _FlickerSpeed + worldSeed;
 
-                    half innerEdge = _ReactionDistance * _ReactionFalloff;
-                    half outerEdge = _ReactionDistance;
+                    // Multi-octave frac hash for less patterned flicker
+                    half noise = CheapHash2(flickerInput, worldSeed);
 
-                    // closeness: 1.0 at innerEdge, 0.0 at outerEdge+
-                    half closeness = 1.0h - smoothstep(innerEdge, outerEdge, dist);
+                    // step: 1.0 when noise >= threshold, 0.0 when below (glitch)
+                    half isNormal = step(_FlickerThreshold, noise);
 
-                    if (mode == 0) // Fear: dims when player is close
-                    {
-                        proximity = saturate(1.0h - closeness * _ReactionIntensity);
-                    }
-                    else // mode == 1, Aggro: brightens when player is close
-                    {
-                        proximity = saturate(1.0h + closeness * _ReactionIntensity);
-                    }
+                    // During glitch: drop to _FlickerIntensity (e.g. 0.15)
+                    flicker = lerp(_FlickerIntensity, 1.0h, isNormal);
                 }
+
+                // ────────────────────────────────────────────
+                //  3. PROXIMITY REACTION (High and Med)
+                //     Per-vertex distance. Branching in VS free.
+                // ────────────────────────────────────────────
+                half proximity = ComputeProximityFactor(worldPos);
 
                 // ────────────────────────────────────────────
                 //  4. COMBINE: single scalar for Fragment
@@ -355,7 +384,7 @@ Shader "Hecton8/BiolumMaster"
 
             // ══════════════════════════════════════════════════
             //  FRAGMENT SHADER
-            //  Emission cost: 1 texture read (already done) + 1 MUL + 1 MUL
+            //  Emission cost: 1 texture read (already done) + 1 MUL
             // ══════════════════════════════════════════════════
 
             half4 LitPassFragment(Varyings input) : SV_Target
@@ -412,25 +441,25 @@ Shader "Hecton8/BiolumMaster"
                 //  PBR LIGHTING (URP Standard)
                 // ════════════════════════════════════════════
 
-                SurfaceData surfaceData        = (SurfaceData)0;
-                surfaceData.albedo             = albedo;
-                surfaceData.metallic           = metallic;
-                surfaceData.smoothness         = smoothness;
-                surfaceData.normalTS           = normalTS;
-                surfaceData.emission           = emission;
-                surfaceData.occlusion          = 1.0h;
-                surfaceData.alpha              = 1.0h;
-                surfaceData.specular           = half3(0.0h, 0.0h, 0.0h);
-                surfaceData.clearCoatMask      = 0.0h;
-                surfaceData.clearCoatSmoothness = 0.0h;
+                SurfaceData surfaceData             = (SurfaceData)0;
+                surfaceData.albedo                  = albedo;
+                surfaceData.metallic                = metallic;
+                surfaceData.smoothness              = smoothness;
+                surfaceData.normalTS                = normalTS;
+                surfaceData.emission                = emission;
+                surfaceData.occlusion               = 1.0h;
+                surfaceData.alpha                   = 1.0h;
+                surfaceData.specular                = half3(0.0h, 0.0h, 0.0h);
+                surfaceData.clearCoatMask           = 0.0h;
+                surfaceData.clearCoatSmoothness     = 0.0h;
 
-                InputData inputData                   = (InputData)0;
-                inputData.positionWS                  = input.positionWS;
-                inputData.positionCS                  = input.positionCS;
-                inputData.normalWS                    = normalWS;
-                inputData.viewDirectionWS             = normalize(input.viewDirWS);
-                inputData.fogCoord                    = input.fogFactor;
-                inputData.normalizedScreenSpaceUV     = GetNormalizedScreenSpaceUV(input.positionCS);
+                InputData inputData                 = (InputData)0;
+                inputData.positionWS                = input.positionWS;
+                inputData.positionCS                = input.positionCS;
+                inputData.normalWS                  = normalWS;
+                inputData.viewDirectionWS           = normalize(input.viewDirWS);
+                inputData.fogCoord                  = input.fogFactor;
+                inputData.normalizedScreenSpaceUV   = GetNormalizedScreenSpaceUV(input.positionCS);
 
                 #if defined(_MAIN_LIGHT_SHADOWS) || defined(_MAIN_LIGHT_SHADOWS_CASCADE)
                     inputData.shadowCoord = input.shadowCoord;
@@ -495,6 +524,7 @@ Shader "Hecton8/BiolumMaster"
                 half   _ReactionFalloff;
                 half   _ReactionIntensity;
                 half   _ReactionMode;
+                half   _LODLevel;
                 half   _Cutoff;
             CBUFFER_END
 
@@ -599,6 +629,7 @@ Shader "Hecton8/BiolumMaster"
                 half   _ReactionFalloff;
                 half   _ReactionIntensity;
                 half   _ReactionMode;
+                half   _LODLevel;
                 half   _Cutoff;
             CBUFFER_END
 
@@ -687,6 +718,7 @@ Shader "Hecton8/BiolumMaster"
                 half   _ReactionFalloff;
                 half   _ReactionIntensity;
                 half   _ReactionMode;
+                half   _LODLevel;
                 half   _Cutoff;
             CBUFFER_END
 
@@ -757,7 +789,9 @@ Shader "Hecton8/BiolumMaster"
                 }
                 #endif
 
-                return half4(normalWS, 0.0h);
+                // Encode world normal for SSAO compatibility
+                // URP DepthNormals expects [0..1] encoded normals in some versions
+                return half4(normalWS * 0.5h + 0.5h, 0.0h);
             }
 
             ENDHLSL
@@ -802,6 +836,7 @@ Shader "Hecton8/BiolumMaster"
                 half   _ReactionFalloff;
                 half   _ReactionIntensity;
                 half   _ReactionMode;
+                half   _LODLevel;
                 half   _Cutoff;
             CBUFFER_END
 
@@ -844,9 +879,9 @@ Shader "Hecton8/BiolumMaster"
                 half3 emission = _EmissionColor.rgb * mask
                                * _EmissionIntensity * _PulseOffset;
 
-                MetaInput metaInput;
-                metaInput.Albedo   = albedo;
-                metaInput.Emission = emission;
+                MetaInput metaInput = (MetaInput)0;
+                metaInput.Albedo    = albedo;
+                metaInput.Emission  = emission;
 
                 return UnityMetaFragment(metaInput);
             }

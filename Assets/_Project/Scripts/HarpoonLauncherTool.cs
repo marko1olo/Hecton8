@@ -5,6 +5,8 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class HarpoonLauncherTool : PlayerTool
     {
+        private static Material s_tracerMaterial;
+
         [Header("Harpoon")]
         [SerializeField] private float range = 36f;
         [SerializeField] private float damage = 42f;
@@ -25,6 +27,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+            EnsureTracer();
             SetTracer(false, Vector3.zero);
         }
 
@@ -115,6 +118,45 @@ namespace Hecton8.Gameplay
 
             tracer.SetPosition(0, Vector3.zero);
             tracer.SetPosition(1, _cachedTransform.InverseTransformPoint(endPoint));
+        }
+
+        private void EnsureTracer()
+        {
+            if (tracer != null)
+                return;
+
+            GameObject tracerRoot = new GameObject("Tracer");
+            tracerRoot.transform.SetParent(transform, false);
+            tracerRoot.transform.localPosition = Vector3.zero;
+            tracerRoot.transform.localRotation = Quaternion.identity;
+
+            tracer = tracerRoot.AddComponent<LineRenderer>();
+            tracer.alignment = LineAlignment.View;
+            tracer.useWorldSpace = false;
+            tracer.positionCount = 2;
+            tracer.startWidth = 0.012f;
+            tracer.endWidth = 0.005f;
+            tracer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            tracer.receiveShadows = false;
+            tracer.textureMode = LineTextureMode.Stretch;
+            tracer.numCapVertices = 2;
+            tracer.sharedMaterial = GetTracerMaterial();
+            tracer.startColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
+            tracer.endColor = new Color(0.46f, 0.98f, 0.94f, 0.2f);
+            tracer.enabled = false;
+        }
+
+        private static Material GetTracerMaterial()
+        {
+            if (s_tracerMaterial != null)
+                return s_tracerMaterial;
+
+            Shader shader = Shader.Find("Sprites/Default");
+            if (shader == null)
+                shader = Shader.Find("Unlit/Color");
+
+            s_tracerMaterial = new Material(shader);
+            return s_tracerMaterial;
         }
     }
 }

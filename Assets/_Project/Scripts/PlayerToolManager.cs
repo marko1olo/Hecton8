@@ -61,6 +61,7 @@ namespace Hecton8.Gameplay
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugCurrentSlot = -1;
         [SerializeField] private string _debugStateName;
+        [SerializeField] private bool toolDebugLogging;
 
         // SlotKeys removed — handled by InputManager events
 
@@ -97,6 +98,7 @@ namespace Hecton8.Gameplay
         private InputManager _subscribedInputManager;
 
         public event Action<int> ActiveSlotChanged;
+        public event Action ToolAssignmentsChanged;
 
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE
@@ -277,6 +279,26 @@ namespace Hecton8.Gameplay
             return toolPrefabs[slotIndex];
         }
 
+        public bool SetAssignedToolPrefab(int slotIndex, GameObject prefab, bool holsterIfCurrentInvalid = true)
+        {
+            if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
+                return false;
+
+            if (ReferenceEquals(toolPrefabs[slotIndex], prefab))
+                return true;
+
+            toolPrefabs[slotIndex] = prefab;
+            ToolAssignmentsChanged?.Invoke();
+
+            if (!holsterIfCurrentInvalid || slotIndex != _currentSlotIndex)
+                return true;
+
+            if (prefab == null || !HasToolInInventory(prefab))
+                Holster();
+
+            return true;
+        }
+
         public bool IsToolAvailableInSlot(int slotIndex)
         {
             if (slotIndex < 0 || slotIndex >= SlotCount)
@@ -329,6 +351,10 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void RequestSwap(int newSlotIndex)
         {
+            LogToolDebug(
+                $"RequestSwap new={newSlotIndex} current={_currentSlotIndex} pending={_pendingSlotIndex} " +
+                $"state={_swapState} hasCurrent={_currentTool != null}");
+
             // Уже на этом слоте и не holster
             if (newSlotIndex == _currentSlotIndex)
                 return;
@@ -339,6 +365,7 @@ namespace Hecton8.Gameplay
                 GameObject prefab = toolPrefabs[newSlotIndex];
                 if (prefab == null)
                 {
+                    LogToolDebug($"RequestSwap abort: slot {newSlotIndex} prefab null");
                     Debug.LogWarning(
                         $"[PlayerToolManager] Slot {newSlotIndex + 1}: no prefab assigned.");
                     return;
@@ -347,6 +374,7 @@ namespace Hecton8.Gameplay
                 // Проверяем ItemData на префабе
                 if (!HasToolInInventory(prefab))
                 {
+                    LogToolDebug($"RequestSwap abort: slot {newSlotIndex} missing in inventory ({prefab.name})");
                     Debug.Log(
                         $"[PlayerToolManager] Slot {newSlotIndex + 1}: " +
                         "tool not found in inventory.");
@@ -359,12 +387,14 @@ namespace Hecton8.Gameplay
             // Если есть текущий инструмент — опускаем сначала
             if (_currentTool != null)
             {
+                LogToolDebug($"RequestSwap lowering current tool {_currentTool.GetType().Name}");
                 _swapState    = SwapState.Lowering;
                 _swapProgress = 0f;
             }
             else
             {
                 // Нет текущего — сразу спавним
+                LogToolDebug("RequestSwap performing immediate swap");
                 PerformSwap();
             }
         }
@@ -376,6 +406,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void PerformSwap()
         {
+            LogToolDebug(
+                $"PerformSwap begin pending={_pendingSlotIndex} current={_currentSlotIndex} " +
+                $"currentTool={(_currentTool != null ? _currentTool.GetType().Name : "null")}");
             // ── Деспавн текущего ──
             DespawnCurrentTool();
 
@@ -386,17 +419,22 @@ namespace Hecton8.Gameplay
 
                 if (prefab != null && handAnchor != null)
                 {
+                    LogToolDebug($"PerformSwap spawning slot={_pendingSlotIndex} prefab={prefab.name}");
                     SpawnNewTool(prefab, _pendingSlotIndex);
                 }
             }
 
             _currentSlotIndex = _pendingSlotIndex;
             _pendingSlotIndex = -1;
+            LogToolDebug(
+                $"PerformSwap assigned currentSlot={_currentSlotIndex} currentTool=" +
+                $"{(_currentTool != null ? _currentTool.GetType().Name : "null")}");
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
 
             // Если спавнили новый — запускаем анимацию подъёма
             if (_currentTool != null)
             {
+                LogToolDebug($"PerformSwap raising {_currentTool.GetType().Name}");
                 _swapState    = SwapState.Raising;
                 _swapProgress = 0f;
 
@@ -407,6 +445,7 @@ namespace Hecton8.Gameplay
             else
             {
                 // Holster — возвращаем anchor в нормальную позицию
+                LogToolDebug("PerformSwap completed with no current tool");
                 _swapState = SwapState.Idle;
                 if (handAnchor != null)
                     handAnchor.localPosition = _anchorRestPosition;
@@ -489,6 +528,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void SpawnNewTool(GameObject prefab, int slotIndex)
         {
+            LogToolDebug($"SpawnNewTool begin slot={slotIndex} prefab={prefab.name}");
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null)
             {
@@ -504,6 +544,7 @@ namespace Hecton8.Gameplay
 
             if (_currentInstance == null)
             {
+                LogToolDebug($"SpawnNewTool failed: pool returned null for {prefab.name}");
                 Debug.LogError(
                     $"[PlayerToolManager] Failed to spawn tool from slot {slotIndex + 1}.");
                 return;
@@ -518,7 +559,13 @@ namespace Hecton8.Gameplay
             if (_currentInstance.TryGetComponent(out PlayerTool tool))
             {
                 _currentTool = tool;
+                LogToolDebug(
+                    $"SpawnNewTool got instance={_currentInstance.name} tool={tool.GetType().Name} " +
+                    $"toolData={(tool.ToolData != null ? tool.ToolData.name : "null")}");
                 _currentTool.OnEquip();
+                LogToolDebug(
+                    $"SpawnNewTool after OnEquip instanceActive={_currentInstance.activeInHierarchy} " +
+                    $"toolEquipped={_currentTool.IsEquipped}");
             }
             else
             {
@@ -535,6 +582,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void DespawnCurrentTool()
         {
+            LogToolDebug(
+                $"DespawnCurrentTool begin currentTool={(_currentTool != null ? _currentTool.GetType().Name : "null")} " +
+                $"currentInstance={(_currentInstance != null ? _currentInstance.name : "null")} currentSlot={_currentSlotIndex}");
             if (_currentTool != null)
             {
                 _currentTool.OnUnequip();
@@ -556,6 +606,7 @@ namespace Hecton8.Gameplay
             }
 
             _currentSlotIndex = -1;
+            LogToolDebug("DespawnCurrentTool complete currentSlot=-1");
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
         }
 
@@ -618,7 +669,17 @@ namespace Hecton8.Gameplay
             if (currentPrefab == null || HasToolInInventory(currentPrefab))
                 return;
 
+            LogToolDebug(
+                $"HandleInventoryChanged holstering current slot {_currentSlotIndex} because assigned prefab missing from inventory");
             Holster();
+        }
+
+        private void LogToolDebug(string message)
+        {
+            if (!toolDebugLogging)
+                return;
+
+            Debug.Log($"[ToolMgr] {message}");
         }
     }
 }

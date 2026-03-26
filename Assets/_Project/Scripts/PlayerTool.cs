@@ -150,13 +150,16 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnSpawn()
         {
+            Debug.Log(
+                $"[ToolLifecycle] {GetType().Name}.OnSpawn data={(_toolData != null ? _toolData.name : "null")} " +
+                $"meta={(_toolMetadata != null ? _toolMetadata.name : "null")}");
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
 
             // Auto-resolve SurvivalSystem
             if (_survivalSystem == null && enableEnergyConsumption)
             {
-                _survivalSystem = FindObjectOfType<HectonSurvivalSystem>();
+                _survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
             }
         }
 
@@ -168,6 +171,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnDespawn()
         {
+            Debug.Log($"[ToolLifecycle] {GetType().Name}.OnDespawn equipped={IsEquipped}");
             // Если инструмент ещё экипирован — корректно снимаем
             if (IsEquipped)
             {
@@ -189,6 +193,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnEquip()
         {
+            Debug.Log(
+                $"[ToolLifecycle] {GetType().Name}.OnEquip data={(_toolData != null ? _toolData.name : "null")} " +
+                $"meta={(_toolMetadata != null ? _toolMetadata.name : "null")}");
             IsEquipped = true;
             _lowDurabilityWarningFired = false;
 
@@ -207,6 +214,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnUnequip()
         {
+            Debug.Log($"[ToolLifecycle] {GetType().Name}.OnUnequip");
             IsEquipped = false;
 
             // Unsubscribe from durability events

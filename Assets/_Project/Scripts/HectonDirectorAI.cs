@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — HectonDirectorAI.cs
+// HECTON-8 — HectonDirectorAI.cs  (v2 — Optimized)
 // AI Director системы темпа игры для Submerge.
 //
 // РОЛЬ:
@@ -10,39 +10,25 @@
 //     (кэшированные ссылки) + публикует decoupled-события для остальных систем.
 //   • Работает на ISlowTickable, без Update().
 //
+// ОПТИМИЗАЦИИ v2:
+//   • Instance-level predator buffer вместо static (safe multi-scene).
+//   • HashSet<Collider> registration — TryGetComponent убран из горячего цикла.
+//   • Ленивый resolve зависимостей — FindAnyObjectByType один раз.
+//   • SafeInvoke для event protection при scene transitions.
+//   • Единый WeightedRoll метод без копипасты.
+//   • Новые event types: WeatherShift, MissionTrigger.
+//   • Zero GC в горячем пути. Никаких new/List/LINQ в SlowTick.
+//
 // АВТОСОХРАНЕНИЕ:
 //   • При входе в фазу Relax — автосохранение через SaveManager.
-//   • Кулдаун: не чаще чем раз в autoSaveCooldownSeconds (по умолчанию 300с = 5 мин).
+//   • Кулдаун: не чаще чем раз в autoSaveCooldownSeconds (по умолчанию 300с).
 //   • Fire-and-forget: async Task запускается, но не await-ится в SlowTick.
-//     SaveManager обрабатывает ошибки внутри себя.
-//   • Не блокирует главный поток (snapshot <2ms, disk write — background).
-//
-// ЛОГИКА:
-//   TensionScore складывается из:
-//     1. Взвешенных дистанций до хищников (saturate(1 - dist/radius)).
-//     2. Низкого уровня O₂.
-//     3. Низкого уровня энергии.
-//     4. Времени, проведённого в спокойствии.
-//
-//   Фазы:
-//     • BuildUp — мягкое нагнетание, редкие находки / заманивание глубже.
-//     • Peak    — принудительное событие, если игроку слишком спокойно.
-//     • Relax   — отдых после пика, запрет на опасные события.
-//                 «Милость Директора»: раз в 30с при очень низком tension
-//                 выдаётся RareDiscovery для создания цикла «Страх → Награда».
-//                 Автосохранение при входе в фазу.
-//
-// ZERO GC:
-//   • Никаких new/List в SlowTick.
-//   • Physics.OverlapSphereNonAlloc.
-//   • Кэшированные буферы.
-//   • Нет LINQ / foreach по managed-коллекциям в горячем пути.
-//   • SaveGameAsync — fire-and-forget, zero alloc в caller.
 //
 // Namespace: Hecton8.Systems.AI
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
@@ -67,38 +53,36 @@ namespace Hecton8.Systems.AI
 
         private enum DirectorEventType
         {
-            None = 0,
-            SpawnHorde = 1,
-            EquipmentGlitch = 2,
-            RareDiscovery = 3
+            None             = 0,
+            SpawnHorde       = 1,
+            EquipmentGlitch  = 2,
+            RareDiscovery    = 3,
+            WeatherShift     = 4,
+            MissionTrigger   = 5
         }
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC EVENTS — DECOUPLED COMMAND BUS
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Запрос на спавн волны угрозы.
-        /// Param: мировая позиция центра события.
-        /// </summary>
+        /// <summary>Запрос на спавн волны угрозы. Param: мировая позиция центра.</summary>
         public static event Action<Vector3> OnRequestSpawnHorde;
 
-        /// <summary>
-        /// Запрос на помехи оборудования / HUD glitch.
-        /// Param: интенсивность [0..1].
-        /// </summary>
+        /// <summary>Запрос на помехи оборудования / HUD glitch. Param: интенсивность [0..1].</summary>
         public static event Action<float> OnRequestEquipmentGlitch;
 
-        /// <summary>
-        /// Запрос на редкую находку / подсветку ресурса.
-        /// Param: мировая позиция интереса рядом с игроком.
-        /// </summary>
+        /// <summary>Запрос на редкую находку. Param: мировая позиция интереса.</summary>
         public static event Action<Vector3> OnRequestRareDiscovery;
+
+        /// <summary>Запрос на смену погоды / условий среды. Param: интенсивность [0..1].</summary>
+        public static event Action<float> OnRequestWeatherShift;
+
+        /// <summary>Запрос на mission trigger / narrative beat. Param: мировая позиция.</summary>
+        public static event Action<Vector3> OnRequestMissionTrigger;
 
         /// <summary>
         /// Уведомление о глобальном разрешении/запрете хищного давления.
-        /// true  = давление разрешено (BuildUp / Peak).
-        /// false = давление запрещено (Relax).
+        /// true = давление разрешено (BuildUp / Peak), false = запрещено (Relax).
         /// </summary>
         public static event Action<bool> OnPredatorPressureChanged;
 
@@ -113,10 +97,10 @@ namespace Hecton8.Systems.AI
         [Tooltip("Система выживания для чтения O2 и энергии.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
-        [Tooltip("Ссылка на FaunaDirector. Если null — ищется автоматически в OnEnable.")]
+        [Tooltip("Ссылка на FaunaDirector. Если null — ищется автоматически один раз.")]
         [SerializeField] private FaunaDirector faunaDirector;
 
-        [Tooltip("Ссылка на ScavengePopulator. Если null — ищется автоматически в OnEnable.")]
+        [Tooltip("Ссылка на ScavengePopulator. Если null — ищется автоматически один раз.")]
         [SerializeField] private ScavengePopulator scavengePopulator;
 
         // ══════════════════════════════════════════════════════════
@@ -125,33 +109,33 @@ namespace Hecton8.Systems.AI
 
         [Header("── Tension Weights ───────────────────────────")]
         [SerializeField] private float predatorsWeight = 40f;
-        [SerializeField] private float oxygenWeight = 25f;
-        [SerializeField] private float energyWeight = 20f;
-        [SerializeField] private float calmWeight = 15f;
+        [SerializeField] private float oxygenWeight    = 25f;
+        [SerializeField] private float energyWeight    = 20f;
+        [SerializeField] private float calmWeight      = 15f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PREDATOR SCAN
         // ══════════════════════════════════════════════════════════
 
         [Header("── Predator Detection ────────────────────────")]
-        [SerializeField] private float predatorScanRadius = 40f;
-        [SerializeField] private LayerMask predatorMask = ~0;
-        [SerializeField] private int predatorsForMaxTension = 4;
+        [SerializeField] private float     predatorScanRadius       = 40f;
+        [SerializeField] private LayerMask predatorMask              = ~0;
+        [SerializeField] private int       predatorsForMaxTension    = 4;
 
-        [Tooltip("true — любой HectonBaseAI в радиусе = угроза. " +
-                 "false — только объекты с tag Predator.")]
-        [SerializeField] private bool countAnyAIAsPredator = true;
+        [Tooltip("true — HashSet registration mode (рекомендуется).\n" +
+                 "false — fallback на CompareTag(\"Predator\").")]
+        [SerializeField] private bool useRegistrationMode = true;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PHASE THRESHOLDS
         // ══════════════════════════════════════════════════════════
 
         [Header("── Phase Thresholds ──────────────────────────")]
-        [SerializeField] private float lowTensionThreshold = 25f;
-        [SerializeField] private float highTensionThreshold = 60f;
-        [SerializeField] private float calmBeforePeakSeconds = 90f;
-        [SerializeField] private float relaxDurationSeconds = 120f;
-        [SerializeField] private float peakCooldownSeconds = 60f;
+        [SerializeField] private float lowTensionThreshold    = 25f;
+        [SerializeField] private float highTensionThreshold   = 60f;
+        [SerializeField] private float calmBeforePeakSeconds  = 90f;
+        [SerializeField] private float relaxDurationSeconds   = 120f;
+        [SerializeField] private float peakCooldownSeconds    = 60f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — BUILD-UP
@@ -160,8 +144,8 @@ namespace Hecton8.Systems.AI
         [Header("── Build-Up Behaviour ───────────────────────")]
         [SerializeField] private float buildUpEventIntervalSeconds = 45f;
         [Range(0f, 1f)]
-        [SerializeField] private float buildUpEventChance = 0.35f;
-        [SerializeField] private float deepLureDepthThreshold = 120f;
+        [SerializeField] private float buildUpEventChance          = 0.35f;
+        [SerializeField] private float deepLureDepthThreshold      = 120f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — RELAX MERCY
@@ -169,19 +153,21 @@ namespace Hecton8.Systems.AI
 
         [Header("── Relax Mercy (Director's Grace) ────────────")]
         [Tooltip("Порог tension, ниже которого срабатывает «Милость Директора».")]
-        [SerializeField] private float relaxMercyTensionThreshold = 15f;
+        [SerializeField] private float relaxMercyTensionThreshold  = 15f;
 
         [Tooltip("Интервал между discovery-подарками в фазе Relax (сек).")]
-        [SerializeField] private float relaxMercyIntervalSeconds = 30f;
+        [SerializeField] private float relaxMercyIntervalSeconds   = 30f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PEAK EVENT WEIGHTS
         // ══════════════════════════════════════════════════════════
 
         [Header("── Peak Event Weights ────────────────────────")]
-        [SerializeField] private int spawnHordeWeight = 50;
-        [SerializeField] private int equipmentGlitchWeight = 25;
-        [SerializeField] private int rareDiscoveryWeight = 25;
+        [SerializeField] private int spawnHordeWeight       = 40;
+        [SerializeField] private int equipmentGlitchWeight  = 20;
+        [SerializeField] private int rareDiscoveryWeight    = 15;
+        [SerializeField] private int weatherShiftWeight     = 15;
+        [SerializeField] private int missionTriggerWeight   = 10;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — EVENT OUTPUT
@@ -190,30 +176,39 @@ namespace Hecton8.Systems.AI
         [Header("── Event Output ──────────────────────────────")]
         [SerializeField] private float eventOffsetRadius = 25f;
         [Range(0f, 1f)]
-        [SerializeField] private float glitchIntensity = 0.8f;
+        [SerializeField] private float glitchIntensity   = 0.8f;
+        [Range(0f, 1f)]
+        [SerializeField] private float weatherIntensity  = 0.6f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AUTOSAVE
         // ══════════════════════════════════════════════════════════
 
         [Header("── Autosave ──────────────────────────────────")]
-        [Tooltip("Минимальный интервал между автосохранениями (секунды). " +
-                 "Предотвращает частые записи на диск при быстрой смене фаз. " +
-                 "300 = 5 минут.")]
-        [SerializeField] private float autoSaveCooldownSeconds = 300f;
+        [Tooltip("Минимальный интервал между автосохранениями (секунды).")]
+        [SerializeField] private float  autoSaveCooldownSeconds = 300f;
 
         [Tooltip("Имя слота автосохранения.")]
-        [SerializeField] private string autoSaveSlotName = "autosave";
+        [SerializeField] private string autoSaveSlotName        = "autosave";
 
         [Tooltip("Включить автосохранение при входе в Relax.")]
-        [SerializeField] private bool enableAutoSave = true;
+        [SerializeField] private bool   enableAutoSave          = true;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — PLAYER POS SHADER SYNC
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Shader Integration ────────────────────────")]
+        [Tooltip("Публиковать позицию игрока в Shader.SetGlobalVector " +
+                 "для proximity reaction в бiolum-шейдерах.")]
+        [SerializeField] private bool publishPlayerPosToShader = true;
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        private DirectorPhase _phase = DirectorPhase.BuildUp;
-        private DirectorEventType _lastEventType = DirectorEventType.None;
+        private DirectorPhase     _phase          = DirectorPhase.BuildUp;
+        private DirectorEventType _lastEventType  = DirectorEventType.None;
 
         private float _tensionScore;
         private float _calmTimer;
@@ -226,7 +221,7 @@ namespace Hecton8.Systems.AI
 
         // Dynamic delta
         private float _lastTickTime;
-        private bool _hasTickedOnce;
+        private bool  _hasTickedOnce;
 
         // Cached factors (debug + reuse)
         private float _predatorFactor;
@@ -237,29 +232,72 @@ namespace Hecton8.Systems.AI
         // Autosave cooldown
         private float _lastAutoSaveTime = float.NegativeInfinity;
 
-        // Pre-allocated overlap buffer (shared, single-threaded)
-        private static readonly Collider[] PredatorBuffer = new Collider[32];
+        // Lazy resolve flag
+        private bool _resolvedDirectors;
+
+        // ══════════════════════════════════════════════════════════
+        //  PREDATOR REGISTRATION — REPLACES TryGetComponent
+        // ══════════════════════════════════════════════════════════
+
+        // Instance-level buffer — safe for multi-scene / multiple Directors
+        private readonly Collider[] _predatorScanBuffer = new Collider[32];
+
+        // Registered predator colliders — O(1) lookup instead of TryGetComponent
+        private static readonly HashSet<Collider> _registeredPredators = new(64);
+
+        /// <summary>
+        /// Регистрирует коллайдер как хищник. Вызывается из HectonBaseAI.OnEnable.
+        /// Zero GC: HashSet.Add на pre-allocated set.
+        /// </summary>
+        public static void RegisterPredator(Collider c)
+        {
+            if (c != null)
+                _registeredPredators.Add(c);
+        }
+
+        /// <summary>
+        /// Снимает регистрацию хищника. Вызывается из HectonBaseAI.OnDisable.
+        /// </summary>
+        public static void UnregisterPredator(Collider c)
+        {
+            if (c != null)
+                _registeredPredators.Remove(c);
+        }
+
+        /// <summary>
+        /// Очищает все регистрации. Вызывается при смене сцены.
+        /// </summary>
+        public static void ClearAllPredatorRegistrations()
+        {
+            _registeredPredators.Clear();
+        }
+
+        // Shader property ID — cached once
+        private static readonly int ShaderPlayerPosID = Shader.PropertyToID("_PlayerPos");
 
         // ══════════════════════════════════════════════════════════
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
 
+#if UNITY_EDITOR
         [Header("── Diagnostics ───────────────────────────────")]
-        [SerializeField] private float _debugTensionScore;
-        [SerializeField] private float _debugPredatorFactor;
-        [SerializeField] private float _debugOxygenFactor;
-        [SerializeField] private float _debugEnergyFactor;
-        [SerializeField] private float _debugCalmFactor;
-        [SerializeField] private float _debugCalmTimer;
-        [SerializeField] private float _debugPhaseTimer;
-        [SerializeField] private float _debugPeakCooldown;
-        [SerializeField] private float _debugDeltaTime;
+        [SerializeField] private float  _debugTensionScore;
+        [SerializeField] private float  _debugPredatorFactor;
+        [SerializeField] private float  _debugOxygenFactor;
+        [SerializeField] private float  _debugEnergyFactor;
+        [SerializeField] private float  _debugCalmFactor;
+        [SerializeField] private float  _debugCalmTimer;
+        [SerializeField] private float  _debugPhaseTimer;
+        [SerializeField] private float  _debugPeakCooldown;
+        [SerializeField] private float  _debugDeltaTime;
         [SerializeField] private string _debugPhase;
         [SerializeField] private string _debugLastEvent;
-        [SerializeField] private bool _debugPredatorPressureEnabled;
-        [SerializeField] private bool _debugHasFaunaDirector;
-        [SerializeField] private bool _debugHasScavengePopulator;
-        [SerializeField] private float _debugTimeSinceLastAutoSave;
+        [SerializeField] private bool   _debugPredatorPressureEnabled;
+        [SerializeField] private bool   _debugHasFaunaDirector;
+        [SerializeField] private bool   _debugHasScavengePopulator;
+        [SerializeField] private float  _debugTimeSinceLastAutoSave;
+        [SerializeField] private int    _debugRegisteredPredatorCount;
+#endif
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -272,14 +310,9 @@ namespace Hecton8.Systems.AI
 
         private void OnEnable()
         {
-            if (faunaDirector == null)
-                faunaDirector = FindAnyObjectByType<FaunaDirector>();
-
-            if (scavengePopulator == null)
-                scavengePopulator = FindAnyObjectByType<ScavengePopulator>();
-
-            _lastTickTime = Time.time;
+            _lastTickTime  = Time.time;
             _hasTickedOnce = false;
+            _resolvedDirectors = false;
 
             GameTickManager.Instance?.Register((ISlowTickable)this);
 
@@ -313,9 +346,11 @@ namespace Hecton8.Systems.AI
 
             _lastTickTime = now;
 
+            // Clamp delta to sane range
             if (dt < 0.001f) dt = 0.001f;
-            if (dt > 5f) dt = 5f;
+            if (dt > 5f)     dt = 5f;
 
+            // ── Resolve player ──
             if (playerTransform == null)
             {
                 ResolvePlayerAndSurvival();
@@ -323,6 +358,19 @@ namespace Hecton8.Systems.AI
                     return;
             }
 
+            // ── Lazy resolve directors (one time) ──
+            if (!_resolvedDirectors)
+                ResolveDirectors();
+
+            // ── Publish player pos to shaders ──
+            if (publishPlayerPosToShader)
+            {
+                Vector3 pp = playerTransform.position;
+                Shader.SetGlobalVector(ShaderPlayerPosID,
+                    new Vector4(pp.x, pp.y, pp.z, 1f)); // w=1 = valid
+            }
+
+            // ── Core logic ──
             UpdateTimers(dt);
             _tensionScore = ComputeTensionScore();
             UpdateCalmTimer(dt);
@@ -344,21 +392,7 @@ namespace Hecton8.Systems.AI
             }
 
 #if UNITY_EDITOR
-            _debugTensionScore = _tensionScore;
-            _debugPredatorFactor = _predatorFactor;
-            _debugOxygenFactor = _oxygenFactor;
-            _debugEnergyFactor = _energyFactor;
-            _debugCalmFactor = _calmFactor;
-            _debugCalmTimer = _calmTimer;
-            _debugPhaseTimer = _phaseTimer;
-            _debugPeakCooldown = _peakCooldownTimer;
-            _debugDeltaTime = dt;
-            _debugPhase = _phase.ToString();
-            _debugLastEvent = _lastEventType.ToString();
-            _debugPredatorPressureEnabled = _predatorPressureEnabled;
-            _debugHasFaunaDirector = faunaDirector != null;
-            _debugHasScavengePopulator = scavengePopulator != null;
-            _debugTimeSinceLastAutoSave = now - _lastAutoSaveTime;
+            WriteDebugFields(now, dt);
 #endif
         }
 
@@ -369,17 +403,18 @@ namespace Hecton8.Systems.AI
         private float ComputeTensionScore()
         {
             _predatorFactor = ComputePredatorFactor();
-            _oxygenFactor = ComputeLowOxygenFactor();
-            _energyFactor = ComputeLowEnergyFactor();
-            _calmFactor = ComputeCalmFactor();
+            _oxygenFactor   = ComputeLowOxygenFactor();
+            _energyFactor   = ComputeLowEnergyFactor();
+            _calmFactor     = ComputeCalmFactor();
 
             float tension =
                 _predatorFactor * predatorsWeight +
-                _oxygenFactor * oxygenWeight +
-                _energyFactor * energyWeight +
-                _calmFactor * calmWeight;
+                _oxygenFactor   * oxygenWeight    +
+                _energyFactor   * energyWeight    +
+                _calmFactor     * calmWeight;
 
-            if (tension < 0f) tension = 0f;
+            // Manual clamp — no Mathf call overhead
+            if (tension < 0f)   tension = 0f;
             if (tension > 100f) tension = 100f;
 
             return tension;
@@ -395,7 +430,7 @@ namespace Hecton8.Systems.AI
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 playerPos,
                 predatorScanRadius,
-                PredatorBuffer,
+                _predatorScanBuffer,
                 predatorMask,
                 QueryTriggerInteraction.Ignore);
 
@@ -403,21 +438,24 @@ namespace Hecton8.Systems.AI
                 return 0f;
 
             float tensionSum = 0f;
-            float invRadius = 1f / predatorScanRadius;
+            float invRadius  = 1f / predatorScanRadius;
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider col = PredatorBuffer[i];
+                Collider col = _predatorScanBuffer[i];
                 if (col == null) continue;
 
-                if (!countAnyAIAsPredator)
+                // ── Predator identification ──
+                // Registration mode: O(1) HashSet lookup, zero GC
+                // Fallback mode: CompareTag (no alloc)
+                if (useRegistrationMode)
                 {
-                    if (!col.CompareTag("Predator"))
+                    if (!_registeredPredators.Contains(col))
                         continue;
                 }
                 else
                 {
-                    if (!col.TryGetComponent(out HectonBaseAI _))
+                    if (!col.CompareTag("Predator"))
                         continue;
                 }
 
@@ -476,7 +514,7 @@ namespace Hecton8.Systems.AI
 
         private void UpdateTimers(float dt)
         {
-            _phaseTimer += dt;
+            _phaseTimer   += dt;
             _buildUpTimer += dt;
 
             if (_peakCooldownTimer > 0f)
@@ -501,6 +539,7 @@ namespace Hecton8.Systems.AI
                 return;
             }
 
+            // Mid-range: slow decay
             _calmTimer -= dt * 0.5f;
             if (_calmTimer < 0f)
                 _calmTimer = 0f;
@@ -525,6 +564,7 @@ namespace Hecton8.Systems.AI
                 }
 
                 case DirectorPhase.Peak:
+                    // Peak is processed and exited in ProcessPeak
                     break;
 
                 case DirectorPhase.Relax:
@@ -540,8 +580,8 @@ namespace Hecton8.Systems.AI
 
         private void EnterPhase(DirectorPhase next)
         {
-            _phase = next;
-            _phaseTimer = 0f;
+            _phase          = next;
+            _phaseTimer     = 0f;
             _relaxMercyTimer = 0f;
 
             switch (next)
@@ -565,26 +605,6 @@ namespace Hecton8.Systems.AI
         //  AUTOSAVE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Пытается выполнить автосохранение при входе в фазу Relax.
-        ///
-        /// Условия:
-        ///   1. enableAutoSave == true (Inspector toggle).
-        ///   2. Прошло достаточно времени с последнего автосейва (cooldown).
-        ///   3. SaveManager доступен и не занят.
-        ///
-        /// Fire-and-forget: async Task запускается без await.
-        /// SaveManager обрабатывает все ошибки внутри SaveGameAsync.
-        /// При ошибке — игра продолжает работать, просто лог ошибки.
-        ///
-        /// ZERO GC:
-        ///   • Проверка cooldown — float сравнение.
-        ///   • SaveGameAsync — snapshot фаза <2ms (main thread),
-        ///     disk write — background thread.
-        ///   • Fire-and-forget — Task объект создаётся, но не await-ится
-        ///     в SlowTick. GC соберёт Task после завершения.
-        ///     Это допустимо: автосохранение происходит раз в 5+ минут.
-        /// </summary>
         private void TryAutoSave()
         {
             if (!enableAutoSave)
@@ -592,28 +612,15 @@ namespace Hecton8.Systems.AI
 
             float now = Time.time;
 
-            // ── Cooldown check ──
             if (now - _lastAutoSaveTime < autoSaveCooldownSeconds)
                 return;
 
             SaveManager saveManager = SaveManager.Instance;
-            if (saveManager == null)
-                return;
-
-            if (saveManager.IsBusy)
+            if (saveManager == null || saveManager.IsBusy)
                 return;
 
             _lastAutoSaveTime = now;
 
-            // ── Fire-and-forget ──
-            // Мы намеренно не await-им Task в SlowTick:
-            //   1. SlowTick не async — ISlowTickable.SlowTick() возвращает void.
-            //   2. SaveGameAsync snapshot phase выполняется синхронно (<2ms).
-            //   3. Disk write phase — background thread, не блокирует.
-            //   4. Ошибки обрабатываются внутри SaveGameAsync (try-catch).
-            //
-            // Suppress CS4014: "Because this call is not awaited..."
-            // Это intentional fire-and-forget.
 #pragma warning disable CS4014
             saveManager.SaveGameAsync(autoSaveSlotName);
 #pragma warning restore CS4014
@@ -637,22 +644,25 @@ namespace Hecton8.Systems.AI
             if (UnityEngine.Random.value > buildUpEventChance)
                 return;
 
+            // Deep lure: rare discovery at depth
             if (survivalSystem != null && survivalSystem.Depth >= deepLureDepthThreshold)
             {
                 TriggerRareDiscovery();
                 return;
             }
 
-            int total = rareDiscoveryWeight + equipmentGlitchWeight;
-            if (total <= 0)
-                return;
+            // Weighted pick between soft build-up events
+            int pick = WeightedRoll(
+                rareDiscoveryWeight,
+                equipmentGlitchWeight,
+                weatherShiftWeight);
 
-            int roll = UnityEngine.Random.Range(0, total);
-
-            if (roll < rareDiscoveryWeight)
-                TriggerRareDiscovery();
-            else
-                TriggerEquipmentGlitch(0.35f);
+            switch (pick)
+            {
+                case 0: TriggerRareDiscovery();        break;
+                case 1: TriggerEquipmentGlitch(0.35f); break;
+                case 2: TriggerWeatherShift(0.3f);     break;
+            }
         }
 
         private void ProcessPeak()
@@ -672,10 +682,18 @@ namespace Hecton8.Systems.AI
                 case DirectorEventType.RareDiscovery:
                     TriggerRareDiscovery();
                     break;
+
+                case DirectorEventType.WeatherShift:
+                    TriggerWeatherShift(weatherIntensity);
+                    break;
+
+                case DirectorEventType.MissionTrigger:
+                    TriggerMissionTrigger();
+                    break;
             }
 
-            _lastEventType = evt;
-            _calmTimer = 0f;
+            _lastEventType     = evt;
+            _calmTimer         = 0f;
             _peakCooldownTimer = peakCooldownSeconds;
 
             EnterPhase(DirectorPhase.Relax);
@@ -696,34 +714,86 @@ namespace Hecton8.Systems.AI
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EVENT PICKING
+        //  EVENT PICKING — UNIFIED WEIGHTED RANDOM
         // ══════════════════════════════════════════════════════════
 
         private DirectorEventType PickPeakEvent()
         {
-            int total =
-                spawnHordeWeight +
-                equipmentGlitchWeight +
-                rareDiscoveryWeight;
+            int pick = WeightedRoll(
+                spawnHordeWeight,
+                equipmentGlitchWeight,
+                rareDiscoveryWeight,
+                weatherShiftWeight,
+                missionTriggerWeight);
 
-            if (total <= 0)
-                return DirectorEventType.EquipmentGlitch;
+            switch (pick)
+            {
+                case 0:  return DirectorEventType.SpawnHorde;
+                case 1:  return DirectorEventType.EquipmentGlitch;
+                case 2:  return DirectorEventType.RareDiscovery;
+                case 3:  return DirectorEventType.WeatherShift;
+                case 4:  return DirectorEventType.MissionTrigger;
+                default: return DirectorEventType.EquipmentGlitch;
+            }
+        }
 
+        /// <summary>
+        /// Unified weighted random selection. Zero GC.
+        /// Accepts 2-5 weights via params-free overloads.
+        /// Returns index of chosen weight (0-based).
+        /// </summary>
+        private static int WeightedRoll(int w0, int w1)
+        {
+            int total = w0 + w1;
+            if (total <= 0) return 0;
             int roll = UnityEngine.Random.Range(0, total);
+            return roll < w0 ? 0 : 1;
+        }
 
-            if (roll < spawnHordeWeight)
-                return DirectorEventType.SpawnHorde;
+        private static int WeightedRoll(int w0, int w1, int w2)
+        {
+            int total = w0 + w1 + w2;
+            if (total <= 0) return 0;
+            int roll = UnityEngine.Random.Range(0, total);
+            if (roll < w0) return 0;
+            roll -= w0;
+            return roll < w1 ? 1 : 2;
+        }
 
-            roll -= spawnHordeWeight;
-            if (roll < equipmentGlitchWeight)
-                return DirectorEventType.EquipmentGlitch;
-
-            return DirectorEventType.RareDiscovery;
+        private static int WeightedRoll(int w0, int w1, int w2, int w3, int w4)
+        {
+            int total = w0 + w1 + w2 + w3 + w4;
+            if (total <= 0) return 0;
+            int roll = UnityEngine.Random.Range(0, total);
+            if (roll < w0) return 0;
+            roll -= w0;
+            if (roll < w1) return 1;
+            roll -= w1;
+            if (roll < w2) return 2;
+            roll -= w2;
+            return roll < w3 ? 3 : 4;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EVENT COMMANDS — ORCHESTRATED
+        //  EVENT COMMANDS — SAFE INVOKE
         // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Safe event invocation. Catches exceptions from destroyed subscribers
+        /// during scene transitions. Zero GC in normal path.
+        /// </summary>
+        private static void SafeInvoke<T>(Action<T> action, T arg)
+        {
+            if (action == null) return;
+            try
+            {
+                action.Invoke(arg);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
         private void TriggerSpawnHorde()
         {
@@ -732,12 +802,12 @@ namespace Hecton8.Systems.AI
             if (faunaDirector != null)
                 faunaDirector.ForceSpawnHorde(center);
 
-            OnRequestSpawnHorde?.Invoke(center);
+            SafeInvoke(OnRequestSpawnHorde, center);
         }
 
         private void TriggerEquipmentGlitch(float intensity)
         {
-            OnRequestEquipmentGlitch?.Invoke(intensity);
+            SafeInvoke(OnRequestEquipmentGlitch, intensity);
         }
 
         private void TriggerRareDiscovery()
@@ -747,7 +817,18 @@ namespace Hecton8.Systems.AI
             if (scavengePopulator != null)
                 scavengePopulator.HighlightNearbyResource(hintPos);
 
-            OnRequestRareDiscovery?.Invoke(hintPos);
+            SafeInvoke(OnRequestRareDiscovery, hintPos);
+        }
+
+        private void TriggerWeatherShift(float intensity)
+        {
+            SafeInvoke(OnRequestWeatherShift, intensity);
+        }
+
+        private void TriggerMissionTrigger()
+        {
+            Vector3 pos = GetEventPositionAroundPlayer();
+            SafeInvoke(OnRequestMissionTrigger, pos);
         }
 
         private void PublishPredatorPressure(bool enabled)
@@ -760,7 +841,7 @@ namespace Hecton8.Systems.AI
             if (faunaDirector != null)
                 faunaDirector.SetPredatorPressure(enabled);
 
-            OnPredatorPressureChanged?.Invoke(enabled);
+            SafeInvoke(OnPredatorPressureChanged, enabled);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -782,13 +863,29 @@ namespace Hecton8.Systems.AI
             }
         }
 
+        /// <summary>
+        /// Lazy resolve of FaunaDirector and ScavengePopulator.
+        /// Called once per enable cycle. FindAnyObjectByType is expensive
+        /// but only runs once.
+        /// </summary>
+        private void ResolveDirectors()
+        {
+            _resolvedDirectors = true;
+
+            if (faunaDirector == null)
+                faunaDirector = FindAnyObjectByType<FaunaDirector>();
+
+            if (scavengePopulator == null)
+                scavengePopulator = FindAnyObjectByType<ScavengePopulator>();
+        }
+
         private Vector3 GetEventPositionAroundPlayer()
         {
             if (playerTransform == null)
                 return transform.position;
 
             float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            float dist = UnityEngine.Random.Range(eventOffsetRadius * 0.4f, eventOffsetRadius);
+            float dist  = UnityEngine.Random.Range(eventOffsetRadius * 0.4f, eventOffsetRadius);
 
             Vector3 pos = playerTransform.position;
             pos.x += Mathf.Cos(angle) * dist;
@@ -796,6 +893,28 @@ namespace Hecton8.Systems.AI
 
             return pos;
         }
+
+#if UNITY_EDITOR
+        private void WriteDebugFields(float now, float dt)
+        {
+            _debugTensionScore            = _tensionScore;
+            _debugPredatorFactor          = _predatorFactor;
+            _debugOxygenFactor            = _oxygenFactor;
+            _debugEnergyFactor            = _energyFactor;
+            _debugCalmFactor              = _calmFactor;
+            _debugCalmTimer               = _calmTimer;
+            _debugPhaseTimer              = _phaseTimer;
+            _debugPeakCooldown            = _peakCooldownTimer;
+            _debugDeltaTime               = dt;
+            _debugPhase                   = _phase.ToString();
+            _debugLastEvent               = _lastEventType.ToString();
+            _debugPredatorPressureEnabled = _predatorPressureEnabled;
+            _debugHasFaunaDirector        = faunaDirector != null;
+            _debugHasScavengePopulator    = scavengePopulator != null;
+            _debugTimeSinceLastAutoSave   = now - _lastAutoSaveTime;
+            _debugRegisteredPredatorCount = _registeredPredators.Count;
+        }
+#endif
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -813,37 +932,32 @@ namespace Hecton8.Systems.AI
         /// <summary>Текущая фаза в виде строки (для внешней диагностики).</summary>
         public string CurrentPhaseName => _phase.ToString();
 
-        /// <summary>
-        /// Принудительно вызывает пик-событие.
-        /// </summary>
+        /// <summary>Принудительно вызывает пик-событие.</summary>
         public void ForcePeak()
         {
             EnterPhase(DirectorPhase.Peak);
             ProcessPeak();
         }
 
-        /// <summary>
-        /// Сбрасывает Director в спокойное состояние.
-        /// </summary>
+        /// <summary>Сбрасывает Director в спокойное состояние.</summary>
         public void ResetDirector()
         {
-            _phase = DirectorPhase.BuildUp;
-            _lastEventType = DirectorEventType.None;
-            _tensionScore = 0f;
-            _calmTimer = 0f;
-            _phaseTimer = 0f;
-            _peakCooldownTimer = 0f;
-            _buildUpTimer = 0f;
-            _relaxMercyTimer = 0f;
-            _hasTickedOnce = false;
-            _lastTickTime = Time.time;
+            _phase              = DirectorPhase.BuildUp;
+            _lastEventType      = DirectorEventType.None;
+            _tensionScore       = 0f;
+            _calmTimer          = 0f;
+            _phaseTimer         = 0f;
+            _peakCooldownTimer  = 0f;
+            _buildUpTimer       = 0f;
+            _relaxMercyTimer    = 0f;
+            _hasTickedOnce      = false;
+            _resolvedDirectors  = false;
+            _lastTickTime       = Time.time;
 
             PublishPredatorPressure(true);
         }
 
-        /// <summary>
-        /// Принудительно переводит Director в фазу Relax.
-        /// </summary>
+        /// <summary>Принудительно переводит Director в фазу Relax.</summary>
         public void ForceRelax()
         {
             EnterPhase(DirectorPhase.Relax);
@@ -856,29 +970,41 @@ namespace Hecton8.Systems.AI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (predatorScanRadius < 1f) predatorScanRadius = 1f;
-            if (predatorsForMaxTension < 1) predatorsForMaxTension = 1;
-            if (calmBeforePeakSeconds < 5f) calmBeforePeakSeconds = 5f;
-            if (relaxDurationSeconds < 5f) relaxDurationSeconds = 5f;
-            if (peakCooldownSeconds < 0f) peakCooldownSeconds = 0f;
-            if (buildUpEventIntervalSeconds < 1f) buildUpEventIntervalSeconds = 1f;
-            if (eventOffsetRadius < 1f) eventOffsetRadius = 1f;
-            if (relaxMercyIntervalSeconds < 5f) relaxMercyIntervalSeconds = 5f;
-            if (relaxMercyTensionThreshold < 0f) relaxMercyTensionThreshold = 0f;
-            if (autoSaveCooldownSeconds < 30f) autoSaveCooldownSeconds = 30f;
-            if (string.IsNullOrEmpty(autoSaveSlotName)) autoSaveSlotName = "autosave";
+            if (predatorScanRadius          < 1f)  predatorScanRadius          = 1f;
+            if (predatorsForMaxTension      < 1)   predatorsForMaxTension      = 1;
+            if (calmBeforePeakSeconds       < 5f)  calmBeforePeakSeconds       = 5f;
+            if (relaxDurationSeconds        < 5f)  relaxDurationSeconds        = 5f;
+            if (peakCooldownSeconds         < 0f)  peakCooldownSeconds         = 0f;
+            if (buildUpEventIntervalSeconds < 1f)  buildUpEventIntervalSeconds = 1f;
+            if (eventOffsetRadius           < 1f)  eventOffsetRadius           = 1f;
+            if (relaxMercyIntervalSeconds   < 5f)  relaxMercyIntervalSeconds   = 5f;
+            if (relaxMercyTensionThreshold  < 0f)  relaxMercyTensionThreshold  = 0f;
+            if (autoSaveCooldownSeconds     < 30f) autoSaveCooldownSeconds     = 30f;
+
+            if (string.IsNullOrEmpty(autoSaveSlotName))
+                autoSaveSlotName = "autosave";
+
+            // Weight sanity
+            if (spawnHordeWeight      < 0) spawnHordeWeight      = 0;
+            if (equipmentGlitchWeight < 0) equipmentGlitchWeight = 0;
+            if (rareDiscoveryWeight   < 0) rareDiscoveryWeight   = 0;
+            if (weatherShiftWeight    < 0) weatherShiftWeight    = 0;
+            if (missionTriggerWeight  < 0) missionTriggerWeight  = 0;
         }
 
         private void OnDrawGizmosSelected()
         {
             Transform t = playerTransform != null ? playerTransform : transform;
 
+            // Predator scan radius
             Gizmos.color = new Color(1f, 0.25f, 0.1f, 0.15f);
             Gizmos.DrawWireSphere(t.position, predatorScanRadius);
 
+            // Event offset radius
             Gizmos.color = new Color(0.1f, 0.8f, 1f, 0.12f);
             Gizmos.DrawWireSphere(t.position, eventOffsetRadius);
 
+            // Phase indicator
             switch (_phase)
             {
                 case DirectorPhase.BuildUp:

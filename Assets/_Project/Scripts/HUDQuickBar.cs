@@ -105,16 +105,23 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             if (toolManager != null)
+            {
                 toolManager.ActiveSlotChanged += OnSlotChanged;
+                toolManager.ToolAssignmentsChanged += OnAssignmentsChanged;
+            }
         }
 
         private void Unsubscribe()
         {
             if (toolManager != null)
+            {
                 toolManager.ActiveSlotChanged -= OnSlotChanged;
+                toolManager.ToolAssignmentsChanged -= OnAssignmentsChanged;
+            }
         }
 
         private void OnSlotChanged(int _) => Refresh();
+        private void OnAssignmentsChanged() => Refresh();
 
         // ══════════════════════════════════════════════════════════
         //  BUILD

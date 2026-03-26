@@ -38,6 +38,10 @@ As of this pass:
   - `--- WORLD ---/Tool_Staging`
   - `ToolStagingSpawner` authoring helper on that root
   - all 12 tool world prefabs laid out in-scene for future pickup/drop testing
+- live player scene setup also now has:
+  - `ToolLoadoutProvisioner` on `Player`
+  - startup full-kit inventory seeding enabled
+  - startup core 4-slot loadout assignment enabled
 
 ## Matrix
 
@@ -73,4 +77,12 @@ As of this pass:
 - `ItemCatalog` was expanded to include the new tool item assets.
 - All 12 tool items now support `DROP -> world pickup prefab` at the data level.
 - Full scene-level tool rack now exists independently of the player's 4 active quick slots.
+- There is now a formal provisioning path for:
+  - adding tool items into inventory
+  - assigning held prefabs into tool slots
+  - notifying HUD/PDA when assignments change
+- First runtime smoke-pass is now confirmed:
+  - full tool kit successfully entered inventory at play start
+  - core 4-slot loadout remained assigned in `PlayerToolManager`
+  - flashlight runtime binding stayed alive in play mode
 - There is still a legacy `Item_Builder_Device.asset` in the project; treat it as legacy until we intentionally migrate or remove it.

@@ -1,5 +1,65 @@
 # Codex Backlog
 
+## 2026-03-27 - First runtime smoke-pass after tool provisioning
+
+- Ran a real play-mode smoke-pass through Unity MCP after:
+  - `ToolLoadoutProvisioner`
+  - `ToolStagingSpawner`
+  - world-prefab binding
+  - flashlight runtime binding
+- Verified live `Player` state in play mode:
+  - `ToolLoadoutProvisioner` resolved its refs and default assets correctly
+  - `PlayerInventory` was populated at runtime
+  - live inventory snapshot:
+    - `OccupiedCells = 30`
+    - `FreeCells = 18`
+    - `Weight = 21.8`
+  - `PlayerToolManager` retained the intended core quick-slot assignments:
+    - Scanner
+    - Repair
+    - Builder
+    - Laser Cutter
+  - `PlayerFlashlight` resolved `DiveLamp_Light` and `HectonSurvivalSystem`
+  - no new gameplay/runtime errors were emitted during the smoke-pass
+- Residual console noise during inspection was only MCP serializer `TransformHandle` warnings.
+  - These are tooling-side and were already known, not gameplay regressions.
+- Important limitation of this smoke-pass:
+  - it confirms provisioning and live component wiring
+  - it does not yet confirm per-tool interaction behavior under manual input
+
+## 2026-03-27 - Tool provisioning API and runtime loadout bootstrap
+
+- Added official provisioning entrypoint in `Assets/_Project/Scripts/PlayerInventory.cs`:
+  - `TryAddItem(ItemData item, int quantity = 1)`
+  - Why: tool/inventory integration can now seed items through one safe public API instead of faking world pickups or duplicating placement logic.
+  - Result: inventory provisioning, debug seeding, and future fabricator rewards can all go through the same stacking/weight/event path.
+- Refactored `HandleItemCollected(...)` in `PlayerInventory` to use that new API.
+  - Why: one source of truth for placement/stacking/full-inventory handling.
+- Added assignment-change event and public slot assignment API in `Assets/_Project/Scripts/PlayerToolManager.cs`:
+  - `event Action ToolAssignmentsChanged`
+  - `SetAssignedToolPrefab(int slotIndex, GameObject prefab, bool holsterIfCurrentInvalid = true)`
+  - Why: quickbar/PDA/tool provisioning can now react to live slot remaps without inspector-only workflows.
+- Updated UI listeners:
+  - `Assets/_Project/Scripts/HUDQuickBar.cs`
+  - `Assets/_Project/Scripts/PDAInventoryTab.cs`
+  - Both now refresh not only on active-slot changes but also on loadout assignment changes.
+- Added `Assets/_Project/Scripts/ToolLoadoutProvisioner.cs`.
+  - What: dev/runtime helper that can:
+    - provision the full 12-tool kit into `PlayerInventory`
+    - assign the default core 4-slot loadout into `PlayerToolManager`
+  - Why: removes manual setup debt from every test pass and gives a deterministic bootstrap path for the full tool system.
+  - Important:
+    - it auto-resolves scene refs
+    - in editor it auto-resolves the default tool assets/prefabs from known project paths
+    - it is safe/dev-oriented and does not replace the real gameplay acquisition loop
+- Added `ToolLoadoutProvisioner` to `Player` in `02_HECTON_WORLD` and enabled:
+  - `provisionInventoryOnStart = true`
+  - `assignCoreLoadoutOnStart = true`
+  - `holsterBeforeAssigning = true`
+- Result of this pass:
+  - next play session should bootstrap a full tool inventory plus stable core quick slots automatically
+  - HUD/PDA quick-slot UI now has the event surface needed to stay in sync with runtime loadout changes
+
 ## 2026-03-27 - Tool world integration and flashlight runtime binding
 
 - Completed world-item loop for the full 12-tool set.

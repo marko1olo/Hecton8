@@ -1,11 +1,14 @@
 using Hecton8.AI;
 using Hecton8.Items;
+using Hecton8.UI;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
     internal static class ToolHitUtility
     {
+        private static HUDNotification s_notification;
+
         public static bool ApplyDamage(
             Collider hitCollider,
             float damage,
@@ -88,6 +91,34 @@ namespace Hecton8.Gameplay
                 direction = Vector3.forward;
 
             body.AddForce(direction.normalized * impulse, ForceMode.Impulse);
+        }
+
+        public static void ShowInfo(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            if (s_notification == null)
+                s_notification = Object.FindFirstObjectByType<HUDNotification>();
+
+            if (s_notification != null)
+                s_notification.ShowInfo(message);
+            else
+                Debug.Log($"[ToolInfo] {message}");
+        }
+
+        public static void ShowWarning(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            if (s_notification == null)
+                s_notification = Object.FindFirstObjectByType<HUDNotification>();
+
+            if (s_notification != null)
+                s_notification.ShowWarning(message);
+            else
+                Debug.LogWarning($"[ToolWarning] {message}");
         }
     }
 }

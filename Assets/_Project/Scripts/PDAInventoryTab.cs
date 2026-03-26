@@ -200,7 +200,10 @@ namespace Hecton8.UI
             if (playerInventory != null)
                 playerInventory.InventoryChanged += OnInventoryChanged;
             if (toolManager != null)
+            {
                 toolManager.ActiveSlotChanged += OnToolSlotChanged;
+                toolManager.ToolAssignmentsChanged += OnToolAssignmentsChanged;
+            }
             PDAEvents.OnTabChanged += OnTabChanged;
         }
 
@@ -209,12 +212,16 @@ namespace Hecton8.UI
             if (playerInventory != null)
                 playerInventory.InventoryChanged -= OnInventoryChanged;
             if (toolManager != null)
+            {
                 toolManager.ActiveSlotChanged -= OnToolSlotChanged;
+                toolManager.ToolAssignmentsChanged -= OnToolAssignmentsChanged;
+            }
             PDAEvents.OnTabChanged -= OnTabChanged;
         }
 
         private void OnInventoryChanged() => RefreshGrid();
         private void OnToolSlotChanged(int _) => RefreshToolStrip();
+        private void OnToolAssignmentsChanged() => RefreshToolStrip();
 
         private void OnTabChanged(int oldTab, int newTab)
         {

@@ -257,6 +257,48 @@ namespace Hecton8.Inventory
         }
 
         /// <summary>
+        /// Programmatically adds one or more items into the inventory using the
+        /// same stacking/placement rules as world pickup flow.
+        /// Returns true only if the full quantity was added.
+        /// </summary>
+        public bool TryAddItem(ItemData item, int quantity = 1)
+        {
+            if (item == null || quantity <= 0)
+                return false;
+
+            bool allAdded = true;
+
+            for (int i = 0; i < quantity; i++)
+            {
+                if (item.stackable && TryStackItem(item))
+                {
+                    TotalWeight += item.weight;
+                    continue;
+                }
+
+                int placedX;
+                int placedY;
+                if (_grid.TryAddItem(item, out placedX, out placedY))
+                {
+                    _stackCounts[AnchorIndex(placedX, placedY)] = 1;
+                    TotalWeight += item.weight;
+                }
+                else
+                {
+                    allAdded = false;
+                    InventoryFull?.Invoke(item);
+                    break;
+                }
+            }
+
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+            return allAdded;
+        }
+
+        /// <summary>
         /// Counts top-left anchor placements of a specific item.
         /// Multi-cell items are counted once.
         /// </summary>
@@ -442,41 +484,17 @@ namespace Hecton8.Inventory
         /// </summary>
         private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
         {
-            if (item == null) return;
+            if (item == null)
+                return;
 
-            for (int i = 0; i < quantity; i++)
+            bool allAdded = TryAddItem(item, quantity);
+            if (!allAdded)
             {
-                // Сначала пытаемся добавить в существующий стек
-                if (item.stackable && TryStackItem(item))
-                {
-                    TotalWeight += item.weight;
-                    if (survival != null)
-                        survival.SetWeight(TotalWeight);
-                    continue;
-                }
-
-                // Иначе — новое размещение
-                int placedX, placedY;
-                if (_grid.TryAddItem(item, out placedX, out placedY))
-                {
-                    _stackCounts[AnchorIndex(placedX, placedY)] = 1;
-                    TotalWeight += item.weight;
-                    if (survival != null)
-                        survival.SetWeight(TotalWeight);
-                }
-                else
-                {
-                    Debug.LogWarning(
-                        $"[PlayerInventory] Инвентарь полон! " +
-                        $"Не удалось разместить: {item.itemName} " +
-                        $"({item.width}×{item.height}), " +
-                        $"осталось {quantity - i} шт.");
-                    InventoryFull?.Invoke(item);
-                    break;
-                }
+                Debug.LogWarning(
+                    $"[PlayerInventory] Инвентарь полон! " +
+                    $"Не удалось полностью разместить: {item.itemName} " +
+                    $"({item.width}×{item.height}).");
             }
-
-            NotifyInventoryChanged();
         }
         /// <summary>
         /// Ищет существующий неполный стек того же предмета.

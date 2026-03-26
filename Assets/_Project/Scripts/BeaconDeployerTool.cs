@@ -7,6 +7,8 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class BeaconDeployerTool : PlayerTool
     {
+        private static Material s_fallbackBeaconMaterial;
+
         [Header("Deployment")]
         [SerializeField] private float deployRange = 12f;
         [SerializeField] private float deployCooldown = 0.25f;
@@ -23,6 +25,7 @@ namespace Hecton8.Gameplay
 
         private Transform _cachedTransform;
         private float _cooldown;
+        [SerializeField] private int _debugActiveBeaconCount;
 
         private void Awake()
         {
@@ -60,6 +63,7 @@ namespace Hecton8.Gameplay
             if (beacon != null)
             {
                 RegisterBeacon(beacon);
+                ToolHitUtility.ShowInfo("BEACON DEPLOYED");
                 _cooldown = deployCooldown;
             }
         }
@@ -96,6 +100,7 @@ namespace Hecton8.Gameplay
             {
                 ActiveBeacons.Remove(nearest);
                 nearest.DespawnSelf();
+                ToolHitUtility.ShowInfo("BEACON RETRACTED");
                 _cooldown = deployCooldown;
             }
         }
@@ -104,6 +109,8 @@ namespace Hecton8.Gameplay
         {
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+
+            _debugActiveBeaconCount = ActiveBeacons.Count;
         }
 
         private BeaconRuntime SpawnBeacon(Vector3 position, Quaternion rotation)
@@ -138,9 +145,7 @@ namespace Hecton8.Gameplay
             Renderer renderer = body.GetComponent<Renderer>();
             if (renderer != null)
             {
-                Material material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                material.color = beaconColor;
-                renderer.sharedMaterial = material;
+                renderer.sharedMaterial = GetFallbackBeaconMaterial();
             }
 
             Light lightComp = beaconRoot.AddComponent<Light>();
@@ -165,6 +170,20 @@ namespace Hecton8.Gameplay
                 if (oldest != null)
                     oldest.DespawnSelf();
             }
+        }
+
+        private Material GetFallbackBeaconMaterial()
+        {
+            if (s_fallbackBeaconMaterial != null)
+                return s_fallbackBeaconMaterial;
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+                shader = Shader.Find("Standard");
+
+            s_fallbackBeaconMaterial = new Material(shader);
+            s_fallbackBeaconMaterial.color = beaconColor;
+            return s_fallbackBeaconMaterial;
         }
     }
 
