@@ -90,6 +90,38 @@ namespace Hecton8.Construction
         /// <summary>Количество зарегистрированных модулей.</summary>
         public int Count => allModules != null ? allModules.Count : 0;
 
+        /// <summary>
+        /// Read-only доступ к массиву модулей для runtime-циклов и UI.
+        /// </summary>
+        public IReadOnlyList<BuildableData> Modules => allModules;
+
+        /// <summary>
+        /// Возвращает модуль по индексу или null, если индекс некорректен.
+        /// </summary>
+        public BuildableData GetAt(int index)
+        {
+            if (allModules == null) return null;
+            if ((uint)index >= (uint)allModules.Count) return null;
+            return allModules[index];
+        }
+
+        /// <summary>
+        /// Возвращает индекс BuildableData в каталоге или -1, если его нет.
+        /// </summary>
+        public int IndexOf(BuildableData data)
+        {
+            if (data == null || allModules == null) return -1;
+
+            int count = allModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(allModules[i], data))
+                    return i;
+            }
+
+            return -1;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════

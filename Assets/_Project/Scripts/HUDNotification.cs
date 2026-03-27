@@ -23,6 +23,8 @@ namespace Hecton8.UI
 
         private static readonly Color WarningBg = new Color(0.12f, 0.06f, 0.02f, 0.7f);
         private static readonly Color WarningText = new Color(1f, 0.74f, 0.22f, 0.95f);
+        private static readonly Color CriticalBg = new Color(0.18f, 0.03f, 0.03f, 0.78f);
+        private static readonly Color CriticalText = new Color(1f, 0.52f, 0.42f, 0.98f);
         private static readonly Color InfoBg = new Color(0.02f, 0.08f, 0.1f, 0.7f);
         private static readonly Color InfoText = new Color(0.46f, 0.98f, 0.94f, 0.9f);
 
@@ -91,9 +93,16 @@ namespace Hecton8.UI
             _notifBg.color = WarningBg;
             _notifText.text = message;
             _notifText.color = WarningText;
-            _timer = displayDuration;
-            _currentAlpha = 0f;
-            _notifRoot.gameObject.SetActive(true);
+            ShowInternal();
+        }
+
+        public void ShowCritical(string message)
+        {
+            EnsureBuilt();
+            _notifBg.color = CriticalBg;
+            _notifText.text = message;
+            _notifText.color = CriticalText;
+            ShowInternal();
         }
 
         public void ShowInfo(string message)
@@ -102,6 +111,11 @@ namespace Hecton8.UI
             _notifBg.color = InfoBg;
             _notifText.text = message;
             _notifText.color = InfoText;
+            ShowInternal();
+        }
+
+        private void ShowInternal()
+        {
             _timer = displayDuration;
             _currentAlpha = 0f;
             _notifRoot.gameObject.SetActive(true);

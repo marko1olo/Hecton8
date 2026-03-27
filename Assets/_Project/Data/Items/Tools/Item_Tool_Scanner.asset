@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Hydroacoustic Scanner
   icon: {fileID: 0}
-  description: Long-range analysis tool for fauna, flora, wreck signatures and technology traces.
+  description: Long-range analysis tool for fauna, flora, wreck signatures and technology
+    traces.
   weight: 1.6
   stackable: 0
   maxStack: 1
@@ -28,4 +29,4 @@ MonoBehaviour:
   useSound: {fileID: 0}
   interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
   worldPrefab: {fileID: 100100000, guid: 48435f04343913447adc3ca4573951fc, type: 3}
-
+  worldBuoyancyProfile: {fileID: 11400000, guid: 3d11ab4b6f12cac4a9410e735e06e486, type: 2}

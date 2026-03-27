@@ -178,6 +178,12 @@ namespace Hecton8.Interaction
             // ── Отписка от GameTickManager ──
             StopTicking();
 
+            if (_block == null)
+                _block = new MaterialPropertyBlock();
+
+            if (targetRenderers == null || targetRenderers.Length == 0)
+                return;
+
             // ── Мгновенный сброс цвета ──
             Color offColor = GetOffColor();
             ApplyImmediate(offColor);
@@ -390,6 +396,12 @@ namespace Hecton8.Interaction
         /// </summary>
         private void ApplyImmediate(Color value)
         {
+            if (_block == null)
+                _block = new MaterialPropertyBlock();
+
+            if (targetRenderers == null || targetRenderers.Length == 0)
+                return;
+
             _currentValue = value;
 
             for (int i = 0; i < targetRenderers.Length; i++)

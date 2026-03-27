@@ -11,6 +11,7 @@
 
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.Physics;
 
 namespace Hecton8.Items
 {
@@ -29,12 +30,15 @@ namespace Hecton8.Items
         // ─────────────────────── Cached ──────────────────────────
         private InteractionHighlighter _highlighter;
         private Rigidbody _rb;
+        private BuoyancyObject _buoyancy;
 
         // ═════════════════════════════════════════════════════════
         private void Awake()
         {
             _highlighter = GetComponent<InteractionHighlighter>();
             _rb = GetComponent<Rigidbody>();
+            _buoyancy = GetComponent<BuoyancyObject>();
+            ConfigureWaterDynamicsFromData();
 
             if (itemData == null)
                 Debug.LogError($"[HectonItem] ItemData не назначен на {gameObject.name}!", this);
@@ -110,6 +114,7 @@ namespace Hecton8.Items
         {
             itemData = data;
             quantity = qty > 0 ? qty : 1;
+            ConfigureWaterDynamicsFromData();
         }
 
         /// <summary>Текущие данные предмета (read-only).</summary>
@@ -117,6 +122,17 @@ namespace Hecton8.Items
 
         /// <summary>Текущее количество (read-only).</summary>
         public int Quantity => quantity;
+
+        private void ConfigureWaterDynamicsFromData()
+        {
+            if (itemData == null || itemData.worldBuoyancyProfile == null || _rb == null)
+                return;
+
+            if (_buoyancy == null)
+                _buoyancy = GetComponent<BuoyancyObject>() ?? gameObject.AddComponent<BuoyancyObject>();
+
+            _buoyancy.SetProfile(itemData.worldBuoyancyProfile);
+        }
 
         // ─────────────────────── IInteractable ───────────────────
         public void OnHoverStart()
@@ -161,6 +177,13 @@ namespace Hecton8.Items
 
             if (itemData != null && !Application.isPlaying)
                 gameObject.name = $"Item_{itemData.itemName}";
+
+            if (!Application.isPlaying)
+            {
+                _rb = GetComponent<Rigidbody>();
+                _buoyancy = GetComponent<BuoyancyObject>();
+                ConfigureWaterDynamicsFromData();
+            }
         }
 #endif
     }

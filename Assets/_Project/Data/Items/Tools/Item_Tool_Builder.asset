@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Fabrication Tool
   icon: {fileID: 0}
-  description: Construction and deconstruction device for habitat modules, wiring and field equipment.
+  description: Construction and deconstruction device for habitat modules, wiring
+    and field equipment.
   weight: 2.6
   stackable: 0
   maxStack: 1
@@ -28,4 +29,4 @@ MonoBehaviour:
   useSound: {fileID: 0}
   interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
   worldPrefab: {fileID: 100100000, guid: a9d920f69f572794da38a80172350742, type: 3}
-
+  worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

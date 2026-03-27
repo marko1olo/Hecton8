@@ -39,6 +39,8 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Input;
+using Hecton8.Construction;
+using Hecton8.UI;
 using UnityEngine;
 
 namespace Hecton8.Building
@@ -59,6 +61,7 @@ namespace Hecton8.Building
 
         [Tooltip("Точка перед камерой (fallback, если Raycast в пустоту)")]
         [SerializeField] private Transform buildAnchor;
+        [SerializeField] private HUDNotification hudNotification;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — BUILDING
@@ -67,6 +70,7 @@ namespace Hecton8.Building
         [Header("── Building ──────────────────────────────────")]
         [Tooltip("Активный модуль для строительства.")]
         [SerializeField] private BuildableData activeBuildable;
+        [SerializeField] private bool autoResolveCatalogSelection = true;
 
         [Tooltip("Максимальная дальность размещения (метры)")]
         [SerializeField] private float buildDistance = 8f;
@@ -161,6 +165,8 @@ namespace Hecton8.Building
         /// Предыдущий snap-статус. Для edge detection (звук при snap/unsnap).
         /// </summary>
         private bool _wasSnapped;
+        private ModuleCatalog _buildCatalog;
+        private int _activeBuildableIndex = -1;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -181,6 +187,7 @@ namespace Hecton8.Building
                 DespawnGhost();
 
             activeBuildable = data;
+            SyncActiveBuildableIndex();
 
             if (wasEquipped)
                 SpawnGhost();
@@ -193,6 +200,7 @@ namespace Hecton8.Building
         public override void OnSpawn()
         {
             base.OnSpawn();
+            ResolveRuntimeReferences();
             ResetBuilderState();
         }
 
@@ -210,15 +218,20 @@ namespace Hecton8.Building
         public override void OnEquip()
         {
             base.OnEquip();
+            ResolveRuntimeReferences();
+            EnsureCatalogSelection();
             ResetBuilderState();
             
             if (InputManager.Instance != null)
             {
                 InputManager.Instance.OnPrimaryAction   += HandlePrimaryAction;
                 InputManager.Instance.OnSecondaryAction += HandleSecondaryAction;
+                InputManager.Instance.OnTabNext         += HandleTabNext;
+                InputManager.Instance.OnTabPrevious     += HandleTabPrevious;
             }
 
             SpawnGhost();
+            NotifyBuildableSelection();
         }
 
         public override void OnUnequip()
@@ -227,6 +240,8 @@ namespace Hecton8.Building
             {
                 InputManager.Instance.OnPrimaryAction   -= HandlePrimaryAction;
                 InputManager.Instance.OnSecondaryAction -= HandleSecondaryAction;
+                InputManager.Instance.OnTabNext         -= HandleTabNext;
+                InputManager.Instance.OnTabPrevious     -= HandleTabPrevious;
             }
 
             DespawnGhost();
@@ -256,6 +271,52 @@ namespace Hecton8.Building
                 _ghostYawOffset -= 360f;
 
             PlaySound(rotateSound);
+        }
+
+        private void HandleTabNext()
+        {
+            if (!IsEquipped) return;
+            CycleBuildable(+1);
+        }
+
+        private void HandleTabPrevious()
+        {
+            if (!IsEquipped) return;
+            CycleBuildable(-1);
+        }
+
+        private void CycleBuildable(int direction)
+        {
+            ResolveRuntimeReferences();
+            if (_buildCatalog == null || _buildCatalog.Count <= 0)
+            {
+                NotifyBuildBlocked("MODULE CATALOG OFFLINE");
+                return;
+            }
+
+            int count = _buildCatalog.Count;
+            int startIndex = _activeBuildableIndex;
+
+            if (startIndex < 0 || startIndex >= count)
+                startIndex = Mathf.Max(0, _buildCatalog.IndexOf(activeBuildable));
+
+            if (startIndex < 0)
+                startIndex = 0;
+
+            for (int step = 1; step <= count; step++)
+            {
+                int candidateIndex = WrapIndex(startIndex + (step * direction), count);
+                BuildableData candidate = _buildCatalog.GetAt(candidateIndex);
+                if (candidate == null) continue;
+
+                SetActiveBuildable(candidate);
+                _activeBuildableIndex = candidateIndex;
+                PlaySound(rotateSound);
+                NotifyBuildableSelection();
+                return;
+            }
+
+            NotifyBuildBlocked("NO VALID MODULES");
         }
 
         public override void UsePrimary(float deltaTime)
@@ -564,12 +625,14 @@ namespace Hecton8.Building
         {
             if (_currentGhost == null || !_currentGhost.CanBuild)
             {
+                NotifyBuildBlocked("PLACEMENT INVALID");
                 PlaySound(errorSound);
                 return;
             }
 
             if (activeBuildable == null)
             {
+                NotifyBuildBlocked("NO MODULE SELECTED");
                 PlaySound(errorSound);
                 return;
             }
@@ -607,6 +670,7 @@ namespace Hecton8.Building
             }
 
             PlaySound(buildSound);
+            NotifyBuildPlaced(activeBuildable);
 
             // ── Сброс snap-состояния ──
             _isSnapped = false;
@@ -660,6 +724,117 @@ namespace Hecton8.Building
             }
 
             return true;
+        }
+
+        private void ResolveRuntimeReferences()
+        {
+            if (inventory == null)
+                inventory = GetComponentInParent<PlayerInventory>();
+
+            if (playerCamera == null)
+                playerCamera = Camera.main;
+
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
+
+            if (_buildCatalog == null)
+            {
+                ConstructionManager manager = ConstructionManager.Instance;
+                if (manager != null)
+                    _buildCatalog = manager.Catalog;
+            }
+
+            SyncActiveBuildableIndex();
+        }
+
+        private void EnsureCatalogSelection()
+        {
+            if (!autoResolveCatalogSelection) return;
+            if (activeBuildable != null) return;
+            if (_buildCatalog == null || _buildCatalog.Count <= 0) return;
+
+            for (int i = 0; i < _buildCatalog.Count; i++)
+            {
+                BuildableData candidate = _buildCatalog.GetAt(i);
+                if (candidate == null) continue;
+
+                activeBuildable = candidate;
+                _activeBuildableIndex = i;
+                return;
+            }
+        }
+
+        private void SyncActiveBuildableIndex()
+        {
+            if (_buildCatalog == null || activeBuildable == null)
+            {
+                _activeBuildableIndex = -1;
+                return;
+            }
+
+            _activeBuildableIndex = _buildCatalog.IndexOf(activeBuildable);
+        }
+
+        private void NotifyBuildableSelection()
+        {
+            if (activeBuildable == null)
+            {
+                NotifyBuildBlocked("NO MODULE SELECTED");
+                return;
+            }
+
+            string status = HasResources(activeBuildable) ? "READY" : "MISSING COST";
+            string message = $"BUILDER // {activeBuildable.moduleName.ToUpperInvariant()} // {status}";
+
+            if (hudNotification != null)
+                hudNotification.ShowInfo(message);
+            else
+                Debug.Log(message);
+        }
+
+        private void NotifyMissingResources(BuildableData data)
+        {
+            if (data == null)
+            {
+                NotifyBuildBlocked("MISSING COST");
+                return;
+            }
+
+            string message = $"BUILDER // {data.moduleName.ToUpperInvariant()} // MISSING COST";
+            if (hudNotification != null)
+                hudNotification.ShowWarning(message);
+            else
+                Debug.LogWarning(message);
+        }
+
+        private void NotifyBuildBlocked(string reason)
+        {
+            if (string.IsNullOrEmpty(reason))
+                reason = "BUILD BLOCKED";
+
+            string message = $"BUILDER // {reason}";
+            if (hudNotification != null)
+                hudNotification.ShowWarning(message);
+            else
+                Debug.LogWarning(message);
+        }
+
+        private void NotifyBuildPlaced(BuildableData data)
+        {
+            if (data == null) return;
+
+            string message = $"BUILDER // {data.moduleName.ToUpperInvariant()} DEPLOYED";
+            if (hudNotification != null)
+                hudNotification.ShowInfo(message);
+            else
+                Debug.Log(message);
+        }
+
+        private static int WrapIndex(int value, int count)
+        {
+            if (count <= 0) return -1;
+            int wrapped = value % count;
+            return wrapped < 0 ? wrapped + count : wrapped;
         }
 
         private void ConsumeResources(BuildableData data)

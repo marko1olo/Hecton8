@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Dive Lamp
   icon: {fileID: 0}
-  description: Focused handheld lamp for trench work, wreck interiors and low-visibility dives.
+  description: Focused handheld lamp for trench work, wreck interiors and low-visibility
+    dives.
   weight: 1
   stackable: 0
   maxStack: 1
@@ -28,4 +29,4 @@ MonoBehaviour:
   useSound: {fileID: 0}
   interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
   worldPrefab: {fileID: 100100000, guid: 40a67b632626b2b4ca1b22462448c725, type: 3}
-
+  worldBuoyancyProfile: {fileID: 11400000, guid: 3d11ab4b6f12cac4a9410e735e06e486, type: 2}

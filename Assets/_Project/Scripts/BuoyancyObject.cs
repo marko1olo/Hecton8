@@ -39,6 +39,9 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
     public sealed class BuoyancyObject : MonoBehaviour
     {
+        [Header("Profile")]
+        [SerializeField] private BuoyancyProfile profile;
+        [SerializeField] private bool autoApplyProfile = true;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -179,6 +182,7 @@ namespace Hecton8.Physics
         /// This prevents buoyancy from pushing objects up through islands.
         /// </summary>
         public bool IsInAir => _dryZoneRefCount > 0 || _isGrounded;
+        public BuoyancyProfile Profile => profile;
 
         /// <summary>
         /// Вызывается BaseModule при входе объекта в сухую зону.
@@ -201,12 +205,41 @@ namespace Hecton8.Physics
                 _dryZoneRefCount = 0;
         }
 
+        public void ApplyProfile()
+        {
+            if (profile == null)
+                return;
+
+            density = profile.density;
+            volume = profile.volume;
+            height = profile.height;
+            currentResponse = profile.currentResponse;
+            surfaceStability = profile.surfaceStability;
+            lodBias = profile.lodBias;
+            allowDistanceLod = profile.allowDistanceLod;
+        }
+
+        public void SetProfile(BuoyancyProfile newProfile, bool applyImmediately = true)
+        {
+            profile = newProfile;
+
+            if (applyImmediately)
+                ApplyProfileIfNeeded();
+        }
+
+        private void ApplyProfileIfNeeded()
+        {
+            if (autoApplyProfile && profile != null)
+                ApplyProfile();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
+            ApplyProfileIfNeeded();
             TryGetComponent(out _rb);
             TryGetComponent(out _collider);
             _cachedTransform = transform;
@@ -304,6 +337,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            ApplyProfileIfNeeded();
             if (density < 0.01f) density = 0.01f;
             if (volume  < 0.0001f) volume = 0.0001f;
             if (height  < 0f) height = 0f;

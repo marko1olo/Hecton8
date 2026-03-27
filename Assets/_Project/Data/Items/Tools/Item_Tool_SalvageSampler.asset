@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Salvage Sampler
   icon: {fileID: 0}
-  description: Precision tool for extracting bio-samples, cutting growths and removing resource crusts.
+  description: Precision tool for extracting bio-samples, cutting growths and removing
+    resource crusts.
   weight: 1.7
   stackable: 0
   maxStack: 1
@@ -28,4 +29,4 @@ MonoBehaviour:
   useSound: {fileID: 0}
   interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
   worldPrefab: {fileID: 100100000, guid: fa20e563eef211a4daf00fe5b0ca6412, type: 3}
-
+  worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

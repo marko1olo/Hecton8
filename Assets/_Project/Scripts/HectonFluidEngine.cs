@@ -38,6 +38,9 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Physics
 {
@@ -123,6 +126,10 @@ namespace Hecton8.Physics
         [SerializeField] private int _debugMediumCount;
         [SerializeField] private int _debugFarCount;
         [SerializeField] private int _debugCulledCount;
+        [SerializeField] private int _debugCurrentVolumeCount;
+        [SerializeField] private bool drawLodGizmos = true;
+        [SerializeField] private bool drawCurrentVectors = true;
+        [SerializeField] private float gizmoCurrentVectorScale = 4f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -168,12 +175,15 @@ namespace Hecton8.Physics
 
         private NativeArray<float3>         _positions;
         private NativeArray<float3>         _velocities;
+        private NativeArray<float3>         _angularVelocities;
+        private NativeArray<float3>         _upVectors;
         private NativeArray<BuoyancyParams> _params;
         private NativeArray<float3>         _resultForces;
         private NativeArray<float3>         _resultTorques;
 
         /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
         private int _nativeCapacity;
+        private int _lodFrameCounter;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -198,6 +208,8 @@ namespace Hecton8.Physics
 
                 DontDestroyOnLoad(gameObject);
             }
+
+            TryResolveObserver();
         }
 
         private void OnEnable()
@@ -294,6 +306,12 @@ namespace Hecton8.Physics
         {
             int count = _objects.Count;
             if (count == 0) return;
+            _debugNearCount = 0;
+            _debugMediumCount = 0;
+            _debugFarCount = 0;
+            _debugCulledCount = 0;
+            _lodFrameCounter++;
+            TryResolveObserver();
 
             // ── 1. Ensure capacity (Capacity Doubling) ──
             if (count > _nativeCapacity)
@@ -313,6 +331,8 @@ namespace Hecton8.Physics
             {
                 positions        = _positions,
                 velocities       = _velocities,
+                angularVelocities = _angularVelocities,
+                upVectors        = _upVectors,
                 objParams        = _params,
                 resultForces     = _resultForces,
                 resultTorques    = _resultTorques,
@@ -322,10 +342,16 @@ namespace Hecton8.Physics
                 viscousDrag      = viscousDrag,
                 angularDragCoeff = angularDrag,
                 gravity          = math.abs(UnityEngine.Physics.gravity.y),
-                currentForce     = new float3(
+                baseCurrentForce = new float3(
                     currentVector.x * currentStrength,
                     currentVector.y * currentStrength,
                     currentVector.z * currentStrength),
+                time             = Time.unscaledTime,
+                enablePhantomCurrent = enablePhantomCurrent,
+                currentNoiseScale = currentNoiseScale,
+                currentTimeScale = currentTimeScale,
+                currentVerticalFactor = currentVerticalFactor,
+                phantomCurrentStrength = phantomCurrentStrength,
                 dt               = fixedDeltaTime
             };
 
@@ -372,16 +398,89 @@ namespace Hecton8.Physics
 
                 Vector3 com = rb.worldCenterOfMass;
                 Vector3 vel = rb.linearVelocity;
+                Vector3 angVel = rb.angularVelocity;
+                Vector3 up = rb.transform.up;
+                Vector3 localCurrent = Vector3.zero;
+
+                byte simulationMode = 0;
+                byte simplifiedSubmersion = 0;
+                float currentWeight = 1f;
+                float stabilityWeight = 1f;
+
+                if (enableDistanceLod && obj.AllowDistanceLod && lodObserver != null)
+                {
+                    float bias = math.max(0.1f, obj.LodBias);
+                    float nearDistanceSq = nearLodDistance * nearLodDistance * bias * bias;
+                    float mediumDistanceSq = mediumLodDistance * mediumLodDistance * bias * bias;
+                    float farDistanceSq = farLodDistance * farLodDistance * bias * bias;
+                    float cullDistanceSq = cullLodDistance * cullLodDistance * bias * bias;
+
+                    float dx = com.x - lodObserver.position.x;
+                    float dy = com.y - lodObserver.position.y;
+                    float dz = com.z - lodObserver.position.z;
+                    float distanceSq = dx * dx + dy * dy + dz * dz;
+
+                    if (distanceSq <= nearDistanceSq)
+                    {
+                        _debugNearCount++;
+                    }
+                    else if (distanceSq <= mediumDistanceSq)
+                    {
+                        _debugMediumCount++;
+                        if ((_lodFrameCounter + i) % math.max(1, mediumLodDivisor) != 0)
+                            simulationMode = 1;
+                        currentWeight = 0.85f;
+                        stabilityWeight = 0.9f;
+                    }
+                    else if (distanceSq <= farDistanceSq)
+                    {
+                        _debugFarCount++;
+                        if ((_lodFrameCounter + i) % math.max(1, farLodDivisor) != 0)
+                            simulationMode = 1;
+                        simplifiedSubmersion = 1;
+                        currentWeight = 0.55f;
+                        stabilityWeight = 0.65f;
+                    }
+                    else if (distanceSq <= cullDistanceSq)
+                    {
+                        _debugCulledCount++;
+                        simplifiedSubmersion = 1;
+                        if (rb.IsSleeping())
+                            simulationMode = 2;
+                        else if ((_lodFrameCounter + i) % math.max(1, cullLodDivisor) != 0)
+                            simulationMode = 1;
+                        currentWeight = 0.3f;
+                        stabilityWeight = 0.45f;
+                    }
+                    else
+                    {
+                        _debugCulledCount++;
+                        simplifiedSubmersion = 1;
+                        simulationMode = rb.IsSleeping() ? (byte)2 : (byte)1;
+                        currentWeight = 0.12f;
+                        stabilityWeight = 0.25f;
+                    }
+                }
+
+                if (simulationMode != 2)
+                    localCurrent = CurrentVolume.SampleAt(com);
 
                 _positions[i]  = new float3(com.x, com.y, com.z);
                 _velocities[i] = new float3(vel.x, vel.y, vel.z);
+                _angularVelocities[i] = new float3(angVel.x, angVel.y, angVel.z);
+                _upVectors[i] = new float3(up.x, up.y, up.z);
                 _params[i]     = new BuoyancyParams
                 {
                     density = obj.Density,
                     volume  = obj.Volume,
                     height  = obj.Height > 0f ? obj.Height : 0.01f,
                     mass    = rb.mass,
-                    isInAir = obj.IsInAir
+                    currentResponse = obj.CurrentResponse * currentWeight,
+                    surfaceStability = obj.SurfaceStability * stabilityWeight,
+                    localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
+                    isInAir = obj.IsInAir,
+                    simulationMode = simulationMode,
+                    simplifiedSubmersion = simplifiedSubmersion
                 };
             }
         }
@@ -445,12 +544,16 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.UninitializedMemory);
             _velocities    = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
+            _angularVelocities = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            _upVectors = new NativeArray<float3>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
             _params        = new NativeArray<BuoyancyParams>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
             _resultForces  = new NativeArray<float3>(newCapacity, Allocator.Persistent,
-                                 NativeArrayOptions.UninitializedMemory);
+                                 NativeArrayOptions.ClearMemory);
             _resultTorques = new NativeArray<float3>(newCapacity, Allocator.Persistent,
-                                 NativeArrayOptions.UninitializedMemory);
+                                 NativeArrayOptions.ClearMemory);
 
             _nativeCapacity = newCapacity;
         }
@@ -462,6 +565,8 @@ namespace Hecton8.Physics
         {
             if (_positions.IsCreated)     _positions.Dispose();
             if (_velocities.IsCreated)    _velocities.Dispose();
+            if (_angularVelocities.IsCreated) _angularVelocities.Dispose();
+            if (_upVectors.IsCreated)     _upVectors.Dispose();
             if (_params.IsCreated)        _params.Dispose();
             if (_resultForces.IsCreated)  _resultForces.Dispose();
             if (_resultTorques.IsCreated) _resultTorques.Dispose();
@@ -477,6 +582,28 @@ namespace Hecton8.Physics
         private void UpdateDiagnostics()
         {
             _debugObjectCount = _objects.Count;
+            _debugNearCount = 0;
+            _debugMediumCount = 0;
+            _debugFarCount = 0;
+            _debugCulledCount = 0;
+            _debugCurrentVolumeCount = CurrentVolume.ActiveCount;
+        }
+
+        private void TryResolveObserver()
+        {
+            if (lodObserver != null)
+                return;
+
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                lodObserver = mainCam.transform;
+                return;
+            }
+
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+                lodObserver = player.transform;
         }
 
 #if UNITY_EDITOR
@@ -486,6 +613,14 @@ namespace Hecton8.Physics
             if (viscousDrag  < 0f)    viscousDrag  = 0f;
             if (angularDrag  < 0f)    angularDrag  = 0f;
             if (jobBatchSize < 1)     jobBatchSize = 1;
+            if (currentNoiseScale < 0.0001f) currentNoiseScale = 0.0001f;
+            if (currentTimeScale < 0f) currentTimeScale = 0f;
+            if (phantomCurrentStrength < 0f) phantomCurrentStrength = 0f;
+            if (nearLodDistance < 1f) nearLodDistance = 1f;
+            if (mediumLodDistance < nearLodDistance) mediumLodDistance = nearLodDistance;
+            if (farLodDistance < mediumLodDistance) farLodDistance = mediumLodDistance;
+            if (cullLodDistance < farLodDistance) cullLodDistance = farLodDistance;
+            if (gizmoCurrentVectorScale < 0f) gizmoCurrentVectorScale = 0f;
         }
 
         private void OnDrawGizmos()
@@ -493,6 +628,37 @@ namespace Hecton8.Physics
             Gizmos.color = new Color(0f, 0.3f, 0.8f, 0.1f);
             Vector3 center = new Vector3(0f, waterLevel, 0f);
             Gizmos.DrawCube(center, new Vector3(200f, 0.02f, 200f));
+
+            if (lodObserver != null && drawLodGizmos)
+            {
+                DrawLodRing(nearLodDistance, new Color(0.15f, 0.9f, 1f, 0.7f));
+                DrawLodRing(mediumLodDistance, new Color(0.25f, 0.8f, 0.55f, 0.65f));
+                DrawLodRing(farLodDistance, new Color(0.95f, 0.75f, 0.2f, 0.55f));
+                DrawLodRing(cullLodDistance, new Color(1f, 0.35f, 0.2f, 0.45f));
+            }
+
+            if (drawCurrentVectors)
+            {
+                Vector3 origin = lodObserver != null ? lodObserver.position : center;
+                origin.y = waterLevel;
+                Vector3 current = currentVector * gizmoCurrentVectorScale;
+                Gizmos.color = new Color(0.1f, 0.95f, 1f, 0.95f);
+                Gizmos.DrawRay(origin, current);
+            }
+        }
+
+        private void DrawLodRing(float radius, Color color)
+        {
+            if (lodObserver == null || radius <= 0f)
+                return;
+
+            Gizmos.color = color;
+#if UNITY_EDITOR
+            Handles.color = color;
+            Handles.DrawWireDisc(lodObserver.position, Vector3.up, radius);
+#else
+            Gizmos.DrawWireSphere(lodObserver.position, radius);
+#endif
         }
 #endif
     }
@@ -521,12 +687,17 @@ namespace Hecton8.Physics
 
         /// <summary>Масса Rigidbody (кг).</summary>
         public float mass;
+        public float currentResponse;
+        public float surfaceStability;
+        public float3 localCurrent;
 
         /// <summary>
         /// Объект находится в сухой зоне (внутри незатопленного модуля).
         /// Если true — все водные силы обнуляются в BuoyancyJob.
         /// </summary>
         public bool isInAir;
+        public byte simulationMode;
+        public byte simplifiedSubmersion;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -556,6 +727,8 @@ namespace Hecton8.Physics
         // ── Input (ReadOnly) ──
         [ReadOnly] public NativeArray<float3>         positions;
         [ReadOnly] public NativeArray<float3>         velocities;
+        [ReadOnly] public NativeArray<float3>         angularVelocities;
+        [ReadOnly] public NativeArray<float3>         upVectors;
         [ReadOnly] public NativeArray<BuoyancyParams> objParams;
 
         // ── Output (WriteOnly) ──
@@ -568,12 +741,28 @@ namespace Hecton8.Physics
         public float  viscousDrag;
         public float  angularDragCoeff;
         public float  gravity;
-        public float3 currentForce;
+        public float3 baseCurrentForce;
+        public float  time;
+        public bool   enablePhantomCurrent;
+        public float  currentNoiseScale;
+        public float  currentTimeScale;
+        public float  currentVerticalFactor;
+        public float  phantomCurrentStrength;
         public float  dt;
 
         public void Execute(int i)
         {
             BuoyancyParams p = objParams[i];
+
+            if (p.simulationMode == 1)
+                return;
+
+            if (p.simulationMode == 2)
+            {
+                resultForces[i] = float3.zero;
+                resultTorques[i] = float3.zero;
+                return;
+            }
 
             // ══════════════════════════════════════════════
             //  DRY ZONE CHECK — объект внутри незатопленного модуля
@@ -589,6 +778,8 @@ namespace Hecton8.Physics
 
             float3 pos = positions[i];
             float3 vel = velocities[i];
+            float3 angularVel = angularVelocities[i];
+            float3 up = math.normalizesafe(upVectors[i], new float3(0f, 1f, 0f));
 
             // ── Глубина погружения центра масс ──
             float depthBelowSurface = waterLevel - pos.y;
@@ -602,7 +793,9 @@ namespace Hecton8.Physics
             }
 
             // ── Коэффициент погружения (0..1) ──
-            float subRatio = math.saturate(depthBelowSurface / p.height);
+            float subRatio = p.simplifiedSubmersion != 0
+                ? (depthBelowSurface > 0f ? 1f : 0f)
+                : math.saturate(depthBelowSurface / p.height);
 
             // ══════════════════════════════════════════════
             //  1. СИЛА АРХИМЕДА (Buoyancy)
@@ -620,7 +813,19 @@ namespace Hecton8.Physics
             // ══════════════════════════════════════════════
             //  3. ПОДВОДНОЕ ТЕЧЕНИЕ (Current)
             // ══════════════════════════════════════════════
-            float3 currentF = currentForce * subRatio * p.mass;
+            float3 sampledCurrent = baseCurrentForce + p.localCurrent;
+            if (enablePhantomCurrent && p.currentResponse > 0.0001f)
+            {
+                sampledCurrent += CurrentManager.SampleCurrent(
+                    pos,
+                    time,
+                    currentNoiseScale,
+                    currentTimeScale,
+                    phantomCurrentStrength,
+                    currentVerticalFactor);
+            }
+
+            float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);
 
             // ══════════════════════════════════════════════
             //  4. ДЕМПФИРОВАНИЕ ПОКАЧИВАНИЯ
@@ -637,8 +842,13 @@ namespace Hecton8.Physics
             //  ИТОГ
             // ══════════════════════════════════════════════
 
+            float surfaceBand = math.saturate(1f - math.abs(depthBelowSurface - p.height) / math.max(0.25f, p.height * 1.5f));
+            float3 tiltAxis = math.cross(up, new float3(0f, 1f, 0f));
+            float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
+            float3 angularDragTorque = -angularVel * (angularDragCoeff * subRatio * math.max(1f, p.mass * 0.35f));
+
             resultForces[i] = buoyancyForce + dragForce + currentF + dampingVec;
-            resultTorques[i] = float3.zero;
+            resultTorques[i] = angularDragTorque + stabilityTorque;
         }
     }
 }

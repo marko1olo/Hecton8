@@ -103,6 +103,9 @@ namespace Hecton8.Construction
         /// <summary>Read-only доступ к списку модулей (для UI, minimap).</summary>
         public IReadOnlyList<GameObject> SpawnedModules => _spawnedModules;
 
+        /// <summary>Read-only доступ к каталогу модулей для build tools/UI.</summary>
+        public ModuleCatalog Catalog => catalog;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════

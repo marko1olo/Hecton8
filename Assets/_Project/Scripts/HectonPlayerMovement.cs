@@ -1248,9 +1248,17 @@ namespace Hecton8.Gameplay
             if (_currentTimer > 100000f) _currentTimer -= 100000f;
 
             float strength = suit.ambientCurrentStrength * _waterImmersionRatio;
-            _forceVector.x = math.sin(_currentTimer * 0.1f) * strength;
-            _forceVector.y = math.sin(_currentTimer * 0.07f) * strength * 0.3f;
-            _forceVector.z = math.cos(_currentTimer * 0.13f) * strength;
+            float3 phantom = CurrentManager.SampleCurrent(
+                new float3(transform.position.x, transform.position.y, transform.position.z),
+                _currentTimer,
+                0.018f,
+                0.12f,
+                strength,
+                0.2f);
+            Vector3 localVolumeCurrent = Hecton8.Physics.CurrentVolume.SampleAt(transform.position) * _waterImmersionRatio;
+            _forceVector.x = phantom.x + localVolumeCurrent.x;
+            _forceVector.y = phantom.y + localVolumeCurrent.y;
+            _forceVector.z = phantom.z + localVolumeCurrent.z;
             _rb.AddForce(_forceVector, ForceMode.Force);
         }
 

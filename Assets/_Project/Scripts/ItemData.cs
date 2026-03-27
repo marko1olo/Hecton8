@@ -6,6 +6,7 @@
 
 namespace Hecton8.Items
 {
+    using Hecton8.Physics;
     using UnityEngine;
     /// <summary>
     /// Категория предмета. Используется для фильтрации,
@@ -80,6 +81,8 @@ namespace Hecton8.Items
         [Header("World")]
         [Tooltip("Префаб для выбрасывания в мир (опционально)")]
         public GameObject worldPrefab;
+        [Tooltip("Profile applied to worldPrefab buoyancy when this item exists in the world.")]
+        public BuoyancyProfile worldBuoyancyProfile;
 
         // ─────────────────────── Cache ───────────────────────────
         // Built once in OnEnable — zero allocation at runtime.

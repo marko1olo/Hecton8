@@ -386,8 +386,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            string binding = action.GetBindingDisplayString(bindingIndex);
-            row.bindingText.SetText(string.IsNullOrEmpty(binding) ? "--" : binding);
+            row.bindingText.SetText(GetBindingDisplaySafe(action, bindingIndex));
         }
 
         private void RefreshSelectionVisuals()
@@ -426,9 +425,7 @@ namespace Hecton8.UI
                     int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
                     if (bindingIndex >= 0)
                     {
-                        binding = action.GetBindingDisplayString(bindingIndex);
-                        if (string.IsNullOrEmpty(binding))
-                            binding = "--";
+                        binding = GetBindingDisplaySafe(action, bindingIndex);
                     }
                 }
             }
@@ -473,6 +470,22 @@ namespace Hecton8.UI
             }
 
             return -1;
+        }
+
+        private static string GetBindingDisplaySafe(InputAction action, int bindingIndex)
+        {
+            if (action == null || bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+                return "--";
+
+            try
+            {
+                string binding = action.GetBindingDisplayString(bindingIndex);
+                return string.IsNullOrEmpty(binding) ? "--" : binding;
+            }
+            catch
+            {
+                return "--";
+            }
         }
 
         private static int WrapIndex(int value, int max)

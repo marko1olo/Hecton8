@@ -1,5 +1,168 @@
 # Codex Backlog
 
+## 2026-03-27 - Current volumes, ambient water motion, and player current integration
+
+- Added authored local current volumes:
+  - `Assets/_Project/Scripts/CurrentVolume.cs`
+- What it does:
+  - cheap additive local current field on top of the global phantom current
+  - box or sphere shape
+  - directional flow with soft edges
+  - shared static registry, zero allocations in sampling
+- Why:
+  - the first pass only had global + phantom drift
+  - needed a way to author “this corridor pulls left” or “surface band drifts forward” without flowmaps or heavy simulation
+- Result:
+  - player, buoyancy, and visual ambient motion now have a common local-current authoring surface
+
+- Added centralized decorative bob/sway:
+  - `Assets/_Project/Scripts/AmbientWaterMotion.cs`
+  - `Assets/_Project/Scripts/AmbientWaterMotionManager.cs`
+- What it does:
+  - visual-only motion for decorative props
+  - one manager tick instead of per-prop `Update`
+  - distance LOD / cadence degradation
+  - motion reacts to both phantom current and local current volumes
+- Why:
+  - user asked for more scene dynamism without burning CPU on full rigidbody simulation
+- Result:
+  - there is now a cheap path for floating junk / small props / dressing that should look alive but not run full buoyancy
+
+- Extended `Assets/_Project/Scripts/HectonFluidEngine.cs` again:
+  - per-object gather now samples `CurrentVolume.SampleAt(...)`
+  - `BuoyancyParams` now carries `localCurrent`
+  - diagnostics now expose `_debugCurrentVolumeCount`
+- Why:
+  - authored current zones had to affect buoyant bodies too, not just the player
+- Result:
+  - the existing Burst/job path stays authoritative
+  - local current does not require a second water system
+
+- Improved player ambient current path in `Assets/_Project/Scripts/HectonPlayerMovement.cs`.
+  - Removed the old hardcoded sin/cos fake drift
+  - Replaced with:
+    - `CurrentManager.SampleCurrent(...)`
+    - `CurrentVolume.SampleAt(...)`
+- Why:
+  - the player was still using a disconnected fake wobble while the rest of the water system evolved
+- Result:
+  - player drift now comes from the same field logic as the rest of the world
+
+- Scene authoring / wiring:
+  - attached `AmbientWaterMotionManager` to `[MANAGERS]`
+  - created sample current-volume objects:
+    - `Water_Dynamics`
+    - `CurrentVolume_SpawnDrift`
+    - `CurrentVolume_PlayerSpawn_Test`
+- Important note:
+  - MCP handled component creation reliably but was unreliable for transform placement on these sample objects
+  - their exact world placement should be corrected manually in the inspector if kept
+
+- Honest validation:
+  - compile clean after this pass
+  - play-mode smoke clean
+  - no new red console errors from the current-volume / ambient-motion code
+  - `AmbientWaterMotionManager` is present on `[MANAGERS]` in play mode
+- Honest limit:
+  - sample current-volume placement via MCP was not trustworthy
+  - code/runtime path is validated, but authored volume positioning still needs manual inspector cleanup
+
+- Added data-driven authoring presets:
+  - `Assets/_Project/Scripts/BuoyancyProfile.cs`
+  - `Assets/_Project/Scripts/AmbientWaterMotionProfile.cs`
+  - created assets under:
+    - `Assets/_Project/Data/Water/BuoyancyProfiles`
+    - `Assets/_Project/Data/Water/AmbientMotionProfiles`
+- Added authoring/control docs:
+  - `WATER_AUTHORING_GUIDE.md`
+
+- Added visual control on `HectonFluidEngine`:
+  - `drawLodGizmos`
+  - `drawCurrentVectors`
+  - `gizmoCurrentVectorScale`
+- Why:
+  - without this, tuning the system remains blind and slow
+- Result:
+  - current/LOD authoring now has a proper debug surface instead of guesswork
+
+## 2026-03-27 - Optimized buoyancy / sinking / phantom current pass
+
+- Extended `Assets/_Project/Scripts/BuoyancyObject.cs` with object-level tuning fields:
+  - `currentResponse`
+  - `surfaceStability`
+  - `lodBias`
+  - `allowDistanceLod`
+- Why:
+  - the engine needed per-object control over current influence, righting torque, and distance-LOD importance
+- Result:
+  - heavy/important props can stay stable and higher quality
+  - light trash/ambient props can degrade more aggressively without separate systems
+
+- Extended `Assets/_Project/Scripts/HectonFluidEngine.cs` instead of creating a second water system.
+  - Added distance-based LOD knobs:
+    - `lodObserver`
+    - `near/medium/far/cull` distances
+    - per-tier divisors
+  - Added phantom current knobs:
+    - `enablePhantomCurrent`
+    - `currentNoiseScale`
+    - `currentTimeScale`
+    - `currentVerticalFactor`
+    - `phantomCurrentStrength`
+  - Added diagnostics:
+    - near / medium / far / culled counters
+- Why:
+  - user asked for more realistic currents and beautiful float/sink behavior without burning CPU/GPU/RAM
+  - existing Burst/job path was already the right integration point
+- Result:
+  - near objects still get full simulation
+  - farther objects degrade by cadence and simplified math instead of full-cost updates every tick
+  - sleeping far bodies can be zeroed instead of endlessly pushed by fake water
+
+- Upgraded job data in `HectonFluidEngine`:
+  - added angular velocity and up-vector arrays
+  - extended `BuoyancyParams` with:
+    - `currentResponse`
+    - `surfaceStability`
+    - `simulationMode`
+    - `simplifiedSubmersion`
+- Why:
+  - needed enough state in Burst to support:
+    - reuse-cached / zero / full recompute modes
+    - restoring torque near the surface
+    - current blending per object
+- Result:
+  - the water pass now has a real quality ladder instead of one monolithic calculation
+
+- Added surface restoring torque in `BuoyancyJob`.
+  - What:
+    - computes tilt axis from object up-vector vs world up
+    - adds a stabilizing torque band near the surface
+    - still keeps angular drag
+  - Why:
+    - floating objects previously had no meaningful rotational recovery and looked dead or wrong
+  - Result:
+    - better upright recovery and cleaner “beautiful float” behavior
+
+- Added phantom current sampling in `BuoyancyJob` via `CurrentManager.SampleCurrent(...)`.
+  - What:
+    - blends global `currentVector` with low-cost simplex-based field
+    - scaled by LOD and per-object response
+  - Why:
+    - pure global vector current is too dead and uniform
+  - Result:
+    - more organic drift and variation without authored flowmaps or per-object scripts
+
+- Honest validation:
+  - compile clean after the buoyancy/current pass
+  - play-mode smoke-pass clean
+  - no new red console errors from the water-physics code
+  - MCP observed at least one live `BuoyancyObject` in play mode
+- Limit:
+  - this is still a cheap stylized fluid interaction layer, not high-cost CFD or per-hull buoyancy
+
+## 2026-03-27 - Pause menu migration, font cleanup, and scene audio bootstrap
+
 ## 2026-03-27 - Pause menu migration, font cleanup, and scene audio bootstrap
 
 - PDA no longer carries `Controls` as a live tab in the active user flow.
@@ -601,3 +764,54 @@ Notes:
   - duplicate `Image` usage on the same detail icon container caused a `NullReferenceException`
   - fixed by splitting the icon background and icon visual into separate UI objects
 - Rechecked compile and post-play console after the fix; the pass now closes clean with no red errors.
+## 2026-03-27 — Water / Current Integration Pass
+
+- Added `BuoyancyObject.SetProfile(...)` so runtime systems can assign buoyancy presets without prefab duplication.
+- Extended `ItemData` with `worldBuoyancyProfile`.
+- Extended `HectonItem` to auto-apply `worldBuoyancyProfile` to `BuoyancyObject` on awake, validate, and `SetItemData(...)`.
+- Created tool-specific water presets:
+  - `Profile_Sink_TechTool`
+  - `Profile_Float_SealedInstrument`
+- Assigned `worldBuoyancyProfile` across all `Item_Tool_*` assets.
+- Extended `CurrentVolume` with cheap authored modulation:
+  - pulse
+  - per-volume phase
+  - opt-in turbulence
+- Recompiled and checked console after the pass: no new red errors.
+## 2026-03-27 — Suit Advisory Pass
+
+- Added [`SuitAdvisoryController`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitAdvisoryController.cs).
+- Advisory controller subscribes to `HectonSurvivalSystem` events and emits throttled HUD alerts for:
+  - low / critical oxygen
+  - low suit power
+  - degraded / critical integrity
+  - approaching / exceeded safe depth
+  - suit failure
+- Extended [`HUDNotification.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/HUDNotification.cs) with `ShowCritical(...)`.
+- Attached `SuitAdvisoryController` to live `Player` in [`02_HECTON_WORLD.unity`](C:/hades/Hecton8/Assets/_Project/Scenes/02_HECTON_WORLD.unity).
+- Compile clean and play-mode smoke clean after the pass.
+
+## 2026-03-27 - Builder catalog / cycling pass
+
+- Extended [`ModuleCatalog.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/ModuleCatalog.cs) with runtime-safe accessors:
+  - `Modules`
+  - `GetAt(int index)`
+  - `IndexOf(BuildableData data)`
+- Extended [`ConstructionManager.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/ConstructionManager.cs) with `Catalog` read-only exposure so tools/UI can reuse the existing build backend instead of inventing a second menu path.
+- Extended [`PlayerBuilder.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/PlayerBuilder.cs):
+  - auto-resolves `ModuleCatalog` and `HUDNotification`
+  - auto-selects the first buildable when equipped if none is assigned
+  - subscribes to `InputManager.OnTabNext` / `OnTabPrevious`
+  - cycles buildables in-place while equipped
+  - sends short HUD feedback for selection / blocked placement / successful deployment
+- Recompiled after the pass: compile clean.
+
+## 2026-03-27 - Runtime hygiene pass
+
+- Hardened [`PauseControlsPanel.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/PauseControlsPanel.cs) with safe binding-display fallback to stop `IndexOutOfRangeException` during runtime binding refresh.
+- Hardened [`InteractionHighlighter.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/InteractionHighlighter.cs) against null `MaterialPropertyBlock` / empty renderer arrays during `OnDisable`.
+- Hardened [`ScavengePopulator.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/ScavengePopulator.cs) cleanup path against null collection state during teardown.
+- Post-fix compile is clean.
+- Post-play console still contains one residual teardown error:
+  - `Some objects were not cleaned up when closing the scene. (Did you spawn new GameObjects from OnDestroy?)`
+  - this remains to be localized separately.

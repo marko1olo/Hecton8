@@ -600,6 +600,9 @@ namespace Hecton8.Core
         /// </summary>
         private void DespawnAllChunks()
         {
+            if (_spawnQueue == null || _chunksToUnload == null || _chunks == null)
+                return;
+
             _spawnQueue.Clear();
             _chunksToUnload.Clear();
 

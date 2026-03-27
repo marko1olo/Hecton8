@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Propulsion Cannon
   icon: {fileID: 0}
-  description: Gravitic projector for pulling, pushing and clearing objects in hazardous spaces.
+  description: Gravitic projector for pulling, pushing and clearing objects in hazardous
+    spaces.
   weight: 3
   stackable: 0
   maxStack: 1
@@ -28,4 +29,4 @@ MonoBehaviour:
   useSound: {fileID: 0}
   interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
   worldPrefab: {fileID: 100100000, guid: f9ee01257418ed74696850470ef62d20, type: 3}
-
+  worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}
