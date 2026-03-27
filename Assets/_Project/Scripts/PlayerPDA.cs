@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — PlayerPDA.cs  v2.0 ENTERPRISE
-// Персональный дата-ассистент (карта/журнал/управление).
+// Персональный дата-ассистент (inventory / loadout / controls / data log).
 // Назначить на Player root. Управляет Canvas-панелью PDA.
 //
 // v2.0 ENTERPRISE ADDITIONS:
@@ -19,7 +19,7 @@
 //     и PlayerInteraction для блокировки ввода (аналогично HectonFabricatorUI).
 //   • Клавиша M (или из ControlScheme).
 //   • Canvas-панель назначается в инспекторе — PDA не знает о содержимом.
-//   • Вкладки (карта, журнал, управление) — дочерние GameObject'ы панели,
+//   • Вкладки (inventory, loadout, controls, data log) — дочерние GameObject'ы панели,
 //     переключаются через SetActiveTab(int).
 //   • Battery drain — опциональная интеграция с HectonSurvivalSystem.
 //
@@ -83,8 +83,7 @@ namespace Hecton8.UI
         [Tooltip("CanvasGroup для fade-анимации. Если null — мгновенное появление.")]
         [SerializeField] private CanvasGroup pdaCanvasGroup;
 
-        [Tooltip("Вкладки PDA (карта, журнал, управление). " +
-                 "Порядок: 0=Map, 1=Log, 2=Controls.")]
+        [Tooltip("Вкладки PDA. Порядок: 0=Inventory, 1=Loadout, 2=Controls, 3=Data Log.")]
         [SerializeField] private GameObject[] tabs = new GameObject[3];
 
         [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
@@ -95,7 +94,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Вкладка по умолчанию при открытии (0=Map, 1=Log, 2=Controls).")]
+        [Tooltip("Вкладка по умолчанию при открытии (0=Inventory, 1=Loadout, 2=Controls, 3=Data Log).")]
         [SerializeField] private int defaultTab = 0;
 
         [Tooltip("Скорость fade-анимации (alpha/sec). 0 = мгновенно.")]
@@ -193,6 +192,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            AutoResolveTabs();
             IsOpen = false;
             _currentAlpha = 0f;
             _targetAlpha = 0f;
@@ -244,6 +244,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            AutoResolveTabs();
             if (_registered) return;
             if (GameTickManager.Instance != null)
             {
@@ -259,6 +260,49 @@ namespace Hecton8.UI
                     "[PlayerPDA] GameTickManager.Instance is null at Start(). " +
                     "PDA will not function.");
             }
+        }
+
+        private void OnValidate()
+        {
+            AutoResolveTabs();
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying && pdaPanel != null)
+            {
+                pdaPanel.SetActive(false);
+
+                if (pdaCanvasGroup == null)
+                    pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
+
+                if (pdaCanvasGroup != null)
+                {
+                    pdaCanvasGroup.alpha = 0f;
+                    pdaCanvasGroup.interactable = false;
+                    pdaCanvasGroup.blocksRaycasts = false;
+                }
+            }
+#endif
+        }
+
+        private void AutoResolveTabs()
+        {
+            if (pdaPanel == null)
+                return;
+
+            Transform root = pdaPanel.transform;
+            GameObject inventory = root.Find("Tab_Inventory")?.gameObject;
+            GameObject loadout = root.Find("Tab_Loadout")?.gameObject;
+            GameObject dataLog = root.Find("Tab_DataLog")?.gameObject ?? root.Find("Tab_Reserved")?.gameObject;
+
+            if (inventory == null && loadout == null && dataLog == null)
+                return;
+
+            if (tabs == null || tabs.Length != 3)
+                tabs = new GameObject[3];
+
+            if (inventory != null) tabs[0] = inventory;
+            if (loadout != null) tabs[1] = loadout;
+            if (dataLog != null) tabs[2] = dataLog;
         }
 
         private void OnDisable()
@@ -419,7 +463,7 @@ namespace Hecton8.UI
             ClearTabHistory();
         }
 
-        /// <summary>Переключить вкладку (0=Map, 1=Log, 2=Controls).</summary>
+        /// <summary>Переключить вкладку (0=Inventory, 1=Controls, 2=Data Log).</summary>
         public void SetActiveTab(int index)
         {
             if (tabs == null || tabs.Length == 0) return;
@@ -620,9 +664,9 @@ namespace Hecton8.UI
         private void PlaySound(AudioClip clip)
         {
             if (clip == null) return;
-            if (SpatialAudioManager.Instance == null) return;
+            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager)) return;
 
-            SpatialAudioManager.Instance.PlayStatic2D(clip, audioVolume);
+            audioManager.PlayStatic2D(clip, audioVolume);
         }
 
         // ══════════════════════════════════════════════════════════

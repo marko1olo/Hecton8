@@ -185,7 +185,7 @@ namespace Hecton8.Input
             // fallback so the project never hard-fails on a missing asset reference.
             if (_inputActionAsset == null)
             {
-                _inputActionAsset = Resources.Load<InputActionAsset>("HectonInputActions");
+                _inputActionAsset = Resources.Load<InputActionAsset>("HectonRuntimeInputActions");
             }
 
             if (_inputActionAsset == null)

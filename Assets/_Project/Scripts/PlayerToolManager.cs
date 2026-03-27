@@ -30,6 +30,9 @@ namespace Hecton8.Gameplay
     using Hecton8.Items;
     using Hecton8.Input;
     using UnityEngine;
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 
     [DisallowMultipleComponent]
     public sealed class PlayerToolManager : MonoBehaviour, ITickable
@@ -49,6 +52,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Префабы инструментов, привязанные к кнопкам 1-4. " +
                  "Пустые слоты — оставить null.")]
         [SerializeField] private GameObject[] toolPrefabs = new GameObject[4];
+
+        [Header("── Known Tool Prefabs ────────────────────────")]
+        [Tooltip("Полный реестр held-tool prefab'ов для PDA / quick-slot assignment.")]
+        [SerializeField] private GameObject[] knownToolPrefabs = new GameObject[12];
 
         [Header("── Swap Animation ────────────────────────────")]
         [Tooltip("Скорость анимации смены инструмента (lerp factor per second). " +
@@ -137,6 +144,13 @@ namespace Hecton8.Gameplay
                 _anchorLoweredPosition = _anchorRestPosition + lowerOffset;
             }
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            AutoResolveKnownToolPrefabs();
+        }
+#endif
 
         private void OnEnable()
         {
@@ -306,6 +320,27 @@ namespace Hecton8.Gameplay
 
             GameObject prefab = toolPrefabs[slotIndex];
             return prefab != null && HasToolInInventory(prefab);
+        }
+
+        public GameObject GetKnownToolPrefabForItem(ItemData item)
+        {
+            if (item == null || knownToolPrefabs == null)
+                return null;
+
+            for (int i = 0; i < knownToolPrefabs.Length; i++)
+            {
+                GameObject prefab = knownToolPrefabs[i];
+                if (prefab == null)
+                    continue;
+
+                if (!prefab.TryGetComponent(out PlayerTool tool))
+                    continue;
+
+                if (ReferenceEquals(tool.ToolData, item))
+                    return prefab;
+            }
+
+            return null;
         }
 
         // ProcessSlotInput and GetSlotKey removed — handled via events
@@ -681,5 +716,37 @@ namespace Hecton8.Gameplay
 
             Debug.Log($"[ToolMgr] {message}");
         }
+
+#if UNITY_EDITOR
+        private void AutoResolveKnownToolPrefabs()
+        {
+            string[] prefabPaths =
+            {
+                "Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_Repair_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_Builder_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_LaserCutter_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_Propulsion_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_SalvageSampler_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_BeaconDeployer_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_EnvAnalyzer_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_Knife_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab"
+            };
+
+            if (knownToolPrefabs == null || knownToolPrefabs.Length != prefabPaths.Length)
+                Array.Resize(ref knownToolPrefabs, prefabPaths.Length);
+
+            for (int i = 0; i < prefabPaths.Length; i++)
+            {
+                if (knownToolPrefabs[i] != null)
+                    continue;
+
+                knownToolPrefabs[i] = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPaths[i]);
+            }
+        }
+#endif
     }
 }

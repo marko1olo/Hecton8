@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — PDADataLogTab.cs
-// PDA tab 2: live suit, cargo, and loadout digest for the current expedition.
+// PDA tab 3: live suit, cargo, and loadout digest for the current expedition.
 // Builds its own UI at runtime and refreshes from real gameplay systems.
 // ============================================================================
 
@@ -39,6 +39,8 @@ namespace Hecton8.UI
 
         private bool _built;
         private TextMeshProUGUI _summaryText;
+        private Image _directiveBg;
+        private TextMeshProUGUI _directiveText;
         private TextMeshProUGUI _cargoText;
         private TextMeshProUGUI _loadoutText;
         private TextMeshProUGUI _hintText;
@@ -54,8 +56,14 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            AutoResolveTabIndex();
             AutoResolve();
             _placementBuffer = new PlayerInventory.ItemPlacement[64];
+        }
+
+        private void OnValidate()
+        {
+            AutoResolveTabIndex();
         }
 
         private void OnEnable()
@@ -87,6 +95,15 @@ namespace Hecton8.UI
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
+        }
+
+        private void AutoResolveTabIndex()
+        {
+            if (gameObject.name.Contains("DataLog", System.StringComparison.OrdinalIgnoreCase) ||
+                gameObject.name.Contains("Reserved", System.StringComparison.OrdinalIgnoreCase))
+            {
+                dataLogTabIndex = 2;
+            }
         }
 
         private void Subscribe()
@@ -167,8 +184,25 @@ namespace Hecton8.UI
 
             TextMeshProUGUI leftHdr = CreateSectionHeader(left, "SUIT + ENVIRONMENT");
             _summaryText = CreateBody(left, "SummaryText", numericFont);
-            Anchor(_summaryText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f),
-                new Vector2(14f, 16f), new Vector2(-14f, -42f));
+            Anchor(_summaryText.rectTransform, new Vector2(0f, 0.34f), new Vector2(1f, 1f),
+                new Vector2(14f, 12f), new Vector2(-14f, -42f));
+
+            CreateInnerRule(left, 0.30f);
+
+            _directiveBg = EnsureImage(CreateRect(left, "DirectivePanel").gameObject);
+            RectTransform directiveBgRect = _directiveBg.rectTransform;
+            directiveBgRect.anchorMin = new Vector2(0.04f, 0.02f);
+            directiveBgRect.anchorMax = new Vector2(0.96f, 0.28f);
+            directiveBgRect.offsetMin = Vector2.zero;
+            directiveBgRect.offsetMax = Vector2.zero;
+            _directiveBg.color = new Color(0.08f, 0.18f, 0.2f, 0.74f);
+            _directiveBg.raycastTarget = false;
+
+            _directiveText = CreateBody(left, "DirectiveText", numericFont);
+            Anchor(_directiveText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.28f),
+                new Vector2(14f, 14f), new Vector2(-14f, -8f));
+            _directiveText.fontSize = 11.5f;
+            _directiveText.color = Primary;
 
             TextMeshProUGUI rightHdr = CreateSectionHeader(right, "CARGO + LOADOUT");
             _cargoText = CreateBody(right, "CargoText", numericFont);
@@ -217,6 +251,11 @@ namespace Hecton8.UI
             _sb.Append("PDA TAB  ").Append(playerPDA != null ? playerPDA.ActiveTab.ToString() : "--").AppendLine();
 
             _summaryText.SetText(_sb);
+
+            if (_directiveText != null)
+                _directiveText.SetText(GetOperationsDirective());
+
+            ApplyDirectiveVisuals();
         }
 
         private void RefreshCargo()
@@ -333,6 +372,125 @@ namespace Hecton8.UI
             }
 
             _loadoutText.SetText(_sb);
+
+            if (_hintText != null)
+            {
+                _hintText.SetText(GetFooterHint());
+                _hintText.color = GetFooterHintColor();
+            }
+        }
+
+        private string GetOperationsDirective()
+        {
+            float oxygen = survivalSystem != null ? survivalSystem.OxygenNormalized : 0f;
+            float energy = survivalSystem != null ? survivalSystem.EnergyNormalized : 0f;
+            float integrity = survivalSystem != null ? survivalSystem.IntegrityNormalized : 0f;
+            float pressure = survivalSystem != null ? survivalSystem.Pressure : 0f;
+            float weight = playerInventory != null ? playerInventory.TotalWeight : 0f;
+
+            if (integrity < 0.35f)
+                return "OPERATIONS DIRECTIVE\nSuit integrity is in the red zone. Abort risk-heavy work and restore hull condition immediately.";
+
+            if (oxygen < 0.30f)
+                return "OPERATIONS DIRECTIVE\nOxygen reserve is critically low. Surface or return to safe air infrastructure before further tasking.";
+
+            if (energy < 0.25f)
+                return "OPERATIONS DIRECTIVE\nPower reserve is degraded. Reduce tool usage and prioritize recharge logistics.";
+
+            if (pressure > 4.5f)
+                return "OPERATIONS DIRECTIVE\nPressure envelope is elevated. Favor short exposures and keep repair-capable tools ready.";
+
+            if (weight > 22f)
+                return "OPERATIONS DIRECTIVE\nCargo load is getting heavy. Consider dropping low-priority salvage before the next deep run.";
+
+            return "OPERATIONS DIRECTIVE\nExpedition profile is stable. Maintain cargo discipline and keep a repair/scanner pair available.";
+        }
+
+        private string GetFooterHint()
+        {
+            if (toolManager == null)
+                return "Tool manager unavailable.";
+
+            int ready = 0;
+            int missing = 0;
+
+            for (int i = 0; i < toolManager.SlotCount; i++)
+            {
+                GameObject prefab = toolManager.GetAssignedToolPrefab(i);
+                if (prefab == null)
+                    continue;
+
+                if (toolManager.IsToolAvailableInSlot(i))
+                    ready++;
+                else
+                    missing++;
+            }
+
+            if (ready == 0)
+                return "No ready quick-slot tools detected. Inventory still holds cargo, but field response will be slow.";
+
+            if (missing > 0)
+                return "One or more assigned loadout tools are absent from cargo. Review the Loadout tab before deployment.";
+
+            return "Cargo and loadout are synchronized. Use Loadout for slot control and Inventory for assignment/actions.";
+        }
+
+        private Color GetFooterHintColor()
+        {
+            if (toolManager == null)
+                return new Color(1f, 0.74f, 0.22f, 0.86f);
+
+            int ready = 0;
+            int missing = 0;
+
+            for (int i = 0; i < toolManager.SlotCount; i++)
+            {
+                GameObject prefab = toolManager.GetAssignedToolPrefab(i);
+                if (prefab == null)
+                    continue;
+
+                if (toolManager.IsToolAvailableInSlot(i))
+                    ready++;
+                else
+                    missing++;
+            }
+
+            if (ready == 0)
+                return new Color(1f, 0.74f, 0.22f, 0.9f);
+
+            if (missing > 0)
+                return new Color(1f, 0.74f, 0.22f, 0.86f);
+
+            return DimLow;
+        }
+
+        private void ApplyDirectiveVisuals()
+        {
+            if (_directiveBg == null || _directiveText == null)
+                return;
+
+            float oxygen = survivalSystem != null ? survivalSystem.OxygenNormalized : 0f;
+            float energy = survivalSystem != null ? survivalSystem.EnergyNormalized : 0f;
+            float integrity = survivalSystem != null ? survivalSystem.IntegrityNormalized : 0f;
+            float pressure = survivalSystem != null ? survivalSystem.Pressure : 0f;
+            float weight = playerInventory != null ? playerInventory.TotalWeight : 0f;
+
+            if (integrity < 0.35f)
+            {
+                _directiveBg.color = new Color(0.34f, 0.12f, 0.12f, 0.84f);
+                _directiveText.color = new Color(1f, 0.78f, 0.72f, 0.96f);
+                return;
+            }
+
+            if (oxygen < 0.30f || energy < 0.25f || pressure > 4.5f || weight > 22f)
+            {
+                _directiveBg.color = new Color(0.3f, 0.2f, 0.06f, 0.82f);
+                _directiveText.color = new Color(1f, 0.9f, 0.72f, 0.96f);
+                return;
+            }
+
+            _directiveBg.color = new Color(0.08f, 0.18f, 0.2f, 0.74f);
+            _directiveText.color = Primary;
         }
 
         private static string FormatPercent(float value)
@@ -418,7 +576,7 @@ namespace Hecton8.UI
         private static TextMeshProUGUI CreateBody(RectTransform parent, string name, TMP_FontAsset font)
         {
             TextMeshProUGUI body = CreateText(parent, name, font, 12f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            body.enableWordWrapping = false;
+            body.textWrappingMode = TextWrappingModes.NoWrap;
             body.overflowMode = TextOverflowModes.Overflow;
             body.color = Dim;
             return body;

@@ -26,7 +26,7 @@ namespace Hecton8.Dev
         [SerializeField] private PlayerInventory playerInventory;
 
         [Header("Execution")]
-        [SerializeField] private bool runOnStart = true;
+        [SerializeField] private bool runOnStart = false;
         [SerializeField] private bool restoreOriginalLoadout = true;
         [SerializeField] private float startupDelay = 0.75f;
         [SerializeField] private float equipTimeout = 1.25f;

@@ -35,6 +35,13 @@ namespace Hecton8.UI
         private bool _built;
         private PlayerInventory _inventory;
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            ApplyPreviewSafeState();
+        }
+#endif
+
         private void OnEnable()
         {
             if (font == null) font = TMP_Settings.defaultFontAsset;
@@ -153,6 +160,26 @@ namespace Hecton8.UI
 
             gameObject.SetActive(false);
             _built = true;
+        }
+
+        private void ApplyPreviewSafeState()
+        {
+            CanvasGroup cg = GetComponent<CanvasGroup>();
+            if (cg != null)
+            {
+                cg.alpha = 0f;
+                cg.interactable = false;
+                cg.blocksRaycasts = false;
+            }
+
+            Image image = GetComponent<Image>();
+            if (image != null)
+            {
+                Color c = image.color;
+                c.a = 0f;
+                image.color = c;
+                image.raycastTarget = false;
+            }
         }
     }
 }

@@ -86,6 +86,16 @@ namespace Hecton8.Audio
             }
         }
 
+        /// <summary>
+        /// Silent singleton probe for optional UI/gameplay audio calls.
+        /// Does not emit editor errors when the manager is intentionally absent.
+        /// </summary>
+        public static bool TryGetInstance(out SpatialAudioManager instance)
+        {
+            instance = s_Instance;
+            return instance != null;
+        }
+
         // ═══════════════════════════════════════════════════════
         //  INSPECTOR CONFIGURATION
         // ═══════════════════════════════════════════════════════

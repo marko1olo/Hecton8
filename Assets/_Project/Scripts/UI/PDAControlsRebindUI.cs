@@ -79,6 +79,10 @@ namespace Hecton8.UI
         private bool _built;
         private int _selectedIndex;
         private bool _subscribed;
+        private Image[] _rowBackgrounds = Array.Empty<Image>();
+        private Image[] _rowAccentBars = Array.Empty<Image>();
+        private Image[] _bindingBackgrounds = Array.Empty<Image>();
+        private Image _statusBackground;
 
         private bool IsControlsTabActive =>
             isActiveAndEnabled &&
@@ -89,6 +93,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            AutoResolveTabIndex();
             if (playerPda == null)
             {
                 playerPda = GetComponentInParent<PlayerPDA>();
@@ -108,6 +113,17 @@ namespace Hecton8.UI
             }
 
             if (_selectedIndex >= rows.Length) _selectedIndex = 0;
+        }
+
+        private void OnValidate()
+        {
+            AutoResolveTabIndex();
+        }
+
+        private void AutoResolveTabIndex()
+        {
+            if (gameObject.name.Contains("Controls", StringComparison.OrdinalIgnoreCase))
+                controlsTabIndex = 2;
         }
 
         private void OnEnable()
@@ -195,10 +211,24 @@ namespace Hecton8.UI
             if (RebindingManager.Instance.IsRebinding) return;
 
             RebindRow row = rows[_selectedIndex];
+            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
+            if (action == null)
+            {
+                SetStatus($"Action not found: {row.actionMap}/{row.actionName}");
+                return;
+            }
+
+            int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+            if (bindingIndex < 0)
+            {
+                SetStatus($"No rebindable binding: {row.label}");
+                return;
+            }
+
             bool started = RebindingManager.Instance.StartInteractiveRebind(
                 row.actionName,
                 row.actionMap,
-                row.bindingIndex,
+                bindingIndex,
                 expectedControlType: null,
                 cancelPath: "<Keyboard>/escape",
                 excludedControlPaths: new[] { "<Pointer>/position", "<Pointer>/delta" });
@@ -238,14 +268,20 @@ namespace Hecton8.UI
         private void HandleRebindStarted(string actionName, string actionMap, int bindingIndex)
         {
             if (!IsControlsTabActive) return;
-            SetStatus($"{rebindingPrefix}  [{actionMap}/{actionName}]");
+            SetStatus(
+                $"{rebindingPrefix}  [{actionMap}/{actionName}]",
+                new Color(0.82f, 0.98f, 1f, 0.96f),
+                new Color(0.08f, 0.22f, 0.34f, 0.9f));
         }
 
         private void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
         {
             RefreshAllBindings();
             if (!IsControlsTabActive) return;
-            SetStatus($"{actionName}: {display}");
+            SetStatus(
+                $"{actionName}: {display}",
+                new Color(0.76f, 0.98f, 0.94f, 0.96f),
+                new Color(0.08f, 0.2f, 0.18f, 0.88f));
         }
 
         private void HandleRebindCanceled(string actionName, string actionMap, int bindingIndex)
@@ -277,13 +313,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (row.bindingIndex < 0 || row.bindingIndex >= action.bindings.Count)
+            int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+            if (bindingIndex < 0)
             {
-                SetStatus($"Invalid binding index: {row.actionName}[{row.bindingIndex}]");
+                SetStatus($"No rebindable binding: {row.actionName}");
                 return;
             }
 
-            action.RemoveBindingOverride(row.bindingIndex);
+            action.RemoveBindingOverride(bindingIndex);
             if (saveAfterRowReset)
             {
                 RebindingManager.Instance.SaveOverrides();
@@ -355,6 +392,10 @@ namespace Hecton8.UI
             Anchor(listRoot, new Vector2(0f, 0f), new Vector2(1f, 1f),
                 new Vector2(18f, 72f), new Vector2(-18f, -72f));
 
+            _rowBackgrounds = new Image[rows.Length];
+            _rowAccentBars = new Image[rows.Length];
+            _bindingBackgrounds = new Image[rows.Length];
+
             const float rowHeight = 30f;
             const float rowGap = 6f;
             float totalHeight = rows.Length * rowHeight + Mathf.Max(0, rows.Length - 1) * rowGap;
@@ -374,6 +415,15 @@ namespace Hecton8.UI
                 Image rowBg = EnsureImage(rowRoot.gameObject);
                 rowBg.color = RowBg;
                 rowBg.raycastTarget = false;
+                _rowBackgrounds[i] = rowBg;
+
+                RectTransform accent = CreateRect(rowRoot, $"Accent_{row.actionName}");
+                Anchor(accent, new Vector2(0f, 0f), new Vector2(0f, 1f),
+                    new Vector2(0f, 0f), new Vector2(4f, 0f));
+                Image accentImg = EnsureImage(accent.gameObject);
+                accentImg.color = new Color(0.18f, 0.32f, 0.34f, 0.78f);
+                accentImg.raycastTarget = false;
+                _rowAccentBars[i] = accentImg;
 
                 RectTransform selected = CreateRect(rowRoot, $"Selected_{row.actionName}");
                 Anchor(selected, new Vector2(0f, 0f), new Vector2(0f, 1f),
@@ -394,6 +444,7 @@ namespace Hecton8.UI
                 Image bindingBg = EnsureImage(bindingBox.gameObject);
                 bindingBg.color = BindingBg;
                 bindingBg.raycastTarget = false;
+                _bindingBackgrounds[i] = bindingBg;
 
                 TextMeshProUGUI binding = CreateText(bindingBox, $"Binding_{row.actionName}",
                     bindingFont, 11.5f, FontStyles.Bold, TextAlignmentOptions.Center);
@@ -411,6 +462,7 @@ namespace Hecton8.UI
             Image statusBg = EnsureImage(statusRoot.gameObject);
             statusBg.color = new Color(0.05f, 0.1f, 0.12f, 0.82f);
             statusBg.raycastTarget = false;
+            _statusBackground = statusBg;
 
             statusText = CreateText(statusRoot, "StatusText", labelFont, 11f, FontStyles.Normal, TextAlignmentOptions.Left);
             Stretch(statusText.rectTransform, 12f, 0f, 12f, 0f);
@@ -535,13 +587,14 @@ namespace Hecton8.UI
             if (row.bindingText == null) return;
 
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
-            if (action == null || row.bindingIndex < 0 || row.bindingIndex >= action.bindings.Count)
+            int bindingIndex = action != null ? ResolveBindingIndex(action, row.bindingIndex) : -1;
+            if (action == null || bindingIndex < 0)
             {
                 row.bindingText.text = "--";
                 return;
             }
 
-            string binding = action.GetBindingDisplayString(row.bindingIndex);
+            string binding = action.GetBindingDisplayString(bindingIndex);
             row.bindingText.text = string.IsNullOrEmpty(binding) ? "--" : binding;
         }
 
@@ -553,6 +606,27 @@ namespace Hecton8.UI
                 if (indicator != null)
                 {
                     indicator.SetActive(i == _selectedIndex);
+                }
+
+                if (_rowBackgrounds != null && i < _rowBackgrounds.Length && _rowBackgrounds[i] != null)
+                {
+                    _rowBackgrounds[i].color = i == _selectedIndex
+                        ? new Color(0.08f, 0.18f, 0.2f, 0.82f)
+                        : RowBg;
+                }
+
+                if (_rowAccentBars != null && i < _rowAccentBars.Length && _rowAccentBars[i] != null)
+                {
+                    _rowAccentBars[i].color = i == _selectedIndex
+                        ? new Color(0.46f, 0.98f, 0.94f, 0.96f)
+                        : new Color(0.18f, 0.32f, 0.34f, 0.78f);
+                }
+
+                if (_bindingBackgrounds != null && i < _bindingBackgrounds.Length && _bindingBackgrounds[i] != null)
+                {
+                    _bindingBackgrounds[i].color = i == _selectedIndex
+                        ? new Color(0.1f, 0.24f, 0.28f, 0.86f)
+                        : BindingBg;
                 }
             }
         }
@@ -566,18 +640,59 @@ namespace Hecton8.UI
             }
 
             RebindRow row = rows[_selectedIndex];
-            string binding = InputManager.Instance.GetBindingDisplayString(
-                row.actionName, row.actionMap, row.bindingIndex);
-            if (string.IsNullOrEmpty(binding)) binding = "--";
+            string binding = "--";
+            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
+            if (action != null)
+            {
+                int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+                if (bindingIndex >= 0)
+                {
+                    binding = action.GetBindingDisplayString(bindingIndex);
+                    if (string.IsNullOrEmpty(binding)) binding = "--";
+                }
+            }
 
             SetStatus($"{readyPrefix}: {row.label} [{binding}]  |  {resetHint}");
         }
 
+        private static int ResolveBindingIndex(InputAction action, int preferredIndex)
+        {
+            if (action == null || action.bindings.Count == 0)
+                return -1;
+
+            if (preferredIndex >= 0 &&
+                preferredIndex < action.bindings.Count &&
+                !action.bindings[preferredIndex].isComposite &&
+                !action.bindings[preferredIndex].isPartOfComposite)
+            {
+                return preferredIndex;
+            }
+
+            for (int i = 0; i < action.bindings.Count; i++)
+            {
+                if (!action.bindings[i].isComposite && !action.bindings[i].isPartOfComposite)
+                    return i;
+            }
+
+            return -1;
+        }
+
         private void SetStatus(string value)
+        {
+            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+        }
+
+        private void SetStatus(string value, Color textColor, Color backgroundColor)
         {
             if (statusText != null)
             {
                 statusText.text = value;
+                statusText.color = textColor;
+            }
+
+            if (_statusBackground != null)
+            {
+                _statusBackground.color = backgroundColor;
             }
         }
 
@@ -641,7 +756,7 @@ namespace Hecton8.UI
             text.fontStyle = style;
             text.alignment = alignment;
             text.raycastTarget = false;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             return text;
         }
 

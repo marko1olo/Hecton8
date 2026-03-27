@@ -58,10 +58,11 @@ UI systems to add:
 
 ### Tabs
 
-Use the existing 3-tab PDA model:
+Use the current 4-tab PDA model:
 - Tab 0: `Inventory`
-- Tab 1: `Equipment`
+- Tab 1: `Loadout`
 - Tab 2: `Controls`
+- Tab 3: `Data Log`
 
 ### Inventory Tab
 
@@ -73,15 +74,26 @@ Show:
 
 Do not fake stack counts. The current backend does not support true stacks.
 
-### Equipment Tab
+### Loadout Tab
 
 Show:
-- 4 quick slots
-- assigned tool icon/name per slot
+- 4 quick-slot cards
+- assigned tool icon/name
+- ready / missing / broken state
 - active slot highlight
-- empty / unavailable / equipped states
+- durability + energy profile digest
 
-This tab reflects `PlayerToolManager`. It does not replace equip logic.
+This tab is the dedicated equipment/readiness screen and stays backed by `PlayerToolManager`.
+
+### Data Log Tab
+
+Show:
+- suit telemetry summary
+- cargo digest
+- manifest preview
+- current quick-slot loadout state
+
+This tab is a high-signal readout, not a replacement for inventory management.
 
 ### Controls Tab
 
@@ -121,7 +133,8 @@ Separate from PDA panel:
 - `Tab` / `I` inventory path opens PDA to Inventory tab without using the old separate inventory overlay.
 - PDA open blocks gameplay the same way the current `PlayerPDA` contract already expects.
 - Inventory tab reflects the actual `InventoryGrid`.
-- Equipment tab reflects the actual `PlayerToolManager`.
+- Loadout tab reflects live quick-slot readiness and assignment state.
+- Data Log tab reflects live cargo/loadout/suit state.
 - HUD quick bar reflects active slot live.
 - Controls tab remains functional.
 - Flat HUD remains the only active HUD path.

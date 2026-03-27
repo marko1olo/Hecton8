@@ -334,3 +334,162 @@ Notes:
 - Flashlight remains an existing `PlayerFlashlight` path, not yet a `PlayerTool` prefab
 - The four held prefabs are logic scaffolds only and still need visuals/audio tuning
 - The remaining eight tools currently exist only as data assets until gameplay scripts are added
+
+## 2026-03-27 — PDA tabs completion pass
+
+- `PDAControlsRebindUI` upgraded from a reference-only shell into a self-building runtime tab.
+  - If the tab has no preauthored rows, it now creates the whole controls list, selection markers, binding boxes, and status line itself.
+  - Existing event-driven rebinding flow through `InputManager` / `RebindingManager` remains intact.
+- Added `Assets/_Project/Scripts/UI/PDADataLogTab.cs`.
+  - This is now the third PDA tab (`Data Log`) instead of a dead placeholder.
+  - It shows live suit telemetry, cargo summary, manifest preview, and current quick-slot loadout.
+- `Tab_Reserved` in `02_HECTON_WORLD` was cleaned from the old non-UI TMP placeholder and is now intended to host `PDADataLogTab`.
+- `PlayerPDA` comments/tooltips were aligned to the real contract:
+  - `0 = Inventory`
+  - `1 = Controls`
+  - `2 = Data Log`
+
+## 2026-03-27 - PDA inventory usability pass
+
+- `PDAInventoryTab` now has category filters:
+  - `ALL`
+  - `TOOLS`
+  - `CONS`
+  - `MATS`
+  - `PARTS`
+- Filtering is UI-side only and does not mutate `PlayerInventory` or `InventoryGrid`.
+- Added a `CargoDigest` block under the grid:
+  - anchor count
+  - unit count
+  - free cells
+  - per-category breakdown
+- Inventory footer now reports both cargo mass and used cells.
+- Item details now show stack state, total stack mass, and whether the item is consumable/field-use only.
+- Compile was rechecked after this pass; only legacy/third-party warnings remain in console.
+
+## 2026-03-27 - PDA loadout assignment pass
+
+- `PlayerToolManager` now owns a serialized `knownToolPrefabs` registry for the full held-tool set.
+- Added `GetKnownToolPrefabForItem(ItemData)` so PDA/inventory UI can resolve a runtime-held prefab from an inventory item without hardcoded scene hacks.
+- `PDAInventoryTab` details panel now includes `SET SLOT 1-4` loadout buttons for tool/equipment items.
+- Selected tools can now be assigned directly from inventory into quick slots through `PlayerToolManager.SetAssignedToolPrefab(...)`.
+- Loadout assignment feeds back into HUD via existing tool-assignment events instead of introducing a second loadout backend.
+
+## 2026-03-27 - PDA loadout tab pass
+
+- Added `PDALoadoutTab` as a dedicated PDA screen for quick-slot readiness.
+- Expanded PDA tab contract to `Inventory / Loadout / Controls / Data Log`.
+- `PDAInventoryTab` top bar now exposes all four tabs instead of the old three-label shell.
+- Loadout cards now read real assignment, cargo availability, durability, and energy profile from the existing tool systems.
+
+## 2026-03-27 - PDA loadout interaction pass
+
+- Upgraded `PDALoadoutTab` from read-only summary into a working management screen.
+- Each loadout card now exposes slot actions:
+  - activate slot
+  - holster current slot
+  - clear slot assignment
+- Added HUD feedback for loadout actions and invalid states through `HUDNotification`.
+- Kept all actions routed through existing `PlayerToolManager` APIs instead of adding parallel state.
+
+## 2026-03-27 - PDA inventory decision-support pass
+
+- Expanded `PDAInventoryTab` details panel with richer decision-support fields:
+  - effect profile
+  - live status
+  - recommended next action
+- Consumables now expose actual suit restore profile directly in the details view.
+- Tool/equipment items now expose loadout relevance and registry/assignment state directly in inventory.
+- Details panel now refreshes immediately after loadout assignment so the user sees the new state without tab churn.
+
+## 2026-03-27 - PDA inventory contextual-action pass
+
+- Upgraded the former `USE` button in `PDAInventoryTab` into a contextual primary-action control.
+- Consumables still execute `UseSelectedItem()`, but assignable tools now expose direct actions:
+  - `ARM Sx`
+  - `ACTIVATE Sx`
+  - `HOLSTER`
+  - `RE-ARM Sx`
+  - `NO PREFAB`
+- Primary action now routes through the real tool/loadout backend instead of forcing the user to leave Inventory just to arm or activate a selected tool.
+- Rechecked both compile and a short play-mode smoke pass after the change; no new red errors were emitted.
+
+## 2026-03-27 - PDA directives pass
+
+- `PDALoadoutTab` now emits a live directive line instead of a static hint:
+  - no kit assigned
+  - broken tools present
+  - cargo/loadout mismatch
+  - under-armed expedition state
+  - ready-to-deploy state
+- `PDADataLogTab` now includes a dedicated `OPERATIONS DIRECTIVE` block driven by real suit/cargo state:
+  - low integrity
+  - low oxygen
+  - low energy
+  - elevated pressure
+  - heavy cargo load
+  - stable expedition profile
+- `PDADataLogTab` footer hint is now dynamic and reflects current quick-slot readiness instead of staying static.
+- Compile was rechecked and a post-play console sweep stayed clean after the pass.
+
+## 2026-03-27 - PDA severity-visual pass
+
+- `PDALoadoutTab` now gives each slot card stronger visual hierarchy:
+  - left accent bars
+  - status-chip backplates
+  - state-tinted severity colors for `READY`, `MISSING`, `BROKEN`, and `UNASSIGNED`
+- `PDADataLogTab` now renders the operations directive inside a dedicated severity panel instead of plain text.
+- Directive visuals now shift between stable, warning, and critical states based on live suit/cargo conditions.
+- `PDADataLogTab` footer hint now also changes color based on actual loadout readiness state.
+- Rechecked compile and post-play console after the visual pass; no new red errors were emitted.
+
+## 2026-03-27 - PDA controls visual-language pass
+
+- `PDAControlsRebindUI` now uses the same stronger visual language as the other PDA tabs:
+  - selected-row background emphasis
+  - accent bars
+  - stronger binding-box highlight on the focused row
+- Controls status line now has explicit visual states for:
+  - neutral browse state
+  - active rebinding state
+  - successful completion state
+- This keeps the Controls tab from feeling like a legacy/debug screen next to Inventory, Loadout, and Data Log.
+- Compile was rechecked and a post-play console sweep stayed clean after the pass.
+
+## 2026-03-27 - PDA shell chrome pass
+
+- Added a new runtime shell component: `PDAShellChrome`.
+- Attached it to `PDA_Panel` so the whole PDA now has a shared top/bottom chrome layer independent of individual tabs.
+- Shell chrome now shows:
+  - fixed system title
+  - current active tab
+  - cargo cells / cargo mass / ready tools
+  - oxygen / power / PDA online state
+- Shell header/footer severity now shifts between stable, warning, and critical states using live suit/cargo/loadout conditions.
+- Added corner brackets and shell rules so the PDA reads as one coherent premium panel instead of four separate screens.
+- Rechecked compile and post-play console after live attachment to `PDA_Panel`; no new red errors were emitted.
+
+## 2026-03-27 - PDA inventory section-rhythm pass
+
+- `PDAInventoryTab` now has clearer flagship-tab sectioning instead of a flat grid/details layout:
+  - `CARGO GRID`
+  - `ITEM ANALYSIS`
+  - `QUICK ACCESS MATRIX`
+  - `CARGO DIGEST`
+- Grid and details panels were shifted to leave explicit section-label space, improving top-of-screen breathing room.
+- Added an additional lower rule and extended vertical separator so the inventory screen reads with stronger structural rhythm.
+- Sort control was moved into cleaner alignment with the grid header band instead of floating deeper in the panel.
+- Rechecked compile and post-play console after the layout pass; no new red errors were emitted.
+
+## 2026-03-27 - PDA inventory detail-card pass
+
+- `PDAInventoryTab` selected-item presentation was upgraded into a stronger command-card treatment:
+  - dedicated icon-box backplate
+  - title band
+  - status chip panel
+  - action recommendation panel
+- Detail-card chrome now changes tint by item category and item state instead of using a flat single-color block.
+- During this pass a real runtime regression was caught:
+  - duplicate `Image` usage on the same detail icon container caused a `NullReferenceException`
+  - fixed by splitting the icon background and icon visual into separate UI objects
+- Rechecked compile and post-play console after the fix; the pass now closes clean with no red errors.
