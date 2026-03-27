@@ -152,7 +152,6 @@ namespace Hecton8.UI
 
             ShowSection(PauseSection.Main);
 
-            gameObject.SetActive(true);
             if (_canvasGroup != null)
             {
                 _canvasGroup.alpha = 1f;
@@ -196,18 +195,17 @@ namespace Hecton8.UI
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
 
-            if (Application.isPlaying)
-                gameObject.SetActive(false);
         }
 
         private void AutoResolve()
         {
             if (playerPDA == null)
                 playerPDA = FindFirstObjectByType<PlayerPDA>();
-            if (labelFont == null)
-                labelFont = TMP_Settings.defaultFontAsset;
+            labelFont = ResolveReadableFont(labelFont);
             if (numericFont == null)
                 numericFont = labelFont;
+            else if (IsNumericOnlyFont(labelFont) && !IsNumericOnlyFont(numericFont))
+                labelFont = numericFont;
         }
 
         private void EnsureBuilt()
@@ -383,7 +381,7 @@ namespace Hecton8.UI
             RectTransform controlsRoot = CreateRect(panel, "ControlsPanel");
             Anchor(controlsRoot, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(22f, 62f), new Vector2(-22f, -80f));
             PauseControlsPanel controls = controlsRoot.gameObject.AddComponent<PauseControlsPanel>();
-            controls.Configure(this, labelFont, numericFont);
+            controls.Configure(this, labelFont, labelFont);
             _controlsPanel = controls;
 
             CreateBackButton(panel, () => ShowSection(PauseSection.Main));
@@ -422,7 +420,7 @@ namespace Hecton8.UI
         private async void SaveSlot(string slotName)
         {
             if (_saveStatus != null)
-                _saveStatus.SetText("WRITING {0}...", slotName.ToUpperInvariant());
+                _saveStatus.text = $"WRITING {slotName.ToUpperInvariant()}...";
 
             SaveManager saveManager = SaveManager.Instance;
             if (saveManager == null)
@@ -436,13 +434,13 @@ namespace Hecton8.UI
             {
                 await saveManager.SaveGameAsync(slotName);
                 if (_saveStatus != null)
-                    _saveStatus.SetText("{0} WRITTEN.", slotName.ToUpperInvariant());
+                    _saveStatus.text = $"{slotName.ToUpperInvariant()} WRITTEN.";
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {ex.Message}");
                 if (_saveStatus != null)
-                    _saveStatus.SetText("{0} FAILED. CHECK CONSOLE.", slotName.ToUpperInvariant());
+                    _saveStatus.text = $"{slotName.ToUpperInvariant()} FAILED. CHECK CONSOLE.";
             }
         }
 
@@ -619,6 +617,40 @@ namespace Hecton8.UI
             rect.anchorMax = new Vector2(1f, 1f);
             rect.offsetMin = new Vector2(left, bottom);
             rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)
+        {
+            if (preferred != null && !IsNumericOnlyFont(preferred))
+                return preferred;
+
+            TMP_FontAsset[] fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            for (int i = 0; i < fonts.Length; i++)
+            {
+                TMP_FontAsset candidate = fonts[i];
+                if (candidate == null)
+                    continue;
+
+                string name = candidate.name;
+                if (name.IndexOf("текст", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("text", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return candidate;
+                }
+            }
+
+            return TMP_Settings.defaultFontAsset;
+        }
+
+        private static bool IsNumericOnlyFont(TMP_FontAsset font)
+        {
+            if (font == null)
+                return false;
+
+            string name = font.name;
+            return name.IndexOf("циф", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf("digit", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf("number", StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

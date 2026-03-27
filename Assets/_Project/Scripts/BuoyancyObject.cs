@@ -56,6 +56,21 @@ namespace Hecton8.Physics
                  "0 = считать полностью погружённым")]
         [SerializeField] private float height = 0.3f;
 
+        [Tooltip("Насколько сильно объект реагирует на течение. " +
+                 "1 = стандартно, 0 = игнорирует поток, >1 = лёгкий/парусный объект.")]
+        [SerializeField] private float currentResponse = 1f;
+
+        [Tooltip("Стабилизирующий момент у поверхности. " +
+                 "Помогает объекту красиво выравниваться и не болтаться как мусорный баг.")]
+        [SerializeField] private float surfaceStability = 0.75f;
+
+        [Tooltip("Насколько важен объект для high-fidelity симуляции на расстоянии. " +
+                 "1 = стандарт, >1 = дольше остаётся в high LOD, <1 = раньше упрощается.")]
+        [SerializeField] private float lodBias = 1f;
+
+        [Tooltip("Если выключено — объект всегда считается в полном качестве, без distance LOD.")]
+        [SerializeField] private bool allowDistanceLod = true;
+
         [Header("── Ground Detection ─────────────────────────")]
         [Tooltip("How often to perform ground check (in fixed frames). " +
                  "1 = every frame, 3 = every 3rd frame. Higher = better perf, slower response.")]
@@ -132,6 +147,18 @@ namespace Hecton8.Physics
 
         /// <summary>Высота (м).</summary>
         public float Height => height;
+
+        /// <summary>Множитель реакции на течение.</summary>
+        public float CurrentResponse => currentResponse;
+
+        /// <summary>Стабилизирующий момент у поверхности.</summary>
+        public float SurfaceStability => surfaceStability;
+
+        /// <summary>Смещение приоритета LOD.</summary>
+        public float LodBias => lodBias;
+
+        /// <summary>Разрешён ли distance-based LOD для этого объекта.</summary>
+        public bool AllowDistanceLod => allowDistanceLod;
 
         /// <summary>Кэшированный Rigidbody. Гарантированно не-null (RequireComponent).</summary>
         public Rigidbody Body => _rb;
@@ -280,6 +307,9 @@ namespace Hecton8.Physics
             if (density < 0.01f) density = 0.01f;
             if (volume  < 0.0001f) volume = 0.0001f;
             if (height  < 0f) height = 0f;
+            if (currentResponse < 0f) currentResponse = 0f;
+            if (surfaceStability < 0f) surfaceStability = 0f;
+            if (lodBias < 0.1f) lodBias = 0.1f;
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
 
             // Ensure Water layer is excluded from groundLayers

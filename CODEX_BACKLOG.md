@@ -1,5 +1,113 @@
 # Codex Backlog
 
+## 2026-03-27 - Pause menu migration, font cleanup, and scene audio bootstrap
+
+- PDA no longer carries `Controls` as a live tab in the active user flow.
+  - Changed in:
+    - `Assets/_Project/Scripts/PlayerPDA.cs`
+    - `Assets/_Project/Scripts/PDAInventoryTab.cs`
+    - `Assets/_Project/Scripts/UI/PDADataLogTab.cs`
+    - `Assets/_Project/Scripts/UI/PDAShellChrome.cs`
+  - What changed:
+    - active PDA contract is now:
+      - `0 = Inventory`
+      - `1 = Loadout`
+      - `2 = Data Log`
+    - `Tab_Controls` is no longer part of `PlayerPDA.tabs[]`
+    - top tab labels were reduced accordingly
+  - Why:
+    - user requested moving controls/rebinding out of PDA into the standard `Esc` settings flow
+  - Result:
+    - PDA surface is simpler and closer to a real in-game field device instead of a settings dump
+
+- Added a real `Esc` pause/settings shell.
+  - New files:
+    - `Assets/_Project/Scripts/UI/PauseMenuController.cs`
+    - `Assets/_Project/Scripts/UI/PauseControlsPanel.cs`
+    - `Assets/_Project/Scripts/UI/PauseMenuHost.cs`
+  - Scene wiring:
+    - `PauseMenuHost` attached to `--- UI ---/Suit_HUD_Canvas`
+    - host creates `PauseMenu_Root` at runtime under the existing HUD canvas
+  - What it provides:
+    - `Resume Expedition`
+    - `Save Station`
+    - `Field Guide`
+    - `Settings`
+    - `Exit To Main Menu`
+    - `Quit Application`
+    - runtime rebinding UI lives inside `Settings`, not inside PDA
+  - Important implementation detail:
+    - pause menu root stays active and uses `CanvasGroup` for visibility, so `ITickable` registration is not lost after closing
+
+- Fixed PDA/UI audio null-spam without faking a backend.
+  - Changed in:
+    - `Assets/_Project/Scripts/SpatialAudioManager.cs`
+    - `Assets/_Project/Scripts/PlayerPDA.cs`
+  - What changed:
+    - added `SpatialAudioManager.TryGetInstance(out ...)`
+    - `PlayerPDA.PlaySound(...)` now probes silently instead of touching the noisy `Instance` getter
+  - Why:
+    - user hit repeated `[SpatialAudioManager] Instance is null` errors when opening/closing PDA
+  - Result:
+    - PDA sound calls no longer spam the console when the manager is absent
+
+- Added a real `SpatialAudioManager` scene bootstrap.
+  - Scene change:
+    - created root scene object `SpatialAudioManager_Root`
+    - attached `Hecton8.Audio.SpatialAudioManager`
+    - saved `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+  - Why:
+    - optional silent probing is good, but the correct production fix is to actually have the scene audio manager present
+  - Result:
+    - PDA / pause-menu UI audio path now has a real manager available
+  - Bad attempt noted:
+    - first manager instance was created as a child under `--- UI ---`
+    - this triggered `DontDestroyOnLoad only works for root GameObjects`
+    - rolled forward by deleting that child instance and creating a root object instead
+
+- Removed pause/settings TMP glyph warnings caused by numeric-only font assignment.
+  - Changed in:
+    - `Assets/_Project/Scripts/UI/PauseMenuController.cs`
+    - `Assets/_Project/Scripts/UI/PauseControlsPanel.cs`
+  - What changed:
+    - both scripts now sanitize assigned fonts through a readable-font resolver
+    - numeric-only fonts like `цифры SDF` are rejected for text labels/binding text
+  - Why:
+    - runtime warnings were emitted for Cyrillic/letter glyphs missing from the numeric font
+  - Result:
+    - glyph warnings from pause controls panel disappeared in play-mode smoke checks
+
+- Updated runtime input asset to support closing PDA from `Tab` while UI map is active.
+  - Changed in:
+    - `Assets/Resources/HectonRuntimeInputActions.inputactions`
+  - What changed:
+    - UI `Cancel` now includes `<Keyboard>/tab` in addition to escape/right mouse/gamepad cancel paths
+  - Why:
+    - user explicitly reported that inventory/PDA was not closing via `Tab`
+  - Result:
+    - input asset side is now aligned with the intended `Tab` close behavior
+  - Validation status:
+    - asset change is present
+    - not yet manually verified by user in real input session
+
+- Console state after this pass:
+  - Confirmed gone:
+    - `[SpatialAudioManager] Instance is null`
+    - TMP glyph warnings from `Binding_Interact`, `Binding_Flashlight`, etc.
+    - `DontDestroyOnLoad only works for root GameObjects`
+  - New residual noise seen in play mode:
+    - `Resource ID out of range in SetResource: ...`
+  - Current status of that noise:
+    - source not yet tied to PDA/audio changes
+    - treat as separate rendering/runtime issue until proven otherwise
+
+- Honest validation done:
+  - compile clean after the pause/audio/font pass
+  - post-play console rechecked
+  - runtime `PauseMenu_Root` was confirmed to exist
+  - scene was re-saved after audio-manager bootstrap
+  - direct manual `Esc` interaction was not simulated through MCP; input-side correctness is inferred from code + input asset, not yet manually asserted
+
 ## 2026-03-27 - First runtime smoke-pass after tool provisioning
 
 - Ran a real play-mode smoke-pass through Unity MCP after:

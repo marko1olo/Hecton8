@@ -342,6 +342,10 @@ MonoBehaviour:
   bottomOffset: 92
   leftOffset: 82
   rightOffset: 58
+  useVisorSafeArea: 1
+  visorSafeMarginX: 0.18
+  visorSafeMarginY: 0.15
+  visorSafeRadialLimit: 0.82
   coldSurfaceTemp: 13.5
   abyssTemp: 2.4
   abyssReferenceDepth: 1450
@@ -765,10 +769,24 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  knownToolPrefabs:
+  - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
+  - {fileID: 3486443233350383320, guid: 5d922653eb929b94e9882b6e241eefa9, type: 3}
+  - {fileID: 493671988579274469, guid: 93bb5a6d42216914abf2e747410b61b1, type: 3}
+  - {fileID: 5076310524989112150, guid: 9ca050d6528fee3448cf92682aff30f2, type: 3}
+  - {fileID: 6454695462912670554, guid: cd122cc810f53fb4e943bcca187c5735, type: 3}
+  - {fileID: 1883046840169899827, guid: 5dc3c28d8d02bdd4e85ce79380a857df, type: 3}
+  - {fileID: 6564105744471423693, guid: f57d76c5db394a34aa52a3e94785f1de, type: 3}
+  - {fileID: 3322295463934918442, guid: cd9a43bda1d7a2740b47629d54731c97, type: 3}
+  - {fileID: 7743704587066382820, guid: 6c238274f01396e4abf84994c62699e5, type: 3}
+  - {fileID: 4272986197542876413, guid: 3fe44b7eed0229040aa15c0270b92326, type: 3}
+  - {fileID: 2166434716932352637, guid: 8aba6c744939ce54ab4d6ed98e920b77, type: 3}
+  - {fileID: 4612592341407459497, guid: 5d4c7102c6623d842a18e690fd88ea2e, type: 3}
   swapSpeed: 8
   lowerOffset: {x: 0, y: -0.5, z: 0}
   _debugCurrentSlot: -1
   _debugStateName: 
+  toolDebugLogging: 0
 --- !u!114 &8889624962428220854
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1019,8 +1037,8 @@ Transform:
   m_GameObject: {fileID: 7083179055082406996}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.7998047, z: 0.2999878}
-  m_LocalScale: {x: 1, y: 1, z: 0.1}
+  m_LocalPosition: {x: 0, y: 1.8, z: 0.2999878}
+  m_LocalScale: {x: 1, y: 1, z: 0.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2516292804375615598}
@@ -1129,9 +1147,16 @@ MonoBehaviour:
   _scratchBleed: 0.8
   _distortion: 0.02
   _manualProjectionRender: 1
+  _previewInEditMode: 1
   _syncToReferenceCamera: 1
+  _syncPoseInEditMode: 0
   _visorLocalOffset: {x: 0, y: 0, z: 0.3}
+  _visorLocalEulerOffset: {x: 0, y: 0, z: 0}
+  _visorLocalScale: {x: 1, y: 1, z: 0.6}
   _hudCameraLocalOffset: {x: 0, y: 0, z: 0}
+  _hudCameraLocalEulerOffset: {x: 0, y: 0, z: 0}
+  _minimumVisorForwardOffset: 0.02
+  _enforceNearClipSafeOffset: 0
 --- !u!1 &7338754024745434685
 GameObject:
   m_ObjectHideFlags: 0
@@ -1291,7 +1316,7 @@ Transform:
   m_GameObject: {fileID: 7350136928691967875}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.7998047, z: 0}
+  m_LocalPosition: {x: 0, y: 1.8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1469,6 +1494,10 @@ MonoBehaviour:
   bottomOffset: 92
   leftOffset: 82
   rightOffset: 58
+  useVisorSafeArea: 1
+  visorSafeMarginX: 0.18
+  visorSafeMarginY: 0.15
+  visorSafeRadialLimit: 0.82
   coldSurfaceTemp: 13.5
   abyssTemp: 2.4
   abyssReferenceDepth: 1450
@@ -1514,8 +1543,16 @@ MonoBehaviour:
   sharedProjectionTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
   overlayPresentationCamera: {fileID: 2887721374667799330}
   visorProjectionCamera: {fileID: 4738717749101629275}
+  canvasOverlay: {fileID: 0}
+  projectionSourceOverlay: {fileID: 0}
+  screenCompositor: {fileID: 0}
+  suppressOverlaysInProjectedMode: 1
+  previewProjectedSourceOnScreen: 1
+  preferCanvasProjectionSource: 1
+  syncProjectionLayoutFromOverlay: 0
   suppressAllLegacyHudInScene: 1
   debugAppliedModeLabel: ModernProjectedSharedRT
   debugLegacyEnabled: 0
   debugModernEnabled: 1
   debugProjectedModeActive: 1
+  debugOverlaysSuppressed: 0

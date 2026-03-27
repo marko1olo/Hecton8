@@ -509,13 +509,6 @@ namespace Hecton8.Audio
 
             if (_minDistance < 0.1f) _minDistance = 0.1f;
             if (_maxDistance < _minDistance) _maxDistance = _minDistance + 1f;
-
-            if (_sfxGroup == null || _interfaceGroup == null || _ambientGroup == null)
-            {
-                Debug.LogWarning(
-                    "[SpatialAudioManager] One or more AudioMixerGroups are not assigned. " +
-                    "Assign them in the Inspector for proper audio routing.");
-            }
         }
 
         /// <summary>

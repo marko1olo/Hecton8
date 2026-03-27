@@ -93,6 +93,11 @@ namespace Hecton8.Physics
 
         [Tooltip("Сила воздействия течения (множитель)")]
         [SerializeField] private float currentStrength = 1f;
+        [SerializeField] private bool enablePhantomCurrent = true;
+        [SerializeField] private float currentNoiseScale = 0.018f;
+        [SerializeField] private float currentTimeScale = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float currentVerticalFactor = 0.18f;
+        [SerializeField] private float phantomCurrentStrength = 0.9f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PERFORMANCE
@@ -102,9 +107,22 @@ namespace Hecton8.Physics
         [Tooltip("Минимальный batch size для Job. " +
                  "Меньше = больше параллелизма, больше = меньше overhead.")]
         [SerializeField] private int jobBatchSize = 32;
+        [SerializeField] private bool enableDistanceLod = true;
+        [SerializeField] private Transform lodObserver;
+        [SerializeField] private float nearLodDistance = 20f;
+        [SerializeField] private float mediumLodDistance = 45f;
+        [SerializeField] private float farLodDistance = 90f;
+        [SerializeField] private float cullLodDistance = 160f;
+        [SerializeField, Range(1, 8)] private int mediumLodDivisor = 2;
+        [SerializeField, Range(1, 16)] private int farLodDivisor = 4;
+        [SerializeField, Range(1, 32)] private int cullLodDivisor = 8;
 
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugObjectCount;
+        [SerializeField] private int _debugNearCount;
+        [SerializeField] private int _debugMediumCount;
+        [SerializeField] private int _debugFarCount;
+        [SerializeField] private int _debugCulledCount;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
