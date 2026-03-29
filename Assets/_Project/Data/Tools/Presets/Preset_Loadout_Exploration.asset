@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b67c66db13a4fa7498a4e56e9420d0dd, type: 3}
+  m_Name: Preset_Loadout_Exploration
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Tools.ToolLoadoutPreset
+  presetName: EXPLORATION
+  description: 'Balanced deep-run loadout: scanner, flashlight, propulsion, and cutter.'
+  slotPrefabs:
+  - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
+  - {fileID: 6454695462912670554, guid: cd122cc810f53fb4e943bcca187c5735, type: 3}
+  - {fileID: 1883046840169899827, guid: 5dc3c28d8d02bdd4e85ce79380a857df, type: 3}
+  - {fileID: 5076310524989112150, guid: 9ca050d6528fee3448cf92682aff30f2, type: 3}

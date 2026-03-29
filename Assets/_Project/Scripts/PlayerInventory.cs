@@ -299,6 +299,65 @@ namespace Hecton8.Inventory
         }
 
         /// <summary>
+        /// Removes an exact quantity of one item type across all anchor stacks.
+        /// Returns false and performs no mutation when the inventory does not
+        /// contain the full requested quantity.
+        /// </summary>
+        public bool TryRemoveQuantity(ItemData item, int quantity)
+        {
+            if (item == null || quantity <= 0)
+                return false;
+
+            if (CountTotal(item) < quantity)
+                return false;
+
+            int remaining = quantity;
+            int cols = _grid.Columns;
+            int rows = _grid.Rows;
+
+            for (int y = 0; y < rows && remaining > 0; y++)
+            {
+                for (int x = 0; x < cols && remaining > 0; x++)
+                {
+                    ItemData cell = _grid.GetCell(x, y);
+                    if (!ReferenceEquals(cell, item))
+                        continue;
+
+                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item))
+                        continue;
+                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item))
+                        continue;
+
+                    int idx = AnchorIndex(x, y);
+                    int stackCount = Mathf.Max(1, _stackCounts[idx]);
+                    int take = Mathf.Min(stackCount, remaining);
+
+                    if (take >= stackCount)
+                    {
+                        _grid.RemoveItem(x, y, item.width, item.height);
+                        _stackCounts[idx] = 0;
+                    }
+                    else
+                    {
+                        _stackCounts[idx] = stackCount - take;
+                    }
+
+                    TotalWeight -= item.weight * take;
+                    remaining -= take;
+                }
+            }
+
+            if (TotalWeight < 0f)
+                TotalWeight = 0f;
+
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+            return true;
+        }
+
+        /// <summary>
         /// Counts top-left anchor placements of a specific item.
         /// Multi-cell items are counted once.
         /// </summary>

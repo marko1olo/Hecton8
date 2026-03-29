@@ -404,9 +404,82 @@ namespace Hecton8.Input
         public string GetBindingDisplayString(string actionName, string actionMap = "Player", int bindingIndex = 0)
         {
             InputAction action = GetAction(actionName, actionMap);
-            if (action == null) return string.Empty;
-            
-            return action.GetBindingDisplayString(bindingIndex);
+            if (action == null)
+                return string.Empty;
+
+            if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+                bindingIndex = GetFirstDisplayableBindingIndex(action);
+
+            if (!TryGetBindingDisplayStringSafe(action, bindingIndex, out string display))
+                return string.Empty;
+
+            return display;
+        }
+
+        public static bool TryGetBindingDisplayStringSafe(InputAction action, int bindingIndex, out string display)
+        {
+            display = string.Empty;
+            if (action == null || bindingIndex < 0)
+                return false;
+
+            InputBinding binding;
+            try
+            {
+                if (bindingIndex >= action.bindings.Count)
+                    return false;
+
+                binding = action.bindings[bindingIndex];
+            }
+            catch
+            {
+                return false;
+            }
+
+            string path = binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
+
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            try
+            {
+                display = InputControlPath.ToHumanReadableString(
+                    path,
+                    InputControlPath.HumanReadableStringOptions.OmitDevice);
+            }
+            catch
+            {
+                display = string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(display))
+                display = path;
+
+            return !string.IsNullOrWhiteSpace(display);
+        }
+
+        private static int GetFirstDisplayableBindingIndex(InputAction action)
+        {
+            if (action == null)
+                return -1;
+
+            try
+            {
+                int count = action.bindings.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    InputBinding binding = action.bindings[i];
+                    if (!binding.isComposite && !binding.isPartOfComposite)
+                        return i;
+                }
+
+                return count > 0 ? 0 : -1;
+            }
+            catch
+            {
+                return -1;
+            }
         }
 
         public string SaveBindingOverridesAsJson()

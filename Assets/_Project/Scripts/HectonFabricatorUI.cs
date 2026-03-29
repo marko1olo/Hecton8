@@ -112,6 +112,7 @@ namespace Hecton8.UI
         private string LabelHintCraft   = "[SPACE] FABRICATE";
         private string LabelHintClose   = "[ESC] CLOSE";
         private string LabelNoRecipes   = "NO BLUEPRINTS AVAILABLE";
+        private string LabelBlueprintLocked = "SCAN DATA REQUIRED";
         private string LabelInsufficient = "INSUFFICIENT";
         private string LabelReady       = "READY";
         private const string LabelSeconds     = "s";
@@ -263,6 +264,21 @@ namespace Hecton8.UI
 
             if (hudCamera == null)
                 hudCamera = Camera.main;
+
+            if (font == null)
+            {
+                font = TMP_Settings.defaultFontAsset;
+
+                if (font == null)
+                {
+                    TextMeshProUGUI sampleText = FindFirstObjectByType<TextMeshProUGUI>();
+                    if (sampleText != null)
+                        font = sampleText.font;
+                }
+            }
+
+            if (playerInventory == null)
+                playerInventory = FindFirstObjectByType<PlayerInventory>();
         }
 
         public override void OnEnable()
@@ -278,10 +294,13 @@ namespace Hecton8.UI
                 InputManager.Instance.OnCancel   += HandleCancelInput;
             }
 
-            RebindingManager.Instance.OnRebindCompleted += HandleRebindCompleted;
-            RebindingManager.Instance.OnRebindCanceled += HandleRebindCanceled;
-            RebindingManager.Instance.OnOverridesLoaded += HandleRebindOverridesChanged;
-            RebindingManager.Instance.OnOverridesCleared += HandleRebindOverridesChanged;
+            if (RebindingManager.TryGetInstance(out RebindingManager rebindingManager))
+            {
+                rebindingManager.OnRebindCompleted += HandleRebindCompleted;
+                rebindingManager.OnRebindCanceled += HandleRebindCanceled;
+                rebindingManager.OnOverridesLoaded += HandleRebindOverridesChanged;
+                rebindingManager.OnOverridesCleared += HandleRebindOverridesChanged;
+            }
 
             // ── Subscribe to explicit UI texts ──
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
@@ -337,10 +356,13 @@ namespace Hecton8.UI
                 InputManager.Instance.OnCancel   -= HandleCancelInput;
             }
 
-            RebindingManager.Instance.OnRebindCompleted -= HandleRebindCompleted;
-            RebindingManager.Instance.OnRebindCanceled -= HandleRebindCanceled;
-            RebindingManager.Instance.OnOverridesLoaded -= HandleRebindOverridesChanged;
-            RebindingManager.Instance.OnOverridesCleared -= HandleRebindOverridesChanged;
+            if (RebindingManager.TryGetInstance(out RebindingManager rebindingManager))
+            {
+                rebindingManager.OnRebindCompleted -= HandleRebindCompleted;
+                rebindingManager.OnRebindCanceled -= HandleRebindCanceled;
+                rebindingManager.OnOverridesLoaded -= HandleRebindOverridesChanged;
+                rebindingManager.OnOverridesCleared -= HandleRebindOverridesChanged;
+            }
 
             CraftingEvents.OnFabricatorOpened    -= HandleFabricatorOpened;
             CraftingEvents.OnFabricatorClosed    -= HandleFabricatorClosed;
@@ -782,10 +804,18 @@ namespace Hecton8.UI
         {
             if (_recipes == null || _recipes.Count == 0)
             {
+                string emptyLabel = LabelNoRecipes;
+                if (_currentFabricator != null &&
+                    _currentFabricator.TotalRecipeCount > 0 &&
+                    _currentFabricator.LockedRecipeCount > 0)
+                {
+                    emptyLabel = LabelBlueprintLocked;
+                }
+
                 Draw.Color     = ColorTextDim;
                 Draw.FontSize  = FontW(fontSizeBody);
                 Draw.TextAlign = TextAlign.Left;
-                Draw.Text(Scr(ListX + 10f, ContentT - 40f), LabelNoRecipes);
+                Draw.Text(Scr(ListX + 10f, ContentT - 40f), emptyLabel);
                 return;
             }
 

@@ -227,7 +227,9 @@ namespace Hecton8.UI
             {
                 case 0: return "INVENTORY";
                 case 1: return "LOADOUT";
-                case 2: return "DATA LOG";
+                case 2: return "CONSTRUCTION";
+                case 3: return "BARTER";
+                case 4: return "DATA LOG";
                 default: return "UNKNOWN";
             }
         }

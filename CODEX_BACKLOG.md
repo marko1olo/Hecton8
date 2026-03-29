@@ -1,5 +1,477 @@
 # Codex Backlog
 
+## 2026-03-29 - Active tool HUD integration pass
+
+- Added shared active-tool reporting API:
+  - `PlayerTool.GetOperationalSummary()`
+  - `PlayerTool.GetOperationalDirective()`
+  - `PlayerToolManager.GetCurrentToolOperationalSummary()`
+  - `PlayerToolManager.GetCurrentToolOperationalDirective()`
+- Tried a dedicated `ToolStatusOverlay` HUD component, but Unity did not import the type reliably even with a clean compile and empty console.
+- Did not let that block the sprint:
+  - removed the risky standalone overlay path
+  - integrated current-tool summary + directive directly into `HUDQuickBar`
+  - quickbar now shows the active tool status under the 4 slots
+- Removed the leftover experimental `ToolStatusOverlay` scene object so the scene stays clean.
+- Verified through Unity MCP:
+  - compile clean
+  - short game run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Tool operational summary pass
+
+- Extended the shared active-tool HUD layer beyond the base fallback text.
+- `HUDQuickBar` now refreshes active-tool summary/directive on a light timer instead of only on slot changes, so live tool state can update during normal use.
+- Added tool-specific operational summary/directive overrides for:
+  - `RepairTool`
+  - `SalvageSamplerTool`
+  - `PropulsionTool`
+  - `LaserCutter`
+- These tools now feed the shared HUD layer with:
+  - service state
+  - salvage readiness
+  - tractor/lock guidance
+  - cutter heat/recovery state
+- Verified through Unity MCP:
+  - compile clean
+  - short game run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Full tool HUD coverage pass
+
+- Extended shared active-tool summary/directive coverage to the remaining tools:
+  - `BeaconDeployerTool`
+  - `EnvironmentalAnalyzerTool`
+  - `KnifeTool`
+  - `StunPistolTool`
+  - `HarpoonLauncherTool`
+- The full 12-tool roster now has a shared operational status path for the active quick-slot HUD.
+- This means the player-facing quickbar can now describe:
+  - current lock/hold state
+  - cooldown or recovery time
+  - current contact state
+  - current tactical recommendation
+- Verified through Unity MCP:
+  - compile clean
+  - short game run clean
+  - console clean
+
+## 2026-03-29 - Tool HUD validation and PDA loadout pass
+
+- Extended `ToolStackValidator` with a dedicated menu item:
+  - `Hecton/Validation/Validate Tool Operational HUD`
+- This validation now checks:
+  - every held tool prefab exposes `PlayerTool`
+  - every held tool overrides `GetOperationalSummary()`
+  - every held tool overrides `GetOperationalDirective()`
+  - live scene still contains `HUDQuickBar`
+- Validation result is now confirmed:
+  - `[ToolOperationalValidation] PASS no issues found.`
+- `PDALoadoutTab` now also surfaces the live active-tool summary and directive in the loadout digest/footer instead of only showing slot readiness.
+- Verified through Unity MCP:
+  - compile clean
+  - validator pass
+  - short game run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Tool Trial Range authoring pass
+
+- Added a new authoring menu path inside `ConstructionBootstrapAuthoring`:
+  - `Hecton/Authoring/Rebuild Tool Trial Range`
+- The new trial range now rebuilds a reusable in-scene testing zone under `Tool_Staging/Tool_TrialRange`.
+- Current authored lanes:
+  - `Lane_Cargo`
+    - light / work / heavy / overweight cargo masses
+  - `Lane_Salvage`
+    - multiple titanium salvage pickups
+  - `Lane_ServiceModules`
+    - damaged foundation
+    - flooded corridor
+    - intact pylon control reference
+  - `Lane_BeaconRoute`
+    - anchor / relay / frontier route markers
+- This gives us a real scene-side base for validating:
+  - propulsion mass bands
+  - harpoon reel behavior
+  - salvage pickup flow
+  - repair and cutter service states
+  - beacon route logic
+- Caught and fixed one real compile issue during authoring:
+  - `Transform.scene` was invalid and replaced with `parent.gameObject.scene`
+- Verified through Unity MCP:
+  - compile clean
+  - authoring menu executed
+  - `Tool_TrialRange` and child lanes were found in the live scene
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Tool Trial Range expansion and validation pass
+
+- Expanded `Tool Trial Range` beyond the first 4 lanes.
+- New authored lanes:
+  - `Lane_DarkRoute`
+    - narrow dark-space corridor geometry
+    - close salvage pickup
+    - distant scannable hazard probe
+    - route markers for flashlight guidance
+  - `Lane_ScanCorridor`
+    - expedition / resource / structure scan probes
+    - extra nearby pickup cache for scanner and analyzer checks
+- Added and verified a dedicated validation menu path:
+  - `Hecton/Validation/Validate Tool Trial Range`
+- Caught and fixed one real authoring issue during validation:
+  - intact control target on the service lane was using a pylon without `BaseModule`
+  - replaced it with an intact foundation control target so `RepairTool` checks stay meaningful
+- Verified through Unity MCP:
+  - compile clean
+  - `Rebuild Tool Trial Range` executed
+  - `Validate Tool Trial Range` returned:
+    - `[ToolTrialRangeValidation] PASS no issues found.`
+  - new lanes were found in the live scene
+
+## 2026-03-29 - Flashlight and analyzer authored-world context pass
+
+- Closed a real authored-world gap for the new `Tool Trial Range` lanes.
+- `FlashlightTool.cs` now reads the forward context and changes its live recommendation based on what is actually ahead:
+  - nearby pickups -> recommend `FLOOD`
+  - distant probes / hazards / modules -> recommend `FOCUS`
+  - nearby service surfaces -> recommend `STANDARD`
+- `EnvironmentalAnalyzerTool.cs` now properly classifies:
+  - `PickupItem`
+  - `ScannableTarget`
+- This makes the new `Lane_DarkRoute` and `Lane_ScanCorridor` meaningful to real tool usage instead of only existing as scene decoration.
+- Caught and fixed one real compile issue during the pass:
+  - `FlashlightTool` needed the `Hecton8.Scavenging` namespace for `ResourceNode`
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Scanner authored-lane interpretation pass
+
+- Extended `ScannerTool.cs` so the scanner no longer forgets the last useful sweep immediately.
+- New behavior:
+  - scanner caches the latest meaningful scan result for a short window
+  - active-tool HUD can now reflect the last resolved contact count instead of dropping straight back to a generic ready-state
+- Added authored-POI-aware interpretation:
+  - hazard probes
+  - resource POIs
+  - structure POIs
+  - expedition checkpoints
+- This makes the scanner recommendations more useful on `Lane_ScanCorridor` and nearby authored route probes.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Salvage lane resource-node pass
+
+- Expanded `Lane_Salvage` inside `Tool Trial Range`.
+- Added authored scene targets:
+  - `Trial_Node_Active`
+  - `Trial_Node_Depleted`
+- Implemented these directly inside `ConstructionBootstrapAuthoring.cs` without adding another editor utility script.
+- Caught and fixed one real authoring/runtime issue:
+  - `ResourceNode` private runtime fields were not accessible through `SerializedObject.FindProperty(...)`
+  - switched this localized editor-only setup to direct reflection assignment for `_currentHealth` and `_isDepleted`
+- This gives authored real-world targets for:
+  - sampler recovery diagnosis
+  - depleted-node analyzer reads
+  - cutter and knife process-state checks
+- Verified through Unity MCP:
+  - compile clean
+  - `Rebuild Tool Trial Range` executed
+  - `Validate Tool Trial Range` returned `PASS no issues found`
+  - both trial resource nodes were found in the live scene
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Salvage and cutter authored-state pass
+
+- Improved real authored-state reads for salvage-lane targets.
+- `SalvageSamplerTool.cs`:
+  - now resolves `ResourceNode` from parent colliders as well as direct colliders
+  - now reports live node integrity bands instead of one generic active-node message
+- `LaserCutter.cs`:
+  - now resolves `BaseModule` and `ResourceNode` from parent colliders too
+  - node diagnosis now distinguishes dense / weakened / nearly-open states by integrity
+- `KnifeTool.cs`:
+  - node readouts now include clearer percentage-based break state
+- This pass specifically hardens authored salvage-lane usefulness instead of only adding more props.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Service-lane repair and cutter pass
+
+- Hardened authored service-module interactions.
+- `RepairTool.cs`:
+  - now resolves `BaseModule` through parent colliders
+  - this affects:
+    - primary repair path
+    - secondary diagnosis path
+    - live operational HUD diagnosis
+- `LaserCutter.cs`:
+  - module diagnosis now distinguishes:
+    - flooded module
+    - breached module
+    - locked sealed module
+  - integrity percentage is now carried into service-module readouts
+- This makes `Lane_ServiceModules` much more useful as a real authored maintenance scenario instead of only a visual prop lane.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Environmental Analyzer Enterprise Pass
+
+- Upgraded `EnvironmentalAnalyzerTool` from mostly flat HUD text to risk-oriented field analysis.
+- Added richer target classification for:
+  - items
+  - resource nodes
+  - modules
+  - bioforms
+  - movable mass objects
+- Added recommendation text so analyzer output tells the player what to do next.
+- Added stronger suit diagnostics:
+  - hull critical
+  - oxygen critical
+  - low power
+  - pressure exceedance
+  - stable state
+- Verified through Unity MCP:
+  - compile clean
+  - short game run clean
+  - console clean
+
+## 2026-03-29 - Scanner mode pass
+
+- Reworked `ScannerTool.cs` so scanner is no longer a single flat ping.
+- Added three working scanner modes:
+  - `EXPEDITION`
+  - `RESOURCE`
+  - `STRUCTURE`
+- Added secondary action mode cycling with explicit HUD feedback:
+  - `SCANNER MODE - EXPEDITION`
+  - `SCANNER MODE - RESOURCE`
+  - `SCANNER MODE - STRUCTURE`
+- Primary scan now builds a real result digest by mode:
+  - broad contact count for expedition sweeps
+  - resource + pickup emphasis for resource sweeps
+  - structure + intel emphasis for structure sweeps
+- Field log now records the actual sweep type and meaningful outcome instead of always producing the same generic scan text.
+- Caught and fixed one real regression during compile:
+  - `Physics.OverlapSphereNonAlloc` was resolving against the wrong namespace inside project scope
+  - fixed by switching to explicit `UnityEngine.Physics.OverlapSphereNonAlloc`
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Beacon logistics pass
+
+- Extended `BeaconDeployerTool.cs` so secondary action is distance-aware instead of always trying to retract immediately.
+- New behavior:
+  - if the nearest active beacon is farther than `retractRange`, the tool reports its label and distance
+  - if the nearest active beacon is within `retractRange`, the tool retracts it
+- Deploy and retract feedback now also include active beacon-grid count, which makes the tool more useful for navigation and logistics planning.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Repair diagnostics pass
+
+- Extended `RepairTool.cs` with a real diagnosis layer instead of plain percent-only readouts.
+- Quick diagnosis now distinguishes:
+  - sealed module
+  - patching / nearly sealed module
+  - heavy damage
+  - critical damage
+  - flooded compartment
+  - draining compartment
+  - flooded compartment with no power for pumps
+- Repair-start feedback now uses the same diagnosis path, so the tool reports the actual service situation when repair begins.
+- Diagnosis now includes a simple operator recommendation, not only state text.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Laser cutter clarity pass
+
+- Extended `LaserCutter.cs` so secondary action is now a real target diagnosis path instead of an empty reserved slot.
+- Cutter diagnosis now distinguishes:
+  - no target
+  - resource contact
+  - generic cuttable contact
+  - recovery-ready module
+  - locked/non-recoverable module
+- Recovery mode now reports live deconstruction progress while the beam is being held.
+- Overheat recovery now explicitly reports `LASER CUTTER - CORE STABLE` when the cutter exits lockout.
+- Caught and fixed one real compile issue during the pass:
+  - `ResourceNode` required the `Hecton8.Scavenging` namespace import
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Salvage sampler clarity pass
+
+- Extended `SalvageSamplerTool.cs` so the sampler gives meaningful state during both extraction and recovery.
+- Primary action now reports `SAMPLER - EXTRACTION IN PROGRESS` when a valid process target is being worked.
+- Secondary action now diagnoses the current target when no package is recovered:
+  - recovery ready
+  - live resource node
+  - depleted node
+  - process-only target
+  - invalid target
+- Successful recovery now names the recovered item when available.
+- Added `ToolHitUtility.TryPeekCollectible(...)` so salvage-style tools can inspect recoverable targets without duplicating pickup lookup logic.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+  - scene saved clean
+
+## 2026-03-29 - Builder Readiness Pass
+
+- `PlayerBuilder` now exposes a proper build-readiness state instead of only raw booleans.
+- Builder HUD warnings now include a cost digest showing owned vs required materials.
+- Builder now writes better field-log entries for:
+  - buildable armed
+  - missing materials
+  - placement blocked
+  - module deployed
+  - module recovered
+- `BuilderTool` screen tint now distinguishes:
+  - missing materials
+  - blocked placement
+  - ready
+  - snapped ready
+- Verified through Unity MCP:
+  - compile clean
+  - short game run clean
+  - console clean
+
+## 2026-03-28 - Beacon network system pass
+
+- Added persistent beacon backend:
+  - `Assets/_Project/Scripts/BeaconNetworkSystem.cs`
+  - `Assets/_Project/Scripts/BeaconRuntime.cs`
+- What changed:
+  - beacon state is no longer a temporary static list inside `BeaconDeployerTool`
+  - live markers now belong to a real saveable system
+  - deployment assigns stable labels like `BEACON-01`
+  - nearest-beacon lookup and retract now go through the shared network
+- Save/load integration:
+  - extended `Assets/_Project/Scripts/SaveData.cs`
+  - `SaveData.CurrentVersion = 6`
+  - added `BeaconNetworkDTO` and `BeaconEntryDTO`
+- PDA integration:
+  - `Assets/_Project/Scripts/UI/PDADataLogTab.cs` now shows:
+    - active beacon count
+    - nearest marker
+    - up to three recent beacon anchors with coordinates
+  - `OPERATIONS DIRECTIVE` now warns when no field markers are online
+- Scene/runtime:
+  - attached `BeaconNetworkSystem` to `Player` in `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- Honest validation:
+  - initial compile failed due to missing `Hecton8.Core` using for `ObjectPoolManager`
+  - fixed immediately
+  - compile clean after fix
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Propulsion tool utility pass
+
+- Upgraded `Assets/_Project/Scripts/PropulsionTool.cs`
+- What changed:
+  - secondary action can now acquire a tractor lock on a valid rigidbody
+  - locked mass is maintained in front of the player instead of only being pulled once
+  - secondary press on an active lock now releases the target
+  - primary press while a target is locked now launches it
+  - lock loss, too-heavy targets, and invalid targets now all report cleanly
+- Why:
+  - the old version was functionally alive but still felt like a generic push/pull raycast
+  - the new version gives the tool a stronger late-game identity and clearer operator intent
+- Honest validation:
+  - compile clean
+  - short play run clean
+  - console clean after stop
+
+## 2026-03-29 - Flashlight mode and diagnostics pass
+
+- Upgraded:
+  - `Assets/_Project/Scripts/PlayerFlashlight.cs`
+  - `Assets/_Project/Scripts/FlashlightTool.cs`
+- What changed:
+  - added flashlight beam profiles:
+    - `STANDARD`
+    - `FLOOD`
+    - `FOCUS`
+  - beam profile now changes range, spot angle, and effective intensity
+  - `FlashlightTool` secondary action now cycles profiles instead of only showing a shallow status line
+  - flashlight status now reports:
+    - beam mode
+    - energy percent
+    - heat percent
+    - cooldown remaining if overheated
+- Why:
+  - the old flashlight path was safe but too shallow for an endgame expedition tool
+  - the new mode system gives it clearer field purpose in caves, broad scans, and long-range viewing
+- Honest validation:
+  - compile clean
+  - short play run clean
+  - console clean after stop
+
+## 2026-03-29 - Harpoon tether pass
+
+- Upgraded:
+  - `Assets/_Project/Scripts/HarpoonLauncherTool.cs`
+- What changed:
+  - successful hits now attempt to create a short tether lock on a valid movable target
+  - secondary use now first exploits that tether for a stronger reel pass
+  - if no tether exists, the tool still falls back to the old direct reel behavior
+- Why:
+  - this makes the harpoon behave like one coherent field weapon instead of a plain ranged hit plus a disconnected impulse action
+- Honest validation:
+  - compile clean
+  - short play run clean
+  - console clean after stop
+
+## 2026-03-29 - Knife tactical readout pass
+
+- Upgraded:
+  - `Assets/_Project/Scripts/KnifeTool.cs`
+- What changed:
+  - secondary action now performs a close-range tactical read instead of being effectively absent
+  - it can inspect:
+    - bioforms
+    - resource nodes
+    - base modules
+  - critically weakened targets can now receive a stronger precision strike
+- Why:
+  - the knife needed a late-game reason to stay in the loadout beyond a plain short-range hit
+  - this pass gives it a proper emergency finisher / close-inspection role
+- Honest validation:
+  - first compile failed because `ResourceNode` lives in `Hecton8.Scavenging`
+  - fixed immediately by adding the correct `using`
+  - compile clean after fix
+  - short play run clean
+  - console clean after stop
+
 ## 2026-03-27 - Current volumes, ambient water motion, and player current integration
 
 - Added authored local current volumes:
@@ -815,3 +1287,1266 @@ Notes:
 - Post-play console still contains one residual teardown error:
   - `Some objects were not cleaned up when closing the scene. (Did you spawn new GameObjects from OnDestroy?)`
   - this remains to be localized separately.
+
+## 2026-03-27 - Rebinding teardown / builder screen pass
+
+- Hardened [`RebindingManager.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/Input/RebindingManager.cs):
+  - added shutdown guard
+  - added `TryGetInstance(...)`
+  - stopped lazy singleton creation during teardown
+- Switched [`PauseControlsPanel.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/PauseControlsPanel.cs) and [`PDAControlsRebindUI.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs) to safe rebinding-manager access for subscribe/unsubscribe paths.
+- Extended [`PlayerBuilder.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/PlayerBuilder.cs) with public runtime state exposure:
+  - active buildable index
+  - catalog count
+  - resource readiness
+  - placement readiness
+- Upgraded [`BuilderTool.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/BuilderTool.cs) screen state so it now reflects:
+  - offline / no selection
+  - missing cost
+  - ready placement
+  - snapped ready placement
+- Unity MCP became unavailable during this pass, so this step is code-complete but not live-verified through editor console yet.
+
+## 2026-03-27 - Builder overlay / construction HUD pass
+
+- Added [`BuilderStatusOverlay.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs).
+- Attached `BuilderStatusOverlay` to live scene under `Suit_HUD_Canvas` through a dedicated `BuilderStatusOverlay` GameObject.
+- Overlay now surfaces the active construction state while `PlayerBuilder` is equipped:
+  - module name
+  - module index / catalog count
+  - placement readiness
+  - snap readiness
+  - resource readiness
+  - power profile
+  - per-module cost summary
+- Hardened the overlay so it can bootstrap its own `RectTransform` root even if attached to a plain scene `GameObject`.
+- Fixed the missing-resource path in [`PlayerBuilder.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/PlayerBuilder.cs) so failed deploy attempts now route through `NotifyMissingResources(...)` instead of only logging a warning.
+- Recompiled after the pass, saved `02_HECTON_WORLD`, and ran a short play-mode smoke pass.
+- Post-play console remained clean with no new warnings or errors.
+
+## 2026-03-27 - Construction bootstrap pass
+
+- Added [`PlayerBuilder`](C:/hades/Hecton8/Assets/_Project/Scripts/PlayerBuilder.cs) to live `Player` in [`02_HECTON_WORLD.unity`](C:/hades/Hecton8/Assets/_Project/Scenes/02_HECTON_WORLD.unity).
+- Added root scene object `ConstructionManager_Root` with [`ConstructionManager`](C:/hades/Hecton8/Assets/_Project/Scripts/ConstructionManager.cs).
+- Recompiled and ran another short play-mode smoke pass after the bootstrap.
+- Post-play console remained clean with no new warnings or errors.
+- Live audit result:
+  - `BuilderTool` / `PlayerBuilder` / `ConstructionManager` runtime chain now exists in scene.
+  - `ModuleCatalog` ScriptableObject and authored `BuildableData` assets still appear to be missing from the project, so the next construction pass must create the first actual buildable content set rather than only more UI.
+
+## 2026-03-27 - Construction starter kit authoring pass
+
+- Added deterministic editor authoring utility [`ConstructionBootstrapAuthoring.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/ConstructionBootstrapAuthoring.cs).
+- Added menu path:
+  - `Hecton/Authoring/Rebuild Starter Construction Kit`
+- The utility now rebuilds the first authored construction content set end-to-end:
+  - ghost materials:
+    - `Mat_BuildGhost_Valid`
+    - `Mat_BuildGhost_Invalid`
+  - final module materials:
+    - `Mat_Module_Foundation`
+    - `Mat_Module_Corridor`
+    - `Mat_Module_Pylon`
+  - ghost prefabs:
+    - `PFB_Ghost_Foundation`
+    - `PFB_Ghost_Corridor`
+    - `PFB_Ghost_Pylon`
+  - final prefabs:
+    - `PFB_Module_Foundation`
+    - `PFB_Module_Corridor`
+    - `PFB_Module_Pylon`
+  - authored `BuildableData` assets:
+    - `Build_Foundation_Platform`
+    - `Build_Corridor_Straight`
+    - `Build_Utility_Pylon`
+  - authored `ModuleCatalog` asset:
+    - `ModuleCatalog_Starter`
+- Added `Sockets` layer and reran the authoring utility so:
+  - prefab socket children are authored onto the correct layer
+  - `PlayerBuilder.socketLayerMask` is populated
+- The utility also assigns:
+  - `ConstructionManager.catalog`
+  - `PlayerBuilder.activeBuildable`
+- Removed temporary authoring scene objects after prefab generation and saved [`02_HECTON_WORLD.unity`](C:/hades/Hecton8/Assets/_Project/Scenes/02_HECTON_WORLD.unity).
+- Verification:
+  - compile clean
+  - play-mode smoke clean
+  - post-play console clean
+- Honest remaining gap:
+  - starter modules currently ship with zero build-cost entries and without full `BaseModule` gameplay authoring
+  - construction now has real authored content, but the next pass should turn it from placeholder buildables into fully simulated habitat modules
+
+## 2026-03-27 - Construction readiness / PDA integration pass
+
+- Updated [`ConstructionBootstrapAuthoring.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/ConstructionBootstrapAuthoring.cs) so starter modules now author real build costs instead of empty lists:
+  - foundation = `Data_Copper x2`
+  - corridor = `Data_Copper x3`
+  - utility pylon = `Data_Copper x1`
+- Updated [`ToolLoadoutProvisioner.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/ToolLoadoutProvisioner.cs) so startup provisioning can also seed starter construction materials for runtime smoke.
+- Extended [`PDADataLogTab.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/PDADataLogTab.cs) with a new `CONSTRUCTION READINESS` block:
+  - starter catalog count
+  - built module count
+  - active buildable
+  - ready / snapped / blocked / missing-cost state
+  - active build-cost digest from real inventory data
+- Extended the Data Log directive/footer so construction readiness now contributes to PDA operational guidance.
+- Rebuilt the authored starter kit through:
+  - `Hecton/Authoring/Rebuild Starter Construction Kit`
+- Verification:
+  - compile succeeded with no new red errors
+  - starter construction assets now contain real serialized `buildCost` entries
+- Honest remaining gap:
+  - the project still emits pre-existing input/rebinding warnings (`Computed binding index is out of range`, `Map must be contained in state`) during refresh/runtime paths
+  - these warnings are not introduced by the construction pass, but the input/rebind layer still needs a dedicated hardening pass
+
+## 2026-03-27 - Builder loop registration / recovery pass
+
+- Fixed a real gameplay gap in [`PlayerBuilder.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/PlayerBuilder.cs):
+  - placed construction prefabs are now registered into [`ConstructionManager.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/ConstructionManager.cs) through `RegisterModule(placedModule, activeBuildable)`
+  - this closes the broken runtime path where built modules existed visually but never entered the construction registry/save/runtime summary flow
+- Added builder-side recovery flow in [`PlayerBuilder.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/PlayerBuilder.cs):
+  - while builder is equipped, `Interact` now targets a looked-at [`BaseModule.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/BaseModule.cs)
+  - if valid, the module deconstructs and routes refund through the existing `BaseModule.Deconstruct(PlayerInventory)` path
+- Updated [`BuilderStatusOverlay.cs`](C:/hades/Hecton8/Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs) hint line so the HUD now exposes the builder recovery path instead of hiding it
+- Verification:
+  - compile succeeded with no new red errors
+- Honest remaining gap:
+  - the builder deploy/recover loop still needs a dedicated live interaction smoke pass
+  - non-fatal Input System/rebinding warnings still pollute compile/runtime smoke and should be isolated separately
+## 2026-03-27 - Builder smoke / HUD navigation pass
+
+- Added `BuilderRuntimeSmokeTester.cs` as a dedicated dev-only construction smoke path for `deploy -> registry -> recover`.
+- Attached `BuilderRuntimeSmokeTester` to live `Player` authoring with `runOnStart = false` so the scene keeps a reusable verification hook without polluting normal runtime.
+- Hardened `PlayerBuilder.ResolveRuntimeReferences()`:
+  - resolves `PlayerInventory` from self/parent
+  - resolves camera from children before `Camera.main`
+  - resolves `HandAnchor` by child name
+  - resolves `ConstructionManager` via singleton or scene lookup
+  - auto-applies catalog selection when active buildable is missing
+- Extended `PlayerBuilder` public API with `GetBuildableAt(...)` and `GetRelativeBuildable(...)` for UI and future builder catalog UX.
+- Upgraded `BuilderStatusOverlay` from plain status readout to navigational construction HUD:
+  - larger panel footprint
+  - current module index + built module count
+  - queue hint with previous/next buildable context
+  - preserved zero-GC refresh discipline by caching `ConstructionManager` reference
+- Compile verified clean after this pass.
+
+## 2026-03-27 - PDA construction tab pass
+
+- Promoted construction flow into the PDA itself with new `PDAConstructionTab.cs`.
+- `PDAConstructionTab` reads the real `PlayerBuilder`, `ConstructionManager`, `ModuleCatalog`, and `PlayerInventory`:
+  - build backbone summary
+  - active buildable / index / built module count
+  - readiness and live cost digest
+  - module catalog cards with direct `SELECT` action into `PlayerBuilder.SetActiveBuildable(...)`
+- Expanded `PlayerPDA` shell from 3 to 4 tabs:
+  - `Inventory`
+  - `Loadout`
+  - `Construction`
+  - `Data Log`
+- Updated PDA shell labels and inventory tab top bar to the new 4-tab contract.
+- Moved `PDADataLogTab` to tab index 3.
+- Duplicated live scene tab authoring to create `Tab_Construction` under `PDA_Panel` and attached `PDAConstructionTab`.
+- Compile verified clean after wiring.
+
+## 2026-03-27 - Builder smoke stabilization / exact cost fix
+
+- Strengthened `BuilderRuntimeSmokeTester.cs` with lifecycle and phase telemetry:
+  - `AWAKE / ON_ENABLE / START`
+  - startup execution path
+  - deploy / registry / cost / recover checkpoints
+- Reworked `BuilderRuntimeSmokeTester` timing defaults for deterministic startup smoke:
+  - `startupDelay = 0`
+  - `recoverDelay = 0`
+  - removed unnecessary post-deploy / post-recover frame waits
+- Used Unity MCP play-mode smoke to isolate the actual construction regression instead of guessing:
+  - smoke now starts automatically when `runOnStart = true`
+  - deploy path reaches `ConstructionManager.ModuleCount`
+  - recover path returns the registry to zero
+- Added temporary `BuilderDebug` instrumentation in `PlayerBuilder.DebugDeployActiveBuildable(...)`, `ResolveRuntimeReferences()`, `EnsureCatalogSelection()`, and `SpawnPlacedModule(...)` to localize deploy flow boundaries.
+- Fixed a real gameplay bug in `PlayerBuilder.HasResources(...)`:
+  - removed manual grid cell scan
+  - now uses authoritative `PlayerInventory.CountTotal(...)`
+- Fixed a real gameplay bug in `PlayerBuilder.ConsumeResources(...)`:
+  - previous path removed whole anchor stacks via `RemoveItem(...)`
+  - new path consumes exact unit counts via `RemoveOneItem(...)` on anchor cells
+- Verified through live Unity MCP smoke:
+  - `Foundation Platform` deploy grows registry `0 -> 1`
+  - recover shrinks registry `1 -> 0`
+  - `Copper x2` spend now behaves correctly: `12 -> 10`
+- Honest remaining gap:
+  - temporary `BuilderSmoke` / `BuilderDebug` telemetry should be reduced or gated once the builder loop hardening sprint is finished
+  - non-fatal input/rebinding warning hygiene is still an open independent task
+
+## 2026-03-27 - PDA construction browser UX pass
+
+- Upgraded `PDAConstructionTab.cs` from a plain selector into a more useful module browser.
+- Added build backbone digest improvements:
+  - generator / consumer / passive family counts
+  - active module power role
+- Expanded module cards with stronger planning context:
+  - power role label
+  - total resource footprint
+  - short description excerpt
+  - better action intent (`ARM / QUEUE / ARMED`)
+- Improved construction directives and hint line:
+  - next viable candidate now includes module role
+  - active/next context is surfaced in the footer hint
+- Verification:
+  - compile clean
+  - post-compile console clean
+
+## 2026-03-27 - PDA construction builder handoff pass
+
+- Extended `PlayerToolManager.cs` with type-based helper API:
+  - `GetKnownToolPrefabForToolType<TTool>()`
+  - `FindAssignedSlotForToolType<TTool>()`
+- Upgraded `PDAConstructionTab.cs` with direct builder field handoff:
+  - live builder state line in summary (`ACTIVE / ASSIGNED / MISSING / UNASSIGNED`)
+  - dedicated action control for:
+    - `ARM BUILDER TO S4`
+    - `ACTIVATE BUILDER [Sx]`
+    - `HOLSTER BUILDER`
+    - `BUILDER MISSING [Sx]`
+- The new action path stays on top of the real tool backend:
+  - assigns BuilderTool via `PlayerToolManager`
+  - activates via `SwitchToSlot(...)`
+  - holsters via `Holster()`
+  - no second loadout/backend introduced
+- Verification:
+  - compile clean
+  - post-compile console clean
+
+## 2026-03-27 - PDA construction field preview / deploy pass
+
+- Extended `PlayerBuilder.cs` with public preview/deploy helpers:
+  - `HasPlacementPreview`
+  - `TryGetPlacementPreviewPose(...)`
+  - `TryDeployActiveBuildableFromPreview()`
+- Added a second action control to `PDAConstructionTab.cs` for field workflow:
+  - `ARM + PREVIEW`
+  - `FIELD PREVIEW [Sx]`
+  - `RETURN TO FIELD`
+  - `DEPLOY ACTIVE`
+  - `MISSING COST`
+- The new field action path stays on the real runtime systems:
+  - arms BuilderTool through `PlayerToolManager`
+  - activates BuilderTool through `SwitchToSlot(...)`
+  - closes PDA back into field preview
+  - deploys through the live `PlayerBuilder` ghost/placement path
+- Fixed state-color drift on construction controls:
+  - catalog buttons now preserve state color after hover exit
+  - builder handoff button now preserves its current state color after hover exit
+  - field action button uses the same pattern
+- Verification:
+  - local code structure review complete
+  - Unity MCP verification pending because the local MCP HTTP endpoint was offline during this pass
+
+## 2026-03-27 - Input / rebinding warning hardening pass
+
+- Hardened `RebindingManager.cs` against stale/invalid InputAction state:
+  - safe binding-count inspection
+  - guarded binding reads
+  - safe display-string resolution on rebind completion
+  - safer `FindBindingIndexById(...)`
+- Hardened `PauseControlsPanel.cs`:
+  - hot input paths now use `RebindingManager.TryGetInstance(...)`
+  - avoids singleton side effects during shutdown/reload and reduces stale-state access
+- Hardened `PDAControlsRebindUI.cs` the same way:
+  - no direct `RebindingManager.Instance` dependency in navigation/submit/cancel/reset paths
+- Status:
+  - code complete
+  - Unity MCP compile/play verification pending because the local MCP HTTP endpoint was offline during this pass
+
+## 2026-03-27 - Tool interaction feedback pass
+
+- Extended `ScannerTool.cs` with throttled HUD feedback:
+  - cooldown warning (`SCANNER - RECHARGING`)
+  - result digest (`SCANNER - CONTACTS N` / `SCANNER - CLEAR`)
+- Extended `SalvageSamplerTool.cs` with field feedback:
+  - no target / no viable target warnings
+  - salvage recovery / empty recovery result messages
+- Extended `LaserCutter.cs` with mission-grade feedback:
+  - overheat warning on lockout trigger
+  - lockout warning when the player tries to fire during lockout
+  - deconstruction completion message when a module is recovered
+- Status:
+  - local code review complete
+  - Unity MCP verification pending because the local MCP HTTP endpoint was offline during this pass
+
+## 2026-03-27 - Construction family layer pass
+
+- Extended `BuildableData.cs` with a data-driven `BuildableFamily` enum and convenience labels/codes:
+  - `Structure`
+  - `Habitat`
+  - `Utility`
+  - `Fabrication`
+  - `Logistics`
+  - `Defense`
+- Updated `ConstructionBootstrapAuthoring.cs` so starter modules author against the new family field.
+- Extended `PDAConstructionTab.cs`:
+  - family/domain counts in the summary block
+  - active module family line
+  - family labels in catalog cards
+  - richer directive/hint text with family short codes
+- Extended `PDADataLogTab.cs`:
+  - active construction family line
+  - construction role line in the readiness digest
+- Corrected starter assets directly after verification showed the new field had not serialized from the menu pass:
+  - `Build_Foundation_Platform.asset` -> `Structure`
+  - `Build_Corridor_Straight.asset` -> `Habitat`
+  - `Build_Utility_Pylon.asset` -> `Utility`
+- Verification:
+  - compile clean via Unity MCP
+  - post-compile console clean
+  - YAML verification confirmed `family:` is now serialized in the starter `BuildableData` assets
+
+## 2026-03-27 - UI smoke harness diagnostics pass
+
+- Added `UIRuntimeSmokeTester.cs` for PDA / pause / builder handoff regression coverage.
+- Attached it to `Player` in-scene with `runOnStart` kept disabled by default.
+- Verified lifecycle entry in play mode:
+  - harness starts
+  - inactive-scene-object resolution for `PDAConstructionTab` now works
+- Current honest status:
+  - `PauseMenuController` resolve path required fallback hardening because it is host-generated
+  - the harness still does not complete its full pass, so the regression-smoke task remains open
+
+## 2026-03-27 - Construction validation / debug-noise cleanup pass
+
+- Added `ConstructionCatalogValidator.cs` with a new editor menu:
+  - `Hecton/Validation/Validate Construction Catalog`
+- Validator now checks:
+  - missing `moduleName`
+  - duplicate module names
+  - missing `ghostPrefab` / `finalPrefab`
+  - empty or malformed `buildCost`
+  - empty `ModuleCatalog`
+  - null or duplicate module references inside catalogs
+- Reduced default debug-noise from dev harnesses:
+  - `BuilderRuntimeSmokeTester.verboseLogging` default -> `false`
+  - `ToolRuntimeSmokeTester.verboseLogging` default -> `false`
+  - `UIRuntimeSmokeTester.verboseLogging` default -> `false`
+- Added explicit lifecycle debug gating in `PlayerTool.cs` via `lifecycleDebugLogging`.
+- Added explicit builder debug gating in `PlayerBuilder.cs` via `builderDebugLogging`.
+- Scene-level debug flags on `Player` were turned off for:
+  - `UIRuntimeSmokeTester`
+  - `BuilderRuntimeSmokeTester`
+  - `ToolRuntimeSmokeTester`
+  - `PlayerToolManager.toolDebugLogging`
+- Verification:
+  - compile clean via Unity MCP
+  - short idle play smoke console clean
+  - `Hecton/Validation/Validate Construction Catalog` returns `PASS no issues found`
+
+## 2026-03-27 - Tool stack validation and UI smoke closure pass
+
+- Added `ToolStackValidator.cs` with a new editor menu:
+  - `Hecton/Validation/Validate Tool Stack`
+- Validator now checks:
+  - tool `ItemData` authoring (`category`, `itemName`, `worldPrefab`, `worldBuoyancyProfile`, non-stackable expectation)
+  - `ToolMetadata` ids and value ranges
+  - held prefab bindings (`PlayerTool`, `ToolData`, `Metadata`, renderable child presence)
+  - `ItemCatalog` resolution for tool items
+  - `ToolLoadoutProvisioner` population
+  - `Tool_Staging` pickup bindings against the authored tool item set
+- Fixed a real validator stall:
+  - the original staging validation path used a heavy scene-wide object query and the wrong component assumption (`HectonItem`)
+  - replaced it with scene-root traversal plus `PickupItem` serialized `itemData` validation for the actual world-pickup staging contract
+- Verified through Unity MCP:
+  - `Hecton/Validation/Validate Tool Stack` now completes and returns `PASS no issues found.`
+- Completed a live UI regression smoke with `UIRuntimeSmokeTester`:
+  - PDA open/close pass
+  - PDA tab cycling pass
+  - pause open/close pass
+  - construction tab -> builder arm/activate/field handoff pass
+  - result: `[UISmoke] COMPLETE pda=True pause=True builder=True`
+
+## 2026-03-27 - Persistent scan log / PDA intel pass
+
+- Added `ScanLogSystem.cs` as a real save/load-backed gameplay system:
+  - subscribes to `ScanEvents.OnEntryDiscovered`
+  - keeps unique archived scan entries plus a recent-entry list
+  - persists through `SaveData.scanLog`
+- Added `ScannableTarget.cs` for authored databank-style scan points with stable:
+  - `entryId`
+  - `entryTitle`
+  - `entryCategory`
+  - `entrySummary`
+- Extended `ScanEvents.cs` with:
+  - `OnEntryDiscovered(string id, string title, string category, string summary)`
+- Extended `ScannerTool.cs` so scan pulses can feed the new intel layer:
+  - authored `ScannableTarget` entries
+  - generic `RESOURCE DEPOSIT` archive unlock on first resource-node contact
+- Extended `SaveData.cs` with:
+  - `ScanEntryDTO`
+  - `ScanLogDTO`
+  - `SaveData.scanLog`
+- Extended `PDADataLogTab.cs`:
+  - live scan-entry count in suit summary
+  - `SCAN ARCHIVE` digest inside the lower-right data block
+  - recent entry list fed from `ScanLogSystem`
+- Attached `ScanLogSystem` to the live `Player` object in `02_HECTON_WORLD.unity`.
+- Verified through Unity MCP:
+  - compile clean
+  - scene save clean
+  - console clean after integration
+
+## 2026-03-27 - Scan intel field integration pass
+
+- Extended `PickupItem.cs` with public `ItemData` / `Quantity` accessors so scan/intel systems can reason about real world pickups without reflection or duplicate state.
+- Extended `ScannerTool.cs` to archive scan intel from additional real world targets:
+  - authored `ScannableTarget`
+  - `PickupItem` + `ItemData` derived entries
+  - `ModuleMarker` + `BuildableData` derived entries
+- Upgraded `ScannerTool` contact count so scan result feedback reflects meaningful contacts, not only `ResourceNode` hits.
+- Extended `ScanLogSystem.cs` with first-unlock HUD feedback:
+  - auto-resolves `HUDNotification`
+  - emits `SCAN ARCHIVED - ...` only for newly discovered entries
+- Added authored starter POI coverage in the live scene:
+  - `--- GAMEPLAY ---/Item_Titanium` now has `ScannableTarget`
+  - entry id: `resource.titanium_fragment`
+- Added editor quality gate:
+  - `ScanIntelValidator.cs`
+  - menu: `Hecton/Validation/Validate Scan Intel`
+  - validates:
+    - `Player` carries `ScanLogSystem`
+    - scene contains valid `ScannableTarget` entries
+    - starter titanium POI stays authored
+- Verified through Unity MCP:
+  - scene save clean
+  - `Hecton/Validation/Validate Scan Intel` returns `PASS no issues found.`
+  - post-save console clean
+
+## 2026-03-27 - HUD notification queue / signal hardening pass
+
+- Upgraded `HUDNotification.cs` from a single transient label into a queued notification surface:
+  - severity model: `Info / Warning / Critical`
+  - repeat suppression window
+  - bounded queue
+  - critical preemption with reinsertion of the interrupted message
+- Existing call sites stayed compatible:
+  - `ShowInfo(...)`
+  - `ShowWarning(...)`
+  - `ShowCritical(...)`
+- This hardens the current gameplay stack without touching callers:
+  - suit advisories
+  - scan archive unlocks
+  - builder/construction feedback
+  - inventory pressure warnings
+  - tool feedback
+- Added `ScanRuntimeSmokeTester.cs` as the next dedicated automation hook for:
+  - `ScannerTool -> ScanLogSystem` end-to-end smoke
+  - authored probe repositioning near player
+  - auto-equip scanner and archive verification
+- Attached `ScanRuntimeSmokeTester` to the live `Player` object with `runOnStart = false`.
+- Verified through Unity MCP:
+  - compile / refresh path clean
+  - short play smoke clean
+  - post-play console clean
+- Honest remaining tail:
+  - `ScanRuntimeSmokeTester` still needs deterministic runtime confirmation logs before the scan-smoke task can be closed
+
+## 2026-03-27 - Salvage pickup compatibility fix
+
+- Closed a real world-item gap in `ToolHitUtility.cs`:
+  - `TryCollectItem(...)` now supports both pickup implementations used by the project:
+    - `HectonItem`
+    - `PickupItem`
+- This directly hardens `SalvageSamplerTool` secondary action against the current staged/world tool pickups, which are authored primarily as `PickupItem`.
+- Verified through Unity MCP:
+  - compile/refresh path clean
+  - post-compile console clean
+
+## 2026-03-27 - Field recovery intel integration pass
+
+- Extended `ScanLogSystem.cs` with public `ArchiveEntry(...)` so non-scanner field loops can feed the same persistent intel layer without inventing a second log backend.
+- Extended `ToolHitUtility.cs` with an overload that returns recovered `ItemData` during `TryCollectItem(...)`.
+- Updated `SalvageSamplerTool.cs` so successful salvage recovery archives recovery intel for the recovered item.
+- Updated `LaserCutter.cs` so module recovery/deconstruction archives recovery intel for the recovered buildable module.
+- Added `FieldToolRuntimeSmokeTester.cs` on `Player` for deterministic salvage + cutter smoke coverage.
+- Verified through Unity MCP:
+  - compile clean
+  - scene save clean
+- Honest remaining tail:
+  - the new harness is narrowed but not yet closed
+  - live debug state shows progress reaches `Salvage / HolsterForSalvage` before stalling
+  - `runOnStart` was turned back off after the probe pass to avoid session noise
+
+## 2026-03-27 - PDA recovery-intel digest pass
+
+- Extended `PDADataLogTab.cs` so `SCAN ARCHIVE` now distinguishes:
+  - `RECOV.` recent recovery-derived archive entries
+  - `INTEL` recent scanner/intel-derived entries
+- Recovery-derived entries are rendered with a separate `↳` prefix so field recovery output does not visually blend into plain scan contacts.
+- Updated the operations directive so recent recovery intel can influence the top-level guidance line.
+- Verified through Unity MCP:
+  - compile clean
+  - console clean
+
+## 2026-03-29 - Cargo-lane descriptor pass for propulsion and harpoon
+
+- Added `FieldTargetDescriptor.cs` as a reusable authored semantic tag for field targets.
+- Extended `ConstructionBootstrapAuthoring.cs` so `Tool Trial Range` now assigns descriptors to:
+  - cargo crates
+  - route markers
+  - salvage pickups
+  - scan pickups
+  - scannable probes
+  - active/depleted resource nodes
+- Strengthened `Validate Tool Trial Range` so descriptor coverage is now part of the range quality gate.
+- Extended `PropulsionTool.cs` so authored cargo targets now produce role-specific guidance:
+  - precision cargo
+  - work crate
+  - heavy salvage
+  - overweight blocker
+- Extended `HarpoonLauncherTool.cs` with the same authored cargo-role awareness for tether/reel advice.
+- Verified through Unity MCP:
+  - compile/refresh clean
+  - `Hecton/Authoring/Rebuild Tool Trial Range` executed successfully
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS no issues found`
+  - scene saved clean
+
+## 2026-03-29 - Beacon route guidance now reads authored lane markers
+
+- Extended `BeaconDeployerTool.cs` so beacon deployment and nearest-beacon assessment can read nearby authored route markers via `FieldTargetDescriptor`.
+- The beacon tool now aligns its route advice to authored roles:
+  - `ANCHOR`
+  - `RELAY`
+  - `FRONTIER`
+- This connects the existing `Lane_BeaconRoute` fixture to the actual beacon workflow instead of leaving it as a passive scene decoration.
+- Verified through Unity MCP:
+  - compile clean
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS no issues found`
+
+## 2026-03-29 - Descriptor-aware recon pass for analyzer and scanner
+
+- Extended `EnvironmentalAnalyzerTool.cs` so it now reads `FieldTargetDescriptor` for:
+  - route anchor / relay / frontier markers
+  - authored cargo roles
+- Extended `ScannerTool.cs` so authored descriptors now contribute live scan meaning for:
+  - cargo contacts
+  - route markers
+  - resource cache roles
+  - expedition checkpoints
+- This ties `Lane_Cargo`, `Lane_BeaconRoute`, `Lane_DarkRoute`, and `Lane_ScanCorridor` into one shared authored interpretation layer instead of one-off special cases.
+- Verified through Unity MCP:
+  - compile clean
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS no issues found`
+
+## 2026-03-29 - Flashlight descriptor pass + field-ops validator hardening
+
+- Extended `FlashlightTool.cs` so dark-route guidance now reads `FieldTargetDescriptor` for:
+  - route anchor / relay / frontier markers
+  - authored cargo roles
+- Hardened `FieldOperationsValidator.cs` to emit an explicit completion log when issues exist.
+- Honest status:
+  - `Tool Trial Range` validation continues to pass cleanly through MCP
+  - `Validate Field Operations Stack` still does not surface an explicit PASS/COMPLETE line back through MCP console, even after hardening
+  - this is now a localized MCP-observability tail, not a product blocker
+
+## 2026-03-29 - Shared authored-semantics refactor
+
+- Added `FieldTargetSemantics.cs` as the central route/cargo interpretation helper for authored trial-range targets.
+- Refactored these tools to use the shared semantics helper instead of duplicated switch logic:
+  - `FlashlightTool.cs`
+  - `EnvironmentalAnalyzerTool.cs`
+  - `PropulsionTool.cs`
+  - `HarpoonLauncherTool.cs`
+  - `BeaconDeployerTool.cs`
+- This reduces drift risk between authored cargo/route behaviors across logistics, recon, and navigation tools.
+- Verified through Unity MCP:
+  - compile clean
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS no issues found`
+  - `Hecton/Validation/Validate Tool Operational HUD` -> `PASS no issues found`
+
+## 2026-03-29 - Tool trial-range runtime harness started
+
+- Added `ToolTrialRangeRuntimeSmokeTester.cs` as a combined runtime harness for:
+  - logistics pass (`Propulsion / Harpoon / Beacon`)
+  - recon pass (`Flashlight / Analyzer / Scanner`)
+- Attached the harness to the live `Player` in `02_HECTON_WORLD.unity`.
+- Restored `runOnStart = false` after a short live probe so the normal scene stays quiet.
+- Honest status:
+  - compile clean
+  - harness is present in scene and ready for future passes
+  - a short play probe did not surface any console errors, but also did not emit the expected explicit PASS/FAIL line through MCP console
+  - treat this as a localized runtime-observability tail, not as a product blocker
+
+## 2026-03-29 - Builder field-guidance pass
+
+- Extended `PlayerBuilder.cs` with clearer active-module context:
+  - family code
+  - role label
+  - purpose-driven build advice
+- Builder notifications are now richer for:
+  - armed buildable
+  - missing materials
+  - blocked placement
+  - successful deployment
+- Extended `BuilderStatusOverlay.cs`:
+  - module line now shows family short code
+  - power line now shows the active role instead of only raw watt data
+  - bottom hint now shows live contextual build advice instead of a fixed controls legend
+- Extended `PDAConstructionTab.cs`:
+  - module cards now show a short purpose line
+  - directive text now reuses the live builder advice path so PDA and field HUD speak the same language
+- Caught and fixed two real compile regressions in `BuilderStatusOverlay.cs` during the pass:
+  - invalid conditional `SetText(...)` formatting
+  - wrong TMP overload usage for string arguments
+- Verified through Unity MCP:
+  - compile clean
+  - short play clean
+  - console clean
+  - scene saved
+
+## 2026-03-29 - Stun pistol tactical readout pass
+
+- Upgraded `StunPistolTool.cs` from a basic disrupt / status ping tool into a clearer combat-control tool.
+- Added a real target assessment layer:
+  - aggressive threat
+  - panic response
+  - patrol contact
+  - dormant contact
+  - fractured target
+  - target down
+  - already disrupted
+- Primary stun fire now records the same assessment layer into the field log instead of always writing the same flat disruption message.
+- Secondary target checks now:
+  - publish recommendation-driven feedback
+  - distinguish valid tactical states
+  - latch while held so the same check does not spam continuously
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Propulsion cargo assessment pass
+
+- Upgraded `PropulsionTool.cs` so it no longer feels like a blind push/pull beam.
+- Added a real cargo assessment layer:
+  - anchored structure
+  - mass exceeds safe handling
+  - light cargo
+  - normal workload cargo
+  - heavy-but-safe cargo
+- Tractor lock, hold, launch, and invalid-target paths now all publish clearer operator guidance.
+- The tool now better supports a late-game logistics / field-control role instead of only raw force application.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Beacon navigation-role pass
+
+- Upgraded `BeaconDeployerTool.cs` so beacon placement now carries field meaning instead of only raw marker count.
+- Added a role layer for deployed markers:
+  - `ANCHOR`
+  - `LOCAL MARK`
+  - `RELAY`
+  - `FRONTIER`
+- Nearest-beacon checks now explain what the active marker is doing in the network and whether it should be kept or recovered.
+- Fixed a real logic issue during this pass:
+  - a newly deployed beacon would otherwise resolve itself as the nearest marker
+  - deployment role now looks for the nearest neighbor other than the newly placed beacon
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Harpoon control-readout pass
+
+- Upgraded `HarpoonLauncherTool.cs` so the weapon now explains what kind of target is on the line.
+- Added a target-assessment layer for:
+  - aggressive bioforms
+  - weakened bioforms
+  - downed targets
+  - safe reel cargo
+  - overloaded cargo
+  - anchored structures
+- Harpoon strike, tether, and reel feedback now gives direct advice about control, spacing, recovery, or disengagement.
+- This moves the harpoon closer to a real strike-and-control tool instead of a simple hit/reel action pair.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Flashlight expedition-guidance pass
+
+- Upgraded `PlayerFlashlight.cs` with a real operational summary and recommendation layer.
+- Added role descriptions for all three beam modes:
+  - `STANDARD = BALANCED PATROL`
+  - `FLOOD = SEARCH SWEEP`
+  - `FOCUS = DISTANT PROBE`
+- `FlashlightTool.cs` now evaluates and reports:
+  - normal readiness
+  - low energy
+  - rising heat
+  - cooling lockout
+- The flashlight now explains not only what state it is in, but what the player should do with that state.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Analyzer expedition-risk pass
+
+- Upgraded `EnvironmentalAnalyzerTool.cs` so it now catches intermediate expedition danger states instead of only full emergencies.
+- Suit diagnostics now distinguish:
+  - hull warning
+  - oxygen watch
+  - power watch
+  - pressure watch
+- Item targets now classify by field role:
+  - tool package
+  - equipment package
+  - consumable cache
+  - component package
+  - material stock
+- Resource nodes now distinguish depleted vs usable state, and sleeping bioforms now read correctly as dormant contacts.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Scanner sweep-interpretation pass
+
+- Upgraded `ScannerTool.cs` so sweep results now explain what they mean and what the next move should be.
+- Resource, structure, and expedition sweeps now each return a practical recommendation layer instead of only raw counts.
+- Dense contact fields, sparse sweeps, databank-only returns, and pickup-only resource sweeps now read differently.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Knife close-quarters readout pass
+
+- Upgraded `KnifeTool.cs` so close-range readouts now carry useful tactical meaning.
+- Blade reads now distinguish:
+  - dormant bioforms
+  - hostile bioforms
+  - fractured targets
+  - dense nodes
+  - salvageable modules
+  - depleted nodes
+- The knife now tells the player more clearly when to finish, when to back off, and when to swap to another tool.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-29 - Repair service-priority pass
+
+- Upgraded `RepairTool.cs` so service diagnostics now communicate urgency, not only condition.
+- Added explicit repair priority bands:
+  - `CRITICAL RESPONSE`
+  - `IMMEDIATE SERVICE`
+  - `ACTIVE SERVICE`
+  - `FINAL PASS`
+  - `STABILIZING`
+  - `SERVICE BLOCKED`
+  - `SERVICE COMPLETE`
+- Repair readouts now better tell the player whether to repair immediately, wait for drainage, restore power first, or stand down.
+- Verified through Unity MCP:
+  - compile clean
+  - short play run clean
+  - console clean
+
+## 2026-03-28 - PDA loadout preset pass
+
+- Continued tool-management work instead of only improving single tool scripts.
+- Updated `PDALoadoutTab.cs`:
+  - added a player-facing preset strip inside the loadout tab
+  - added direct apply buttons for:
+    - `EXPLORATION`
+    - `CONSTRUCTION`
+    - `FIELD RECOVERY`
+    - `DEFENSE`
+  - loadout footer now reports matched preset name or `CUSTOM`
+  - preset cards also show how many tools from that preset are currently ready in cargo
+- Important design note kept explicit:
+  - presets are slot layouts
+  - they do not grant free tools
+  - real acquisition still stays with crafting / discovery / barter / progression
+- Honest note:
+  - Unity MCP resource handshake timed out during this pass, so this one is code-complete and logged, but still needs a live in-editor spacing check
+
+## 2026-03-28 - Repair tool clarity pass
+
+- Improved `RepairTool.cs` so it is easier to understand in moment-to-moment play:
+  - warns on no target
+  - warns on invalid target
+  - reports when the looked-at module is already sealed
+  - reports active repair start
+  - reports full module restoration
+- Added secondary-action diagnostic ping for quick module status checks.
+- Repair actions now write into `FieldOperationLogSystem`, so the tool has a real expedition trace instead of only temporary HUD text.
+- Honest note:
+  - this pass still needs a live in-editor check once Unity MCP tools/resources respond normally again
+
+## 2026-03-28 - Environmental analyzer persistence pass
+
+- Extended `EnvironmentalAnalyzerTool.cs` so analyzer reads are not only short HUD messages anymore.
+- Target analysis now archives persistent entries into `ScanLogSystem`.
+- Suit diagnostics now also archive a persistent suit-status entry with different summaries for:
+  - low hull
+  - low oxygen
+  - low power
+  - stable state
+- Honest note:
+  - Unity MCP port is alive, but MCP client handshake is still timing out on tools/resources, so this pass is logged as code-complete and still awaits a live compile/play check
+
+## 2026-03-28 - Stun pistol tactical pass
+
+- Extended `StunPistolTool.cs`:
+  - secondary action now checks the looked-at target instead of doing nothing useful
+  - reports whether the target is vulnerable or already disrupted
+  - writes that status into `FieldOperationLogSystem`
+- Extended `StunTargetRuntime`:
+  - exposes disruption state/time
+  - logs when the target recovers and resumes activity
+- Verified:
+  - compile clean through Unity MCP
+  - short play/start-stop check with console still clean
+
+## 2026-03-28 - Field operations log system pass
+
+- Added a new persistent gameplay system:
+  - `FieldOperationLogSystem.cs`
+  - save/load-backed field journal for `scanner / salvage / cutter`
+  - keeps recent operations with `INFO / WARN / CRITICAL` severity
+- Added a new editor-side validation hook:
+  - `Editor/FieldOperationsValidator.cs`
+  - menu: `Hecton/Validation/Validate Field Operations Stack`
+- Extended `SaveData.cs`:
+  - format version bumped to `5`
+  - added `FieldOperationLogDTO`
+- Extended `PDADataLogTab.cs`:
+  - new `FIELD OPERATIONS` digest
+  - summary line now shows field-log count
+  - `OPERATIONS DIRECTIVE` now reacts to critical/recent field operations
+- Wired live tool loops into the new persistent field journal:
+  - `ScannerTool.cs`
+    - records successful contact sweeps and clear sweeps
+  - `SalvageSamplerTool.cs`
+    - records successful recoveries and empty salvage passes
+  - `LaserCutter.cs`
+    - records core overheat as `CRITICAL`
+    - records module recovery completion
+- Added `FieldOperationLogSystem` to the live `Player` object in `02_HECTON_WORLD`
+- Verified through Unity MCP:
+  - compile clean
+  - short play smoke clean
+  - console clean
+- Honest remaining tails:
+  - `FieldToolRuntimeSmokeTester` is still not deterministic `PASS`
+  - `BarterRuntimeSmokeTester` is still narrowed to the post-`Execute` tail
+
+## 2026-03-28 - Tools enterprise shared hardening pass
+
+- Added a dedicated tools sprint file:
+  - `TOOLS_ENTERPRISE_SPRINT.md`
+  - full 12-tool roster fixed as the active enterprise hardening goal
+- Audited the weak non-core tools and started a baseline-equalization pass instead of another isolated feature sprint.
+- Hardened the following tools with explicit operator feedback + field-log integration:
+  - `BeaconDeployerTool.cs`
+  - `EnvironmentalAnalyzerTool.cs`
+  - `PropulsionTool.cs`
+  - `KnifeTool.cs`
+  - `StunPistolTool.cs`
+  - `HarpoonLauncherTool.cs`
+  - `FlashlightTool.cs`
+- Product effect of the pass:
+  - fewer silent no-op tool states
+  - mission-relevant actions now contribute to `FieldOperationLogSystem`
+  - weaker tools now sit closer to the same expedition/HUD baseline as scanner/salvage/cutter
+- Verified through Unity MCP:
+  - compile clean
+  - `Hecton/Validation/Validate Tool Stack` -> `PASS`
+- Honest remaining tails:
+  - `FieldOperationsValidator` still does not emit a loud PASS payload into MCP console despite the menu item being registered/executable
+  - deeper runtime smoke for the weaker tools is still a next step, not closed in this pass
+
+## 2026-03-28 - Tool management / preset pass
+
+- Added asset-based loadout preset support:
+  - `Tools/ToolLoadoutPreset.cs`
+  - `Editor/ToolLoadoutPresetAuthoring.cs`
+- Added runtime API:
+  - `PlayerToolManager.ApplyLoadoutPreset(...)`
+  - `PlayerToolManager.CopyAssignedToolPrefabs(...)`
+- Extended `ToolLoadoutProvisioner.cs`:
+  - optional `startupPreset`
+  - `ApplyStartupPreset()` path
+- Rebuilt starter presets through Unity MCP:
+  - `EXPLORATION`
+  - `CONSTRUCTION`
+  - `FIELD RECOVERY`
+  - `DEFENSE`
+- Verified through Unity MCP:
+  - compile clean
+  - `Hecton/Authoring/Rebuild Tool Loadout Presets` ran successfully
+  - `Hecton/Validation/Validate Tool Stack` -> `PASS`
+
+## 2026-03-27 - PDA barter relay / exchange system pass
+
+- Added an exact-quantity removal API to `PlayerInventory.cs`:
+  - `TryRemoveQuantity(ItemData item, int quantity)`
+  - supports transactional exchange/crafting style systems without deleting whole stacks
+- Extended `SaveData.cs` to version `3` and added save/load support for barter runtime state:
+  - `BarterDTO`
+  - `BarterOfferStateDTO`
+- Added the barter data/runtime layer:
+  - `Gameplay/BarterOfferData.cs`
+  - `Gameplay/BarterOfferCatalog.cs`
+  - `Gameplay/PDAExchangeSystem.cs`
+- `PDAExchangeSystem` now provides:
+  - offer snapshots
+  - scan-gated availability
+  - repeat limits
+  - exact cost consumption
+  - reward grant + refund-on-failure path
+  - HUD feedback + `ExchangeStateChanged`
+- Added a new PDA runtime tab:
+  - `UI/PDABarterTab.cs`
+  - shows offer cards, costs, outputs, gates, status and execute/unavailable states
+- Expanded the PDA shell contract from 4 tabs to 5:
+  - `0 Inventory`
+  - `1 Loadout`
+  - `2 Construction`
+  - `3 Barter`
+  - `4 Data Log`
+- Updated:
+  - `PlayerPDA.cs`
+  - `PDAInventoryTab.cs`
+  - `PDADataLogTab.cs`
+  - `PDAShellChrome.cs`
+  - `UIRuntimeSmokeTester.cs`
+- `PlayerPDA.AutoResolveTabs()` now auto-creates `Tab_Barter` with `PDABarterTab` when absent, so the scene does not depend on manual tab authoring.
+- Added editor authoring + validation:
+  - `Editor/BarterBootstrapAuthoring.cs`
+  - `Editor/BarterCatalogValidator.cs`
+- Starter barter content is now authored under `Assets/_Project/Data/Barter`:
+  - `Offer_RelayStarter.asset`
+  - `Offer_Illumination.asset`
+  - `Offer_RepairLoop.asset`
+  - `BarterOfferCatalog_Starter.asset`
+- Verified through Unity MCP:
+  - compile clean after fixing two real regressions in `PDAExchangeSystem.cs` and `PDABarterTab.cs`
+  - `Hecton/Authoring/Rebuild Starter Barter Relay` executed successfully
+  - `Hecton/Validation/Validate Barter Catalog` returned `PASS no issues found`
+  - console clean after compile/authoring/validation
+  - live play probe confirms:
+    - `Player` carries `PDAExchangeSystem`
+    - in play mode it resolves `PlayerInventory`, `ScanLogSystem`, and `HUDNotification`
+    - `PlayerPDA` holds a live `Tab_Barter`
+    - short PDA/UI smoke stays console-clean
+- Added `BarterRuntimeSmokeTester.cs` on `Player` as the dedicated regression hook for:
+  - scan-gate unlock seeding
+  - barter cost provisioning
+  - exact cost/reward delta verification
+  - execution count verification
+- Honest remaining tail:
+  - the barter smoke harness is narrowed but not yet closed
+  - current live localization reaches `Execute`
+  - before that pass was failing at `NEED COPPER X2`, which is now fixed by explicit cost provisioning inside the harness
+- Extended `PDADataLogTab.cs` with a live `EXCHANGE RELAY` digest:
+  - offers / ready / locked / closed
+  - next executable contract label
+  - operations directive now considers ready barter contracts
+- Verified through Unity MCP:
+  - compile clean
+  - console clean
+- Upgraded barter persistence and expedition logging:
+  - `SaveData.cs` barter section is now versioned to `4` and stores recent transaction records
+  - `PDAExchangeSystem.cs` now tracks recent completed exchanges and exposes them via `CopyRecentTransactions(...)`
+  - `PDADataLogTab.cs` now surfaces:
+    - latest completed exchange
+    - reward output summary
+    - directive influence from recent barter activity
+- Honest remaining tail:
+  - barter smoke is still open, but now the product layer no longer depends on it to expose exchange history/readiness to the player
+- Verified through Unity MCP:
+  - compile clean
+  - console clean
+
+## 2026-03-28 - Tool world authoring gate + barter tab history pass
+
+- Added a new editor-side quality gate:
+  - `Editor/ToolWorldAuthoringValidator.cs`
+  - menu: `Hecton/Validation/Validate Tool World Authoring`
+- Validator is designed to audit:
+  - `Item_Tool_*` assets under `Assets/_Project/Data/Items/Tools`
+  - `worldPrefab` presence and expected tool-world prefab folder placement
+  - `worldBuoyancyProfile`
+  - `PickupItem` / `HectonItem` linkage back to the correct `ItemData`
+  - `Rigidbody`, `Collider`, and `BuoyancyObject` presence on tool world prefabs
+  - active-scene `Tool_Staging` coverage
+- Confirmed through Unity MCP:
+  - `Tool_Staging` exists in the live scene at `--- WORLD ---/Tool_Staging`
+  - it currently carries 12 staged children, matching the current 12-tool roster
+- Extended `PDABarterTab.cs` so barter now surfaces recent relay history directly in the tab:
+  - latest confirmed contract
+  - latest reward output summary
+  - contextual hint line derived from recent barter transactions
+- Honest note:
+  - the new tool-world validator menu item is registered and executable, but MCP console did not surface an explicit pass/fail payload during this probe
+  - keep the audit task open until the validator is either exercised manually in-editor or re-probed with a louder reporting path
+- Verified through Unity MCP:
+  - compile clean
+  - console clean
+
+## 2026-03-29 - Combat trial lane + descriptor-driven combat semantics
+
+- Expanded `Tool Trial Range` with a new authored combat lane:
+  - `Lane_CombatContacts`
+  - targets:
+    - `Combat_Dormant`
+    - `Combat_Aggressive`
+    - `Combat_Fractured`
+    - `Combat_Down`
+    - `Combat_Checkpoint`
+- Extended `FieldTargetRole` and `FieldTargetSemantics` with combat states:
+  - `BioformDormant`
+  - `BioformAggressive`
+  - `BioformFractured`
+  - `BioformDown`
+- Shared semantic helpers now cover combat readouts for:
+  - analyzer
+  - stun pistol
+  - knife
+  - harpoon
+- Product impact:
+  - combat-oriented tools can now read authored trial targets without depending on brittle live-AI scene setup
+  - expedition scanner now reports descriptor-driven bioform contacts inside authored lanes
+- Runtime coverage:
+  - `ToolTrialRangeRuntimeSmokeTester` now includes a `Combat` pass in addition to `Logistics` and `Recon`
+- Validation status through Unity MCP:
+  - compile clean
+  - `Hecton/Authoring/Rebuild Tool Trial Range` executed cleanly
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS no issues found`
+  - `Hecton/Validation/Validate Tool Operational HUD` -> `PASS no issues found`
+- Honest tail:
+  - `Validate Field Operations Stack` still does not reliably echo an explicit `PASS` line back through MCP console
+  - this remains an observability/tooling tail, not a product blocker
+
+## 2026-03-29 - Service descriptors + live loadout advice
+
+- Expanded service authoring so `Lane_ServiceModules` now participates in the same semantic system as cargo, route, recon, and combat lanes:
+  - `Trial_Module_Foundation_Damaged` -> `ServiceDamaged`
+  - `Trial_Module_Corridor_Flooded` -> `ServiceFlooded`
+  - `Trial_Module_Foundation_Control` -> `ServiceControl`
+- Extended `FieldTargetSemantics`:
+  - analyzer now emits descriptor-driven service assessments
+  - flashlight now emits descriptor-driven service beam advice
+  - scanner now counts service descriptors as structural authored contacts
+- Added `FieldLoadoutAdvisor.cs`:
+  - maps live forward targets to practical preset recommendations:
+    - `EXPLORATION`
+    - `CONSTRUCTION`
+    - `FIELD RECOVERY`
+    - `DEFENSE`
+- Product integration:
+  - `PDALoadoutTab` now shows both the currently matched preset and the recommended preset for the forward field target
+  - `PDALoadoutTab` hint line now includes live field advice
+  - `HUDQuickBar` now appends the recommended preset to the current tool directive
+  - `PDADataLogTab` footer now surfaces recommended field kit advice when a relevant target is ahead
+- Verified through Unity MCP:
+  - compile clean
+  - `Rebuild Tool Trial Range` clean
+  - `Validate Tool Trial Range` -> `PASS`
+  - `Validate Tool Operational HUD` -> `PASS`
+
+## 2026-03-29 - Trial-range suite expansion + live cutter target HUD
+
+- Expanded `ToolTrialRangeRuntimeSmokeTester.cs` from a 3-pass harness into a broader endgame suite:
+  - `Logistics`
+  - `Recon`
+  - `Recovery`
+  - `Service`
+  - `Combat`
+  - `Construction`
+- Added explicit per-pass console lines:
+  - `PASS logistics=True`
+  - `PASS recon=True`
+  - `PASS recovery=True`
+  - `PASS service=True`
+  - `PASS combat=True`
+  - `PASS construction=True`
+  - plus one final combined pass/fail line
+- Upgraded `LaserCutter.cs` so the active operational HUD can now read aimed targets directly during normal ready-state:
+  - resource nodes now surface live cutter contact text in `GetOperationalSummary()`
+  - service/recovery modules now surface direct lock/contact guidance in `GetOperationalSummary()` and `GetOperationalDirective()`
+- Verified through Unity MCP:
+  - compile clean
+  - `Validate Tool Trial Range` -> `PASS no issues found`
+  - `Validate Tool Operational HUD` -> `PASS no issues found`
+  - short play probe clean
+  - scene kept in quiet mode with `ToolTrialRangeRuntimeSmokeTester.runOnStart = false`
+- Honest tail:
+  - the expanded runtime suite is now in place and wired, but a short MCP play probe still did not surface the new pass lines back through console
+  - treat this as an observability tail, not a product failure
+
+## 2026-03-29 - Endgame operations lane + mixed-route advice pass
+
+- Expanded `Tool Trial Range` with a new mixed expedition route:
+  - `Lane_EndgameOps`
+  - authored sequence:
+    - `Ops_Anchor`
+    - `Ops_Cargo_Work`
+    - `Ops_Salvage`
+    - `Ops_Service_Flooded`
+    - `Ops_Hazard`
+    - `Ops_Combat_Aggressive`
+    - `Ops_Frontier`
+- Product intent:
+  - stop treating tools as isolated lane checks only
+  - verify one chained route where logistics, recovery, service, recon, combat, and return guidance all coexist
+- Expanded `ToolTrialRangeRuntimeSmokeTester.cs` again:
+  - added `Endgame` pass
+  - it now verifies live preset recommendations across the mixed route:
+    - cargo / salvage -> `FIELD RECOVERY`
+    - flooded service -> `CONSTRUCTION`
+    - hazard / frontier -> `EXPLORATION`
+    - aggressive contact -> `DEFENSE`
+- Validation status through Unity MCP:
+  - compile clean
+  - `Rebuild Tool Trial Range` clean
+  - `Validate Tool Trial Range` -> `PASS no issues found`
+  - `Validate Tool Operational HUD` -> `PASS no issues found`
+- Honest tail:
+  - short MCP play probes still do not reliably surface `ToolTrialRangeRuntimeSmokeTester` runtime pass logs back into the console
+  - scene and validators are healthy; the remaining issue is observability, not content integrity
+
+## 2026-03-29 - PDA recommended-loadout action pass
+
+- Upgraded `PDALoadoutTab.cs` so field advice is now actionable:
+  - added a dedicated `APPLY RECOMMENDED` button
+  - the button resolves the current recommended preset from live forward-target advice
+  - when that preset is already active, the button switches to `RECOMMENDED ACTIVE`
+- Product impact:
+  - loadout advice is no longer passive text only
+  - the player can switch to the suggested expedition kit from the same PDA screen that explains why the kit is recommended
+- Verified through Unity MCP:
+  - compile clean
+  - `Validate Tool Operational HUD` -> `PASS no issues found`
+  - additional edit-mode test run completed cleanly with no console errors
+
+## 2026-03-29 - Construction operations lane + construction semantics
+
+- Added new shared authored construction roles:
+  - `ConstructionSocket`
+  - `ConstructionBlocked`
+  - `ConstructionClear`
+- Extended the shared semantic layer so construction targets now feed the same systems as cargo, route, service, recon, and combat:
+  - `FieldLoadoutAdvisor` now recommends `CONSTRUCTION` for authored construction targets
+  - `ScannerTool` now counts authored construction targets as structural contacts
+  - `EnvironmentalAnalyzerTool` and `FlashlightTool` now inherit construction guidance through `FieldTargetSemantics`
+- Added a dedicated authored construction lane to `Tool Trial Range`:
+  - `Lane_ConstructionOps`
+  - targets:
+    - `Construct_SocketBase`
+    - `Construct_ClearLane`
+    - `Construct_Blocker`
+    - `Construct_SocketGuide`
+- Expanded `ToolTrialRangeRuntimeSmokeTester.cs` construction pass so it now checks construction recommendation flow against authored construction targets before equipping the builder.
+- Verified through Unity MCP:
+  - compile clean
+  - `Rebuild Tool Trial Range` clean
+  - `Validate Tool Trial Range` -> `PASS no issues found`
+  - `Validate Tool Operational HUD` -> `PASS no issues found`
+  - confirmed scene objects exist:
+    - `Lane_ConstructionOps`
+    - `Construct_Blocker`
+    - `Construct_SocketGuide`
+
+## 2026-03-29 - Softer loadout advice + choice hub
+
+- Reworked `FieldLoadoutAdvisor.cs` wording so advice reads as support, not command:
+  - `recommended` / `best fit` style phrasing was softened into `good fit`, `strong option`, `safer choice`, and similar wording
+- Reworked `PDALoadoutTab.cs` wording:
+  - `RECOMM.` -> `SUGGESTED`
+  - `APPLY RECOMMENDED` -> `APPLY SUGGESTED`
+  - `RECOMMENDED ACTIVE` -> `SUGGESTED ACTIVE`
+- Added a visible branching authored hub to `Tool Trial Range`:
+  - `Lane_ChoiceHub`
+  - nodes:
+    - `Choice_Hub`
+    - `Choice_To_Recovery`
+    - `Choice_To_Construction`
+    - `Choice_To_Defense`
+- Product intent:
+  - make it explicit that the system is offering useful context, not taking agency away from the player
+  - support development of open-ended late-game routing instead of a forced scripted sequence
+- Verified through Unity MCP:
+  - compile clean
+  - `Rebuild Tool Trial Range` clean
+  - `Validate Tool Trial Range` -> `PASS no issues found`
+  - `Validate Tool Operational HUD` -> `PASS no issues found`
+  - confirmed scene objects exist:
+    - `Lane_ChoiceHub`
+    - `Choice_To_Construction`
+    - `Choice_To_Defense`
+## 2026-03-29 - Fabrication blueprint unlock pass
+
+- Linked scan progression to fabrication progression.
+- `RecipeData` received optional `requiredScanEntryId`.
+- `Fabricator` now filters locked recipes against `ScanLogSystem`.
+- `HectonFabricatorUI` now distinguishes between:
+  - no recipes authored
+  - recipes authored but still locked behind scan data
+- Added editor bootstrap:
+  - `FabricationBootstrapAuthoring.cs`
+- Added starter assets:
+  - `Assets/_Project/Data/Crafting/Recipes/Recipe_FieldBeacon.asset`
+  - `Assets/_Project/Data/Crafting/Recipes/Recipe_EnvAnalyzer.asset`
+  - `Assets/_Project/Data/Crafting/Recipes/Recipe_SalvageSampler.asset`
+- Added live scene object:
+  - `Fabrication_Trial/Trial_Fabricator`
+- Validation result:
+  - `Hecton/Validation/Validate Starter Fabrication Kit` -> `PASS`
+
+## 2026-03-29 - Fabricator loop made player-facing
+
+- Added `HectonFabricatorUI` to the live HUD scene on `Suit_HUD_Canvas`.
+- Hardened `HectonFabricatorUI.cs`:
+  - auto-resolve camera
+  - auto-resolve player inventory
+  - auto-resolve font
+  - safe `RebindingManager` subscription path
+- Reworked `FabricationBootstrapAuthoring.cs` so fabrication is not trial-only anymore.
+- Added a second real station in the world:
+  - `--- WORLD ---/Fabrication_Outpost/Forward_Fabricator`
+- Expanded fabrication content from 3 starter recipes to 6:
+  - Beacon
+  - Analyzer
+  - Salvage Sampler
+  - Flashlight
+  - Scanner
+  - Repair Tool
+- Added `FabricationRuntimeSmokeTester` on `Player` for deterministic fabrication-loop probes.
+- Verified through Unity MCP:
+  - compile clean
+  - rebuild fabrication kit clean
+  - `Validate Starter Fabrication Kit` -> `PASS`
+  - no console errors
+  - short play smoke clean
+- Honest tail:
+  - the new fabrication smoke hook does not yet emit a clear `PASS` line back through the short MCP play probe
+  - product side is in place; observability for that smoke still needs one more pass
+
+## 2026-03-29 - Resource and crafting foundation defined
+
+- Added [RESOURCE_CRAFTING_FOUNDATION.md](C:/hades/Hecton8/RESOURCE_CRAFTING_FOUNDATION.md).
+- Defined the target full economy:
+  - structural metals
+  - electronics metals
+  - energy chemistry
+  - biological materials
+  - deep-zone materials
+  - intermediate components
+- Added the full-resource-system task to:
+  - `HADES_HECTON8_tasks.md`
+  - `NEXT_SPRINT_TASKS.md`
+- Direction for the next big implementation block:
+  - replace placeholder copper-only crafting with a real multi-resource crafting tree

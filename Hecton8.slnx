@@ -13,13 +13,13 @@
   <Project Path="GPUInstancer.csproj" />
   <Project Path="AmplifyImpostors.Editor.csproj" />
   <Project Path="AstarPathfindingProject.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="ShapesEditor.csproj" />
   <Project Path="Den.Tools.csproj" />
   <Project Path="MapMagic.csproj" />
   <Project Path="MoreMountains.Feedbacks.PostProcessing.csproj" />
   <Project Path="Tayx.Graphy.csproj" />
   <Project Path="Lofelt.NiceVibrations.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.MMTools.csproj" />
   <Project Path="MoreMountains.Feedbacks.Cinemachine.csproj" />
   <Project Path="AmplifyImpostors.Runtime.csproj" />

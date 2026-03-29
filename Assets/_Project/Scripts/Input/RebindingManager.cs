@@ -13,6 +13,7 @@ namespace Hecton8.Input
     {
         private const string DefaultOverridesKey = "Hecton8.Input.BindingOverrides.v1";
         private static RebindingManager _instance;
+        private static bool _isShuttingDown;
 
         [Header("Persistence")]
         [SerializeField] private bool loadOverridesOnAwake = true;
@@ -28,6 +29,9 @@ namespace Hecton8.Input
         {
             get
             {
+                if (_isShuttingDown || !Application.isPlaying)
+                    return _instance;
+
                 if (_instance != null) return _instance;
 
                 _instance = FindFirstObjectByType<RebindingManager>();
@@ -38,6 +42,12 @@ namespace Hecton8.Input
                 DontDestroyOnLoad(go);
                 return _instance;
             }
+        }
+
+        public static bool TryGetInstance(out RebindingManager instance)
+        {
+            instance = _instance;
+            return instance != null;
         }
 
         public bool IsRebinding => _activeRebind != null;
@@ -58,6 +68,7 @@ namespace Hecton8.Input
             }
 
             _instance = this;
+            _isShuttingDown = false;
             DontDestroyOnLoad(gameObject);
 
             if (!loadOverridesOnAwake) return;
@@ -66,6 +77,8 @@ namespace Hecton8.Input
 
         private void OnDestroy()
         {
+            _isShuttingDown = true;
+
             if (_instance == this)
             {
                 _instance = null;
@@ -95,13 +108,34 @@ namespace Hecton8.Input
                 return false;
             }
 
-            if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+            int bindingCount;
+            try
+            {
+                bindingCount = action.bindings.Count;
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Unable to inspect bindings for '{actionMap}/{actionName}': {ex.Message}");
+                return false;
+            }
+
+            if (bindingIndex < 0 || bindingIndex >= bindingCount)
             {
                 LogWarning($"Binding index out of range: action='{actionName}', index={bindingIndex}.");
                 return false;
             }
 
-            InputBinding binding = action.bindings[bindingIndex];
+            InputBinding binding;
+            try
+            {
+                binding = action.bindings[bindingIndex];
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Failed to read binding for '{actionMap}/{actionName}[{bindingIndex}]': {ex.Message}");
+                return false;
+            }
+
             if (binding.isComposite)
             {
                 LogWarning($"Binding index points to a composite root. Rebind composite parts instead. action='{actionName}', index={bindingIndex}.");
@@ -145,7 +179,13 @@ namespace Hecton8.Input
             {
                 if (wasEnabled) action.Enable();
 
-                string display = action.GetBindingDisplayString(bindingIndex);
+                string display = "--";
+                if (!InputManager.TryGetBindingDisplayStringSafe(action, bindingIndex, out display) ||
+                    string.IsNullOrEmpty(display))
+                {
+                    display = "--";
+                }
+
                 DisposeActiveRebind();
 
                 if (saveOverridesAfterRebind)
@@ -261,11 +301,31 @@ namespace Hecton8.Input
 
         private static int FindBindingIndexById(InputAction action, string bindingId)
         {
-            for (int i = 0; i < action.bindings.Count; i++)
+            if (action == null || string.IsNullOrWhiteSpace(bindingId))
+                return -1;
+
+            int bindingCount;
+            try
             {
-                if (action.bindings[i].id.ToString().Equals(bindingId, StringComparison.OrdinalIgnoreCase))
+                bindingCount = action.bindings.Count;
+            }
+            catch
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < bindingCount; i++)
+            {
+                try
                 {
-                    return i;
+                    if (action.bindings[i].id.ToString().Equals(bindingId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return i;
+                    }
+                }
+                catch
+                {
+                    return -1;
                 }
             }
 

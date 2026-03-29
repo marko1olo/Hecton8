@@ -18,6 +18,16 @@ using UnityEngine;
 
 namespace Hecton8.Building
 {
+    public enum BuildableFamily
+    {
+        Structure = 0,
+        Habitat = 1,
+        Utility = 2,
+        Fabrication = 3,
+        Logistics = 4,
+        Defense = 5
+    }
+
     // ══════════════════════════════════════════════════════════════════
     //  InventoryCost — стоимость одного ресурса
     // ══════════════════════════════════════════════════════════════════
@@ -61,6 +71,9 @@ namespace Hecton8.Building
         [TextArea(2, 4)]
         [Tooltip("Описание модуля для подсказки")]
         public string description = "";
+
+        [Tooltip("Семейство модуля для browser/filter/directive logic.")]
+        public BuildableFamily family = BuildableFamily.Structure;
 
         // ─────────────────────── Prefabs ─────────────────────────
         [Header("Prefabs")]
@@ -153,6 +166,27 @@ namespace Hecton8.Building
         /// true если модуль потребляет энергию (powerRating &lt; 0).
         /// </summary>
         public bool IsConsumer => powerRating < 0f;
+
+        public bool IsPassive => Mathf.Approximately(powerRating, 0f);
+
+        public string FamilyLabel => family.ToString().ToUpperInvariant();
+
+        public string FamilyShortCode
+        {
+            get
+            {
+                switch (family)
+                {
+                    case BuildableFamily.Structure: return "STR";
+                    case BuildableFamily.Habitat: return "HAB";
+                    case BuildableFamily.Utility: return "UTL";
+                    case BuildableFamily.Fabrication: return "FAB";
+                    case BuildableFamily.Logistics: return "LOG";
+                    case BuildableFamily.Defense: return "DEF";
+                    default: return "UNK";
+                }
+            }
+        }
 
         // ═════════════════════════════════════════════════════════
         //  Private

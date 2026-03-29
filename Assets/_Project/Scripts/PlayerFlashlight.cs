@@ -68,6 +68,13 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Player/Player Flashlight")]
     public sealed class PlayerFlashlight : MonoBehaviour, ITickable
     {
+        public enum BeamMode
+        {
+            Standard = 0,
+            Flood = 1,
+            Focus = 2
+        }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
         // ══════════════════════════════════════════════════════════
@@ -92,6 +99,7 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Скорость плавного включения/выключения.")]
         [SerializeField, Range(1f, 20f)] private float transitionSpeed = 8f;
+        [SerializeField] private BeamMode defaultBeamMode = BeamMode.Standard;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — BATTERY
@@ -183,6 +191,17 @@ namespace Hecton8.Gameplay
         public float HeatLevel => _heatLevel;
         public bool IsOverheated => _isOverheated;
         public bool IsFlickering => _isFlickering;
+        public BeamMode CurrentBeamMode => _beamMode;
+        public float CooldownRemaining => _overheatCooldownTimer;
+        public float EnergyPercent => survivalSystem != null ? survivalSystem.EnergyPercent : 0f;
+        public string BeamModeLabel =>
+            _beamMode == BeamMode.Flood ? "FLOOD" :
+            _beamMode == BeamMode.Focus ? "FOCUS" :
+            "STANDARD";
+        public string BeamRoleLabel =>
+            _beamMode == BeamMode.Flood ? "SEARCH SWEEP" :
+            _beamMode == BeamMode.Focus ? "DISTANT PROBE" :
+            "BALANCED PATROL";
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -193,6 +212,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _inputSubscribed;
         private InputManager _subscribedInputManager;
+        private BeamMode _beamMode;
 
         // Battery
         private float _batteryDrainAccumulator;
@@ -223,6 +243,7 @@ namespace Hecton8.Gameplay
             _heatLevel = 0f;
             _isOverheated = false;
             _overheatCooldownTimer = 0f;
+            _beamMode = defaultBeamMode;
 
             ResolveReferences();
 
@@ -244,6 +265,7 @@ namespace Hecton8.Gameplay
 
             _isOn = onByDefault;
             _currentIntensity = _isOn ? baseIntensity : 0f;
+            _beamMode = defaultBeamMode;
 
             ResolveReferences();
 
@@ -396,6 +418,65 @@ namespace Hecton8.Gameplay
             else TurnOff();
         }
 
+        public void CycleBeamMode()
+        {
+            switch (_beamMode)
+            {
+                case BeamMode.Standard:
+                    SetBeamMode(BeamMode.Flood);
+                    break;
+                case BeamMode.Flood:
+                    SetBeamMode(BeamMode.Focus);
+                    break;
+                default:
+                    SetBeamMode(BeamMode.Standard);
+                    break;
+            }
+        }
+
+        public void SetBeamMode(BeamMode mode)
+        {
+            _beamMode = mode;
+            ConfigureFlashlightLight();
+            UpdateVolumetricBeam(_currentIntensity);
+            UpdateDiagnostics();
+        }
+
+        public string BuildOperationalSummary()
+        {
+            if (_isOverheated)
+                return $"Beam {BeamModeLabel} ({BeamRoleLabel}). Lamp is overheated and locked for {Mathf.CeilToInt(_overheatCooldownTimer)} s.";
+
+            if (_isOn)
+            {
+                return $"Beam {BeamModeLabel} ({BeamRoleLabel}). Energy {EnergyPercent:0}% | Heat {(_heatLevel * 100f):0}% | Output {GetModeIntensity():0.0}.";
+            }
+
+            return $"Lamp standby. Beam {BeamModeLabel} ({BeamRoleLabel}) preset | Energy {EnergyPercent:0}% | Heat {(_heatLevel * 100f):0}%.";
+        }
+
+        public string BuildOperationalRecommendation()
+        {
+            if (_isOverheated)
+                return "Hold the lamp down until the thermal lock clears.";
+
+            if (EnergyPercent <= lowBatteryThreshold)
+                return "Keep light discipline tight and use short bursts only.";
+
+            if (_heatLevel >= flickerHeatThreshold)
+                return "Shift to shorter bursts or a wider beam until heat falls.";
+
+            switch (_beamMode)
+            {
+                case BeamMode.Flood:
+                    return "Use this for close search, salvage sweeps, and cave junctions.";
+                case BeamMode.Focus:
+                    return "Use this for distant reads, narrow passages, and threat spotting.";
+                default:
+                    return "Use this for general travel when you need balanced reach and coverage.";
+            }
+        }
+
         private void SubscribeToInputManager()
         {
             InputManager inputManager = InputManager.Instance;
@@ -476,8 +557,21 @@ namespace Hecton8.Gameplay
             }
 
             flashlightLight.type = LightType.Spot;
-            flashlightLight.range = 18f;
-            flashlightLight.spotAngle = 42f;
+            switch (_beamMode)
+            {
+                case BeamMode.Flood:
+                    flashlightLight.range = 14f;
+                    flashlightLight.spotAngle = 68f;
+                    break;
+                case BeamMode.Focus:
+                    flashlightLight.range = 26f;
+                    flashlightLight.spotAngle = 24f;
+                    break;
+                default:
+                    flashlightLight.range = 18f;
+                    flashlightLight.spotAngle = 42f;
+                    break;
+            }
             flashlightLight.shadows = LightShadows.None;
         }
 
@@ -498,7 +592,7 @@ namespace Hecton8.Gameplay
 
         private void ProcessTransition(float deltaTime)
         {
-            float target = _isOn ? baseIntensity : 0f;
+            float target = _isOn ? GetModeIntensity() : 0f;
 
             // Apply flickering modulation
             if (_isFlickering && _isOn)
@@ -642,7 +736,20 @@ namespace Hecton8.Gameplay
 
             if (_volumetricIntensityProp != null)
             {
-                _volumetricIntensityProp.SetValue(volumetricBeam, intensity / baseIntensity);
+                _volumetricIntensityProp.SetValue(volumetricBeam, intensity / Mathf.Max(0.01f, GetModeIntensity()));
+            }
+        }
+
+        private float GetModeIntensity()
+        {
+            switch (_beamMode)
+            {
+                case BeamMode.Flood:
+                    return baseIntensity * 0.82f;
+                case BeamMode.Focus:
+                    return baseIntensity * 1.18f;
+                default:
+                    return baseIntensity;
             }
         }
 

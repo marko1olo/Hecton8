@@ -38,5 +38,12 @@ namespace Hecton8.Gameplay
         /// HectonScanMarkerSystem creates a timed HUD marker at this position.
         /// </summary>
         public static Action<float3> OnNodeFound;
+
+        /// <summary>
+        /// Fired when scanner logic resolves a meaningful databank-style entry.
+        /// Parameters: stable entry id, title, category, summary.
+        /// Used by scan log / codex systems without coupling them to scanner implementation.
+        /// </summary>
+        public static Action<string, string, string, string> OnEntryDiscovered;
     }
 }

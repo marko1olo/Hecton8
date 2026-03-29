@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_Flashlight
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Dive Flashlight
+  overrideIcon: {fileID: 0}
+  description: Portable beam unit for dark trenches, search sweeps, and distant hazard
+    reads.
+  resultItem: {fileID: 11400000, guid: 2b9ecc74c262da64da17563638a017c1, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+    amount: 1
+  craftTime: 2.5
+  requiredScanEntryId: scan.resource_node

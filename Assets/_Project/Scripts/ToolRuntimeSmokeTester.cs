@@ -33,7 +33,7 @@ namespace Hecton8.Dev
         [SerializeField] private float settleDelay = 0.2f;
         [SerializeField] private float betweenToolsDelay = 0.1f;
         [SerializeField] private float simulatedDeltaTime = 0.1f;
-        [SerializeField] private bool verboseLogging = true;
+        [SerializeField] private bool verboseLogging = false;
 
         [Header("Tool Set")]
         [SerializeField] private GameObject[] heldToolPrefabs = new GameObject[12];

@@ -40,6 +40,8 @@ namespace Hecton8.UI
         private static readonly Color KeyActive = new Color(0.46f, 0.98f, 0.94f, 0.85f);
         private static readonly Color DurGood    = new Color(0.3f, 0.9f, 0.85f, 0.7f);
         private static readonly Color DurWarning = new Color(1f, 0.74f, 0.22f, 0.7f);
+        private static readonly Color SummaryColor = new Color(0.9f, 0.98f, 1f, 0.94f);
+        private static readonly Color DirectiveColor = new Color(0.64f, 0.83f, 0.88f, 0.92f);
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
         // ══════════════════════════════════════════════════════════
@@ -57,6 +59,11 @@ namespace Hecton8.UI
         private TextMeshProUGUI[] _slotKeys;
         private Image[] _durBars;
         private CanvasGroup _canvasGroup;
+        private TextMeshProUGUI _toolSummary;
+        private TextMeshProUGUI _toolDirective;
+        private float _nextStatusRefreshAt;
+        [SerializeField] private float fieldAdviceRange = 18f;
+        [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -83,6 +90,12 @@ namespace Hecton8.UI
                 float target = PlayerPDA.IsOpen ? 0.15f : 1f;
                 _canvasGroup.alpha = Mathf.Lerp(_canvasGroup.alpha, target,
                     1f - Mathf.Exp(-8f * Time.deltaTime));
+            }
+
+            if (Time.unscaledTime >= _nextStatusRefreshAt)
+            {
+                _nextStatusRefreshAt = Time.unscaledTime + 0.15f;
+                Refresh();
             }
         }
 
@@ -140,7 +153,7 @@ namespace Hecton8.UI
             self.pivot = new Vector2(0.5f, 0f);
 
             float totalW = SlotCount * slotSize + (SlotCount - 1) * slotGap;
-            self.sizeDelta = new Vector2(totalW, slotSize);
+            self.sizeDelta = new Vector2(totalW, slotSize + 44f);
             self.anchoredPosition = barOffset;
 
             // Canvas group for fade
@@ -160,7 +173,7 @@ namespace Hecton8.UI
                 slot.pivot = new Vector2(0f, 0f);
                 slot.anchorMin = new Vector2(0f, 0f);
                 slot.anchorMax = new Vector2(0f, 0f);
-                slot.anchoredPosition = new Vector2(i * (slotSize + slotGap), 0f);
+                slot.anchoredPosition = new Vector2(i * (slotSize + slotGap), 30f);
                 slot.sizeDelta = new Vector2(slotSize, slotSize);
 
                 Image bg = slot.gameObject.AddComponent<Image>();
@@ -211,6 +224,36 @@ namespace Hecton8.UI
                 durImg.gameObject.SetActive(false);
                 _durBars[i] = durImg;
             }
+
+            RectTransform summaryR = MakeRect("ToolSummary", self);
+            summaryR.anchorMin = new Vector2(0f, 0f);
+            summaryR.anchorMax = new Vector2(1f, 0f);
+            summaryR.pivot = new Vector2(0.5f, 0f);
+            summaryR.anchoredPosition = new Vector2(0f, 14f);
+            summaryR.sizeDelta = new Vector2(0f, 16f);
+            _toolSummary = summaryR.gameObject.AddComponent<TextMeshProUGUI>();
+            _toolSummary.font = font;
+            _toolSummary.fontSize = 11f;
+            _toolSummary.fontStyle = FontStyles.Bold;
+            _toolSummary.alignment = TextAlignmentOptions.Center;
+            _toolSummary.textWrappingMode = TextWrappingModes.NoWrap;
+            _toolSummary.color = SummaryColor;
+            _toolSummary.raycastTarget = false;
+
+            RectTransform directiveR = MakeRect("ToolDirective", self);
+            directiveR.anchorMin = new Vector2(0f, 0f);
+            directiveR.anchorMax = new Vector2(1f, 0f);
+            directiveR.pivot = new Vector2(0.5f, 0f);
+            directiveR.anchoredPosition = new Vector2(0f, 0f);
+            directiveR.sizeDelta = new Vector2(0f, 14f);
+            _toolDirective = directiveR.gameObject.AddComponent<TextMeshProUGUI>();
+            _toolDirective.font = font;
+            _toolDirective.fontSize = 10f;
+            _toolDirective.fontStyle = FontStyles.Normal;
+            _toolDirective.alignment = TextAlignmentOptions.Center;
+            _toolDirective.textWrappingMode = TextWrappingModes.NoWrap;
+            _toolDirective.color = DirectiveColor;
+            _toolDirective.raycastTarget = false;
 
             _built = true;
         }
@@ -278,6 +321,19 @@ namespace Hecton8.UI
 
                     _durBars[i].gameObject.SetActive(showDur);
                 }
+            }
+
+            if (_toolSummary != null)
+                _toolSummary.text = toolManager.GetCurrentToolOperationalSummary();
+
+            if (_toolDirective != null)
+            {
+                string directive = toolManager.GetCurrentToolOperationalDirective();
+                Transform origin = toolManager != null ? toolManager.transform : null;
+                if (FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
+                    _toolDirective.text = $"{directive}  KIT {advice.PresetName}";
+                else
+                    _toolDirective.text = directive;
             }
         }
 

@@ -100,7 +100,7 @@ namespace Hecton8.UI
                 return;
 
             InputManager input = InputManager.Instance;
-            RebindingManager rebinding = RebindingManager.Instance;
+            RebindingManager.TryGetInstance(out RebindingManager rebinding);
             if (input == null || rebinding == null)
                 return;
 
@@ -130,7 +130,7 @@ namespace Hecton8.UI
                 input.OnTabPrevious -= HandleTabPrevious;
             }
 
-            RebindingManager rebinding = RebindingManager.Instance;
+            RebindingManager.TryGetInstance(out RebindingManager rebinding);
             if (rebinding != null)
             {
                 rebinding.OnRebindStarted -= HandleRebindStarted;
@@ -145,7 +145,7 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
             if (_rows.Length == 0) return;
-            if (RebindingManager.Instance != null && RebindingManager.Instance.IsRebinding) return;
+            if (RebindingManager.TryGetInstance(out RebindingManager rebinding) && rebinding.IsRebinding) return;
 
             int delta = 0;
             if (direction.y > 0.35f) delta = -1;
@@ -161,7 +161,7 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
             if (_rows.Length == 0) return;
-            if (RebindingManager.Instance == null || RebindingManager.Instance.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
             RebindRow row = _rows[_selectedIndex];
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
@@ -178,7 +178,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            bool started = RebindingManager.Instance.StartInteractiveRebind(
+            bool started = rebinding.StartInteractiveRebind(
                 row.actionName,
                 row.actionMap,
                 bindingIndex,
@@ -193,16 +193,16 @@ namespace Hecton8.UI
         private void HandleTabNext()
         {
             if (!IsActive) return;
-            if (RebindingManager.Instance != null && RebindingManager.Instance.IsRebinding) return;
+            if (RebindingManager.TryGetInstance(out RebindingManager rebinding) && rebinding.IsRebinding) return;
             ResetSelectedBinding();
         }
 
         private void HandleTabPrevious()
         {
             if (!IsActive) return;
-            if (RebindingManager.Instance == null || RebindingManager.Instance.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
-            RebindingManager.Instance.ClearOverrides();
+            rebinding.ClearOverrides();
             RefreshAllBindingsNow();
             SetStatus("ALL BINDINGS RESET TO DEFAULTS.");
         }
@@ -252,8 +252,8 @@ namespace Hecton8.UI
             }
 
             action.RemoveBindingOverride(bindingIndex);
-            if (saveAfterRowReset && RebindingManager.Instance != null)
-                RebindingManager.Instance.SaveOverrides();
+            if (saveAfterRowReset && RebindingManager.TryGetInstance(out RebindingManager rebinding))
+                rebinding.SaveOverrides();
 
             RefreshRowBinding(row);
             UpdateStatusForSelected();
@@ -452,21 +452,48 @@ namespace Hecton8.UI
 
         private static int ResolveBindingIndex(InputAction action, int preferredIndex)
         {
-            if (action == null || action.bindings.Count == 0)
+            if (action == null)
                 return -1;
 
-            if (preferredIndex >= 0 &&
-                preferredIndex < action.bindings.Count &&
-                !action.bindings[preferredIndex].isComposite &&
-                !action.bindings[preferredIndex].isPartOfComposite)
+            int bindingCount;
+            try
             {
-                return preferredIndex;
+                bindingCount = action.bindings.Count;
+            }
+            catch
+            {
+                return -1;
             }
 
-            for (int i = 0; i < action.bindings.Count; i++)
+            if (bindingCount == 0)
+                return -1;
+
+            try
             {
-                if (!action.bindings[i].isComposite && !action.bindings[i].isPartOfComposite)
-                    return i;
+                if (preferredIndex >= 0 &&
+                    preferredIndex < bindingCount &&
+                    !action.bindings[preferredIndex].isComposite &&
+                    !action.bindings[preferredIndex].isPartOfComposite)
+                {
+                    return preferredIndex;
+                }
+            }
+            catch
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < bindingCount; i++)
+            {
+                try
+                {
+                    if (!action.bindings[i].isComposite && !action.bindings[i].isPartOfComposite)
+                        return i;
+                }
+                catch
+                {
+                    return -1;
+                }
             }
 
             return -1;
@@ -474,18 +501,13 @@ namespace Hecton8.UI
 
         private static string GetBindingDisplaySafe(InputAction action, int bindingIndex)
         {
-            if (action == null || bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+            if (action == null || bindingIndex < 0)
                 return "--";
 
-            try
-            {
-                string binding = action.GetBindingDisplayString(bindingIndex);
-                return string.IsNullOrEmpty(binding) ? "--" : binding;
-            }
-            catch
-            {
-                return "--";
-            }
+            return InputManager.TryGetBindingDisplayStringSafe(action, bindingIndex, out string binding) &&
+                   !string.IsNullOrEmpty(binding)
+                ? binding
+                : "--";
         }
 
         private static int WrapIndex(int value, int max)

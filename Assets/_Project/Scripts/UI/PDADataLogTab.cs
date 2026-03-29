@@ -5,6 +5,8 @@
 // ============================================================================
 
 using System.Text;
+using Hecton8.Building;
+using Hecton8.Construction;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -30,11 +32,17 @@ namespace Hecton8.UI
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private PlayerPDA playerPDA;
         [SerializeField] private HectonSurvivalSystem survivalSystem;
+        [SerializeField] private PlayerBuilder playerBuilder;
+        [SerializeField] private ConstructionManager constructionManager;
+        [SerializeField] private ScanLogSystem scanLogSystem;
+        [SerializeField] private FieldOperationLogSystem fieldOperationLogSystem;
+        [SerializeField] private PDAExchangeSystem exchangeSystem;
+        [SerializeField] private BeaconNetworkSystem beaconNetworkSystem;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
         [Header("Settings")]
-        [SerializeField] private int dataLogTabIndex = 2;
+        [SerializeField] private int dataLogTabIndex = 4;
         [SerializeField] private int manifestVisibleRows = 10;
 
         private bool _built;
@@ -43,8 +51,14 @@ namespace Hecton8.UI
         private TextMeshProUGUI _directiveText;
         private TextMeshProUGUI _cargoText;
         private TextMeshProUGUI _loadoutText;
+        private TextMeshProUGUI _constructionText;
         private TextMeshProUGUI _hintText;
         private PlayerInventory.ItemPlacement[] _placementBuffer;
+        private ScanLogSystem.ScanEntrySnapshot[] _scanBuffer;
+        private FieldOperationLogSystem.FieldOperationSnapshot[] _fieldOpsBuffer;
+        private PDAExchangeSystem.OfferSnapshot[] _barterBuffer;
+        private PDAExchangeSystem.TransactionSnapshot[] _barterTxBuffer;
+        private BeaconNetworkSystem.BeaconSnapshot[] _beaconBuffer;
         private readonly StringBuilder _sb = new StringBuilder(1024);
 
         private bool IsTabActive =>
@@ -91,6 +105,18 @@ namespace Hecton8.UI
                 playerPDA = FindFirstObjectByType<PlayerPDA>();
             if (survivalSystem == null)
                 survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
+            if (playerBuilder == null)
+                playerBuilder = FindFirstObjectByType<PlayerBuilder>();
+            if (constructionManager == null)
+                constructionManager = FindFirstObjectByType<ConstructionManager>();
+            if (scanLogSystem == null)
+                scanLogSystem = FindFirstObjectByType<ScanLogSystem>();
+            if (fieldOperationLogSystem == null)
+                fieldOperationLogSystem = FindFirstObjectByType<FieldOperationLogSystem>();
+            if (exchangeSystem == null)
+                exchangeSystem = FindFirstObjectByType<PDAExchangeSystem>();
+            if (beaconNetworkSystem == null)
+                beaconNetworkSystem = FindFirstObjectByType<BeaconNetworkSystem>();
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
@@ -102,7 +128,7 @@ namespace Hecton8.UI
             if (gameObject.name.Contains("DataLog", System.StringComparison.OrdinalIgnoreCase) ||
                 gameObject.name.Contains("Reserved", System.StringComparison.OrdinalIgnoreCase))
             {
-                dataLogTabIndex = 2;
+                dataLogTabIndex = 4;
             }
         }
 
@@ -115,6 +141,14 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged += HandleToolSlotChanged;
                 toolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
             }
+            if (scanLogSystem != null)
+                scanLogSystem.ScanLogChanged += HandleScanLogChanged;
+            if (fieldOperationLogSystem != null)
+                fieldOperationLogSystem.LogChanged += HandleFieldOperationsChanged;
+            if (exchangeSystem != null)
+                exchangeSystem.ExchangeStateChanged += HandleExchangeStateChanged;
+            if (beaconNetworkSystem != null)
+                beaconNetworkSystem.NetworkChanged += HandleBeaconNetworkChanged;
 
             PDAEvents.OnOpened += HandlePdaOpened;
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
@@ -129,6 +163,14 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged -= HandleToolSlotChanged;
                 toolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
             }
+            if (scanLogSystem != null)
+                scanLogSystem.ScanLogChanged -= HandleScanLogChanged;
+            if (fieldOperationLogSystem != null)
+                fieldOperationLogSystem.LogChanged -= HandleFieldOperationsChanged;
+            if (exchangeSystem != null)
+                exchangeSystem.ExchangeStateChanged -= HandleExchangeStateChanged;
+            if (beaconNetworkSystem != null)
+                beaconNetworkSystem.NetworkChanged -= HandleBeaconNetworkChanged;
 
             PDAEvents.OnOpened -= HandlePdaOpened;
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
@@ -137,6 +179,10 @@ namespace Hecton8.UI
         private void HandleInventoryChanged() => RefreshCargo();
         private void HandleToolSlotChanged(int _) => RefreshLoadout();
         private void HandleToolAssignmentsChanged() => RefreshLoadout();
+        private void HandleScanLogChanged() => RefreshConstruction();
+        private void HandleFieldOperationsChanged() => RefreshConstruction();
+        private void HandleExchangeStateChanged() => RefreshConstruction();
+        private void HandleBeaconNetworkChanged() => RefreshConstruction();
 
         private void HandlePdaOpened(int tab)
         {
@@ -212,7 +258,13 @@ namespace Hecton8.UI
             CreateInnerRule(right, 0.34f);
 
             _loadoutText = CreateBody(right, "LoadoutText", numericFont);
-            Anchor(_loadoutText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.32f),
+            Anchor(_loadoutText.rectTransform, new Vector2(0f, 0.20f), new Vector2(1f, 0.52f),
+                new Vector2(14f, 14f), new Vector2(-14f, -8f));
+
+            CreateInnerRule(right, 0.16f);
+
+            _constructionText = CreateBody(right, "ConstructionText", numericFont);
+            Anchor(_constructionText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.16f),
                 new Vector2(14f, 14f), new Vector2(-14f, -8f));
 
             _hintText = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Italic, TextAlignmentOptions.Center);
@@ -232,6 +284,7 @@ namespace Hecton8.UI
             RefreshSummary();
             RefreshCargo();
             RefreshLoadout();
+            RefreshConstruction();
         }
 
         private void RefreshSummary()
@@ -249,6 +302,9 @@ namespace Hecton8.UI
             _sb.Append("PRESS.   ").AppendFormat("{0:0.0} atm", survivalSystem != null ? survivalSystem.Pressure : 0f).AppendLine();
             _sb.Append("WEIGHT   ").AppendFormat("{0:0.0} kg", playerInventory != null ? playerInventory.TotalWeight : 0f).AppendLine();
             _sb.Append("PDA TAB  ").Append(playerPDA != null ? playerPDA.ActiveTab.ToString() : "--").AppendLine();
+            _sb.Append("SCANS    ").Append(scanLogSystem != null ? scanLogSystem.EntryCount : 0).AppendLine();
+            _sb.Append("FIELD    ").Append(fieldOperationLogSystem != null ? fieldOperationLogSystem.RecentCount : 0).AppendLine();
+            _sb.Append("BEACONS  ").Append(beaconNetworkSystem != null ? beaconNetworkSystem.ActiveCount : 0).AppendLine();
 
             _summaryText.SetText(_sb);
 
@@ -380,6 +436,259 @@ namespace Hecton8.UI
             }
         }
 
+        private void RefreshConstruction()
+        {
+            if (_constructionText == null)
+                return;
+
+            _sb.Clear();
+            _sb.AppendLine("CONSTRUCTION READINESS");
+
+            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            BuildableData activeBuildable = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
+
+            _sb.Append("CATALOG  ").Append(catalog != null ? catalog.Count : 0).AppendLine();
+            _sb.Append("BUILT    ").Append(constructionManager != null ? constructionManager.ModuleCount : 0).AppendLine();
+
+            if (activeBuildable == null)
+            {
+                _sb.Append("ACTIVE   NONE").AppendLine();
+                _sb.Append("STATUS   BUILDER OFFLINE").AppendLine();
+                _sb.AppendLine();
+                AppendBeaconDigest(_sb);
+                _sb.AppendLine();
+                AppendBarterDigest(_sb);
+                _sb.AppendLine();
+                AppendFieldOperationsDigest(_sb);
+                _sb.AppendLine();
+                AppendScanArchiveDigest(_sb);
+                _constructionText.SetText(_sb);
+                return;
+            }
+
+            _sb.Append("ACTIVE   ").Append(activeBuildable.moduleName.ToUpperInvariant()).AppendLine();
+            _sb.Append("FAMILY   ").Append(activeBuildable.FamilyLabel).AppendLine();
+            _sb.Append("ROLE     ").Append(DescribeConstructionRole(activeBuildable)).AppendLine();
+            _sb.Append("STATUS   ");
+            if (!playerBuilder.HasResourcesForActiveBuildable)
+                _sb.Append("MISSING COST");
+            else if (playerBuilder.CanPlaceActiveBuildable)
+                _sb.Append(playerBuilder.IsSnapped ? "SNAPPED READY" : "READY");
+            else
+                _sb.Append("PLACEMENT BLOCKED");
+            _sb.AppendLine();
+
+            _sb.Append("COST     ");
+            AppendBuildCostDigest(_sb, activeBuildable);
+            _sb.AppendLine();
+            _sb.AppendLine();
+            AppendBeaconDigest(_sb);
+            _sb.AppendLine();
+            AppendBarterDigest(_sb);
+            _sb.AppendLine();
+            AppendFieldOperationsDigest(_sb);
+            _sb.AppendLine();
+            AppendScanArchiveDigest(_sb);
+            _constructionText.SetText(_sb);
+        }
+
+        private void AppendBarterDigest(StringBuilder sb)
+        {
+            sb.AppendLine("EXCHANGE RELAY");
+
+            int count = 0;
+            if (exchangeSystem != null)
+            {
+                EnsureBarterBuffer();
+                count = exchangeSystem.CopySnapshots(_barterBuffer);
+            }
+
+            int ready = 0;
+            int locked = 0;
+            int closed = 0;
+            string topOffer = "NONE";
+
+            for (int i = 0; i < count; i++)
+            {
+                PDAExchangeSystem.OfferSnapshot snapshot = _barterBuffer[i];
+                if (snapshot.Offer == null)
+                    continue;
+
+                if (topOffer == "NONE" && snapshot.CanExecute)
+                    topOffer = snapshot.Offer.offerName.ToUpperInvariant();
+
+                if (!snapshot.Unlocked) locked++;
+                else if (snapshot.Status == "CONTRACT CLOSED") closed++;
+                else if (snapshot.CanExecute) ready++;
+            }
+
+            sb.Append("OFFERS   ").Append(count).AppendLine();
+            sb.Append("READY    ").Append(ready).AppendLine();
+            sb.Append("LOCKED   ").Append(locked).AppendLine();
+            sb.Append("CLOSED   ").Append(closed).AppendLine();
+            sb.Append("NEXT     ").Append(topOffer).AppendLine();
+
+            EnsureBarterTransactionBuffer();
+            int txCount = exchangeSystem != null ? exchangeSystem.CopyRecentTransactions(_barterTxBuffer) : 0;
+            if (txCount > 0)
+            {
+                PDAExchangeSystem.TransactionSnapshot tx = _barterTxBuffer[0];
+                sb.Append("LATEST   ").Append(string.IsNullOrWhiteSpace(tx.OfferName) ? "UNKNOWN" : tx.OfferName.ToUpperInvariant()).AppendLine();
+                sb.Append("OUT      ").Append(string.IsNullOrWhiteSpace(tx.RewardSummary) ? "NONE" : tx.RewardSummary).AppendLine();
+            }
+            else
+            {
+                sb.Append("LATEST   NONE").AppendLine();
+                sb.Append("OUT      NO COMPLETED EXCHANGES");
+            }
+        }
+
+        private void AppendBeaconDigest(StringBuilder sb)
+        {
+            sb.AppendLine("BEACON NETWORK");
+
+            EnsureBeaconBuffer();
+            int count = beaconNetworkSystem != null ? beaconNetworkSystem.CopySnapshots(_beaconBuffer) : 0;
+            sb.Append("ACTIVE   ").Append(count).AppendLine();
+
+            if (count <= 0)
+            {
+                sb.Append("STATUS   NO ACTIVE FIELD MARKERS");
+                return;
+            }
+
+            Vector3 origin = survivalSystem != null ? survivalSystem.transform.position : Vector3.zero;
+            if (BeaconNetworkSystem.TryGetNearest(origin, out BeaconNetworkSystem.BeaconSnapshot nearest, out float nearestDistance))
+            {
+                sb.Append("NEAREST  ").Append(nearest.Label).Append(" @ ").AppendFormat("{0:0.0} m", nearestDistance).AppendLine();
+            }
+            else
+            {
+                sb.Append("NEAREST  OFFLINE").AppendLine();
+            }
+
+            int visible = Mathf.Min(3, count);
+            for (int i = 0; i < visible; i++)
+            {
+                BeaconNetworkSystem.BeaconSnapshot beacon = _beaconBuffer[i];
+                sb.Append("- ").Append(beacon.Label)
+                  .Append(" @ ")
+                  .AppendFormat("{0:0.0}, {1:0.0}, {2:0.0}", beacon.Position.x, beacon.Position.y, beacon.Position.z)
+                  .AppendLine();
+            }
+        }
+
+        private void AppendFieldOperationsDigest(StringBuilder sb)
+        {
+            sb.AppendLine("FIELD OPERATIONS");
+
+            EnsureFieldOpsBuffer();
+            int count = fieldOperationLogSystem != null ? fieldOperationLogSystem.CopyRecentEntries(_fieldOpsBuffer) : 0;
+            sb.Append("RECENT   ").Append(count).AppendLine();
+
+            if (count <= 0)
+            {
+                sb.Append("LATEST   NO RECORDED FIELD OPERATIONS");
+                return;
+            }
+
+            int warnings = 0;
+            int critical = 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (_fieldOpsBuffer[i].Severity == "CRITICAL")
+                    critical++;
+                else if (_fieldOpsBuffer[i].Severity == "WARN")
+                    warnings++;
+            }
+
+            sb.Append("WARN     ").Append(warnings).AppendLine();
+            sb.Append("CRIT     ").Append(critical).AppendLine();
+
+            for (int i = 0; i < count; i++)
+            {
+                FieldOperationLogSystem.FieldOperationSnapshot entry = _fieldOpsBuffer[i];
+                sb.Append(entry.Severity == "CRITICAL" ? "! " : entry.Severity == "WARN" ? "» " : "· ");
+                sb.Append(entry.Source).Append(" :: ").Append(entry.Title);
+                if (!string.IsNullOrWhiteSpace(entry.Summary))
+                    sb.Append(" — ").Append(entry.Summary);
+                sb.AppendLine();
+            }
+        }
+
+        private void AppendScanArchiveDigest(StringBuilder sb)
+        {
+            sb.AppendLine("SCAN ARCHIVE");
+            sb.Append("ENTRIES  ").Append(scanLogSystem != null ? scanLogSystem.EntryCount : 0).AppendLine();
+
+            int recentCount = 0;
+            if (scanLogSystem != null)
+            {
+                EnsureScanBuffer();
+                recentCount = scanLogSystem.CopyRecentEntries(_scanBuffer);
+            }
+
+            if (recentCount <= 0)
+            {
+                sb.Append("RECENT   no archived scan entries");
+                return;
+            }
+
+            int recoveryCount = 0;
+            for (int i = 0; i < recentCount; i++)
+            {
+                if (_scanBuffer[i].Id != null &&
+                    _scanBuffer[i].Id.StartsWith("recovery.", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    recoveryCount++;
+                }
+            }
+
+            sb.Append("RECOV.   ").Append(recoveryCount).AppendLine();
+            sb.Append("INTEL    ").Append(recentCount - recoveryCount).AppendLine();
+
+            for (int i = 0; i < recentCount; i++)
+            {
+                ScanLogSystem.ScanEntrySnapshot entry = _scanBuffer[i];
+                bool isRecovery = !string.IsNullOrWhiteSpace(entry.Id) &&
+                                  entry.Id.StartsWith("recovery.", System.StringComparison.OrdinalIgnoreCase);
+
+                sb.Append(isRecovery ? "↳ " : "• ").Append(entry.Title);
+                if (!string.IsNullOrWhiteSpace(entry.Category))
+                    sb.Append(" [").Append(entry.Category).Append(']');
+                sb.AppendLine();
+            }
+        }
+
+        private void EnsureScanBuffer()
+        {
+            if (_scanBuffer == null || _scanBuffer.Length != 6)
+                _scanBuffer = new ScanLogSystem.ScanEntrySnapshot[6];
+        }
+
+        private void EnsureFieldOpsBuffer()
+        {
+            if (_fieldOpsBuffer == null || _fieldOpsBuffer.Length != 5)
+                _fieldOpsBuffer = new FieldOperationLogSystem.FieldOperationSnapshot[5];
+        }
+
+        private void EnsureBeaconBuffer()
+        {
+            if (_beaconBuffer == null || _beaconBuffer.Length != 6)
+                _beaconBuffer = new BeaconNetworkSystem.BeaconSnapshot[6];
+        }
+
+        private static string DescribeConstructionRole(BuildableData data)
+        {
+            if (data == null)
+                return "OFFLINE";
+            if (data.IsGenerator)
+                return "GENERATOR";
+            if (data.IsConsumer)
+                return "CONSUMER";
+            return "PASSIVE";
+        }
+
         private string GetOperationsDirective()
         {
             float oxygen = survivalSystem != null ? survivalSystem.OxygenNormalized : 0f;
@@ -403,7 +712,97 @@ namespace Hecton8.UI
             if (weight > 22f)
                 return "OPERATIONS DIRECTIVE\nCargo load is getting heavy. Consider dropping low-priority salvage before the next deep run.";
 
+            if (playerBuilder != null && playerBuilder.ActiveBuildable != null && !playerBuilder.HasResourcesForActiveBuildable)
+                return "OPERATIONS DIRECTIVE\nConstruction loadout is armed but current cargo cannot satisfy active module costs.";
+
+            if (HasReadyBarterOffer())
+                return "OPERATIONS DIRECTIVE\nExchange relay has at least one executable contract. Use Barter to convert current cargo into field-ready gear.";
+
+            if (beaconNetworkSystem != null && beaconNetworkSystem.ActiveCount <= 0)
+                return "OPERATIONS DIRECTIVE\nNo active beacon anchors are online. Deploy at least one marker before the next long-range sweep.";
+
+            if (HasRecentBarterTransaction())
+                return "OPERATIONS DIRECTIVE\nRecent barter relay activity is logged. Review the latest contract output before planning the next field run.";
+
+            if (HasCriticalFieldOperation())
+                return "OPERATIONS DIRECTIVE\nField operations log contains critical tool events. Stabilize cutter or recovery workflow before the next deep-run escalation.";
+
+            if (HasRecentFieldOperation())
+                return "OPERATIONS DIRECTIVE\nRecent scanner, salvage, or cutter operations are archived. Review the field log before committing to the next objective chain.";
+
+            if (HasRecentRecoveryIntel())
+                return "OPERATIONS DIRECTIVE\nRecent field recovery data is archived. Review recovered module and salvage profiles before the next deployment pass.";
+
             return "OPERATIONS DIRECTIVE\nExpedition profile is stable. Maintain cargo discipline and keep a repair/scanner pair available.";
+        }
+
+        private bool HasRecentRecoveryIntel()
+        {
+            if (scanLogSystem == null)
+                return false;
+
+            EnsureScanBuffer();
+            int count = scanLogSystem.CopyRecentEntries(_scanBuffer);
+            for (int i = 0; i < count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(_scanBuffer[i].Id) &&
+                    _scanBuffer[i].Id.StartsWith("recovery.", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasReadyBarterOffer()
+        {
+            if (exchangeSystem == null)
+                return false;
+
+            EnsureBarterBuffer();
+            int count = exchangeSystem.CopySnapshots(_barterBuffer);
+            for (int i = 0; i < count; i++)
+            {
+                if (_barterBuffer[i].Offer != null && _barterBuffer[i].CanExecute)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool HasRecentBarterTransaction()
+        {
+            if (exchangeSystem == null)
+                return false;
+
+            EnsureBarterTransactionBuffer();
+            return exchangeSystem.CopyRecentTransactions(_barterTxBuffer) > 0;
+        }
+
+        private bool HasRecentFieldOperation()
+        {
+            if (fieldOperationLogSystem == null)
+                return false;
+
+            EnsureFieldOpsBuffer();
+            return fieldOperationLogSystem.CopyRecentEntries(_fieldOpsBuffer) > 0;
+        }
+
+        private bool HasCriticalFieldOperation()
+        {
+            if (fieldOperationLogSystem == null)
+                return false;
+
+            EnsureFieldOpsBuffer();
+            int count = fieldOperationLogSystem.CopyRecentEntries(_fieldOpsBuffer);
+            for (int i = 0; i < count; i++)
+            {
+                if (_fieldOpsBuffer[i].Severity == "CRITICAL")
+                    return true;
+            }
+
+            return false;
         }
 
         private string GetFooterHint()
@@ -431,6 +830,17 @@ namespace Hecton8.UI
 
             if (missing > 0)
                 return "One or more assigned loadout tools are absent from cargo. Review the Loadout tab before deployment.";
+
+            if (playerBuilder != null && playerBuilder.ActiveBuildable != null)
+            {
+                return playerBuilder.HasResourcesForActiveBuildable
+                    ? "Construction starter kit is ready. Builder can deploy the active module."
+                    : "Construction starter kit is armed, but current cargo does not cover active build costs.";
+            }
+
+            Transform origin = survivalSystem != null ? survivalSystem.transform : (toolManager != null ? toolManager.transform : null);
+            if (FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, 18f, ~0, out FieldLoadoutAdvisor.LoadoutAdvice advice))
+                return $"Recommended field kit: {advice.PresetName}. {advice.Summary}";
 
             return "Cargo and loadout are synchronized. Use Loadout for slot control and Inventory for assignment/actions.";
         }
@@ -461,7 +871,67 @@ namespace Hecton8.UI
             if (missing > 0)
                 return new Color(1f, 0.74f, 0.22f, 0.86f);
 
+            if (playerBuilder != null && playerBuilder.ActiveBuildable != null && !playerBuilder.HasResourcesForActiveBuildable)
+                return new Color(1f, 0.74f, 0.22f, 0.86f);
+
             return DimLow;
+        }
+
+        private int CountTotalAvailable(ItemData item)
+        {
+            return playerInventory != null && item != null ? playerInventory.CountTotal(item) : 0;
+        }
+
+        private void EnsureBarterBuffer()
+        {
+            int required = exchangeSystem != null ? Mathf.Max(4, exchangeSystem.OfferCount) : 4;
+            if (_barterBuffer == null || _barterBuffer.Length < required)
+                _barterBuffer = new PDAExchangeSystem.OfferSnapshot[required];
+        }
+
+        private void EnsureBarterTransactionBuffer()
+        {
+            const int required = 4;
+            if (_barterTxBuffer == null || _barterTxBuffer.Length < required)
+                _barterTxBuffer = new PDAExchangeSystem.TransactionSnapshot[required];
+        }
+
+        private static void AppendUpper(StringBuilder sb, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+
+            sb.Append(value.ToUpperInvariant());
+        }
+
+        private void AppendBuildCostDigest(StringBuilder sb, BuildableData data)
+        {
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0)
+            {
+                sb.Append("NONE");
+                return;
+            }
+
+            bool appended = false;
+            for (int i = 0; i < data.buildCost.Count; i++)
+            {
+                InventoryCost cost = data.buildCost[i];
+                if (cost == null || cost.item == null)
+                    continue;
+
+                if (appended)
+                    sb.Append("  |  ");
+
+                AppendUpper(sb, cost.item.itemName);
+                sb.Append(' ');
+                sb.Append(CountTotalAvailable(cost.item));
+                sb.Append('/');
+                sb.Append(cost.amount);
+                appended = true;
+            }
+
+            if (!appended)
+                sb.Append("NONE");
         }
 
         private void ApplyDirectiveVisuals()

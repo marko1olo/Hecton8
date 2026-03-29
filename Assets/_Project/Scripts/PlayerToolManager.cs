@@ -29,6 +29,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Input;
+    using Hecton8.Tools;
     using UnityEngine;
 #if UNITY_EDITOR
     using UnityEditor;
@@ -285,6 +286,23 @@ namespace Hecton8.Gameplay
 
         public int SlotCount => toolPrefabs != null ? toolPrefabs.Length : 0;
 
+        public string GetCurrentToolOperationalSummary()
+        {
+            return _currentTool != null
+                ? _currentTool.GetOperationalSummary()
+                : "NO TOOL ARMED";
+        }
+
+        public string GetCurrentToolOperationalDirective()
+        {
+            if (IsSwapping)
+                return "Tool swap in progress. Wait for the active handoff.";
+
+            return _currentTool != null
+                ? _currentTool.GetOperationalDirective()
+                : "Arm a tool from quick slots or PDA loadout.";
+        }
+
         public GameObject GetAssignedToolPrefab(int slotIndex)
         {
             if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
@@ -341,6 +359,70 @@ namespace Hecton8.Gameplay
             }
 
             return null;
+        }
+
+        public GameObject GetKnownToolPrefabForToolType<TTool>() where TTool : PlayerTool
+        {
+            if (knownToolPrefabs == null)
+                return null;
+
+            for (int i = 0; i < knownToolPrefabs.Length; i++)
+            {
+                GameObject prefab = knownToolPrefabs[i];
+                if (prefab == null)
+                    continue;
+
+                if (prefab.GetComponent<TTool>() != null)
+                    return prefab;
+            }
+
+            return null;
+        }
+
+        public int FindAssignedSlotForToolType<TTool>() where TTool : PlayerTool
+        {
+            if (toolPrefabs == null)
+                return -1;
+
+            for (int i = 0; i < toolPrefabs.Length; i++)
+            {
+                GameObject prefab = toolPrefabs[i];
+                if (prefab == null)
+                    continue;
+
+                if (prefab.GetComponent<TTool>() != null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        public bool ApplyLoadoutPreset(ToolLoadoutPreset preset, bool holsterFirst = true)
+        {
+            if (preset == null || toolPrefabs == null || toolPrefabs.Length == 0)
+                return false;
+
+            if (holsterFirst)
+                Holster();
+
+            int count = Mathf.Min(toolPrefabs.Length, preset.slotPrefabs != null ? preset.slotPrefabs.Length : 0);
+            for (int i = 0; i < count; i++)
+                SetAssignedToolPrefab(i, preset.slotPrefabs[i], holsterIfCurrentInvalid: false);
+
+            ToolAssignmentsChanged?.Invoke();
+            return true;
+        }
+
+        public int CopyAssignedToolPrefabs(GameObject[] buffer)
+        {
+            if (buffer == null || toolPrefabs == null)
+                return 0;
+
+            int count = Mathf.Min(buffer.Length, toolPrefabs.Length);
+            for (int i = 0; i < count; i++)
+                buffer[i] = toolPrefabs[i];
+
+            return count;
         }
 
         // ProcessSlotInput and GetSlotKey removed — handled via events

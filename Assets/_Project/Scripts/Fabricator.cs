@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -100,6 +101,10 @@ namespace Hecton8.Crafting
         /// Null-safe: если PowerNode отсутствует — уведомление не отправляется.
         /// </summary>
         private PowerNode _powerNode;
+        private ScanLogSystem _scanLogSystem;
+        private readonly List<RecipeData> _visibleRecipes = new List<RecipeData>(16);
+        private bool _recipeCacheDirty = true;
+        private int _lockedRecipeCount;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -148,7 +153,24 @@ namespace Hecton8.Crafting
         public RecipeData ActiveRecipe => _activeRecipe;
 
         /// <summary>Список доступных рецептов. Read-only для UI.</summary>
-        public IReadOnlyList<RecipeData> AvailableRecipes => availableRecipes;
+        public IReadOnlyList<RecipeData> AvailableRecipes
+        {
+            get
+            {
+                EnsureRecipeCache();
+                return _visibleRecipes;
+            }
+        }
+
+        public int TotalRecipeCount => availableRecipes != null ? availableRecipes.Count : 0;
+        public int LockedRecipeCount
+        {
+            get
+            {
+                EnsureRecipeCache();
+                return _lockedRecipeCount;
+            }
+        }
 
         /// <summary>Крафт на паузе из-за отсутствия питания.</summary>
         public bool IsPausedNoPower => _isCrafting && !_hasPower;
@@ -211,15 +233,21 @@ namespace Hecton8.Crafting
             // Кэшируем PowerNode для мгновенного уведомления сети.
             // PowerNode должен быть на том же GameObject, что и Fabricator.
             TryGetComponent(out _powerNode);
+            EnsureScanLogSystem();
+            MarkRecipeCacheDirty();
         }
 
         private void OnEnable()
         {
             GameTickManager.Instance?.Register((ITickable)this);
+            EnsureScanLogSystem();
+            SubscribeToScanLog();
         }
 
         private void OnDisable()
         {
+            UnsubscribeFromScanLog();
+
             if (_isCrafting)
                 CancelCraft();
 
@@ -264,6 +292,7 @@ namespace Hecton8.Crafting
             if (_isCrafting) return false;
             if (!_hasPower) return false;
             if (_playerInventory == null || _playerInventory.Grid == null) return false;
+            if (!IsRecipeUnlocked(recipe)) return false;
 
             if (!HasIngredients(recipe))
                 return false;
@@ -616,6 +645,67 @@ namespace Hecton8.Crafting
                 SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
         }
 
+        private void EnsureScanLogSystem()
+        {
+            if (_scanLogSystem == null)
+                _scanLogSystem = FindFirstObjectByType<ScanLogSystem>();
+        }
+
+        private void SubscribeToScanLog()
+        {
+            if (_scanLogSystem != null)
+                _scanLogSystem.ScanLogChanged += HandleScanLogChanged;
+        }
+
+        private void UnsubscribeFromScanLog()
+        {
+            if (_scanLogSystem != null)
+                _scanLogSystem.ScanLogChanged -= HandleScanLogChanged;
+        }
+
+        private void HandleScanLogChanged()
+        {
+            MarkRecipeCacheDirty();
+        }
+
+        private void MarkRecipeCacheDirty()
+        {
+            _recipeCacheDirty = true;
+        }
+
+        private void EnsureRecipeCache()
+        {
+            if (!_recipeCacheDirty)
+                return;
+
+            EnsureScanLogSystem();
+
+            _visibleRecipes.Clear();
+            _lockedRecipeCount = 0;
+
+            if (availableRecipes != null)
+            {
+                for (int i = 0; i < availableRecipes.Count; i++)
+                {
+                    RecipeData recipe = availableRecipes[i];
+                    if (recipe == null)
+                        continue;
+
+                    if (IsRecipeUnlocked(recipe))
+                        _visibleRecipes.Add(recipe);
+                    else
+                        _lockedRecipeCount++;
+                }
+            }
+
+            _recipeCacheDirty = false;
+        }
+
+        private bool IsRecipeUnlocked(RecipeData recipe)
+        {
+            return recipe != null && recipe.IsUnlocked(_scanLogSystem);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
@@ -628,6 +718,7 @@ namespace Hecton8.Crafting
             if (string.IsNullOrEmpty(fabricatorName)) fabricatorName = "Фабрикатор";
 
             _interactText = $"Использовать {fabricatorName}";
+            MarkRecipeCacheDirty();
         }
 
         private void OnDrawGizmosSelected()

@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton8.Input;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -6,6 +7,27 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class StunPistolTool : PlayerTool
     {
+        private readonly struct StunAssessment
+        {
+            public readonly string Headline;
+            public readonly string Summary;
+            public readonly string Recommendation;
+            public readonly string Severity;
+
+            public StunAssessment(string headline, string summary, string recommendation, string severity)
+            {
+                Headline = headline;
+                Summary = summary;
+                Recommendation = recommendation;
+                Severity = severity;
+            }
+
+            public string BuildHudMessage()
+            {
+                return $"{Headline} | {Summary} | {Recommendation}";
+            }
+        }
+
         [Header("Stun Shot")]
         [SerializeField] private float range = 22f;
         [SerializeField] private float damage = 10f;
@@ -13,9 +35,12 @@ namespace Hecton8.Gameplay
         [SerializeField] private float stunDuration = 2.5f;
         [SerializeField] private float shotCooldown = 0.6f;
         [SerializeField] private LayerMask targetMask = ~0;
+        [SerializeField] private float feedbackInterval = 0.35f;
 
         private Transform _cachedTransform;
         private float _cooldown;
+        private float _nextFeedbackAt;
+        private bool _secondaryLatched;
 
         private void Awake()
         {
@@ -54,8 +79,51 @@ namespace Hecton8.Gameplay
                     if (stunState == null)
                         stunState = ai.gameObject.AddComponent<StunTargetRuntime>();
 
+                    StunAssessment assessment = BuildAssessment(ai, stunState);
                     stunState.Apply(ai, stunDuration);
+                    if (Time.time >= _nextFeedbackAt)
+                    {
+                        PublishAssessment(assessment);
+                        FieldOperationLogSystem.RecordOperation(
+                            "STUN",
+                            assessment.Headline,
+                            $"{assessment.Summary} | {assessment.Recommendation}",
+                            assessment.Severity);
+                        _nextFeedbackAt = Time.time + feedbackInterval;
+                    }
                 }
+                else if (Time.time >= _nextFeedbackAt)
+                {
+                    if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out StunAssessment descriptorAssessment))
+                    {
+                        PublishAssessment(descriptorAssessment);
+                        FieldOperationLogSystem.RecordOperation(
+                            "STUN",
+                            descriptorAssessment.Headline,
+                            $"{descriptorAssessment.Summary} | {descriptorAssessment.Recommendation}",
+                            descriptorAssessment.Severity);
+                    }
+                    else
+                    {
+                        ToolHitUtility.ShowWarning("STUN PISTOL - NO BIOFORM CIRCUIT");
+                        FieldOperationLogSystem.RecordOperation(
+                            "STUN",
+                            "STUN SHOT HIT NON-BIOFORM TARGET",
+                            $"{hit.collider.gameObject.name} absorbed a stun shot without a compatible AI circuit.",
+                            "WARN");
+                    }
+                    _nextFeedbackAt = Time.time + feedbackInterval;
+                }
+            }
+            else if (Time.time >= _nextFeedbackAt)
+            {
+                ToolHitUtility.ShowWarning("STUN PISTOL - NO TARGET LOCK");
+                FieldOperationLogSystem.RecordOperation(
+                    "STUN",
+                    "STUN SHOT RETURNED CLEAR",
+                    "No valid target was present in the stun pistol engagement cone.",
+                    "WARN");
+                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             _cooldown = shotCooldown;
@@ -65,6 +133,242 @@ namespace Hecton8.Gameplay
         {
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+
+            if (_secondaryLatched && !(InputManager.Instance?.IsSecondaryActionHeld ?? false))
+                _secondaryLatched = false;
+        }
+
+        public override string GetOperationalSummary()
+        {
+            if (_cooldown > 0f)
+                return $"STUN PISTOL // RECHARGING {_cooldown:0.0}S";
+
+            if (TryReadAssessment(out StunAssessment assessment))
+                return $"STUN PISTOL // {assessment.Headline}";
+
+            return "STUN PISTOL // READY";
+        }
+
+        public override string GetOperationalDirective()
+        {
+            if (_cooldown > 0f)
+                return "Capacitors are recharging for the next disruption shot.";
+
+            if (TryReadAssessment(out StunAssessment assessment))
+                return assessment.Recommendation;
+
+            return "Primary disrupts. Secondary checks whether the target is worth stunning.";
+        }
+
+        public override void UseSecondary(float deltaTime)
+        {
+            base.UseSecondary(deltaTime);
+
+            if (!IsEquipped || _cooldown > 0f || _secondaryLatched)
+                return;
+
+            _secondaryLatched = true;
+
+            if (!UnityEngine.Physics.Raycast(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                out RaycastHit hit,
+                range,
+                targetMask,
+                QueryTriggerInteraction.Ignore))
+            {
+                WarnSecondary("STUN PISTOL - NO TARGET LOCK");
+                return;
+            }
+
+            HectonBaseAI ai = hit.collider.GetComponent<HectonBaseAI>();
+            if (ai == null)
+                ai = hit.collider.GetComponentInParent<HectonBaseAI>();
+
+            if (ai == null)
+            {
+                if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out StunAssessment descriptorAssessment))
+                {
+                    PublishAssessment(descriptorAssessment);
+                    FieldOperationLogSystem.RecordOperation(
+                        "STUN",
+                        descriptorAssessment.Headline,
+                        $"{descriptorAssessment.Summary} | {descriptorAssessment.Recommendation}",
+                        descriptorAssessment.Severity);
+                    _nextFeedbackAt = Time.time + feedbackInterval;
+                }
+                else
+                {
+                    WarnSecondary("STUN PISTOL - TARGET HAS NO BIO CIRCUIT");
+                }
+                return;
+            }
+
+            StunTargetRuntime stunState = ai.GetComponent<StunTargetRuntime>();
+            StunAssessment assessment = BuildAssessment(ai, stunState);
+            PublishAssessment(assessment);
+            FieldOperationLogSystem.RecordOperation(
+                "STUN",
+                assessment.Headline,
+                $"{assessment.Summary} | {assessment.Recommendation}",
+                assessment.Severity);
+
+            _nextFeedbackAt = Time.time + feedbackInterval;
+        }
+
+        private void WarnSecondary(string message)
+        {
+            if (Time.time < _nextFeedbackAt)
+                return;
+
+            ToolHitUtility.ShowWarning(message);
+            FieldOperationLogSystem.RecordOperation(
+                "STUN",
+                message,
+                "Secondary target check could not confirm a valid disruption candidate.",
+                "WARN");
+            _nextFeedbackAt = Time.time + feedbackInterval;
+        }
+
+        private bool TryReadAssessment(out StunAssessment assessment)
+        {
+            assessment = default;
+
+            if (!UnityEngine.Physics.Raycast(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                out RaycastHit hit,
+                range,
+                targetMask,
+                QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            HectonBaseAI ai = hit.collider.GetComponent<HectonBaseAI>();
+            if (ai == null)
+                ai = hit.collider.GetComponentInParent<HectonBaseAI>();
+
+            if (ai == null)
+            {
+                if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out assessment))
+                    return true;
+
+                assessment = new StunAssessment(
+                    "TARGET HAS NO BIO CIRCUIT",
+                    "The current contact does not expose a valid disruption target.",
+                    "Switch tools or reacquire a bioform.",
+                    "WARN");
+                return true;
+            }
+
+            StunTargetRuntime stunState = ai.GetComponent<StunTargetRuntime>();
+            assessment = BuildAssessment(ai, stunState);
+            return true;
+        }
+
+        private static StunAssessment BuildAssessment(HectonBaseAI ai, StunTargetRuntime stunState)
+        {
+            if (ai == null)
+            {
+                return new StunAssessment(
+                    "STUN PISTOL - NO BIOFORM",
+                    "No compatible bioform circuit was detected.",
+                    "Sweep a valid creature target.",
+                    "WARN");
+            }
+
+            if (stunState != null && stunState.IsArmed)
+            {
+                return new StunAssessment(
+                    $"STUN PISTOL - TARGET DISRUPTED {stunState.RemainingTime:0.0}S",
+                    $"{ai.gameObject.name} is already offline and unable to act.",
+                    "Reposition, retreat, or finish another target.",
+                    "INFO");
+            }
+
+            if (ai.IsDead || ai.CurrentHealth <= 0.01f)
+            {
+                return new StunAssessment(
+                    "STUN PISTOL - TARGET DOWN",
+                    $"{ai.gameObject.name} no longer presents an active threat.",
+                    "Recover samples or move on.",
+                    "INFO");
+            }
+
+            if (ai.IsSleeping)
+            {
+                return new StunAssessment(
+                    "STUN PISTOL - DORMANT CONTACT",
+                    $"{ai.gameObject.name} is dormant and can be disrupted before wake-up.",
+                    "Take the shot now or bypass quietly.",
+                    "INFO");
+            }
+
+            if (ai.HealthNormalized <= 0.25f)
+            {
+                return new StunAssessment(
+                    "STUN PISTOL - FRACTURED TARGET",
+                    $"{ai.gameObject.name} is heavily weakened and close to collapse.",
+                    "Disrupt, then finish or disengage safely.",
+                    "WARN");
+            }
+
+            switch (ai.CurrentState)
+            {
+                case HectonBaseAI.AIState.Aggressive:
+                    return new StunAssessment(
+                        "STUN PISTOL - AGGRESSIVE THREAT",
+                        $"{ai.gameObject.name} is actively attacking and should be disrupted immediately.",
+                        "Fire now, then create distance.",
+                        "CRITICAL");
+
+                case HectonBaseAI.AIState.Escape:
+                    return new StunAssessment(
+                        "STUN PISTOL - PANIC RESPONSE",
+                        $"{ai.gameObject.name} is fleeing and can be stopped for recovery or control.",
+                        "Disrupt if pursuit matters, otherwise hold fire.",
+                        "INFO");
+
+                case HectonBaseAI.AIState.Wander:
+                    return new StunAssessment(
+                        "STUN PISTOL - PATROL CONTACT",
+                        $"{ai.gameObject.name} is mobile but not yet committed to attack.",
+                        "Open with disruption before it closes distance.",
+                        "INFO");
+
+                default:
+                    return new StunAssessment(
+                        "STUN PISTOL - TARGET VULNERABLE",
+                        $"{ai.gameObject.name} is stable and susceptible to a disruption shot.",
+                        "Take a clean shot when ready.",
+                        "INFO");
+            }
+        }
+
+        private static bool TryBuildDescriptorAssessment(Collider target, float distance, out StunAssessment assessment)
+        {
+            assessment = default;
+            if (!FieldTargetDescriptor.TryResolve(target, out FieldTargetDescriptor descriptor))
+                return false;
+
+            if (!FieldTargetSemantics.TryBuildStunAssessment(descriptor, distance, out FieldTargetSemantics.SemanticAssessment semantic))
+                return false;
+
+            assessment = new StunAssessment(
+                semantic.Headline,
+                semantic.Summary,
+                semantic.Recommendation,
+                semantic.Severity);
+            return true;
+        }
+
+        private static void PublishAssessment(StunAssessment assessment)
+        {
+            if (assessment.Severity == "CRITICAL" || assessment.Severity == "WARN")
+                ToolHitUtility.ShowWarning(assessment.BuildHudMessage());
+            else
+                ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
         }
     }
 
@@ -73,6 +377,9 @@ namespace Hecton8.Gameplay
         private HectonBaseAI _target;
         private float _remaining;
         private bool _armed;
+
+        public float RemainingTime => _remaining;
+        public bool IsArmed => _armed;
 
         public void Apply(HectonBaseAI target, float duration)
         {
@@ -97,6 +404,15 @@ namespace Hecton8.Gameplay
 
             if (_target != null)
                 _target.enabled = true;
+
+            if (_target != null)
+            {
+                FieldOperationLogSystem.RecordOperation(
+                    "STUN",
+                    "BIOFORM RECOVERED",
+                    $"{_target.gameObject.name} recovered from disruption and resumed activity.",
+                    "INFO");
+            }
 
             _armed = false;
             _remaining = 0f;

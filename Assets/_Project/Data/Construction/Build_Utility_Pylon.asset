@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a2e1b49b31ede4386a6c6f3c5b0c81, type: 3}
+  m_Name: Build_Utility_Pylon
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.BuildableData
+  moduleName: Utility Pylon
+  icon: {fileID: 0}
+  description: External support and routing node for later power/data chains.
+  family: 2
+  ghostPrefab: {fileID: 5443949765716291362, guid: 4c4abfe5d28d3d54ebedb3cabee64ca6, type: 3}
+  finalPrefab: {fileID: 64260289537814543, guid: 1171decc9d7897e48b74478799d80969, type: 3}
+  buildCost:
+  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+    amount: 1
+  powerRating: 0
+  powerPriority: 40

@@ -56,6 +56,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Включить энергопотребление при использовании.")]
         [SerializeField] private bool enableEnergyConsumption = true;
 
+        [Tooltip("Включить подробные lifecycle-логи для диагностики.")]
+        [SerializeField] private bool lifecycleDebugLogging = false;
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
@@ -150,8 +153,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnSpawn()
         {
-            Debug.Log(
-                $"[ToolLifecycle] {GetType().Name}.OnSpawn data={(_toolData != null ? _toolData.name : "null")} " +
+            LogLifecycleDebug(
+                $"{GetType().Name}.OnSpawn data={(_toolData != null ? _toolData.name : "null")} " +
                 $"meta={(_toolMetadata != null ? _toolMetadata.name : "null")}");
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
@@ -171,7 +174,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnDespawn()
         {
-            Debug.Log($"[ToolLifecycle] {GetType().Name}.OnDespawn equipped={IsEquipped}");
+            LogLifecycleDebug($"{GetType().Name}.OnDespawn equipped={IsEquipped}");
             // Если инструмент ещё экипирован — корректно снимаем
             if (IsEquipped)
             {
@@ -193,8 +196,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnEquip()
         {
-            Debug.Log(
-                $"[ToolLifecycle] {GetType().Name}.OnEquip data={(_toolData != null ? _toolData.name : "null")} " +
+            LogLifecycleDebug(
+                $"{GetType().Name}.OnEquip data={(_toolData != null ? _toolData.name : "null")} " +
                 $"meta={(_toolMetadata != null ? _toolMetadata.name : "null")}");
             IsEquipped = true;
             _lowDurabilityWarningFired = false;
@@ -214,7 +217,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual void OnUnequip()
         {
-            Debug.Log($"[ToolLifecycle] {GetType().Name}.OnUnequip");
+            LogLifecycleDebug($"{GetType().Name}.OnUnequip");
             IsEquipped = false;
 
             // Unsubscribe from durability events
@@ -302,6 +305,41 @@ namespace Hecton8.Gameplay
         /// </summary>
         /// <param name="deltaTime">Time.deltaTime.</param>
         public virtual void ToolTick(float deltaTime) { }
+
+        /// <summary>
+        /// Короткая сводка состояния активного инструмента для HUD/PDA.
+        /// </summary>
+        public virtual string GetOperationalSummary()
+        {
+            string toolName = _toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName)
+                ? _toolData.itemName.ToUpperInvariant()
+                : GetType().Name.ToUpperInvariant();
+
+            if (!IsEquipped)
+                return $"{toolName} // STANDBY";
+
+            if (IsBroken)
+                return $"{toolName} // BROKEN";
+
+            if (_toolMetadata != null)
+                return $"{toolName} // DUR {CurrentDurability:0}/{_toolMetadata.maxDurability:0}";
+
+            return $"{toolName} // READY";
+        }
+
+        /// <summary>
+        /// Что игроку сейчас делать с активным инструментом.
+        /// </summary>
+        public virtual string GetOperationalDirective()
+        {
+            if (IsBroken)
+                return "Repair or replace the active tool before the next field action.";
+
+            if (_toolMetadata != null && DurabilityNormalized <= 0.2f)
+                return "Durability is low. Finish the current action and service the tool.";
+
+            return "Tool is ready for the current field role.";
+        }
 
         // ══════════════════════════════════════════════════════════
         //  PROTECTED — STAT MODIFIERS (v2.0 ENTERPRISE)
@@ -403,6 +441,14 @@ namespace Hecton8.Gameplay
         protected virtual void OnToolBrokenWhileUsing()
         {
             // Default: do nothing (tool is blocked)
+        }
+
+        private void LogLifecycleDebug(string message)
+        {
+            if (!lifecycleDebugLogging)
+                return;
+
+            Debug.Log("[ToolLifecycle] " + message);
         }
     }
 }

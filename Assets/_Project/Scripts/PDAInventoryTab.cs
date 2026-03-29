@@ -315,23 +315,33 @@ namespace Hecton8.UI
             RectTransform parent = transform.parent as RectTransform;
             if (parent == null) return;
 
-            // Check if tab bar already exists
+            string[] labels = { "INVENTORY", "LOADOUT", "CONSTRUCT", "BARTER", "DATA LOG" };
             Transform existing = parent.Find("PDA_TabBar");
             if (existing != null)
             {
                 _tabBarRoot = existing as RectTransform;
-                // Collect existing buttons
                 _tabButtons = _tabBarRoot.GetComponentsInChildren<PDATabButton>(true);
-                return;
+                if (_tabButtons != null && _tabButtons.Length == labels.Length)
+                    return;
+
+                for (int i = _tabBarRoot.childCount - 1; i >= 0; i--)
+                {
+                    Transform child = _tabBarRoot.GetChild(i);
+                    if (Application.isPlaying)
+                        Destroy(child.gameObject);
+                    else
+                        DestroyImmediate(child.gameObject);
+                }
+            }
+            else
+            {
+                _tabBarRoot = CreateRect("PDA_TabBar", parent);
+                Anchor(_tabBarRoot, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                       new Vector2(0f, -4f), new Vector2(0f, 36f));
             }
 
-            _tabBarRoot = CreateRect("PDA_TabBar", parent);
-            Anchor(_tabBarRoot, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                   new Vector2(0f, -4f), new Vector2(0f, 36f));
-
-            string[] labels = { "INVENTORY", "LOADOUT", "DATA LOG" };
             _tabButtons = new PDATabButton[labels.Length];
-            float tabWidth = 140f;
+            float tabWidth = 126f;
             float totalWidth = labels.Length * tabWidth + (labels.Length - 1) * 6f;
             float startX = -totalWidth * 0.5f + tabWidth * 0.5f;
 

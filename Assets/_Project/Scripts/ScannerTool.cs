@@ -1,10 +1,8 @@
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  ScannerTool.cs — Project HECTON-8 Hydroacoustic Scanner                   ║
-// ║  Unity 6 (URP) | Shapes 4.x | Zero GC                                    ║
-// ║  v1.1 — Fixed: composition instead of multiple inheritance                 ║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
-
 using Hecton8.Audio;
+using Hecton8.Building;
+using Hecton8.Construction;
+using Hecton8.Interaction;
+using Hecton8.Items;
 using Hecton8.Scavenging;
 using Shapes;
 using Unity.Mathematics;
@@ -15,78 +13,165 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class ScannerTool : PlayerTool
     {
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        private enum ScanMode
+        {
+            Expedition = 0,
+            Resource = 1,
+            Structure = 2
+        }
 
-        [Header("═══ SCAN PARAMETERS ═══")]
+        private struct ScanResultSummary
+        {
+            public int totalContacts;
+            public int resourceContacts;
+            public int structureContacts;
+            public int pickupContacts;
+            public int scannableContacts;
+            public int hazardContacts;
+            public int expeditionContacts;
+            public int resourcePoiContacts;
+            public int structurePoiContacts;
+            public int cargoContacts;
+            public int routeContacts;
+            public int bioformContacts;
 
-        [Tooltip("Scan radius in meters. Upgradeable in future.")]
+            public string BuildHudMessage(ScanMode mode)
+            {
+                if (totalContacts <= 0)
+                {
+                    return mode switch
+                    {
+                        ScanMode.Resource => "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane.",
+                        ScanMode.Structure => "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector.",
+                        _ => "SCANNER - CLEAR | No meaningful contacts in the active sweep."
+                    };
+                }
+
+                return mode switch
+                {
+                    ScanMode.Resource => $"SCANNER - RESOURCES {resourceContacts} // PICKUPS {pickupContacts} | {BuildRecommendation(mode)}",
+                    ScanMode.Structure => $"SCANNER - STRUCTURES {structureContacts} // ROUTE {routeContacts} | {BuildRecommendation(mode)}",
+                    _ => $"SCANNER - CONTACTS {totalContacts} // BIO {bioformContacts} | {BuildRecommendation(mode)}"
+                };
+            }
+
+            public string BuildOperationTitle(ScanMode mode)
+            {
+                return mode switch
+                {
+                    ScanMode.Resource => "RESOURCE SWEEP COMPLETE",
+                    ScanMode.Structure => "STRUCTURE SWEEP COMPLETE",
+                    _ => "HYDROACOUSTIC CONTACTS ARCHIVED"
+                };
+            }
+
+            public string BuildOperationSummary(ScanMode mode, float radius)
+            {
+                if (totalContacts <= 0)
+                {
+                    return mode switch
+                    {
+                        ScanMode.Resource => $"No harvestable or cached resource signatures were resolved inside the {radius:0}m sweep. Recommendation: Shift to another extraction lane.",
+                        ScanMode.Structure => $"No modules, markers, or authored intel contacts were resolved inside the {radius:0}m sweep. Recommendation: Continue transit or widen the structural search area.",
+                        _ => $"No meaningful contacts were resolved in the last {radius:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."
+                    };
+                }
+
+                return mode switch
+                {
+                    ScanMode.Resource => $"{resourceContacts} resource signatures and {pickupContacts} cached pickups resolved inside {radius:0}m. Recommendation: {BuildRecommendation(mode)}",
+                    ScanMode.Structure => $"{structureContacts} structural contacts, {routeContacts} route markers, and {scannableContacts} databank contacts resolved inside {radius:0}m. Recommendation: {BuildRecommendation(mode)}",
+                    _ => $"{totalContacts} contact signatures resolved inside {radius:0}m pulse envelope, including {bioformContacts} bioform-coded contacts. Recommendation: {BuildRecommendation(mode)}"
+                };
+            }
+
+            public string BuildRecommendation(ScanMode mode)
+            {
+                if (totalContacts <= 0)
+                {
+                    return mode switch
+                    {
+                        ScanMode.Resource => "Shift to another extraction lane.",
+                        ScanMode.Structure => "Widen the search or continue transit.",
+                        _ => "Advance to the next scouting point."
+                    };
+                }
+
+                return mode switch
+                {
+                    ScanMode.Resource => resourcePoiContacts > 0
+                        ? "A resource pocket is authored in this lane. Sweep it, then recover in sequence."
+                        : resourceContacts > 0
+                            ? "Mark the richest lane and recover in sequence."
+                            : "Cached pickups exist, but no live resource node is leading this lane.",
+                    ScanMode.Structure => hazardContacts > 0
+                        ? "Hazard probe resolved. Switch to cautious approach and inspect with focus tools."
+                        : routeContacts > 0
+                            ? "Route markers are live in this sector. Hold the lane readable and stage beacon relays."
+                        : structurePoiContacts > 0
+                            ? "Structural waypoint resolved. Hold this route for navigation or service work."
+                            : structureContacts > 0
+                                ? "Hold this route for construction, salvage, or return navigation."
+                                : "Databank signal only. Sweep closer before committing tools.",
+                    _ => totalContacts >= 4
+                        ? "Sector is dense with contacts. Slow down and classify before pushing deeper."
+                        : bioformContacts > 0
+                            ? "Bioform signatures are present. Confirm posture before closing distance."
+                        : cargoContacts > 0
+                            ? "Cargo signatures are present. Prepare propulsion or harpoon handling before transit."
+                        : expeditionContacts > 0
+                            ? "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper."
+                            : "Sparse contact field. Safe to keep moving with periodic sweeps."
+                };
+            }
+        }
+
+        [Header("Scan Parameters")]
         [SerializeField] private float scanRadius = 50f;
-
-        [Tooltip("Cooldown between scans in seconds.")]
         [SerializeField] private float scanCooldown = 3f;
-
-        [Tooltip("Physics layer mask for scannable objects.\n" +
-                 "Should include 'Mineable' layer at minimum.")]
         [SerializeField] private LayerMask scanLayerMask = ~0;
 
-        [Header("═══ PULSE VISUAL ═══")]
-
-        [Tooltip("Duration of the expanding ring animation (seconds).")]
+        [Header("Pulse Visual")]
         [SerializeField] private float pulseDuration = 1.5f;
-
-        [Tooltip("Ring color at start of pulse.")]
         [SerializeField] private Color pulseColor = new Color(0f, 0.9f, 1f, 0.8f);
-
-        [Tooltip("Ring thickness in world units.")]
         [SerializeField] private float pulseThickness = 0.15f;
 
-        [Header("═══ AUDIO ═══")]
-
-        [Tooltip("Sonar ping sound. Low-frequency, submarine-style.")]
+        [Header("Audio")]
         [SerializeField] private AudioClip pingClip;
-
-        [Tooltip("Volume of the sonar ping (0-1).")]
         [Range(0f, 1f)]
         [SerializeField] private float pingVolume = 0.7f;
-
-        [Tooltip("Sound when scan is on cooldown.")]
         [SerializeField] private AudioClip cooldownClip;
 
-        // ══════════════════════════════════════════════════════════
-        //  STATIC BUFFER — Zero GC OverlapSphere
-        // ══════════════════════════════════════════════════════════
+        [Header("Feedback")]
+        [SerializeField] private float cooldownFeedbackInterval = 0.75f;
+        [SerializeField] private float resultFeedbackInterval = 0.5f;
+        [SerializeField] private float modeFeedbackInterval = 0.4f;
 
         private static readonly Collider[] s_HitBuffer = new Collider[64];
 
-        // ══════════════════════════════════════════════════════════
-        //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
-
         private float _lastScanTime = -999f;
+        private float _nextCooldownFeedbackAt;
+        private float _nextResultFeedbackAt;
+        private float _nextModeFeedbackAt;
         private Transform _cachedTransform;
+        private ScanMode _scanMode = ScanMode.Expedition;
+        private ScanResultSummary _lastResult;
+        private float _lastResultTime = -999f;
+        private bool _hasLastResult;
 
-        // ── Pulse state (read by ScannerPulseDrawer) ──
-        internal bool  PulseActive    { get; private set; }
-        internal float3 PulseOrigin   { get; private set; }
+        internal bool PulseActive { get; private set; }
+        internal float3 PulseOrigin { get; private set; }
         internal float PulseStartTime { get; private set; }
 
-        // ── Config accessors (read by ScannerPulseDrawer) ──
-        internal float PulseDuration   => pulseDuration;
-        internal float ScanRadius      => scanRadius;
-        internal Color PulseColor      => pulseColor;
-        internal float PulseThickness  => pulseThickness;
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        internal float PulseDuration => pulseDuration;
+        internal float ScanRadius => scanRadius;
+        internal Color PulseColor => pulseColor;
+        internal float PulseThickness => pulseThickness;
 
         private void Awake()
         {
             _cachedTransform = transform;
 
-            // Auto-create the Shapes drawer component on this GameObject
             if (GetComponent<ScannerPulseDrawer>() == null)
             {
                 var drawer = gameObject.AddComponent<ScannerPulseDrawer>();
@@ -106,98 +191,450 @@ namespace Hecton8.Gameplay
             PulseActive = false;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  TOOL USAGE
-        // ══════════════════════════════════════════════════════════
-
         public override void UsePrimary(float deltaTime)
         {
-            if (!IsEquipped) return;
+            if (!IsEquipped)
+                return;
 
             float now = Time.time;
-
             if (now - _lastScanTime < scanCooldown)
+            {
+                if (now >= _nextCooldownFeedbackAt)
+                {
+                    ToolHitUtility.ShowWarning("SCANNER - RECHARGING");
+                    _nextCooldownFeedbackAt = now + cooldownFeedbackInterval;
+                }
                 return;
+            }
 
             _lastScanTime = now;
 
             float3 origin = _cachedTransform.position;
-            PerformScan(origin);
+            ScanResultSummary result = PerformScan(origin, _scanMode);
 
-            PulseActive    = true;
-            PulseOrigin    = origin;
+            PulseActive = true;
+            PulseOrigin = origin;
             PulseStartTime = now;
 
             if (pingClip != null && SpatialAudioManager.Instance != null)
                 SpatialAudioManager.Instance.PlayStatic2D(pingClip, pingVolume);
 
             ScanEvents.OnScanTriggered?.Invoke(origin, scanRadius);
+
+            if (now >= _nextResultFeedbackAt)
+            {
+                ToolHitUtility.ShowInfo(result.BuildHudMessage(_scanMode));
+                _nextResultFeedbackAt = now + resultFeedbackInterval;
+            }
+
+            FieldOperationLogSystem.RecordOperation(
+                "SCAN",
+                result.BuildOperationTitle(_scanMode),
+                result.BuildOperationSummary(_scanMode, scanRadius),
+                "INFO");
+
+            _lastResult = result;
+            _lastResultTime = now;
+            _hasLastResult = true;
+        }
+
+        public override void UseSecondary(float deltaTime)
+        {
+            if (!IsEquipped)
+                return;
+
+            float now = Time.time;
+            if (now < _nextModeFeedbackAt)
+                return;
+
+            _scanMode = NextMode(_scanMode);
+            string modeLabel = DescribeMode(_scanMode);
+
+            ToolHitUtility.ShowInfo($"SCANNER MODE - {modeLabel}");
+            FieldOperationLogSystem.RecordOperation(
+                "SCAN",
+                $"SCAN MODE - {modeLabel}",
+                BuildModeSummary(_scanMode),
+                "INFO");
+
+            _nextModeFeedbackAt = now + modeFeedbackInterval;
         }
 
         public override void ToolTick(float deltaTime)
         {
-            if (PulseActive)
-            {
-                float elapsed = Time.time - PulseStartTime;
-                if (elapsed > pulseDuration)
-                    PulseActive = false;
-            }
+            if (!PulseActive)
+                return;
+
+            float elapsed = Time.time - PulseStartTime;
+            if (elapsed > pulseDuration)
+                PulseActive = false;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  SCAN LOGIC — Zero GC
-        // ══════════════════════════════════════════════════════════
+        public override string GetOperationalSummary()
+        {
+            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
+            string modeLabel = DescribeMode(_scanMode);
 
-        private void PerformScan(float3 origin)
+            if (cooldownRemaining > 0.01f)
+                return $"SCANNER // {modeLabel} // RECHARGING {cooldownRemaining:0.0}S";
+
+            if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
+                return $"SCANNER // {modeLabel} // LAST {_lastResult.totalContacts} CONTACTS";
+
+            return $"SCANNER // {modeLabel} // READY {scanRadius:0}M";
+        }
+
+        public override string GetOperationalDirective()
+        {
+            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
+            if (cooldownRemaining > 0.01f)
+                return $"Hold for recharge. Next pulse in {cooldownRemaining:0.0} seconds.";
+
+            if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
+                return _lastResult.BuildRecommendation(_scanMode);
+
+            return BuildModeSummary(_scanMode);
+        }
+
+        private ScanResultSummary PerformScan(float3 origin, ScanMode mode)
         {
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                origin, scanRadius, s_HitBuffer, scanLayerMask,
+                origin,
+                scanRadius,
+                s_HitBuffer,
+                scanLayerMask,
                 QueryTriggerInteraction.Collide);
 
             if (hitCount > s_HitBuffer.Length)
                 hitCount = s_HitBuffer.Length;
 
-            int foundCount = 0;
+            ScanResultSummary result = default;
+            bool genericResourceLogged = false;
 
             for (int i = 0; i < hitCount; i++)
             {
                 Collider col = s_HitBuffer[i];
-                if (col == null) continue;
+                if (col == null)
+                    continue;
+
+                bool meaningfulContact = false;
+                bool resourceContact = false;
+                bool structureContact = false;
+                bool pickupContact = false;
+                bool scannableContact = false;
+                bool bioformContact = false;
+
+                if (col.TryGetComponent(out ScannableTarget scannable))
+                {
+                    ScanEvents.OnEntryDiscovered?.Invoke(
+                        scannable.EntryId,
+                        scannable.EntryTitle,
+                        scannable.EntryCategory,
+                        scannable.EntrySummary);
+                    meaningfulContact = true;
+                    scannableContact = true;
+                    CategorizeScannable(scannable, ref result);
+                }
+                else
+                {
+                    if (col.TryGetComponent(out PickupItem pickup) && TryDiscoverPickupEntry(pickup))
+                    {
+                        meaningfulContact = true;
+                        pickupContact = true;
+                        resourceContact = IsResourcePickup(pickup.ItemData);
+                    }
+
+                    if (col.TryGetComponent(out ModuleMarker marker) && TryDiscoverModuleEntry(marker))
+                    {
+                        meaningfulContact = true;
+                        structureContact = true;
+                    }
+                }
+
+                if (FieldTargetDescriptor.TryResolve(col, out FieldTargetDescriptor descriptor))
+                {
+                    CategorizeDescriptor(descriptor, ref result, ref meaningfulContact, ref resourceContact, ref structureContact);
+                    bioformContact = FieldTargetSemantics.IsBioformRole(descriptor.Role);
+                }
 
                 if (col.TryGetComponent(out ResourceNode node))
                 {
-                    if (node.IsDepleted) continue;
+                    if (node.IsDepleted)
+                    {
+                        s_HitBuffer[i] = null;
+                        continue;
+                    }
 
                     float3 nodePos = col.transform.position;
                     ScanEvents.OnNodeFound?.Invoke(nodePos);
-                    foundCount++;
+                    if (!genericResourceLogged)
+                    {
+                        ScanEvents.OnEntryDiscovered?.Invoke(
+                            "scan.resource_node",
+                            "RESOURCE DEPOSIT",
+                            "Resource",
+                            "Hydroacoustic pulse returned a mineral-density signature. Mark for salvage or extraction.");
+                        genericResourceLogged = true;
+                    }
+                    meaningfulContact = true;
+                    resourceContact = true;
+                }
+
+                if (meaningfulContact && MatchesMode(mode, resourceContact, structureContact, pickupContact, scannableContact, bioformContact))
+                {
+                    result.totalContacts++;
+                    if (resourceContact) result.resourceContacts++;
+                    if (structureContact) result.structureContacts++;
+                    if (pickupContact) result.pickupContacts++;
+                    if (scannableContact) result.scannableContacts++;
                 }
 
                 s_HitBuffer[i] = null;
             }
 
 #if UNITY_EDITOR
-            Debug.Log($"[Scanner] Pulse at {origin}: {foundCount} nodes found " +
-                      $"({hitCount} colliders checked, radius {scanRadius}m)");
+            Debug.Log($"[Scanner] Pulse at {origin}: {result.totalContacts} contacts found ({hitCount} colliders checked, radius {scanRadius}m, mode {DescribeMode(mode)})");
 #endif
+            return result;
+        }
+
+        private static void CategorizeScannable(ScannableTarget scannable, ref ScanResultSummary result)
+        {
+            if (scannable == null)
+                return;
+
+            string category = scannable.EntryCategory;
+            if (string.IsNullOrWhiteSpace(category))
+                return;
+
+            string lowered = category.ToLowerInvariant();
+            if (lowered.Contains("hazard"))
+            {
+                result.hazardContacts++;
+                return;
+            }
+
+            if (lowered.Contains("resource"))
+            {
+                result.resourcePoiContacts++;
+                return;
+            }
+
+            if (lowered.Contains("structure"))
+            {
+                result.structurePoiContacts++;
+                return;
+            }
+
+            if (lowered.Contains("expedition"))
+                result.expeditionContacts++;
+        }
+
+        private static void CategorizeDescriptor(
+            FieldTargetDescriptor descriptor,
+            ref ScanResultSummary result,
+            ref bool meaningfulContact,
+            ref bool resourceContact,
+            ref bool structureContact)
+        {
+            if (descriptor == null)
+                return;
+
+            switch (descriptor.Role)
+            {
+                case FieldTargetRole.CargoLight:
+                case FieldTargetRole.CargoWork:
+                case FieldTargetRole.CargoHeavy:
+                case FieldTargetRole.CargoOverweight:
+                    result.cargoContacts++;
+                    meaningfulContact = true;
+                    return;
+
+                case FieldTargetRole.RouteAnchor:
+                case FieldTargetRole.RouteRelay:
+                case FieldTargetRole.RouteFrontier:
+                    result.routeContacts++;
+                    structureContact = true;
+                    meaningfulContact = true;
+                    return;
+
+                case FieldTargetRole.ResourceCache:
+                case FieldTargetRole.ResourceNodeActive:
+                    result.resourcePoiContacts++;
+                    resourceContact = true;
+                    meaningfulContact = true;
+                    return;
+
+                case FieldTargetRole.StructureRelay:
+                case FieldTargetRole.ServiceDamaged:
+                case FieldTargetRole.ServiceFlooded:
+                case FieldTargetRole.ServiceControl:
+                case FieldTargetRole.ConstructionSocket:
+                case FieldTargetRole.ConstructionBlocked:
+                case FieldTargetRole.ConstructionClear:
+                    result.structurePoiContacts++;
+                    structureContact = true;
+                    meaningfulContact = true;
+                    return;
+
+                case FieldTargetRole.HazardProbe:
+                    result.hazardContacts++;
+                    structureContact = true;
+                    meaningfulContact = true;
+                    return;
+
+                case FieldTargetRole.ExpeditionCheckpoint:
+                    result.expeditionContacts++;
+                    meaningfulContact = true;
+                    return;
+                case FieldTargetRole.BioformDormant:
+                case FieldTargetRole.BioformAggressive:
+                case FieldTargetRole.BioformFractured:
+                case FieldTargetRole.BioformDown:
+                    result.bioformContacts++;
+                    meaningfulContact = true;
+                    return;
+            }
+        }
+
+        private static bool TryDiscoverPickupEntry(PickupItem pickup)
+        {
+            if (pickup == null)
+                return false;
+
+            ItemData item = pickup.ItemData;
+            if (item == null)
+                return false;
+
+            string itemId = string.IsNullOrWhiteSpace(item.name) ? item.itemName : item.name;
+            if (string.IsNullOrWhiteSpace(itemId))
+                return false;
+
+            string title = string.IsNullOrWhiteSpace(item.itemName) ? "UNIDENTIFIED PICKUP" : item.itemName.ToUpperInvariant();
+            string category = DescribeItemCategory(item.category);
+            string summary = BuildPickupSummary(item, pickup.Quantity);
+            ScanEvents.OnEntryDiscovered?.Invoke($"item.{itemId}".ToLowerInvariant(), title, category, summary);
+            return true;
+        }
+
+        private static bool TryDiscoverModuleEntry(ModuleMarker marker)
+        {
+            if (marker == null || marker.Data == null)
+                return false;
+
+            BuildableData data = marker.Data;
+            string moduleId = string.IsNullOrWhiteSpace(data.name) ? data.moduleName : data.name;
+            if (string.IsNullOrWhiteSpace(moduleId))
+                return false;
+
+            string title = string.IsNullOrWhiteSpace(data.moduleName) ? "UNIDENTIFIED MODULE" : data.moduleName.ToUpperInvariant();
+            string category = $"Construction/{data.FamilyLabel}";
+            string summary = string.IsNullOrWhiteSpace(data.description)
+                ? $"Base module archived. Power role: {DescribePowerRole(data)}."
+                : data.description.Trim();
+            ScanEvents.OnEntryDiscovered?.Invoke($"module.{moduleId}".ToLowerInvariant(), title, category, summary);
+            return true;
+        }
+
+        private static bool MatchesMode(
+            ScanMode mode,
+            bool resourceContact,
+            bool structureContact,
+            bool pickupContact,
+            bool scannableContact,
+            bool bioformContact)
+        {
+            return mode switch
+            {
+                ScanMode.Resource => resourceContact || pickupContact,
+                ScanMode.Structure => structureContact || scannableContact,
+                _ => resourceContact || structureContact || pickupContact || scannableContact || bioformContact
+            };
+        }
+
+        private static bool IsResourcePickup(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            return item.category == ItemCategory.Material || item.category == ItemCategory.Component;
+        }
+
+        private static ScanMode NextMode(ScanMode mode)
+        {
+            return mode switch
+            {
+                ScanMode.Expedition => ScanMode.Resource,
+                ScanMode.Resource => ScanMode.Structure,
+                _ => ScanMode.Expedition
+            };
+        }
+
+        private static string DescribeMode(ScanMode mode)
+        {
+            return mode switch
+            {
+                ScanMode.Resource => "RESOURCE",
+                ScanMode.Structure => "STRUCTURE",
+                _ => "EXPEDITION"
+            };
+        }
+
+        private static string BuildModeSummary(ScanMode mode)
+        {
+            return mode switch
+            {
+                ScanMode.Resource => "Scanner now prioritizes mineral, salvage, and cached pickup signatures.",
+                ScanMode.Structure => "Scanner now prioritizes authored intel contacts, module markers, and structural returns.",
+                _ => "Scanner now runs full-spectrum expedition sweeps across all supported contact classes."
+            };
+        }
+
+        private static string DescribeItemCategory(ItemCategory category)
+        {
+            switch (category)
+            {
+                case ItemCategory.Tool: return "Tool";
+                case ItemCategory.Equipment: return "Equipment";
+                case ItemCategory.Consumable: return "Consumable";
+                case ItemCategory.Material: return "Material";
+                case ItemCategory.Component: return "Component";
+                default: return "Misc";
+            }
+        }
+
+        private static string BuildPickupSummary(ItemData item, int quantity)
+        {
+            string description = string.IsNullOrWhiteSpace(item.description)
+                ? "Portable field asset archived for suit databank reference."
+                : item.description.Trim();
+
+            if (quantity > 1)
+                return $"{description} Cached pickup quantity: {quantity}.";
+
+            return description;
+        }
+
+        private static string DescribePowerRole(BuildableData data)
+        {
+            if (data == null)
+                return "Unknown";
+
+            if (data.IsGenerator)
+                return "Generator";
+
+            if (data.IsConsumer)
+                return "Consumer";
+
+            return "Passive";
         }
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  SHAPES DRAWER — separate component on same GameObject
-    //  Inherits ImmediateModeShapeDrawer (Shapes 4.x class).
-    //  Reads pulse state from ScannerTool via internal properties.
-    //  Zero GC: immediate mode drawing, no allocations.
-    // ══════════════════════════════════════════════════════════════
 
     [DisallowMultipleComponent]
     public sealed class ScannerPulseDrawer : ImmediateModeShapeDrawer
     {
         private ScannerTool _scanner;
 
-        /// <summary>
-        /// Called by ScannerTool.Awake() after AddComponent.
-        /// </summary>
         internal void Init(ScannerTool scanner)
         {
             _scanner = scanner;
@@ -205,30 +642,25 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            // If Init wasn't called (e.g. component already existed on prefab),
-            // find ScannerTool on same GameObject.
             if (_scanner == null)
                 _scanner = GetComponent<ScannerTool>();
         }
 
         public override void DrawShapes(Camera cam)
         {
-            if (_scanner == null) return;
-            if (!_scanner.PulseActive) return;
-            if (!_scanner.IsEquipped) return;
+            if (_scanner == null || !_scanner.PulseActive || !_scanner.IsEquipped)
+                return;
 
             float elapsed = Time.time - _scanner.PulseStartTime;
             float t = math.saturate(elapsed / _scanner.PulseDuration);
-
             float currentRadius = math.lerp(0f, _scanner.ScanRadius, t);
 
             Color baseColor = _scanner.PulseColor;
             float alpha = baseColor.a * (1f - t * t);
-
-            if (alpha < 0.01f) return;
+            if (alpha < 0.01f)
+                return;
 
             Color ringColor = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
-
             float baseThickness = _scanner.PulseThickness;
             float thickness = math.lerp(baseThickness, baseThickness * 0.3f, t);
 
@@ -239,23 +671,20 @@ namespace Hecton8.Gameplay
                     Quaternion.Euler(90f, 0f, 0f),
                     currentRadius,
                     thickness,
-                    ringColor
-                );
+                    ringColor);
 
                 if (t < 0.8f)
                 {
                     float innerRadius = currentRadius * 0.85f;
                     float innerAlpha = alpha * 0.3f;
-                    Color innerColor = new Color(
-                        baseColor.r, baseColor.g, baseColor.b, innerAlpha);
+                    Color innerColor = new Color(baseColor.r, baseColor.g, baseColor.b, innerAlpha);
 
                     Draw.Ring(
                         (Vector3)_scanner.PulseOrigin,
                         Quaternion.Euler(90f, 0f, 0f),
                         innerRadius,
                         thickness * 0.5f,
-                        innerColor
-                    );
+                        innerColor);
                 }
             }
         }

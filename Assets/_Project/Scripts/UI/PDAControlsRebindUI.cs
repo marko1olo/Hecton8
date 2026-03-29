@@ -142,7 +142,8 @@ namespace Hecton8.UI
             if (_subscribed) return;
 
             var input = InputManager.Instance;
-            if (input == null || RebindingManager.Instance == null)
+            RebindingManager.TryGetInstance(out RebindingManager rebinding);
+            if (input == null || rebinding == null)
                 return;
 
             input.OnNavigate += HandleNavigate;
@@ -151,9 +152,9 @@ namespace Hecton8.UI
             input.OnTabNext += HandleTabNext;
             input.OnTabPrevious += HandleTabPrevious;
 
-            RebindingManager.Instance.OnRebindStarted += HandleRebindStarted;
-            RebindingManager.Instance.OnRebindCompleted += HandleRebindCompleted;
-            RebindingManager.Instance.OnRebindCanceled += HandleRebindCanceled;
+            rebinding.OnRebindStarted += HandleRebindStarted;
+            rebinding.OnRebindCompleted += HandleRebindCompleted;
+            rebinding.OnRebindCanceled += HandleRebindCanceled;
 
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
             PDAEvents.OnOpened += HandlePdaOpened;
@@ -175,11 +176,12 @@ namespace Hecton8.UI
                 input.OnTabPrevious -= HandleTabPrevious;
             }
 
-            if (RebindingManager.Instance != null)
+            RebindingManager.TryGetInstance(out RebindingManager rebinding);
+            if (rebinding != null)
             {
-                RebindingManager.Instance.OnRebindStarted -= HandleRebindStarted;
-                RebindingManager.Instance.OnRebindCompleted -= HandleRebindCompleted;
-                RebindingManager.Instance.OnRebindCanceled -= HandleRebindCanceled;
+                rebinding.OnRebindStarted -= HandleRebindStarted;
+                rebinding.OnRebindCompleted -= HandleRebindCompleted;
+                rebinding.OnRebindCanceled -= HandleRebindCanceled;
             }
 
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
@@ -192,7 +194,7 @@ namespace Hecton8.UI
         {
             if (!IsControlsTabActive) return;
             if (rows.Length == 0) return;
-            if (RebindingManager.Instance.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
             int delta = 0;
             if (direction.y > 0.35f) delta = -1;
@@ -208,7 +210,7 @@ namespace Hecton8.UI
         {
             if (!IsControlsTabActive) return;
             if (rows.Length == 0) return;
-            if (RebindingManager.Instance.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
             RebindRow row = rows[_selectedIndex];
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
@@ -225,7 +227,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            bool started = RebindingManager.Instance.StartInteractiveRebind(
+            bool started = rebinding.StartInteractiveRebind(
                 row.actionName,
                 row.actionMap,
                 bindingIndex,
@@ -242,15 +244,15 @@ namespace Hecton8.UI
         private void HandleCancel()
         {
             if (!PlayerPDA.IsOpen) return;
-            if (!RebindingManager.Instance.IsRebinding) return;
-            RebindingManager.Instance.CancelRebind();
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || !rebinding.IsRebinding) return;
+            rebinding.CancelRebind();
         }
 
         private void HandleTabNext()
         {
             if (!IsControlsTabActive) return;
             if (rows.Length == 0) return;
-            if (RebindingManager.Instance.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
             ResetSelectedBinding();
         }
@@ -258,9 +260,9 @@ namespace Hecton8.UI
         private void HandleTabPrevious()
         {
             if (!IsControlsTabActive) return;
-            if (RebindingManager.Instance.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
-            RebindingManager.Instance.ClearOverrides();
+            rebinding.ClearOverrides();
             RefreshAllBindings();
             UpdateStatusForSelected();
         }
@@ -323,7 +325,8 @@ namespace Hecton8.UI
             action.RemoveBindingOverride(bindingIndex);
             if (saveAfterRowReset)
             {
-                RebindingManager.Instance.SaveOverrides();
+                if (RebindingManager.TryGetInstance(out RebindingManager rebinding))
+                    rebinding.SaveOverrides();
             }
 
             RefreshRowBinding(row);
@@ -594,8 +597,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            string binding = action.GetBindingDisplayString(bindingIndex);
-            row.bindingText.text = string.IsNullOrEmpty(binding) ? "--" : binding;
+            row.bindingText.text = GetBindingDisplaySafe(action, bindingIndex);
         }
 
         private void RefreshSelectionVisuals()
@@ -647,8 +649,7 @@ namespace Hecton8.UI
                 int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
                 if (bindingIndex >= 0)
                 {
-                    binding = action.GetBindingDisplayString(bindingIndex);
-                    if (string.IsNullOrEmpty(binding)) binding = "--";
+                    binding = GetBindingDisplaySafe(action, bindingIndex);
                 }
             }
 
@@ -657,24 +658,62 @@ namespace Hecton8.UI
 
         private static int ResolveBindingIndex(InputAction action, int preferredIndex)
         {
-            if (action == null || action.bindings.Count == 0)
+            if (action == null)
                 return -1;
 
-            if (preferredIndex >= 0 &&
-                preferredIndex < action.bindings.Count &&
-                !action.bindings[preferredIndex].isComposite &&
-                !action.bindings[preferredIndex].isPartOfComposite)
+            int bindingCount;
+            try
             {
-                return preferredIndex;
+                bindingCount = action.bindings.Count;
+            }
+            catch
+            {
+                return -1;
             }
 
-            for (int i = 0; i < action.bindings.Count; i++)
+            if (bindingCount == 0)
+                return -1;
+
+            try
             {
-                if (!action.bindings[i].isComposite && !action.bindings[i].isPartOfComposite)
-                    return i;
+                if (preferredIndex >= 0 &&
+                    preferredIndex < bindingCount &&
+                    !action.bindings[preferredIndex].isComposite &&
+                    !action.bindings[preferredIndex].isPartOfComposite)
+                {
+                    return preferredIndex;
+                }
+            }
+            catch
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < bindingCount; i++)
+            {
+                try
+                {
+                    if (!action.bindings[i].isComposite && !action.bindings[i].isPartOfComposite)
+                        return i;
+                }
+                catch
+                {
+                    return -1;
+                }
             }
 
             return -1;
+        }
+
+        private static string GetBindingDisplaySafe(InputAction action, int bindingIndex)
+        {
+            if (action == null || bindingIndex < 0)
+                return "--";
+
+            return InputManager.TryGetBindingDisplayStringSafe(action, bindingIndex, out string binding) &&
+                   !string.IsNullOrEmpty(binding)
+                ? binding
+                : "--";
         }
 
         private void SetStatus(string value)

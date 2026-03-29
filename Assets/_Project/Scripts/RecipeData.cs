@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Hecton8.Building;
+using Hecton8.Gameplay;
 using Hecton8.Items;
 using UnityEngine;
 
@@ -64,6 +65,10 @@ namespace Hecton8.Crafting
         [Tooltip("Время крафта в секундах")]
         [Min(0.1f)]
         public float craftTime = 3f;
+
+        [Header("Unlock")]
+        [Tooltip("Необязательная scan-log запись, которая открывает этот чертёж. Пусто = чертёж доступен сразу.")]
+        public string requiredScanEntryId = "";
 
         // ─────────────────────── Cache ───────────────────────────
 
@@ -123,6 +128,20 @@ namespace Hecton8.Crafting
         public Sprite Icon => overrideIcon != null
             ? overrideIcon
             : (resultItem != null ? resultItem.icon : null);
+
+        public bool RequiresScanUnlock => !string.IsNullOrWhiteSpace(requiredScanEntryId);
+
+        public string RequiredScanEntryId => string.IsNullOrWhiteSpace(requiredScanEntryId)
+            ? string.Empty
+            : requiredScanEntryId.Trim();
+
+        public bool IsUnlocked(ScanLogSystem scanLogSystem)
+        {
+            if (!RequiresScanUnlock)
+                return true;
+
+            return scanLogSystem != null && scanLogSystem.ContainsEntry(RequiredScanEntryId);
+        }
 
         // ═════════════════════════════════════════════════════════
         //  Private

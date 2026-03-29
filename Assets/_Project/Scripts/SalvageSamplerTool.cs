@@ -1,19 +1,30 @@
 using UnityEngine;
+using Hecton8.Items;
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     public sealed class SalvageSamplerTool : PlayerTool
     {
+        private struct SamplerDiagnosis
+        {
+            public string headline;
+            public string summary;
+            public string severity;
+        }
+
         [Header("Sampling")]
         [SerializeField] private float samplingRange = 3.2f;
         [SerializeField] private float sampleDamage = 18f;
         [SerializeField] private float sampleImpulse = 1.5f;
         [SerializeField] private float sampleCooldown = 0.3f;
         [SerializeField] private LayerMask samplingMask = ~0;
+        [SerializeField] private float feedbackInterval = 0.45f;
 
         private Transform _cachedTransform;
         private float _cooldown;
+        private float _nextFeedbackAt;
+        private bool _secondaryLatched;
 
         private void Awake()
         {
@@ -36,12 +47,28 @@ namespace Hecton8.Gameplay
                 QueryTriggerInteraction.Collide))
             {
                 float effectiveDamage = sampleDamage * GetEfficiency();
-                ToolHitUtility.ApplyDamage(
+                bool applied = ToolHitUtility.ApplyDamage(
                     hit.collider,
                     effectiveDamage,
                     hit.point,
                     _cachedTransform.forward,
                     sampleImpulse);
+
+                if (!applied && Time.time >= _nextFeedbackAt)
+                {
+                    ToolHitUtility.ShowWarning("SAMPLER - NO VIABLE TARGET");
+                    _nextFeedbackAt = Time.time + feedbackInterval;
+                }
+                else if (applied && Time.time >= _nextFeedbackAt)
+                {
+                    ToolHitUtility.ShowInfo("SAMPLER - EXTRACTION IN PROGRESS");
+                    _nextFeedbackAt = Time.time + feedbackInterval;
+                }
+            }
+            else if (Time.time >= _nextFeedbackAt)
+            {
+                ToolHitUtility.ShowWarning("SAMPLER - NO TARGET LOCK");
+                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             _cooldown = sampleCooldown / Mathf.Max(0.25f, GetSpeed());
@@ -50,6 +77,11 @@ namespace Hecton8.Gameplay
         public override void UseSecondary(float deltaTime)
         {
             base.UseSecondary(deltaTime);
+
+            if (_secondaryLatched)
+                return;
+
+            _secondaryLatched = true;
 
             if (!IsEquipped || _cooldown > 0f)
                 return;
@@ -62,7 +94,38 @@ namespace Hecton8.Gameplay
                 samplingMask,
                 QueryTriggerInteraction.Collide))
             {
-                ToolHitUtility.TryCollectItem(hit.collider, _cachedTransform.root);
+                bool collected = ToolHitUtility.TryCollectItem(hit.collider, _cachedTransform.root, out ItemData recoveredItem);
+                if (collected)
+                {
+                    ArchiveRecoveredItem(recoveredItem);
+                    FieldOperationLogSystem.RecordOperation(
+                        "SALVAGE",
+                        "SALVAGE PACKAGE RECOVERED",
+                        recoveredItem != null
+                            ? $"Sampler retrieved {recoveredItem.itemName} from a recoverable field target."
+                            : "Sampler retrieved an unidentified salvage package.",
+                        "INFO");
+                    ToolHitUtility.ShowInfo(
+                        recoveredItem != null
+                            ? $"SAMPLER - RECOVERED {recoveredItem.itemName.ToUpperInvariant()}"
+                            : "SAMPLER - SALVAGE RECOVERED");
+                    _nextFeedbackAt = Time.time + feedbackInterval;
+                }
+                else
+                {
+                    SamplerDiagnosis diagnosis = BuildDiagnosis(hit.collider);
+                    PublishDiagnosis(diagnosis);
+                    FieldOperationLogSystem.RecordOperation(
+                        "SALVAGE",
+                        $"SAMPLER DIAG - {diagnosis.headline}",
+                        diagnosis.summary,
+                        diagnosis.severity);
+                }
+            }
+            else if (Time.time >= _nextFeedbackAt)
+            {
+                ToolHitUtility.ShowWarning("SAMPLER - NO SALVAGE LOCK");
+                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             _cooldown = sampleCooldown / Mathf.Max(0.25f, GetSpeed());
@@ -72,6 +135,134 @@ namespace Hecton8.Gameplay
         {
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+
+            Hecton8.Input.InputManager input = Hecton8.Input.InputManager.Instance;
+            if (input != null && !input.IsSecondaryActionHeld)
+                _secondaryLatched = false;
+        }
+
+        public override string GetOperationalSummary()
+        {
+            if (_cooldown > 0f)
+                return $"SAMPLER // CYCLING {_cooldown:0.0}S";
+
+            if (TryReadDiagnosis(out SamplerDiagnosis diagnosis))
+                return $"SAMPLER // {diagnosis.headline}";
+
+            return "SAMPLER // READY";
+        }
+
+        public override string GetOperationalDirective()
+        {
+            if (_cooldown > 0f)
+                return "Hold position while the sampling head resets.";
+
+            if (TryReadDiagnosis(out SamplerDiagnosis diagnosis))
+                return diagnosis.summary;
+
+            return "Primary extracts. Secondary checks or recovers salvage packages.";
+        }
+
+        private static void ArchiveRecoveredItem(ItemData item)
+        {
+            if (item == null || ScanLogSystem.Instance == null)
+                return;
+
+            string entryId = $"recovery.{item.name.ToLowerInvariant()}";
+            string title = $"{item.itemName} RECOVERY";
+            string category = item.category.ToString();
+            string summary = $"Recovered field salvage package containing {item.itemName}. Archive updated from sampler retrieval.";
+            ScanLogSystem.Instance.ArchiveEntry(entryId, title, category, summary);
+        }
+
+        private bool TryReadDiagnosis(out SamplerDiagnosis diagnosis)
+        {
+            diagnosis = default;
+
+            if (!UnityEngine.Physics.Raycast(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                out RaycastHit hit,
+                samplingRange,
+                samplingMask,
+                QueryTriggerInteraction.Collide))
+            {
+                return false;
+            }
+
+            diagnosis = BuildDiagnosis(hit.collider);
+            return true;
+        }
+
+        private static SamplerDiagnosis BuildDiagnosis(Collider hitCollider)
+        {
+            if (hitCollider == null)
+            {
+                return new SamplerDiagnosis
+                {
+                    headline = "NO TARGET",
+                    summary = "No salvage contact was detected inside sampler range.",
+                    severity = "WARN"
+                };
+            }
+
+            if (ToolHitUtility.TryPeekCollectible(hitCollider, out ItemData recoverableItem, out int quantity))
+            {
+                string itemLabel = recoverableItem != null
+                    ? recoverableItem.itemName.ToUpperInvariant()
+                    : "UNKNOWN PACKAGE";
+                return new SamplerDiagnosis
+                {
+                    headline = "RECOVERY READY",
+                    summary = $"{itemLabel} is ready for collection. Cached quantity: {Mathf.Max(1, quantity)}.",
+                    severity = "INFO"
+                };
+            }
+
+            Hecton8.Scavenging.ResourceNode node =
+                hitCollider.GetComponent<Hecton8.Scavenging.ResourceNode>() ??
+                hitCollider.GetComponentInParent<Hecton8.Scavenging.ResourceNode>();
+            if (node != null)
+            {
+                float integrityPercent = node.HealthNormalized * 100f;
+                return new SamplerDiagnosis
+                {
+                    headline = node.IsDepleted ? "NODE DEPLETED" : $"RESOURCE NODE {integrityPercent:0}%",
+                    summary = node.IsDepleted
+                        ? "Resource node is already exhausted. No further salvage packet is expected."
+                        : integrityPercent <= 30f
+                            ? "Resource node is fragile and close to opening. Finish sampling now for a fast recovery window."
+                            : integrityPercent <= 65f
+                                ? "Resource node is weakened. Another controlled extraction pass is worthwhile."
+                                : "Resource node is still active. Use primary action to continue sampling.",
+                    severity = node.IsDepleted ? "WARN" : "INFO"
+                };
+            }
+
+            if (hitCollider.TryGetComponent(out ICuttable _))
+            {
+                return new SamplerDiagnosis
+                {
+                    headline = "PROCESS TARGET",
+                    summary = "Target can be processed, but no recoverable package is ready yet.",
+                    severity = "WARN"
+                };
+            }
+
+            return new SamplerDiagnosis
+            {
+                headline = "INVALID TARGET",
+                summary = "Target is inside sampler range but does not support salvage recovery.",
+                severity = "WARN"
+            };
+        }
+
+        private static void PublishDiagnosis(SamplerDiagnosis diagnosis)
+        {
+            if (diagnosis.severity == "WARN" || diagnosis.severity == "CRITICAL")
+                ToolHitUtility.ShowWarning($"SAMPLER DIAG - {diagnosis.headline}");
+            else
+                ToolHitUtility.ShowInfo($"SAMPLER DIAG - {diagnosis.headline}");
         }
     }
 }

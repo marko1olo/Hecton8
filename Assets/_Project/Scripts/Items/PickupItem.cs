@@ -21,6 +21,19 @@ namespace Hecton8.Interaction
         private InteractionHighlighter _highlighter;
         private string _cachedInteractText;
 
+        public ItemData ItemData => itemData;
+        public int Quantity => quantity;
+
+        public void Configure(ItemData data, int itemQuantity)
+        {
+            itemData = data;
+            quantity = Mathf.Max(1, itemQuantity);
+
+            _cachedInteractText = itemData != null
+                ? itemData.GetInteractText()
+                : "Pick up Unknown";
+        }
+
         private void Awake()
         {
             _highlighter = GetComponent<InteractionHighlighter>();

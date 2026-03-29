@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — PlayerPDA.cs  v2.0 ENTERPRISE
-// Персональный дата-ассистент (inventory / loadout / controls / data log).
+// Персональный дата-ассистент (inventory / loadout / construction / barter / data log).
 // Назначить на Player root. Управляет Canvas-панелью PDA.
 //
 // v2.0 ENTERPRISE ADDITIONS:
@@ -83,8 +83,8 @@ namespace Hecton8.UI
         [Tooltip("CanvasGroup для fade-анимации. Если null — мгновенное появление.")]
         [SerializeField] private CanvasGroup pdaCanvasGroup;
 
-        [Tooltip("Вкладки PDA. Порядок: 0=Inventory, 1=Loadout, 2=Controls, 3=Data Log.")]
-        [SerializeField] private GameObject[] tabs = new GameObject[3];
+        [Tooltip("Вкладки PDA. Порядок: 0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log.")]
+        [SerializeField] private GameObject[] tabs = new GameObject[5];
 
         [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
@@ -94,7 +94,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Вкладка по умолчанию при открытии (0=Inventory, 1=Loadout, 2=Controls, 3=Data Log).")]
+        [Tooltip("Вкладка по умолчанию при открытии (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log).")]
         [SerializeField] private int defaultTab = 0;
 
         [Tooltip("Скорость fade-анимации (alpha/sec). 0 = мгновенно.")]
@@ -292,17 +292,51 @@ namespace Hecton8.UI
             Transform root = pdaPanel.transform;
             GameObject inventory = root.Find("Tab_Inventory")?.gameObject;
             GameObject loadout = root.Find("Tab_Loadout")?.gameObject;
+            GameObject construction = root.Find("Tab_Construction")?.gameObject;
+            GameObject barter = root.Find("Tab_Barter")?.gameObject;
             GameObject dataLog = root.Find("Tab_DataLog")?.gameObject ?? root.Find("Tab_Reserved")?.gameObject;
 
-            if (inventory == null && loadout == null && dataLog == null)
+            if (inventory == null && loadout == null && construction == null && barter == null && dataLog == null)
                 return;
 
-            if (tabs == null || tabs.Length != 3)
-                tabs = new GameObject[3];
+            if (barter == null)
+                barter = EnsureRuntimeTab(root, "Tab_Barter", typeof(PDABarterTab));
+
+            if (tabs == null || tabs.Length != 5)
+                tabs = new GameObject[5];
 
             if (inventory != null) tabs[0] = inventory;
             if (loadout != null) tabs[1] = loadout;
-            if (dataLog != null) tabs[2] = dataLog;
+            if (construction != null) tabs[2] = construction;
+            if (barter != null) tabs[3] = barter;
+            if (dataLog != null) tabs[4] = dataLog;
+        }
+
+        private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)
+        {
+            if (root == null)
+                return null;
+
+            Transform existing = root.Find(name);
+            if (existing != null)
+            {
+                if (tabComponentType != null && existing.GetComponent(tabComponentType) == null)
+                    existing.gameObject.AddComponent(tabComponentType);
+                return existing.gameObject;
+            }
+
+            GameObject tab = new GameObject(name, typeof(RectTransform));
+            tab.layer = root.gameObject.layer;
+            RectTransform rect = tab.GetComponent<RectTransform>();
+            rect.SetParent(root, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(24f, 24f);
+            rect.offsetMax = new Vector2(-24f, -72f);
+            if (tabComponentType != null)
+                tab.AddComponent(tabComponentType);
+            tab.SetActive(false);
+            return tab;
         }
 
         private void OnDisable()

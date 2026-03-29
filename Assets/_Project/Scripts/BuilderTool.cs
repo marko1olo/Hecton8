@@ -105,12 +105,18 @@ namespace Hecton8.Gameplay
         /// Альтернатива: _MainTex для текстурного атласа шрифтов.
         /// </summary>
         private static readonly int PropScreenColor = Shader.PropertyToID("_EmissionColor");
+        private static readonly Color ScreenOfflineColor = new Color(0.6f, 0.1f, 0.1f, 1f);
+        private static readonly Color ScreenMissingCostColor = new Color(0.9f, 0.55f, 0.18f, 1f);
+        private static readonly Color ScreenReadyColor = new Color(0.2f, 0.85f, 1f, 1f);
+        private static readonly Color ScreenSnapReadyColor = new Color(0.2f, 1f, 0.4f, 1f);
+        private static readonly Color ScreenBlockedColor = new Color(1f, 0.28f, 0.22f, 1f);
 
         /// <summary>
         /// Последний отображённый buildable. Для skip-проверки —
         /// не обновляем экран, если модуль не изменился.
         /// </summary>
         private BuildableData _lastDisplayedBuildable;
+        private PlayerBuilder.BuildReadiness _lastReadinessState;
 
         /// <summary>Флаг успешной привязки к сцене.</summary>
         private bool _bound;
@@ -184,6 +190,7 @@ namespace Hecton8.Gameplay
             }
 
             _lastDisplayedBuildable = null;
+            _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
             _bound = true;
         }
 
@@ -200,6 +207,7 @@ namespace Hecton8.Gameplay
             _bound           = false;
 
             _lastDisplayedBuildable = null;
+            _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
 
             base.OnDespawn();
         }
@@ -247,6 +255,7 @@ namespace Hecton8.Gameplay
             }
 
             _lastDisplayedBuildable = null;
+            _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
 
             base.OnUnequip();
         }
@@ -296,7 +305,8 @@ namespace Hecton8.Gameplay
 
             // ── 3. LCD-экран (skip если модуль не изменился) ──
             BuildableData current = _playerBuilder.ActiveBuildable;
-            if (!ReferenceEquals(current, _lastDisplayedBuildable))
+            PlayerBuilder.BuildReadiness readiness = _playerBuilder.ActiveBuildReadiness;
+            if (!ReferenceEquals(current, _lastDisplayedBuildable) || readiness != _lastReadinessState)
             {
                 UpdateScreen();
             }
@@ -321,6 +331,23 @@ namespace Hecton8.Gameplay
         /// Визуальный результат: при быстром повороте мыши инструмент
         /// «запаздывает», создавая ощущение массы (NASA-punk aesthetic).
         /// </summary>
+        public override string GetOperationalSummary()
+        {
+            if (!_bound || _playerBuilder == null)
+                return "BUILDER // OFFLINE";
+
+            return "BUILDER // " + _playerBuilder.GetActiveBuildOperationalSummary() +
+                   " // " + _playerBuilder.GetActiveBuildStatusLabel();
+        }
+
+        public override string GetOperationalDirective()
+        {
+            if (!_bound || _playerBuilder == null)
+                return "Restore builder link before field deployment.";
+
+            return _playerBuilder.GetActiveBuildAdvice();
+        }
+
         private void ApplySway(float dt)
         {
             if (_cameraTransform == null || _selfTransform == null) return;
@@ -390,17 +417,38 @@ namespace Hecton8.Gameplay
             // ── Получаем текущий property block (merge с существующими) ──
             screenRenderer.GetPropertyBlock(_screenPropBlock, screenMaterialIndex);
 
-            if (buildable != null)
+            Color screenColor = ScreenOfflineColor;
+
+            if (buildable != null && _playerBuilder != null)
             {
-                // ── Активный модуль: зелёный экран ──
-                // Будущее: заменить на texture lookup по buildable.displayName
-                _screenPropBlock.SetColor(PropScreenColor, new Color(0.2f, 1f, 0.4f, 1f));
+                PlayerBuilder.BuildReadiness readiness = _playerBuilder.ActiveBuildReadiness;
+                _lastReadinessState = readiness;
+
+                switch (readiness)
+                {
+                    case PlayerBuilder.BuildReadiness.MissingCost:
+                        screenColor = ScreenMissingCostColor;
+                        break;
+                    case PlayerBuilder.BuildReadiness.PlacementBlocked:
+                        screenColor = ScreenBlockedColor;
+                        break;
+                    case PlayerBuilder.BuildReadiness.SnappedReady:
+                        screenColor = ScreenSnapReadyColor;
+                        break;
+                    case PlayerBuilder.BuildReadiness.Ready:
+                        screenColor = ScreenReadyColor;
+                        break;
+                    default:
+                        screenColor = ScreenOfflineColor;
+                        break;
+                }
             }
             else
             {
-                // ── Нет модуля: тусклый красный (standby) ──
-                _screenPropBlock.SetColor(PropScreenColor, new Color(0.6f, 0.1f, 0.1f, 1f));
+                _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
             }
+
+            _screenPropBlock.SetColor(PropScreenColor, screenColor);
 
             screenRenderer.SetPropertyBlock(_screenPropBlock, screenMaterialIndex);
         }

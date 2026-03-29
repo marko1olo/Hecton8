@@ -1,0 +1,269 @@
+# Hecton8 Next Sprint Tasks
+
+## Current tool work
+
+- Finish `BuilderTool` / `PlayerBuilder` verification in Unity:
+  - compile
+  - short game run
+  - confirm no builder-related console errors
+- Continue remaining core tool pass:
+  - verify `ScannerTool` modes in authored play situations
+  - verify `RepairTool` diagnosis in authored flooded/power-loss situations
+  - verify `LaserCutter` diagnosis and recovery progress in real authored module/resource situations
+
+## Active Sprint - Construction / Builder UX
+
+- [x] Add a dedicated builder status overlay on `Suit_HUD_Canvas` for active construction flow.
+- [x] Show current module, module index, placement readiness, snap state, resource readiness, and cost summary.
+- [x] Verify `BuilderTool` + `PlayerBuilder` runtime path in play mode after overlay attach.
+- [x] Validate builder deploy / blocked / missing-cost feedback against live HUD notifications.
+- [x] Audit buildable catalog contents and identify missing `BuildableData` assets or empty ghost/final prefab links.
+- [x] Author starter `ModuleCatalog` + first `BuildableData` set with ghost/final placeholder prefabs.
+- [x] Add first real starter build costs using the current project material pool.
+
+## Active Sprint - Construction Readiness / PDA Integration
+
+- [x] Surface construction readiness and starter catalog state inside PDA / Data Log.
+- [x] Verify starter construction materials are provisioned into player inventory for runtime smoke.
+- [x] Run another builder-focused play smoke after PDA/readiness integration.
+- [x] Verify placed modules now enter `ConstructionManager` registry and increase built-module count.
+- [x] Verify builder `Interact` recovery/deconstruct path against real built modules.
+- [ ] Identify whether additional construction resources must be authored now or deferred behind a dedicated materials sprint.
+- [ ] Harden the remaining input/rebinding warning path so refresh/play smoke does not spam non-fatal Input System messages.
+- [x] Promote PDA Construction tab from plain selector to a richer module browser with role/cost/directive context.
+- [x] Add direct builder arm/activate/holster control path inside `PDAConstructionTab`.
+
+## Next Targets After Builder HUD
+
+- [x] Add a PDA barter/exchange relay backed by real inventory transactions and scan-gated offer availability.
+- [x] Add save/load support for barter offer execution state.
+- [x] Add starter barter content authoring + validation path.
+- [ ] Run live PDA barter trade smoke to verify actual offer execution and post-trade inventory/state updates.
+- [x] Surface barter relay readiness inside PDA Data Log / operations directive.
+- [x] Persist and surface recent barter transaction history in PDA Data Log.
+- [x] Add mission-grade interaction feedback for scanning / salvage / cutter loops.
+- [x] Add persistent scan-log backbone and surface it in PDA Data Log.
+- [x] Add construction category families and module cycling hints inside PDA/Data Log.
+- [x] Add regression smoke coverage for PDA open/close, pause menu, and builder equip/deploy loop.
+- [ ] Audit world pickups / staging rack to ensure all authored tools use correct `ItemData`, world prefabs, and buoyancy profiles.
+- [ ] Run focused live smoke coverage for the weaker non-core tools: `Beacon / Analyzer / Propulsion / Knife / Stun / Harpoon / Flashlight`.
+- [ ] Verify the upgraded `HUDQuickBar` tool summary/directive line in play and tune spacing if it crowds the bottom HUD on 16:9.
+- [x] Extend shared active-tool summary/directive overrides to the remaining tools so the quickbar layer is equally useful for the full 12-tool roster.
+- [ ] Verify in authored play situations that the new quickbar status line is genuinely readable during stress, not only technically present.
+- [ ] Use authored gameplay scenarios to validate the shared tool-status layer against real moments:
+  - overheating cutter
+  - active repair service
+  - salvage-ready package
+  - tractor lock
+  - tethered harpoon target
+  - beacon frontier / relay behavior
+- [x] Add a reusable authored `Tool Trial Range` in the live scene for cargo / salvage / service-module / beacon-route checks.
+- [x] Add validation coverage for `Tool Trial Range` so authored lanes can be rebuilt and checked without manual scene inspection.
+- [ ] Use the new `Tool Trial Range` to run real in-scene checks for:
+  - `PropulsionTool`
+  - `HarpoonLauncherTool`
+  - `SalvageSamplerTool`
+  - `RepairTool`
+  - `LaserCutter`
+  - `BeaconDeployerTool`
+- [ ] Verify `RepairTool` and `LaserCutter` on `Lane_ServiceModules` against:
+  - damaged dry module
+  - flooded module
+  - intact control module
+- [ ] Use the expanded `Tool Trial Range` authored lanes for:
+  - verify `FlashlightTool` beam guidance in `Lane_DarkRoute` during real play
+  - verify `ScannerTool` and `EnvironmentalAnalyzerTool` authored reads in `Lane_ScanCorridor` during real play
+  - verify that `ScannerTool` last-sweep HUD output stays readable and helpful after a real authored pulse
+- [ ] Verify `SalvageSamplerTool` diagnosis against real authored salvage packages, depleted nodes, and process-only targets.
+- [ ] Verify `SalvageSamplerTool` diagnosis against the expanded `Lane_Salvage`:
+  - pickups
+  - active resource node
+  - depleted resource node
+- [ ] Verify `LaserCutter` and `KnifeTool` readouts against the same salvage-lane node states:
+  - dense node
+  - weakened node
+  - nearly-open node
+  - depleted node
+- [ ] Run focused live smoke coverage for new `ScannerTool` modes: `EXPEDITION / RESOURCE / STRUCTURE`.
+- [x] Surface the new tool loadout presets inside PDA / loadout UX so preset switching is available to the player, not only to authoring/dev paths.
+- [ ] Verify the new PDA preset strip in play mode and tune spacing/text density if the footer becomes too crowded on 16:9.
+- [ ] Stabilize `ScanRuntimeSmokeTester` so the scanner -> scan-log loop has the same deterministic smoke coverage as PDA/builder.
+- [ ] Stabilize `FieldToolRuntimeSmokeTester` so the salvage/cutter field loop reaches a deterministic PASS instead of stalling in the salvage holster/equip phase.
+- [x] Add authored `ScannableTarget` coverage to real world points of interest beyond starter construction modules.
+- [x] Add dedicated builder runtime smoke hook for deploy/register/recover verification.
+- [x] Promote builder HUD from plain status panel to navigation-aware construction overlay.
+- [x] Add dedicated PDA Construction tab backed by the real builder/catalog systems.
+- [x] Investigate why `BuilderRuntimeSmokeTester` does not emit expected runtime logs on startup despite valid component state in play mode.
+- [x] Decide next builder UX pass: richer module browser/deploy UX inside the new PDA Construction tab.
+- [ ] Add a direct deploy/preview control path inside `PDAConstructionTab` for pre-field planning without replacing in-world placement.
+- [x] Run one live PDA interaction smoke to verify the new builder handoff button against real `PlayerToolManager` slot state.
+- [x] Run live deploy/recover verification against `ConstructionManager.ModuleCount` once startup-trigger issue is isolated.
+- [ ] Remove or gate temporary `BuilderSmoke` / `BuilderDebug` instrumentation once the builder loop stabilisation sprint closes.
+- [ ] If needed later, retry a standalone tool-status HUD only after the shared quickbar-integrated version proves insufficient; do not re-open the broken `ToolStatusOverlay` path blindly.
+- [x] Add an editor-side construction catalog quality gate for `BuildableData` / `ModuleCatalog`.
+
+Notes:
+- `PDAExchangeSystem` now exists as a real runtime/saveable system on `Player`, backed by `BarterOfferCatalog` and exact quantity removal in `PlayerInventory`.
+- `PlayerPDA` now runs a 5-tab shell contract: `Inventory / Loadout / Construction / Barter / Data Log`.
+- `PlayerPDA.AutoResolveTabs()` can author `Tab_Barter` at runtime if the scene does not already contain it.
+- `Hecton/Authoring/Rebuild Starter Barter Relay` now creates the starter offer set and assigns a starter `BarterOfferCatalog` to the live `Player`.
+- `Hecton/Validation/Validate Barter Catalog` currently passes clean.
+- A short live PDA/UI smoke already confirms the barter tab resolves in play and `PDAExchangeSystem` wires itself to `PlayerInventory`, `ScanLogSystem`, and `HUDNotification`; keep the trade-smoke task open until an actual offer execution path is verified.
+- `BarterRuntimeSmokeTester` now exists on `Player` and has already been narrowed from a missing-cost failure to a post-`Execute` tail; keep the trade-smoke task open until it reaches a deterministic `PASS`.
+- `PDAExchangeSystem` now keeps a recent transaction log with save/load persistence, and `PDADataLogTab` surfaces the latest completed barter output directly in the expedition digest.
+- `PDABarterTab` now also surfaces the latest confirmed contract and its reward output directly inside the barter shell instead of acting as a stateless offer list.
+- `Hecton/Validation/Validate Tool World Authoring` now exists as the dedicated audit gate for `Item_Tool_* -> worldPrefab -> pickup component -> buoyancy -> Tool_Staging` integrity.
+- The active scene still shows a live `Tool_Staging` root with 12 staged children; keep the audit task open until the new validator is confirmed with an explicit pass/fail payload beyond menu registration.
+- `PDAConstructionTab` now has a code-complete field preview / direct deploy action path.
+- Keep the deploy/preview task open until Unity MCP comes back and the new field action gets a real live smoke.
+- Construction family layer is now data-driven via `BuildableData.family` and surfaced in `PDAConstructionTab` / `PDADataLogTab`.
+- `Hecton/Validation/Validate Construction Catalog` now validates starter `BuildableData` / `ModuleCatalog` content and currently passes clean.
+- `Hecton/Validation/Validate Tool Stack` now validates tool `ItemData`, `ToolMetadata`, held prefabs, `ToolLoadoutProvisioner`, `ItemCatalog`, and `Tool_Staging`; it currently passes clean.
+- `ScanLogSystem` is now a real save/load-backed system on `Player`; `ScannerTool` feeds it through `ScanEvents.OnEntryDiscovered`, and `PDADataLogTab` surfaces archive counts and recent entries.
+- `SalvageSamplerTool` and `LaserCutter` now archive first-time recovery intel into `ScanLogSystem`, so field recovery loops contribute to PDA/Data Log instead of living outside the intel layer.
+- `FieldToolRuntimeSmokeTester` now exists on `Player` with inspectable debug state; current localization shows the coroutine reaches `Salvage/HolsterForSalvage` before stalling, so the harness is narrowed but not yet closed.
+- `ScanLogSystem` now also emits first-unlock HUD feedback through `HUDNotification`, and `ScannerTool` archives derived intel from real `PickupItem` and `ModuleMarker` world objects in addition to authored `ScannableTarget` points.
+- `Hecton/Validation/Validate Scan Intel` now validates the active scene scan-intel layer (`ScanLogSystem`, scene `ScannableTarget`s, starter titanium POI) and currently passes clean.
+- `PauseControlsPanel` and `PDAControlsRebindUI` no longer hard-reference `RebindingManager.Instance` in hot input paths; finish this warning-hygiene task only after Unity MCP smoke confirms the remaining Input System spam level.
+- `ScannerTool`, `SalvageSamplerTool`, and `LaserCutter` now have a first mission-grade HUD feedback layer; keep the broader interaction-feedback task open until live smoke covers these loops in play mode.
+- `ScannerTool` now also has three real scan modes, so its next check is no longer code completeness but authored gameplay usefulness in real caves/resources/modules.
+- `ToolHitUtility.TryCollectItem(...)` now supports both `HectonItem` and `PickupItem`, so `SalvageSamplerTool` can recover real staged/world pickups instead of only one pickup implementation.
+- `HUDNotification` now uses a queued severity model with repeat suppression and critical preemption, so suit alerts, scan unlocks, builder messages, and inventory warnings do not overwrite each other immediately.
+- `FieldOperationLogSystem` now persists recent `scanner / salvage / cutter` actions and is surfaced inside `PDADataLogTab` as a dedicated `FIELD OPERATIONS` digest with severity-aware directives.
+- Keep `FieldToolRuntimeSmokeTester` open as a pure automation tail; the gameplay layer no longer depends on it to expose field-loop history to the player.
+- `TOOLS_ENTERPRISE_SPRINT.md` is now the dedicated hardening tracker for the full 12-tool stack.
+- `Hecton/Validation/Validate Tool Trial Range` now passes clean against:
+  - cargo
+  - salvage
+  - service modules
+  - beacon route
+  - dark route
+  - scan corridor
+- `FlashlightTool` now gives context-aware beam recommendations from forward contacts, and `EnvironmentalAnalyzerTool` now reads `PickupItem` / `ScannableTarget`; keep the authored-lane task open until this is confirmed in real play, not only compile/console.
+- `ScannerTool` now caches and reuses the latest authored sweep result for a short period; keep the authored scan-lane task open until that last-result HUD behavior is confirmed as genuinely readable in play.
+- `Lane_Salvage` now includes active and depleted `ResourceNode` targets; use this before inventing ad-hoc sampler/cutter test props elsewhere in the scene.
+- `SalvageSamplerTool`, `LaserCutter`, and `KnifeTool` now all read salvage-lane node states more precisely; keep the task open until this is confirmed by real manual use, not only compile/play smoke.
+- `RepairTool` now resolves parent-collider service modules correctly, and `LaserCutter` now reads flooded / breached / sealed service states more clearly; keep the service-lane task open until this is confirmed by real manual use.
+- `FieldTargetDescriptor` now covers cargo crates, route markers, probes, and node targets inside `Tool Trial Range`; use it as the preferred authored semantic layer instead of adding more name-based special cases.
+- `PropulsionTool` and `HarpoonLauncherTool` now read authored cargo roles; keep the cargo-lane task open until these role-specific directives are confirmed by real manual use on the trial range.
+- `BeaconDeployerTool` now reads authored route markers and aligns to `ANCHOR / RELAY / FRONTIER`; keep the beacon-lane task open until this is confirmed by real manual use during route setup and recovery.
+- `EnvironmentalAnalyzerTool` and `ScannerTool` now read authored descriptors too; keep the authored-lane task open until cargo / route / scan corridor behavior is confirmed by real manual use, not only validator passes.
+- `FlashlightTool` now reads authored route/cargo descriptors too; keep the dark-route task open until real manual use confirms the beam advice is actually helpful, not just technically correct.
+- `Validate Field Operations Stack` remains partially opaque through MCP console; treat this as a tooling-observability tail and do not let it block product work.
+- `FieldTargetSemantics` now exists as the shared authored route/cargo helper; extend that layer first when adding more trial-range semantics instead of duplicating per-tool switch logic again.
+- `ToolTrialRangeRuntimeSmokeTester` now exists on `Player`; keep it as the main future live-check hook for logistics/recon authored lanes, but do not block product work on its current MCP-log opacity.
+- The weaker non-core tools now have first shared-baseline hardening: no-lock / invalid-target / success feedback plus field-log integration.
+- Tool control has started moving toward a Subnautica-like useful-loadout model: `ToolLoadoutPreset` assets now exist for exploration, construction, recovery, and defense.
+- [x] turn beacon deployment into a real saved gameplay system
+- [x] turn propulsion into a real tractor/launch tool instead of only a simple force raycast
+- [x] turn flashlight into a real beam-profile tool instead of only a toggle
+- [x] turn harpoon into a linked strike-and-reel tool instead of two loose actions
+- [x] give knife a real tactical read / precision role instead of only a plain melee swing
+- [ ] add authored world situations that make `FlashlightTool` beam profiles matter in play
+- [ ] add authored enemy/prop situations that make `HarpoonLauncherTool` tether control matter in play
+- [ ] add authored combat encounters that let `StunPistolTool` tactical states matter in play:
+  - sleeping bioforms
+  - aggressive bioforms
+  - wounded bioforms
+- [ ] add authored cargo situations that let `PropulsionTool` mass bands matter in play:
+  - light debris lanes
+  - medium utility cargo
+  - heavy near-threshold obstacles
+- [ ] add authored traversal routes where `BeaconDeployerTool` roles matter in play:
+  - tight cave turns for `LOCAL MARK`
+  - long return lanes for `RELAY`
+  - deep progression checkpoints for `FRONTIER`
+- [ ] add authored encounters where `HarpoonLauncherTool` control states matter in play:
+  - aggressive fast bioforms
+  - weakened medium targets
+  - movable cargo inside reel-safe mass
+- [x] add authored combat lane for descriptor-driven tool checks:
+  - dormant contact
+  - aggressive contact
+  - fractured finish window
+  - downed contact
+- [ ] verify new `Lane_CombatContacts` in a longer live pass:
+  - `StunPistolTool` directive quality
+  - `KnifeTool` finish-window guidance
+  - `HarpoonLauncherTool` control guidance
+  - `EnvironmentalAnalyzerTool` combat recommendations
+  - `ScannerTool` bioform contact wording
+- [x] extend service lane into the shared authored semantic layer
+- [x] add live field-based preset recommendation layer for loadout management
+- [ ] verify recommended preset wording in real play:
+  - `HUDQuickBar`
+  - `PDALoadoutTab`
+  - `PDADataLogTab`
+  - make sure the advice is helpful, not just technically correct
+- [x] add direct player action to apply the recommended preset from `PDALoadoutTab`, not only read the advice text
+- [x] expand `ToolTrialRangeRuntimeSmokeTester` beyond `Logistics / Recon / Combat` into broader endgame passes:
+  - `Recovery`
+  - `Service`
+  - `Construction`
+- [ ] verify the new broader trial-range runtime suite gives readable explicit pass lines in a longer live run, not only in code and validators
+- [x] add a mixed `Lane_EndgameOps` route that chains cargo, salvage, service, recon, combat, and route roles in one authored operation
+- [ ] verify `Lane_EndgameOps` in a longer live pass:
+  - loadout recommendation changes are readable and useful
+  - recommended kit changes at the right moments
+  - the route feels like one expedition sequence, not a random prop row
+- [x] add a visible multi-branch `Lane_ChoiceHub` so tool/loadout advice reads like player choice support, not forced mission scripting
+- [ ] verify `Lane_ChoiceHub` in play:
+  - recovery branch reads as recovery
+  - construction branch reads as construction
+  - defense branch reads as defense
+  - wording feels like advice, not an order
+- [ ] add authored dark-space situations where `FlashlightTool` guidance matters in play:
+  - close salvage sweeps for `FLOOD`
+  - distant hazard reads for `FOCUS`
+  - long balanced traversal for `STANDARD`
+- [ ] add authored scouting situations where `EnvironmentalAnalyzerTool` richer readouts matter in play:
+  - depleted and fresh resource nodes
+  - dormant and aggressive bioforms
+  - long dives near safe-depth boundary
+- [ ] add authored scouting situations where `ScannerTool` recommendations matter in play:
+  - sparse contact corridors
+  - dense resource clusters
+  - databank-only structural returns
+- [ ] add authored close-range situations where `KnifeTool` readouts matter in play:
+  - sleeping bioforms
+  - fractured enemies
+  - fresh and depleted nodes side by side
+- [ ] add authored maintenance situations where `RepairTool` priorities matter in play:
+  - powered flooded modules
+  - flooded unpowered modules
+  - nearly restored modules
+- [ ] add authored construction situations where new `Builder` guidance matters in play:
+  - blocked free placement versus snapped socket placement
+  - missing-cost construction with partial stacks
+  - generator versus passive module choices
+  - logistics and defense family modules with different field advice
+- [x] add a dedicated authored `Lane_ConstructionOps` for builder/construction late-game checks
+- [ ] verify `Lane_ConstructionOps` in live play:
+  - clear placement reads
+  - blocked placement reads
+  - snapped/socket placement reads
+  - construction loadout recommendation quality
+- [ ] expand `BeaconDeployerTool` with richer field workflow:
+  - marker naming/role summary
+  - clearer late-game logistics value
+- [ ] verify beacon save/load in a full save cycle, not only short runtime checks
+- [x] make `BeaconDeployerTool` report nearest marker when far away and retract only when within practical recovery distance
+- [x] add scan-gated blueprint unlocks for fabrication recipes
+- [x] add starter fabrication recipes tied to real scan entries
+- [x] add a live trial fabricator to the scene
+- [ ] connect more real recipes and non-tool progression to scan unlocks
+- [x] place at least one non-trial world fabricator or workstation in the main route
+- [ ] verify full player loop on the new world station:
+  - scan unlock obtained
+  - fabricator opened from interaction
+  - recipe list visible
+  - craft completes into inventory
+- [x] add 2-3 more real scan-gated recipes so the fabrication loop is not tool-only
+- [ ] make `FabricationRuntimeSmokeTester` return a clear `PASS/FAIL` line during short MCP play probes
+- [ ] add at least one non-tool fabrication result tied to scan progression
+- [ ] start full resource + crafting economy pass
+  - add core raw resources
+  - add intermediate components
+  - rebuild tool recipes away from copper-only costs
+  - author real world sources for those resources
+  - follow `RESOURCE_CRAFTING_FOUNDATION.md`

@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.UI;
 using UnityEngine;
@@ -54,6 +55,44 @@ namespace Hecton8.Gameplay
 
         public static bool TryCollectItem(Collider hitCollider, Transform interactor)
         {
+            return TryCollectItem(hitCollider, interactor, out _);
+        }
+
+        public static bool TryPeekCollectible(Collider hitCollider, out ItemData itemData, out int quantity)
+        {
+            itemData = null;
+            quantity = 0;
+
+            if (hitCollider == null)
+                return false;
+
+            HectonItem item = hitCollider.GetComponent<HectonItem>();
+            if (item == null)
+                item = hitCollider.GetComponentInParent<HectonItem>();
+
+            if (item != null)
+            {
+                itemData = item.Data;
+                quantity = 1;
+                return itemData != null;
+            }
+
+            PickupItem pickup = hitCollider.GetComponent<PickupItem>();
+            if (pickup == null)
+                pickup = hitCollider.GetComponentInParent<PickupItem>();
+
+            if (pickup == null)
+                return false;
+
+            itemData = pickup.ItemData;
+            quantity = pickup.Quantity;
+            return itemData != null;
+        }
+
+        public static bool TryCollectItem(Collider hitCollider, Transform interactor, out ItemData collectedItem)
+        {
+            collectedItem = null;
+
             if (hitCollider == null || interactor == null)
                 return false;
 
@@ -61,10 +100,22 @@ namespace Hecton8.Gameplay
             if (item == null)
                 item = hitCollider.GetComponentInParent<HectonItem>();
 
-            if (item == null)
+            if (item != null)
+            {
+                collectedItem = item.Data;
+                item.Interact(interactor);
+                return true;
+            }
+
+            PickupItem pickup = hitCollider.GetComponent<PickupItem>();
+            if (pickup == null)
+                pickup = hitCollider.GetComponentInParent<PickupItem>();
+
+            if (pickup == null)
                 return false;
 
-            item.Interact(interactor);
+            collectedItem = pickup.ItemData;
+            pickup.Interact(interactor);
             return true;
         }
 

@@ -41,15 +41,25 @@
 namespace Hecton8.Gameplay
 {
     using System;
+    using Hecton8.Building;
+    using Hecton8.Construction;
     using Hecton8.Core;
     using Hecton8.Inventory;
     using Hecton8.Input;
+    using Hecton8.Scavenging;
     using Unity.Mathematics;
     using UnityEngine;
 
     [DisallowMultipleComponent]
     public sealed class LaserCutter : PlayerTool
     {
+        private struct CutterDiagnosis
+        {
+            public string headline;
+            public string summary;
+            public string severity;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EVENTS
         // ══════════════════════════════════════════════════════════
@@ -176,6 +186,10 @@ namespace Hecton8.Gameplay
         /// <summary>Cached PlayerInventory for Deconstruct calls.</summary>
         private PlayerInventory _cachedInventory;
         private bool _inventorySearched;
+        private bool _secondaryLatched;
+        private bool _deconstructStartReported;
+        private bool _deconstructBlockedReported;
+        private float _nextProgressFeedbackAt;
 
         // ── Sparks cache ──
 
@@ -198,6 +212,24 @@ namespace Hecton8.Gameplay
 
         /// <summary>Is the tool currently in overheat lockout.</summary>
         public bool IsOverheated => _isLockedOut;
+
+        public bool DebugRecoverModule(BaseModule module)
+        {
+            if (module == null || !module.CanDeconstruct())
+                return false;
+
+            EnsurePlayerInventory();
+            module.Deconstruct(_cachedInventory);
+            ArchiveRecoveredModule(module);
+            ToolHitUtility.ShowInfo("LASER CUTTER - MODULE RECOVERED");
+            FieldOperationLogSystem.RecordOperation(
+                "CUTTER",
+                "MODULE RECOVERY COMPLETED",
+                $"Laser-assisted deconstruction completed on {module.name}.",
+                "INFO");
+            ResetDeconstructState();
+            return true;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -264,6 +296,7 @@ namespace Hecton8.Gameplay
                             overheatErrorClip, 0.5f);
                     }
                     _lockoutSoundPlayed = true;
+                    ToolHitUtility.ShowWarning("LASER CUTTER - OVERHEAT LOCKOUT");
                 }
                 return;
             }
@@ -323,7 +356,24 @@ namespace Hecton8.Gameplay
 
         public override void UseSecondary(float deltaTime)
         {
-            // Reserved for future: weld mode, focus beam
+            if (_secondaryLatched)
+                return;
+
+            _secondaryLatched = true;
+
+            Vector3 origin = _cachedTransform.position;
+            Vector3 direction = _cachedTransform.forward;
+            bool didHit = UnityEngine.Physics.Raycast(
+                origin, direction, out _hitInfo, maxRange,
+                cuttableLayer, QueryTriggerInteraction.Ignore);
+
+            CutterDiagnosis diagnosis = BuildDiagnosis(didHit);
+            PublishDiagnosis(diagnosis);
+            FieldOperationLogSystem.RecordOperation(
+                "CUTTER",
+                $"CUTTER DIAG - {diagnosis.headline}",
+                diagnosis.summary,
+                diagnosis.severity);
         }
 
         /// <summary>
@@ -351,6 +401,46 @@ namespace Hecton8.Gameplay
 
             _wasFiringLastFrame = _isFiring;
             _isFiring = false;
+
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null && !inputManager.IsSecondaryActionHeld)
+                _secondaryLatched = false;
+        }
+
+        public override string GetOperationalSummary()
+        {
+            if (_isLockedOut)
+                return $"LASER CUTTER // LOCKOUT {_heatLevel * 100f:0}%";
+
+            if (_cachedDeconstructModule != null)
+            {
+                float progress = Mathf.Clamp01(_deconstructProgress / math.max(0.01f, deconstructThreshold));
+                return $"LASER CUTTER // RECOVERY {progress * 100f:0}%";
+            }
+
+            if (TryReadDiagnosis(out CutterDiagnosis diagnosis))
+                return $"LASER CUTTER // {diagnosis.headline}";
+
+            return _heatLevel > 0.01f
+                ? $"LASER CUTTER // HEAT {_heatLevel * 100f:0}%"
+                : "LASER CUTTER // READY";
+        }
+
+        public override string GetOperationalDirective()
+        {
+            if (_isLockedOut)
+                return "Wait for the core to cool before firing again.";
+
+            if (_cachedDeconstructModule != null)
+                return "Hold the beam steady to finish recovery on the locked module.";
+
+            if (TryReadDiagnosis(out CutterDiagnosis diagnosis))
+                return diagnosis.summary;
+
+            if (_heatLevel >= 0.75f)
+                return "Core is running hot. Finish the cut or vent heat before lockout.";
+
+            return "Primary cuts. Secondary diagnoses and holds recovery mode on modules.";
         }
 
         // ══════════════════════════════════════════════════════════
@@ -368,6 +458,12 @@ namespace Hecton8.Gameplay
             _isFiring = false;
             SetVisualsActive(false);
             ResetDeconstructState();
+            ToolHitUtility.ShowWarning("LASER CUTTER - CORE OVERHEATED");
+            FieldOperationLogSystem.RecordOperation(
+                "CUTTER",
+                "LASER CORE OVERHEATED",
+                "Cutter entered forced thermal lockout. Reduce sustained beam exposure before the next recovery pass.",
+                "CRITICAL");
 
             // Fire and forget — auto-cancelled if despawned
             _ = OverheatLockoutAsync();
@@ -397,6 +493,7 @@ namespace Hecton8.Gameplay
             // Force heat down to 80% so player has a small buffer
             _heatLevel = math.min(_heatLevel, 0.8f);
             PublishHeat();
+            ToolHitUtility.ShowInfo("LASER CUTTER - CORE STABLE");
         }
 
         /// <summary>
@@ -464,6 +561,11 @@ namespace Hecton8.Gameplay
             // ── No BaseModule → standard cut ──
             if (_cachedDeconstructModule == null)
             {
+                if (!_deconstructBlockedReported)
+                {
+                    ToolHitUtility.ShowWarning("RECOVERY MODE - NO MODULE");
+                    _deconstructBlockedReported = true;
+                }
                 ApplyCutDamage(deltaTime);
                 return;
             }
@@ -471,18 +573,42 @@ namespace Hecton8.Gameplay
             // ── Can't deconstruct → standard cut ──
             if (!_cachedDeconstructModule.CanDeconstruct())
             {
+                if (!_deconstructBlockedReported)
+                {
+                    ToolHitUtility.ShowWarning("RECOVERY MODE - MODULE LOCKED");
+                    _deconstructBlockedReported = true;
+                }
                 ApplyCutDamage(deltaTime);
                 return;
             }
 
             // ── Accumulate progress ──
             _deconstructProgress += deltaTime;
+            if (!_deconstructStartReported)
+            {
+                ToolHitUtility.ShowInfo("RECOVERY MODE - HOLD CUT");
+                _deconstructStartReported = true;
+            }
+
+            if (Time.time >= _nextProgressFeedbackAt)
+            {
+                float progress01 = math.saturate(_deconstructProgress / math.max(deconstructThreshold, 0.01f));
+                ToolHitUtility.ShowInfo($"RECOVERY PROGRESS - {(progress01 * 100f):0}%");
+                _nextProgressFeedbackAt = Time.time + 0.6f;
+            }
 
             // ── Complete deconstruction ──
             if (_deconstructProgress >= deconstructThreshold)
             {
                 EnsurePlayerInventory();
                 _cachedDeconstructModule.Deconstruct(_cachedInventory);
+                ArchiveRecoveredModule(_cachedDeconstructModule);
+                ToolHitUtility.ShowInfo("LASER CUTTER - MODULE RECOVERED");
+                FieldOperationLogSystem.RecordOperation(
+                    "CUTTER",
+                    "MODULE RECOVERY COMPLETED",
+                    $"Laser-assisted deconstruction completed on {_cachedDeconstructModule.name}.",
+                    "INFO");
                 ResetDeconstructState();
             }
         }
@@ -492,6 +618,9 @@ namespace Hecton8.Gameplay
             _deconstructProgress = 0f;
             _cachedDeconstructTargetId = -1;
             _cachedDeconstructModule = null;
+            _deconstructStartReported = false;
+            _deconstructBlockedReported = false;
+            _nextProgressFeedbackAt = 0f;
         }
 
         private void EnsurePlayerInventory()
@@ -502,6 +631,23 @@ namespace Hecton8.Gameplay
             GameObject player = GameObject.FindWithTag("Player");
             if (player != null)
                 player.TryGetComponent(out _cachedInventory);
+        }
+
+        private static void ArchiveRecoveredModule(BaseModule module)
+        {
+            if (module == null || ScanLogSystem.Instance == null)
+                return;
+
+            ModuleMarker marker = module.GetComponent<ModuleMarker>();
+            BuildableData data = marker != null ? marker.Data : null;
+            if (data == null)
+                return;
+
+            string entryId = $"recovery.module.{data.name.ToLowerInvariant()}";
+            string title = $"{data.moduleName} RECOVERY";
+            string category = "Construction";
+            string summary = $"Laser-assisted recovery completed for {data.moduleName}. Structural blueprint and salvage profile archived.";
+            ScanLogSystem.Instance.ArchiveEntry(entryId, title, category, summary);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -657,7 +803,137 @@ namespace Hecton8.Gameplay
             _isLockedOut = false;
             _lockoutSoundPlayed = false;
             _lastPublishedHeat = -1f;
+            _secondaryLatched = false;
             ResetDeconstructState();
+        }
+
+        private CutterDiagnosis BuildDiagnosis(bool didHit)
+        {
+            if (!didHit || _hitInfo.collider == null)
+            {
+                return new CutterDiagnosis
+                {
+                    headline = "NO TARGET",
+                    summary = "No cuttable contact inside cutter range.",
+                    severity = "WARN"
+                };
+            }
+
+            BaseModule module =
+                _hitInfo.collider.GetComponent<BaseModule>() ??
+                _hitInfo.collider.GetComponentInParent<BaseModule>();
+            if (module != null)
+            {
+                ModuleMarker marker = module.GetComponent<ModuleMarker>();
+                string moduleName = marker != null && marker.Data != null
+                    ? marker.Data.moduleName.ToUpperInvariant()
+                    : module.name.ToUpperInvariant();
+                float integrityPercent = module.MaxIntegrity > 0f
+                    ? (module.CurrentIntegrity / module.MaxIntegrity) * 100f
+                    : 0f;
+
+                if (module.CanDeconstruct())
+                {
+                    return new CutterDiagnosis
+                    {
+                        headline = "RECOVERY READY",
+                        summary = $"{moduleName} can be recovered. Hold primary while secondary is held to complete recovery.",
+                        severity = "INFO"
+                    };
+                }
+
+                if (module.IsFlooded)
+                {
+                    return new CutterDiagnosis
+                    {
+                        headline = $"MODULE FLOODED {integrityPercent:0}%",
+                        summary = $"{moduleName} is flooded. Cutter work is not the first fix here; stabilize or repair before recovery planning.",
+                        severity = "WARN"
+                    };
+                }
+
+                if (module.IsBreached)
+                {
+                    return new CutterDiagnosis
+                    {
+                        headline = $"MODULE BREACHED {integrityPercent:0}%",
+                        summary = $"{moduleName} is already compromised. Use repair or controlled recovery, not blind cutting.",
+                        severity = "WARN"
+                    };
+                }
+
+                return new CutterDiagnosis
+                {
+                    headline = $"MODULE LOCKED {integrityPercent:0}%",
+                    summary = $"{moduleName} is sealed and not available for recovery. Satisfy the module conditions first.",
+                    severity = "WARN"
+                };
+            }
+
+            ResourceNode node =
+                _hitInfo.collider.GetComponent<ResourceNode>() ??
+                _hitInfo.collider.GetComponentInParent<ResourceNode>();
+            if (node != null)
+            {
+                float integrityPercent = node.HealthNormalized * 100f;
+                return new CutterDiagnosis
+                {
+                    headline = node.IsDepleted ? "NODE DEPLETED" : $"RESOURCE CONTACT {integrityPercent:0}%",
+                    summary = node.IsDepleted
+                        ? "Resource node is exhausted. Cutter yield will be negligible."
+                        : integrityPercent <= 30f
+                            ? "Resource node shell is nearly breached. Hold the beam to finish extraction."
+                            : integrityPercent <= 65f
+                                ? "Resource node shell is weakened. Another controlled cutter pass should open it."
+                                : "Resource node is live. Primary beam can process this target.",
+                    severity = node.IsDepleted ? "WARN" : "INFO"
+                };
+            }
+
+            if (_hitInfo.collider.TryGetComponent(out ICuttable _))
+            {
+                return new CutterDiagnosis
+                {
+                    headline = "CUTTABLE CONTACT",
+                    summary = "Target accepts thermal damage but is not recoverable as a base module.",
+                    severity = "INFO"
+                };
+            }
+
+            return new CutterDiagnosis
+            {
+                headline = "INVALID TARGET",
+                summary = "Target is inside beam range but does not respond to cutter operations.",
+                severity = "WARN"
+            };
+        }
+
+        private bool TryReadDiagnosis(out CutterDiagnosis diagnosis)
+        {
+            diagnosis = default;
+
+            bool didHit = UnityEngine.Physics.Raycast(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                out _hitInfo,
+                maxRange,
+                cuttableLayer,
+                QueryTriggerInteraction.Ignore);
+
+            if (!didHit)
+                return false;
+
+            diagnosis = BuildDiagnosis(true);
+            return true;
+        }
+
+        private static void PublishDiagnosis(CutterDiagnosis diagnosis)
+        {
+            string message = $"LASER DIAG - {diagnosis.headline}";
+            if (diagnosis.severity == "WARN" || diagnosis.severity == "CRITICAL")
+                ToolHitUtility.ShowWarning(message);
+            else
+                ToolHitUtility.ShowInfo(message);
         }
     }
 }

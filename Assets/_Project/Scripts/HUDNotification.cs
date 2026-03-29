@@ -16,9 +16,24 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
     public sealed class HUDNotification : MonoBehaviour
     {
+        private enum NotificationSeverity
+        {
+            Info = 0,
+            Warning = 1,
+            Critical = 2
+        }
+
+        private struct NotificationRequest
+        {
+            public string Message;
+            public NotificationSeverity Severity;
+        }
+
         [Header("── Settings ──────────────────────────────────")]
         [SerializeField] private float displayDuration = 3f;
         [SerializeField] private float fadeSpeed = 4f;
+        [SerializeField] private int maxQueuedNotifications = 6;
+        [SerializeField] private float repeatSuppressWindow = 0.85f;
         [SerializeField] private TMP_FontAsset font;
 
         private static readonly Color WarningBg = new Color(0.12f, 0.06f, 0.02f, 0.7f);
@@ -36,6 +51,13 @@ namespace Hecton8.UI
         private float _currentAlpha;
         private bool _built;
         private PlayerInventory _inventory;
+        private readonly System.Collections.Generic.List<NotificationRequest> _queue =
+            new System.Collections.Generic.List<NotificationRequest>(8);
+        private string _currentMessage;
+        private NotificationSeverity _currentSeverity;
+        private string _lastEnqueuedMessage;
+        private NotificationSeverity _lastEnqueuedSeverity;
+        private float _lastEnqueueTime = -999f;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -80,6 +102,13 @@ namespace Hecton8.UI
                 {
                     _currentAlpha = 0f;
                     _notifRoot.gameObject.SetActive(false);
+
+                    if (_queue.Count > 0)
+                    {
+                        NotificationRequest next = _queue[0];
+                        _queue.RemoveAt(0);
+                        ShowImmediate(next.Message, next.Severity);
+                    }
                 }
             }
 
@@ -89,36 +118,112 @@ namespace Hecton8.UI
 
         public void ShowWarning(string message)
         {
-            EnsureBuilt();
-            _notifBg.color = WarningBg;
-            _notifText.text = message;
-            _notifText.color = WarningText;
-            ShowInternal();
+            Enqueue(message, NotificationSeverity.Warning);
         }
 
         public void ShowCritical(string message)
         {
-            EnsureBuilt();
-            _notifBg.color = CriticalBg;
-            _notifText.text = message;
-            _notifText.color = CriticalText;
-            ShowInternal();
+            Enqueue(message, NotificationSeverity.Critical);
         }
 
         public void ShowInfo(string message)
         {
-            EnsureBuilt();
-            _notifBg.color = InfoBg;
-            _notifText.text = message;
-            _notifText.color = InfoText;
-            ShowInternal();
+            Enqueue(message, NotificationSeverity.Info);
         }
 
-        private void ShowInternal()
+        private void Enqueue(string message, NotificationSeverity severity)
         {
+            EnsureBuilt();
+
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            string normalized = message.Trim();
+            float now = Time.unscaledTime;
+
+            if (normalized == _currentMessage && severity == _currentSeverity && _timer > 0f)
+            {
+                _timer = displayDuration;
+                return;
+            }
+
+            if (normalized == _lastEnqueuedMessage &&
+                severity == _lastEnqueuedSeverity &&
+                now - _lastEnqueueTime < repeatSuppressWindow)
+            {
+                return;
+            }
+
+            _lastEnqueuedMessage = normalized;
+            _lastEnqueuedSeverity = severity;
+            _lastEnqueueTime = now;
+
+            if (_timer <= 0f && _queue.Count == 0 && !_notifRoot.gameObject.activeSelf)
+            {
+                ShowImmediate(normalized, severity);
+                return;
+            }
+
+            if (severity == NotificationSeverity.Critical && _currentSeverity != NotificationSeverity.Critical)
+            {
+                if (!string.IsNullOrWhiteSpace(_currentMessage) && _queue.Count < maxQueuedNotifications)
+                {
+                    _queue.Insert(0, new NotificationRequest
+                    {
+                        Message = _currentMessage,
+                        Severity = _currentSeverity
+                    });
+                }
+
+                ShowImmediate(normalized, severity);
+                return;
+            }
+
+            if (_queue.Count >= Mathf.Max(1, maxQueuedNotifications))
+            {
+                if (severity <= NotificationSeverity.Info)
+                    return;
+
+                _queue.RemoveAt(0);
+            }
+
+            _queue.Add(new NotificationRequest
+            {
+                Message = normalized,
+                Severity = severity
+            });
+        }
+
+        private void ShowImmediate(string message, NotificationSeverity severity)
+        {
+            ApplyVisuals(message, severity);
             _timer = displayDuration;
             _currentAlpha = 0f;
             _notifRoot.gameObject.SetActive(true);
+        }
+
+        private void ApplyVisuals(string message, NotificationSeverity severity)
+        {
+            _currentMessage = message;
+            _currentSeverity = severity;
+
+            switch (severity)
+            {
+                case NotificationSeverity.Critical:
+                    _notifBg.color = CriticalBg;
+                    _notifText.color = CriticalText;
+                    break;
+                case NotificationSeverity.Warning:
+                    _notifBg.color = WarningBg;
+                    _notifText.color = WarningText;
+                    break;
+                default:
+                    _notifBg.color = InfoBg;
+                    _notifText.color = InfoText;
+                    break;
+            }
+
+            _notifText.text = message;
         }
 
         private void OnInventoryFull(ItemData item)

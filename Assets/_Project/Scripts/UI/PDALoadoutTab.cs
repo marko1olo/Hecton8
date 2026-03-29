@@ -11,6 +11,9 @@ using Hecton8.Tools;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.UI
 {
@@ -38,6 +41,10 @@ namespace Hecton8.UI
 
         [Header("Settings")]
         [SerializeField] private int loadoutTabIndex = 1;
+        [SerializeField] private bool holsterBeforeApplyingPreset = true;
+        [SerializeField] private ToolLoadoutPreset[] loadoutPresets = new ToolLoadoutPreset[4];
+        [SerializeField] private float fieldAdviceRange = 18f;
+        [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
         private bool _built;
         private RectTransform[] _slotRoots;
@@ -54,8 +61,15 @@ namespace Hecton8.UI
         private Image[] _slotClearBgs;
         private TextMeshProUGUI[] _slotActionLabels;
         private TextMeshProUGUI[] _slotClearLabels;
+        private RectTransform[] _presetRoots;
+        private Image[] _presetBgs;
+        private TextMeshProUGUI[] _presetTitles;
+        private TextMeshProUGUI[] _presetBodies;
         private TextMeshProUGUI _summaryText;
         private TextMeshProUGUI _hintText;
+        private RectTransform _recommendedActionRoot;
+        private Image _recommendedActionBg;
+        private TextMeshProUGUI _recommendedActionLabel;
 
         private void Awake()
         {
@@ -66,6 +80,9 @@ namespace Hecton8.UI
         private void OnValidate()
         {
             AutoResolveTabIndex();
+#if UNITY_EDITOR
+            AutoResolvePresets();
+#endif
         }
 
         private void OnEnable()
@@ -188,6 +205,10 @@ namespace Hecton8.UI
             _slotClearBgs = new Image[4];
             _slotActionLabels = new TextMeshProUGUI[4];
             _slotClearLabels = new TextMeshProUGUI[4];
+            _presetRoots = new RectTransform[loadoutPresets != null ? loadoutPresets.Length : 0];
+            _presetBgs = new Image[_presetRoots.Length];
+            _presetTitles = new TextMeshProUGUI[_presetRoots.Length];
+            _presetBodies = new TextMeshProUGUI[_presetRoots.Length];
 
             const float left = 18f;
             const float right = 18f;
@@ -321,14 +342,36 @@ namespace Hecton8.UI
                     new Color(0.34f, 0.12f, 0.12f, 0.92f));
             }
 
+            BuildPresetStrip(self);
+
             _summaryText = CreateText(self, "Summary", numericFont, 11.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             Anchor(_summaryText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(20f, 18f), new Vector2(-20f, 46f));
             _summaryText.color = Dim;
 
+            _recommendedActionRoot = CreateRect(self, "RecommendedActionButton");
+            _recommendedActionRoot.anchorMin = new Vector2(1f, 0f);
+            _recommendedActionRoot.anchorMax = new Vector2(1f, 0f);
+            _recommendedActionRoot.pivot = new Vector2(1f, 0f);
+            _recommendedActionRoot.anchoredPosition = new Vector2(-20f, 50f);
+            _recommendedActionRoot.sizeDelta = new Vector2(184f, 26f);
+            _recommendedActionBg = EnsureImage(_recommendedActionRoot.gameObject);
+            _recommendedActionBg.color = new Color(0.08f, 0.18f, 0.2f, 0.82f);
+            _recommendedActionBg.raycastTarget = true;
+            _recommendedActionLabel = CreateText(_recommendedActionRoot, "RecommendedActionLabel", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_recommendedActionLabel.rectTransform, 0f, 0f, 0f, 0f);
+            _recommendedActionLabel.color = Primary;
+            _recommendedActionLabel.SetText("APPLY SUGGESTED");
+            PDALoadoutRecommendedButton recommendedButton = _recommendedActionRoot.gameObject.AddComponent<PDALoadoutRecommendedButton>();
+            recommendedButton.Init(
+                this,
+                _recommendedActionBg,
+                new Color(0.08f, 0.18f, 0.2f, 0.82f),
+                new Color(0.14f, 0.28f, 0.3f, 0.94f));
+
             _hintText = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Italic, TextAlignmentOptions.Right);
             Anchor(_hintText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
-                new Vector2(20f, 18f), new Vector2(-20f, 46f));
+                new Vector2(20f, 18f), new Vector2(-214f, 46f));
             _hintText.color = DimLow;
             _hintText.SetText("Assign tools from Inventory details. Hotbar mirrors this matrix live.");
 
@@ -339,6 +382,7 @@ namespace Hecton8.UI
         {
             EnsureBuilt();
             RefreshSlots();
+            RefreshPresets();
             RefreshSummary();
         }
 
@@ -482,10 +526,13 @@ namespace Hecton8.UI
             _summaryText.text =
                 $"LOADOUT: {assigned}/4 assigned | READY {ready} | MISSING {missing} | " +
                 $"BROKEN {broken} | ACTIVE SLOT {(toolManager.CurrentSlotIndex >= 0 ? (toolManager.CurrentSlotIndex + 1).ToString() : "--")} | " +
-                $"KIT MASS {totalWeight:0.0} kg";
+                $"KIT MASS {totalWeight:0.0} kg | PRESET {GetMatchedPresetName()} | SUGGESTED {GetRecommendedPresetName()}\n" +
+                $"ACTIVE TOOL: {toolManager.GetCurrentToolOperationalSummary()}";
 
             if (_hintText != null)
-                _hintText.SetText(GetLoadoutDirective(assigned, ready, missing, broken));
+                _hintText.SetText($"{GetLoadoutDirective(assigned, ready, missing, broken)}  LIVE: {toolManager.GetCurrentToolOperationalDirective()}  FIELD: {GetRecommendedPresetDirective()}");
+
+            RefreshRecommendedAction();
         }
 
         private string GetLoadoutDirective(int assigned, int ready, int missing, int broken)
@@ -506,6 +553,68 @@ namespace Hecton8.UI
                 return "Directive: kit is ready. Activate a slot to deploy a field tool.";
 
             return "Directive: loadout matrix is mission-ready. Use Activate/Holster here for controlled tool management.";
+        }
+
+        private string GetRecommendedPresetName()
+        {
+            if (toolManager == null)
+                return "UNKNOWN";
+
+            Transform origin = toolManager.transform;
+            return FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice)
+                ? advice.PresetName
+                : "GENERAL";
+        }
+
+        private string GetRecommendedPresetDirective()
+        {
+            if (toolManager == null)
+                return "No field loadout advice available.";
+
+            Transform origin = toolManager.transform;
+            return FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice)
+                ? advice.Summary
+                : "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
+        }
+
+        private void RefreshPresets()
+        {
+            if (_presetRoots == null || _presetBgs == null)
+                return;
+
+            for (int i = 0; i < _presetRoots.Length; i++)
+            {
+                ToolLoadoutPreset preset = loadoutPresets != null && i < loadoutPresets.Length
+                    ? loadoutPresets[i]
+                    : null;
+
+                bool hasPreset = preset != null;
+                bool matched = hasPreset && MatchesPreset(preset);
+
+                if (_presetRoots[i] != null)
+                    _presetRoots[i].gameObject.SetActive(hasPreset);
+
+                if (!hasPreset)
+                    continue;
+
+                if (_presetBgs[i] != null)
+                {
+                    _presetBgs[i].color = matched
+                        ? new Color(0.1f, 0.28f, 0.3f, 0.9f)
+                        : new Color(0.07f, 0.15f, 0.17f, 0.76f);
+                }
+
+                if (_presetTitles[i] != null)
+                    _presetTitles[i].SetText(preset.presetName.ToUpperInvariant());
+
+                if (_presetBodies[i] != null)
+                {
+                    int ready = CountReadyToolsInPreset(preset);
+                    _presetBodies[i].SetText(
+                        $"{GetPresetBrief(preset)}\n" +
+                        $"READY NOW {ready}/4{(matched ? " | ACTIVE" : string.Empty)}");
+                }
+            }
         }
 
         internal void InvokeSlotAction(int slotIndex, bool clearAssignment)
@@ -563,6 +672,55 @@ namespace Hecton8.UI
             NotifyInfo($"LOADOUT ACTIVE — SLOT {slotIndex + 1}: {(item != null ? item.itemName.ToUpperInvariant() : prefab.name.ToUpperInvariant())}");
         }
 
+        internal void InvokePresetAction(int presetIndex)
+        {
+            if (toolManager == null || loadoutPresets == null || presetIndex < 0 || presetIndex >= loadoutPresets.Length)
+                return;
+
+            ToolLoadoutPreset preset = loadoutPresets[presetIndex];
+            if (preset == null)
+            {
+                NotifyWarning("LOADOUT PRESET IS NOT CONFIGURED");
+                return;
+            }
+
+            if (!toolManager.ApplyLoadoutPreset(preset, holsterBeforeApplyingPreset))
+            {
+                NotifyWarning($"FAILED TO APPLY {preset.presetName.ToUpperInvariant()}");
+                return;
+            }
+
+            RefreshAll();
+            NotifyInfo($"LOADOUT PRESET APPLIED - {preset.presetName.ToUpperInvariant()}");
+        }
+
+        internal void InvokeRecommendedPresetAction()
+        {
+            int presetIndex = GetRecommendedPresetIndex();
+            if (presetIndex < 0)
+            {
+                NotifyWarning("NO SUGGESTED PRESET FOR CURRENT FIELD TARGET");
+                return;
+            }
+
+            ToolLoadoutPreset preset = loadoutPresets != null && presetIndex < loadoutPresets.Length
+                ? loadoutPresets[presetIndex]
+                : null;
+            if (preset == null)
+            {
+                NotifyWarning("SUGGESTED PRESET IS NOT CONFIGURED");
+                return;
+            }
+
+            if (MatchesPreset(preset))
+            {
+                NotifyInfo($"SUGGESTED KIT ALREADY ACTIVE - {preset.presetName.ToUpperInvariant()}");
+                return;
+            }
+
+            InvokePresetAction(presetIndex);
+        }
+
         private void NotifyInfo(string message)
         {
             HUDNotification notification = FindFirstObjectByType<HUDNotification>();
@@ -576,6 +734,193 @@ namespace Hecton8.UI
             if (notification != null)
                 notification.ShowWarning(message);
         }
+
+        private void BuildPresetStrip(RectTransform self)
+        {
+            if (_presetRoots == null || _presetRoots.Length == 0)
+                return;
+
+            TextMeshProUGUI hdr = CreateText(self, "PresetHeader", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Left);
+            Anchor(hdr.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
+                new Vector2(20f, 58f), new Vector2(-20f, 80f));
+            hdr.color = DimLow;
+            hdr.SetText("MISSION PRESETS");
+
+            float gap = 10f;
+            float width = (1320f - 40f - gap * (_presetRoots.Length - 1)) / Mathf.Max(1, _presetRoots.Length);
+
+            for (int i = 0; i < _presetRoots.Length; i++)
+            {
+                RectTransform root = CreateRect(self, $"Preset_{i + 1}");
+                root.anchorMin = new Vector2(0f, 0f);
+                root.anchorMax = new Vector2(0f, 0f);
+                root.pivot = new Vector2(0f, 0f);
+                root.anchoredPosition = new Vector2(20f + i * (width + gap), 48f);
+                root.sizeDelta = new Vector2(width, 64f);
+
+                Image bg = EnsureImage(root.gameObject);
+                bg.color = new Color(0.07f, 0.15f, 0.17f, 0.76f);
+                bg.raycastTarget = true;
+
+                TextMeshProUGUI title = CreateText(root, "Title", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Left);
+                Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                    new Vector2(10f, -8f), new Vector2(-10f, 18f));
+                title.color = Primary;
+
+                TextMeshProUGUI body = CreateText(root, "Body", numericFont, 9.5f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
+                Anchor(body.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f),
+                    new Vector2(10f, 6f), new Vector2(-10f, -24f));
+                body.color = Dim;
+
+                PDALoadoutPresetButton button = root.gameObject.AddComponent<PDALoadoutPresetButton>();
+                button.Init(this, i, bg,
+                    new Color(0.07f, 0.15f, 0.17f, 0.76f),
+                    new Color(0.12f, 0.22f, 0.24f, 0.92f));
+
+                _presetRoots[i] = root;
+                _presetBgs[i] = bg;
+                _presetTitles[i] = title;
+                _presetBodies[i] = body;
+            }
+        }
+
+        private int GetRecommendedPresetIndex()
+        {
+            string recommended = GetRecommendedPresetName();
+            if (string.IsNullOrWhiteSpace(recommended) || string.Equals(recommended, "GENERAL", System.StringComparison.OrdinalIgnoreCase))
+                return -1;
+
+            if (loadoutPresets == null)
+                return -1;
+
+            for (int i = 0; i < loadoutPresets.Length; i++)
+            {
+                ToolLoadoutPreset preset = loadoutPresets[i];
+                if (preset == null || string.IsNullOrWhiteSpace(preset.presetName))
+                    continue;
+
+                if (string.Equals(preset.presetName, recommended, System.StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RefreshRecommendedAction()
+        {
+            if (_recommendedActionRoot == null || _recommendedActionLabel == null || _recommendedActionBg == null)
+                return;
+
+            int presetIndex = GetRecommendedPresetIndex();
+            if (presetIndex < 0)
+            {
+                _recommendedActionRoot.gameObject.SetActive(false);
+                return;
+            }
+
+            _recommendedActionRoot.gameObject.SetActive(true);
+
+            ToolLoadoutPreset preset = loadoutPresets != null && presetIndex < loadoutPresets.Length
+                ? loadoutPresets[presetIndex]
+                : null;
+            bool matched = preset != null && MatchesPreset(preset);
+            _recommendedActionLabel.SetText(matched
+                ? $"SUGGESTED ACTIVE - {preset.presetName.ToUpperInvariant()}"
+                : $"APPLY SUGGESTED - {preset.presetName.ToUpperInvariant()}");
+            _recommendedActionBg.color = matched
+                ? new Color(0.1f, 0.3f, 0.3f, 0.9f)
+                : new Color(0.08f, 0.18f, 0.2f, 0.82f);
+        }
+
+        private string GetMatchedPresetName()
+        {
+            if (loadoutPresets == null)
+                return "--";
+
+            for (int i = 0; i < loadoutPresets.Length; i++)
+            {
+                ToolLoadoutPreset preset = loadoutPresets[i];
+                if (preset != null && MatchesPreset(preset))
+                    return preset.presetName.ToUpperInvariant();
+            }
+
+            return "CUSTOM";
+        }
+
+        private bool MatchesPreset(ToolLoadoutPreset preset)
+        {
+            if (preset == null || toolManager == null)
+                return false;
+
+            for (int i = 0; i < toolManager.SlotCount; i++)
+            {
+                GameObject assigned = toolManager.GetAssignedToolPrefab(i);
+                GameObject expected = preset.slotPrefabs != null && i < preset.slotPrefabs.Length
+                    ? preset.slotPrefabs[i]
+                    : null;
+
+                if (!ReferenceEquals(assigned, expected))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private int CountReadyToolsInPreset(ToolLoadoutPreset preset)
+        {
+            if (preset == null || preset.slotPrefabs == null || playerInventory == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < preset.slotPrefabs.Length; i++)
+            {
+                GameObject prefab = preset.slotPrefabs[i];
+                PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
+                if (tool?.ToolData != null && playerInventory.ContainsItem(tool.ToolData))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static string GetPresetBrief(ToolLoadoutPreset preset)
+        {
+            if (preset == null)
+                return "NO DATA";
+
+            string description = preset.description;
+            if (string.IsNullOrWhiteSpace(description))
+                return "Standard expedition slot map.";
+
+            int newline = description.IndexOf('\n');
+            if (newline >= 0)
+                description = description.Substring(0, newline);
+
+            return description.Length > 44
+                ? description.Substring(0, 44).TrimEnd() + "..."
+                : description;
+        }
+
+#if UNITY_EDITOR
+        private void AutoResolvePresets()
+        {
+            if (loadoutPresets == null || loadoutPresets.Length < 4)
+                loadoutPresets = new ToolLoadoutPreset[4];
+
+            TryAssignPreset(ref loadoutPresets[0], "Assets/_Project/Data/Tools/Presets/Preset_Exploration.asset");
+            TryAssignPreset(ref loadoutPresets[1], "Assets/_Project/Data/Tools/Presets/Preset_Construction.asset");
+            TryAssignPreset(ref loadoutPresets[2], "Assets/_Project/Data/Tools/Presets/Preset_FieldRecovery.asset");
+            TryAssignPreset(ref loadoutPresets[3], "Assets/_Project/Data/Tools/Presets/Preset_Defense.asset");
+        }
+
+        private static void TryAssignPreset(ref ToolLoadoutPreset target, string path)
+        {
+            if (target != null)
+                return;
+
+            target = AssetDatabase.LoadAssetAtPath<ToolLoadoutPreset>(path);
+        }
+#endif
 
         private static void ClearChildren(Transform parent)
         {
@@ -703,6 +1048,78 @@ namespace Hecton8.UI
         public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
         {
             _tab?.InvokeSlotAction(_slotIndex, _clearAssignment);
+        }
+
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_bg != null) _bg.color = _hoverColor;
+        }
+
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_bg != null) _bg.color = _normalColor;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    internal sealed class PDALoadoutPresetButton : MonoBehaviour,
+        UnityEngine.EventSystems.IPointerClickHandler,
+        UnityEngine.EventSystems.IPointerEnterHandler,
+        UnityEngine.EventSystems.IPointerExitHandler
+    {
+        private PDALoadoutTab _tab;
+        private int _presetIndex;
+        private Image _bg;
+        private Color _normalColor;
+        private Color _hoverColor;
+
+        public void Init(PDALoadoutTab tab, int presetIndex, Image bg, Color normal, Color hover)
+        {
+            _tab = tab;
+            _presetIndex = presetIndex;
+            _bg = bg;
+            _normalColor = normal;
+            _hoverColor = hover;
+        }
+
+        public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            _tab?.InvokePresetAction(_presetIndex);
+        }
+
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_bg != null) _bg.color = _hoverColor;
+        }
+
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_bg != null) _bg.color = _normalColor;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    internal sealed class PDALoadoutRecommendedButton : MonoBehaviour,
+        UnityEngine.EventSystems.IPointerClickHandler,
+        UnityEngine.EventSystems.IPointerEnterHandler,
+        UnityEngine.EventSystems.IPointerExitHandler
+    {
+        private PDALoadoutTab _tab;
+        private Image _bg;
+        private Color _normalColor;
+        private Color _hoverColor;
+
+        public void Init(PDALoadoutTab tab, Image bg, Color normal, Color hover)
+        {
+            _tab = tab;
+            _bg = bg;
+            _normalColor = normal;
+            _hoverColor = hover;
+        }
+
+        public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            _tab?.InvokeRecommendedPresetAction();
         }
 
         public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)

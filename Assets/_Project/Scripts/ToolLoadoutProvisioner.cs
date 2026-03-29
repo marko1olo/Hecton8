@@ -7,6 +7,7 @@
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Tools;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -27,12 +28,18 @@ namespace Hecton8.Dev
         [SerializeField] private bool provisionInventoryOnStart = false;
         [SerializeField] private bool assignCoreLoadoutOnStart = false;
         [SerializeField] private bool holsterBeforeAssigning = true;
+        [SerializeField] private bool provisionConstructionMaterialsOnStart = true;
+        [SerializeField] private ToolLoadoutPreset startupPreset;
 
         [Header("Core Quick Slots")]
         [SerializeField] private GameObject[] coreQuickSlotPrefabs = new GameObject[4];
 
         [Header("Full Tool Kit")]
         [SerializeField] private ItemData[] allToolItems = new ItemData[12];
+
+        [Header("Construction Materials")]
+        [SerializeField] private ItemData[] starterConstructionItems = new ItemData[1];
+        [SerializeField] private int[] starterConstructionAmounts = new int[1];
 
         private bool _appliedAtRuntime;
 
@@ -52,8 +59,16 @@ namespace Hecton8.Dev
             if (provisionInventoryOnStart)
                 ProvisionFullToolKit();
 
+            if (provisionConstructionMaterialsOnStart)
+                ProvisionConstructionMaterials();
+
             if (assignCoreLoadoutOnStart)
-                AssignCoreLoadout();
+            {
+                if (startupPreset != null)
+                    ApplyStartupPreset();
+                else
+                    AssignCoreLoadout();
+            }
 
             _appliedAtRuntime = true;
         }
@@ -86,6 +101,25 @@ namespace Hecton8.Dev
             }
         }
 
+        [ContextMenu("Provision Construction Materials")]
+        public void ProvisionConstructionMaterials()
+        {
+            AutoResolveSceneReferences();
+            if (playerInventory == null)
+                return;
+
+            int count = Mathf.Min(starterConstructionItems.Length, starterConstructionAmounts.Length);
+            for (int i = 0; i < count; i++)
+            {
+                ItemData item = starterConstructionItems[i];
+                int amount = starterConstructionAmounts[i];
+                if (item == null || amount <= 0)
+                    continue;
+
+                playerInventory.TryAddItem(item, amount);
+            }
+        }
+
         [ContextMenu("Assign Core Loadout")]
         public void AssignCoreLoadout()
         {
@@ -106,7 +140,18 @@ namespace Hecton8.Dev
         public void ProvisionAndAssignCoreLoadout()
         {
             ProvisionFullToolKit();
+            ProvisionConstructionMaterials();
             AssignCoreLoadout();
+        }
+
+        [ContextMenu("Apply Startup Preset")]
+        public void ApplyStartupPreset()
+        {
+            AutoResolveSceneReferences();
+            if (toolManager == null || startupPreset == null)
+                return;
+
+            toolManager.ApplyLoadoutPreset(startupPreset, holsterBeforeAssigning);
         }
 
         private void AutoResolveSceneReferences()
@@ -149,6 +194,12 @@ namespace Hecton8.Dev
 
                 allToolItems[i] = AssetDatabase.LoadAssetAtPath<ItemData>(itemPaths[i]);
             }
+
+            if (starterConstructionItems.Length > 0 && starterConstructionItems[0] == null)
+                starterConstructionItems[0] = AssetDatabase.LoadAssetAtPath<ItemData>("Assets/_Project/Data/Items/Data_Copper.asset");
+
+            if (starterConstructionAmounts.Length > 0 && starterConstructionAmounts[0] <= 0)
+                starterConstructionAmounts[0] = 12;
         }
 
         private static void TryAssignToolPrefab(ref GameObject target, string path)

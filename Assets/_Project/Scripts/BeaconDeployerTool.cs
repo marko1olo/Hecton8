@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -7,25 +6,44 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class BeaconDeployerTool : PlayerTool
     {
-        private static Material s_fallbackBeaconMaterial;
+        private readonly struct BeaconAssessment
+        {
+            public readonly string Role;
+            public readonly string Summary;
+            public readonly string Recommendation;
+
+            public BeaconAssessment(string role, string summary, string recommendation)
+            {
+                Role = role;
+                Summary = summary;
+                Recommendation = recommendation;
+            }
+
+            public string BuildHudMessage(string label)
+            {
+                return $"{label} - {Role} | {Summary} | {Recommendation}";
+            }
+        }
 
         [Header("Deployment")]
         [SerializeField] private float deployRange = 12f;
         [SerializeField] private float deployCooldown = 0.25f;
+        [SerializeField] private float retractRange = 6f;
         [SerializeField] private int maxActiveBeacons = 24;
         [SerializeField] private LayerMask deploymentMask = ~0;
         [SerializeField] private GameObject worldBeaconPrefab;
+        [SerializeField] private float feedbackInterval = 0.45f;
 
         [Header("Fallback Beacon")]
         [SerializeField] private Color beaconColor = new Color(0.25f, 1f, 0.95f, 1f);
         [SerializeField] private Vector3 beaconScale = new Vector3(0.22f, 0.45f, 0.22f);
         [SerializeField] private float fallbackLightRange = 4f;
 
-        private static readonly List<BeaconRuntime> ActiveBeacons = new List<BeaconRuntime>(32);
-
         private Transform _cachedTransform;
         private float _cooldown;
+        private float _nextFeedbackAt;
         [SerializeField] private int _debugActiveBeaconCount;
+        private readonly BeaconNetworkSystem.BeaconSnapshot[] _beaconBuffer = new BeaconNetworkSystem.BeaconSnapshot[32];
 
         private void Awake()
         {
@@ -59,11 +77,24 @@ namespace Hecton8.Gameplay
                 spawnRotation = Quaternion.identity;
             }
 
-            BeaconRuntime beacon = SpawnBeacon(spawnPosition, spawnRotation);
-            if (beacon != null)
+            if (BeaconNetworkSystem.TryDeployBeacon(
+                worldBeaconPrefab,
+                spawnPosition,
+                spawnRotation,
+                beaconColor,
+                fallbackLightRange,
+                beaconScale,
+                maxActiveBeacons,
+                out BeaconRuntime beacon,
+                out string label))
             {
-                RegisterBeacon(beacon);
-                ToolHitUtility.ShowInfo("BEACON DEPLOYED");
+                BeaconAssessment assessment = BuildDeploymentAssessment(spawnPosition, label);
+                ToolHitUtility.ShowInfo($"BEACON DEPLOYED - {assessment.BuildHudMessage(label)} // GRID {BeaconNetworkSystem.Instance.ActiveCount}");
+                FieldOperationLogSystem.RecordOperation(
+                    "BEACON",
+                    "FIELD BEACON DEPLOYED",
+                    $"{label} established at {spawnPosition.x:0.0}, {spawnPosition.y:0.0}, {spawnPosition.z:0.0}. {assessment.Summary} Recommendation: {assessment.Recommendation}. Active marker count: {BeaconNetworkSystem.Instance.ActiveCount}.",
+                    "INFO");
                 _cooldown = deployCooldown;
             }
         }
@@ -72,35 +103,48 @@ namespace Hecton8.Gameplay
         {
             base.UseSecondary(deltaTime);
 
-            if (!IsEquipped || _cooldown > 0f || ActiveBeacons.Count == 0)
+            if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            BeaconRuntime nearest = null;
-            float bestSqr = float.MaxValue;
-            Vector3 origin = _cachedTransform.position;
-
-            for (int i = ActiveBeacons.Count - 1; i >= 0; i--)
+            if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount == 0)
             {
-                BeaconRuntime beacon = ActiveBeacons[i];
-                if (beacon == null)
+                if (Time.time >= _nextFeedbackAt)
                 {
-                    ActiveBeacons.RemoveAt(i);
-                    continue;
+                    ToolHitUtility.ShowWarning("BEACON NET - NO ACTIVE MARKERS");
+                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
-
-                float sqr = (beacon.transform.position - origin).sqrMagnitude;
-                if (sqr < bestSqr)
-                {
-                    bestSqr = sqr;
-                    nearest = beacon;
-                }
+                return;
             }
 
-            if (nearest != null)
+            if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearestSnapshot, out float nearestDistance))
+                return;
+
+            if (nearestDistance > retractRange)
             {
-                ActiveBeacons.Remove(nearest);
-                nearest.DespawnSelf();
-                ToolHitUtility.ShowInfo("BEACON RETRACTED");
+                if (Time.time >= _nextFeedbackAt)
+                {
+                    BeaconAssessment assessment = BuildExistingBeaconAssessment(nearestSnapshot, nearestDistance);
+                    ToolHitUtility.ShowInfo($"NEAREST BEACON - {assessment.BuildHudMessage(nearestSnapshot.Label)} // {nearestDistance:0.0}M // GRID {BeaconNetworkSystem.Instance.ActiveCount}");
+                    FieldOperationLogSystem.RecordOperation(
+                        "BEACON",
+                        "BEACON GRID CHECK",
+                        $"{nearestSnapshot.Label} is the nearest active field marker at {nearestDistance:0.0} m. {assessment.Summary} Recommendation: {assessment.Recommendation}. Close within {retractRange:0.0} m to retract.",
+                        "INFO");
+                    _nextFeedbackAt = Time.time + feedbackInterval;
+                }
+                return;
+            }
+
+            if (BeaconNetworkSystem.TryRetractNearest(_cachedTransform.position, out BeaconRuntime nearest, out float distance))
+            {
+                Vector3 position = nearest.transform.position;
+                string label = nearest.Label;
+                ToolHitUtility.ShowInfo($"BEACON RETRACTED - {label} // GRID {BeaconNetworkSystem.Instance.ActiveCount}");
+                FieldOperationLogSystem.RecordOperation(
+                    "BEACON",
+                    "FIELD BEACON RETRACTED",
+                    $"{label} was retracted from {position.x:0.0}, {position.y:0.0}, {position.z:0.0} at {distance:0.0} m. Active marker count: {BeaconNetworkSystem.Instance.ActiveCount}.",
+                    "INFO");
                 _cooldown = deployCooldown;
             }
         }
@@ -110,116 +154,173 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
 
-            _debugActiveBeaconCount = ActiveBeacons.Count;
+            _debugActiveBeaconCount = BeaconNetworkSystem.Instance != null
+                ? BeaconNetworkSystem.Instance.ActiveCount
+                : 0;
         }
 
-        private BeaconRuntime SpawnBeacon(Vector3 position, Quaternion rotation)
+        public override string GetOperationalSummary()
         {
-            if (worldBeaconPrefab != null && ObjectPoolManager.Instance != null)
-            {
-                GameObject instance = ObjectPoolManager.Instance.Spawn(worldBeaconPrefab, position, rotation);
-                if (instance != null)
-                {
-                    BeaconRuntime pooledBeacon = instance.GetComponent<BeaconRuntime>();
-                    if (pooledBeacon == null)
-                        pooledBeacon = instance.AddComponent<BeaconRuntime>();
+            int activeCount = BeaconNetworkSystem.Instance != null ? BeaconNetworkSystem.Instance.ActiveCount : 0;
+            if (_cooldown > 0f)
+                return $"BEACON TOOL // GRID {activeCount} // CYCLING {_cooldown:0.0}S";
 
-                    pooledBeacon.Configure(worldBeaconPrefab, beaconColor, fallbackLightRange);
-                    return pooledBeacon;
+            if (TryReadNearestAssessment(out string label, out float distance, out BeaconAssessment assessment))
+                return $"BEACON TOOL // {assessment.Role} // {label} {distance:0.0}M";
+
+            return $"BEACON TOOL // GRID {activeCount} // READY";
+        }
+
+        public override string GetOperationalDirective()
+        {
+            if (_cooldown > 0f)
+                return "Wait for deployment hardware to reset.";
+
+            if (TryReadNearestAssessment(out _, out _, out BeaconAssessment assessment))
+                return assessment.Recommendation;
+
+            return "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.";
+        }
+
+        private BeaconAssessment BuildDeploymentAssessment(Vector3 spawnPosition, string label)
+        {
+            if (TryReadRouteMarkerAssessment(spawnPosition, out BeaconAssessment routeAssessment))
+            {
+                return new BeaconAssessment(
+                    routeAssessment.Role,
+                    $"{label} aligned with authored route guidance. {routeAssessment.Summary}",
+                    routeAssessment.Recommendation);
+            }
+
+            if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount <= 1)
+            {
+                return new BeaconAssessment(
+                    "ANCHOR",
+                    $"{label} is acting as the first navigation anchor in the current sector.",
+                    "Build the network outward from this point.");
+            }
+
+            if (!TryGetNearestNeighbor(spawnPosition, label, out BeaconNetworkSystem.BeaconSnapshot nearest, out float nearestDistance))
+            {
+                return new BeaconAssessment(
+                    "ANCHOR",
+                    $"{label} could not resolve a neighbor and is acting as a standalone anchor.",
+                    "Confirm line of travel before extending the grid.");
+            }
+
+            string role = ClassifyRole(nearestDistance);
+            string summary = $"{label} extends the grid from {nearest.Label} by {nearestDistance:0.0} m.";
+            string recommendation = role switch
+            {
+                "LOCAL MARK" => "Use it to tag dense loot, cave turns, or salvage clusters.",
+                "RELAY" => "Use it to bridge a travel lane or a return path.",
+                _ => "Use it as a frontier marker for deep progression or retreat routing."
+            };
+            return new BeaconAssessment(role, summary, recommendation);
+        }
+
+        private BeaconAssessment BuildExistingBeaconAssessment(BeaconNetworkSystem.BeaconSnapshot snapshot, float distance)
+        {
+            if (TryReadRouteMarkerAssessment(snapshot.Position, out BeaconAssessment routeAssessment))
+            {
+                string routeRecommendation = distance <= retractRange
+                    ? "You are inside recovery distance and can retract or reposition this route marker now."
+                    : routeAssessment.Recommendation;
+
+                return new BeaconAssessment(
+                    routeAssessment.Role,
+                    $"{snapshot.Label} sits on authored route guidance. {routeAssessment.Summary}",
+                    routeRecommendation);
+            }
+
+            string role = ClassifyRole(distance);
+            string summary = role switch
+            {
+                "LOCAL MARK" => $"{snapshot.Label} is a close-range marker for nearby loot, turns, or hazards.",
+                "RELAY" => $"{snapshot.Label} is holding a mid-range travel lane through the sector.",
+                _ => $"{snapshot.Label} is acting as a frontier marker deeper into the field."
+            };
+            string recommendation = distance <= retractRange
+                ? "You are inside recovery distance and can retract it now."
+                : "Leave it active unless you are collapsing this route.";
+            return new BeaconAssessment(role, summary, recommendation);
+        }
+
+        private bool TryReadRouteMarkerAssessment(Vector3 position, out BeaconAssessment assessment)
+        {
+            assessment = default;
+
+            if (!FieldTargetSemantics.TryFindNearestRouteMarker(position, 5f, out FieldTargetDescriptor nearest, out _))
+                return false;
+
+            assessment = new BeaconAssessment(
+                FieldTargetSemantics.BuildRouteRoleLabel(nearest.Role),
+                FieldTargetSemantics.BuildDescriptorSummary(nearest, $"{nearest.name} is the nearest authored route guide."),
+                FieldTargetSemantics.BuildRouteRecommendation(nearest.Role));
+            return true;
+        }
+
+        private string ClassifyRole(float distance)
+        {
+            if (distance <= 12f)
+                return "LOCAL MARK";
+            if (distance <= 35f)
+                return "RELAY";
+            return "FRONTIER";
+        }
+
+        private bool TryGetNearestNeighbor(Vector3 origin, string excludeLabel, out BeaconNetworkSystem.BeaconSnapshot snapshot, out float distance)
+        {
+            snapshot = default;
+            distance = 0f;
+
+            if (BeaconNetworkSystem.Instance == null)
+                return false;
+
+            int count = BeaconNetworkSystem.Instance.CopySnapshots(_beaconBuffer);
+            float bestSqr = float.MaxValue;
+            bool found = false;
+
+            for (int i = 0; i < count; i++)
+            {
+                BeaconNetworkSystem.BeaconSnapshot candidate = _beaconBuffer[i];
+                if (string.IsNullOrWhiteSpace(candidate.Label) ||
+                    string.Equals(candidate.Label, excludeLabel, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                float sqr = (candidate.Position - origin).sqrMagnitude;
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    snapshot = candidate;
+                    found = true;
                 }
             }
 
-            GameObject beaconRoot = new GameObject("Beacon_Runtime");
-            beaconRoot.transform.SetPositionAndRotation(position, rotation);
+            if (!found)
+                return false;
 
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "BeaconBody";
-            body.transform.SetParent(beaconRoot.transform, false);
-            body.transform.localScale = beaconScale;
-            body.transform.localPosition = new Vector3(0f, beaconScale.y * 0.5f, 0f);
-
-            Collider bodyCollider = body.GetComponent<Collider>();
-            if (bodyCollider != null)
-                Object.Destroy(bodyCollider);
-
-            Renderer renderer = body.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.sharedMaterial = GetFallbackBeaconMaterial();
-            }
-
-            Light lightComp = beaconRoot.AddComponent<Light>();
-            lightComp.type = LightType.Point;
-            lightComp.range = fallbackLightRange;
-            lightComp.intensity = 1.6f;
-            lightComp.color = beaconColor;
-
-            BeaconRuntime beacon = beaconRoot.AddComponent<BeaconRuntime>();
-            beacon.Configure(null, beaconColor, fallbackLightRange);
-            return beacon;
+            distance = Mathf.Sqrt(bestSqr);
+            return true;
         }
 
-        private void RegisterBeacon(BeaconRuntime beacon)
+        private bool TryReadNearestAssessment(out string label, out float distance, out BeaconAssessment assessment)
         {
-            ActiveBeacons.Add(beacon);
+            label = "NO BEACON";
+            distance = 0f;
+            assessment = default;
 
-            while (ActiveBeacons.Count > maxActiveBeacons)
-            {
-                BeaconRuntime oldest = ActiveBeacons[0];
-                ActiveBeacons.RemoveAt(0);
-                if (oldest != null)
-                    oldest.DespawnSelf();
-            }
-        }
+            if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount == 0)
+                return false;
 
-        private Material GetFallbackBeaconMaterial()
-        {
-            if (s_fallbackBeaconMaterial != null)
-                return s_fallbackBeaconMaterial;
+            if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearest, out distance))
+                return false;
 
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null)
-                shader = Shader.Find("Standard");
-
-            s_fallbackBeaconMaterial = new Material(shader);
-            s_fallbackBeaconMaterial.color = beaconColor;
-            return s_fallbackBeaconMaterial;
-        }
-    }
-
-    public sealed class BeaconRuntime : MonoBehaviour
-    {
-        private GameObject _sourcePrefab;
-        private Light _light;
-        private float _baseIntensity;
-
-        public void Configure(GameObject sourcePrefab, Color color, float range)
-        {
-            _sourcePrefab = sourcePrefab;
-            _light = GetComponent<Light>();
-            if (_light != null)
-            {
-                _light.color = color;
-                _light.range = range;
-                _baseIntensity = _light.intensity;
-            }
-        }
-
-        private void Update()
-        {
-            if (_light != null)
-                _light.intensity = _baseIntensity * (0.8f + Mathf.Sin(Time.time * 3.5f) * 0.15f);
-        }
-
-        public void DespawnSelf()
-        {
-            if (_sourcePrefab != null && ObjectPoolManager.Instance != null)
-            {
-                ObjectPoolManager.Instance.Despawn(gameObject);
-                return;
-            }
-
-            Destroy(gameObject);
+            label = nearest.Label;
+            assessment = BuildExistingBeaconAssessment(nearest, distance);
+            return true;
         }
     }
 }

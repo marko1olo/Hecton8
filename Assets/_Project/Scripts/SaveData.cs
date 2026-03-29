@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 6;
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -58,6 +58,14 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Построенные модули базы.</summary>
         public ConstructionDTO construction;
+
+        /// <summary>Архив сканирования и разведданных.</summary>
+        public ScanLogDTO scanLog;
+
+        /// <summary>Состояние barter/exchange контрактов PDA.</summary>
+        public BarterDTO barter;
+        public FieldOperationLogDTO fieldOperations;
+        public BeaconNetworkDTO beaconNetwork;
 
         /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
@@ -83,7 +91,11 @@ namespace Hecton8.SaveSystem
                 playerStats   = new PlayerStatsDTO(),
                 inventory     = new InventoryDTO(),
                 worldState    = new WorldStateDTO(),
-                construction  = new ConstructionDTO()
+                construction  = new ConstructionDTO(),
+                scanLog       = new ScanLogDTO(),
+                barter        = new BarterDTO(),
+                fieldOperations = new FieldOperationLogDTO(),
+                beaconNetwork = new BeaconNetworkDTO()
             };
         }
     }
@@ -263,6 +275,151 @@ namespace Hecton8.SaveSystem
         {
             if (modules == null || modules.Length < MaxModules)
                 modules = new ModuleDTO[MaxModules];
+        }
+    }
+
+    [Serializable]
+    public struct ScanEntryDTO
+    {
+        public string id;
+        public string title;
+        public string category;
+        public string summary;
+    }
+
+    [Serializable]
+    public struct ScanLogDTO
+    {
+        public int entryCount;
+        public ScanEntryDTO[] entries;
+        public int recentCount;
+        public string[] recentEntryIds;
+
+        public const int MaxEntries = 128;
+        public const int MaxRecentEntries = 8;
+
+        public void EnsureCapacity()
+        {
+            if (entries == null || entries.Length < MaxEntries)
+                entries = new ScanEntryDTO[MaxEntries];
+
+            if (recentEntryIds == null || recentEntryIds.Length < MaxRecentEntries)
+                recentEntryIds = new string[MaxRecentEntries];
+        }
+    }
+
+    [Serializable]
+    public struct BarterOfferStateDTO
+    {
+        public string offerId;
+        public int executionCount;
+    }
+
+    [Serializable]
+    public struct BarterTransactionDTO
+    {
+        public string offerId;
+        public string offerName;
+        public string channelName;
+        public string costSummary;
+        public string rewardSummary;
+    }
+
+    [Serializable]
+    public struct BarterDTO
+    {
+        public int stateCount;
+        public BarterOfferStateDTO[] offerStates;
+        public int recentTransactionCount;
+        public BarterTransactionDTO[] recentTransactions;
+
+        public const int MaxOffers = 128;
+        public const int MaxRecentTransactions = 8;
+
+        public void EnsureCapacity()
+        {
+            if (offerStates == null || offerStates.Length < MaxOffers)
+                offerStates = new BarterOfferStateDTO[MaxOffers];
+            if (recentTransactions == null || recentTransactions.Length < MaxRecentTransactions)
+                recentTransactions = new BarterTransactionDTO[MaxRecentTransactions];
+        }
+    }
+
+    [Serializable]
+    public struct FieldOperationEntryDTO
+    {
+        public string source;
+        public string title;
+        public string summary;
+        public string severity;
+    }
+
+    [Serializable]
+    public struct FieldOperationLogDTO
+    {
+        public int recentCount;
+        public FieldOperationEntryDTO[] recentEntries;
+
+        public const int MaxRecentEntries = 12;
+
+        public void EnsureCapacity()
+        {
+            if (recentEntries == null || recentEntries.Length < MaxRecentEntries)
+                recentEntries = new FieldOperationEntryDTO[MaxRecentEntries];
+        }
+    }
+
+    [Serializable]
+    public struct BeaconEntryDTO
+    {
+        public string id;
+        public string label;
+        public float posX;
+        public float posY;
+        public float posZ;
+        public float rotX;
+        public float rotY;
+        public float rotZ;
+        public float rotW;
+        public float colorR;
+        public float colorG;
+        public float colorB;
+        public float colorA;
+        public float lightRange;
+
+        public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
+        public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);
+        public Color GetColor() => new Color(colorR, colorG, colorB, colorA <= 0f ? 1f : colorA);
+
+        public void SetPosition(Vector3 pos)
+        {
+            posX = pos.x;
+            posY = pos.y;
+            posZ = pos.z;
+        }
+
+        public void SetRotation(Quaternion rot)
+        {
+            rotX = rot.x;
+            rotY = rot.y;
+            rotZ = rot.z;
+            rotW = rot.w;
+        }
+    }
+
+    [Serializable]
+    public struct BeaconNetworkDTO
+    {
+        public int activeCount;
+        public int nextSequence;
+        public BeaconEntryDTO[] entries;
+
+        public const int MaxEntries = 32;
+
+        public void EnsureCapacity()
+        {
+            if (entries == null || entries.Length < MaxEntries)
+                entries = new BeaconEntryDTO[MaxEntries];
         }
     }
 
