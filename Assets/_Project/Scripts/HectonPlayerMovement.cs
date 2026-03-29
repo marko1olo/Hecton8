@@ -281,6 +281,7 @@ namespace Hecton8.Gameplay
             if (newSuit == null) { Debug.LogWarning("[HectonPlayerMovement] null suit.", this); return; }
             currentSuitData = newSuit;
             ApplySuitToRigidbody();
+            EnsureJuiceProcessor();
             _juiceProcessor.Initialize(leanIntoTurn);
             UpdateSuitDiagnostics();
         }
@@ -337,7 +338,7 @@ namespace Hecton8.Gameplay
             _cachedGravity = UnityEngine.Physics.gravity;
             _smoothedGroundNormal = Vector3.up;
 
-            _juiceProcessor = new CameraJuiceProcessor();
+            EnsureJuiceProcessor();
             _juiceProcessor.Initialize(leanIntoTurn);
 
             // ── Crest integration ──
@@ -360,6 +361,14 @@ namespace Hecton8.Gameplay
 
             _inputManager = InputManager.Instance;
             UpdateSuitDiagnostics();
+        }
+
+        private void EnsureJuiceProcessor()
+        {
+            if (_juiceProcessor != null)
+                return;
+
+            _juiceProcessor = new CameraJuiceProcessor();
         }
 
         private void OnEnable() 
@@ -535,6 +544,8 @@ namespace Hecton8.Gameplay
         {
             SuitData suit = currentSuitData;
             if (suit == null) return;
+
+            EnsureJuiceProcessor();
 
             RefreshInputManagerBinding();
 
@@ -763,6 +774,8 @@ namespace Hecton8.Gameplay
         {
             SuitData suit = currentSuitData;
             if (suit == null) return;
+
+            EnsureJuiceProcessor();
 
             // ═══════════════════════════════════════════════
             //  1. FORCE-OVERRIDE: BuoyancyObject-proof

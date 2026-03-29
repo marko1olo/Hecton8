@@ -241,6 +241,19 @@ namespace Hecton8.Core
 #endif
         }
 
+        public float ActivateRadius => activateRadius;
+        public float DeactivateRadius => deactivateRadius;
+        public int MaxOperationsPerFrame => maxOperationsPerTick;
+
+        public void SetRuntimeBudget(float newActivateRadius, float newDeactivateRadius, int newMaxOperations)
+        {
+            activateRadius = Mathf.Max(4f, newActivateRadius);
+            deactivateRadius = Mathf.Max(activateRadius + 2f, newDeactivateRadius);
+            maxOperationsPerTick = Mathf.Max(4, newMaxOperations);
+            _activateRadiusSq = activateRadius * activateRadius;
+            _deactivateRadiusSq = deactivateRadius * deactivateRadius;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE — регистрация в GameTickManager
         // ══════════════════════════════════════════════════════════

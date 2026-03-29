@@ -159,6 +159,28 @@ Notes:
 - [x] turn flashlight into a real beam-profile tool instead of only a toggle
 - [x] turn harpoon into a linked strike-and-reel tool instead of two loose actions
 - [x] give knife a real tactical read / precision role instead of only a plain melee swing
+- [x] add a real pooled near-field collider layer to the world stack through `ProximityColliderSystem`
+- [x] create a reusable collider proxy prefab and hook it into `ObjectPoolManager` warmup
+- [x] add authoring automation for the runtime world stack instead of relying on hand wiring
+- [x] add authored world-slice streaming for current real scene zones
+- [x] add authored world-interest budgeting so high-value roots lift local runtime density without raising global cost
+- [x] apply a first safe Project Settings optimization pass that does not reduce expected gameplay quality
+- [ ] bring a live `HectonRockManager` into the scene only when the GPUI side is truly ready, not as a fake empty manager
+- [ ] add the first real hybrid-density world slice:
+  - near = collision and interaction
+  - mid = instanced clutter
+  - far = silhouette mass
+- [ ] extend `WorldSliceDirector` beyond staging/resource/fabrication into:
+  - construction sites
+  - trial ranges that are safe to stream
+  - future real progression hubs
+- [ ] connect resource/fabrication/construction authored roots into one streamed progression corridor instead of isolated always-on islands
+- [ ] add world-interest anchors for future construction/power/service roots once those roots are promoted out of trial-only space
+- [ ] inspect more safe `ProjectSettings` candidates:
+  - physics broadphase/callback cost
+  - audio voice budget
+  - URP asset/renderer settings
+- [ ] make MapMagic-driven world validation return a clear final line through MCP, not only execute silently
 - [ ] add authored world situations that make `FlashlightTool` beam profiles matter in play
 - [ ] add authored enemy/prop situations that make `HarpoonLauncherTool` tether control matter in play
 - [ ] add authored combat encounters that let `StunPistolTool` tactical states matter in play:
@@ -267,3 +289,109 @@ Notes:
   - rebuild tool recipes away from copper-only costs
   - author real world sources for those resources
   - follow `RESOURCE_CRAFTING_FOUNDATION.md`
+- [x] create core resource data baseline
+  - 20 raw resources
+  - 19 intermediate components
+  - 19 component recipes
+  - starter fabricator includes component crafting before tool crafting
+- [ ] author real world resource sources for the new economy
+- [x] author real world resource sources for the new economy
+  - salvage scrap
+  - copper and silver nodes
+  - silica deposits
+  - fiber and membrane harvest points
+  - sulfur / resin / thermal chemistry nodes
+  - late deep-resource deposits
+- [x] split fabrication into clearer groups for the player
+  - materials
+  - components
+  - tools
+  - suit
+  - construction
+  - power
+- [ ] run a longer real interaction pass on grouped fabricator UX
+  - horizontal group switching
+  - recipe selection stability after tab changes
+  - suit tab visibility on world fabricator
+- [ ] migrate more recipes onto the new economy
+  - suit consumables
+  - construction parts
+  - power components
+  - logistics modules
+- [x] migrate starter construction costs onto the new economy
+  - foundation uses reinforced plates and pressure seal
+  - corridor uses reinforced plate, pressure seals, and copper wire
+  - pylon uses reinforced plate, hydraulic actuator, and relay matrix
+- [x] add first real suit consumables to the new economy
+  - Emergency O2 Canister
+  - Field Med Gel
+  - Electrolyte Ampoule
+- [ ] expand suit recipes beyond first aid basics
+  - higher-tier oxygen support
+  - stronger integrity recovery
+  - portable power recovery
+- [ ] expand power recipes beyond portable basics
+  - station-grade relay parts
+  - cooling/power service parts
+  - later utility/logistics support
+- [ ] expand construction progression beyond starter trio
+  - more modules
+  - stronger family differences
+  - real cost curves for early/mid/late building
+- [x] add a wider early utility layer
+  - Structural Bracket
+  - Pump Rotor
+  - Power Coupler
+- [x] expand starter construction catalog beyond the first three modules
+  - Service Pump
+  - Current Turbine
+- [x] add authored gameplay uses for the new utility modules
+  - `Lane_PowerOps` now gives:
+    - exposed generator position for `Current Turbine`
+    - relay midpoint for `Utility Pylon`
+    - service load target for `Service Pump`
+    - flooded downstream route for service/power linkage
+  - trial-range advice and tool semantics now read those situations as real power/service contexts
+- [ ] expand power gameplay beyond the trial lane
+  - place one real world route where exposed power support matters
+  - place one real world flooded service path that benefits from pump-first thinking
+  - connect those situations to progression, not only to trial-range authoring
+- [x] inspect the live MapMagic stack before attempting any replacement
+  - confirmed scene graph:
+    - `Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset`
+  - confirmed scene `MapMagicObject` lives on:
+    - `--- WORLD ---/Terrain`
+  - confirmed current approach should stay hybrid:
+    - keep MapMagic for terrain/masks/tiles
+    - build our own streaming/spawn/physics layer on top
+- [x] fix `MapMagicBridge` so it can see inactive scene `MapMagicObject`
+  - bridge now resolves inactive scene objects
+  - play-mode check now reports `IsAvailable = true`
+- [x] build the first real optimization layer over MapMagic
+  - `MapMagicWorldValidator`
+  - `BiomeSamplerCache`
+  - `ScatterBudgetController`
+- [x] build `WorldStreamingDirector` on top of the cache/budget layer
+  - survey/traverse runtime modes
+  - depth-aware MapMagic object budget
+  - higher-level budget scaling into `ScatterBudgetController`
+- [x] tune the live scene MapMagic runtime defaults for cheaper play mode
+  - `draftsInPlaymode = false`
+  - `hideFarTerrains = true`
+  - `mainRange = 1`
+  - `objectsNumPerFrame = 128`
+  - `drawInstanced = true`
+- [x] attach the first runtime world-control systems to `[MANAGERS]`
+  - `BiomeSamplerCache`
+  - `ScatterBudgetController`
+- [x] attach `WorldStreamingDirector` to `[MANAGERS]`
+- [ ] connect a live `ProximityColliderSystem` so near-field collider budgets become real, not only code-ready
+- [ ] start the first hybrid density pass over the real MapMagic stack
+  - near field interactables
+  - mid-field instanced clutter
+  - far-field silhouette density
+- [ ] push the new world-stack budgets into real world slices, not only the scene root
+  - service routes
+  - salvage belts
+  - relay canyons
+  - deep biolum pockets

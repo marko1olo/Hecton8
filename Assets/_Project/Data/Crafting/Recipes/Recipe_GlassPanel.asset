@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_GlassPanel
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Glass Panel
+  overrideIcon: {fileID: 0}
+  description: Cut and stabilize silica into a clean optics-grade pane.
+  resultItem: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+    amount: 2
+  craftTime: 1.5
+  requiredScanEntryId: 
+  fabricationGroup: 1

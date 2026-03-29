@@ -19,7 +19,10 @@ MonoBehaviour:
   resultItem: {fileID: 11400000, guid: a2439d90148d25c42a60223a0da9d505, type: 2}
   resultQuantity: 1
   ingredients:
-  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  - item: {fileID: 11400000, guid: f2fa85eafcf50c745b3f7cc3e0da0dc0, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 4db2385c36cb8374f86a2d73f99b1e06, type: 2}
     amount: 1
   craftTime: 2.5
   requiredScanEntryId: scan.expedition_contact
+  fabricationGroup: 3

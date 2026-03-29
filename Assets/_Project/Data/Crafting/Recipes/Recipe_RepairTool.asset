@@ -19,7 +19,12 @@ MonoBehaviour:
   resultItem: {fileID: 11400000, guid: b7348927f9bf50f49a10a940fad34081, type: 2}
   resultQuantity: 1
   ingredients:
-  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
-    amount: 3
+  - item: {fileID: 11400000, guid: 4a285a81e47817e4c986cae01c0f5508, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 4fff05ba725d1c14a997e48f2f5e16ab, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 426d6d99d427e244da3b178b46aa95ec, type: 2}
+    amount: 1
   craftTime: 2.5
   requiredScanEntryId: scan.structure_relay
+  fabricationGroup: 3

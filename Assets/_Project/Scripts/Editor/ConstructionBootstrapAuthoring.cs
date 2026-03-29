@@ -52,6 +52,14 @@ namespace Hecton8.EditorTools
                 $"{MaterialFolder}/Mat_Module_Pylon.mat",
                 new Color(0.58f, 0.42f, 0.18f, 1.00f),
                 false);
+            Material pumpMat = CreateOrUpdateMaterial(
+                $"{MaterialFolder}/Mat_Module_ServicePump.mat",
+                new Color(0.18f, 0.56f, 0.66f, 1.00f),
+                false);
+            Material turbineMat = CreateOrUpdateMaterial(
+                $"{MaterialFolder}/Mat_Module_CurrentTurbine.mat",
+                new Color(0.22f, 0.68f, 0.34f, 1.00f),
+                false);
 
             GameObject foundationGhost = CreateGhostPrefab(
                 $"{GhostPrefabFolder}/PFB_Ghost_Foundation.prefab",
@@ -72,6 +80,20 @@ namespace Hecton8.EditorTools
                 PrimitiveType.Cylinder,
                 new Vector3(0.8f, 2.2f, 0.8f),
                 new Vector3(0.45f, 2.2f, 0.45f),
+                validGhost,
+                invalidGhost);
+            GameObject pumpGhost = CreateGhostPrefab(
+                $"{GhostPrefabFolder}/PFB_Ghost_ServicePump.prefab",
+                PrimitiveType.Cube,
+                new Vector3(1.8f, 1.6f, 1.8f),
+                new Vector3(0.9f, 0.8f, 0.9f),
+                validGhost,
+                invalidGhost);
+            GameObject turbineGhost = CreateGhostPrefab(
+                $"{GhostPrefabFolder}/PFB_Ghost_CurrentTurbine.prefab",
+                PrimitiveType.Cylinder,
+                new Vector3(1.8f, 2.8f, 1.8f),
+                new Vector3(0.9f, 1.4f, 0.9f),
                 validGhost,
                 invalidGhost);
 
@@ -109,6 +131,22 @@ namespace Hecton8.EditorTools
                 false,
                 Vector3.zero,
                 null);
+            GameObject pumpFinal = CreateFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Module_ServicePump.prefab",
+                PrimitiveType.Cube,
+                new Vector3(1.9f, 1.7f, 1.9f),
+                pumpMat,
+                false,
+                Vector3.zero,
+                null);
+            GameObject turbineFinal = CreateFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Module_CurrentTurbine.prefab",
+                PrimitiveType.Cylinder,
+                new Vector3(1.2f, 3.0f, 1.2f),
+                turbineMat,
+                false,
+                Vector3.zero,
+                null);
 
             BuildableData foundation = CreateOrUpdateBuildable(
                 $"{DataFolder}/Build_Foundation_Platform.asset",
@@ -137,14 +175,34 @@ namespace Hecton8.EditorTools
                 BuildableFamily.Utility,
                 0f,
                 40);
+            BuildableData pump = CreateOrUpdateBuildable(
+                $"{DataFolder}/Build_Service_Pump.asset",
+                "Service Pump",
+                "Flood-control utility module for keeping starter corridors and work bays serviceable.",
+                pumpGhost,
+                pumpFinal,
+                BuildableFamily.Utility,
+                -8f,
+                20);
+            BuildableData turbine = CreateOrUpdateBuildable(
+                $"{DataFolder}/Build_Current_Turbine.asset",
+                "Current Turbine",
+                "Low-profile current generator for early power support on exposed routes.",
+                turbineGhost,
+                turbineFinal,
+                BuildableFamily.Utility,
+                18f,
+                15);
 
-            AssignStarterBuildCosts(foundation, corridor, pylon);
+            AssignStarterBuildCosts(foundation, corridor, pylon, pump, turbine);
 
             ModuleCatalog catalog = CreateOrUpdateModuleCatalog(
                 $"{DataFolder}/ModuleCatalog_Starter.asset",
                 foundation,
                 corridor,
-                pylon);
+                pylon,
+                pump,
+                turbine);
 
             AssignCatalogToScene(catalog, foundation);
 
@@ -324,7 +382,19 @@ namespace Hecton8.EditorTools
             CreateTrialCube(constructionLane.transform, "Construct_Blocker", new Vector3(8.8f, 0.9f, 0f), new Vector3(1.6f, 1.6f, 1.6f), 140f, trialHeavyMat, FieldTargetRole.ConstructionBlocked, "Blocked construction lane. Remove or route around the obstacle before building.");
             CreateMarker(constructionLane.transform, "Construct_SocketGuide", new Vector3(0f, 0.9f, 3.8f), trialAnchorMat, FieldTargetRole.ConstructionSocket, "Socket guide marker. Use it to align snapped placement before committing the module.");
 
-            GameObject endgameLane = CreateSceneRoot("Lane_EndgameOps", rangeRoot.transform, new Vector3(0f, 0f, 98f));
+            GameObject powerLane = CreateSceneRoot("Lane_PowerOps", rangeRoot.transform, new Vector3(0f, 0f, 94f));
+            GameObject powerTurbine = SpawnScenePrefab($"{FinalPrefabFolder}/PFB_Module_CurrentTurbine.prefab", powerLane.transform, "Power_CurrentTurbine", new Vector3(0f, 0f, 0f), Quaternion.identity);
+            AttachDescriptor(powerTurbine, FieldTargetRole.PowerGeneration, "Exposed current turbine position. Good generator anchor for early field power.");
+            GameObject powerRelay = SpawnScenePrefab($"{FinalPrefabFolder}/PFB_Module_Pylon.prefab", powerLane.transform, "Power_RelayPylon", new Vector3(5.5f, 0f, 0f), Quaternion.identity);
+            AttachDescriptor(powerRelay, FieldTargetRole.PowerRelay, "Relay pylon position. Good midpoint for routing service power through the lane.");
+            GameObject powerLoad = SpawnScenePrefab($"{FinalPrefabFolder}/PFB_Module_ServicePump.prefab", powerLane.transform, "Power_ServicePump", new Vector3(11f, 0f, 0f), Quaternion.identity);
+            AttachDescriptor(powerLoad, FieldTargetRole.PowerLoad, "Service pump load. Wants stable upstream power before flood-control work starts.");
+            GameObject powerFlooded = SpawnScenePrefab($"{FinalPrefabFolder}/PFB_Module_Corridor.prefab", powerLane.transform, "Power_ServiceRoute", new Vector3(16f, 0f, 0f), Quaternion.identity);
+            ConfigureModuleState(powerFlooded, 52f, true);
+            AttachDescriptor(powerFlooded, FieldTargetRole.ServiceFlooded, "Flooded service route downstream from the pump and relay chain.");
+            CreateMarker(powerLane.transform, "Power_ExposedGuide", new Vector3(0f, 0.9f, 4.2f), trialAnchorMat, FieldTargetRole.PowerGeneration, "Exposed route guide. Turbine support matters here before extending farther.");
+
+            GameObject endgameLane = CreateSceneRoot("Lane_EndgameOps", rangeRoot.transform, new Vector3(0f, 0f, 110f));
             CreateMarker(endgameLane.transform, "Ops_Anchor", new Vector3(0f, 0.9f, 0f), trialAnchorMat, FieldTargetRole.RouteAnchor, "Endgame operation entry anchor. Start of the mixed-role field route.");
             CreateTrialCube(endgameLane.transform, "Ops_Cargo_Work", new Vector3(4.2f, 0.9f, 0f), new Vector3(1.0f, 1.0f, 1.0f), 35f, trialCargoMat, FieldTargetRole.CargoWork, "Work cargo placed early in the route for recovery-loadout advice.");
             AttachDescriptor(SpawnScenePrefab(TitaniumPrefabPath, endgameLane.transform, "Ops_Salvage", new Vector3(7.4f, 0.35f, 0.4f), Quaternion.identity), FieldTargetRole.SalvagePickup, "Loose salvage package in the mid-route recovery pocket.");
@@ -343,7 +413,7 @@ namespace Hecton8.EditorTools
             CreateTrialCube(endgameLane.transform, "Ops_Combat_Aggressive", new Vector3(21.5f, 0.8f, 0f), new Vector3(1.1f, 1.0f, 1.1f), 34f, trialCombatMat, FieldTargetRole.BioformAggressive, "Aggressive contact near the route terminus. Should push the active recommendation toward defense.");
             CreateMarker(endgameLane.transform, "Ops_Frontier", new Vector3(27f, 0.9f, 0f), trialAnchorMat, FieldTargetRole.RouteFrontier, "Endgame route frontier. Used to confirm that the route closes back into exploration guidance.");
 
-            GameObject choiceLane = CreateSceneRoot("Lane_ChoiceHub", rangeRoot.transform, new Vector3(0f, 0f, 116f));
+            GameObject choiceLane = CreateSceneRoot("Lane_ChoiceHub", rangeRoot.transform, new Vector3(0f, 0f, 128f));
             CreateMarker(choiceLane.transform, "Choice_Hub", new Vector3(0f, 0.9f, 0f), trialAnchorMat, FieldTargetRole.ExpeditionCheckpoint, "Open decision hub. Choose the route that best matches your current goal and loadout.");
             CreateMarker(choiceLane.transform, "Choice_To_Recovery", new Vector3(-5f, 0.9f, 5f), trialAnchorMat, FieldTargetRole.ResourceCache, "Left branch favors salvage and resource recovery.");
             CreateMarker(choiceLane.transform, "Choice_To_Construction", new Vector3(0f, 0.9f, 7f), trialAnchorMat, FieldTargetRole.ConstructionSocket, "Center branch favors snapped construction and service work.");
@@ -378,6 +448,7 @@ namespace Hecton8.EditorTools
             ValidateScanCorridorLane(root.transform, ref errorCount, ref warningCount);
             ValidateCombatLane(root.transform, ref errorCount, ref warningCount);
             ValidateConstructionOpsLane(root.transform, ref errorCount, ref warningCount);
+            ValidatePowerOpsLane(root.transform, ref errorCount, ref warningCount);
             ValidateEndgameOpsLane(root.transform, ref errorCount, ref warningCount);
             ValidateChoiceHubLane(root.transform, ref errorCount, ref warningCount);
 
@@ -818,6 +889,31 @@ namespace Hecton8.EditorTools
             ValidateCargoMass(lane, "Construct_Blocker", 140f, ref errorCount);
         }
 
+        private static void ValidatePowerOpsLane(Transform root, ref int errorCount, ref int warningCount)
+        {
+            Transform lane = root.Find("Lane_PowerOps");
+            if (lane == null)
+            {
+                Debug.LogError("[ToolTrialRangeValidation] Missing Lane_PowerOps.");
+                errorCount++;
+                return;
+            }
+
+            ValidateNamedObject(lane, "Power_CurrentTurbine", ref errorCount);
+            ValidateNamedObject(lane, "Power_RelayPylon", ref errorCount);
+            ValidateNamedObject(lane, "Power_ServicePump", ref errorCount);
+            ValidateNamedObject(lane, "Power_ServiceRoute", ref errorCount);
+            ValidateNamedObject(lane, "Power_ExposedGuide", ref errorCount);
+
+            ValidateDescriptor(lane, "Power_CurrentTurbine", ref errorCount);
+            ValidateDescriptor(lane, "Power_RelayPylon", ref errorCount);
+            ValidateDescriptor(lane, "Power_ServicePump", ref errorCount);
+            ValidateDescriptor(lane, "Power_ServiceRoute", ref errorCount);
+            ValidateDescriptor(lane, "Power_ExposedGuide", ref errorCount);
+
+            ValidateModuleState(lane, "Power_ServiceRoute", floodedExpected: true, shouldBeDamaged: true, ref errorCount, ref warningCount);
+        }
+
         private static void ValidateEndgameOpsLane(Transform root, ref int errorCount, ref int warningCount)
         {
             Transform lane = root.Find("Lane_EndgameOps");
@@ -1162,30 +1258,86 @@ namespace Hecton8.EditorTools
         private static void AssignStarterBuildCosts(
             BuildableData foundation,
             BuildableData corridor,
-            BuildableData pylon)
+            BuildableData pylon,
+            BuildableData pump,
+            BuildableData turbine)
         {
-            ItemData copper = AssetDatabase.LoadAssetAtPath<ItemData>(
-                "Assets/_Project/Data/Items/Data_Copper.asset");
-            if (copper == null)
+            ItemData reinforcedPlate = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_ReinforcedPlate.asset");
+            ItemData pressureSeal = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_PressureSeal.asset");
+            ItemData copperWire = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_CopperWire.asset");
+            ItemData hydraulicActuator = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_HydraulicActuator.asset");
+            ItemData relayMatrix = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_RelayMatrix.asset");
+            ItemData pumpRotor = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_PumpRotor.asset");
+            ItemData batteryCell = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_BatteryCell.asset");
+            ItemData powerCoupler = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_PowerCoupler.asset");
+            ItemData stabilizerCoil = AssetDatabase.LoadAssetAtPath<ItemData>(
+                "Assets/_Project/Data/Items/Resources/Components/Comp_StabilizerCoil.asset");
+
+            if (reinforcedPlate == null || pressureSeal == null || copperWire == null ||
+                hydraulicActuator == null || relayMatrix == null || pumpRotor == null ||
+                batteryCell == null || powerCoupler == null || stabilizerCoil == null)
                 return;
 
-            SetSingleCost(foundation, copper, 2);
-            SetSingleCost(corridor, copper, 3);
-            SetSingleCost(pylon, copper, 1);
+            SetCosts(
+                foundation,
+                new InventoryCost { item = reinforcedPlate, amount = 2 },
+                new InventoryCost { item = pressureSeal, amount = 1 });
+
+            SetCosts(
+                corridor,
+                new InventoryCost { item = reinforcedPlate, amount = 1 },
+                new InventoryCost { item = pressureSeal, amount = 2 },
+                new InventoryCost { item = copperWire, amount = 1 });
+
+            SetCosts(
+                pylon,
+                new InventoryCost { item = reinforcedPlate, amount = 1 },
+                new InventoryCost { item = hydraulicActuator, amount = 1 },
+                new InventoryCost { item = relayMatrix, amount = 1 });
+
+            SetCosts(
+                pump,
+                new InventoryCost { item = pressureSeal, amount = 2 },
+                new InventoryCost { item = pumpRotor, amount = 1 },
+                new InventoryCost { item = batteryCell, amount = 1 });
+
+            SetCosts(
+                turbine,
+                new InventoryCost { item = reinforcedPlate, amount = 1 },
+                new InventoryCost { item = hydraulicActuator, amount = 1 },
+                new InventoryCost { item = stabilizerCoil, amount = 1 },
+                new InventoryCost { item = powerCoupler, amount = 1 });
         }
 
-        private static void SetSingleCost(BuildableData buildable, ItemData item, int amount)
+        private static void SetCosts(BuildableData buildable, params InventoryCost[] costs)
         {
-            if (buildable == null || item == null || amount <= 0)
+            if (buildable == null || costs == null || costs.Length == 0)
                 return;
 
             buildable.buildCost ??= new List<InventoryCost>();
             buildable.buildCost.Clear();
-            buildable.buildCost.Add(new InventoryCost
+
+            for (int i = 0; i < costs.Length; i++)
             {
-                item = item,
-                amount = amount
-            });
+                InventoryCost cost = costs[i];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                buildable.buildCost.Add(new InventoryCost
+                {
+                    item = cost.item,
+                    amount = cost.amount
+                });
+            }
+
             EditorUtility.SetDirty(buildable);
         }
 

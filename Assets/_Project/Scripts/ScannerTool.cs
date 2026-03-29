@@ -472,6 +472,9 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.ConstructionSocket:
                 case FieldTargetRole.ConstructionBlocked:
                 case FieldTargetRole.ConstructionClear:
+                case FieldTargetRole.PowerGeneration:
+                case FieldTargetRole.PowerRelay:
+                case FieldTargetRole.PowerLoad:
                     result.structurePoiContacts++;
                     structureContact = true;
                     meaningfulContact = true;

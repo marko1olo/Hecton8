@@ -578,3 +578,41 @@ Result:
 - Result:
   - scan-gated recipes now have both UI and world delivery
   - fabrication is no longer locked to a trial-only prop
+
+## 2026-03-29 - Tools now sit on a real resource baseline
+
+- Added a live resource economy baseline under the tool layer:
+  - 20 raw resources
+  - 19 intermediate components
+  - 19 component recipes
+- Starter fabrication is no longer raw-copper straight into tools.
+- The live fabricator path now supports:
+  - crafting core components
+  - crafting starter tools from those components
+- This is the first real step toward full endgame tool progression instead of placeholder economy glue.
+
+## 2026-03-30 - Power and service field lane added
+
+- Extended the authored field-target layer with explicit power roles:
+  - `PowerGeneration`
+  - `PowerRelay`
+  - `PowerLoad`
+- Added a dedicated `Lane_PowerOps` to `Tool_TrialRange`:
+  - `Power_CurrentTurbine`
+  - `Power_RelayPylon`
+  - `Power_ServicePump`
+  - `Power_ServiceRoute`
+  - `Power_ExposedGuide`
+- These targets are now understood by:
+  - `FieldTargetSemantics`
+  - `FieldLoadoutAdvisor`
+  - `ScannerTool`
+  - `EnvironmentalAnalyzerTool`
+  - `FlashlightTool`
+- Expanded `ToolTrialRangeRuntimeSmokeTester` with a dedicated `power` pass so the new lane sits inside the same live tool loop as logistics, recon, service, combat, construction, and endgame.
+- Validation through Unity MCP:
+  - `Hecton/Authoring/Rebuild Tool Trial Range`
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS`
+  - `Hecton/Validation/Validate Tool Operational HUD` -> `PASS`
+- Scene saved:
+  - `Assets/_Project/Scenes/02_HECTON_WORLD.unity`

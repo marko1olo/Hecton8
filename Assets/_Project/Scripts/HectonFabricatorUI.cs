@@ -207,8 +207,14 @@ namespace Hecton8.UI
         /// <summary>Текущий фабрикатор (установлен при открытии).</summary>
         private Fabricator _currentFabricator;
 
+        /// <summary>Полный список рецептов станции до фильтра по группе.</summary>
+        private IReadOnlyList<RecipeData> _allRecipes;
+
         /// <summary>Список рецептов текущего фабрикатора.</summary>
         private IReadOnlyList<RecipeData> _recipes;
+
+        private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(32);
+        private FabricationGroup _selectedGroup = FabricationGroup.Unspecified;
 
         /// <summary>Индекс выбранного рецепта.</summary>
         private int _selectedIndex;
@@ -406,6 +412,12 @@ namespace Hecton8.UI
             if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
                 return;
 
+            if (Mathf.Abs(direction.x) >= 0.5f && Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+            {
+                CycleGroup(direction.x > 0f ? 1 : -1);
+                return;
+            }
+
             if (Mathf.Abs(direction.y) < 0.5f)
                 return;
 
@@ -500,7 +512,8 @@ namespace Hecton8.UI
             if (fabricator == null) return;
 
             _currentFabricator = fabricator;
-            _recipes           = fabricator.AvailableRecipes;
+            _allRecipes        = fabricator.AvailableRecipes;
+            _selectedGroup     = FabricationGroup.Unspecified;
             _selectedIndex     = 0;
             _isCrafting        = false;
             _craftProgress     = 0f;
@@ -520,6 +533,7 @@ namespace Hecton8.UI
             Cursor.visible   = false; // NASA-Punk: no cursor, only keyboard
 
             // ── Build initial cache ──
+            RebuildVisibleRecipes();
             if (_recipes != null && _recipes.Count > 0)
                 RebuildIngredientCache();
 
@@ -562,7 +576,9 @@ namespace Hecton8.UI
             _isOpen            = false;
             IsMenuOpen         = false;
             _currentFabricator = null;
+            _allRecipes        = null;
             _recipes           = null;
+            _filteredRecipes.Clear();
             _isCrafting        = false;
             _craftProgress     = 0f;
 
@@ -606,6 +622,7 @@ namespace Hecton8.UI
                 DrawScanlines();
                 DrawPanelFrame();
                 DrawHeader();
+                DrawGroupTabs();
                 DrawRecipeList();
                 DrawRecipeDetails();
 
@@ -791,9 +808,39 @@ namespace Hecton8.UI
             float sectionY = ContentT + fontSizeBody;
 
             Draw.Color = ColorTextDim;
-            Draw.Text(Scr(ListX, sectionY), LabelRecipes);
+            Draw.Text(Scr(ListX, sectionY), LabelRecipes + " / " + GetCurrentGroupLabel());
 
             Draw.Text(Scr(DetailX, sectionY), LabelDetails);
+        }
+
+        private void DrawGroupTabs()
+        {
+            float startX = ListX;
+            float y = ContentT + 4f;
+            float spacing = 78f;
+            FabricationGroup[] groups =
+            {
+                FabricationGroup.Unspecified,
+                FabricationGroup.Materials,
+                FabricationGroup.Components,
+                FabricationGroup.Tools,
+                FabricationGroup.Suit,
+                FabricationGroup.Construction,
+                FabricationGroup.Power
+            };
+
+            for (int i = 0; i < groups.Length; i++)
+            {
+                FabricationGroup group = groups[i];
+                bool isActive = group == _selectedGroup;
+                string label = GetGroupLabel(group);
+                float x = startX + i * spacing;
+
+                Draw.Color = isActive ? ColorAccent : ColorPrimaryDim;
+                Draw.FontSize = FontW(isActive ? fontSizeHint * 1.05f : fontSizeHint);
+                Draw.TextAlign = TextAlign.Left;
+                Draw.Text(Scr(x, y), label);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1203,6 +1250,110 @@ namespace Hecton8.UI
         ///
         /// ZERO GC: ReferenceEquals, for-цикл, no LINQ.
         /// </summary>
+        private void CycleGroup(int direction)
+        {
+            FabricationGroup[] groups =
+            {
+                FabricationGroup.Unspecified,
+                FabricationGroup.Materials,
+                FabricationGroup.Components,
+                FabricationGroup.Tools,
+                FabricationGroup.Suit,
+                FabricationGroup.Construction,
+                FabricationGroup.Power
+            };
+
+            int currentIndex = 0;
+            for (int i = 0; i < groups.Length; i++)
+            {
+                if (groups[i] == _selectedGroup)
+                {
+                    currentIndex = i;
+                    break;
+                }
+            }
+
+            for (int step = 1; step <= groups.Length; step++)
+            {
+                int nextIndex = (currentIndex + (step * direction) + groups.Length) % groups.Length;
+                FabricationGroup candidate = groups[nextIndex];
+                if (!HasRecipesInGroup(candidate))
+                    continue;
+
+                _selectedGroup = candidate;
+                _selectedIndex = 0;
+                RebuildVisibleRecipes();
+                RebuildIngredientCache();
+                return;
+            }
+        }
+
+        private bool HasRecipesInGroup(FabricationGroup group)
+        {
+            if (_allRecipes == null)
+                return false;
+
+            for (int i = 0; i < _allRecipes.Count; i++)
+            {
+                RecipeData recipe = _allRecipes[i];
+                if (recipe == null)
+                    continue;
+
+                if (group == FabricationGroup.Unspecified || recipe.GetResolvedFabricationGroup() == group)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void RebuildVisibleRecipes()
+        {
+            _filteredRecipes.Clear();
+
+            if (_allRecipes == null)
+            {
+                _recipes = null;
+                return;
+            }
+
+            for (int i = 0; i < _allRecipes.Count; i++)
+            {
+                RecipeData recipe = _allRecipes[i];
+                if (recipe == null)
+                    continue;
+
+                if (_selectedGroup != FabricationGroup.Unspecified &&
+                    recipe.GetResolvedFabricationGroup() != _selectedGroup)
+                {
+                    continue;
+                }
+
+                _filteredRecipes.Add(recipe);
+            }
+
+            _recipes = _filteredRecipes;
+            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _filteredRecipes.Count - 1));
+        }
+
+        private string GetCurrentGroupLabel()
+        {
+            return GetGroupLabel(_selectedGroup);
+        }
+
+        private static string GetGroupLabel(FabricationGroup group)
+        {
+            switch (group)
+            {
+                case FabricationGroup.Materials: return "MAT";
+                case FabricationGroup.Components: return "COMP";
+                case FabricationGroup.Tools: return "TOOLS";
+                case FabricationGroup.Suit: return "SUIT";
+                case FabricationGroup.Construction: return "CONST";
+                case FabricationGroup.Power: return "POWER";
+                default: return "ALL";
+            }
+        }
+
         private int CountItemInInventory(ItemData item)
         {
             if (item == null) return 0;

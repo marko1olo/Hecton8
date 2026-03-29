@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_CoolingCartridge
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Cooling Cartridge
+  overrideIcon: {fileID: 0}
+  description: Build a compact cooling pack for hot-running portable devices.
+  resultItem: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+    amount: 1
+  craftTime: 1.5
+  requiredScanEntryId: 
+  fabricationGroup: 6

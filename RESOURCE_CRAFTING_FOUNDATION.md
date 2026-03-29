@@ -331,3 +331,138 @@ The first practical slice should be:
    - silver
 
 That will turn the current placeholder craft loop into a real resource economy.
+
+## Implemented Baseline - 2026-03-29
+
+Current live baseline in project:
+- 20 raw resources created as `ItemData`
+- 19 intermediate components created as `ItemData`
+- 19 component recipes created as `RecipeData`
+- starter fabricator rebuilt around component costs instead of simple copper-only costs
+- starter fabricator now exposes both:
+  - component crafting
+  - starter tool crafting
+
+What is still next:
+- expand beyond starter tool crafting into deeper suit, construction, and power progression
+
+## Implemented World Sources - 2026-03-29
+
+Live world resource sources now exist in the main scene under:
+- `--- WORLD ---/Resource_FieldSources`
+
+Authored source groups:
+- `Scrap_Field`
+- `Mineral_Pocket`
+- `Organic_Garden`
+- `Chemical_Seep`
+- `Electronics_Vein`
+- `Biolum_Grove`
+- `Deep_Crystal_Bed`
+
+This means the economy is no longer data-only:
+- early salvage metal is placed in the world
+- common mineral nodes exist
+- organic harvest points exist
+- chemistry pickups exist
+- electronics-tier and deep-tier sources now have real authored placeholders in the scene
+
+Validation result:
+- `Hecton/Authoring/Rebuild Starter Resource Sources`
+- `Hecton/Validation/Validate Starter Resource Sources` -> `PASS`
+
+## Fabricator Groups And Suit Basics - 2026-03-29
+
+The fabricator is no longer one flat recipe list.
+
+Live recipe groups now exist:
+- `Materials`
+- `Components`
+- `Tools`
+- `Suit`
+- `Construction`
+- `Power`
+
+This grouping is now explicit on recipe assets, not only inferred from item category.
+
+First real `Suit` recipes now exist:
+- `Emergency O2 Canister`
+- `Field Med Gel`
+- `Electrolyte Ampoule`
+
+This means the fabrication loop now covers:
+- raw resource processing
+- component assembly
+- starter tool crafting
+- basic survival consumables
+
+## Construction Economy Link - 2026-03-30
+
+Starter construction is no longer priced in placeholder single-ore costs.
+
+Live build costs now use crafted components:
+- `Foundation Platform`
+  - `Reinforced Plate x2`
+  - `Pressure Seal x1`
+- `Straight Corridor`
+  - `Reinforced Plate x1`
+  - `Pressure Seal x2`
+  - `Copper Wire x1`
+- `Utility Pylon`
+  - `Reinforced Plate x1`
+  - `Hydraulic Actuator x1`
+  - `Relay Matrix x1`
+
+This connects fabrication and building into one real loop:
+- gather resources
+- fabricate parts
+- spend parts on modules
+
+## Expanded Power And Utility Baseline - 2026-03-30
+
+The economy now has a broader middle layer for construction and base service.
+
+New crafted components:
+- `Structural Bracket`
+- `Pump Rotor`
+- `Power Coupler`
+
+New recipes are live and grouped correctly:
+- `Structural Bracket` -> `Construction`
+- `Pump Rotor` -> `Construction`
+- `Power Coupler` -> `Power`
+
+Starter construction also expanded beyond the first three modules:
+- `Service Pump`
+- `Current Turbine`
+
+So the live progression is now wider:
+- gather raw resources
+- craft power and construction parts
+- build support, routing, pumping, and early generation modules
+
+## Authored Power Field Layer - 2026-03-30
+
+The new utility modules now have a real field surface, not only recipes and catalog entries.
+
+New explicit authored power roles:
+- `PowerGeneration`
+- `PowerRelay`
+- `PowerLoad`
+
+`Tool_TrialRange` now contains a dedicated `Lane_PowerOps`:
+- `Power_CurrentTurbine`
+- `Power_RelayPylon`
+- `Power_ServicePump`
+- `Power_ServiceRoute`
+- `Power_ExposedGuide`
+
+This means the new economy now has a matching gameplay layer:
+- `Current Turbine` sits in an exposed generator spot
+- `Utility Pylon` sits in a routing/relay spot
+- `Service Pump` sits in a load-bearing service spot
+- a flooded downstream route shows why the pump/support chain matters
+
+Verification:
+- `Hecton/Authoring/Rebuild Tool Trial Range`
+- `Hecton/Validation/Validate Tool Trial Range` -> `PASS`

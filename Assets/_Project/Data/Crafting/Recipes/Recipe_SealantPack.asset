@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_SealantPack
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Sealant Pack
+  overrideIcon: {fileID: 0}
+  description: Mix fiber binder and sulfur compound into an emergency patching medium.
+  resultItem: {fileID: 11400000, guid: 4a285a81e47817e4c986cae01c0f5508, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 426d6d99d427e244da3b178b46aa95ec, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+    amount: 1
+  craftTime: 1.5
+  requiredScanEntryId: 
+  fabricationGroup: 1

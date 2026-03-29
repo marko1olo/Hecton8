@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a2e1b49b31ede4386a6c6f3c5b0c81, type: 3}
+  m_Name: Build_Current_Turbine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.BuildableData
+  moduleName: Current Turbine
+  icon: {fileID: 0}
+  description: Low-profile current generator for early power support on exposed routes.
+  family: 2
+  ghostPrefab: {fileID: 9043565189866826513, guid: 6f077545d7f6d3449b45b152018f55fe, type: 3}
+  finalPrefab: {fileID: 7498929676155026764, guid: 850ede05779e5bd46ac311a1e7a0397c, type: 3}
+  buildCost:
+  - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: cf025797e54fe354fb30a40523c637db, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: c3851602fb54f504fbd62ea61e3c294a, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 2f16016142035d6459a0e8b33c4ae20f, type: 2}
+    amount: 1
+  powerRating: 18
+  powerPriority: 15

@@ -810,6 +810,18 @@ namespace Hecton8.Core
         /// <summary>Количество запросов в очереди спавна.</summary>
         public int PendingSpawnCount => _spawnQueue.Count;
 
+        public float UnloadDistance => unloadDistance;
+        public float PriorityLoadRadius => priorityLoadRadius;
+        public int MaxSpawnsPerSlowTick => maxSpawnsPerTick;
+
+        public void SetRuntimeBudget(float newUnloadDistance, float newPriorityLoadRadius, int newMaxSpawnsPerTick)
+        {
+            unloadDistance = Mathf.Max(50f, newUnloadDistance);
+            priorityLoadRadius = Mathf.Max(10f, newPriorityLoadRadius);
+            maxSpawnsPerTick = Mathf.Max(1, newMaxSpawnsPerTick);
+            _unloadDistanceSqr = unloadDistance * unloadDistance;
+        }
+
         /// <summary>
         /// Принудительная перезагрузка чанка.
         /// Деспавнит все узлы и помечает для повторного заполнения.

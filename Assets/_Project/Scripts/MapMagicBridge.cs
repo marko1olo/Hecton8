@@ -39,6 +39,7 @@ using System;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
+using MapMagic.Core;
 
 namespace Hecton8.Core
 {
@@ -148,6 +149,7 @@ namespace Hecton8.Core
 
         /// <summary>MapMagic найден и доступен.</summary>
         public bool IsAvailable => mapMagicObject != null;
+        public MapMagicObject RuntimeMapMagicObject => mapMagicObject;
 
         /// <summary>
         /// Current biome ID under the player.
@@ -174,8 +176,7 @@ namespace Hecton8.Core
             // ── Поиск MapMagicObject ──
             if (mapMagicObject == null)
             {
-                mapMagicObject =
-                    FindAnyObjectByType<MapMagic.Core.MapMagicObject>();
+                mapMagicObject = FindMapMagicObjectIncludingInactive();
             }
 
             // ── Поиск игрока ──
@@ -193,6 +194,25 @@ namespace Hecton8.Core
             _initialBiomePublished = false;
 
             UpdateDiagnostics();
+        }
+
+        private static MapMagicObject FindMapMagicObjectIncludingInactive()
+        {
+            MapMagicObject[] candidates = Resources.FindObjectsOfTypeAll<MapMagicObject>();
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                MapMagicObject candidate = candidates[i];
+                if (candidate == null)
+                    continue;
+
+                GameObject go = candidate.gameObject;
+                if (go == null || !go.scene.IsValid())
+                    continue;
+
+                return candidate;
+            }
+
+            return null;
         }
 
         // ════════════════════════════════════════════════════════

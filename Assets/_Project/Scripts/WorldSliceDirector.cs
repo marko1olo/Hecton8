@@ -1,0 +1,131 @@
+using System.Collections.Generic;
+using Hecton8.Core;
+using UnityEngine;
+
+namespace Hecton8.World
+{
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-4100)]
+    public sealed class WorldSliceDirector : MonoBehaviour, ISlowTickable
+    {
+        [Header("References")]
+        [SerializeField] private Transform playerTransform;
+
+        [Header("Diagnostics")]
+        [SerializeField] private int _debugSliceCount;
+        [SerializeField] private bool _debugPlayerReady;
+        [SerializeField] private bool _debugApplied;
+
+        private readonly List<WorldSliceAnchor> _anchors = new List<WorldSliceAnchor>(32);
+        private bool _registeredToTickManager;
+
+        private void Awake()
+        {
+            ResolvePlayer();
+            RefreshAnchors();
+            UpdateDiagnostics(false);
+        }
+
+        private void OnEnable()
+        {
+            if (GameTickManager.Instance != null && !_registeredToTickManager)
+            {
+                GameTickManager.Instance.Register((ISlowTickable)this);
+                _registeredToTickManager = true;
+            }
+        }
+
+        private void Start()
+        {
+            if (!_registeredToTickManager && GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Register((ISlowTickable)this);
+                _registeredToTickManager = true;
+            }
+
+            ApplySlices(forceRefresh: true);
+        }
+
+        private void OnDisable()
+        {
+            if (_registeredToTickManager && GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Unregister((ISlowTickable)this);
+                _registeredToTickManager = false;
+            }
+        }
+
+        public void SlowTick()
+        {
+            ApplySlices(forceRefresh: false);
+        }
+
+        public void RefreshAnchors()
+        {
+            _anchors.Clear();
+
+            WorldSliceAnchor[] anchors = Resources.FindObjectsOfTypeAll<WorldSliceAnchor>();
+            for (int i = 0; i < anchors.Length; i++)
+            {
+                WorldSliceAnchor anchor = anchors[i];
+                if (anchor == null)
+                    continue;
+
+                GameObject go = anchor.gameObject;
+                if (go == null || !go.scene.IsValid())
+                    continue;
+
+                _anchors.Add(anchor);
+            }
+
+            _debugSliceCount = _anchors.Count;
+        }
+
+        private void ApplySlices(bool forceRefresh)
+        {
+            ResolvePlayer();
+            if (forceRefresh || _anchors.Count == 0)
+                RefreshAnchors();
+
+            if (playerTransform == null)
+            {
+                UpdateDiagnostics(false);
+                return;
+            }
+
+            Vector3 playerPosition = playerTransform.position;
+            for (int i = 0; i < _anchors.Count; i++)
+            {
+                WorldSliceAnchor anchor = _anchors[i];
+                if (anchor == null)
+                    continue;
+
+                Vector3 delta = anchor.transform.position - playerPosition;
+                delta.y = 0f;
+                anchor.ApplyForDistance(delta.magnitude);
+            }
+
+            UpdateDiagnostics(true);
+        }
+
+        private void ResolvePlayer()
+        {
+            if (playerTransform != null)
+                return;
+
+            GameObject player = GameObject.FindWithTag("Player");
+            if (player == null)
+                player = GameObject.Find("Player");
+
+            if (player != null)
+                playerTransform = player.transform;
+        }
+
+        private void UpdateDiagnostics(bool applied)
+        {
+            _debugSliceCount = _anchors.Count;
+            _debugPlayerReady = playerTransform != null;
+            _debugApplied = applied;
+        }
+    }
+}

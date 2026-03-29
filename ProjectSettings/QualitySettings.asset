@@ -54,7 +54,7 @@ QualitySettings:
     terrainDetailDensityScale: 1
     terrainBasemapDistance: 1000
     terrainDetailDistance: 80
-    terrainTreeDistance: 5000
+    terrainTreeDistance: 1800
     terrainBillboardStart: 50
     terrainFadeLength: 5
     terrainMaxTrees: 50
@@ -92,7 +92,7 @@ QualitySettings:
     meshLodThreshold: 1
     maximumLODLevel: 0
     enableLODCrossFade: 1
-    streamingMipmapsActive: 0
+    streamingMipmapsActive: 1
     streamingMipmapsAddAllCameras: 1
     streamingMipmapsMemoryBudget: 512
     streamingMipmapsRenderersPerFrame: 512
@@ -109,7 +109,7 @@ QualitySettings:
     terrainDetailDensityScale: 1
     terrainBasemapDistance: 1000
     terrainDetailDistance: 80
-    terrainTreeDistance: 5000
+    terrainTreeDistance: 1200
     terrainBillboardStart: 50
     terrainFadeLength: 5
     terrainMaxTrees: 50
@@ -164,7 +164,7 @@ QualitySettings:
     terrainDetailDensityScale: 1
     terrainBasemapDistance: 1000
     terrainDetailDistance: 80
-    terrainTreeDistance: 5000
+    terrainTreeDistance: 2500
     terrainBillboardStart: 50
     terrainFadeLength: 5
     terrainMaxTrees: 50

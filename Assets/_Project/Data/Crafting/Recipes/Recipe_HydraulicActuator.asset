@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_HydraulicActuator
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Hydraulic Actuator
+  overrideIcon: {fileID: 0}
+  description: Assemble a controlled motion unit for heavy field equipment.
+  resultItem: {fileID: 11400000, guid: cf025797e54fe354fb30a40523c637db, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 2936bbaa2b04aa243a67b3e6494c3ef7, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: b8de736e6b1c21241acc1651212a733f, type: 2}
+    amount: 1
+  craftTime: 1.5
+  requiredScanEntryId: 
+  fabricationGroup: 5

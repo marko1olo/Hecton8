@@ -52,6 +52,13 @@ namespace Hecton8.Gameplay
                    role == FieldTargetRole.ConstructionClear;
         }
 
+        public static bool IsPowerRole(FieldTargetRole role)
+        {
+            return role == FieldTargetRole.PowerGeneration ||
+                   role == FieldTargetRole.PowerRelay ||
+                   role == FieldTargetRole.PowerLoad;
+        }
+
         public static bool TryFindNearestRouteMarker(Vector3 position, float maxDistance, out FieldTargetDescriptor descriptor, out float distance)
         {
             descriptor = null;
@@ -170,6 +177,19 @@ namespace Hecton8.Gameplay
                     return true;
                 case FieldTargetRole.ConstructionClear:
                     directive = "Use STANDARD while surveying the clear build lane and module footprint.";
+                    return true;
+                case FieldTargetRole.PowerGeneration:
+                    directive = distance >= 8f
+                        ? "Use FOCUS to read the exposed turbine face before committing service work."
+                        : "Use STANDARD to keep the generator body readable while you stage support modules.";
+                    return true;
+                case FieldTargetRole.PowerRelay:
+                    directive = "Use STANDARD to trace the relay line and keep the support route readable.";
+                    return true;
+                case FieldTargetRole.PowerLoad:
+                    directive = distance >= 8f
+                        ? "Use FOCUS to inspect the powered load before you commit repair or routing work."
+                        : "Use STANDARD to keep the load face and service connections readable.";
                     return true;
             }
 
@@ -326,6 +346,37 @@ namespace Hecton8.Gameplay
                         buildRecommendation,
                         buildSeverity,
                         "Construction");
+                    return true;
+                }
+
+                case FieldTargetRole.PowerGeneration:
+                case FieldTargetRole.PowerRelay:
+                case FieldTargetRole.PowerLoad:
+                {
+                    string powerHeadline = descriptor.Role switch
+                    {
+                        FieldTargetRole.PowerGeneration => "POWER GENERATION NODE",
+                        FieldTargetRole.PowerRelay => "POWER RELAY NODE",
+                        _ => "POWER LOAD NODE"
+                    };
+
+                    string powerSeverity = descriptor.Role == FieldTargetRole.PowerLoad
+                        ? "WARN"
+                        : "INFO";
+
+                    string powerRecommendation = descriptor.Role switch
+                    {
+                        FieldTargetRole.PowerGeneration => "Expose and protect this generator. Turbine support is the value play here.",
+                        FieldTargetRole.PowerRelay => "Keep this relay path stable. Pylon routing and clean service access fit this lane well.",
+                        _ => "This load will lean on power support. Pair pump or service work with a stable upstream supply."
+                    };
+
+                    assessment = new SemanticAssessment(
+                        $"{powerHeadline} | RANGE {distance:0.0} M",
+                        note,
+                        powerRecommendation,
+                        powerSeverity,
+                        "Power");
                     return true;
                 }
             }

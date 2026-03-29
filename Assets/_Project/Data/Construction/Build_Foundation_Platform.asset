@@ -19,7 +19,9 @@ MonoBehaviour:
   ghostPrefab: {fileID: 2131711338715611294, guid: 6142b2af4ab564442876fb6809e6d33f, type: 3}
   finalPrefab: {fileID: 5760737024609812604, guid: 3fd47dbaa6552004b99e7b71e2a866d0, type: 3}
   buildCost:
-  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}
     amount: 2
+  - item: {fileID: 11400000, guid: ae02bcd19d7e28b44a03544b03dc399a, type: 2}
+    amount: 1
   powerRating: 0
   powerPriority: 25

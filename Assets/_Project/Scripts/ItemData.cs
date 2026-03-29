@@ -21,6 +21,28 @@ namespace Hecton8.Items
         Consumable    = 4,
         Component     = 5
     }
+
+    public enum ResourceFamily
+    {
+        None              = 0,
+        StructuralMetal   = 1,
+        ElectronicsMetal  = 2,
+        Chemical          = 3,
+        Organic           = 4,
+        Crystal           = 5,
+        DeepMaterial      = 6,
+        Component         = 7,
+        Power             = 8
+    }
+
+    public enum ProgressionTier
+    {
+        None  = 0,
+        Tier0 = 1,
+        Tier1 = 2,
+        Tier2 = 3,
+        Tier3 = 4
+    }
     /// <summary>
     /// Чистые данные предмета. Никакой логики — только описание.
     /// Создаётся через контекстное меню: Hecton → Item Data.
@@ -46,6 +68,12 @@ namespace Hecton8.Items
         [Header("Classification")]
         [Tooltip("Категория предмета для UI фильтрации и крафт-правил")]
         public ItemCategory category = ItemCategory.Miscellaneous;
+        [Tooltip("Семейство ресурса/компонента для экономики, скан-логики и будущего крафт-дерева")]
+        public ResourceFamily resourceFamily = ResourceFamily.None;
+        [Tooltip("Прогрессионный уровень: ранний, средний, поздний, глубоководный")]
+        public ProgressionTier progressionTier = ProgressionTier.None;
+        [Tooltip("Если true — это базовый добываемый ресурс мира, а не собранный компонент")]
+        public bool isRawResource = false;
 
         // ─────────────────────── Grid ────────────────────────────
         // ◆ NEW — габариты для тетрис-инвентаря

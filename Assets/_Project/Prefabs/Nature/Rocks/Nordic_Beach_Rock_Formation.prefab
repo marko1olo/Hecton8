@@ -59,5 +59,26 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cf11f26bc3637ee47b676379c18699c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2322219988976594689}
   m_SourcePrefab: {fileID: 100100000, guid: cf11f26bc3637ee47b676379c18699c3, type: 3}
+--- !u!1 &1537715959788787414 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: cf11f26bc3637ee47b676379c18699c3, type: 3}
+  m_PrefabInstance: {fileID: 1843794504652811143}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2322219988976594689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1537715959788787414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: c7482753df7852c4ea902080135c60c5, type: 2}

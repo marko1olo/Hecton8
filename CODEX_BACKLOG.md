@@ -1,5 +1,68 @@
 # Codex Backlog
 
+## 2026-03-30 - World runtime stack production pass
+
+- Added `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`.
+- New menu path:
+  - `Hecton/Authoring/Rebuild World Runtime Stack`
+- This pass is not a prototype helper; it is the first production authoring path for the runtime world stack.
+- It now:
+  - creates `Assets/_Project/Prefabs/WorldRuntime/PFB_ProximityColliderProxy.prefab`
+  - ensures `[MANAGERS]` contains:
+    - `BiomeSamplerCache`
+    - `ScatterBudgetController`
+    - `WorldStreamingDirector`
+    - `ProximityColliderSystem`
+  - wires explicit references between them
+  - injects collider warmup into `ObjectPoolManager`
+- Extended `MapMagicWorldValidator.cs` to validate:
+  - `ProximityColliderSystem`
+  - assigned collider prefab
+  - collider prefab `BoxCollider`
+  - `ObjectPoolManager` presence
+  - collider-proxy warmup coverage
+- Verified through Unity MCP:
+  - compile clean
+  - world runtime bootstrap executed
+  - collider proxy prefab exists
+  - `[MANAGERS]` now contains a live `ProximityColliderSystem`
+  - explicit scene references are assigned
+  - short play enter/exit produced no new console errors
+  - scene saved clean
+- Honest tail:
+  - `Validate MapMagic World Stack` still executes opaquely through MCP and does not always echo its final line
+  - `HectonRockManager` and `GPUInstancerPrefabManager` are still not live in the scene, so the rock-instancing side remains a separate next step
+
+## 2026-03-30 - Authored world-slice streaming pass
+
+- Added:
+  - `Assets/_Project/Scripts/WorldSliceDirector.cs`
+  - `Assets/_Project/Scripts/WorldSliceAnchor.cs`
+- Extended:
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- New world behavior:
+  - authored scene zones now have distance-based runtime states
+  - current states are:
+    - `Near`
+    - `Mid`
+    - `Far`
+- Current live slice coverage:
+  - `--- WORLD ---/Resource_FieldSources`
+  - `--- WORLD ---/Fabrication_Outpost`
+  - `Tool_Staging`
+- `Tool_Staging` now also disables its `ToolStagingSpawner` when the slice is far.
+- Verified through Unity MCP:
+  - compile clean
+  - world runtime bootstrap executed
+  - `WorldSliceDirector` is live on `[MANAGERS]`
+  - `WorldSliceAnchor` is live on all three authored roots
+  - short play enter/exit clean
+  - console clean after play
+  - scene saved clean
+- Honest tail:
+  - play-mode MCP introspection is still flaky during editor transition, so the current proof is clean runtime behavior and scene wiring, not rich live state dumps during play
+
 ## 2026-03-29 - Active tool HUD integration pass
 
 - Added shared active-tool reporting API:
@@ -2550,3 +2613,252 @@ Notes:
   - `NEXT_SPRINT_TASKS.md`
 - Direction for the next big implementation block:
   - replace placeholder copper-only crafting with a real multi-resource crafting tree
+
+## 2026-03-29 - Core resource kit implemented
+
+- Rebuilt `ResourceCraftingBootstrapAuthoring.cs` into a real economy bootstrap instead of a tiny placeholder slice.
+- Live data now exists for:
+  - 20 raw resources
+  - 19 intermediate components
+  - 19 component recipes
+- Validation through Unity MCP:
+  - `Hecton/Authoring/Rebuild Core Resource Kit`
+  - `Hecton/Validation/Validate Core Resource Kit` -> `PASS`
+- The starter fabrication path is no longer tool-only.
+- `FabricationBootstrapAuthoring.cs` now includes craftable component recipes on live fabricators before starter tools.
+- Validation through Unity MCP:
+  - `Hecton/Validation/Validate Starter Fabrication Kit` -> `PASS`
+- Honest next gaps:
+  - real world sources for the expanded resource list are not authored yet
+  - fabrication categories are not separated yet
+  - deeper tool, suit, and construction recipes still need to be migrated onto the new economy
+
+## 2026-03-29 - Starter world resource sources implemented
+
+- Added a new editor bootstrap:
+  - `Assets/_Project/Scripts/Editor/ResourceWorldBootstrapAuthoring.cs`
+- Authored live world resource sources in `02_HECTON_WORLD` under:
+  - `--- WORLD ---/Resource_FieldSources`
+- Current source groups now present:
+  - `Scrap_Field`
+  - `Mineral_Pocket`
+  - `Organic_Garden`
+  - `Chemical_Seep`
+  - `Electronics_Vein`
+  - `Biolum_Grove`
+  - `Deep_Crystal_Bed`
+- Validation flow completed:
+  - `Hecton/Authoring/Rebuild Starter Resource Sources`
+  - `Hecton/Validation/Validate Starter Resource Sources` -> `PASS`
+- Scene saved:
+  - `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- Honest next gaps:
+  - fabricator categories are still one flat list
+  - recipes still need broader migration into suit / construction / power progression
+  - world sources are authored placeholders and still need later biome-quality placement and progression gating
+
+## 2026-03-29 - Fabricator grouping baseline started
+
+- Added recipe-side grouping support in:
+  - `Assets/_Project/Scripts/RecipeData.cs`
+- Added player-facing filtering baseline in:
+  - `Assets/_Project/Scripts/HectonFabricatorUI.cs`
+- Fabricator UI now has a real grouping concept instead of one long undifferentiated recipe list.
+- Current grouping path is data-driven and can resolve from `ItemData` category even before every recipe is hand-tagged.
+- Verification:
+  - compile clean
+  - `Validate Starter Fabrication Kit` -> `PASS`
+  - `Validate Starter Resource Sources` -> `PASS`
+- Honest next gap:
+  - run a longer live fabricator interaction pass to confirm the grouped navigation feels right in actual play
+
+## 2026-03-29 - Fabricator groups and first suit consumables implemented
+
+- Explicit fabrication groups are now authored on live recipe assets instead of relying only on category inference.
+- `ResourceCraftingBootstrapAuthoring.cs` now assigns recipe groups across:
+  - `Materials`
+  - `Components`
+  - `Tools`
+  - `Construction`
+  - `Power`
+  - `Suit`
+- Added first real survival consumables to the economy:
+  - `Emergency O2 Canister`
+  - `Field Med Gel`
+  - `Electrolyte Ampoule`
+- Added live `Suit` recipes for those items and included them on starter/world fabricators.
+- Validation through Unity MCP:
+  - `Hecton/Validation/Validate Core Resource Kit` -> `PASS`
+  - `Hecton/Validation/Validate Starter Fabrication Kit` -> `PASS`
+- Honest next gaps:
+  - longer real interaction pass on grouped fabricator UX
+  - more non-tool recipes for construction and power progression
+
+## 2026-03-30 - Construction costs migrated onto the new economy
+
+- `ConstructionBootstrapAuthoring.cs` no longer prices starter modules in placeholder single-copper costs.
+- Starter buildables now consume crafted parts from the new economy:
+  - `Foundation Platform` -> reinforced plates + pressure seal
+  - `Straight Corridor` -> reinforced plate + pressure seals + copper wire
+  - `Utility Pylon` -> reinforced plate + hydraulic actuator + relay matrix
+- Validation through Unity MCP:
+  - `Hecton/Authoring/Rebuild Starter Construction Kit`
+  - `Hecton/Validation/Validate Construction Catalog` -> `PASS`
+- Honest next gaps:
+  - expand construction progression beyond the three starter modules
+  - add more power-facing recipes that support later utility/logistics modules
+
+## 2026-03-30 - Power and utility crafting layer expanded
+
+- Added new crafted economy parts:
+  - `Structural Bracket`
+  - `Pump Rotor`
+  - `Power Coupler`
+- Added live recipes for those parts and included them on starter/world fabricators.
+- Expanded the starter construction catalog from 3 modules to 5 modules:
+  - `Foundation Platform`
+  - `Straight Corridor`
+  - `Utility Pylon`
+  - `Service Pump`
+  - `Current Turbine`
+- Rebuilt and validated through Unity MCP:
+  - `Hecton/Authoring/Rebuild Core Resource Kit`
+  - `Hecton/Authoring/Rebuild Starter Fabrication Kit`
+  - `Hecton/Authoring/Rebuild Starter Construction Kit`
+  - `Hecton/Validation/Validate Core Resource Kit` -> `PASS`
+  - `Hecton/Validation/Validate Starter Fabrication Kit` -> `PASS`
+  - `Hecton/Validation/Validate Construction Catalog` -> `PASS`
+- Scene saved:
+  - `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- Honest next gaps:
+  - give the new utility modules stronger authored world situations
+  - keep expanding power/construction recipes toward mid and late progression
+
+## 2026-03-30 - Power/service authored tool lane added
+
+- Added explicit power roles to the field-target layer:
+  - `PowerGeneration`
+  - `PowerRelay`
+  - `PowerLoad`
+- Extended tool semantics so authored power targets are now read consistently by:
+  - `FieldLoadoutAdvisor`
+  - `ScannerTool`
+  - `EnvironmentalAnalyzerTool`
+  - `FlashlightTool`
+- Added `Lane_PowerOps` to `Tool_TrialRange` with live authored targets:
+  - `Power_CurrentTurbine`
+  - `Power_RelayPylon`
+  - `Power_ServicePump`
+  - `Power_ServiceRoute`
+  - `Power_ExposedGuide`
+- Extended `ToolTrialRangeRuntimeSmokeTester` with a dedicated `power` pass.
+- Verification through Unity MCP:
+  - `Hecton/Authoring/Rebuild Tool Trial Range`
+  - `Hecton/Validation/Validate Tool Trial Range` -> `PASS`
+  - `Hecton/Validation/Validate Tool Operational HUD` -> `PASS`
+  - short play probe ran without new console errors
+- Honest current gap:
+  - the runtime smoke harness still is not ideal at pushing all `PASS` lines back through short MCP play probes, even though the authored lane and validators are green
+
+## 2026-03-30 - MapMagic stack inspected and bridge fixed
+
+- Confirmed the live scene still uses MapMagic:
+  - scene object: `--- WORLD ---/Terrain`
+  - graph: `Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset`
+- Confirmed the correct strategic direction:
+  - do not replace MapMagic now
+  - keep it for terrain, masks, tiles, and scatter data
+  - build our own thin optimization layer over it
+- Fixed a real runtime defect in `Assets/_Project/Scripts/MapMagicBridge.cs`:
+  - `MapMagicBridge` could not see the scene `MapMagicObject` because the terrain root is inactive
+  - bridge now resolves inactive scene `MapMagicObject` instances through `Resources.FindObjectsOfTypeAll`
+- Verified in play mode through Unity MCP:
+  - `MapMagicBridge.IsAvailable = true`
+  - `mapMagicObject = Terrain`
+  - `CurrentBiomeID = 0`
+- Added planning document:
+  - `MAPMAGIC_WORLD_STACK_PLAN.md`
+
+## 2026-03-30 - First production world layer over MapMagic
+
+- Added editor validation gate:
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+  - menu:
+    - `Hecton/Validation/Validate MapMagic World Stack`
+- Added runtime biome/height cache:
+  - `Assets/_Project/Scripts/BiomeSamplerCache.cs`
+- Added runtime depth-budget controller:
+  - `Assets/_Project/Scripts/ScatterBudgetController.cs`
+- Extended existing runtime systems so they can be budget-controlled live:
+  - `ScavengePopulator` now exposes runtime tuning for:
+    - unload distance
+    - priority load radius
+    - max spawns per slow tick
+  - `ProximityColliderSystem` now exposes runtime tuning for:
+    - activate/deactivate radii
+    - max operations per frame
+- Live scene tuning applied on `--- WORLD ---/Terrain`:
+  - `draftsInPlaymode = false`
+  - `hideFarTerrains = true`
+  - `mainRange = 1`
+  - `terrainSettings.drawInstanced = true`
+  - `globals.objectsNumPerFrame = 128`
+- Runtime systems attached to `[MANAGERS]`:
+  - `BiomeSamplerCache`
+  - `ScatterBudgetController`
+- Verified through Unity MCP in play mode:
+  - `MapMagicBridge.IsAvailable = true`
+  - `BiomeSamplerCache.IsReady = true`
+  - `BiomeSamplerCache.SampleCount = 49`
+  - `ScatterBudgetController` resolved player + bridge + scavenge references and applied the `Surface` band
+  - `ScavengePopulator` runtime budget updated to:
+    - `UnloadDistance = 320`
+    - `PriorityLoadRadius = 150`
+    - `MaxSpawnsPerSlowTick = 24`
+  - console stayed clean
+- Honest current tail:
+  - no live `ProximityColliderSystem` exists in the loaded scene yet
+  - collider-budget control is ready in code, but not yet wired to a real scene system
+
+## 2026-03-30 - Player movement stability tail closed during world pass
+
+- While verifying the new world stack, Unity console exposed a real runtime tail unrelated to MapMagic:
+  - `NullReferenceException` in `HectonPlayerMovement` around `CameraJuiceProcessor` usage
+- Fixed in:
+  - `Assets/_Project/Scripts/HectonPlayerMovement.cs`
+- Added lazy `EnsureJuiceProcessor()` protection and called it from:
+  - `SetSuit(...)`
+  - `Awake()`
+  - `Tick(...)`
+  - `FixedTick(...)`
+- Rechecked through Unity MCP:
+  - compile/play cycle clean
+  - console returned `0` entries after the fix
+
+## 2026-03-30 - World streaming director added
+
+- Added:
+  - `Assets/_Project/Scripts/WorldStreamingDirector.cs`
+- Purpose:
+  - turn the MapMagic runtime layer into a real world-control stack instead of separate helpers
+  - react to player speed + depth
+  - switch between survey/traverse world budgets
+  - tune `MapMagicObject.globals.objectsNumPerFrame` live
+  - push higher-level scales into `ScatterBudgetController`
+- Added support API:
+  - `MapMagicBridge.RuntimeMapMagicObject`
+  - `ScatterBudgetController.SetDirectorScales(...)`
+- Added validation coverage:
+  - `MapMagicWorldValidator` now checks for `WorldStreamingDirector`
+- Scene:
+  - attached `WorldStreamingDirector` to `[MANAGERS]`
+  - saved `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- Verified through Unity MCP:
+  - compile clean
+  - play probe clean
+  - console clean
+- Honest current tail:
+  - play-mode console stays clean, but MCP still times out on some live `[MANAGERS]` component snapshots during play mode
+  - no live `ProximityColliderSystem` is in the scene yet, so collider budgeting is still code-ready rather than scene-live
+- 2026-03-30: Added `WorldInterestDirector` + `WorldInterestAnchor` as a real production layer on top of `ScatterBudgetController`; the world now lifts local runtime budgets near `Resource_FieldSources`, `Fabrication_Outpost`, and `Tool_TrialRange` instead of spending the same cost everywhere.
+- 2026-03-30: Ran a first safe `Project Settings` optimization pass for runtime without gameplay/visual regressions: enabled camera-relative light/shadow culling, reduced extreme terrain tree distances on runtime quality tiers, enabled streaming mipmaps on `Abyss (Low)`. Verified compile clean + short play clean.

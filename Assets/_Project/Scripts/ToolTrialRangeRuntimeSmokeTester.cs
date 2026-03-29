@@ -82,6 +82,7 @@ namespace Hecton8.Gameplay
             bool reconPass = false;
             bool recoveryPass = false;
             bool servicePass = false;
+            bool powerPass = false;
             bool combatPass = false;
             bool constructionPass = false;
             bool endgamePass = false;
@@ -94,6 +95,8 @@ namespace Hecton8.Gameplay
             ReportPass("recovery", recoveryPass);
             yield return RunServicePass(rangeRoot, result => servicePass = result);
             ReportPass("service", servicePass);
+            yield return RunPowerPass(rangeRoot, result => powerPass = result);
+            ReportPass("power", powerPass);
             yield return RunCombatPass(rangeRoot, result => combatPass = result);
             ReportPass("combat", combatPass);
             yield return RunConstructionPass(rangeRoot, result => constructionPass = result);
@@ -105,10 +108,10 @@ namespace Hecton8.Gameplay
             playerRoot.SetPositionAndRotation(originalPosition, originalRotation);
             _isRunning = false;
 
-            if (logisticsPass && reconPass && recoveryPass && servicePass && combatPass && constructionPass && endgamePass)
-                Debug.Log("[TrialRangeSmoke] PASS logistics=True recon=True recovery=True service=True combat=True construction=True endgame=True");
+            if (logisticsPass && reconPass && recoveryPass && servicePass && powerPass && combatPass && constructionPass && endgamePass)
+                Debug.Log("[TrialRangeSmoke] PASS logistics=True recon=True recovery=True service=True power=True combat=True construction=True endgame=True");
             else
-                Debug.LogWarning($"[TrialRangeSmoke] FAIL logistics={logisticsPass} recon={reconPass} recovery={recoveryPass} service={servicePass} combat={combatPass} construction={constructionPass} endgame={endgamePass}");
+                Debug.LogWarning($"[TrialRangeSmoke] FAIL logistics={logisticsPass} recon={reconPass} recovery={recoveryPass} service={servicePass} power={powerPass} combat={combatPass} construction={constructionPass} endgame={endgamePass}");
         }
 
         private IEnumerator RunLogisticsPass(Transform rangeRoot, System.Action<bool> complete)
@@ -457,6 +460,63 @@ namespace Hecton8.Gameplay
 
             complete(true);
             LogVerbose("Service pass complete.");
+        }
+
+        private IEnumerator RunPowerPass(Transform rangeRoot, System.Action<bool> complete)
+        {
+            complete(false);
+
+            Transform turbine = FindRelative(rangeRoot, "Lane_PowerOps/Power_CurrentTurbine");
+            Transform relay = FindRelative(rangeRoot, "Lane_PowerOps/Power_RelayPylon");
+            Transform pump = FindRelative(rangeRoot, "Lane_PowerOps/Power_ServicePump");
+            Transform route = FindRelative(rangeRoot, "Lane_PowerOps/Power_ServiceRoute");
+            if (turbine == null || relay == null || pump == null || route == null)
+            {
+                Debug.LogWarning("[TrialRangeSmoke] Power lane is missing key authored targets.");
+                yield break;
+            }
+
+            if (!VerifyRecommendedPreset(turbine, 5f, "CONSTRUCTION"))
+                yield break;
+
+            yield return new WaitForSecondsRealtime(settleDelay);
+
+            if (!VerifyRecommendedPreset(relay, 5f, "CONSTRUCTION"))
+                yield break;
+
+            yield return new WaitForSecondsRealtime(settleDelay);
+
+            if (!VerifyRecommendedPreset(pump, 5f, "CONSTRUCTION"))
+                yield break;
+
+            bool equipOk = false;
+            yield return EquipTool<EnvironmentalAnalyzerTool>(0, result => equipOk = result);
+            if (!equipOk || !(toolManager.CurrentTool is EnvironmentalAnalyzerTool analyzer))
+                yield break;
+
+            PositionPlayerForTarget(turbine, 4.8f);
+            yield return new WaitForSecondsRealtime(settleDelay);
+            if (!ContainsAny(analyzer.GetOperationalSummary(), "POWER", "GENERATION", "CURRENT"))
+            {
+                Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve power generation semantics. Summary={analyzer.GetOperationalSummary()}");
+                yield break;
+            }
+
+            equipOk = false;
+            yield return EquipTool<FlashlightTool>(1, result => equipOk = result);
+            if (!equipOk || !(toolManager.CurrentTool is FlashlightTool flashlight))
+                yield break;
+
+            PositionPlayerForTarget(route, 8f);
+            yield return new WaitForSecondsRealtime(settleDelay);
+            if (!ContainsAny(flashlight.GetOperationalDirective(), "FOCUS", "service", "power", "generator"))
+            {
+                Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve power/service guidance. Directive={flashlight.GetOperationalDirective()}");
+                yield break;
+            }
+
+            complete(true);
+            LogVerbose("Power pass complete.");
         }
 
         private IEnumerator RunConstructionPass(Transform rangeRoot, System.Action<bool> complete)

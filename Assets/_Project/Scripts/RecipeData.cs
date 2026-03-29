@@ -21,6 +21,17 @@ using UnityEngine;
 
 namespace Hecton8.Crafting
 {
+    public enum FabricationGroup
+    {
+        Unspecified = 0,
+        Materials = 1,
+        Components = 2,
+        Tools = 3,
+        Suit = 4,
+        Construction = 5,
+        Power = 6
+    }
+
     /// <summary>
     /// Данные одного рецепта крафта.
     /// Содержит входные ресурсы, выходной предмет и время изготовления.
@@ -69,6 +80,9 @@ namespace Hecton8.Crafting
         [Header("Unlock")]
         [Tooltip("Необязательная scan-log запись, которая открывает этот чертёж. Пусто = чертёж доступен сразу.")]
         public string requiredScanEntryId = "";
+
+        [Header("Fabricator Group")]
+        public FabricationGroup fabricationGroup = FabricationGroup.Unspecified;
 
         // ─────────────────────── Cache ───────────────────────────
 
@@ -141,6 +155,44 @@ namespace Hecton8.Crafting
                 return true;
 
             return scanLogSystem != null && scanLogSystem.ContainsEntry(RequiredScanEntryId);
+        }
+
+        public FabricationGroup GetResolvedFabricationGroup()
+        {
+            if (fabricationGroup != FabricationGroup.Unspecified)
+                return fabricationGroup;
+
+            if (resultItem == null)
+                return FabricationGroup.Components;
+
+            switch (resultItem.category)
+            {
+                case ItemCategory.Material:
+                    return FabricationGroup.Materials;
+                case ItemCategory.Component:
+                    return FabricationGroup.Components;
+                case ItemCategory.Tool:
+                    return FabricationGroup.Tools;
+                case ItemCategory.Equipment:
+                case ItemCategory.Consumable:
+                    return FabricationGroup.Suit;
+                default:
+                    return FabricationGroup.Components;
+            }
+        }
+
+        public string GetFabricationGroupLabel()
+        {
+            switch (GetResolvedFabricationGroup())
+            {
+                case FabricationGroup.Materials: return "MATERIALS";
+                case FabricationGroup.Components: return "COMPONENTS";
+                case FabricationGroup.Tools: return "TOOLS";
+                case FabricationGroup.Suit: return "SUIT";
+                case FabricationGroup.Construction: return "CONSTRUCTION";
+                case FabricationGroup.Power: return "POWER";
+                default: return "ALL";
+            }
         }
 
         // ═════════════════════════════════════════════════════════

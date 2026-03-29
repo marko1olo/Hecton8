@@ -28,7 +28,10 @@ namespace Hecton8.Gameplay
         BioformDown = 21,
         ConstructionSocket = 22,
         ConstructionBlocked = 23,
-        ConstructionClear = 24
+        ConstructionClear = 24,
+        PowerGeneration = 25,
+        PowerRelay = 26,
+        PowerLoad = 27
     }
 
     [DisallowMultipleComponent]

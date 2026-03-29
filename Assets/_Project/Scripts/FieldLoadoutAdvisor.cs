@@ -134,9 +134,12 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.ConstructionSocket:
                 case FieldTargetRole.ConstructionBlocked:
                 case FieldTargetRole.ConstructionClear:
+                case FieldTargetRole.PowerGeneration:
+                case FieldTargetRole.PowerRelay:
+                case FieldTargetRole.PowerLoad:
                     advice = new LoadoutAdvice(
                         "CONSTRUCTION",
-                        $"Service or build target ahead at {distance:0.0} m. Construction kit covers builder, repair, and service work well.");
+                        $"Service, power, or build target ahead at {distance:0.0} m. Construction kit is a strong fit if you want builder, repair, and support coverage.");
                     return true;
 
                 case FieldTargetRole.BioformDormant:

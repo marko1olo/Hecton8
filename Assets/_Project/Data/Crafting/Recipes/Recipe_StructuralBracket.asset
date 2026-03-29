@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_StructuralBracket
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Structural Bracket
+  overrideIcon: {fileID: 0}
+  description: Press and brace a simple heavy-duty support bracket for base framing.
+  resultItem: {fileID: 11400000, guid: b95343c72192ed64cb087ce9794eba81, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: f10189c61e17ea748bb6fc943e14d2ff, type: 2}
+    amount: 1
+  craftTime: 1.5
+  requiredScanEntryId: 
+  fabricationGroup: 5
