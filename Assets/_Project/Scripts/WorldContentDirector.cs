@@ -25,8 +25,11 @@ namespace Hecton8.World
         [SerializeField] private string _debugNearestPopulationLandmark = "None";
         [SerializeField] private string _debugNearestPopulationSpatialRole = "None";
         [SerializeField] private string _debugNearestPopulationSpatialReason = "None";
+        [SerializeField] private string _debugNearestPopulationBorderRole = "None";
+        [SerializeField] private string _debugNearestPopulationBorderReason = "None";
         [SerializeField] private string _debugNearestZoneRoleFamily = "None";
         [SerializeField] private string _debugNearestZoneRoleLayout = "None";
+        [SerializeField] private string _debugNearestZoneRolePriority = "None";
         [SerializeField] private string _debugNearestPopulationPurpose = "None";
         [SerializeField] private float _debugNearestPopulationDensity;
         [SerializeField] private string _debugCurrentZone = "None";
@@ -165,8 +168,11 @@ namespace Hecton8.World
             _debugNearestPopulationLandmark = nearestSocket != null ? nearestSocket.ResolvedPopulationLandmark : "None";
             _debugNearestPopulationSpatialRole = nearestSocket != null ? nearestSocket.ResolvedPopulationSpatialRole : "None";
             _debugNearestPopulationSpatialReason = nearestSocket != null ? nearestSocket.ResolvedPopulationSpatialReason : "None";
+            _debugNearestPopulationBorderRole = nearestSocket != null ? nearestSocket.ResolvedPopulationBorderRole : "None";
+            _debugNearestPopulationBorderReason = nearestSocket != null ? nearestSocket.ResolvedPopulationBorderReason : "None";
             _debugNearestZoneRoleFamily = nearestSocket != null ? nearestSocket.ResolvedZoneRoleFamily : "None";
             _debugNearestZoneRoleLayout = nearestSocket != null ? nearestSocket.ResolvedZoneRoleLayout : "None";
+            _debugNearestZoneRolePriority = nearestSocket != null ? nearestSocket.ResolvedZoneRolePriority : "None";
             _debugNearestPopulationPurpose = nearestSocket != null ? nearestSocket.ResolvedPopulationPurpose : "None";
             _debugNearestPopulationDensity = nearestSocket != null ? nearestSocket.GetResolvedPopulationDensityWeight() : 0f;
             _debugCurrentZone = worldZoneDirector != null && worldZoneDirector.CurrentZone != null

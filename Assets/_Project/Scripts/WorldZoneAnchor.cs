@@ -43,6 +43,10 @@ namespace Hecton8.World
         [Header("Presence")]
         [SerializeField] private float activationRadius = 90f;
         [SerializeField] private float holdRadius = 140f;
+        [SerializeField] private float edgeBlendDistance = 22f;
+        [SerializeField] private float edgeNoiseScale = 0.018f;
+        [SerializeField] private float edgeNoiseStrength = 0.16f;
+        [SerializeField] private Vector2 edgeNoiseOffset = new Vector2(13.7f, 41.3f);
         [SerializeField] private int priority = 0;
 
         [Header("Future Use")]
@@ -53,6 +57,8 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastDistance;
         [SerializeField] private bool _debugInsideActivation;
         [SerializeField] private bool _debugInsideHold;
+        [SerializeField] private float _debugActivationWeight;
+        [SerializeField] private float _debugHoldWeight;
 
         public string ZoneId => zoneId;
         public string ZoneLabel => zoneLabel;
@@ -66,13 +72,18 @@ namespace Hecton8.World
         public bool RouteCritical => routeCritical;
         public float ActivationRadius => activationRadius;
         public float HoldRadius => holdRadius;
+        public float EdgeBlendDistance => edgeBlendDistance;
+        public float EdgeNoiseScale => edgeNoiseScale;
+        public float EdgeNoiseStrength => edgeNoiseStrength;
 
         public bool IsInsideActivation(Vector3 playerPosition)
         {
             float distance = GetFlatDistance(playerPosition);
             _debugLastDistance = distance;
-            _debugInsideActivation = distance <= activationRadius;
-            _debugInsideHold = distance <= holdRadius;
+            _debugActivationWeight = EvaluateActivationWeight(playerPosition);
+            _debugHoldWeight = EvaluateHoldWeight(playerPosition);
+            _debugInsideActivation = _debugActivationWeight > 0.01f;
+            _debugInsideHold = _debugHoldWeight > 0.01f;
             return _debugInsideActivation;
         }
 
@@ -80,8 +91,10 @@ namespace Hecton8.World
         {
             float distance = GetFlatDistance(playerPosition);
             _debugLastDistance = distance;
-            _debugInsideActivation = distance <= activationRadius;
-            _debugInsideHold = distance <= holdRadius;
+            _debugActivationWeight = EvaluateActivationWeight(playerPosition);
+            _debugHoldWeight = EvaluateHoldWeight(playerPosition);
+            _debugInsideActivation = _debugActivationWeight > 0.01f;
+            _debugInsideHold = _debugHoldWeight > 0.01f;
             return _debugInsideHold;
         }
 
@@ -92,11 +105,49 @@ namespace Hecton8.World
             return delta.magnitude;
         }
 
+        public float EvaluateActivationWeight(Vector3 playerPosition)
+        {
+            return EvaluateRadiusWeight(playerPosition, activationRadius);
+        }
+
+        public float EvaluateHoldWeight(Vector3 playerPosition)
+        {
+            return EvaluateRadiusWeight(playerPosition, holdRadius);
+        }
+
+        private float EvaluateRadiusWeight(Vector3 playerPosition, float radius)
+        {
+            float distance = GetFlatDistance(playerPosition);
+            float noisyRadius = radius * EvaluateNoiseRadiusMultiplier(playerPosition);
+            float blend = Mathf.Max(4f, edgeBlendDistance);
+            float innerRadius = Mathf.Max(0f, noisyRadius - blend);
+
+            if (distance <= innerRadius)
+                return 1f;
+
+            if (distance >= noisyRadius)
+                return 0f;
+
+            return 1f - Mathf.InverseLerp(innerRadius, noisyRadius, distance);
+        }
+
+        private float EvaluateNoiseRadiusMultiplier(Vector3 playerPosition)
+        {
+            float scale = Mathf.Max(0.0001f, edgeNoiseScale);
+            Vector2 sample = new Vector2(playerPosition.x, playerPosition.z) * scale + edgeNoiseOffset;
+            float noise = Mathf.PerlinNoise(sample.x, sample.y);
+            float centered = (noise - 0.5f) * 2f;
+            return Mathf.Clamp(1f + centered * edgeNoiseStrength, 0.75f, 1.35f);
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             activationRadius = Mathf.Max(24f, activationRadius);
             holdRadius = Mathf.Max(activationRadius + 10f, holdRadius);
+            edgeBlendDistance = Mathf.Clamp(edgeBlendDistance, 4f, holdRadius * 0.45f);
+            edgeNoiseScale = Mathf.Clamp(edgeNoiseScale, 0.001f, 0.2f);
+            edgeNoiseStrength = Mathf.Clamp(edgeNoiseStrength, 0f, 0.35f);
             priority = Mathf.Clamp(priority, -10, 20);
 
             if (string.IsNullOrWhiteSpace(zoneId))

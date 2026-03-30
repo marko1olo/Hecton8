@@ -593,6 +593,10 @@ namespace Hecton8.EditorTools
             so.FindProperty("priority").intValue = priority;
             so.FindProperty("activationRadius").floatValue = activationRadius;
             so.FindProperty("holdRadius").floatValue = holdRadius;
+            so.FindProperty("edgeBlendDistance").floatValue = InferZoneEdgeBlend(zoneKind, activationRadius);
+            so.FindProperty("edgeNoiseScale").floatValue = InferZoneEdgeNoiseScale(zoneKind);
+            so.FindProperty("edgeNoiseStrength").floatValue = InferZoneEdgeNoiseStrength(zoneKind, routeCritical);
+            so.FindProperty("edgeNoiseOffset").vector2Value = InferZoneEdgeNoiseOffset(dominantMatrixIndex, priority, zoneKind);
             so.FindProperty("gameplayIntent").stringValue = gameplayIntent;
             so.FindProperty("routeCritical").boolValue = routeCritical;
             so.FindProperty("zoneProfile").objectReferenceValue = zoneProfile;
@@ -600,6 +604,58 @@ namespace Hecton8.EditorTools
             so.FindProperty("dominantBiomeFamily").objectReferenceValue = dominantBiome != null ? dominantBiome.familyProfile : null;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(zone);
+        }
+
+        private static float InferZoneEdgeBlend(WorldZoneAnchor.ZoneKind zoneKind, float activationRadius)
+        {
+            float baseBlend = zoneKind switch
+            {
+                WorldZoneAnchor.ZoneKind.Resources => 26f,
+                WorldZoneAnchor.ZoneKind.Navigation => 30f,
+                WorldZoneAnchor.ZoneKind.Progression => 22f,
+                WorldZoneAnchor.ZoneKind.Combat => 18f,
+                WorldZoneAnchor.ZoneKind.Fabrication => 16f,
+                _ => 20f
+            };
+
+            return Mathf.Clamp(baseBlend, 6f, activationRadius * 0.4f);
+        }
+
+        private static float InferZoneEdgeNoiseScale(WorldZoneAnchor.ZoneKind zoneKind)
+        {
+            return zoneKind switch
+            {
+                WorldZoneAnchor.ZoneKind.Resources => 0.015f,
+                WorldZoneAnchor.ZoneKind.Navigation => 0.013f,
+                WorldZoneAnchor.ZoneKind.Progression => 0.02f,
+                WorldZoneAnchor.ZoneKind.Combat => 0.024f,
+                _ => 0.018f
+            };
+        }
+
+        private static float InferZoneEdgeNoiseStrength(WorldZoneAnchor.ZoneKind zoneKind, bool routeCritical)
+        {
+            float strength = zoneKind switch
+            {
+                WorldZoneAnchor.ZoneKind.Resources => 0.2f,
+                WorldZoneAnchor.ZoneKind.Navigation => 0.16f,
+                WorldZoneAnchor.ZoneKind.Progression => 0.14f,
+                WorldZoneAnchor.ZoneKind.Fabrication => 0.08f,
+                _ => 0.12f
+            };
+
+            if (routeCritical)
+                strength *= 0.82f;
+
+            return Mathf.Clamp(strength, 0.04f, 0.28f);
+        }
+
+        private static Vector2 InferZoneEdgeNoiseOffset(int dominantMatrixIndex, int priority, WorldZoneAnchor.ZoneKind zoneKind)
+        {
+            float zoneBias = ((int)zoneKind + 1) * 17.37f;
+            float x = dominantMatrixIndex * 3.11f + priority * 5.7f + zoneBias;
+            float y = dominantMatrixIndex * 1.73f + priority * 9.1f + zoneBias * 0.5f;
+            return new Vector2(x, y);
         }
 
         private static void ConfigureContentSocket(

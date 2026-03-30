@@ -710,6 +710,34 @@ What this means:
 - Meaning:
   - a rich readable starter biome now behaves differently from a harsh late void even if both are just "zones" in the scene
 
+## 2026-03-30 - World Zones Now Have Soft Ragged Edges
+
+- `WorldZoneAnchor` now supports:
+  - `edgeBlendDistance`
+  - `edgeNoiseScale`
+  - `edgeNoiseStrength`
+  - per-zone noise offset
+- `WorldZoneDirector` no longer treats zones like perfectly clean circles.
+- Zone selection now uses weighted soft-edge presence instead of only hard inside/outside checks.
+- `WorldRuntimeBootstrapAuthoring` now assigns edge settings automatically per zone kind.
+- Meaning:
+  - zones can bleed into each other more naturally
+  - borders feel less editor-like and more like Subnautica-style fuzzy biome transitions
+  - route-critical zones stay more readable, while resource/ambient spaces can have rougher edges
+
+## 2026-03-30 - World Zones Now Blend Near Their Borders
+
+- `WorldZoneDirector` no longer only picks one hard winner.
+- It now tracks:
+  - primary zone
+  - secondary zone
+  - blend factor
+- Runtime budget scales now blend between the top two nearby zones when their weights are close.
+- Meaning:
+  - borders are not only fuzzy visually
+  - they also behave like transitions in gameplay cost and world density
+  - this is closer to Subnautica-style biome bleed than hard territory switching
+
 ## 2026-03-30 - World Sockets Now Get Concrete Biome Roles
 
 - `WorldPopulationRule` now resolves not only density and purpose, but also a practical spatial role for each socket:
@@ -762,7 +790,64 @@ What this means:
 - `WorldContentSocket` now stores:
   - resolved zone-role family
   - resolved zone-role layout
+- it now also stores:
+  - resolved zone-role priority
 - `WorldContentDirector` and `WorldPopulationDirector` now expose that layout data in diagnostics too.
 - Meaning:
   - the runtime layer can now say not only "this is a route anchor"
   - but also "this route anchor belongs near the main route, in mid slice, count 2, with this gameplay purpose"
+  - and also whether it is a primary route element, a support reward, a gate, or a secondary payoff
+
+## 2026-03-30 - Zone Borders Now Blend Meaning, Not Only Budgets
+
+- `WorldZoneDirector` now keeps:
+  - primary zone
+  - secondary zone
+  - live blend factor
+- zone diagnostics now expose:
+  - secondary biome
+  - secondary biome family
+  - blended pickup / node / salvage bias
+  - blended common / uncommon / rare pull
+  - blended reward rhythm
+  - blended route rhythm
+  - blended safe-pocket rhythm
+  - blended extraction guidance
+  - blended landmark guidance
+- effective near / mid / far density is now also blended near ragged borders
+- Meaning:
+  - border areas no longer feel like only a math lerp of budgets
+  - they now read like a mixed gameplay space where two nearby biome identities are both present
+
+## 2026-03-30 - Border-aware Population Selection
+
+- `WorldPopulationDirector` now reads:
+  - primary zone
+  - secondary zone
+  - zone blend factor
+- the current nearest socket no longer resolves only from the primary zone
+- its final recommendation can now blend:
+  - biome fit
+  - extraction focus
+  - landmark guidance
+  - resolved purpose
+  - effective density
+- Meaning:
+  - border spaces can now feel like mixed content pressure too
+  - not only mixed zone budgets
+
+## 2026-03-30 - Transition Roles For Border Water
+
+- `WorldPopulationRule` now builds an explicit transition role for sockets on mixed zone borders.
+- Examples:
+  - `Transition Route Anchor`
+  - `Transition Safe Pocket`
+  - `Transition Hazard Gate`
+  - `Transition Rare Objective`
+  - `Transition Reward Pocket`
+- `WorldPopulationDirector` now:
+  - uses border multipliers when resolving the current nearest socket
+  - exposes border role and border reason in diagnostics
+- `WorldContentSocket` and `WorldContentDirector` now store and show those transition diagnostics too.
+- Meaning:
+  - transition water can now communicate what kind of place it is becoming, not only that two budgets are blending

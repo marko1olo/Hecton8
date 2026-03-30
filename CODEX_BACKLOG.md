@@ -1,5 +1,59 @@
 # Codex Backlog
 
+# 2026-03-30 - Zone border blend pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+- Result:
+  - world zones now track:
+    - primary zone
+    - secondary zone
+    - blend factor
+  - runtime world scales now blend between the top two nearby zones when their weights are close
+  - this moves world logic closer to soft biome bleed instead of hard zone switching
+- Honest tail:
+  - the code layer is in place
+  - Unity MCP was unstable during the final verification loop, so this pass still wants one more clean console read when the editor fully settles
+
+# 2026-03-30 - Soft ragged zone edge pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldZoneAnchor.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- Result:
+  - world zones are no longer modeled only as hard circular presence checks
+  - each zone now has:
+    - edge blend distance
+    - edge noise scale
+    - edge noise strength
+    - per-zone noise offset
+  - zone selection now uses weighted soft-edge presence
+  - runtime bootstrap now writes edge settings automatically by zone kind
+- Honest verification:
+  - `WorldRuntimeBootstrap` rebuilt clean through Unity MCP
+  - scene `02_HECTON_WORLD.unity` saved successfully after the rebuild
+  - last console read returned only rebuild logs, with no errors/warnings
+
+# 2026-03-30 - Zone role priority pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldContentSocket.cs`
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+  - `Assets/_Project/Scripts/WorldContentDirector.cs`
+- Result:
+  - world sockets now expose not only role and layout, but also role priority
+  - runtime layer can now distinguish:
+    - primary route
+    - primary hub
+    - primary goal
+    - gate
+    - support reward
+    - support problem
+  - this is the first simple runtime classification of what the player should care about first in a zone
+
 # 2026-03-30 - Zone role layout propagation pass
 
 - Extended:
@@ -3288,3 +3342,48 @@ Notes:
   - `WorldZoneDirector`
 - Goal:
   - give each biome family a consistent placement language before real prefab fill begins
+
+## 2026-03-30 - Border blend pass
+
+- `WorldZoneDirector` now keeps the active secondary zone and blend factor as runtime state.
+- Zone diagnostics no longer show only the primary biome identity.
+- They now also show:
+  - secondary biome
+  - secondary biome family
+  - blended pickup / node / salvage bias
+  - blended common / uncommon / rare pull
+  - blended reward / route / safe-pocket rhythm
+  - blended extraction and landmark guidance
+- Effective density now blends near ragged borders too.
+- Goal:
+  - make border spaces feel like mixed gameplay water instead of hard handoff circles
+
+## 2026-03-30 - Border-aware socket resolution
+
+- `WorldPopulationDirector` now lets the current nearest socket evaluate against:
+  - primary zone
+  - secondary zone
+  - current blend factor
+- this affects:
+  - effective density
+  - biome fit reason
+  - extraction guidance
+  - landmark guidance
+  - resolved gameplay purpose
+- Goal:
+  - make transition water choose more believable local content meaning, not just display blended diagnostics
+
+## 2026-03-30 - Transition socket roles
+
+- Added explicit transition-role semantics to `WorldPopulationRule`.
+- Border sockets can now resolve as:
+  - transition route anchor
+  - transition safe pocket
+  - transition hazard gate
+  - transition rare objective
+  - transition reward pocket
+  - transition pressure point
+- `WorldPopulationDirector` now applies border multipliers to current-socket selection.
+- `WorldContentSocket` now stores border role + border reason as live diagnostics.
+- Goal:
+  - make border water produce readable place identity, not only blended biome text

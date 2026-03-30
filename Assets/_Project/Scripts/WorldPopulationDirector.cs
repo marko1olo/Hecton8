@@ -20,6 +20,9 @@ namespace Hecton8.World
         [SerializeField] private int _debugResolvedSocketCount;
         [SerializeField] private string _debugCurrentZone = "None";
         [SerializeField] private string _debugCurrentZoneBiome = "None";
+        [SerializeField] private string _debugSecondaryZone = "None";
+        [SerializeField] private string _debugSecondaryZoneBiome = "None";
+        [SerializeField] private float _debugZoneBlendFactor;
         [SerializeField] private string _debugCurrentSocket = "None";
         [SerializeField] private string _debugPrimaryRule = "None";
         [SerializeField] private string _debugPrimaryPrefabFamily = "None";
@@ -28,8 +31,11 @@ namespace Hecton8.World
         [SerializeField] private string _debugPrimaryLandmark = "None";
         [SerializeField] private string _debugPrimarySpatialRole = "None";
         [SerializeField] private string _debugPrimarySpatialReason = "None";
+        [SerializeField] private string _debugPrimaryBorderRole = "None";
+        [SerializeField] private string _debugPrimaryBorderReason = "None";
         [SerializeField] private string _debugPrimaryZoneRoleFamily = "None";
         [SerializeField] private string _debugPrimaryZoneRoleLayout = "None";
+        [SerializeField] private string _debugPrimaryZoneRolePriority = "None";
         [SerializeField] private string _debugPrimaryPurpose = "None";
         [SerializeField] private float _debugPrimaryEffectiveDensity;
 
@@ -38,7 +44,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ResolveReferences();
-            UpdateDiagnostics(null, null, null, 0f, "None", "None", "None", "None", "None", "None", "None", "None", 0, 0);
+            UpdateDiagnostics(null, null, 0f, null, null, 0f, "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", 0, 0);
         }
 
         private void OnEnable()
@@ -93,6 +99,8 @@ namespace Hecton8.World
             ResolveReferences();
 
             WorldZoneAnchor zone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
+            WorldZoneAnchor secondaryZone = worldZoneDirector != null ? worldZoneDirector.SecondaryZone : null;
+            float zoneBlendFactor = worldZoneDirector != null ? worldZoneDirector.CurrentBlendFactor : 0f;
             WorldContentSocket socket = FindNearestSocketInZone(zone);
 
             WorldPopulationRule primaryRule = null;
@@ -102,8 +110,11 @@ namespace Hecton8.World
             string primaryLandmark = "None";
             string primarySpatialRole = "None";
             string primarySpatialReason = "None";
+            string primaryBorderRole = "None";
+            string primaryBorderReason = "None";
             string primaryZoneRoleFamily = "None";
             string primaryZoneRoleLayout = "None";
+            string primaryZoneRolePriority = "None";
             string primaryPurpose = "None";
             int matchedCount = 0;
             int resolvedSocketCount = 0;
@@ -131,8 +142,11 @@ namespace Hecton8.World
                             candidateSelection.ResolvedPurpose,
                             candidateSelection.SpatialRole,
                             candidateSelection.SpatialReason,
+                            candidateSelection.BorderBlendRole,
+                            candidateSelection.BorderBlendReason,
                             candidateSelection.ZoneRoleFamily,
-                            candidateSelection.ZoneRoleLayout);
+                            candidateSelection.ZoneRoleLayout,
+                            candidateSelection.ZoneRolePriority);
                         resolvedSocketCount++;
                     }
                     else
@@ -142,22 +156,26 @@ namespace Hecton8.World
 
                     if (candidateSocket == socket)
                     {
-                        primaryRule = candidateSelection.Rule;
-                        primaryDensityWeight = candidateSelection.EffectiveDensityWeight;
-                        primaryBiomeFit = candidateSelection.BiomeFitReason;
-                        primaryExtraction = candidateSelection.ExtractionFocus;
-                        primaryLandmark = candidateSelection.LandmarkGuidance;
-                        primarySpatialRole = candidateSelection.SpatialRole;
-                        primarySpatialReason = candidateSelection.SpatialReason;
-                        primaryZoneRoleFamily = candidateSelection.ZoneRoleFamily;
-                        primaryZoneRoleLayout = candidateSelection.ZoneRoleLayout;
-                        primaryPurpose = candidateSelection.ResolvedPurpose;
-                        matchedCount = candidateMatchCount;
+                        PopulationSelection blendedSelection = FindPrimaryRule(zone, secondaryZone, zoneBlendFactor, candidateSocket, out int blendedMatchCount);
+                        primaryRule = blendedSelection.Rule;
+                        primaryDensityWeight = blendedSelection.EffectiveDensityWeight;
+                        primaryBiomeFit = blendedSelection.BiomeFitReason;
+                        primaryExtraction = blendedSelection.ExtractionFocus;
+                        primaryLandmark = blendedSelection.LandmarkGuidance;
+                        primarySpatialRole = blendedSelection.SpatialRole;
+                        primarySpatialReason = blendedSelection.SpatialReason;
+                        primaryBorderRole = blendedSelection.BorderBlendRole;
+                        primaryBorderReason = blendedSelection.BorderBlendReason;
+                        primaryZoneRoleFamily = blendedSelection.ZoneRoleFamily;
+                        primaryZoneRoleLayout = blendedSelection.ZoneRoleLayout;
+                        primaryZoneRolePriority = blendedSelection.ZoneRolePriority;
+                        primaryPurpose = blendedSelection.ResolvedPurpose;
+                        matchedCount = Mathf.Max(candidateMatchCount, blendedMatchCount);
                     }
                 }
             }
 
-            UpdateDiagnostics(zone, socket, primaryRule, primaryDensityWeight, primaryBiomeFit, primaryExtraction, primaryLandmark, primarySpatialRole, primarySpatialReason, primaryZoneRoleFamily, primaryZoneRoleLayout, primaryPurpose, matchedCount, resolvedSocketCount);
+            UpdateDiagnostics(zone, secondaryZone, zoneBlendFactor, socket, primaryRule, primaryDensityWeight, primaryBiomeFit, primaryExtraction, primaryLandmark, primarySpatialRole, primarySpatialReason, primaryBorderRole, primaryBorderReason, primaryZoneRoleFamily, primaryZoneRoleLayout, primaryZoneRolePriority, primaryPurpose, matchedCount, resolvedSocketCount);
         }
 
         private WorldContentSocket FindNearestSocketInZone(WorldZoneAnchor zone)
@@ -211,6 +229,11 @@ namespace Hecton8.World
 
         private PopulationSelection FindPrimaryRule(WorldZoneAnchor zone, WorldContentSocket socket, out int matchedCount)
         {
+            return FindPrimaryRule(zone, null, 0f, socket, out matchedCount);
+        }
+
+        private PopulationSelection FindPrimaryRule(WorldZoneAnchor zone, WorldZoneAnchor secondaryZone, float blendFactor, WorldContentSocket socket, out int matchedCount)
+        {
             PopulationSelection bestSelection = default;
             WorldPopulationRule primaryRule = null;
             float bestDensity = float.MinValue;
@@ -219,27 +242,43 @@ namespace Hecton8.World
             for (int i = 0; i < rules.Count; i++)
             {
                 WorldPopulationRule rule = rules[i];
-                if (rule == null || !rule.Matches(zone, socket))
+                if (rule == null)
+                    continue;
+
+                float primaryDensity = rule.GetEffectiveDensityWeight(zone, socket);
+                float secondaryDensity = secondaryZone != null ? rule.GetEffectiveDensityWeight(secondaryZone, socket) : 0f;
+                bool primaryMatched = primaryDensity > 0f;
+                bool secondaryMatched = secondaryDensity > 0f;
+                if (!primaryMatched && !secondaryMatched)
                     continue;
 
                 matchedCount++;
-                float candidateDensity = rule.GetEffectiveDensityWeight(zone, socket);
+                float candidateDensity = primaryMatched && secondaryMatched && blendFactor > 0.001f
+                    ? Mathf.Lerp(primaryDensity, secondaryDensity, blendFactor)
+                    : Mathf.Max(primaryDensity, secondaryDensity);
+                candidateDensity *= rule.GetBorderBlendMultiplier(zone, secondaryZone, socket, blendFactor);
                 if (candidateDensity <= bestDensity && primaryRule != null)
                     continue;
 
+                WorldZoneAnchor resolvedZone = secondaryMatched && secondaryDensity > primaryDensity
+                    ? secondaryZone
+                    : zone;
                 primaryRule = rule;
                 bestDensity = candidateDensity;
                 bestSelection = new PopulationSelection(
                     rule,
                     candidateDensity,
-                    rule.BuildBiomeFitReason(zone, socket),
-                    rule.BuildExtractionFocus(zone),
-                    rule.BuildLandmarkGuidance(zone),
-                    rule.BuildResolvedPurpose(zone),
-                    rule.BuildSpatialRole(zone, socket),
-                    rule.BuildSpatialRoleReason(zone, socket),
-                    rule.BuildZoneRoleFamily(zone, socket),
-                    rule.BuildZoneRoleLayout(zone, socket));
+                    BuildBlendedString(rule.BuildBiomeFitReason(zone, socket), rule.BuildBiomeFitReason(secondaryZone, socket), primaryMatched, secondaryMatched, blendFactor),
+                    BuildBlendedString(rule.BuildExtractionFocus(zone), rule.BuildExtractionFocus(secondaryZone), primaryMatched, secondaryMatched, blendFactor),
+                    BuildBlendedString(rule.BuildLandmarkGuidance(zone), rule.BuildLandmarkGuidance(secondaryZone), primaryMatched, secondaryMatched, blendFactor),
+                    BuildBlendedString(rule.BuildResolvedPurpose(zone), rule.BuildResolvedPurpose(secondaryZone), primaryMatched, secondaryMatched, blendFactor),
+                    rule.BuildSpatialRole(resolvedZone, socket),
+                    BuildBlendedString(rule.BuildSpatialRoleReason(zone, socket), rule.BuildSpatialRoleReason(secondaryZone, socket), primaryMatched, secondaryMatched, blendFactor),
+                    rule.BuildBorderBlendRole(zone, secondaryZone, socket, blendFactor),
+                    rule.BuildBorderBlendReason(zone, secondaryZone, socket, blendFactor),
+                    rule.BuildZoneRoleFamily(resolvedZone, socket),
+                    rule.BuildZoneRoleLayout(resolvedZone, socket),
+                    rule.BuildZoneRolePriority(resolvedZone, socket));
             }
 
             return bestSelection;
@@ -247,6 +286,8 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics(
             WorldZoneAnchor zone,
+            WorldZoneAnchor secondaryZone,
+            float zoneBlendFactor,
             WorldContentSocket socket,
             WorldPopulationRule primaryRule,
             float primaryDensityWeight,
@@ -255,8 +296,11 @@ namespace Hecton8.World
             string primaryLandmark,
             string primarySpatialRole,
             string primarySpatialReason,
+            string primaryBorderRole,
+            string primaryBorderReason,
             string primaryZoneRoleFamily,
             string primaryZoneRoleLayout,
+            string primaryZoneRolePriority,
             string primaryPurpose,
             int matchedCount,
             int resolvedSocketCount)
@@ -268,6 +312,11 @@ namespace Hecton8.World
             _debugCurrentZoneBiome = zone != null && zone.DominantBiomeFamily != null
                 ? zone.DominantBiomeFamily.familyLabel
                 : "None";
+            _debugSecondaryZone = secondaryZone != null ? secondaryZone.ZoneLabel : "None";
+            _debugSecondaryZoneBiome = secondaryZone != null && secondaryZone.DominantBiomeFamily != null
+                ? secondaryZone.DominantBiomeFamily.familyLabel
+                : "None";
+            _debugZoneBlendFactor = Mathf.Clamp01(zoneBlendFactor);
             _debugCurrentSocket = socket != null ? socket.SocketLabel : "None";
             _debugPrimaryRule = primaryRule != null ? primaryRule.ruleLabel : "None";
             _debugPrimaryPrefabFamily = primaryRule != null && !string.IsNullOrWhiteSpace(primaryRule.prefabFamily)
@@ -278,10 +327,35 @@ namespace Hecton8.World
             _debugPrimaryLandmark = string.IsNullOrWhiteSpace(primaryLandmark) ? "None" : primaryLandmark;
             _debugPrimarySpatialRole = string.IsNullOrWhiteSpace(primarySpatialRole) ? "None" : primarySpatialRole;
             _debugPrimarySpatialReason = string.IsNullOrWhiteSpace(primarySpatialReason) ? "None" : primarySpatialReason;
+            _debugPrimaryBorderRole = string.IsNullOrWhiteSpace(primaryBorderRole) ? "None" : primaryBorderRole;
+            _debugPrimaryBorderReason = string.IsNullOrWhiteSpace(primaryBorderReason) ? "None" : primaryBorderReason;
             _debugPrimaryZoneRoleFamily = string.IsNullOrWhiteSpace(primaryZoneRoleFamily) ? "None" : primaryZoneRoleFamily;
             _debugPrimaryZoneRoleLayout = string.IsNullOrWhiteSpace(primaryZoneRoleLayout) ? "None" : primaryZoneRoleLayout;
+            _debugPrimaryZoneRolePriority = string.IsNullOrWhiteSpace(primaryZoneRolePriority) ? "None" : primaryZoneRolePriority;
             _debugPrimaryPurpose = string.IsNullOrWhiteSpace(primaryPurpose) ? "None" : primaryPurpose;
             _debugPrimaryEffectiveDensity = Mathf.Max(0f, primaryDensityWeight);
+        }
+
+        private static string BuildBlendedString(string primary, string secondary, bool primaryMatched, bool secondaryMatched, float blendFactor)
+        {
+            if (primaryMatched && !secondaryMatched)
+                return string.IsNullOrWhiteSpace(primary) ? "None" : primary;
+
+            if (!primaryMatched && secondaryMatched)
+                return string.IsNullOrWhiteSpace(secondary) ? "None" : secondary;
+
+            if (!primaryMatched && !secondaryMatched)
+                return "None";
+
+            string cleanPrimary = string.IsNullOrWhiteSpace(primary) ? "None" : primary;
+            string cleanSecondary = string.IsNullOrWhiteSpace(secondary) ? "None" : secondary;
+            if (cleanPrimary == cleanSecondary || blendFactor <= 0.12f)
+                return cleanPrimary;
+
+            if (blendFactor >= 0.68f)
+                return cleanSecondary;
+
+            return $"{cleanPrimary} | Подмешивается: {cleanSecondary}";
         }
 
         private readonly struct PopulationSelection
@@ -295,8 +369,11 @@ namespace Hecton8.World
                 string resolvedPurpose,
                 string spatialRole,
                 string spatialReason,
+                string borderBlendRole,
+                string borderBlendReason,
                 string zoneRoleFamily,
-                string zoneRoleLayout)
+                string zoneRoleLayout,
+                string zoneRolePriority)
             {
                 Rule = rule;
                 EffectiveDensityWeight = effectiveDensityWeight;
@@ -306,8 +383,11 @@ namespace Hecton8.World
                 ResolvedPurpose = resolvedPurpose;
                 SpatialRole = spatialRole;
                 SpatialReason = spatialReason;
+                BorderBlendRole = borderBlendRole;
+                BorderBlendReason = borderBlendReason;
                 ZoneRoleFamily = zoneRoleFamily;
                 ZoneRoleLayout = zoneRoleLayout;
+                ZoneRolePriority = zoneRolePriority;
             }
 
             public WorldPopulationRule Rule { get; }
@@ -318,8 +398,11 @@ namespace Hecton8.World
             public string ResolvedPurpose { get; }
             public string SpatialRole { get; }
             public string SpatialReason { get; }
+            public string BorderBlendRole { get; }
+            public string BorderBlendReason { get; }
             public string ZoneRoleFamily { get; }
             public string ZoneRoleLayout { get; }
+            public string ZoneRolePriority { get; }
         }
     }
 }

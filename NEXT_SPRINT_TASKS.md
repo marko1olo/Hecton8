@@ -232,12 +232,21 @@ Notes:
   - suggested count
   - usage text
 - [x] propagate zone role-plan layout into live world socket diagnostics so future placement decisions are visible at runtime
+- [x] propagate zone role priority into live world socket diagnostics so the runtime layer distinguishes:
+  - primary route
+  - primary goal
+  - gate
+  - support reward
+  - support problem
 - [ ] start using zone-plan role families as the main future fill contract for real prefab/model placement instead of ad-hoc naming rules
 - [x] build the future 108-biome matrix as a real asset/catalog/director layer without breaking the current small runtime biome palette
 - [ ] map the 108-biome matrix onto real world planning:
   - which depth tiers feed which zone families
   - which cardinal regions feed which route identities
   - which biomes are still placeholders and need final lore fill
+- [x] move world zones away from hard circular borders and into soft ragged edges with blend + noise
+- [x] blend the top two nearby zones so borders behave like transitions, not hard winner-take-all only
+- [ ] add true multi-zone bleed logic later so neighboring zones can coexist as gradients instead of winner-take-all only
 - [ ] connect biome spatial roles to future production fill patterns:
   - resource pocket
   - node cluster
@@ -550,3 +559,18 @@ Notes:
   - what landmark dominates the biome
   - how the biome reads in near / mid / far
   - how landmarks support route memory and safe-pocket reading
+- [x] make ragged zone borders blend gameplay meaning too
+  - blended extraction focus
+  - blended route rhythm
+  - blended safe-pocket rhythm
+  - blended reward pull
+  - blended effective density near borders
+- [x] make current socket population selection border-aware
+  - nearest active socket can now resolve against primary + secondary zone pressure
+  - blended biome fit and gameplay purpose now show up at transition water
+- [x] add explicit transition roles for border sockets
+  - transition route anchor
+  - transition safe pocket
+  - transition hazard gate
+  - transition rare objective
+  - transition reward pocket

@@ -35,6 +35,8 @@ namespace Hecton8.World
         [SerializeField] private string _debugRareObjectiveFamily = "None";
         [SerializeField] private string _debugDominantBiome = "None";
         [SerializeField] private string _debugDominantBiomeFamily = "None";
+        [SerializeField] private string _debugSecondaryBiome = "None";
+        [SerializeField] private string _debugSecondaryBiomeFamily = "None";
         [SerializeField] private string _debugDominantVisitPurpose = "None";
         [SerializeField] private string _debugDominantLandmark = "None";
         [SerializeField] private string _debugDominantRisk = "None";
@@ -49,6 +51,12 @@ namespace Hecton8.World
         [SerializeField] private int _debugCommonBias;
         [SerializeField] private int _debugUncommonBias;
         [SerializeField] private int _debugRareBias;
+        [SerializeField] private int _debugBlendedLoosePickupBias;
+        [SerializeField] private int _debugBlendedNodeBias;
+        [SerializeField] private int _debugBlendedSalvageBias;
+        [SerializeField] private int _debugBlendedCommonBias;
+        [SerializeField] private int _debugBlendedUncommonBias;
+        [SerializeField] private int _debugBlendedRareBias;
         [SerializeField] private float _debugEffectiveScavengeScale = 1f;
         [SerializeField] private float _debugEffectiveSpawnScale = 1f;
         [SerializeField] private float _debugEffectiveColliderRadiusScale = 1f;
@@ -61,15 +69,29 @@ namespace Hecton8.World
         [SerializeField] private string _debugZoneRewardRhythm = "None";
         [SerializeField] private string _debugZoneRouteRhythm = "None";
         [SerializeField] private string _debugZoneSafePocketRhythm = "None";
+        [SerializeField] private string _debugBlendedRewardRhythm = "None";
+        [SerializeField] private string _debugBlendedRouteRhythm = "None";
+        [SerializeField] private string _debugBlendedSafePocketRhythm = "None";
+        [SerializeField] private string _debugBlendedExtraction = "None";
+        [SerializeField] private string _debugBlendedLandmarkGuidance = "None";
         [SerializeField] private string _debugNearestZone = "None";
+        [SerializeField] private float _debugCurrentZoneWeight;
+        [SerializeField] private float _debugNearestZoneWeight;
+        [SerializeField] private string _debugSecondaryZone = "None";
+        [SerializeField] private float _debugSecondaryZoneWeight;
+        [SerializeField] private float _debugZoneBlendFactor;
         [SerializeField] private int _debugZoneCount;
         [SerializeField] private bool _debugApplied;
 
         private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
         private bool _registeredToTickManager;
         private WorldZoneAnchor _currentZone;
+        private WorldZoneAnchor _secondaryZone;
+        private float _currentBlendFactor;
 
         public WorldZoneAnchor CurrentZone => _currentZone;
+        public WorldZoneAnchor SecondaryZone => _secondaryZone;
+        public float CurrentBlendFactor => _currentBlendFactor;
 
         private void Awake()
         {
@@ -145,7 +167,11 @@ namespace Hecton8.World
             Vector3 playerPosition = playerTransform.position;
             WorldZoneAnchor nearest = null;
             float nearestDistance = float.MaxValue;
+            float nearestWeight = 0f;
             WorldZoneAnchor bestCandidate = null;
+            float bestCandidateWeight = 0f;
+            WorldZoneAnchor secondaryCandidate = null;
+            float secondaryCandidateWeight = 0f;
 
             for (int i = 0; i < _anchors.Count; i++)
             {
@@ -162,29 +188,61 @@ namespace Hecton8.World
 
                 bool insideActivation = anchor.IsInsideActivation(playerPosition);
                 bool insideHold = anchor.IsInsideHold(playerPosition);
+                float activationWeight = anchor.EvaluateActivationWeight(playerPosition);
+                float holdWeight = anchor.EvaluateHoldWeight(playerPosition);
 
                 if (_currentZone == anchor && insideHold)
                 {
-                    bestCandidate = anchor;
+                    float holdCandidateWeight = holdWeight + Mathf.Max(0f, anchor.Priority) * 0.05f;
+                    PromoteCandidate(
+                        anchor,
+                        holdCandidateWeight,
+                        ref bestCandidate,
+                        ref bestCandidateWeight,
+                        ref secondaryCandidate,
+                        ref secondaryCandidateWeight,
+                        playerPosition);
                     continue;
                 }
 
                 if (!insideActivation)
                     continue;
 
-                if (bestCandidate == null || Compare(anchor, bestCandidate, playerPosition) < 0)
-                    bestCandidate = anchor;
+                float candidateWeight = activationWeight + Mathf.Max(0f, anchor.Priority) * 0.05f;
+                PromoteCandidate(
+                    anchor,
+                    candidateWeight,
+                    ref bestCandidate,
+                    ref bestCandidateWeight,
+                    ref secondaryCandidate,
+                    ref secondaryCandidateWeight,
+                    playerPosition);
+
+                if (anchor == nearest)
+                    nearestWeight = activationWeight;
             }
 
             _currentZone = bestCandidate ?? nearest;
-            ApplyZoneProfile(_currentZone);
+            float blendFactor = EvaluateBlendFactor(bestCandidateWeight, secondaryCandidateWeight);
+            _secondaryZone = secondaryCandidate;
+            _currentBlendFactor = blendFactor;
+            ApplyZoneProfile(_currentZone, secondaryCandidate, blendFactor);
             _debugNearestZone = nearest != null ? nearest.ZoneLabel : "None";
+            _debugNearestZoneWeight = nearestWeight;
+            _debugCurrentZoneWeight = _currentZone != null ? (_currentZone == bestCandidate ? bestCandidateWeight : _currentZone.EvaluateActivationWeight(playerPosition)) : 0f;
+            _debugSecondaryZone = secondaryCandidate != null ? secondaryCandidate.ZoneLabel : "None";
+            _debugSecondaryZoneWeight = secondaryCandidateWeight;
+            _debugZoneBlendFactor = blendFactor;
             _debugApplied = _currentZone != null;
             UpdateDiagnostics();
         }
 
-        private int Compare(WorldZoneAnchor a, WorldZoneAnchor b, Vector3 playerPosition)
+        private int Compare(WorldZoneAnchor a, float aWeight, WorldZoneAnchor b, float bWeight, Vector3 playerPosition)
         {
+            int weightCompare = bWeight.CompareTo(aWeight);
+            if (weightCompare != 0)
+                return weightCompare;
+
             int priorityCompare = b.Priority.CompareTo(a.Priority);
             if (priorityCompare != 0)
                 return priorityCompare;
@@ -211,24 +269,24 @@ namespace Hecton8.World
                 worldSliceDirector = FindAnyObjectByType<WorldSliceDirector>();
         }
 
-        private void ApplyZoneProfile(WorldZoneAnchor zone)
+        private void ApplyZoneProfile(WorldZoneAnchor primaryZone, WorldZoneAnchor secondaryZone, float blendFactor)
         {
-            WorldZoneProfile profile = zone != null ? zone.Profile : null;
-            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scavengeScale = EvaluateZoneScavengeScale(primaryZone);
+            float spawnScale = EvaluateZoneSpawnScale(primaryZone);
+            float colliderRadiusScale = EvaluateZoneColliderRadiusScale(primaryZone);
+            float colliderOpsScale = EvaluateZoneColliderOpsScale(primaryZone);
+            float nearSliceScale = EvaluateZoneNearSliceScale(primaryZone);
+            float midSliceScale = EvaluateZoneMidSliceScale(primaryZone);
 
-            float scavengeScale = profile != null ? profile.scavengeRadiusScale : 1f;
-            float spawnScale = profile != null ? profile.spawnScale : 1f;
-            float colliderRadiusScale = profile != null ? profile.colliderRadiusScale : 1f;
-            float colliderOpsScale = profile != null ? profile.colliderOpsScale : 1f;
-            float nearSliceScale = profile != null ? profile.sliceNearScale : 1f;
-            float midSliceScale = profile != null ? profile.sliceMidScale : 1f;
-
-            scavengeScale *= EvaluateBiomeScavengeScale(zone, biome);
-            spawnScale *= EvaluateBiomeSpawnScale(zone, biome);
-            colliderRadiusScale *= EvaluateBiomeColliderRadiusScale(zone, biome);
-            colliderOpsScale *= EvaluateBiomeColliderOpsScale(zone, biome);
-            nearSliceScale *= EvaluateBiomeNearSliceScale(zone, biome);
-            midSliceScale *= EvaluateBiomeMidSliceScale(zone, biome);
+            if (secondaryZone != null && blendFactor > 0.001f)
+            {
+                scavengeScale = Mathf.Lerp(scavengeScale, EvaluateZoneScavengeScale(secondaryZone), blendFactor);
+                spawnScale = Mathf.Lerp(spawnScale, EvaluateZoneSpawnScale(secondaryZone), blendFactor);
+                colliderRadiusScale = Mathf.Lerp(colliderRadiusScale, EvaluateZoneColliderRadiusScale(secondaryZone), blendFactor);
+                colliderOpsScale = Mathf.Lerp(colliderOpsScale, EvaluateZoneColliderOpsScale(secondaryZone), blendFactor);
+                nearSliceScale = Mathf.Lerp(nearSliceScale, EvaluateZoneNearSliceScale(secondaryZone), blendFactor);
+                midSliceScale = Mathf.Lerp(midSliceScale, EvaluateZoneMidSliceScale(secondaryZone), blendFactor);
+            }
 
             _debugEffectiveScavengeScale = scavengeScale;
             _debugEffectiveSpawnScale = spawnScale;
@@ -242,6 +300,91 @@ namespace Hecton8.World
 
             if (worldSliceDirector != null)
                 worldSliceDirector.SetZoneScales(nearSliceScale, midSliceScale);
+        }
+
+        private float EvaluateZoneScavengeScale(WorldZoneAnchor zone)
+        {
+            WorldZoneProfile profile = zone != null ? zone.Profile : null;
+            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scale = profile != null ? profile.scavengeRadiusScale : 1f;
+            return scale * EvaluateBiomeScavengeScale(zone, biome);
+        }
+
+        private float EvaluateZoneSpawnScale(WorldZoneAnchor zone)
+        {
+            WorldZoneProfile profile = zone != null ? zone.Profile : null;
+            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scale = profile != null ? profile.spawnScale : 1f;
+            return scale * EvaluateBiomeSpawnScale(zone, biome);
+        }
+
+        private float EvaluateZoneColliderRadiusScale(WorldZoneAnchor zone)
+        {
+            WorldZoneProfile profile = zone != null ? zone.Profile : null;
+            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scale = profile != null ? profile.colliderRadiusScale : 1f;
+            return scale * EvaluateBiomeColliderRadiusScale(zone, biome);
+        }
+
+        private float EvaluateZoneColliderOpsScale(WorldZoneAnchor zone)
+        {
+            WorldZoneProfile profile = zone != null ? zone.Profile : null;
+            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scale = profile != null ? profile.colliderOpsScale : 1f;
+            return scale * EvaluateBiomeColliderOpsScale(zone, biome);
+        }
+
+        private float EvaluateZoneNearSliceScale(WorldZoneAnchor zone)
+        {
+            WorldZoneProfile profile = zone != null ? zone.Profile : null;
+            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scale = profile != null ? profile.sliceNearScale : 1f;
+            return scale * EvaluateBiomeNearSliceScale(zone, biome);
+        }
+
+        private float EvaluateZoneMidSliceScale(WorldZoneAnchor zone)
+        {
+            WorldZoneProfile profile = zone != null ? zone.Profile : null;
+            HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
+            float scale = profile != null ? profile.sliceMidScale : 1f;
+            return scale * EvaluateBiomeMidSliceScale(zone, biome);
+        }
+
+        private void PromoteCandidate(
+            WorldZoneAnchor candidate,
+            float candidateWeight,
+            ref WorldZoneAnchor bestCandidate,
+            ref float bestCandidateWeight,
+            ref WorldZoneAnchor secondaryCandidate,
+            ref float secondaryCandidateWeight,
+            Vector3 playerPosition)
+        {
+            if (candidate == null || candidateWeight <= 0f)
+                return;
+
+            if (bestCandidate == null || Compare(candidate, candidateWeight, bestCandidate, bestCandidateWeight, playerPosition) < 0)
+            {
+                secondaryCandidate = bestCandidate;
+                secondaryCandidateWeight = bestCandidateWeight;
+                bestCandidate = candidate;
+                bestCandidateWeight = candidateWeight;
+                return;
+            }
+
+            if (secondaryCandidate == null || Compare(candidate, candidateWeight, secondaryCandidate, secondaryCandidateWeight, playerPosition) < 0)
+            {
+                secondaryCandidate = candidate;
+                secondaryCandidateWeight = candidateWeight;
+            }
+        }
+
+        private static float EvaluateBlendFactor(float primaryWeight, float secondaryWeight)
+        {
+            if (primaryWeight <= 0f || secondaryWeight <= 0f)
+                return 0f;
+
+            float closeness = Mathf.Clamp01(1f - Mathf.Abs(primaryWeight - secondaryWeight));
+            return Mathf.Clamp01(closeness * Mathf.InverseLerp(0.15f, 0.75f, secondaryWeight));
         }
 
         private void UpdateDiagnostics()
@@ -270,6 +413,8 @@ namespace Hecton8.World
                 _debugRareObjectiveFamily = "None";
                 _debugDominantBiome = "None";
                 _debugDominantBiomeFamily = "None";
+                _debugSecondaryBiome = "None";
+                _debugSecondaryBiomeFamily = "None";
                 _debugDominantVisitPurpose = "None";
                 _debugDominantLandmark = "None";
                 _debugDominantRisk = "None";
@@ -284,6 +429,12 @@ namespace Hecton8.World
                 _debugCommonBias = 0;
                 _debugUncommonBias = 0;
                 _debugRareBias = 0;
+                _debugBlendedLoosePickupBias = 0;
+                _debugBlendedNodeBias = 0;
+                _debugBlendedSalvageBias = 0;
+                _debugBlendedCommonBias = 0;
+                _debugBlendedUncommonBias = 0;
+                _debugBlendedRareBias = 0;
                 _debugEffectiveScavengeScale = 1f;
                 _debugEffectiveSpawnScale = 1f;
                 _debugEffectiveColliderRadiusScale = 1f;
@@ -296,11 +447,18 @@ namespace Hecton8.World
                 _debugZoneRewardRhythm = "None";
                 _debugZoneRouteRhythm = "None";
                 _debugZoneSafePocketRhythm = "None";
+                _debugBlendedRewardRhythm = "None";
+                _debugBlendedRouteRhythm = "None";
+                _debugBlendedSafePocketRhythm = "None";
+                _debugBlendedExtraction = "None";
+                _debugBlendedLandmarkGuidance = "None";
                 return;
             }
 
             HectonBiomeMatrixProfile biome = _currentZone.DominantMatrixBiome;
             HectonBiomeFamilyProfile biomeFamily = _currentZone.DominantBiomeFamily;
+            HectonBiomeMatrixProfile secondaryBiome = _secondaryZone != null ? _secondaryZone.DominantMatrixBiome : null;
+            HectonBiomeFamilyProfile secondaryBiomeFamily = _secondaryZone != null ? _secondaryZone.DominantBiomeFamily : null;
             WorldZonePlanProfile zonePlan = _currentZone.Profile != null ? _currentZone.Profile.zonePlanProfile : null;
             _debugCurrentZoneId = _currentZone.ZoneId;
             _debugCurrentZoneLabel = _currentZone.ZoneLabel;
@@ -334,6 +492,8 @@ namespace Hecton8.World
             _debugRareObjectiveFamily = zonePlan != null && zonePlan.rareObjectivePlan != null && zonePlan.rareObjectivePlan.family != null ? zonePlan.rareObjectivePlan.family.familyLabel : "None";
             _debugDominantBiome = biome != null ? biome.biomeName : "None";
             _debugDominantBiomeFamily = biomeFamily != null ? biomeFamily.familyLabel : "None";
+            _debugSecondaryBiome = secondaryBiome != null ? secondaryBiome.biomeName : "None";
+            _debugSecondaryBiomeFamily = secondaryBiomeFamily != null ? secondaryBiomeFamily.familyLabel : "None";
             _debugDominantVisitPurpose = biome != null && !string.IsNullOrWhiteSpace(biome.visitPurpose)
                 ? biome.visitPurpose
                 : "None";
@@ -364,12 +524,23 @@ namespace Hecton8.World
             _debugCommonBias = biome != null ? biome.commonResourceBias : 0;
             _debugUncommonBias = biome != null ? biome.uncommonResourceBias : 0;
             _debugRareBias = biome != null ? biome.rareResourceBias : 0;
-            _debugEffectiveNearDensity = EvaluateEffectiveDensity(zonePlan != null ? zonePlan.nearPlan.targetDensity : 0, biome, DensityBand.Near);
-            _debugEffectiveMidDensity = EvaluateEffectiveDensity(zonePlan != null ? zonePlan.midPlan.targetDensity : 0, biome, DensityBand.Mid);
-            _debugEffectiveFarDensity = EvaluateEffectiveDensity(zonePlan != null ? zonePlan.farPlan.targetDensity : 0, biome, DensityBand.Far);
+            _debugBlendedLoosePickupBias = BlendBias(biome != null ? biome.loosePickupBias : 0, secondaryBiome != null ? secondaryBiome.loosePickupBias : 0, _currentBlendFactor);
+            _debugBlendedNodeBias = BlendBias(biome != null ? biome.nodeExtractionBias : 0, secondaryBiome != null ? secondaryBiome.nodeExtractionBias : 0, _currentBlendFactor);
+            _debugBlendedSalvageBias = BlendBias(biome != null ? biome.salvageBias : 0, secondaryBiome != null ? secondaryBiome.salvageBias : 0, _currentBlendFactor);
+            _debugBlendedCommonBias = BlendBias(biome != null ? biome.commonResourceBias : 0, secondaryBiome != null ? secondaryBiome.commonResourceBias : 0, _currentBlendFactor);
+            _debugBlendedUncommonBias = BlendBias(biome != null ? biome.uncommonResourceBias : 0, secondaryBiome != null ? secondaryBiome.uncommonResourceBias : 0, _currentBlendFactor);
+            _debugBlendedRareBias = BlendBias(biome != null ? biome.rareResourceBias : 0, secondaryBiome != null ? secondaryBiome.rareResourceBias : 0, _currentBlendFactor);
+            _debugEffectiveNearDensity = EvaluateBlendedEffectiveDensity(zonePlan != null ? zonePlan.nearPlan.targetDensity : 0, biome, secondaryBiome, _currentBlendFactor, DensityBand.Near);
+            _debugEffectiveMidDensity = EvaluateBlendedEffectiveDensity(zonePlan != null ? zonePlan.midPlan.targetDensity : 0, biome, secondaryBiome, _currentBlendFactor, DensityBand.Mid);
+            _debugEffectiveFarDensity = EvaluateBlendedEffectiveDensity(zonePlan != null ? zonePlan.farPlan.targetDensity : 0, biome, secondaryBiome, _currentBlendFactor, DensityBand.Far);
             _debugZoneRewardRhythm = BuildRewardRhythm(biome, biomeFamily);
             _debugZoneRouteRhythm = BuildRouteRhythm(biome, biomeFamily);
             _debugZoneSafePocketRhythm = BuildSafePocketRhythm(biome, biomeFamily);
+            _debugBlendedRewardRhythm = BuildBlendedRhythm(_debugZoneRewardRhythm, BuildRewardRhythm(secondaryBiome, secondaryBiomeFamily), _currentBlendFactor);
+            _debugBlendedRouteRhythm = BuildBlendedRhythm(_debugZoneRouteRhythm, BuildRouteRhythm(secondaryBiome, secondaryBiomeFamily), _currentBlendFactor);
+            _debugBlendedSafePocketRhythm = BuildBlendedRhythm(_debugZoneSafePocketRhythm, BuildSafePocketRhythm(secondaryBiome, secondaryBiomeFamily), _currentBlendFactor);
+            _debugBlendedExtraction = BuildBlendedDescriptor(_debugDominantExtraction, secondaryBiome != null && !string.IsNullOrWhiteSpace(secondaryBiome.extractionFocus) ? secondaryBiome.extractionFocus : "None", _currentBlendFactor);
+            _debugBlendedLandmarkGuidance = BuildBlendedDescriptor(_debugDominantLandmarkGuidance, secondaryBiome != null && !string.IsNullOrWhiteSpace(secondaryBiome.landmarkGuidance) ? secondaryBiome.landmarkGuidance : "None", _currentBlendFactor);
         }
 
         private float EvaluateBiomeScavengeScale(WorldZoneAnchor zone, HectonBiomeMatrixProfile biome)
@@ -476,6 +647,21 @@ namespace Hecton8.World
             return Mathf.Max(1, Mathf.RoundToInt(baseDensity * multiplier));
         }
 
+        private int EvaluateBlendedEffectiveDensity(
+            int baseDensity,
+            HectonBiomeMatrixProfile primaryBiome,
+            HectonBiomeMatrixProfile secondaryBiome,
+            float blendFactor,
+            DensityBand band)
+        {
+            int primaryDensity = EvaluateEffectiveDensity(baseDensity, primaryBiome, band);
+            if (secondaryBiome == null || blendFactor <= 0.001f)
+                return primaryDensity;
+
+            int secondaryDensity = EvaluateEffectiveDensity(baseDensity, secondaryBiome, band);
+            return Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(primaryDensity, secondaryDensity, blendFactor)));
+        }
+
         private string BuildRewardRhythm(HectonBiomeMatrixProfile biome, HectonBiomeFamilyProfile biomeFamily)
         {
             if (biome == null)
@@ -532,6 +718,48 @@ namespace Hecton8.World
                 return biomeFamily.landmarkPlanProfile.safePocketUse;
 
             return "Передышка ищется в складках рельефа и за большими формами.";
+        }
+
+        private static int BlendBias(int primary, int secondary, float blendFactor)
+        {
+            if (secondary <= 0 || blendFactor <= 0.001f)
+                return primary;
+
+            return Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(primary, secondary, blendFactor)), 0, 5);
+        }
+
+        private static string BuildBlendedRhythm(string primary, string secondary, float blendFactor)
+        {
+            if (string.IsNullOrWhiteSpace(primary))
+                primary = "None";
+
+            if (string.IsNullOrWhiteSpace(secondary) || secondary == "None" || blendFactor <= 0.12f)
+                return primary;
+
+            if (blendFactor >= 0.68f)
+                return secondary;
+
+            if (primary == secondary)
+                return primary;
+
+            return $"{primary} | Подмешивается: {secondary}";
+        }
+
+        private static string BuildBlendedDescriptor(string primary, string secondary, float blendFactor)
+        {
+            if (string.IsNullOrWhiteSpace(primary))
+                primary = "None";
+
+            if (string.IsNullOrWhiteSpace(secondary) || secondary == "None" || blendFactor <= 0.12f)
+                return primary;
+
+            if (blendFactor >= 0.68f)
+                return secondary;
+
+            if (primary == secondary)
+                return primary;
+
+            return $"{primary} -> {secondary}";
         }
 
         private static float Average(params int[] values)

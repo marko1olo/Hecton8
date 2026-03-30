@@ -737,6 +737,29 @@ namespace Hecton8.EditorTools
                             break;
                     }
                 }
+
+                SerializedObject anchorSo = new SerializedObject(anchor);
+                SerializedProperty edgeBlendDistance = anchorSo.FindProperty("edgeBlendDistance");
+                SerializedProperty edgeNoiseScale = anchorSo.FindProperty("edgeNoiseScale");
+                SerializedProperty edgeNoiseStrength = anchorSo.FindProperty("edgeNoiseStrength");
+
+                if (edgeBlendDistance == null || edgeBlendDistance.floatValue < 4f)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has too little edgeBlendDistance for soft biome edges.", anchor);
+                    warningCount++;
+                }
+
+                if (edgeNoiseScale == null || edgeNoiseScale.floatValue <= 0f)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has invalid edgeNoiseScale.", anchor);
+                    warningCount++;
+                }
+
+                if (edgeNoiseStrength == null || edgeNoiseStrength.floatValue <= 0f)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has zero edgeNoiseStrength, so zone borders will feel too clean.", anchor);
+                    warningCount++;
+                }
             }
 
             if (sceneZoneCount <= 0)

@@ -86,6 +86,31 @@ namespace Hecton8.World
             return Mathf.Max(0.05f, weight);
         }
 
+        public float GetBorderBlendMultiplier(
+            WorldZoneAnchor primaryZone,
+            WorldZoneAnchor secondaryZone,
+            WorldContentSocket socket,
+            float blendFactor)
+        {
+            if (primaryZone == null || secondaryZone == null || socket == null || blendFactor <= 0.08f)
+                return 1f;
+
+            float strength = Mathf.Lerp(1f, 1.22f, Mathf.Clamp01(blendFactor));
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.NavigationMarker => IsRouteTransition(primaryZone.Kind, secondaryZone.Kind) ? strength : 1f,
+                WorldContentSocket.ContentKind.FabricationStation => IsReliefTransition(primaryZone.Kind, secondaryZone.Kind) ? Mathf.Lerp(1f, 1.18f, Mathf.Clamp01(blendFactor)) : 1f,
+                WorldContentSocket.ContentKind.HazardPoint => IsHazardTransition(primaryZone.Kind, secondaryZone.Kind) ? strength : 1f,
+                WorldContentSocket.ContentKind.CombatPoint => IsHazardTransition(primaryZone.Kind, secondaryZone.Kind) ? strength : 1f,
+                WorldContentSocket.ContentKind.Landmark => IsGoalTransition(primaryZone.Kind, secondaryZone.Kind) ? Mathf.Lerp(1f, 1.2f, Mathf.Clamp01(blendFactor)) : 1f,
+                WorldContentSocket.ContentKind.ResourcePickup => IsRewardTransition(primaryZone.Kind, secondaryZone.Kind) ? Mathf.Lerp(1f, 1.14f, Mathf.Clamp01(blendFactor)) : 1f,
+                WorldContentSocket.ContentKind.ResourceNode => IsRewardTransition(primaryZone.Kind, secondaryZone.Kind) ? Mathf.Lerp(1f, 1.17f, Mathf.Clamp01(blendFactor)) : 1f,
+                WorldContentSocket.ContentKind.ServiceTarget => IsHazardTransition(primaryZone.Kind, secondaryZone.Kind) ? Mathf.Lerp(1f, 1.15f, Mathf.Clamp01(blendFactor)) : 1f,
+                WorldContentSocket.ContentKind.PowerPoint => IsPowerTransition(primaryZone.Kind, secondaryZone.Kind) ? Mathf.Lerp(1f, 1.14f, Mathf.Clamp01(blendFactor)) : 1f,
+                _ => 1f
+            };
+        }
+
         public string BuildResolvedPurpose(WorldZoneAnchor zone)
         {
             if (zone == null)
@@ -269,6 +294,72 @@ namespace Hecton8.World
             return $"{rolePlan.relation} / {rolePlan.preferredSlice} / count {rolePlan.targetCount} / {family}";
         }
 
+        public string BuildZoneRolePriority(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            WorldZonePlanProfile.RolePlan rolePlan = ResolveRolePlan(zone, socket);
+            if (rolePlan == null)
+                return "Unplanned";
+
+            bool lateZone = zone != null && zone.Tier >= WorldZoneAnchor.ZoneTier.Late;
+            return socket != null ? socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.FabricationStation => "Primary Hub",
+                WorldContentSocket.ContentKind.Landmark => lateZone ? "Primary Goal" : "Primary Landmark",
+                WorldContentSocket.ContentKind.NavigationMarker => "Primary Route",
+                WorldContentSocket.ContentKind.HazardPoint => lateZone ? "Gate" : "Warning",
+                WorldContentSocket.ContentKind.CombatPoint => lateZone ? "Gate" : "Pressure",
+                WorldContentSocket.ContentKind.PowerPoint => rolePlan.targetCount >= 2 ? "Backbone" : "Support",
+                WorldContentSocket.ContentKind.ServiceTarget => "Support Problem",
+                WorldContentSocket.ContentKind.ConstructionPoint => "Build Route",
+                WorldContentSocket.ContentKind.ResourceNode => rolePlan.targetCount >= 2 ? "Secondary Reward" : "Reward",
+                WorldContentSocket.ContentKind.ResourcePickup => "Support Reward",
+                _ => rolePlan.targetCount > 0 ? "Support" : "Optional"
+            } : "Unplanned";
+        }
+
+        public string BuildBorderBlendRole(WorldZoneAnchor primaryZone, WorldZoneAnchor secondaryZone, WorldContentSocket socket, float blendFactor)
+        {
+            if (primaryZone == null || secondaryZone == null || socket == null || blendFactor <= 0.12f)
+                return "Pure Zone Point";
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.NavigationMarker => "Transition Route Anchor",
+                WorldContentSocket.ContentKind.FabricationStation => "Transition Safe Pocket",
+                WorldContentSocket.ContentKind.HazardPoint => "Transition Hazard Gate",
+                WorldContentSocket.ContentKind.CombatPoint => "Transition Threat Gate",
+                WorldContentSocket.ContentKind.Landmark => "Transition Rare Objective",
+                WorldContentSocket.ContentKind.ResourcePickup => "Transition Reward Pocket",
+                WorldContentSocket.ContentKind.ResourceNode => "Transition Node Cluster",
+                WorldContentSocket.ContentKind.ServiceTarget => "Transition Pressure Point",
+                WorldContentSocket.ContentKind.PowerPoint => "Transition Power Spine",
+                WorldContentSocket.ContentKind.ConstructionPoint => "Transition Build Route",
+                _ => "Transition Point"
+            };
+        }
+
+        public string BuildBorderBlendReason(WorldZoneAnchor primaryZone, WorldZoneAnchor secondaryZone, WorldContentSocket socket, float blendFactor)
+        {
+            if (primaryZone == null || secondaryZone == null || socket == null || blendFactor <= 0.12f)
+                return "Point is still read mostly from one zone.";
+
+            string pair = $"{primaryZone.Kind} <-> {secondaryZone.Kind}";
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.NavigationMarker => $"{pair}: маршрут должен удерживать память на стыке двух типов воды.",
+                WorldContentSocket.ContentKind.FabricationStation => $"{pair}: точка отдыха нужна там, где спокойный контур начинает уступать давлению.",
+                WorldContentSocket.ContentKind.HazardPoint => $"{pair}: опасность должна читаться как явная граница перехода.",
+                WorldContentSocket.ContentKind.CombatPoint => $"{pair}: угроза подхватывает игрока именно на переломе маршрута.",
+                WorldContentSocket.ContentKind.Landmark => $"{pair}: редкая цель сильнее запоминается на стыке двух идентичностей места.",
+                WorldContentSocket.ContentKind.ResourcePickup => $"{pair}: мелкая награда помогает понять, что ты уже входишь в соседний контур.",
+                WorldContentSocket.ContentKind.ResourceNode => $"{pair}: плотная награда оправдывает заход чуть глубже за привычный маршрут.",
+                WorldContentSocket.ContentKind.ServiceTarget => $"{pair}: сервисная проблема лучше работает как узкое место перехода.",
+                WorldContentSocket.ContentKind.PowerPoint => $"{pair}: силовая линия естественно связывает два соседних контура.",
+                WorldContentSocket.ContentKind.ConstructionPoint => $"{pair}: стройка лучше читается как связка между двумя режимами пространства.",
+                _ => $"{pair}: точка помогает почувствовать переход, а не резкий обрыв зоны."
+            };
+        }
+
         public string ResolveFarmReason(WorldZoneAnchor zone)
         {
             if (zone == null || zone.DominantBiomeFamily == null || zone.DominantBiomeFamily.resourcePlanProfile == null)
@@ -331,6 +422,53 @@ namespace Hecton8.World
         {
             float t = Mathf.InverseLerp(1f, 5f, bias);
             return Mathf.Lerp(0.72f, 1.35f, t);
+        }
+
+        private static bool IsRouteTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)
+        {
+            return IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Resources)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Progression)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Combat);
+        }
+
+        private static bool IsReliefTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)
+        {
+            return IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Service)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Service)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Power, WorldZoneAnchor.ZoneKind.Service);
+        }
+
+        private static bool IsHazardTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)
+        {
+            return IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Combat)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Service)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Power);
+        }
+
+        private static bool IsGoalTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)
+        {
+            return IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Navigation)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Combat)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Resources);
+        }
+
+        private static bool IsRewardTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)
+        {
+            return IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Power)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Service);
+        }
+
+        private static bool IsPowerTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)
+        {
+            return IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Power, WorldZoneAnchor.ZoneKind.Service)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Power, WorldZoneAnchor.ZoneKind.Progression)
+                || IsEitherPair(a, b, WorldZoneAnchor.ZoneKind.Power, WorldZoneAnchor.ZoneKind.Navigation);
+        }
+
+        private static bool IsEitherPair(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b, WorldZoneAnchor.ZoneKind x, WorldZoneAnchor.ZoneKind y)
+        {
+            return (a == x && b == y) || (a == y && b == x);
         }
 
         private static WorldZonePlanProfile.RolePlan ResolveRolePlan(WorldZoneAnchor zone, WorldContentSocket socket)
