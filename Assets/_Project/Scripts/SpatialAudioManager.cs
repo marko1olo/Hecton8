@@ -504,6 +504,12 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             _poolSize = Mathf.Clamp(_poolSize, 4, 32);
             _pool2DSize = Mathf.Clamp(_pool2DSize, 2, 16);
 

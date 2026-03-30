@@ -72,6 +72,11 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             fullInfluenceRadius = Mathf.Max(20f, fullInfluenceRadius);
             falloffRadius = Mathf.Max(fullInfluenceRadius + 20f, falloffRadius);
             scavengeRadiusScale = Mathf.Clamp(scavengeRadiusScale, 0.85f, 1.4f);

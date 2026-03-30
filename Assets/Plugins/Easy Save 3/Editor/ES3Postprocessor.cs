@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.SceneManagement;
+using UnityEditorInternal;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,6 +22,8 @@ using ES3Internal;
 [InitializeOnLoad]
 public class ES3Postprocessor : UnityEditor.AssetModificationProcessor
 {
+    private static bool _callbacksRegistered = false;
+
     public static ES3ReferenceMgr RefMgr
     {
         get { return (ES3ReferenceMgr)ES3ReferenceMgr.Current; }
@@ -33,18 +36,48 @@ public class ES3Postprocessor : UnityEditor.AssetModificationProcessor
     // because we have the [InitializeOnLoad] attribute assigned to the class.
     static ES3Postprocessor()
     {
+        EditorApplication.delayCall -= RegisterCallbacks;
+        EditorApplication.delayCall += RegisterCallbacks;
+    }
+
+    private static bool ShouldDeferEditorHooks()
+    {
+        if (InternalEditorUtility.inBatchMode)
+            return true;
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            return true;
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+            return true;
+        return false;
+    }
+
+    private static void RegisterCallbacks()
+    {
+        EditorApplication.delayCall -= RegisterCallbacks;
+
+        if (ShouldDeferEditorHooks())
+        {
+            EditorApplication.delayCall += RegisterCallbacks;
+            return;
+        }
+
+        if (_callbacksRegistered)
+            return;
+
 #if UNITY_2020_2_OR_NEWER
+        ObjectChangeEvents.changesPublished -= Changed;
         ObjectChangeEvents.changesPublished += Changed;
 #endif
+        ObjectFactory.componentWasAdded -= ComponentWasAdded;
         ObjectFactory.componentWasAdded += ComponentWasAdded;
-
-        // Open the Easy Save 3 window the first time ES3 is installed.
-        //ES3Editor.ES3Window.OpenEditorWindowOnStart();
 
         EditorApplication.playModeStateChanged -= PlayModeStateChanged;
         EditorApplication.playModeStateChanged += PlayModeStateChanged;
 
+        EditorSceneManager.sceneOpened -= OnSceneOpened;
         EditorSceneManager.sceneOpened += OnSceneOpened;
+
+        _callbacksRegistered = true;
     }
 
     #region Reference Updating

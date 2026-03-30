@@ -1026,6 +1026,12 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (maxIntegrity < 1f) maxIntegrity = 1f;
             if (currentIntegrity < 0f) currentIntegrity = 0f;
             if (currentIntegrity > maxIntegrity) currentIntegrity = maxIntegrity;

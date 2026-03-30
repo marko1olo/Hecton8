@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace DarkTonic.MasterAudio.EditorScripts
@@ -52,15 +53,25 @@ namespace DarkTonic.MasterAudio.EditorScripts
 
         private static void RegisterWindowCheck()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+            if (InternalEditorUtility.inBatchMode ||
+                EditorApplication.isPlayingOrWillChangePlaymode ||
+                !showOnStartPrefs)
             {
-                EditorApplication.update += CheckShowWelcomeWindow;
+                return;
             }
+
+            EditorApplication.delayCall += CheckShowWelcomeWindow;
         }
 
         private static void CheckShowWelcomeWindow()
         {
-            EditorApplication.update -= CheckShowWelcomeWindow;
+            EditorApplication.delayCall -= CheckShowWelcomeWindow;
+
+            if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             if (showOnStartPrefs)
             {
                 ShowWindow();

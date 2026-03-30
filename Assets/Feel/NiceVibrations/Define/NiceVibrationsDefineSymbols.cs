@@ -15,6 +15,8 @@ namespace MoreMountains.FeedbacksForThirdParty
     [InitializeOnLoad]
     public class NiceVibrationsDefineSymbols
     {
+        private static bool _queued;
+
         /// <summary>
         /// A list of all the symbols you want added to the build settings
         /// </summary>
@@ -28,6 +30,34 @@ namespace MoreMountains.FeedbacksForThirdParty
         /// </summary>
         static NiceVibrationsDefineSymbols()
         {
+            QueueApplySymbols();
+        }
+
+        private static void QueueApplySymbols()
+        {
+            if (_queued)
+                return;
+
+            if (Application.isBatchMode ||
+                EditorApplication.isCompiling ||
+                EditorApplication.isUpdating ||
+                EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            _queued = true;
+            EditorApplication.delayCall += DeferredApplySymbols;
+        }
+
+        private static void DeferredApplySymbols()
+        {
+            _queued = false;
+
+            if (Application.isBatchMode ||
+                EditorApplication.isCompiling ||
+                EditorApplication.isUpdating ||
+                EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             string scriptingDefinesString = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup); 
             List<string> scriptingDefinesStringList = scriptingDefinesString.Split(';').ToList();
             scriptingDefinesStringList.AddRange(Symbols.Except(scriptingDefinesStringList));

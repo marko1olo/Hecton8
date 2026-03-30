@@ -1605,6 +1605,12 @@ namespace Hecton8.AI
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (swimForce              < 0f)    swimForce              = 0f;
             if (maxSpeed               < 0.1f)  maxSpeed               = 0.1f;
             if (maxEscapeSpeed         < maxSpeed) maxEscapeSpeed      = maxSpeed;

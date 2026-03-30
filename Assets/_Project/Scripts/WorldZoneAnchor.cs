@@ -143,6 +143,12 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             activationRadius = Mathf.Max(24f, activationRadius);
             holdRadius = Mathf.Max(activationRadius + 10f, holdRadius);
             edgeBlendDistance = Mathf.Clamp(edgeBlendDistance, 4f, holdRadius * 0.45f);

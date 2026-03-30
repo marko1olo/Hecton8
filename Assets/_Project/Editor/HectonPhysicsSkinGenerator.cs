@@ -66,7 +66,18 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     private void OnDisable()
     {
         SceneView.duringSceneGui -= OnSceneGUI;
+
+        if (IsEditorTransitionBusy())
+            return;
+
         previewMesh = null;
+    }
+
+    private static bool IsEditorTransitionBusy()
+    {
+        return EditorApplication.isCompiling ||
+               EditorApplication.isUpdating ||
+               EditorApplication.isPlayingOrWillChangePlaymode;
     }
 
     // ═══════════════════════════════════════════════════════════════════

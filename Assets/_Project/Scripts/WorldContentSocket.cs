@@ -47,6 +47,12 @@ namespace Hecton8.World
         [SerializeField] private string _debugPopulationSpatialReason = "None";
         [SerializeField] private string _debugPopulationBorderRole = "None";
         [SerializeField] private string _debugPopulationBorderReason = "None";
+        [SerializeField] private string _debugPopulationResourceItem = "None";
+        [SerializeField] private string _debugPopulationResourceReason = "None";
+        [SerializeField] private string _debugPopulationMotivationPull = "None";
+        [SerializeField] private string _debugPopulationMotivationReason = "None";
+        [SerializeField] private string _debugPopulationSandboxAttractionRole = "None";
+        [SerializeField] private string _debugPopulationSandboxAttractionReason = "None";
         [SerializeField] private string _debugZoneRoleFamily = "None";
         [SerializeField] private string _debugZoneRoleLayout = "None";
         [SerializeField] private string _debugZoneRolePriority = "None";
@@ -84,6 +90,12 @@ namespace Hecton8.World
         public string ResolvedPopulationSpatialReason => _debugPopulationSpatialReason;
         public string ResolvedPopulationBorderRole => _debugPopulationBorderRole;
         public string ResolvedPopulationBorderReason => _debugPopulationBorderReason;
+        public string ResolvedPopulationResourceItem => _debugPopulationResourceItem;
+        public string ResolvedPopulationResourceReason => _debugPopulationResourceReason;
+        public string ResolvedPopulationMotivationPull => _debugPopulationMotivationPull;
+        public string ResolvedPopulationMotivationReason => _debugPopulationMotivationReason;
+        public string ResolvedPopulationSandboxAttractionRole => _debugPopulationSandboxAttractionRole;
+        public string ResolvedPopulationSandboxAttractionReason => _debugPopulationSandboxAttractionReason;
         public string ResolvedZoneRoleFamily => _debugZoneRoleFamily;
         public string ResolvedZoneRoleLayout => _debugZoneRoleLayout;
         public string ResolvedZoneRolePriority => _debugZoneRolePriority;
@@ -101,6 +113,12 @@ namespace Hecton8.World
             string spatialReason,
             string borderRole,
             string borderReason,
+            string resourceItem,
+            string resourceReason,
+            string motivationPull,
+            string motivationReason,
+            string sandboxAttractionRole,
+            string sandboxAttractionReason,
             string zoneRoleFamily,
             string zoneRoleLayout,
             string zoneRolePriority)
@@ -121,6 +139,12 @@ namespace Hecton8.World
             _debugPopulationSpatialReason = string.IsNullOrWhiteSpace(spatialReason) ? "None" : spatialReason;
             _debugPopulationBorderRole = string.IsNullOrWhiteSpace(borderRole) ? "None" : borderRole;
             _debugPopulationBorderReason = string.IsNullOrWhiteSpace(borderReason) ? "None" : borderReason;
+            _debugPopulationResourceItem = string.IsNullOrWhiteSpace(resourceItem) ? "None" : resourceItem;
+            _debugPopulationResourceReason = string.IsNullOrWhiteSpace(resourceReason) ? "None" : resourceReason;
+            _debugPopulationMotivationPull = string.IsNullOrWhiteSpace(motivationPull) ? "None" : motivationPull;
+            _debugPopulationMotivationReason = string.IsNullOrWhiteSpace(motivationReason) ? "None" : motivationReason;
+            _debugPopulationSandboxAttractionRole = string.IsNullOrWhiteSpace(sandboxAttractionRole) ? "None" : sandboxAttractionRole;
+            _debugPopulationSandboxAttractionReason = string.IsNullOrWhiteSpace(sandboxAttractionReason) ? "None" : sandboxAttractionReason;
             _debugZoneRoleFamily = string.IsNullOrWhiteSpace(zoneRoleFamily) ? "None" : zoneRoleFamily;
             _debugZoneRoleLayout = string.IsNullOrWhiteSpace(zoneRoleLayout) ? "None" : zoneRoleLayout;
             _debugZoneRolePriority = string.IsNullOrWhiteSpace(zoneRolePriority) ? "None" : zoneRolePriority;
@@ -143,6 +167,12 @@ namespace Hecton8.World
             _debugPopulationSpatialReason = "None";
             _debugPopulationBorderRole = "None";
             _debugPopulationBorderReason = "None";
+            _debugPopulationResourceItem = "None";
+            _debugPopulationResourceReason = "None";
+            _debugPopulationMotivationPull = "None";
+            _debugPopulationMotivationReason = "None";
+            _debugPopulationSandboxAttractionRole = "None";
+            _debugPopulationSandboxAttractionReason = "None";
             _debugZoneRoleFamily = "None";
             _debugZoneRoleLayout = "None";
             _debugZoneRolePriority = "None";
@@ -164,6 +194,11 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (string.IsNullOrWhiteSpace(socketId))
                 socketId = "socket.generic";
 

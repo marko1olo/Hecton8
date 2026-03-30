@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace MoreMountains.Tools
 {
-	[InitializeOnLoad]
 	public static class MMMonoBehaviourDrawerHelper
 	{
 		public static void DrawButton(this Editor editor, MethodInfo methodInfo)

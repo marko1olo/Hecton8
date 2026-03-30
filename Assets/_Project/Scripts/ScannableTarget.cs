@@ -33,6 +33,11 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (string.IsNullOrWhiteSpace(entryId))
                 entryId = gameObject.name.Trim().ToLowerInvariant().Replace(' ', '_');
 

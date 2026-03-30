@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace GPUInstancer
@@ -27,6 +28,9 @@ namespace GPUInstancer
 
         static GPUInstancerDefines()
         {
+            if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (EditorUserBuildSettings.selectedBuildTargetGroup == BuildTargetGroup.Unknown)
                 return;
             List<string> defineList = new List<string>(PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup).Split(';'));
@@ -39,11 +43,21 @@ namespace GPUInstancer
 
             GetBillboardExtensions();
 
-            EditorApplication.update -= GenerateSettings;
-            EditorApplication.update += GenerateSettings;
+            EditorApplication.delayCall += RegisterGenerateSettings;
 
             if (previewCache == null)
                 previewCache = new GPUInstancerPreviewCache();
+        }
+
+        static void RegisterGenerateSettings()
+        {
+            EditorApplication.delayCall -= RegisterGenerateSettings;
+
+            if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            EditorApplication.update -= GenerateSettings;
+            EditorApplication.update += GenerateSettings;
         }
 
         static void GenerateSettings()

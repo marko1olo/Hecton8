@@ -713,6 +713,11 @@ namespace Hecton8.Crafting
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (maxUseDistance < 1f) maxUseDistance = 1f;
             if (craftPowerDraw < 0f) craftPowerDraw = 0f;
             if (string.IsNullOrEmpty(fabricatorName)) fabricatorName = "Фабрикатор";

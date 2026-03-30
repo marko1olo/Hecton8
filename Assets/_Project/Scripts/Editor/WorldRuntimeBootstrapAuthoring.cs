@@ -17,6 +17,9 @@ namespace Hecton8.EditorTools
         private const string ColliderProxyPrefabPath = RuntimePrefabFolder + "/PFB_ProximityColliderProxy.prefab";
         private const string WorldProfileFolder = "Assets/_Project/Data/World/ZoneProfiles";
         private const string WorldZonePlanFolder = "Assets/_Project/Data/World/ZonePlans";
+        private const string WorldExpeditionLoopFolder = "Assets/_Project/Data/World/ExpeditionLoops";
+        private const string WorldSandboxAttractionFolder = "Assets/_Project/Data/World/SandboxAttractions";
+        private const string WorldMotivationFolder = "Assets/_Project/Data/World/Motivations";
         private const string WorldContentProfileFolder = "Assets/_Project/Data/World/ContentProfiles";
         private const string WorldPopulationRuleFolder = "Assets/_Project/Data/World/PopulationRules";
         private const string WorldFamilyProfileFolder = "Assets/_Project/Data/World/FamilyProfiles";
@@ -36,6 +39,9 @@ namespace Hecton8.EditorTools
             EnsureFolder("Assets/_Project/Data/World");
             EnsureFolder(WorldProfileFolder);
             EnsureFolder(WorldZonePlanFolder);
+            EnsureFolder(WorldExpeditionLoopFolder);
+            EnsureFolder(WorldSandboxAttractionFolder);
+            EnsureFolder(WorldMotivationFolder);
             EnsureFolder(WorldContentProfileFolder);
             EnsureFolder(WorldPopulationRuleFolder);
             EnsureFolder(WorldFamilyProfileFolder);
@@ -743,7 +749,208 @@ namespace Hecton8.EditorTools
                 BuildSliceUsage(profile.profileId, WorldSliceAnchor.SliceState.Far),
                 InferHeroFamilyProfile(profile.profileId),
                 BuildZoneGameplaySummary(profile.profileId));
+            profile.expeditionLoopProfile = EnsureExpeditionLoopProfile(
+                $"Read_{fileName}",
+                $"loop.{profileId}",
+                $"{profileLabel} Read",
+                profile.profileId);
+            profile.sandboxAttractionProfile = EnsureSandboxAttractionProfile(
+                $"Sandbox_{fileName}",
+                $"sandbox.{profileId}",
+                $"{profileLabel} Sandbox",
+                profile.profileId);
+            profile.motivationProfile = EnsureMotivationProfile(
+                $"Motivation_{fileName}",
+                $"motivation.{profileId}",
+                $"{profileLabel} Motivation",
+                profile.profileId);
             ApplySpatialRolePlans(profile.zonePlanProfile, profile.profileId);
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static WorldMotivationProfile EnsureMotivationProfile(
+            string fileName,
+            string profileId,
+            string profileLabel,
+            string zoneProfileId)
+        {
+            string assetPath = $"{WorldMotivationFolder}/{fileName}";
+            WorldMotivationProfile profile = AssetDatabase.LoadAssetAtPath<WorldMotivationProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<WorldMotivationProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = profileId;
+            profile.profileLabel = profileLabel;
+            ApplyMotivationTemplate(profile, zoneProfileId);
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static void ApplyMotivationTemplate(WorldMotivationProfile profile, string zoneProfileId)
+        {
+            switch (zoneProfileId)
+            {
+                case "profile.resources.starter":
+                    profile.survivalNeedWeight = 1.35f;
+                    profile.resourceNeedWeight = 1.45f;
+                    profile.engineeringNeedWeight = 0.75f;
+                    profile.curiosityPullWeight = 1.15f;
+                    profile.storyPullWeight = 0.7f;
+                    profile.rareValuePullWeight = 0.55f;
+                    profile.survivalNeed = "This area keeps early runs stocked with oxygen-adjacent safety and common supplies.";
+                    profile.resourceNeed = "This area is worth short repeated trips for starter materials.";
+                    profile.engineeringNeed = "It lightly supports first tools and first construction costs.";
+                    profile.curiosityPull = "Clear shapes and shallow pockets tempt the player to check just one more corner.";
+                    profile.storyPull = "It hints that the wider world is bigger and stranger beyond the safe shelf.";
+                    profile.rareValuePull = "Rare value is weak here; this water teaches confidence more than greed.";
+                    break;
+                case "profile.fabrication.early":
+                    profile.survivalNeedWeight = 1.4f;
+                    profile.resourceNeedWeight = 0.7f;
+                    profile.engineeringNeedWeight = 1.2f;
+                    profile.curiosityPullWeight = 0.8f;
+                    profile.storyPullWeight = 0.9f;
+                    profile.rareValuePullWeight = 0.6f;
+                    profile.survivalNeed = "This area resets pressure by letting the player recover, craft, and stabilize.";
+                    profile.resourceNeed = "Its value is logistical, not raw abundance.";
+                    profile.engineeringNeed = "It supports planning tools, modules, and the next safer departure.";
+                    profile.curiosityPull = "Nearby authored details should invite checking what else this stop can support.";
+                    profile.storyPull = "A fabrication outpost hints at prior human activity and unfinished work.";
+                    profile.rareValuePull = "Rare value is indirect here: preparation for stronger future dives.";
+                    break;
+                case "profile.construction.mid":
+                    profile.survivalNeedWeight = 0.95f;
+                    profile.resourceNeedWeight = 0.8f;
+                    profile.engineeringNeedWeight = 1.45f;
+                    profile.curiosityPullWeight = 1f;
+                    profile.storyPullWeight = 0.75f;
+                    profile.rareValuePullWeight = 0.85f;
+                    profile.survivalNeed = "This area can become safer if the player chooses to invest in it.";
+                    profile.resourceNeed = "Its value is tied to improved local access and utility rather than raw loot.";
+                    profile.engineeringNeed = "This is a natural place to solve space, access, and support problems.";
+                    profile.curiosityPull = "Sockets, blockers, and awkward geometry should provoke planning instincts.";
+                    profile.storyPull = "It suggests unfinished infrastructure and player-made improvement.";
+                    profile.rareValuePull = "Rare value is practical: a better foothold, better serviceability, and better local flow.";
+                    break;
+                case "profile.power.mid":
+                    profile.survivalNeedWeight = 1.05f;
+                    profile.resourceNeedWeight = 0.85f;
+                    profile.engineeringNeedWeight = 1.5f;
+                    profile.curiosityPullWeight = 1f;
+                    profile.storyPullWeight = 0.95f;
+                    profile.rareValuePullWeight = 1.05f;
+                    profile.survivalNeed = "Working power can make nearby water safer and more controllable.";
+                    profile.resourceNeed = "Its value comes through systems and recovery, not simple pickups.";
+                    profile.engineeringNeed = "This area invites diagnosing lines, relays, loads, and failed links.";
+                    profile.curiosityPull = "Visible energy chains should make the player want to see where they begin and end.";
+                    profile.storyPull = "Power routes imply old use, current failure, and places that once mattered.";
+                    profile.rareValuePull = "Rare value comes from restoring leverage over a difficult pocket of world.";
+                    break;
+                case "profile.progression.endgame":
+                    profile.survivalNeedWeight = 1.1f;
+                    profile.resourceNeedWeight = 1.15f;
+                    profile.engineeringNeedWeight = 1.2f;
+                    profile.curiosityPullWeight = 1.45f;
+                    profile.storyPullWeight = 1.6f;
+                    profile.rareValuePullWeight = 1.75f;
+                    profile.survivalNeed = "This area tests whether the player can survive bad visibility, pressure, and long return distance.";
+                    profile.resourceNeed = "The water should promise expensive late-game value, not casual farm loops.";
+                    profile.engineeringNeed = "Better gear, stronger tools, and prior preparation should matter here.";
+                    profile.curiosityPull = "Abyss edges, strange silhouettes, and severe gradients should keep pulling attention deeper.";
+                    profile.storyPull = "This is where strong narrative pull should live: mystery, consequence, and deep-world answers.";
+                    profile.rareValuePull = "The strongest lure here is rare value worth fear, planning, and a later return.";
+                    break;
+                case "profile.combat.mid":
+                    profile.survivalNeedWeight = 1.25f;
+                    profile.resourceNeedWeight = 0.65f;
+                    profile.engineeringNeedWeight = 1.05f;
+                    profile.curiosityPullWeight = 1f;
+                    profile.storyPullWeight = 0.8f;
+                    profile.rareValuePullWeight = 1f;
+                    profile.survivalNeed = "This area pressures awareness, spacing, and escape options.";
+                    profile.resourceNeed = "Loot matters less than learning how danger behaves in this water.";
+                    profile.engineeringNeed = "Tools, control options, and support gear can change how threatening the space feels.";
+                    profile.curiosityPull = "Threat behavior and pressure pockets should still provoke observation, not only avoidance.";
+                    profile.storyPull = "Danger zones can hint at why the ecosystem behaves differently here.";
+                    profile.rareValuePull = "Rare value exists, but it should feel stolen from danger, not handed out.";
+                    break;
+                case "profile.navigation.mid":
+                    profile.survivalNeedWeight = 1f;
+                    profile.resourceNeedWeight = 0.6f;
+                    profile.engineeringNeedWeight = 0.95f;
+                    profile.curiosityPullWeight = 1.2f;
+                    profile.storyPullWeight = 0.85f;
+                    profile.rareValuePullWeight = 0.55f;
+                    profile.survivalNeed = "This area helps the player not get lost when runs grow longer and messier.";
+                    profile.resourceNeed = "Its value is mostly navigational clarity with a little practical reward.";
+                    profile.engineeringNeed = "It supports route planning, beacon logic, and better return discipline.";
+                    profile.curiosityPull = "Branching space should invite comparison and mental mapping.";
+                    profile.storyPull = "Landmarks and route breaks can quietly suggest other systems nearby.";
+                    profile.rareValuePull = "Rare value is weak; the real payoff is mastery of movement and memory.";
+                    break;
+                default:
+                    profile.survivalNeedWeight = 1f;
+                    profile.resourceNeedWeight = 1f;
+                    profile.engineeringNeedWeight = 1f;
+                    profile.curiosityPullWeight = 1f;
+                    profile.storyPullWeight = 1f;
+                    profile.rareValuePullWeight = 1f;
+                    profile.survivalNeed = "This area offers some practical survival value.";
+                    profile.resourceNeed = "This area offers readable material value.";
+                    profile.engineeringNeed = "This area can support tools, systems, or later improvements.";
+                    profile.curiosityPull = "The player should want to inspect at least one more feature.";
+                    profile.storyPull = "The area should imply there is more to understand later.";
+                    profile.rareValuePull = "A stronger reward should exist somewhere beyond the first glance.";
+                    break;
+            }
+
+            profile.optionalityRule = "These pulls are invitations, not requirements; the player decides which one matters today.";
+            profile.returnRule = "The area should stay worth revisiting later with a different goal, toolset, or tolerance for risk.";
+            profile.ownershipRule = "The player should feel they built their own reasons to come back here.";
+        }
+
+        private static WorldExpeditionLoopProfile EnsureExpeditionLoopProfile(
+            string fileName,
+            string profileId,
+            string profileLabel,
+            string zoneProfileId)
+        {
+            string assetPath = $"{WorldExpeditionLoopFolder}/{fileName}";
+            WorldExpeditionLoopProfile profile = AssetDatabase.LoadAssetAtPath<WorldExpeditionLoopProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<WorldExpeditionLoopProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = profileId;
+            profile.profileLabel = profileLabel;
+            ApplyExpeditionLoopTemplate(profile, zoneProfileId);
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static WorldSandboxAttractionProfile EnsureSandboxAttractionProfile(
+            string fileName,
+            string profileId,
+            string profileLabel,
+            string zoneProfileId)
+        {
+            string assetPath = $"{WorldSandboxAttractionFolder}/{fileName}";
+            WorldSandboxAttractionProfile profile = AssetDatabase.LoadAssetAtPath<WorldSandboxAttractionProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<WorldSandboxAttractionProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = profileId;
+            profile.profileLabel = profileLabel;
+            ApplySandboxAttractionTemplate(profile, zoneProfileId);
             EditorUtility.SetDirty(profile);
             return profile;
         }
@@ -1102,22 +1309,374 @@ namespace Hecton8.EditorTools
                 case "profile.resources.starter":
                     return "Starter harvesting pocket with clear pickups, extractable nodes, and distant landmark memory.";
                 case "profile.fabrication.early":
-                    return "Safe logistics stop for crafting, route reset, and regrouping.";
+                    return "Safe logistics stop for crafting, regrouping, and optional reset before another dive.";
                 case "profile.trial.early":
                     return "Dense authored space for tool practice, regression checks, and future prefab replacement.";
                 case "profile.construction.mid":
-                    return "Construction route with obvious sockets, blockers, and support structure.";
+                    return "Construction pocket with obvious sockets, blockers, and support structure.";
                 case "profile.power.mid":
-                    return "Power route built around generator, relay, and serviced load readability.";
+                    return "Power pocket built around generator, relay, and serviced load readability.";
                 case "profile.progression.endgame":
-                    return "Late-game chain that mixes hazard, recovery, combat pressure, and route landmarks.";
+                    return "Late-game water that mixes hazard, recovery, combat pressure, and memorable landmarks.";
                 case "profile.combat.mid":
                     return "Combat pocket focused on threat readability and control timing.";
                 case "profile.navigation.mid":
-                    return "Navigation hub that helps the player read branch choice and return flow.";
+                    return "Navigation pocket that helps the player read branch choice and return flow.";
             }
 
             return "Generic world zone plan.";
+        }
+
+        private static void ApplyExpeditionLoopTemplate(WorldExpeditionLoopProfile profile, string zoneProfileId)
+        {
+            switch (zoneProfileId)
+            {
+                case "profile.resources.starter":
+                    profile.entryBeat = "A bright shelf, arch, or scrap silhouette makes the water easy to read at first glance.";
+                    profile.routineBeat = "Common materials are visible quickly without forcing one exact sweep.";
+                    profile.reliefBeat = "Short calm pockets let the player reorient and decide whether to keep wandering.";
+                    profile.pressureBeat = "Risk rises naturally as visibility drops and easy materials thin out.";
+                    profile.payoffBeat = "A stronger node or denser material patch exists deeper in for players who feel like pushing.";
+                    profile.exitBeat = "Leaving stays readable by memory of shape and light, not by a prescribed line.";
+                    profile.playerFreedomRule = "The player can drift, circle, detour, or leave at any time; this water only suggests confidence, not obedience.";
+                    profile.softProgressionPull = "The place gently teaches that stronger finds usually sit a little beyond the most obvious shelf.";
+                    profile.optionalDetourRule = "Side pockets should still teach the terrain and pay out a little value.";
+                    profile.returnLogic = "Returning later should feel faster because the player remembers the shapes and material rhythm.";
+                    profile.masteryLogic = "Mastery means building a personal quick-harvest loop, not following a designer path.";
+                    profile.playerPromise = "Readable early water with safe value, mild risk, and room to improvise.";
+                    profile.routeMemoryRule = "Memory should come from one strong silhouette and one reliable calm pocket.";
+                    profile.failureMode = "If shapes, safety, and value blur together, the area turns into mush.";
+                    return;
+                case "profile.fabrication.early":
+                    profile.entryBeat = "A visible outpost or fabrication stop reads as a reliable human foothold.";
+                    profile.routineBeat = "The player quickly understands this is a place to reset, craft, and reassess.";
+                    profile.reliefBeat = "This area acts as a dependable pressure break before or after riskier water.";
+                    profile.pressureBeat = "Pressure lives mostly outside the stop, not inside it.";
+                    profile.payoffBeat = "The reward is readiness for the next self-chosen trip, not a scripted loot moment.";
+                    profile.exitBeat = "Departure should feel deliberate and clean, not funnelled.";
+                    profile.playerFreedomRule = "The player decides whether this stop matters now, later, or not at all.";
+                    profile.softProgressionPull = "The place quietly advertises preparation and optional regrouping.";
+                    profile.optionalDetourRule = "Even a brief glance should make the outpost memorable as a future reset point.";
+                    profile.returnLogic = "Repeat visits should feel smart and self-directed, never mandatory.";
+                    profile.masteryLogic = "Experienced players use the stop as a flexible logistics anchor between different plans.";
+                    profile.playerPromise = "A stable pocket of control inside a wider uncertain world.";
+                    profile.routeMemoryRule = "Memory should come from the outpost silhouette and its relation to nearby risk water.";
+                    profile.failureMode = "If the stop is slow, noisy, or unclear, it stops working as a relief space.";
+                    return;
+                case "profile.construction.mid":
+                    profile.entryBeat = "Sockets, frames, and awkward geometry immediately suggest possible improvement.";
+                    profile.routineBeat = "The player reads what is easy to place, what is blocked, and what could become useful later.";
+                    profile.reliefBeat = "A clean work pocket offers a moment of clarity in otherwise messy space.";
+                    profile.pressureBeat = "Pressure comes from obstruction, poor angles, and the cost of investing here.";
+                    profile.payoffBeat = "The reward is a better place: easier travel, better support, or a smarter foothold.";
+                    profile.exitBeat = "The player can leave after learning enough, even if they build nothing yet.";
+                    profile.playerFreedomRule = "Construction is optional leverage, not a required progression step.";
+                    profile.softProgressionPull = "The zone suggests that building here could improve later runs.";
+                    profile.optionalDetourRule = "Even without building, the player should understand why this spot matters.";
+                    profile.returnLogic = "The place should stay memorable as a future improvement opportunity.";
+                    profile.masteryLogic = "Mastery means spotting where investment pays off and where it does not.";
+                    profile.playerPromise = "A place where player agency can reshape local quality of life.";
+                    profile.routeMemoryRule = "Memory should hold onto the best socket, the main blocker, and the clearest working angle.";
+                    profile.failureMode = "If building here changes nothing meaningful, the area feels fake.";
+                    return;
+                case "profile.power.mid":
+                    profile.entryBeat = "Generator, relay, or load silhouettes make the local system legible from a distance.";
+                    profile.routineBeat = "The player can quickly read source, transfer, and demand without being forced into one route.";
+                    profile.reliefBeat = "A small stable pocket near the system gives room to inspect and plan.";
+                    profile.pressureBeat = "Pressure comes from broken links, exposure, and the cost of stabilizing the chain.";
+                    profile.payoffBeat = "The reward is regained leverage: safer nearby water, stronger utility, or a working support line.";
+                    profile.exitBeat = "Leaving should still feel readable through system memory, not through a fixed track.";
+                    profile.playerFreedomRule = "The player can observe, repair, ignore, or return later depending on their needs.";
+                    profile.softProgressionPull = "Visible system logic naturally tempts the player to follow power relationships.";
+                    profile.optionalDetourRule = "Off-angle looks should still reveal useful system clues or side value.";
+                    profile.returnLogic = "Returning later should feel worthwhile because the player remembers how the line behaved.";
+                    profile.masteryLogic = "Mastery means seeing the whole power picture fast and acting only where it matters.";
+                    profile.playerPromise = "Readable infrastructure that rewards understanding more than obedience.";
+                    profile.routeMemoryRule = "Memory should latch onto the strongest source, the most obvious relay, and the hungriest load.";
+                    profile.failureMode = "If source, transfer, and demand blur together, the system loses meaning.";
+                    return;
+                case "profile.progression.endgame":
+                    profile.entryBeat = "A strong silhouette or environmental shift warns that this water is serious.";
+                    profile.routineBeat = "Routine value is sparse; the area tells the player this is not a lazy farm pocket.";
+                    profile.reliefBeat = "Rare calm pockets matter because they create decision space before a deeper commitment.";
+                    profile.pressureBeat = "Risk ramps through depth, exposure, and uncertainty rather than a forced gate.";
+                    profile.payoffBeat = "A rare high-value lure exists deeper in for players willing to bring preparation and nerve.";
+                    profile.exitBeat = "Getting out should reward memory, restraint, and choosing when enough is enough.";
+                    profile.playerFreedomRule = "The player may sample the edge, turn back, or fully commit on their own terms.";
+                    profile.softProgressionPull = "The area should tempt curiosity, need, and story hunger more than any scripted funnel.";
+                    profile.optionalDetourRule = "Side observations should still teach something valuable even if the main lure stays out of reach.";
+                    profile.returnLogic = "Retreat should preserve knowledge, landmarks, and unfinished intention for a later dive.";
+                    profile.masteryLogic = "Mastery means assembling a personal deep-run plan from memory and judgment.";
+                    profile.playerPromise = "Serious water with strong mystery, strong value, and honest consequences.";
+                    profile.routeMemoryRule = "Memory should come from major shapes, rare shelter, and sharp pressure changes.";
+                    profile.failureMode = "If this water becomes linear or obvious, it loses its awe and fear.";
+                    return;
+                case "profile.combat.mid":
+                    profile.entryBeat = "Threat cues in movement, sound, or silhouette signal that awareness matters here.";
+                    profile.routineBeat = "The player reads spacing, control options, and escape space before picking a response.";
+                    profile.reliefBeat = "Cover or calmer side water provides a moment to recover and reassess.";
+                    profile.pressureBeat = "Pressure comes from threat behavior and local geometry, not from a forced duel lane.";
+                    profile.payoffBeat = "The payoff is surviving well, stealing value, or learning how this danger behaves.";
+                    profile.exitBeat = "Leaving should still be a valid smart choice.";
+                    profile.playerFreedomRule = "The player may engage, evade, control, or postpone the problem.";
+                    profile.softProgressionPull = "Threat should make the water feel charged, not scripted.";
+                    profile.optionalDetourRule = "Detours should offer flanking space, observation angles, or minor reward.";
+                    profile.returnLogic = "A second visit should feel smarter because the player better understands local danger.";
+                    profile.masteryLogic = "Mastery means deciding when the fight is not worth the cost.";
+                    profile.playerPromise = "Tense water where control, timing, and escape matter more than brute force.";
+                    profile.routeMemoryRule = "Memory should hold onto cover, escape angle, and the shape of the threat pocket.";
+                    profile.failureMode = "If every encounter reads like a mandatory lane fight, the space stops feeling alive.";
+                    return;
+                case "profile.navigation.mid":
+                    profile.entryBeat = "Distinct silhouettes and branching space make orientation the main value.";
+                    profile.routineBeat = "The player quickly understands that mental mapping matters more than raw loot here.";
+                    profile.reliefBeat = "Short calm ledges or readable pockets help reset direction.";
+                    profile.pressureBeat = "Pressure comes from getting turned around, not from being shoved down one line.";
+                    profile.payoffBeat = "The reward is better world memory, cleaner returns, and confidence in branch choice.";
+                    profile.exitBeat = "Leaving should feel easier because the player now owns more of the map in their head.";
+                    profile.playerFreedomRule = "The player is free to test branches, retreat, or cross-cut between landmarks.";
+                    profile.softProgressionPull = "The area nudges exploration through readability and curiosity, not compulsion.";
+                    profile.optionalDetourRule = "Wrong turns should still teach the space and occasionally pay out.";
+                    profile.returnLogic = "Repeat visits should become smoother as landmark memory grows.";
+                    profile.masteryLogic = "Mastery means building your own internal map and faster cross-links.";
+                    profile.playerPromise = "Readable branching water that turns confusion into ownership over time.";
+                    profile.routeMemoryRule = "Memory should come from silhouettes, branch logic, and safe reorientation pockets.";
+                    profile.failureMode = "If every branch feels the same, the zone loses identity.";
+                    return;
+                default:
+                    profile.entryBeat = "A readable landmark or contrast in the water invites first contact.";
+                    profile.routineBeat = "Common value can be found without implying one correct sweep.";
+                    profile.reliefBeat = "At least one calm pocket gives the player space to think.";
+                    profile.pressureBeat = "Risk grows naturally where depth, threat, or visibility turn harsher.";
+                    profile.payoffBeat = "A stronger lure exists deeper in for players who choose to keep pushing.";
+                    profile.exitBeat = "Returning stays readable through remembered shapes, not a prescribed line.";
+                    profile.playerFreedomRule = "This profile is a reading aid, not a route script.";
+                    profile.softProgressionPull = "The area can tempt attention without claiming ownership over the player's path.";
+                    profile.optionalDetourRule = "Detours should still teach the place and offer some value.";
+                    profile.returnLogic = "Leaving early should still produce useful memory for later.";
+                    profile.masteryLogic = "Mastery means inventing a personal line through risk and opportunity.";
+                    profile.playerPromise = "Readable value, readable danger, and plenty of room for player choice.";
+                    profile.routeMemoryRule = "The player should remember the place through shape, shelter, and pressure shifts.";
+                    profile.failureMode = "If readability collapses, the space becomes noise instead of a sandbox.";
+                    return;
+            }
+        }
+#if false
+            switch (zoneProfileId)
+            {
+                case "profile.resources.starter":
+                    profile.entryBeat = "Вход через простой ориентир: светлая кромка, арка, обломок или понятный route anchor.";
+                    profile.routineBeat = "Собери быстрые nearby pockets и не теряй главный ориентир.";
+                    profile.reliefBeat = "Передышка короткая: карман за формой рельефа, где можно быстро свериться с направлением.";
+                    profile.pressureBeat = "Дальше начинается первый риск: глубже, темнее, меньше лёгкой добычи.";
+                    profile.payoffBeat = "Главная награда - первый хороший узел или заметная группа материалов.";
+                    profile.exitBeat = "Выход должен читаться по тем же формам, по которым ты вошёл.";
+                    profile.playerFreedomRule = "Игрок может свободно кружить по стартовой воде; зона лишь мягко подсказывает выгодный круг.";
+                    profile.softProgressionPull = "Сильнее всего тянет туда, где простой ориентир переходит в первый заметный узел.";
+                    profile.optionalDetourRule = "Если игрок ушёл в сторону, он всё равно должен взять что-то полезное и понять рельеф.";
+                    profile.returnLogic = "Даже короткий выход из зоны должен запоминаться как понятный сборочный карман.";
+                    profile.masteryLogic = "Опытный игрок может резать стартовые круги очень быстро, почти без остановок.";
+                    profile.playerPromise = "Понятный стартовый круг: быстро нашёл, быстро понял, безопасно вернулся.";
+                    profile.routeMemoryRule = "Игрок должен помнить один сильный входной ориентир и один карман передышки.";
+                    profile.failureMode = "Если уйти слишком глубоко без якоря маршрута, стартовая зона перестаёт быть простой.";
+                    break;
+                case "profile.fabrication.early":
+                    profile.entryBeat = "Вход через узнаваемый форпост или тех-остановку.";
+                    profile.routineBeat = "Ближайший круг — проверить крафт, логистику и восстановить набор.";
+                    profile.reliefBeat = "Передышка тут главная: игрок должен чувствовать контроль и reset.";
+                    profile.pressureBeat = "Следующее давление начинается уже после выхода из безопасного контура.";
+                    profile.payoffBeat = "Главная награда — не лут, а подготовка к следующему заходу.";
+                    profile.exitBeat = "Выход должен быть коротким и очевидным.";
+                    profile.playerFreedomRule = "Игрок волен использовать форпост когда хочет; система не требует посещать его по таймеру.";
+                    profile.softProgressionPull = "Место мягко тянет к себе перед новым риском, но не запирает на одном маршруте.";
+                    profile.optionalDetourRule = "Даже если игрок просто проскочил мимо, он должен запомнить точку как возможный reset.";
+                    profile.returnLogic = "Возврат сюда должен ощущаться как разумное решение, а не обязательная остановка.";
+                    profile.masteryLogic = "Опытный игрок использует форпост как быструю логистическую засечку, а не как хаб по расписанию.";
+                    profile.playerPromise = "Надёжная остановка между рискованными кусками маршрута.";
+                    profile.routeMemoryRule = "Игрок должен помнить, где это место относительно следующей опасной зоны.";
+                    profile.failureMode = "Если outpost не читается быстро, он перестаёт быть точкой отдыха.";
+                    break;
+                case "profile.construction.mid":
+                    profile.entryBeat = "Вход через понятную площадку, сокет или чистый строительный коридор.";
+                    profile.routineBeat = "Сначала игрок оценивает, что тут ставится легко, а что мешает.";
+                    profile.reliefBeat = "Передышка — это хороший build pocket, где всё читается без суеты.";
+                    profile.pressureBeat = "Давление создают блокеры, неудачные углы и потребность в правильном модуле.";
+                    profile.payoffBeat = "Главная награда — рабочая точка, после которой путь становится лучше.";
+                    profile.exitBeat = "Игрок уходит, оставив место понятнее и полезнее, чем нашёл.";
+                    profile.playerFreedomRule = "Игрок сам решает, строить тут сейчас, позже или вообще обойти это место.";
+                    profile.softProgressionPull = "Зона мягко подсказывает, что правильная постройка сделает дальнейший маршрут удобнее.";
+                    profile.optionalDetourRule = "Даже если игрок не строит, он должен понять, зачем это место может пригодиться.";
+                    profile.returnLogic = "Строительная зона должна оставаться в памяти как потенциальная точка улучшения маршрута.";
+                    profile.masteryLogic = "Опытный игрок быстро понимает, что и где строить, а что можно игнорировать.";
+                    profile.playerPromise = "Строительство должно улучшать пространство, а не только тратить ресурсы.";
+                    profile.routeMemoryRule = "Игрок должен помнить, где хороший сокет и где был главный blocker.";
+                    profile.failureMode = "Если стройка не меняет маршрут, зона ощущается пустой.";
+                    break;
+                case "profile.power.mid":
+                    profile.entryBeat = "Вход через видимый генераторный или релейный контур.";
+                    profile.routineBeat = "Игрок быстро читает линию: источник -> передача -> нагрузка.";
+                    profile.reliefBeat = "Передышка короткая и техничная: место, где линия снова понятна.";
+                    profile.pressureBeat = "Давление растёт там, где линия рвётся или уходит в плохую воду.";
+                    profile.payoffBeat = "Главная награда — оживлённая линия, стабильная нагрузка или выгодная power pocket.";
+                    profile.exitBeat = "Выход идёт по той же энергетической логике, не по хаосу.";
+                    profile.playerFreedomRule = "Игрок не обязан чинить или читать всю линию за один заход.";
+                    profile.softProgressionPull = "Контур мягко ведёт взгляд от источника к проблемной точке.";
+                    profile.optionalDetourRule = "Даже отдельный кусок линии должен читаться как часть большей системы.";
+                    profile.returnLogic = "Игрок может вернуться позже с лучшим набором и дорешать тот же power-контур.";
+                    profile.masteryLogic = "Опытный игрок будет видеть линию целиком и срезать путь к главной проблеме.";
+                    profile.playerPromise = "Силовая зона должна читаться как система, а не как набор объектов.";
+                    profile.routeMemoryRule = "Игрок должен помнить источник, один relay и проблемный load point.";
+                    profile.failureMode = "Если силовая линия не читается, игрок перестаёт понимать, зачем она нужна.";
+                    break;
+                case "profile.progression.endgame":
+                    profile.entryBeat = "Вход через последний надёжный ориентир перед серьёзным давлением.";
+                    profile.routineBeat = "Рутины мало: игрок быстро понимает, что это уже не зона для ленивого фарма.";
+                    profile.reliefBeat = "Передышка редкая и дорогая — только короткое окно перед следующим push.";
+                    profile.pressureBeat = "Основная часть зоны — hazard gate, service choke, threat pressure и плохой возврат.";
+                    profile.payoffBeat = "Главная награда — редкая цель или late-game материал, оправдывающий весь заход.";
+                    profile.exitBeat = "Выход должен опираться на память маршрута, а не на импровизацию.";
+                    profile.playerFreedomRule = "Игрок может вообще отказаться от глубокой цели и вернуться, это тоже нормальный исход.";
+                    profile.softProgressionPull = "Зона должна соблазнять редкой ценностью, а не насильно заталкивать вперёд.";
+                    profile.optionalDetourRule = "Боковые карманы должны давать сигналы о главной цели, но не ломать свободу захода.";
+                    profile.returnLogic = "Игрок, который отступил, должен сохранить память о gate, relief и payoff.";
+                    profile.masteryLogic = "Опытный игрок строит собственную глубокую линию, используя только ключевые anchor'ы.";
+                    profile.playerPromise = "Поздний заход должен ощущаться как экспедиция, а не как обычный круг.";
+                    profile.routeMemoryRule = "Игрок должен помнить последний anchor, редкую передышку и главный gate.";
+                    profile.failureMode = "Если поздняя зона даёт слишком много комфорта, она теряет ценность.";
+                    break;
+                case "profile.combat.mid":
+                    profile.entryBeat = "Вход через заметное изменение угрозы или поведения воды.";
+                    profile.routineBeat = "Игрок оценивает контакт, дистанцию и вариант контроля.";
+                    profile.reliefBeat = "Передышка короткая и хрупкая, только чтобы сменить темп.";
+                    profile.pressureBeat = "Главный ритм — окна контроля, а не постоянный урон.";
+                    profile.payoffBeat = "Главная награда — пройти мимо угрозы, взять полезное и сохранить темп.";
+                    profile.exitBeat = "Выход лучше работает по памяти пути, чем по гонке.";
+                    profile.playerFreedomRule = "Игрок может драться, обходить или просто читать угрозу и уходить.";
+                    profile.softProgressionPull = "Зона должна давать напряжение, но не запирать в обязательной драке.";
+                    profile.optionalDetourRule = "Даже боковой обход должен чему-то учить про угрозу и пространство.";
+                    profile.returnLogic = "Игрок, ушедший без боя, всё равно должен вынести полезную информацию.";
+                    profile.masteryLogic = "Опытный игрок использует окна контроля как короткие инструменты, а не как главный режим игры.";
+                    profile.playerPromise = "Боевая зона должна проверять контроль и решение, а не тупо съедать ресурс.";
+                    profile.routeMemoryRule = "Игрок должен помнить один safe angle и одну опасную линию входа.";
+                    profile.failureMode = "Если в боевой зоне нет читаемых окон, она превращается в шум.";
+                    break;
+                case "profile.navigation.mid":
+                    profile.entryBeat = "Вход через развилку или понятный маршрутный якорь.";
+                    profile.routineBeat = "Игрок быстро решает, какой путь ведёт к чему.";
+                    profile.reliefBeat = "Передышка здесь — не отдых, а ясность.";
+                    profile.pressureBeat = "Давление идёт от риска ошибиться веткой и потерять память маршрута.";
+                    profile.payoffBeat = "Главная награда — правильная ветка и хорошая route memory.";
+                    profile.exitBeat = "Выход должен быть легче входа, если игрок читал ориентиры правильно.";
+                    profile.playerFreedomRule = "Игрок волен брать любую ветку; зона только помогает потом не потеряться.";
+                    profile.softProgressionPull = "Сильнейший путь должен читаться, но не отменять другие варианты.";
+                    profile.optionalDetourRule = "Неверная ветка тоже должна быть осмысленной, а не пустой ошибкой.";
+                    profile.returnLogic = "Даже после неверного выбора игрок должен суметь восстановить картину маршрута.";
+                    profile.masteryLogic = "Опытный игрок использует хаб как карту в голове и строит свой собственный круг.";
+                    profile.playerPromise = "Навигационная зона должна делать маршрут понятнее, а не запутаннее.";
+                    profile.routeMemoryRule = "Игрок должен помнить ветку, anchor и направление возврата.";
+                    profile.failureMode = "Если ветки не различаются, навигационная зона не выполняет свою работу.";
+                    break;
+                case "profile.trial.early":
+                default:
+                    profile.entryBeat = "Вход через понятную стартовую точку.";
+                    profile.routineBeat = "Базовый круг даёт игроку главный тип действия этой зоны.";
+                    profile.reliefBeat = "Передышка короткая и нужна, чтобы считать следующий шаг.";
+                    profile.pressureBeat = "Дальше зона начинает просить более точное решение.";
+                    profile.payoffBeat = "Главная награда — понятная польза, а не случайная выдача.";
+                    profile.exitBeat = "Выход держится на читаемом маршруте.";
+                    profile.playerFreedomRule = "Игрок свободен идти как хочет; loop — это мягкая форма, а не сценарий.";
+                    profile.softProgressionPull = "Место должно намекать на лучший заход, не отбирая свободу.";
+                    profile.optionalDetourRule = "Даже неидеальный путь должен быть содержательным.";
+                    profile.returnLogic = "Короткий и длинный заход оба должны оставлять читаемую память о зоне.";
+                    profile.masteryLogic = "Опытный игрок читает форму быстрее и сам решает, сколько риска брать.";
+                    profile.playerPromise = "Зона даёт понятный экспедиционный цикл.";
+                    profile.routeMemoryRule = "Игрок должен помнить вход, relief и payoff.";
+                    profile.failureMode = "Если цикл не читается, зона становится шумом.";
+                    break;
+            }
+        }
+
+#endif
+        private static void ApplySandboxAttractionTemplate(WorldSandboxAttractionProfile profile, string zoneProfileId)
+        {
+            switch (zoneProfileId)
+            {
+                case "profile.resources.starter":
+                    profile.entryRead = "Сильный ориентир просто говорит: эту воду стоит проверить.";
+                    profile.ambientValue = "Базовая ценность лежит широко и поддерживает свободные короткие круги.";
+                    profile.detourValue = "Побочные pockets и узлы сидят чуть в стороне и награждают любопытство.";
+                    profile.shelterRead = "Спокойный карман даёт выдох и помогает заново прочитать пространство.";
+                    profile.pressureRead = "Глубже вода начинает честно давить, но не запирает игрока.";
+                    profile.deepLure = "Чуть дальше рутины лежит более редкая причина рискнуть.";
+                    profile.storyLure = "Среда намекает, что глубже начинается что-то более важное, чем простой фарм.";
+                    profile.returnValue = "После первого знакомства сюда выгодно возвращаться уже умнее.";
+                    profile.freedomRule = "Игрок волен кружить, брать малые круги, уходить раньше или нырять глубже по своему желанию.";
+                    profile.curiosityRule = "Любой боковой заход должен давать маленький, но внятный смысл.";
+                    profile.crosslinkRule = "Соседние pockets должны пересекаться так, чтобы игрок строил маршрут в голове сам.";
+                    profile.reentryRule = "После первого знакомства повторный заход должен ощущаться проще и быстрее.";
+                    profile.masteryRule = "Мастерство здесь — знать короткие ресурсоёмкие круги без лишнего блуждания.";
+                    profile.playerPromise = "Понятная стартовая вода с честным фармом и мягким намёком на глубину.";
+                    profile.memoryRule = "Память держится на арках, ступенях, пятнах света и одном хорошем ориентире.";
+                    profile.dangerRule = "Опасность растёт по мере удаления от читаемой безопасной воды.";
+                    break;
+
+                case "profile.power.mid":
+                    profile.entryRead = "Видимый источник или relay-линия сразу цепляют взгляд.";
+                    profile.ambientValue = "Обычная ценность сидит на читаемой связке источник -> передача -> нагрузка.";
+                    profile.detourValue = "Боковые power и service pockets помогают понять систему глубже.";
+                    profile.shelterRead = "Передышка тут — это ясность схемы, а не полная безопасность.";
+                    profile.pressureRead = "Разрыв линии и плохая вода отмечают участок с более высоким риском.";
+                    profile.deepLure = "Дальше манит восстановление важной линии или доступ к более сильной точке питания.";
+                    profile.storyLure = "Энергетический контур намекает, как жила или ломалась эта инфраструктура.";
+                    profile.returnValue = "Повторный заход становится выгоднее, когда игрок уже видит схему целиком.";
+                    profile.freedomRule = "Игрок не обязан чинить весь power-контур за один заход.";
+                    profile.curiosityRule = "Части линии должны быть полезны даже по отдельности.";
+                    profile.crosslinkRule = "Релейные точки должны связывать соседние pockets и маршруты.";
+                    profile.reentryRule = "Повторный заход должен быть короче благодаря пониманию всей линии.";
+                    profile.masteryRule = "Мастерство — видеть схему целиком и резать путь к нужной проблеме.";
+                    profile.playerPromise = "Техническая зона, где система читается как система, а не как шум из объектов.";
+                    profile.memoryRule = "Память держится на источнике, relay-цепочке и одной проблемной точке.";
+                    profile.dangerRule = "Давление растёт там, где линия уходит в тяжёлую воду или начинает ломаться.";
+                    break;
+
+                case "profile.progression.endgame":
+                    profile.entryRead = "Последний надёжный ориентир говорит: дальше вода уже серьёзнее.";
+                    profile.ambientValue = "Обычной ценности мало, и даже мелкие находки намекают на дорогой глубокий смысл.";
+                    profile.detourValue = "Боковые карманы дают сигналы о глубокой цели, но не ведут игрока за руку.";
+                    profile.shelterRead = "Редкий спокойный карман нужен, чтобы решиться на новый push, а не расслабиться.";
+                    profile.pressureRead = "Риск нарастает ступенями и заранее читается по среде.";
+                    profile.deepLure = "Глубже манит дорогая late-game находка, ради которой и затевается заход.";
+                    profile.storyLure = "Среда обещает историю, тайну и ощущение по-настоящему важного места.";
+                    profile.returnValue = "Даже отход оставляет ценность: память, ориентиры, редкую добычу и новый план.";
+                    profile.freedomRule = "Игрок может не брать late-game цель сразу и вернуться позже с другим планом.";
+                    profile.curiosityRule = "Побочные заходы должны подкармливать любопытство, а не ломать свободу.";
+                    profile.crosslinkRule = "Соседние pockets и anchors должны позволять строить свой глубокий маршрут.";
+                    profile.reentryRule = "Даже отступление должно оставлять пользу: память, ориентиры, редкую добычу.";
+                    profile.masteryRule = "Мастерство — собирать свой дерзкий маршрут из нескольких ключевых anchor'ов.";
+                    profile.playerPromise = "Глубокая экспедиция с редкой ценностью, сильной памятью места и честным риском.";
+                    profile.memoryRule = "Память держится на последнем anchor, редкой передышке и сильном предупреждении о риске.";
+                    profile.dangerRule = "Риск нарастает ступенями: редкая передышка, резкий рост давления, затем дорогой push.";
+                    break;
+
+                default:
+                    profile.entryRead = "Входной ориентир должен мягко приглашать внутрь зоны.";
+                    profile.ambientValue = "Обычная ценность должна сидеть рядом с читаемым пространством.";
+                    profile.detourValue = "Побочная ценность должна поощрять свободные отклонения.";
+                    profile.shelterRead = "Передышка нужна, чтобы игрок не терял картину зоны.";
+                    profile.pressureRead = "Давление должно читаться как переход к более серьёзной воде.";
+                    profile.deepLure = "Более редкая ценность должна лежать глубже рутины.";
+                    profile.storyLure = "Зона должна обещать не только ресурсы, но и смысл места.";
+                    profile.returnValue = "Назад игрок должен идти по памяти формы мира.";
+                    profile.freedomRule = "Игрок свободен нарушать идеальный маршрут и строить свой.";
+                    profile.curiosityRule = "Любой detour должен нести маленький, но честный смысл.";
+                    profile.crosslinkRule = "Соседние pockets и anchors должны образовывать сеть, а не трубу.";
+                    profile.reentryRule = "Повторный заход должен ощущаться быстрее и увереннее.";
+                    profile.masteryRule = "Мастерство — строить свой маршрут по памяти и риску.";
+                    profile.playerPromise = "Свободная подводная экспедиция с читаемым пространством.";
+                    profile.memoryRule = "Игрок должен помнить пространство по формам и ориентиру, а не по UI.";
+                    profile.dangerRule = "Риск должен расти мягко и читаемо.";
+                    break;
+            }
         }
 
         private static WorldPrefabFamilyProfile InferSpatialRoleFamilyProfile(string zoneProfileId, string roleId)

@@ -962,6 +962,12 @@ namespace Hecton8.AI
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (globalMaxCount    < 1)   globalMaxCount    = 1;
             if (maxSpawnsPerTick  < 1)   maxSpawnsPerTick  = 1;
             if (spawnRingInner    < 10f) spawnRingInner    = 10f;

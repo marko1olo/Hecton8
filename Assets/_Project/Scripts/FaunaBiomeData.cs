@@ -206,6 +206,11 @@ namespace Hecton8.AI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             _totalWeight = -1f;
             if (biomeMaxCreatures < 0) biomeMaxCreatures = 0;
             if (spawnHeightAboveBottom < 0f) spawnHeightAboveBottom = 0f;

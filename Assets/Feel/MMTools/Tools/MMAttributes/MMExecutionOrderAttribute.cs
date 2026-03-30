@@ -25,6 +25,7 @@ namespace MoreMountains.Tools
 		protected static Type _executionOrderAttributeType;
 		protected static Assembly _typeAssembly;
 		protected static Type[] _assemblyTypes;
+		protected static bool _queued;
 
 		/// <summary>
 		/// Attribute method
@@ -42,6 +43,40 @@ namespace MoreMountains.Tools
 		[InitializeOnLoadMethod]        
 		protected static void ModifyExecutionOrder()
 		{
+			QueueModifyExecutionOrder();
+		}
+
+		protected static void QueueModifyExecutionOrder()
+		{
+			if (_queued)
+			{
+				return;
+			}
+
+			if (Application.isBatchMode ||
+				EditorApplication.isCompiling ||
+				EditorApplication.isUpdating ||
+				EditorApplication.isPlayingOrWillChangePlaymode)
+			{
+				return;
+			}
+
+			_queued = true;
+			EditorApplication.delayCall += DeferredModifyExecutionOrder;
+		}
+
+		protected static void DeferredModifyExecutionOrder()
+		{
+			_queued = false;
+
+			if (Application.isBatchMode ||
+				EditorApplication.isCompiling ||
+				EditorApplication.isUpdating ||
+				EditorApplication.isPlayingOrWillChangePlaymode)
+			{
+				return;
+			}
+
 			Initialization();
 
 			FindExecutionOrderAttributes();

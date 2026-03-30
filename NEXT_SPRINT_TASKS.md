@@ -178,7 +178,7 @@ Notes:
   - construction sites
   - trial ranges that are safe to stream
   - future real progression hubs
-- [ ] connect resource/fabrication/construction authored roots into one streamed progression corridor instead of isolated always-on islands
+- [ ] connect resource/fabrication/construction authored roots into one streamed sandbox region mesh instead of isolated always-on islands
 - [x] add finer-grained slicing inside heavy trial/progression lanes instead of keeping the whole trial range equally alive
 - [ ] add world-interest anchors for future construction/power/service roots once those roots are promoted out of trial-only space
 - [x] add a data-driven world population layer:
@@ -198,7 +198,51 @@ Notes:
   - power clutter
   - route markers
   - combat set dressing
+- [x] add sandbox attraction profiles for world zones
+- [ ] connect sandbox attraction reads to authored/manual fill later:
+  - strong anchors
+  - ambient value pockets
+  - detour value
+  - shelter pockets
+  - pressure thresholds
+  - deep lures
+  - story pulls
+- [x] add a data-driven motivation layer for world zones:
+  - survival need
+  - resource need
+  - engineering need
+  - curiosity pull
+  - story pull
+  - rare value pull
+- [ ] use zone motivation profiles to keep sandbox zones attractive without implying one right route
+- [ ] use sandbox attraction logic to define soft world pressure/readability:
+  - early survival water
+  - mid engineering water
+- [x] start Unity reload cleanup wave 1 on safe non-visual systems:
+  - stop `HectonWorldGenerator` from living in edit-mode by default
+  - stop `HectonVoxelEngine` from doing edit-mode lifecycle churn by default
+  - keep sky / atmosphere / water / celestial live-preview systems untouched
+- [ ] measure whether reload/play-enter stability improves after wave 1:
+  - reload scripts
+  - enter play
+  - return from play
+  - console noise
+- [x] remove edit-mode lifecycle where it was not buying useful preview:
+  - `HectonSocketHelper`
+- [x] reduce duplicate editor rebuild queue spam in:
+  - `ToolStagingSpawner`
+- [x] update old world-source assumptions so startup/debug logic prefers:
+  - `MapMagic`
+  - then legacy `HectonWorldGenerator`
+- [ ] build the audited hook map for remaining `_Project` editor/reload systems:
+  - `Protected`
+  - `Safe To Defer`
+  - `Safe To Disable In Editor`
+  - `Risky`
+  - late expedition water
+  without implying one correct path
   - progression landmarks
+  - optional return pockets
 - [x] back world prefab families with real profile assets so zones and population rules do not rely on plain strings only
 - [x] add a world population family planner so each zone can advertise:
   - near interactive family
@@ -233,9 +277,9 @@ Notes:
   - usage text
 - [x] propagate zone role-plan layout into live world socket diagnostics so future placement decisions are visible at runtime
 - [x] propagate zone role priority into live world socket diagnostics so the runtime layer distinguishes:
-  - primary route
+  - strong anchor
   - primary goal
-  - gate
+  - pressure threshold
   - support reward
   - support problem
 - [ ] start using zone-plan role families as the main future fill contract for real prefab/model placement instead of ad-hoc naming rules
@@ -256,6 +300,14 @@ Notes:
   - power spine
   - rare objective gate
   - rare objective
+- [x] add biome resource-channel profiles so world roles can point at likely material/component payoff
+- [ ] verify rebuilt biome families now all carry:
+  - resource plan
+  - resource channel
+  - landmark plan
+  - spatial pattern
+- [x] add expedition-loop profiles to world zones so each zone has a designed gameplay rhythm
+- [ ] connect expedition-loop beats later to real authored/manual fill and progression hubs
 - [ ] add biome-family grouping on top of the 108 matrix:
   - silt
   - tectonic
@@ -558,7 +610,7 @@ Notes:
 - [x] add family-level landmark plan profiles so each biome family answers:
   - what landmark dominates the biome
   - how the biome reads in near / mid / far
-  - how landmarks support route memory and safe-pocket reading
+  - how landmarks support place memory and safe-pocket reading
 - [x] make ragged zone borders blend gameplay meaning too
   - blended extraction focus
   - blended route rhythm
@@ -574,3 +626,96 @@ Notes:
   - transition hazard gate
   - transition rare objective
   - transition reward pocket
+- [x] remove active rail-like dependency on `expeditionLoopProfile` from world validation and rebuild generation
+- [x] rename generated zone read assets from `Loop_*` to `Read_*` so active data no longer suggests scripted traversal
+- [x] add numeric world motivation weights so sandbox attraction can affect population density and socket importance
+- [ ] after Unity session stabilizes, rerun clean compile + console pass for the latest sandbox-cleanup and motivation-weighting changes
+- [x] confirm reload bottleneck from `Editor.log` instead of guessing
+  - compile is not the main pain
+  - reload finalization / editor assemblies / initialize-on-load is the real pain
+- [x] add external reload-audit tooling that works without a responsive Unity session
+  - `Tools/ReloadAudit/Analyze-EditorLog.ps1`
+  - `Tools/ReloadAudit/Scan-ReloadHooks.ps1`
+- [x] generate first external reload reports from live data
+  - `UNITY_RELOAD_FINDINGS.md`
+  - `UNITY_RELOAD_HOOKS_REPORT.md`
+- [x] shave editor-window reload noise from `HectonMeshCleaner`
+- [x] shave editor-window reload noise from `HectonPhysicsSkinGenerator`
+- [ ] continue safe reload cleanup on our non-visual editor/runtime code
+  - avoid protected live-preview systems
+  - keep reducing edit-mode lifecycle churn
+- [ ] prepare `_Project` asmdef split from facts, not guessing
+  - count editor/runtime files
+  - list runtime files still coupled to editor APIs
+  - only split after those blockers are visible
+- [x] generate `_Project` split readiness report
+  - `UNITY_PROJECT_SPLIT_REPORT.md`
+- [ ] reduce runtime editor-coupling in the highest-signal `_Project` files before any asmdef split
+  - `HectonUnderwaterVisuals`
+  - `HectonVoxelEngine`
+  - `SkySystemFollowCamera`
+  - `HectonWorldGenerator`
+  - `ToolStagingSpawner`
+- [x] move obvious editor-only `_Project` tools out of runtime-side files
+  - `ObjectSpawner`
+- [x] revert unsafe runtime/editor partial extraction before asmdef work
+  - restored stable inline editor autofill blocks in:
+    - `ToolLoadoutProvisioner`
+    - `ToolRuntimeSmokeTester`
+    - `FieldToolRuntimeSmokeTester`
+    - `PDALoadoutTab`
+  - deleted temporary `.Editor.cs` partial files
+- [x] trim safe third-party editor startup noise
+  - `AstarUpdateChecker`
+  - `AudioScriptOrderManager`
+  - `CandiceAutorun`
+  - `MasterAudioHierIcon`
+  - `MasterAudioWelcomeWindow`
+  - `AIPackageManagerHelper`
+  - `AIStartScreen`
+  - `GPUInstancerDefines`
+  - `ftDefine` (Bakery)
+  - `ftUpdater` (Bakery)
+  - `ftFixResettingGlobalsOnSave` (Bakery)
+  - `ES3Postprocessor` (Easy Save 3)
+  - `ES3ScriptingDefineSymbols` (Easy Save 3)
+  - `NiceVibrationsDefineSymbols`
+  - `PhysicsCreatorUpdater`
+- [x] remove obviously bogus runtime/editor hook signals where they add no value
+  - `MMEventManager` no longer carries `[ExecuteAlways]` on a static class
+- [x] add safe reload guards to common non-visual `OnValidate` paths
+  - `ScavengePopulator`
+  - `BaseModule`
+  - `FaunaDirector`
+  - `HectonDirectorAI`
+  - `HectonBaseAI`
+  - `SpatialAudioManager`
+  - `ProximityColliderSystem`
+- [x] extend safe reload guards to authored scene/data components
+  - `PlayerBuilder`
+  - `PowerNode`
+  - `ResourceNode`
+  - `HectonFabricatorUI`
+  - `PlayerPDA`
+  - `ItemData`
+  - `RecipeData`
+  - `BuildableData`
+  - `ModuleCatalog`
+  - `WorldZoneAnchor`
+  - `WorldSliceAnchor`
+  - `WorldContentSocket`
+- [x] extend safe reload guards into more non-visual authored/UI/data components
+  - `AcousticZoneController`
+  - `BarterRuntimeSmokeTester`
+  - `BuilderRuntimeSmokeTester`
+  - `FaunaBiomeData`
+  - `HectonBoidController`
+  - `PlayerToolManager`
+  - `ToolLoadoutProvisioner`
+  - `ToolRuntimeSmokeTester`
+  - `UI/PauseMenuController`
+  - `UI/PDAControlsRebindUI`
+  - `UI/PDAConstructionTab`
+  - `UI/PDADataLogTab`
+- [ ] decide later whether `_Project` needs asmdef splitting after more safe cleanup data
+  - do not rush this before the next measurement pass

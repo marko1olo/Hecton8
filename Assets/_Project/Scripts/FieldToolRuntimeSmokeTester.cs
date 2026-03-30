@@ -11,11 +11,10 @@ using Hecton8.Dev;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
@@ -66,14 +65,6 @@ namespace Hecton8.Gameplay
 
             StartCoroutine(RunSmokePass());
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            AutoResolveSceneReferences();
-            AutoResolveDefaultAssets();
-        }
-#endif
 
         [ContextMenu("Run Field Tool Runtime Smoke Pass")]
         public void RunFromContextMenu()
@@ -500,6 +491,17 @@ namespace Hecton8.Gameplay
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            AutoResolveSceneReferences();
+            AutoResolveDefaultAssets();
+        }
+
         private void AutoResolveDefaultAssets()
         {
             if (salvageProbeItem == null)

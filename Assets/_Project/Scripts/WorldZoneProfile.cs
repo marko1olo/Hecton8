@@ -27,5 +27,8 @@ namespace Hecton8.World
         public WorldPrefabFamilyProfile midVisualProfile;
         public WorldPrefabFamilyProfile farSilhouetteProfile;
         public WorldZonePlanProfile zonePlanProfile;
+        public WorldExpeditionLoopProfile expeditionLoopProfile;
+        public WorldSandboxAttractionProfile sandboxAttractionProfile;
+        public WorldMotivationProfile motivationProfile;
     }
 }

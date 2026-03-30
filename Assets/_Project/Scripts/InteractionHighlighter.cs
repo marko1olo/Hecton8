@@ -469,6 +469,11 @@ namespace Hecton8.Interaction
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (fadeDuration < 0f) fadeDuration = 0f;
             if (intensity    < 0f) intensity    = 0f;
         }

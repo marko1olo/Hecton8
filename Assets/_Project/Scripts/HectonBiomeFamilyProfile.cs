@@ -33,6 +33,7 @@ namespace Hecton8.Environment
         public ItemData tertiaryResource;
         public ItemData signatureComponent;
         public HectonBiomeResourcePlanProfile resourcePlanProfile;
+        public HectonBiomeResourceChannelProfile resourceChannelProfile;
         public HectonBiomeLandmarkPlanProfile landmarkPlanProfile;
         public HectonBiomeSpatialPatternProfile spatialPatternProfile;
 

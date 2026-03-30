@@ -16,7 +16,7 @@
 // Gizmos hide behind geometry (zTest = LessEqual).
 // Context menu "Snap to Surface" auto-aligns socket to nearest mesh.
 //
-// [ExecuteInEditMode] — runs ONLY in Editor, zero runtime cost.
+// Does not need edit-mode lifecycle; gizmos and context actions work without it.
 // ============================================================================
 
 using UnityEngine;
@@ -28,7 +28,6 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.Building
 {
-    [ExecuteInEditMode]
     [DisallowMultipleComponent]
     public sealed class HectonSocketHelper : MonoBehaviour
     {

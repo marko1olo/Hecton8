@@ -460,6 +460,11 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (swaySpeed    < 0.1f) swaySpeed    = 0.1f;
             if (swayMaxAngle < 1f)   swayMaxAngle = 1f;
             if (swayMaxAngle > 45f)  swayMaxAngle = 45f;

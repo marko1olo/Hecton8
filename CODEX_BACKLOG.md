@@ -1,5 +1,117 @@
 # Codex Backlog
 
+# 2026-03-30 - Unity reload cleanup wave 1
+
+- Changed:
+  - `Assets/_Project/Scripts/HectonWorldGenerator.cs`
+  - `Assets/_Project/Scripts/HectonVoxelEngine.cs`
+  - `Assets/_Project/Scripts/HectonSocketHelper.cs`
+  - `Assets/_Project/Scripts/ToolStagingSpawner.cs`
+  - `Assets/_Project/Scripts/SceneBootstrap.cs`
+  - `Assets/_Project/Scripts/HectonVoxelEngine.cs`
+  - `Assets/_Project/Editor/UnityReloadAuditReport.cs`
+  - `UNITY_RELOAD_AUDIT.md`
+- Result:
+  - removed `ExecuteAlways` from both generator-side scripts
+  - `HectonWorldGenerator` no longer wakes edit-mode lifecycle by default
+  - `HectonWorldGenerator` now avoids play-stream cleanup on editor-only disable/reload
+  - `HectonVoxelEngine` now avoids edit-mode `OnEnable/OnDisable/OnDestroy` churn
+  - removed `ExecuteInEditMode` from `HectonSocketHelper`; gizmos and snap action remain
+  - deduplicated queued editor rebuilds in `ToolStagingSpawner`
+  - made `ToolStagingSpawner` wait out compile/update/playmode transitions before rebuilding
+  - updated `SceneBootstrap` world-source priority to prefer `MapMagic` over legacy `HectonWorldGenerator`
+  - moved `HectonVoxelEngine.MCTables` editor shutdown hook registration from eager reload-time init to lazy runtime/editor use
+  - added a menu-driven audit generator:
+    - `Hecton/Validation/Generate Unity Reload Audit Report`
+  - improved the audit generator to:
+    - classify `playModeStateChanged`
+    - ignore itself in the report
+  - added a dedicated reload audit file with:
+    - protected systems
+    - safe targets
+    - risky targets
+- manual preview / inspector buttons remain intact:
+  - world preview generation
+  - world clear
+  - voxel engine inspector actions
+- Intent:
+  - reduce editor/domain reload cost without touching protected live-preview systems:
+    - sky
+    - atmosphere
+    - water
+    - celestial visuals
+- Honest note:
+  - this wave targets safe legacy/auxiliary world-generation scripts first
+  - protected visual edit-time systems were intentionally left untouched
+  - `UnityReloadAuditReport.cs` validated clean through Unity MCP
+  - Unity console reads were clean before the next compile-refresh attempt
+  - parsed `Editor.log` and confirmed the real bottleneck is reload finalization, not compile:
+    - `SetupLoadedEditorAssemblies`
+    - `BeforeProcessingInitializeOnLoad`
+    - `ProcessInitializeOnLoadAttributes`
+    - `AwakeInstancesAfterBackupRestoration`
+  - the follow-up compile refresh timed out and the Unity session dropped again before the new audit menu could be executed
+  - Unity compile/console still needs one more clean MCP pass after the editor session stabilizes
+
+# 2026-03-30 - Sandbox attraction pass
+
+- Added:
+  - `Assets/_Project/Scripts/WorldSandboxAttractionProfile.cs`
+- Extended:
+  - `Assets/_Project/Scripts/WorldZoneProfile.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+  - `Assets/_Project/Scripts/WorldContentSocket.cs`
+  - `Assets/_Project/Scripts/WorldContentDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- Removed rejected idea:
+  - `Assets/_Project/Scripts/WorldProgressionCorridorProfile.cs`
+- Result:
+  - zones now have a real `sandboxAttractionProfile`
+  - the active layer now describes sandbox-friendly area reads:
+    - entry read
+    - ambient value
+    - detour value
+    - shelter read
+    - pressure read
+    - deep lure
+    - readable return
+  - rejected corridor/one-right-route language was removed from the active world layer
+  - world sockets now also resolve a sandbox-attraction role/reason in addition to:
+    - biome fit
+    - spatial role
+    - border role
+    - resource channel
+- Honest verification:
+  - `WorldSandboxAttractionProfile.cs` validated clean through Unity MCP
+  - `WorldZoneProfile.cs` validated clean through Unity MCP
+  - Unity console read returned `0` warning/error entries
+  - MCP validator still emits the old false `duplicate method signature` tail on large pre-existing world scripts, while direct `rg` checks show single method definitions
+
+# 2026-03-30 - World motivation pass
+
+- Added:
+  - `Assets/_Project/Scripts/WorldMotivationProfile.cs`
+- Extended:
+  - `Assets/_Project/Scripts/WorldZoneProfile.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- Result:
+  - world zones now store a separate motivation layer for sandbox play:
+    - survival need
+    - resource need
+    - engineering need
+    - curiosity pull
+    - story pull
+    - rare value pull
+  - this replaces more rail-like thinking with a clearer answer to:
+    - why the player might care about this water now
+    - why they might return later
+  - the motivation layer is optionality-first and explicitly not a forced route
+
 # 2026-03-30 - Zone border blend pass
 
 - Extended:
@@ -46,10 +158,10 @@
 - Result:
   - world sockets now expose not only role and layout, but also role priority
   - runtime layer can now distinguish:
-    - primary route
+    - strong anchor
     - primary hub
     - primary goal
-    - gate
+    - pressure threshold
     - support reward
     - support problem
   - this is the first simple runtime classification of what the player should care about first in a zone
@@ -3387,3 +3499,171 @@ Notes:
 - `WorldContentSocket` now stores border role + border reason as live diagnostics.
 - Goal:
   - make border water produce readable place identity, not only blended biome text
+
+## 2026-03-30 - Biome resource-channel pass
+
+- Added `HectonBiomeResourceChannelProfile`.
+- Biome families now can answer a more concrete question:
+  - what item belongs to a pocket
+  - what belongs to a node cluster
+  - what belongs to a safe pocket
+  - what belongs to power/service pressure
+  - what the rare objective tends to pay out
+- `BiomeMatrixDirector` now exposes channel diagnostics.
+- `WorldPopulationRule` now resolves a likely resource item and reason for each socket role.
+- `WorldPopulationDirector`, `WorldContentSocket`, and `WorldContentDirector` now surface those resource hints live.
+- Goal:
+  - connect biome identity to crafting value without random loot soup
+
+## 2026-03-30 - Expedition-loop pass
+
+- Added `WorldExpeditionLoopProfile`.
+- `WorldZoneProfile` now carries a dedicated expedition loop asset.
+- `WorldRuntimeBootstrapAuthoring` now auto-authors loop profiles for major zone types.
+- `WorldZoneDirector` now exposes:
+  - entry beat
+  - routine beat
+  - relief beat
+  - pressure beat
+  - payoff beat
+  - exit beat
+- Goal:
+  - make zone design readable as a playable expedition rhythm, not only as content structure
+
+## 2026-03-30 - Sandbox correction
+
+- Expedition loops were explicitly reframed as soft pulls, not forced rails.
+- Added to loop profiles:
+  - player freedom rule
+  - soft progression pull
+  - optional detour rule
+  - return logic
+  - mastery logic
+- Goal:
+  - keep the game sandbox-like and Subnautica-like
+  - preserve place memory and progression pull without railroading the player
+- 2026-03-30 - Sandbox cleanup and motivation weighting
+  - removed validator dependency on `expeditionLoopProfile` so the old read layer is no longer treated as mandatory
+  - renamed generated read assets from `Loop_*` to `Read_*`
+  - replaced active `ApplyExpeditionLoopTemplate(...)` generation text with sandbox-readable wording
+  - disabled the old rail-ish template body inside `WorldRuntimeBootstrapAuthoring.cs` so rebuilds no longer re-inject rejected route-script language
+  - added numeric weights to `WorldMotivationProfile`
+  - wired motivation into `WorldPopulationRule` density weighting and runtime diagnostics
+  - world sockets now expose not only biome/resource/sandbox reads, but also the resolved motivation pull and motivation reason
+- 2026-03-30 - Unity reload cleanup wave 1.5
+  - measured `Editor.log` directly instead of waiting on flaky Unity MCP sessions
+  - confirmed the main bottleneck is editor reload/finalization, not compile:
+    - `Domain Reload Profiling` samples: `105s - 153s`
+    - top steps: `FinalizeReload`, `SetupLoadedEditorAssemblies`, `AwakeInstancesAfterBackupRestoration`, `ProcessInitializeOnLoadAttributes`
+  - confirmed `_Project` has no `.asmdef` split yet
+  - identified likely third-party reload weight:
+    - Bakery
+    - GPU Instancer
+    - Astar
+    - MapMagic
+    - Amplify Impostors
+    - MoreMountains / MMPlaylist
+  - added external audit tools that work even when Unity hangs:
+    - `Tools/ReloadAudit/Analyze-EditorLog.ps1`
+    - `Tools/ReloadAudit/Scan-ReloadHooks.ps1`
+  - generated living reports:
+    - `UNITY_RELOAD_FINDINGS.md`
+    - `UNITY_RELOAD_HOOKS_REPORT.md`
+    - `UNITY_PROJECT_SPLIT_REPORT.md`
+  - softened `HectonMeshCleaner` shutdown path so it does not run its heaviest cleanup in the middle of compile/update/playmode transitions
+  - also softened `HectonPhysicsSkinGenerator` shutdown path so it skips non-essential preview cleanup in the same transition window
+  - measured `_Project` split readiness:
+    - `243` total scripts
+    - `208` runtime-side
+    - `35` editor-side
+    - `81` runtime-side files still showing editor-coupling signals
+  - conclusion: do not rush `_Project asmdef` split yet; keep shaving runtime editor coupling first
+  - applied safe vendor editor cleanup:
+    - `AstarUpdateChecker` now only schedules startup update checks when they are actually due
+    - `CandiceAutorun` now uses one-shot `delayCall` with batchmode/playmode guards
+    - `MasterAudioWelcomeWindow` now avoids startup checks when auto-open is disabled and also uses `delayCall`
+    - `MasterAudioHierIcon` now defers hierarchy icon registration and asset loads instead of doing them immediately in static initialization
+    - `AudioScriptOrderManager` (Master Audio) now defers its runtime script execution-order scan instead of running it immediately during static initialization
+    - `AIPackageManagerHelper` now skips auto SRP package probing unless it is actually enabled and safe to do
+    - `GPUInstancerDefines` now defers startup settings generation instead of registering it immediately inside static initialization
+    - `ftUpdater` (Bakery) now defers patch-apply startup work and skips compile/update/playmode-transition windows instead of injecting prompt logic straight from static initialization
+    - `ftFixResettingGlobalsOnSave` (Bakery) now uses an idempotent deferred callback instead of raw editor update scheduling after scene save
+    - `ftDefine` (Bakery) now defers define setup instead of mutating scripting defines directly from static initialization
+    - `ES3Postprocessor` (Easy Save 3) now defers editor hook registration and makes it idempotent instead of wiring all callbacks directly in static initialization
+  - applied additional `_Project` editor startup cleanup:
+    - `VisorOpaqueTextureEnsurer` now warns through deferred startup instead of checking URP state directly inside static initialization
+    - `ObjectSpawner` is now explicitly editor-only, so it no longer pollutes runtime-side `_Project` coupling
+  - fixed and removed the unsafe runtime/editor partial-class experiment before it could become a real compile risk:
+    - restored inline editor autofill blocks in `ToolLoadoutProvisioner`
+    - restored inline editor autofill blocks in `ToolRuntimeSmokeTester`
+    - restored inline editor autofill blocks in `FieldToolRuntimeSmokeTester`
+    - restored inline editor autofill blocks in `PDALoadoutTab`
+    - deleted the temporary `.Editor.cs` partial files
+  - applied another safe vendor/editor cleanup:
+    - `AIStartScreen` (Amplify Impostors) now defers its startup open-check through `delayCall` and skips compile/update/playmode-transition windows
+    - `ES3ScriptingDefineSymbols` (Easy Save 3) now defers define setup through an idempotent `delayCall` path instead of running it directly from static initialization
+    - `NiceVibrationsDefineSymbols` now defers define setup with guard checks instead of mutating symbols directly from static initialization
+    - `PhysicsCreatorUpdater` now defers orphaned-file scanning instead of running it immediately from static initialization
+  - removed a bogus editor hook signal from `MMEventManager`
+    - dropped `[ExecuteAlways]` from the static class because it provides no useful runtime/editor behavior there
+  - applied a mass safe `OnValidate` guard pass on common non-visual gameplay/world scripts:
+    - `ScavengePopulator`
+    - `BaseModule`
+    - `FaunaDirector`
+    - `HectonDirectorAI`
+    - `HectonBaseAI`
+    - `SpatialAudioManager`
+    - `ProximityColliderSystem`
+    - each now bails out of `OnValidate` during compile/update/playmode-transition windows
+  - extended the same safe `OnValidate` guard approach to more authored scene/data components:
+    - `PlayerBuilder`
+    - `PowerNode`
+    - `ResourceNode`
+    - `HectonFabricatorUI`
+    - `PlayerPDA`
+    - `ItemData`
+    - `RecipeData`
+    - `BuildableData`
+    - `ModuleCatalog`
+    - `WorldZoneAnchor`
+    - `WorldSliceAnchor`
+    - `WorldContentSocket`
+  - extended the same guard pattern further into authored runtime helpers and player/world glue:
+    - `BuilderTool`
+    - `Fabricator`
+    - `ItemCatalog`
+    - `ModuleMarker`
+    - `PlayerFlashlight`
+    - `PlayerFootstepAudio`
+    - `ScanRuntimeSmokeTester`
+    - `ToolTrialRangeRuntimeSmokeTester`
+    - `UIRuntimeSmokeTester`
+    - `ScannableTarget`
+    - `SurvivalStats`
+    - `HUDNotification`
+    - `HectonItem`
+    - `HectonPlayerMovement`
+    - `HectonPlayerSpawner`
+    - `InteractionHighlighter`
+    - `WorldInterestAnchor`
+    - `WorldFidelityRoot`
+  - extended the safe `OnValidate` guard pass again into more non-visual authored/UI/data scripts:
+    - `AcousticZoneController`
+    - `BarterRuntimeSmokeTester`
+    - `BuilderRuntimeSmokeTester`
+    - `FaunaBiomeData`
+    - `HectonBoidController`
+    - `PlayerToolManager`
+    - `ToolLoadoutProvisioner`
+    - `ToolRuntimeSmokeTester`
+    - `PauseMenuController`
+    - `PDAControlsRebindUI`
+    - `PDAConstructionTab`
+    - `PDADataLogTab`
+  - `_Project` split readiness improved:
+    - runtime-side files dropped from `208` to `207`
+    - editor-side files sit at `36`
+    - runtime files with editor-coupling signals currently sit at `80`
+  - honest status:
+    - the report count rose back above `77` because the unsafe partial extraction was reverted cleanly
+    - this is the correct tradeoff: stable code first, asmdef-split prep second

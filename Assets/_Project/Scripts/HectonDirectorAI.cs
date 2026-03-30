@@ -970,6 +970,12 @@ namespace Hecton8.Systems.AI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (predatorScanRadius          < 1f)  predatorScanRadius          = 1f;
             if (predatorsForMaxTension      < 1)   predatorsForMaxTension      = 1;
             if (calmBeforePeakSeconds       < 5f)  calmBeforePeakSeconds       = 5f;

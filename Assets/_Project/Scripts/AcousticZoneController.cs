@@ -556,6 +556,11 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (transitionDuration < 0f) transitionDuration = 0f;
             if (underwaterTransitionDuration < 0f) underwaterTransitionDuration = 0f;
             if (transitionVolume < 0f) transitionVolume = 0f;

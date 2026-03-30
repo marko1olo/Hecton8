@@ -503,6 +503,12 @@ namespace Hecton8.Scavenging
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (maxHealth      < 1f)  maxHealth      = 1f;
             if (lootCount      < 0)   lootCount      = 0;
             if (lootLifetime   < 0f)  lootLifetime   = 0f;

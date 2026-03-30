@@ -440,7 +440,6 @@ public struct HectonColorJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonWorldGenerator
 
-[ExecuteAlways]
 public class HectonWorldGenerator : MonoBehaviour
 {
     // ╔═══════════════════════════════════════════════╗
@@ -569,11 +568,17 @@ public class HectonWorldGenerator : MonoBehaviour
 
     void OnEnable()
     {
-        if (Application.isPlaying) StartStreaming();
+        if (!Application.isPlaying)
+            return;
+
+        StartStreaming();
     }
 
     void OnDisable()
     {
+        if (!Application.isPlaying)
+            return;
+
         StopStreaming();
     }
 
@@ -1669,6 +1674,13 @@ public class HectonWorldGenerator : MonoBehaviour
 
     void OnDestroy()
     {
+        if (!Application.isPlaying)
+        {
+            ClearPreview();
+            DisposeLUTs();
+            return;
+        }
+
         ClearAll();
     }
 }

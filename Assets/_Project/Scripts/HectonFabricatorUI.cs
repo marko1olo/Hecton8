@@ -1442,6 +1442,12 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (fontSizeHeader     < 8f)  fontSizeHeader     = 8f;
             if (fontSizeBody       < 6f)  fontSizeBody       = 6f;
             if (fontSizeHint       < 6f)  fontSizeHint       = 6f;

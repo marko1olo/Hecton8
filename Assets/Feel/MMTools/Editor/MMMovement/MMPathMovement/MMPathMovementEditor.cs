@@ -10,7 +10,6 @@ namespace MoreMountains.Tools
 	/// This class adds names for each LevelMapPathElement next to it on the scene view, for easier setup
 	/// </summary>
 	[CustomEditor(typeof(MMPathMovement),true)]
-	[InitializeOnLoad]
 	public class MMPathMovementEditor : Editor 
 	{		
 		public MMPathMovement pathMovementTarget

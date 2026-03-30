@@ -5,6 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditorInternal;
 
 namespace NASAPunk.Visor
 {
@@ -13,6 +14,23 @@ namespace NASAPunk.Visor
     {
         static VisorOpaqueTextureEnsurer()
         {
+            EditorApplication.delayCall -= CheckOpaqueTextureSupport;
+            EditorApplication.delayCall += CheckOpaqueTextureSupport;
+        }
+
+        private static void CheckOpaqueTextureSupport()
+        {
+            EditorApplication.delayCall -= CheckOpaqueTextureSupport;
+
+            if (InternalEditorUtility.inBatchMode)
+                return;
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorApplication.delayCall += CheckOpaqueTextureSupport;
+                return;
+            }
+
             var pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
                 as UniversalRenderPipelineAsset;
 

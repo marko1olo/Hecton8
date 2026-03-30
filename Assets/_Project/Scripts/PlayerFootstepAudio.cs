@@ -439,6 +439,11 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (minStepInterval < 0.01f) minStepInterval = 0.01f;
             if (terrainLayerIndex < 0) terrainLayerIndex = 0;
             if (terrainLayerIndex > 31) terrainLayerIndex = 31;

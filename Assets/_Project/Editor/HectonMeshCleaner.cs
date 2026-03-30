@@ -70,8 +70,30 @@ public class HectonMeshCleaner : EditorWindow
     }
 
     private void OnEnable() { SceneView.duringSceneGui += OnSceneGUI; EditorApplication.playModeStateChanged += OnPlayMode; }
-    private void OnDisable() { SceneView.duringSceneGui -= OnSceneGUI; EditorApplication.playModeStateChanged -= OnPlayMode; FullReset(); CleanupTemp(); }
-    private void OnPlayMode(PlayModeStateChange s) { FullReset(); }
+    private void OnDisable()
+    {
+        SceneView.duringSceneGui -= OnSceneGUI;
+        EditorApplication.playModeStateChanged -= OnPlayMode;
+
+        if (IsEditorTransitionBusy())
+            return;
+
+        FullReset();
+        CleanupTemp();
+    }
+
+    private void OnPlayMode(PlayModeStateChange s)
+    {
+        if (s == PlayModeStateChange.ExitingEditMode || s == PlayModeStateChange.ExitingPlayMode)
+            FullReset();
+    }
+
+    private static bool IsEditorTransitionBusy()
+    {
+        return EditorApplication.isCompiling ||
+               EditorApplication.isUpdating ||
+               EditorApplication.isPlayingOrWillChangePlaymode;
+    }
 
     // ═══════════════════════════════════════════════════════════════════
     // STATE PROTECTION

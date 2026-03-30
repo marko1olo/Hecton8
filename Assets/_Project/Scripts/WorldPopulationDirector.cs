@@ -33,6 +33,12 @@ namespace Hecton8.World
         [SerializeField] private string _debugPrimarySpatialReason = "None";
         [SerializeField] private string _debugPrimaryBorderRole = "None";
         [SerializeField] private string _debugPrimaryBorderReason = "None";
+        [SerializeField] private string _debugPrimaryResourceItem = "None";
+        [SerializeField] private string _debugPrimaryResourceReason = "None";
+        [SerializeField] private string _debugPrimaryMotivationPull = "None";
+        [SerializeField] private string _debugPrimaryMotivationReason = "None";
+        [SerializeField] private string _debugPrimarySandboxAttractionRole = "None";
+        [SerializeField] private string _debugPrimarySandboxAttractionReason = "None";
         [SerializeField] private string _debugPrimaryZoneRoleFamily = "None";
         [SerializeField] private string _debugPrimaryZoneRoleLayout = "None";
         [SerializeField] private string _debugPrimaryZoneRolePriority = "None";
@@ -44,7 +50,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ResolveReferences();
-            UpdateDiagnostics(null, null, 0f, null, null, 0f, "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", 0, 0);
+            UpdateDiagnostics(null, null, 0f, null, null, 0f, "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", 0, 0);
         }
 
         private void OnEnable()
@@ -112,6 +118,12 @@ namespace Hecton8.World
             string primarySpatialReason = "None";
             string primaryBorderRole = "None";
             string primaryBorderReason = "None";
+            string primaryResourceItem = "None";
+            string primaryResourceReason = "None";
+            string primaryMotivationPull = "None";
+            string primaryMotivationReason = "None";
+            string primarySandboxAttractionRole = "None";
+            string primarySandboxAttractionReason = "None";
             string primaryZoneRoleFamily = "None";
             string primaryZoneRoleLayout = "None";
             string primaryZoneRolePriority = "None";
@@ -144,6 +156,12 @@ namespace Hecton8.World
                             candidateSelection.SpatialReason,
                             candidateSelection.BorderBlendRole,
                             candidateSelection.BorderBlendReason,
+                            candidateSelection.ResourceChannelItem,
+                            candidateSelection.ResourceChannelReason,
+                            candidateSelection.MotivationPull,
+                            candidateSelection.MotivationReason,
+                            candidateSelection.SandboxAttractionRole,
+                            candidateSelection.SandboxAttractionReason,
                             candidateSelection.ZoneRoleFamily,
                             candidateSelection.ZoneRoleLayout,
                             candidateSelection.ZoneRolePriority);
@@ -166,6 +184,12 @@ namespace Hecton8.World
                         primarySpatialReason = blendedSelection.SpatialReason;
                         primaryBorderRole = blendedSelection.BorderBlendRole;
                         primaryBorderReason = blendedSelection.BorderBlendReason;
+                        primaryResourceItem = blendedSelection.ResourceChannelItem;
+                        primaryResourceReason = blendedSelection.ResourceChannelReason;
+                        primaryMotivationPull = blendedSelection.MotivationPull;
+                        primaryMotivationReason = blendedSelection.MotivationReason;
+                        primarySandboxAttractionRole = blendedSelection.SandboxAttractionRole;
+                        primarySandboxAttractionReason = blendedSelection.SandboxAttractionReason;
                         primaryZoneRoleFamily = blendedSelection.ZoneRoleFamily;
                         primaryZoneRoleLayout = blendedSelection.ZoneRoleLayout;
                         primaryZoneRolePriority = blendedSelection.ZoneRolePriority;
@@ -175,7 +199,7 @@ namespace Hecton8.World
                 }
             }
 
-            UpdateDiagnostics(zone, secondaryZone, zoneBlendFactor, socket, primaryRule, primaryDensityWeight, primaryBiomeFit, primaryExtraction, primaryLandmark, primarySpatialRole, primarySpatialReason, primaryBorderRole, primaryBorderReason, primaryZoneRoleFamily, primaryZoneRoleLayout, primaryZoneRolePriority, primaryPurpose, matchedCount, resolvedSocketCount);
+            UpdateDiagnostics(zone, secondaryZone, zoneBlendFactor, socket, primaryRule, primaryDensityWeight, primaryBiomeFit, primaryExtraction, primaryLandmark, primarySpatialRole, primarySpatialReason, primaryBorderRole, primaryBorderReason, primaryResourceItem, primaryResourceReason, primaryMotivationPull, primaryMotivationReason, primarySandboxAttractionRole, primarySandboxAttractionReason, primaryZoneRoleFamily, primaryZoneRoleLayout, primaryZoneRolePriority, primaryPurpose, matchedCount, resolvedSocketCount);
         }
 
         private WorldContentSocket FindNearestSocketInZone(WorldZoneAnchor zone)
@@ -276,6 +300,12 @@ namespace Hecton8.World
                     BuildBlendedString(rule.BuildSpatialRoleReason(zone, socket), rule.BuildSpatialRoleReason(secondaryZone, socket), primaryMatched, secondaryMatched, blendFactor),
                     rule.BuildBorderBlendRole(zone, secondaryZone, socket, blendFactor),
                     rule.BuildBorderBlendReason(zone, secondaryZone, socket, blendFactor),
+                    rule.BuildResourceChannelItem(resolvedZone, socket),
+                    rule.BuildResourceChannelReason(resolvedZone, socket),
+                    rule.BuildMotivationPull(resolvedZone, socket),
+                    rule.BuildMotivationReason(resolvedZone, socket),
+                    rule.BuildSandboxAttractionRole(resolvedZone, socket),
+                    rule.BuildSandboxAttractionReason(resolvedZone, socket),
                     rule.BuildZoneRoleFamily(resolvedZone, socket),
                     rule.BuildZoneRoleLayout(resolvedZone, socket),
                     rule.BuildZoneRolePriority(resolvedZone, socket));
@@ -298,6 +328,12 @@ namespace Hecton8.World
             string primarySpatialReason,
             string primaryBorderRole,
             string primaryBorderReason,
+            string primaryResourceItem,
+            string primaryResourceReason,
+            string primaryMotivationPull,
+            string primaryMotivationReason,
+            string primarySandboxAttractionRole,
+            string primarySandboxAttractionReason,
             string primaryZoneRoleFamily,
             string primaryZoneRoleLayout,
             string primaryZoneRolePriority,
@@ -329,6 +365,12 @@ namespace Hecton8.World
             _debugPrimarySpatialReason = string.IsNullOrWhiteSpace(primarySpatialReason) ? "None" : primarySpatialReason;
             _debugPrimaryBorderRole = string.IsNullOrWhiteSpace(primaryBorderRole) ? "None" : primaryBorderRole;
             _debugPrimaryBorderReason = string.IsNullOrWhiteSpace(primaryBorderReason) ? "None" : primaryBorderReason;
+            _debugPrimaryResourceItem = string.IsNullOrWhiteSpace(primaryResourceItem) ? "None" : primaryResourceItem;
+            _debugPrimaryResourceReason = string.IsNullOrWhiteSpace(primaryResourceReason) ? "None" : primaryResourceReason;
+            _debugPrimaryMotivationPull = string.IsNullOrWhiteSpace(primaryMotivationPull) ? "None" : primaryMotivationPull;
+            _debugPrimaryMotivationReason = string.IsNullOrWhiteSpace(primaryMotivationReason) ? "None" : primaryMotivationReason;
+            _debugPrimarySandboxAttractionRole = string.IsNullOrWhiteSpace(primarySandboxAttractionRole) ? "None" : primarySandboxAttractionRole;
+            _debugPrimarySandboxAttractionReason = string.IsNullOrWhiteSpace(primarySandboxAttractionReason) ? "None" : primarySandboxAttractionReason;
             _debugPrimaryZoneRoleFamily = string.IsNullOrWhiteSpace(primaryZoneRoleFamily) ? "None" : primaryZoneRoleFamily;
             _debugPrimaryZoneRoleLayout = string.IsNullOrWhiteSpace(primaryZoneRoleLayout) ? "None" : primaryZoneRoleLayout;
             _debugPrimaryZoneRolePriority = string.IsNullOrWhiteSpace(primaryZoneRolePriority) ? "None" : primaryZoneRolePriority;
@@ -371,6 +413,12 @@ namespace Hecton8.World
                 string spatialReason,
                 string borderBlendRole,
                 string borderBlendReason,
+                string resourceChannelItem,
+                string resourceChannelReason,
+                string motivationPull,
+                string motivationReason,
+                string sandboxAttractionRole,
+                string sandboxAttractionReason,
                 string zoneRoleFamily,
                 string zoneRoleLayout,
                 string zoneRolePriority)
@@ -385,6 +433,12 @@ namespace Hecton8.World
                 SpatialReason = spatialReason;
                 BorderBlendRole = borderBlendRole;
                 BorderBlendReason = borderBlendReason;
+                ResourceChannelItem = resourceChannelItem;
+                ResourceChannelReason = resourceChannelReason;
+                MotivationPull = motivationPull;
+                MotivationReason = motivationReason;
+                SandboxAttractionRole = sandboxAttractionRole;
+                SandboxAttractionReason = sandboxAttractionReason;
                 ZoneRoleFamily = zoneRoleFamily;
                 ZoneRoleLayout = zoneRoleLayout;
                 ZoneRolePriority = zoneRolePriority;
@@ -400,6 +454,12 @@ namespace Hecton8.World
             public string SpatialReason { get; }
             public string BorderBlendRole { get; }
             public string BorderBlendReason { get; }
+            public string ResourceChannelItem { get; }
+            public string ResourceChannelReason { get; }
+            public string MotivationPull { get; }
+            public string MotivationReason { get; }
+            public string SandboxAttractionRole { get; }
+            public string SandboxAttractionReason { get; }
             public string ZoneRoleFamily { get; }
             public string ZoneRoleLayout { get; }
             public string ZoneRolePriority { get; }

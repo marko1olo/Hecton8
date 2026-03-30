@@ -626,6 +626,18 @@ namespace Hecton8.EditorTools
                     warningCount++;
                 }
 
+                if (anchor.Profile.sandboxAttractionProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' is missing a sandboxAttractionProfile.", anchor);
+                    warningCount++;
+                }
+
+                if (anchor.Profile.motivationProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' is missing a motivationProfile.", anchor);
+                    warningCount++;
+                }
+
                 if (string.IsNullOrWhiteSpace(anchor.Profile.nearInteractiveFamily))
                 {
                     Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has an empty nearInteractiveFamily.", anchor);

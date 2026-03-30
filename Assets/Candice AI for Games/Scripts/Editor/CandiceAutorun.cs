@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 using System;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
@@ -14,12 +15,19 @@ namespace CandiceAIforGames.AI
         static string storagePath;
         static CandiceAutorun()
         {
-            EditorApplication.update += Update;
             storagePath = Application.persistentDataPath + "/candiceAutorun.txt";
+            if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            EditorApplication.delayCall += Update;
         }
         static void Update()
         {
-            EditorApplication.update -= Update;
+            EditorApplication.delayCall -= Update;
+
+            if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             double time = EditorApplication.timeSinceStartup;
             if (time < 40)
             {
@@ -45,7 +53,7 @@ namespace CandiceAIforGames.AI
         }
         static void LaunchStartupWindow()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+            if (!InternalEditorUtility.inBatchMode && !EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 EditorWindow window = EditorWindow.GetWindow<StartupWindow>();
                 window.titleContent = new GUIContent("Candice AI for Games");

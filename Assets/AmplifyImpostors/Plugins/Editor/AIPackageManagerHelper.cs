@@ -5,6 +5,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEditor.PackageManager.Requests;
 using System.Collections.Generic;
 using System.IO;
@@ -122,7 +123,13 @@ namespace AmplifyImpostors
 
 		static AIPackageManagerHelper()
 		{
-			RequestInfo();
+			if ( InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode )
+				return;
+
+			if ( !Preferences.GlobalAutoSRP )
+				return;
+
+			EditorApplication.delayCall += RequestInfo;
 		}
 
 		static void WaitForPackageListBeforeUpdating()
@@ -136,6 +143,14 @@ namespace AmplifyImpostors
 
 		public static void RequestInfo()
 		{
+			EditorApplication.delayCall -= RequestInfo;
+
+			if ( InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode )
+				return;
+
+			if ( !Preferences.GlobalAutoSRP )
+				return;
+
 			if ( !m_requireUpdateList && m_importingPackage == AIImportFlags.None )
 			{
 				m_requireUpdateList = true;

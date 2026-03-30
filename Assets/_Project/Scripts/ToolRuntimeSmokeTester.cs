@@ -9,11 +9,10 @@ using System.Collections;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using UnityEngine;
 
 namespace Hecton8.Dev
 {
@@ -55,14 +54,6 @@ namespace Hecton8.Dev
 
             StartCoroutine(RunSmokePass());
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            AutoResolveSceneReferences();
-            AutoResolveDefaultAssets();
-        }
-#endif
 
         private IEnumerator RunSmokePass()
         {
@@ -249,7 +240,26 @@ namespace Hecton8.Dev
                 playerInventory = FindFirstObjectByType<PlayerInventory>();
         }
 
+        private void LogVerbose(string message)
+        {
+            if (!verboseLogging)
+                return;
+
+            Debug.Log($"[ToolSmoke] {message}");
+        }
+
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            AutoResolveSceneReferences();
+            AutoResolveDefaultAssets();
+        }
+
         private void AutoResolveDefaultAssets()
         {
             string[] paths =
@@ -277,13 +287,5 @@ namespace Hecton8.Dev
             }
         }
 #endif
-
-        private void LogVerbose(string message)
-        {
-            if (!verboseLogging)
-                return;
-
-            Debug.Log($"[ToolSmoke] {message}");
-        }
     }
 }

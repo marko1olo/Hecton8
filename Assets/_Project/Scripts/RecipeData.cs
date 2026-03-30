@@ -104,6 +104,12 @@ namespace Hecton8.Crafting
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (resultQuantity < 1) resultQuantity = 1;
             if (craftTime < 0.1f)   craftTime = 0.1f;
 

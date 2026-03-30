@@ -6,6 +6,8 @@ using UnityEditor;
 [InitializeOnLoad]
 public class PhysicsCreatorUpdater
 {
+	private static bool _queued;
+
 	private class SearchQuery
 	{
 		public SearchQuery(string n, string t)
@@ -20,6 +22,34 @@ public class PhysicsCreatorUpdater
 
 	static PhysicsCreatorUpdater()
 	{
+		QueueCleanupScan();
+	}
+
+	private static void QueueCleanupScan()
+	{
+		if (_queued)
+			return;
+
+		if (Application.isBatchMode ||
+			EditorApplication.isCompiling ||
+			EditorApplication.isUpdating ||
+			EditorApplication.isPlayingOrWillChangePlaymode)
+			return;
+
+		_queued = true;
+		EditorApplication.delayCall += DeferredCleanupScan;
+	}
+
+	private static void DeferredCleanupScan()
+	{
+		_queued = false;
+
+		if (Application.isBatchMode ||
+			EditorApplication.isCompiling ||
+			EditorApplication.isUpdating ||
+			EditorApplication.isPlayingOrWillChangePlaymode)
+			return;
+
 		//Debug.Log("PhysicsCreatorUpdater checking for orphaned files");
 
 		int numDeleted = 0;

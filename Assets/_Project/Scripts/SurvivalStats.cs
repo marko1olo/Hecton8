@@ -76,6 +76,11 @@ public sealed class SurvivalStats : ScriptableObject
 #if UNITY_EDITOR
     private void OnValidate()
     {
+        if (UnityEditor.EditorApplication.isCompiling ||
+            UnityEditor.EditorApplication.isUpdating ||
+            UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            return;
+
         // Clamp to sane minimums — prevents division-by-zero at runtime
         maxOxygen              = Mathf.Max(1f,  maxOxygen);
         maxEnergy              = Mathf.Max(1f,  maxEnergy);

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 #if UNITY_2018_1_OR_NEWER
 using UnityEngine.Networking;
 #endif
@@ -107,11 +108,27 @@ namespace Pathfinding {
 		};
 
 		static AstarUpdateChecker() {
-			// Add a callback so that we can parse the message when it has been downloaded
-			EditorApplication.update += UpdateCheckLoop;
 			EditorBase.getDocumentationURL = () => GetURL("documentation");
+			if (!ShouldScheduleStartupCheck()) return;
+			EditorApplication.delayCall += RegisterStartupCheck;
 		}
 
+		static bool ShouldScheduleStartupCheck () {
+			if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode) return false;
+
+			if (updateCheckDownload != null) return true;
+
+			var hasCachedServerMessage = !string.IsNullOrEmpty(EditorPrefs.GetString("AstarServerMessage"));
+			var minutesUntilUpdate = lastUpdateCheck.AddDays(updateCheckRate).AddMinutes(20).Subtract(System.DateTime.UtcNow).TotalMinutes;
+
+			return !hasCachedServerMessage || minutesUntilUpdate < 10;
+		}
+
+		static void RegisterStartupCheck () {
+			if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode) return;
+			EditorApplication.update -= UpdateCheckLoop;
+			EditorApplication.update += UpdateCheckLoop;
+		}
 
 		static void RefreshServerMessage () {
 			if (!hasParsedServerMessage) {
@@ -140,7 +157,7 @@ namespace Pathfinding {
 			EditorApplication.update -= UpdateCheckLoop;
 
 			// Add a callback so that we can parse the message when it has been downloaded
-			EditorApplication.update += UpdateCheckLoop;
+			EditorApplication.delayCall += RegisterStartupCheck;
 		}
 
 		/// <summary>

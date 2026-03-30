@@ -139,6 +139,12 @@ namespace Hecton8.Items
         /// </summary>
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             // ◆ NEW — не допускаем нулевые/отрицательные габариты
             if (width  < 1) width  = 1;
             if (height < 1) height = 1;

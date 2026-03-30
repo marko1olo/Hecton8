@@ -18,6 +18,7 @@ namespace Hecton8.EditorTools
         private const string BiomeFaunaFamilyProfileFolder = "Assets/_Project/Data/Biomes/FaunaFamilies";
         private const string BiomePlayProfileFolder = "Assets/_Project/Data/Biomes/PlayProfiles";
         private const string BiomeResourcePlanProfileFolder = "Assets/_Project/Data/Biomes/ResourcePlans";
+        private const string BiomeResourceChannelProfileFolder = "Assets/_Project/Data/Biomes/ResourceChannels";
         private const string BiomeLandmarkPlanProfileFolder = "Assets/_Project/Data/Biomes/LandmarkPlans";
         private const string BiomeSpatialPatternProfileFolder = "Assets/_Project/Data/Biomes/SpatialPatterns";
         private const string BiomeCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
@@ -36,6 +37,7 @@ namespace Hecton8.EditorTools
             EnsureFolder(BiomeFaunaFamilyProfileFolder);
             EnsureFolder(BiomePlayProfileFolder);
             EnsureFolder(BiomeResourcePlanProfileFolder);
+            EnsureFolder(BiomeResourceChannelProfileFolder);
             EnsureFolder(BiomeLandmarkPlanProfileFolder);
             EnsureFolder(BiomeSpatialPatternProfileFolder);
 
@@ -235,6 +237,12 @@ namespace Hecton8.EditorTools
                     if (profile.familyProfile.resourcePlanProfile == null)
                     {
                         Debug.LogWarning($"[BiomeMatrixValidation] Biome family '{profile.familyProfile.familyLabel}' has no resource plan profile.", profile.familyProfile);
+                        warningCount++;
+                    }
+
+                    if (profile.familyProfile.resourceChannelProfile == null)
+                    {
+                        Debug.LogWarning($"[BiomeMatrixValidation] Biome family '{profile.familyProfile.familyLabel}' has no resource channel profile.", profile.familyProfile);
                         warningCount++;
                     }
 
@@ -1360,6 +1368,10 @@ namespace Hecton8.EditorTools
                 lateReasonToReturn,
                 extractionStyle,
                 routeRewardLogic);
+
+            profile.resourceChannelProfile = EnsureResourceChannelProfile(
+                profile,
+                familyId);
         }
 
         private static HectonBiomeResourcePlanProfile EnsureResourcePlanProfile(
@@ -1393,6 +1405,75 @@ namespace Hecton8.EditorTools
             profile.lateReasonToReturn = lateReasonToReturn;
             profile.extractionStyle = extractionStyle;
             profile.routeRewardLogic = routeRewardLogic;
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static HectonBiomeResourceChannelProfile EnsureResourceChannelProfile(
+            HectonBiomeFamilyProfile family,
+            string familyId)
+        {
+            string fileName = $"ResourceChannel_{SanitizeId(familyId)}.asset";
+            string assetPath = $"{BiomeResourceChannelProfileFolder}/{fileName}";
+            HectonBiomeResourceChannelProfile profile = AssetDatabase.LoadAssetAtPath<HectonBiomeResourceChannelProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<HectonBiomeResourceChannelProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = familyId.Replace("biome.family.", "biome.resource_channel.");
+            profile.profileLabel = $"{family.familyLabel} Resource Channel";
+            profile.resourcePocketItem = family.primaryResource;
+            profile.nodeClusterItem = family.secondaryResource != null ? family.secondaryResource : family.primaryResource;
+            profile.safePocketItem = family.secondaryResource != null ? family.secondaryResource : family.primaryResource;
+            profile.buildSocketItem = family.signatureComponent != null ? family.signatureComponent : family.secondaryResource;
+            profile.powerSpineItem = family.signatureComponent != null ? family.signatureComponent : family.tertiaryResource;
+            profile.serviceChokeItem = family.signatureComponent != null ? family.signatureComponent : family.secondaryResource;
+            profile.routeAnchorHintItem = family.secondaryResource != null ? family.secondaryResource : family.primaryResource;
+            profile.hazardGateRewardItem = family.tertiaryResource != null ? family.tertiaryResource : family.secondaryResource;
+            profile.rareObjectiveRewardItem = family.signatureComponent != null ? family.signatureComponent : family.tertiaryResource;
+
+            switch (familyId)
+            {
+                case "biome.family.littoral_karst":
+                case "biome.family.sediment_drift":
+                case "biome.family.granite_escarpment":
+                case "biome.family.fossil_reef":
+                    profile.safePocketItem = family.primaryResource;
+                    profile.routeAnchorHintItem = family.secondaryResource != null ? family.secondaryResource : family.primaryResource;
+                    break;
+                case "biome.family.tectonic_spine":
+                case "biome.family.crystal_growth":
+                case "biome.family.abyssal_silt":
+                    profile.nodeClusterItem = family.primaryResource;
+                    profile.safePocketItem = family.secondaryResource != null ? family.secondaryResource : family.primaryResource;
+                    profile.hazardGateRewardItem = family.signatureComponent != null ? family.signatureComponent : family.tertiaryResource;
+                    break;
+                case "biome.family.volcanic_glass":
+                case "biome.family.chemosynthetic_brine":
+                case "biome.family.metallic_hadal":
+                    profile.powerSpineItem = family.primaryResource;
+                    profile.serviceChokeItem = family.signatureComponent != null ? family.signatureComponent : family.secondaryResource;
+                    profile.rareObjectiveRewardItem = family.tertiaryResource != null ? family.tertiaryResource : family.signatureComponent;
+                    break;
+                case "biome.family.volcanic_hadal":
+                case "biome.family.rift_spine":
+                case "biome.family.rift_void":
+                    profile.hazardGateRewardItem = family.secondaryResource != null ? family.secondaryResource : family.primaryResource;
+                    profile.rareObjectiveRewardItem = family.signatureComponent != null ? family.signatureComponent : family.tertiaryResource;
+                    break;
+            }
+
+            string pocketItem = GetItemLabel(profile.resourcePocketItem, "field material");
+            string nodeItem = GetItemLabel(profile.nodeClusterItem, "node material");
+            string safeItem = GetItemLabel(profile.safePocketItem, "stabilizer material");
+            string rareItem = GetItemLabel(profile.rareObjectiveRewardItem, "late reward");
+            profile.pocketRead = $"Routine nearby pockets usually pay out {pocketItem}.";
+            profile.nodeRead = $"Heavier node clusters here usually lead to {nodeItem}.";
+            profile.safePocketRead = $"Short relief spaces often still give {safeItem}, so retreat is not empty.";
+            profile.routeRead = $"Route anchors hint this biome's material line before the player fully commits.";
+            profile.rareRead = $"The expensive late pull of this family usually resolves into {rareItem}.";
             EditorUtility.SetDirty(profile);
             return profile;
         }

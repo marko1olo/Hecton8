@@ -743,6 +743,11 @@ public class HectonPlayerSpawner : MonoBehaviour
 
     private void OnValidate()
     {
+        if (UnityEditor.EditorApplication.isCompiling ||
+            UnityEditor.EditorApplication.isUpdating ||
+            UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            return;
+
         if (maxRetriesPerPoint < 1) maxRetriesPerPoint = 1;
         if (globalTimeoutSec < 10f) globalTimeoutSec = 10f;
         if (retryDelay < 0.1f) retryDelay = 0.1f;

@@ -71,15 +71,29 @@ public static class MCTables
     static NativeArray<int> _triTable;
     static int _ready;
     static readonly object _initLock = new object();
+    static bool _editorHooksInstalled;
 
 #if UNITY_EDITOR
-    [InitializeOnLoadMethod]
-    static void EditorHooks()
+    static void EnsureEditorHooks()
     {
+        if (_editorHooksInstalled)
+            return;
+
         AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
         AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
         EditorApplication.quitting -= Shutdown;
         EditorApplication.quitting += Shutdown;
+        _editorHooksInstalled = true;
+    }
+
+    static void ReleaseEditorHooks()
+    {
+        if (!_editorHooksInstalled)
+            return;
+
+        AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
+        EditorApplication.quitting -= Shutdown;
+        _editorHooksInstalled = false;
     }
 #endif
 
@@ -92,6 +106,10 @@ public static class MCTables
         lock (_initLock)
         {
             if (Volatile.Read(ref _ready) == 1) return;
+
+#if UNITY_EDITOR
+            EnsureEditorHooks();
+#endif
 
             var et = new int[256]
             {
@@ -401,6 +419,9 @@ public static class MCTables
     {
         lock (_initLock)
         {
+#if UNITY_EDITOR
+            ReleaseEditorHooks();
+#endif
             if (_edgeTable.IsCreated) _edgeTable.Dispose();
             if (_triTable.IsCreated)  _triTable.Dispose();
             Volatile.Write(ref _ready, 0);
@@ -1537,7 +1558,6 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonVoxelEngine
 
-[ExecuteAlways]
 public class HectonVoxelEngine : MonoBehaviour
 {
     // ╔═══════════════════════════════════════════════╗
@@ -1592,9 +1612,30 @@ public class HectonVoxelEngine : MonoBehaviour
     // ║              LIFECYCLE                        ║
     // ╚═══════════════════════════════════════════════╝
 
-    void OnEnable()  { MCTables.Initialize(); }
-    void OnDisable() { ClearAllVolumes(); }
-    void OnDestroy() { ClearAllVolumes(); MCTables.Shutdown(); }
+    void OnEnable()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        MCTables.Initialize();
+    }
+
+    void OnDisable()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        ClearAllVolumes();
+    }
+
+    void OnDestroy()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        ClearAllVolumes();
+        MCTables.Shutdown();
+    }
 
     // ╔═══════════════════════════════════════════════╗
     // ║       PUBLIC API — CAVE GENERATION            ║

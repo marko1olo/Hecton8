@@ -20,6 +20,15 @@ namespace Hecton8.World
         [SerializeField] private string _debugCurrentZoneKind = "Generic";
         [SerializeField] private string _debugCurrentZoneTier = "Starter";
         [SerializeField] private string _debugZonePlan = "None";
+        [SerializeField] private string _debugExpeditionLoop = "None";
+        [SerializeField] private string _debugSandboxAttraction = "None";
+        [SerializeField] private string _debugMotivationProfile = "None";
+        [SerializeField] private string _debugSurvivalNeed = "None";
+        [SerializeField] private string _debugResourceNeed = "None";
+        [SerializeField] private string _debugEngineeringNeed = "None";
+        [SerializeField] private string _debugCuriosityPull = "None";
+        [SerializeField] private string _debugStoryPull = "None";
+        [SerializeField] private string _debugRareValuePull = "None";
         [SerializeField] private string _debugHeroFamily = "None";
         [SerializeField] private string _debugNearFamily = "None";
         [SerializeField] private string _debugMidFamily = "None";
@@ -42,6 +51,10 @@ namespace Hecton8.World
         [SerializeField] private string _debugDominantRisk = "None";
         [SerializeField] private string _debugDominantEarlyFarm = "None";
         [SerializeField] private string _debugDominantLateReturn = "None";
+        [SerializeField] private string _debugPocketResource = "None";
+        [SerializeField] private string _debugNodeResource = "None";
+        [SerializeField] private string _debugSafePocketResource = "None";
+        [SerializeField] private string _debugRareObjectiveResource = "None";
         [SerializeField] private string _debugDominantLandmarkRole = "None";
         [SerializeField] private string _debugDominantExtraction = "None";
         [SerializeField] private string _debugDominantLandmarkGuidance = "None";
@@ -69,6 +82,26 @@ namespace Hecton8.World
         [SerializeField] private string _debugZoneRewardRhythm = "None";
         [SerializeField] private string _debugZoneRouteRhythm = "None";
         [SerializeField] private string _debugZoneSafePocketRhythm = "None";
+        [SerializeField] private string _debugLoopEntryBeat = "None";
+        [SerializeField] private string _debugLoopRoutineBeat = "None";
+        [SerializeField] private string _debugLoopReliefBeat = "None";
+        [SerializeField] private string _debugLoopPressureBeat = "None";
+        [SerializeField] private string _debugLoopPayoffBeat = "None";
+        [SerializeField] private string _debugLoopExitBeat = "None";
+        [SerializeField] private string _debugLoopFreedomRule = "None";
+        [SerializeField] private string _debugLoopSoftPull = "None";
+        [SerializeField] private string _debugLoopDetourRule = "None";
+        [SerializeField] private string _debugLoopMasteryRule = "None";
+        [SerializeField] private string _debugSandboxEntryRead = "None";
+        [SerializeField] private string _debugSandboxAmbientValue = "None";
+        [SerializeField] private string _debugSandboxDetourValue = "None";
+        [SerializeField] private string _debugSandboxShelterRead = "None";
+        [SerializeField] private string _debugSandboxPressureRead = "None";
+        [SerializeField] private string _debugSandboxDeepLure = "None";
+        [SerializeField] private string _debugSandboxReturnValue = "None";
+        [SerializeField] private string _debugSandboxFreedomRule = "None";
+        [SerializeField] private string _debugSandboxCrosslinkRule = "None";
+        [SerializeField] private string _debugSandboxDangerRule = "None";
         [SerializeField] private string _debugBlendedRewardRhythm = "None";
         [SerializeField] private string _debugBlendedRouteRhythm = "None";
         [SerializeField] private string _debugBlendedSafePocketRhythm = "None";
@@ -398,6 +431,15 @@ namespace Hecton8.World
                 _debugCurrentZoneKind = WorldZoneAnchor.ZoneKind.Generic.ToString();
                 _debugCurrentZoneTier = WorldZoneAnchor.ZoneTier.Starter.ToString();
                 _debugZonePlan = "None";
+                _debugExpeditionLoop = "None";
+                _debugSandboxAttraction = "None";
+                _debugMotivationProfile = "None";
+                _debugSurvivalNeed = "None";
+                _debugResourceNeed = "None";
+                _debugEngineeringNeed = "None";
+                _debugCuriosityPull = "None";
+                _debugStoryPull = "None";
+                _debugRareValuePull = "None";
                 _debugHeroFamily = "None";
                 _debugNearFamily = "None";
                 _debugMidFamily = "None";
@@ -420,6 +462,10 @@ namespace Hecton8.World
                 _debugDominantRisk = "None";
                 _debugDominantEarlyFarm = "None";
                 _debugDominantLateReturn = "None";
+                _debugPocketResource = "None";
+                _debugNodeResource = "None";
+                _debugSafePocketResource = "None";
+                _debugRareObjectiveResource = "None";
                 _debugDominantLandmarkRole = "None";
                 _debugDominantExtraction = "None";
                 _debugDominantLandmarkGuidance = "None";
@@ -447,6 +493,26 @@ namespace Hecton8.World
                 _debugZoneRewardRhythm = "None";
                 _debugZoneRouteRhythm = "None";
                 _debugZoneSafePocketRhythm = "None";
+                _debugLoopEntryBeat = "None";
+                _debugLoopRoutineBeat = "None";
+                _debugLoopReliefBeat = "None";
+                _debugLoopPressureBeat = "None";
+                _debugLoopPayoffBeat = "None";
+                _debugLoopExitBeat = "None";
+                _debugLoopFreedomRule = "None";
+                _debugLoopSoftPull = "None";
+                _debugLoopDetourRule = "None";
+                _debugLoopMasteryRule = "None";
+                _debugSandboxEntryRead = "None";
+                _debugSandboxAmbientValue = "None";
+                _debugSandboxDetourValue = "None";
+                _debugSandboxShelterRead = "None";
+                _debugSandboxPressureRead = "None";
+                _debugSandboxDeepLure = "None";
+                _debugSandboxReturnValue = "None";
+                _debugSandboxFreedomRule = "None";
+                _debugSandboxCrosslinkRule = "None";
+                _debugSandboxDangerRule = "None";
                 _debugBlendedRewardRhythm = "None";
                 _debugBlendedRouteRhythm = "None";
                 _debugBlendedSafePocketRhythm = "None";
@@ -460,6 +526,9 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile secondaryBiome = _secondaryZone != null ? _secondaryZone.DominantMatrixBiome : null;
             HectonBiomeFamilyProfile secondaryBiomeFamily = _secondaryZone != null ? _secondaryZone.DominantBiomeFamily : null;
             WorldZonePlanProfile zonePlan = _currentZone.Profile != null ? _currentZone.Profile.zonePlanProfile : null;
+            WorldExpeditionLoopProfile expeditionLoop = _currentZone.Profile != null ? _currentZone.Profile.expeditionLoopProfile : null;
+            WorldSandboxAttractionProfile sandboxAttraction = _currentZone.Profile != null ? _currentZone.Profile.sandboxAttractionProfile : null;
+            WorldMotivationProfile motivation = _currentZone.Profile != null ? _currentZone.Profile.motivationProfile : null;
             _debugCurrentZoneId = _currentZone.ZoneId;
             _debugCurrentZoneLabel = _currentZone.ZoneLabel;
             _debugCurrentZoneKind = _currentZone.Kind.ToString();
@@ -467,6 +536,15 @@ namespace Hecton8.World
             _debugZonePlan = zonePlan != null
                 ? zonePlan.planLabel
                 : "None";
+            _debugExpeditionLoop = expeditionLoop != null ? expeditionLoop.profileLabel : "None";
+            _debugSandboxAttraction = sandboxAttraction != null ? sandboxAttraction.profileLabel : "None";
+            _debugMotivationProfile = motivation != null ? motivation.profileLabel : "None";
+            _debugSurvivalNeed = motivation != null ? motivation.survivalNeed : "None";
+            _debugResourceNeed = motivation != null ? motivation.resourceNeed : "None";
+            _debugEngineeringNeed = motivation != null ? motivation.engineeringNeed : "None";
+            _debugCuriosityPull = motivation != null ? motivation.curiosityPull : "None";
+            _debugStoryPull = motivation != null ? motivation.storyPull : "None";
+            _debugRareValuePull = motivation != null ? motivation.rareValuePull : "None";
             _debugHeroFamily = _currentZone.Profile != null
                 && zonePlan != null
                 && zonePlan.heroFamily != null
@@ -509,6 +587,10 @@ namespace Hecton8.World
             _debugDominantLateReturn = biomeFamily != null && biomeFamily.resourcePlanProfile != null && !string.IsNullOrWhiteSpace(biomeFamily.resourcePlanProfile.lateReasonToReturn)
                 ? biomeFamily.resourcePlanProfile.lateReasonToReturn
                 : "None";
+            _debugPocketResource = GetItemLabel(biomeFamily != null && biomeFamily.resourceChannelProfile != null ? biomeFamily.resourceChannelProfile.resourcePocketItem : null);
+            _debugNodeResource = GetItemLabel(biomeFamily != null && biomeFamily.resourceChannelProfile != null ? biomeFamily.resourceChannelProfile.nodeClusterItem : null);
+            _debugSafePocketResource = GetItemLabel(biomeFamily != null && biomeFamily.resourceChannelProfile != null ? biomeFamily.resourceChannelProfile.safePocketItem : null);
+            _debugRareObjectiveResource = GetItemLabel(biomeFamily != null && biomeFamily.resourceChannelProfile != null ? biomeFamily.resourceChannelProfile.rareObjectiveRewardItem : null);
             _debugDominantLandmarkRole = biomeFamily != null && biomeFamily.landmarkPlanProfile != null && !string.IsNullOrWhiteSpace(biomeFamily.landmarkPlanProfile.dominantLandmarkRole)
                 ? biomeFamily.landmarkPlanProfile.dominantLandmarkRole
                 : "None";
@@ -536,6 +618,26 @@ namespace Hecton8.World
             _debugZoneRewardRhythm = BuildRewardRhythm(biome, biomeFamily);
             _debugZoneRouteRhythm = BuildRouteRhythm(biome, biomeFamily);
             _debugZoneSafePocketRhythm = BuildSafePocketRhythm(biome, biomeFamily);
+            _debugLoopEntryBeat = expeditionLoop != null ? expeditionLoop.entryBeat : "None";
+            _debugLoopRoutineBeat = expeditionLoop != null ? expeditionLoop.routineBeat : "None";
+            _debugLoopReliefBeat = expeditionLoop != null ? expeditionLoop.reliefBeat : "None";
+            _debugLoopPressureBeat = expeditionLoop != null ? expeditionLoop.pressureBeat : "None";
+            _debugLoopPayoffBeat = expeditionLoop != null ? expeditionLoop.payoffBeat : "None";
+            _debugLoopExitBeat = expeditionLoop != null ? expeditionLoop.exitBeat : "None";
+            _debugLoopFreedomRule = expeditionLoop != null ? expeditionLoop.playerFreedomRule : "None";
+            _debugLoopSoftPull = expeditionLoop != null ? expeditionLoop.softProgressionPull : "None";
+            _debugLoopDetourRule = expeditionLoop != null ? expeditionLoop.optionalDetourRule : "None";
+            _debugLoopMasteryRule = expeditionLoop != null ? expeditionLoop.masteryLogic : "None";
+            _debugSandboxEntryRead = sandboxAttraction != null ? sandboxAttraction.entryRead : "None";
+            _debugSandboxAmbientValue = sandboxAttraction != null ? sandboxAttraction.ambientValue : "None";
+            _debugSandboxDetourValue = sandboxAttraction != null ? sandboxAttraction.detourValue : "None";
+            _debugSandboxShelterRead = sandboxAttraction != null ? sandboxAttraction.shelterRead : "None";
+            _debugSandboxPressureRead = sandboxAttraction != null ? sandboxAttraction.pressureRead : "None";
+            _debugSandboxDeepLure = sandboxAttraction != null ? sandboxAttraction.deepLure : "None";
+            _debugSandboxReturnValue = sandboxAttraction != null ? sandboxAttraction.returnValue : "None";
+            _debugSandboxFreedomRule = sandboxAttraction != null ? sandboxAttraction.freedomRule : "None";
+            _debugSandboxCrosslinkRule = sandboxAttraction != null ? sandboxAttraction.crosslinkRule : "None";
+            _debugSandboxDangerRule = sandboxAttraction != null ? sandboxAttraction.dangerRule : "None";
             _debugBlendedRewardRhythm = BuildBlendedRhythm(_debugZoneRewardRhythm, BuildRewardRhythm(secondaryBiome, secondaryBiomeFamily), _currentBlendFactor);
             _debugBlendedRouteRhythm = BuildBlendedRhythm(_debugZoneRouteRhythm, BuildRouteRhythm(secondaryBiome, secondaryBiomeFamily), _currentBlendFactor);
             _debugBlendedSafePocketRhythm = BuildBlendedRhythm(_debugZoneSafePocketRhythm, BuildSafePocketRhythm(secondaryBiome, secondaryBiomeFamily), _currentBlendFactor);
@@ -760,6 +862,14 @@ namespace Hecton8.World
                 return primary;
 
             return $"{primary} -> {secondary}";
+        }
+
+        private static string GetItemLabel(Hecton8.Items.ItemData item)
+        {
+            if (item == null)
+                return "None";
+
+            return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
         }
 
         private static float Average(params int[] values)

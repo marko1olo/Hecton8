@@ -1385,6 +1385,11 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (mouseSensitivity < 0.01f) mouseSensitivity = 0.01f;
             if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;

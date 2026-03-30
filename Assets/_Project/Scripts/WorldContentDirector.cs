@@ -27,6 +27,12 @@ namespace Hecton8.World
         [SerializeField] private string _debugNearestPopulationSpatialReason = "None";
         [SerializeField] private string _debugNearestPopulationBorderRole = "None";
         [SerializeField] private string _debugNearestPopulationBorderReason = "None";
+        [SerializeField] private string _debugNearestPopulationResourceItem = "None";
+        [SerializeField] private string _debugNearestPopulationResourceReason = "None";
+        [SerializeField] private string _debugNearestPopulationMotivationPull = "None";
+        [SerializeField] private string _debugNearestPopulationMotivationReason = "None";
+        [SerializeField] private string _debugNearestPopulationSandboxAttractionRole = "None";
+        [SerializeField] private string _debugNearestPopulationSandboxAttractionReason = "None";
         [SerializeField] private string _debugNearestZoneRoleFamily = "None";
         [SerializeField] private string _debugNearestZoneRoleLayout = "None";
         [SerializeField] private string _debugNearestZoneRolePriority = "None";
@@ -170,6 +176,12 @@ namespace Hecton8.World
             _debugNearestPopulationSpatialReason = nearestSocket != null ? nearestSocket.ResolvedPopulationSpatialReason : "None";
             _debugNearestPopulationBorderRole = nearestSocket != null ? nearestSocket.ResolvedPopulationBorderRole : "None";
             _debugNearestPopulationBorderReason = nearestSocket != null ? nearestSocket.ResolvedPopulationBorderReason : "None";
+            _debugNearestPopulationResourceItem = nearestSocket != null ? nearestSocket.ResolvedPopulationResourceItem : "None";
+            _debugNearestPopulationResourceReason = nearestSocket != null ? nearestSocket.ResolvedPopulationResourceReason : "None";
+            _debugNearestPopulationMotivationPull = nearestSocket != null ? nearestSocket.ResolvedPopulationMotivationPull : "None";
+            _debugNearestPopulationMotivationReason = nearestSocket != null ? nearestSocket.ResolvedPopulationMotivationReason : "None";
+            _debugNearestPopulationSandboxAttractionRole = nearestSocket != null ? nearestSocket.ResolvedPopulationSandboxAttractionRole : "None";
+            _debugNearestPopulationSandboxAttractionReason = nearestSocket != null ? nearestSocket.ResolvedPopulationSandboxAttractionReason : "None";
             _debugNearestZoneRoleFamily = nearestSocket != null ? nearestSocket.ResolvedZoneRoleFamily : "None";
             _debugNearestZoneRoleLayout = nearestSocket != null ? nearestSocket.ResolvedZoneRoleLayout : "None";
             _debugNearestZoneRolePriority = nearestSocket != null ? nearestSocket.ResolvedZoneRolePriority : "None";

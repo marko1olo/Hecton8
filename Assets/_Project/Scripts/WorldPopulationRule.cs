@@ -1,4 +1,5 @@
 using Hecton8.Environment;
+using Hecton8.Items;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -82,6 +83,7 @@ namespace Hecton8.World
             weight *= GetExtractionBiasMultiplier(matrixBiome, socket);
             weight *= GetRewardBiasMultiplier(matrixBiome, socket);
             weight *= GetNavigationBiasMultiplier(matrixBiome, socket);
+            weight *= GetMotivationBiasMultiplier(zone, socket);
 
             return Mathf.Max(0.05f, weight);
         }
@@ -305,12 +307,12 @@ namespace Hecton8.World
             {
                 WorldContentSocket.ContentKind.FabricationStation => "Primary Hub",
                 WorldContentSocket.ContentKind.Landmark => lateZone ? "Primary Goal" : "Primary Landmark",
-                WorldContentSocket.ContentKind.NavigationMarker => "Primary Route",
-                WorldContentSocket.ContentKind.HazardPoint => lateZone ? "Gate" : "Warning",
-                WorldContentSocket.ContentKind.CombatPoint => lateZone ? "Gate" : "Pressure",
+                WorldContentSocket.ContentKind.NavigationMarker => "Strong Anchor",
+                WorldContentSocket.ContentKind.HazardPoint => lateZone ? "Pressure Threshold" : "Warning",
+                WorldContentSocket.ContentKind.CombatPoint => lateZone ? "Pressure Threshold" : "Pressure",
                 WorldContentSocket.ContentKind.PowerPoint => rolePlan.targetCount >= 2 ? "Backbone" : "Support",
                 WorldContentSocket.ContentKind.ServiceTarget => "Support Problem",
-                WorldContentSocket.ContentKind.ConstructionPoint => "Build Route",
+                WorldContentSocket.ContentKind.ConstructionPoint => "Build Opportunity",
                 WorldContentSocket.ContentKind.ResourceNode => rolePlan.targetCount >= 2 ? "Secondary Reward" : "Reward",
                 WorldContentSocket.ContentKind.ResourcePickup => "Support Reward",
                 _ => rolePlan.targetCount > 0 ? "Support" : "Optional"
@@ -357,6 +359,134 @@ namespace Hecton8.World
                 WorldContentSocket.ContentKind.PowerPoint => $"{pair}: силовая линия естественно связывает два соседних контура.",
                 WorldContentSocket.ContentKind.ConstructionPoint => $"{pair}: стройка лучше читается как связка между двумя режимами пространства.",
                 _ => $"{pair}: точка помогает почувствовать переход, а не резкий обрыв зоны."
+            };
+        }
+
+        public string BuildResourceChannelItem(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            ItemData item = ResolveResourceChannelItem(zone, socket);
+            if (item == null)
+                return "None";
+
+            return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
+        }
+
+        public string BuildResourceChannelReason(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            HectonBiomeResourceChannelProfile channels = zone != null && zone.DominantBiomeFamily != null
+                ? zone.DominantBiomeFamily.resourceChannelProfile
+                : null;
+            if (channels == null || socket == null)
+                return "No resource-channel mapping.";
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.ResourcePickup => channels.pocketRead,
+                WorldContentSocket.ContentKind.ResourceNode => channels.nodeRead,
+                WorldContentSocket.ContentKind.FabricationStation => channels.safePocketRead,
+                WorldContentSocket.ContentKind.NavigationMarker => channels.routeRead,
+                WorldContentSocket.ContentKind.Landmark => channels.rareRead,
+                WorldContentSocket.ContentKind.HazardPoint => channels.rareRead,
+                WorldContentSocket.ContentKind.CombatPoint => channels.rareRead,
+                _ => channels.routeRead
+            };
+        }
+
+        public string BuildSandboxAttractionRole(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            WorldSandboxAttractionProfile attraction = zone != null && zone.Profile != null
+                ? zone.Profile.sandboxAttractionProfile
+                : null;
+            if (attraction == null || socket == null)
+                return "None";
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.NavigationMarker => attraction.entryRead,
+                WorldContentSocket.ContentKind.ResourcePickup => attraction.ambientValue,
+                WorldContentSocket.ContentKind.ResourceNode => attraction.detourValue,
+                WorldContentSocket.ContentKind.FabricationStation => attraction.shelterRead,
+                WorldContentSocket.ContentKind.ConstructionPoint => attraction.detourValue,
+                WorldContentSocket.ContentKind.PowerPoint => attraction.pressureRead,
+                WorldContentSocket.ContentKind.ServiceTarget => attraction.pressureRead,
+                WorldContentSocket.ContentKind.HazardPoint => attraction.pressureRead,
+                WorldContentSocket.ContentKind.CombatPoint => attraction.pressureRead,
+                WorldContentSocket.ContentKind.Landmark => attraction.deepLure,
+                _ => attraction.playerPromise
+            };
+        }
+
+        public string BuildSandboxAttractionReason(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            WorldSandboxAttractionProfile attraction = zone != null && zone.Profile != null
+                ? zone.Profile.sandboxAttractionProfile
+                : null;
+            if (attraction == null || socket == null)
+                return "No sandbox attraction profile.";
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.NavigationMarker => attraction.memoryRule,
+                WorldContentSocket.ContentKind.ResourcePickup => attraction.curiosityRule,
+                WorldContentSocket.ContentKind.ResourceNode => attraction.crosslinkRule,
+                WorldContentSocket.ContentKind.FabricationStation => attraction.reentryRule,
+                WorldContentSocket.ContentKind.ConstructionPoint => attraction.curiosityRule,
+                WorldContentSocket.ContentKind.PowerPoint => attraction.dangerRule,
+                WorldContentSocket.ContentKind.ServiceTarget => attraction.dangerRule,
+                WorldContentSocket.ContentKind.HazardPoint => attraction.dangerRule,
+                WorldContentSocket.ContentKind.CombatPoint => attraction.dangerRule,
+                WorldContentSocket.ContentKind.Landmark => attraction.masteryRule,
+                _ => attraction.freedomRule
+            };
+        }
+
+        public string BuildMotivationPull(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            WorldMotivationProfile motivation = zone != null && zone.Profile != null
+                ? zone.Profile.motivationProfile
+                : null;
+            if (motivation == null || socket == null)
+                return "None";
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.ResourcePickup => motivation.resourceNeed,
+                WorldContentSocket.ContentKind.ResourceNode => motivation.resourceNeed,
+                WorldContentSocket.ContentKind.FabricationStation => motivation.survivalNeed,
+                WorldContentSocket.ContentKind.ConstructionPoint => motivation.engineeringNeed,
+                WorldContentSocket.ContentKind.PowerPoint => motivation.engineeringNeed,
+                WorldContentSocket.ContentKind.ServiceTarget => motivation.engineeringNeed,
+                WorldContentSocket.ContentKind.NavigationMarker => motivation.curiosityPull,
+                WorldContentSocket.ContentKind.HazardPoint => motivation.curiosityPull,
+                WorldContentSocket.ContentKind.CombatPoint => motivation.survivalNeed,
+                WorldContentSocket.ContentKind.Landmark => Mathf.Max(motivation.storyPullWeight, motivation.rareValuePullWeight) >= motivation.curiosityPullWeight
+                    ? (motivation.storyPullWeight >= motivation.rareValuePullWeight ? motivation.storyPull : motivation.rareValuePull)
+                    : motivation.curiosityPull,
+                _ => motivation.optionalityRule
+            };
+        }
+
+        public string BuildMotivationReason(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            WorldMotivationProfile motivation = zone != null && zone.Profile != null
+                ? zone.Profile.motivationProfile
+                : null;
+            if (motivation == null || socket == null)
+                return "No motivation profile.";
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.ResourcePickup => motivation.returnRule,
+                WorldContentSocket.ContentKind.ResourceNode => motivation.returnRule,
+                WorldContentSocket.ContentKind.FabricationStation => motivation.optionalityRule,
+                WorldContentSocket.ContentKind.ConstructionPoint => motivation.ownershipRule,
+                WorldContentSocket.ContentKind.PowerPoint => motivation.ownershipRule,
+                WorldContentSocket.ContentKind.ServiceTarget => motivation.ownershipRule,
+                WorldContentSocket.ContentKind.NavigationMarker => motivation.ownershipRule,
+                WorldContentSocket.ContentKind.HazardPoint => motivation.optionalityRule,
+                WorldContentSocket.ContentKind.CombatPoint => motivation.optionalityRule,
+                WorldContentSocket.ContentKind.Landmark => motivation.returnRule,
+                _ => motivation.optionalityRule
             };
         }
 
@@ -418,10 +548,60 @@ namespace Hecton8.World
             };
         }
 
+        private float GetMotivationBiasMultiplier(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            WorldMotivationProfile motivation = zone != null && zone.Profile != null
+                ? zone.Profile.motivationProfile
+                : null;
+            if (motivation == null || socket == null)
+                return 1f;
+
+            float weight = socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.ResourcePickup => motivation.resourceNeedWeight,
+                WorldContentSocket.ContentKind.ResourceNode => Mathf.Max(motivation.resourceNeedWeight, motivation.rareValuePullWeight),
+                WorldContentSocket.ContentKind.FabricationStation => Mathf.Max(motivation.survivalNeedWeight, motivation.engineeringNeedWeight),
+                WorldContentSocket.ContentKind.ConstructionPoint => Mathf.Max(motivation.engineeringNeedWeight, motivation.curiosityPullWeight),
+                WorldContentSocket.ContentKind.PowerPoint => Mathf.Max(motivation.engineeringNeedWeight, motivation.storyPullWeight),
+                WorldContentSocket.ContentKind.ServiceTarget => Mathf.Max(motivation.engineeringNeedWeight, motivation.survivalNeedWeight),
+                WorldContentSocket.ContentKind.NavigationMarker => Mathf.Max(motivation.curiosityPullWeight, motivation.survivalNeedWeight),
+                WorldContentSocket.ContentKind.HazardPoint => Mathf.Max(motivation.curiosityPullWeight, motivation.rareValuePullWeight),
+                WorldContentSocket.ContentKind.CombatPoint => Mathf.Max(motivation.survivalNeedWeight, motivation.rareValuePullWeight),
+                WorldContentSocket.ContentKind.Landmark => Mathf.Max(motivation.storyPullWeight, motivation.rareValuePullWeight, motivation.curiosityPullWeight),
+                _ => 1f
+            };
+
+            return Mathf.Lerp(0.82f, 1.28f, Mathf.InverseLerp(0.1f, 2f, weight));
+        }
+
         private static float BiasToMultiplier(int bias)
         {
             float t = Mathf.InverseLerp(1f, 5f, bias);
             return Mathf.Lerp(0.72f, 1.35f, t);
+        }
+
+        private static ItemData ResolveResourceChannelItem(WorldZoneAnchor zone, WorldContentSocket socket)
+        {
+            HectonBiomeResourceChannelProfile channels = zone != null && zone.DominantBiomeFamily != null
+                ? zone.DominantBiomeFamily.resourceChannelProfile
+                : null;
+            if (channels == null || socket == null)
+                return null;
+
+            return socket.Kind switch
+            {
+                WorldContentSocket.ContentKind.ResourcePickup => channels.resourcePocketItem,
+                WorldContentSocket.ContentKind.ResourceNode => channels.nodeClusterItem,
+                WorldContentSocket.ContentKind.FabricationStation => channels.safePocketItem,
+                WorldContentSocket.ContentKind.ConstructionPoint => channels.buildSocketItem,
+                WorldContentSocket.ContentKind.PowerPoint => channels.powerSpineItem,
+                WorldContentSocket.ContentKind.ServiceTarget => channels.serviceChokeItem,
+                WorldContentSocket.ContentKind.NavigationMarker => channels.routeAnchorHintItem,
+                WorldContentSocket.ContentKind.HazardPoint => channels.hazardGateRewardItem,
+                WorldContentSocket.ContentKind.CombatPoint => channels.hazardGateRewardItem,
+                WorldContentSocket.ContentKind.Landmark => channels.rareObjectiveRewardItem,
+                _ => null
+            };
         }
 
         private static bool IsRouteTransition(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b)

@@ -1012,6 +1012,12 @@ namespace Hecton8.Core
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (tileSize < 32f) tileSize = 32f;
             if (maxSpawnsPerTick < 1) maxSpawnsPerTick = 1;
             if (unloadDistance < 50f) unloadDistance = 50f;

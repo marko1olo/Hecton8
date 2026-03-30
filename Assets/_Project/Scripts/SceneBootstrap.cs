@@ -405,9 +405,8 @@ namespace Hecton8.Bootstrap
         /// Запускает генерацию мира.
         ///
         /// Приоритет:
-        ///   1. HectonWorldGenerator — если найден, логирует и выходит
-        ///      (генератор сам знает, что делать).
-        ///   2. MapMagic — ищет по имени типа (reflection-free).
+        ///   1. MapMagic — текущий основной источник мира/террейна.
+        ///   2. HectonWorldGenerator — legacy/side-path fallback, если он всё ещё активен.
         ///   3. Ни один не найден — статическая сцена.
         ///
         /// После этого метода pipeline ждёт <see cref="worldGenWaitTime"/>
@@ -415,7 +414,6 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void StartWorldGeneration()
         {
-            // ── Приоритет 1: HectonWorldGenerator ──
             var allBehaviours = FindObjectsByType<MonoBehaviour>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
@@ -439,15 +437,15 @@ namespace Hecton8.Bootstrap
                 }
             }
 
-            if (hectonWorldGen != null)
+            if (mapMagic != null)
             {
-                Log($"  HectonWorldGenerator active: {hectonWorldGen.gameObject.name}");
+                Log($"  MapMagic active: {mapMagic.gameObject.name}");
                 return;
             }
 
-            if (mapMagic != null)
+            if (hectonWorldGen != null)
             {
-                Log($"  MapMagic found: {mapMagic.gameObject.name}");
+                Log($"  HectonWorldGenerator active (legacy path): {hectonWorldGen.gameObject.name}");
                 return;
             }
 
@@ -715,6 +713,11 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (worldGenWaitTime < 0f)  worldGenWaitTime = 0f;
             if (bootstrapTimeout < 1f)  bootstrapTimeout = 1f;
         }

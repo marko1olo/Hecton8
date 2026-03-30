@@ -67,7 +67,6 @@ namespace MoreMountains.Tools
 	/// } 
 	/// will catch all events of type MMGameEvent emitted from anywhere in the game, and do something if it's named GameOver
 	/// </summary>
-	[ExecuteAlways]
 	public static class MMEventManager 
 	{
 		private static Dictionary<Type, List<MMEventListenerBase>> _subscribersList;

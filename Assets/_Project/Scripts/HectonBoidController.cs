@@ -1035,6 +1035,11 @@ namespace Hecton8.AI.GPU
 
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (boidCount < 64) boidCount = 64;
             if (separationRadius > perceptionRadius)
                 separationRadius = perceptionRadius * 0.5f;

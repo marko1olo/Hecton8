@@ -45,6 +45,9 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     [SerializeField] private Camera hudCamera;
     [SerializeField] private TMP_FontAsset hudFont;
     [SerializeField] private PlayerFlashlight flashlight;
+    [SerializeField] private PlayerToolManager toolManager;
+    [SerializeField] private HectonSuitHUD_v4 primaryHud;
+    [SerializeField] private SuitHUDV4CanvasOverlay canvasOverlay;
 
     // ══════════════════════════════════════════════════════════
     //  INSPECTOR — COLORS
@@ -120,6 +123,13 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     private static string STR_FLASHLIGHT_LOW_BATTERY = "FLASHLIGHT LOW BATTERY";
     private static string STR_PDA_LOW_BATTERY = "PDA LOW BATTERY";
     private static string STR_BATTERY_DEPLETED = "BATTERY DEPLETED";
+    private static readonly string STR_LOADOUT = "LOADOUT";
+    private static readonly string STR_EMPTY_SLOT = "EMPTY";
+    private static readonly string[] SlotIndexLabels = { "1", "2", "3", "4" };
+
+    private const int ToolSlotCount = 4;
+    private readonly string[] _toolSlotNames = new string[ToolSlotCount];
+    private PlayerToolManager _subscribedToolManager;
 
     // ══════════════════════════════════════════════════════════
     //  LIFECYCLE
@@ -128,15 +138,10 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     public override void OnEnable()
     {
         base.OnEnable();
-
-        if (hudCamera == null)
-            hudCamera = GetComponent<Camera>();
-
-        // Auto-resolve flashlight if not assigned
-        if (flashlight == null)
-            flashlight = FindFirstObjectByType<PlayerFlashlight>();
+        AutoResolveReferences();
 
         Subscribe();
+        SubscribeToolManager();
         ForceRefresh();
     }
 
@@ -144,6 +149,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     {
         base.OnDisable();
         Unsubscribe();
+        UnsubscribeToolManager();
     }
 
     // ══════════════════════════════════════════════════════════
@@ -158,8 +164,47 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
 
     private void LateUpdate()
     {
+        AutoResolveReferences();
+        PollHeatState();
         UpdateNotifications(Time.deltaTime);
         UpdateDiagnostics();
+    }
+
+    private void AutoResolveReferences()
+    {
+        if (primaryHud == null)
+            primaryHud = GetComponent<HectonSuitHUD_v4>();
+
+        if (canvasOverlay == null)
+            canvasOverlay = GetComponent<SuitHUDV4CanvasOverlay>();
+
+        if (hudCamera == null)
+        {
+            hudCamera = GetComponent<Camera>();
+            if (hudCamera == null && canvasOverlay != null)
+                hudCamera = canvasOverlay.GetComponent<Camera>();
+            if (hudCamera == null && primaryHud != null)
+                hudCamera = primaryHud.GetComponent<Camera>();
+        }
+
+        if (flashlight == null)
+            flashlight = FindFirstObjectByType<PlayerFlashlight>();
+
+        if (toolManager == null)
+            toolManager = FindFirstObjectByType<PlayerToolManager>();
+
+        SubscribeToolManager();
+    }
+
+    private void PollHeatState()
+    {
+        if (flashlight == null)
+            return;
+
+        _flashlightHeat = flashlight.HeatLevel;
+        _flashlightOn = flashlight.IsOn;
+        _flashlightOverheated = flashlight.IsOverheated;
+        _flashlightFlickering = flashlight.IsFlickering;
     }
 
     // ══════════════════════════════════════════════════════════
@@ -193,7 +238,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     {
         float margin = 12f;
         float panelW = 180f;
-        float panelH = 100f;
+        float panelH = 168f;
         float panelX = w - margin - panelW;
         float panelY = h - margin - panelH;
 
@@ -222,6 +267,15 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         // PDA indicator
         rowY -= 32f;
         DrawPDAIndicator(panelX, rowY, panelW);
+
+        float dividerY = rowY - 14f;
+        Draw.Line(
+            new Vector3(panelX + 8f, dividerY, 0),
+            new Vector3(panelX + panelW - 8f, dividerY, 0),
+            lineThickness * 0.5f, frameColor * 0.65f);
+
+        DrawText(STR_LOADOUT, new Vector3(panelX + 8f, dividerY - 12f, 0), fontSizeTiny, frameColor * 0.8f);
+        DrawToolSlots(panelX + 8f, dividerY - 42f, panelW - 16f);
     }
 
     private void DrawFlashlightIndicator(float panelX, float rowY, float panelW)
@@ -281,6 +335,42 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         string label = _pdaOpen ? "PDA [ACTIVE]" : "PDA";
         Color labelColor = _pdaOpen ? pdaActiveColor : frameColor;
         DrawText(label, new Vector3(panelX + 28f, rowY, 0), fontSizeTiny, labelColor);
+    }
+
+    private void DrawToolSlots(float startX, float rowY, float availableWidth)
+    {
+        float slotGap = 4f;
+        float slotW = (availableWidth - slotGap * (ToolSlotCount - 1)) / ToolSlotCount;
+        float slotH = 30f;
+
+        int activeSlot = toolManager != null ? toolManager.CurrentSlotIndex : -1;
+
+        for (int i = 0; i < ToolSlotCount; i++)
+        {
+            float slotX = startX + i * (slotW + slotGap);
+            bool isActive = activeSlot == i;
+            Color borderColor = isActive ? normalColor : frameColor * 0.65f;
+            Color fillColor = isActive
+                ? new Color(normalColor.r, normalColor.g, normalColor.b, 0.1f)
+                : new Color(bgPanelColor.r, bgPanelColor.g, bgPanelColor.b, bgPanelColor.a * 0.7f);
+
+            Draw.Rectangle(
+                new Vector3(slotX + slotW * 0.5f, rowY + slotH * 0.5f, 0f),
+                slotW, slotH, fillColor);
+
+            Draw.RectangleBorder(
+                new Vector3(slotX + slotW * 0.5f, rowY + slotH * 0.5f, 0f),
+                slotW, slotH, thinLine, borderColor);
+
+            DrawTextCentered(SlotIndexLabels[i], new Vector3(slotX + slotW * 0.5f, rowY + slotH - 11f, 0f), fontSizeTiny, borderColor);
+
+            string slotName = _toolSlotNames[i];
+            DrawTextCentered(
+                string.IsNullOrEmpty(slotName) ? STR_EMPTY_SLOT : slotName,
+                new Vector3(slotX + slotW * 0.5f, rowY + 8f, 0f),
+                fontSizeTiny,
+                isActive ? normalColor : frameColor);
+        }
     }
 
     // ══════════════════════════════════════════════════════════
@@ -447,6 +537,40 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         PDAEvents.OnLowBatteryShutdown -= HandlePDALowBattery;
     }
 
+    private void SubscribeToolManager()
+    {
+        if (toolManager == null)
+            return;
+
+        if (ReferenceEquals(_subscribedToolManager, toolManager))
+            return;
+
+        UnsubscribeToolManager();
+        toolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
+        _subscribedToolManager = toolManager;
+        RefreshToolSlotCache();
+    }
+
+    private void UnsubscribeToolManager()
+    {
+        if (_subscribedToolManager == null)
+            return;
+
+        _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
+        _subscribedToolManager = null;
+    }
+
+    private void HandleToolAssignmentsChanged()
+    {
+        RefreshToolSlotCache();
+    }
+
+    private void RefreshToolSlotCache()
+    {
+        for (int i = 0; i < ToolSlotCount; i++)
+            _toolSlotNames[i] = toolManager != null ? toolManager.GetSlotName(i) : null;
+    }
+
     // ══════════════════════════════════════════════════════════
     //  EVENT HANDLERS — FLASHLIGHT
     // ══════════════════════════════════════════════════════════
@@ -512,11 +636,13 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
 
     private void ForceRefresh()
     {
+        AutoResolveReferences();
         _flashlightOn = flashlight != null && flashlight.IsOn;
         _flashlightHeat = flashlight != null ? flashlight.HeatLevel : 0f;
         _flashlightOverheated = flashlight != null && flashlight.IsOverheated;
         _flashlightFlickering = flashlight != null && flashlight.IsFlickering;
         _pdaOpen = PlayerPDA.IsOpen;
+        RefreshToolSlotCache();
     }
 
     // ══════════════════════════════════════════════════════════

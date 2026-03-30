@@ -104,6 +104,7 @@ namespace Hecton8.Gameplay
         /// <summary>Целевая позиция при опускании (rest + offset).</summary>
         private Vector3 _anchorLoweredPosition;
         private InputManager _subscribedInputManager;
+        private readonly string[] _slotNameCache = new string[4];
 
         public event Action<int> ActiveSlotChanged;
         public event Action ToolAssignmentsChanged;
@@ -144,11 +145,18 @@ namespace Hecton8.Gameplay
                 _anchorRestPosition    = handAnchor.localPosition;
                 _anchorLoweredPosition = _anchorRestPosition + lowerOffset;
             }
+
+            RefreshSlotNameCache();
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             AutoResolveKnownToolPrefabs();
         }
 #endif
@@ -286,6 +294,14 @@ namespace Hecton8.Gameplay
 
         public int SlotCount => toolPrefabs != null ? toolPrefabs.Length : 0;
 
+        public string GetSlotName(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= _slotNameCache.Length)
+                return null;
+
+            return _slotNameCache[slotIndex];
+        }
+
         public string GetCurrentToolOperationalSummary()
         {
             return _currentTool != null
@@ -320,6 +336,7 @@ namespace Hecton8.Gameplay
                 return true;
 
             toolPrefabs[slotIndex] = prefab;
+            RefreshSlotNameCacheSlot(slotIndex);
             ToolAssignmentsChanged?.Invoke();
 
             if (!holsterIfCurrentInvalid || slotIndex != _currentSlotIndex)
@@ -409,6 +426,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < count; i++)
                 SetAssignedToolPrefab(i, preset.slotPrefabs[i], holsterIfCurrentInvalid: false);
 
+            RefreshSlotNameCache();
             ToolAssignmentsChanged?.Invoke();
             return true;
         }
@@ -789,6 +807,35 @@ namespace Hecton8.Gameplay
             LogToolDebug(
                 $"HandleInventoryChanged holstering current slot {_currentSlotIndex} because assigned prefab missing from inventory");
             Holster();
+        }
+
+        private void RefreshSlotNameCache()
+        {
+            for (int i = 0; i < _slotNameCache.Length; i++)
+                RefreshSlotNameCacheSlot(i);
+        }
+
+        private void RefreshSlotNameCacheSlot(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= _slotNameCache.Length)
+                return;
+
+            _slotNameCache[slotIndex] = ResolveSlotName(slotIndex);
+        }
+
+        private string ResolveSlotName(int slotIndex)
+        {
+            if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
+                return null;
+
+            GameObject prefab = toolPrefabs[slotIndex];
+            if (prefab == null)
+                return null;
+
+            if (prefab.TryGetComponent(out PlayerTool tool) && tool.ToolData != null && !string.IsNullOrWhiteSpace(tool.ToolData.itemName))
+                return tool.ToolData.itemName;
+
+            return prefab.name;
         }
 
         private void LogToolDebug(string message)

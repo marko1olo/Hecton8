@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace DarkTonic.MasterAudio.EditorScripts
@@ -7,11 +8,30 @@ namespace DarkTonic.MasterAudio.EditorScripts
     // ReSharper disable once CheckNamespace
     public class MasterAudioHierIcon : MonoBehaviour
     {
-        static readonly Texture2D MAicon;
-        static readonly Texture2D PCicon;
+        static Texture2D MAicon;
+        static Texture2D PCicon;
 
         static MasterAudioHierIcon()
         {
+            EditorApplication.delayCall -= RegisterHierarchyIcons;
+            EditorApplication.delayCall += RegisterHierarchyIcons;
+        }
+
+        static void RegisterHierarchyIcons()
+        {
+            EditorApplication.delayCall -= RegisterHierarchyIcons;
+
+            if (InternalEditorUtility.inBatchMode)
+            {
+                return;
+            }
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorApplication.delayCall += RegisterHierarchyIcons;
+                return;
+            }
+
             MAicon = AssetDatabase.LoadAssetAtPath("Assets/Gizmos/MasterAudio/MasterAudio Icon.png", typeof(Texture2D)) as Texture2D;
             PCicon = AssetDatabase.LoadAssetAtPath("Assets/Gizmos/MasterAudio/PlaylistController Icon.png", typeof(Texture2D)) as Texture2D;
 
@@ -20,6 +40,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
                 return;
             }
 
+            EditorApplication.hierarchyWindowItemOnGUI -= HierarchyItemCB;
             EditorApplication.hierarchyWindowItemOnGUI += HierarchyItemCB;
             EditorApplication.RepaintHierarchyWindow();
         }

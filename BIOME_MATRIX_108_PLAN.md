@@ -197,3 +197,15 @@ without rebuilding the whole architecture
   - `Rare Objective Gate`
   - `Rare Objective`
 - This means the biome layer now informs not only density and reward pressure, but also what kind of place a socket wants to become in final world fill.
+
+- Biome families now also carry a resource-channel layer.
+- This answers a more practical production question:
+  - what item is most associated with a `resource pocket`
+  - what item is most associated with a `node cluster`
+  - what usually sits in a `safe pocket`
+  - what material line belongs to `power` and `service` pressure
+  - what the player expects from a `rare objective`
+- This is the bridge between:
+  - biome identity
+  - world socket role
+  - resource/crafting progression

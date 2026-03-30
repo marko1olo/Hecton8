@@ -35,9 +35,14 @@ namespace Hecton8.Environment
         [SerializeField] private string _debugThreatStyle = "None";
         [SerializeField] private string _debugRecommendedLoadout = "None";
         [SerializeField] private string _debugResourcePlan = "None";
+        [SerializeField] private string _debugResourceChannels = "None";
         [SerializeField] private string _debugEarlyFarmReason = "None";
         [SerializeField] private string _debugLateReturnReason = "None";
         [SerializeField] private string _debugExtractionStyle = "None";
+        [SerializeField] private string _debugPocketResource = "None";
+        [SerializeField] private string _debugNodeResource = "None";
+        [SerializeField] private string _debugSafePocketResource = "None";
+        [SerializeField] private string _debugRareObjectiveResource = "None";
         [SerializeField] private int _debugLoosePickupWeight;
         [SerializeField] private int _debugNodeExtractionWeight;
         [SerializeField] private int _debugSalvageRecoveryWeight;
@@ -232,9 +237,14 @@ namespace Hecton8.Environment
             _debugThreatStyle = profile != null && profile.familyProfile != null && profile.familyProfile.faunaFamilyProfile != null ? profile.familyProfile.faunaFamilyProfile.threatStyle : "None";
             _debugRecommendedLoadout = profile != null && profile.familyProfile != null && profile.familyProfile.recommendedLoadoutPreset != null ? profile.familyProfile.recommendedLoadoutPreset.presetName : "None";
             _debugResourcePlan = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.profileLabel : "None";
+            _debugResourceChannels = profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.profileLabel : "None";
             _debugEarlyFarmReason = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.earlyReasonToFarm : "None";
             _debugLateReturnReason = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.lateReasonToReturn : "None";
             _debugExtractionStyle = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.extractionStyle : "None";
+            _debugPocketResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.resourcePocketItem : null);
+            _debugNodeResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.nodeClusterItem : null);
+            _debugSafePocketResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.safePocketItem : null);
+            _debugRareObjectiveResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.rareObjectiveRewardItem : null);
             _debugLoosePickupWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.loosePickupWeight : 0;
             _debugNodeExtractionWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.nodeExtractionWeight : 0;
             _debugSalvageRecoveryWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.salvageRecoveryWeight : 0;
@@ -276,6 +286,14 @@ namespace Hecton8.Environment
             _debugLandmarkStrengthValue = profile != null ? profile.landmarkStrength : 0;
             _debugRewardPullValue = profile != null ? profile.rewardPull : 0;
             _debugSurvivalPressure = profile != null ? profile.survivalPressure : 0;
+        }
+
+        private static string GetItemLabel(Hecton8.Items.ItemData item)
+        {
+            if (item == null)
+                return "None";
+
+            return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
         }
     }
 }

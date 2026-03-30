@@ -1,6 +1,7 @@
 ﻿/*! \cond PRIVATE */
 using System;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace DarkTonic.MasterAudio.EditorScripts
@@ -11,8 +12,37 @@ namespace DarkTonic.MasterAudio.EditorScripts
     {
         static AudioScriptOrderManager()
         {
+            EditorApplication.delayCall -= ApplyScriptOrder;
+            EditorApplication.delayCall += ApplyScriptOrder;
+        }
+
+        private static bool ShouldDefer()
+        {
+            if (InternalEditorUtility.inBatchMode)
+            {
+                return true;
+            }
+
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
+                return true;
+            }
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyScriptOrder()
+        {
+            EditorApplication.delayCall -= ApplyScriptOrder;
+
+            if (ShouldDefer())
+            {
+                EditorApplication.delayCall += ApplyScriptOrder;
                 return;
             }
 

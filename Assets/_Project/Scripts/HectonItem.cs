@@ -173,6 +173,11 @@ namespace Hecton8.Items
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             if (quantity < 1) quantity = 1;
 
             if (itemData != null && !Application.isPlaying)

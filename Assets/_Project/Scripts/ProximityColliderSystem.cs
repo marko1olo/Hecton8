@@ -610,6 +610,12 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (deactivateRadius <= activateRadius)
                 deactivateRadius = activateRadius + 5f;
 

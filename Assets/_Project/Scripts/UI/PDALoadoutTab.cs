@@ -9,11 +9,11 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
 using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
@@ -79,6 +79,13 @@ namespace Hecton8.UI
 
         private void OnValidate()
         {
+            #if UNITY_EDITOR
+            if (EditorApplication.isCompiling ||
+                EditorApplication.isUpdating ||
+                EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+            #endif
+
             AutoResolveTabIndex();
 #if UNITY_EDITOR
             AutoResolvePresets();
@@ -119,6 +126,27 @@ namespace Hecton8.UI
             if (gameObject.name.Contains("Loadout", System.StringComparison.OrdinalIgnoreCase))
                 loadoutTabIndex = 1;
         }
+
+#if UNITY_EDITOR
+        private void AutoResolvePresets()
+        {
+            if (loadoutPresets == null || loadoutPresets.Length < 4)
+                loadoutPresets = new ToolLoadoutPreset[4];
+
+            TryAssignPreset(ref loadoutPresets[0], "Assets/_Project/Data/Tools/Presets/Preset_Exploration.asset");
+            TryAssignPreset(ref loadoutPresets[1], "Assets/_Project/Data/Tools/Presets/Preset_Construction.asset");
+            TryAssignPreset(ref loadoutPresets[2], "Assets/_Project/Data/Tools/Presets/Preset_FieldRecovery.asset");
+            TryAssignPreset(ref loadoutPresets[3], "Assets/_Project/Data/Tools/Presets/Preset_Defense.asset");
+        }
+
+        private static void TryAssignPreset(ref ToolLoadoutPreset target, string path)
+        {
+            if (target != null)
+                return;
+
+            target = AssetDatabase.LoadAssetAtPath<ToolLoadoutPreset>(path);
+        }
+#endif
 
         private void Subscribe()
         {
@@ -900,27 +928,6 @@ namespace Hecton8.UI
                 ? description.Substring(0, 44).TrimEnd() + "..."
                 : description;
         }
-
-#if UNITY_EDITOR
-        private void AutoResolvePresets()
-        {
-            if (loadoutPresets == null || loadoutPresets.Length < 4)
-                loadoutPresets = new ToolLoadoutPreset[4];
-
-            TryAssignPreset(ref loadoutPresets[0], "Assets/_Project/Data/Tools/Presets/Preset_Exploration.asset");
-            TryAssignPreset(ref loadoutPresets[1], "Assets/_Project/Data/Tools/Presets/Preset_Construction.asset");
-            TryAssignPreset(ref loadoutPresets[2], "Assets/_Project/Data/Tools/Presets/Preset_FieldRecovery.asset");
-            TryAssignPreset(ref loadoutPresets[3], "Assets/_Project/Data/Tools/Presets/Preset_Defense.asset");
-        }
-
-        private static void TryAssignPreset(ref ToolLoadoutPreset target, string path)
-        {
-            if (target != null)
-                return;
-
-            target = AssetDatabase.LoadAssetAtPath<ToolLoadoutPreset>(path);
-        }
-#endif
 
         private static void ClearChildren(Transform parent)
         {

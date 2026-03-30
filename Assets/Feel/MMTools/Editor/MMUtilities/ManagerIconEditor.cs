@@ -8,7 +8,6 @@ namespace MoreMountains.Tools
 	/// This class adds names for each LevelMapPathElement next to it on the scene view, for easier setup
 	/// </summary>
 	[CustomEditor(typeof(MMSceneViewIcon))]
-	[InitializeOnLoad]
 	public class SceneViewIconEditor : Editor 
 	{		
 		//protected SceneViewIcon _sceneViewIcon;

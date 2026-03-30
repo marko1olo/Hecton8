@@ -469,7 +469,7 @@ namespace AmplifyImpostors
 	{
 		static ShowStartScreen()
 		{
-			EditorApplication.update += Update;
+			EditorApplication.delayCall += DeferredUpdate;
 		}
 
 		static UnityWebRequest www;
@@ -488,9 +488,17 @@ namespace AmplifyImpostors
 			}
 		}
 
-		static void Update()
+		static void DeferredUpdate()
 		{
-			EditorApplication.update -= Update;
+			EditorApplication.delayCall -= DeferredUpdate;
+
+			if (Application.isBatchMode ||
+				EditorApplication.isCompiling ||
+				EditorApplication.isUpdating ||
+				EditorApplication.isPlayingOrWillChangePlaymode)
+			{
+				return;
+			}
 
 			if ( !EditorApplication.isPlayingOrWillChangePlaymode )
 			{

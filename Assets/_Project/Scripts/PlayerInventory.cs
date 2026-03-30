@@ -499,6 +499,8 @@ namespace Hecton8.Inventory
                 {
                     _grid.PlaceAt(item, cell.x, cell.y); //это надо или нет? я не понял нейронка не сказала точно. подумай надо или нет!
                     // После успешного _grid.CheckFit / PlaceAt:
+                    _grid.PlaceAt(item, cell.x, cell.y); 
+                    
                     int loadedCount = cell.stackCount > 0 ? cell.stackCount : 1;
                     _stackCounts[AnchorIndex(cell.x, cell.y)] = loadedCount;
                     TotalWeight += item.weight * loadedCount;

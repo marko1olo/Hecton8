@@ -8,11 +8,10 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
-using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using UnityEngine;
 
 namespace Hecton8.Dev
 {
@@ -72,14 +71,6 @@ namespace Hecton8.Dev
 
             _appliedAtRuntime = true;
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            AutoResolveSceneReferences();
-            AutoResolveDefaultAssets();
-        }
-#endif
 
         [ContextMenu("Provision Full Tool Kit")]
         public void ProvisionFullToolKit()
@@ -164,6 +155,17 @@ namespace Hecton8.Dev
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            AutoResolveSceneReferences();
+            AutoResolveDefaultAssets();
+        }
+
         private void AutoResolveDefaultAssets()
         {
             TryAssignToolPrefab(ref coreQuickSlotPrefabs[0], "Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab");

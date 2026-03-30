@@ -428,6 +428,12 @@ namespace Hecton8.Power
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (connectionRadius < 0.5f) connectionRadius = 0.5f;
         }
 

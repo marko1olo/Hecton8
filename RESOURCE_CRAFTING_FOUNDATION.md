@@ -184,6 +184,22 @@ These are the real backbone of the crafting tree.
   - Titanium Scrap
   - Fiber Mesh
 
+## World Readability Rule
+
+Resources should not feel detached from place identity.
+
+Each biome family should gradually teach the player:
+- what nearby loose pockets usually pay out
+- what heavier node clusters usually pay out
+- what kind of sustain item or support material might still appear in a safe pocket
+- what kind of material line belongs to power/service pressure
+- what kind of expensive reward sits behind a rare objective
+
+This is now being wired into the world stack through biome `resource channel` profiles so that:
+- the world knows what a place is for
+- the crafting tree knows why the player went there
+- future prefab fill can reinforce both without random loot soup
+
 ### Suit / Survival
 
 - oxygen upgrades:

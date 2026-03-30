@@ -1332,6 +1332,12 @@ namespace Hecton8.Building
 #if UNITY_EDITOR
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+#endif
             if (buildDistance     < 1f) buildDistance     = 1f;
             if (ghostFollowSpeed < 1f) ghostFollowSpeed = 1f;
             if (rotationStep     < 1f) rotationStep     = 1f;

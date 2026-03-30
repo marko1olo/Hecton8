@@ -10,8 +10,38 @@ using System;
 [InitializeOnLoad]
 public class ES3ScriptingDefineSymbols
 {
+    private static bool _setDefineSymbolsQueued;
+
     static ES3ScriptingDefineSymbols()
     {
+        QueueSetDefineSymbols();
+    }
+
+    static void QueueSetDefineSymbols()
+    {
+        if (_setDefineSymbolsQueued)
+            return;
+
+        if (Application.isBatchMode ||
+            EditorApplication.isCompiling ||
+            EditorApplication.isUpdating ||
+            EditorApplication.isPlayingOrWillChangePlaymode)
+            return;
+
+        _setDefineSymbolsQueued = true;
+        EditorApplication.delayCall += DeferredSetDefineSymbols;
+    }
+
+    static void DeferredSetDefineSymbols()
+    {
+        _setDefineSymbolsQueued = false;
+
+        if (Application.isBatchMode ||
+            EditorApplication.isCompiling ||
+            EditorApplication.isUpdating ||
+            EditorApplication.isPlayingOrWillChangePlaymode)
+            return;
+
         SetDefineSymbols();
     }
 

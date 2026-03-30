@@ -39,12 +39,14 @@ namespace Hecton8.Dev
             "Assets/_Project/Prefabs/Items/Tools/Item_Tool_HarpoonLauncher_World.prefab",
         };
 
+        [System.NonSerialized] private bool _rebuildQueued;
+
         private void Reset()
         {
             if (!rebuildOnReset)
                 return;
 
-            EditorApplication.delayCall += TryRebuildAfterReset;
+            QueueRebuildAfterReset();
         }
 
         private void OnValidate()
@@ -53,7 +55,7 @@ namespace Hecton8.Dev
                 return;
 
             if (transform.childCount == 0)
-                EditorApplication.delayCall += TryRebuildAfterReset;
+                QueueRebuildAfterReset();
         }
 
         [ContextMenu("Rebuild Tool Staging")]
@@ -77,10 +79,29 @@ namespace Hecton8.Dev
 
         private void TryRebuildAfterReset()
         {
+            _rebuildQueued = false;
+
             if (this == null || gameObject == null || Application.isPlaying)
                 return;
 
+            if (EditorApplication.isCompiling ||
+                EditorApplication.isUpdating ||
+                EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                QueueRebuildAfterReset();
+                return;
+            }
+
             RebuildInternal();
+        }
+
+        private void QueueRebuildAfterReset()
+        {
+            if (_rebuildQueued)
+                return;
+
+            _rebuildQueued = true;
+            EditorApplication.delayCall += TryRebuildAfterReset;
         }
 
         private void RebuildInternal()
