@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b045ecf728f96244b0fbae755546080, type: 3}
+  m_Name: ZonePlan_ZoneProfile_Combat_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZonePlanProfile
+  planId: plan.profile.combat.mid
+  planLabel: Combat Mid Plan
+  nearPlan:
+    primaryFamily: {fileID: 11400000, guid: 72794ec42d7288a40925e99d9a25fb0e, type: 2}
+    supportFamily: {fileID: 11400000, guid: 7d93d962142b9fa439b2276b3eb3711b, type: 2}
+    targetDensity: 5
+    usage: 'near: threat readability and control windows.'
+  midPlan:
+    primaryFamily: {fileID: 11400000, guid: b0453a1f4dafd1b4dbc95597fb715959, type: 2}
+    supportFamily: {fileID: 11400000, guid: 7d93d962142b9fa439b2276b3eb3711b, type: 2}
+    targetDensity: 4
+    usage: 'mid: threat readability and control windows.'
+  farPlan:
+    primaryFamily: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    supportFamily: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    targetDensity: 2
+    usage: 'far: threat readability and control windows.'
+  heroFamily: {fileID: 11400000, guid: 9ef3ef400847ea449b03d38cea6ee473, type: 2}
+  gameplaySummary: Combat pocket focused on threat readability and control timing.

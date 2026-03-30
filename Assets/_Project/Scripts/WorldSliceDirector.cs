@@ -11,6 +11,14 @@ namespace Hecton8.World
         [Header("References")]
         [SerializeField] private Transform playerTransform;
 
+        [Header("Runtime Scales")]
+        [SerializeField] private float nearDistanceScale = 1f;
+        [SerializeField] private float midDistanceScale = 1f;
+        [SerializeField] private float interestNearDistanceScale = 1f;
+        [SerializeField] private float interestMidDistanceScale = 1f;
+        [SerializeField] private float zoneNearDistanceScale = 1f;
+        [SerializeField] private float zoneMidDistanceScale = 1f;
+
         [Header("Diagnostics")]
         [SerializeField] private int _debugSliceCount;
         [SerializeField] private bool _debugPlayerReady;
@@ -81,6 +89,24 @@ namespace Hecton8.World
             _debugSliceCount = _anchors.Count;
         }
 
+        public void SetDistanceScales(float nearScale, float midScale)
+        {
+            nearDistanceScale = Mathf.Clamp(nearScale, 0.6f, 1.4f);
+            midDistanceScale = Mathf.Clamp(midScale, 0.6f, 1.5f);
+        }
+
+        public void SetInterestScales(float nearScale, float midScale)
+        {
+            interestNearDistanceScale = Mathf.Clamp(nearScale, 0.75f, 1.4f);
+            interestMidDistanceScale = Mathf.Clamp(midScale, 0.8f, 1.5f);
+        }
+
+        public void SetZoneScales(float nearScale, float midScale)
+        {
+            zoneNearDistanceScale = Mathf.Clamp(nearScale, 0.75f, 1.4f);
+            zoneMidDistanceScale = Mathf.Clamp(midScale, 0.8f, 1.5f);
+        }
+
         private void ApplySlices(bool forceRefresh)
         {
             ResolvePlayer();
@@ -102,7 +128,10 @@ namespace Hecton8.World
 
                 Vector3 delta = anchor.transform.position - playerPosition;
                 delta.y = 0f;
-                anchor.ApplyForDistance(delta.magnitude);
+                anchor.ApplyForDistance(
+                    delta.magnitude,
+                    nearDistanceScale * interestNearDistanceScale * zoneNearDistanceScale,
+                    midDistanceScale * interestMidDistanceScale * zoneMidDistanceScale);
             }
 
             UpdateDiagnostics(true);

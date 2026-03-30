@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9842f2ee36658c7409d1a0084426e4d2, type: 3}
+  m_Name: BiomeFamilyProfile_biome_family_tectonic_spine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeFamilyProfile
+  familyId: biome.family.tectonic_spine
+  familyLabel: Tectonic Spine
+  debugColor: {r: 0.59, g: 0.52, b: 0.72, a: 1}
+  geologicalIdentity: "\u0420\u0430\u0437\u043B\u043E\u043C\u043D\u044B\u0435 \u0433\u0440\u0435\u0431\u043D\u0438,
+    \u043A\u0430\u043C\u0435\u043D\u043D\u044B\u0435 \u0440\u0451\u0431\u0440\u0430,
+    \u0441\u0442\u0443\u043F\u0435\u043D\u0438 \u0438 \u0440\u0435\u0437\u043A\u0438\u0435
+    \u043F\u043E\u0432\u043E\u0440\u043E\u0442\u044B \u043C\u0430\u0440\u0448\u0440\u0443\u0442\u0430."
+  gameplayIdentity: "\u0425\u043E\u0440\u043E\u0448\u043E \u0432\u0435\u0434\u0451\u0442
+    \u0438\u0433\u0440\u043E\u043A\u0430 \u0432\u043D\u0438\u0437, \u0440\u0430\u0437\u0434\u0435\u043B\u044F\u0435\u0442
+    \u0431\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u044B\u0435 \u0438 \u043E\u043F\u0430\u0441\u043D\u044B\u0435
+    \u0441\u0442\u043E\u0440\u043E\u043D\u044B \u0438 \u0434\u0435\u043B\u0430\u0435\u0442
+    \u043F\u0443\u0442\u044C \u0437\u0430\u043F\u043E\u043C\u0438\u043D\u0430\u044E\u0449\u0438\u043C\u0441\u044F."
+  atmosphereMood: tense_structural
+  navigationStyle: ridge_tracking
+  hazardStyle: pinch_points
+  landmarkStyle: spines_and_steps
+  primaryResourceTheme: copper_cobalt_and_support_minerals
+  secondaryResourceTheme: route_salvage
+  suggestedZoneFamily: progression.route.mid
+  progressionFeeling: controlled_descent
+  primaryResource: {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
+  secondaryResource: {fileID: 11400000, guid: 59a14819e2557ec4a9c83015dc8dabca, type: 2}
+  tertiaryResource: {fileID: 11400000, guid: f10189c61e17ea748bb6fc943e14d2ff, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 55af013acadda304f891e03a554e0b27, type: 2}
+  atmosphereProfile: {fileID: 11400000, guid: 535c470fb1a4b684c924ab03ade4ebe0, type: 2}
+  faunaFamilyProfile: {fileID: 11400000, guid: 812a75bc929d8ea4b8f85f49a378e36d, type: 2}
+  nearInteractiveFamily: {fileID: 11400000, guid: 22a501be16366f347997ac1131df2b35, type: 2}
+  midVisualFamily: {fileID: 11400000, guid: 9a6dc20dd0e26444aaeef854e1097890, type: 2}
+  farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}
+  preferredZonePlan: {fileID: 11400000, guid: c09215255c6f16e4fa3079d1254e0514, type: 2}

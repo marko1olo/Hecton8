@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd11935b2a30d141b8531e43a823280, type: 3}
+  m_Name: Biome_105_North_27
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeMatrixProfile
+  matrixIndex: 105
+  depthTier: 27
+  region: 0
+  biomeName: The Iron Peak
+  minDepthMeters: 14000
+  maxDepthMeters: 15000
+  shortDescription: The highest point of the deepest tier, a single rusted needle.
+  isPlaceholder: 0
+  runtimeVisualProfile: {fileID: 0}
+  familyId: biome.family.metallic_hadal
+  familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  suggestedZoneFamily: progression.route.landmark
+  progressionRole: final_hadal

@@ -11,12 +11,15 @@ namespace Hecton8.World
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private ScatterBudgetController scatterBudgetController;
+        [SerializeField] private WorldSliceDirector worldSliceDirector;
 
         [Header("Defaults")]
         [SerializeField] private float idleScavengeRadiusScale = 1f;
         [SerializeField] private float idleSpawnScale = 1f;
         [SerializeField] private float idleColliderRadiusScale = 1f;
         [SerializeField] private float idleColliderOpsScale = 1f;
+        [SerializeField] private float idleSliceNearScale = 1f;
+        [SerializeField] private float idleSliceMidScale = 1f;
 
         [Header("Diagnostics")]
         [SerializeField] private string _debugDominantAnchor = "None";
@@ -110,6 +113,8 @@ namespace Hecton8.World
             float spawnScale = idleSpawnScale;
             float colliderRadiusScale = idleColliderRadiusScale;
             float colliderOpsScale = idleColliderOpsScale;
+            float sliceNearScale = idleSliceNearScale;
+            float sliceMidScale = idleSliceMidScale;
 
             for (int i = 0; i < _anchors.Count; i++)
             {
@@ -125,6 +130,8 @@ namespace Hecton8.World
                 spawnScale = Mathf.Max(spawnScale, Mathf.Lerp(1f, anchor.SpawnScale, influence));
                 colliderRadiusScale = Mathf.Max(colliderRadiusScale, Mathf.Lerp(1f, anchor.ColliderRadiusScale, influence));
                 colliderOpsScale = Mathf.Max(colliderOpsScale, Mathf.Lerp(1f, anchor.ColliderOpsScale, influence));
+                sliceNearScale = Mathf.Max(sliceNearScale, Mathf.Lerp(1f, anchor.SliceNearScale, influence));
+                sliceMidScale = Mathf.Max(sliceMidScale, Mathf.Lerp(1f, anchor.SliceMidScale, influence));
 
                 if (influence > bestInfluence)
                 {
@@ -138,6 +145,9 @@ namespace Hecton8.World
                 spawnScale,
                 colliderRadiusScale,
                 colliderOpsScale);
+
+            if (worldSliceDirector != null)
+                worldSliceDirector.SetInterestScales(sliceNearScale, sliceMidScale);
 
             _debugDominantAnchor = bestAnchor != null ? bestAnchor.name : "None";
             _debugDominantKind = bestAnchor != null ? bestAnchor.Kind.ToString() : "None";
@@ -160,6 +170,9 @@ namespace Hecton8.World
 
             if (scatterBudgetController == null)
                 scatterBudgetController = FindAnyObjectByType<ScatterBudgetController>();
+
+            if (worldSliceDirector == null)
+                worldSliceDirector = FindAnyObjectByType<WorldSliceDirector>();
         }
     }
 }

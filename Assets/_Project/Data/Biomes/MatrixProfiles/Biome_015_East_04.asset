@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd11935b2a30d141b8531e43a823280, type: 3}
+  m_Name: Biome_015_East_04
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeMatrixProfile
+  matrixIndex: 15
+  depthTier: 4
+  region: 2
+  biomeName: The Slab Wall
+  minDepthMeters: 600
+  maxDepthMeters: 1000
+  shortDescription: Tilted granite megablocks leaning into sunless overhangs.
+  isPlaceholder: 0
+  runtimeVisualProfile: {fileID: 0}
+  familyId: biome.family.tectonic_spine
+  familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
+  suggestedZoneFamily: progression.skyline.far
+  progressionRole: starter_surface

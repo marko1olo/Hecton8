@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd11935b2a30d141b8531e43a823280, type: 3}
+  m_Name: Biome_047_East_12
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeMatrixProfile
+  matrixIndex: 47
+  depthTier: 12
+  region: 2
+  biomeName: Tier 12 East Reserve
+  minDepthMeters: 4550
+  maxDepthMeters: 5075
+  shortDescription: Reserved biome slot for Tier 12 / East. The 108-biome matrix
+    expects a bespoke authored identity here; final lore and geology are pending
+    expansion from the master vision.
+  isPlaceholder: 1
+  runtimeVisualProfile: {fileID: 0}
+  familyId: biome.family.abyssal_silt
+  familyProfile: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  suggestedZoneFamily: progression.route.mid
+  progressionRole: abyss_entry

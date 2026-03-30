@@ -29,6 +29,10 @@ namespace Hecton8.World
         [SerializeField] private float colliderRadiusScale = 1.08f;
         [SerializeField] private float colliderOpsScale = 1.08f;
 
+        [Header("Slice Lift")]
+        [SerializeField] private float sliceNearScale = 1.05f;
+        [SerializeField] private float sliceMidScale = 1.1f;
+
         [Header("Diagnostics")]
         [SerializeField] private float _debugLastInfluence;
 
@@ -39,6 +43,8 @@ namespace Hecton8.World
         public float SpawnScale => spawnScale;
         public float ColliderRadiusScale => colliderRadiusScale;
         public float ColliderOpsScale => colliderOpsScale;
+        public float SliceNearScale => sliceNearScale;
+        public float SliceMidScale => sliceMidScale;
 
         public float EvaluateInfluence(Vector3 playerPosition)
         {
@@ -72,6 +78,8 @@ namespace Hecton8.World
             spawnScale = Mathf.Clamp(spawnScale, 0.85f, 1.4f);
             colliderRadiusScale = Mathf.Clamp(colliderRadiusScale, 0.85f, 1.4f);
             colliderOpsScale = Mathf.Clamp(colliderOpsScale, 0.85f, 1.4f);
+            sliceNearScale = Mathf.Clamp(sliceNearScale, 0.85f, 1.35f);
+            sliceMidScale = Mathf.Clamp(sliceMidScale, 0.9f, 1.45f);
         }
 #endif
     }

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b679426c4efc41f4184a354212d6ea88, type: 3}
+  m_Name: ZoneProfile_Combat_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZoneProfile
+  profileId: profile.combat.mid
+  profileLabel: Combat Mid
+  scavengeRadiusScale: 0.98
+  spawnScale: 0.96
+  colliderRadiusScale: 1.08
+  colliderOpsScale: 1.08
+  sliceNearScale: 1.02
+  sliceMidScale: 1.1
+  nearInteractiveFamily: combat.targets.near
+  midVisualFamily: combat.readability.mid
+  farSilhouetteFamily: combat.silhouette.far
+  nearInteractiveProfile: {fileID: 11400000, guid: 72794ec42d7288a40925e99d9a25fb0e, type: 2}
+  midVisualProfile: {fileID: 11400000, guid: b0453a1f4dafd1b4dbc95597fb715959, type: 2}
+  farSilhouetteProfile: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+  zonePlanProfile: {fileID: 11400000, guid: 64580f224aed4df44a089e3c7580747d, type: 2}

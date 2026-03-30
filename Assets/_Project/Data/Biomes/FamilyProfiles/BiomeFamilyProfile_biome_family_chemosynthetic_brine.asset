@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9842f2ee36658c7409d1a0084426e4d2, type: 3}
+  m_Name: BiomeFamilyProfile_biome_family_chemosynthetic_brine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeFamilyProfile
+  familyId: biome.family.chemosynthetic_brine
+  familyLabel: Chemosynthetic Brine
+  debugColor: {r: 0.34, g: 0.78, b: 0.64, a: 1}
+  geologicalIdentity: "\u0411\u0440\u0430\u0439\u043D\u043E\u0432\u044B\u0435 \u043A\u0430\u0440\u043C\u0430\u043D\u044B,
+    \u043C\u0435\u0442\u0430\u043D\u043E\u0432\u044B\u0435 \u043A\u0443\u043F\u043E\u043B\u0430
+    \u0438 \u0445\u0438\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0441\u0442\u043E\u043B\u0431\u044B,
+    \u0433\u0434\u0435 \u0441\u0430\u043C\u0430 \u0441\u0440\u0435\u0434\u0430 \u0444\u043E\u0440\u043C\u0438\u0440\u0443\u0435\u0442
+    gameplay."
+  gameplayIdentity: "\u0417\u043E\u043D\u0430 \u043D\u0430\u0443\u0447\u043D\u043E\u0433\u043E
+    \u0440\u0438\u0441\u043A\u0430: \u043C\u043D\u043E\u0433\u043E \u0443\u0433\u0440\u043E\u0437
+    \u0441\u0440\u0435\u0434\u044B, \u043D\u043E \u0438 \u043C\u043D\u043E\u0433\u043E
+    \u0446\u0435\u043D\u043D\u044B\u0445 \u0445\u0438\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0445
+    \u0438 power-\u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u043E\u0432."
+  atmosphereMood: alien_chemical
+  navigationStyle: hazard_channeling
+  hazardStyle: chemical_pools
+  landmarkStyle: vents_and_pools
+  primaryResourceTheme: salts_resin_sulfur_nickel
+  secondaryResourceTheme: enzyme_and_thermal_materials
+  suggestedZoneFamily: power.route.far
+  progressionFeeling: science_and_risk
+  primaryResource: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  secondaryResource: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  tertiaryResource: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 309f4de80276b6e408359a2ee710b3ca, type: 2}
+  atmosphereProfile: {fileID: 11400000, guid: 61e04d47e96171e4f83a70a7da37fd2f, type: 2}
+  faunaFamilyProfile: {fileID: 11400000, guid: 94d9a6091a7dc3f4fb9a59f59175563b, type: 2}
+  nearInteractiveFamily: {fileID: 11400000, guid: 97764b386f3717d4a8316a33b4b97503, type: 2}
+  midVisualFamily: {fileID: 11400000, guid: 1c8c261e996f93946a43f3da255e2463, type: 2}
+  farSilhouetteFamily: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
+  preferredZonePlan: {fileID: 11400000, guid: 64462bc97c867b34ebff9da31449895f, type: 2}

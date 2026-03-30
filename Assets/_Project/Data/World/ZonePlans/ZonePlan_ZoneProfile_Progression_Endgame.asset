@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b045ecf728f96244b0fbae755546080, type: 3}
+  m_Name: ZonePlan_ZoneProfile_Progression_Endgame
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZonePlanProfile
+  planId: plan.profile.progression.endgame
+  planLabel: Progression Endgame Plan
+  nearPlan:
+    primaryFamily: {fileID: 11400000, guid: fadd42a1c8bb05340b193e0433c92a1e, type: 2}
+    supportFamily: {fileID: 11400000, guid: 226deee80d65ad847af40ff94ce25888, type: 2}
+    targetDensity: 9
+    usage: 'near: late-route escalation with hazard, service, and landmark pull.'
+  midPlan:
+    primaryFamily: {fileID: 11400000, guid: 9a6dc20dd0e26444aaeef854e1097890, type: 2}
+    supportFamily: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+    targetDensity: 6
+    usage: 'mid: late-route escalation with hazard, service, and landmark pull.'
+  farPlan:
+    primaryFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}
+    supportFamily: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+    targetDensity: 3
+    usage: 'far: late-route escalation with hazard, service, and landmark pull.'
+  heroFamily: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+  gameplaySummary: Late-game chain that mixes hazard, recovery, combat pressure,
+    and route landmarks.

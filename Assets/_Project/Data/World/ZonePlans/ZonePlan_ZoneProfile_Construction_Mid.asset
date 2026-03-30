@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b045ecf728f96244b0fbae755546080, type: 3}
+  m_Name: ZonePlan_ZoneProfile_Construction_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZonePlanProfile
+  planId: plan.profile.construction.mid
+  planLabel: Construction Mid Plan
+  nearPlan:
+    primaryFamily: {fileID: 11400000, guid: 573a81a80edc9b9459293d03e59f6e34, type: 2}
+    supportFamily: {fileID: 11400000, guid: 77fbedc95f1858d41bab7a36cc8c95f3, type: 2}
+    targetDensity: 8
+    usage: 'near: placement guidance, sockets, blockers, and support frames.'
+  midPlan:
+    primaryFamily: {fileID: 11400000, guid: d0a2d0ce2b048d94aac4a9e2660742aa, type: 2}
+    supportFamily: {fileID: 11400000, guid: 77fbedc95f1858d41bab7a36cc8c95f3, type: 2}
+    targetDensity: 5
+    usage: 'mid: placement guidance, sockets, blockers, and support frames.'
+  farPlan:
+    primaryFamily: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    supportFamily: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    targetDensity: 2
+    usage: 'far: placement guidance, sockets, blockers, and support frames.'
+  heroFamily: {fileID: 11400000, guid: a70cc2dd5d724d74cb48b99c6e63d6fe, type: 2}
+  gameplaySummary: Construction route with obvious sockets, blockers, and support
+    structure.

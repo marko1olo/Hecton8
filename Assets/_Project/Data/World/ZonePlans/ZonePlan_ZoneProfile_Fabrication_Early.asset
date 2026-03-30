@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b045ecf728f96244b0fbae755546080, type: 3}
+  m_Name: ZonePlan_ZoneProfile_Fabrication_Early
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZonePlanProfile
+  planId: plan.profile.fabrication.early
+  planLabel: Fabrication Early Plan
+  nearPlan:
+    primaryFamily: {fileID: 11400000, guid: 5e79adafda074c54cb5c33c114f5d3e0, type: 2}
+    supportFamily: {fileID: 11400000, guid: 863a47418e48c8c4896f4a51d20831ae, type: 2}
+    targetDensity: 6
+    usage: 'near: safe stop with fabrication readability, route rest, and utility
+      silhouette.'
+  midPlan:
+    primaryFamily: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    supportFamily: {fileID: 11400000, guid: 5f51b21b64a0a1043aad5da5f411cbc8, type: 2}
+    targetDensity: 4
+    usage: 'mid: safe stop with fabrication readability, route rest, and utility
+      silhouette.'
+  farPlan:
+    primaryFamily: {fileID: 11400000, guid: 1ccee84cb413895489771b8c15242297, type: 2}
+    supportFamily: {fileID: 11400000, guid: 1ccee84cb413895489771b8c15242297, type: 2}
+    targetDensity: 2
+    usage: 'far: safe stop with fabrication readability, route rest, and utility
+      silhouette.'
+  heroFamily: {fileID: 11400000, guid: 863a47418e48c8c4896f4a51d20831ae, type: 2}
+  gameplaySummary: Safe logistics stop for crafting, route reset, and regrouping.

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b679426c4efc41f4184a354212d6ea88, type: 3}
+  m_Name: ZoneProfile_Fabrication_Early
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZoneProfile
+  profileId: profile.fabrication.early
+  profileLabel: Fabrication Early
+  scavengeRadiusScale: 1.04
+  spawnScale: 1.02
+  colliderRadiusScale: 1.12
+  colliderOpsScale: 1.1
+  sliceNearScale: 1.04
+  sliceMidScale: 1.16
+  nearInteractiveFamily: fabrication.usables.near
+  midVisualFamily: fabrication.outpost.mid
+  farSilhouetteFamily: fabrication.outpost.far
+  nearInteractiveProfile: {fileID: 11400000, guid: 5e79adafda074c54cb5c33c114f5d3e0, type: 2}
+  midVisualProfile: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+  farSilhouetteProfile: {fileID: 11400000, guid: 1ccee84cb413895489771b8c15242297, type: 2}
+  zonePlanProfile: {fileID: 11400000, guid: 0770b800ac765704ba782186b31942cd, type: 2}

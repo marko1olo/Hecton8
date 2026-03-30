@@ -1,0 +1,159 @@
+using System.Collections.Generic;
+using Hecton8.Core;
+using UnityEngine;
+
+namespace Hecton8.World
+{
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-4050)]
+    public sealed class WorldContentDirector : MonoBehaviour, ISlowTickable
+    {
+        [Header("References")]
+        [SerializeField] private Transform playerTransform;
+        [SerializeField] private WorldZoneDirector worldZoneDirector;
+
+        [Header("Diagnostics")]
+        [SerializeField] private int _debugSocketCount;
+        [SerializeField] private int _debugZoneSocketCount;
+        [SerializeField] private string _debugNearestSocket = "None";
+        [SerializeField] private string _debugNearestKind = "Generic";
+        [SerializeField] private string _debugNearestProfile = "None";
+        [SerializeField] private string _debugNearestPopulationFamily = "None";
+        [SerializeField] private string _debugNearestPopulationRule = "None";
+        [SerializeField] private string _debugCurrentZone = "None";
+
+        private readonly List<WorldContentSocket> _sockets = new List<WorldContentSocket>(128);
+        private bool _registeredToTickManager;
+
+        public IReadOnlyList<WorldContentSocket> Sockets => _sockets;
+
+        private void Awake()
+        {
+            ResolveReferences();
+            RefreshSockets();
+            UpdateDiagnostics(null, 0);
+        }
+
+        private void OnEnable()
+        {
+            if (GameTickManager.Instance != null && !_registeredToTickManager)
+            {
+                GameTickManager.Instance.Register((ISlowTickable)this);
+                _registeredToTickManager = true;
+            }
+        }
+
+        private void Start()
+        {
+            if (!_registeredToTickManager && GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Register((ISlowTickable)this);
+                _registeredToTickManager = true;
+            }
+
+            EvaluateSockets(forceRefresh: true);
+        }
+
+        private void OnDisable()
+        {
+            if (_registeredToTickManager && GameTickManager.Instance != null)
+            {
+                GameTickManager.Instance.Unregister((ISlowTickable)this);
+                _registeredToTickManager = false;
+            }
+        }
+
+        public void SlowTick()
+        {
+            EvaluateSockets(forceRefresh: false);
+        }
+
+        public void RefreshSockets()
+        {
+            _sockets.Clear();
+
+            WorldContentSocket[] sockets = Resources.FindObjectsOfTypeAll<WorldContentSocket>();
+            for (int i = 0; i < sockets.Length; i++)
+            {
+                WorldContentSocket socket = sockets[i];
+                if (socket == null || socket.gameObject == null || !socket.gameObject.scene.IsValid())
+                    continue;
+
+                _sockets.Add(socket);
+            }
+
+            _debugSocketCount = _sockets.Count;
+        }
+
+        private void EvaluateSockets(bool forceRefresh)
+        {
+            ResolveReferences();
+            if (forceRefresh || _sockets.Count == 0)
+                RefreshSockets();
+
+            if (playerTransform == null)
+            {
+                UpdateDiagnostics(null, 0);
+                return;
+            }
+
+            WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
+            string currentZoneId = currentZone != null ? currentZone.ZoneId : "zone.none";
+
+            WorldContentSocket nearestSocket = null;
+            float nearestDistance = float.MaxValue;
+            int zoneSocketCount = 0;
+
+            for (int i = 0; i < _sockets.Count; i++)
+            {
+                WorldContentSocket socket = _sockets[i];
+                if (socket == null)
+                    continue;
+
+                WorldZoneAnchor zoneAnchor = socket.GetComponentInParent<WorldZoneAnchor>();
+                if (zoneAnchor == null || zoneAnchor.ZoneId != currentZoneId)
+                    continue;
+
+                zoneSocketCount++;
+                float distance = socket.GetFlatDistance(playerTransform.position);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestSocket = socket;
+                }
+            }
+
+            UpdateDiagnostics(nearestSocket, zoneSocketCount);
+        }
+
+        private void ResolveReferences()
+        {
+            if (playerTransform == null)
+            {
+                GameObject player = GameObject.FindWithTag("Player");
+                if (player == null)
+                    player = GameObject.Find("Player");
+
+                if (player != null)
+                    playerTransform = player.transform;
+            }
+
+            if (worldZoneDirector == null)
+                worldZoneDirector = FindAnyObjectByType<WorldZoneDirector>();
+        }
+
+        private void UpdateDiagnostics(WorldContentSocket nearestSocket, int zoneSocketCount)
+        {
+            _debugSocketCount = _sockets.Count;
+            _debugZoneSocketCount = zoneSocketCount;
+            _debugNearestSocket = nearestSocket != null ? nearestSocket.SocketLabel : "None";
+            _debugNearestKind = nearestSocket != null ? nearestSocket.Kind.ToString() : WorldContentSocket.ContentKind.Generic.ToString();
+            _debugNearestProfile = nearestSocket != null && nearestSocket.Profile != null ? nearestSocket.Profile.profileLabel : "None";
+            _debugNearestPopulationFamily = nearestSocket != null ? nearestSocket.ResolvedPopulationFamily : "None";
+            _debugNearestPopulationRule = nearestSocket != null ? nearestSocket.ResolvedPopulationRule : "None";
+            _debugCurrentZone = worldZoneDirector != null && worldZoneDirector.CurrentZone != null
+                ? worldZoneDirector.CurrentZone.ZoneLabel
+                : "None";
+        }
+    }
+}

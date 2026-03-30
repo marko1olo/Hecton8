@@ -57,6 +57,10 @@ namespace Hecton8.World
         [SerializeField] private float _debugInterestSpawnScale = 1f;
         [SerializeField] private float _debugInterestColliderRadiusScale = 1f;
         [SerializeField] private float _debugInterestColliderOpsScale = 1f;
+        [SerializeField] private float _debugZoneScavengeRadiusScale = 1f;
+        [SerializeField] private float _debugZoneSpawnScale = 1f;
+        [SerializeField] private float _debugZoneColliderRadiusScale = 1f;
+        [SerializeField] private float _debugZoneColliderOpsScale = 1f;
 
         private bool _registeredToTickManager;
         private BudgetBand _lastAppliedBand = (BudgetBand)(-1);
@@ -68,6 +72,10 @@ namespace Hecton8.World
         private float _interestSpawnScale = 1f;
         private float _interestColliderRadiusScale = 1f;
         private float _interestColliderOpsScale = 1f;
+        private float _zoneScavengeRadiusScale = 1f;
+        private float _zoneSpawnScale = 1f;
+        private float _zoneColliderRadiusScale = 1f;
+        private float _zoneColliderOpsScale = 1f;
 
         private void Reset()
         {
@@ -195,6 +203,32 @@ namespace Hecton8.World
                 ApplyCurrentBudget(force: true);
         }
 
+        public void SetZoneScales(
+            float scavengeRadiusScale,
+            float spawnScale,
+            float colliderRadiusScale,
+            float colliderOpsScale)
+        {
+            float clampedScavengeRadius = Mathf.Clamp(scavengeRadiusScale, 0.75f, 1.4f);
+            float clampedSpawn = Mathf.Clamp(spawnScale, 0.75f, 1.4f);
+            float clampedColliderRadius = Mathf.Clamp(colliderRadiusScale, 0.75f, 1.4f);
+            float clampedColliderOps = Mathf.Clamp(colliderOpsScale, 0.75f, 1.4f);
+
+            bool changed =
+                !Mathf.Approximately(_zoneScavengeRadiusScale, clampedScavengeRadius) ||
+                !Mathf.Approximately(_zoneSpawnScale, clampedSpawn) ||
+                !Mathf.Approximately(_zoneColliderRadiusScale, clampedColliderRadius) ||
+                !Mathf.Approximately(_zoneColliderOpsScale, clampedColliderOps);
+
+            _zoneScavengeRadiusScale = clampedScavengeRadius;
+            _zoneSpawnScale = clampedSpawn;
+            _zoneColliderRadiusScale = clampedColliderRadius;
+            _zoneColliderOpsScale = clampedColliderOps;
+
+            if (changed)
+                ApplyCurrentBudget(force: true);
+        }
+
         private void ApplyCurrentBudget(bool force)
         {
             ResolveReferences();
@@ -223,8 +257,8 @@ namespace Hecton8.World
 
             if (scavengePopulator != null)
             {
-                float scavengeRadiusScale = Mathf.Clamp(_directorScavengeRadiusScale * _interestScavengeRadiusScale, 0.35f, 1.75f);
-                float spawnScale = Mathf.Clamp(_directorSpawnScale * _interestSpawnScale, 0.35f, 1.75f);
+                float scavengeRadiusScale = Mathf.Clamp(_directorScavengeRadiusScale * _interestScavengeRadiusScale * _zoneScavengeRadiusScale, 0.35f, 1.75f);
+                float spawnScale = Mathf.Clamp(_directorSpawnScale * _interestSpawnScale * _zoneSpawnScale, 0.35f, 1.75f);
                 scavengePopulator.SetRuntimeBudget(
                     profile.scavengeUnloadDistance * scavengeRadiusScale,
                     profile.scavengePriorityRadius * scavengeRadiusScale,
@@ -233,8 +267,8 @@ namespace Hecton8.World
 
             if (proximityColliderSystem != null)
             {
-                float colliderRadiusScale = Mathf.Clamp(_directorColliderRadiusScale * _interestColliderRadiusScale, 0.35f, 1.75f);
-                float colliderOpsScale = Mathf.Clamp(_directorColliderOpsScale * _interestColliderOpsScale, 0.35f, 1.75f);
+                float colliderRadiusScale = Mathf.Clamp(_directorColliderRadiusScale * _interestColliderRadiusScale * _zoneColliderRadiusScale, 0.35f, 1.75f);
+                float colliderOpsScale = Mathf.Clamp(_directorColliderOpsScale * _interestColliderOpsScale * _zoneColliderOpsScale, 0.35f, 1.75f);
                 proximityColliderSystem.SetRuntimeBudget(
                     profile.colliderActivateRadius * colliderRadiusScale,
                     profile.colliderDeactivateRadius * colliderRadiusScale,
@@ -325,6 +359,10 @@ namespace Hecton8.World
             _debugInterestSpawnScale = _interestSpawnScale;
             _debugInterestColliderRadiusScale = _interestColliderRadiusScale;
             _debugInterestColliderOpsScale = _interestColliderOpsScale;
+            _debugZoneScavengeRadiusScale = _zoneScavengeRadiusScale;
+            _debugZoneSpawnScale = _zoneSpawnScale;
+            _debugZoneColliderRadiusScale = _zoneColliderRadiusScale;
+            _debugZoneColliderOpsScale = _zoneColliderOpsScale;
         }
     }
 }

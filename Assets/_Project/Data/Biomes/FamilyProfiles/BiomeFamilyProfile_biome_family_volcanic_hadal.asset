@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9842f2ee36658c7409d1a0084426e4d2, type: 3}
+  m_Name: BiomeFamilyProfile_biome_family_volcanic_hadal
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeFamilyProfile
+  familyId: biome.family.volcanic_hadal
+  familyLabel: Volcanic Hadal
+  debugColor: {r: 0.9, g: 0.18, b: 0.12, a: 1}
+  geologicalIdentity: "\u041A\u0440\u0430\u0439\u043D\u0435 \u0433\u043B\u0443\u0431\u043E\u043A\u0438\u0435
+    \u043C\u0430\u0433\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435
+    \u0438 \u043B\u0430\u0432\u043E\u0432\u044B\u0435 \u0437\u043E\u043D\u044B \u0441
+    \u043A\u0440\u0430\u0441\u043D\u044B\u043C \u0441\u0432\u0435\u0442\u043E\u043C
+    \u0438 \u0441\u0438\u043B\u044C\u043D\u044B\u043C \u0440\u0438\u0441\u043A\u043E\u043C."
+  gameplayIdentity: "\u042D\u0442\u043E \u0443\u0436\u0435 \u043F\u043E\u0440\u043E\u0433
+    \u043F\u043E\u0437\u0434\u043D\u0435\u0439 \u0438\u0433\u0440\u044B: \u0434\u043E\u0440\u043E\u0433\u043E,
+    \u043E\u043F\u0430\u0441\u043D\u043E, \u043D\u043E \u0431\u043E\u0433\u0430\u0442\u043E
+    \u043D\u0430 \u043A\u0440\u0438\u0442\u0438\u0447\u043D\u044B\u0435 \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u044B."
+  atmosphereMood: red_pressure
+  navigationStyle: vent_lines
+  hazardStyle: catastrophic_heat
+  landmarkStyle: lava_seams
+  primaryResourceTheme: endgame_heat_materials
+  secondaryResourceTheme: power_core_materials
+  suggestedZoneFamily: hazard.probe
+  progressionFeeling: threshold_to_endgame
+  primaryResource: {fileID: 11400000, guid: cda4ba86d994d7748a5ddf598feaa073, type: 2}
+  secondaryResource: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+  tertiaryResource: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 718e70c80bd164544bbd109e49bb9375, type: 2}
+  atmosphereProfile: {fileID: 11400000, guid: 0fd909013a253c84a975e02cc2e9a38c, type: 2}
+  faunaFamilyProfile: {fileID: 11400000, guid: 397d0f7498de8bc43b1b4730e6a41f3d, type: 2}
+  nearInteractiveFamily: {fileID: 11400000, guid: 97764b386f3717d4a8316a33b4b97503, type: 2}
+  midVisualFamily: {fileID: 11400000, guid: 5e95ae9c9a01b52408960903c98168c5, type: 2}
+  farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}
+  preferredZonePlan: {fileID: 11400000, guid: 118b59d14676051419724ee0f886e4e6, type: 2}

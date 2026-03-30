@@ -1,5 +1,192 @@
 # Codex Backlog
 
+## 2026-03-30 - 108 biome family integration pass
+
+- Added and extended:
+  - `Assets/_Project/Scripts/HectonBiomeFamilyProfile.cs`
+  - `Assets/_Project/Scripts/HectonBiomeMatrixProfile.cs`
+  - `Assets/_Project/Scripts/BiomeMatrixDirector.cs`
+  - `Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- New live data folder:
+  - `Assets/_Project/Data/Biomes/FamilyProfiles`
+- Result:
+  - each biome slot now resolves into a real biome-family asset
+  - current authored result:
+    - `13 biome families`
+    - `44 placeholders`
+  - each family now carries:
+    - geology character
+    - gameplay character
+    - atmosphere mood
+    - navigation style
+    - hazard style
+    - landmark language
+    - resource emphasis
+    - real resource references
+    - signature component reference
+    - atmosphere profile reference
+    - fauna family reference
+    - links to future near / mid / far world families
+    - preferred zone-plan link
+- New live data folders:
+  - `Assets/_Project/Data/Biomes/AtmosphereProfiles`
+  - `Assets/_Project/Data/Biomes/FaunaFamilies`
+- Current result:
+  - `13` atmosphere profiles
+  - `13` fauna family profiles
+- `BiomeMatrixDirector` now exposes family-level diagnostics at runtime instead of only the raw biome slot.
+- `MapMagicWorldValidator` now checks biome family assignment health.
+- Verified through Unity MCP:
+  - compile clean
+  - `Rebuild 108 Biome Matrix` executed
+  - `Validate 108 Biome Matrix` pass:
+    - `[BiomeMatrixValidation] PASS placeholders=44 families=13 warnings=0`
+  - no new console errors
+  - scene saved clean
+
+## 2026-03-30 - 108 biome matrix pass
+
+- Added:
+  - `Assets/_Project/Scripts/HectonBiomeMatrixProfile.cs`
+  - `Assets/_Project/Scripts/HectonBiomeMatrixCatalog.cs`
+  - `Assets/_Project/Scripts/BiomeMatrixDirector.cs`
+  - `Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs`
+- Added planning doc:
+  - `BIOME_MATRIX_108_PLAN.md`
+- New data:
+  - `Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset`
+  - `Assets/_Project/Data/Biomes/MatrixProfiles`
+- Important product decision:
+  - do not force the current small runtime MapMagic biome palette to become a 108-layer monster right now
+  - instead, keep the current runtime palette stable and build the full 108-biome identity layer in parallel
+- Current result:
+  - full 108-slot biome matrix exists as real assets
+  - explicitly described lore biomes are filled with authored names/descriptions
+  - missing detailed lore slots are honest placeholders
+  - current validation result:
+    - `placeholders = 44`
+- `BiomeMatrixDirector` now resolves a future biome slot from:
+  - player depth
+  - cardinal world region
+- Integrated with the world stack:
+  - `WorldRuntimeBootstrapAuthoring` now attaches `BiomeMatrixDirector` to `[MANAGERS]` when the matrix catalog exists
+  - `MapMagicWorldValidator` now checks `BiomeMatrixDirector`
+- Verified through Unity MCP:
+  - 108 matrix assets created
+  - biome matrix validation pass:
+    - `[BiomeMatrixValidation] PASS placeholders=44 warnings=0`
+  - world runtime bootstrap still runs
+  - no new console errors
+  - scene saved clean
+
+## 2026-03-30 - World population coverage pass
+
+- Added:
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+- Extended:
+  - `Assets/_Project/Scripts/WorldContentSocket.cs`
+  - `Assets/_Project/Scripts/WorldContentDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- New live data folder:
+  - `Assets/_Project/Data/World/PopulationRules`
+- The world stack now goes all the way through:
+  - zone
+  - zone profile
+  - content socket
+  - content profile
+  - population rule
+- `WorldPopulationDirector` now resolves real recommended population families onto scene sockets instead of keeping rules as passive assets only.
+- `WorldContentSocket` now shows resolved population diagnostics:
+  - primary rule
+  - future prefab family
+  - gameplay purpose
+  - density/count guidance
+- `MapMagicWorldValidator` now warns if a scene socket belongs to a zoned world area but has no matching population rule.
+- Verified through Unity MCP:
+  - compile clean
+  - world runtime bootstrap executed
+  - short play enter/exit clean
+  - console clean
+  - population rule assets exist on disk
+  - scene saved clean
+- Honest tail:
+  - the world validator menu still sometimes reports opaquely through MCP even when compile/play state is clean
+  - next strong step is not more validator polish, but defining future prefab families and near/mid/far content planning on top of the resolved population layer
+
+## 2026-03-30 - Zone family planning pass
+
+- Extended `Assets/_Project/Scripts/WorldZoneProfile.cs` with future content family hints:
+  - `nearInteractiveFamily`
+  - `midVisualFamily`
+  - `farSilhouetteFamily`
+- Extended `Assets/_Project/Scripts/WorldZoneDirector.cs` diagnostics so the active zone now exposes its planned near/mid/far families during runtime.
+- Extended `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs` so every current zone profile now gets explicit family planning values instead of staying generic.
+- Extended `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs` so it warns when a zone profile is missing or its future family fields are empty.
+- Verified through Unity MCP:
+  - compile clean
+  - world runtime bootstrap executed
+  - short validation pass produced no new errors
+  - console clean
+  - scene saved clean
+- Result:
+  - the world stack now knows not only what each zone is, but also what kind of near/mid/far content should eventually live there
+
+## 2026-03-30 - Family profile asset pass
+
+- Added:
+  - `Assets/_Project/Scripts/WorldPrefabFamilyProfile.cs`
+- Extended:
+  - `Assets/_Project/Scripts/WorldZoneProfile.cs`
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- New live data folder:
+  - `Assets/_Project/Data/World/FamilyProfiles`
+- Result:
+  - future world families are now first-class assets
+  - zone profiles now hold both family ids and family profile references
+  - population rules now hold both prefabFamily ids and family profile references
+  - validator now catches missing family profile links
+- Verified through Unity MCP:
+  - compile clean
+  - world runtime bootstrap executed
+  - family profile assets created on disk
+  - validator pass produced no new console errors
+  - console clean
+  - scene saved clean
+
+## 2026-03-30 - Zone plan profile pass
+
+- Added:
+  - `Assets/_Project/Scripts/WorldZonePlanProfile.cs`
+- Extended:
+  - `Assets/_Project/Scripts/WorldZoneProfile.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- New live data folder:
+  - `Assets/_Project/Data/World/ZonePlans`
+- Result:
+  - each important world zone now has a real future fill plan asset
+  - each plan already describes:
+    - near primary family
+    - near support family
+    - mid primary family
+    - mid support family
+    - far primary family
+    - far support family
+    - hero family
+  - `WorldZoneDirector` now exposes the active zone plan and hero family in runtime diagnostics
+  - validator now checks that zone plans exist and have primary families for near/mid/far
+- Verified through Unity MCP:
+  - zone plan assets created on disk
+  - world runtime bootstrap executed
+  - no new compile/runtime console errors
+  - scene saved clean
+
 ## 2026-03-30 - World runtime stack production pass
 
 - Added `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`.
@@ -2862,3 +3049,38 @@ Notes:
   - no live `ProximityColliderSystem` is in the scene yet, so collider budgeting is still code-ready rather than scene-live
 - 2026-03-30: Added `WorldInterestDirector` + `WorldInterestAnchor` as a real production layer on top of `ScatterBudgetController`; the world now lifts local runtime budgets near `Resource_FieldSources`, `Fabrication_Outpost`, and `Tool_TrialRange` instead of spending the same cost everywhere.
 - 2026-03-30: Ran a first safe `Project Settings` optimization pass for runtime without gameplay/visual regressions: enabled camera-relative light/shadow culling, reduced extreme terrain tree distances on runtime quality tiers, enabled streaming mipmaps on `Abyss (Low)`. Verified compile clean + short play clean.
+- 2026-03-30: Added `HectonRockRuntimeBootstrapAuthoring` and proved the real blocker for GPUI rocks is not scene wiring but the custom rock Shader Graph `SG_Rock_Triplanar`, which currently lacks manual `GPU Instancer Setup`. Left `Rock_Runtime` disabled on purpose to keep runtime clean.
+- 2026-03-30: Extended `WorldRuntimeBootstrapAuthoring` with finer-grained slicing for `Fabrication_Trial` and heavy `Tool_TrialRange` lanes (`ConstructionOps`, `PowerOps`, `EndgameOps`, `CombatContacts`). Verified compile clean + short play clean + no new console errors.
+- 2026-03-30: Added `WorldFidelityRoot` and wired it into `WorldSliceAnchor` + `WorldRuntimeBootstrapAuthoring`. The world now has a real `near / mid / far` fidelity contract for future content (`__NearInteractive`, `__MidVisual`, `__FarSilhouette`) instead of only whole-root on/off slicing. Verified compile clean + bootstrap clean + short play clean + console clean.
+- 2026-03-30: Linked `WorldStreamingDirector` to `WorldSliceDirector`, so depth and motion now adapt actual slice distances in runtime. Survey keeps a stronger near gameplay bubble; traverse trims expensive near content and stretches mid-band visual continuity. Verified compile clean + bootstrap clean + short play clean + console clean.
+- 2026-03-30: Extended `WorldInterestDirector` + `WorldInterestAnchor` so local hotspots now also lift slice distances, not only spawn/collider budgets. Important places keep their local world bubble alive longer; empty space still collapses aggressively. Verified compile clean + bootstrap clean + short play clean + console clean.
+- 2026-03-30: Added `WorldZoneAnchor` + `WorldZoneDirector` and wired them through `WorldRuntimeBootstrapAuthoring`. Major world roots now have explicit zone identity, tier, and priority instead of relying only on object names. Verified compile clean + bootstrap clean + short play clean + console clean.
+- 2026-03-30: Added `WorldZoneProfile` assets and connected them to `WorldZoneAnchor` + `WorldZoneDirector`. World zones are now data-driven and can push real runtime budget/slice behavior instead of only acting as labels. Verified compile clean + bootstrap clean + short play clean + console clean.
+- 2026-03-30: Added `WorldContentSocket` + `WorldContentDirector` and wired them through `WorldRuntimeBootstrapAuthoring`. The world now has explicit content anchors for resources, fabrication, service, power, navigation, hazard, combat, and progression points. Verified compile clean + bootstrap clean + short play clean + console clean.
+- 2026-03-30: Added `WorldContentProfile` assets and connected them to `WorldContentSocket`. World content anchors are now data-driven and can describe future prefab family, purpose, zone preference, and fidelity preference without more hardcoded branches. Verified compile clean + bootstrap clean + short play clean + console clean.
+## 2026-03-30 - Biome play-profile pass
+
+- Added `HectonBiomePlayProfile` and `Assets/_Project/Data/Biomes/PlayProfiles`.
+- Each biome family now has a simple gameplay identity layer:
+  - why player goes there
+  - route clarity
+  - landmark strength
+  - safe pocket frequency
+  - reward pull
+  - encounter pressure
+  - hazard pressure
+- Wired play profiles into `HectonBiomeFamilyProfile`, `BiomeMatrixDirector`, and `BiomeMatrixBootstrapAuthoring`.
+- Goal: keep 108-biome planning grounded in actual exploration feel, not only lore names.
+## 2026-03-30 - Slot-level biome framing pass
+
+- Fixed the broken `ApplyFamilyPlay(...)` block in `BiomeMatrixBootstrapAuthoring.cs` after the previous mojibake corruption.
+- Extended `HectonBiomeMatrixProfile` so each of the 108 slots now stores direct gameplay framing:
+  - visit purpose
+  - common reward hook
+  - rare reward hook
+  - landmark identity
+  - safe pocket identity
+  - risk summary
+  - route / landmark / reward / survival pressure
+- Extended `BiomeMatrixDirector` diagnostics to expose this framing live.
+- Extended `BiomeMatrixBootstrapAuthoring` so the slot-level gameplay framing is rebuilt automatically from family + depth + region.

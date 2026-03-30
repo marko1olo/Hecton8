@@ -166,6 +166,10 @@ Notes:
 - [x] add authored world-interest budgeting so high-value roots lift local runtime density without raising global cost
 - [x] apply a first safe Project Settings optimization pass that does not reduce expected gameplay quality
 - [ ] bring a live `HectonRockManager` into the scene only when the GPUI side is truly ready, not as a fake empty manager
+- [x] add a real editor bootstrap for GPUI rock runtime so the future scene setup is no longer manual
+- [ ] manually add `GPU Instancer Setup` to the custom rock Shader Graph:
+  - `Assets/_Project/Art/Shaders/SG_Rock_Triplanar.shadergraph`
+  - only after that re-enable `Rock_Runtime`
 - [ ] add the first real hybrid-density world slice:
   - near = collision and interaction
   - mid = instanced clutter
@@ -175,7 +179,58 @@ Notes:
   - trial ranges that are safe to stream
   - future real progression hubs
 - [ ] connect resource/fabrication/construction authored roots into one streamed progression corridor instead of isolated always-on islands
+- [x] add finer-grained slicing inside heavy trial/progression lanes instead of keeping the whole trial range equally alive
 - [ ] add world-interest anchors for future construction/power/service roots once those roots are promoted out of trial-only space
+- [x] add a data-driven world population layer:
+  - zone profiles
+  - content profiles
+  - population rules
+  - population director
+  - socket-level resolved population diagnostics
+- [ ] add world population validation strong enough to catch uncovered sockets before content-authoring starts
+- [ ] define the first real future prefab families for world population without placing final models yet:
+  - resource clusters
+  - service clutter
+  - power clutter
+  - route markers
+  - combat set dressing
+  - progression landmarks
+- [x] back world prefab families with real profile assets so zones and population rules do not rely on plain strings only
+- [x] add a world population family planner so each zone can advertise:
+  - near interactive family
+  - mid visual family
+  - far silhouette family
+- [ ] start moving current authored roots toward future real-world use:
+  - resources as starter gathering pocket
+  - fabrication as safe logistics stop
+  - power as route-support pocket
+  - endgame ops as future progression spine
+- [x] add zone-plan assets so every important world zone already has a future near/mid/far content plan
+- [ ] use the new zone-plan assets to define concrete future fill targets for each important zone:
+  - what is primary near content
+  - what is support near content
+  - what is readable mid content
+  - what is far silhouette content
+  - what is the hero family of the zone
+- [x] build the future 108-biome matrix as a real asset/catalog/director layer without breaking the current small runtime biome palette
+- [ ] map the 108-biome matrix onto real world planning:
+  - which depth tiers feed which zone families
+  - which cardinal regions feed which route identities
+  - which biomes are still placeholders and need final lore fill
+- [ ] add biome-family grouping on top of the 108 matrix:
+  - silt
+  - tectonic
+  - volcanic
+  - crystalline
+  - fossil
+  - industrial
+  - hadal void
+- [ ] connect the 108-biome matrix to future systems:
+  - atmosphere
+  - resources
+  - fauna
+  - route landmarks
+  - progression pacing
 - [ ] inspect more safe `ProjectSettings` candidates:
   - physics broadphase/callback cost
   - audio voice budget
@@ -390,8 +445,61 @@ Notes:
   - near field interactables
   - mid-field instanced clutter
   - far-field silhouette density
+- [x] add a real hybrid fidelity contract for sliced world zones
+  - `WorldFidelityRoot`
+  - `__NearInteractive / __MidVisual / __FarSilhouette`
+  - slice-state propagation from `WorldSliceAnchor`
+- [x] make world slicing adaptive to motion/depth instead of static distances
+  - `WorldStreamingDirector` now drives `WorldSliceDirector`
+  - traverse expands mid readability while trimming expensive near gameplay
+- [x] make important hotspots hold their slice life a bit longer
+  - `WorldInterestDirector` now also lifts local slice distances
+  - fabrication/resources/progression hubs remain readable without keeping empty space hot
+- [x] add an official world-zone runtime layer
+  - `WorldZoneAnchor`
+  - `WorldZoneDirector`
+  - major scene roots now have stable zone identity and tier
+- [x] make world zones data-driven instead of only tagged roots
+  - `WorldZoneProfile` assets created
+  - zones now push real budget/slice behavior
+- [x] add official world-content anchors for future prefab population
+  - `WorldContentSocket`
+  - `WorldContentDirector`
+  - major authored objects now have content-kind sockets
+- [x] make world-content anchors data-driven too
+  - `WorldContentProfile` assets created
+  - sockets now describe future content through data, not only tags
 - [ ] push the new world-stack budgets into real world slices, not only the scene root
   - service routes
   - salvage belts
   - relay canyons
   - deep biolum pockets
+- [x] add biome-family grouping on top of the 108-biome matrix
+  - every biome slot now resolves into a real biome-family asset
+  - current result: `13 biome families`
+- [ ] connect biome families to future production systems
+  - resources
+  - atmosphere overrides
+  - landmark language
+  - navigation identity
+  - fauna grouping
+- [x] create data-driven atmosphere profiles and fauna-family profiles for biome families
+- [ ] connect biome-family atmosphere and fauna guidance to real runtime systems later
+  - underwater visuals
+  - fauna spawn grouping
+  - encounter pacing
+- [ ] start populating the new near/mid/far holders with real production content later
+  - near interactive prefabs
+  - mid cheap visual forms
+  - far silhouettes
+- Biomes:
+  - done: family-level play profiles for the 108-biome matrix
+  - next: connect play profiles to reward distribution, landmark strength, and route identity by depth/region
+- done: 108-biome matrix slots now receive direct player framing
+  - visit purpose
+  - common/rare reward hooks
+  - landmark identity
+  - safe pocket identity
+  - risk summary
+  - route/landmark/reward/survival pressure
+- next: connect slot-level biome framing to zone plans, resource family weighting, and future landmark families

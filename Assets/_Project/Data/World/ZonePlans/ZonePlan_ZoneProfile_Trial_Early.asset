@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b045ecf728f96244b0fbae755546080, type: 3}
+  m_Name: ZonePlan_ZoneProfile_Trial_Early
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZonePlanProfile
+  planId: plan.profile.trial.early
+  planLabel: Trial Early Plan
+  nearPlan:
+    primaryFamily: {fileID: 11400000, guid: f1681f6c1a14c7f4491013f7f2afcdc7, type: 2}
+    supportFamily: {fileID: 11400000, guid: 267b742641ab04b4a9832f746ce5ae23, type: 2}
+    targetDensity: 10
+    usage: 'near: authored proving lane with clear tool readability.'
+  midPlan:
+    primaryFamily: {fileID: 11400000, guid: 267b742641ab04b4a9832f746ce5ae23, type: 2}
+    supportFamily: {fileID: 11400000, guid: 4281a857735782d42b620c9ee1ea57a6, type: 2}
+    targetDensity: 6
+    usage: 'mid: authored proving lane with clear tool readability.'
+  farPlan:
+    primaryFamily: {fileID: 11400000, guid: 4281a857735782d42b620c9ee1ea57a6, type: 2}
+    supportFamily: {fileID: 11400000, guid: 4281a857735782d42b620c9ee1ea57a6, type: 2}
+    targetDensity: 3
+    usage: 'far: authored proving lane with clear tool readability.'
+  heroFamily: {fileID: 11400000, guid: 267b742641ab04b4a9832f746ce5ae23, type: 2}
+  gameplaySummary: Dense authored space for tool practice, regression checks, and
+    future prefab replacement.

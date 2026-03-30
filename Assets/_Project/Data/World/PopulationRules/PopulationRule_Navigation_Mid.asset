@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f189ca228b0d344f8649899cd765fad, type: 3}
+  m_Name: PopulationRule_Navigation_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPopulationRule
+  ruleId: population.rule.navigation.mid
+  ruleLabel: Navigation Guide Chain
+  zoneKind: 9
+  minTier: 2
+  maxTier: 4
+  contentKind: 7
+  prefabFamily: navigation.marker.chain
+  familyProfile: {fileID: 11400000, guid: 5f51b21b64a0a1043aad5da5f411cbc8, type: 2}
+  gameplayPurpose: Readable route markers and frontier guides.
+  densityWeight: 0.9
+  suggestedClusterCount: 3
+  suggestedMinCount: 2
+  suggestedMaxCount: 4

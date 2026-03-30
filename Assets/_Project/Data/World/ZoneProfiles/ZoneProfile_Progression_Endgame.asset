@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b679426c4efc41f4184a354212d6ea88, type: 3}
+  m_Name: ZoneProfile_Progression_Endgame
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZoneProfile
+  profileId: profile.progression.endgame
+  profileLabel: Progression Endgame
+  scavengeRadiusScale: 1.1
+  spawnScale: 1.08
+  colliderRadiusScale: 1.12
+  colliderOpsScale: 1.1
+  sliceNearScale: 1.08
+  sliceMidScale: 1.18
+  nearInteractiveFamily: progression.setpieces.near
+  midVisualFamily: progression.route.mid
+  farSilhouetteFamily: progression.skyline.far
+  nearInteractiveProfile: {fileID: 11400000, guid: fadd42a1c8bb05340b193e0433c92a1e, type: 2}
+  midVisualProfile: {fileID: 11400000, guid: 9a6dc20dd0e26444aaeef854e1097890, type: 2}
+  farSilhouetteProfile: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}
+  zonePlanProfile: {fileID: 11400000, guid: 118b59d14676051419724ee0f886e4e6, type: 2}

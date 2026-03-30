@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9842f2ee36658c7409d1a0084426e4d2, type: 3}
+  m_Name: BiomeFamilyProfile_biome_family_sediment_drift
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeFamilyProfile
+  familyId: biome.family.sediment_drift
+  familyLabel: Sediment Drift
+  debugColor: {r: 0.87, g: 0.81, b: 0.67, a: 1}
+  geologicalIdentity: "\u041D\u0430\u043D\u043E\u0441\u043D\u044B\u0435 \u043F\u043E\u043B\u044F,
+    \u043C\u044F\u0433\u043A\u0438\u0435 \u0434\u044E\u043D\u044B, \u0432\u043E\u0440\u043E\u043D\u043A\u0438
+    \u0438 \u043A\u0430\u0440\u043C\u0430\u043D\u044B \u0440\u044B\u0445\u043B\u043E\u0433\u043E
+    \u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u0430."
+  gameplayIdentity: "\u0425\u043E\u0440\u043E\u0448\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442
+    \u043A\u0430\u043A \u0441\u043F\u043E\u043A\u043E\u0439\u043D\u0430\u044F \u0437\u043E\u043D\u0430
+    \u0441\u0431\u043E\u0440\u0430 \u0438 \u043A\u0430\u043A \u043F\u0435\u0440\u0435\u0445\u043E\u0434\u043D\u044B\u0439
+    \u0444\u043E\u043D \u043C\u0435\u0436\u0434\u0443 \u0431\u043E\u043B\u0435\u0435
+    \u0432\u044B\u0440\u0430\u0437\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u043C\u0438
+    \u043C\u0435\u0441\u0442\u0430\u043C\u0438."
+  atmosphereMood: soft_hazy
+  navigationStyle: micro_relief
+  hazardStyle: poor_visibility
+  landmarkStyle: dunes_and_bowls
+  primaryResourceTheme: silica_salts_and_loose_ore
+  secondaryResourceTheme: light_organics
+  suggestedZoneFamily: resources.clutter.mid
+  progressionFeeling: calm_gathering
+  primaryResource: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+  secondaryResource: {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
+  tertiaryResource: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 4a285a81e47817e4c986cae01c0f5508, type: 2}
+  atmosphereProfile: {fileID: 11400000, guid: 9588706cd5470454a978ff0f22ac8be6, type: 2}
+  faunaFamilyProfile: {fileID: 11400000, guid: 32538b572a011394aaa8da43fe1c3f21, type: 2}
+  nearInteractiveFamily: {fileID: 11400000, guid: 89b0a6d958451ba47be1145df0460b18, type: 2}
+  midVisualFamily: {fileID: 11400000, guid: 413f193252e584a4098d718221bf5911, type: 2}
+  farSilhouetteFamily: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+  preferredZonePlan: {fileID: 11400000, guid: f04e16aa4a0e5e34ab194ed8cf09f07e, type: 2}

@@ -29,6 +29,8 @@ namespace Hecton8.World
             public float scavengeSpawnScale;
             public float colliderRadiusScale;
             public float colliderOpsScale;
+            public float nearSliceScale;
+            public float midSliceScale;
         }
 
         [Header("References")]
@@ -37,6 +39,7 @@ namespace Hecton8.World
         [SerializeField] private MapMagicBridge mapMagicBridge;
         [SerializeField] private BiomeSamplerCache biomeSamplerCache;
         [SerializeField] private ScatterBudgetController scatterBudgetController;
+        [SerializeField] private WorldSliceDirector worldSliceDirector;
 
         [Header("Depth Thresholds")]
         [SerializeField] private float midDepthStart = 60f;
@@ -60,6 +63,8 @@ namespace Hecton8.World
         [SerializeField] private float _debugDepth;
         [SerializeField] private float _debugSpeed;
         [SerializeField] private int _debugMapMagicObjectsPerFrame;
+        [SerializeField] private float _debugNearSliceScale = 1f;
+        [SerializeField] private float _debugMidSliceScale = 1f;
         [SerializeField] private bool _debugApplied;
         [SerializeField] private bool _debugPlayerReady;
         [SerializeField] private bool _debugBridgeReady;
@@ -80,7 +85,9 @@ namespace Hecton8.World
                 scavengeRadiusScale = 1f,
                 scavengeSpawnScale = 1f,
                 colliderRadiusScale = 1f,
-                colliderOpsScale = 1f
+                colliderOpsScale = 1f,
+                nearSliceScale = 1.06f,
+                midSliceScale = 1f
             };
 
             surfaceTraverseProfile = new StreamingProfile
@@ -89,7 +96,9 @@ namespace Hecton8.World
                 scavengeRadiusScale = 0.92f,
                 scavengeSpawnScale = 0.82f,
                 colliderRadiusScale = 0.9f,
-                colliderOpsScale = 0.82f
+                colliderOpsScale = 0.82f,
+                nearSliceScale = 0.86f,
+                midSliceScale = 1.16f
             };
 
             midSurveyProfile = new StreamingProfile
@@ -98,7 +107,9 @@ namespace Hecton8.World
                 scavengeRadiusScale = 0.9f,
                 scavengeSpawnScale = 0.88f,
                 colliderRadiusScale = 0.86f,
-                colliderOpsScale = 0.84f
+                colliderOpsScale = 0.84f,
+                nearSliceScale = 1f,
+                midSliceScale = 0.96f
             };
 
             midTraverseProfile = new StreamingProfile
@@ -107,7 +118,9 @@ namespace Hecton8.World
                 scavengeRadiusScale = 0.82f,
                 scavengeSpawnScale = 0.72f,
                 colliderRadiusScale = 0.78f,
-                colliderOpsScale = 0.72f
+                colliderOpsScale = 0.72f,
+                nearSliceScale = 0.82f,
+                midSliceScale = 1.12f
             };
 
             deepSurveyProfile = new StreamingProfile
@@ -116,7 +129,9 @@ namespace Hecton8.World
                 scavengeRadiusScale = 0.78f,
                 scavengeSpawnScale = 0.76f,
                 colliderRadiusScale = 0.72f,
-                colliderOpsScale = 0.72f
+                colliderOpsScale = 0.72f,
+                nearSliceScale = 0.94f,
+                midSliceScale = 0.92f
             };
 
             deepTraverseProfile = new StreamingProfile
@@ -125,7 +140,9 @@ namespace Hecton8.World
                 scavengeRadiusScale = 0.68f,
                 scavengeSpawnScale = 0.58f,
                 colliderRadiusScale = 0.62f,
-                colliderOpsScale = 0.58f
+                colliderOpsScale = 0.58f,
+                nearSliceScale = 0.74f,
+                midSliceScale = 1.06f
             };
         }
 
@@ -213,6 +230,9 @@ namespace Hecton8.World
                 profile.colliderRadiusScale,
                 profile.colliderOpsScale);
 
+            if (worldSliceDirector != null)
+                worldSliceDirector.SetDistanceScales(profile.nearSliceScale, profile.midSliceScale);
+
             MapMagicObject mapMagicObject = mapMagicBridge.RuntimeMapMagicObject;
             if (mapMagicObject != null && mapMagicObject.globals != null)
             {
@@ -227,6 +247,8 @@ namespace Hecton8.World
             _lastDepthZone = depthZone;
             _lastMotionMode = motionMode;
             _lastObjectsPerFrame = profile.mapMagicObjectsPerFrame;
+            _debugNearSliceScale = profile.nearSliceScale;
+            _debugMidSliceScale = profile.midSliceScale;
             _debugApplied = true;
             UpdateDiagnostics();
         }
@@ -281,6 +303,9 @@ namespace Hecton8.World
 
             if (scatterBudgetController == null)
                 scatterBudgetController = FindAnyObjectByType<ScatterBudgetController>();
+
+            if (worldSliceDirector == null)
+                worldSliceDirector = FindAnyObjectByType<WorldSliceDirector>();
         }
 
         private void ClampSettings()
@@ -305,6 +330,8 @@ namespace Hecton8.World
             profile.scavengeSpawnScale = Mathf.Clamp(profile.scavengeSpawnScale, 0.4f, 1.5f);
             profile.colliderRadiusScale = Mathf.Clamp(profile.colliderRadiusScale, 0.4f, 1.5f);
             profile.colliderOpsScale = Mathf.Clamp(profile.colliderOpsScale, 0.4f, 1.5f);
+            profile.nearSliceScale = Mathf.Clamp(profile.nearSliceScale, 0.6f, 1.4f);
+            profile.midSliceScale = Mathf.Clamp(profile.midSliceScale, 0.6f, 1.5f);
             return profile;
         }
 

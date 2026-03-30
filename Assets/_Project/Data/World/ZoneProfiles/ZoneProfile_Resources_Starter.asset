@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b679426c4efc41f4184a354212d6ea88, type: 3}
+  m_Name: ZoneProfile_Resources_Starter
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZoneProfile
+  profileId: profile.resources.starter
+  profileLabel: Resources Starter
+  scavengeRadiusScale: 1.16
+  spawnScale: 1.14
+  colliderRadiusScale: 1.08
+  colliderOpsScale: 1.08
+  sliceNearScale: 1.06
+  sliceMidScale: 1.12
+  nearInteractiveFamily: resources.pickups.near
+  midVisualFamily: resources.clutter.mid
+  farSilhouetteFamily: resources.landmarks.far
+  nearInteractiveProfile: {fileID: 11400000, guid: 89b0a6d958451ba47be1145df0460b18, type: 2}
+  midVisualProfile: {fileID: 11400000, guid: 413f193252e584a4098d718221bf5911, type: 2}
+  farSilhouetteProfile: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+  zonePlanProfile: {fileID: 11400000, guid: f04e16aa4a0e5e34ab194ed8cf09f07e, type: 2}

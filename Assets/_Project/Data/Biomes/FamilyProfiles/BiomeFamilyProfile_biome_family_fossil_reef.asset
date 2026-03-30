@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9842f2ee36658c7409d1a0084426e4d2, type: 3}
+  m_Name: BiomeFamilyProfile_biome_family_fossil_reef
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeFamilyProfile
+  familyId: biome.family.fossil_reef
+  familyLabel: Fossil Reef
+  debugColor: {r: 0.72, g: 0.82, b: 0.74, a: 1}
+  geologicalIdentity: "\u041F\u043E\u0440\u0438\u0441\u0442\u044B\u0435 \u0440\u0438\u0444\u044B,
+    \u043A\u043E\u0440\u0430\u043B\u043B\u043E\u0432\u044B\u0435 \u0441\u0442\u0435\u043D\u044B
+    \u0438 \u043E\u0440\u0433\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0435
+    \u043A\u0430\u0440\u043C\u0430\u043D\u044B \u0432 \u043A\u0430\u043C\u043D\u0435."
+  gameplayIdentity: "\u0414\u0430\u0451\u0442 \u043E\u0440\u0433\u0430\u043D\u0438\u043A\u0443,
+    \u0443\u043A\u0440\u044B\u0442\u0438\u044F, \u043D\u043E\u0440\u044B \u0438 \u0445\u043E\u0440\u043E\u0448\u0443\u044E
+    \u043F\u0430\u043C\u044F\u0442\u044C \u043C\u0435\u0441\u0442\u0430 \u0431\u0435\u0437
+    \u043F\u0440\u044F\u043C\u043E\u0439 \u0430\u0433\u0440\u0435\u0441\u0441\u0438\u0438
+    \u043C\u0438\u0440\u0430."
+  atmosphereMood: organic_murmur
+  navigationStyle: honeycomb_paths
+  hazardStyle: ambush_and_maze
+  landmarkStyle: reef_walls
+  primaryResourceTheme: fiber_membrane_and_biolum
+  secondaryResourceTheme: fine_minerals
+  suggestedZoneFamily: resources.pickups.near
+  progressionFeeling: curious_exploration
+  primaryResource: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  secondaryResource: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
+  tertiaryResource: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 426d6d99d427e244da3b178b46aa95ec, type: 2}
+  atmosphereProfile: {fileID: 11400000, guid: efa5bafb9f032f742a04feafe93d8b85, type: 2}
+  faunaFamilyProfile: {fileID: 11400000, guid: e6f8e9656eef89946a0fc00ac0d9ec33, type: 2}
+  nearInteractiveFamily: {fileID: 11400000, guid: 89b0a6d958451ba47be1145df0460b18, type: 2}
+  midVisualFamily: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+  farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}
+  preferredZonePlan: {fileID: 11400000, guid: f04e16aa4a0e5e34ab194ed8cf09f07e, type: 2}

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd11935b2a30d141b8531e43a823280, type: 3}
+  m_Name: Biome_039_East_10
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeMatrixProfile
+  matrixIndex: 39
+  depthTier: 10
+  region: 2
+  biomeName: Block-City
+  minDepthMeters: 3500
+  maxDepthMeters: 4025
+  shortDescription: Monolithic cube geometry like ancient ruins.
+  isPlaceholder: 0
+  runtimeVisualProfile: {fileID: 0}
+  familyId: biome.family.abyssal_silt
+  familyProfile: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  suggestedZoneFamily: progression.route.landmark
+  progressionRole: abyss_entry

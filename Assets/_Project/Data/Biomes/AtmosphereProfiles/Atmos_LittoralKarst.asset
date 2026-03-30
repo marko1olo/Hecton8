@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
+  m_Name: Atmos_LittoralKarst
+  m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
+  fogColor: {r: 0.62, g: 0.76, b: 0.84, a: 1}
+  fogDensity: 0.006
+  skyExposure: 1.35
+  ambientColor: {r: 0.52, g: 0.55, b: 0.6, a: 1}
+  sunIntensity: 1.55

@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.World;
+using Hecton8.Environment;
 using MapMagic.Core;
 using System;
 using GPUInstancer;
@@ -28,6 +29,10 @@ namespace Hecton8.EditorTools
             WorldStreamingDirector streamingDirector = FindSceneObjectIncludingInactive<WorldStreamingDirector>();
             WorldSliceDirector worldSliceDirector = FindSceneObjectIncludingInactive<WorldSliceDirector>();
             WorldInterestDirector worldInterestDirector = FindSceneObjectIncludingInactive<WorldInterestDirector>();
+            WorldZoneDirector worldZoneDirector = FindSceneObjectIncludingInactive<WorldZoneDirector>();
+            WorldContentDirector worldContentDirector = FindSceneObjectIncludingInactive<WorldContentDirector>();
+            WorldPopulationDirector worldPopulationDirector = FindSceneObjectIncludingInactive<WorldPopulationDirector>();
+            BiomeMatrixDirector biomeMatrixDirector = FindSceneObjectIncludingInactive<BiomeMatrixDirector>();
             Component scatterBudgetController = FindSceneObjectIncludingInactive(
                 Type.GetType("Hecton8.World.ScatterBudgetController, Assembly-CSharp"));
 
@@ -147,6 +152,46 @@ namespace Hecton8.EditorTools
             else
             {
                 ValidateWorldInterestDirector(worldInterestDirector, ref errorCount, ref warningCount);
+            }
+
+            if (worldZoneDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldZoneDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldZoneDirector(worldZoneDirector, ref errorCount, ref warningCount);
+            }
+
+            if (worldContentDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldContentDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldContentDirector(worldContentDirector, ref errorCount, ref warningCount);
+            }
+
+            if (worldPopulationDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldPopulationDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldPopulationDirector(worldPopulationDirector, ref errorCount, ref warningCount);
+            }
+
+            if (biomeMatrixDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing BiomeMatrixDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateBiomeMatrixDirector(biomeMatrixDirector, ref errorCount, ref warningCount);
             }
 
             if (errorCount <= 0 && warningCount <= 0)
@@ -328,6 +373,7 @@ namespace Hecton8.EditorTools
             SerializedProperty traverseSpeedStart = so.FindProperty("traverseSpeedStart");
             SerializedProperty speedSmoothing = so.FindProperty("speedSmoothing");
             SerializedProperty scatterBudgetController = so.FindProperty("scatterBudgetController");
+            SerializedProperty worldSliceDirector = so.FindProperty("worldSliceDirector");
 
             if (traverseSpeedStart == null || traverseSpeedStart.floatValue <= 0f)
             {
@@ -346,6 +392,12 @@ namespace Hecton8.EditorTools
                 Debug.LogWarning("[MapMagicWorldValidation] WorldStreamingDirector is using runtime auto-resolve for ScatterBudgetController.", streamingDirector);
                 warningCount++;
             }
+
+            if (worldSliceDirector == null || worldSliceDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldStreamingDirector is using runtime auto-resolve for WorldSliceDirector.", streamingDirector);
+                warningCount++;
+            }
         }
 
         private static void ValidateWorldInterestDirector(
@@ -355,9 +407,16 @@ namespace Hecton8.EditorTools
         {
             SerializedObject so = new SerializedObject(worldInterestDirector);
             SerializedProperty scatterBudgetController = so.FindProperty("scatterBudgetController");
+            SerializedProperty worldSliceDirector = so.FindProperty("worldSliceDirector");
             if (scatterBudgetController == null || scatterBudgetController.objectReferenceValue == null)
             {
                 Debug.LogWarning("[MapMagicWorldValidation] WorldInterestDirector is using runtime auto-resolve for ScatterBudgetController.", worldInterestDirector);
+                warningCount++;
+            }
+
+            if (worldSliceDirector == null || worldSliceDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldInterestDirector is using runtime auto-resolve for WorldSliceDirector.", worldInterestDirector);
                 warningCount++;
             }
 
@@ -485,6 +544,340 @@ namespace Hecton8.EditorTools
                 Debug.LogWarning("[MapMagicWorldValidation] No WorldSliceAnchor objects found in the scene.", worldSliceDirector);
                 warningCount++;
             }
+
+            WorldFidelityRoot[] fidelityRoots = Resources.FindObjectsOfTypeAll<WorldFidelityRoot>();
+            int sceneFidelityCount = 0;
+            for (int i = 0; i < fidelityRoots.Length; i++)
+            {
+                WorldFidelityRoot fidelityRoot = fidelityRoots[i];
+                if (fidelityRoot == null || fidelityRoot.gameObject == null || !fidelityRoot.gameObject.scene.IsValid())
+                    continue;
+
+                sceneFidelityCount++;
+            }
+
+            if (sceneFidelityCount <= 0)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] No WorldFidelityRoot components found in the scene.", worldSliceDirector);
+                warningCount++;
+            }
+        }
+
+        private static void ValidateWorldZoneDirector(
+            WorldZoneDirector worldZoneDirector,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldZoneDirector);
+            SerializedProperty playerTransform = so.FindProperty("playerTransform");
+            if (playerTransform == null || playerTransform.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldZoneDirector is using runtime auto-resolve for playerTransform.", worldZoneDirector);
+                warningCount++;
+            }
+
+            WorldZoneAnchor[] anchors = Resources.FindObjectsOfTypeAll<WorldZoneAnchor>();
+            int sceneZoneCount = 0;
+            for (int i = 0; i < anchors.Length; i++)
+            {
+                WorldZoneAnchor anchor = anchors[i];
+                if (anchor == null || anchor.gameObject == null || !anchor.gameObject.scene.IsValid())
+                    continue;
+
+                sceneZoneCount++;
+
+                if (anchor.Profile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' is missing a zone profile.", anchor);
+                    warningCount++;
+                    continue;
+                }
+
+                if (anchor.DominantMatrixBiome == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' is missing a dominant matrix biome.", anchor);
+                    warningCount++;
+                }
+
+                if (anchor.DominantBiomeFamily == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' is missing a dominant biome family.", anchor);
+                    warningCount++;
+                }
+                else if (anchor.DominantMatrixBiome != null && anchor.DominantMatrixBiome.familyProfile != anchor.DominantBiomeFamily)
+                {
+                    Debug.LogWarning(
+                        $"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has dominant biome family that does not match its matrix biome.",
+                        anchor);
+                    warningCount++;
+                }
+
+                if (anchor.Profile.zonePlanProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' is missing a zonePlanProfile.", anchor);
+                    warningCount++;
+                }
+
+                if (string.IsNullOrWhiteSpace(anchor.Profile.nearInteractiveFamily))
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has an empty nearInteractiveFamily.", anchor);
+                    warningCount++;
+                }
+                else if (anchor.Profile.nearInteractiveProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has nearInteractiveFamily but no nearInteractiveProfile asset.", anchor);
+                    warningCount++;
+                }
+
+                if (string.IsNullOrWhiteSpace(anchor.Profile.midVisualFamily))
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has an empty midVisualFamily.", anchor);
+                    warningCount++;
+                }
+                else if (anchor.Profile.midVisualProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has midVisualFamily but no midVisualProfile asset.", anchor);
+                    warningCount++;
+                }
+
+                if (string.IsNullOrWhiteSpace(anchor.Profile.farSilhouetteFamily))
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has an empty farSilhouetteFamily.", anchor);
+                    warningCount++;
+                }
+                else if (anchor.Profile.farSilhouetteProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldZoneAnchor '{anchor.name}' has farSilhouetteFamily but no farSilhouetteProfile asset.", anchor);
+                    warningCount++;
+                }
+
+                if (anchor.Profile.zonePlanProfile != null)
+                {
+                    if (anchor.Profile.zonePlanProfile.nearPlan.primaryFamily == null)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Zone plan '{anchor.Profile.zonePlanProfile.name}' is missing near primary family.", anchor.Profile.zonePlanProfile);
+                        warningCount++;
+                    }
+
+                    if (anchor.Profile.zonePlanProfile.midPlan.primaryFamily == null)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Zone plan '{anchor.Profile.zonePlanProfile.name}' is missing mid primary family.", anchor.Profile.zonePlanProfile);
+                        warningCount++;
+                    }
+
+                    if (anchor.Profile.zonePlanProfile.farPlan.primaryFamily == null)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Zone plan '{anchor.Profile.zonePlanProfile.name}' is missing far primary family.", anchor.Profile.zonePlanProfile);
+                        warningCount++;
+                    }
+                }
+            }
+
+            if (sceneZoneCount <= 0)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] No WorldZoneAnchor objects found in the scene.", worldZoneDirector);
+                warningCount++;
+            }
+        }
+
+        private static void ValidateWorldContentDirector(
+            WorldContentDirector worldContentDirector,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldContentDirector);
+            SerializedProperty playerTransform = so.FindProperty("playerTransform");
+            SerializedProperty worldZoneDirector = so.FindProperty("worldZoneDirector");
+
+            if (playerTransform == null || playerTransform.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldContentDirector is using runtime auto-resolve for playerTransform.", worldContentDirector);
+                warningCount++;
+            }
+
+            if (worldZoneDirector == null || worldZoneDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldContentDirector is using runtime auto-resolve for WorldZoneDirector.", worldContentDirector);
+                warningCount++;
+            }
+
+            WorldContentSocket[] sockets = Resources.FindObjectsOfTypeAll<WorldContentSocket>();
+            int sceneSocketCount = 0;
+            for (int i = 0; i < sockets.Length; i++)
+            {
+                WorldContentSocket socket = sockets[i];
+                if (socket == null || socket.gameObject == null || !socket.gameObject.scene.IsValid())
+                    continue;
+
+                sceneSocketCount++;
+
+                SerializedObject socketSo = new SerializedObject(socket);
+                SerializedProperty contentProfile = socketSo.FindProperty("contentProfile");
+                if (contentProfile == null || contentProfile.objectReferenceValue == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' is missing a content profile.", socket);
+                    warningCount++;
+                }
+            }
+
+            if (sceneSocketCount <= 0)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] No WorldContentSocket objects found in the scene.", worldContentDirector);
+                warningCount++;
+            }
+        }
+
+        private static void ValidateWorldPopulationDirector(
+            WorldPopulationDirector worldPopulationDirector,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldPopulationDirector);
+            SerializedProperty playerTransform = so.FindProperty("playerTransform");
+            SerializedProperty worldZoneDirector = so.FindProperty("worldZoneDirector");
+            SerializedProperty worldContentDirector = so.FindProperty("worldContentDirector");
+            SerializedProperty rules = so.FindProperty("rules");
+
+            if (playerTransform == null || playerTransform.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldPopulationDirector is using runtime auto-resolve for playerTransform.", worldPopulationDirector);
+                warningCount++;
+            }
+
+            if (worldZoneDirector == null || worldZoneDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldPopulationDirector is using runtime auto-resolve for WorldZoneDirector.", worldPopulationDirector);
+                warningCount++;
+            }
+
+            if (worldContentDirector == null || worldContentDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldPopulationDirector is using runtime auto-resolve for WorldContentDirector.", worldPopulationDirector);
+                warningCount++;
+            }
+
+            if (rules == null || rules.arraySize <= 0)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldPopulationDirector has no population rules assigned.", worldPopulationDirector);
+                warningCount++;
+                return;
+            }
+
+            for (int i = 0; i < rules.arraySize; i++)
+            {
+                SerializedProperty entry = rules.GetArrayElementAtIndex(i);
+                WorldPopulationRule rule = entry != null ? entry.objectReferenceValue as WorldPopulationRule : null;
+                if (rule == null)
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(rule.prefabFamily) && rule.familyProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldPopulationRule '{rule.ruleLabel}' has prefabFamily but no familyProfile asset.", rule);
+                    warningCount++;
+                }
+
+                if (rule.preferredBiomeFamilies != null)
+                {
+                    for (int familyIndex = 0; familyIndex < rule.preferredBiomeFamilies.Length; familyIndex++)
+                    {
+                        if (rule.preferredBiomeFamilies[familyIndex] != null)
+                            continue;
+
+                        Debug.LogWarning(
+                            $"[MapMagicWorldValidation] WorldPopulationRule '{rule.ruleLabel}' has an empty preferred biome family slot.",
+                            rule);
+                        warningCount++;
+                    }
+                }
+            }
+
+            WorldContentSocket[] sockets = Resources.FindObjectsOfTypeAll<WorldContentSocket>();
+            for (int i = 0; i < sockets.Length; i++)
+            {
+                WorldContentSocket socket = sockets[i];
+                if (socket == null || socket.gameObject == null || !socket.gameObject.scene.IsValid())
+                    continue;
+
+                WorldZoneAnchor zone = socket.GetComponentInParent<WorldZoneAnchor>();
+                if (zone == null)
+                    continue;
+
+                if (!HasMatchingPopulationRule(rules, zone, socket))
+                {
+                    Debug.LogWarning(
+                        $"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' in zone '{zone.ZoneLabel}' has no matching population rule.",
+                        socket);
+                    warningCount++;
+                }
+            }
+        }
+
+        private static void ValidateBiomeMatrixDirector(
+            BiomeMatrixDirector biomeMatrixDirector,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(biomeMatrixDirector);
+            SerializedProperty playerTransform = so.FindProperty("playerTransform");
+            SerializedProperty matrixCatalog = so.FindProperty("matrixCatalog");
+
+            if (playerTransform == null || playerTransform.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] BiomeMatrixDirector is using runtime auto-resolve for playerTransform.", biomeMatrixDirector);
+                warningCount++;
+            }
+
+            if (matrixCatalog == null || matrixCatalog.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] BiomeMatrixDirector has no matrix catalog assigned.", biomeMatrixDirector);
+                warningCount++;
+                return;
+            }
+
+            HectonBiomeMatrixCatalog catalog = matrixCatalog.objectReferenceValue as HectonBiomeMatrixCatalog;
+            if (catalog == null || catalog.Profiles == null)
+                return;
+
+            for (int i = 0; i < catalog.Profiles.Length; i++)
+            {
+                HectonBiomeMatrixProfile profile = catalog.Profiles[i];
+                if (profile == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(profile.familyId))
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] Matrix biome '{profile.biomeName}' is missing familyId.", profile);
+                    warningCount++;
+                }
+
+                if (profile.familyProfile == null)
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] Matrix biome '{profile.biomeName}' is missing familyProfile.", profile);
+                    warningCount++;
+                }
+            }
+        }
+
+        private static bool HasMatchingPopulationRule(
+            SerializedProperty rulesProperty,
+            WorldZoneAnchor zone,
+            WorldContentSocket socket)
+        {
+            if (rulesProperty == null)
+                return false;
+
+            for (int i = 0; i < rulesProperty.arraySize; i++)
+            {
+                SerializedProperty entry = rulesProperty.GetArrayElementAtIndex(i);
+                if (entry == null || entry.objectReferenceValue == null)
+                    continue;
+
+                WorldPopulationRule rule = entry.objectReferenceValue as WorldPopulationRule;
+                if (rule != null && rule.Matches(zone, socket))
+                    return true;
+            }
+
+            return false;
         }
 
         private static T FindSceneObjectIncludingInactive<T>() where T : Component

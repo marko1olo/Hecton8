@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edd11935b2a30d141b8531e43a823280, type: 3}
+  m_Name: Biome_027_East_07
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeMatrixProfile
+  matrixIndex: 27
+  depthTier: 7
+  region: 2
+  biomeName: The Wall-Fissures
+  minDepthMeters: 2000
+  maxDepthMeters: 2500
+  shortDescription: Narrow vertical cracks emitting faint thermal light.
+  isPlaceholder: 0
+  runtimeVisualProfile: {fileID: 0}
+  familyId: biome.family.granite_escarpment
+  familyProfile: {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  suggestedZoneFamily: hazard.probe
+  progressionRole: slope_descent

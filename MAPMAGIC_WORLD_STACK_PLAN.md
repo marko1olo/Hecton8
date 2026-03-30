@@ -110,6 +110,26 @@ Use a hybrid density model:
 
 This is how the world feels full without actually simulating everything.
 
+### 4. World Meaning Layer
+
+Build the world from data layers, not from scene names:
+
+- `WorldZoneAnchor`
+  - says what kind of place this is
+- `WorldZoneProfile`
+  - says how expensive this place may be
+- `WorldContentSocket`
+  - says what kind of content point exists here
+- `WorldContentProfile`
+  - says what that point is for
+- `WorldPopulationRule`
+  - says what family of future content belongs here
+
+This is the bridge between:
+- optimization
+- authored progression
+- future prefab/model filling
+
 ## Beauty And Uniqueness Direction
 
 The world should not feel like random noise.
@@ -238,6 +258,48 @@ Verified in play mode:
   - `PriorityLoadRadius = 150`
   - `MaxSpawnsPerSlowTick = 24`
 
+### `World Zones + Content + Population`
+
+Added:
+- `Assets/_Project/Scripts/WorldZoneAnchor.cs`
+- `Assets/_Project/Scripts/WorldZoneDirector.cs`
+- `Assets/_Project/Scripts/WorldZoneProfile.cs`
+- `Assets/_Project/Scripts/WorldContentSocket.cs`
+- `Assets/_Project/Scripts/WorldContentDirector.cs`
+- `Assets/_Project/Scripts/WorldContentProfile.cs`
+- `Assets/_Project/Scripts/WorldPopulationRule.cs`
+- `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+
+Live data folders:
+- `Assets/_Project/Data/World/ZoneProfiles`
+- `Assets/_Project/Data/World/ContentProfiles`
+- `Assets/_Project/Data/World/PopulationRules`
+- `Assets/_Project/Data/World/FamilyProfiles`
+
+What this means:
+- the world now knows what each important place is
+- the world now knows what each important content point is
+- each content point now gets a resolved future population family from real rules
+- those future families are now backed by real data assets, not only strings
+- validation can now detect sockets that have no population coverage
+
+This is the production-ready foundation for future real prefab filling.
+
+### Zone Plan Layer
+
+Added on top:
+- `WorldZonePlanProfile`
+- `WorldPrefabFamilyProfile`
+
+Now each zone can describe:
+- what is primary near the player
+- what supports that near layer
+- what is the readable mid layer
+- what is the far silhouette layer
+- what the hero family of the zone is
+
+This is the first real production plan for future world filling, not only a streaming scaffold.
+
 ### `WorldStreamingDirector`
 
 Added:
@@ -277,6 +339,9 @@ Current live anchors:
 - `--- WORLD ---/Resource_FieldSources`
 - `--- WORLD ---/Fabrication_Outpost`
 - `--- WORLD ---/Tool_Staging/Tool_TrialRange`
+- `--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps`
+- `--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_PowerOps`
+- `--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_EndgameOps`
 
 Runtime intent:
 - near resource fields:
@@ -300,6 +365,29 @@ Verification after this pass:
 - compile clean
 - short play enter/exit clean
 - console clean
+
+## Honest GPUI Rock Status
+
+We now have:
+- `Assets/_Project/Scripts/Editor/HectonRockRuntimeBootstrapAuthoring.cs`
+- a live `Rock_Runtime` root can be authored into the scene
+- `GPUInstancerPrefabManager`
+- `HectonRockManager`
+- rock prefabs prepared with `GPUInstancerPrefab`
+
+But the rock stack is **intentionally disabled right now**.
+
+Reason:
+- current rock prefabs use the custom Shader Graph shader:
+  - `Shader Graphs/SG_Rock_Triplanar`
+- that graph does not yet include manual `GPU Instancer Setup`
+- GPUI throws real runtime errors if we force it live
+
+Decision:
+- keep `Rock_Runtime` disabled until the rock Shader Graph is manually prepared for GPUI
+- do not fake a working rock-instancing layer before that shader work is done
+
+This is now a known, localized, honest blocker rather than hidden instability.
 
 ### `ProximityColliderSystem`
 
@@ -430,3 +518,142 @@ Current profile groups:
 - no full gameplay object spawn from every scatter point
 - limit collider and rigidbody participation by budget
 - keep world beauty from shape and composition, not from brute-force object count
+
+## 2026-03-30 - Hybrid Fidelity Layer Integrated
+
+- Added a real per-zone fidelity component:
+  - `Assets/_Project/Scripts/WorldFidelityRoot.cs`
+- `WorldSliceAnchor` now propagates slice state into fidelity roots, not only into whole active/inactive roots.
+- `WorldRuntimeBootstrapAuthoring` now auto-creates and configures fidelity holders for sliced zones:
+  - `__NearInteractive`
+  - `__MidVisual`
+  - `__FarSilhouette`
+- This is the intended production contract for future real prefab population:
+  - `Near`
+    - full gameplay
+    - colliders
+    - rigidbodies
+    - behaviours
+    - full shadows
+  - `Mid`
+    - visual mass
+    - reduced shadow cost
+    - no heavy physics by default
+  - `Far`
+    - silhouette / cheap visual occupancy
+    - no heavy physics
+    - no gameplay behaviours
+- `MapMagicWorldValidator` now also checks that scene-side `WorldFidelityRoot` components exist.
+
+What this means:
+- we no longer only stream whole authored islands on/off
+- we now have a real contract for future world prefabs to live in `near / mid / far` without rewriting the world stack
+- current scene still uses placeholders, but the runtime layer is now final-grade and directly usable for future real content
+
+## 2026-03-30 - Streaming Director Now Drives Slice Distances
+
+- `WorldStreamingDirector` now controls not only spawn/collider budgets, but also live slice distances.
+- Added runtime slice scaling path:
+  - `WorldStreamingDirector -> WorldSliceDirector -> WorldSliceAnchor`
+- Survey and traverse now behave differently:
+  - `Survey`
+    - keeps a stronger nearby gameplay bubble
+    - suited for slow inspection and local interaction
+  - `Traverse`
+    - shrinks expensive near gameplay a bit
+    - extends mid-band visual continuity
+    - better for movement through long routes without keeping full local cost everywhere
+- This is now a real production behavior change, not just another helper:
+  - fast movement and depth alter what the world keeps alive around the player
+  - near-field cost and mid-field readability are no longer static
+
+## 2026-03-30 - Interest Hotspots Now Also Hold Slice Life
+
+- `WorldInterestDirector` now affects two things:
+  - runtime budgets
+  - local slice distance lift
+- `WorldInterestAnchor` gained slice scales:
+  - `sliceNearScale`
+  - `sliceMidScale`
+- Meaning:
+  - important places like fabrication, resources, power, and progression hubs now keep their local world bubble alive a bit longer
+  - empty space can still collapse more aggressively
+- This is the correct production behavior:
+  - world readability is preserved around valuable places
+  - performance is still saved away from meaningful content
+
+## 2026-03-30 - World Zones Added As A Real Runtime Layer
+
+- Added:
+  - `Assets/_Project/Scripts/WorldZoneAnchor.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+- This is the official world-zone layer for future production content.
+- Important scene roots now have explicit zone identity:
+  - resources
+  - fabrication
+  - trial range
+  - construction
+  - power
+  - combat
+  - progression
+  - navigation hub
+- Meaning:
+  - the world no longer depends only on object names and ad-hoc scene paths
+  - future gameplay systems can ask “where is the player?” in a stable way
+  - future content population can target zone kind/tier instead of hardcoded scene roots
+
+## 2026-03-30 - World Zones Are Now Data-Driven
+
+- Added:
+  - `Assets/_Project/Scripts/WorldZoneProfile.cs`
+- Created live assets under:
+  - `Assets/_Project/Data/World/ZoneProfiles`
+- `WorldZoneAnchor` now references a real `WorldZoneProfile`.
+- `WorldZoneDirector` now pushes zone-profile multipliers into:
+  - `ScatterBudgetController`
+  - `WorldSliceDirector`
+- Meaning:
+  - zones no longer only identify space
+  - they now actually change how the world behaves
+  - resource zones, fabrication zones, combat zones, and progression zones can each carry different runtime behavior without more hardcoded branches
+
+## 2026-03-30 - World Content Sockets Added
+
+- Added:
+  - `Assets/_Project/Scripts/WorldContentSocket.cs`
+  - `Assets/_Project/Scripts/WorldContentDirector.cs`
+- This is the first official layer for future prefab population.
+- Important authored objects now have explicit content sockets:
+  - resource pickups
+  - resource nodes
+  - fabrication station
+  - construction point
+  - power points
+  - service targets
+  - navigation markers
+  - hazards
+  - combat points
+  - landmarks
+- Meaning:
+  - the world now has stable “where content belongs” anchors
+  - future real models/prefabs can replace sockets cleanly
+  - population logic can target content kinds instead of random scene object names
+
+## 2026-03-30 - World Content Is Now Data-Driven Too
+
+- Added:
+  - `Assets/_Project/Scripts/WorldContentProfile.cs`
+- Created live assets under:
+  - `Assets/_Project/Data/World/ContentProfiles`
+- `WorldContentSocket` now references a real content profile.
+- `WorldContentProfile` defines:
+  - content kind
+  - preferred zone kind
+  - preferred fidelity
+  - future prefab family
+  - gameplay purpose
+  - default weight
+- Meaning:
+  - content sockets are no longer just tagged points
+  - they now describe what kind of content should eventually live there
+  - future population passes can use profiles instead of more hardcoded branching
