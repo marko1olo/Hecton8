@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 4550
   shortDescription: Glass-smooth black volcanic flows.
   isPlaceholder: 0
+  visitPurpose: Abyss biome. Come here for specialized runs, rarer materials, and
+    work around bowls, pools, and local hotspots.
+  commonRewardHook: Reliable value comes from Sulfur Clumps and Thermal Gel.
+  rareRewardHook: 'The rare pull is real: Tungsten Chunk and Cooling Cartridge.'
+  landmarkIdentity: Obsidian Flows reads through bowls, pools, domes, and hotspot
+    basins. Landmarks should feel scarce but memorable.
+  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+    nook, not constant cover.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins, then
+    overstaying for loot. Creature pressure stays high.'
+  extractionFocus: 'Quick strike extraction from hot pockets with short exposure
+    windows. Mid-depth: expect basin pockets, salvage traps, and local hotspots,
+    then return before greed stretches the route.'
+  landmarkGuidance: Dominant landmark is heat vent field or obsidian flow edge. This
+    slot should read through flow channel and thermal chimney cluster; use bowls
+    and hotspot rims to remember loops.
+  loosePickupBias: 3
+  nodeExtractionBias: 3
+  salvageBias: 3
+  commonResourceBias: 3
+  uncommonResourceBias: 4
+  rareResourceBias: 3
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.volcanic_glass
   familyProfile: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}

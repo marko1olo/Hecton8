@@ -22,6 +22,33 @@ MonoBehaviour:
     expects a bespoke authored identity here; final lore and geology are pending
     expansion from the master vision.
   isPlaceholder: 1
+  visitPurpose: Late-game pressure biome. Come here only for major progress, rare
+    extraction, and to work around bowls, pools, and local hotspots.
+  commonRewardHook: Even routine value here comes from Abyssal Crystal and Rare Earth
+    Dust.
+  rareRewardHook: 'The reason to risk the trip is: Gold Ore and Abyss Pressure Shell.'
+  landmarkIdentity: Tier 23 South Reserve reads through bowls, pools, domes, and
+    hotspot basins. Landmarks should feel singular and intimidating.
+  safePocketIdentity: Safe pockets are almost psychological only. The player survives
+    by discipline, not comfort.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins, depth
+    stress, and expensive hesitation. Creature pressure stays extreme.'
+  extractionFocus: 'Minimal contact count, extreme commitment, almost no comfort.
+    Deep tier: expect basin pockets, salvage traps, and local hotspots, extract only
+    what justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is the final shaft or void cut. This slot should
+    read through a singular abyssal absence in the world; use bowls and hotspot rims
+    to remember loops.
+  loosePickupBias: 2
+  nodeExtractionBias: 4
+  salvageBias: 4
+  commonResourceBias: 3
+  uncommonResourceBias: 5
+  rareResourceBias: 5
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.rift_void
   familyProfile: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}

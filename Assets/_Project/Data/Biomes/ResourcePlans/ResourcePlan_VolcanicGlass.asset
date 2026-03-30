@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_VolcanicGlass
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.volcanic_glass
+  profileLabel: Volcanic Glass Resource Plan
+  commonResource: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+  rareResource: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Heat-side chemistry, thermal materials, and power parts.
+  lateReasonToReturn: Still relevant whenever power and cooling chains need refilling.
+  extractionStyle: Quick strike extraction from hot pockets with short exposure windows.
+  routeRewardLogic: The reward is strong, but the safe dwell time is short.

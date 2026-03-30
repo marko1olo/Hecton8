@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 1500
   shortDescription: Wide plateaus ending in brutal vertical drops.
   isPlaceholder: 0
+  visitPurpose: Transition biome. Come here to push deeper, find better materials,
+    and keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Reliable value comes from Iron Composite and Copper Ore.
+  rareRewardHook: 'The rare pull is real: Titanium Scrap and Structural Bracket.'
+  landmarkIdentity: Table-Land Benches reads through dunes, plains, void cuts, and
+    shape changes in the floor. Landmarks should feel large and route-defining.
+  safePocketIdentity: Safe pockets exist, but they must be earned by reading the
+    terrain.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
+    then overstaying for loot. Creature pressure stays medium.'
+  extractionFocus: 'Pocket mining along walls and ledges with careful positioning.
+    Mid-depth: accept longer sweeps and weaker orientation during gathering, then
+    return before greed stretches the route.'
+  landmarkGuidance: Dominant landmark is wall face or cliff step. This slot should
+    read through tall wall ribs and shadowed benches; use silhouette changes to avoid
+    getting lost in soft terrain.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 3
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 3
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.granite_escarpment
   familyProfile: {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}

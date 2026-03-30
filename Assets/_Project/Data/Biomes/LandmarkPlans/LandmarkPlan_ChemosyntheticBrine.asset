@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_ChemosyntheticBrine
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.chemosynthetic_brine
+  profileLabel: Chemosynthetic Brine Landmark Plan
+  dominantLandmarkRole: brine bowl or vent pocket
+  nearReferenceShape: chemical crust, seep edge, or low chimney
+  midReferenceShape: brine pool chain and active vent arc
+  farReferenceShape: sunken bowl marked by luminous chemical haze
+  routeUse: Player should move from hotspot to hotspot with clear risk spikes.
+  safePocketUse: Safe pockets sit just outside active chemistry, not inside it.
+  emotionalRead: Alien, useful, and locally hostile.

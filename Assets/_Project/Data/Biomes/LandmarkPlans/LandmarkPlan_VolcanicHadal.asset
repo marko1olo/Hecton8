@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_VolcanicHadal
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.volcanic_hadal
+  profileLabel: Volcanic Hadal Landmark Plan
+  dominantLandmarkRole: magma seam or hadal chimney crown
+  nearReferenceShape: pressure crack with thermal glare
+  midReferenceShape: chimney forest or furnace ridge
+  farReferenceShape: red-black catastrophic skyline
+  routeUse: Player should feel that one huge landmark is the whole mission target.
+  safePocketUse: Safe pockets are temporary breaks in heat, not true safe homes.
+  emotionalRead: Late-game terror mixed with extreme value.

@@ -31,3 +31,57 @@ MonoBehaviour:
     usage: 'far: generator, relay, and service-load chain readability.'
   heroFamily: {fileID: 11400000, guid: 1a1dfdad5879447429c4c1886c31f52b, type: 2}
   gameplaySummary: Power route built around generator, relay, and serviced load readability.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: 47edc8a29b1db5240acedd99ea8d5543, type: 2}
+    relation: 0
+    preferredSlice: 1
+    targetCount: 2
+    usage: Main energy line through the zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: 393f855590ac4be438b86bb4f5d729a8, type: 2}
+    relation: 4
+    preferredSlice: 2
+    targetCount: 1
+    usage: A junction where power and maintenance pressure meet.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: ecd4f83de81d64345b6ce797ee6b63d7, type: 2}
+    relation: 1
+    preferredSlice: 1
+    targetCount: 2
+    usage: A readable relay point that chains the route.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: b9cf7b0d866cb714dbd83f41c6638317, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The major powered landmark at the end of the line.

@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 600
   shortDescription: Ancient fossilized reef walls honeycombed with holes and micro-caverns.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Common runs pay out in Fiber Kelp and Membrane Tissue.
+  rareRewardHook: 'Rare pull is modest: Biolum Paste and Fiber Mesh.'
+  landmarkIdentity: Coral-Porous Walls reads through dunes, plains, void cuts, and
+    shape changes in the floor. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims.
+    Creature pressure stays medium.'
+  extractionFocus: 'Mixed salvage, harvest pockets, and risky reef-node peels. Early
+    tier: keep runs short and accept longer sweeps and weaker orientation during
+    gathering.'
+  landmarkGuidance: Dominant landmark is reef crown or porous fossil wall. This slot
+    should read through coral windows and rib-like skeletons; use silhouette changes
+    to avoid getting lost in soft terrain.
+  loosePickupBias: 5
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 4
+  uncommonResourceBias: 3
+  rareResourceBias: 2
+  routePressure: 3
+  landmarkStrength: 4
+  rewardPull: 3
+  survivalPressure: 2
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.fossil_reef
   familyProfile: {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_TectonicSpine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.tectonic_spine
+  profileLabel: Tectonic Spine Play
+  whyPlayerComesHere: Readable travel along a spine, with depth pressure and hard
+    geometry.
+  playerPromise: A transit biome where the player reads the world by huge stone lines.
+  traversalRhythm: Long moves between strong forms with only rare pauses in cover.
+  routeClarity: 3
+  landmarkStrength: 4
+  safePocketFrequency: 2
+  commonResourceDensity: 3
+  salvageValue: 3
+  rareRewardPull: 3
+  encounterPressure: 4
+  hazardPressure: 4
+  expeditionCommitment: 4
+  cautionSummary: The key mistake here is overcommitting along the edge without a
+    return plan.

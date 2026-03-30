@@ -32,3 +32,57 @@ MonoBehaviour:
   heroFamily: {fileID: 11400000, guid: 267b742641ab04b4a9832f746ce5ae23, type: 2}
   gameplaySummary: Dense authored space for tool practice, regression checks, and
     future prefab replacement.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: 96aa1c83edda7e446a02478495eb87a4, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 1
+    usage: Simple readable reward near a practice route.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: 2da39d6287eee47478990b164253112b, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 1
+    usage: Compact extractable cluster for tool testing.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: 2f2fad3e4fd015d48bc442bf5d3e17f0, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 1
+    usage: Brief reset space between lanes.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: 1810e38d1412431479c281a429ce73a7, type: 2}
+    relation: 4
+    preferredSlice: 2
+    targetCount: 1
+    usage: Obvious construction test point.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: 2ad6c3dffdf163c4dac422d3e410ea98, type: 2}
+    relation: 0
+    preferredSlice: 1
+    targetCount: 1
+    usage: Linear power-support read across a lane.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: 79247e81669e32e4796119147423397c, type: 2}
+    relation: 6
+    preferredSlice: 2
+    targetCount: 1
+    usage: A service problem that intentionally blocks smooth forward flow.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: 6fb0c1f2c3e97624a996fe4e1eb588e9, type: 2}
+    relation: 1
+    preferredSlice: 1
+    targetCount: 2
+    usage: Clear lane anchor for route memory.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: bed6020aebd3dcc429c8a1e099b74498, type: 2}
+    relation: 4
+    preferredSlice: 2
+    targetCount: 1
+    usage: A gate that tells the player risk begins here.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: f071c9bbc7a87ac4fa604e241c56e4d4, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The endpoint that justifies finishing a lane.

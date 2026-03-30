@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 4025
   shortDescription: Perfectly flat and dark ultimate silence.
   isPlaceholder: 0
+  visitPurpose: Abyss biome. Come here for specialized runs, rarer materials, and
+    keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Reliable value comes from Abyssal Crystal and Rare Earth Dust.
+  rareRewardHook: 'The rare pull is real: Gold Ore and Abyss Pressure Shell.'
+  landmarkIdentity: Silt-Void reads through dunes, plains, void cuts, and shape changes
+    in the floor. Landmarks should feel scarce but memorable.
+  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+    nook, not constant cover.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
+    then overstaying for loot. Creature pressure stays extreme.'
+  extractionFocus: 'Minimal contact count, extreme commitment, almost no comfort.
+    Mid-depth: accept longer sweeps and weaker orientation during gathering, then
+    return before greed stretches the route.'
+  landmarkGuidance: Dominant landmark is the final shaft or void cut. This slot should
+    read through void-rim terraces and black pressure cuts; use silhouette changes
+    to avoid getting lost in soft terrain.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.rift_void
   familyProfile: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}

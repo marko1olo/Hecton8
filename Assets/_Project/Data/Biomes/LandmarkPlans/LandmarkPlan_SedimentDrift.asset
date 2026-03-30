@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_SedimentDrift
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.sediment_drift
+  profileLabel: Sediment Drift Landmark Plan
+  dominantLandmarkRole: basin lip or dune crest line
+  nearReferenceShape: soft bowls and ripple seams
+  midReferenceShape: fan-shaped sediment flows
+  farReferenceShape: broad dune silhouette with one strong basin edge
+  routeUse: Player should read flow direction and basin rims to keep orientation.
+  safePocketUse: Safe pockets live behind basin lips and inside soft depressions.
+  emotionalRead: Calm, open, and slightly deceptive.

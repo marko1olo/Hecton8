@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 1000
   shortDescription: Geometric mineral peaks covered in translucent needles.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Common runs pay out in Silver Ore and Gold Ore.
+  rareRewardHook: 'Rare pull is modest: Lithium Crystal and Precision Lens.'
+  landmarkIdentity: Crystalline Ridges reads through dunes, plains, void cuts, and
+    shape changes in the floor. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims.
+    Creature pressure stays medium.'
+  extractionFocus: 'Slow, careful harvesting from obvious but exposed crystal structures.
+    Early tier: keep runs short and accept longer sweeps and weaker orientation during
+    gathering.'
+  landmarkGuidance: Dominant landmark is crystal crown or shard grove. This slot
+    should read through needle cluster and reflective seam; use silhouette changes
+    to avoid getting lost in soft terrain.
+  loosePickupBias: 5
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 4
+  uncommonResourceBias: 3
+  rareResourceBias: 2
+  routePressure: 3
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 2
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.crystal_growth
   familyProfile: {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}

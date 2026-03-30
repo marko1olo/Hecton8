@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_ChemosyntheticBrine
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.chemosynthetic_brine
+  profileLabel: Chemosynthetic Brine Spatial Pattern
+  resourcePocketPattern: Chemistry-rich pickups sit around the edge of active bowls
+    and seep lines.
+  nodeClusterPattern: Node clusters form in concentrated hotspots around vents, not
+    evenly across the biome.
+  safePocketPattern: Safe pockets are just outside active chemistry, using the edge
+    of danger rather than true safety.
+  routeAnchorPattern: Route memory comes from bowl chains, vent arcs, and bright
+    chemistry contrast.
+  rareObjectivePattern: Rare value sits in one or two hostile active pockets, not
+    in the whole field.
+  explorationLoop: Cross empty ground, hit a hotspot hard, pull out, reset, then
+    choose the next chemical pocket.
+  spatialRead: Patchy intensity. Most of the biome is setup for a few concentrated
+    moments.
+  playerMemoryHook: Remember the place by linked bowls and one especially active
+    vent cluster.

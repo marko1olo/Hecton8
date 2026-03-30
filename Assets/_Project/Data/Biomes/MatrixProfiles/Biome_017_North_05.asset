@@ -20,6 +20,31 @@ MonoBehaviour:
   maxDepthMeters: 1500
   shortDescription: Massive descending shelves leading the player into the abyss.
   isPlaceholder: 0
+  visitPurpose: Transition biome. Come here to push deeper, find better materials,
+    and follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Reliable value comes from Copper Ore and Cobalt Alloy.
+  rareRewardHook: 'The rare pull is real: Iron Composite and Copper Wire.'
+  landmarkIdentity: The Great Staircase reads through spires, steps, and big natural
+    crowns. Landmarks should feel large and route-defining.
+  safePocketIdentity: Safe pockets exist, but they must be earned by reading the
+    terrain.
+  riskSummary: 'Main failure mode: bad drops and exposed lines, then overstaying
+    for loot. Creature pressure stays medium.'
+  extractionFocus: 'Targeted node work along long rock lines and exposed shelves.
+    Mid-depth: favor stone pockets and hard-form nodes, then return before greed
+    stretches the route.'
+  landmarkGuidance: Dominant landmark is main ridge line. This slot should read through
+    parallel ridge family and stepped breaks; use vertical forms to keep heading.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 3
+  landmarkStrength: 4
+  rewardPull: 3
+  survivalPressure: 4
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.tectonic_spine
   familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}

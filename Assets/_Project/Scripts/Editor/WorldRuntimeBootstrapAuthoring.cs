@@ -687,6 +687,7 @@ namespace Hecton8.EditorTools
                 BuildSliceUsage(profile.profileId, WorldSliceAnchor.SliceState.Far),
                 InferHeroFamilyProfile(profile.profileId),
                 BuildZoneGameplaySummary(profile.profileId));
+            ApplySpatialRolePlans(profile.zonePlanProfile, profile.profileId);
             EditorUtility.SetDirty(profile);
             return profile;
         }
@@ -884,6 +885,35 @@ namespace Hecton8.EditorTools
             return profile;
         }
 
+        private static void ApplySpatialRolePlans(WorldZonePlanProfile profile, string zoneProfileId)
+        {
+            if (profile == null)
+                return;
+
+            ApplyRolePlan(profile.resourcePocketPlan, zoneProfileId, "resource_pocket");
+            ApplyRolePlan(profile.nodeClusterPlan, zoneProfileId, "node_cluster");
+            ApplyRolePlan(profile.safePocketPlan, zoneProfileId, "safe_pocket");
+            ApplyRolePlan(profile.buildSocketPlan, zoneProfileId, "build_socket");
+            ApplyRolePlan(profile.powerSpinePlan, zoneProfileId, "power_spine");
+            ApplyRolePlan(profile.serviceChokePlan, zoneProfileId, "service_choke");
+            ApplyRolePlan(profile.routeAnchorPlan, zoneProfileId, "route_anchor");
+            ApplyRolePlan(profile.hazardGatePlan, zoneProfileId, "hazard_gate");
+            ApplyRolePlan(profile.rareObjectivePlan, zoneProfileId, "rare_objective");
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static void ApplyRolePlan(WorldZonePlanProfile.RolePlan plan, string zoneProfileId, string roleId)
+        {
+            if (plan == null)
+                return;
+
+            plan.family = InferSpatialRoleFamilyProfile(zoneProfileId, roleId);
+            plan.relation = InferSpatialRoleRelation(zoneProfileId, roleId);
+            plan.preferredSlice = InferSpatialRoleSlice(zoneProfileId, roleId);
+            plan.targetCount = InferSpatialRoleCount(zoneProfileId, roleId);
+            plan.usage = BuildSpatialRoleUsage(zoneProfileId, roleId);
+        }
+
         private static WorldPrefabFamilyProfile InferSupportFamilyProfile(string zoneProfileId, WorldSliceAnchor.SliceState slice)
         {
             switch (zoneProfileId)
@@ -1032,6 +1062,346 @@ namespace Hecton8.EditorTools
             }
 
             return "Generic world zone plan.";
+        }
+
+        private static WorldPrefabFamilyProfile InferSpatialRoleFamilyProfile(string zoneProfileId, string roleId)
+        {
+            switch (zoneProfileId)
+            {
+                case "profile.resources.starter":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "resource_pocket" => "resource.pocket.readable",
+                        "node_cluster" => "resource.node.cluster",
+                        "safe_pocket" => "safe.pocket.reef",
+                        "route_anchor" => "navigation.anchor.reef",
+                        "rare_objective" => "resource.rare.pocket",
+                        _ => "resources.landmarks.far"
+                    });
+
+                case "profile.fabrication.early":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "safe_pocket" => "safe.outpost.support",
+                        "route_anchor" => "navigation.anchor.outpost",
+                        "rare_objective" => "fabrication.landmark.utility",
+                        _ => "fabrication.outpost.mid"
+                    });
+
+                case "profile.trial.early":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "resource_pocket" => "trial.pocket.readable",
+                        "node_cluster" => "trial.node.cluster",
+                        "safe_pocket" => "trial.safe.pocket",
+                        "build_socket" => "trial.build.socket",
+                        "power_spine" => "trial.power.spine",
+                        "service_choke" => "trial.service.choke",
+                        "route_anchor" => "trial.route.anchor",
+                        "hazard_gate" => "trial.hazard.gate",
+                        "rare_objective" => "trial.rare.objective",
+                        _ => "trial.readability.far"
+                    });
+
+                case "profile.construction.mid":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "build_socket" => "construction.socket.support",
+                        "safe_pocket" => "construction.safe.ledge",
+                        "route_anchor" => "construction.route.frame",
+                        "rare_objective" => "construction.landmark.spine",
+                        _ => "construction.spine.far"
+                    });
+
+                case "profile.power.mid":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "power_spine" => "power.spine.chain",
+                        "service_choke" => "power.service.junction",
+                        "route_anchor" => "power.route.anchor",
+                        "rare_objective" => "power.landmark.core",
+                        _ => "power.route.far"
+                    });
+
+                case "profile.progression.endgame":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "safe_pocket" => "progression.safe.pocket",
+                        "service_choke" => "progression.service.choke",
+                        "route_anchor" => "progression.route.anchor",
+                        "hazard_gate" => "progression.hazard.gate",
+                        "rare_objective" => "progression.rare.objective",
+                        _ => "progression.route.landmark"
+                    });
+
+                case "profile.combat.mid":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "safe_pocket" => "combat.safe.cover",
+                        "route_anchor" => "combat.route.anchor",
+                        "hazard_gate" => "combat.threat.gate",
+                        "rare_objective" => "combat.landmark.threat",
+                        _ => "combat.silhouette.far"
+                    });
+
+                case "profile.navigation.mid":
+                    return EnsurePrefabFamilyProfile(roleId switch
+                    {
+                        "safe_pocket" => "navigation.safe.ledge",
+                        "route_anchor" => "navigation.anchor.readable",
+                        "rare_objective" => "navigation.frontier.landmark",
+                        _ => "navigation.silhouette.far"
+                    });
+            }
+
+            return EnsurePrefabFamilyProfile("world.generic.role");
+        }
+
+        private static WorldZonePlanProfile.SpatialRelation InferSpatialRoleRelation(string zoneProfileId, string roleId)
+        {
+            return zoneProfileId switch
+            {
+                "profile.resources.starter" => roleId switch
+                {
+                    "resource_pocket" => WorldZonePlanProfile.SpatialRelation.NearRouteAnchor,
+                    "node_cluster" => WorldZonePlanProfile.SpatialRelation.OffMainRoute,
+                    "safe_pocket" => WorldZonePlanProfile.SpatialRelation.BehindCover,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.AlongMainRoute,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                "profile.fabrication.early" => roleId switch
+                {
+                    "safe_pocket" => WorldZonePlanProfile.SpatialRelation.AroundHeroObject,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.NearRouteAnchor,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.AroundHeroObject
+                },
+                "profile.trial.early" => roleId switch
+                {
+                    "build_socket" => WorldZonePlanProfile.SpatialRelation.AtBranchPoint,
+                    "power_spine" => WorldZonePlanProfile.SpatialRelation.AlongMainRoute,
+                    "service_choke" => WorldZonePlanProfile.SpatialRelation.BehindHazardGate,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.NearRouteAnchor,
+                    "hazard_gate" => WorldZonePlanProfile.SpatialRelation.AtBranchPoint,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                "profile.construction.mid" => roleId switch
+                {
+                    "build_socket" => WorldZonePlanProfile.SpatialRelation.AtBranchPoint,
+                    "safe_pocket" => WorldZonePlanProfile.SpatialRelation.BehindCover,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.AlongMainRoute,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                "profile.power.mid" => roleId switch
+                {
+                    "power_spine" => WorldZonePlanProfile.SpatialRelation.AlongMainRoute,
+                    "service_choke" => WorldZonePlanProfile.SpatialRelation.AtBranchPoint,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.NearRouteAnchor,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                "profile.progression.endgame" => roleId switch
+                {
+                    "safe_pocket" => WorldZonePlanProfile.SpatialRelation.BehindCover,
+                    "service_choke" => WorldZonePlanProfile.SpatialRelation.AtBranchPoint,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.AlongMainRoute,
+                    "hazard_gate" => WorldZonePlanProfile.SpatialRelation.BehindHazardGate,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                "profile.combat.mid" => roleId switch
+                {
+                    "safe_pocket" => WorldZonePlanProfile.SpatialRelation.BehindCover,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.NearRouteAnchor,
+                    "hazard_gate" => WorldZonePlanProfile.SpatialRelation.BehindHazardGate,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                "profile.navigation.mid" => roleId switch
+                {
+                    "safe_pocket" => WorldZonePlanProfile.SpatialRelation.BehindCover,
+                    "route_anchor" => WorldZonePlanProfile.SpatialRelation.AlongMainRoute,
+                    "rare_objective" => WorldZonePlanProfile.SpatialRelation.AtRouteTerminus,
+                    _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+                },
+                _ => WorldZonePlanProfile.SpatialRelation.OffMainRoute
+            };
+        }
+
+        private static WorldSliceAnchor.SliceState InferSpatialRoleSlice(string zoneProfileId, string roleId)
+        {
+            return roleId switch
+            {
+                "resource_pocket" => WorldSliceAnchor.SliceState.Near,
+                "node_cluster" => WorldSliceAnchor.SliceState.Near,
+                "safe_pocket" => WorldSliceAnchor.SliceState.Near,
+                "build_socket" => WorldSliceAnchor.SliceState.Near,
+                "power_spine" => WorldSliceAnchor.SliceState.Mid,
+                "service_choke" => WorldSliceAnchor.SliceState.Near,
+                "route_anchor" => WorldSliceAnchor.SliceState.Mid,
+                "hazard_gate" => zoneProfileId == "profile.progression.endgame" || zoneProfileId == "profile.combat.mid"
+                    ? WorldSliceAnchor.SliceState.Mid
+                    : WorldSliceAnchor.SliceState.Near,
+                "rare_objective" => WorldSliceAnchor.SliceState.Mid,
+                _ => WorldSliceAnchor.SliceState.Mid
+            };
+        }
+
+        private static int InferSpatialRoleCount(string zoneProfileId, string roleId)
+        {
+            return zoneProfileId switch
+            {
+                "profile.resources.starter" => roleId switch
+                {
+                    "resource_pocket" => 3,
+                    "node_cluster" => 2,
+                    "safe_pocket" => 2,
+                    "route_anchor" => 2,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.fabrication.early" => roleId switch
+                {
+                    "safe_pocket" => 1,
+                    "route_anchor" => 1,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.trial.early" => roleId switch
+                {
+                    "resource_pocket" => 1,
+                    "node_cluster" => 1,
+                    "safe_pocket" => 1,
+                    "build_socket" => 1,
+                    "power_spine" => 1,
+                    "service_choke" => 1,
+                    "route_anchor" => 2,
+                    "hazard_gate" => 1,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.construction.mid" => roleId switch
+                {
+                    "build_socket" => 2,
+                    "safe_pocket" => 1,
+                    "route_anchor" => 2,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.power.mid" => roleId switch
+                {
+                    "power_spine" => 2,
+                    "service_choke" => 1,
+                    "route_anchor" => 2,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.progression.endgame" => roleId switch
+                {
+                    "safe_pocket" => 1,
+                    "service_choke" => 1,
+                    "route_anchor" => 2,
+                    "hazard_gate" => 1,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.combat.mid" => roleId switch
+                {
+                    "safe_pocket" => 1,
+                    "route_anchor" => 1,
+                    "hazard_gate" => 1,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                "profile.navigation.mid" => roleId switch
+                {
+                    "safe_pocket" => 1,
+                    "route_anchor" => 3,
+                    "rare_objective" => 1,
+                    _ => 0
+                },
+                _ => 0
+            };
+        }
+
+        private static string BuildSpatialRoleUsage(string zoneProfileId, string roleId)
+        {
+            return zoneProfileId switch
+            {
+                "profile.resources.starter" => roleId switch
+                {
+                    "resource_pocket" => "Small readable loose-resource pocket close to a safe route line.",
+                    "node_cluster" => "A slightly deeper mineral cluster that asks for a small detour.",
+                    "safe_pocket" => "Short recovery nook behind stone cover or reef folds.",
+                    "route_anchor" => "A strong readable form that keeps beginner routes stable.",
+                    "rare_objective" => "The best find of the pocket, one layer deeper than routine scrap.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.fabrication.early" => roleId switch
+                {
+                    "safe_pocket" => "The trusted regroup and craft stop around the outpost.",
+                    "route_anchor" => "Approach marker that brings the player back to safety.",
+                    "rare_objective" => "The memorable utility landmark that makes the stop worth revisiting.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.trial.early" => roleId switch
+                {
+                    "resource_pocket" => "Simple readable reward near a practice route.",
+                    "node_cluster" => "Compact extractable cluster for tool testing.",
+                    "safe_pocket" => "Brief reset space between lanes.",
+                    "build_socket" => "Obvious construction test point.",
+                    "power_spine" => "Linear power-support read across a lane.",
+                    "service_choke" => "A service problem that intentionally blocks smooth forward flow.",
+                    "route_anchor" => "Clear lane anchor for route memory.",
+                    "hazard_gate" => "A gate that tells the player risk begins here.",
+                    "rare_objective" => "The endpoint that justifies finishing a lane.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.construction.mid" => roleId switch
+                {
+                    "build_socket" => "Main place where the route wants construction to happen.",
+                    "safe_pocket" => "Small calm space to read placement before committing.",
+                    "route_anchor" => "Frame or support shape that keeps the build route legible.",
+                    "rare_objective" => "The distant structural payoff that makes the route memorable.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.power.mid" => roleId switch
+                {
+                    "power_spine" => "Main energy line through the zone.",
+                    "service_choke" => "A junction where power and maintenance pressure meet.",
+                    "route_anchor" => "A readable relay point that chains the route.",
+                    "rare_objective" => "The major powered landmark at the end of the line.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.progression.endgame" => roleId switch
+                {
+                    "safe_pocket" => "A rare breathing point before another hard push.",
+                    "service_choke" => "A maintenance problem that reinforces route pressure.",
+                    "route_anchor" => "The last trustworthy anchor before escalation.",
+                    "hazard_gate" => "The clear threshold into expensive late-game risk.",
+                    "rare_objective" => "The major pull that makes the dangerous route worth taking.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.combat.mid" => roleId switch
+                {
+                    "safe_pocket" => "A small break in sightlines where the player can recover.",
+                    "route_anchor" => "A stable combat-read form that prevents total chaos.",
+                    "hazard_gate" => "The point where control space ends and danger starts.",
+                    "rare_objective" => "The focal point that makes the threat pocket memorable.",
+                    _ => "Not a major role for this zone."
+                },
+                "profile.navigation.mid" => roleId switch
+                {
+                    "safe_pocket" => "A brief recovery ledge near a branch.",
+                    "route_anchor" => "A major route-memory form for branch choice and return flow.",
+                    "rare_objective" => "The frontier landmark that rewards pushing one branch further.",
+                    _ => "Not a major role for this zone."
+                },
+                _ => "Generic role plan."
+            };
         }
 
         private static string BuildFamilyLabel(string familyId)

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_CrystalGrowth
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.crystal_growth
+  profileLabel: Crystal Growth Play
+  whyPlayerComesHere: You come here for beauty and rare material, but only with care.
+  playerPromise: Very readable visually, but it steals time if explored lazily.
+  traversalRhythm: Stop, read, collect, and move again in short careful bursts.
+  routeClarity: 3
+  landmarkStrength: 5
+  safePocketFrequency: 2
+  commonResourceDensity: 3
+  salvageValue: 2
+  rareRewardPull: 4
+  encounterPressure: 2
+  hazardPressure: 3
+  expeditionCommitment: 4
+  cautionSummary: The main trap is moving faster than the space actually allows.

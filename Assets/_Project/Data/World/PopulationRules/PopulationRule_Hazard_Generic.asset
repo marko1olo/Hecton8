@@ -21,6 +21,12 @@ MonoBehaviour:
   prefabFamily: hazard.probe
   familyProfile: {fileID: 11400000, guid: 97764b386f3717d4a8316a33b4b97503, type: 2}
   gameplayPurpose: Probe or warning anchor in risky routes.
+  biomeFitSummary: Best where the terrain itself carries localized danger and forces
+    a read before commitment.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
   densityWeight: 0.9
   suggestedClusterCount: 2
   suggestedMinCount: 1

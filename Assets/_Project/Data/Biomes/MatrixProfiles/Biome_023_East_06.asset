@@ -20,6 +20,31 @@ MonoBehaviour:
   maxDepthMeters: 2000
   shortDescription: A debris valley of square megablocks fallen from above.
   isPlaceholder: 0
+  visitPurpose: Transition biome. Come here to push deeper, find better materials,
+    and read walls, fissures, and major vertical routes.
+  commonRewardHook: Reliable value comes from Iron Composite and Copper Ore.
+  rareRewardHook: 'The rare pull is real: Titanium Scrap and Structural Bracket.'
+  landmarkIdentity: The Shattered Cliff-Base reads through walls, fins, fissures,
+    and giant vertical breaks. Landmarks should feel large and route-defining.
+  safePocketIdentity: Safe pockets live behind slab cover and under wall breaks.
+  riskSummary: 'Main failure mode: vertical trap geometry and hard commitment, then
+    overstaying for loot. Creature pressure stays medium.'
+  extractionFocus: 'Pocket mining along walls and ledges with careful positioning.
+    Mid-depth: work edges, cracks, and vertical seams, then return before greed stretches
+    the route.'
+  landmarkGuidance: Dominant landmark is wall face or cliff step. This slot should
+    read through tall wall ribs and shadowed benches; use walls and breaks to mark
+    route commitment.
+  loosePickupBias: 3
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 2
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 3
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.granite_escarpment
   familyProfile: {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}

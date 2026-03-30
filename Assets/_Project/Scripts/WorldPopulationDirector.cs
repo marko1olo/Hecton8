@@ -24,13 +24,21 @@ namespace Hecton8.World
         [SerializeField] private string _debugPrimaryRule = "None";
         [SerializeField] private string _debugPrimaryPrefabFamily = "None";
         [SerializeField] private string _debugPrimaryBiomeFit = "None";
+        [SerializeField] private string _debugPrimaryExtraction = "None";
+        [SerializeField] private string _debugPrimaryLandmark = "None";
+        [SerializeField] private string _debugPrimarySpatialRole = "None";
+        [SerializeField] private string _debugPrimarySpatialReason = "None";
+        [SerializeField] private string _debugPrimaryZoneRoleFamily = "None";
+        [SerializeField] private string _debugPrimaryZoneRoleLayout = "None";
+        [SerializeField] private string _debugPrimaryPurpose = "None";
+        [SerializeField] private float _debugPrimaryEffectiveDensity;
 
         private bool _registeredToTickManager;
 
         private void Awake()
         {
             ResolveReferences();
-            UpdateDiagnostics(null, null, null, 0, 0);
+            UpdateDiagnostics(null, null, null, 0f, "None", "None", "None", "None", "None", "None", "None", "None", 0, 0);
         }
 
         private void OnEnable()
@@ -88,6 +96,15 @@ namespace Hecton8.World
             WorldContentSocket socket = FindNearestSocketInZone(zone);
 
             WorldPopulationRule primaryRule = null;
+            float primaryDensityWeight = 0f;
+            string primaryBiomeFit = "None";
+            string primaryExtraction = "None";
+            string primaryLandmark = "None";
+            string primarySpatialRole = "None";
+            string primarySpatialReason = "None";
+            string primaryZoneRoleFamily = "None";
+            string primaryZoneRoleLayout = "None";
+            string primaryPurpose = "None";
             int matchedCount = 0;
             int resolvedSocketCount = 0;
 
@@ -101,10 +118,21 @@ namespace Hecton8.World
                         continue;
 
                     WorldZoneAnchor candidateZone = candidateSocket.GetComponentInParent<WorldZoneAnchor>();
-                    WorldPopulationRule candidateRule = FindPrimaryRule(candidateZone, candidateSocket, out int candidateMatchCount);
+                    PopulationSelection candidateSelection = FindPrimaryRule(candidateZone, candidateSocket, out int candidateMatchCount);
+                    WorldPopulationRule candidateRule = candidateSelection.Rule;
                     if (candidateRule != null)
                     {
-                        candidateSocket.ApplyPopulationRecommendation(candidateRule);
+                        candidateSocket.ApplyPopulationRecommendation(
+                            candidateRule,
+                            candidateSelection.EffectiveDensityWeight,
+                            candidateSelection.BiomeFitReason,
+                            candidateSelection.ExtractionFocus,
+                            candidateSelection.LandmarkGuidance,
+                            candidateSelection.ResolvedPurpose,
+                            candidateSelection.SpatialRole,
+                            candidateSelection.SpatialReason,
+                            candidateSelection.ZoneRoleFamily,
+                            candidateSelection.ZoneRoleLayout);
                         resolvedSocketCount++;
                     }
                     else
@@ -114,13 +142,22 @@ namespace Hecton8.World
 
                     if (candidateSocket == socket)
                     {
-                        primaryRule = candidateRule;
+                        primaryRule = candidateSelection.Rule;
+                        primaryDensityWeight = candidateSelection.EffectiveDensityWeight;
+                        primaryBiomeFit = candidateSelection.BiomeFitReason;
+                        primaryExtraction = candidateSelection.ExtractionFocus;
+                        primaryLandmark = candidateSelection.LandmarkGuidance;
+                        primarySpatialRole = candidateSelection.SpatialRole;
+                        primarySpatialReason = candidateSelection.SpatialReason;
+                        primaryZoneRoleFamily = candidateSelection.ZoneRoleFamily;
+                        primaryZoneRoleLayout = candidateSelection.ZoneRoleLayout;
+                        primaryPurpose = candidateSelection.ResolvedPurpose;
                         matchedCount = candidateMatchCount;
                     }
                 }
             }
 
-            UpdateDiagnostics(zone, socket, primaryRule, matchedCount, resolvedSocketCount);
+            UpdateDiagnostics(zone, socket, primaryRule, primaryDensityWeight, primaryBiomeFit, primaryExtraction, primaryLandmark, primarySpatialRole, primarySpatialReason, primaryZoneRoleFamily, primaryZoneRoleLayout, primaryPurpose, matchedCount, resolvedSocketCount);
         }
 
         private WorldContentSocket FindNearestSocketInZone(WorldZoneAnchor zone)
@@ -172,9 +209,11 @@ namespace Hecton8.World
                 worldContentDirector = FindAnyObjectByType<WorldContentDirector>();
         }
 
-        private WorldPopulationRule FindPrimaryRule(WorldZoneAnchor zone, WorldContentSocket socket, out int matchedCount)
+        private PopulationSelection FindPrimaryRule(WorldZoneAnchor zone, WorldContentSocket socket, out int matchedCount)
         {
+            PopulationSelection bestSelection = default;
             WorldPopulationRule primaryRule = null;
+            float bestDensity = float.MinValue;
             matchedCount = 0;
 
             for (int i = 0; i < rules.Count; i++)
@@ -184,17 +223,41 @@ namespace Hecton8.World
                     continue;
 
                 matchedCount++;
-                if (primaryRule == null)
-                    primaryRule = rule;
+                float candidateDensity = rule.GetEffectiveDensityWeight(zone, socket);
+                if (candidateDensity <= bestDensity && primaryRule != null)
+                    continue;
+
+                primaryRule = rule;
+                bestDensity = candidateDensity;
+                bestSelection = new PopulationSelection(
+                    rule,
+                    candidateDensity,
+                    rule.BuildBiomeFitReason(zone, socket),
+                    rule.BuildExtractionFocus(zone),
+                    rule.BuildLandmarkGuidance(zone),
+                    rule.BuildResolvedPurpose(zone),
+                    rule.BuildSpatialRole(zone, socket),
+                    rule.BuildSpatialRoleReason(zone, socket),
+                    rule.BuildZoneRoleFamily(zone, socket),
+                    rule.BuildZoneRoleLayout(zone, socket));
             }
 
-            return primaryRule;
+            return bestSelection;
         }
 
         private void UpdateDiagnostics(
             WorldZoneAnchor zone,
             WorldContentSocket socket,
             WorldPopulationRule primaryRule,
+            float primaryDensityWeight,
+            string primaryBiomeFit,
+            string primaryExtraction,
+            string primaryLandmark,
+            string primarySpatialRole,
+            string primarySpatialReason,
+            string primaryZoneRoleFamily,
+            string primaryZoneRoleLayout,
+            string primaryPurpose,
             int matchedCount,
             int resolvedSocketCount)
         {
@@ -210,9 +273,53 @@ namespace Hecton8.World
             _debugPrimaryPrefabFamily = primaryRule != null && !string.IsNullOrWhiteSpace(primaryRule.prefabFamily)
                 ? primaryRule.prefabFamily
                 : "None";
-            _debugPrimaryBiomeFit = primaryRule != null && !string.IsNullOrWhiteSpace(primaryRule.biomeFitSummary)
-                ? primaryRule.biomeFitSummary
-                : "None";
+            _debugPrimaryBiomeFit = string.IsNullOrWhiteSpace(primaryBiomeFit) ? "None" : primaryBiomeFit;
+            _debugPrimaryExtraction = string.IsNullOrWhiteSpace(primaryExtraction) ? "None" : primaryExtraction;
+            _debugPrimaryLandmark = string.IsNullOrWhiteSpace(primaryLandmark) ? "None" : primaryLandmark;
+            _debugPrimarySpatialRole = string.IsNullOrWhiteSpace(primarySpatialRole) ? "None" : primarySpatialRole;
+            _debugPrimarySpatialReason = string.IsNullOrWhiteSpace(primarySpatialReason) ? "None" : primarySpatialReason;
+            _debugPrimaryZoneRoleFamily = string.IsNullOrWhiteSpace(primaryZoneRoleFamily) ? "None" : primaryZoneRoleFamily;
+            _debugPrimaryZoneRoleLayout = string.IsNullOrWhiteSpace(primaryZoneRoleLayout) ? "None" : primaryZoneRoleLayout;
+            _debugPrimaryPurpose = string.IsNullOrWhiteSpace(primaryPurpose) ? "None" : primaryPurpose;
+            _debugPrimaryEffectiveDensity = Mathf.Max(0f, primaryDensityWeight);
+        }
+
+        private readonly struct PopulationSelection
+        {
+            public PopulationSelection(
+                WorldPopulationRule rule,
+                float effectiveDensityWeight,
+                string biomeFitReason,
+                string extractionFocus,
+                string landmarkGuidance,
+                string resolvedPurpose,
+                string spatialRole,
+                string spatialReason,
+                string zoneRoleFamily,
+                string zoneRoleLayout)
+            {
+                Rule = rule;
+                EffectiveDensityWeight = effectiveDensityWeight;
+                BiomeFitReason = biomeFitReason;
+                ExtractionFocus = extractionFocus;
+                LandmarkGuidance = landmarkGuidance;
+                ResolvedPurpose = resolvedPurpose;
+                SpatialRole = spatialRole;
+                SpatialReason = spatialReason;
+                ZoneRoleFamily = zoneRoleFamily;
+                ZoneRoleLayout = zoneRoleLayout;
+            }
+
+            public WorldPopulationRule Rule { get; }
+            public float EffectiveDensityWeight { get; }
+            public string BiomeFitReason { get; }
+            public string ExtractionFocus { get; }
+            public string LandmarkGuidance { get; }
+            public string ResolvedPurpose { get; }
+            public string SpatialRole { get; }
+            public string SpatialReason { get; }
+            public string ZoneRoleFamily { get; }
+            public string ZoneRoleLayout { get; }
         }
     }
 }

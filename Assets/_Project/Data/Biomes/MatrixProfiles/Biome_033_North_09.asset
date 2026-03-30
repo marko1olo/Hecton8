@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 3500
   shortDescription: Roofless tunnels left by extinct mega-worms.
   isPlaceholder: 0
+  visitPurpose: Transition biome. Come here to push deeper, find better materials,
+    and follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Reliable value comes from Abyssal Crystal and Rare Earth Dust.
+  rareRewardHook: 'The rare pull is real: Gold Ore and Abyss Pressure Shell.'
+  landmarkIdentity: Silt Catacombs reads through spires, steps, and big natural crowns.
+    Landmarks should feel large and route-defining.
+  safePocketIdentity: Safe pockets exist, but they must be earned by reading the
+    terrain.
+  riskSummary: 'Main failure mode: bad drops and exposed lines, then overstaying
+    for loot. Creature pressure stays extreme.'
+  extractionFocus: 'Minimal contact count, extreme commitment, almost no comfort.
+    Mid-depth: favor stone pockets and hard-form nodes, then return before greed
+    stretches the route.'
+  landmarkGuidance: Dominant landmark is the final shaft or void cut. This slot should
+    read through void-rim terraces and black pressure cuts; use vertical forms to
+    keep heading.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.rift_void
   familyProfile: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_ChemosyntheticBrine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.chemosynthetic_brine
+  profileLabel: Chemosynthetic Brine Resource Plan
+  commonResource: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  rareResource: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 309f4de80276b6e408359a2ee710b3ca, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Chemistry-heavy biome for sealants, electrolytes, and service
+    supplies.
+  lateReasonToReturn: Great refill zone for advanced chemistry and maintenance materials.
+  extractionStyle: Harvest concentrated hotspots, then move before the zone punishes
+    greed.
+  routeRewardLogic: Quiet travel between high-value chemical pockets.

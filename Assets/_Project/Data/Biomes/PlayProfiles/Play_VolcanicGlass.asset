@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_VolcanicGlass
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.volcanic_glass
+  profileLabel: Volcanic Glass Play
+  whyPlayerComesHere: Heat, risk, and strong materials for technical growth.
+  playerPromise: An aggressive biome where thermal danger must be read before commitment.
+  traversalRhythm: Sharp pushes toward one valuable point, then retreat.
+  routeClarity: 2
+  landmarkStrength: 4
+  safePocketFrequency: 1
+  commonResourceDensity: 2
+  salvageValue: 2
+  rareRewardPull: 4
+  encounterPressure: 4
+  hazardPressure: 5
+  expeditionCommitment: 5
+  cautionSummary: Pressure ramps up faster than one quiet pocket suggests.

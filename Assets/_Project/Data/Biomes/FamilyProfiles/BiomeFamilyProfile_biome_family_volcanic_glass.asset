@@ -15,16 +15,18 @@ MonoBehaviour:
   familyId: biome.family.volcanic_glass
   familyLabel: Volcanic Glass
   debugColor: {r: 0.78, g: 0.28, b: 0.18, a: 1}
-  geologicalIdentity: "\u041E\u0431\u0441\u0438\u0434\u0438\u0430\u043D\u043E\u0432\u044B\u0435
-    \u043F\u043E\u0442\u043E\u043A\u0438, \u0448\u043B\u0430\u043A\u043E\u0432\u044B\u0435
-    \u043F\u043E\u043B\u044F \u0438 \u0441\u0442\u0435\u043A\u043B\u044F\u043D\u043D\u044B\u0435
-    \u043A\u043E\u0440\u043A\u0438 \u0441 \u0436\u0451\u0441\u0442\u043A\u043E\u0439
-    \u0433\u0435\u043E\u043C\u0435\u0442\u0440\u0438\u0435\u0439."
-  gameplayIdentity: "\u0420\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u043A\u0430\u043A
-    \u043E\u043F\u0430\u0441\u043D\u0430\u044F \u0433\u043E\u0440\u044F\u0447\u0430\u044F
-    \u0441\u0440\u0435\u0434\u0430 \u0441 \u0441\u0438\u043B\u044C\u043D\u044B\u043C\u0438
-    \u0441\u0438\u043B\u0443\u044D\u0442\u0430\u043C\u0438 \u0438 \u0445\u043E\u0440\u043E\u0448\u0438\u043C\u0438
-    power-\u043C\u0430\u0442\u0435\u0440\u0438\u0430\u043B\u0430\u043C\u0438."
+  geologicalIdentity: "\xD0\u017E\xD0\xB1\xD1\x81\xD0\xB8\xD0\xB4\xD0\xB8\xD0\xB0\xD0\xBD\xD0\xBE\xD0\xB2\xD1\u2039\xD0\xB5
+    \xD0\xBF\xD0\xBE\xD1\u201A\xD0\xBE\xD0\xBA\xD0\xB8, \xD1\u02C6\xD0\xBB\xD0\xB0\xD0\xBA\xD0\xBE\xD0\xB2\xD1\u2039\xD0\xB5
+    \xD0\xBF\xD0\xBE\xD0\xBB\xD1\x8F \xD0\xB8 \xD1\x81\xD1\u201A\xD0\xB5\xD0\xBA\xD0\xBB\xD1\x8F\xD0\xBD\xD0\xBD\xD1\u2039\xD0\xB5
+    \xD0\xBA\xD0\xBE\xD1\u20AC\xD0\xBA\xD0\xB8 \xD1\x81 \xD0\xB6\xD1\u2018\xD1\x81\xD1\u201A\xD0\xBA\xD0\xBE\xD0\xB9
+    \xD0\xB3\xD0\xB5\xD0\xBE\xD0\xBC\xD0\xB5\xD1\u201A\xD1\u20AC\xD0\xB8\xD0\xB5\xD0\xB9."
+  gameplayIdentity: "\xD0\_\xD0\xB0\xD0\xB1\xD0\xBE\xD1\u201A\xD0\xB0\xD0\xB5\xD1\u201A
+    \xD0\xBA\xD0\xB0\xD0\xBA \xD0\xBE\xD0\xBF\xD0\xB0\xD1\x81\xD0\xBD\xD0\xB0\xD1\x8F
+    \xD0\xB3\xD0\xBE\xD1\u20AC\xD1\x8F\xD1\u2021\xD0\xB0\xD1\x8F \xD1\x81\xD1\u20AC\xD0\xB5\xD0\xB4\xD0\xB0
+    \xD1\x81 \xD1\x81\xD0\xB8\xD0\xBB\xD1\u0152\xD0\xBD\xD1\u2039\xD0\xBC\xD0\xB8
+    \xD1\x81\xD0\xB8\xD0\xBB\xD1\u0192\xD1\x8D\xD1\u201A\xD0\xB0\xD0\xBC\xD0\xB8
+    \xD0\xB8 \xD1\u2026\xD0\xBE\xD1\u20AC\xD0\xBE\xD1\u02C6\xD0\xB8\xD0\xBC\xD0\xB8
+    power-\xD0\xBC\xD0\xB0\xD1\u201A\xD0\xB5\xD1\u20AC\xD0\xB8\xD0\xB0\xD0\xBB\xD0\xB0\xD0\xBC\xD0\xB8."
   atmosphereMood: hot_menace
   navigationStyle: thermal_veins
   hazardStyle: heat_and_rupture
@@ -37,8 +39,13 @@ MonoBehaviour:
   secondaryResource: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
   tertiaryResource: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
   signatureComponent: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
+  resourcePlanProfile: {fileID: 11400000, guid: 65612f09e5382ae4c90da33fd51cad60, type: 2}
+  landmarkPlanProfile: {fileID: 11400000, guid: 963320652a843c44586f0091717f4793, type: 2}
+  spatialPatternProfile: {fileID: 11400000, guid: 737ee6f647db4c747b5f37f34d3a17e5, type: 2}
   atmosphereProfile: {fileID: 11400000, guid: c54a601e2a5147d4ba3dd17cd3bbc0e7, type: 2}
   faunaFamilyProfile: {fileID: 11400000, guid: 0df2254c8ab847a41a5aad21514e52d9, type: 2}
+  recommendedLoadoutPreset: {fileID: 11400000, guid: d53ff5d7b7f68e347884f7e9fab197ba, type: 2}
+  playProfile: {fileID: 11400000, guid: 5e476aca6ede1c24891fd00edf4b206f, type: 2}
   nearInteractiveFamily: {fileID: 11400000, guid: 97764b386f3717d4a8316a33b4b97503, type: 2}
   midVisualFamily: {fileID: 11400000, guid: 5e95ae9c9a01b52408960903c98168c5, type: 2}
   farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}

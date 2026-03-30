@@ -20,6 +20,33 @@ MonoBehaviour:
   maxDepthMeters: 15000
   shortDescription: The highest point of the deepest tier, a single rusted needle.
   isPlaceholder: 0
+  visitPurpose: Late-game pressure biome. Come here only for major progress, rare
+    extraction, and to follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Even routine value here comes from Nickel Ore and Cobalt Alloy.
+  rareRewardHook: 'The reason to risk the trip is: Abyssal Crystal and High-Capacity
+    Cell.'
+  landmarkIdentity: The Iron Peak reads through spires, steps, and big natural crowns.
+    Landmarks should feel singular and intimidating.
+  safePocketIdentity: Safe pockets are rare and temporary. Retreat routes matter
+    more than comfort.
+  riskSummary: 'Main failure mode: bad drops and exposed lines, depth stress, and
+    expensive hesitation. Creature pressure stays high.'
+  extractionFocus: 'Exact deep extraction with little tolerance for wasted movement.
+    Deep tier: favor stone pockets and hard-form nodes, extract only what justifies
+    the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is iron shard ridge or compressed metal plain
+    break. This slot should read through cold industrial skyline made by geology;
+    use vertical forms to keep heading.
+  loosePickupBias: 2
+  nodeExtractionBias: 5
+  salvageBias: 3
+  commonResourceBias: 3
+  uncommonResourceBias: 4
+  rareResourceBias: 5
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.metallic_hadal
   familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}

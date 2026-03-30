@@ -21,6 +21,32 @@ MonoBehaviour:
   shortDescription: Terraced basins like frozen waterfalls, filled with milky mineral
     pools.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and work around bowls, pools, and local hotspots.
+  commonRewardHook: Common runs pay out in Silver Ore and Gold Ore.
+  rareRewardHook: 'Rare pull is modest: Lithium Crystal and Precision Lens.'
+  landmarkIdentity: White Alabaster Pools reads through bowls, pools, domes, and
+    hotspot basins. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins. Creature
+    pressure stays medium.'
+  extractionFocus: 'Slow, careful harvesting from obvious but exposed crystal structures.
+    Early tier: keep runs short and expect basin pockets, salvage traps, and local
+    hotspots.'
+  landmarkGuidance: Dominant landmark is crystal crown or shard grove. This slot
+    should read through needle cluster and reflective seam; use bowls and hotspot
+    rims to remember loops.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 3
+  commonResourceBias: 4
+  uncommonResourceBias: 4
+  rareResourceBias: 2
+  routePressure: 2
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 3
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.crystal_growth
   familyProfile: {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}

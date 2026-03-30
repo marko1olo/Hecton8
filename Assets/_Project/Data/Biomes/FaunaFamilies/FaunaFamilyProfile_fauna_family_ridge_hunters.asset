@@ -18,10 +18,12 @@ MonoBehaviour:
   threatStyle: medium
   signaturePredator: ridge_hunter
   encounterRhythm: route_pressure
-  gameplaySummary: "\u0424\u0430\u0443\u043D\u0430 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442
-    \u0432\u0434\u043E\u043B\u044C \u0433\u0440\u0435\u0431\u043D\u0435\u0439 \u0438
-    \u043D\u0430\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u0442 \u043F\u043E\u0432\u0435\u0434\u0435\u043D\u0438\u0435
-    \u0438\u0433\u0440\u043E\u043A\u0430 \u0447\u0435\u0440\u0435\u0437 \u0444\u043E\u0440\u043C\u0443
-    \u043C\u0430\u0440\u0448\u0440\u0443\u0442\u0430."
-  ambienceSummary: "\u0425\u0438\u0449\u043D\u0438\u043A\u0438 \u043B\u044E\u0431\u044F\u0442
-    \u0443\u0437\u043A\u0438\u0435 \u043B\u0438\u043D\u0438\u0438 \u043F\u0443\u0442\u0438."
+  gameplaySummary: "\xD0\xA4\xD0\xB0\xD1\u0192\xD0\xBD\xD0\xB0 \xD1\u20AC\xD0\xB0\xD0\xB1\xD0\xBE\xD1\u201A\xD0\xB0\xD0\xB5\xD1\u201A
+    \xD0\xB2\xD0\xB4\xD0\xBE\xD0\xBB\xD1\u0152 \xD0\xB3\xD1\u20AC\xD0\xB5\xD0\xB1\xD0\xBD\xD0\xB5\xD0\xB9
+    \xD0\xB8 \xD0\xBD\xD0\xB0\xD0\xBF\xD1\u20AC\xD0\xB0\xD0\xB2\xD0\xBB\xD1\x8F\xD0\xB5\xD1\u201A
+    \xD0\xBF\xD0\xBE\xD0\xB2\xD0\xB5\xD0\xB4\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5 \xD0\xB8\xD0\xB3\xD1\u20AC\xD0\xBE\xD0\xBA\xD0\xB0
+    \xD1\u2021\xD0\xB5\xD1\u20AC\xD0\xB5\xD0\xB7 \xD1\u201E\xD0\xBE\xD1\u20AC\xD0\xBC\xD1\u0192
+    \xD0\xBC\xD0\xB0\xD1\u20AC\xD1\u02C6\xD1\u20AC\xD1\u0192\xD1\u201A\xD0\xB0."
+  ambienceSummary: "\xD0\xA5\xD0\xB8\xD1\u2030\xD0\xBD\xD0\xB8\xD0\xBA\xD0\xB8 \xD0\xBB\xD1\u017D\xD0\xB1\xD1\x8F\xD1\u201A
+    \xD1\u0192\xD0\xB7\xD0\xBA\xD0\xB8\xD0\xB5 \xD0\xBB\xD0\xB8\xD0\xBD\xD0\xB8\xD0\xB8
+    \xD0\xBF\xD1\u0192\xD1\u201A\xD0\xB8."

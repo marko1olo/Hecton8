@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_RiftVoid
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.rift_void
+  profileLabel: Rift Void Spatial Pattern
+  resourcePocketPattern: Routine resource pockets almost disappear; trivial value
+    should not distract from the place itself.
+  nodeClusterPattern: Meaningful nodes are rare and support one high-commitment objective,
+    not farming.
+  safePocketPattern: Safe pockets are conceptual and temporary, usually just enough
+    structure to regain control.
+  routeAnchorPattern: The biome is defined by one or two overwhelming anchors, not
+    by dense path signage.
+  rareObjectivePattern: One singular late-game objective should dominate memory of
+    the entire zone.
+  explorationLoop: Orient on the void anchor, survive the approach, complete the
+    objective, and get out clean.
+  spatialRead: Sparse, final, and unforgettable.
+  playerMemoryHook: Remember the place by the one impossible landmark that swallowed
+    everything else.

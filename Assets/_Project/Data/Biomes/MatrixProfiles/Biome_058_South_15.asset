@@ -20,6 +20,33 @@ MonoBehaviour:
   maxDepthMeters: 6650
   shortDescription: Hyper-saline underwater lakes in deep depressions.
   isPlaceholder: 0
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to work around bowls, pools, and local hotspots.
+  commonRewardHook: Even routine value here comes from Electrolyte Salts and Hydrocarbon
+    Resin.
+  rareRewardHook: 'The reason to risk the trip is: Sulfur Clumps and Pump Rotor.'
+  landmarkIdentity: Brine Rivers reads through bowls, pools, domes, and hotspot basins.
+    Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins, depth
+    stress, and expensive hesitation. Creature pressure stays high.'
+  extractionFocus: 'Harvest concentrated hotspots, then move before the zone punishes
+    greed. Deep tier: expect basin pockets, salvage traps, and local hotspots, extract
+    only what justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is brine bowl or vent pocket. This slot should
+    read through sunken bowl marked by luminous chemical haze; use bowls and hotspot
+    rims to remember loops.
+  loosePickupBias: 2
+  nodeExtractionBias: 4
+  salvageBias: 3
+  commonResourceBias: 3
+  uncommonResourceBias: 4
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.chemosynthetic_brine
   familyProfile: {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}

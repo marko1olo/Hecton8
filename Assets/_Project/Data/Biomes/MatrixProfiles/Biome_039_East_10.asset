@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 4025
   shortDescription: Monolithic cube geometry like ancient ruins.
   isPlaceholder: 0
+  visitPurpose: Abyss biome. Come here for specialized runs, rarer materials, and
+    read walls, fissures, and major vertical routes.
+  commonRewardHook: Reliable value comes from Iron Composite and Electrolyte Salts.
+  rareRewardHook: 'The rare pull is real: Rare Earth Dust and Stabilizer Coil.'
+  landmarkIdentity: Block-City reads through walls, fins, fissures, and giant vertical
+    breaks. Landmarks should feel scarce but memorable.
+  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+    nook, not constant cover.
+  riskSummary: 'Main failure mode: vertical trap geometry and hard commitment, then
+    overstaying for loot. Creature pressure stays medium_to_high.'
+  extractionFocus: 'Sparse node hits and salvage pockets hidden in weak-visibility
+    terrain. Mid-depth: work edges, cracks, and vertical seams, then return before
+    greed stretches the route.'
+  landmarkGuidance: Dominant landmark is rare mound, trench lip, or wreck rise. This
+    slot should read through single trench mouth or silt catacomb seam; use walls
+    and breaks to mark route commitment.
+  loosePickupBias: 3
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 3
+  rewardPull: 3
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.abyssal_silt
   familyProfile: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}

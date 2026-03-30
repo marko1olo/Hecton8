@@ -20,6 +20,34 @@ MonoBehaviour:
   maxDepthMeters: 9800
   shortDescription: Quenched obsidian sheets at trench depth.
   isPlaceholder: 0
+  visitPurpose: Late-game pressure biome. Come here only for major progress, rare
+    extraction, and to keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Even routine value here comes from Abyssal Crystal and Thermal
+    Gel.
+  rareRewardHook: 'The reason to risk the trip is: Tungsten Chunk and Abyss Pressure
+    Shell.'
+  landmarkIdentity: The Glass Plains reads through dunes, plains, void cuts, and
+    shape changes in the floor. Landmarks should feel singular and intimidating.
+  safePocketIdentity: Safe pockets are rare and temporary. Retreat routes matter
+    more than comfort.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
+    depth stress, and expensive hesitation. Creature pressure stays extreme.'
+  extractionFocus: 'High-risk extraction under thermal and survival pressure. Deep
+    tier: accept longer sweeps and weaker orientation during gathering, extract only
+    what justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is magma seam or hadal chimney crown. This
+    slot should read through red-black catastrophic skyline; use silhouette changes
+    to avoid getting lost in soft terrain.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 3
+  commonResourceBias: 3
+  uncommonResourceBias: 4
+  rareResourceBias: 5
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.volcanic_hadal
   familyProfile: {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}

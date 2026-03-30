@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 4550
   shortDescription: Fractal ash-noise fields from deep volcanism.
   isPlaceholder: 0
+  visitPurpose: Abyss biome. Come here for specialized runs, rarer materials, and
+    follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Reliable value comes from Sulfur Clumps and Thermal Gel.
+  rareRewardHook: 'The rare pull is real: Tungsten Chunk and Cooling Cartridge.'
+  landmarkIdentity: Cinder Fields reads through spires, steps, and big natural crowns.
+    Landmarks should feel scarce but memorable.
+  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+    nook, not constant cover.
+  riskSummary: 'Main failure mode: bad drops and exposed lines, then overstaying
+    for loot. Creature pressure stays high.'
+  extractionFocus: 'Quick strike extraction from hot pockets with short exposure
+    windows. Mid-depth: favor stone pockets and hard-form nodes, then return before
+    greed stretches the route.'
+  landmarkGuidance: Dominant landmark is heat vent field or obsidian flow edge. This
+    slot should read through flow channel and thermal chimney cluster; use vertical
+    forms to keep heading.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.volcanic_glass
   familyProfile: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}

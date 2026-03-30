@@ -32,3 +32,57 @@ MonoBehaviour:
   heroFamily: {fileID: 11400000, guid: a70cc2dd5d724d74cb48b99c6e63d6fe, type: 2}
   gameplaySummary: Construction route with obvious sockets, blockers, and support
     structure.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: 720d68f80554cbe41be1c78935671334, type: 2}
+    relation: 2
+    preferredSlice: 2
+    targetCount: 1
+    usage: Small calm space to read placement before committing.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: 1ce863c4fe061844bbca3e10cf1ba487, type: 2}
+    relation: 4
+    preferredSlice: 2
+    targetCount: 2
+    usage: Main place where the route wants construction to happen.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Not a major role for this zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: 2d781b4f024050d47a7a5149557cea57, type: 2}
+    relation: 0
+    preferredSlice: 1
+    targetCount: 2
+    usage: Frame or support shape that keeps the build route legible.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: 1dda31a8f764cdf43ac2cb400a9b3039, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The distant structural payoff that makes the route memorable.

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_CrystalGrowth
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.crystal_growth
+  profileLabel: Crystal Growth Landmark Plan
+  dominantLandmarkRole: crystal crown or shard grove
+  nearReferenceShape: needle cluster and reflective seam
+  midReferenceShape: crystal ridge or luminous fan
+  farReferenceShape: glowing shard skyline that pulls the eye
+  routeUse: Player should see valuable paths from afar but feel exposed on approach.
+  safePocketUse: Safe pockets live behind opaque crystal fans and heavy shard roots.
+  emotionalRead: Precious, cold, and slightly hypnotic.

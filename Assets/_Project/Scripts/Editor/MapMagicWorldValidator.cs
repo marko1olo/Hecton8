@@ -16,6 +16,8 @@ namespace Hecton8.EditorTools
         {
             int errorCount = 0;
             int warningCount = 0;
+            int uncoveredSocketCount = 0;
+            int weakSpatialSocketCount = 0;
 
             MapMagicObject mapMagic = FindSceneObjectIncludingInactive<MapMagicObject>();
             MapMagicBridge bridge = FindSceneObjectIncludingInactive<MapMagicBridge>();
@@ -181,7 +183,7 @@ namespace Hecton8.EditorTools
             }
             else
             {
-                ValidateWorldPopulationDirector(worldPopulationDirector, ref errorCount, ref warningCount);
+                ValidateWorldPopulationDirector(worldPopulationDirector, ref errorCount, ref warningCount, ref uncoveredSocketCount, ref weakSpatialSocketCount);
             }
 
             if (biomeMatrixDirector == null)
@@ -198,6 +200,12 @@ namespace Hecton8.EditorTools
             {
                 Debug.Log("[MapMagicWorldValidation] PASS no issues found.");
                 return;
+            }
+
+            if (uncoveredSocketCount > 0 || weakSpatialSocketCount > 0)
+            {
+                Debug.LogWarning(
+                    $"[MapMagicWorldValidation] Population coverage summary uncoveredSockets={uncoveredSocketCount} weakSpatialSockets={weakSpatialSocketCount}");
             }
 
             Debug.LogWarning($"[MapMagicWorldValidation] COMPLETE errors={errorCount} warnings={warningCount}");
@@ -670,6 +678,64 @@ namespace Hecton8.EditorTools
                         Debug.LogWarning($"[MapMagicWorldValidation] Zone plan '{anchor.Profile.zonePlanProfile.name}' is missing far primary family.", anchor.Profile.zonePlanProfile);
                         warningCount++;
                     }
+
+                    if (anchor.Profile.zonePlanProfile.routeAnchorPlan == null || anchor.Profile.zonePlanProfile.routeAnchorPlan.family == null)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Zone plan '{anchor.Profile.zonePlanProfile.name}' is missing routeAnchorPlan family.", anchor.Profile.zonePlanProfile);
+                        warningCount++;
+                    }
+
+                    if (anchor.Profile.zonePlanProfile.safePocketPlan == null || anchor.Profile.zonePlanProfile.safePocketPlan.family == null)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Zone plan '{anchor.Profile.zonePlanProfile.name}' is missing safePocketPlan family.", anchor.Profile.zonePlanProfile);
+                        warningCount++;
+                    }
+
+                    switch (anchor.Kind)
+                    {
+                        case WorldZoneAnchor.ZoneKind.Resources:
+                            if (anchor.Profile.zonePlanProfile.resourcePocketPlan == null || anchor.Profile.zonePlanProfile.resourcePocketPlan.family == null ||
+                                anchor.Profile.zonePlanProfile.nodeClusterPlan == null || anchor.Profile.zonePlanProfile.nodeClusterPlan.family == null)
+                            {
+                                Debug.LogWarning($"[MapMagicWorldValidation] Resource zone plan '{anchor.Profile.zonePlanProfile.name}' is missing resourcePocketPlan or nodeClusterPlan family.", anchor.Profile.zonePlanProfile);
+                                warningCount++;
+                            }
+                            break;
+
+                        case WorldZoneAnchor.ZoneKind.Construction:
+                            if (anchor.Profile.zonePlanProfile.buildSocketPlan == null || anchor.Profile.zonePlanProfile.buildSocketPlan.family == null)
+                            {
+                                Debug.LogWarning($"[MapMagicWorldValidation] Construction zone plan '{anchor.Profile.zonePlanProfile.name}' is missing buildSocketPlan family.", anchor.Profile.zonePlanProfile);
+                                warningCount++;
+                            }
+                            break;
+
+                        case WorldZoneAnchor.ZoneKind.Power:
+                            if (anchor.Profile.zonePlanProfile.powerSpinePlan == null || anchor.Profile.zonePlanProfile.powerSpinePlan.family == null)
+                            {
+                                Debug.LogWarning($"[MapMagicWorldValidation] Power zone plan '{anchor.Profile.zonePlanProfile.name}' is missing powerSpinePlan family.", anchor.Profile.zonePlanProfile);
+                                warningCount++;
+                            }
+                            break;
+
+                        case WorldZoneAnchor.ZoneKind.Service:
+                            if (anchor.Profile.zonePlanProfile.serviceChokePlan == null || anchor.Profile.zonePlanProfile.serviceChokePlan.family == null)
+                            {
+                                Debug.LogWarning($"[MapMagicWorldValidation] Service zone plan '{anchor.Profile.zonePlanProfile.name}' is missing serviceChokePlan family.", anchor.Profile.zonePlanProfile);
+                                warningCount++;
+                            }
+                            break;
+
+                        case WorldZoneAnchor.ZoneKind.Progression:
+                        case WorldZoneAnchor.ZoneKind.Combat:
+                            if (anchor.Profile.zonePlanProfile.hazardGatePlan == null || anchor.Profile.zonePlanProfile.hazardGatePlan.family == null ||
+                                anchor.Profile.zonePlanProfile.rareObjectivePlan == null || anchor.Profile.zonePlanProfile.rareObjectivePlan.family == null)
+                            {
+                                Debug.LogWarning($"[MapMagicWorldValidation] High-pressure zone plan '{anchor.Profile.zonePlanProfile.name}' is missing hazardGatePlan or rareObjectivePlan family.", anchor.Profile.zonePlanProfile);
+                                warningCount++;
+                            }
+                            break;
+                    }
                 }
             }
 
@@ -717,6 +783,30 @@ namespace Hecton8.EditorTools
                 {
                     Debug.LogWarning($"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' is missing a content profile.", socket);
                     warningCount++;
+                    continue;
+                }
+
+                WorldContentProfile profile = contentProfile.objectReferenceValue as WorldContentProfile;
+                if (profile == null)
+                    continue;
+
+                if (profile.contentKind != WorldContentSocket.ContentKind.Generic && profile.contentKind != socket.Kind)
+                {
+                    Debug.LogWarning(
+                        $"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' kind '{socket.Kind}' conflicts with profile kind '{profile.contentKind}'.",
+                        socket);
+                    warningCount++;
+                }
+
+                WorldZoneAnchor zone = socket.GetComponentInParent<WorldZoneAnchor>();
+                if (zone != null &&
+                    profile.preferredZoneKind != WorldZoneAnchor.ZoneKind.Generic &&
+                    profile.preferredZoneKind != zone.Kind)
+                {
+                    Debug.LogWarning(
+                        $"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' sits in zone '{zone.ZoneLabel}' but profile prefers zone kind '{profile.preferredZoneKind}'.",
+                        socket);
+                    warningCount++;
                 }
             }
 
@@ -730,7 +820,9 @@ namespace Hecton8.EditorTools
         private static void ValidateWorldPopulationDirector(
             WorldPopulationDirector worldPopulationDirector,
             ref int errorCount,
-            ref int warningCount)
+            ref int warningCount,
+            ref int uncoveredSocketCount,
+            ref int weakSpatialSocketCount)
         {
             SerializedObject so = new SerializedObject(worldPopulationDirector);
             SerializedProperty playerTransform = so.FindProperty("playerTransform");
@@ -789,6 +881,12 @@ namespace Hecton8.EditorTools
                         warningCount++;
                     }
                 }
+
+                if (string.IsNullOrWhiteSpace(rule.gameplayPurpose))
+                {
+                    Debug.LogWarning($"[MapMagicWorldValidation] WorldPopulationRule '{rule.ruleLabel}' has an empty gameplayPurpose.", rule);
+                    warningCount++;
+                }
             }
 
             WorldContentSocket[] sockets = Resources.FindObjectsOfTypeAll<WorldContentSocket>();
@@ -808,6 +906,26 @@ namespace Hecton8.EditorTools
                         $"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' in zone '{zone.ZoneLabel}' has no matching population rule.",
                         socket);
                     warningCount++;
+                    uncoveredSocketCount++;
+                    continue;
+                }
+
+                WorldPopulationRule strongestRule = FindStrongestMatchingPopulationRule(rules, zone, socket);
+                if (strongestRule == null)
+                    continue;
+
+                string spatialRole = strongestRule.BuildSpatialRole(zone, socket);
+                string spatialReason = strongestRule.BuildSpatialRoleReason(zone, socket);
+                if (string.IsNullOrWhiteSpace(spatialRole) ||
+                    string.Equals(spatialRole, "Generic Point", StringComparison.OrdinalIgnoreCase) ||
+                    string.IsNullOrWhiteSpace(spatialReason) ||
+                    string.Equals(spatialReason, "Socket follows the biome's default spatial rhythm.", StringComparison.OrdinalIgnoreCase))
+                {
+                    Debug.LogWarning(
+                        $"[MapMagicWorldValidation] WorldContentSocket '{socket.name}' has weak spatial coverage. role='{spatialRole}' reason='{spatialReason}'.",
+                        socket);
+                    warningCount++;
+                    weakSpatialSocketCount++;
                 }
             }
         }
@@ -878,6 +996,38 @@ namespace Hecton8.EditorTools
             }
 
             return false;
+        }
+
+        private static WorldPopulationRule FindStrongestMatchingPopulationRule(
+            SerializedProperty rulesProperty,
+            WorldZoneAnchor zone,
+            WorldContentSocket socket)
+        {
+            if (rulesProperty == null)
+                return null;
+
+            WorldPopulationRule bestRule = null;
+            float bestWeight = float.MinValue;
+
+            for (int i = 0; i < rulesProperty.arraySize; i++)
+            {
+                SerializedProperty entry = rulesProperty.GetArrayElementAtIndex(i);
+                if (entry == null || entry.objectReferenceValue == null)
+                    continue;
+
+                WorldPopulationRule rule = entry.objectReferenceValue as WorldPopulationRule;
+                if (rule == null || !rule.Matches(zone, socket))
+                    continue;
+
+                float weight = rule.GetEffectiveDensityWeight(zone, socket);
+                if (bestRule != null && weight <= bestWeight)
+                    continue;
+
+                bestRule = rule;
+                bestWeight = weight;
+            }
+
+            return bestRule;
         }
 
         private static T FindSceneObjectIncludingInactive<T>() where T : Component

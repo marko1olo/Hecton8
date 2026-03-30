@@ -20,6 +20,33 @@ MonoBehaviour:
   maxDepthMeters: 9275
   shortDescription: Compressed mirror-flat basalt plates.
   isPlaceholder: 0
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Even routine value here comes from Nickel Ore and Cobalt Alloy.
+  rareRewardHook: 'The reason to risk the trip is: Abyssal Crystal and High-Capacity
+    Cell.'
+  landmarkIdentity: Pressure-Slabs reads through dunes, plains, void cuts, and shape
+    changes in the floor. Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
+    depth stress, and expensive hesitation. Creature pressure stays high.'
+  extractionFocus: 'Exact deep extraction with little tolerance for wasted movement.
+    Deep tier: accept longer sweeps and weaker orientation during gathering, extract
+    only what justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is iron shard ridge or compressed metal plain
+    break. This slot should read through cold industrial skyline made by geology;
+    use silhouette changes to avoid getting lost in soft terrain.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.metallic_hadal
   familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}

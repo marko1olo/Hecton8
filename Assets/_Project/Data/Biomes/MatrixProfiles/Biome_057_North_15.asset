@@ -20,6 +20,33 @@ MonoBehaviour:
   maxDepthMeters: 6650
   shortDescription: Rust-colored metallic peaks over manganese nodules.
   isPlaceholder: 0
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Even routine value here comes from Nickel Ore and Cobalt Alloy.
+  rareRewardHook: 'The reason to risk the trip is: Abyssal Crystal and High-Capacity
+    Cell.'
+  landmarkIdentity: The Iron Plains reads through spires, steps, and big natural
+    crowns. Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: bad drops and exposed lines, depth stress, and
+    expensive hesitation. Creature pressure stays high.'
+  extractionFocus: 'Exact deep extraction with little tolerance for wasted movement.
+    Deep tier: favor stone pockets and hard-form nodes, extract only what justifies
+    the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is iron shard ridge or compressed metal plain
+    break. This slot should read through cold industrial skyline made by geology;
+    use vertical forms to keep heading.
+  loosePickupBias: 2
+  nodeExtractionBias: 5
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.metallic_hadal
   familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}

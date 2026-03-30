@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 1000
   shortDescription: A meteor-like field of circular seabed depressions.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and work around bowls, pools, and local hotspots.
+  commonRewardHook: Common runs pay out in Silica Shards and Copper Ore.
+  rareRewardHook: 'Rare pull is modest: Electrolyte Salts and Sealant Pack.'
+  landmarkIdentity: Pothole Fields reads through bowls, pools, domes, and hotspot
+    basins. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins. Creature
+    pressure stays low_to_medium.'
+  extractionFocus: 'Broad sweep collection, light salvage, and scattered node stops.
+    Early tier: keep runs short and expect basin pockets, salvage traps, and local
+    hotspots.'
+  landmarkGuidance: Dominant landmark is basin lip or dune crest line. This slot
+    should read through soft bowls and ripple seams; use bowls and hotspot rims to
+    remember loops.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 3
+  commonResourceBias: 4
+  uncommonResourceBias: 4
+  rareResourceBias: 2
+  routePressure: 1
+  landmarkStrength: 3
+  rewardPull: 3
+  survivalPressure: 2
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.sediment_drift
   familyProfile: {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}

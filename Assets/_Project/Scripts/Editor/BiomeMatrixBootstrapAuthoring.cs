@@ -18,6 +18,8 @@ namespace Hecton8.EditorTools
         private const string BiomeFaunaFamilyProfileFolder = "Assets/_Project/Data/Biomes/FaunaFamilies";
         private const string BiomePlayProfileFolder = "Assets/_Project/Data/Biomes/PlayProfiles";
         private const string BiomeResourcePlanProfileFolder = "Assets/_Project/Data/Biomes/ResourcePlans";
+        private const string BiomeLandmarkPlanProfileFolder = "Assets/_Project/Data/Biomes/LandmarkPlans";
+        private const string BiomeSpatialPatternProfileFolder = "Assets/_Project/Data/Biomes/SpatialPatterns";
         private const string BiomeCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string WorldFamilyProfileFolder = "Assets/_Project/Data/World/FamilyProfiles";
         private const string WorldZonePlanFolder = "Assets/_Project/Data/World/ZonePlans";
@@ -34,6 +36,8 @@ namespace Hecton8.EditorTools
             EnsureFolder(BiomeFaunaFamilyProfileFolder);
             EnsureFolder(BiomePlayProfileFolder);
             EnsureFolder(BiomeResourcePlanProfileFolder);
+            EnsureFolder(BiomeLandmarkPlanProfileFolder);
+            EnsureFolder(BiomeSpatialPatternProfileFolder);
 
             HectonBiomeMatrixCatalog catalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeCatalogPath);
             if (catalog == null)
@@ -73,6 +77,7 @@ namespace Hecton8.EditorTools
                     profile.suggestedZoneFamily = seed.suggestedZoneFamily;
                     profile.progressionRole = seed.progressionRole;
                     ApplyMatrixPlayerFraming(profile, tier, region);
+                    ApplyMatrixResourceAndLandmarkGuidance(profile, tier, region);
                     EditorUtility.SetDirty(profile);
 
                     profiles[matrixIndex - 1] = profile;
@@ -176,6 +181,18 @@ namespace Hecton8.EditorTools
                     warningCount++;
                 }
 
+                if (string.IsNullOrWhiteSpace(profile.extractionFocus))
+                {
+                    Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing extractionFocus.", profile);
+                    warningCount++;
+                }
+
+                if (string.IsNullOrWhiteSpace(profile.landmarkGuidance))
+                {
+                    Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing landmarkGuidance.", profile);
+                    warningCount++;
+                }
+
                 if (profile.familyProfile == null)
                 {
                     Debug.LogError($"[BiomeMatrixValidation] '{profile.biomeName}' is missing familyProfile.", profile);
@@ -218,6 +235,18 @@ namespace Hecton8.EditorTools
                     if (profile.familyProfile.resourcePlanProfile == null)
                     {
                         Debug.LogWarning($"[BiomeMatrixValidation] Biome family '{profile.familyProfile.familyLabel}' has no resource plan profile.", profile.familyProfile);
+                        warningCount++;
+                    }
+
+                    if (profile.familyProfile.landmarkPlanProfile == null)
+                    {
+                        Debug.LogWarning($"[BiomeMatrixValidation] Biome family '{profile.familyProfile.familyLabel}' has no landmark plan profile.", profile.familyProfile);
+                        warningCount++;
+                    }
+
+                    if (profile.familyProfile.spatialPatternProfile == null)
+                    {
+                        Debug.LogWarning($"[BiomeMatrixValidation] Biome family '{profile.familyProfile.familyLabel}' has no spatial pattern profile.", profile.familyProfile);
                         warningCount++;
                     }
                 }
@@ -403,6 +432,114 @@ namespace Hecton8.EditorTools
                 return $"Main failure mode: {regionRisk}, then overstaying for loot. Creature pressure stays {faunaRisk}.";
 
             return $"Main failure mode: {regionRisk}, depth stress, and expensive hesitation. Creature pressure stays {faunaRisk}.";
+        }
+
+        private static void ApplyMatrixResourceAndLandmarkGuidance(
+            HectonBiomeMatrixProfile profile,
+            int tier,
+            HectonBiomeMatrixProfile.CardinalRegion region)
+        {
+            HectonBiomeFamilyProfile family = profile.familyProfile;
+            HectonBiomeResourcePlanProfile resourcePlan = family != null ? family.resourcePlanProfile : null;
+            HectonBiomeLandmarkPlanProfile landmarkPlan = family != null ? family.landmarkPlanProfile : null;
+
+            int loosePickupBias = resourcePlan != null ? resourcePlan.loosePickupWeight : 3;
+            int nodeExtractionBias = resourcePlan != null ? resourcePlan.nodeExtractionWeight : 3;
+            int salvageBias = resourcePlan != null ? resourcePlan.salvageRecoveryWeight : 2;
+            int commonResourceBias = resourcePlan != null ? resourcePlan.commonResourcePull : 3;
+            int uncommonResourceBias = resourcePlan != null ? resourcePlan.uncommonResourcePull : 3;
+            int rareResourceBias = resourcePlan != null ? resourcePlan.rareResourcePull : 3;
+
+            if (tier <= 4)
+            {
+                loosePickupBias++;
+                commonResourceBias++;
+                rareResourceBias = Mathf.Max(1, rareResourceBias - 1);
+            }
+            else if (tier >= 15)
+            {
+                loosePickupBias = Mathf.Max(1, loosePickupBias - 1);
+                nodeExtractionBias++;
+                rareResourceBias++;
+            }
+
+            if (tier >= 21)
+            {
+                salvageBias = Mathf.Max(salvageBias, 3);
+                uncommonResourceBias = Mathf.Max(uncommonResourceBias, 4);
+                rareResourceBias = Mathf.Clamp(rareResourceBias + 1, 1, 5);
+            }
+
+            switch (region)
+            {
+                case HectonBiomeMatrixProfile.CardinalRegion.North:
+                    nodeExtractionBias++;
+                    break;
+                case HectonBiomeMatrixProfile.CardinalRegion.South:
+                    salvageBias++;
+                    uncommonResourceBias++;
+                    break;
+                case HectonBiomeMatrixProfile.CardinalRegion.East:
+                    rareResourceBias++;
+                    break;
+                case HectonBiomeMatrixProfile.CardinalRegion.West:
+                    loosePickupBias++;
+                    break;
+            }
+
+            profile.loosePickupBias = Mathf.Clamp(loosePickupBias, 1, 5);
+            profile.nodeExtractionBias = Mathf.Clamp(nodeExtractionBias, 1, 5);
+            profile.salvageBias = Mathf.Clamp(salvageBias, 1, 5);
+            profile.commonResourceBias = Mathf.Clamp(commonResourceBias, 1, 5);
+            profile.uncommonResourceBias = Mathf.Clamp(uncommonResourceBias, 1, 5);
+            profile.rareResourceBias = Mathf.Clamp(rareResourceBias, 1, 5);
+            profile.extractionFocus = BuildExtractionFocus(resourcePlan, tier, region);
+            profile.landmarkGuidance = BuildLandmarkGuidance(landmarkPlan, tier, region);
+        }
+
+        private static string BuildExtractionFocus(
+            HectonBiomeResourcePlanProfile resourcePlan,
+            int tier,
+            HectonBiomeMatrixProfile.CardinalRegion region)
+        {
+            string baseStyle = resourcePlan != null ? resourcePlan.extractionStyle : "Mixed extraction.";
+            string regionHook = region switch
+            {
+                HectonBiomeMatrixProfile.CardinalRegion.North => "favor stone pockets and hard-form nodes",
+                HectonBiomeMatrixProfile.CardinalRegion.South => "expect basin pockets, salvage traps, and local hotspots",
+                HectonBiomeMatrixProfile.CardinalRegion.East => "work edges, cracks, and vertical seams",
+                _ => "accept longer sweeps and weaker orientation during gathering"
+            };
+
+            if (tier <= 4)
+                return $"{baseStyle} Early tier: keep runs short and {regionHook}.";
+            if (tier <= 14)
+                return $"{baseStyle} Mid-depth: {regionHook}, then return before greed stretches the route.";
+
+            return $"{baseStyle} Deep tier: {regionHook}, extract only what justifies the risk, and leave cleanly.";
+        }
+
+        private static string BuildLandmarkGuidance(
+            HectonBiomeLandmarkPlanProfile landmarkPlan,
+            int tier,
+            HectonBiomeMatrixProfile.CardinalRegion region)
+        {
+            string role = landmarkPlan != null ? landmarkPlan.dominantLandmarkRole : "general landmark";
+            string distanceShape = tier <= 4
+                ? landmarkPlan != null ? landmarkPlan.nearReferenceShape : "small readable form"
+                : tier <= 14
+                    ? landmarkPlan != null ? landmarkPlan.midReferenceShape : "medium route anchor"
+                    : landmarkPlan != null ? landmarkPlan.farReferenceShape : "large silhouette anchor";
+
+            string regionHook = region switch
+            {
+                HectonBiomeMatrixProfile.CardinalRegion.North => "use vertical forms to keep heading",
+                HectonBiomeMatrixProfile.CardinalRegion.South => "use bowls and hotspot rims to remember loops",
+                HectonBiomeMatrixProfile.CardinalRegion.East => "use walls and breaks to mark route commitment",
+                _ => "use silhouette changes to avoid getting lost in soft terrain"
+            };
+
+            return $"Dominant landmark is {role}. This slot should read through {distanceShape}; {regionHook}.";
         }
 
         private static string GetItemLabel(ItemData item, string fallback)
@@ -844,6 +981,8 @@ namespace Hecton8.EditorTools
             ApplyFamilyLoadout(profile, familyId);
             ApplyFamilyPlay(profile, familyId);
             ApplyFamilyResourcePlan(profile, familyId);
+            ApplyFamilyLandmarkPlan(profile, familyId);
+            ApplyFamilySpatialPattern(profile, familyId);
         }
 
         private static void ApplyFamilyEnvironment(HectonBiomeFamilyProfile profile, string familyId)
@@ -1075,6 +1214,644 @@ namespace Hecton8.EditorTools
                     profile.playProfile = EnsurePlayProfile("Play_RiftVoid.asset", "biome.play.rift_void", "Rift Void Play", "Void and final depth. You go here for major progress, not routine.", "A final-pressure space where reward or progression should feel like an event.", "Very little routine, full concentration, expensive decisions.", 1, 5, 1, 1, 1, 5, 5, 5, "The player should come here with a clear purpose, not for convenience.");
                     break;
             }
+        }
+
+        private static void ApplyFamilyResourcePlan(HectonBiomeFamilyProfile profile, string familyId)
+        {
+            string planFileName;
+            string profileId;
+            string profileLabel;
+            string earlyReasonToFarm;
+            string lateReasonToReturn;
+            string extractionStyle;
+            string routeRewardLogic;
+
+            switch (familyId)
+            {
+                case "biome.family.littoral_karst":
+                    planFileName = "ResourcePlan_LittoralKarst.asset";
+                    profileId = "biome.resource_plan.littoral_karst";
+                    profileLabel = "Littoral Karst Resource Plan";
+                    earlyReasonToFarm = "Fast starter loops for scrap, silica, and simple glass or plate progression.";
+                    lateReasonToReturn = "Easy refill biome when a run needs bulk basics without heavy danger.";
+                    extractionStyle = "Loose pickup fields and readable shallow mineral nodes.";
+                    routeRewardLogic = "Short loops from one obvious karst landmark to the next.";
+                    break;
+                case "biome.family.sediment_drift":
+                    planFileName = "ResourcePlan_SedimentDrift.asset";
+                    profileId = "biome.resource_plan.sediment_drift";
+                    profileLabel = "Sediment Drift Resource Plan";
+                    earlyReasonToFarm = "Steady base-material gathering and safe restocking.";
+                    lateReasonToReturn = "Reliable filler biome when you want support materials without committing deep.";
+                    extractionStyle = "Broad sweep collection, light salvage, and scattered node stops.";
+                    routeRewardLogic = "Wide loops with soft terrain and low punishment for detours.";
+                    break;
+                case "biome.family.granite_escarpment":
+                    planFileName = "ResourcePlan_GraniteEscarpment.asset";
+                    profileId = "biome.resource_plan.granite_escarpment";
+                    profileLabel = "Granite Escarpment Resource Plan";
+                    earlyReasonToFarm = "Vertical mineral pockets for wire, structure, and route-building parts.";
+                    lateReasonToReturn = "Technical wall routes still pay well when you need focused extraction.";
+                    extractionStyle = "Pocket mining along walls and ledges with careful positioning.";
+                    routeRewardLogic = "Each crack or ledge is a choice between reward and awkward recovery.";
+                    break;
+                case "biome.family.fossil_reef":
+                    planFileName = "ResourcePlan_FossilReef.asset";
+                    profileId = "biome.resource_plan.fossil_reef";
+                    profileLabel = "Fossil Reef Resource Plan";
+                    earlyReasonToFarm = "Organic growth, useful chemistry, and medium-risk salvage.";
+                    lateReasonToReturn = "Still worth revisiting for craft organics and niche biological parts.";
+                    extractionStyle = "Mixed salvage, harvest pockets, and risky reef-node peels.";
+                    routeRewardLogic = "Reward hides inside beautiful clusters that can also trap you.";
+                    break;
+                case "biome.family.tectonic_spine":
+                    planFileName = "ResourcePlan_TectonicSpine.asset";
+                    profileId = "biome.resource_plan.tectonic_spine";
+                    profileLabel = "Tectonic Spine Resource Plan";
+                    earlyReasonToFarm = "Structural metals and route-defining materials for the first real builds.";
+                    lateReasonToReturn = "Strong transit biome for topping up serious construction stock.";
+                    extractionStyle = "Targeted node work along long rock lines and exposed shelves.";
+                    routeRewardLogic = "Read the spine, commit to one branch, then extract and leave.";
+                    break;
+                case "biome.family.crystal_growth":
+                    planFileName = "ResourcePlan_CrystalGrowth.asset";
+                    profileId = "biome.resource_plan.crystal_growth";
+                    profileLabel = "Crystal Growth Resource Plan";
+                    earlyReasonToFarm = "Specialized shards, optics materials, and clean high-value pockets.";
+                    lateReasonToReturn = "A consistent place to chase precision components and rare upgrades.";
+                    extractionStyle = "Slow, careful harvesting from obvious but exposed crystal structures.";
+                    routeRewardLogic = "High visual pull, but each stop should feel exposed and deliberate.";
+                    break;
+                case "biome.family.abyssal_silt":
+                    planFileName = "ResourcePlan_AbyssalSilt.asset";
+                    profileId = "biome.resource_plan.abyssal_silt";
+                    profileLabel = "Abyssal Silt Resource Plan";
+                    earlyReasonToFarm = "Not for early casual runs; mainly for deep support materials and salvage.";
+                    lateReasonToReturn = "Good for patient deep-sea refill runs when you need dense support value.";
+                    extractionStyle = "Sparse node hits and salvage pockets hidden in weak-visibility terrain.";
+                    routeRewardLogic = "Long quiet swims punctuated by one important find.";
+                    break;
+                case "biome.family.volcanic_glass":
+                    planFileName = "ResourcePlan_VolcanicGlass.asset";
+                    profileId = "biome.resource_plan.volcanic_glass";
+                    profileLabel = "Volcanic Glass Resource Plan";
+                    earlyReasonToFarm = "Heat-side chemistry, thermal materials, and power parts.";
+                    lateReasonToReturn = "Still relevant whenever power and cooling chains need refilling.";
+                    extractionStyle = "Quick strike extraction from hot pockets with short exposure windows.";
+                    routeRewardLogic = "The reward is strong, but the safe dwell time is short.";
+                    break;
+                case "biome.family.volcanic_hadal":
+                    planFileName = "ResourcePlan_VolcanicHadal.asset";
+                    profileId = "biome.resource_plan.volcanic_hadal";
+                    profileLabel = "Volcanic Hadal Resource Plan";
+                    earlyReasonToFarm = "Not an early farm biome; this is reserved for major late-game pulls.";
+                    lateReasonToReturn = "Go back only for top-tier heat-pressure materials and serious upgrades.";
+                    extractionStyle = "High-risk extraction under thermal and survival pressure.";
+                    routeRewardLogic = "One big target should justify the whole expedition.";
+                    break;
+                case "biome.family.chemosynthetic_brine":
+                    planFileName = "ResourcePlan_ChemosyntheticBrine.asset";
+                    profileId = "biome.resource_plan.chemosynthetic_brine";
+                    profileLabel = "Chemosynthetic Brine Resource Plan";
+                    earlyReasonToFarm = "Chemistry-heavy biome for sealants, electrolytes, and service supplies.";
+                    lateReasonToReturn = "Great refill zone for advanced chemistry and maintenance materials.";
+                    extractionStyle = "Harvest concentrated hotspots, then move before the zone punishes greed.";
+                    routeRewardLogic = "Quiet travel between high-value chemical pockets.";
+                    break;
+                case "biome.family.metallic_hadal":
+                    planFileName = "ResourcePlan_MetallicHadal.asset";
+                    profileId = "biome.resource_plan.metallic_hadal";
+                    profileLabel = "Metallic Hadal Resource Plan";
+                    earlyReasonToFarm = "Too costly for early progression; save it for true deep infrastructure.";
+                    lateReasonToReturn = "Primary source for extreme-grade structural and relay materials.";
+                    extractionStyle = "Exact deep extraction with little tolerance for wasted movement.";
+                    routeRewardLogic = "You enter with a list, take what matters, and leave.";
+                    break;
+                case "biome.family.rift_spine":
+                    planFileName = "ResourcePlan_RiftSpine.asset";
+                    profileId = "biome.resource_plan.rift_spine";
+                    profileLabel = "Rift Spine Resource Plan";
+                    earlyReasonToFarm = "Mid-to-late route biome for construction-grade finds and dangerous salvage.";
+                    lateReasonToReturn = "Great for route-control materials and structural parts under pressure.";
+                    extractionStyle = "Fissure-edge scavenging, hard geometry, and exposed recovery points.";
+                    routeRewardLogic = "The path itself is half the challenge, not just the node.";
+                    break;
+                case "biome.family.rift_void":
+                default:
+                    planFileName = "ResourcePlan_RiftVoid.asset";
+                    profileId = "biome.resource_plan.rift_void";
+                    profileLabel = "Rift Void Resource Plan";
+                    earlyReasonToFarm = "Not for farming. Only come when the run itself is major progression.";
+                    lateReasonToReturn = "Final-tier reason: singular deep reward, rare shell, or key progression part.";
+                    extractionStyle = "Minimal contact count, extreme commitment, almost no comfort.";
+                    routeRewardLogic = "The whole biome is the price of admission for one huge return.";
+                    break;
+            }
+
+            profile.resourcePlanProfile = EnsureResourcePlanProfile(
+                planFileName,
+                profileId,
+                profileLabel,
+                profile.primaryResource,
+                profile.secondaryResource,
+                profile.tertiaryResource,
+                profile.signatureComponent,
+                earlyReasonToFarm,
+                lateReasonToReturn,
+                extractionStyle,
+                routeRewardLogic);
+        }
+
+        private static HectonBiomeResourcePlanProfile EnsureResourcePlanProfile(
+            string fileName,
+            string profileId,
+            string profileLabel,
+            ItemData commonResource,
+            ItemData uncommonResource,
+            ItemData rareResource,
+            ItemData signatureComponent,
+            string earlyReasonToFarm,
+            string lateReasonToReturn,
+            string extractionStyle,
+            string routeRewardLogic)
+        {
+            string assetPath = $"{BiomeResourcePlanProfileFolder}/{fileName}";
+            HectonBiomeResourcePlanProfile profile = AssetDatabase.LoadAssetAtPath<HectonBiomeResourcePlanProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<HectonBiomeResourcePlanProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = profileId;
+            profile.profileLabel = profileLabel;
+            profile.commonResource = commonResource;
+            profile.uncommonResource = uncommonResource;
+            profile.rareResource = rareResource;
+            profile.signatureComponent = signatureComponent;
+            profile.earlyReasonToFarm = earlyReasonToFarm;
+            profile.lateReasonToReturn = lateReasonToReturn;
+            profile.extractionStyle = extractionStyle;
+            profile.routeRewardLogic = routeRewardLogic;
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static void ApplyFamilyLandmarkPlan(HectonBiomeFamilyProfile profile, string familyId)
+        {
+            string fileName;
+            string profileId;
+            string profileLabel;
+            string dominantLandmarkRole;
+            string nearReferenceShape;
+            string midReferenceShape;
+            string farReferenceShape;
+            string routeUse;
+            string safePocketUse;
+            string emotionalRead;
+
+            switch (familyId)
+            {
+                case "biome.family.littoral_karst":
+                    fileName = "LandmarkPlan_LittoralKarst.asset";
+                    profileId = "biome.landmark_plan.littoral_karst";
+                    profileLabel = "Littoral Karst Landmark Plan";
+                    dominantLandmarkRole = "karst arch or sea-stack crown";
+                    nearReferenceShape = "small limestone teeth and arch feet";
+                    midReferenceShape = "stack clusters and white shelf breaks";
+                    farReferenceShape = "clear spire skyline against surface light";
+                    routeUse = "Player should chain visible stacks and arches without needing UI help.";
+                    safePocketUse = "Safe pockets hide on lee sides of stacks and under bright arches.";
+                    emotionalRead = "Readable, inviting, and adventurous without feeling harmless.";
+                    break;
+                case "biome.family.sediment_drift":
+                    fileName = "LandmarkPlan_SedimentDrift.asset";
+                    profileId = "biome.landmark_plan.sediment_drift";
+                    profileLabel = "Sediment Drift Landmark Plan";
+                    dominantLandmarkRole = "basin lip or dune crest line";
+                    nearReferenceShape = "soft bowls and ripple seams";
+                    midReferenceShape = "fan-shaped sediment flows";
+                    farReferenceShape = "broad dune silhouette with one strong basin edge";
+                    routeUse = "Player should read flow direction and basin rims to keep orientation.";
+                    safePocketUse = "Safe pockets live behind basin lips and inside soft depressions.";
+                    emotionalRead = "Calm, open, and slightly deceptive.";
+                    break;
+                case "biome.family.granite_escarpment":
+                    fileName = "LandmarkPlan_GraniteEscarpment.asset";
+                    profileId = "biome.landmark_plan.granite_escarpment";
+                    profileLabel = "Granite Escarpment Landmark Plan";
+                    dominantLandmarkRole = "wall face or cliff step";
+                    nearReferenceShape = "ledge cut, crack mouth, or fallen slab";
+                    midReferenceShape = "tall wall ribs and shadowed benches";
+                    farReferenceShape = "giant escarpment edge slicing the horizon";
+                    routeUse = "Player should navigate by the wall itself, not by scattered props.";
+                    safePocketUse = "Safe pockets exist in crack mouths, ledges, and overhang feet.";
+                    emotionalRead = "Imposing, technical, and route-defining.";
+                    break;
+                case "biome.family.fossil_reef":
+                    fileName = "LandmarkPlan_FossilReef.asset";
+                    profileId = "biome.landmark_plan.fossil_reef";
+                    profileLabel = "Fossil Reef Landmark Plan";
+                    dominantLandmarkRole = "reef crown or porous fossil wall";
+                    nearReferenceShape = "coral windows and rib-like skeletons";
+                    midReferenceShape = "branching reef crown or fossil gallows";
+                    farReferenceShape = "ornate porous silhouette with clear negative space";
+                    routeUse = "Player should remember routes by unusual reef silhouettes and openings.";
+                    safePocketUse = "Safe pockets hide inside porous chambers and behind fossil ribs.";
+                    emotionalRead = "Beautiful, alive, and quietly dangerous.";
+                    break;
+                case "biome.family.tectonic_spine":
+                    fileName = "LandmarkPlan_TectonicSpine.asset";
+                    profileId = "biome.landmark_plan.tectonic_spine";
+                    profileLabel = "Tectonic Spine Landmark Plan";
+                    dominantLandmarkRole = "main ridge line";
+                    nearReferenceShape = "spine tooth, fin, or slab seam";
+                    midReferenceShape = "parallel ridge family and stepped breaks";
+                    farReferenceShape = "one giant spine line that tells direction immediately";
+                    routeUse = "Player should know forward and backward by the ridge line alone.";
+                    safePocketUse = "Safe pockets appear on the protected side of the spine and in fracture bends.";
+                    emotionalRead = "Directional, severe, and dependable.";
+                    break;
+                case "biome.family.crystal_growth":
+                    fileName = "LandmarkPlan_CrystalGrowth.asset";
+                    profileId = "biome.landmark_plan.crystal_growth";
+                    profileLabel = "Crystal Growth Landmark Plan";
+                    dominantLandmarkRole = "crystal crown or shard grove";
+                    nearReferenceShape = "needle cluster and reflective seam";
+                    midReferenceShape = "crystal ridge or luminous fan";
+                    farReferenceShape = "glowing shard skyline that pulls the eye";
+                    routeUse = "Player should see valuable paths from afar but feel exposed on approach.";
+                    safePocketUse = "Safe pockets live behind opaque crystal fans and heavy shard roots.";
+                    emotionalRead = "Precious, cold, and slightly hypnotic.";
+                    break;
+                case "biome.family.abyssal_silt":
+                    fileName = "LandmarkPlan_AbyssalSilt.asset";
+                    profileId = "biome.landmark_plan.abyssal_silt";
+                    profileLabel = "Abyssal Silt Landmark Plan";
+                    dominantLandmarkRole = "rare mound, trench lip, or wreck rise";
+                    nearReferenceShape = "subtle mound break or exposed salvage edge";
+                    midReferenceShape = "single trench mouth or silt catacomb seam";
+                    farReferenceShape = "almost absent silhouette with one lonely anchor";
+                    routeUse = "Player should feel orientation stress and cling to rare anchors.";
+                    safePocketUse = "Safe pockets are small lee zones and trench shoulders, not comfort spaces.";
+                    emotionalRead = "Quiet, heavy, and isolating.";
+                    break;
+                case "biome.family.volcanic_glass":
+                    fileName = "LandmarkPlan_VolcanicGlass.asset";
+                    profileId = "biome.landmark_plan.volcanic_glass";
+                    profileLabel = "Volcanic Glass Landmark Plan";
+                    dominantLandmarkRole = "heat vent field or obsidian flow edge";
+                    nearReferenceShape = "glass lip, vent mouth, or hot crack";
+                    midReferenceShape = "flow channel and thermal chimney cluster";
+                    farReferenceShape = "dark glass mass split by heat glow";
+                    routeUse = "Player should track heat lines and know where a quick extraction lane begins.";
+                    safePocketUse = "Safe pockets are cool seams between hot structures, never broad comfort zones.";
+                    emotionalRead = "Sharp, risky, and high-value.";
+                    break;
+                case "biome.family.volcanic_hadal":
+                    fileName = "LandmarkPlan_VolcanicHadal.asset";
+                    profileId = "biome.landmark_plan.volcanic_hadal";
+                    profileLabel = "Volcanic Hadal Landmark Plan";
+                    dominantLandmarkRole = "magma seam or hadal chimney crown";
+                    nearReferenceShape = "pressure crack with thermal glare";
+                    midReferenceShape = "chimney forest or furnace ridge";
+                    farReferenceShape = "red-black catastrophic skyline";
+                    routeUse = "Player should feel that one huge landmark is the whole mission target.";
+                    safePocketUse = "Safe pockets are temporary breaks in heat, not true safe homes.";
+                    emotionalRead = "Late-game terror mixed with extreme value.";
+                    break;
+                case "biome.family.chemosynthetic_brine":
+                    fileName = "LandmarkPlan_ChemosyntheticBrine.asset";
+                    profileId = "biome.landmark_plan.chemosynthetic_brine";
+                    profileLabel = "Chemosynthetic Brine Landmark Plan";
+                    dominantLandmarkRole = "brine bowl or vent pocket";
+                    nearReferenceShape = "chemical crust, seep edge, or low chimney";
+                    midReferenceShape = "brine pool chain and active vent arc";
+                    farReferenceShape = "sunken bowl marked by luminous chemical haze";
+                    routeUse = "Player should move from hotspot to hotspot with clear risk spikes.";
+                    safePocketUse = "Safe pockets sit just outside active chemistry, not inside it.";
+                    emotionalRead = "Alien, useful, and locally hostile.";
+                    break;
+                case "biome.family.metallic_hadal":
+                    fileName = "LandmarkPlan_MetallicHadal.asset";
+                    profileId = "biome.landmark_plan.metallic_hadal";
+                    profileLabel = "Metallic Hadal Landmark Plan";
+                    dominantLandmarkRole = "iron shard ridge or compressed metal plain break";
+                    nearReferenceShape = "rust spike, plate seam, or nodule scar";
+                    midReferenceShape = "shard field or metallic terrace";
+                    farReferenceShape = "cold industrial skyline made by geology";
+                    routeUse = "Player should read a few hard metallic anchors and ignore most empty space.";
+                    safePocketUse = "Safe pockets are mostly created by shard shadows and pressure slabs.";
+                    emotionalRead = "Hard, expensive, and purposeful.";
+                    break;
+                case "biome.family.rift_spine":
+                    fileName = "LandmarkPlan_RiftSpine.asset";
+                    profileId = "biome.landmark_plan.rift_spine";
+                    profileLabel = "Rift Spine Landmark Plan";
+                    dominantLandmarkRole = "fracture mouth or gate-like break";
+                    nearReferenceShape = "crack edge, broken tooth, or rift lip";
+                    midReferenceShape = "fracture corridor and offset slab gate";
+                    farReferenceShape = "one violent split in the world surface";
+                    routeUse = "Player should memorize progress by which fracture mouth they entered.";
+                    safePocketUse = "Safe pockets are bends and side cuts, not open rooms.";
+                    emotionalRead = "Tense, vertical, and committed.";
+                    break;
+                case "biome.family.rift_void":
+                default:
+                    fileName = "LandmarkPlan_RiftVoid.asset";
+                    profileId = "biome.landmark_plan.rift_void";
+                    profileLabel = "Rift Void Landmark Plan";
+                    dominantLandmarkRole = "the final shaft or void cut";
+                    nearReferenceShape = "broken edge and impossible drop";
+                    midReferenceShape = "void-rim terraces and black pressure cuts";
+                    farReferenceShape = "a singular abyssal absence in the world";
+                    routeUse = "Player should know this place by one unforgettable final landmark.";
+                    safePocketUse = "Safe pockets are almost conceptual; discipline matters more than cover.";
+                    emotionalRead = "Final, severe, and unforgettable.";
+                    break;
+            }
+
+            profile.landmarkPlanProfile = EnsureLandmarkPlanProfile(
+                fileName,
+                profileId,
+                profileLabel,
+                dominantLandmarkRole,
+                nearReferenceShape,
+                midReferenceShape,
+                farReferenceShape,
+                routeUse,
+                safePocketUse,
+                emotionalRead);
+        }
+
+        private static HectonBiomeLandmarkPlanProfile EnsureLandmarkPlanProfile(
+            string fileName,
+            string profileId,
+            string profileLabel,
+            string dominantLandmarkRole,
+            string nearReferenceShape,
+            string midReferenceShape,
+            string farReferenceShape,
+            string routeUse,
+            string safePocketUse,
+            string emotionalRead)
+        {
+            string assetPath = $"{BiomeLandmarkPlanProfileFolder}/{fileName}";
+            HectonBiomeLandmarkPlanProfile profile = AssetDatabase.LoadAssetAtPath<HectonBiomeLandmarkPlanProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<HectonBiomeLandmarkPlanProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = profileId;
+            profile.profileLabel = profileLabel;
+            profile.dominantLandmarkRole = dominantLandmarkRole;
+            profile.nearReferenceShape = nearReferenceShape;
+            profile.midReferenceShape = midReferenceShape;
+            profile.farReferenceShape = farReferenceShape;
+            profile.routeUse = routeUse;
+            profile.safePocketUse = safePocketUse;
+            profile.emotionalRead = emotionalRead;
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static void ApplyFamilySpatialPattern(HectonBiomeFamilyProfile profile, string familyId)
+        {
+            string fileName;
+            string profileId;
+            string profileLabel;
+            string resourcePocketPattern;
+            string nodeClusterPattern;
+            string safePocketPattern;
+            string routeAnchorPattern;
+            string rareObjectivePattern;
+            string explorationLoop;
+            string spatialRead;
+            string playerMemoryHook;
+
+            switch (familyId)
+            {
+                case "biome.family.littoral_karst":
+                    fileName = "SpatialPattern_LittoralKarst.asset";
+                    profileId = "biome.spatial_pattern.littoral_karst";
+                    profileLabel = "Littoral Karst Spatial Pattern";
+                    resourcePocketPattern = "Loose scrap and easy basics sit around the feet of arches, stacks, and bright shelf lips.";
+                    nodeClusterPattern = "Small mineral nodes hide in short wall cuts and at the base of obvious limestone breaks.";
+                    safePocketPattern = "Safe pockets appear often on the lee side of stacks and inside shallow arch shadows.";
+                    routeAnchorPattern = "Routes chain from one big karst silhouette to the next without needing UI help.";
+                    rareObjectivePattern = "Rare value sits one ring deeper than the comfortable starter loop, still visible from a safe landmark.";
+                    explorationLoop = "Spot stack, clear pocket, grab one node, peek deeper, then return by the same silhouette chain.";
+                    spatialRead = "Very readable at all distances. Good first biome language.";
+                    playerMemoryHook = "Remember the place by one arch, one stack, and the bright open water between them.";
+                    break;
+                case "biome.family.sediment_drift":
+                    fileName = "SpatialPattern_SedimentDrift.asset";
+                    profileId = "biome.spatial_pattern.sediment_drift";
+                    profileLabel = "Sediment Drift Spatial Pattern";
+                    resourcePocketPattern = "Loose materials gather in bowls, drift seams, and the calm sides of dunes.";
+                    nodeClusterPattern = "Nodes are sparse and low, usually found where soft terrain breaks against something harder.";
+                    safePocketPattern = "Safe pockets are soft depressions and reverse slopes that briefly hide the player from open sightlines.";
+                    routeAnchorPattern = "Routes are taught by basin rims and flow direction more than by big unique objects.";
+                    rareObjectivePattern = "Rare value is less about one glowing prize and more about finding the right quiet pocket inside broad terrain.";
+                    explorationLoop = "Sweep a basin, gather along the drift line, confirm orientation, then push to the next bowl.";
+                    spatialRead = "Open and calm, but easy to lose orientation if no rim or basin edge is respected.";
+                    playerMemoryHook = "Remember the place by dune flow and one basin lip, not by clutter.";
+                    break;
+                case "biome.family.granite_escarpment":
+                    fileName = "SpatialPattern_GraniteEscarpment.asset";
+                    profileId = "biome.spatial_pattern.granite_escarpment";
+                    profileLabel = "Granite Escarpment Spatial Pattern";
+                    resourcePocketPattern = "Useful materials sit on ledges, broken shelves, and crack mouths along the wall.";
+                    nodeClusterPattern = "Nodes appear in vertical pocket chains, so one good line can yield several exact stops.";
+                    safePocketPattern = "Safe pockets are overhang feet, side ledges, and recesses that break line-of-sight.";
+                    routeAnchorPattern = "The wall itself is the route anchor. Progress is measured by named ledges and visible breaks.";
+                    rareObjectivePattern = "Rare value hangs in slightly awkward positions that ask for commitment to one ledge line.";
+                    explorationLoop = "Take a wall line, harvest two or three ledge pockets, secure a recess, then choose whether to descend further.";
+                    spatialRead = "Strong vertical readability. The player should always know what is up, down, and back.";
+                    playerMemoryHook = "Remember the place by one wall face and one unmistakable broken ledge.";
+                    break;
+                case "biome.family.fossil_reef":
+                    fileName = "SpatialPattern_FossilReef.asset";
+                    profileId = "biome.spatial_pattern.fossil_reef";
+                    profileLabel = "Fossil Reef Spatial Pattern";
+                    resourcePocketPattern = "Organic pickups sit in holes, ribs, alcoves, and reef windows rather than in open space.";
+                    nodeClusterPattern = "Node clusters appear in semi-hidden chambers or at reef roots, rewarding curiosity and short detours.";
+                    safePocketPattern = "Safe pockets exist behind reef ribs and inside porous side chambers, but can turn into ambush pockets.";
+                    routeAnchorPattern = "Routes are remembered by unusual reef silhouettes and repeated porous gate shapes.";
+                    rareObjectivePattern = "Rare finds are tucked into beautiful but slightly suspicious interior spaces.";
+                    explorationLoop = "Circle the crown, slip through one opening, harvest a chamber, then escape back into a known silhouette line.";
+                    spatialRead = "Rich and memorable, but layered. It should feel inviting before it feels tricky.";
+                    playerMemoryHook = "Remember the place by one crown shape and one distinctive interior opening.";
+                    break;
+                case "biome.family.tectonic_spine":
+                    fileName = "SpatialPattern_TectonicSpine.asset";
+                    profileId = "biome.spatial_pattern.tectonic_spine";
+                    profileLabel = "Tectonic Spine Spatial Pattern";
+                    resourcePocketPattern = "Resource pockets ride the protected side of ridges and the short shelves between hard turns.";
+                    nodeClusterPattern = "Node clusters appear on spine seams and exposed ridge cuts, often in a line rather than a blob.";
+                    safePocketPattern = "Safe pockets are rare but strong: the correct side of a ridge, a fracture bend, a protected step.";
+                    routeAnchorPattern = "The route is the ridge. If the player loses the spine, they should feel it immediately.";
+                    rareObjectivePattern = "Rare value is farther along the same line, behind one more exposed step or sharper bend.";
+                    explorationLoop = "Pick a spine, move with intent, harvest the protected side, then decide whether the next exposed turn is worth it.";
+                    spatialRead = "Directional and disciplined. The terrain should teach commitment.";
+                    playerMemoryHook = "Remember the place by one dominant ridge and how it splits or bends.";
+                    break;
+                case "biome.family.crystal_growth":
+                    fileName = "SpatialPattern_CrystalGrowth.asset";
+                    profileId = "biome.spatial_pattern.crystal_growth";
+                    profileLabel = "Crystal Growth Spatial Pattern";
+                    resourcePocketPattern = "Valuable loose shards sit near the edge of exposed crystal groves to tempt early greed.";
+                    nodeClusterPattern = "Node clusters form around roots and dense shard fans, readable from far but costly up close.";
+                    safePocketPattern = "Safe pockets are behind thick crystal fans and opaque mineral bulges, never in the open glow.";
+                    routeAnchorPattern = "The route is drawn by luminous shard lines and standout crowns.";
+                    rareObjectivePattern = "The rare reward lives in the brightest visible area, but the final approach should feel exposed.";
+                    explorationLoop = "Spot a grove, skim outer value, find one safe crystal shadow, then decide whether to take the core.";
+                    spatialRead = "Very high visual pull. The player should want to go there before they know if it is smart.";
+                    playerMemoryHook = "Remember the place by one glowing crown and the shadow pocket that makes it survivable.";
+                    break;
+                case "biome.family.abyssal_silt":
+                    fileName = "SpatialPattern_AbyssalSilt.asset";
+                    profileId = "biome.spatial_pattern.abyssal_silt";
+                    profileLabel = "Abyssal Silt Spatial Pattern";
+                    resourcePocketPattern = "Loose value is sparse and usually sits where almost featureless ground finally breaks.";
+                    nodeClusterPattern = "Nodes are rare, deliberate, and often tied to one seam, mound, or salvage rise in otherwise empty space.";
+                    safePocketPattern = "Safe pockets are weak and brief: trench shoulders, lee sides of mounds, or the shadow of a wreck fragment.";
+                    routeAnchorPattern = "Anchors are rare. The player should travel from one lonely readable object to the next.";
+                    rareObjectivePattern = "Rare value should feel far apart, forcing patience and trust in instruments.";
+                    explorationLoop = "Long quiet transit, single important stop, short evaluation, then commit to the next anchor.";
+                    spatialRead = "Sparse and oppressive. The emptiness itself is part of the pressure.";
+                    playerMemoryHook = "Remember the place by the one object that breaks the emptiness.";
+                    break;
+                case "biome.family.volcanic_glass":
+                    fileName = "SpatialPattern_VolcanicGlass.asset";
+                    profileId = "biome.spatial_pattern.volcanic_glass";
+                    profileLabel = "Volcanic Glass Spatial Pattern";
+                    resourcePocketPattern = "Useful chemistry and hot materials sit in short, exposed strike pockets along thermal cracks.";
+                    nodeClusterPattern = "Node clusters gather around vents, broken flow edges, and hard temperature transitions.";
+                    safePocketPattern = "Safe pockets are cool seams between hot structures and should feel temporary, not comfortable.";
+                    routeAnchorPattern = "Routes are remembered by black flow edges and thermal lines, not by clutter.";
+                    rareObjectivePattern = "Rare value lives inside the hottest and most visually obvious pocket, demanding fast execution.";
+                    explorationLoop = "Read the heat line, enter fast, take what matters, cool off, decide if another strike is worth it.";
+                    spatialRead = "Aggressive and high-value. The terrain should say 'not for loitering'.";
+                    playerMemoryHook = "Remember the place by one black flow and one heat seam.";
+                    break;
+                case "biome.family.volcanic_hadal":
+                    fileName = "SpatialPattern_VolcanicHadal.asset";
+                    profileId = "biome.spatial_pattern.volcanic_hadal";
+                    profileLabel = "Volcanic Hadal Spatial Pattern";
+                    resourcePocketPattern = "Routine pockets barely matter here; the biome should not encourage casual sweeping.";
+                    nodeClusterPattern = "Important extraction sits around furnace-scale structures and late-game thermal crowns.";
+                    safePocketPattern = "Safe pockets exist only as short relief zones outside catastrophic heat lines.";
+                    routeAnchorPattern = "One huge heat landmark should define the mission path more than a chain of small anchors.";
+                    rareObjectivePattern = "One major reward target should justify the entire expedition.";
+                    explorationLoop = "Approach with purpose, stabilize once, take the high-value window, and leave before greed wins.";
+                    spatialRead = "Extreme. Every big form should feel consequential.";
+                    playerMemoryHook = "Remember the place by the one furnace-scale landmark that dominated the run.";
+                    break;
+                case "biome.family.chemosynthetic_brine":
+                    fileName = "SpatialPattern_ChemosyntheticBrine.asset";
+                    profileId = "biome.spatial_pattern.chemosynthetic_brine";
+                    profileLabel = "Chemosynthetic Brine Spatial Pattern";
+                    resourcePocketPattern = "Chemistry-rich pickups sit around the edge of active bowls and seep lines.";
+                    nodeClusterPattern = "Node clusters form in concentrated hotspots around vents, not evenly across the biome.";
+                    safePocketPattern = "Safe pockets are just outside active chemistry, using the edge of danger rather than true safety.";
+                    routeAnchorPattern = "Route memory comes from bowl chains, vent arcs, and bright chemistry contrast.";
+                    rareObjectivePattern = "Rare value sits in one or two hostile active pockets, not in the whole field.";
+                    explorationLoop = "Cross empty ground, hit a hotspot hard, pull out, reset, then choose the next chemical pocket.";
+                    spatialRead = "Patchy intensity. Most of the biome is setup for a few concentrated moments.";
+                    playerMemoryHook = "Remember the place by linked bowls and one especially active vent cluster.";
+                    break;
+                case "biome.family.metallic_hadal":
+                    fileName = "SpatialPattern_MetallicHadal.asset";
+                    profileId = "biome.spatial_pattern.metallic_hadal";
+                    profileLabel = "Metallic Hadal Spatial Pattern";
+                    resourcePocketPattern = "Everyday value sits thinly between hard metallic structures, making exact pathing matter.";
+                    nodeClusterPattern = "Heavy node clusters appear where plates break and shard fields intersect.";
+                    safePocketPattern = "Safe pockets are formed by slab shadows and pressure breaks, not comfort terrain.";
+                    routeAnchorPattern = "Routes are remembered by very hard silhouettes: shard ridge, plate seam, crushed terrace.";
+                    rareObjectivePattern = "Rare objective sits behind one precise, expensive deep branch.";
+                    explorationLoop = "Long controlled approach, exact extraction stop, brief shelter, then a very deliberate retreat.";
+                    spatialRead = "Cold and exact. Waste should feel expensive.";
+                    playerMemoryHook = "Remember the place by one metallic skyline and one plate seam that saved the run.";
+                    break;
+                case "biome.family.rift_spine":
+                    fileName = "SpatialPattern_RiftSpine.asset";
+                    profileId = "biome.spatial_pattern.rift_spine";
+                    profileLabel = "Rift Spine Spatial Pattern";
+                    resourcePocketPattern = "Small reward pockets ride the fracture edges and tempt players off the safest line.";
+                    nodeClusterPattern = "Clusters sit at gate-like breaks, fracture mouths, and offset slab intersections.";
+                    safePocketPattern = "Safe pockets are side cuts and bends off the main fracture, never broad open rooms.";
+                    routeAnchorPattern = "The route is a sequence of fracture mouths. Each one is both a landmark and a decision.";
+                    rareObjectivePattern = "The rare target is one fracture deeper than feels comfortable, but clearly foreshadowed.";
+                    explorationLoop = "Take one gate, secure one bend, choose whether to spend pressure for the next mouth.";
+                    spatialRead = "Tight and committed. The player should feel the cost of each branch.";
+                    playerMemoryHook = "Remember the place by the fracture mouth where the route changed character.";
+                    break;
+                case "biome.family.rift_void":
+                default:
+                    fileName = "SpatialPattern_RiftVoid.asset";
+                    profileId = "biome.spatial_pattern.rift_void";
+                    profileLabel = "Rift Void Spatial Pattern";
+                    resourcePocketPattern = "Routine resource pockets almost disappear; trivial value should not distract from the place itself.";
+                    nodeClusterPattern = "Meaningful nodes are rare and support one high-commitment objective, not farming.";
+                    safePocketPattern = "Safe pockets are conceptual and temporary, usually just enough structure to regain control.";
+                    routeAnchorPattern = "The biome is defined by one or two overwhelming anchors, not by dense path signage.";
+                    rareObjectivePattern = "One singular late-game objective should dominate memory of the entire zone.";
+                    explorationLoop = "Orient on the void anchor, survive the approach, complete the objective, and get out clean.";
+                    spatialRead = "Sparse, final, and unforgettable.";
+                    playerMemoryHook = "Remember the place by the one impossible landmark that swallowed everything else.";
+                    break;
+            }
+
+            profile.spatialPatternProfile = EnsureSpatialPatternProfile(
+                fileName,
+                profileId,
+                profileLabel,
+                resourcePocketPattern,
+                nodeClusterPattern,
+                safePocketPattern,
+                routeAnchorPattern,
+                rareObjectivePattern,
+                explorationLoop,
+                spatialRead,
+                playerMemoryHook);
+        }
+
+        private static HectonBiomeSpatialPatternProfile EnsureSpatialPatternProfile(
+            string fileName,
+            string profileId,
+            string profileLabel,
+            string resourcePocketPattern,
+            string nodeClusterPattern,
+            string safePocketPattern,
+            string routeAnchorPattern,
+            string rareObjectivePattern,
+            string explorationLoop,
+            string spatialRead,
+            string playerMemoryHook)
+        {
+            string assetPath = $"{BiomeSpatialPatternProfileFolder}/{fileName}";
+            HectonBiomeSpatialPatternProfile profile = AssetDatabase.LoadAssetAtPath<HectonBiomeSpatialPatternProfile>(assetPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<HectonBiomeSpatialPatternProfile>();
+                AssetDatabase.CreateAsset(profile, assetPath);
+            }
+
+            profile.profileId = profileId;
+            profile.profileLabel = profileLabel;
+            profile.resourcePocketPattern = resourcePocketPattern;
+            profile.nodeClusterPattern = nodeClusterPattern;
+            profile.safePocketPattern = safePocketPattern;
+            profile.routeAnchorPattern = routeAnchorPattern;
+            profile.rareObjectivePattern = rareObjectivePattern;
+            profile.explorationLoop = explorationLoop;
+            profile.spatialRead = spatialRead;
+            profile.playerMemoryHook = playerMemoryHook;
+            EditorUtility.SetDirty(profile);
+            return profile;
         }
 
 

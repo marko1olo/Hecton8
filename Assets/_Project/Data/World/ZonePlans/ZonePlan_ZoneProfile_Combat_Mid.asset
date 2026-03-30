@@ -31,3 +31,57 @@ MonoBehaviour:
     usage: 'far: threat readability and control windows.'
   heroFamily: {fileID: 11400000, guid: 9ef3ef400847ea449b03d38cea6ee473, type: 2}
   gameplaySummary: Combat pocket focused on threat readability and control timing.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: 71f187efefef450488d71821ba48c2a8, type: 2}
+    relation: 2
+    preferredSlice: 2
+    targetCount: 1
+    usage: A small break in sightlines where the player can recover.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Not a major role for this zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: 31ffbb28337dd554b93f98e6c9a9c7bf, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: f8a63c31f643d954083d7182aa41d357, type: 2}
+    relation: 1
+    preferredSlice: 1
+    targetCount: 1
+    usage: A stable combat-read form that prevents total chaos.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: 2d54d5ddcfd72d24393e7d380614ae7b, type: 2}
+    relation: 6
+    preferredSlice: 1
+    targetCount: 1
+    usage: The point where control space ends and danger starts.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: 2f56dbdfa05a8eb4c82aafa2bb96f2ab, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The focal point that makes the threat pocket memorable.

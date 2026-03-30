@@ -21,6 +21,31 @@ MonoBehaviour:
   shortDescription: Flat-topped dry platforms dotted with giant blue holes full of
     stagnant nutrient-rich water.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and work around bowls, pools, and local hotspots.
+  commonRewardHook: Common runs pay out in Titanium Scrap and Silica Shards.
+  rareRewardHook: 'Rare pull is modest: Fiber Kelp and Glass Panel.'
+  landmarkIdentity: Mesa Plateaus reads through bowls, pools, domes, and hotspot
+    basins. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins. Creature
+    pressure stays low.'
+  extractionFocus: 'Loose pickup fields and readable shallow mineral nodes. Early
+    tier: keep runs short and expect basin pockets, salvage traps, and local hotspots.'
+  landmarkGuidance: Dominant landmark is karst arch or sea-stack crown. This slot
+    should read through small limestone teeth and arch feet; use bowls and hotspot
+    rims to remember loops.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 3
+  commonResourceBias: 4
+  uncommonResourceBias: 4
+  rareResourceBias: 2
+  routePressure: 1
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 1
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.littoral_karst
   familyProfile: {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}

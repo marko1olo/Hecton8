@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_SedimentDrift
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.sediment_drift
+  profileLabel: Sediment Drift Resource Plan
+  commonResource: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
+  rareResource: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 4a285a81e47817e4c986cae01c0f5508, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Steady base-material gathering and safe restocking.
+  lateReasonToReturn: Reliable filler biome when you want support materials without
+    committing deep.
+  extractionStyle: Broad sweep collection, light salvage, and scattered node stops.
+  routeRewardLogic: Wide loops with soft terrain and low punishment for detours.

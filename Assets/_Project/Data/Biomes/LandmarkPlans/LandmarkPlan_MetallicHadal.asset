@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_MetallicHadal
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.metallic_hadal
+  profileLabel: Metallic Hadal Landmark Plan
+  dominantLandmarkRole: iron shard ridge or compressed metal plain break
+  nearReferenceShape: rust spike, plate seam, or nodule scar
+  midReferenceShape: shard field or metallic terrace
+  farReferenceShape: cold industrial skyline made by geology
+  routeUse: Player should read a few hard metallic anchors and ignore most empty
+    space.
+  safePocketUse: Safe pockets are mostly created by shard shadows and pressure slabs.
+  emotionalRead: Hard, expensive, and purposeful.

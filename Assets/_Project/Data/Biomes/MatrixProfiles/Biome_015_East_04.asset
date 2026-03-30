@@ -20,6 +20,30 @@ MonoBehaviour:
   maxDepthMeters: 1000
   shortDescription: Tilted granite megablocks leaning into sunless overhangs.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and read walls, fissures, and major vertical routes.
+  commonRewardHook: Common runs pay out in Copper Ore and Cobalt Alloy.
+  rareRewardHook: 'Rare pull is modest: Iron Composite and Copper Wire.'
+  landmarkIdentity: The Slab Wall reads through walls, fins, fissures, and giant
+    vertical breaks. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: vertical trap geometry and hard commitment. Creature
+    pressure stays medium.'
+  extractionFocus: 'Targeted node work along long rock lines and exposed shelves.
+    Early tier: keep runs short and work edges, cracks, and vertical seams.'
+  landmarkGuidance: Dominant landmark is main ridge line. This slot should read through
+    spine tooth, fin, or slab seam; use walls and breaks to mark route commitment.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 4
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 2
+  landmarkStrength: 5
+  rewardPull: 2
+  survivalPressure: 3
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.tectonic_spine
   familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}

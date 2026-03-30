@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_AbyssalSilt
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.abyssal_silt
+  profileLabel: Abyssal Silt Spatial Pattern
+  resourcePocketPattern: Loose value is sparse and usually sits where almost featureless
+    ground finally breaks.
+  nodeClusterPattern: Nodes are rare, deliberate, and often tied to one seam, mound,
+    or salvage rise in otherwise empty space.
+  safePocketPattern: 'Safe pockets are weak and brief: trench shoulders, lee sides
+    of mounds, or the shadow of a wreck fragment.'
+  routeAnchorPattern: Anchors are rare. The player should travel from one lonely
+    readable object to the next.
+  rareObjectivePattern: Rare value should feel far apart, forcing patience and trust
+    in instruments.
+  explorationLoop: Long quiet transit, single important stop, short evaluation, then
+    commit to the next anchor.
+  spatialRead: Sparse and oppressive. The emptiness itself is part of the pressure.
+  playerMemoryHook: Remember the place by the one object that breaks the emptiness.

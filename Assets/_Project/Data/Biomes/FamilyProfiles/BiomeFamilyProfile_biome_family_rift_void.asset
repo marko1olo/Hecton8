@@ -15,16 +15,19 @@ MonoBehaviour:
   familyId: biome.family.rift_void
   familyLabel: Rift Void
   debugColor: {r: 0.24, g: 0.24, b: 0.34, a: 1}
-  geologicalIdentity: "\u041F\u0430\u0441\u0442\u0438, \u0448\u0430\u0445\u0442\u044B,
-    \u043F\u0440\u043E\u0432\u0430\u043B\u044B \u0438 \u043F\u0443\u0441\u0442\u043E\u0442\u043D\u044B\u0435
-    \u043A\u0430\u0440\u043C\u0430\u043D\u044B, \u0433\u0434\u0435 \u0441\u0430\u043C
-    \u043C\u0430\u0441\u0448\u0442\u0430\u0431 \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u0430
-    \u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0441\u044F \u0443\u0433\u0440\u043E\u0437\u043E\u0439."
-  gameplayIdentity: "\u042D\u0442\u043E \u0443\u0436\u0435 \u043F\u043E\u0437\u0434\u043D\u044F\u044F
-    \u043D\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u044F \u043D\u0430 \u0441\u0442\u0440\u0430\u0445\u0435,
-    \u0433\u043B\u0443\u0431\u0438\u043D\u0435 \u0438 \u0440\u0435\u0434\u043A\u0438\u0445
-    \u043E\u0440\u0438\u0435\u043D\u0442\u0438\u0440\u0430\u0445, \u043F\u043E\u0447\u0442\u0438
-    \u0431\u0435\u0437 \u043B\u0438\u0448\u043D\u0435\u0433\u043E \u0448\u0443\u043C\u0430."
+  geologicalIdentity: "\xD0\u0178\xD0\xB0\xD1\x81\xD1\u201A\xD0\xB8, \xD1\u02C6\xD0\xB0\xD1\u2026\xD1\u201A\xD1\u2039,
+    \xD0\xBF\xD1\u20AC\xD0\xBE\xD0\xB2\xD0\xB0\xD0\xBB\xD1\u2039 \xD0\xB8 \xD0\xBF\xD1\u0192\xD1\x81\xD1\u201A\xD0\xBE\xD1\u201A\xD0\xBD\xD1\u2039\xD0\xB5
+    \xD0\xBA\xD0\xB0\xD1\u20AC\xD0\xBC\xD0\xB0\xD0\xBD\xD1\u2039, \xD0\xB3\xD0\xB4\xD0\xB5
+    \xD1\x81\xD0\xB0\xD0\xBC \xD0\xBC\xD0\xB0\xD1\x81\xD1\u02C6\xD1\u201A\xD0\xB0\xD0\xB1
+    \xD0\xBF\xD1\u20AC\xD0\xBE\xD1\x81\xD1\u201A\xD1\u20AC\xD0\xB0\xD0\xBD\xD1\x81\xD1\u201A\xD0\xB2\xD0\xB0
+    \xD1\x81\xD1\u201A\xD0\xB0\xD0\xBD\xD0\xBE\xD0\xB2\xD0\xB8\xD1\u201A\xD1\x81\xD1\x8F
+    \xD1\u0192\xD0\xB3\xD1\u20AC\xD0\xBE\xD0\xB7\xD0\xBE\xD0\xB9."
+  gameplayIdentity: "\xD0\xAD\xD1\u201A\xD0\xBE \xD1\u0192\xD0\xB6\xD0\xB5 \xD0\xBF\xD0\xBE\xD0\xB7\xD0\xB4\xD0\xBD\xD1\x8F\xD1\x8F
+    \xD0\xBD\xD0\xB0\xD0\xB2\xD0\xB8\xD0\xB3\xD0\xB0\xD1\u2020\xD0\xB8\xD1\x8F \xD0\xBD\xD0\xB0
+    \xD1\x81\xD1\u201A\xD1\u20AC\xD0\xB0\xD1\u2026\xD0\xB5, \xD0\xB3\xD0\xBB\xD1\u0192\xD0\xB1\xD0\xB8\xD0\xBD\xD0\xB5
+    \xD0\xB8 \xD1\u20AC\xD0\xB5\xD0\xB4\xD0\xBA\xD0\xB8\xD1\u2026 \xD0\xBE\xD1\u20AC\xD0\xB8\xD0\xB5\xD0\xBD\xD1\u201A\xD0\xB8\xD1\u20AC\xD0\xB0\xD1\u2026,
+    \xD0\xBF\xD0\xBE\xD1\u2021\xD1\u201A\xD0\xB8 \xD0\xB1\xD0\xB5\xD0\xB7 \xD0\xBB\xD0\xB8\xD1\u02C6\xD0\xBD\xD0\xB5\xD0\xB3\xD0\xBE
+    \xD1\u02C6\xD1\u0192\xD0\xBC\xD0\xB0."
   atmosphereMood: void_awe
   navigationStyle: anchor_to_anchor
   hazardStyle: falloff_and_ambush
@@ -37,8 +40,13 @@ MonoBehaviour:
   secondaryResource: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
   tertiaryResource: {fileID: 11400000, guid: 40d32130468663f4d99724d031822eff, type: 2}
   signatureComponent: {fileID: 11400000, guid: 718e70c80bd164544bbd109e49bb9375, type: 2}
+  resourcePlanProfile: {fileID: 11400000, guid: 21a6e84728e131948a7729da178bfb94, type: 2}
+  landmarkPlanProfile: {fileID: 11400000, guid: ecc569b08b5b9884386fbad34b5019cb, type: 2}
+  spatialPatternProfile: {fileID: 11400000, guid: 8093a500cfb6ac9458a3e3b2fcfb92ab, type: 2}
   atmosphereProfile: {fileID: 11400000, guid: 4202d5454d4c8614fa8b1c4e4db85186, type: 2}
   faunaFamilyProfile: {fileID: 11400000, guid: 2eacd9f51df4f1a4e90ad68e86f60ee6, type: 2}
+  recommendedLoadoutPreset: {fileID: 11400000, guid: cebc0acb95899da4cb76d8605f784e9f, type: 2}
+  playProfile: {fileID: 11400000, guid: 6de6540b40c30824b9752cc23a68a3de, type: 2}
   nearInteractiveFamily: {fileID: 11400000, guid: fadd42a1c8bb05340b193e0433c92a1e, type: 2}
   midVisualFamily: {fileID: 11400000, guid: 9a6dc20dd0e26444aaeef854e1097890, type: 2}
   farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}

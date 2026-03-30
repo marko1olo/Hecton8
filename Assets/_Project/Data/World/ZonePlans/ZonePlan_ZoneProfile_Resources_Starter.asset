@@ -35,3 +35,57 @@ MonoBehaviour:
   heroFamily: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
   gameplaySummary: Starter harvesting pocket with clear pickups, extractable nodes,
     and distant landmark memory.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: 50aa40e5e879447418b34fd15f2ee9dc, type: 2}
+    relation: 1
+    preferredSlice: 2
+    targetCount: 3
+    usage: Small readable loose-resource pocket close to a safe route line.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: 1c25b670563e35c498edc9b5add23bd5, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 2
+    usage: A slightly deeper mineral cluster that asks for a small detour.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: a97de01b6921d744b8482975f718d685, type: 2}
+    relation: 2
+    preferredSlice: 2
+    targetCount: 2
+    usage: Short recovery nook behind stone cover or reef folds.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Not a major role for this zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: 027b494782b8cc34fa73740a81584dba, type: 2}
+    relation: 0
+    preferredSlice: 1
+    targetCount: 2
+    usage: A strong readable form that keeps beginner routes stable.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: 6204f4d03705cf2429278a6745232624, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The best find of the pocket, one layer deeper than routine scrap.

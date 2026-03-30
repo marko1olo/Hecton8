@@ -1,5 +1,107 @@
 # Codex Backlog
 
+# 2026-03-30 - Zone role layout propagation pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldContentSocket.cs`
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+  - `Assets/_Project/Scripts/WorldContentDirector.cs`
+- Result:
+  - world sockets now receive not only a biome-driven role, but also the matching zone-plan layout
+  - runtime diagnostics now expose:
+    - zone-role family
+    - zone-role layout
+  - this connects:
+    - biome logic
+    - zone plans
+    - world sockets
+    into one practical future fill contract
+- Honest verification:
+  - `WorldRuntimeBootstrap` rebuilt clean through Unity MCP
+  - checked `ZonePlan_ZoneProfile_Progression_Endgame.asset` directly and confirmed serialized role-plan layout data
+  - no new errors/warnings were returned in the last console checks
+
+# 2026-03-30 - Zone-plan role layout pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldZonePlanProfile.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- Result:
+  - zone plans now store real role plans, not only family references
+  - each important role now carries:
+    - family
+    - relation
+    - preferred slice
+    - suggested count
+    - usage text
+  - this is now serialized into real assets on disk, not kept only in code
+- Honest verification:
+  - `WorldRuntimeBootstrap` rebuilt clean through Unity MCP
+  - console ended clean with `0` errors/warnings
+  - checked `ZonePlan_ZoneProfile_Resources_Starter.asset` directly and confirmed the new role-plan data is serialized
+
+# 2026-03-30 - Zone-plan production fill role pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldZonePlanProfile.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- Result:
+  - zone plans now carry explicit future fill families for:
+    - resource pockets
+    - node clusters
+    - safe pockets / outposts
+    - build sockets
+    - power spines
+    - service chokes
+    - route anchors
+    - hazard gates
+    - rare objectives
+  - `WorldRuntimeBootstrapAuthoring` now auto-fills those families per zone profile
+  - `WorldZoneDirector` now exposes those role families in live diagnostics
+  - `MapMagicWorldValidator` is stricter and now checks missing role families on important zone kinds
+- Honest verification:
+  - `WorldRuntimeBootstrap` log returned through Unity MCP
+  - rebuilt zone-plan assets on disk now contain the new serialized role-family references
+  - the world validator menu still reports opaquely through MCP, so final pass/fail echo for that menu remains a tooling-observability tail
+
+# 2026-03-30 - Biome spatial role pass
+
+- Extended:
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+  - `Assets/_Project/Scripts/WorldContentSocket.cs`
+  - `Assets/_Project/Scripts/WorldContentDirector.cs`
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+- Result:
+  - world sockets now resolve a practical biome-driven role, not only a density/purpose:
+    - `Resource Pocket`
+    - `Node Cluster`
+    - `Safe Outpost`
+    - `Build Socket`
+    - `Power Spine`
+    - `Service Choke`
+    - `Route Anchor`
+    - `Hazard Pocket`
+    - `Rare Objective Gate`
+    - `Rare Objective`
+  - `WorldContentSocket` now stores resolved spatial role + spatial reason for diagnostics
+  - `WorldContentDirector` and `WorldPopulationDirector` now expose those role diagnostics live
+  - `MapMagicWorldValidator` is stricter and now warns about:
+    - sockets with no matching population rule
+    - weak spatial coverage
+    - socket/profile kind mismatches
+- Verified through Unity MCP:
+  - console errors/warnings clean after compile/reload
+  - `Validate 108 Biome Matrix` pass:
+    - `[BiomeMatrixValidation] PASS placeholders=44 families=13 warnings=0`
+- Honest tail:
+  - `Validate MapMagic World Stack` still reports opaquely through MCP sometimes, so the stricter validator layer is in code, but its final menu echo is not always returned by the session logger
+
 ## 2026-03-30 - 108 biome family integration pass
 
 - Added and extended:
@@ -3084,3 +3186,105 @@ Notes:
   - route / landmark / reward / survival pressure
 - Extended `BiomeMatrixDirector` diagnostics to expose this framing live.
 - Extended `BiomeMatrixBootstrapAuthoring` so the slot-level gameplay framing is rebuilt automatically from family + depth + region.
+
+## 2026-03-30 - World biome integration and resource-plan pass
+
+- World zones now store a dominant matrix biome and dominant biome family:
+  - `Assets/_Project/Scripts/WorldZoneAnchor.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+- World population rules are now biome-aware:
+  - `Assets/_Project/Scripts/WorldPopulationRule.cs`
+  - `Assets/_Project/Scripts/WorldPopulationDirector.cs`
+- World runtime bootstrap now assigns dominant matrix biomes to the authored world zones and also promotes `Lane_ServiceModules` into a real world zone:
+  - `Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs`
+- Added family-level biome resource plans so each biome family now answers:
+  - why to farm it early
+  - why to revisit it later
+  - what extraction style it implies
+  - how reward loops should read
+- New asset-backed script:
+  - `Assets/_Project/Scripts/HectonBiomeResourcePlanProfile.cs`
+- Updated:
+  - `Assets/_Project/Scripts/HectonBiomeFamilyProfile.cs`
+  - `Assets/_Project/Scripts/BiomeMatrixDirector.cs`
+  - `Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs`
+- Validation was also hardened in:
+  - `Assets/_Project/Scripts/Editor/MapMagicWorldValidator.cs`
+
+## 2026-03-30 - Resource weighting and landmark guidance pass
+
+- Added family-level biome resource weighting:
+  - `Assets/_Project/Scripts/HectonBiomeResourcePlanProfile.cs`
+  - loose pickup weight
+  - node extraction weight
+  - salvage recovery weight
+  - common/uncommon/rare pull values
+- Added family-level biome landmark guidance:
+  - `Assets/_Project/Scripts/HectonBiomeLandmarkPlanProfile.cs`
+- Wired both into:
+  - `Assets/_Project/Scripts/HectonBiomeFamilyProfile.cs`
+  - `Assets/_Project/Scripts/BiomeMatrixDirector.cs`
+  - `Assets/_Project/Scripts/WorldZoneDirector.cs`
+  - `Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs`
+- Goal:
+  - make each biome family answer not only "what this place is"
+  - but also "what pulls the player here" and "what landmark makes it memorable"
+
+## 2026-03-30 - Biome-weighted world population pass
+
+- `WorldPopulationRule` now computes an effective density weight instead of acting only like a binary match.
+- The weight is now influenced by the current zone dominant matrix biome:
+  - extraction bias
+  - reward bias
+  - route / landmark pressure
+- `WorldPopulationDirector` now selects the strongest matching rule, not just the first matching rule.
+- `WorldContentSocket` and `WorldContentDirector` now expose resolved runtime diagnostics:
+  - biome fit reason
+  - extraction focus
+  - landmark guidance
+  - resolved gameplay purpose
+  - effective density weight
+- Goal:
+  - move the 108-biome matrix from descriptive data toward real world-population influence
+
+## 2026-03-30 - Biome-weighted zone-runtime pass
+
+- `WorldZoneDirector` now folds the dominant biome slot into actual runtime zone behavior.
+- Static zone-profile scales are now modified by slot pressure from:
+  - pickup / node / salvage bias
+  - common / uncommon / rare pull
+  - route pressure
+  - landmark strength
+  - reward pull
+  - survival pressure
+- This now affects:
+  - scavenge scale
+  - spawn scale
+  - collider radius scale
+  - collider ops scale
+  - near slice scale
+  - mid slice scale
+- Zone diagnostics now also expose:
+  - effective near / mid / far density
+  - reward rhythm
+  - route rhythm
+  - safe-pocket rhythm
+- Goal:
+  - make the world feel different biome-to-biome before final prefab fill, not only read differently in data
+
+## 2026-03-30 - Biome spatial-pattern pass
+
+- Added a new family-level spatial pattern layer:
+  - resource pocket pattern
+  - node cluster pattern
+  - safe pocket pattern
+  - route anchor pattern
+  - rare objective pattern
+  - exploration loop
+- Wired it into:
+  - `HectonBiomeFamilyProfile`
+  - `BiomeMatrixDirector`
+  - `BiomeMatrixBootstrapAuthoring`
+  - `WorldZoneDirector`
+- Goal:
+  - give each biome family a consistent placement language before real prefab fill begins

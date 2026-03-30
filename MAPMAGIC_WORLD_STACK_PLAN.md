@@ -276,6 +276,15 @@ Live data folders:
 - `Assets/_Project/Data/World/PopulationRules`
 - `Assets/_Project/Data/World/FamilyProfiles`
 
+## Latest Extension
+
+- World zones now carry a dominant matrix biome and dominant biome family.
+- Population rules can now filter by preferred biome families instead of only zone kind and content kind.
+- This lets the world stack express simple but important production truths:
+  - starter resource fields belong in readable early geology
+  - power/service content belongs in hot, chemical, or fractured biomes
+  - endgame landmarks belong in extreme late biome families
+
 What this means:
 - the world now knows what each important place is
 - the world now knows what each important content point is
@@ -657,3 +666,103 @@ What this means:
   - content sockets are no longer just tagged points
   - they now describe what kind of content should eventually live there
   - future population passes can use profiles instead of more hardcoded branching
+
+## 2026-03-30 - Population Rules Now Read Biome Pressure
+
+- `WorldPopulationRule` no longer acts only like a yes/no filter.
+- It now computes an effective density weight from:
+  - zone dominant matrix biome
+  - slot-level extraction bias
+  - slot-level reward bias
+  - slot-level landmark / route pressure
+- `WorldPopulationDirector` now picks the strongest matching rule instead of the first one.
+- `WorldContentSocket` and `WorldContentDirector` now expose:
+  - biome fit reason
+  - extraction focus
+  - landmark guidance
+  - resolved gameplay purpose
+  - effective density weight
+- Meaning:
+  - biome logic is starting to influence actual world-population behavior
+  - not just data, not just lore, but the strength of what content wants to live at a given socket
+
+## 2026-03-30 - World Zones Now Breathe With Their Biome
+
+- `WorldZoneDirector` no longer applies only static zone-profile scales.
+- It now also folds in the dominant biome slot pressure:
+  - resource richness
+  - extraction style
+  - route pressure
+  - landmark strength
+  - reward pull
+  - survival pressure
+- This now changes effective runtime behavior of a zone:
+  - scavenge radius scale
+  - spawn scale
+  - collider radius / ops scale
+  - near slice scale
+  - mid slice scale
+- It also exposes clearer zone diagnostics:
+  - effective near / mid / far density
+  - reward rhythm
+  - route rhythm
+  - safe-pocket rhythm
+- Meaning:
+  - a rich readable starter biome now behaves differently from a harsh late void even if both are just "zones" in the scene
+
+## 2026-03-30 - World Sockets Now Get Concrete Biome Roles
+
+- `WorldPopulationRule` now resolves not only density and purpose, but also a practical spatial role for each socket:
+  - resource pocket
+  - node cluster
+  - safe outpost
+  - build socket
+  - power spine
+  - service choke
+  - route anchor
+  - hazard pocket / rare-objective gate
+  - rare objective
+- `WorldContentSocket`, `WorldContentDirector`, and `WorldPopulationDirector` now expose these resolved roles in diagnostics.
+- `MapMagicWorldValidator` is now stricter about world-population coverage:
+  - catches sockets without matching population rules
+  - catches weak spatial coverage where a socket still collapses to generic/noisy placement logic
+  - catches socket/profile kind mismatches
+- Meaning:
+  - the world stack is moving from “this point has some content” to “this point has a real place-logic inside its biome”
+
+## 2026-03-30 - Zone Plans Now Carry Production Fill Roles
+
+- `WorldZonePlanProfile` no longer only describes `near / mid / far` layers.
+- It now also carries dedicated future role plans for:
+  - `resource pocket`
+  - `node cluster`
+  - `safe pocket`
+  - `build socket`
+  - `power spine`
+  - `service choke`
+  - `route anchor`
+  - `hazard gate`
+  - `rare objective`
+- Each role plan now stores:
+  - future family
+  - relation to route/cover/hazard
+  - preferred slice
+  - suggested count
+  - role usage text
+- `WorldRuntimeBootstrapAuthoring` now fills those slots automatically per zone type.
+- `WorldZoneDirector` now exposes those resolved role plans in runtime diagnostics.
+- `MapMagicWorldValidator` is stricter and now checks that important zones are not missing these role families.
+- Meaning:
+  - the project now has a real production bridge between biome logic and future prefab fill
+  - when real models arrive later, we already know what kind of content belongs to each zone and each kind of place inside it
+
+## 2026-03-30 - Zone Layout Plans Now Reach World Sockets
+
+- `WorldPopulationRule` now resolves not only a socket role, but also the matching zone-plan layout for that role.
+- `WorldContentSocket` now stores:
+  - resolved zone-role family
+  - resolved zone-role layout
+- `WorldContentDirector` and `WorldPopulationDirector` now expose that layout data in diagnostics too.
+- Meaning:
+  - the runtime layer can now say not only "this is a route anchor"
+  - but also "this route anchor belongs near the main route, in mid slice, count 2, with this gameplay purpose"

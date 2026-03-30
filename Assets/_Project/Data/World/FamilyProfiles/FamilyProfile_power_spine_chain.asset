@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: FamilyProfile_power_spine_chain
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: power.spine.chain
+  familyLabel: Power Spine Chain
+  defaultFidelity: 2
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  futurePrefabRoot: power.spine.chain
+  gameplayRole: Planned world family for 'power.spine.chain'.

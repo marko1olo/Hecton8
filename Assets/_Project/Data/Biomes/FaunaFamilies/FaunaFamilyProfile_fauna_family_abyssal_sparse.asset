@@ -18,9 +18,11 @@ MonoBehaviour:
   threatStyle: medium_to_high
   signaturePredator: shadow_interceptor
   encounterRhythm: long_silence_spikes
-  gameplaySummary: "\u041F\u043E\u0447\u0442\u0438 \u043F\u0443\u0441\u0442\u043E\u0442\u0430
-    \u043C\u0435\u0436\u0434\u0443 \u0432\u0441\u0442\u0440\u0435\u0447\u0430\u043C\u0438.
-    \u041D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u0438\u0434\u0451\u0442
-    \u043E\u0442 \u0440\u0435\u0434\u043A\u0438\u0445 \u043A\u043E\u043D\u0442\u0430\u043A\u0442\u043E\u0432."
-  ambienceSummary: "\u0422\u0438\u0448\u0438\u043D\u0430 \u2014 \u0433\u043B\u0430\u0432\u043D\u044B\u0439
-    \u044D\u0444\u0444\u0435\u043A\u0442 \u044D\u0442\u043E\u0433\u043E \u0441\u0435\u043C\u0435\u0439\u0441\u0442\u0432\u0430."
+  gameplaySummary: "\xD0\u0178\xD0\xBE\xD1\u2021\xD1\u201A\xD0\xB8 \xD0\xBF\xD1\u0192\xD1\x81\xD1\u201A\xD0\xBE\xD1\u201A\xD0\xB0
+    \xD0\xBC\xD0\xB5\xD0\xB6\xD0\xB4\xD1\u0192 \xD0\xB2\xD1\x81\xD1\u201A\xD1\u20AC\xD0\xB5\xD1\u2021\xD0\xB0\xD0\xBC\xD0\xB8.
+    \xD0\x9D\xD0\xB0\xD0\xBF\xD1\u20AC\xD1\x8F\xD0\xB6\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5
+    \xD0\xB8\xD0\xB4\xD1\u2018\xD1\u201A \xD0\xBE\xD1\u201A \xD1\u20AC\xD0\xB5\xD0\xB4\xD0\xBA\xD0\xB8\xD1\u2026
+    \xD0\xBA\xD0\xBE\xD0\xBD\xD1\u201A\xD0\xB0\xD0\xBA\xD1\u201A\xD0\xBE\xD0\xB2."
+  ambienceSummary: "\xD0\xA2\xD0\xB8\xD1\u02C6\xD0\xB8\xD0\xBD\xD0\xB0 \xE2\u20AC\u201D
+    \xD0\xB3\xD0\xBB\xD0\xB0\xD0\xB2\xD0\xBD\xD1\u2039\xD0\xB9 \xD1\x8D\xD1\u201E\xD1\u201E\xD0\xB5\xD0\xBA\xD1\u201A
+    \xD1\x8D\xD1\u201A\xD0\xBE\xD0\xB3\xD0\xBE \xD1\x81\xD0\xB5\xD0\xBC\xD0\xB5\xD0\xB9\xD1\x81\xD1\u201A\xD0\xB2\xD0\xB0."

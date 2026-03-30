@@ -34,6 +34,14 @@ namespace Hecton8.Environment
         [TextArea(2, 4)] public string landmarkIdentity = string.Empty;
         [TextArea(2, 4)] public string safePocketIdentity = string.Empty;
         [TextArea(2, 4)] public string riskSummary = string.Empty;
+        [TextArea(2, 4)] public string extractionFocus = string.Empty;
+        [TextArea(2, 4)] public string landmarkGuidance = string.Empty;
+        [Range(1, 5)] public int loosePickupBias = 3;
+        [Range(1, 5)] public int nodeExtractionBias = 3;
+        [Range(1, 5)] public int salvageBias = 2;
+        [Range(1, 5)] public int commonResourceBias = 3;
+        [Range(1, 5)] public int uncommonResourceBias = 3;
+        [Range(1, 5)] public int rareResourceBias = 3;
         [Range(1, 5)] public int routePressure = 3;
         [Range(1, 5)] public int landmarkStrength = 3;
         [Range(1, 5)] public int rewardPull = 3;

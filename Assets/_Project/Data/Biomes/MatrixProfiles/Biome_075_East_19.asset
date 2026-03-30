@@ -22,6 +22,33 @@ MonoBehaviour:
     expects a bespoke authored identity here; final lore and geology are pending
     expansion from the master vision.
   isPlaceholder: 1
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to read walls, fissures, and major vertical routes.
+  commonRewardHook: Even routine value here comes from Tungsten Chunk and Rare Earth
+    Dust.
+  rareRewardHook: 'The reason to risk the trip is: Lithium Crystal and Power Coupler.'
+  landmarkIdentity: Tier 19 East Reserve reads through walls, fins, fissures, and
+    giant vertical breaks. Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: vertical trap geometry and hard commitment, depth
+    stress, and expensive hesitation. Creature pressure stays high.'
+  extractionFocus: 'Fissure-edge scavenging, hard geometry, and exposed recovery
+    points. Deep tier: work edges, cracks, and vertical seams, extract only what
+    justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is fracture mouth or gate-like break. This
+    slot should read through one violent split in the world surface; use walls and
+    breaks to mark route commitment.
+  loosePickupBias: 2
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 5
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.rift_spine
   familyProfile: {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}

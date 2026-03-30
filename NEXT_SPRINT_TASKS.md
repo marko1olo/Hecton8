@@ -188,6 +188,10 @@ Notes:
   - population director
   - socket-level resolved population diagnostics
 - [ ] add world population validation strong enough to catch uncovered sockets before content-authoring starts
+- [x] strengthen world population validation so it catches:
+  - uncovered sockets
+  - weak biome spatial coverage
+  - socket/profile kind mismatches
 - [ ] define the first real future prefab families for world population without placing final models yet:
   - resource clusters
   - service clutter
@@ -212,11 +216,37 @@ Notes:
   - what is readable mid content
   - what is far silhouette content
   - what is the hero family of the zone
+- [x] extend zone-plan assets with dedicated production role families:
+  - resource pocket
+  - node cluster
+  - safe pocket
+  - build socket
+  - power spine
+  - service choke
+  - route anchor
+  - hazard gate
+  - rare objective
+- [x] extend zone-plan role families into real role plans with:
+  - relation to route/cover/hazard
+  - preferred slice
+  - suggested count
+  - usage text
+- [x] propagate zone role-plan layout into live world socket diagnostics so future placement decisions are visible at runtime
+- [ ] start using zone-plan role families as the main future fill contract for real prefab/model placement instead of ad-hoc naming rules
 - [x] build the future 108-biome matrix as a real asset/catalog/director layer without breaking the current small runtime biome palette
 - [ ] map the 108-biome matrix onto real world planning:
   - which depth tiers feed which zone families
   - which cardinal regions feed which route identities
   - which biomes are still placeholders and need final lore fill
+- [ ] connect biome spatial roles to future production fill patterns:
+  - resource pocket
+  - node cluster
+  - safe outpost / safe pocket
+  - route anchor
+  - service choke
+  - power spine
+  - rare objective gate
+  - rare objective
 - [ ] add biome-family grouping on top of the 108 matrix:
   - silt
   - tectonic
@@ -503,3 +533,20 @@ Notes:
   - risk summary
   - route/landmark/reward/survival pressure
 - next: connect slot-level biome framing to zone plans, resource family weighting, and future landmark families
+- [x] connect world zones to dominant matrix biomes and biome families
+- [x] make world population rules biome-aware
+- [x] make world population selection react to slot-level biome pressure
+  - strongest rule is now chosen by effective biome-weighted density
+  - sockets now expose biome fit, extraction focus, landmark guidance, and resolved purpose
+- [x] make zone runtime budgets react to dominant biome pressure too
+  - zones now adjust effective scavenge/spawn/collider/slice scales from biome slot pressure
+  - zones now expose reward rhythm, route rhythm, and safe-pocket rhythm
+- [x] add family-level resource plan profiles so each biome family answers:
+  - why to farm it early
+  - why to return later
+  - how extraction should feel
+  - how reward loops should read
+- [x] add family-level landmark plan profiles so each biome family answers:
+  - what landmark dominates the biome
+  - how the biome reads in near / mid / far
+  - how landmarks support route memory and safe-pocket reading

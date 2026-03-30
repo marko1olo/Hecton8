@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_VolcanicGlass
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.volcanic_glass
+  profileLabel: Volcanic Glass Spatial Pattern
+  resourcePocketPattern: Useful chemistry and hot materials sit in short, exposed
+    strike pockets along thermal cracks.
+  nodeClusterPattern: Node clusters gather around vents, broken flow edges, and hard
+    temperature transitions.
+  safePocketPattern: Safe pockets are cool seams between hot structures and should
+    feel temporary, not comfortable.
+  routeAnchorPattern: Routes are remembered by black flow edges and thermal lines,
+    not by clutter.
+  rareObjectivePattern: Rare value lives inside the hottest and most visually obvious
+    pocket, demanding fast execution.
+  explorationLoop: Read the heat line, enter fast, take what matters, cool off, decide
+    if another strike is worth it.
+  spatialRead: Aggressive and high-value. The terrain should say 'not for loitering'.
+  playerMemoryHook: Remember the place by one black flow and one heat seam.

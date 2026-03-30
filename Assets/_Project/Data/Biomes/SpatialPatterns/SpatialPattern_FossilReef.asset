@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_FossilReef
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.fossil_reef
+  profileLabel: Fossil Reef Spatial Pattern
+  resourcePocketPattern: Organic pickups sit in holes, ribs, alcoves, and reef windows
+    rather than in open space.
+  nodeClusterPattern: Node clusters appear in semi-hidden chambers or at reef roots,
+    rewarding curiosity and short detours.
+  safePocketPattern: Safe pockets exist behind reef ribs and inside porous side chambers,
+    but can turn into ambush pockets.
+  routeAnchorPattern: Routes are remembered by unusual reef silhouettes and repeated
+    porous gate shapes.
+  rareObjectivePattern: Rare finds are tucked into beautiful but slightly suspicious
+    interior spaces.
+  explorationLoop: Circle the crown, slip through one opening, harvest a chamber,
+    then escape back into a known silhouette line.
+  spatialRead: Rich and memorable, but layered. It should feel inviting before it
+    feels tricky.
+  playerMemoryHook: Remember the place by one crown shape and one distinctive interior
+    opening.

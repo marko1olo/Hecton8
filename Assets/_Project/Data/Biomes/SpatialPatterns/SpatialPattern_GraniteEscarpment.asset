@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_GraniteEscarpment
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.granite_escarpment
+  profileLabel: Granite Escarpment Spatial Pattern
+  resourcePocketPattern: Useful materials sit on ledges, broken shelves, and crack
+    mouths along the wall.
+  nodeClusterPattern: Nodes appear in vertical pocket chains, so one good line can
+    yield several exact stops.
+  safePocketPattern: Safe pockets are overhang feet, side ledges, and recesses that
+    break line-of-sight.
+  routeAnchorPattern: The wall itself is the route anchor. Progress is measured by
+    named ledges and visible breaks.
+  rareObjectivePattern: Rare value hangs in slightly awkward positions that ask for
+    commitment to one ledge line.
+  explorationLoop: Take a wall line, harvest two or three ledge pockets, secure a
+    recess, then choose whether to descend further.
+  spatialRead: Strong vertical readability. The player should always know what is
+    up, down, and back.
+  playerMemoryHook: Remember the place by one wall face and one unmistakable broken
+    ledge.

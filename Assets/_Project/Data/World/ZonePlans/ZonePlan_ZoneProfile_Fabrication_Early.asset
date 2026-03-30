@@ -34,3 +34,57 @@ MonoBehaviour:
       silhouette.'
   heroFamily: {fileID: 11400000, guid: 863a47418e48c8c4896f4a51d20831ae, type: 2}
   gameplaySummary: Safe logistics stop for crafting, route reset, and regrouping.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    relation: 5
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    relation: 5
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: 96c6632d6d0689d4484039dcd26dce94, type: 2}
+    relation: 5
+    preferredSlice: 2
+    targetCount: 1
+    usage: The trusted regroup and craft stop around the outpost.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    relation: 5
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    relation: 5
+    preferredSlice: 1
+    targetCount: 0
+    usage: Not a major role for this zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    relation: 5
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: dc0bb9f005edf5348a449ae50c634b01, type: 2}
+    relation: 1
+    preferredSlice: 1
+    targetCount: 1
+    usage: Approach marker that brings the player back to safety.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
+    relation: 5
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: 7bd87c9299b682144951216c93941691, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The memorable utility landmark that makes the stop worth revisiting.

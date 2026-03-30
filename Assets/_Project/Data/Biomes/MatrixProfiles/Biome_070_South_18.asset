@@ -22,6 +22,33 @@ MonoBehaviour:
     expects a bespoke authored identity here; final lore and geology are pending
     expansion from the master vision.
   isPlaceholder: 1
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to work around bowls, pools, and local hotspots.
+  commonRewardHook: Even routine value here comes from Tungsten Chunk and Rare Earth
+    Dust.
+  rareRewardHook: 'The reason to risk the trip is: Lithium Crystal and Power Coupler.'
+  landmarkIdentity: Tier 18 South Reserve reads through bowls, pools, domes, and
+    hotspot basins. Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins, depth
+    stress, and expensive hesitation. Creature pressure stays high.'
+  extractionFocus: 'Fissure-edge scavenging, hard geometry, and exposed recovery
+    points. Deep tier: expect basin pockets, salvage traps, and local hotspots, extract
+    only what justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is fracture mouth or gate-like break. This
+    slot should read through one violent split in the world surface; use bowls and
+    hotspot rims to remember loops.
+  loosePickupBias: 2
+  nodeExtractionBias: 4
+  salvageBias: 3
+  commonResourceBias: 3
+  uncommonResourceBias: 4
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.rift_spine
   familyProfile: {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}

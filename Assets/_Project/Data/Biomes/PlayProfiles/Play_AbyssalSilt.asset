@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_AbyssalSilt
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.abyssal_silt
+  profileLabel: Abyssal Silt Play
+  whyPlayerComesHere: Silence, depth, and a small number of valuable rewards.
+  playerPromise: A patience biome with weak orientation, weak safety, and important
+    deep-sea gathering.
+  traversalRhythm: Long quiet stretches interrupted by one awkward contact.
+  routeClarity: 2
+  landmarkStrength: 2
+  safePocketFrequency: 1
+  commonResourceDensity: 2
+  salvageValue: 3
+  rareRewardPull: 2
+  encounterPressure: 3
+  hazardPressure: 4
+  expeditionCommitment: 4
+  cautionSummary: The biggest enemy here is trip length and weak orientation.

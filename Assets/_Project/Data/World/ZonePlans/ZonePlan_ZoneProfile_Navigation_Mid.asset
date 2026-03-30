@@ -32,3 +32,57 @@ MonoBehaviour:
   heroFamily: {fileID: 11400000, guid: 4c168e11ae4b62e4c9f8bbc2270be70e, type: 2}
   gameplaySummary: Navigation hub that helps the player read branch choice and return
     flow.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: e8f887a7d879da94d92e573b7c88e721, type: 2}
+    relation: 2
+    preferredSlice: 2
+    targetCount: 1
+    usage: A brief recovery ledge near a branch.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Not a major role for this zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: b99b532370b8a37419a0175b3b42b08c, type: 2}
+    relation: 0
+    preferredSlice: 1
+    targetCount: 3
+    usage: A major route-memory form for branch choice and return flow.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: a24294478a973854aa691420b220805c, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The frontier landmark that rewards pushing one branch further.

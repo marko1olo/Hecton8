@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_RiftSpine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.rift_spine
+  profileLabel: Rift Spine Resource Plan
+  commonResource: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
+  uncommonResource: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
+  rareResource: {fileID: 11400000, guid: 432c7f076754baf48ba1ab5a83231c02, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 2f16016142035d6459a0e8b33c4ae20f, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Mid-to-late route biome for construction-grade finds and dangerous
+    salvage.
+  lateReasonToReturn: Great for route-control materials and structural parts under
+    pressure.
+  extractionStyle: Fissure-edge scavenging, hard geometry, and exposed recovery points.
+  routeRewardLogic: The path itself is half the challenge, not just the node.

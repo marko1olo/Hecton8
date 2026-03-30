@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_CrystalGrowth
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.crystal_growth
+  profileLabel: Crystal Growth Resource Plan
+  commonResource: {fileID: 11400000, guid: b8de736e6b1c21241acc1651212a733f, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 40d32130468663f4d99724d031822eff, type: 2}
+  rareResource: {fileID: 11400000, guid: 432c7f076754baf48ba1ab5a83231c02, type: 2}
+  signatureComponent: {fileID: 11400000, guid: a85858d645dd9fe4e93fed3fbf501d0d, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Specialized shards, optics materials, and clean high-value pockets.
+  lateReasonToReturn: A consistent place to chase precision components and rare upgrades.
+  extractionStyle: Slow, careful harvesting from obvious but exposed crystal structures.
+  routeRewardLogic: High visual pull, but each stop should feel exposed and deliberate.

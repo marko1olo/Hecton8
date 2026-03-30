@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_VolcanicHadal
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.volcanic_hadal
+  profileLabel: Volcanic Hadal Resource Plan
+  commonResource: {fileID: 11400000, guid: cda4ba86d994d7748a5ddf598feaa073, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+  rareResource: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 718e70c80bd164544bbd109e49bb9375, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Not an early farm biome; this is reserved for major late-game
+    pulls.
+  lateReasonToReturn: Go back only for top-tier heat-pressure materials and serious
+    upgrades.
+  extractionStyle: High-risk extraction under thermal and survival pressure.
+  routeRewardLogic: One big target should justify the whole expedition.

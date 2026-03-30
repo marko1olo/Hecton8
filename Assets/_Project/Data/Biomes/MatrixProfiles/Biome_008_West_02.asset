@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 300
   shortDescription: Fractal tidal sediment patterns that change after every storm.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Common runs pay out in Silica Shards and Copper Ore.
+  rareRewardHook: 'Rare pull is modest: Electrolyte Salts and Sealant Pack.'
+  landmarkIdentity: Sand-Fan Deltas reads through dunes, plains, void cuts, and shape
+    changes in the floor. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims.
+    Creature pressure stays low_to_medium.'
+  extractionFocus: 'Broad sweep collection, light salvage, and scattered node stops.
+    Early tier: keep runs short and accept longer sweeps and weaker orientation during
+    gathering.'
+  landmarkGuidance: Dominant landmark is basin lip or dune crest line. This slot
+    should read through soft bowls and ripple seams; use silhouette changes to avoid
+    getting lost in soft terrain.
+  loosePickupBias: 5
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 4
+  uncommonResourceBias: 3
+  rareResourceBias: 2
+  routePressure: 2
+  landmarkStrength: 3
+  rewardPull: 3
+  survivalPressure: 1
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.sediment_drift
   familyProfile: {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}

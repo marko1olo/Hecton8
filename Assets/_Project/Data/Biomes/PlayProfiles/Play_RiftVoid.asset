@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_RiftVoid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.rift_void
+  profileLabel: Rift Void Play
+  whyPlayerComesHere: Void and final depth. You go here for major progress, not routine.
+  playerPromise: A final-pressure space where reward or progression should feel like
+    an event.
+  traversalRhythm: Very little routine, full concentration, expensive decisions.
+  routeClarity: 1
+  landmarkStrength: 5
+  safePocketFrequency: 1
+  commonResourceDensity: 1
+  salvageValue: 1
+  rareRewardPull: 5
+  encounterPressure: 5
+  hazardPressure: 5
+  expeditionCommitment: 5
+  cautionSummary: The player should come here with a clear purpose, not for convenience.

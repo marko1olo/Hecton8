@@ -21,6 +21,32 @@ MonoBehaviour:
   shortDescription: Serpentine channels full of ash drifts and the skeletons of surface
     life.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and work around bowls, pools, and local hotspots.
+  commonRewardHook: Common runs pay out in Sulfur Clumps and Thermal Gel.
+  rareRewardHook: 'Rare pull is modest: Tungsten Chunk and Cooling Cartridge.'
+  landmarkIdentity: Meander-Basins reads through bowls, pools, domes, and hotspot
+    basins. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins. Creature
+    pressure stays high.'
+  extractionFocus: 'Quick strike extraction from hot pockets with short exposure
+    windows. Early tier: keep runs short and expect basin pockets, salvage traps,
+    and local hotspots.'
+  landmarkGuidance: Dominant landmark is heat vent field or obsidian flow edge. This
+    slot should read through glass lip, vent mouth, or hot crack; use bowls and hotspot
+    rims to remember loops.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 3
+  commonResourceBias: 4
+  uncommonResourceBias: 4
+  rareResourceBias: 2
+  routePressure: 3
+  landmarkStrength: 4
+  rewardPull: 3
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.volcanic_glass
   familyProfile: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}

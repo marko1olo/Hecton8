@@ -21,6 +21,12 @@ MonoBehaviour:
   prefabFamily: progression.route.landmark
   familyProfile: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
   gameplayPurpose: Late-game frontier landmark and route goal.
+  biomeFitSummary: Best in extreme late spaces where the landmark itself is a promise
+    of major progress.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
   densityWeight: 0.85
   suggestedClusterCount: 1
   suggestedMinCount: 1

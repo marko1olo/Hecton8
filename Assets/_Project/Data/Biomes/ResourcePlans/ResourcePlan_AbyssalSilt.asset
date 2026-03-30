@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_AbyssalSilt
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.abyssal_silt
+  profileLabel: Abyssal Silt Resource Plan
+  commonResource: {fileID: 11400000, guid: f10189c61e17ea748bb6fc943e14d2ff, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  rareResource: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
+  signatureComponent: {fileID: 11400000, guid: c3851602fb54f504fbd62ea61e3c294a, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Not for early casual runs; mainly for deep support materials
+    and salvage.
+  lateReasonToReturn: Good for patient deep-sea refill runs when you need dense support
+    value.
+  extractionStyle: Sparse node hits and salvage pockets hidden in weak-visibility
+    terrain.
+  routeRewardLogic: Long quiet swims punctuated by one important find.

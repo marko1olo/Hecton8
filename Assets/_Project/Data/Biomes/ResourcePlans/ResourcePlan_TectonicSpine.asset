@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_TectonicSpine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.tectonic_spine
+  profileLabel: Tectonic Spine Resource Plan
+  commonResource: {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 59a14819e2557ec4a9c83015dc8dabca, type: 2}
+  rareResource: {fileID: 11400000, guid: f10189c61e17ea748bb6fc943e14d2ff, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 55af013acadda304f891e03a554e0b27, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Structural metals and route-defining materials for the first
+    real builds.
+  lateReasonToReturn: Strong transit biome for topping up serious construction stock.
+  extractionStyle: Targeted node work along long rock lines and exposed shelves.
+  routeRewardLogic: Read the spine, commit to one branch, then extract and leave.

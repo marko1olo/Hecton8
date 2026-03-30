@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_VolcanicGlass
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.volcanic_glass
+  profileLabel: Volcanic Glass Landmark Plan
+  dominantLandmarkRole: heat vent field or obsidian flow edge
+  nearReferenceShape: glass lip, vent mouth, or hot crack
+  midReferenceShape: flow channel and thermal chimney cluster
+  farReferenceShape: dark glass mass split by heat glow
+  routeUse: Player should track heat lines and know where a quick extraction lane
+    begins.
+  safePocketUse: Safe pockets are cool seams between hot structures, never broad
+    comfort zones.
+  emotionalRead: Sharp, risky, and high-value.

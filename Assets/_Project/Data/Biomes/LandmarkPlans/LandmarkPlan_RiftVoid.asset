@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: LandmarkPlan_RiftVoid
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  profileId: biome.landmark_plan.rift_void
+  profileLabel: Rift Void Landmark Plan
+  dominantLandmarkRole: the final shaft or void cut
+  nearReferenceShape: broken edge and impossible drop
+  midReferenceShape: void-rim terraces and black pressure cuts
+  farReferenceShape: a singular abyssal absence in the world
+  routeUse: Player should know this place by one unforgettable final landmark.
+  safePocketUse: Safe pockets are almost conceptual; discipline matters more than
+    cover.
+  emotionalRead: Final, severe, and unforgettable.

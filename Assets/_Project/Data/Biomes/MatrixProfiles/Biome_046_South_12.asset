@@ -22,6 +22,32 @@ MonoBehaviour:
     expects a bespoke authored identity here; final lore and geology are pending
     expansion from the master vision.
   isPlaceholder: 1
+  visitPurpose: Abyss biome. Come here for specialized runs, rarer materials, and
+    work around bowls, pools, and local hotspots.
+  commonRewardHook: Reliable value comes from Iron Composite and Electrolyte Salts.
+  rareRewardHook: 'The rare pull is real: Rare Earth Dust and Stabilizer Coil.'
+  landmarkIdentity: Tier 12 South Reserve reads through bowls, pools, domes, and
+    hotspot basins. Landmarks should feel scarce but memorable.
+  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+    nook, not constant cover.
+  riskSummary: 'Main failure mode: localized danger pockets and hostile basins, then
+    overstaying for loot. Creature pressure stays medium_to_high.'
+  extractionFocus: 'Sparse node hits and salvage pockets hidden in weak-visibility
+    terrain. Mid-depth: expect basin pockets, salvage traps, and local hotspots,
+    then return before greed stretches the route.'
+  landmarkGuidance: Dominant landmark is rare mound, trench lip, or wreck rise. This
+    slot should read through single trench mouth or silt catacomb seam; use bowls
+    and hotspot rims to remember loops.
+  loosePickupBias: 3
+  nodeExtractionBias: 3
+  salvageBias: 3
+  commonResourceBias: 3
+  uncommonResourceBias: 4
+  rareResourceBias: 3
+  routePressure: 5
+  landmarkStrength: 2
+  rewardPull: 3
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.abyssal_silt
   familyProfile: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}

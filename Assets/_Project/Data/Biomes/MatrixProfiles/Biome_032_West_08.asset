@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 3000
   shortDescription: Funnel sinkholes centered in every silt wave.
   isPlaceholder: 0
+  visitPurpose: Transition biome. Come here to push deeper, find better materials,
+    and keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Reliable value comes from Silica Shards and Copper Ore.
+  rareRewardHook: 'The rare pull is real: Electrolyte Salts and Sealant Pack.'
+  landmarkIdentity: Dune-Drains reads through dunes, plains, void cuts, and shape
+    changes in the floor. Landmarks should feel large and route-defining.
+  safePocketIdentity: Safe pockets exist, but they must be earned by reading the
+    terrain.
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
+    then overstaying for loot. Creature pressure stays low_to_medium.'
+  extractionFocus: 'Broad sweep collection, light salvage, and scattered node stops.
+    Mid-depth: accept longer sweeps and weaker orientation during gathering, then
+    return before greed stretches the route.'
+  landmarkGuidance: Dominant landmark is basin lip or dune crest line. This slot
+    should read through fan-shaped sediment flows; use silhouette changes to avoid
+    getting lost in soft terrain.
+  loosePickupBias: 4
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 3
+  landmarkStrength: 3
+  rewardPull: 4
+  survivalPressure: 2
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.sediment_drift
   familyProfile: {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}

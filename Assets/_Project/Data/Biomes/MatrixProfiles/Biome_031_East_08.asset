@@ -20,6 +20,31 @@ MonoBehaviour:
   maxDepthMeters: 3000
   shortDescription: Predatory ridge-fins like giant teeth in the dark.
   isPlaceholder: 0
+  visitPurpose: Transition biome. Come here to push deeper, find better materials,
+    and read walls, fissures, and major vertical routes.
+  commonRewardHook: Reliable value comes from Copper Ore and Cobalt Alloy.
+  rareRewardHook: 'The rare pull is real: Iron Composite and Copper Wire.'
+  landmarkIdentity: Spine-Teeth reads through walls, fins, fissures, and giant vertical
+    breaks. Landmarks should feel large and route-defining.
+  safePocketIdentity: Safe pockets live behind slab cover and under wall breaks.
+  riskSummary: 'Main failure mode: vertical trap geometry and hard commitment, then
+    overstaying for loot. Creature pressure stays medium.'
+  extractionFocus: 'Targeted node work along long rock lines and exposed shelves.
+    Mid-depth: work edges, cracks, and vertical seams, then return before greed stretches
+    the route.'
+  landmarkGuidance: Dominant landmark is main ridge line. This slot should read through
+    parallel ridge family and stepped breaks; use walls and breaks to mark route
+    commitment.
+  loosePickupBias: 3
+  nodeExtractionBias: 3
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 3
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 4
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.tectonic_spine
   familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}

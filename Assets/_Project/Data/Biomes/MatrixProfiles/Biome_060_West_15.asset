@@ -20,6 +20,34 @@ MonoBehaviour:
   maxDepthMeters: 6650
   shortDescription: Flat dark plains that swallow almost all light.
   isPlaceholder: 0
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to keep orientation in soft terrain and hunt hidden value.
+  commonRewardHook: Even routine value here comes from Iron Composite and Copper
+    Ore.
+  rareRewardHook: 'The reason to risk the trip is: Titanium Scrap and Structural
+    Bracket.'
+  landmarkIdentity: The Silt Shadows reads through dunes, plains, void cuts, and
+    shape changes in the floor. Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
+    depth stress, and expensive hesitation. Creature pressure stays medium.'
+  extractionFocus: 'Pocket mining along walls and ledges with careful positioning.
+    Deep tier: accept longer sweeps and weaker orientation during gathering, extract
+    only what justifies the risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is wall face or cliff step. This slot should
+    read through giant escarpment edge slicing the horizon; use silhouette changes
+    to avoid getting lost in soft terrain.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 4
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.granite_escarpment
   familyProfile: {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}

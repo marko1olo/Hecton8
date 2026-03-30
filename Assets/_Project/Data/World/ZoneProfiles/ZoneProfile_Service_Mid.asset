@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b679426c4efc41f4184a354212d6ea88, type: 3}
+  m_Name: ZoneProfile_Service_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZoneProfile
+  profileId: profile.service.mid
+  profileLabel: Service Mid
+  scavengeRadiusScale: 1.04
+  spawnScale: 1.02
+  colliderRadiusScale: 1.1
+  colliderOpsScale: 1.1
+  sliceNearScale: 1.06
+  sliceMidScale: 1.14
+  nearInteractiveFamily: service.targets.near
+  midVisualFamily: service.frames.mid
+  farSilhouetteFamily: service.route.far
+  nearInteractiveProfile: {fileID: 11400000, guid: a5750c13273c62749b8a286a98aad320, type: 2}
+  midVisualProfile: {fileID: 11400000, guid: ca50117563d256a48a9990e419d5e307, type: 2}
+  farSilhouetteProfile: {fileID: 11400000, guid: 93612d16b4b65b643bffa1454664cd4d, type: 2}
+  zonePlanProfile: {fileID: 11400000, guid: 26b62cf3bea27eb4196a7497154fa4b2, type: 2}

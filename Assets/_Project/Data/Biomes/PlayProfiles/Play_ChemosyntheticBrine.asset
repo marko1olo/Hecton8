@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_ChemosyntheticBrine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.chemosynthetic_brine
+  profileLabel: Chemosynthetic Brine Play
+  whyPlayerComesHere: Pockets of valuable chemistry and dangerous local hotspots.
+  playerPromise: The biome alternates empty travel with very valuable active pockets.
+  traversalRhythm: Find pocket, do a short risky harvest, move on.
+  routeClarity: 2
+  landmarkStrength: 4
+  safePocketFrequency: 2
+  commonResourceDensity: 3
+  salvageValue: 3
+  rareRewardPull: 4
+  encounterPressure: 4
+  hazardPressure: 4
+  expeditionCommitment: 4
+  cautionSummary: Danger here is not constant; it is concentrated in hotspots.

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101846838fdb124469e67e626506f142, type: 3}
+  m_Name: Play_FossilReef
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
+  profileId: biome.play.fossil_reef
+  profileLabel: Fossil Reef Play
+  whyPlayerComesHere: Dense life, organics, and beautiful but risky reef navigation.
+  playerPromise: Good reward biome with constant chance to disturb something dangerous.
+  traversalRhythm: Slow inspection of reef pockets with repeated greed-versus-safety
+    choices.
+  routeClarity: 3
+  landmarkStrength: 4
+  safePocketFrequency: 3
+  commonResourceDensity: 4
+  salvageValue: 3
+  rareRewardPull: 3
+  encounterPressure: 3
+  hazardPressure: 3
+  expeditionCommitment: 3
+  cautionSummary: The reef pays well but punishes deep commitment into porous clusters.

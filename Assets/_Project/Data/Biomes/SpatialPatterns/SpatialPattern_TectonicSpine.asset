@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_TectonicSpine
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.tectonic_spine
+  profileLabel: Tectonic Spine Spatial Pattern
+  resourcePocketPattern: Resource pockets ride the protected side of ridges and the
+    short shelves between hard turns.
+  nodeClusterPattern: Node clusters appear on spine seams and exposed ridge cuts,
+    often in a line rather than a blob.
+  safePocketPattern: 'Safe pockets are rare but strong: the correct side of a ridge,
+    a fracture bend, a protected step.'
+  routeAnchorPattern: The route is the ridge. If the player loses the spine, they
+    should feel it immediately.
+  rareObjectivePattern: Rare value is farther along the same line, behind one more
+    exposed step or sharper bend.
+  explorationLoop: Pick a spine, move with intent, harvest the protected side, then
+    decide whether the next exposed turn is worth it.
+  spatialRead: Directional and disciplined. The terrain should teach commitment.
+  playerMemoryHook: Remember the place by one dominant ridge and how it splits or
+    bends.

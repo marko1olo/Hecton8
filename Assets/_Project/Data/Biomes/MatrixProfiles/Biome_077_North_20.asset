@@ -20,6 +20,34 @@ MonoBehaviour:
   maxDepthMeters: 9275
   shortDescription: Deep ash deposits that storm when disturbed.
   isPlaceholder: 0
+  visitPurpose: Deep-pressure biome. Come here with purpose, stronger gear, and a
+    plan to follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Even routine value here comes from Abyssal Crystal and Thermal
+    Gel.
+  rareRewardHook: 'The reason to risk the trip is: Tungsten Chunk and Abyss Pressure
+    Shell.'
+  landmarkIdentity: The Ash-Wastes reads through spires, steps, and big natural crowns.
+    Landmarks should feel scarce but memorable.
+  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+    side, a bowl edge, a dead current seam.'
+  riskSummary: 'Main failure mode: bad drops and exposed lines, depth stress, and
+    expensive hesitation. Creature pressure stays extreme.'
+  extractionFocus: 'High-risk extraction under thermal and survival pressure. Deep
+    tier: favor stone pockets and hard-form nodes, extract only what justifies the
+    risk, and leave cleanly.'
+  landmarkGuidance: Dominant landmark is magma seam or hadal chimney crown. This
+    slot should read through red-black catastrophic skyline; use vertical forms to
+    keep heading.
+  loosePickupBias: 2
+  nodeExtractionBias: 5
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 4
+  routePressure: 5
+  landmarkStrength: 5
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.volcanic_hadal
   familyProfile: {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}

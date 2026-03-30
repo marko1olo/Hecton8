@@ -21,6 +21,12 @@ MonoBehaviour:
   prefabFamily: navigation.marker.chain
   familyProfile: {fileID: 11400000, guid: 5f51b21b64a0a1043aad5da5f411cbc8, type: 2}
   gameplayPurpose: Readable route markers and frontier guides.
+  biomeFitSummary: Best in spaces where the terrain itself teaches route memory and
+    branch choice.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  - {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
   densityWeight: 0.9
   suggestedClusterCount: 3
   suggestedMinCount: 2

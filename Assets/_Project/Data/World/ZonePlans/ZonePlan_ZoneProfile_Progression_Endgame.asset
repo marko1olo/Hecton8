@@ -32,3 +32,57 @@ MonoBehaviour:
   heroFamily: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
   gameplaySummary: Late-game chain that mixes hazard, recovery, combat pressure,
     and route landmarks.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: 40c7f61a75da67547a28c8dbafa534f3, type: 2}
+    relation: 2
+    preferredSlice: 2
+    targetCount: 1
+    usage: A rare breathing point before another hard push.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Not a major role for this zone.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Not a major role for this zone.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: 477ab9fe371e55b47bb8e2e7193d9bc5, type: 2}
+    relation: 4
+    preferredSlice: 2
+    targetCount: 1
+    usage: A maintenance problem that reinforces route pressure.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: f88f3d620445dee42aac5fbb53621069, type: 2}
+    relation: 0
+    preferredSlice: 1
+    targetCount: 2
+    usage: The last trustworthy anchor before escalation.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: 712da05c5df381342908a46ebfa92d60, type: 2}
+    relation: 6
+    preferredSlice: 1
+    targetCount: 1
+    usage: The clear threshold into expensive late-game risk.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: 27fb6bc3515848b41b4828d38685125b, type: 2}
+    relation: 7
+    preferredSlice: 1
+    targetCount: 1
+    usage: The major pull that makes the dangerous route worth taking.

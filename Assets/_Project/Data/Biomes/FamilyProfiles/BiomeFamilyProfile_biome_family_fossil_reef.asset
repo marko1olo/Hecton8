@@ -15,15 +15,15 @@ MonoBehaviour:
   familyId: biome.family.fossil_reef
   familyLabel: Fossil Reef
   debugColor: {r: 0.72, g: 0.82, b: 0.74, a: 1}
-  geologicalIdentity: "\u041F\u043E\u0440\u0438\u0441\u0442\u044B\u0435 \u0440\u0438\u0444\u044B,
-    \u043A\u043E\u0440\u0430\u043B\u043B\u043E\u0432\u044B\u0435 \u0441\u0442\u0435\u043D\u044B
-    \u0438 \u043E\u0440\u0433\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0435
-    \u043A\u0430\u0440\u043C\u0430\u043D\u044B \u0432 \u043A\u0430\u043C\u043D\u0435."
-  gameplayIdentity: "\u0414\u0430\u0451\u0442 \u043E\u0440\u0433\u0430\u043D\u0438\u043A\u0443,
-    \u0443\u043A\u0440\u044B\u0442\u0438\u044F, \u043D\u043E\u0440\u044B \u0438 \u0445\u043E\u0440\u043E\u0448\u0443\u044E
-    \u043F\u0430\u043C\u044F\u0442\u044C \u043C\u0435\u0441\u0442\u0430 \u0431\u0435\u0437
-    \u043F\u0440\u044F\u043C\u043E\u0439 \u0430\u0433\u0440\u0435\u0441\u0441\u0438\u0438
-    \u043C\u0438\u0440\u0430."
+  geologicalIdentity: "\xD0\u0178\xD0\xBE\xD1\u20AC\xD0\xB8\xD1\x81\xD1\u201A\xD1\u2039\xD0\xB5
+    \xD1\u20AC\xD0\xB8\xD1\u201E\xD1\u2039, \xD0\xBA\xD0\xBE\xD1\u20AC\xD0\xB0\xD0\xBB\xD0\xBB\xD0\xBE\xD0\xB2\xD1\u2039\xD0\xB5
+    \xD1\x81\xD1\u201A\xD0\xB5\xD0\xBD\xD1\u2039 \xD0\xB8 \xD0\xBE\xD1\u20AC\xD0\xB3\xD0\xB0\xD0\xBD\xD0\xB8\xD1\u2021\xD0\xB5\xD1\x81\xD0\xBA\xD0\xB8\xD0\xB5
+    \xD0\xBA\xD0\xB0\xD1\u20AC\xD0\xBC\xD0\xB0\xD0\xBD\xD1\u2039 \xD0\xB2 \xD0\xBA\xD0\xB0\xD0\xBC\xD0\xBD\xD0\xB5."
+  gameplayIdentity: "\xD0\u201D\xD0\xB0\xD1\u2018\xD1\u201A \xD0\xBE\xD1\u20AC\xD0\xB3\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xBA\xD1\u0192,
+    \xD1\u0192\xD0\xBA\xD1\u20AC\xD1\u2039\xD1\u201A\xD0\xB8\xD1\x8F, \xD0\xBD\xD0\xBE\xD1\u20AC\xD1\u2039
+    \xD0\xB8 \xD1\u2026\xD0\xBE\xD1\u20AC\xD0\xBE\xD1\u02C6\xD1\u0192\xD1\u017D \xD0\xBF\xD0\xB0\xD0\xBC\xD1\x8F\xD1\u201A\xD1\u0152
+    \xD0\xBC\xD0\xB5\xD1\x81\xD1\u201A\xD0\xB0 \xD0\xB1\xD0\xB5\xD0\xB7 \xD0\xBF\xD1\u20AC\xD1\x8F\xD0\xBC\xD0\xBE\xD0\xB9
+    \xD0\xB0\xD0\xB3\xD1\u20AC\xD0\xB5\xD1\x81\xD1\x81\xD0\xB8\xD0\xB8 \xD0\xBC\xD0\xB8\xD1\u20AC\xD0\xB0."
   atmosphereMood: organic_murmur
   navigationStyle: honeycomb_paths
   hazardStyle: ambush_and_maze
@@ -36,8 +36,13 @@ MonoBehaviour:
   secondaryResource: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
   tertiaryResource: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}
   signatureComponent: {fileID: 11400000, guid: 426d6d99d427e244da3b178b46aa95ec, type: 2}
+  resourcePlanProfile: {fileID: 11400000, guid: cc9f8cdf9bb512f46b1e661e96383393, type: 2}
+  landmarkPlanProfile: {fileID: 11400000, guid: 3e01ab8cfd39f8945a6da16c17c3043e, type: 2}
+  spatialPatternProfile: {fileID: 11400000, guid: 0c6e49145b1dc644585ec08f75030f96, type: 2}
   atmosphereProfile: {fileID: 11400000, guid: efa5bafb9f032f742a04feafe93d8b85, type: 2}
   faunaFamilyProfile: {fileID: 11400000, guid: e6f8e9656eef89946a0fc00ac0d9ec33, type: 2}
+  recommendedLoadoutPreset: {fileID: 11400000, guid: 9f4fc749b6c0fa2488c4a25f4dd58516, type: 2}
+  playProfile: {fileID: 11400000, guid: 389befd64ffa05e4b9933c98ac89064e, type: 2}
   nearInteractiveFamily: {fileID: 11400000, guid: 89b0a6d958451ba47be1145df0460b18, type: 2}
   midVisualFamily: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
   farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}

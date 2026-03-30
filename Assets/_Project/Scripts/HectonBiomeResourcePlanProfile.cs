@@ -16,6 +16,14 @@ namespace Hecton8.Environment
         public ItemData rareResource;
         public ItemData signatureComponent;
 
+        [Header("Weighting")]
+        [Range(1, 5)] public int loosePickupWeight = 3;
+        [Range(1, 5)] public int nodeExtractionWeight = 3;
+        [Range(1, 5)] public int salvageRecoveryWeight = 2;
+        [Range(1, 5)] public int commonResourcePull = 3;
+        [Range(1, 5)] public int uncommonResourcePull = 3;
+        [Range(1, 5)] public int rareResourcePull = 3;
+
         [Header("Player Pull")]
         [TextArea(2, 4)] public string earlyReasonToFarm = "General field farming.";
         [TextArea(2, 4)] public string lateReasonToReturn = "General late return value.";

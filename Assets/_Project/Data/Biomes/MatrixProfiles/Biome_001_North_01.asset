@@ -21,6 +21,31 @@ MonoBehaviour:
   shortDescription: Razor-sharp limestone spires rising from the surf. Wind-eroded
     bird-nesting pillars with salt-crusted peaks.
   isPlaceholder: 0
+  visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
+    and follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Common runs pay out in Titanium Scrap and Silica Shards.
+  rareRewardHook: 'Rare pull is modest: Fiber Kelp and Glass Panel.'
+  landmarkIdentity: Archipelago Needles reads through spires, steps, and big natural
+    crowns. Landmarks should feel bright and readable.
+  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+    reset point nearby.
+  riskSummary: 'Main failure mode: bad drops and exposed lines. Creature pressure
+    stays low.'
+  extractionFocus: 'Loose pickup fields and readable shallow mineral nodes. Early
+    tier: keep runs short and favor stone pockets and hard-form nodes.'
+  landmarkGuidance: Dominant landmark is karst arch or sea-stack crown. This slot
+    should read through small limestone teeth and arch feet; use vertical forms to
+    keep heading.
+  loosePickupBias: 4
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 4
+  uncommonResourceBias: 3
+  rareResourceBias: 2
+  routePressure: 1
+  landmarkStrength: 5
+  rewardPull: 3
+  survivalPressure: 1
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.littoral_karst
   familyProfile: {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}

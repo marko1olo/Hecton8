@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_RiftSpine
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.rift_spine
+  profileLabel: Rift Spine Spatial Pattern
+  resourcePocketPattern: Small reward pockets ride the fracture edges and tempt players
+    off the safest line.
+  nodeClusterPattern: Clusters sit at gate-like breaks, fracture mouths, and offset
+    slab intersections.
+  safePocketPattern: Safe pockets are side cuts and bends off the main fracture,
+    never broad open rooms.
+  routeAnchorPattern: The route is a sequence of fracture mouths. Each one is both
+    a landmark and a decision.
+  rareObjectivePattern: The rare target is one fracture deeper than feels comfortable,
+    but clearly foreshadowed.
+  explorationLoop: Take one gate, secure one bend, choose whether to spend pressure
+    for the next mouth.
+  spatialRead: Tight and committed. The player should feel the cost of each branch.
+  playerMemoryHook: Remember the place by the fracture mouth where the route changed
+    character.

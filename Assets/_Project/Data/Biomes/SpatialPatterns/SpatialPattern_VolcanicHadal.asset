@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpatialPattern_VolcanicHadal
+  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeSpatialPatternProfile
+  profileId: biome.spatial_pattern.volcanic_hadal
+  profileLabel: Volcanic Hadal Spatial Pattern
+  resourcePocketPattern: Routine pockets barely matter here; the biome should not
+    encourage casual sweeping.
+  nodeClusterPattern: Important extraction sits around furnace-scale structures and
+    late-game thermal crowns.
+  safePocketPattern: Safe pockets exist only as short relief zones outside catastrophic
+    heat lines.
+  routeAnchorPattern: One huge heat landmark should define the mission path more
+    than a chain of small anchors.
+  rareObjectivePattern: One major reward target should justify the entire expedition.
+  explorationLoop: Approach with purpose, stabilize once, take the high-value window,
+    and leave before greed wins.
+  spatialRead: Extreme. Every big form should feel consequential.
+  playerMemoryHook: Remember the place by the one furnace-scale landmark that dominated
+    the run.

@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b045ecf728f96244b0fbae755546080, type: 3}
+  m_Name: ZonePlan_ZoneProfile_Service_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZonePlanProfile
+  planId: plan.profile.service.mid
+  planLabel: Service Mid Plan
+  nearPlan:
+    primaryFamily: {fileID: 11400000, guid: a5750c13273c62749b8a286a98aad320, type: 2}
+    supportFamily: {fileID: 0}
+    targetDensity: 6
+    usage: 'near: generic world composition.'
+  midPlan:
+    primaryFamily: {fileID: 11400000, guid: ca50117563d256a48a9990e419d5e307, type: 2}
+    supportFamily: {fileID: 0}
+    targetDensity: 4
+    usage: 'mid: generic world composition.'
+  farPlan:
+    primaryFamily: {fileID: 11400000, guid: 93612d16b4b65b643bffa1454664cd4d, type: 2}
+    supportFamily: {fileID: 0}
+    targetDensity: 2
+    usage: 'far: generic world composition.'
+  heroFamily: {fileID: 0}
+  gameplaySummary: Generic world zone plan.
+  resourcePocketPlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Generic role plan.
+  nodeClusterPlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Generic role plan.
+  safePocketPlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Generic role plan.
+  buildSocketPlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Generic role plan.
+  powerSpinePlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Generic role plan.
+  serviceChokePlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Generic role plan.
+  routeAnchorPlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Generic role plan.
+  hazardGatePlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 2
+    targetCount: 0
+    usage: Generic role plan.
+  rareObjectivePlan:
+    family: {fileID: 11400000, guid: a73f2a67865150d4d988182842c321ff, type: 2}
+    relation: 3
+    preferredSlice: 1
+    targetCount: 0
+    usage: Generic role plan.

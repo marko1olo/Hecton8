@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b744e5caae05eb645835e7130c51b0d1, type: 3}
+  m_Name: ResourcePlan_FossilReef
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
+  profileId: biome.resource_plan.fossil_reef
+  profileLabel: Fossil Reef Resource Plan
+  commonResource: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  uncommonResource: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
+  rareResource: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}
+  signatureComponent: {fileID: 11400000, guid: 426d6d99d427e244da3b178b46aa95ec, type: 2}
+  loosePickupWeight: 3
+  nodeExtractionWeight: 3
+  salvageRecoveryWeight: 2
+  commonResourcePull: 3
+  uncommonResourcePull: 3
+  rareResourcePull: 3
+  earlyReasonToFarm: Organic growth, useful chemistry, and medium-risk salvage.
+  lateReasonToReturn: Still worth revisiting for craft organics and niche biological
+    parts.
+  extractionStyle: Mixed salvage, harvest pockets, and risky reef-node peels.
+  routeRewardLogic: Reward hides inside beautiful clusters that can also trap you.

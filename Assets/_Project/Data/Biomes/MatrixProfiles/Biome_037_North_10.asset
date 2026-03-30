@@ -20,6 +20,32 @@ MonoBehaviour:
   maxDepthMeters: 4025
   shortDescription: Spongy cones venting constant methane bubbles.
   isPlaceholder: 0
+  visitPurpose: Abyss biome. Come here for specialized runs, rarer materials, and
+    follow strong natural shapes and search obvious pockets.
+  commonRewardHook: Reliable value comes from Electrolyte Salts and Hydrocarbon Resin.
+  rareRewardHook: 'The rare pull is real: Sulfur Clumps and Pump Rotor.'
+  landmarkIdentity: Methane Mounds reads through spires, steps, and big natural crowns.
+    Landmarks should feel scarce but memorable.
+  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+    nook, not constant cover.
+  riskSummary: 'Main failure mode: bad drops and exposed lines, then overstaying
+    for loot. Creature pressure stays high.'
+  extractionFocus: 'Harvest concentrated hotspots, then move before the zone punishes
+    greed. Mid-depth: favor stone pockets and hard-form nodes, then return before
+    greed stretches the route.'
+  landmarkGuidance: Dominant landmark is brine bowl or vent pocket. This slot should
+    read through brine pool chain and active vent arc; use vertical forms to keep
+    heading.
+  loosePickupBias: 3
+  nodeExtractionBias: 4
+  salvageBias: 2
+  commonResourceBias: 3
+  uncommonResourceBias: 3
+  rareResourceBias: 3
+  routePressure: 5
+  landmarkStrength: 4
+  rewardPull: 5
+  survivalPressure: 5
   runtimeVisualProfile: {fileID: 0}
   familyId: biome.family.chemosynthetic_brine
   familyProfile: {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
