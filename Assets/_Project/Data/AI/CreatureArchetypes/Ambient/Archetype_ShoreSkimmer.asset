@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.CreatureArchetypeData
   creatureId: creature.ambient.shore_skimmer
   displayName: Shore Skimmer
-  gameplayPurpose: "\xD0\u0153\xD0\xB5\xD0\xBB\xD0\xBA\xD0\xB0\xD1\x8F \xD1\x81\xD1\u201A\xD0\xB0\xD0\xB9\xD0\xBD\xD0\xB0\xD1\x8F
-    \xD0\xB6\xD0\xB8\xD0\xB7\xD0\xBD\xD1\u0152 \xD1\x81\xD0\xBF\xD0\xBE\xD0\xBA\xD0\xBE\xD0\xB9\xD0\xBD\xD0\xBE\xD0\xB9
-    \xD0\xB2\xD0\xBE\xD0\xB4\xD1\u2039."
+  gameplayPurpose: "\u041C\u0435\u043B\u043A\u0430\u044F \u0441\u0442\u0430\u0439\u043D\u0430\u044F
+    \u0436\u0438\u0437\u043D\u044C \u0441\u043F\u043E\u043A\u043E\u0439\u043D\u043E\u0439
+    \u0432\u043E\u0434\u044B."
   roleType: 0
   locomotionType: 0
   isAggressive: 0
@@ -82,10 +82,9 @@ MonoBehaviour:
   spawnWeight: 18
   prefab: {fileID: 676815894980492824, guid: 54d26ac0f761ade449ffd3811fbe2620, type: 3}
   lootProfileId: 
-  biomeNotes: "\xD0\u201D\xD0\xB0\xD1\u2018\xD1\u201A \xD0\xB6\xD0\xB8\xD0\xB2\xD0\xBE\xD0\xB9
-    \xD1\u201E\xD0\xBE\xD0\xBD \xD1\u0192 \xD0\xBF\xD0\xBE\xD0\xB2\xD0\xB5\xD1\u20AC\xD1\u2026\xD0\xBD\xD0\xBE\xD1\x81\xD1\u201A\xD0\xB8
-    \xD0\xB8 \xD0\xB2 \xD1\x81\xD0\xBF\xD0\xBE\xD0\xBA\xD0\xBE\xD0\xB9\xD0\xBD\xD1\u2039\xD1\u2026
-    \xD0\xB0\xD1\u20AC\xD0\xBA\xD0\xB0\xD1\u2026."
+  biomeNotes: "\u0414\u0430\u0451\u0442 \u0436\u0438\u0432\u043E\u0439 \u0444\u043E\u043D
+    \u0443 \u043F\u043E\u0432\u0435\u0440\u0445\u043D\u043E\u0441\u0442\u0438 \u0438
+    \u0432 \u0441\u043F\u043E\u043A\u043E\u0439\u043D\u044B\u0445 \u0430\u0440\u043A\u0430\u0445."
   recommendedFaunaFamilyIds:
   - fauna.family.littoral_passive
   - fauna.family.reef_ambush

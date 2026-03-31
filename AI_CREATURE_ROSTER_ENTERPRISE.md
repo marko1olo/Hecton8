@@ -11,48 +11,48 @@
 ### Shore Skimmer
 
 - `ID`: `creature.ambient.shore_skimmer`
-- `Зачем нужен`: ÐœÐµÐ»ÐºÐ°Ñ ÑÑ‚Ð°Ð¹Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.
-- `Суть`: Ð”Ð°Ñ‘Ñ‚ Ð¶Ð¸Ð²Ð¾Ð¹ Ñ„Ð¾Ð½ Ñƒ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ð¸ Ð² ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ñ‹Ñ… Ð°Ñ€ÐºÐ°Ñ….
+- `Зачем нужен`: Мелкая стайная жизнь спокойной воды.
+- `Суть`: Даёт живой фон у поверхности и в спокойных арках.
 - `Подходит для`: fauna.family.littoral_passive, fauna.family.reef_ambush
 - `Биомы`: biome.family.littoral_karst, biome.family.fossil_reef
 
 ### Kelp Raylet
 
 - `ID`: `creature.ambient.kelp_raylet`
-- `Зачем нужен`: ÐœÐ¸Ñ€Ð½Ð°Ñ ÑˆÐ¸Ñ€Ð¾ÐºÐ°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÑ€ÐºÐ¸Ñ… Ð·Ð°Ñ€Ð¾ÑÐ»ÐµÐ¹ Ð¸ Ñ€Ð¸Ñ„Ð¾Ð².
-- `Суть`: Ð”Ð°Ñ‘Ñ‚ Ð¼ÑÐ³ÐºÑƒÑŽ ÐºÑ€ÑƒÐ¿Ð½ÑƒÑŽ Ð¶Ð¸Ð·Ð½ÑŒ Ñ‚Ð°Ð¼, Ð³Ð´Ðµ Ð¼Ð¸Ñ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ ÐºÐ°Ð·Ð°Ñ‚ÑŒÑÑ Ð±Ð¾Ð³Ð°Ñ‚Ñ‹Ð¼, Ð° Ð½Ðµ Ð±Ð¾ÐµÐ²Ñ‹Ð¼.
+- `Зачем нужен`: Мирная широкая жизнь ярких зарослей и рифов.
+- `Суть`: Даёт мягкую крупную жизнь там, где мир должен казаться богатым, а не боевым.
 - `Подходит для`: fauna.family.littoral_passive, fauna.family.crystal_skittish
 - `Биомы`: biome.family.fossil_reef, biome.family.crystal_growth
 
 ### Silt Drifter
 
 - `ID`: `creature.ambient.silt_drifter`
-- `Зачем нужен`: Ð”Ð¾Ð½Ð½Ñ‹Ð¹ Ð¼Ð¸Ñ€Ð½Ñ‹Ð¹ ÑÐ±Ð¾Ñ€Ñ‰Ð¸Ðº Ð¾ÑÐ°Ð´Ð¾Ñ‡Ð½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.
-- `Суть`: Ð”ÐµÐ»Ð°ÐµÑ‚ Ñ€ÐµÑÑƒÑ€ÑÐ½ÑƒÑŽ Ð²Ð¾Ð´Ñƒ Ð¶Ð¸Ð²Ð¾Ð¹, Ð½Ð¾ Ð½Ðµ Ð°Ð³Ñ€ÐµÑÑÐ¸Ð²Ð½Ð¾Ð¹.
+- `Зачем нужен`: Донный мирный сборщик осадочной воды.
+- `Суть`: Делает ресурсную воду живой, но не агрессивной.
 - `Подходит для`: fauna.family.sediment_scavengers, fauna.family.abyssal_sparse
 - `Биомы`: biome.family.sediment_drift, biome.family.abyssal_silt, biome.family.granite_escarpment
 
 ### Wall Glider
 
 - `ID`: `creature.ambient.wall_glider`
-- `Зачем нужен`: ÐœÐ¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÑ‚ÐµÐ½, ÑƒÑÑ‚ÑƒÐ¿Ð¾Ð² Ð¸ Ð³Ñ€ÐµÐ±Ð½ÐµÐ¹.
-- `Суть`: Ð”ÐµÐ»Ð°ÐµÑ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ñ‹ Ð²Ð´Ð¾Ð»ÑŒ ÑÑ‚ÐµÐ½ Ð¶Ð¸Ð²Ñ‹Ð¼Ð¸ Ð¸ ÑÐ¸Ñ‚Ð°ÐµÐ¼Ñ‹Ð¼Ð¸.
+- `Зачем нужен`: Мирная жизнь стен, уступов и гребней.
+- `Суть`: Делает маршруты вдоль стен живыми и читаемыми.
 - `Подходит для`: fauna.family.escarpment_watchers, fauna.family.ridge_hunters
 - `Биомы`: biome.family.granite_escarpment, biome.family.rift_spine
 
 ### Brine Siphoner
 
 - `ID`: `creature.ambient.brine_siphoner`
-- `Зачем нужен`: Ð¡Ñ‚Ñ€Ð°Ð½Ð½Ð°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ñ… ÐºÐ°Ñ€Ð¼Ð°Ð½Ð¾Ð² Ð¸ Ð²ÐµÐ½Ñ‚Ð¾Ð².
-- `Суть`: ÐÑƒÐ¶ÐµÐ½, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ñ‚Ð¾ÐºÑÐ¸Ñ‡Ð½Ð°Ñ Ð¸ ÑÐµÑ€Ð²Ð¸ÑÐ½Ð°Ñ Ð²Ð¾Ð´Ð° Ð½Ðµ Ð±Ñ‹Ð»Ð° Ð¼Ñ‘Ñ€Ñ‚Ð²Ð¾Ð¹.
+- `Зачем нужен`: Странная мирная жизнь химических карманов и вентов.
+- `Суть`: Нужен, чтобы токсичная и сервисная вода не была мёртвой.
 - `Подходит для`: fauna.family.chemical_specialists, fauna.family.thermal_hostile
 - `Биомы`: biome.family.chemosynthetic_brine, biome.family.tectonic_spine, biome.family.volcanic_glass
 
 ### Lantern Sifter
 
 - `ID`: `creature.ambient.lantern_sifter`
-- `Зачем нужен`: Ð ÐµÐ´ÐºÐ°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¾Ð¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.
-- `Суть`: Ð”Ð°Ñ‘Ñ‚ Ð¾Ñ‰ÑƒÑ‰ÐµÐ½Ð¸Ðµ Ñ€ÐµÐ´ÐºÐ¾Ð¹ Ð¶Ð¸Ð·Ð½Ð¸ Ð´Ð°Ð¶Ðµ Ð² Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ðµ.
+- `Зачем нужен`: Редкая мирная жизнь открытой глубины.
+- `Суть`: Даёт ощущение редкой жизни даже в поздней пустоте.
 - `Подходит для`: fauna.family.abyssal_sparse, fauna.family.hadal_apex
 - `Биомы`: biome.family.abyssal_silt, biome.family.metallic_hadal, biome.family.rift_void
 

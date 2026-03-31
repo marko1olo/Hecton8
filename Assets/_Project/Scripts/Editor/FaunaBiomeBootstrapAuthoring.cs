@@ -99,6 +99,8 @@ namespace Hecton8.AI.Editor
 
         private static int ResolveBiomeMaxCreatures(HectonBiomeMatrixProfile profile)
         {
+            if (IsMassiveSurfaceSetpiece(profile))
+                return profile.faunaMood == WorldProceduralFaunaMood.Lively ? 15 : 13;
             if (IsCalmFamily(profile.familyId))
                 return profile.faunaMood == WorldProceduralFaunaMood.Lively ? 14 : 12;
             if (IsResourceFriendlyFamily(profile.familyId))
@@ -134,6 +136,8 @@ namespace Hecton8.AI.Editor
 
         private static int ResolveAmbientTarget(HectonBiomeMatrixProfile profile)
         {
+            if (IsMassiveSurfaceSetpiece(profile))
+                return profile.faunaMood == WorldProceduralFaunaMood.Lively ? 4 : 3;
             if (IsCalmFamily(profile.familyId))
                 return 3;
             if (IsResourceFriendlyFamily(profile.familyId) || profile.faunaMood == WorldProceduralFaunaMood.Lively)
@@ -145,6 +149,8 @@ namespace Hecton8.AI.Editor
 
         private static bool ShouldAddTerritorial(HectonBiomeMatrixProfile profile)
         {
+            if (IsMassiveSurfaceSetpiece(profile))
+                return true;
             if (profile.primaryClusterFocus == WorldProceduralClusterFocus.BiologicalNest)
                 return true;
             if (profile.primaryStructureFocus == WorldProceduralStructureFocus.NaturalLandmark)
@@ -156,6 +162,8 @@ namespace Hecton8.AI.Editor
 
         private static int ResolveHunterTarget(HectonBiomeMatrixProfile profile)
         {
+            if (IsMassiveSurfaceSetpiece(profile))
+                return profile.survivalPressure >= 4 ? 2 : 1;
             if (IsRiftFamily(profile.familyId) || IsServiceHeavyFamily(profile.familyId))
                 return 2;
             if (IsCalmFamily(profile.familyId))
@@ -168,17 +176,27 @@ namespace Hecton8.AI.Editor
             if (profile == null)
                 return false;
 
+            if (IsSurfaceLeviathanCandidate(profile))
+                return true;
+
             bool lateDepth = profile.maxDepthMeters >= 8750f || profile.depthTier >= 18;
             if (!lateDepth)
+                return false;
+
+            if (IsGenericReserveBiomeName(profile.biomeName))
                 return false;
 
             bool heavyFamily = IsRiftFamily(profile.familyId) ||
                                string.Equals(profile.familyId, "biome.family.metallic_hadal", System.StringComparison.OrdinalIgnoreCase) ||
                                string.Equals(profile.familyId, "biome.family.abyssal_silt", System.StringComparison.OrdinalIgnoreCase) ||
                                string.Equals(profile.familyId, "biome.family.volcanic_hadal", System.StringComparison.OrdinalIgnoreCase);
+            if (!heavyFamily)
+                return false;
 
             bool lateRole = ContainsToken(profile.progressionRole, "deep_pressure", "final_hadal");
-            return heavyFamily && (profile.survivalPressure >= 4 || lateRole);
+            bool setpieceRoute = ContainsToken(profile.suggestedZoneFamily, "progression.route.landmark", "progression.setpieces.near", "hazard.probe");
+            bool extremeDanger = profile.survivalPressure >= 5;
+            return lateRole || setpieceRoute || extremeDanger;
         }
 
         private static void EnsurePassivePresence(
@@ -382,6 +400,7 @@ namespace Hecton8.AI.Editor
                     score += 12;
                     if (ContainsToken(profile.progressionRole, "deep_pressure", "final_hadal"))
                         score += 5;
+                    score += ScoreLeviathanSetpieceAffinity(archetype, profile);
                     break;
             }
 
@@ -404,6 +423,54 @@ namespace Hecton8.AI.Editor
                 return 4;
             if ((biomeName.Contains("arch") || biomeName.Contains("gallows") || biomeName.Contains("needle")) && creatureId.Contains("archway"))
                 return 3;
+            return 0;
+        }
+
+        private static int ScoreLeviathanSetpieceAffinity(CreatureArchetypeData archetype, HectonBiomeMatrixProfile profile)
+        {
+            string biomeName = profile.biomeName != null ? profile.biomeName.ToLowerInvariant() : string.Empty;
+            string creatureId = archetype.creatureId != null ? archetype.creatureId.ToLowerInvariant() : string.Empty;
+
+            if (ContainsToken(biomeName, "archipelago", "sea-stack", "coral porous"))
+            {
+                if (creatureId.Contains("halo_crown"))
+                    return 10;
+                if (creatureId.Contains("gate_warden"))
+                    return 4;
+            }
+
+            if (ContainsToken(biomeName, "granite spine", "gates", "maw", "spine", "walls"))
+            {
+                if (creatureId.Contains("gate_warden"))
+                    return 10;
+                if (creatureId.Contains("rift_lancer"))
+                    return 5;
+            }
+
+            if (ContainsToken(biomeName, "rift", "void"))
+            {
+                if (creatureId.Contains("rift_lancer"))
+                    return 9;
+                if (creatureId.Contains("void_ribbon"))
+                    return 7;
+            }
+
+            if (ContainsToken(biomeName, "ash", "shiver", "glass", "static"))
+            {
+                if (creatureId.Contains("black_choir"))
+                    return 9;
+                if (creatureId.Contains("halo_crown"))
+                    return 4;
+            }
+
+            if (ContainsToken(biomeName, "lava", "magma", "basalt", "pillow"))
+            {
+                if (creatureId.Contains("furnace_maw"))
+                    return 10;
+                if (creatureId.Contains("gate_warden"))
+                    return 3;
+            }
+
             return 0;
         }
 
@@ -477,6 +544,35 @@ namespace Hecton8.AI.Editor
         {
             return string.Equals(familyId, "biome.family.sediment_drift", System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(familyId, "biome.family.granite_escarpment", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsMassiveSurfaceSetpiece(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null || profile.maxDepthMeters > 3000f)
+                return false;
+
+            string biomeName = profile.biomeName != null ? profile.biomeName.ToLowerInvariant() : string.Empty;
+            return biomeName.Contains("archipelago needles") ||
+                   biomeName.Contains("sea-stack forest") ||
+                   biomeName.Contains("coral porous walls") ||
+                   biomeName.Contains("granite spine");
+        }
+
+        private static bool IsSurfaceLeviathanCandidate(HectonBiomeMatrixProfile profile)
+        {
+            if (!IsMassiveSurfaceSetpiece(profile))
+                return false;
+
+            return profile.landmarkStrength >= 4 &&
+                   (profile.survivalPressure >= 3 ||
+                    ContainsToken(profile.suggestedZoneFamily, "progression.route.landmark", "progression.skyline.far", "resources.landmarks.far"));
+        }
+
+        private static bool IsGenericReserveBiomeName(string biomeName)
+        {
+            return !string.IsNullOrWhiteSpace(biomeName) &&
+                   biomeName.StartsWith("Tier ", System.StringComparison.OrdinalIgnoreCase) &&
+                   biomeName.Contains("Reserve", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool Contains(string[] values, string target)

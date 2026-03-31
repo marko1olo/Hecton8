@@ -45,6 +45,8 @@ namespace Hecton8.AI.Editor
             var biomesWithoutPassive = new List<string>();
             var biomesWithoutThreat = new List<string>();
             var biomesWithLeviathan = new List<string>();
+            var reserveBiomesWithLeviathan = new List<string>();
+            var surfaceBiomesWithLeviathan = new List<string>();
             var skewWarnings = new List<string>();
 
             if (catalog != null && catalog.Profiles != null)
@@ -101,7 +103,13 @@ namespace Hecton8.AI.Editor
                         biomesWithoutThreat.Add(profile.biomeName);
 
                     if (leviathanCount > 0)
+                    {
                         biomesWithLeviathan.Add($"{profile.biomeName} ({leviathanCount})");
+                        if (IsGenericReserveBiomeName(profile.biomeName))
+                            reserveBiomesWithLeviathan.Add(profile.biomeName);
+                        if (profile.maxDepthMeters <= 3000f)
+                            surfaceBiomesWithLeviathan.Add(profile.biomeName);
+                    }
 
                     if (hunterCount > 2)
                         skewWarnings.Add($"{profile.biomeName}: слишком много средних угроз ({hunterCount})");
@@ -113,6 +121,11 @@ namespace Hecton8.AI.Editor
                         skewWarnings.Add($"{profile.biomeName}: спокойная вода ушла в боевую арену");
                 }
             }
+
+            if (reserveBiomesWithLeviathan.Count > 0)
+                skewWarnings.Add($"Левиафаны сидят на обычных резервных биомах: {reserveBiomesWithLeviathan.Count}");
+            if (surfaceBiomesWithLeviathan.Count > 4)
+                skewWarnings.Add($"Слишком много мелководных и среднеглубинных биомов с левиафанами: {surfaceBiomesWithLeviathan.Count}");
 
             var sb = new StringBuilder(16384);
             sb.AppendLine("# AI Fauna World Integration Report");
@@ -127,6 +140,8 @@ namespace Hecton8.AI.Editor
             AppendList(sb, "Биомы без мирной жизни", biomesWithoutPassive);
             AppendList(sb, "Биомы без угроз", biomesWithoutThreat);
             AppendList(sb, "Биомы с левиафанами", biomesWithLeviathan);
+            AppendList(sb, "Обычные резервные биомы с левиафанами", reserveBiomesWithLeviathan);
+            AppendList(sb, "Мелководные и среднеглубинные биомы с левиафанами", surfaceBiomesWithLeviathan);
             AppendList(sb, "Перекосы", skewWarnings);
 
             File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8);
@@ -156,6 +171,13 @@ namespace Hecton8.AI.Editor
             return string.Equals(familyId, "biome.family.littoral_karst", System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(familyId, "biome.family.fossil_reef", System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(familyId, "biome.family.crystal_growth", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsGenericReserveBiomeName(string biomeName)
+        {
+            return !string.IsNullOrWhiteSpace(biomeName) &&
+                   biomeName.StartsWith("Tier ", System.StringComparison.OrdinalIgnoreCase) &&
+                   biomeName.Contains("Reserve", System.StringComparison.OrdinalIgnoreCase);
         }
     }
 }

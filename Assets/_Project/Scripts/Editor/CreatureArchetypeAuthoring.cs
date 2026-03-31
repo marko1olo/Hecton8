@@ -405,7 +405,37 @@ namespace Hecton8.AI.Editor
             string[] biomeFamilies,
             string notes)
         {
+            purpose = ResolveAmbientPurpose(shortId, purpose);
+            notes = ResolveAmbientNotes(shortId, notes);
             return CreateAmbientInternal(shortId, displayName, purpose, health, cruiseSpeed, burstSpeed, faunaFamilies, biomeFamilies, notes);
+        }
+
+        private static string ResolveAmbientPurpose(string shortId, string fallback)
+        {
+            switch (shortId)
+            {
+                case "shore_skimmer": return "Мелкая стайная жизнь спокойной воды.";
+                case "kelp_raylet": return "Мирная широкая жизнь ярких зарослей и рифов.";
+                case "silt_drifter": return "Донный мирный сборщик осадочной воды.";
+                case "wall_glider": return "Мирная жизнь стен, уступов и гребней.";
+                case "brine_siphoner": return "Странная мирная жизнь химических карманов и вентов.";
+                case "lantern_sifter": return "Редкая мирная жизнь открытой глубины.";
+                default: return fallback;
+            }
+        }
+
+        private static string ResolveAmbientNotes(string shortId, string fallback)
+        {
+            switch (shortId)
+            {
+                case "shore_skimmer": return "Даёт живой фон у поверхности и в спокойных арках.";
+                case "kelp_raylet": return "Даёт мягкую крупную жизнь там, где мир должен казаться богатым, а не боевым.";
+                case "silt_drifter": return "Делает ресурсную воду живой, но не агрессивной.";
+                case "wall_glider": return "Делает маршруты вдоль стен живыми и читаемыми.";
+                case "brine_siphoner": return "Нужен, чтобы токсичная и сервисная вода не была мёртвой.";
+                case "lantern_sifter": return "Даёт ощущение редкой жизни даже в поздней пустоте.";
+                default: return fallback;
+            }
         }
 
         private static ArchetypeDefinition CreateTerritorial(

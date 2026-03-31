@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.CreatureArchetypeData
   creatureId: creature.ambient.lantern_sifter
   displayName: Lantern Sifter
-  gameplayPurpose: "\xD0\_\xD0\xB5\xD0\xB4\xD0\xBA\xD0\xB0\xD1\x8F \xD0\xBC\xD0\xB8\xD1\u20AC\xD0\xBD\xD0\xB0\xD1\x8F
-    \xD0\xB6\xD0\xB8\xD0\xB7\xD0\xBD\xD1\u0152 \xD0\xBE\xD1\u201A\xD0\xBA\xD1\u20AC\xD1\u2039\xD1\u201A\xD0\xBE\xD0\xB9
-    \xD0\xB3\xD0\xBB\xD1\u0192\xD0\xB1\xD0\xB8\xD0\xBD\xD1\u2039."
+  gameplayPurpose: "\u0420\u0435\u0434\u043A\u0430\u044F \u043C\u0438\u0440\u043D\u0430\u044F
+    \u0436\u0438\u0437\u043D\u044C \u043E\u0442\u043A\u0440\u044B\u0442\u043E\u0439
+    \u0433\u043B\u0443\u0431\u0438\u043D\u044B."
   roleType: 0
   locomotionType: 0
   isAggressive: 0
@@ -82,10 +82,9 @@ MonoBehaviour:
   spawnWeight: 18
   prefab: {fileID: 676815894980492824, guid: 54d26ac0f761ade449ffd3811fbe2620, type: 3}
   lootProfileId: 
-  biomeNotes: "\xD0\u201D\xD0\xB0\xD1\u2018\xD1\u201A \xD0\xBE\xD1\u2030\xD1\u0192\xD1\u2030\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5
-    \xD1\u20AC\xD0\xB5\xD0\xB4\xD0\xBA\xD0\xBE\xD0\xB9 \xD0\xB6\xD0\xB8\xD0\xB7\xD0\xBD\xD0\xB8
-    \xD0\xB4\xD0\xB0\xD0\xB6\xD0\xB5 \xD0\xB2 \xD0\xBF\xD0\xBE\xD0\xB7\xD0\xB4\xD0\xBD\xD0\xB5\xD0\xB9
-    \xD0\xBF\xD1\u0192\xD1\x81\xD1\u201A\xD0\xBE\xD1\u201A\xD0\xB5."
+  biomeNotes: "\u0414\u0430\u0451\u0442 \u043E\u0449\u0443\u0449\u0435\u043D\u0438\u0435
+    \u0440\u0435\u0434\u043A\u043E\u0439 \u0436\u0438\u0437\u043D\u0438 \u0434\u0430\u0436\u0435
+    \u0432 \u043F\u043E\u0437\u0434\u043D\u0435\u0439 \u043F\u0443\u0441\u0442\u043E\u0442\u0435."
   recommendedFaunaFamilyIds:
   - fauna.family.abyssal_sparse
   - fauna.family.hadal_apex
