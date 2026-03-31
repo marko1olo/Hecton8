@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_creature_spawn_predator
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.creature.spawn.predator
+  familyLabel: Creature Spawn Predator
+  defaultFidelity: 2
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 13
+  scatterLayer: 3
+  structureAccentRole: 0
+  clusterAccentRole: 0
+  placementMode: 5
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 32
+  clusterRadiusMeters: 24
+  clusterCountMin: 1
+  clusterCountMax: 2
+  heatmapChannel: hazard_density
+  proxyColor: {r: 1, g: 0.28, b: 0.2, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
+  - {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
+  - {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}
+  preferredZoneKinds: 080000000700000005000000
+  biomeAffinityWeight: 0.28
+  zoneAffinityWeight: 0.16
+  primaryPattern: 6
+  secondaryPattern: 5
+  patternAffinityWeight: 0.3
+  variants:
+  - variantId: family.creature.spawn.predator.proxy.tooth
+    prefab: {fileID: 734499636847575940, guid: 95632499f5d71b040aef365a9216e976, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.creature.spawn.predator.proxy.nest
+    prefab: {fileID: 2199568151896303710, guid: 6031b4a5031d41f4a900d5ed664f8be2, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  futurePrefabRoot: World/CreatureSpawn/Creature_Spawn_Predator
+  gameplayRole: Predator spawn anchors for pressure pockets.

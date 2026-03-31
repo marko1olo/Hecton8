@@ -56,11 +56,25 @@ namespace Hecton8.World
         [SerializeField] private string _debugZoneRoleFamily = "None";
         [SerializeField] private string _debugZoneRoleLayout = "None";
         [SerializeField] private string _debugZoneRolePriority = "None";
+        [SerializeField] private string _debugProceduralRule = "None";
+        [SerializeField] private string _debugProceduralFamily = "None";
+        [SerializeField] private string _debugProceduralVariant = "None";
+        [SerializeField] private string _debugProceduralSource = "None";
+        [SerializeField] private string _debugProceduralDomain = "Generic";
+        [SerializeField] private string _debugProceduralPlacementMode = "Scatter";
+        [SerializeField] private string _debugProceduralHeatmap = "None";
+        [SerializeField] private string _debugProceduralIntent = "None";
+        [SerializeField] private string _debugProceduralReason = "None";
         [SerializeField] private WorldSliceAnchor.SliceState _debugPopulationFidelity = WorldSliceAnchor.SliceState.Near;
         [SerializeField] private int _debugPopulationClusterCount;
         [SerializeField] private int _debugPopulationMinCount;
         [SerializeField] private int _debugPopulationMaxCount;
         [SerializeField] private float _debugPopulationDensityWeight;
+        [SerializeField] private int _debugProceduralMinCount;
+        [SerializeField] private int _debugProceduralMaxCount;
+        [SerializeField] private float _debugProceduralScore;
+        [SerializeField] private float _debugProceduralMinSpacingMeters;
+        [SerializeField] private float _debugProceduralClusterRadiusMeters;
 
         public string SocketId => socketId;
         public string SocketLabel => socketLabel;
@@ -99,8 +113,18 @@ namespace Hecton8.World
         public string ResolvedZoneRoleFamily => _debugZoneRoleFamily;
         public string ResolvedZoneRoleLayout => _debugZoneRoleLayout;
         public string ResolvedZoneRolePriority => _debugZoneRolePriority;
+        public string ResolvedProceduralRule => _debugProceduralRule;
+        public string ResolvedProceduralFamily => _debugProceduralFamily;
+        public string ResolvedProceduralVariant => _debugProceduralVariant;
+        public string ResolvedProceduralSource => _debugProceduralSource;
+        public string ResolvedProceduralDomain => _debugProceduralDomain;
+        public string ResolvedProceduralPlacementMode => _debugProceduralPlacementMode;
+        public string ResolvedProceduralHeatmap => _debugProceduralHeatmap;
+        public string ResolvedProceduralIntent => _debugProceduralIntent;
+        public string ResolvedProceduralReason => _debugProceduralReason;
         public WorldSliceAnchor.SliceState ResolvedPopulationFidelity => _debugPopulationFidelity;
         public float GetResolvedPopulationDensityWeight() => _debugPopulationDensityWeight;
+        public float GetResolvedProceduralScore() => _debugProceduralScore;
 
         public void ApplyPopulationRecommendation(
             WorldPopulationRule rule,
@@ -181,6 +205,54 @@ namespace Hecton8.World
             _debugPopulationMinCount = 0;
             _debugPopulationMaxCount = 0;
             _debugPopulationDensityWeight = 0f;
+        }
+
+        public void ApplyProceduralRecommendation(
+            WorldProceduralPlacementRule rule,
+            WorldPrefabFamilyProfile family,
+            string variantId,
+            string source,
+            string reason,
+            string intent,
+            string heatmapChannel,
+            int minCount,
+            int maxCount,
+            float minSpacingMeters,
+            float clusterRadiusMeters,
+            float score)
+        {
+            _debugProceduralRule = rule != null && !string.IsNullOrWhiteSpace(rule.ruleLabel) ? rule.ruleLabel : "None";
+            _debugProceduralFamily = family != null && !string.IsNullOrWhiteSpace(family.familyLabel) ? family.familyLabel : "None";
+            _debugProceduralVariant = string.IsNullOrWhiteSpace(variantId) ? "None" : variantId;
+            _debugProceduralSource = string.IsNullOrWhiteSpace(source) ? "None" : source;
+            _debugProceduralDomain = family != null ? family.proceduralDomain.ToString() : WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
+            _debugProceduralPlacementMode = family != null ? family.placementMode.ToString() : WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugProceduralHeatmap = string.IsNullOrWhiteSpace(heatmapChannel) ? "None" : heatmapChannel;
+            _debugProceduralIntent = string.IsNullOrWhiteSpace(intent) ? "None" : intent;
+            _debugProceduralReason = string.IsNullOrWhiteSpace(reason) ? "None" : reason;
+            _debugProceduralMinCount = Mathf.Max(0, minCount);
+            _debugProceduralMaxCount = Mathf.Max(_debugProceduralMinCount, maxCount);
+            _debugProceduralScore = Mathf.Max(0f, score);
+            _debugProceduralMinSpacingMeters = Mathf.Max(0f, minSpacingMeters);
+            _debugProceduralClusterRadiusMeters = Mathf.Max(0f, clusterRadiusMeters);
+        }
+
+        public void ClearProceduralRecommendation()
+        {
+            _debugProceduralRule = "None";
+            _debugProceduralFamily = "None";
+            _debugProceduralVariant = "None";
+            _debugProceduralSource = "None";
+            _debugProceduralDomain = WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
+            _debugProceduralPlacementMode = WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugProceduralHeatmap = "None";
+            _debugProceduralIntent = "None";
+            _debugProceduralReason = "None";
+            _debugProceduralMinCount = 0;
+            _debugProceduralMaxCount = 0;
+            _debugProceduralScore = 0f;
+            _debugProceduralMinSpacingMeters = 0f;
+            _debugProceduralClusterRadiusMeters = 0f;
         }
 
         private WorldSliceAnchor.SliceState ResolvePopulationFidelity()

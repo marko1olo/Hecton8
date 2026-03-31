@@ -30,8 +30,8 @@ MonoBehaviour:
     targetDensity: 3
     usage: 'far: late-route escalation with hazard, service, and landmark pull.'
   heroFamily: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
-  gameplaySummary: Late-game chain that mixes hazard, recovery, combat pressure,
-    and route landmarks.
+  gameplaySummary: Late-game water that mixes hazard, recovery, combat pressure,
+    and memorable landmarks.
   resourcePocketPlan:
     family: {fileID: 11400000, guid: f3384261eaf6efa41bc51c0500289c49, type: 2}
     relation: 3

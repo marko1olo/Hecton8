@@ -38,6 +38,16 @@ namespace Hecton8.World
         [SerializeField] private string _debugNearestZoneRolePriority = "None";
         [SerializeField] private string _debugNearestPopulationPurpose = "None";
         [SerializeField] private float _debugNearestPopulationDensity;
+        [SerializeField] private string _debugNearestProceduralRule = "None";
+        [SerializeField] private string _debugNearestProceduralFamily = "None";
+        [SerializeField] private string _debugNearestProceduralVariant = "None";
+        [SerializeField] private string _debugNearestProceduralSource = "None";
+        [SerializeField] private string _debugNearestProceduralDomain = "Generic";
+        [SerializeField] private string _debugNearestProceduralPlacementMode = "Scatter";
+        [SerializeField] private string _debugNearestProceduralHeatmap = "None";
+        [SerializeField] private string _debugNearestProceduralIntent = "None";
+        [SerializeField] private string _debugNearestProceduralReason = "None";
+        [SerializeField] private float _debugNearestProceduralScore;
         [SerializeField] private string _debugCurrentZone = "None";
 
         private readonly List<WorldContentSocket> _sockets = new List<WorldContentSocket>(128);
@@ -187,6 +197,16 @@ namespace Hecton8.World
             _debugNearestZoneRolePriority = nearestSocket != null ? nearestSocket.ResolvedZoneRolePriority : "None";
             _debugNearestPopulationPurpose = nearestSocket != null ? nearestSocket.ResolvedPopulationPurpose : "None";
             _debugNearestPopulationDensity = nearestSocket != null ? nearestSocket.GetResolvedPopulationDensityWeight() : 0f;
+            _debugNearestProceduralRule = nearestSocket != null ? nearestSocket.ResolvedProceduralRule : "None";
+            _debugNearestProceduralFamily = nearestSocket != null ? nearestSocket.ResolvedProceduralFamily : "None";
+            _debugNearestProceduralVariant = nearestSocket != null ? nearestSocket.ResolvedProceduralVariant : "None";
+            _debugNearestProceduralSource = nearestSocket != null ? nearestSocket.ResolvedProceduralSource : "None";
+            _debugNearestProceduralDomain = nearestSocket != null ? nearestSocket.ResolvedProceduralDomain : WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
+            _debugNearestProceduralPlacementMode = nearestSocket != null ? nearestSocket.ResolvedProceduralPlacementMode : WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugNearestProceduralHeatmap = nearestSocket != null ? nearestSocket.ResolvedProceduralHeatmap : "None";
+            _debugNearestProceduralIntent = nearestSocket != null ? nearestSocket.ResolvedProceduralIntent : "None";
+            _debugNearestProceduralReason = nearestSocket != null ? nearestSocket.ResolvedProceduralReason : "None";
+            _debugNearestProceduralScore = nearestSocket != null ? nearestSocket.GetResolvedProceduralScore() : 0f;
             _debugCurrentZone = worldZoneDirector != null && worldZoneDirector.CurrentZone != null
                 ? worldZoneDirector.CurrentZone.ZoneLabel
                 : "None";

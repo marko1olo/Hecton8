@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6677c41bc576547458f47d8348d93779, type: 3}
+  m_Name: Motivation_ZoneProfile_Fabrication_Early
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldMotivationProfile
+  profileId: motivation.profile.fabrication.early
+  profileLabel: Fabrication Early Motivation
+  survivalNeed: This area resets pressure by letting the player recover, craft, and
+    stabilize.
+  survivalNeedWeight: 1.4
+  resourceNeed: Its value is logistical, not raw abundance.
+  resourceNeedWeight: 0.7
+  engineeringNeed: It supports planning tools, modules, and the next safer departure.
+  engineeringNeedWeight: 1.2
+  curiosityPull: Nearby authored details should invite checking what else this stop
+    can support.
+  curiosityPullWeight: 0.8
+  storyPull: A fabrication outpost hints at prior human activity and unfinished work.
+  storyPullWeight: 0.9
+  rareValuePull: 'Rare value is indirect here: preparation for stronger future dives.'
+  rareValuePullWeight: 0.6
+  optionalityRule: These pulls are invitations, not requirements; the player decides
+    which one matters today.
+  returnRule: The area should stay worth revisiting later with a different goal,
+    toolset, or tolerance for risk.
+  ownershipRule: The player should feel they built their own reasons to come back
+    here.

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Construction_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.construction.mid
+  profileLabel: Construction Mid Read
+  entryBeat: Sockets, frames, and awkward geometry immediately suggest possible improvement.
+  routineBeat: The player reads what is easy to place, what is blocked, and what
+    could become useful later.
+  reliefBeat: A clean work pocket offers a moment of clarity in otherwise messy space.
+  pressureBeat: Pressure comes from obstruction, poor angles, and the cost of investing
+    here.
+  payoffBeat: 'The reward is a better place: easier travel, better support, or a
+    smarter foothold.'
+  exitBeat: The player can leave after learning enough, even if they build nothing
+    yet.
+  playerFreedomRule: Construction is optional leverage, not a required progression
+    step.
+  softProgressionPull: The zone suggests that building here could improve later runs.
+  optionalDetourRule: Even without building, the player should understand why this
+    spot matters.
+  returnLogic: The place should stay memorable as a future improvement opportunity.
+  masteryLogic: Mastery means spotting where investment pays off and where it does
+    not.
+  playerPromise: A place where player agency can reshape local quality of life.
+  routeMemoryRule: Memory should hold onto the best socket, the main blocker, and
+    the clearest working angle.
+  failureMode: If building here changes nothing meaningful, the area feels fake.

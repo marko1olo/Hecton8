@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6677c41bc576547458f47d8348d93779, type: 3}
+  m_Name: Motivation_ZoneProfile_Navigation_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldMotivationProfile
+  profileId: motivation.profile.navigation.mid
+  profileLabel: Navigation Mid Motivation
+  survivalNeed: This area helps the player not get lost when runs grow longer and
+    messier.
+  survivalNeedWeight: 1
+  resourceNeed: Its value is mostly navigational clarity with a little practical
+    reward.
+  resourceNeedWeight: 0.6
+  engineeringNeed: It supports route planning, beacon logic, and better return discipline.
+  engineeringNeedWeight: 0.95
+  curiosityPull: Branching space should invite comparison and mental mapping.
+  curiosityPullWeight: 1.2
+  storyPull: Landmarks and route breaks can quietly suggest other systems nearby.
+  storyPullWeight: 0.85
+  rareValuePull: Rare value is weak; the real payoff is mastery of movement and memory.
+  rareValuePullWeight: 0.55
+  optionalityRule: These pulls are invitations, not requirements; the player decides
+    which one matters today.
+  returnRule: The area should stay worth revisiting later with a different goal,
+    toolset, or tolerance for risk.
+  ownershipRule: The player should feel they built their own reasons to come back
+    here.

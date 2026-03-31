@@ -30,7 +30,7 @@ MonoBehaviour:
     targetDensity: 2
     usage: 'far: placement guidance, sockets, blockers, and support frames.'
   heroFamily: {fileID: 11400000, guid: a70cc2dd5d724d74cb48b99c6e63d6fe, type: 2}
-  gameplaySummary: Construction route with obvious sockets, blockers, and support
+  gameplaySummary: Construction pocket with obvious sockets, blockers, and support
     structure.
   resourcePocketPlan:
     family: {fileID: 11400000, guid: 185a401f8a685084aa419fcf769c6faf, type: 2}

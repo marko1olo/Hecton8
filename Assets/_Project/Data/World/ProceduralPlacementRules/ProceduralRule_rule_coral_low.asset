@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_coral_low
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.coral.low
+  ruleLabel: Low Coral Beds
+  familyProfile: {fileID: 11400000, guid: 955b39d9404026347907d5f43bc57220, type: 2}
+  gameplayIntent: Low colorful coral that makes the floor feel alive.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  preferredZoneKinds: 010000000900000002000000
+  preferredSocketKinds: 
+  preferredFidelity: 2
+  minDepthMeters: 0
+  maxDepthMeters: 550
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 34
+  requiredHeatmapChannel: coral_density
+  minHeatmapValue: 0.28
+  densityScale: 1.05
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 5
+  maxInstances: 12
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0

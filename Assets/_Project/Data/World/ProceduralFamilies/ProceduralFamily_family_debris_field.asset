@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_debris_field
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.debris.field
+  familyLabel: Debris Field
+  defaultFidelity: 1
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 9
+  scatterLayer: 1
+  structureAccentRole: 0
+  clusterAccentRole: 6
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 8
+  clusterRadiusMeters: 18
+  clusterCountMin: 6
+  clusterCountMax: 14
+  heatmapChannel: debris_density
+  proxyColor: {r: 0.64, g: 0.46, b: 0.28, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
+  preferredZoneKinds: 060000000500000007000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 4
+  secondaryPattern: 3
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.debris.field.proxy.field
+    prefab: {fileID: 1748295628920921969, guid: 34ca3dcc9a989914cbe00f63ae4105d1, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.1}
+  - variantId: family.debris.field.proxy.strip
+    prefab: {fileID: 6217972339110760664, guid: 7831d42103e78d24b95bf2e926b21dbe, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  futurePrefabRoot: World/Debris/Debris_Field
+  gameplayRole: Dense salvageable debris fields.

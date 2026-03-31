@@ -51,3 +51,22 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
   suggestedZoneFamily: resources.landmarks.far
   progressionRole: starter_surface
+  primaryClusterFocus: 3
+  secondaryClusterFocus: 4
+  primaryStructureFocus: 1
+  secondaryStructureFocus: 4
+  faunaMood: 2
+  preferredGroundFamilies:
+  - {fileID: 11400000, guid: 955b39d9404026347907d5f43bc57220, type: 2}
+  - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
+  - {fileID: 11400000, guid: 7b5718118935ca14ead61b4f0f007a13, type: 2}
+  preferredClusterFamilies:
+  - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
+  - {fileID: 11400000, guid: 602b90081c9370b42a85e2acf29ac8ea, type: 2}
+  - {fileID: 11400000, guid: 20ff4b803a538544ca9a58d36bb90883, type: 2}
+  preferredStructureFamilies:
+  - {fileID: 11400000, guid: 3248410377598bf4b935417906c28fd5, type: 2}
+  - {fileID: 11400000, guid: e78426c2ce06cb445a353611d1608196, type: 2}
+  - {fileID: 11400000, guid: 723bfa18be2651148ba5aec371fae323, type: 2}
+  preferredSpawnFamilies:
+  - {fileID: 11400000, guid: 9b6f9e64950b8fe4da7ee795ca6c1126, type: 2}

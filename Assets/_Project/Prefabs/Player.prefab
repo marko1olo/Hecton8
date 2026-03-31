@@ -1299,6 +1299,7 @@ GameObject:
   - component: {fileID: 2417417034809354582}
   - component: {fileID: 7685304760766666158}
   - component: {fileID: 6316095183516097212}
+  - component: {fileID: 6023419987654321091}
   - component: {fileID: 7485984485082269955}
   m_Layer: 6
   m_Name: HUD_Render_Camera
@@ -1522,6 +1523,42 @@ MonoBehaviour:
   _debugCameraMatched: 0
   _debugForceVisibilityProbe: 1
   _debugProbeOpacity: 0.92
+--- !u!114 &6023419987654321091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7350136928691967875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3326f90608010d64d95faa9a9216de96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUDExtensions
+  hudCamera: {fileID: 4738717749101629275}
+  hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
+  flashlight: {fileID: 0}
+  toolManager: {fileID: 3954223694506301739}
+  primaryHud: {fileID: 6316095183516097212}
+  canvasOverlay: {fileID: 0}
+  normalColor: {r: 0, g: 0.898, b: 1, a: 1}
+  warningColor: {r: 1, g: 0.878, b: 0, a: 1}
+  criticalColor: {r: 1, g: 0.384, b: 0, a: 1}
+  frameColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
+  bgPanelColor: {r: 0, g: 0.05, b: 0.1, a: 0.25}
+  flashlightOnColor: {r: 1, g: 0.9, b: 0.3, a: 1}
+  pdaActiveColor: {r: 0.3, g: 1, b: 0.9, a: 1}
+  lineThickness: 1.5
+  thinLine: 1
+  fontSize: 14
+  fontSizeSmall: 10
+  fontSizeTiny: 8
+  notificationDuration: 3
+  notificationFadeSpeed: 4
+  _debugFlashlightOn: 0
+  _debugFlashlightHeat: 0
+  _debugPDAOpen: 0
+  _debugNotificationCount: 0
 --- !u!114 &7485984485082269955
 MonoBehaviour:
   m_ObjectHideFlags: 0

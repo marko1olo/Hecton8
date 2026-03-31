@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_egg_cluster
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.egg.cluster
+  familyLabel: Egg Cluster
+  defaultFidelity: 2
+  budgetClass: 0
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 8
+  scatterLayer: 1
+  structureAccentRole: 0
+  clusterAccentRole: 2
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 3
+  clusterRadiusMeters: 6
+  clusterCountMin: 2
+  clusterCountMax: 5
+  heatmapChannel: bio_density
+  proxyColor: {r: 0.92, g: 0.9, b: 0.72, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  preferredZoneKinds: 010000000900000002000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 0
+  secondaryPattern: 1
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.egg.cluster.proxy.nest
+    prefab: {fileID: 1058132232358462361, guid: 1b38ace470151c64fb8f81dff976b0e3, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.05}
+  - variantId: family.egg.cluster.proxy.clutch
+    prefab: {fileID: 4460012011655085840, guid: f3617b969c9c26243a44ce0efb3ab8a6, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.05}
+  futurePrefabRoot: World/Egg/Egg_Cluster
+  gameplayRole: Biological nests and egg groups for creature storytelling.

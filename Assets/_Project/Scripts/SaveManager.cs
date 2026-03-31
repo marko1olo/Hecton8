@@ -532,13 +532,25 @@ namespace Hecton8.SaveSystem
                     throw new Exception("ES3.Load returned null.");
                 }
 
-                // ── Проверка версии ──
-                if (data.version != SaveData.CurrentVersion)
+                // ── Проверка версии + миграция ──
+                int sourceVersion = data.version;
+                bool migrated = SaveDataMigration.MigrateInPlace(
+                    data,
+                    out int originalVersion,
+                    out string migrationSummary);
+
+                if (sourceVersion != SaveData.CurrentVersion)
                 {
                     Debug.LogWarning(
                         $"[SaveManager] Save version mismatch: " +
-                        $"file={data.version}, current={SaveData.CurrentVersion}. " +
-                        "Attempting load anyway (migration may be needed).");
+                        $"file={sourceVersion}, current={SaveData.CurrentVersion}.");
+                }
+
+                if (migrated)
+                {
+                    Debug.Log(
+                        $"[SaveManager] Save migration applied: " +
+                        $"from {originalVersion} to {data.version}. {migrationSummary}");
                 }
 
                 // ════════════════════════════════════════════════

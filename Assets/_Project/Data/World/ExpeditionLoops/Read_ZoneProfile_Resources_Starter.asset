@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Resources_Starter
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.resources.starter
+  profileLabel: Resources Starter Read
+  entryBeat: A bright shelf, arch, or scrap silhouette makes the water easy to read
+    at first glance.
+  routineBeat: Common materials are visible quickly without forcing one exact sweep.
+  reliefBeat: Short calm pockets let the player reorient and decide whether to keep
+    wandering.
+  pressureBeat: Risk rises naturally as visibility drops and easy materials thin
+    out.
+  payoffBeat: A stronger node or denser material patch exists deeper in for players
+    who feel like pushing.
+  exitBeat: Leaving stays readable by memory of shape and light, not by a prescribed
+    line.
+  playerFreedomRule: The player can drift, circle, detour, or leave at any time;
+    this water only suggests confidence, not obedience.
+  softProgressionPull: The place gently teaches that stronger finds usually sit a
+    little beyond the most obvious shelf.
+  optionalDetourRule: Side pockets should still teach the terrain and pay out a little
+    value.
+  returnLogic: Returning later should feel faster because the player remembers the
+    shapes and material rhythm.
+  masteryLogic: Mastery means building a personal quick-harvest loop, not following
+    a designer path.
+  playerPromise: Readable early water with safe value, mild risk, and room to improvise.
+  routeMemoryRule: Memory should come from one strong silhouette and one reliable
+    calm pocket.
+  failureMode: If shapes, safety, and value blur together, the area turns into mush.

@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_ruin_megastructure
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.ruin.megastructure
+  ruleLabel: Megastructure Ruins
+  familyProfile: {fileID: 11400000, guid: d279bd884179d0541b4f78f0255b7fb7, type: 2}
+  gameplayIntent: Huge ruined silhouettes that act as deep-water memory anchors.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
+  - {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 0100000007000000050000000600000008000000
+  preferredSocketKinds: 0a000000
+  preferredFidelity: 0
+  minDepthMeters: 120
+  maxDepthMeters: 5000
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 22
+  requiredHeatmapChannel: landmark_strength
+  minHeatmapValue: 0.46
+  densityScale: 0.92
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 1
+  maxInstances: 1
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0

@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_FertileShallows
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 0
+  label: Fertile Shallows
+  summary: Garden-like fertile water with shelter detours, biological nests and calm
+    ambient life.
+  groundBudgetScale: 1.1
+  clusterBudgetScale: 1.8
+  structureBudgetScale: 0.85
+  spawnBudgetScale: 0.8
+  minGroundPlacements: 90
+  groundTargetMax: 120
+  minClusterPlacements: 12
+  clusterTargetMax: 16
+  minStructurePlacements: 4
+  minSpawnPlacements: 8
+  structureTargetMin: 4
+  structureTargetMax: 6
+  naturalLandmarkMin: 2
+  naturalLandmarkMax: 3
+  techFragmentMin: 0
+  techFragmentMax: 1
+  caveReadMin: 1
+  caveReadMax: 2
+  biologicalSilhouetteMin: 1
+  biologicalSilhouetteMax: 2
+  fertileGrowthMin: 2
+  biologicalNestMin: 1
+  resourcePocketMin: 1
+  shelterPocketMin: 1
+  hazardPocketMin: 0
+  debrisFieldMin: 0
+  rockCoverMin: 0
+  fertileGrowthMaxRatio: 0.5
+  biologicalNestMaxRatio: 0.18
+  resourcePocketMaxRatio: 0.16
+  shelterPocketMaxRatio: 0.18
+  hazardPocketMaxRatio: 0.05
+  debrisFieldMaxRatio: 0.03
+  rockCoverMaxRatio: 0.12
+  spawnTargetMin: 8
+  spawnTargetMax: 10
+  passiveSpawnMin: 8
+  predatorSpawnMin: 0
+  predatorSpawnMax: 0

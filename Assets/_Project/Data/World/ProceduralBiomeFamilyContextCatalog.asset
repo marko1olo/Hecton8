@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 681ae0d374cc1754696140f6f6661a07, type: 3}
+  m_Name: ProceduralBiomeFamilyContextCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextCatalog
+  fallbackProfile: {fileID: 11400000, guid: e26a4d1891abe0045b705291b53c5a00, type: 2}
+  profiles:
+  - {fileID: 11400000, guid: 1d2957baa7354b24482734b1d1d42022, type: 2}
+  - {fileID: 11400000, guid: c0c42d7c41237bb49beaa44854c91105, type: 2}
+  - {fileID: 11400000, guid: e26a4d1891abe0045b705291b53c5a00, type: 2}
+  - {fileID: 11400000, guid: b24e0b56bcf7feb4d99fd74ae5cba78e, type: 2}
+  - {fileID: 11400000, guid: c1f05697fe919bb429d6bc3ba5f9f82d, type: 2}
+  - {fileID: 11400000, guid: 2db6e860d85263241a1ab36da7711140, type: 2}
+  - {fileID: 11400000, guid: 7e197c7f38143d84ab88e7a9dfd09e0d, type: 2}
+  - {fileID: 11400000, guid: b4b99d7a5e2bc1846ab69bc7b8428aba, type: 2}
+  - {fileID: 11400000, guid: 4ddd7dd31dbfc11429c4872be2fbba20, type: 2}
+  - {fileID: 11400000, guid: 283d13fbd81fff74e85132b00e6724a3, type: 2}
+  - {fileID: 11400000, guid: 65a1bd613e59b2b49ab6112339ae9c5f, type: 2}
+  - {fileID: 11400000, guid: 57ac6743a9853e64ea7cb382d6269e57, type: 2}
+  - {fileID: 11400000, guid: 32c9318ddb3fd204ba57c9baef162815, type: 2}

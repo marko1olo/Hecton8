@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_SedimentResources
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 2
+  label: Sediment Resources
+  summary: Reference sediment water with stone floor, rich resource pockets, readable
+    tech traces and calm fauna.
+  groundBudgetScale: 1.08
+  clusterBudgetScale: 1.25
+  structureBudgetScale: 1.08
+  spawnBudgetScale: 0.75
+  minGroundPlacements: 40
+  groundTargetMax: 50
+  minClusterPlacements: 14
+  clusterTargetMax: 18
+  minStructurePlacements: 9
+  minSpawnPlacements: 8
+  structureTargetMin: 9
+  structureTargetMax: 11
+  naturalLandmarkMin: 4
+  naturalLandmarkMax: 5
+  techFragmentMin: 3
+  techFragmentMax: 4
+  caveReadMin: 1
+  caveReadMax: 2
+  biologicalSilhouetteMin: 0
+  biologicalSilhouetteMax: 1
+  fertileGrowthMin: 0
+  biologicalNestMin: 0
+  resourcePocketMin: 10
+  shelterPocketMin: 2
+  hazardPocketMin: 0
+  debrisFieldMin: 0
+  rockCoverMin: 0
+  fertileGrowthMaxRatio: 0.04
+  biologicalNestMaxRatio: 0.06
+  resourcePocketMaxRatio: 0.78
+  shelterPocketMaxRatio: 0.25
+  hazardPocketMaxRatio: 0.08
+  debrisFieldMaxRatio: 0.18
+  rockCoverMaxRatio: 0.12
+  spawnTargetMin: 8
+  spawnTargetMax: 10
+  passiveSpawnMin: 8
+  predatorSpawnMin: 0
+  predatorSpawnMax: 1

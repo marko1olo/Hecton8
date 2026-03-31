@@ -30,7 +30,8 @@ MonoBehaviour:
     targetDensity: 2
     usage: 'far: generator, relay, and service-load chain readability.'
   heroFamily: {fileID: 11400000, guid: 1a1dfdad5879447429c4c1886c31f52b, type: 2}
-  gameplaySummary: Power route built around generator, relay, and serviced load readability.
+  gameplaySummary: Power pocket built around generator, relay, and serviced load
+    readability.
   resourcePocketPlan:
     family: {fileID: 11400000, guid: 9ac879eac8c1bf34da9ef85d88a44c55, type: 2}
     relation: 3

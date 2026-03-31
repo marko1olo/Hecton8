@@ -55,3 +55,22 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
   suggestedZoneFamily: combat.readability.mid
   progressionRole: deep_pressure
+  primaryClusterFocus: 3
+  secondaryClusterFocus: 4
+  primaryStructureFocus: 2
+  secondaryStructureFocus: 4
+  faunaMood: 3
+  preferredGroundFamilies:
+  - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
+  - {fileID: 11400000, guid: 78eb1922d7c5fc74eb0be51563fc58fb, type: 2}
+  preferredClusterFamilies:
+  - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
+  - {fileID: 11400000, guid: 46f6128afde1266448f05be291b36efe, type: 2}
+  - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
+  preferredStructureFamilies:
+  - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}
+  - {fileID: 11400000, guid: 6cbd01b092811a34898cf4376bf66851, type: 2}
+  - {fileID: 11400000, guid: 3248410377598bf4b935417906c28fd5, type: 2}
+  preferredSpawnFamilies:
+  - {fileID: 11400000, guid: ad5ca7d3c4eae3041861b15fa48a9ec7, type: 2}
+  - {fileID: 11400000, guid: 9b6f9e64950b8fe4da7ee795ca6c1126, type: 2}

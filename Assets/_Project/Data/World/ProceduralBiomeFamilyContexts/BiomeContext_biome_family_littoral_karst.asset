@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a9f87e0d1eeb94094a6b4a0f52daf0, type: 3}
+  m_Name: BiomeContext_biome_family_littoral_karst
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
+  biomeFamily: {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  label: Littoral Karst Context
+  summary: Shallow fertile stone-water with shelter detours, kelp and calm cave reads.
+  groundBudgetScale: 1.05
+  clusterBudgetScale: 1.08
+  structureBudgetScale: 1.04
+  spawnBudgetScale: 1.05
+  rockBias: 0.04
+  kelpBias: 0.18
+  plantBias: 0.1
+  coralBias: 0.08
+  eggBias: 0.06
+  debrisBias: 0
+  ruinBias: 0
+  caveBias: 0.1
+  landmarkBias: 0.06
+  creatureSpawnBias: 0
+  resourcePocketBias: 0.08
+  hazardPocketBias: 0
+  safePocketBias: 0.1
+  powerRouteBias: 0
+  serviceScarBias: 0
+  fertileGrowthBias: 0.08
+  biologicalNestBias: 0.06
+  resourcePocketAccentBias: 0.06
+  shelterPocketBias: 0.08
+  hazardPocketAccentBias: 0
+  debrisFieldBias: 0
+  rockCoverBias: 0
+  naturalLandmarkBias: 0.06
+  techFragmentBias: 0
+  caveReadBias: 0.1
+  biologicalSilhouetteBias: 0.08
+  passiveSpawnBias: 0.08
+  predatorSpawnBias: -0.08

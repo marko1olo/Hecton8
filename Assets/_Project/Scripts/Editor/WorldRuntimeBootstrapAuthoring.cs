@@ -23,6 +23,10 @@ namespace Hecton8.EditorTools
         private const string WorldContentProfileFolder = "Assets/_Project/Data/World/ContentProfiles";
         private const string WorldPopulationRuleFolder = "Assets/_Project/Data/World/PopulationRules";
         private const string WorldFamilyProfileFolder = "Assets/_Project/Data/World/FamilyProfiles";
+        private const string WorldProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
+        private const string WorldProceduralRuleFolder = "Assets/_Project/Data/World/ProceduralPlacementRules";
+        private const string WorldProceduralPatternCatalogPath = "Assets/_Project/Data/World/ProceduralPatternCatalog.asset";
+        private const string WorldProceduralBiomeContextCatalogPath = "Assets/_Project/Data/World/ProceduralBiomeFamilyContextCatalog.asset";
         private const string BiomeFamilyProfileFolder = "Assets/_Project/Data/Biomes/FamilyProfiles";
         private const string BiomeMatrixCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string ManagersRootName = "[MANAGERS]";
@@ -45,6 +49,8 @@ namespace Hecton8.EditorTools
             EnsureFolder(WorldContentProfileFolder);
             EnsureFolder(WorldPopulationRuleFolder);
             EnsureFolder(WorldFamilyProfileFolder);
+            EnsureFolder(WorldProceduralFamilyFolder);
+            EnsureFolder(WorldProceduralRuleFolder);
 
             GameObject colliderPrefab = CreateOrUpdateColliderProxyPrefab();
             if (colliderPrefab == null)
@@ -83,6 +89,9 @@ namespace Hecton8.EditorTools
             WorldZoneDirector zoneDirector = GetOrAddComponent<WorldZoneDirector>(managersRoot);
             WorldContentDirector contentDirector = GetOrAddComponent<WorldContentDirector>(managersRoot);
             WorldPopulationDirector populationDirector = GetOrAddComponent<WorldPopulationDirector>(managersRoot);
+            WorldProceduralFillDirector proceduralFillDirector = GetOrAddComponent<WorldProceduralFillDirector>(managersRoot);
+            WorldProceduralFieldSampler proceduralFieldSampler = GetOrAddComponent<WorldProceduralFieldSampler>(managersRoot);
+            WorldProceduralScatterDirector proceduralScatterDirector = GetOrAddComponent<WorldProceduralScatterDirector>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
             ProximityColliderSystem proximityColliderSystem = GetOrAddComponent<ProximityColliderSystem>(managersRoot);
             HectonBiomeMatrixCatalog biomeMatrixCatalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeMatrixCatalogPath);
@@ -109,12 +118,16 @@ namespace Hecton8.EditorTools
             ConfigureWorldZoneDirector(zoneDirector, playerTransform);
             ConfigureWorldContentDirector(contentDirector, playerTransform, zoneDirector);
             ConfigureWorldPopulationDirector(populationDirector, playerTransform, zoneDirector, contentDirector);
+            ConfigureWorldProceduralFillDirector(proceduralFillDirector, playerTransform, zoneDirector, contentDirector, biomeMatrixDirector);
+            ConfigureWorldProceduralFieldSampler(proceduralFieldSampler, playerTransform, bridge, zoneDirector, biomeMatrixDirector);
+            ConfigureWorldProceduralScatterDirector(proceduralScatterDirector, playerTransform, proceduralFieldSampler, proceduralFillDirector);
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
             ConfigureSceneSlices();
             ConfigureSceneInterestAnchors();
             ConfigureSceneZones();
             ConfigureSceneContentSockets();
             ConfigurePopulationRules(populationDirector);
+            ConfigureProceduralFill(proceduralFillDirector);
 
             if (objectPoolManager != null)
                 EnsureWarmupPreset(objectPoolManager, colliderPrefab, 192);
@@ -264,6 +277,105 @@ namespace Hecton8.EditorTools
             EditorUtility.SetDirty(director);
         }
 
+        private static void ConfigureWorldProceduralFillDirector(
+            WorldProceduralFillDirector director,
+            Transform playerTransform,
+            WorldZoneDirector zoneDirector,
+            WorldContentDirector contentDirector,
+            BiomeMatrixDirector biomeMatrixDirector)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.FindProperty("worldZoneDirector").objectReferenceValue = zoneDirector;
+            so.FindProperty("worldContentDirector").objectReferenceValue = contentDirector;
+            so.FindProperty("biomeMatrixDirector").objectReferenceValue = biomeMatrixDirector;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldProceduralFieldSampler(
+            WorldProceduralFieldSampler sampler,
+            Transform playerTransform,
+            MapMagicBridge bridge,
+            WorldZoneDirector zoneDirector,
+            BiomeMatrixDirector biomeMatrixDirector)
+        {
+            HectonBiomeFamilyProfile littoralKarstFamily = FindBiomeFamilyProfile("biome.family.littoral_karst");
+            HectonBiomeFamilyProfile fossilReefFamily = FindBiomeFamilyProfile("biome.family.fossil_reef");
+            HectonBiomeFamilyProfile sedimentDriftFamily = FindBiomeFamilyProfile("biome.family.sediment_drift");
+            HectonBiomeFamilyProfile abyssalSiltFamily = FindBiomeFamilyProfile("biome.family.abyssal_silt");
+            HectonBiomeFamilyProfile graniteEscarpmentFamily = FindBiomeFamilyProfile("biome.family.granite_escarpment");
+            HectonBiomeFamilyProfile tectonicSpineFamily = FindBiomeFamilyProfile("biome.family.tectonic_spine");
+            HectonBiomeFamilyProfile riftSpineFamily = FindBiomeFamilyProfile("biome.family.rift_spine");
+            HectonBiomeFamilyProfile riftVoidFamily = FindBiomeFamilyProfile("biome.family.rift_void");
+            HectonBiomeFamilyProfile volcanicGlassFamily = FindBiomeFamilyProfile("biome.family.volcanic_glass");
+            HectonBiomeFamilyProfile volcanicHadalFamily = FindBiomeFamilyProfile("biome.family.volcanic_hadal");
+            HectonBiomeFamilyProfile metallicHadalFamily = FindBiomeFamilyProfile("biome.family.metallic_hadal");
+            HectonBiomeFamilyProfile chemosyntheticBrineFamily = FindBiomeFamilyProfile("biome.family.chemosynthetic_brine");
+            HectonBiomeFamilyProfile crystalGrowthFamily = FindBiomeFamilyProfile("biome.family.crystal_growth");
+
+            SerializedObject so = new SerializedObject(sampler);
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.FindProperty("mapMagicBridge").objectReferenceValue = bridge;
+            so.FindProperty("worldZoneDirector").objectReferenceValue = zoneDirector;
+            so.FindProperty("biomeMatrixDirector").objectReferenceValue = biomeMatrixDirector;
+            so.FindProperty("littoralKarstFamily").objectReferenceValue = littoralKarstFamily;
+            so.FindProperty("fossilReefFamily").objectReferenceValue = fossilReefFamily;
+            so.FindProperty("sedimentDriftFamily").objectReferenceValue = sedimentDriftFamily;
+            so.FindProperty("abyssalSiltFamily").objectReferenceValue = abyssalSiltFamily;
+            so.FindProperty("graniteEscarpmentFamily").objectReferenceValue = graniteEscarpmentFamily;
+            so.FindProperty("tectonicSpineFamily").objectReferenceValue = tectonicSpineFamily;
+            so.FindProperty("riftSpineFamily").objectReferenceValue = riftSpineFamily;
+            so.FindProperty("riftVoidFamily").objectReferenceValue = riftVoidFamily;
+            so.FindProperty("volcanicGlassFamily").objectReferenceValue = volcanicGlassFamily;
+            so.FindProperty("volcanicHadalFamily").objectReferenceValue = volcanicHadalFamily;
+            so.FindProperty("metallicHadalFamily").objectReferenceValue = metallicHadalFamily;
+            so.FindProperty("chemosyntheticBrineFamily").objectReferenceValue = chemosyntheticBrineFamily;
+            so.FindProperty("crystalGrowthFamily").objectReferenceValue = crystalGrowthFamily;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(sampler);
+        }
+
+        private static HectonBiomeFamilyProfile FindBiomeFamilyProfile(string familyId)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:HectonBiomeFamilyProfile", new[] { "Assets/_Project/Data/Biomes/FamilyProfiles" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                HectonBiomeFamilyProfile profile = AssetDatabase.LoadAssetAtPath<HectonBiomeFamilyProfile>(path);
+                if (profile != null && string.Equals(profile.familyId, familyId, StringComparison.Ordinal))
+                    return profile;
+            }
+
+            return null;
+        }
+
+        private static void ConfigureWorldProceduralScatterDirector(
+            WorldProceduralScatterDirector director,
+            Transform playerTransform,
+            WorldProceduralFieldSampler fieldSampler,
+            WorldProceduralFillDirector fillDirector)
+        {
+            WorldProceduralPatternCatalog patternCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralPatternCatalog>(WorldProceduralPatternCatalogPath);
+            WorldProceduralBiomeFamilyContextCatalog biomeContextCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralBiomeFamilyContextCatalog>(WorldProceduralBiomeContextCatalogPath);
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.FindProperty("fieldSampler").objectReferenceValue = fieldSampler;
+            so.FindProperty("proceduralFillDirector").objectReferenceValue = fillDirector;
+            so.FindProperty("patternCatalog").objectReferenceValue = patternCatalog;
+            so.FindProperty("biomeContextCatalog").objectReferenceValue = biomeContextCatalog;
+            so.FindProperty("cellSize").floatValue = 22f;
+            so.FindProperty("radiusCells").intValue = 7;
+            so.FindProperty("groundPlacementsPerCell").intValue = 2;
+            so.FindProperty("clusterPlacementsPerCell").intValue = 1;
+            so.FindProperty("structureCellStride").intValue = 2;
+            so.FindProperty("structurePlacementsPerWindow").intValue = 1;
+            so.FindProperty("spawnCellStride").intValue = 3;
+            so.FindProperty("spawnPlacementsPerWindow").intValue = 1;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(director);
+        }
+
         private static void ConfigureSceneSlices()
         {
             ConfigureResourceFieldSlice();
@@ -406,6 +518,15 @@ namespace Hecton8.EditorTools
             };
 
             director.SetRules(rules);
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureProceduralFill(WorldProceduralFillDirector director)
+        {
+            List<WorldProceduralPlacementRule> rules = LoadAssets<WorldProceduralPlacementRule>(WorldProceduralRuleFolder);
+            List<WorldPrefabFamilyProfile> families = LoadAssets<WorldPrefabFamilyProfile>(WorldProceduralFamilyFolder);
+            director.SetRules(rules);
+            director.SetFamilies(families);
             EditorUtility.SetDirty(director);
         }
 
@@ -2255,6 +2376,21 @@ namespace Hecton8.EditorTools
             }
 
             return null;
+        }
+
+        private static List<T> LoadAssets<T>(string folderPath) where T : UnityEngine.Object
+        {
+            string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { folderPath });
+            List<T> assets = new List<T>(guids.Length);
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                T asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+                if (asset != null)
+                    assets.Add(asset);
+            }
+
+            return assets;
         }
 
         private static void EnsureFolder(string folderPath)

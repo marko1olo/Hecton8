@@ -33,7 +33,8 @@ MonoBehaviour:
     usage: 'far: safe stop with fabrication readability, route rest, and utility
       silhouette.'
   heroFamily: {fileID: 11400000, guid: 863a47418e48c8c4896f4a51d20831ae, type: 2}
-  gameplaySummary: Safe logistics stop for crafting, route reset, and regrouping.
+  gameplaySummary: Safe logistics stop for crafting, regrouping, and optional reset
+    before another dive.
   resourcePocketPlan:
     family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
     relation: 5

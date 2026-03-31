@@ -1,3 +1,4 @@
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Environment
@@ -53,5 +54,18 @@ namespace Hecton8.Environment
         public HectonBiomeFamilyProfile familyProfile;
         public string suggestedZoneFamily = string.Empty;
         public string progressionRole = string.Empty;
+
+        [Header("Procedural Memory")]
+        public WorldProceduralClusterFocus primaryClusterFocus = WorldProceduralClusterFocus.None;
+        public WorldProceduralClusterFocus secondaryClusterFocus = WorldProceduralClusterFocus.None;
+        public WorldProceduralStructureFocus primaryStructureFocus = WorldProceduralStructureFocus.None;
+        public WorldProceduralStructureFocus secondaryStructureFocus = WorldProceduralStructureFocus.None;
+        public WorldProceduralFaunaMood faunaMood = WorldProceduralFaunaMood.None;
+
+        [Header("Preferred Content Categories")]
+        public WorldPrefabFamilyProfile[] preferredGroundFamilies;
+        public WorldPrefabFamilyProfile[] preferredClusterFamilies;
+        public WorldPrefabFamilyProfile[] preferredStructureFamilies;
+        public WorldPrefabFamilyProfile[] preferredSpawnFamilies;
     }
 }

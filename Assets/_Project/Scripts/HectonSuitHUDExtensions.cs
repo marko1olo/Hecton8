@@ -174,9 +174,13 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     {
         if (primaryHud == null)
             primaryHud = GetComponent<HectonSuitHUD_v4>();
+        if (primaryHud == null)
+            primaryHud = FindFirstObjectByType<HectonSuitHUD_v4>();
 
         if (canvasOverlay == null)
             canvasOverlay = GetComponent<SuitHUDV4CanvasOverlay>();
+        if (canvasOverlay == null)
+            canvasOverlay = FindFirstObjectByType<SuitHUDV4CanvasOverlay>();
 
         if (hudCamera == null)
         {

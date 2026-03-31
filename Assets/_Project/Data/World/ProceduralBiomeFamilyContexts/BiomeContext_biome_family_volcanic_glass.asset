@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a9f87e0d1eeb94094a6b4a0f52daf0, type: 3}
+  m_Name: BiomeContext_biome_family_volcanic_glass
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
+  biomeFamily: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
+  label: Volcanic Glass Context
+  summary: Pressure-heavy volcanic glass with cave reads, rock anchors and hot hazard
+    pockets.
+  groundBudgetScale: 0.92
+  clusterBudgetScale: 0.96
+  structureBudgetScale: 1.14
+  spawnBudgetScale: 1.06
+  rockBias: 0.14
+  kelpBias: 0
+  plantBias: 0
+  coralBias: 0
+  eggBias: 0
+  debrisBias: 0
+  ruinBias: 0
+  caveBias: 0.18
+  landmarkBias: 0.1
+  creatureSpawnBias: 0
+  resourcePocketBias: 0
+  hazardPocketBias: 0.1
+  safePocketBias: 0
+  powerRouteBias: 0
+  serviceScarBias: 0
+  fertileGrowthBias: 0
+  biologicalNestBias: 0
+  resourcePocketAccentBias: 0
+  shelterPocketBias: 0
+  hazardPocketAccentBias: 0.1
+  debrisFieldBias: 0
+  rockCoverBias: 0.1
+  naturalLandmarkBias: 0.12
+  techFragmentBias: 0
+  caveReadBias: 0.18
+  biologicalSilhouetteBias: 0
+  passiveSpawnBias: -0.02
+  predatorSpawnBias: 0.08

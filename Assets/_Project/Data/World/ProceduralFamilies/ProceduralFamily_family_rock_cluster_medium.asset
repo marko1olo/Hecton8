@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_rock_cluster_medium
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.rock.cluster.medium
+  familyLabel: Rock Cluster Medium
+  defaultFidelity: 1
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 2
+  scatterLayer: 1
+  structureAccentRole: 0
+  clusterAccentRole: 7
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 8
+  clusterRadiusMeters: 14
+  clusterCountMin: 3
+  clusterCountMax: 6
+  heatmapChannel: rock_density
+  proxyColor: {r: 0.48, g: 0.56, b: 0.62, a: 1}
+  preferredBiomeFamilies: []
+  preferredZoneKinds: 
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 6
+  secondaryPattern: 5
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.rock.cluster.medium.proxy.cluster
+    prefab: {fileID: 2857210169646024308, guid: 133de2e702ae64e44b861dfad37ee8da, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.rock.cluster.medium.proxy.ridge
+    prefab: {fileID: 2607046042360378176, guid: da78fa5d3df89434a8478578c648d896, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.15}
+  - variantId: family.rock.cluster.medium.proxy.stack
+    prefab: {fileID: 7174057121802584121, guid: a81611cc7eb0b3d4dacc995c2a5b77ef, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.85, y: 1.1}
+  futurePrefabRoot: World/RockCluster/Rock_Cluster_Medium
+  gameplayRole: Grouped floor rocks that create silhouette and cover.

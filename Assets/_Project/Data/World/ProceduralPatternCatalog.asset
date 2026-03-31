@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59b67cfa62b1cf84d8a404858a986ee9, type: 3}
+  m_Name: ProceduralPatternCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternCatalog
+  fallbackProfile: {fileID: 11400000, guid: 8e97765f857b0af448ff86353a354cf0, type: 2}
+  profiles:
+  - {fileID: 11400000, guid: c5b1d704ca7e0a442b0ba25c4d38ce40, type: 2}
+  - {fileID: 11400000, guid: 89f00b2ddffb7c242aef7fc11d43d1d4, type: 2}
+  - {fileID: 11400000, guid: 8e97765f857b0af448ff86353a354cf0, type: 2}
+  - {fileID: 11400000, guid: c4c3191fe917d3b4ca7ded6490a61d9f, type: 2}
+  - {fileID: 11400000, guid: 5b132709bac2ca84ba97bf6888820efb, type: 2}
+  - {fileID: 11400000, guid: f12af6d952549df4f93a1decc922fe50, type: 2}
+  - {fileID: 11400000, guid: 32751310ee75312439f94679000fe1cd, type: 2}
+  - {fileID: 11400000, guid: 0c605a2a878cea34f96cea598d27c672, type: 2}
+  - {fileID: 11400000, guid: a8c6db154dda1ca459603bd84b16e8f1, type: 2}

@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a9f87e0d1eeb94094a6b4a0f52daf0, type: 3}
+  m_Name: BiomeContext_biome_family_fossil_reef
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
+  biomeFamily: {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  label: Fossil Reef Context
+  summary: Coral-led reef water with readable landmarks and biological shelter memory.
+  groundBudgetScale: 1.06
+  clusterBudgetScale: 1.24
+  structureBudgetScale: 1.06
+  spawnBudgetScale: 1.04
+  rockBias: 0.02
+  kelpBias: 0.08
+  plantBias: 0.1
+  coralBias: 0.22
+  eggBias: 0.18
+  debrisBias: 0
+  ruinBias: 0
+  caveBias: 0
+  landmarkBias: 0.1
+  creatureSpawnBias: 0
+  resourcePocketBias: 0
+  hazardPocketBias: 0
+  safePocketBias: 0.12
+  powerRouteBias: 0
+  serviceScarBias: 0
+  fertileGrowthBias: 0.16
+  biologicalNestBias: 0.18
+  resourcePocketAccentBias: 0
+  shelterPocketBias: 0.14
+  hazardPocketAccentBias: 0
+  debrisFieldBias: 0
+  rockCoverBias: 0
+  naturalLandmarkBias: 0.12
+  techFragmentBias: 0
+  caveReadBias: 0.06
+  biologicalSilhouetteBias: 0.1
+  passiveSpawnBias: 0.06
+  predatorSpawnBias: -0.04

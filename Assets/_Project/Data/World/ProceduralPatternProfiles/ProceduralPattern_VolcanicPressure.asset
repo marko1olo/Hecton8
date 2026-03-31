@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_VolcanicPressure
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 5
+  label: Volcanic Pressure
+  summary: Pressure-heavy cave water with rock cover, hazard pockets and a hard route
+    read.
+  groundBudgetScale: 0.82
+  clusterBudgetScale: 0.86
+  structureBudgetScale: 1.32
+  spawnBudgetScale: 0.98
+  minGroundPlacements: 12
+  groundTargetMax: 16
+  minClusterPlacements: 4
+  clusterTargetMax: 6
+  minStructurePlacements: 8
+  minSpawnPlacements: 5
+  structureTargetMin: 8
+  structureTargetMax: 10
+  naturalLandmarkMin: 3
+  naturalLandmarkMax: 4
+  techFragmentMin: 1
+  techFragmentMax: 2
+  caveReadMin: 3
+  caveReadMax: 4
+  biologicalSilhouetteMin: 0
+  biologicalSilhouetteMax: 0
+  fertileGrowthMin: 0
+  biologicalNestMin: 0
+  resourcePocketMin: 0
+  shelterPocketMin: 0
+  hazardPocketMin: 1
+  debrisFieldMin: 0
+  rockCoverMin: 2
+  fertileGrowthMaxRatio: 0.06
+  biologicalNestMaxRatio: 0.04
+  resourcePocketMaxRatio: 0.12
+  shelterPocketMaxRatio: 0.08
+  hazardPocketMaxRatio: 0.45
+  debrisFieldMaxRatio: 0.12
+  rockCoverMaxRatio: 0.65
+  spawnTargetMin: 5
+  spawnTargetMax: 7
+  passiveSpawnMin: 3
+  predatorSpawnMin: 1
+  predatorSpawnMax: 2

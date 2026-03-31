@@ -113,16 +113,17 @@ namespace Hecton8.AI
             for (int i = 0; i < count; i++)
             {
                 FaunaEntry e = possibleCreatures[i];
-                if (e.prefab == null) continue;
+                GameObject resolvedPrefab = e.GetResolvedPrefab();
+                if (resolvedPrefab == null) continue;
 
                 // Проверка лимита
                 if (currentCounts != null && i < currentCounts.Length)
                 {
-                    if (currentCounts[i] >= e.maxAlive)
+                    if (currentCounts[i] >= e.GetResolvedMaxAlive())
                         continue;
                 }
 
-                availableWeight += e.spawnWeight;
+                availableWeight += e.GetResolvedSpawnWeight();
             }
 
             if (availableWeight <= 0f) return false;
@@ -133,16 +134,17 @@ namespace Hecton8.AI
             for (int i = 0; i < count; i++)
             {
                 FaunaEntry e = possibleCreatures[i];
-                if (e.prefab == null) continue;
+                GameObject resolvedPrefab = e.GetResolvedPrefab();
+                if (resolvedPrefab == null) continue;
 
                 // Проверка лимита
                 if (currentCounts != null && i < currentCounts.Length)
                 {
-                    if (currentCounts[i] >= e.maxAlive)
+                    if (currentCounts[i] >= e.GetResolvedMaxAlive())
                         continue;
                 }
 
-                roll -= e.spawnWeight;
+                roll -= e.GetResolvedSpawnWeight();
 
                 if (roll <= 0f)
                 {
@@ -155,11 +157,12 @@ namespace Hecton8.AI
             for (int i = count - 1; i >= 0; i--)
             {
                 FaunaEntry e = possibleCreatures[i];
-                if (e.prefab == null) continue;
+                GameObject resolvedPrefab = e.GetResolvedPrefab();
+                if (resolvedPrefab == null) continue;
 
                 if (currentCounts != null && i < currentCounts.Length)
                 {
-                    if (currentCounts[i] >= e.maxAlive)
+                    if (currentCounts[i] >= e.GetResolvedMaxAlive())
                         continue;
                 }
 
@@ -193,8 +196,9 @@ namespace Hecton8.AI
             int count = possibleCreatures.Count;
             for (int i = 0; i < count; i++)
             {
-                if (possibleCreatures[i].prefab != null)
-                    _totalWeight += possibleCreatures[i].spawnWeight;
+                FaunaEntry entry = possibleCreatures[i];
+                if (entry.GetResolvedPrefab() != null)
+                    _totalWeight += entry.GetResolvedSpawnWeight();
             }
         }
 
@@ -231,6 +235,10 @@ namespace Hecton8.AI
     [Serializable]
     public struct FaunaEntry
     {
+        [Tooltip("Профиль вида существа. Если задан, он становится главным источником настроек " +
+                 "для префаба, веса спавна и лимитов по биому.")]
+        public CreatureArchetypeData archetype;
+
         [Tooltip("Префаб существа (должен иметь HectonBaseAI + быть в пуле).")]
         public GameObject prefab;
 
@@ -243,5 +251,29 @@ namespace Hecton8.AI
                  "данного типа одновременно.")]
         [Range(1, 50)]
         public int maxAlive;
+
+        public GameObject GetResolvedPrefab()
+        {
+            if (archetype != null && archetype.prefab != null)
+                return archetype.prefab;
+
+            return prefab;
+        }
+
+        public float GetResolvedSpawnWeight()
+        {
+            if (archetype != null && archetype.spawnWeight > 0)
+                return archetype.spawnWeight;
+
+            return spawnWeight;
+        }
+
+        public int GetResolvedMaxAlive()
+        {
+            if (archetype != null && archetype.maxAlivePerBiome > 0)
+                return archetype.maxAlivePerBiome;
+
+            return maxAlive;
+        }
     }
 }

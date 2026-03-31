@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Power_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.power.mid
+  profileLabel: Power Mid Read
+  entryBeat: Generator, relay, or load silhouettes make the local system legible
+    from a distance.
+  routineBeat: The player can quickly read source, transfer, and demand without being
+    forced into one route.
+  reliefBeat: A small stable pocket near the system gives room to inspect and plan.
+  pressureBeat: Pressure comes from broken links, exposure, and the cost of stabilizing
+    the chain.
+  payoffBeat: 'The reward is regained leverage: safer nearby water, stronger utility,
+    or a working support line.'
+  exitBeat: Leaving should still feel readable through system memory, not through
+    a fixed track.
+  playerFreedomRule: The player can observe, repair, ignore, or return later depending
+    on their needs.
+  softProgressionPull: Visible system logic naturally tempts the player to follow
+    power relationships.
+  optionalDetourRule: Off-angle looks should still reveal useful system clues or
+    side value.
+  returnLogic: Returning later should feel worthwhile because the player remembers
+    how the line behaved.
+  masteryLogic: Mastery means seeing the whole power picture fast and acting only
+    where it matters.
+  playerPromise: Readable infrastructure that rewards understanding more than obedience.
+  routeMemoryRule: Memory should latch onto the strongest source, the most obvious
+    relay, and the hungriest load.
+  failureMode: If source, transfer, and demand blur together, the system loses meaning.

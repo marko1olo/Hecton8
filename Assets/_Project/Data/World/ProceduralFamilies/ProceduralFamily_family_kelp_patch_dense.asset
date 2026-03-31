@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_kelp_patch_dense
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.kelp.patch.dense
+  familyLabel: Kelp Patch Dense
+  defaultFidelity: 2
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 5
+  scatterLayer: 1
+  structureAccentRole: 0
+  clusterAccentRole: 1
+  placementMode: 2
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 2
+  clusterRadiusMeters: 16
+  clusterCountMin: 10
+  clusterCountMax: 24
+  heatmapChannel: kelp_density
+  proxyColor: {r: 0.18, g: 0.64, b: 0.28, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 0100000009000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 0
+  secondaryPattern: 1
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.kelp.patch.dense.proxy.patch
+    prefab: {fileID: 6878648354173984997, guid: dce65d454128f164d916e2b1ed11afdc, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.kelp.patch.dense.proxy.grove
+    prefab: {fileID: 6480503630412126635, guid: 1c1500543faa1324e8610786f741f1a8, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  futurePrefabRoot: World/Kelp/Kelp_Patch_Dense
+  gameplayRole: Dense kelp pockets for shelter, occlusion and fauna habitat.

@@ -18,5 +18,27 @@ MonoBehaviour:
   budgetClass: 1
   expectsCollision: 1
   expectsInteraction: 1
+  proceduralDomain: 0
+  scatterLayer: 0
+  structureAccentRole: 0
+  clusterAccentRole: 0
+  placementMode: 0
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 4
+  clusterRadiusMeters: 8
+  clusterCountMin: 1
+  clusterCountMax: 3
+  heatmapChannel: 
+  proxyColor: {r: 0.2, g: 0.8, b: 1, a: 1}
+  preferredBiomeFamilies: []
+  preferredZoneKinds: 
+  biomeAffinityWeight: 0.22
+  zoneAffinityWeight: 0.14
+  primaryPattern: 2
+  secondaryPattern: 1
+  patternAffinityWeight: 0.22
+  variants: []
   futurePrefabRoot: resources.pickups.near
   gameplayRole: Planned world family for 'resources.pickups.near'.

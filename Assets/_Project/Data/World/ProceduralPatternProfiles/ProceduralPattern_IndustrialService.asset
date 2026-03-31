@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_IndustrialService
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 3
+  label: Industrial Service
+  summary: Worked water with relays, debris, scars and enough ambient life to stay
+    sandbox-like.
+  groundBudgetScale: 0.75
+  clusterBudgetScale: 0.95
+  structureBudgetScale: 1.35
+  spawnBudgetScale: 0.8
+  minGroundPlacements: 10
+  groundTargetMax: 14
+  minClusterPlacements: 7
+  clusterTargetMax: 9
+  minStructurePlacements: 7
+  minSpawnPlacements: 4
+  structureTargetMin: 7
+  structureTargetMax: 9
+  naturalLandmarkMin: 1
+  naturalLandmarkMax: 2
+  techFragmentMin: 4
+  techFragmentMax: 6
+  caveReadMin: 1
+  caveReadMax: 2
+  biologicalSilhouetteMin: 0
+  biologicalSilhouetteMax: 0
+  fertileGrowthMin: 0
+  biologicalNestMin: 0
+  resourcePocketMin: 0
+  shelterPocketMin: 0
+  hazardPocketMin: 0
+  debrisFieldMin: 6
+  rockCoverMin: 0
+  fertileGrowthMaxRatio: 0.06
+  biologicalNestMaxRatio: 0.04
+  resourcePocketMaxRatio: 0.1
+  shelterPocketMaxRatio: 0.08
+  hazardPocketMaxRatio: 0.18
+  debrisFieldMaxRatio: 0.85
+  rockCoverMaxRatio: 0.18
+  spawnTargetMin: 4
+  spawnTargetMax: 5
+  passiveSpawnMin: 3
+  predatorSpawnMin: 0
+  predatorSpawnMax: 1

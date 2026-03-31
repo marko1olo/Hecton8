@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_plant_giant
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.plant.giant
+  familyLabel: Plant Giant
+  defaultFidelity: 0
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 6
+  scatterLayer: 2
+  structureAccentRole: 4
+  clusterAccentRole: 0
+  placementMode: 4
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 18
+  clusterRadiusMeters: 20
+  clusterCountMin: 1
+  clusterCountMax: 2
+  heatmapChannel: flora_density
+  proxyColor: {r: 0.16, g: 0.78, b: 0.52, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  preferredZoneKinds: 090000000100000002000000
+  biomeAffinityWeight: 0.3
+  zoneAffinityWeight: 0.18
+  primaryPattern: 8
+  secondaryPattern: 1
+  patternAffinityWeight: 0.33
+  variants:
+  - variantId: family.plant.giant.proxy.tower
+    prefab: {fileID: 5595247473816948719, guid: 09818bd23dd60df4a87b2867dacbb6de, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.12}
+  - variantId: family.plant.giant.proxy.canopy
+    prefab: {fileID: 14027842486582222, guid: 33310923b4038874187e46e83ef0b95e, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  futurePrefabRoot: World/Plant/Plant_Giant
+  gameplayRole: Huge underwater plants that act as biome-scale silhouettes.

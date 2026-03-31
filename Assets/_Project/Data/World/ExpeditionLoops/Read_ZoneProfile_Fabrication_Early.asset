@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Fabrication_Early
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.fabrication.early
+  profileLabel: Fabrication Early Read
+  entryBeat: A visible outpost or fabrication stop reads as a reliable human foothold.
+  routineBeat: The player quickly understands this is a place to reset, craft, and
+    reassess.
+  reliefBeat: This area acts as a dependable pressure break before or after riskier
+    water.
+  pressureBeat: Pressure lives mostly outside the stop, not inside it.
+  payoffBeat: The reward is readiness for the next self-chosen trip, not a scripted
+    loot moment.
+  exitBeat: Departure should feel deliberate and clean, not funnelled.
+  playerFreedomRule: The player decides whether this stop matters now, later, or
+    not at all.
+  softProgressionPull: The place quietly advertises preparation and optional regrouping.
+  optionalDetourRule: Even a brief glance should make the outpost memorable as a
+    future reset point.
+  returnLogic: Repeat visits should feel smart and self-directed, never mandatory.
+  masteryLogic: Experienced players use the stop as a flexible logistics anchor between
+    different plans.
+  playerPromise: A stable pocket of control inside a wider uncertain world.
+  routeMemoryRule: Memory should come from the outpost silhouette and its relation
+    to nearby risk water.
+  failureMode: If the stop is slow, noisy, or unclear, it stops working as a relief
+    space.

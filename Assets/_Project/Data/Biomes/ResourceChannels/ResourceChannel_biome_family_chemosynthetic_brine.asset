@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721656565caf8c64f8e84d70d6562cc9, type: 3}
+  m_Name: ResourceChannel_biome_family_chemosynthetic_brine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourceChannelProfile
+  profileId: biome.resource_channel.chemosynthetic_brine
+  profileLabel: Chemosynthetic Brine Resource Channel
+  resourcePocketItem: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  nodeClusterItem: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  safePocketItem: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  buildSocketItem: {fileID: 11400000, guid: 309f4de80276b6e408359a2ee710b3ca, type: 2}
+  powerSpineItem: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  serviceChokeItem: {fileID: 11400000, guid: 309f4de80276b6e408359a2ee710b3ca, type: 2}
+  routeAnchorHintItem: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  hazardGateRewardItem: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  rareObjectiveRewardItem: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  pocketRead: Routine nearby pockets usually pay out Electrolyte Salts.
+  nodeRead: Heavier node clusters here usually lead to Hydrocarbon Resin.
+  safePocketRead: Short relief spaces often still give Hydrocarbon Resin, so retreat
+    is not empty.
+  routeRead: Route anchors hint this biome's material line before the player fully
+    commits.
+  rareRead: The expensive late pull of this family usually resolves into Sulfur Clumps.

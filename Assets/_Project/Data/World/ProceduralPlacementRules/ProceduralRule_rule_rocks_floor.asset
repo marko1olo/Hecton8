@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_rocks_floor
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.rocks.floor
+  ruleLabel: Seafloor Rock Scatter
+  familyProfile: {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
+  gameplayIntent: Base rock language for most seafloor biomes.
+  preferredBiomeFamilies: []
+  preferredZoneKinds: 
+  preferredSocketKinds: 
+  preferredFidelity: 1
+  minDepthMeters: 0
+  maxDepthMeters: 5000
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 35
+  requiredHeatmapChannel: rock_density
+  minHeatmapValue: 0.25
+  densityScale: 1
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 4
+  maxInstances: 12
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0

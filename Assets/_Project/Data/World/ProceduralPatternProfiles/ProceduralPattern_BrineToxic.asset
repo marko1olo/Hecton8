@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_BrineToxic
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 4
+  label: Brine Toxic
+  summary: Sparse toxic service water with dirty traces, sharp hazards and limited
+    life.
+  groundBudgetScale: 0.68
+  clusterBudgetScale: 0.92
+  structureBudgetScale: 1.6
+  spawnBudgetScale: 0.78
+  minGroundPlacements: 8
+  groundTargetMax: 12
+  minClusterPlacements: 4
+  clusterTargetMax: 5
+  minStructurePlacements: 5
+  minSpawnPlacements: 4
+  structureTargetMin: 5
+  structureTargetMax: 7
+  naturalLandmarkMin: 1
+  naturalLandmarkMax: 2
+  techFragmentMin: 2
+  techFragmentMax: 3
+  caveReadMin: 1
+  caveReadMax: 2
+  biologicalSilhouetteMin: 0
+  biologicalSilhouetteMax: 0
+  fertileGrowthMin: 0
+  biologicalNestMin: 0
+  resourcePocketMin: 0
+  shelterPocketMin: 0
+  hazardPocketMin: 1
+  debrisFieldMin: 2
+  rockCoverMin: 0
+  fertileGrowthMaxRatio: 0.04
+  biologicalNestMaxRatio: 0.04
+  resourcePocketMaxRatio: 0.1
+  shelterPocketMaxRatio: 0.06
+  hazardPocketMaxRatio: 0.45
+  debrisFieldMaxRatio: 0.7
+  rockCoverMaxRatio: 0.16
+  spawnTargetMin: 4
+  spawnTargetMax: 5
+  passiveSpawnMin: 2
+  predatorSpawnMin: 0
+  predatorSpawnMax: 1

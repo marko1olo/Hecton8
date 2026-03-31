@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a9f87e0d1eeb94094a6b4a0f52daf0, type: 3}
+  m_Name: BiomeContext_biome_family_rift_void
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
+  biomeFamily: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
+  label: Rift Void Context
+  summary: Deep hostile void water with sharp hazards, ruins and stronger predator
+    reads.
+  groundBudgetScale: 0.76
+  clusterBudgetScale: 0.9
+  structureBudgetScale: 1.1
+  spawnBudgetScale: 1.14
+  rockBias: 0
+  kelpBias: 0
+  plantBias: 0
+  coralBias: 0
+  eggBias: 0
+  debrisBias: 0.1
+  ruinBias: 0.12
+  caveBias: 0.12
+  landmarkBias: 0
+  creatureSpawnBias: 0
+  resourcePocketBias: 0
+  hazardPocketBias: 0.16
+  safePocketBias: 0
+  powerRouteBias: 0
+  serviceScarBias: 0.08
+  fertileGrowthBias: 0
+  biologicalNestBias: 0
+  resourcePocketAccentBias: 0
+  shelterPocketBias: 0
+  hazardPocketAccentBias: 0.16
+  debrisFieldBias: 0.1
+  rockCoverBias: 0.04
+  naturalLandmarkBias: 0.04
+  techFragmentBias: 0.12
+  caveReadBias: 0.14
+  biologicalSilhouetteBias: 0
+  passiveSpawnBias: -0.06
+  predatorSpawnBias: 0.14

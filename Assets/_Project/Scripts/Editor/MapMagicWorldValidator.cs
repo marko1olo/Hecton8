@@ -3,6 +3,7 @@ using Hecton8.World;
 using Hecton8.Environment;
 using MapMagic.Core;
 using System;
+using System.Collections.Generic;
 using GPUInstancer;
 using UnityEditor;
 using UnityEngine;
@@ -34,6 +35,9 @@ namespace Hecton8.EditorTools
             WorldZoneDirector worldZoneDirector = FindSceneObjectIncludingInactive<WorldZoneDirector>();
             WorldContentDirector worldContentDirector = FindSceneObjectIncludingInactive<WorldContentDirector>();
             WorldPopulationDirector worldPopulationDirector = FindSceneObjectIncludingInactive<WorldPopulationDirector>();
+            WorldProceduralFillDirector worldProceduralFillDirector = FindSceneObjectIncludingInactive<WorldProceduralFillDirector>();
+            WorldProceduralFieldSampler worldProceduralFieldSampler = FindSceneObjectIncludingInactive<WorldProceduralFieldSampler>();
+            WorldProceduralScatterDirector worldProceduralScatterDirector = FindSceneObjectIncludingInactive<WorldProceduralScatterDirector>();
             BiomeMatrixDirector biomeMatrixDirector = FindSceneObjectIncludingInactive<BiomeMatrixDirector>();
             Component scatterBudgetController = FindSceneObjectIncludingInactive(
                 Type.GetType("Hecton8.World.ScatterBudgetController, Assembly-CSharp"));
@@ -184,6 +188,36 @@ namespace Hecton8.EditorTools
             else
             {
                 ValidateWorldPopulationDirector(worldPopulationDirector, ref errorCount, ref warningCount, ref uncoveredSocketCount, ref weakSpatialSocketCount);
+            }
+
+            if (worldProceduralFillDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldProceduralFillDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldProceduralFillDirector(worldProceduralFillDirector, ref errorCount, ref warningCount);
+            }
+
+            if (worldProceduralFieldSampler == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldProceduralFieldSampler.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldProceduralFieldSampler(worldProceduralFieldSampler, ref errorCount, ref warningCount);
+            }
+
+            if (worldProceduralScatterDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldProceduralScatterDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldProceduralScatterDirector(worldProceduralScatterDirector, ref errorCount, ref warningCount);
             }
 
             if (biomeMatrixDirector == null)
@@ -1008,6 +1042,305 @@ namespace Hecton8.EditorTools
                     Debug.LogWarning($"[MapMagicWorldValidation] Matrix biome '{profile.biomeName}' is missing familyProfile.", profile);
                     warningCount++;
                 }
+            }
+        }
+
+        private static void ValidateWorldProceduralFillDirector(
+            WorldProceduralFillDirector worldProceduralFillDirector,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldProceduralFillDirector);
+            SerializedProperty playerTransform = so.FindProperty("playerTransform");
+            SerializedProperty worldZoneDirector = so.FindProperty("worldZoneDirector");
+            SerializedProperty worldContentDirector = so.FindProperty("worldContentDirector");
+            SerializedProperty biomeMatrixDirector = so.FindProperty("biomeMatrixDirector");
+            SerializedProperty rules = so.FindProperty("rules");
+            SerializedProperty families = so.FindProperty("families");
+
+            if (playerTransform == null || playerTransform.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFillDirector is using runtime auto-resolve for playerTransform.", worldProceduralFillDirector);
+                warningCount++;
+            }
+
+            if (worldZoneDirector == null || worldZoneDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFillDirector is using runtime auto-resolve for WorldZoneDirector.", worldProceduralFillDirector);
+                warningCount++;
+            }
+
+            if (worldContentDirector == null || worldContentDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFillDirector is using runtime auto-resolve for WorldContentDirector.", worldProceduralFillDirector);
+                warningCount++;
+            }
+
+            if (biomeMatrixDirector == null || biomeMatrixDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFillDirector is using runtime auto-resolve for BiomeMatrixDirector.", worldProceduralFillDirector);
+                warningCount++;
+            }
+
+            if (rules == null || rules.arraySize <= 0)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFillDirector has no procedural placement rules assigned.", worldProceduralFillDirector);
+                warningCount++;
+            }
+
+            if (families == null || families.arraySize <= 0)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFillDirector has no procedural family profiles assigned.", worldProceduralFillDirector);
+                warningCount++;
+            }
+
+            if (rules != null)
+            {
+                HashSet<WorldPrefabFamilyProfile> coveredFamilies = new HashSet<WorldPrefabFamilyProfile>();
+                for (int i = 0; i < rules.arraySize; i++)
+                {
+                    WorldProceduralPlacementRule rule = rules.GetArrayElementAtIndex(i).objectReferenceValue as WorldProceduralPlacementRule;
+                    if (rule == null)
+                        continue;
+
+                    if (rule.familyProfile == null)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Procedural rule '{rule.ruleLabel}' has no familyProfile.", rule);
+                        warningCount++;
+                    }
+                    else
+                    {
+                        coveredFamilies.Add(rule.familyProfile);
+                    }
+
+                    if (rule.maxInstances < rule.minInstances)
+                    {
+                        Debug.LogError($"[MapMagicWorldValidation] Procedural rule '{rule.ruleLabel}' has maxInstances < minInstances.", rule);
+                        errorCount++;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(rule.requiredHeatmapChannel) && rule.minHeatmapValue <= 0f)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Procedural rule '{rule.ruleLabel}' uses heatmap '{rule.requiredHeatmapChannel}' but minHeatmapValue is too low to be meaningful.", rule);
+                        warningCount++;
+                    }
+                }
+
+                if (families != null)
+                {
+                    for (int i = 0; i < families.arraySize; i++)
+                    {
+                        WorldPrefabFamilyProfile family = families.GetArrayElementAtIndex(i).objectReferenceValue as WorldPrefabFamilyProfile;
+                        if (family == null || !family.allowRuntimeScatter)
+                            continue;
+
+                        if (!coveredFamilies.Contains(family))
+                        {
+                            Debug.LogError($"[MapMagicWorldValidation] Procedural family '{family.familyLabel}' allows runtime scatter but has no placement rule coverage.", family);
+                            errorCount++;
+                        }
+                    }
+                }
+            }
+
+            if (families != null)
+            {
+                for (int i = 0; i < families.arraySize; i++)
+                {
+                    WorldPrefabFamilyProfile family = families.GetArrayElementAtIndex(i).objectReferenceValue as WorldPrefabFamilyProfile;
+                    if (family == null)
+                        continue;
+
+                    if (family.variants == null || family.variants.Length <= 0)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Procedural family '{family.familyLabel}' has no variants.", family);
+                        warningCount++;
+                        continue;
+                    }
+
+                    bool hasPrefab = false;
+                    for (int variantIndex = 0; variantIndex < family.variants.Length; variantIndex++)
+                    {
+                        WorldPrefabFamilyProfile.VariantEntry variant = family.variants[variantIndex];
+                        if (variant == null)
+                            continue;
+
+                        if (variant.prefab != null)
+                            hasPrefab = true;
+                    }
+
+                    if (!hasPrefab)
+                    {
+                        Debug.LogWarning($"[MapMagicWorldValidation] Procedural family '{family.familyLabel}' has variants but no assigned prefabs.", family);
+                        warningCount++;
+                    }
+                }
+            }
+        }
+
+        private static void ValidateWorldProceduralFieldSampler(
+            WorldProceduralFieldSampler worldProceduralFieldSampler,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldProceduralFieldSampler);
+            SerializedProperty mapMagicBridge = so.FindProperty("mapMagicBridge");
+            SerializedProperty worldZoneDirector = so.FindProperty("worldZoneDirector");
+            SerializedProperty biomeMatrixDirector = so.FindProperty("biomeMatrixDirector");
+            SerializedProperty slopeProbeMeters = so.FindProperty("slopeProbeMeters");
+
+            if (mapMagicBridge == null || mapMagicBridge.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFieldSampler is using runtime auto-resolve for MapMagicBridge.", worldProceduralFieldSampler);
+                warningCount++;
+            }
+
+            if (worldZoneDirector == null || worldZoneDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFieldSampler is using runtime auto-resolve for WorldZoneDirector.", worldProceduralFieldSampler);
+                warningCount++;
+            }
+
+            if (biomeMatrixDirector == null || biomeMatrixDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralFieldSampler is using runtime auto-resolve for BiomeMatrixDirector.", worldProceduralFieldSampler);
+                warningCount++;
+            }
+
+            if (slopeProbeMeters == null || slopeProbeMeters.floatValue < 1f)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralFieldSampler slopeProbeMeters is too low.", worldProceduralFieldSampler);
+                errorCount++;
+            }
+        }
+
+        private static void ValidateWorldProceduralScatterDirector(
+            WorldProceduralScatterDirector worldProceduralScatterDirector,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldProceduralScatterDirector);
+            SerializedProperty fieldSampler = so.FindProperty("fieldSampler");
+            SerializedProperty proceduralFillDirector = so.FindProperty("proceduralFillDirector");
+            SerializedProperty patternCatalog = so.FindProperty("patternCatalog");
+            SerializedProperty biomeContextCatalog = so.FindProperty("biomeContextCatalog");
+            SerializedProperty cellSize = so.FindProperty("cellSize");
+            SerializedProperty radiusCells = so.FindProperty("radiusCells");
+            SerializedProperty groundPlacementsPerCell = so.FindProperty("groundPlacementsPerCell");
+            SerializedProperty clusterPlacementsPerCell = so.FindProperty("clusterPlacementsPerCell");
+            SerializedProperty structureCellStride = so.FindProperty("structureCellStride");
+            SerializedProperty structurePlacementsPerWindow = so.FindProperty("structurePlacementsPerWindow");
+            SerializedProperty spawnCellStride = so.FindProperty("spawnCellStride");
+            SerializedProperty spawnPlacementsPerWindow = so.FindProperty("spawnPlacementsPerWindow");
+
+            if (fieldSampler == null || fieldSampler.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralScatterDirector is using runtime auto-resolve for WorldProceduralFieldSampler.", worldProceduralScatterDirector);
+                warningCount++;
+            }
+
+            if (proceduralFillDirector == null || proceduralFillDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldProceduralScatterDirector is using runtime auto-resolve for WorldProceduralFillDirector.", worldProceduralScatterDirector);
+                warningCount++;
+            }
+
+            if (patternCatalog == null || patternCatalog.objectReferenceValue == null)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector is missing WorldProceduralPatternCatalog.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+            else if (patternCatalog.objectReferenceValue is WorldProceduralPatternCatalog catalog)
+            {
+                if (catalog.FallbackProfile == null)
+                {
+                    Debug.LogError("[MapMagicWorldValidation] WorldProceduralPatternCatalog is missing its fallback profile.", worldProceduralScatterDirector);
+                    errorCount++;
+                }
+
+                WorldProceduralPattern[] patterns = (WorldProceduralPattern[])Enum.GetValues(typeof(WorldProceduralPattern));
+                for (int i = 0; i < patterns.Length; i++)
+                {
+                    if (catalog.HasConfiguredProfile(patterns[i]))
+                        continue;
+
+                    Debug.LogError($"[MapMagicWorldValidation] WorldProceduralPatternCatalog is missing profile for {patterns[i]}.", worldProceduralScatterDirector);
+                    errorCount++;
+                }
+            }
+
+            if (biomeContextCatalog == null || biomeContextCatalog.objectReferenceValue == null)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector is missing WorldProceduralBiomeFamilyContextCatalog.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+            else if (biomeContextCatalog.objectReferenceValue is WorldProceduralBiomeFamilyContextCatalog contextCatalog)
+            {
+                if (contextCatalog.FallbackProfile == null)
+                {
+                    Debug.LogError("[MapMagicWorldValidation] WorldProceduralBiomeFamilyContextCatalog is missing its fallback profile.", worldProceduralScatterDirector);
+                    errorCount++;
+                }
+
+                string[] biomeFamilyGuids = AssetDatabase.FindAssets("t:HectonBiomeFamilyProfile", new[] { "Assets/_Project/Data/Biomes/FamilyProfiles" });
+                for (int i = 0; i < biomeFamilyGuids.Length; i++)
+                {
+                    string familyPath = AssetDatabase.GUIDToAssetPath(biomeFamilyGuids[i]);
+                    HectonBiomeFamilyProfile familyProfile = AssetDatabase.LoadAssetAtPath<HectonBiomeFamilyProfile>(familyPath);
+                    if (familyProfile == null || contextCatalog.HasConfiguredProfile(familyProfile))
+                        continue;
+
+                    Debug.LogError($"[MapMagicWorldValidation] WorldProceduralBiomeFamilyContextCatalog is missing profile for {familyProfile.familyId}.", worldProceduralScatterDirector);
+                    errorCount++;
+                }
+            }
+
+            if (cellSize == null || cellSize.floatValue < 8f)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector cellSize is too low.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (radiusCells == null || radiusCells.intValue < 2)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector radiusCells is too low.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (groundPlacementsPerCell == null || groundPlacementsPerCell.intValue <= 0)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector groundPlacementsPerCell must be positive.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (clusterPlacementsPerCell == null || clusterPlacementsPerCell.intValue <= 0)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector clusterPlacementsPerCell must be positive.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (structureCellStride == null || structureCellStride.intValue < 2)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector structureCellStride must be >= 2.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (structurePlacementsPerWindow == null || structurePlacementsPerWindow.intValue <= 0)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector structurePlacementsPerWindow must be positive.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (spawnCellStride == null || spawnCellStride.intValue < 2)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector spawnCellStride must be >= 2.", worldProceduralScatterDirector);
+                errorCount++;
+            }
+
+            if (spawnPlacementsPerWindow == null || spawnPlacementsPerWindow.intValue <= 0)
+            {
+                Debug.LogError("[MapMagicWorldValidation] WorldProceduralScatterDirector spawnPlacementsPerWindow must be positive.", worldProceduralScatterDirector);
+                errorCount++;
             }
         }
 

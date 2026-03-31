@@ -30,8 +30,8 @@ MonoBehaviour:
     targetDensity: 3
     usage: 'far: branching route legibility and recovery path memory.'
   heroFamily: {fileID: 11400000, guid: 4c168e11ae4b62e4c9f8bbc2270be70e, type: 2}
-  gameplaySummary: Navigation hub that helps the player read branch choice and return
-    flow.
+  gameplaySummary: Navigation pocket that helps the player read branch choice and
+    return flow.
   resourcePocketPlan:
     family: {fileID: 11400000, guid: 3b56a229d14117b4c8fd0efaab6cebd2, type: 2}
     relation: 3

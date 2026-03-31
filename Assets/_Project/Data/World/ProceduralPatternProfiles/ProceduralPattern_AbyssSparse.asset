@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_AbyssSparse
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 7
+  label: Abyss Sparse
+  summary: Intentionally sparse deep water with just enough anchors to avoid total
+    deadness.
+  groundBudgetScale: 0.5
+  clusterBudgetScale: 0.55
+  structureBudgetScale: 1
+  spawnBudgetScale: 0.6
+  minGroundPlacements: 5
+  groundTargetMax: 8
+  minClusterPlacements: 2
+  clusterTargetMax: 3
+  minStructurePlacements: 3
+  minSpawnPlacements: 3
+  structureTargetMin: 3
+  structureTargetMax: 4
+  naturalLandmarkMin: 1
+  naturalLandmarkMax: 1
+  techFragmentMin: 1
+  techFragmentMax: 1
+  caveReadMin: 1
+  caveReadMax: 2
+  biologicalSilhouetteMin: 0
+  biologicalSilhouetteMax: 0
+  fertileGrowthMin: 0
+  biologicalNestMin: 0
+  resourcePocketMin: 0
+  shelterPocketMin: 0
+  hazardPocketMin: 0
+  debrisFieldMin: 0
+  rockCoverMin: 1
+  fertileGrowthMaxRatio: 0.04
+  biologicalNestMaxRatio: 0.04
+  resourcePocketMaxRatio: 0.1
+  shelterPocketMaxRatio: 0.08
+  hazardPocketMaxRatio: 0.12
+  debrisFieldMaxRatio: 0.18
+  rockCoverMaxRatio: 0.8
+  spawnTargetMin: 3
+  spawnTargetMax: 4
+  passiveSpawnMin: 2
+  predatorSpawnMin: 0
+  predatorSpawnMax: 1

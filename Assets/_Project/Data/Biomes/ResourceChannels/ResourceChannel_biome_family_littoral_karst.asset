@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721656565caf8c64f8e84d70d6562cc9, type: 3}
+  m_Name: ResourceChannel_biome_family_littoral_karst
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourceChannelProfile
+  profileId: biome.resource_channel.littoral_karst
+  profileLabel: Littoral Karst Resource Channel
+  resourcePocketItem: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
+  nodeClusterItem: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+  safePocketItem: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
+  buildSocketItem: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
+  powerSpineItem: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
+  serviceChokeItem: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
+  routeAnchorHintItem: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+  hazardGateRewardItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  rareObjectiveRewardItem: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
+  pocketRead: Routine nearby pockets usually pay out Titanium Scrap.
+  nodeRead: Heavier node clusters here usually lead to Silica Shards.
+  safePocketRead: Short relief spaces often still give Titanium Scrap, so retreat
+    is not empty.
+  routeRead: Route anchors hint this biome's material line before the player fully
+    commits.
+  rareRead: The expensive late pull of this family usually resolves into Glass Panel.

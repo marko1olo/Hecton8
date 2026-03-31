@@ -49,6 +49,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -203,6 +204,28 @@ namespace Hecton8.AI
         [Tooltip("Время перезарядки атаки (секунды).")]
         [SerializeField] private float attackCooldown = 2f;
 
+        [Header("── Player Stimulus ───────────────────────────────")]
+        [Tooltip("Если true — существо слышит шум игрока и раньше реагирует на него.")]
+        [SerializeField] private bool reactToPlayerNoise = true;
+
+        [Tooltip("Насколько шум игрока расширяет дистанцию обнаружения.")]
+        [SerializeField] private float noiseDetectionBonus = 10f;
+
+        [Tooltip("Насколько шум игрока расширяет дистанцию побега у мирных существ.")]
+        [SerializeField] private float noiseEscapeBonus = 8f;
+
+        [Tooltip("Если true — существо реагирует на луч фонаря игрока.")]
+        [SerializeField] private bool reactToPlayerLight = true;
+
+        [Tooltip("Насколько свет фонаря расширяет дистанцию обнаружения.")]
+        [SerializeField] private float lightDetectionBonus = 12f;
+
+        [Tooltip("Насколько свет фонаря расширяет дистанцию побега у мирных существ.")]
+        [SerializeField] private float lightEscapeBonus = 10f;
+
+        [Tooltip("Как долго существо помнит недавний шум или свет игрока.")]
+        [SerializeField] private float stimulusMemoryDuration = 2.5f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CREATURE HEALTH
         // ══════════════════════════════════════════════════════════
@@ -231,6 +254,11 @@ namespace Hecton8.AI
         [SerializeField] private float _debugCurrentHealth;
         [SerializeField] private float _debugCurrentRayLength;
         [SerializeField] private int _debugBestRayIndex;
+        [SerializeField] private float _debugNoiseStimulus;
+        [SerializeField] private float _debugLightStimulus;
+        [SerializeField] private float _debugStimulusMemory;
+        [SerializeField] private float _debugAggroTriggerDistance;
+        [SerializeField] private float _debugEscapeTriggerDistance;
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -289,6 +317,8 @@ namespace Hecton8.AI
         /// Устанавливается один раз при обнаружении игрока. Zero-GC: нет TryGetComponent каждый удар.
         /// </summary>
         private HectonSurvivalSystem _playerSurvival;
+        private Rigidbody _playerRigidbody;
+        private PlayerFlashlight _playerFlashlight;
 
         /// <summary>Текущее здоровье существа.</summary>
         private float _currentHealth;
@@ -325,6 +355,12 @@ namespace Hecton8.AI
 
         /// <summary>Флаг: существо мертво (HP ≤ 0, ожидает деспавна).</summary>
         private bool _isDead;
+        private float _stimulusMemoryTimer;
+        private float _stimulusAggroDistanceSqr;
+        private float _stimulusEscapeDistanceSqr;
+        private float _stimulusEscapeSafeDistanceSqr;
+        private float _stimulusDeaggroDistanceSqr;
+        private float _stimulusWakeDistanceSqr;
 
         // ── Obstacle Avoidance: pre-allocated + throttled (v2.2) ──
 
@@ -544,6 +580,9 @@ namespace Hecton8.AI
             // ── Сброс кэша survival системы игрока ──
             // (при следующем спавне игрок может быть другим объектом)
             _playerSurvival = null;
+            _playerRigidbody = null;
+            _playerFlashlight = null;
+            ResetStimulusDebug();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -580,11 +619,15 @@ namespace Hecton8.AI
             {
                 // Игрок не найден — спим
                 _isSleeping = true;
+                ResetStimulusDebug();
                 UpdateDiagnostics(distSqrToPlayer);
                 return;
             }
 
-            if (distSqrToPlayer > _sleepDistanceSqr)
+            UpdatePlayerStimulus(deltaTime);
+
+            float wakeDistanceSqr = Mathf.Max(_sleepDistanceSqr, _stimulusWakeDistanceSqr);
+            if (distSqrToPlayer > wakeDistanceSqr)
             {
                 // Слишком далеко — AI засыпает
                 _isSleeping = true;
@@ -794,20 +837,28 @@ namespace Hecton8.AI
         /// </summary>
         protected virtual void EvaluateStateTransitions(float distSqrToPlayer, float deltaTime)
         {
+            float aggroDistanceSqr = Mathf.Max(_aggroDistanceSqr, _stimulusAggroDistanceSqr);
+            float escapeDistanceSqr = Mathf.Max(_escapeDistanceSqr, _stimulusEscapeDistanceSqr);
+            float escapeSafeDistanceSqr = Mathf.Max(_escapeSafeDistanceSqr, _stimulusEscapeSafeDistanceSqr);
+            float deaggroDistanceSqr = Mathf.Max(_deaggroDistanceSqr, _stimulusDeaggroDistanceSqr);
+
+            _debugAggroTriggerDistance = Mathf.Sqrt(aggroDistanceSqr);
+            _debugEscapeTriggerDistance = Mathf.Sqrt(escapeDistanceSqr);
+
             switch (_currentState)
             {
                 // ─────────────────────────────────────────────────
                 case AIState.Idle:
                 {
                     // Агрессия
-                    if (isAggressive && distSqrToPlayer < _aggroDistanceSqr)
+                    if (isAggressive && distSqrToPlayer < aggroDistanceSqr)
                     {
                         TransitionTo(AIState.Aggressive);
                         return;
                     }
 
                     // Побег
-                    if (!isAggressive && distSqrToPlayer < _escapeDistanceSqr)
+                    if (!isAggressive && distSqrToPlayer < escapeDistanceSqr)
                     {
                         TransitionTo(AIState.Escape);
                         return;
@@ -827,14 +878,14 @@ namespace Hecton8.AI
                 case AIState.Wander:
                 {
                     // Агрессия
-                    if (isAggressive && distSqrToPlayer < _aggroDistanceSqr)
+                    if (isAggressive && distSqrToPlayer < aggroDistanceSqr)
                     {
                         TransitionTo(AIState.Aggressive);
                         return;
                     }
 
                     // Побег
-                    if (!isAggressive && distSqrToPlayer < _escapeDistanceSqr)
+                    if (!isAggressive && distSqrToPlayer < escapeDistanceSqr)
                     {
                         TransitionTo(AIState.Escape);
                         return;
@@ -869,7 +920,7 @@ namespace Hecton8.AI
                         return;
 
                     // Убежали достаточно далеко → Wander
-                    if (distSqrToPlayer > _escapeSafeDistanceSqr)
+                    if (distSqrToPlayer > escapeSafeDistanceSqr)
                     {
                         TransitionTo(AIState.Wander);
                     }
@@ -881,7 +932,7 @@ namespace Hecton8.AI
                 case AIState.Aggressive:
                 {
                     // Потеря агрессии (leash distance)
-                    if (distSqrToPlayer > _deaggroDistanceSqr)
+                    if (distSqrToPlayer > deaggroDistanceSqr)
                     {
                         TransitionTo(AIState.Wander);
                     }
@@ -926,6 +977,7 @@ namespace Hecton8.AI
 
                     // Кэшируем HectonSurvivalSystem игрока если ещё не закэширован
                     CachePlayerSurvival();
+                    CachePlayerStimulusSources();
                     break;
             }
 
@@ -1281,7 +1333,10 @@ namespace Hecton8.AI
             if ((object)_playerTransform == null || _playerTransform == null)
             {
                 _playerTransform = null;
-                _playerSurvival  = null;
+                _playerSurvival = null;
+                _playerRigidbody = null;
+                _playerFlashlight = null;
+                ResetStimulusDebug();
                 return false;
             }
 
@@ -1303,6 +1358,7 @@ namespace Hecton8.AI
             {
                 _playerTransform = playerGO.transform;
                 CachePlayerSurvival();
+                CachePlayerStimulusSources();
             }
         }
 
@@ -1319,6 +1375,103 @@ namespace Hecton8.AI
             if (_playerSurvival != null) return;
 
             _playerTransform.TryGetComponent(out _playerSurvival);
+        }
+
+        private void CachePlayerStimulusSources()
+        {
+            if (_playerTransform == null) return;
+
+            if (_playerRigidbody == null)
+            {
+                _playerTransform.TryGetComponent(out _playerRigidbody);
+            }
+
+            if (_playerFlashlight == null)
+            {
+                _playerTransform.TryGetComponent(out _playerFlashlight);
+                if (_playerFlashlight == null)
+                {
+                    _playerFlashlight = _playerTransform.GetComponentInChildren<PlayerFlashlight>();
+                }
+            }
+        }
+
+        private void UpdatePlayerStimulus(float deltaTime)
+        {
+            if (_playerTransform == null)
+            {
+                ResetStimulusDebug();
+                return;
+            }
+
+            CachePlayerStimulusSources();
+
+            float noiseStimulus = reactToPlayerNoise
+                ? NoiseSystem.EvaluatePlayerNoise01(_transform.position, _playerTransform, _playerRigidbody)
+                : 0f;
+
+            float lightStimulus = reactToPlayerLight
+                ? LightDetectionSystem.EvaluatePlayerLight01(_transform.position, _playerTransform, _playerFlashlight)
+                : 0f;
+
+            float strongestStimulus = Mathf.Max(noiseStimulus, lightStimulus);
+            if (strongestStimulus > 0.01f)
+            {
+                _stimulusMemoryTimer = stimulusMemoryDuration;
+            }
+            else if (_stimulusMemoryTimer > 0f)
+            {
+                _stimulusMemoryTimer = Mathf.Max(0f, _stimulusMemoryTimer - deltaTime);
+            }
+
+            float noiseAggroBonus = noiseStimulus * noiseDetectionBonus;
+            float lightAggroBonus = lightStimulus * lightDetectionBonus;
+            float noiseEscapeBonusValue = noiseStimulus * noiseEscapeBonus;
+            float lightEscapeBonusValue = lightStimulus * lightEscapeBonus;
+            float strongestDetectionBonus = Mathf.Max(noiseAggroBonus, lightAggroBonus);
+            float strongestEscapeBonus = Mathf.Max(noiseEscapeBonusValue, lightEscapeBonusValue);
+
+            float stimulusAggroDistance = aggroDistance + strongestDetectionBonus;
+            float stimulusEscapeDistance = escapeDistance + strongestEscapeBonus;
+            float stimulusEscapeSafeDistance = escapeSafeDistance + strongestEscapeBonus * 0.75f;
+            float stimulusDeaggroDistance = deaggroDistance + strongestDetectionBonus * 0.5f;
+            float stimulusWakeDistance = sleepDistance + strongestDetectionBonus;
+
+            if (_stimulusMemoryTimer <= 0f)
+            {
+                _stimulusAggroDistanceSqr = 0f;
+                _stimulusEscapeDistanceSqr = 0f;
+                _stimulusEscapeSafeDistanceSqr = 0f;
+                _stimulusDeaggroDistanceSqr = 0f;
+                _stimulusWakeDistanceSqr = 0f;
+            }
+            else
+            {
+                _stimulusAggroDistanceSqr = stimulusAggroDistance * stimulusAggroDistance;
+                _stimulusEscapeDistanceSqr = stimulusEscapeDistance * stimulusEscapeDistance;
+                _stimulusEscapeSafeDistanceSqr = stimulusEscapeSafeDistance * stimulusEscapeSafeDistance;
+                _stimulusDeaggroDistanceSqr = stimulusDeaggroDistance * stimulusDeaggroDistance;
+                _stimulusWakeDistanceSqr = stimulusWakeDistance * stimulusWakeDistance;
+            }
+
+            _debugNoiseStimulus = noiseStimulus;
+            _debugLightStimulus = lightStimulus;
+            _debugStimulusMemory = _stimulusMemoryTimer;
+        }
+
+        private void ResetStimulusDebug()
+        {
+            _stimulusMemoryTimer = 0f;
+            _stimulusAggroDistanceSqr = 0f;
+            _stimulusEscapeDistanceSqr = 0f;
+            _stimulusEscapeSafeDistanceSqr = 0f;
+            _stimulusDeaggroDistanceSqr = 0f;
+            _stimulusWakeDistanceSqr = 0f;
+            _debugNoiseStimulus = 0f;
+            _debugLightStimulus = 0f;
+            _debugStimulusMemory = 0f;
+            _debugAggroTriggerDistance = aggroDistance;
+            _debugEscapeTriggerDistance = escapeDistance;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1401,6 +1554,7 @@ namespace Hecton8.AI
             // ── Avoidance throttle: случайный начальный сдвиг ──
             _avoidanceTimer  = Random.Range(0f, AVOIDANCE_UPDATE_INTERVAL);
             _cachedAvoidance = Vector3.zero;
+            ResetStimulusDebug();
         }
 
         /// <summary>
@@ -1628,6 +1782,11 @@ namespace Hecton8.AI
             if (attackRange            < 0.1f)  attackRange            = 0.1f;
             if (attackCooldown         < 0.1f)  attackCooldown         = 0.1f;
             if (maxHealth              < 1f)    maxHealth              = 1f;
+            if (noiseDetectionBonus    < 0f)    noiseDetectionBonus    = 0f;
+            if (noiseEscapeBonus       < 0f)    noiseEscapeBonus       = 0f;
+            if (lightDetectionBonus    < 0f)    lightDetectionBonus    = 0f;
+            if (lightEscapeBonus       < 0f)    lightEscapeBonus       = 0f;
+            if (stimulusMemoryDuration < 0f)    stimulusMemoryDuration = 0f;
 
             if (escapeSafeDistance < escapeDistance)
                 escapeSafeDistance = escapeDistance * 2f;

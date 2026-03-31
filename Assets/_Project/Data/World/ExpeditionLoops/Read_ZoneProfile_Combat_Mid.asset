@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Combat_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.combat.mid
+  profileLabel: Combat Mid Read
+  entryBeat: Threat cues in movement, sound, or silhouette signal that awareness
+    matters here.
+  routineBeat: The player reads spacing, control options, and escape space before
+    picking a response.
+  reliefBeat: Cover or calmer side water provides a moment to recover and reassess.
+  pressureBeat: Pressure comes from threat behavior and local geometry, not from
+    a forced duel lane.
+  payoffBeat: The payoff is surviving well, stealing value, or learning how this
+    danger behaves.
+  exitBeat: Leaving should still be a valid smart choice.
+  playerFreedomRule: The player may engage, evade, control, or postpone the problem.
+  softProgressionPull: Threat should make the water feel charged, not scripted.
+  optionalDetourRule: Detours should offer flanking space, observation angles, or
+    minor reward.
+  returnLogic: A second visit should feel smarter because the player better understands
+    local danger.
+  masteryLogic: Mastery means deciding when the fight is not worth the cost.
+  playerPromise: Tense water where control, timing, and escape matter more than brute
+    force.
+  routeMemoryRule: Memory should hold onto cover, escape angle, and the shape of
+    the threat pocket.
+  failureMode: If every encounter reads like a mandatory lane fight, the space stops
+    feeling alive.

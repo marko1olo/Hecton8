@@ -22,13 +22,15 @@ namespace Hecton8.EditorTools
         private const string BiomeLandmarkPlanProfileFolder = "Assets/_Project/Data/Biomes/LandmarkPlans";
         private const string BiomeSpatialPatternProfileFolder = "Assets/_Project/Data/Biomes/SpatialPatterns";
         private const string BiomeCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
-        private const string WorldFamilyProfileFolder = "Assets/_Project/Data/World/FamilyProfiles";
+        private const string WorldFamilyProfileFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string WorldZonePlanFolder = "Assets/_Project/Data/World/ZonePlans";
         private const string ManagersRootName = "[MANAGERS]";
+        private static Dictionary<string, WorldPrefabFamilyProfile> _worldFamilyLookup;
 
         [MenuItem("Hecton/Authoring/Rebuild 108 Biome Matrix", priority = 178)]
         public static void Rebuild108BiomeMatrix()
         {
+            _worldFamilyLookup = null;
             EnsureFolder("Assets/_Project/Data");
             EnsureFolder("Assets/_Project/Data/Biomes");
             EnsureFolder(BiomeProfileFolder);
@@ -80,6 +82,8 @@ namespace Hecton8.EditorTools
                     profile.progressionRole = seed.progressionRole;
                     ApplyMatrixPlayerFraming(profile, tier, region);
                     ApplyMatrixResourceAndLandmarkGuidance(profile, tier, region);
+                    ApplyMatrixProceduralMemory(profile);
+                    ApplyMatrixPreferredContentCategories(profile);
                     EditorUtility.SetDirty(profile);
 
                     profiles[matrixIndex - 1] = profile;
@@ -194,6 +198,29 @@ namespace Hecton8.EditorTools
                     Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing landmarkGuidance.", profile);
                     warningCount++;
                 }
+
+                if (profile.primaryClusterFocus == WorldProceduralClusterFocus.None)
+                {
+                    Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing primaryClusterFocus.", profile);
+                    warningCount++;
+                }
+
+                if (profile.primaryStructureFocus == WorldProceduralStructureFocus.None)
+                {
+                    Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing primaryStructureFocus.", profile);
+                    warningCount++;
+                }
+
+                if (profile.faunaMood == WorldProceduralFaunaMood.None)
+                {
+                    Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing faunaMood.", profile);
+                    warningCount++;
+                }
+
+                ValidatePreferredCategoryArray(profile, profile.preferredGroundFamilies, "preferredGroundFamilies", 3, ref warningCount);
+                ValidatePreferredCategoryArray(profile, profile.preferredClusterFamilies, "preferredClusterFamilies", 4, ref warningCount);
+                ValidatePreferredCategoryArray(profile, profile.preferredStructureFamilies, "preferredStructureFamilies", 4, ref warningCount);
+                ValidatePreferredCategoryArray(profile, profile.preferredSpawnFamilies, "preferredSpawnFamilies", 2, ref warningCount);
 
                 if (profile.familyProfile == null)
                 {
@@ -338,6 +365,871 @@ namespace Hecton8.EditorTools
             profile.landmarkStrength = Mathf.Clamp(baseLandmarkStrength, 1, 5);
             profile.rewardPull = Mathf.Clamp(baseRewardPull + depthRewardOffset, 1, 5);
             profile.survivalPressure = Mathf.Clamp(baseSurvivalPressure + depthPressureOffset, 1, 5);
+        }
+
+        private static void ApplyMatrixProceduralMemory(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return;
+
+            WorldProceduralClusterFocus primaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+            WorldProceduralClusterFocus secondaryCluster = WorldProceduralClusterFocus.ShelterPocket;
+            WorldProceduralStructureFocus primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+            WorldProceduralStructureFocus secondaryStructure = WorldProceduralStructureFocus.TechFragment;
+            WorldProceduralFaunaMood faunaMood = WorldProceduralFaunaMood.Lively;
+            string familyId = (profile.familyId ?? string.Empty).ToLowerInvariant();
+            bool fertileFamily = familyId == "biome.family.littoral_karst"
+                || familyId == "biome.family.fossil_reef"
+                || familyId == "biome.family.crystal_growth";
+            bool sedimentFamily = familyId == "biome.family.sediment_drift"
+                || familyId == "biome.family.granite_escarpment";
+            bool hostileFamily = familyId == "biome.family.rift_spine"
+                || familyId == "biome.family.rift_void"
+                || familyId == "biome.family.volcanic_glass"
+                || familyId == "biome.family.volcanic_hadal";
+
+            switch (familyId)
+            {
+                case "biome.family.littoral_karst":
+                    primaryCluster = WorldProceduralClusterFocus.FertileGrowth;
+                    secondaryCluster = WorldProceduralClusterFocus.ShelterPocket;
+                    primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    faunaMood = profile.survivalPressure >= 3 ? WorldProceduralFaunaMood.Lively : WorldProceduralFaunaMood.Calm;
+                    break;
+
+                case "biome.family.fossil_reef":
+                    primaryCluster = WorldProceduralClusterFocus.BiologicalNest;
+                    secondaryCluster = WorldProceduralClusterFocus.FertileGrowth;
+                    primaryStructure = WorldProceduralStructureFocus.BiologicalSilhouette;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    faunaMood = profile.survivalPressure >= 3 ? WorldProceduralFaunaMood.Lively : WorldProceduralFaunaMood.Calm;
+                    break;
+
+                case "biome.family.crystal_growth":
+                    primaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                    secondaryCluster = WorldProceduralClusterFocus.FertileGrowth;
+                    primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    secondaryStructure = WorldProceduralStructureFocus.BiologicalSilhouette;
+                    faunaMood = WorldProceduralFaunaMood.Lively;
+                    break;
+
+                case "biome.family.sediment_drift":
+                    primaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                    secondaryCluster = WorldProceduralClusterFocus.ShelterPocket;
+                    primaryStructure = WorldProceduralStructureFocus.TechFragment;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    faunaMood = WorldProceduralFaunaMood.Lively;
+                    break;
+
+                case "biome.family.granite_escarpment":
+                    primaryCluster = WorldProceduralClusterFocus.RockCover;
+                    secondaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                    primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    faunaMood = WorldProceduralFaunaMood.Lively;
+                    break;
+
+                case "biome.family.tectonic_spine":
+                    primaryCluster = WorldProceduralClusterFocus.DebrisField;
+                    secondaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                    primaryStructure = WorldProceduralStructureFocus.TechFragment;
+                    secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    faunaMood = WorldProceduralFaunaMood.Mixed;
+                    break;
+
+                case "biome.family.chemosynthetic_brine":
+                    primaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                    secondaryCluster = WorldProceduralClusterFocus.DebrisField;
+                    primaryStructure = WorldProceduralStructureFocus.TechFragment;
+                    secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    faunaMood = WorldProceduralFaunaMood.Mixed;
+                    break;
+
+                case "biome.family.metallic_hadal":
+                    primaryCluster = WorldProceduralClusterFocus.DebrisField;
+                    secondaryCluster = WorldProceduralClusterFocus.RockCover;
+                    primaryStructure = WorldProceduralStructureFocus.TechFragment;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    faunaMood = WorldProceduralFaunaMood.Mixed;
+                    break;
+
+                case "biome.family.rift_spine":
+                    primaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                    secondaryCluster = WorldProceduralClusterFocus.RockCover;
+                    primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    faunaMood = profile.survivalPressure >= 4 ? WorldProceduralFaunaMood.Hostile : WorldProceduralFaunaMood.Mixed;
+                    break;
+
+                case "biome.family.rift_void":
+                    primaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                    secondaryCluster = WorldProceduralClusterFocus.DebrisField;
+                    primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    secondaryStructure = WorldProceduralStructureFocus.TechFragment;
+                    faunaMood = WorldProceduralFaunaMood.Hostile;
+                    break;
+
+                case "biome.family.volcanic_glass":
+                    primaryCluster = WorldProceduralClusterFocus.RockCover;
+                    secondaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                    primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    faunaMood = WorldProceduralFaunaMood.Mixed;
+                    break;
+
+                case "biome.family.volcanic_hadal":
+                    primaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                    secondaryCluster = WorldProceduralClusterFocus.RockCover;
+                    primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    faunaMood = profile.survivalPressure >= 4 ? WorldProceduralFaunaMood.Hostile : WorldProceduralFaunaMood.Mixed;
+                    break;
+
+                case "biome.family.abyssal_silt":
+                    primaryCluster = WorldProceduralClusterFocus.RockCover;
+                    secondaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                    primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                    faunaMood = WorldProceduralFaunaMood.Calm;
+                    break;
+            }
+
+            if (profile.salvageBias >= 4 || HasAnyToken(profile.extractionFocus, profile.visitPurpose, "salvage", "wreck", "relay", "module", "service", "scrap"))
+                PromoteStructureFocus(ref primaryStructure, ref secondaryStructure, WorldProceduralStructureFocus.TechFragment);
+
+            if (profile.landmarkStrength >= 4 || HasAnyToken(profile.landmarkIdentity, profile.landmarkGuidance, "spire", "arch", "crown", "ridge", "needle", "gate", "wall"))
+                PromoteStructureFocus(ref primaryStructure, ref secondaryStructure, WorldProceduralStructureFocus.NaturalLandmark);
+
+            bool strongDangerSignal = profile.survivalPressure >= 5
+                || HasAnyToken(profile.riskSummary, profile.visitPurpose, "predator", "ambush", "rift", "void", "magma", "lava", "brine", "toxic");
+            if (strongDangerSignal)
+            {
+                if (fertileFamily || sedimentFamily)
+                    EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.HazardPocket);
+                else
+                    PromoteClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.HazardPocket);
+
+                faunaMood = hostileFamily
+                    ? WorldProceduralFaunaMood.Hostile
+                    : WorldProceduralFaunaMood.Mixed;
+            }
+
+            if (profile.rewardPull >= 4 && Mathf.Max(profile.commonResourceBias, profile.uncommonResourceBias, profile.rareResourceBias) >= 4)
+            {
+                if (hostileFamily)
+                    EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.ResourcePocket);
+                else if (fertileFamily)
+                    EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.ResourcePocket);
+                else
+                    PromoteClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.ResourcePocket);
+            }
+
+            if (HasAnyToken(profile.extractionFocus, profile.shortDescription, "crystal", "mineral", "ore", "quartz", "alabaster", "node"))
+            {
+                if (fertileFamily)
+                    EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.ResourcePocket);
+                else
+                    PromoteClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.ResourcePocket);
+            }
+
+            if (HasAnyToken(profile.safePocketIdentity, profile.landmarkGuidance, "shelter", "safe", "cover", "basin", "bench", "pocket"))
+                EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.ShelterPocket);
+
+            if (HasAnyToken(profile.landmarkIdentity, profile.landmarkGuidance, "cave", "fissure", "shaft", "mouth", "trench", "gully", "catacomb"))
+                EnsureSecondaryStructureFocus(ref primaryStructure, ref secondaryStructure, WorldProceduralStructureFocus.CaveRead);
+
+            if (HasAnyToken(profile.landmarkIdentity, profile.shortDescription, "forest", "growth", "coral", "pools", "reef"))
+                EnsureSecondaryStructureFocus(ref primaryStructure, ref secondaryStructure, WorldProceduralStructureFocus.BiologicalSilhouette);
+
+            if (HasAnyToken(profile.shortDescription, profile.visitPurpose, "nest", "nursery", "hatch", "spore", "anemone", "porous", "reef"))
+                EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.BiologicalNest);
+
+            if (HasAnyToken(profile.landmarkIdentity, profile.landmarkGuidance, "wall", "escarpment", "ridge", "needle", "gallows", "plateau", "spire"))
+                PromoteStructureFocus(ref primaryStructure, ref secondaryStructure, WorldProceduralStructureFocus.NaturalLandmark);
+
+            if (HasAnyToken(profile.extractionFocus, profile.visitPurpose, "relay", "frame", "pipeline", "service", "module", "station"))
+                PromoteStructureFocus(ref primaryStructure, ref secondaryStructure, WorldProceduralStructureFocus.TechFragment);
+
+            if (profile.rewardPull >= 4 && profile.survivalPressure <= 2 && faunaMood == WorldProceduralFaunaMood.Calm)
+                faunaMood = WorldProceduralFaunaMood.Lively;
+            else if (profile.salvageBias >= 4 && faunaMood == WorldProceduralFaunaMood.Calm)
+                faunaMood = WorldProceduralFaunaMood.Mixed;
+
+            if (fertileFamily)
+            {
+                if (primaryCluster == WorldProceduralClusterFocus.HazardPocket)
+                {
+                    primaryCluster = WorldProceduralClusterFocus.FertileGrowth;
+                    EnsureSecondaryClusterFocus(ref primaryCluster, ref secondaryCluster, WorldProceduralClusterFocus.HazardPocket);
+                }
+
+                if (faunaMood == WorldProceduralFaunaMood.Hostile)
+                    faunaMood = WorldProceduralFaunaMood.Mixed;
+            }
+
+            if (sedimentFamily && faunaMood == WorldProceduralFaunaMood.Hostile)
+                faunaMood = WorldProceduralFaunaMood.Mixed;
+
+            string biomeName = (profile.biomeName ?? string.Empty).ToLowerInvariant();
+            if (biomeName.Contains("fluid seam"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.DebrisField;
+                secondaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                primaryStructure = WorldProceduralStructureFocus.TechFragment;
+                secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                faunaMood = WorldProceduralFaunaMood.Mixed;
+            }
+            else if (biomeName.Contains("hydrothermal spires"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                secondaryCluster = WorldProceduralClusterFocus.DebrisField;
+                primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                faunaMood = WorldProceduralFaunaMood.Mixed;
+            }
+            else if (biomeName.Contains("black spine"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.DebrisField;
+                secondaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                secondaryStructure = WorldProceduralStructureFocus.TechFragment;
+                faunaMood = WorldProceduralFaunaMood.Mixed;
+            }
+            else if (biomeName.Contains("archipelago needles"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.ShelterPocket;
+                secondaryCluster = WorldProceduralClusterFocus.FertileGrowth;
+                primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                faunaMood = WorldProceduralFaunaMood.Calm;
+            }
+            else if (biomeName.Contains("mesa plateaus"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.ShelterPocket;
+                secondaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                faunaMood = WorldProceduralFaunaMood.Lively;
+            }
+            else if (biomeName.Contains("white alabaster pools"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.ResourcePocket;
+                secondaryCluster = WorldProceduralClusterFocus.ShelterPocket;
+                primaryStructure = WorldProceduralStructureFocus.BiologicalSilhouette;
+                secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                faunaMood = WorldProceduralFaunaMood.Calm;
+            }
+            else if (biomeName.Contains("fossil gallows"))
+            {
+                primaryCluster = WorldProceduralClusterFocus.BiologicalNest;
+                secondaryCluster = WorldProceduralClusterFocus.HazardPocket;
+                primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
+                faunaMood = WorldProceduralFaunaMood.Mixed;
+            }
+
+            profile.primaryClusterFocus = primaryCluster;
+            profile.secondaryClusterFocus = secondaryCluster;
+            profile.primaryStructureFocus = primaryStructure;
+            profile.secondaryStructureFocus = secondaryStructure;
+            profile.faunaMood = faunaMood;
+        }
+
+        private static void ApplyMatrixPreferredContentCategories(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return;
+
+            List<WorldPrefabFamilyProfile> ground = new List<WorldPrefabFamilyProfile>(3);
+            List<WorldPrefabFamilyProfile> cluster = new List<WorldPrefabFamilyProfile>(4);
+            List<WorldPrefabFamilyProfile> structure = new List<WorldPrefabFamilyProfile>(4);
+            List<WorldPrefabFamilyProfile> spawn = new List<WorldPrefabFamilyProfile>(2);
+            string familyId = (profile.familyId ?? string.Empty).ToLowerInvariant();
+
+            switch (familyId)
+            {
+                case "biome.family.littoral_karst":
+                    AddPreferredFamilies(ground, 3, "family.coral.low", "family.kelp.tall", "family.rock.small_floor");
+                    AddPreferredFamilies(cluster, 4, "family.coral.branching", "family.pocket.safe", "family.egg.cluster");
+                    AddPreferredFamilies(structure, 4, "family.landmark.spire", "family.cave.entrance", "family.rock.arch.large");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.fossil_reef":
+                    AddPreferredFamilies(ground, 3, "family.coral.low", "family.kelp.tall", "family.rock.small_floor");
+                    AddPreferredFamilies(cluster, 4, "family.egg.cluster", "family.coral.branching", "family.pocket.safe");
+                    AddPreferredFamilies(structure, 4, "family.landmark.spire", "family.plant.giant", "family.cave.entrance");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.crystal_growth":
+                    AddPreferredFamilies(ground, 3, "family.coral.low", "family.rock.small_floor", "family.kelp.tall");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.resource", "family.egg.cluster", "family.coral.branching");
+                    AddPreferredFamilies(structure, 4, "family.plant.giant", "family.landmark.spire", "family.rock.arch.large");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.sediment_drift":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.coral.low");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.resource", "family.pocket.safe");
+                    AddPreferredFamilies(structure, 4, "family.ruin.module.single", "family.rock.arch.large", "family.cave.entrance");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.granite_escarpment":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.safe", "family.pocket.resource", "family.debris.field");
+                    AddPreferredFamilies(structure, 4, "family.rock.arch.large", "family.landmark.spire", "family.cave.entrance");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.tectonic_spine":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.debris.field", "family.pocket.hazard");
+                    AddPreferredFamilies(structure, 4, "family.service.scar", "family.route.power", "family.ruin.module.single", "family.cave.entrance");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive", "family.creature.spawn.predator");
+                    break;
+
+                case "biome.family.chemosynthetic_brine":
+                    AddPreferredFamilies(ground, 3, "family.debris.scatter", "family.rock.small_floor");
+                    AddPreferredFamilies(cluster, 4, "family.debris.field", "family.pocket.hazard");
+                    AddPreferredFamilies(structure, 4, "family.service.scar", "family.cave.entrance", "family.ruin.module.single", "family.plant.giant");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive", "family.creature.spawn.predator");
+                    break;
+
+                case "biome.family.metallic_hadal":
+                    AddPreferredFamilies(ground, 3, "family.debris.scatter", "family.rock.small_floor");
+                    AddPreferredFamilies(cluster, 4, "family.debris.field", "family.pocket.hazard");
+                    AddPreferredFamilies(structure, 4, "family.ruin.module.single", "family.service.scar", "family.ruin.megastructure", "family.cave.entrance");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.predator", "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.rift_spine":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.hazard", "family.debris.field");
+                    AddPreferredFamilies(structure, 4, "family.cave.entrance", "family.rock.arch.large", "family.landmark.spire", "family.ruin.megastructure");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.predator", "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.rift_void":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.hazard", "family.debris.field");
+                    AddPreferredFamilies(structure, 4, "family.cave.entrance", "family.ruin.megastructure", "family.service.scar", "family.rock.arch.large");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.predator", "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.volcanic_glass":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.hazard", "family.debris.field");
+                    AddPreferredFamilies(structure, 4, "family.rock.arch.large", "family.cave.entrance", "family.landmark.spire");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.predator", "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.volcanic_hadal":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.hazard", "family.debris.field");
+                    AddPreferredFamilies(structure, 4, "family.cave.entrance", "family.rock.arch.large", "family.ruin.megastructure");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.predator", "family.creature.spawn.passive");
+                    break;
+
+                case "biome.family.abyssal_silt":
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.debris.scatter");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.safe", "family.pocket.resource");
+                    AddPreferredFamilies(structure, 4, "family.cave.entrance", "family.ruin.module.single", "family.landmark.spire");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+
+                default:
+                    AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.coral.low");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.resource", "family.pocket.safe");
+                    AddPreferredFamilies(structure, 4, "family.rock.arch.large", "family.cave.entrance");
+                    AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
+                    break;
+            }
+
+            bool serviceHeavyFamily = IsServiceHeavyBiomeFamily(familyId);
+
+            if (profile.salvageBias >= 4)
+            {
+                if (serviceHeavyFamily)
+                {
+                    InsertPreferredFamilyAt(structure, 4, "family.ruin.module.single", 2);
+                    InsertPreferredFamilyAt(structure, 4, "family.service.scar", 1);
+                }
+                else
+                {
+                    PromotePreferredFamily(structure, 4, "family.ruin.module.single");
+                    PromotePreferredFamily(structure, 4, "family.service.scar");
+                }
+            }
+
+            if (profile.landmarkStrength >= 4)
+                PromotePreferredFamily(structure, 4, ResolvePreferredLandmarkFamilyId(profile, structure));
+
+            if (profile.survivalPressure >= 4)
+            {
+                if (serviceHeavyFamily)
+                    InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 1);
+                else
+                    PromotePreferredFamily(cluster, 4, "family.pocket.hazard");
+
+                PromotePreferredFamily(spawn, 2, "family.creature.spawn.predator");
+            }
+
+            if (profile.rewardPull >= 4)
+            {
+                if (serviceHeavyFamily)
+                    InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 2);
+                else
+                    PromotePreferredFamily(cluster, 4, "family.pocket.resource");
+            }
+
+            if (HasAnyToken(profile.landmarkIdentity, profile.landmarkGuidance, "cave", "fissure", "shaft", "trench"))
+                PromotePreferredFamily(structure, 4, "family.cave.entrance");
+
+            if (HasAnyToken(profile.visitPurpose, profile.extractionFocus, "relay", "service", "module", "wreck", "station"))
+            {
+                PromotePreferredFamily(structure, 4, "family.ruin.module.single");
+                PromotePreferredFamily(structure, 4, "family.service.scar");
+            }
+
+            if (HasAnyToken(profile.shortDescription, profile.visitPurpose, "reef", "coral", "nest", "nursery"))
+            {
+                PromotePreferredFamily(cluster, 4, "family.coral.branching");
+                PromotePreferredFamily(cluster, 4, "family.egg.cluster");
+            }
+
+            if (HasAnyToken(profile.extractionFocus, profile.shortDescription, "crystal", "ore", "mineral", "alabaster"))
+            {
+                if (serviceHeavyFamily)
+                    InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 2);
+                else
+                    PromotePreferredFamily(cluster, 4, "family.pocket.resource");
+            }
+
+            ApplyFertileBiomeSpecificPreferredOverrides(profile, familyId, cluster, structure, spawn);
+            ApplyServiceHeavyBiomeSpecificPreferredOverrides(profile, familyId, cluster, structure, spawn);
+
+            profile.preferredGroundFamilies = BuildPreferredFamilyArray(ground, 3);
+            profile.preferredClusterFamilies = BuildPreferredFamilyArray(cluster, 4);
+            profile.preferredStructureFamilies = BuildPreferredFamilyArray(structure, 4);
+            profile.preferredSpawnFamilies = BuildPreferredFamilyArray(spawn, 2);
+        }
+
+        private static void ApplyServiceHeavyBiomeSpecificPreferredOverrides(
+            HectonBiomeMatrixProfile profile,
+            string familyId,
+            List<WorldPrefabFamilyProfile> cluster,
+            List<WorldPrefabFamilyProfile> structure,
+            List<WorldPrefabFamilyProfile> spawn)
+        {
+            if (profile == null || !IsServiceHeavyBiomeFamily(familyId))
+                return;
+
+            string biomeName = (profile.biomeName ?? string.Empty).ToLowerInvariant();
+            bool seamRouteBiome = HasAnyToken(
+                profile.biomeName,
+                profile.shortDescription,
+                profile.extractionFocus,
+                profile.landmarkGuidance,
+                "fluid seam",
+                "frozen while seemingly flowing",
+                "seemingly flowing");
+            bool hydrothermalBiome = HasAnyToken(
+                profile.biomeName,
+                profile.shortDescription,
+                profile.landmarkIdentity,
+                profile.landmarkGuidance,
+                profile.extractionFocus,
+                "hydrothermal",
+                "superheated",
+                "chimney",
+                "black chimneys");
+            bool metallicAbyssBiome = HasAnyToken(
+                profile.biomeName,
+                profile.shortDescription,
+                profile.landmarkIdentity,
+                profile.landmarkGuidance,
+                profile.extractionFocus,
+                "black spine",
+                "compressed metal",
+                "low-frequency pressure");
+
+            if (seamRouteBiome || biomeName.Contains("seam"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.debris.field", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 3);
+
+                InsertPreferredFamilyAt(structure, 4, "family.route.power", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.service.scar", 3);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.predator", 1);
+                return;
+            }
+
+            if (hydrothermalBiome || biomeName.Contains("spire"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.debris.field", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 2);
+
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.service.scar", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.ruin.module.single", 3);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.predator", 0);
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 1);
+                return;
+            }
+
+            if (metallicAbyssBiome || biomeName.Contains("black spine"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.debris.field", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 2);
+
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.ruin.megastructure", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.ruin.module.single", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.service.scar", 3);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.predator", 0);
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 1);
+            }
+        }
+
+        private static void ApplyFertileBiomeSpecificPreferredOverrides(
+            HectonBiomeMatrixProfile profile,
+            string familyId,
+            List<WorldPrefabFamilyProfile> cluster,
+            List<WorldPrefabFamilyProfile> structure,
+            List<WorldPrefabFamilyProfile> spawn)
+        {
+            if (profile == null)
+                return;
+
+            string biomeName = (profile.biomeName ?? string.Empty).ToLowerInvariant();
+            bool fertileFamily = string.Equals(familyId, "biome.family.littoral_karst", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(familyId, "biome.family.fossil_reef", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(familyId, "biome.family.crystal_growth", System.StringComparison.OrdinalIgnoreCase);
+            if (!fertileFamily)
+                return;
+
+            if (biomeName.Contains("archipelago needles"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.egg.cluster", 3);
+
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 2);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
+                return;
+            }
+
+            if (biomeName.Contains("mesa plateaus"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.egg.cluster", 3);
+
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 2);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
+                return;
+            }
+
+            if (biomeName.Contains("white alabaster pools"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 2);
+
+                InsertPreferredFamilyAt(structure, 4, "family.plant.giant", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 2);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
+                return;
+            }
+
+            if (biomeName.Contains("fossil gallows"))
+            {
+                InsertPreferredFamilyAt(cluster, 4, "family.egg.cluster", 0);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 1);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 3);
+
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.plant.giant", 2);
+
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.predator", 0);
+                InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 1);
+            }
+        }
+
+        private static void ValidatePreferredCategoryArray(
+            HectonBiomeMatrixProfile profile,
+            WorldPrefabFamilyProfile[] array,
+            string fieldName,
+            int maxAllowed,
+            ref int warningCount)
+        {
+            if (array == null || array.Length == 0)
+            {
+                Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' is missing {fieldName}.", profile);
+                warningCount++;
+                return;
+            }
+
+            if (array.Length > maxAllowed)
+            {
+                Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' has too many entries in {fieldName}.", profile);
+                warningCount++;
+            }
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i] == null)
+                {
+                    Debug.LogWarning($"[BiomeMatrixValidation] '{profile.biomeName}' has null entry in {fieldName}.", profile);
+                    warningCount++;
+                    break;
+                }
+            }
+        }
+
+        private static void AddPreferredFamilies(List<WorldPrefabFamilyProfile> target, int maxCount, params string[] familyIds)
+        {
+            if (target == null || familyIds == null)
+                return;
+
+            for (int i = 0; i < familyIds.Length && target.Count < maxCount; i++)
+            {
+                WorldPrefabFamilyProfile family = ResolveWorldFamilyProfile(familyIds[i]);
+                if (family == null || ContainsPreferredFamily(target, family))
+                    continue;
+
+                target.Add(family);
+            }
+        }
+
+        private static void PromotePreferredFamily(List<WorldPrefabFamilyProfile> target, int maxCount, string familyId)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(familyId))
+                return;
+
+            WorldPrefabFamilyProfile family = ResolveWorldFamilyProfile(familyId);
+            if (family == null)
+                return;
+
+            for (int i = target.Count - 1; i >= 0; i--)
+            {
+                if (target[i] != null && string.Equals(target[i].familyId, family.familyId, System.StringComparison.OrdinalIgnoreCase))
+                    target.RemoveAt(i);
+            }
+
+            target.Insert(0, family);
+            if (target.Count > maxCount)
+                target.RemoveRange(maxCount, target.Count - maxCount);
+        }
+
+        private static void InsertPreferredFamilyAt(List<WorldPrefabFamilyProfile> target, int maxCount, string familyId, int insertIndex)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(familyId))
+                return;
+
+            WorldPrefabFamilyProfile family = ResolveWorldFamilyProfile(familyId);
+            if (family == null)
+                return;
+
+            for (int i = target.Count - 1; i >= 0; i--)
+            {
+                if (target[i] != null && string.Equals(target[i].familyId, family.familyId, System.StringComparison.OrdinalIgnoreCase))
+                    target.RemoveAt(i);
+            }
+
+            int clampedIndex = Mathf.Clamp(insertIndex, 0, target.Count);
+            target.Insert(clampedIndex, family);
+            if (target.Count > maxCount)
+                target.RemoveRange(maxCount, target.Count - maxCount);
+        }
+
+        private static bool IsServiceHeavyBiomeFamily(string familyId)
+        {
+            return string.Equals(familyId, "biome.family.tectonic_spine", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(familyId, "biome.family.chemosynthetic_brine", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(familyId, "biome.family.metallic_hadal", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static WorldPrefabFamilyProfile[] BuildPreferredFamilyArray(List<WorldPrefabFamilyProfile> source, int maxCount)
+        {
+            if (source == null || source.Count == 0)
+                return System.Array.Empty<WorldPrefabFamilyProfile>();
+
+            int count = Mathf.Min(source.Count, maxCount);
+            WorldPrefabFamilyProfile[] result = new WorldPrefabFamilyProfile[count];
+            for (int i = 0; i < count; i++)
+                result[i] = source[i];
+            return result;
+        }
+
+        private static bool ContainsPreferredFamily(List<WorldPrefabFamilyProfile> target, WorldPrefabFamilyProfile family)
+        {
+            if (target == null || family == null)
+                return false;
+
+            for (int i = 0; i < target.Count; i++)
+            {
+                if (target[i] != null && string.Equals(target[i].familyId, family.familyId, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static WorldPrefabFamilyProfile ResolveWorldFamilyProfile(string familyId)
+        {
+            if (string.IsNullOrWhiteSpace(familyId))
+                return null;
+
+            if (_worldFamilyLookup == null)
+            {
+                _worldFamilyLookup = new Dictionary<string, WorldPrefabFamilyProfile>(System.StringComparer.OrdinalIgnoreCase);
+                string[] guids = AssetDatabase.FindAssets("t:WorldPrefabFamilyProfile", new[] { WorldFamilyProfileFolder });
+                for (int i = 0; i < guids.Length; i++)
+                {
+                    string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                    WorldPrefabFamilyProfile family = AssetDatabase.LoadAssetAtPath<WorldPrefabFamilyProfile>(assetPath);
+                    if (family == null || string.IsNullOrWhiteSpace(family.familyId))
+                        continue;
+
+                    _worldFamilyLookup[family.familyId] = family;
+                }
+            }
+
+            _worldFamilyLookup.TryGetValue(familyId, out WorldPrefabFamilyProfile resolvedFamily);
+            return resolvedFamily;
+        }
+
+        private static string ResolvePreferredLandmarkFamilyId(
+            HectonBiomeMatrixProfile profile,
+            List<WorldPrefabFamilyProfile> structurePreferences)
+        {
+            if (HasAnyToken(profile.landmarkIdentity, profile.landmarkGuidance, "spire", "needle", "tower", "crown"))
+                return "family.landmark.spire";
+
+            if (HasAnyToken(profile.landmarkIdentity, profile.landmarkGuidance, "arch", "gate", "bridge", "loop"))
+                return "family.rock.arch.large";
+
+            if (ContainsResolvedFamily(structurePreferences, "family.landmark.spire"))
+                return "family.landmark.spire";
+
+            return "family.rock.arch.large";
+        }
+
+        private static bool ContainsResolvedFamily(List<WorldPrefabFamilyProfile> source, string familyId)
+        {
+            if (source == null || string.IsNullOrWhiteSpace(familyId))
+                return false;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (source[i] != null && string.Equals(source[i].familyId, familyId, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void PromoteClusterFocus(
+            ref WorldProceduralClusterFocus primary,
+            ref WorldProceduralClusterFocus secondary,
+            WorldProceduralClusterFocus target)
+        {
+            if (target == WorldProceduralClusterFocus.None)
+                return;
+
+            if (primary == target)
+                return;
+
+            if (secondary == target)
+                secondary = primary;
+            else
+                secondary = primary;
+
+            primary = target;
+        }
+
+        private static void EnsureSecondaryClusterFocus(
+            ref WorldProceduralClusterFocus primary,
+            ref WorldProceduralClusterFocus secondary,
+            WorldProceduralClusterFocus target)
+        {
+            if (target == WorldProceduralClusterFocus.None || primary == target || secondary == target)
+                return;
+
+            secondary = target;
+        }
+
+        private static void PromoteStructureFocus(
+            ref WorldProceduralStructureFocus primary,
+            ref WorldProceduralStructureFocus secondary,
+            WorldProceduralStructureFocus target)
+        {
+            if (target == WorldProceduralStructureFocus.None)
+                return;
+
+            if (primary == target)
+                return;
+
+            if (secondary == target)
+                secondary = primary;
+            else
+                secondary = primary;
+
+            primary = target;
+        }
+
+        private static void EnsureSecondaryStructureFocus(
+            ref WorldProceduralStructureFocus primary,
+            ref WorldProceduralStructureFocus secondary,
+            WorldProceduralStructureFocus target)
+        {
+            if (target == WorldProceduralStructureFocus.None || primary == target || secondary == target)
+                return;
+
+            secondary = target;
+        }
+
+        private static bool HasAnyToken(string primaryText, string secondaryText, params string[] tokens)
+        {
+            string merged = $"{primaryText} {secondaryText}".ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(merged) || tokens == null)
+                return false;
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string token = tokens[i];
+                if (!string.IsNullOrWhiteSpace(token) && merged.Contains(token.ToLowerInvariant()))
+                    return true;
+            }
+
+            return false;
         }
 
         private static string BuildVisitPurpose(

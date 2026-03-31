@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_rock_arch_large
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.rock.arch.large
+  familyLabel: Rock Arch Large
+  defaultFidelity: 0
+  budgetClass: 2
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 3
+  scatterLayer: 2
+  structureAccentRole: 1
+  clusterAccentRole: 0
+  placementMode: 4
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 28
+  clusterRadiusMeters: 32
+  clusterCountMin: 1
+  clusterCountMax: 1
+  heatmapChannel: landmark_strength
+  proxyColor: {r: 0.44, g: 0.5, b: 0.58, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  - {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
+  - {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}
+  - {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 01000000090000000700000008000000
+  biomeAffinityWeight: 0.3
+  zoneAffinityWeight: 0.18
+  primaryPattern: 8
+  secondaryPattern: 5
+  patternAffinityWeight: 0.33
+  variants:
+  - variantId: family.rock.arch.large.proxy.arch
+    prefab: {fileID: 3526208923748288429, guid: c6eabd854f95bfa48a5161708bd1a664, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.1}
+  - variantId: family.rock.arch.large.proxy.split
+    prefab: {fileID: 7343533608438049590, guid: c9bc8feab1da0d34989da0e6bc1ddaf3, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.1}
+  futurePrefabRoot: World/RockArch/Rock_Arch_Large
+  gameplayRole: Big arches for strong biome memory and route readability.

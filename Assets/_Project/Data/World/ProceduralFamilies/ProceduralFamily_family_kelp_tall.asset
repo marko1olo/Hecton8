@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_kelp_tall
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.kelp.tall
+  familyLabel: Kelp Tall
+  defaultFidelity: 1
+  budgetClass: 0
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 5
+  scatterLayer: 0
+  structureAccentRole: 0
+  clusterAccentRole: 0
+  placementMode: 2
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 3
+  clusterRadiusMeters: 12
+  clusterCountMin: 5
+  clusterCountMax: 12
+  heatmapChannel: kelp_density
+  proxyColor: {r: 0.24, g: 0.72, b: 0.34, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 010000000900000002000000
+  biomeAffinityWeight: 0.18
+  zoneAffinityWeight: 0.08
+  primaryPattern: 0
+  secondaryPattern: 1
+  patternAffinityWeight: 0.18
+  variants:
+  - variantId: family.kelp.tall.proxy.stalk
+    prefab: {fileID: 6677600379232968611, guid: 24215fbf20e5b314b95d88cd4d9fb9b7, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.15}
+  - variantId: family.kelp.tall.proxy.lean
+    prefab: {fileID: 2448324615492693216, guid: 8aaba036d6849484b9292c9b80bee468, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  futurePrefabRoot: World/Kelp/Kelp_Tall
+  gameplayRole: Tall vertical kelp for readable vertical habitat.

@@ -40,13 +40,14 @@ MonoBehaviour:
   tertiaryResource: {fileID: 11400000, guid: 432c7f076754baf48ba1ab5a83231c02, type: 2}
   signatureComponent: {fileID: 11400000, guid: 2f16016142035d6459a0e8b33c4ae20f, type: 2}
   resourcePlanProfile: {fileID: 11400000, guid: 44e709abed6ac964da91b45b8eaa66e8, type: 2}
+  resourceChannelProfile: {fileID: 11400000, guid: 949b221d299e76b4bad10059aa7b3242, type: 2}
   landmarkPlanProfile: {fileID: 11400000, guid: 27cf195eb3d8c3242b677e21443fac42, type: 2}
   spatialPatternProfile: {fileID: 11400000, guid: bcde2af13ea9f174cb583949a0aa2b8a, type: 2}
   atmosphereProfile: {fileID: 11400000, guid: d1e51186f999b1e4382f4424326f6eb4, type: 2}
   faunaFamilyProfile: {fileID: 11400000, guid: 68e3767539283f64b98564e079fc7974, type: 2}
   recommendedLoadoutPreset: {fileID: 11400000, guid: d53ff5d7b7f68e347884f7e9fab197ba, type: 2}
   playProfile: {fileID: 11400000, guid: fc2b7fbbc91932747b5bb722824d44b5, type: 2}
-  nearInteractiveFamily: {fileID: 11400000, guid: fadd42a1c8bb05340b193e0433c92a1e, type: 2}
-  midVisualFamily: {fileID: 11400000, guid: 9a6dc20dd0e26444aaeef854e1097890, type: 2}
-  farSilhouetteFamily: {fileID: 11400000, guid: ce1963fa5af38814783f79999f442d62, type: 2}
+  nearInteractiveFamily: {fileID: 0}
+  midVisualFamily: {fileID: 0}
+  farSilhouetteFamily: {fileID: 0}
   preferredZonePlan: {fileID: 11400000, guid: 118b59d14676051419724ee0f886e4e6, type: 2}

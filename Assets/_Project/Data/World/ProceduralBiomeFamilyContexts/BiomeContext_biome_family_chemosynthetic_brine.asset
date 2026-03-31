@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a9f87e0d1eeb94094a6b4a0f52daf0, type: 3}
+  m_Name: BiomeContext_biome_family_chemosynthetic_brine
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
+  biomeFamily: {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  label: Chemosynthetic Brine Context
+  summary: Dirty chemical water with service scars, hazard traces and rare biological
+    silhouettes.
+  groundBudgetScale: 0.78
+  clusterBudgetScale: 0.92
+  structureBudgetScale: 1.12
+  spawnBudgetScale: 1.02
+  rockBias: 0
+  kelpBias: 0
+  plantBias: 0.08
+  coralBias: 0
+  eggBias: 0
+  debrisBias: 0.12
+  ruinBias: 0.08
+  caveBias: 0.12
+  landmarkBias: 0.04
+  creatureSpawnBias: 0
+  resourcePocketBias: 0
+  hazardPocketBias: 0.1
+  safePocketBias: 0
+  powerRouteBias: 0
+  serviceScarBias: 0.12
+  fertileGrowthBias: 0
+  biologicalNestBias: 0
+  resourcePocketAccentBias: 0
+  shelterPocketBias: 0
+  hazardPocketAccentBias: 0.12
+  debrisFieldBias: 0.12
+  rockCoverBias: 0
+  naturalLandmarkBias: 0.06
+  techFragmentBias: 0.12
+  caveReadBias: 0.12
+  biologicalSilhouetteBias: 0.04
+  passiveSpawnBias: 0
+  predatorSpawnBias: 0.06

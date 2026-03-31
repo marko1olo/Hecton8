@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6677c41bc576547458f47d8348d93779, type: 3}
+  m_Name: Motivation_ZoneProfile_Resources_Starter
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldMotivationProfile
+  profileId: motivation.profile.resources.starter
+  profileLabel: Resources Starter Motivation
+  survivalNeed: This area keeps early runs stocked with oxygen-adjacent safety and
+    common supplies.
+  survivalNeedWeight: 1.35
+  resourceNeed: This area is worth short repeated trips for starter materials.
+  resourceNeedWeight: 1.45
+  engineeringNeed: It lightly supports first tools and first construction costs.
+  engineeringNeedWeight: 0.75
+  curiosityPull: Clear shapes and shallow pockets tempt the player to check just
+    one more corner.
+  curiosityPullWeight: 1.15
+  storyPull: It hints that the wider world is bigger and stranger beyond the safe
+    shelf.
+  storyPullWeight: 0.7
+  rareValuePull: Rare value is weak here; this water teaches confidence more than
+    greed.
+  rareValuePullWeight: 0.55
+  optionalityRule: These pulls are invitations, not requirements; the player decides
+    which one matters today.
+  returnRule: The area should stay worth revisiting later with a different goal,
+    toolset, or tolerance for risk.
+  ownershipRule: The player should feel they built their own reasons to come back
+    here.

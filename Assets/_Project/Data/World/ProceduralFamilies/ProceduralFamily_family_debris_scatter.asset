@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_debris_scatter
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.debris.scatter
+  familyLabel: Debris Scatter
+  defaultFidelity: 1
+  budgetClass: 0
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 9
+  scatterLayer: 0
+  structureAccentRole: 0
+  clusterAccentRole: 0
+  placementMode: 0
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 4
+  clusterRadiusMeters: 10
+  clusterCountMin: 3
+  clusterCountMax: 8
+  heatmapChannel: debris_density
+  proxyColor: {r: 0.72, g: 0.52, b: 0.34, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  preferredZoneKinds: 060000000500000007000000
+  biomeAffinityWeight: 0.18
+  zoneAffinityWeight: 0.08
+  primaryPattern: 4
+  secondaryPattern: 3
+  patternAffinityWeight: 0.18
+  variants:
+  - variantId: family.debris.scatter.proxy.scrap
+    prefab: {fileID: 4067588119456270086, guid: a2b3823a7836cb94b9bd3d1bececde62, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.debris.scatter.proxy.crate
+    prefab: {fileID: 7559265693847773240, guid: c03371f5ea4d90e4a8ba77c9fb69c249, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.08}
+  futurePrefabRoot: World/Debris/Debris_Scatter
+  gameplayRole: General wreck and junk scatter for lived-in seabed.

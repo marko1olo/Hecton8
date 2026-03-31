@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_pocket_resource
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.pocket.resource
+  ruleLabel: Resource Pockets
+  familyProfile: {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
+  gameplayIntent: Small reward pockets that make detours worthwhile.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  - {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  preferredZoneKinds: 010000000900000002000000
+  preferredSocketKinds: 01000000
+  preferredFidelity: 2
+  minDepthMeters: 10
+  maxDepthMeters: 5000
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 36
+  requiredHeatmapChannel: resource_density
+  minHeatmapValue: 0.3
+  densityScale: 1.22
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 2
+  maxInstances: 5
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0

@@ -27,3 +27,6 @@ MonoBehaviour:
   midVisualProfile: {fileID: 11400000, guid: ca50117563d256a48a9990e419d5e307, type: 2}
   farSilhouetteProfile: {fileID: 11400000, guid: 93612d16b4b65b643bffa1454664cd4d, type: 2}
   zonePlanProfile: {fileID: 11400000, guid: 26b62cf3bea27eb4196a7497154fa4b2, type: 2}
+  expeditionLoopProfile: {fileID: 11400000, guid: cbb6f8e9c83b5c74a8e0216090c6b3d3, type: 2}
+  sandboxAttractionProfile: {fileID: 11400000, guid: 19af3729ead65c04fb72dc6c4584f616, type: 2}
+  motivationProfile: {fileID: 11400000, guid: ca8907c74ae80894fbfe5c3ae21b2408, type: 2}

@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_rock_small_floor
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.rock.small_floor
+  familyLabel: Rock Small Floor
+  defaultFidelity: 1
+  budgetClass: 0
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 1
+  scatterLayer: 0
+  structureAccentRole: 0
+  clusterAccentRole: 0
+  placementMode: 0
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 4
+  clusterRadiusMeters: 6
+  clusterCountMin: 1
+  clusterCountMax: 3
+  heatmapChannel: rock_density
+  proxyColor: {r: 0.56, g: 0.6, b: 0.66, a: 1}
+  preferredBiomeFamilies: []
+  preferredZoneKinds: 
+  biomeAffinityWeight: 0.18
+  zoneAffinityWeight: 0.08
+  primaryPattern: 2
+  secondaryPattern: 0
+  patternAffinityWeight: 0.18
+  variants:
+  - variantId: family.rock.small_floor.proxy.low
+    prefab: {fileID: 4972878846468630527, guid: 1ae2cdca70195e34bad1735fd609a46c, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.85, y: 1.05}
+  - variantId: family.rock.small_floor.proxy.flat
+    prefab: {fileID: 5148494846662840202, guid: 9eea7012124eed445a31d6ecae043e9f, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.85, y: 1.1}
+  - variantId: family.rock.small_floor.proxy.group
+    prefab: {fileID: 3063071950383403182, guid: 0116f543ddc20d645a47d09c76edeb76, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.15}
+  futurePrefabRoot: World/Rock/Rock_Small_Floor
+  gameplayRole: Base floor stones for seafloor readability.

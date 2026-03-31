@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_pocket_safe
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.pocket.safe
+  familyLabel: Pocket Safe
+  defaultFidelity: 2
+  budgetClass: 0
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 16
+  scatterLayer: 1
+  structureAccentRole: 0
+  clusterAccentRole: 4
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 10
+  clusterRadiusMeters: 12
+  clusterCountMin: 1
+  clusterCountMax: 2
+  heatmapChannel: shelter_density
+  proxyColor: {r: 0.24, g: 0.92, b: 1, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  preferredZoneKinds: 090000000200000001000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 2
+  secondaryPattern: 0
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.pocket.safe.proxy.bubble
+    prefab: {fileID: 7077092274583691722, guid: 1d145482c42aaf0439d49e73cba1a7eb, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.pocket.safe.proxy.shelter
+    prefab: {fileID: 1058192802857507975, guid: 24669a4959618f545ade4beb542c8229, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  futurePrefabRoot: World/SafePocket/Pocket_Safe
+  gameplayRole: Breathing room and shelter pockets between pushes.

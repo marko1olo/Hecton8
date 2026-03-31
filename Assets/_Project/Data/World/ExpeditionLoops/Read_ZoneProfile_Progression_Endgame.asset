@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Progression_Endgame
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.progression.endgame
+  profileLabel: Progression Endgame Read
+  entryBeat: A strong silhouette or environmental shift warns that this water is
+    serious.
+  routineBeat: Routine value is sparse; the area tells the player this is not a lazy
+    farm pocket.
+  reliefBeat: Rare calm pockets matter because they create decision space before
+    a deeper commitment.
+  pressureBeat: Risk ramps through depth, exposure, and uncertainty rather than a
+    forced gate.
+  payoffBeat: A rare high-value lure exists deeper in for players willing to bring
+    preparation and nerve.
+  exitBeat: Getting out should reward memory, restraint, and choosing when enough
+    is enough.
+  playerFreedomRule: The player may sample the edge, turn back, or fully commit on
+    their own terms.
+  softProgressionPull: The area should tempt curiosity, need, and story hunger more
+    than any scripted funnel.
+  optionalDetourRule: Side observations should still teach something valuable even
+    if the main lure stays out of reach.
+  returnLogic: Retreat should preserve knowledge, landmarks, and unfinished intention
+    for a later dive.
+  masteryLogic: Mastery means assembling a personal deep-run plan from memory and
+    judgment.
+  playerPromise: Serious water with strong mystery, strong value, and honest consequences.
+  routeMemoryRule: Memory should come from major shapes, rare shelter, and sharp
+    pressure changes.
+  failureMode: If this water becomes linear or obvious, it loses its awe and fear.

@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Environment
@@ -84,12 +85,18 @@ namespace Hecton8.Environment
         [SerializeField] private int _debugLandmarkStrengthValue;
         [SerializeField] private int _debugRewardPullValue;
         [SerializeField] private int _debugSurvivalPressure;
+        [SerializeField] private string _debugPrimaryClusterFocus = "None";
+        [SerializeField] private string _debugSecondaryClusterFocus = "None";
+        [SerializeField] private string _debugPrimaryStructureFocus = "None";
+        [SerializeField] private string _debugSecondaryStructureFocus = "None";
+        [SerializeField] private string _debugFaunaMoodValue = "None";
 
         private bool _registeredToTickManager;
         private HectonBiomeMatrixProfile _currentProfile;
 
         public HectonBiomeMatrixProfile CurrentProfile => _currentProfile;
         public HectonBiomeFamilyProfile CurrentFamilyProfile => _currentProfile != null ? _currentProfile.familyProfile : null;
+        public HectonBiomeMatrixCatalog MatrixCatalog => matrixCatalog;
 
         private void Awake()
         {
@@ -286,6 +293,11 @@ namespace Hecton8.Environment
             _debugLandmarkStrengthValue = profile != null ? profile.landmarkStrength : 0;
             _debugRewardPullValue = profile != null ? profile.rewardPull : 0;
             _debugSurvivalPressure = profile != null ? profile.survivalPressure : 0;
+            _debugPrimaryClusterFocus = profile != null ? profile.primaryClusterFocus.ToString() : "None";
+            _debugSecondaryClusterFocus = profile != null ? profile.secondaryClusterFocus.ToString() : "None";
+            _debugPrimaryStructureFocus = profile != null ? profile.primaryStructureFocus.ToString() : "None";
+            _debugSecondaryStructureFocus = profile != null ? profile.secondaryStructureFocus.ToString() : "None";
+            _debugFaunaMoodValue = profile != null ? profile.faunaMood.ToString() : "None";
         }
 
         private static string GetItemLabel(Hecton8.Items.ItemData item)

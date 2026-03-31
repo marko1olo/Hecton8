@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_plant_giant
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.plant.giant
+  ruleLabel: Giant Flora Silhouettes
+  familyProfile: {fileID: 11400000, guid: e78426c2ce06cb445a353611d1608196, type: 2}
+  gameplayIntent: Huge plant silhouettes that make the biome readable from afar.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  preferredZoneKinds: 090000000100000002000000
+  preferredSocketKinds: 0a000000
+  preferredFidelity: 0
+  minDepthMeters: 30
+  maxDepthMeters: 1200
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 26
+  requiredHeatmapChannel: flora_density
+  minHeatmapValue: 0.42
+  densityScale: 1.02
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 1
+  maxInstances: 2
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0

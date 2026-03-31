@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_RiftHazard
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 6
+  label: Rift Hazard
+  summary: Hazard-led rift water with pressure, debris and predators, but still open-ended
+    sandbox space.
+  groundBudgetScale: 0.7
+  clusterBudgetScale: 1
+  structureBudgetScale: 1.15
+  spawnBudgetScale: 1.35
+  minGroundPlacements: 8
+  groundTargetMax: 12
+  minClusterPlacements: 4
+  clusterTargetMax: 6
+  minStructurePlacements: 8
+  minSpawnPlacements: 5
+  structureTargetMin: 8
+  structureTargetMax: 10
+  naturalLandmarkMin: 2
+  naturalLandmarkMax: 3
+  techFragmentMin: 2
+  techFragmentMax: 3
+  caveReadMin: 2
+  caveReadMax: 3
+  biologicalSilhouetteMin: 0
+  biologicalSilhouetteMax: 0
+  fertileGrowthMin: 0
+  biologicalNestMin: 0
+  resourcePocketMin: 0
+  shelterPocketMin: 0
+  hazardPocketMin: 2
+  debrisFieldMin: 1
+  rockCoverMin: 1
+  fertileGrowthMaxRatio: 0.05
+  biologicalNestMaxRatio: 0.05
+  resourcePocketMaxRatio: 0.08
+  shelterPocketMaxRatio: 0.06
+  hazardPocketMaxRatio: 0.65
+  debrisFieldMaxRatio: 0.35
+  rockCoverMaxRatio: 0.35
+  spawnTargetMin: 5
+  spawnTargetMax: 7
+  passiveSpawnMin: 1
+  predatorSpawnMin: 2
+  predatorSpawnMax: 3

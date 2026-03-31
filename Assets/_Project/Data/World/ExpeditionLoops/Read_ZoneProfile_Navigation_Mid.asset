@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b061e491659d4e8424ca22aacc1c7, type: 3}
+  m_Name: Read_ZoneProfile_Navigation_Mid
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
+  profileId: loop.profile.navigation.mid
+  profileLabel: Navigation Mid Read
+  entryBeat: Distinct silhouettes and branching space make orientation the main value.
+  routineBeat: The player quickly understands that mental mapping matters more than
+    raw loot here.
+  reliefBeat: Short calm ledges or readable pockets help reset direction.
+  pressureBeat: Pressure comes from getting turned around, not from being shoved
+    down one line.
+  payoffBeat: The reward is better world memory, cleaner returns, and confidence
+    in branch choice.
+  exitBeat: Leaving should feel easier because the player now owns more of the map
+    in their head.
+  playerFreedomRule: The player is free to test branches, retreat, or cross-cut between
+    landmarks.
+  softProgressionPull: The area nudges exploration through readability and curiosity,
+    not compulsion.
+  optionalDetourRule: Wrong turns should still teach the space and occasionally pay
+    out.
+  returnLogic: Repeat visits should become smoother as landmark memory grows.
+  masteryLogic: Mastery means building your own internal map and faster cross-links.
+  playerPromise: Readable branching water that turns confusion into ownership over
+    time.
+  routeMemoryRule: Memory should come from silhouettes, branch logic, and safe reorientation
+    pockets.
+  failureMode: If every branch feels the same, the zone loses identity.

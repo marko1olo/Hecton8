@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721656565caf8c64f8e84d70d6562cc9, type: 3}
+  m_Name: ResourceChannel_biome_family_volcanic_glass
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourceChannelProfile
+  profileId: biome.resource_channel.volcanic_glass
+  profileLabel: Volcanic Glass Resource Channel
+  resourcePocketItem: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  nodeClusterItem: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+  safePocketItem: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+  buildSocketItem: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
+  powerSpineItem: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+  serviceChokeItem: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
+  routeAnchorHintItem: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
+  hazardGateRewardItem: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
+  rareObjectiveRewardItem: {fileID: 11400000, guid: 02470fe41c1d62e419c347ade282cc3e, type: 2}
+  pocketRead: Routine nearby pockets usually pay out Sulfur Clumps.
+  nodeRead: Heavier node clusters here usually lead to Thermal Gel.
+  safePocketRead: Short relief spaces often still give Thermal Gel, so retreat is
+    not empty.
+  routeRead: Route anchors hint this biome's material line before the player fully
+    commits.
+  rareRead: The expensive late pull of this family usually resolves into Tungsten
+    Chunk.

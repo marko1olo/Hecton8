@@ -52,3 +52,23 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
   suggestedZoneFamily: progression.skyline.far
   progressionRole: final_hadal
+  primaryClusterFocus: 3
+  secondaryClusterFocus: 4
+  primaryStructureFocus: 1
+  secondaryStructureFocus: 2
+  faunaMood: 3
+  preferredGroundFamilies:
+  - {fileID: 11400000, guid: 78eb1922d7c5fc74eb0be51563fc58fb, type: 2}
+  - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
+  preferredClusterFamilies:
+  - {fileID: 11400000, guid: ff8b34f9718db3a4f93ea8552b5cbe30, type: 2}
+  - {fileID: 11400000, guid: 46f6128afde1266448f05be291b36efe, type: 2}
+  - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
+  preferredStructureFamilies:
+  - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}
+  - {fileID: 11400000, guid: d279bd884179d0541b4f78f0255b7fb7, type: 2}
+  - {fileID: 11400000, guid: 6cbd01b092811a34898cf4376bf66851, type: 2}
+  - {fileID: 11400000, guid: dcc251612f752f4408558a43bce429ab, type: 2}
+  preferredSpawnFamilies:
+  - {fileID: 11400000, guid: ad5ca7d3c4eae3041861b15fa48a9ec7, type: 2}
+  - {fileID: 11400000, guid: 9b6f9e64950b8fe4da7ee795ca6c1126, type: 2}

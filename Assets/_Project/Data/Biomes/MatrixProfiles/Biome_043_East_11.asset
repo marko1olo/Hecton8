@@ -51,3 +51,24 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
   suggestedZoneFamily: combat.readability.mid
   progressionRole: abyss_entry
+  primaryClusterFocus: 3
+  secondaryClusterFocus: 4
+  primaryStructureFocus: 1
+  secondaryStructureFocus: 3
+  faunaMood: 3
+  preferredGroundFamilies:
+  - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
+  - {fileID: 11400000, guid: 78eb1922d7c5fc74eb0be51563fc58fb, type: 2}
+  preferredClusterFamilies:
+  - {fileID: 11400000, guid: ff8b34f9718db3a4f93ea8552b5cbe30, type: 2}
+  - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
+  - {fileID: 11400000, guid: 46f6128afde1266448f05be291b36efe, type: 2}
+  - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
+  preferredStructureFamilies:
+  - {fileID: 11400000, guid: 4713708ed9ef09d469a6f7640237809a, type: 2}
+  - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}
+  - {fileID: 11400000, guid: 723bfa18be2651148ba5aec371fae323, type: 2}
+  - {fileID: 11400000, guid: dcc251612f752f4408558a43bce429ab, type: 2}
+  preferredSpawnFamilies:
+  - {fileID: 11400000, guid: 9b6f9e64950b8fe4da7ee795ca6c1126, type: 2}
+  - {fileID: 11400000, guid: ad5ca7d3c4eae3041861b15fa48a9ec7, type: 2}

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6677c41bc576547458f47d8348d93779, type: 3}
+  m_Name: Motivation_ZoneProfile_Trial_Early
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldMotivationProfile
+  profileId: motivation.profile.trial.early
+  profileLabel: Trial Early Motivation
+  survivalNeed: This area offers some practical survival value.
+  survivalNeedWeight: 1
+  resourceNeed: This area offers readable material value.
+  resourceNeedWeight: 1
+  engineeringNeed: This area can support tools, systems, or later improvements.
+  engineeringNeedWeight: 1
+  curiosityPull: The player should want to inspect at least one more feature.
+  curiosityPullWeight: 1
+  storyPull: The area should imply there is more to understand later.
+  storyPullWeight: 1
+  rareValuePull: A stronger reward should exist somewhere beyond the first glance.
+  rareValuePullWeight: 1
+  optionalityRule: These pulls are invitations, not requirements; the player decides
+    which one matters today.
+  returnRule: The area should stay worth revisiting later with a different goal,
+    toolset, or tolerance for risk.
+  ownershipRule: The player should feel they built their own reasons to come back
+    here.

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36132f8e0021684e89d282383fb0556, type: 3}
+  m_Name: ProceduralPattern_ReefNavigation
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
+  pattern: 1
+  label: Reef Navigation
+  summary: Readable reef water with route memory, shelter detours and passive fauna.
+  groundBudgetScale: 0.95
+  clusterBudgetScale: 1.6
+  structureBudgetScale: 1.1
+  spawnBudgetScale: 0.85
+  minGroundPlacements: 140
+  groundTargetMax: 170
+  minClusterPlacements: 8
+  clusterTargetMax: 12
+  minStructurePlacements: 6
+  minSpawnPlacements: 6
+  structureTargetMin: 6
+  structureTargetMax: 8
+  naturalLandmarkMin: 3
+  naturalLandmarkMax: 4
+  techFragmentMin: 0
+  techFragmentMax: 1
+  caveReadMin: 1
+  caveReadMax: 2
+  biologicalSilhouetteMin: 1
+  biologicalSilhouetteMax: 2
+  fertileGrowthMin: 1
+  biologicalNestMin: 1
+  resourcePocketMin: 0
+  shelterPocketMin: 1
+  hazardPocketMin: 0
+  debrisFieldMin: 0
+  rockCoverMin: 1
+  fertileGrowthMaxRatio: 0.4
+  biologicalNestMaxRatio: 0.18
+  resourcePocketMaxRatio: 0.12
+  shelterPocketMaxRatio: 0.22
+  hazardPocketMaxRatio: 0.04
+  debrisFieldMaxRatio: 0.04
+  rockCoverMaxRatio: 0.24
+  spawnTargetMin: 6
+  spawnTargetMax: 8
+  passiveSpawnMin: 6
+  predatorSpawnMin: 0
+  predatorSpawnMax: 0

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_ruin_medium
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.ruin.medium
+  ruleLabel: Abandoned Module Clusters
+  familyProfile: {fileID: 11400000, guid: c9d9f836a335df94bb74b3b58c842615, type: 2}
+  gameplayIntent: Old modular ruins from single chunks to cluster silhouettes.
+  preferredBiomeFamilies: []
+  preferredZoneKinds: 
+  preferredSocketKinds: 0a000000
+  preferredFidelity: 0
+  minDepthMeters: 80
+  maxDepthMeters: 5000
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 20
+  requiredHeatmapChannel: ruin_density
+  minHeatmapValue: 0.55
+  densityScale: 0.8
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 1
+  maxInstances: 2
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0
