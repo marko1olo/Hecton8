@@ -323,6 +323,62 @@ namespace Hecton8.Gameplay
                         "Fire now, then create distance.",
                         "CRITICAL");
 
+                case HectonBaseAI.AIState.Threaten:
+                    return new StunAssessment(
+                        "STUN PISTOL - TERRITORIAL WARNING",
+                        $"{ai.gameObject.name} is pressuring you and may escalate if you keep pushing forward.",
+                        "A disruption shot can break the warning spiral before it becomes a direct attack.",
+                        "WARN");
+
+                case HectonBaseAI.AIState.Stalk:
+                {
+                    bool packHunt = ai.UsesPackHuntBehavior;
+                    bool feintCapable = ai.UsesFeintRushBehavior;
+                    return new StunAssessment(
+                        packHunt ? "STUN PISTOL - PACK HUNT TRACKING" : "STUN PISTOL - PREDATOR TRACKING",
+                        packHunt
+                            ? $"{ai.gameObject.name} is tracking your movement as part of a hunting group."
+                            : (feintCapable
+                                ? $"{ai.gameObject.name} is tracking your movement and can fake a charge before the real commit."
+                                : $"{ai.gameObject.name} is tracking your movement and building toward a commit."),
+                        packHunt
+                            ? "Disrupt now and break the group before the flank closes."
+                            : (feintCapable
+                                ? "Disrupt only if the fake charge becomes a real entry. Do not waste the shot too early."
+                                : "Disrupt now if you want to deny the opening rush."),
+                        "WARN");
+                }
+
+                case HectonBaseAI.AIState.Loom:
+                {
+                    bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
+                    bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
+                    return new StunAssessment(
+                        ambushLeviathan
+                            ? "STUN PISTOL - LEVIATHAN AMBUSH"
+                            : (sentinelLeviathan
+                                ? "STUN PISTOL - LEVIATHAN SENTINEL"
+                                : "STUN PISTOL - LEVIATHAN PRESSURE"),
+                        ambushLeviathan
+                            ? $"{ai.gameObject.name} is coiling for a burst attack with very little warning."
+                            : (sentinelLeviathan
+                                ? $"{ai.gameObject.name} is holding a guarded route and may force you off the line."
+                                : $"{ai.gameObject.name} is holding a heavy pressure circle and may crash into direct contact if you close distance."),
+                        ambushLeviathan
+                            ? "Disrupt only to break the burst window, then move immediately."
+                            : (sentinelLeviathan
+                                ? "Use disruption only if you are forcing passage through the guarded corridor."
+                                : "Disrupt only if you need a break window, then disengage hard."),
+                        "CRITICAL");
+                }
+
+                case HectonBaseAI.AIState.Feint:
+                    return new StunAssessment(
+                        "STUN PISTOL - FALSE CHARGE",
+                        $"{ai.gameObject.name} is in a false-charge pass and may peel away or crash into a real hit if you hold the line.",
+                        "Hold the shot until the pass tightens or the return swing begins.",
+                        "CRITICAL");
+
                 case HectonBaseAI.AIState.Escape:
                     return new StunAssessment(
                         "STUN PISTOL - PANIC RESPONSE",

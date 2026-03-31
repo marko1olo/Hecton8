@@ -378,6 +378,47 @@ namespace Hecton8.Gameplay
                     "WARN");
             }
 
+            if (ai.CurrentState == HectonBaseAI.AIState.Threaten || ai.CurrentState == HectonBaseAI.AIState.Stalk || ai.CurrentState == HectonBaseAI.AIState.Loom || ai.CurrentState == HectonBaseAI.AIState.Feint)
+            {
+                bool packHunt = ai.UsesPackHuntBehavior && ai.CurrentState == HectonBaseAI.AIState.Stalk;
+                bool feintCapable = ai.UsesFeintRushBehavior && (ai.CurrentState == HectonBaseAI.AIState.Stalk || ai.CurrentState == HectonBaseAI.AIState.Loom || ai.CurrentState == HectonBaseAI.AIState.Feint);
+                bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
+                bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
+                return new KnifeAssessment(
+                    $"BLADE READ - PRESSURE CONTACT {healthPercent:0}%",
+                    ai.CurrentState == HectonBaseAI.AIState.Feint
+                        ? $"{ai.gameObject.name} is in a false-charge pass and can swing back into a real hit if you misread the opening."
+                        :
+                    ai.CurrentState == HectonBaseAI.AIState.Loom
+                        ? (ambushLeviathan
+                            ? $"{ai.gameObject.name} is setting up a burst ambush and can snap into close range with little warning."
+                            : (sentinelLeviathan
+                                ? $"{ai.gameObject.name} is holding a guarded route and pushing you out of its corridor."
+                                : $"{ai.gameObject.name} is holding a heavy pressure circle and can crash into close range fast."))
+                        : ai.CurrentState == HectonBaseAI.AIState.Threaten
+                        ? $"{ai.gameObject.name} is warning and pressuring you around its protected space."
+                        : (packHunt
+                            ? $"{ai.gameObject.name} is shadowing you as part of a group hunt and may rush from the flank."
+                            : (feintCapable
+                                ? $"{ai.gameObject.name} is shadowing you and may throw a fake entry before the real bite."
+                                : $"{ai.gameObject.name} is shadowing you and may commit to attack soon.")),
+                    ai.CurrentState == HectonBaseAI.AIState.Feint
+                        ? "Do not knife into the pass. Sidestep the fake run and wait for the turn."
+                        :
+                    ai.CurrentState == HectonBaseAI.AIState.Loom
+                        ? (ambushLeviathan
+                            ? "Do not trust a knife opener here. Break the angle before it bursts."
+                            : (sentinelLeviathan
+                                ? "This is a bad knife lane. Leave the corridor or force a hard opening first."
+                                : "Do not trust a knife opener here. Break distance first."))
+                        : packHunt
+                        ? "Do not trust a knife opener here unless you have already broken the group shape."
+                        : (feintCapable
+                            ? "Do not bite on the fake entry. Hold the blade for the real commit window."
+                            : "Do not rely on a knife opener here unless you are forcing a close-range break."),
+                    "WARN");
+            }
+
             if (ai.HealthNormalized <= criticalHealthThreshold)
             {
                 return new KnifeAssessment(

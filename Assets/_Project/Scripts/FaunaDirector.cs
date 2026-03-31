@@ -514,7 +514,11 @@ namespace Hecton8.AI
                 Vector3 spawnPos = new Vector3(spawnX, spawnY, spawnZ);
                 Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
-                GameObject instance = pool.Spawn(selectedEntry.prefab, spawnPos, spawnRot);
+                GameObject resolvedPrefab = selectedEntry.GetResolvedPrefab();
+                if (resolvedPrefab == null)
+                    continue;
+
+                GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot);
 
                 if (instance == null)
                     continue;
@@ -522,11 +526,12 @@ namespace Hecton8.AI
                 // ── Настройка спавн-поинта для AI ──
                 if (instance.TryGetComponent(out HectonBaseAI ai))
                 {
+                    ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
                 }
 
                 // ── Определяем typeIndex (индекс в possibleCreatures) ──
-                int typeIndex = FindCreatureTypeIndex(biomeData, selectedEntry.prefab);
+                int typeIndex = FindCreatureTypeIndex(biomeData, resolvedPrefab);
 
                 // ── Регистрация в трекере ──
                 ActiveCreature record = new ActiveCreature
@@ -535,7 +540,7 @@ namespace Hecton8.AI
                     transform         = instance.transform,
                     creatureTypeIndex  = typeIndex,
                     biomeIndex        = biomeIdx,
-                    prefabSource      = selectedEntry.prefab
+                    prefabSource      = resolvedPrefab
                 };
 
                 _activeCreatures.Add(record);
@@ -608,7 +613,7 @@ namespace Hecton8.AI
 
             for (int i = 0; i < count; i++)
             {
-                if (ReferenceEquals(creatures[i].prefab, prefab))
+                if (ReferenceEquals(creatures[i].GetResolvedPrefab(), prefab))
                     return i;
             }
 
@@ -834,7 +839,8 @@ namespace Hecton8.AI
                 int creatureIdx = Random.Range(0, possibleCreatures.Count);
                 FaunaEntry entry = possibleCreatures[creatureIdx];
 
-                if (entry.prefab == null)
+                GameObject resolvedPrefab = entry.GetResolvedPrefab();
+                if (resolvedPrefab == null)
                     continue;
 
                 // ── Позиция в кольце вокруг worldCenter ──
@@ -849,12 +855,12 @@ namespace Hecton8.AI
                 Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
                 // ── Спавн через пул ──
-                GameObject instance = pool.Spawn(entry.prefab, spawnPos, spawnRot);
+                GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot);
                 if (instance == null)
                     continue;
 
                 // ── Определяем typeIndex ──
-                int typeIndex = FindCreatureTypeIndex(biomeData, entry.prefab);
+                int typeIndex = FindCreatureTypeIndex(biomeData, resolvedPrefab);
 
                 // ── Регистрация в трекере ──
                 ActiveCreature record = new ActiveCreature
@@ -863,7 +869,7 @@ namespace Hecton8.AI
                     transform        = instance.transform,
                     creatureTypeIndex = typeIndex,
                     biomeIndex       = biomeIdx,
-                    prefabSource     = entry.prefab
+                    prefabSource     = resolvedPrefab
                 };
 
                 _activeCreatures.Add(record);
@@ -874,6 +880,7 @@ namespace Hecton8.AI
                 // ── Настройка AI: спавн-поинт + принудительное Aggressive ──
                 if (instance.TryGetComponent(out HectonBaseAI ai))
                 {
+                    ai.ApplyArchetype(entry.archetype);
                     ai.SetSpawnPoint(spawnPos);
                     ai.ForceState(HectonBaseAI.AIState.Aggressive);
                 }

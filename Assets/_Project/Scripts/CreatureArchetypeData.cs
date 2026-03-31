@@ -19,6 +19,13 @@ namespace Hecton8.AI
         CandiceActor
     }
 
+    public enum LeviathanEncounterType
+    {
+        PresenceCircle,
+        AmbushBurst,
+        SentinelPressure
+    }
+
     [CreateAssetMenu(
         fileName = "CreatureArchetype",
         menuName = "Hecton8/AI/Creature Archetype",
@@ -61,6 +68,41 @@ namespace Hecton8.AI
         public float lightEscapeBonus = 10f;
         public float stimulusMemoryDuration = 2.5f;
 
+        [Header("Home Territory")]
+        public bool useHomeTerritory;
+        public float homeWanderRadius = 30f;
+        public float homeReturnDistance = 45f;
+        public float territoryProtectRadius = 22f;
+        public float warningDuration = 3.5f;
+        public float warningStandOffDistance = 8f;
+        public float stalkDuration = 4.5f;
+        public float stalkDistance = 10f;
+
+        [Header("Nest And Group")]
+        public bool defendNest;
+        public float nestProtectRadius = 12f;
+        public bool callNearbyAllies;
+        public float allyAlertRadius = 18f;
+        public float allyAlertCooldown = 2.5f;
+        public int allyAlertMaxCount = 3;
+        public bool alliesRequireSameArchetype = true;
+        public bool usePackHunt;
+        public float packSupportRadius = 20f;
+        public float packFlankDistance = 6f;
+        public float packCommitDistance = 7f;
+
+        [Header("Leviathan Presence")]
+        public bool useLeviathanPresence;
+        public LeviathanEncounterType leviathanEncounterType = LeviathanEncounterType.PresenceCircle;
+        public float loomingDuration = 6f;
+        public float loomingDistance = 18f;
+        public float loomingCommitDistance = 12f;
+        public bool useFeintRush;
+        public float feintDuration = 2.1f;
+        public float feintTriggerDistance = 14f;
+        public float feintBreakDistance = 6f;
+        public float feintCooldown = 5f;
+
         [Header("AI Stack")]
         public bool useCandiceBehaviorTree;
         public bool useAstarPathing;
@@ -76,6 +118,10 @@ namespace Hecton8.AI
         public GameObject prefab;
         public string lootProfileId = string.Empty;
         [TextArea(1, 3)] public string biomeNotes = string.Empty;
+
+        [Header("World Guidance")]
+        public string[] recommendedFaunaFamilyIds;
+        public string[] recommendedBiomeFamilyIds;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -102,9 +148,63 @@ namespace Hecton8.AI
             if (lightDetectionBonus < 0f) lightDetectionBonus = 0f;
             if (lightEscapeBonus < 0f) lightEscapeBonus = 0f;
             if (stimulusMemoryDuration < 0f) stimulusMemoryDuration = 0f;
+            if (homeWanderRadius < 1f) homeWanderRadius = 1f;
+            if (homeReturnDistance < homeWanderRadius) homeReturnDistance = homeWanderRadius;
+            if (territoryProtectRadius < 0f) territoryProtectRadius = 0f;
+            if (warningDuration < 0f) warningDuration = 0f;
+            if (warningStandOffDistance < 1f) warningStandOffDistance = 1f;
+            if (stalkDuration < 0f) stalkDuration = 0f;
+            if (stalkDistance < 1f) stalkDistance = 1f;
+            if (nestProtectRadius < 0f) nestProtectRadius = 0f;
+            if (allyAlertRadius < 0f) allyAlertRadius = 0f;
+            if (allyAlertCooldown < 0f) allyAlertCooldown = 0f;
+            if (allyAlertMaxCount < 0) allyAlertMaxCount = 0;
+            if (packSupportRadius < 0f) packSupportRadius = 0f;
+            if (packFlankDistance < 0f) packFlankDistance = 0f;
+            if (packCommitDistance < 0f) packCommitDistance = 0f;
+            if (loomingDuration < 0f) loomingDuration = 0f;
+            if (loomingDistance < 0f) loomingDistance = 0f;
+            if (loomingCommitDistance < 0f) loomingCommitDistance = 0f;
+            if (feintDuration < 0f) feintDuration = 0f;
+            if (feintTriggerDistance < 0f) feintTriggerDistance = 0f;
+            if (feintBreakDistance < 0f) feintBreakDistance = 0f;
+            if (feintCooldown < 0f) feintCooldown = 0f;
             if (maxAliveGlobal < 0) maxAliveGlobal = 0;
             if (maxAlivePerBiome < 0) maxAlivePerBiome = 0;
             if (spawnWeight < 0) spawnWeight = 0;
+
+            TrimGuidanceArray(ref recommendedFaunaFamilyIds);
+            TrimGuidanceArray(ref recommendedBiomeFamilyIds);
+        }
+
+        private static void TrimGuidanceArray(ref string[] values)
+        {
+            if (values == null || values.Length == 0)
+                return;
+
+            int writeIndex = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                string value = values[i];
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
+
+                values[writeIndex++] = value.Trim();
+            }
+
+            if (writeIndex == values.Length)
+                return;
+
+            if (writeIndex == 0)
+            {
+                values = System.Array.Empty<string>();
+                return;
+            }
+
+            string[] trimmed = new string[writeIndex];
+            for (int i = 0; i < writeIndex; i++)
+                trimmed[i] = values[i];
+            values = trimmed;
         }
 #endif
     }

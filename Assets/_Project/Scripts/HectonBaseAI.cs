@@ -48,6 +48,7 @@
 //     • GetSteeringDirection — для кастомного поведения движения.
 // ============================================================================
 
+using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
@@ -73,6 +74,21 @@ namespace Hecton8.AI
 
             /// <summary>Существо плавно перемещается к случайной точке.</summary>
             Wander,
+
+            /// <summary>Существо проверяет источник шума или света, не атакуя мгновенно.</summary>
+            Investigate,
+
+            /// <summary>Существо давит на игрока и предупреждает, защищая свою зону.</summary>
+            Threaten,
+
+            /// <summary>Существо ведёт и подкрадывается к цели перед жёсткой атакой.</summary>
+            Stalk,
+
+            /// <summary>Крупная угроза держит круг вокруг игрока и ломает комфорт перед жёстким входом.</summary>
+            Loom,
+
+            /// <summary>Крупный хищник делает ложный заход, сбивает ритм игрока и уходит на повторный заход.</summary>
+            Feint,
 
             /// <summary>Существо убегает от игрока (distance &lt; escapeDistance).</summary>
             Escape,
@@ -189,6 +205,9 @@ namespace Hecton8.AI
         [Tooltip("Если true — существо агрессивно (атакует вместо побега).")]
         [SerializeField] private bool isAggressive;
 
+        [Tooltip("Если false — существо не пытается убегать от игрока и держит свой режим поведения.")]
+        [SerializeField] private bool canFlee = true;
+
         [Tooltip("Дистанция обнаружения для агрессии.")]
         [SerializeField] private float aggroDistance = 20f;
 
@@ -226,6 +245,102 @@ namespace Hecton8.AI
         [Tooltip("Как долго существо помнит недавний шум или свет игрока.")]
         [SerializeField] private float stimulusMemoryDuration = 2.5f;
 
+        [Tooltip("Сколько времени существо тратит на проверку подозрительного шума или света.")]
+        [SerializeField] private float investigateDuration = 4f;
+
+        [Tooltip("На какой дистанции точка проверки считается достигнутой.")]
+        [SerializeField] private float investigateReachDistance = 4f;
+
+        [Header("── Home Territory ───────────────────────────────")]
+        [Tooltip("Если включено — существо считает точку спавна своим домом и старается не уходить слишком далеко.")]
+        [SerializeField] private bool useHomeTerritory;
+
+        [Tooltip("Радиус обычной жизни вокруг дома.")]
+        [SerializeField] private float homeWanderRadius = 30f;
+
+        [Tooltip("Если существо ушло дальше этой дистанции от дома, оно начнёт возвращаться.")]
+        [SerializeField] private float homeReturnDistance = 45f;
+
+        [Tooltip("Радиус, внутри которого территориальное существо считает игрока вторжением в свою зону.")]
+        [SerializeField] private float territoryProtectRadius = 22f;
+
+        [Tooltip("Сколько времени территориальное существо сначала давит и предупреждает перед атакой.")]
+        [SerializeField] private float warningDuration = 3.5f;
+
+        [Tooltip("На какой дистанции территориальное существо старается держать игрока во время давления.")]
+        [SerializeField] private float warningStandOffDistance = 8f;
+
+        [Tooltip("Сколько времени охотник может вести и подкрадываться перед переходом в жёсткую атаку.")]
+        [SerializeField] private float stalkDuration = 4.5f;
+
+        [Tooltip("Какую дистанцию охотник старается держать во время подкрадывания.")]
+        [SerializeField] private float stalkDistance = 10f;
+
+        [Header("── Nest And Group ───────────────────────────────")]
+        [Tooltip("Если включено — существо защищает гнездо вокруг точки спавна.")]
+        [SerializeField] private bool defendNest;
+
+        [Tooltip("Радиус защиты гнезда вокруг точки спавна.")]
+        [SerializeField] private float nestProtectRadius = 12f;
+
+        [Tooltip("Если включено — существо может звать соседей на помощь.")]
+        [SerializeField] private bool callNearbyAllies;
+
+        [Tooltip("Радиус вызова соседей на помощь.")]
+        [SerializeField] private float allyAlertRadius = 18f;
+
+        [Tooltip("Пауза между вызовами помощи.")]
+        [SerializeField] private float allyAlertCooldown = 2.5f;
+
+        [Tooltip("Сколько соседей максимум поднимается одним вызовом.")]
+        [SerializeField] private int allyAlertMaxCount = 3;
+
+        [Tooltip("Если включено — помощь зовётся только у того же вида.")]
+        [SerializeField] private bool alliesRequireSameArchetype = true;
+
+        [Tooltip("Если включено — хищники этого вида стараются заходить на игрока группой, а не лететь в одну точку.")]
+        [SerializeField] private bool usePackHunt;
+
+        [Tooltip("Радиус, внутри которого соседние охотники могут подключиться к совместной охоте.")]
+        [SerializeField] private float packSupportRadius = 20f;
+
+        [Tooltip("Насколько широко хищники расходятся по бокам игрока во время совместной охоты.")]
+        [SerializeField] private float packFlankDistance = 6f;
+
+        [Tooltip("На какой дистанции боковой охотник уже может перейти из подкрадывания в жёсткую атаку.")]
+        [SerializeField] private float packCommitDistance = 7f;
+
+        [Header("── Leviathan Presence ───────────────────────────────")]
+        [Tooltip("Если включено — левиафан сначала давит присутствием и держит круг, а не сразу срывается в атаку.")]
+        [SerializeField] private bool useLeviathanPresence;
+
+        [Tooltip("Какой именно сценарий встречи использует левиафан.")]
+        [SerializeField] private LeviathanEncounterType leviathanEncounterType = LeviathanEncounterType.PresenceCircle;
+
+        [Tooltip("Сколько времени левиафан может держать круг и давить перед жёстким входом.")]
+        [SerializeField] private float loomingDuration = 6f;
+
+        [Tooltip("Какую дистанцию левиафан старается держать во время большого давления.")]
+        [SerializeField] private float loomingDistance = 18f;
+
+        [Tooltip("На какой дистанции левиафан уже срывается из давления в прямую атаку.")]
+        [SerializeField] private float loomingCommitDistance = 12f;
+
+        [Tooltip("Если включено — крупный хищник может делать ложный заход и срываться обратно, а не всегда бить сразу.")]
+        [SerializeField] private bool useFeintRush;
+
+        [Tooltip("Сколько длится один ложный заход.")]
+        [SerializeField] private float feintDuration = 2.1f;
+
+        [Tooltip("На какой дистанции ложный заход вообще разрешён.")]
+        [SerializeField] private float feintTriggerDistance = 14f;
+
+        [Tooltip("На какой дистанции ложный заход считается опасно близким и существо уже начинает срыв назад.")]
+        [SerializeField] private float feintBreakDistance = 6f;
+
+        [Tooltip("Пауза между ложными заходами, чтобы крупная угроза не спамила ими постоянно.")]
+        [SerializeField] private float feintCooldown = 5f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CREATURE HEALTH
         // ══════════════════════════════════════════════════════════
@@ -259,6 +374,20 @@ namespace Hecton8.AI
         [SerializeField] private float _debugStimulusMemory;
         [SerializeField] private float _debugAggroTriggerDistance;
         [SerializeField] private float _debugEscapeTriggerDistance;
+        [SerializeField] private float _debugStrongestStimulus;
+        [SerializeField] private string _debugArchetypeId;
+        [SerializeField] private CreatureRoleType _debugRoleType;
+        [SerializeField] private CreatureLocomotionType _debugLocomotionType;
+        [SerializeField] private float _debugDistanceFromHome;
+        [SerializeField] private bool _debugReturningHome;
+        [SerializeField] private bool _debugPlayerInsideTerritory;
+        [SerializeField] private float _debugBehaviorTimer;
+        [SerializeField] private bool _debugPlayerInsideNest;
+        [SerializeField] private float _debugAllyAlertCooldown;
+        [SerializeField] private int _debugAlliesAlertedLastCall;
+        [SerializeField] private bool _debugPackHuntActive;
+        [SerializeField] private int _debugPackSlot;
+        [SerializeField] private float _debugFeintCooldown;
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -319,6 +448,8 @@ namespace Hecton8.AI
         private HectonSurvivalSystem _playerSurvival;
         private Rigidbody _playerRigidbody;
         private PlayerFlashlight _playerFlashlight;
+        private CreatureRoleType _roleType = CreatureRoleType.Ambient;
+        private CreatureLocomotionType _locomotionType = CreatureLocomotionType.SteeringSolo;
 
         /// <summary>Текущее здоровье существа.</summary>
         private float _currentHealth;
@@ -361,6 +492,35 @@ namespace Hecton8.AI
         private float _stimulusEscapeSafeDistanceSqr;
         private float _stimulusDeaggroDistanceSqr;
         private float _stimulusWakeDistanceSqr;
+        private float _investigateReachDistanceSqr;
+        private float _homeReturnDistanceSqr;
+        private float _territoryProtectRadiusSqr;
+        private float _warningStandOffDistanceSqr;
+        private float _stalkDistanceSqr;
+        private float _nestProtectRadiusSqr;
+        private float _allyAlertRadiusSqr;
+        private float _packSupportRadiusSqr;
+        private float _packCommitDistanceSqr;
+        private float _loomingDistanceSqr;
+        private float _loomingCommitDistanceSqr;
+        private float _feintTriggerDistanceSqr;
+        private float _feintBreakDistanceSqr;
+        private float _allyAlertCooldownTimer;
+        private float _feintCooldownTimer;
+        private float _strongestStimulus;
+        private Vector3 _stimulusTarget;
+        private bool _hasStimulusTarget;
+        private float _behaviorSideSign = 1f;
+        private int _packFormationSlot = -1;
+        private string _archetypeId = string.Empty;
+        private bool _registeredInAiRegistry;
+
+        private static readonly List<HectonBaseAI> s_activeAis = new List<HectonBaseAI>(256);
+        private bool UsesPackHunt => usePackHunt && (_roleType == CreatureRoleType.Hunter || _roleType == CreatureRoleType.Leviathan);
+        private bool UsesLeviathanLoom => _roleType == CreatureRoleType.Leviathan &&
+                                          useLeviathanPresence &&
+                                          leviathanEncounterType != LeviathanEncounterType.AmbushBurst;
+        private bool UsesFeintRush => useFeintRush && (_roleType == CreatureRoleType.Hunter || _roleType == CreatureRoleType.Leviathan);
 
         // ── Obstacle Avoidance: pre-allocated + throttled (v2.2) ──
 
@@ -452,6 +612,7 @@ namespace Hecton8.AI
             ResetInternalState();
 
             _registeredToTickManager = false;
+            _registeredInAiRegistry = false;
         }
 
         private void OnEnable()
@@ -475,6 +636,8 @@ namespace Hecton8.AI
             {
                 FindPlayer();
             }
+
+            RegisterInAiRegistry();
         }
 
         /// <summary>
@@ -505,7 +668,11 @@ namespace Hecton8.AI
         private void OnDisable()
         {
             // Guard: singleton may be destroyed before this component.
-            if (GameTickManager.Instance == null) return;
+            if (GameTickManager.Instance == null)
+            {
+                UnregisterFromAiRegistry();
+                return;
+            }
 
             if (_registeredToTickManager)
             {
@@ -513,6 +680,26 @@ namespace Hecton8.AI
                 GameTickManager.Instance.Unregister((IFixedTickable)this);
                 _registeredToTickManager = false;
             }
+
+            UnregisterFromAiRegistry();
+        }
+
+        private void RegisterInAiRegistry()
+        {
+            if (_registeredInAiRegistry)
+                return;
+
+            s_activeAis.Add(this);
+            _registeredInAiRegistry = true;
+        }
+
+        private void UnregisterFromAiRegistry()
+        {
+            if (!_registeredInAiRegistry)
+                return;
+
+            s_activeAis.Remove(this);
+            _registeredInAiRegistry = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -550,6 +737,8 @@ namespace Hecton8.AI
             {
                 FindPlayer();
             }
+
+            RegisterInAiRegistry();
         }
 
         /// <summary>
@@ -583,6 +772,9 @@ namespace Hecton8.AI
             _playerRigidbody = null;
             _playerFlashlight = null;
             ResetStimulusDebug();
+            _allyAlertCooldownTimer = 0f;
+            _debugAlliesAlertedLastCall = 0;
+            UnregisterFromAiRegistry();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -646,6 +838,16 @@ namespace Hecton8.AI
                 _attackCooldownTimer -= deltaTime;
             }
 
+            if (_allyAlertCooldownTimer > 0f)
+            {
+                _allyAlertCooldownTimer -= deltaTime;
+            }
+
+            if (_feintCooldownTimer > 0f)
+            {
+                _feintCooldownTimer -= deltaTime;
+            }
+
             // ══════════════════════════════════════════════════════
             //  3. STATE TRANSITIONS
             // ══════════════════════════════════════════════════════
@@ -664,6 +866,26 @@ namespace Hecton8.AI
 
                 case AIState.Wander:
                     TickWander(deltaTime);
+                    break;
+
+                case AIState.Investigate:
+                    TickInvestigate(deltaTime);
+                    break;
+
+                case AIState.Threaten:
+                    TickThreaten(distSqrToPlayer);
+                    break;
+
+                case AIState.Stalk:
+                    TickStalk(distSqrToPlayer);
+                    break;
+
+                case AIState.Loom:
+                    TickLoom(distSqrToPlayer);
+                    break;
+
+                case AIState.Feint:
+                    TickFeint(distSqrToPlayer);
                     break;
 
                 case AIState.Escape:
@@ -716,6 +938,11 @@ namespace Hecton8.AI
             {
                 float currentTurnSpeed = _currentState switch
                 {
+                    AIState.Investigate => turnSpeed * 1.35f,
+                    AIState.Threaten   => turnSpeed * 1.45f,
+                    AIState.Stalk      => turnSpeed * 1.5f,
+                    AIState.Loom       => turnSpeed * 1.25f,
+                    AIState.Feint      => turnSpeed * 1.85f,
                     AIState.Escape     => turnSpeed * escapeTurnMultiplier,
                     AIState.Aggressive => turnSpeed * aggressiveTurnMultiplier,
                     _                  => turnSpeed
@@ -794,6 +1021,26 @@ namespace Hecton8.AI
 
             switch (_currentState)
             {
+                case AIState.Threaten:
+                    force = swimForce * 0.9f;
+                    speedLimit = Mathf.Max(maxSpeed * 0.9f, 0.1f);
+                    break;
+
+                case AIState.Stalk:
+                    force = swimForce * 1.1f;
+                    speedLimit = Mathf.Min(maxAggressiveSpeed, Mathf.Max(maxSpeed * 1.15f, maxSpeed));
+                    break;
+
+                case AIState.Loom:
+                    force = swimForce;
+                    speedLimit = Mathf.Min(maxAggressiveSpeed, Mathf.Max(maxSpeed * 1.05f, maxSpeed));
+                    break;
+
+                case AIState.Feint:
+                    force = swimForce * Mathf.Max(1.15f, aggressiveForceMultiplier * 0.85f);
+                    speedLimit = Mathf.Min(maxAggressiveSpeed, Mathf.Max(maxSpeed * 1.25f, maxSpeed));
+                    break;
+
                 case AIState.Escape:
                     force      = swimForce * escapeForceMultiplier;
                     speedLimit = maxEscapeSpeed;
@@ -841,6 +1088,23 @@ namespace Hecton8.AI
             float escapeDistanceSqr = Mathf.Max(_escapeDistanceSqr, _stimulusEscapeDistanceSqr);
             float escapeSafeDistanceSqr = Mathf.Max(_escapeSafeDistanceSqr, _stimulusEscapeSafeDistanceSqr);
             float deaggroDistanceSqr = Mathf.Max(_deaggroDistanceSqr, _stimulusDeaggroDistanceSqr);
+            bool behavesAsHunter = isAggressive ||
+                                   _roleType == CreatureRoleType.Hunter ||
+                                   _roleType == CreatureRoleType.Leviathan;
+            bool defendsTerritory = (_roleType == CreatureRoleType.Territorial && IsPlayerInsideTerritory()) || IsPlayerInsideNestZone();
+            bool ignoresPlayer = _roleType == CreatureRoleType.DroneTrader && !isAggressive;
+            bool playerVeryClose = distSqrToPlayer <= _attackRangeSqr * 2.25f;
+            bool shouldThreaten = !ignoresPlayer && defendsTerritory && distSqrToPlayer < aggroDistanceSqr && !playerVeryClose;
+            bool shouldLoom = !ignoresPlayer &&
+                              UsesLeviathanLoom &&
+                              distSqrToPlayer < aggroDistanceSqr &&
+                              !playerVeryClose;
+            bool shouldStalk = !ignoresPlayer && behavesAsHunter && distSqrToPlayer < aggroDistanceSqr && !playerVeryClose;
+            bool shouldFeint = !ignoresPlayer &&
+                               UsesFeintRush &&
+                               _feintCooldownTimer <= 0f &&
+                               distSqrToPlayer < _feintTriggerDistanceSqr &&
+                               !playerVeryClose;
 
             _debugAggroTriggerDistance = Mathf.Sqrt(aggroDistanceSqr);
             _debugEscapeTriggerDistance = Mathf.Sqrt(escapeDistanceSqr);
@@ -850,17 +1114,47 @@ namespace Hecton8.AI
                 // ─────────────────────────────────────────────────
                 case AIState.Idle:
                 {
+                    if (ShouldInvestigate(distSqrToPlayer))
+                    {
+                        TransitionTo(AIState.Investigate);
+                        return;
+                    }
+
+                    if (shouldThreaten)
+                    {
+                        TransitionTo(AIState.Threaten);
+                        return;
+                    }
+
+                    if (shouldLoom)
+                    {
+                        TransitionTo(AIState.Loom);
+                        return;
+                    }
+
+                    if (shouldStalk)
+                    {
+                        TransitionTo(AIState.Stalk);
+                        return;
+                    }
+
                     // Агрессия
-                    if (isAggressive && distSqrToPlayer < aggroDistanceSqr)
+                    if (!ignoresPlayer && (behavesAsHunter || defendsTerritory) && distSqrToPlayer < aggroDistanceSqr)
                     {
                         TransitionTo(AIState.Aggressive);
                         return;
                     }
 
                     // Побег
-                    if (!isAggressive && distSqrToPlayer < escapeDistanceSqr)
+                    if (!ignoresPlayer && canFlee && !behavesAsHunter && !defendsTerritory && distSqrToPlayer < escapeDistanceSqr)
                     {
                         TransitionTo(AIState.Escape);
+                        return;
+                    }
+
+                    if (ShouldReturnHome())
+                    {
+                        StartReturnHome();
                         return;
                     }
 
@@ -877,17 +1171,47 @@ namespace Hecton8.AI
                 // ─────────────────────────────────────────────────
                 case AIState.Wander:
                 {
+                    if (ShouldInvestigate(distSqrToPlayer))
+                    {
+                        TransitionTo(AIState.Investigate);
+                        return;
+                    }
+
+                    if (shouldThreaten)
+                    {
+                        TransitionTo(AIState.Threaten);
+                        return;
+                    }
+
+                    if (shouldLoom)
+                    {
+                        TransitionTo(AIState.Loom);
+                        return;
+                    }
+
+                    if (shouldStalk)
+                    {
+                        TransitionTo(AIState.Stalk);
+                        return;
+                    }
+
                     // Агрессия
-                    if (isAggressive && distSqrToPlayer < aggroDistanceSqr)
+                    if (!ignoresPlayer && (behavesAsHunter || defendsTerritory) && distSqrToPlayer < aggroDistanceSqr)
                     {
                         TransitionTo(AIState.Aggressive);
                         return;
                     }
 
                     // Побег
-                    if (!isAggressive && distSqrToPlayer < escapeDistanceSqr)
+                    if (!ignoresPlayer && canFlee && !behavesAsHunter && !defendsTerritory && distSqrToPlayer < escapeDistanceSqr)
                     {
                         TransitionTo(AIState.Escape);
+                        return;
+                    }
+
+                    if (ShouldReturnHome())
+                    {
+                        StartReturnHome();
                         return;
                     }
 
@@ -928,13 +1252,246 @@ namespace Hecton8.AI
                     break;
                 }
 
+                case AIState.Investigate:
+                {
+                    _stateTimer -= deltaTime;
+
+                    if (shouldThreaten)
+                    {
+                        TransitionTo(AIState.Threaten);
+                        return;
+                    }
+
+                    if (shouldLoom)
+                    {
+                        TransitionTo(AIState.Loom);
+                        return;
+                    }
+
+                    if (shouldStalk)
+                    {
+                        TransitionTo(AIState.Stalk);
+                        return;
+                    }
+
+                    if (!ignoresPlayer && (behavesAsHunter || defendsTerritory) && distSqrToPlayer < aggroDistanceSqr)
+                    {
+                        TransitionTo(AIState.Aggressive);
+                        return;
+                    }
+
+                    if (!ignoresPlayer && canFlee && !behavesAsHunter && !defendsTerritory && distSqrToPlayer < escapeDistanceSqr)
+                    {
+                        TransitionTo(AIState.Escape);
+                        return;
+                    }
+
+                    if (_hasStimulusTarget)
+                    {
+                        Vector3 toStimulus = _stimulusTarget - _transform.position;
+                        if (toStimulus.sqrMagnitude <= _investigateReachDistanceSqr)
+                        {
+                            TransitionTo(AIState.Wander);
+                            return;
+                        }
+                    }
+
+                    if (_stateTimer <= 0f)
+                    {
+                        if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+                    }
+
+                    break;
+                }
+
                 // ─────────────────────────────────────────────────
+                case AIState.Threaten:
+                {
+                    _stateTimer -= deltaTime;
+
+                    if (!defendsTerritory)
+                    {
+                        if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+
+                        return;
+                    }
+
+                    if (playerVeryClose)
+                    {
+                        TransitionTo(AIState.Aggressive);
+                        return;
+                    }
+
+                    if (_stateTimer <= 0f)
+                    {
+                        if (distSqrToPlayer < aggroDistanceSqr)
+                        {
+                            TransitionTo(AIState.Aggressive);
+                        }
+                        else if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+                    }
+
+                    break;
+                }
+
+                case AIState.Stalk:
+                {
+                    _stateTimer -= deltaTime;
+                    bool packFollower = UsesPackHunt && _packFormationSlot > 0;
+
+                    if (distSqrToPlayer > deaggroDistanceSqr)
+                    {
+                        if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+
+                        return;
+                    }
+
+                    if (shouldFeint && (!packFollower || _roleType == CreatureRoleType.Leviathan))
+                    {
+                        TransitionTo(AIState.Feint);
+                        return;
+                    }
+
+                    if (playerVeryClose ||
+                        (!packFollower && _stateTimer <= 0f) ||
+                        (packFollower && distSqrToPlayer <= _packCommitDistanceSqr))
+                    {
+                        TransitionTo(AIState.Aggressive);
+                    }
+                    else if (packFollower && _stateTimer <= 0f)
+                    {
+                        _stateTimer = Mathf.Max(0.75f, stalkDuration * 0.35f);
+                    }
+
+                    break;
+                }
+
+                case AIState.Loom:
+                {
+                    _stateTimer -= deltaTime;
+
+                    if (_roleType != CreatureRoleType.Leviathan || !UsesLeviathanLoom)
+                    {
+                        TransitionTo(AIState.Stalk);
+                        return;
+                    }
+
+                    if (distSqrToPlayer > deaggroDistanceSqr)
+                    {
+                        if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+
+                        return;
+                    }
+
+                    if (shouldFeint && leviathanEncounterType == LeviathanEncounterType.AmbushBurst)
+                    {
+                        TransitionTo(AIState.Feint);
+                        return;
+                    }
+
+                    if (playerVeryClose || distSqrToPlayer <= _loomingCommitDistanceSqr || _stateTimer <= 0f)
+                    {
+                        TransitionTo(AIState.Aggressive);
+                    }
+
+                    break;
+                }
+
+                case AIState.Feint:
+                {
+                    _stateTimer -= deltaTime;
+
+                    if (distSqrToPlayer > deaggroDistanceSqr)
+                    {
+                        if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+
+                        return;
+                    }
+
+                    if (playerVeryClose && _stateTimer <= feintDuration * 0.35f)
+                    {
+                        TransitionTo(AIState.Aggressive);
+                        return;
+                    }
+
+                    if (_stateTimer <= 0f)
+                    {
+                        if (_roleType == CreatureRoleType.Leviathan && UsesLeviathanLoom)
+                        {
+                            TransitionTo(AIState.Loom);
+                        }
+                        else if (shouldStalk)
+                        {
+                            TransitionTo(AIState.Stalk);
+                        }
+                        else if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
+                    }
+
+                    break;
+                }
+
                 case AIState.Aggressive:
                 {
                     // Потеря агрессии (leash distance)
                     if (distSqrToPlayer > deaggroDistanceSqr)
                     {
-                        TransitionTo(AIState.Wander);
+                        if (ShouldReturnHome())
+                        {
+                            StartReturnHome();
+                        }
+                        else
+                        {
+                            TransitionTo(AIState.Wander);
+                        }
                     }
 
                     break;
@@ -958,22 +1515,71 @@ namespace Hecton8.AI
             switch (newState)
             {
                 case AIState.Idle:
+                    _packFormationSlot = -1;
                     _stateTimer = Random.Range(idleTimeMin, idleTimeMax);
                     break;
 
                 case AIState.Wander:
+                    _packFormationSlot = -1;
                     GenerateWanderTarget();
                     _wanderTimer = wanderTimeout;
                     break;
 
+                case AIState.Investigate:
+                    _packFormationSlot = -1;
+                    _stateTimer = investigateDuration;
+                    break;
+
+                case AIState.Threaten:
+                    _packFormationSlot = -1;
+                    _stateTimer = warningDuration;
+                    _behaviorSideSign = Random.value < 0.5f ? -1f : 1f;
+                    TryAlertNearbyAllies(false);
+                    break;
+
+                case AIState.Stalk:
+                    if (!UsesPackHunt || _packFormationSlot < 0)
+                    {
+                        _packFormationSlot = 0;
+                    }
+
+                    _stateTimer = stalkDuration;
+                    _behaviorSideSign = Random.value < 0.5f ? -1f : 1f;
+                    TryAlertNearbyAllies(false);
+                    break;
+
+                case AIState.Loom:
+                    _packFormationSlot = -1;
+                    _stateTimer = loomingDuration;
+                    _behaviorSideSign = Random.value < 0.5f ? -1f : 1f;
+                    break;
+
+                case AIState.Feint:
+                    if (!UsesPackHunt || _packFormationSlot < 0)
+                    {
+                        _packFormationSlot = 0;
+                    }
+
+                    _stateTimer = feintDuration;
+                    _behaviorSideSign = Random.value < 0.5f ? -1f : 1f;
+                    _feintCooldownTimer = feintCooldown;
+                    break;
+
                 case AIState.Escape:
+                    _packFormationSlot = -1;
                     _stateTimer = escapeMinDuration;
                     break;
 
                 case AIState.Aggressive:
+                    if (!UsesPackHunt || _packFormationSlot < 0)
+                    {
+                        _packFormationSlot = 0;
+                    }
+
                     // Сброс кулдауна атаки при входе в агрессию,
                     // чтобы первая атака происходила не мгновенно
                     _attackCooldownTimer = 0f;
+                    TryAlertNearbyAllies(true);
 
                     // Кэшируем HectonSurvivalSystem игрока если ещё не закэширован
                     CachePlayerSurvival();
@@ -1010,6 +1616,261 @@ namespace Hecton8.AI
             {
                 _desiredDirection = toTarget.normalized;
             }
+
+            if (_debugReturningHome && (_spawnPoint - _transform.position).sqrMagnitude <= _waypointReachSqr)
+            {
+                _debugReturningHome = false;
+            }
+        }
+
+        /// <summary>
+        /// Investigate: существо подплывает к месту, где недавно был шум или свет.
+        /// Это даёт более живую реакцию, чем мгновенный переход в атаку или побег.
+        /// </summary>
+        private void TickInvestigate(float deltaTime)
+        {
+            if (!_hasStimulusTarget)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 toStimulus = _stimulusTarget - _transform.position;
+            if (toStimulus.sqrMagnitude > 0.01f)
+            {
+                _desiredDirection = toStimulus.normalized;
+            }
+        }
+
+        /// <summary>
+        /// Threaten: существо давит на игрока, но ещё не бросается в атаку.
+        /// Это нужно для охраны территории, чтобы игрок сначала почувствовал предупреждение.
+        /// </summary>
+        private void TickThreaten(float distSqrToPlayer)
+        {
+            if (_playerTransform == null)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 toPlayer = _playerTransform.position - _transform.position;
+            if (toPlayer.sqrMagnitude <= 0.001f)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 forwardToPlayer = toPlayer.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, forwardToPlayer);
+            if (side.sqrMagnitude < 0.001f)
+            {
+                side = _transform.right;
+            }
+
+            side = side.normalized * (_behaviorSideSign >= 0f ? 1f : -1f);
+
+            if (distSqrToPlayer > _warningStandOffDistanceSqr * 1.35f)
+            {
+                _desiredDirection = (forwardToPlayer + side * 0.35f).normalized;
+            }
+            else if (distSqrToPlayer < _warningStandOffDistanceSqr * 0.65f)
+            {
+                _desiredDirection = ((-forwardToPlayer * 0.75f) + side * 0.55f).normalized;
+            }
+            else
+            {
+                _desiredDirection = (side * 0.85f + forwardToPlayer * 0.2f).normalized;
+            }
+        }
+
+        /// <summary>
+        /// Stalk: хищник или левиафан ведёт цель, держит дистанцию и накапливает давление.
+        /// Это делает охоту более умной, чем мгновенный рывок в лоб.
+        /// </summary>
+        private void TickStalk(float distSqrToPlayer)
+        {
+            if (_playerTransform == null)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 toPlayer = _playerTransform.position - _transform.position;
+            if (toPlayer.sqrMagnitude <= 0.001f)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 forwardToPlayer = toPlayer.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, forwardToPlayer);
+            if (side.sqrMagnitude < 0.001f)
+            {
+                side = _transform.right;
+            }
+
+            side = side.normalized * (_behaviorSideSign >= 0f ? 1f : -1f);
+
+            if (UsesPackHunt)
+            {
+                float flankDistance = Mathf.Max(1f, packFlankDistance);
+                Vector3 packTargetOffset;
+
+                switch (_packFormationSlot)
+                {
+                    case 1:
+                        packTargetOffset = side * flankDistance - forwardToPlayer * (stalkDistance * 0.75f);
+                        break;
+
+                    case 2:
+                        packTargetOffset = -side * flankDistance - forwardToPlayer * (stalkDistance * 0.75f);
+                        break;
+
+                    case 3:
+                        packTargetOffset = side * (flankDistance * 0.45f) - forwardToPlayer * (stalkDistance * 1.25f);
+                        break;
+
+                    default:
+                        packTargetOffset = side * (flankDistance * 0.2f) - forwardToPlayer * stalkDistance;
+                        break;
+                }
+
+                Vector3 packTarget = _playerTransform.position + packTargetOffset;
+                Vector3 toPackTarget = packTarget - _transform.position;
+                if (toPackTarget.sqrMagnitude > 0.001f)
+                {
+                    _desiredDirection = toPackTarget.normalized;
+                    return;
+                }
+            }
+
+            if (_roleType == CreatureRoleType.Leviathan &&
+                leviathanEncounterType == LeviathanEncounterType.AmbushBurst)
+            {
+                float ambushSide = Mathf.Max(2f, packFlankDistance * 1.35f);
+                Vector3 ambushTarget = _playerTransform.position - forwardToPlayer * (stalkDistance * 0.6f) + side * ambushSide;
+                Vector3 toAmbushTarget = ambushTarget - _transform.position;
+                if (toAmbushTarget.sqrMagnitude > 0.001f)
+                {
+                    _desiredDirection = toAmbushTarget.normalized;
+                    return;
+                }
+            }
+
+            if (distSqrToPlayer > _stalkDistanceSqr * 1.25f)
+            {
+                _desiredDirection = (forwardToPlayer + side * 0.2f).normalized;
+            }
+            else if (distSqrToPlayer < _stalkDistanceSqr * 0.7f)
+            {
+                _desiredDirection = ((-forwardToPlayer * 0.4f) + side * 0.8f).normalized;
+            }
+            else
+            {
+                _desiredDirection = (side * 0.95f + forwardToPlayer * 0.3f).normalized;
+            }
+        }
+
+        /// <summary>
+        /// Loom: крупная угроза держит большой круг вокруг игрока,
+        /// показывает силуэт и накапливает давление перед прямым входом.
+        /// Это нужно, чтобы левиафан ощущался событием мира, а не просто большой рыбой.
+        /// </summary>
+        private void TickLoom(float distSqrToPlayer)
+        {
+            if (_playerTransform == null)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 toPlayer = _playerTransform.position - _transform.position;
+            if (toPlayer.sqrMagnitude <= 0.001f)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 forwardToPlayer = toPlayer.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, forwardToPlayer);
+            if (side.sqrMagnitude < 0.001f)
+            {
+                side = _transform.right;
+            }
+
+            side = side.normalized * (_behaviorSideSign >= 0f ? 1f : -1f);
+
+            float desiredDistance = Mathf.Max(4f, loomingDistance);
+            if (leviathanEncounterType == LeviathanEncounterType.SentinelPressure)
+            {
+                Vector3 toHome = _spawnPoint - _playerTransform.position;
+                Vector3 homeDir = toHome.sqrMagnitude > 0.001f ? toHome.normalized : -forwardToPlayer;
+                Vector3 guardTarget = _playerTransform.position + homeDir * desiredDistance + side * (desiredDistance * 0.45f);
+                Vector3 toGuardTarget = guardTarget - _transform.position;
+                if (toGuardTarget.sqrMagnitude > 0.001f)
+                {
+                    _desiredDirection = toGuardTarget.normalized;
+                    return;
+                }
+            }
+
+            if (distSqrToPlayer > _loomingDistanceSqr * 1.35f)
+            {
+                _desiredDirection = (forwardToPlayer * 0.75f + side * 0.45f).normalized;
+            }
+            else if (distSqrToPlayer < _loomingDistanceSqr * 0.72f)
+            {
+                _desiredDirection = ((-forwardToPlayer * 0.9f) + side * 0.55f).normalized;
+            }
+            else
+            {
+                Vector3 circleTarget = _playerTransform.position - forwardToPlayer * desiredDistance + side * (desiredDistance * 0.9f);
+                Vector3 toCircleTarget = circleTarget - _transform.position;
+                _desiredDirection = toCircleTarget.sqrMagnitude > 0.001f
+                    ? toCircleTarget.normalized
+                    : (side * 0.9f + forwardToPlayer * 0.1f).normalized;
+            }
+        }
+
+        /// <summary>
+        /// Feint: крупный хищник резко идёт на сближение, ломает ритм игрока и уходит в сторону.
+        /// Это даёт ложные заходы и нервное давление вместо тупой прямой атаки каждый раз.
+        /// </summary>
+        private void TickFeint(float distSqrToPlayer)
+        {
+            if (_playerTransform == null)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 toPlayer = _playerTransform.position - _transform.position;
+            if (toPlayer.sqrMagnitude <= 0.001f)
+            {
+                _desiredDirection = _transform.forward;
+                return;
+            }
+
+            Vector3 forwardToPlayer = toPlayer.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, forwardToPlayer);
+            if (side.sqrMagnitude < 0.001f)
+            {
+                side = _transform.right;
+            }
+
+            side = side.normalized * (_behaviorSideSign >= 0f ? 1f : -1f);
+            bool shouldBreakOff = distSqrToPlayer <= _feintBreakDistanceSqr || _stateTimer <= feintDuration * 0.45f;
+
+            if (!shouldBreakOff)
+            {
+                float sideBias = _roleType == CreatureRoleType.Leviathan ? 0.28f : 0.18f;
+                _desiredDirection = (forwardToPlayer * 0.96f + side * sideBias).normalized;
+                return;
+            }
+
+            Vector3 peelOff = (-forwardToPlayer * 0.62f) + side * 0.88f + Vector3.up * 0.14f;
+            _desiredDirection = peelOff.normalized;
         }
 
         /// <summary>
@@ -1304,7 +2165,9 @@ namespace Hecton8.AI
         /// </summary>
         private void GenerateWanderTarget()
         {
-            _wanderTarget = _spawnPoint + Random.insideUnitSphere * wanderRadius;
+            float radius = useHomeTerritory ? homeWanderRadius : wanderRadius;
+            _wanderTarget = _spawnPoint + Random.insideUnitSphere * radius;
+            _debugReturningHome = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1415,9 +2278,12 @@ namespace Hecton8.AI
                 : 0f;
 
             float strongestStimulus = Mathf.Max(noiseStimulus, lightStimulus);
+            _strongestStimulus = strongestStimulus;
             if (strongestStimulus > 0.01f)
             {
                 _stimulusMemoryTimer = stimulusMemoryDuration;
+                _stimulusTarget = _playerTransform.position;
+                _hasStimulusTarget = true;
             }
             else if (_stimulusMemoryTimer > 0f)
             {
@@ -1457,6 +2323,7 @@ namespace Hecton8.AI
             _debugNoiseStimulus = noiseStimulus;
             _debugLightStimulus = lightStimulus;
             _debugStimulusMemory = _stimulusMemoryTimer;
+            _debugStrongestStimulus = strongestStimulus;
         }
 
         private void ResetStimulusDebug()
@@ -1467,11 +2334,240 @@ namespace Hecton8.AI
             _stimulusEscapeSafeDistanceSqr = 0f;
             _stimulusDeaggroDistanceSqr = 0f;
             _stimulusWakeDistanceSqr = 0f;
+            _strongestStimulus = 0f;
+            _hasStimulusTarget = false;
+            _stimulusTarget = Vector3.zero;
             _debugNoiseStimulus = 0f;
             _debugLightStimulus = 0f;
             _debugStimulusMemory = 0f;
             _debugAggroTriggerDistance = aggroDistance;
             _debugEscapeTriggerDistance = escapeDistance;
+            _debugStrongestStimulus = 0f;
+            _debugReturningHome = false;
+        }
+
+        private bool ShouldReturnHome()
+        {
+            if (!useHomeTerritory)
+                return false;
+
+            Vector3 toHome = _spawnPoint - _transform.position;
+            return toHome.sqrMagnitude > _homeReturnDistanceSqr;
+        }
+
+        private void StartReturnHome()
+        {
+            _debugReturningHome = true;
+
+            if (_currentState != AIState.Wander)
+            {
+                TransitionTo(AIState.Wander);
+            }
+
+            _wanderTarget = _spawnPoint;
+            _wanderTimer = wanderTimeout;
+        }
+
+        private bool IsPlayerInsideTerritory()
+        {
+            if (_playerTransform == null)
+            {
+                _debugPlayerInsideTerritory = false;
+                return false;
+            }
+
+            Vector3 toPlayerFromHome = _playerTransform.position - _spawnPoint;
+            bool inside = toPlayerFromHome.sqrMagnitude <= _territoryProtectRadiusSqr;
+            _debugPlayerInsideTerritory = inside;
+            return inside;
+        }
+
+        private bool IsPlayerInsideNestZone()
+        {
+            if (!defendNest || _playerTransform == null)
+            {
+                _debugPlayerInsideNest = false;
+                return false;
+            }
+
+            Vector3 toPlayerFromNest = _playerTransform.position - _spawnPoint;
+            bool inside = toPlayerFromNest.sqrMagnitude <= _nestProtectRadiusSqr;
+            _debugPlayerInsideNest = inside;
+            return inside;
+        }
+
+        private void TryAlertNearbyAllies(bool fullAggro)
+        {
+            bool hasAnyAlertRadius = allyAlertRadius > 0f || (UsesPackHunt && packSupportRadius > 0f);
+            if (!callNearbyAllies || allyAlertMaxCount <= 0 || !hasAnyAlertRadius || _allyAlertCooldownTimer > 0f)
+            {
+                _debugAlliesAlertedLastCall = 0;
+                return;
+            }
+
+            int alerted = 0;
+            int nextPackSlot = 1;
+            Vector3 position = _transform.position;
+            bool usePackFormation = UsesPackHunt;
+            float alertRadiusSqr = usePackFormation && packSupportRadius > 0f
+                ? _packSupportRadiusSqr
+                : _allyAlertRadiusSqr;
+
+            for (int i = 0; i < s_activeAis.Count && alerted < allyAlertMaxCount; i++)
+            {
+                HectonBaseAI ally = s_activeAis[i];
+                if (ally == null || ally == this || !ally.isActiveAndEnabled || ally._isDead)
+                    continue;
+
+                Vector3 toAlly = ally._transform.position - position;
+                if (toAlly.sqrMagnitude > alertRadiusSqr)
+                    continue;
+
+                if (alliesRequireSameArchetype &&
+                    !string.IsNullOrEmpty(_archetypeId) &&
+                    !string.Equals(ally._archetypeId, _archetypeId, System.StringComparison.Ordinal))
+                    continue;
+
+                if (!ally.CanReceiveAllyAlert(this, fullAggro))
+                    continue;
+
+                int packSlot = usePackFormation && ally.UsesPackHunt ? nextPackSlot++ : -1;
+                ally.ReceiveAllyAlert(this, fullAggro, packSlot);
+                alerted++;
+            }
+
+            _allyAlertCooldownTimer = allyAlertCooldown;
+            _debugAlliesAlertedLastCall = alerted;
+        }
+
+        private bool CanReceiveAllyAlert(HectonBaseAI source, bool fullAggro)
+        {
+            if (source == null || _isDead || _roleType == CreatureRoleType.DroneTrader)
+                return false;
+
+            if (alliesRequireSameArchetype &&
+                !string.IsNullOrEmpty(_archetypeId) &&
+                !string.IsNullOrEmpty(source._archetypeId) &&
+                !string.Equals(_archetypeId, source._archetypeId, System.StringComparison.Ordinal))
+                return false;
+
+            if (_roleType == CreatureRoleType.Ambient && !canFlee && !fullAggro)
+                return false;
+
+            return true;
+        }
+
+        private void ReceiveAllyAlert(HectonBaseAI source, bool fullAggro, int packSlot)
+        {
+            if (source == null || _isDead)
+                return;
+
+            if (_playerTransform == null)
+            {
+                FindPlayer();
+            }
+
+            if (_roleType == CreatureRoleType.DroneTrader)
+                return;
+
+            // Мягкий стопор против цепочки тревоги:
+            // поднятый сосед не должен в ту же секунду снова разослать волну вызовов.
+            _allyAlertCooldownTimer = Mathf.Max(_allyAlertCooldownTimer, Mathf.Max(0.25f, allyAlertCooldown * 0.5f));
+
+            if (_roleType == CreatureRoleType.Ambient && canFlee)
+            {
+                _packFormationSlot = -1;
+                TransitionTo(AIState.Escape);
+                return;
+            }
+
+            float distSqrToPlayer = _playerTransform != null
+                ? (_playerTransform.position - _transform.position).sqrMagnitude
+                : float.PositiveInfinity;
+            bool playerVeryClose = distSqrToPlayer <= _attackRangeSqr * 2.25f;
+            bool hunterRole = _roleType == CreatureRoleType.Hunter || _roleType == CreatureRoleType.Leviathan || isAggressive;
+            bool protectedZone = (_roleType == CreatureRoleType.Territorial && IsPlayerInsideTerritory()) || IsPlayerInsideNestZone();
+
+            if (fullAggro && playerVeryClose)
+            {
+                TransitionTo(AIState.Aggressive);
+                return;
+            }
+
+            if (hunterRole)
+            {
+                if (_roleType == CreatureRoleType.Leviathan && UsesLeviathanLoom && !fullAggro)
+                {
+                    _packFormationSlot = -1;
+                    if (_currentState != AIState.Loom && _currentState != AIState.Aggressive)
+                    {
+                        TransitionTo(AIState.Loom);
+                    }
+
+                    return;
+                }
+
+                if (UsesPackHunt && source.UsesPackHunt)
+                {
+                    _packFormationSlot = Mathf.Max(1, packSlot);
+                }
+                else
+                {
+                    _packFormationSlot = -1;
+                }
+
+                if (fullAggro &&
+                    distSqrToPlayer <= _packCommitDistanceSqr &&
+                    (!UsesPackHunt || _packFormationSlot <= 1))
+                {
+                    TransitionTo(AIState.Aggressive);
+                    return;
+                }
+
+                if (_currentState != AIState.Stalk && _currentState != AIState.Aggressive)
+                {
+                    TransitionTo(AIState.Stalk);
+                }
+
+                return;
+            }
+
+            if (protectedZone || _roleType == CreatureRoleType.Territorial || defendNest)
+            {
+                _packFormationSlot = -1;
+                if (_currentState != AIState.Threaten && _currentState != AIState.Aggressive)
+                {
+                    TransitionTo(AIState.Threaten);
+                }
+            }
+        }
+
+        private bool ShouldInvestigate(float distSqrToPlayer)
+        {
+            if (!_hasStimulusTarget || _stimulusMemoryTimer <= 0f)
+                return false;
+
+            if (_roleType == CreatureRoleType.DroneTrader)
+                return false;
+
+            if (distSqrToPlayer <= _attackRangeSqr)
+                return false;
+
+            switch (_roleType)
+            {
+                case CreatureRoleType.Territorial:
+                    return _strongestStimulus >= 0.12f;
+
+                case CreatureRoleType.Hunter:
+                case CreatureRoleType.Leviathan:
+                    return _strongestStimulus >= 0.08f;
+
+                case CreatureRoleType.Ambient:
+                    return _strongestStimulus >= 0.22f && canFlee;
+
+                default:
+                    return _strongestStimulus >= 0.16f;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1504,6 +2600,8 @@ namespace Hecton8.AI
                 CacheSquaredDistances(); // Пересчёт на случай если aggroDistance не был релевантен
                 TransitionTo(AIState.Aggressive);
             }
+
+            TryAlertNearbyAllies(true);
 
             // ── Смерть ──
             if (_currentHealth <= 0f)
@@ -1546,6 +2644,10 @@ namespace Hecton8.AI
             _rotationDirty       = false;
             _currentHealth       = maxHealth;
             _attackCooldownTimer = 0f;
+            _allyAlertCooldownTimer = 0f;
+            _feintCooldownTimer = 0f;
+            _packFormationSlot = -1;
+            _debugAlliesAlertedLastCall = 0;
             _isDead              = false;
             _isSleeping          = false;
             _wanderTimer         = 0f;
@@ -1614,6 +2716,19 @@ namespace Hecton8.AI
             _deaggroDistanceSqr     = deaggroDistance * deaggroDistance;
             _waypointReachSqr       = waypointReachDistance * waypointReachDistance;
             _attackRangeSqr         = attackRange * attackRange;
+            _investigateReachDistanceSqr = investigateReachDistance * investigateReachDistance;
+            _homeReturnDistanceSqr  = homeReturnDistance * homeReturnDistance;
+            _territoryProtectRadiusSqr = territoryProtectRadius * territoryProtectRadius;
+            _warningStandOffDistanceSqr = warningStandOffDistance * warningStandOffDistance;
+            _stalkDistanceSqr = stalkDistance * stalkDistance;
+            _nestProtectRadiusSqr = nestProtectRadius * nestProtectRadius;
+            _allyAlertRadiusSqr = allyAlertRadius * allyAlertRadius;
+            _packSupportRadiusSqr = packSupportRadius * packSupportRadius;
+            _packCommitDistanceSqr = packCommitDistance * packCommitDistance;
+            _loomingDistanceSqr = loomingDistance * loomingDistance;
+            _loomingCommitDistanceSqr = loomingCommitDistance * loomingCommitDistance;
+            _feintTriggerDistanceSqr = feintTriggerDistance * feintTriggerDistance;
+            _feintBreakDistanceSqr = feintBreakDistance * feintBreakDistance;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1625,6 +2740,18 @@ namespace Hecton8.AI
 
         /// <summary>AI спит (далеко от игрока).</summary>
         public bool IsSleeping => _isSleeping;
+
+        /// <summary>Существо умеет работать в охотничьей группе.</summary>
+        public bool UsesPackHuntBehavior => UsesPackHunt;
+
+        /// <summary>Существо умеет делать ложный заход перед настоящим контактом.</summary>
+        public bool UsesFeintRushBehavior => UsesFeintRush;
+
+        /// <summary>Текущая позиция существа внутри охотничьей группы. -1 = не участвует.</summary>
+        public int PackFormationSlot => _packFormationSlot;
+
+        /// <summary>Текущий сценарий встречи у крупной угрозы.</summary>
+        public LeviathanEncounterType LeviathanEncounter => leviathanEncounterType;
 
         /// <summary>Существо мертво (HP ≤ 0).</summary>
         public bool IsDead => _isDead;
@@ -1640,6 +2767,134 @@ namespace Hecton8.AI
 
         /// <summary>Нормализованное здоровье (0..1).</summary>
         public float HealthNormalized => _currentHealth / maxHealth;
+
+        /// <summary>
+        /// Применяет профиль вида существа.
+        /// Нужен для того, чтобы один и тот же базовый AI мог работать
+        /// как мирная рыба, хищник, левиафан или дрон без копипасты настроек.
+        /// </summary>
+        public void ApplyArchetype(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+            {
+                _roleType = CreatureRoleType.Ambient;
+                _locomotionType = CreatureLocomotionType.SteeringSolo;
+                useHomeTerritory = false;
+                homeWanderRadius = wanderRadius;
+                homeReturnDistance = wanderRadius;
+                territoryProtectRadius = wanderRadius;
+                warningDuration = investigateDuration;
+                warningStandOffDistance = Mathf.Max(1f, aggroDistance);
+                stalkDuration = investigateDuration;
+                stalkDistance = Mathf.Max(1f, aggroDistance);
+                defendNest = false;
+                nestProtectRadius = 0f;
+                callNearbyAllies = false;
+                allyAlertRadius = 0f;
+                allyAlertCooldown = 0f;
+                allyAlertMaxCount = 0;
+                alliesRequireSameArchetype = true;
+                usePackHunt = false;
+                packSupportRadius = 0f;
+                packFlankDistance = 0f;
+                packCommitDistance = 0f;
+                useLeviathanPresence = false;
+                leviathanEncounterType = LeviathanEncounterType.PresenceCircle;
+                loomingDuration = 0f;
+                loomingDistance = 0f;
+                loomingCommitDistance = 0f;
+                useFeintRush = false;
+                feintDuration = 0f;
+                feintTriggerDistance = 0f;
+                feintBreakDistance = 0f;
+                feintCooldown = 0f;
+                _archetypeId = string.Empty;
+                _debugArchetypeId = string.Empty;
+                _debugRoleType = _roleType;
+                _debugLocomotionType = _locomotionType;
+                CacheSquaredDistances();
+                ResetStimulusDebug();
+                return;
+            }
+
+            _roleType = archetype.roleType;
+            _locomotionType = archetype.locomotionType;
+            isAggressive = archetype.isAggressive;
+            canFlee = archetype.canFlee;
+
+            maxHealth = archetype.maxHealth;
+            attackDamage = archetype.attackDamage;
+            attackCooldown = archetype.attackCooldown;
+
+            maxSpeed = Mathf.Max(0.1f, archetype.cruiseSpeed);
+            maxEscapeSpeed = Mathf.Max(maxSpeed, archetype.burstSpeed);
+            maxAggressiveSpeed = Mathf.Max(maxSpeed, archetype.burstSpeed);
+            turnSpeed = Mathf.Max(0.1f, archetype.turnSpeed);
+            sleepDistance = Mathf.Max(1f, archetype.sleepDistance);
+
+            aggroDistance = Mathf.Max(0f, archetype.baseAggroDistance);
+            deaggroDistance = Mathf.Max(aggroDistance, archetype.baseDeaggroDistance);
+
+            if (canFlee)
+            {
+                escapeDistance = Mathf.Max(0f, archetype.baseEscapeDistance);
+                escapeSafeDistance = Mathf.Max(escapeDistance, archetype.baseEscapeSafeDistance);
+            }
+            else
+            {
+                escapeDistance = 0f;
+                escapeSafeDistance = 0f;
+            }
+
+            reactToPlayerNoise = archetype.reactToPlayerNoise;
+            noiseDetectionBonus = Mathf.Max(0f, archetype.noiseDetectionBonus);
+            noiseEscapeBonus = Mathf.Max(0f, archetype.noiseEscapeBonus);
+            reactToPlayerLight = archetype.reactToPlayerLight;
+            lightDetectionBonus = Mathf.Max(0f, archetype.lightDetectionBonus);
+            lightEscapeBonus = Mathf.Max(0f, archetype.lightEscapeBonus);
+            stimulusMemoryDuration = Mathf.Max(0f, archetype.stimulusMemoryDuration);
+            useHomeTerritory = archetype.useHomeTerritory;
+            homeWanderRadius = Mathf.Max(1f, archetype.homeWanderRadius);
+            homeReturnDistance = Mathf.Max(homeWanderRadius, archetype.homeReturnDistance);
+            territoryProtectRadius = Mathf.Max(0f, archetype.territoryProtectRadius);
+            warningDuration = Mathf.Max(0f, archetype.warningDuration);
+            warningStandOffDistance = Mathf.Max(1f, archetype.warningStandOffDistance);
+            stalkDuration = Mathf.Max(0f, archetype.stalkDuration);
+            stalkDistance = Mathf.Max(1f, archetype.stalkDistance);
+            defendNest = archetype.defendNest;
+            nestProtectRadius = Mathf.Max(0f, archetype.nestProtectRadius);
+            callNearbyAllies = archetype.callNearbyAllies;
+            allyAlertRadius = Mathf.Max(0f, archetype.allyAlertRadius);
+            allyAlertCooldown = Mathf.Max(0f, archetype.allyAlertCooldown);
+            allyAlertMaxCount = Mathf.Max(0, archetype.allyAlertMaxCount);
+            alliesRequireSameArchetype = archetype.alliesRequireSameArchetype;
+            usePackHunt = archetype.usePackHunt;
+            packSupportRadius = Mathf.Max(0f, archetype.packSupportRadius);
+            packFlankDistance = Mathf.Max(0f, archetype.packFlankDistance);
+            packCommitDistance = Mathf.Max(0f, archetype.packCommitDistance);
+            useLeviathanPresence = archetype.useLeviathanPresence;
+            leviathanEncounterType = archetype.leviathanEncounterType;
+            loomingDuration = Mathf.Max(0f, archetype.loomingDuration);
+            loomingDistance = Mathf.Max(0f, archetype.loomingDistance);
+            loomingCommitDistance = Mathf.Max(0f, archetype.loomingCommitDistance);
+            useFeintRush = archetype.useFeintRush;
+            feintDuration = Mathf.Max(0f, archetype.feintDuration);
+            feintTriggerDistance = Mathf.Max(0f, archetype.feintTriggerDistance);
+            feintBreakDistance = Mathf.Max(0f, archetype.feintBreakDistance);
+            feintCooldown = Mathf.Max(0f, archetype.feintCooldown);
+            wanderRadius = homeWanderRadius;
+
+            _currentHealth = maxHealth;
+            _attackCooldownTimer = 0f;
+            _feintCooldownTimer = 0f;
+            _archetypeId = archetype.creatureId;
+            _debugArchetypeId = archetype.creatureId;
+            _debugRoleType = _roleType;
+            _debugLocomotionType = _locomotionType;
+
+            CacheSquaredDistances();
+            ResetStimulusDebug();
+        }
 
         /// <summary>
         /// Принудительная установка точки спавна.
@@ -1671,6 +2926,20 @@ namespace Hecton8.AI
             _debugDistanceToPlayer = Mathf.Sqrt(distSqrToPlayer);
             _debugCurrentHealth    = _currentHealth;
             _debugCurrentRayLength = _currentRayLength;
+            _debugDistanceFromHome = Vector3.Distance(_transform.position, _spawnPoint);
+            _debugBehaviorTimer = _stateTimer;
+            _debugAllyAlertCooldown = _allyAlertCooldownTimer;
+            _debugFeintCooldown = _feintCooldownTimer;
+            _debugPackSlot = _packFormationSlot;
+            _debugPackHuntActive = UsesPackHunt && (_currentState == AIState.Stalk || _currentState == AIState.Aggressive);
+            if (_roleType != CreatureRoleType.Territorial)
+            {
+                _debugPlayerInsideTerritory = false;
+            }
+            if (!defendNest)
+            {
+                _debugPlayerInsideNest = false;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1684,7 +2953,49 @@ namespace Hecton8.AI
 
             // Зона блуждания
             Gizmos.color = new Color(0f, 0.7f, 1f, 0.08f);
-            Gizmos.DrawWireSphere(pos, wanderRadius);
+            Gizmos.DrawWireSphere(pos, useHomeTerritory ? homeWanderRadius : wanderRadius);
+
+            if (useHomeTerritory)
+            {
+                Gizmos.color = new Color(1f, 0.45f, 0f, 0.1f);
+                Gizmos.DrawWireSphere(pos, homeReturnDistance);
+            }
+
+            if (_roleType == CreatureRoleType.Territorial && territoryProtectRadius > 0f)
+            {
+                Gizmos.color = new Color(1f, 0f, 0.8f, 0.12f);
+                Gizmos.DrawWireSphere(pos, territoryProtectRadius);
+            }
+
+            if (defendNest && nestProtectRadius > 0f)
+            {
+                Gizmos.color = new Color(1f, 1f, 0f, 0.12f);
+                Gizmos.DrawWireSphere(pos, nestProtectRadius);
+            }
+
+            if (usePackHunt && packSupportRadius > 0f)
+            {
+                Gizmos.color = new Color(1f, 0.2f, 0.9f, 0.08f);
+                Gizmos.DrawWireSphere(pos, packSupportRadius);
+            }
+
+            if (_roleType == CreatureRoleType.Leviathan && useLeviathanPresence && loomingDistance > 0f)
+            {
+                Gizmos.color = new Color(1f, 0.35f, 0.35f, 0.08f);
+                Gizmos.DrawWireSphere(pos, loomingDistance);
+            }
+
+            if (UsesFeintRush && feintTriggerDistance > 0f)
+            {
+                Gizmos.color = new Color(1f, 0.55f, 0f, 0.08f);
+                Gizmos.DrawWireSphere(pos, feintTriggerDistance);
+
+                if (feintBreakDistance > 0f)
+                {
+                    Gizmos.color = new Color(1f, 0.85f, 0.15f, 0.12f);
+                    Gizmos.DrawWireSphere(pos, feintBreakDistance);
+                }
+            }
 
             // Дистанция побега
             Gizmos.color = new Color(1f, 0.8f, 0f, 0.15f);
@@ -1787,6 +3098,29 @@ namespace Hecton8.AI
             if (lightDetectionBonus    < 0f)    lightDetectionBonus    = 0f;
             if (lightEscapeBonus       < 0f)    lightEscapeBonus       = 0f;
             if (stimulusMemoryDuration < 0f)    stimulusMemoryDuration = 0f;
+            if (investigateDuration    < 0f)    investigateDuration    = 0f;
+            if (investigateReachDistance < 0.1f) investigateReachDistance = 0.1f;
+            if (homeWanderRadius < 1f) homeWanderRadius = 1f;
+            if (homeReturnDistance < homeWanderRadius) homeReturnDistance = homeWanderRadius;
+            if (territoryProtectRadius < 0f) territoryProtectRadius = 0f;
+            if (warningDuration < 0f) warningDuration = 0f;
+            if (warningStandOffDistance < 1f) warningStandOffDistance = 1f;
+            if (stalkDuration < 0f) stalkDuration = 0f;
+            if (stalkDistance < 1f) stalkDistance = 1f;
+            if (nestProtectRadius < 0f) nestProtectRadius = 0f;
+            if (allyAlertRadius < 0f) allyAlertRadius = 0f;
+            if (allyAlertCooldown < 0f) allyAlertCooldown = 0f;
+            if (allyAlertMaxCount < 0) allyAlertMaxCount = 0;
+            if (packSupportRadius < 0f) packSupportRadius = 0f;
+            if (packFlankDistance < 0f) packFlankDistance = 0f;
+            if (packCommitDistance < 0f) packCommitDistance = 0f;
+            if (loomingDuration < 0f) loomingDuration = 0f;
+            if (loomingDistance < 0f) loomingDistance = 0f;
+            if (loomingCommitDistance < 0f) loomingCommitDistance = 0f;
+            if (feintDuration < 0f) feintDuration = 0f;
+            if (feintTriggerDistance < 0f) feintTriggerDistance = 0f;
+            if (feintBreakDistance < 0f) feintBreakDistance = 0f;
+            if (feintCooldown < 0f) feintCooldown = 0f;
 
             if (escapeSafeDistance < escapeDistance)
                 escapeSafeDistance = escapeDistance * 2f;

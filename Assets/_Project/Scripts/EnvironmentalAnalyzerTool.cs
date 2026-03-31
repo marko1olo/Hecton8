@@ -661,9 +661,17 @@ namespace Hecton8.Gameplay
                 : 0f;
             bool lethalWindow = ai.HealthNormalized <= 0.3f;
             bool hostile = ai.CurrentState == HectonBaseAI.AIState.Aggressive;
+            bool warning = ai.CurrentState == HectonBaseAI.AIState.Threaten;
+            bool stalking = ai.CurrentState == HectonBaseAI.AIState.Stalk;
+            bool looming = ai.CurrentState == HectonBaseAI.AIState.Loom;
+            bool feinting = ai.CurrentState == HectonBaseAI.AIState.Feint;
             bool evasive = ai.CurrentState == HectonBaseAI.AIState.Escape;
             bool sleeping = ai.IsSleeping;
-            string severity = hostile ? "WARN" : "INFO";
+            bool packHunt = ai.UsesPackHuntBehavior && (hostile || stalking);
+            bool feintCapable = ai.UsesFeintRushBehavior && (stalking || looming || feinting);
+            bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
+            bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
+            string severity = hostile ? "WARN" : (warning || stalking || looming || feinting ? "WARN" : "INFO");
             string summary;
             string recommendation;
 
@@ -674,12 +682,51 @@ namespace Hecton8.Gameplay
             }
             else if (hostile)
             {
-                summary = lethalWindow
-                    ? "Hostile bioform is weakened but still dangerous at close range."
-                    : "Hostile bioform remains combat-capable.";
+                summary = packHunt
+                    ? (lethalWindow
+                        ? "Pack-hunting bioform is weakened but the attack pattern is still active."
+                        : "Pack-hunting bioform is in an active kill phase.")
+                    : (lethalWindow
+                        ? "Hostile bioform is weakened but still dangerous at close range."
+                        : "Hostile bioform remains combat-capable.");
                 recommendation = lethalWindow
                     ? "Knife finish or stun follow-up is viable."
-                    : "Keep distance and prepare stun or harpoon control.";
+                    : (packHunt
+                        ? "Break line, watch the flanks, and prepare a fast stun response."
+                        : "Keep distance and prepare stun or harpoon control.");
+            }
+            else if (warning || stalking || looming || feinting)
+            {
+                summary = feinting
+                    ? "Large bioform is in a false-charge run and may peel away or snap into a real hit if you drift too close."
+                    : looming
+                    ? (ambushLeviathan
+                        ? "Large bioform is setting up a burst ambush and may snap into direct contact without a long warning."
+                        : (sentinelLeviathan
+                            ? "Large bioform is controlling a guarded route and pressing you away from its corridor."
+                            : "Large bioform is holding a pressure circle and may convert into a direct attack."))
+                    : warning
+                    ? "Bioform is warning you and holding pressure around its zone."
+                    : (packHunt
+                        ? "Predatory bioform is tracking you as part of a group attack pattern."
+                        : (feintCapable
+                            ? "Predatory bioform is tracking you and can throw a false charge before the real commit."
+                            : "Predatory bioform is tracking you and building attack pressure."));
+                recommendation = feinting
+                    ? "Do not counter-rush. Break the angle, let the pass go wide, and prepare for the second move."
+                    : looming
+                    ? (ambushLeviathan
+                        ? "Do not drift into close range. Break the angle and prepare for a sudden rush."
+                        : (sentinelLeviathan
+                            ? "Back off from the guarded route or prepare for a forced passage."
+                            : "Break line of sight, avoid closing distance, and prepare a stun or hard disengage."))
+                    : warning
+                    ? "Back off, avoid the protected area, or prepare to defend yourself."
+                    : (packHunt
+                        ? "Expect a flank or follow-up rush and keep stun or escape ready."
+                        : (feintCapable
+                            ? "Expect a fake entry before the real commit and do not spend your tool too early."
+                            : "Expect a fast commit soon and keep stun or escape ready."));
             }
             else
             {
