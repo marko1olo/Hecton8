@@ -31,7 +31,7 @@ MonoBehaviour:
     prefab: {fileID: 7495314299482658479, guid: 49303dc2072df02468a488dee598b288, type: 3}
     spawnWeight: 8
     maxAlive: 3
-  - archetype: {fileID: 11400000, guid: 35c8a17831c68f040880627e5cb05aab, type: 2}
+  - archetype: {fileID: 11400000, guid: 7160de7362097ca48bb12c49068bc5ea, type: 2}
     prefab: {fileID: 6997296821160993442, guid: 06adf657c37da8445be209129d62ac01, type: 3}
     spawnWeight: 1
     maxAlive: 1

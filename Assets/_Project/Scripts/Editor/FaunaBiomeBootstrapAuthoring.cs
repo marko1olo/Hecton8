@@ -162,6 +162,8 @@ namespace Hecton8.AI.Editor
 
         private static int ResolveHunterTarget(HectonBiomeMatrixProfile profile)
         {
+            if (IsHeavyHunterSetpiece(profile))
+                return 2;
             if (IsMassiveSurfaceSetpiece(profile))
                 return profile.survivalPressure >= 4 ? 2 : 1;
             if (IsRiftFamily(profile.familyId) || IsServiceHeavyFamily(profile.familyId))
@@ -174,6 +176,9 @@ namespace Hecton8.AI.Editor
         private static bool ShouldIncludeLeviathan(HectonBiomeMatrixProfile profile)
         {
             if (profile == null)
+                return false;
+
+            if (IsHeavyHunterSetpiece(profile))
                 return false;
 
             if (IsSurfaceLeviathanCandidate(profile))
@@ -393,6 +398,7 @@ namespace Hecton8.AI.Editor
                         score += 4;
                     else if (profile.faunaMood == WorldProceduralFaunaMood.Calm)
                         score -= 4;
+                    score += ScoreHeavyHunterSetpieceAffinity(archetype, profile);
                     break;
                 case CreatureRoleType.Leviathan:
                     if (!ShouldIncludeLeviathan(profile))
@@ -430,6 +436,88 @@ namespace Hecton8.AI.Editor
         {
             string biomeName = profile.biomeName != null ? profile.biomeName.ToLowerInvariant() : string.Empty;
             string creatureId = archetype.creatureId != null ? archetype.creatureId.ToLowerInvariant() : string.Empty;
+
+            switch (NormalizeBiomeName(profile.biomeName))
+            {
+                case "sea-stack forest":
+                    if (creatureId.Contains("halo_crown"))
+                        return 18;
+                    if (creatureId.Contains("gate_warden"))
+                        return 6;
+                    break;
+                case "the granite spine":
+                    if (creatureId.Contains("gate_warden"))
+                        return 18;
+                    if (creatureId.Contains("halo_crown"))
+                        return 5;
+                    break;
+                case "the ash-wastes":
+                    if (creatureId.Contains("black_choir"))
+                        return 18;
+                    if (creatureId.Contains("void_ribbon"))
+                        return 6;
+                    break;
+                case "the rift-gates":
+                    if (creatureId.Contains("gate_warden"))
+                        return 18;
+                    if (creatureId.Contains("rift_lancer"))
+                        return 8;
+                    break;
+                case "magma pools":
+                    if (creatureId.Contains("furnace_maw"))
+                        return 18;
+                    break;
+                case "the shattered spine":
+                    if (creatureId.Contains("rift_lancer"))
+                        return 18;
+                    if (creatureId.Contains("gate_warden"))
+                        return 4;
+                    break;
+                case "the glass plains":
+                    if (creatureId.Contains("halo_crown"))
+                        return 14;
+                    if (creatureId.Contains("black_choir"))
+                        return 10;
+                    break;
+                case "the shivering slabs":
+                    if (creatureId.Contains("black_choir"))
+                        return 16;
+                    if (creatureId.Contains("halo_crown"))
+                        return 6;
+                    break;
+                case "the pillow-lava hives":
+                    if (creatureId.Contains("furnace_maw"))
+                        return 18;
+                    break;
+                case "the rift-maw":
+                    if (creatureId.Contains("rift_lancer"))
+                        return 18;
+                    if (creatureId.Contains("gate_warden"))
+                        return 6;
+                    break;
+                case "the basalt flux":
+                    if (creatureId.Contains("furnace_maw"))
+                        return 16;
+                    if (creatureId.Contains("gate_warden"))
+                        return 4;
+                    break;
+                case "the lava seam":
+                    if (creatureId.Contains("furnace_maw"))
+                        return 18;
+                    break;
+                case "the heart of the rift":
+                    if (creatureId.Contains("black_choir"))
+                        return 16;
+                    if (creatureId.Contains("rift_lancer"))
+                        return 8;
+                    break;
+                case "the static matrix":
+                    if (creatureId.Contains("void_ribbon"))
+                        return 18;
+                    if (creatureId.Contains("black_choir"))
+                        return 6;
+                    break;
+            }
 
             if (ContainsToken(biomeName, "archipelago", "sea-stack", "coral porous"))
             {
@@ -469,6 +557,33 @@ namespace Hecton8.AI.Editor
                     return 10;
                 if (creatureId.Contains("gate_warden"))
                     return 3;
+            }
+
+            return 0;
+        }
+
+        private static int ScoreHeavyHunterSetpieceAffinity(CreatureArchetypeData archetype, HectonBiomeMatrixProfile profile)
+        {
+            string creatureId = archetype.creatureId != null ? archetype.creatureId.ToLowerInvariant() : string.Empty;
+
+            switch (NormalizeBiomeName(profile.biomeName))
+            {
+                case "pressure-slabs":
+                    if (creatureId.Contains("armor_breaker"))
+                        return 16;
+                    if (creatureId.Contains("shadow_interceptor"))
+                        return 8;
+                    break;
+                case "iron shards":
+                    if (creatureId.Contains("armor_breaker"))
+                        return 18;
+                    break;
+                case "the iron peak":
+                    if (creatureId.Contains("armor_breaker"))
+                        return 18;
+                    if (creatureId.Contains("shadow_interceptor"))
+                        return 5;
+                    break;
             }
 
             return 0;
@@ -566,6 +681,26 @@ namespace Hecton8.AI.Editor
             return profile.landmarkStrength >= 4 &&
                    (profile.survivalPressure >= 3 ||
                     ContainsToken(profile.suggestedZoneFamily, "progression.route.landmark", "progression.skyline.far", "resources.landmarks.far"));
+        }
+
+        private static bool IsHeavyHunterSetpiece(HectonBiomeMatrixProfile profile)
+        {
+            switch (NormalizeBiomeName(profile != null ? profile.biomeName : null))
+            {
+                case "pressure-slabs":
+                case "iron shards":
+                case "the iron peak":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static string NormalizeBiomeName(string biomeName)
+        {
+            return string.IsNullOrWhiteSpace(biomeName)
+                ? string.Empty
+                : biomeName.Trim().ToLowerInvariant();
         }
 
         private static bool IsGenericReserveBiomeName(string biomeName)

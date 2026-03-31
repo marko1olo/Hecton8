@@ -27,14 +27,10 @@ MonoBehaviour:
     prefab: {fileID: 7151330358475456789, guid: 3e7076e808d65294db14a8a424e8da7f, type: 3}
     spawnWeight: 8
     maxAlive: 3
-  - archetype: {fileID: 11400000, guid: 03e23e17e50a35342a43a9d589555060, type: 2}
-    prefab: {fileID: 7495314299482658479, guid: 49303dc2072df02468a488dee598b288, type: 3}
+  - archetype: {fileID: 11400000, guid: e30e3785ee4eeb540b4be8207c134fad, type: 2}
+    prefab: {fileID: 7151330358475456789, guid: 3e7076e808d65294db14a8a424e8da7f, type: 3}
     spawnWeight: 8
     maxAlive: 3
-  - archetype: {fileID: 11400000, guid: 35c8a17831c68f040880627e5cb05aab, type: 2}
-    prefab: {fileID: 6997296821160993442, guid: 06adf657c37da8445be209129d62ac01, type: 3}
-    spawnWeight: 1
-    maxAlive: 1
   biomeMaxCreatures: 7
   spawnHeightAboveBottom: 1
   spawnHeightMax: 10
