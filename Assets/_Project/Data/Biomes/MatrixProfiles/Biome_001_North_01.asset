@@ -51,8 +51,8 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
   suggestedZoneFamily: navigation.silhouette.far
   progressionRole: starter_surface
-  primaryClusterFocus: 1
-  secondaryClusterFocus: 2
+  primaryClusterFocus: 4
+  secondaryClusterFocus: 1
   primaryStructureFocus: 1
   secondaryStructureFocus: 3
   faunaMood: 1
@@ -61,13 +61,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7b5718118935ca14ead61b4f0f007a13, type: 2}
   - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
   preferredClusterFamilies:
+  - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
+  - {fileID: 11400000, guid: 20ff4b803a538544ca9a58d36bb90883, type: 2}
   - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
   - {fileID: 11400000, guid: 602b90081c9370b42a85e2acf29ac8ea, type: 2}
-  - {fileID: 11400000, guid: 20ff4b803a538544ca9a58d36bb90883, type: 2}
-  - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
   preferredStructureFamilies:
   - {fileID: 11400000, guid: 3248410377598bf4b935417906c28fd5, type: 2}
-  - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}
   - {fileID: 11400000, guid: 723bfa18be2651148ba5aec371fae323, type: 2}
+  - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}
   preferredSpawnFamilies:
   - {fileID: 11400000, guid: 9b6f9e64950b8fe4da7ee795ca6c1126, type: 2}

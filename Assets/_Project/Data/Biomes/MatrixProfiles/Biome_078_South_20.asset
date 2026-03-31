@@ -52,10 +52,10 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
   suggestedZoneFamily: power.generator.current_turbine
   progressionRole: deep_pressure
-  primaryClusterFocus: 3
-  secondaryClusterFocus: 4
+  primaryClusterFocus: 5
+  secondaryClusterFocus: 6
   primaryStructureFocus: 1
-  secondaryStructureFocus: 4
+  secondaryStructureFocus: 3
   faunaMood: 3
   preferredGroundFamilies:
   - {fileID: 11400000, guid: 78eb1922d7c5fc74eb0be51563fc58fb, type: 2}

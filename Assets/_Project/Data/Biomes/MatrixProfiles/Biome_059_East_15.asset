@@ -52,10 +52,10 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
   suggestedZoneFamily: progression.skyline.far
   progressionRole: deep_pressure
-  primaryClusterFocus: 3
-  secondaryClusterFocus: 4
-  primaryStructureFocus: 1
-  secondaryStructureFocus: 3
+  primaryClusterFocus: 6
+  secondaryClusterFocus: 5
+  primaryStructureFocus: 3
+  secondaryStructureFocus: 2
   faunaMood: 3
   preferredGroundFamilies:
   - {fileID: 11400000, guid: 78eb1922d7c5fc74eb0be51563fc58fb, type: 2}

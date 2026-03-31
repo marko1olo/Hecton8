@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac7c852b347479e42843a0ed504753a9, type: 3}
+  m_Name: FaunaBiome_052_Tier13WestReserve
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.FaunaBiomeData
+  biomeIndex: 52
+  biomeName: Tier 13 West Reserve
+  possibleCreatures:
+  - archetype: {fileID: 11400000, guid: c4d06fec5218b254ab2ead08e26cfc84, type: 2}
+    prefab: {fileID: 676815894980492824, guid: 54d26ac0f761ade449ffd3811fbe2620, type: 3}
+    spawnWeight: 18
+    maxAlive: 8
+  - archetype: {fileID: 11400000, guid: e30e3785ee4eeb540b4be8207c134fad, type: 2}
+    prefab: {fileID: 7151330358475456789, guid: 3e7076e808d65294db14a8a424e8da7f, type: 3}
+    spawnWeight: 8
+    maxAlive: 3
+  - archetype: {fileID: 11400000, guid: 52c17626efb42eb4686f28b1c093de73, type: 2}
+    prefab: {fileID: 7151330358475456789, guid: 3e7076e808d65294db14a8a424e8da7f, type: 3}
+    spawnWeight: 8
+    maxAlive: 3
+  biomeMaxCreatures: 5
+  spawnHeightAboveBottom: 2
+  spawnHeightMax: 8

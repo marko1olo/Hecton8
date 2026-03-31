@@ -14,6 +14,7 @@ namespace Hecton8.AI.Editor
         public static void Generate()
         {
             string[] guids = AssetDatabase.FindAssets("t:FaunaBiomeData");
+            string[] archetypeGuids = AssetDatabase.FindAssets("t:CreatureArchetypeData");
             var roleCounts = new Dictionary<CreatureRoleType, int>();
             var locomotionCounts = new Dictionary<CreatureLocomotionType, int>();
             var missing = new List<string>();
@@ -21,6 +22,20 @@ namespace Hecton8.AI.Editor
             int datasetCount = 0;
             int totalEntries = 0;
             int coveredEntries = 0;
+            int archetypeAssetCount = 0;
+            int archetypeWithoutPrefabCount = 0;
+
+            foreach (string archetypeGuid in archetypeGuids)
+            {
+                string archetypePath = AssetDatabase.GUIDToAssetPath(archetypeGuid);
+                CreatureArchetypeData archetype = AssetDatabase.LoadAssetAtPath<CreatureArchetypeData>(archetypePath);
+                if (archetype == null)
+                    continue;
+
+                archetypeAssetCount++;
+                if (archetype.prefab == null)
+                    archetypeWithoutPrefabCount++;
+            }
 
             foreach (string guid in guids)
             {
@@ -66,6 +81,8 @@ namespace Hecton8.AI.Editor
             sb.AppendLine($"- Всего записей фауны: `{totalEntries}`");
             sb.AppendLine($"- С профилем вида: `{coveredEntries}`");
             sb.AppendLine($"- Без профиля вида: `{totalEntries - coveredEntries}`");
+            sb.AppendLine($"- Готовых профилей вида в проекте: `{archetypeAssetCount}`");
+            sb.AppendLine($"- Из них без префаба: `{archetypeWithoutPrefabCount}`");
             sb.AppendLine();
             sb.AppendLine("## По ролям");
             sb.AppendLine();

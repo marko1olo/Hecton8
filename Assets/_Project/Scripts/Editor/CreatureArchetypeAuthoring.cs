@@ -8,6 +8,7 @@ namespace Hecton8.AI.Editor
     public static class CreatureArchetypeAuthoring
     {
         private const string RootFolder = "Assets/_Project/Data/AI/CreatureArchetypes";
+        private const string AmbientFolder = RootFolder + "/Ambient";
         private const string TerritorialFolder = RootFolder + "/Territorial";
         private const string HunterFolder = RootFolder + "/Hunters";
         private const string LeviathanFolder = RootFolder + "/Leviathans";
@@ -19,9 +20,11 @@ namespace Hecton8.AI.Editor
             EnsureFolder("Assets/_Project/Data");
             EnsureFolder("Assets/_Project/Data/AI");
             EnsureFolder(RootFolder);
+            EnsureFolder(AmbientFolder);
             EnsureFolder(TerritorialFolder);
             EnsureFolder(HunterFolder);
             EnsureFolder(LeviathanFolder);
+            CreatureProxyPrefabAuthoring.EnsureProxyAssets();
 
             ArchetypeDefinition[] definitions = GetDefinitions();
             for (int i = 0; i < definitions.Length; i++)
@@ -38,6 +41,67 @@ namespace Hecton8.AI.Editor
         {
             return new[]
             {
+                CreateAmbient(
+                    "shore_skimmer",
+                    "Shore Skimmer",
+                    "ÐœÐµÐ»ÐºÐ°Ñ ÑÑ‚Ð°Ð¹Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.",
+                    22f,
+                    4.8f,
+                    7.2f,
+                    new[] { "fauna.family.littoral_passive", "fauna.family.reef_ambush" },
+                    new[] { "biome.family.littoral_karst", "biome.family.fossil_reef" },
+                    "Ð”Ð°Ñ‘Ñ‚ Ð¶Ð¸Ð²Ð¾Ð¹ Ñ„Ð¾Ð½ Ñƒ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ð¸ Ð² ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ñ‹Ñ… Ð°Ñ€ÐºÐ°Ñ…."),
+                CreateAmbient(
+                    "kelp_raylet",
+                    "Kelp Raylet",
+                    "ÐœÐ¸Ñ€Ð½Ð°Ñ ÑˆÐ¸Ñ€Ð¾ÐºÐ°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÑ€ÐºÐ¸Ñ… Ð·Ð°Ñ€Ð¾ÑÐ»ÐµÐ¹ Ð¸ Ñ€Ð¸Ñ„Ð¾Ð².",
+                    28f,
+                    4.2f,
+                    6.8f,
+                    new[] { "fauna.family.littoral_passive", "fauna.family.crystal_skittish" },
+                    new[] { "biome.family.fossil_reef", "biome.family.crystal_growth" },
+                    "Ð”Ð°Ñ‘Ñ‚ Ð¼ÑÐ³ÐºÑƒÑŽ ÐºÑ€ÑƒÐ¿Ð½ÑƒÑŽ Ð¶Ð¸Ð·Ð½ÑŒ Ñ‚Ð°Ð¼, Ð³Ð´Ðµ Ð¼Ð¸Ñ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ ÐºÐ°Ð·Ð°Ñ‚ÑŒÑÑ Ð±Ð¾Ð³Ð°Ñ‚Ñ‹Ð¼, Ð° Ð½Ðµ Ð±Ð¾ÐµÐ²Ñ‹Ð¼."),
+                CreateAmbient(
+                    "silt_drifter",
+                    "Silt Drifter",
+                    "Ð”Ð¾Ð½Ð½Ñ‹Ð¹ Ð¼Ð¸Ñ€Ð½Ñ‹Ð¹ ÑÐ±Ð¾Ñ€Ñ‰Ð¸Ðº Ð¾ÑÐ°Ð´Ð¾Ñ‡Ð½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.",
+                    30f,
+                    3.6f,
+                    5.8f,
+                    new[] { "fauna.family.sediment_scavengers", "fauna.family.abyssal_sparse" },
+                    new[] { "biome.family.sediment_drift", "biome.family.abyssal_silt", "biome.family.granite_escarpment" },
+                    "Ð”ÐµÐ»Ð°ÐµÑ‚ Ñ€ÐµÑÑƒÑ€ÑÐ½ÑƒÑŽ Ð²Ð¾Ð´Ñƒ Ð¶Ð¸Ð²Ð¾Ð¹, Ð½Ð¾ Ð½Ðµ Ð°Ð³Ñ€ÐµÑÑÐ¸Ð²Ð½Ð¾Ð¹."),
+                CreateAmbient(
+                    "wall_glider",
+                    "Wall Glider",
+                    "ÐœÐ¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÑ‚ÐµÐ½, ÑƒÑÑ‚ÑƒÐ¿Ð¾Ð² Ð¸ Ð³Ñ€ÐµÐ±Ð½ÐµÐ¹.",
+                    34f,
+                    4.0f,
+                    6.4f,
+                    new[] { "fauna.family.escarpment_watchers", "fauna.family.ridge_hunters" },
+                    new[] { "biome.family.granite_escarpment", "biome.family.rift_spine" },
+                    "Ð”ÐµÐ»Ð°ÐµÑ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ñ‹ Ð²Ð´Ð¾Ð»ÑŒ ÑÑ‚ÐµÐ½ Ð¶Ð¸Ð²Ñ‹Ð¼Ð¸ Ð¸ ÑÐ¸Ñ‚Ð°ÐµÐ¼Ñ‹Ð¼Ð¸."),
+                CreateAmbient(
+                    "brine_siphoner",
+                    "Brine Siphoner",
+                    "Ð¡Ñ‚Ñ€Ð°Ð½Ð½Ð°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ñ… ÐºÐ°Ñ€Ð¼Ð°Ð½Ð¾Ð² Ð¸ Ð²ÐµÐ½Ñ‚Ð¾Ð².",
+                    36f,
+                    3.8f,
+                    6.1f,
+                    new[] { "fauna.family.chemical_specialists", "fauna.family.thermal_hostile" },
+                    new[] { "biome.family.chemosynthetic_brine", "biome.family.tectonic_spine", "biome.family.volcanic_glass" },
+                    "ÐÑƒÐ¶ÐµÐ½, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ñ‚Ð¾ÐºÑÐ¸Ñ‡Ð½Ð°Ñ Ð¸ ÑÐµÑ€Ð²Ð¸ÑÐ½Ð°Ñ Ð²Ð¾Ð´Ð° Ð½Ðµ Ð±Ñ‹Ð»Ð° Ð¼Ñ‘Ñ€Ñ‚Ð²Ð¾Ð¹."),
+                CreateAmbient(
+                    "lantern_sifter",
+                    "Lantern Sifter",
+                    "Ð ÐµÐ´ÐºÐ°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¾Ð¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.",
+                    42f,
+                    3.4f,
+                    5.6f,
+                    new[] { "fauna.family.abyssal_sparse", "fauna.family.hadal_apex" },
+                    new[] { "biome.family.abyssal_silt", "biome.family.metallic_hadal", "biome.family.rift_void" },
+                    "Ð”Ð°Ñ‘Ñ‚ Ð¾Ñ‰ÑƒÑ‰ÐµÐ½Ð¸Ðµ Ñ€ÐµÐ´ÐºÐ¾Ð¹ Ð¶Ð¸Ð·Ð½Ð¸ Ð´Ð°Ð¶Ðµ Ð² Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ðµ."),
+
                 CreateTerritorial(
                     "nursery_shellguard",
                     "Nursery Shellguard",
@@ -47,7 +111,7 @@ namespace Hecton8.AI.Editor
                     12f,
                     true,
                     true,
-                    new[] { "fauna.family.fossil_reef", "fauna.family.littoral_passive" },
+                    new[] { "fauna.family.reef_ambush", "fauna.family.littoral_passive" },
                     new[] { "biome.family.fossil_reef", "biome.family.littoral_karst" },
                     "Локальный защитник гнезда. Сначала давит, потом срывается."),
                 CreateTerritorial(
@@ -247,6 +311,101 @@ namespace Hecton8.AI.Editor
                     new[] { "biome.family.abyssal_silt", "biome.family.rift_void" },
                     "Длинный тёмный перехватчик для открытой глубины.")
             };
+        }
+
+        private static ArchetypeDefinition CreateAmbientInternal(
+            string shortId,
+            string displayName,
+            string purpose,
+            float health,
+            float cruiseSpeed,
+            float burstSpeed,
+            string[] faunaFamilies,
+            string[] biomeFamilies,
+            string notes)
+        {
+            return new ArchetypeDefinition
+            {
+                assetFolder = AmbientFolder,
+                assetName = $"Archetype_{ToAssetToken(displayName)}",
+                creatureId = $"creature.ambient.{shortId}",
+                displayName = displayName,
+                gameplayPurpose = purpose,
+                roleType = CreatureRoleType.Ambient,
+                locomotionType = CreatureLocomotionType.SteeringSolo,
+                isAggressive = false,
+                canFlee = true,
+                maxHealth = health,
+                attackDamage = 0f,
+                attackCooldown = 2.5f,
+                cruiseSpeed = cruiseSpeed,
+                burstSpeed = burstSpeed,
+                turnSpeed = 4.8f,
+                sleepDistance = 160f,
+                cullDistance = 220f,
+                baseAggroDistance = 0f,
+                baseEscapeDistance = 12f,
+                baseEscapeSafeDistance = 24f,
+                baseDeaggroDistance = 0f,
+                noiseDetectionBonus = 0f,
+                noiseEscapeBonus = 8f,
+                lightDetectionBonus = 0f,
+                lightEscapeBonus = 6f,
+                stimulusMemoryDuration = 2.6f,
+                useHomeTerritory = false,
+                homeWanderRadius = 20f,
+                homeReturnDistance = 28f,
+                territoryProtectRadius = 0f,
+                warningDuration = 0f,
+                warningStandOffDistance = 0f,
+                stalkDuration = 0f,
+                stalkDistance = 0f,
+                defendNest = false,
+                nestProtectRadius = 0f,
+                callNearbyAllies = false,
+                allyAlertRadius = 0f,
+                allyAlertCooldown = 0f,
+                allyAlertMaxCount = 0,
+                alliesRequireSameArchetype = true,
+                usePackHunt = false,
+                packSupportRadius = 0f,
+                packFlankDistance = 0f,
+                packCommitDistance = 0f,
+                useLeviathanPresence = false,
+                leviathanEncounterType = LeviathanEncounterType.PresenceCircle,
+                loomingDuration = 0f,
+                loomingDistance = 0f,
+                loomingCommitDistance = 0f,
+                useFeintRush = false,
+                feintDuration = 0f,
+                feintTriggerDistance = 0f,
+                feintBreakDistance = 0f,
+                feintCooldown = 0f,
+                useCandiceBehaviorTree = false,
+                useAstarPathing = false,
+                useGpuBoids = false,
+                behaviorTreeHint = "Ð¡Ð¿Ð¾ÐºÐ¾Ð¹Ð½Ð°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ. Ð¤Ð¾Ð½, Ð½ÐµÑ€Ð²Ð½Ñ‹Ðµ Ð¾Ñ‚ÑÐºÐ¾ÐºÐ¸, Ð¾Ñ‰ÑƒÑ‰ÐµÐ½Ð¸Ðµ Ð¶Ð¸Ð²Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.",
+                maxAliveGlobal = 18,
+                maxAlivePerBiome = 8,
+                spawnWeight = 18,
+                biomeNotes = notes,
+                recommendedFaunaFamilyIds = faunaFamilies,
+                recommendedBiomeFamilyIds = biomeFamilies
+            };
+        }
+
+        private static ArchetypeDefinition CreateAmbient(
+            string shortId,
+            string displayName,
+            string purpose,
+            float health,
+            float cruiseSpeed,
+            float burstSpeed,
+            string[] faunaFamilies,
+            string[] biomeFamilies,
+            string notes)
+        {
+            return CreateAmbientInternal(shortId, displayName, purpose, health, cruiseSpeed, burstSpeed, faunaFamilies, biomeFamilies, notes);
         }
 
         private static ArchetypeDefinition CreateTerritorial(
@@ -516,6 +675,8 @@ namespace Hecton8.AI.Editor
             asset.biomeNotes = definition.biomeNotes;
             asset.recommendedFaunaFamilyIds = CloneArray(definition.recommendedFaunaFamilyIds);
             asset.recommendedBiomeFamilyIds = CloneArray(definition.recommendedBiomeFamilyIds);
+            if (asset.prefab == null || CreatureProxyPrefabAuthoring.IsGeneratedProxy(asset.prefab))
+                asset.prefab = CreatureProxyPrefabAuthoring.ResolveDefaultProxyPrefab(definition.roleType, definition.maxHealth, definition.attackDamage);
 
             EditorUtility.SetDirty(asset);
         }
@@ -532,6 +693,7 @@ namespace Hecton8.AI.Editor
             sb.AppendLine("- Основной упор здесь: много разных хищников и левиафанов.");
             sb.AppendLine();
 
+            AppendSection(sb, "Мирная жизнь", definitions, CreatureRoleType.Ambient);
             AppendSection(sb, "Территориальные", definitions, CreatureRoleType.Territorial);
             AppendSection(sb, "Хищники", definitions, CreatureRoleType.Hunter);
             AppendSection(sb, "Левиафаны", definitions, CreatureRoleType.Leviathan);

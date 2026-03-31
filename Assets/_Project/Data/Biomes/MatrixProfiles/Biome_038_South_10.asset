@@ -51,10 +51,10 @@ MonoBehaviour:
   familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
   suggestedZoneFamily: progression.route.mid
   progressionRole: abyss_entry
-  primaryClusterFocus: 3
-  secondaryClusterFocus: 4
-  primaryStructureFocus: 1
-  secondaryStructureFocus: 4
+  primaryClusterFocus: 6
+  secondaryClusterFocus: 3
+  primaryStructureFocus: 2
+  secondaryStructureFocus: 3
   faunaMood: 3
   preferredGroundFamilies:
   - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}

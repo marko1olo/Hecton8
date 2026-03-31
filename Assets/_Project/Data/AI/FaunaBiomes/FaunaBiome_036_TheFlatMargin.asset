@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac7c852b347479e42843a0ed504753a9, type: 3}
+  m_Name: FaunaBiome_036_TheFlatMargin
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.FaunaBiomeData
+  biomeIndex: 36
+  biomeName: The Flat Margin
+  possibleCreatures:
+  - archetype: {fileID: 11400000, guid: 6ee168c37ad7aaf48aca9ed4ceecb908, type: 2}
+    prefab: {fileID: 676815894980492824, guid: 54d26ac0f761ade449ffd3811fbe2620, type: 3}
+    spawnWeight: 18
+    maxAlive: 8
+  - archetype: {fileID: 11400000, guid: 149e855d37758c648b235502e7249aca, type: 2}
+    prefab: {fileID: 676815894980492824, guid: 54d26ac0f761ade449ffd3811fbe2620, type: 3}
+    spawnWeight: 18
+    maxAlive: 8
+  - archetype: {fileID: 11400000, guid: b72d378371abd9e45aa2c4d0c1ec29a4, type: 2}
+    prefab: {fileID: 7495314299482658479, guid: 49303dc2072df02468a488dee598b288, type: 3}
+    spawnWeight: 8
+    maxAlive: 3
+  biomeMaxCreatures: 8
+  spawnHeightAboveBottom: 2
+  spawnHeightMax: 12
