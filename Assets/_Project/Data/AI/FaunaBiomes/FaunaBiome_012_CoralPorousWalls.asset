@@ -34,3 +34,9 @@ MonoBehaviour:
   biomeMaxCreatures: 12
   spawnHeightAboveBottom: 1.5
   spawnHeightMax: 18
+  useLargeThreatMacroZone: 0
+  largeThreatZoneLabel: 
+  largeThreatZoneRadius: 768
+  largeThreatArchetype: {fileID: 0}
+  largeThreatEncounterType: 0
+  preferHeavyHunterInsteadOfLeviathan: 0

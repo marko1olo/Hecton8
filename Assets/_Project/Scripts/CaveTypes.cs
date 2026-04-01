@@ -421,6 +421,7 @@ namespace Hecton8.Caves
         /// <summary>Blend radius for entrance funnels merging with cave interior.
         /// Range: 4-20.</summary>
         public float entranceBlendK;
+        public byte structureOnlyMode;
         // ── Spawn Context ───────────────────────────────────────────
         /// <summary>Determines which loot table is used for spawn points
         /// extracted from this cave's floor geometry.</summary>
@@ -729,6 +730,7 @@ namespace Hecton8.Caves
                 floorFlatness       = floorFlatness,
                 structureBlendK     = 6f,
                 entranceBlendK      = globalBlendK * 0.8f,
+                structureOnlyMode   = 0,
                 spawnContext        = spawnContext
             };
         }

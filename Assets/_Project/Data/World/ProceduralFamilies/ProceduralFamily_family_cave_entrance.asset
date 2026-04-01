@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 11
   scatterLayer: 2
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 0
+  contributesLargeThreatZone: 0
   structureAccentRole: 3
   clusterAccentRole: 0
   placementMode: 4
@@ -62,6 +65,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.cave.entrance.final.placeholder
+    prefab: {fileID: 7491228651472479503, guid: a3e7231cd7360504cb63bbd783e607b9, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
   futurePrefabRoot: World/CaveEntrance/Cave_Entrance_Marker
   gameplayRole: Readable cave entry markers and lip formations.

@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 14
   scatterLayer: 1
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 3
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 3
   placementMode: 1
@@ -56,6 +59,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.pocket.resource.final.placeholder
+    prefab: {fileID: 5335441627370629033, guid: ed4bd01b0725e0f4688d4b728ee18c06, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
   futurePrefabRoot: World/ResourcePocket/Pocket_Resource
   gameplayRole: Loose resources and small reward pockets.

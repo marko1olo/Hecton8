@@ -1,0 +1,533 @@
+# BACKLOG.md — Burst Optimization для AmbientWaterMotion
+
+---
+
+## ЗАДАЧА: Перенос водорослей в IJobParallelForTransform
+
+**Приоритет:** Low (делать только если Profiler показывает >3ms на AmbientWaterMotionManager.Tick)
+
+**Цель:** Снизить нагрузку на main thread с ~2-4ms до <1ms при 200+ объектах через Burst-compiled job.
+
+**Предварительные условия:**
+- Все правки из v1.1 внесены (HashSet, cooldown, кэш позиций)
+- Profiler показывает что `Tick()` всё ещё узкое место (>3ms)
+
+**Затраты:** ~2-3 часа кодера + тестирование
+
+---
+
+## АРХИТЕКТУРНЫЙ ПЛАН
+
+### Проблема текущей реализации
+
+`ApplyMotion()` вызывается на main thread для каждого объекта и делает:
+1. `CurrentVolume.SampleAt(worldPos)` — требует `transform.InverseTransformPoint` (managed bridge call)
+2. `CurrentManager.SampleHorizontal()` — уже Burst-совместим, но вызывается на main thread
+3. `motion.CachedTransform.position/rotation` — bridge calls
+
+**Burst не может работать с managed данными напрямую.** Нужно предвычислить всё на main thread в blittable structs, затем запустить pure-math job.
+
+---
+
+## ШАГ 1: Blittable Struct для CurrentVolume
+
+### Файл: `CurrentVolumeData.cs` (новый)
+
+```csharp
+using Unity.Mathematics;
+
+namespace Hecton8.Physics
+{
+    /// <summary>
+    /// Blittable representation of CurrentVolume для передачи в Burst job.
+    /// Предвычисляется на main thread в AmbientWaterMotionManager.Tick().
+    /// </summary>
+    public struct CurrentVolumeData
+    {
+        // ── Transform данные ──
+        public float4x4 worldToLocal;  // transform.worldToLocalMatrix
+        public float3   worldDirection; // transform.TransformDirection(localDirection)
+
+        // ── Shape ──
+        public int volumeShape;         // 0=Box, 1=Sphere
+        public float3 boxHalfSize;      // boxSize * 0.5f
+        public float sphereRadius;
+
+        // ── Flow ──
+        public float strength;
+        public float verticalFactor;
+        public float edgeSoftness;
+
+        // ── Pulse ──
+        public float pulseAmplitude;
+        public float pulsePhase;        // Time.time * pulseFrequency + phaseOffset
+
+        // ── Turbulence ──
+        public float turbulenceStrength;
+        public float turbulenceScale;
+        public float turbulenceTimeScale;
+        public float turbulenceTime;    // Time.time + phaseOffset
+    }
+}
+```
+
+### Модификация: `CurrentVolume.cs`
+
+Добавить метод экспорта в struct:
+
+```csharp
+/// <summary>
+/// Экспорт managed данных в blittable struct для Burst job.
+/// Вызывается на main thread перед запуском job.
+/// </summary>
+public CurrentVolumeData ExportData()
+{
+    return new CurrentVolumeData
+    {
+        worldToLocal = transform.worldToLocalMatrix,
+        worldDirection = transform.TransformDirection(localDirection.normalized),
+        volumeShape = (int)shape,
+        boxHalfSize = boxSize * 0.5f,
+        sphereRadius = sphereRadius,
+        strength = strength,
+        verticalFactor = verticalFactor,
+        edgeSoftness = edgeSoftness,
+        pulseAmplitude = pulseAmplitude,
+        pulsePhase = Time.time * pulseFrequency + phaseOffset,
+        turbulenceStrength = turbulenceStrength,
+        turbulenceScale = turbulenceScale,
+        turbulenceTimeScale = turbulenceTimeScale,
+        turbulenceTime = Time.time + phaseOffset
+    };
+}
+```
+
+---
+
+## ШАГ 2: Blittable Struct для AmbientWaterMotion параметров
+
+### Файл: `AmbientWaterMotionData.cs` (новый)
+
+```csharp
+using Unity.Mathematics;
+
+namespace Hecton8.Physics
+{
+    /// <summary>
+    /// Blittable representation параметров AmbientWaterMotion.
+    /// Используется как [ReadOnly] в Burst job.
+    /// </summary>
+    public struct AmbientWaterMotionData
+    {
+        public float3 restLocalPosition;
+        public quaternion restLocalRotation;
+
+        public float verticalAmplitude;
+        public float3 positionalAmplitude;
+        public float3 angularAmplitude;
+
+        public float baseFrequency;
+        public float currentCoupling;
+        public float phase;
+    }
+}
+```
+
+### Модификация: `AmbientWaterMotion.cs`
+
+```csharp
+public AmbientWaterMotionData ExportData()
+{
+    return new AmbientWaterMotionData
+    {
+        restLocalPosition = _restLocalPosition,
+        restLocalRotation = _restLocalRotation,
+        verticalAmplitude = verticalAmplitude,
+        positionalAmplitude = positionalAmplitude,
+        angularAmplitude = angularAmplitude,
+        baseFrequency = baseFrequency,
+        currentCoupling = currentCoupling,
+        phase = _phase
+    };
+}
+```
+
+---
+
+## ШАГ 3: Burst Job
+
+### Файл: `AmbientWaterMotionJob.cs` (новый)
+
+```csharp
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine.Jobs;
+
+namespace Hecton8.Physics
+{
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+    public struct AmbientWaterMotionJob : IJobParallelForTransform
+    {
+        // ── Global params ──
+        public float time;
+        public float globalAmplitude;
+        public float globalFrequency;
+
+        // ── Per-object data ──
+        [ReadOnly] public NativeArray<AmbientWaterMotionData> motionData;
+        [ReadOnly] public NativeArray<float3> worldPositions; // предвычислены на main thread
+
+        // ── CurrentVolume data ──
+        [ReadOnly] public NativeArray<CurrentVolumeData> volumeData;
+
+        public void Execute(int index, TransformAccess transform)
+        {
+            AmbientWaterMotionData motion = motionData[index];
+            float3 worldPos = worldPositions[index];
+
+            // ── Sample all CurrentVolumes ──
+            float3 volumeCurrent = SampleAllVolumes(worldPos);
+
+            // ── Phantom current (global noise field) ──
+            float3 phantomCurrent = CurrentManager.SampleHorizontal(
+                worldPos, time, 0.018f, 0.12f, motion.currentCoupling);
+
+            float3 current = volumeCurrent + phantomCurrent;
+            float currentMagnitude = math.length(current);
+            float3 currentDir = currentMagnitude > 0.0001f
+                ? current / currentMagnitude
+                : new float3(0, 0, 1);
+
+            float t = (time + motion.phase) * math.max(0f, motion.baseFrequency * globalFrequency);
+
+            float bobY = math.sin(t * 1.13f) * motion.verticalAmplitude;
+            float bobX = math.sin(t * 0.91f) * motion.positionalAmplitude.x;
+            float bobZ = math.cos(t * 1.07f) * motion.positionalAmplitude.z;
+
+            float coupling = motion.currentCoupling;
+            float3 offset = new float3(
+                bobX + currentDir.x * currentMagnitude * 0.03f * coupling,
+                bobY,
+                bobZ + currentDir.z * currentMagnitude * 0.03f * coupling)
+                * globalAmplitude;
+
+            float pitch = math.sin(t * 0.87f) * motion.angularAmplitude.x
+                        + currentDir.z * currentMagnitude * 2f;
+            float yaw   = math.sin(t * 0.43f) * motion.angularAmplitude.y;
+            float roll  = math.cos(t * 0.79f) * motion.angularAmplitude.z
+                        - currentDir.x * currentMagnitude * 3f;
+
+            transform.localPosition = motion.restLocalPosition + offset;
+            transform.localRotation = math.mul(motion.restLocalRotation,
+                quaternion.Euler(math.radians(pitch), math.radians(yaw), math.radians(roll)));
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  SAMPLE ALL VOLUMES — Burst-compiled version of CurrentVolume.SampleAt
+        // ════════════════════════════════════════════════════════════════════
+
+        private float3 SampleAllVolumes(float3 worldPos)
+        {
+            float3 total = float3.zero;
+
+            for (int i = 0; i < volumeData.Length; i++)
+            {
+                CurrentVolumeData vol = volumeData[i];
+                total += SampleVolume(worldPos, vol);
+            }
+
+            return total;
+        }
+
+        private float3 SampleVolume(float3 worldPos, CurrentVolumeData vol)
+        {
+            // ── Compute weight (box or sphere) ──
+            float weight = vol.volumeShape == 0
+                ? ComputeBoxWeight(worldPos, vol)
+                : ComputeSphereWeight(worldPos, vol);
+
+            if (weight <= 0.0001f) return float3.zero;
+
+            // ── Direction (pre-transformed on main thread) ──
+            float3 dir = vol.worldDirection;
+            dir.y *= vol.verticalFactor;
+            if (math.lengthsq(dir) <= 0.0001f) return float3.zero;
+            dir = math.normalize(dir);
+
+            // ── Pulse (pre-computed phase) ──
+            float pulse = 1f;
+            if (vol.pulseAmplitude > 0.0001f)
+            {
+                pulse += math.sin(vol.pulsePhase * math.PI * 2f) * vol.pulseAmplitude;
+            }
+
+            float3 result = dir * (vol.strength * pulse * weight);
+
+            // ── Turbulence ──
+            if (vol.turbulenceStrength > 0.0001f && vol.turbulenceScale > 0.0001f)
+            {
+                float3 noise = CurrentManager.SampleCurrent(
+                    worldPos,
+                    vol.turbulenceTime,
+                    vol.turbulenceScale,
+                    vol.turbulenceTimeScale,
+                    vol.turbulenceStrength * weight,
+                    vol.verticalFactor * 0.5f);
+
+                result += noise;
+            }
+
+            return result;
+        }
+
+        // ── Box weight ──
+        private float ComputeBoxWeight(float3 worldPos, CurrentVolumeData vol)
+        {
+            // Transform world pos to local space
+            float3 localPos = math.transform(vol.worldToLocal, worldPos);
+            float3 half = vol.boxHalfSize;
+
+            if (math.abs(localPos.x) > half.x || math.abs(localPos.y) > half.y || math.abs(localPos.z) > half.z)
+                return 0f;
+
+            float softness = math.clamp(vol.edgeSoftness, 0.01f, 1f);
+            float safeX = half.x > 0.001f ? 1f - math.abs(localPos.x) / half.x : 1f;
+            float safeY = half.y > 0.001f ? 1f - math.abs(localPos.y) / half.y : 1f;
+            float safeZ = half.z > 0.001f ? 1f - math.abs(localPos.z) / half.z : 1f;
+            float edge = math.min(safeX, math.min(safeY, safeZ));
+            return math.clamp(edge / softness, 0f, 1f);
+        }
+
+        // ── Sphere weight ──
+        private float ComputeSphereWeight(float3 worldPos, CurrentVolumeData vol)
+        {
+            // Sphere center = worldToLocal translation column
+            float3 center = new float3(vol.worldToLocal.c3.x, vol.worldToLocal.c3.y, vol.worldToLocal.c3.z);
+            float radius = math.max(0.01f, vol.sphereRadius);
+            float distance = math.length(worldPos - center);
+
+            if (distance >= radius) return 0f;
+
+            float edge = 1f - distance / radius;
+            return math.clamp(edge / math.max(0.01f, vol.edgeSoftness), 0f, 1f);
+        }
+    }
+}
+```
+
+---
+
+## ШАГ 4: Модификация AmbientWaterMotionManager
+
+### Добавить поля для Burst
+
+```csharp
+// ── Burst job data ──
+private TransformAccessArray _transformAccessArray;
+private NativeArray<AmbientWaterMotionData> _motionDataArray;
+private NativeArray<float3> _worldPosArray;
+private NativeArray<CurrentVolumeData> _volumeDataArray;
+private bool _jobDataInitialized;
+```
+
+### OnDestroy — dispose arrays
+
+```csharp
+private void OnDestroy()
+{
+    if (_instance == this)
+        _instance = null;
+
+    DisposeJobData();
+}
+
+private void DisposeJobData()
+{
+    if (_transformAccessArray.isCreated)
+        _transformAccessArray.Dispose();
+    if (_motionDataArray.IsCreated)
+        _motionDataArray.Dispose();
+    if (_worldPosArray.IsCreated)
+        _worldPosArray.Dispose();
+    if (_volumeDataArray.IsCreated)
+        _volumeDataArray.Dispose();
+
+    _jobDataInitialized = false;
+}
+```
+
+### Tick — rebuild job data и запуск
+
+```csharp
+public void Tick(float deltaTime)
+{
+    if (_objects.Count == 0) return;
+
+    _frameCounter++;
+    _time += deltaTime;
+    if (_time > 100000f) _time -= 100000f;
+
+    // ... observer resolve logic ...
+
+    // ════════════════════════════════════════════════════════════════════
+    //  REBUILD JOB DATA IF NEEDED
+    // ════════════════════════════════════════════════════════════════════
+
+    RebuildJobDataIfNeeded();
+
+    // ════════════════════════════════════════════════════════════════════
+    //  GATHER CURRENT VOLUME DATA
+    // ════════════════════════════════════════════════════════════════════
+
+    int volumeCount = CurrentVolume.ActiveCount;
+    if (_volumeDataArray.Length != volumeCount)
+    {
+        if (_volumeDataArray.IsCreated) _volumeDataArray.Dispose();
+        _volumeDataArray = new NativeArray<CurrentVolumeData>(volumeCount, Allocator.TempJob);
+    }
+
+    CurrentVolume.ExportAllData(_volumeDataArray); // static method to fill array
+
+    // ════════════════════════════════════════════════════════════════════
+    //  SCHEDULE JOB
+    // ════════════════════════════════════════════════════════════════════
+
+    var job = new AmbientWaterMotionJob
+    {
+        time = _time,
+        globalAmplitude = globalAmplitude,
+        globalFrequency = globalFrequency,
+        motionData = _motionDataArray,
+        worldPositions = _worldPosArray,
+        volumeData = _volumeDataArray
+    };
+
+    JobHandle handle = job.Schedule(_transformAccessArray);
+    handle.Complete(); // sync point — можно сделать async если не нужно сразу
+
+    _volumeDataArray.Dispose();
+}
+
+private void RebuildJobDataIfNeeded()
+{
+    int count = _objects.Count;
+
+    // Если количество изменилось или не инициализировано — пересоздать
+    if (!_jobDataInitialized || _transformAccessArray.length != count)
+    {
+        DisposeJobData();
+
+        _transformAccessArray = new TransformAccessArray(count);
+        _motionDataArray = new NativeArray<AmbientWaterMotionData>(count, Allocator.Persistent);
+        _worldPosArray = new NativeArray<float3>(count, Allocator.Persistent);
+
+        for (int i = 0; i < count; i++)
+        {
+            _transformAccessArray.Add(_objects[i].CachedTransform);
+            _motionDataArray[i] = _objects[i].ExportData();
+        }
+
+        _jobDataInitialized = true;
+    }
+
+    // Обновить world positions (каждый кадр)
+    for (int i = 0; i < count; i++)
+    {
+        Vector3 pos = _objects[i].CachedTransform.position;
+        _worldPosArray[i] = new float3(pos.x, pos.y, pos.z);
+    }
+}
+```
+
+### CurrentVolume — добавить static export
+
+```csharp
+// В CurrentVolume.cs
+
+public static void ExportAllData(NativeArray<CurrentVolumeData> output)
+{
+    int count = math.min(ActiveVolumes.Count, output.Length);
+    for (int i = 0; i < count; i++)
+    {
+        output[i] = ActiveVolumes[i].ExportData();
+    }
+}
+```
+
+---
+
+## ШАГ 5: Динамическая регистрация/отписка
+
+**Проблема:** Когда объект регистрируется/отписывается, `TransformAccessArray` нужно обновить.
+
+**Решение:** Отложенная пересборка. Флаг `_jobDataDirty` устанавливается в `Register`/`Unregister`, пересборка происходит в начале `Tick()`.
+
+```csharp
+private bool _jobDataDirty;
+
+public void Register(AmbientWaterMotion motion)
+{
+    if (motion == null) return;
+    if (_objectsSet.Add(motion))
+    {
+        _objects.Add(motion);
+        _jobDataDirty = true; // отметить что нужна пересборка
+    }
+    _debugActiveObjects = _objects.Count;
+}
+
+public void Unregister(AmbientWaterMotion motion)
+{
+    if (motion == null) return;
+    if (_objectsSet.Remove(motion))
+    {
+        _objects.Remove(motion);
+        _jobDataDirty = true;
+    }
+    _debugActiveObjects = _objects.Count;
+}
+
+private void RebuildJobDataIfNeeded()
+{
+    if (!_jobDataDirty && _jobDataInitialized) return;
+
+    // ... код пересборки как выше ...
+
+    _jobDataDirty = false;
+}
+```
+
+---
+
+## ТЕСТИРОВАНИЕ
+
+1. **Profiler:** До/После сравнить `AmbientWaterMotionManager.Tick` время
+2. **Spawn 500 объектов** с `AmbientWaterMotion` в одной сцене
+3. **Динамическая регистрация:** Спавнить/деспавнить объекты через пул во время игры
+4. **Null reference check:** Уничтожить объект без OnDisable, проверить что нет краша
+
+---
+
+## РИСКИ
+
+| Риск | Митигация |
+|------|-----------|
+| Пересборка `TransformAccessArray` каждый кадр при частой регистрации | Отложенная пересборка (`_jobDataDirty` флаг) |
+| `CurrentVolume` меняет параметры в рантайме → job использует устаревшие данные | Export данных каждый кадр (уже в плане) |
+| Job не завершится до следующего Tick → race condition | `handle.Complete()` в конце Tick (sync point) |
+
+---
+
+## КРИТЕРИЙ УСПЕХА
+
+**До:** `AmbientWaterMotionManager.Tick` = 2-4ms на 200 объектов (Main Thread)
+
+**После:** `AmbientWaterMotionManager.Tick` = <1ms (Main Thread), Job Worker = 0.5-1ms (параллельно)
+
+**Если выигрыш <30%** — откатить изменения, не стоит усложнения.
+
+---
+
+**Сохрани этот файл как `BACKLOG_BurstWaterMotion.md` в корне проекта.**

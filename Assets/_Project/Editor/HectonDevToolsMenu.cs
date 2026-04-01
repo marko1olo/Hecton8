@@ -6,7 +6,9 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 using Hecton8.Audio;
+using Hecton8.Dev;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.SceneManagement;
@@ -351,6 +353,353 @@ namespace Hecton8.Editor
             Debug.Log(sb.ToString());
         }
 
+        [MenuItem(MenuRoot + "Scene/Remove Missing Scripts In Loaded Scenes", false, 123)]
+        public static void RemoveMissingScriptsInLoadedScenes()
+        {
+            Scene[] scenes = GetLoadedScenesSnapshot();
+            if (scenes.Length == 0)
+            {
+                Debug.Log("[Hecton Dev] No loaded scenes.");
+                return;
+            }
+
+            int gameObjectsTouched = 0;
+            int removedComponents = 0;
+            GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            for (int i = 0; i < gos.Length; i++)
+            {
+                GameObject go = gos[i];
+                if (go == null)
+                {
+                    continue;
+                }
+
+                Scene sc = go.scene;
+                if (!sc.IsValid() || !sc.isLoaded)
+                {
+                    continue;
+                }
+
+                int missing = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(go);
+                if (missing <= 0)
+                {
+                    continue;
+                }
+
+                Undo.RegisterCompleteObjectUndo(go, "Remove missing scripts");
+                GameObjectUtility.RemoveMonoBehavioursWithMissingScript(go);
+                gameObjectsTouched++;
+                removedComponents += missing;
+                EditorSceneManager.MarkSceneDirty(sc);
+                Debug.Log(
+                    "[Hecton Dev] Removed missing script (" + missing + "): " + BuildTransformPath(go.transform),
+                    go);
+            }
+
+            AssetDatabase.SaveAssets();
+            if (gameObjectsTouched > 0)
+            {
+                Debug.Log(
+                    "[Hecton Dev] Removed " + removedComponents + " missing script components across " +
+                    gameObjectsTouched + " GameObjects.");
+            }
+            else
+            {
+                Debug.Log("[Hecton Dev] No missing scripts found in loaded scenes.");
+            }
+        }
+
+        [MenuItem(MenuRoot + "Scene/Remove Missing Scripts In _Project Prefabs", false, 124)]
+        public static void RemoveMissingScriptsInProjectPrefabs()
+        {
+            string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project", "Assets/_Project/Prefabs" });
+            if (prefabGuids == null || prefabGuids.Length == 0)
+            {
+                Debug.Log("[Hecton Dev] No prefabs found under Assets/_Project.");
+                return;
+            }
+
+            int prefabCount = 0;
+            int gameObjectsTouched = 0;
+            int removedComponents = 0;
+
+            for (int i = 0; i < prefabGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+                if (string.IsNullOrEmpty(path))
+                {
+                    continue;
+                }
+
+                GameObject root = null;
+                bool dirty = false;
+                try
+                {
+                    root = PrefabUtility.LoadPrefabContents(path);
+                    if (root == null)
+                    {
+                        continue;
+                    }
+
+                    List<Transform> transforms = new List<Transform>(64);
+                    CollectTransforms(root.transform, transforms);
+
+                    for (int t = 0; t < transforms.Count; t++)
+                    {
+                        GameObject go = transforms[t] != null ? transforms[t].gameObject : null;
+                        if (go == null)
+                        {
+                            continue;
+                        }
+
+                        int missing = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(go);
+                        if (missing <= 0)
+                        {
+                            continue;
+                        }
+
+                        GameObjectUtility.RemoveMonoBehavioursWithMissingScript(go);
+                        gameObjectsTouched++;
+                        removedComponents += missing;
+                        dirty = true;
+                        Debug.Log("[Hecton Dev] Removed missing script (" + missing + ") from prefab: " + path + " :: " + BuildTransformPath(go.transform));
+                    }
+
+                    if (dirty)
+                    {
+                        PrefabUtility.SaveAsPrefabAsset(root, path);
+                        prefabCount++;
+                    }
+                }
+                finally
+                {
+                    if (root != null)
+                    {
+                        PrefabUtility.UnloadPrefabContents(root);
+                    }
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            if (removedComponents > 0)
+            {
+                Debug.Log(
+                    "[Hecton Dev] Removed " + removedComponents + " missing script components from " +
+                    gameObjectsTouched + " GameObjects across " + prefabCount + " prefabs.");
+            }
+            else
+            {
+                Debug.Log("[Hecton Dev] No missing scripts found in _Project prefabs.");
+            }
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run World Generative Geology Smoke (Play Mode)", false, 125)]
+        public static void RunWorldGenerativeGeologySmoke()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Geology smoke can only run in play mode.");
+                return;
+            }
+
+            WorldGenerativeGeologyRuntimeSmokeTester tester =
+                UnityEngine.Object.FindFirstObjectByType<WorldGenerativeGeologyRuntimeSmokeTester>(
+                    FindObjectsInactive.Include);
+
+            if (tester == null)
+            {
+                Scene activeScene = SceneManager.GetActiveScene();
+                if (!activeScene.IsValid() || !activeScene.isLoaded)
+                {
+                    Debug.LogWarning("[Hecton Dev] No active loaded scene for geology smoke.");
+                    return;
+                }
+
+                GameObject parent = FindRootGameObject(activeScene, "--- SYSTEMS ---");
+                GameObject host = new GameObject("__DEV_GeologySmoke");
+                host.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+                SceneManager.MoveGameObjectToScene(host, activeScene);
+                if (parent != null)
+                {
+                    host.transform.SetParent(parent.transform, false);
+                }
+
+                tester = host.AddComponent<WorldGenerativeGeologyRuntimeSmokeTester>();
+            }
+            else if (tester.gameObject.name.StartsWith("__DEV_", StringComparison.Ordinal))
+            {
+                tester.gameObject.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+            }
+
+            tester.ConfigureForDevRun(
+                enableVerboseLogging: true,
+                enableSuppressionRestore: true,
+                timeoutSeconds: 24f,
+                startupDelaySeconds: 0.35f,
+                settleDelaySeconds: 0.2f,
+                preferVoxel: true,
+                preferTerrain: true);
+
+            if (!tester.TryRunImmediately())
+            {
+                Debug.LogWarning("[Hecton Dev] Geology smoke is already running. " + tester.DescribeStatus());
+                return;
+            }
+
+            Selection.activeObject = tester.gameObject;
+            EditorGUIUtility.PingObject(tester.gameObject);
+            Debug.Log("[Hecton Dev] Started world generative geology smoke pass.");
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run World Generative Geology Smoke (Play Mode)", true)]
+        public static bool RunWorldGenerativeGeologySmokeValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log World Generative Geology Smoke Status (Play Mode)", false, 126)]
+        public static void LogWorldGenerativeGeologySmokeStatus()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Geology smoke status is only available in play mode.");
+                return;
+            }
+
+            WorldGenerativeGeologyRuntimeSmokeTester tester =
+                UnityEngine.Object.FindFirstObjectByType<WorldGenerativeGeologyRuntimeSmokeTester>(
+                    FindObjectsInactive.Include);
+            if (tester == null)
+            {
+                Debug.LogWarning("[Hecton Dev] No WorldGenerativeGeologyRuntimeSmokeTester found.");
+                return;
+            }
+
+            Debug.Log("[Hecton Dev] Geology smoke status: " + tester.DescribeStatus(), tester.gameObject);
+            Selection.activeObject = tester.gameObject;
+            EditorGUIUtility.PingObject(tester.gameObject);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log World Generative Geology Smoke Status (Play Mode)", true)]
+        public static bool LogWorldGenerativeGeologySmokeStatusValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run Runtime Performance Profiler (Play Mode)", false, 127)]
+        public static void RunRuntimePerformanceProfiler()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Runtime performance profiler can only run in play mode.");
+                return;
+            }
+
+            RuntimePerformanceProfiler profiler = GetOrCreateRuntimePerformanceProfiler();
+            if (profiler == null)
+                return;
+
+            profiler.ConfigureForDevRun(
+                autoStartOnEnable: true,
+                enableBudgetViolationLogging: true,
+                enableWindowLogging: true,
+                sampleWindow: 2f);
+            profiler.StartProfiling();
+
+            Selection.activeObject = profiler.gameObject;
+            EditorGUIUtility.PingObject(profiler.gameObject);
+            Debug.Log("[Hecton Dev] Started runtime performance profiler.", profiler.gameObject);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run Runtime Performance Profiler (Play Mode)", true)]
+        public static bool RunRuntimePerformanceProfilerValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Runtime Performance Profiler Status (Play Mode)", false, 128)]
+        public static void LogRuntimePerformanceProfilerStatus()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Runtime performance profiler status is only available in play mode.");
+                return;
+            }
+
+            RuntimePerformanceProfiler profiler = FindExistingRuntimePerformanceProfiler();
+            if (profiler == null)
+            {
+                Debug.LogWarning("[Hecton Dev] No RuntimePerformanceProfiler found.");
+                return;
+            }
+
+            profiler.LogStatusToConsole();
+            Selection.activeObject = profiler.gameObject;
+            EditorGUIUtility.PingObject(profiler.gameObject);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Runtime Performance Profiler Status (Play Mode)", true)]
+        public static bool LogRuntimePerformanceProfilerStatusValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Runtime Performance Profiler Counters (Play Mode)", false, 129)]
+        public static void LogRuntimePerformanceProfilerCounters()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Runtime performance profiler counters are only available in play mode.");
+                return;
+            }
+
+            RuntimePerformanceProfiler profiler = GetOrCreateRuntimePerformanceProfiler();
+            if (profiler == null)
+                return;
+
+            profiler.LogAvailableCounters();
+            Selection.activeObject = profiler.gameObject;
+            EditorGUIUtility.PingObject(profiler.gameObject);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Runtime Performance Profiler Counters (Play Mode)", true)]
+        public static bool LogRuntimePerformanceProfilerCountersValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Stop Runtime Performance Profiler (Play Mode)", false, 130)]
+        public static void StopRuntimePerformanceProfiler()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Runtime performance profiler can only be stopped in play mode.");
+                return;
+            }
+
+            RuntimePerformanceProfiler profiler = FindExistingRuntimePerformanceProfiler();
+            if (profiler == null)
+            {
+                Debug.LogWarning("[Hecton Dev] No RuntimePerformanceProfiler found.");
+                return;
+            }
+
+            profiler.StopProfiling();
+            profiler.LogStatusToConsole();
+            Selection.activeObject = profiler.gameObject;
+            EditorGUIUtility.PingObject(profiler.gameObject);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Stop Runtime Performance Profiler (Play Mode)", true)]
+        public static bool StopRuntimePerformanceProfilerValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
         private static Scene[] GetLoadedScenesSnapshot()
         {
             int count = SceneManager.sceneCount;
@@ -399,6 +748,20 @@ namespace Hecton8.Editor
             return missing;
         }
 
+        private static void CollectTransforms(Transform root, List<Transform> destination)
+        {
+            if (root == null || destination == null)
+            {
+                return;
+            }
+
+            destination.Add(root);
+            for (int i = 0; i < root.childCount; i++)
+            {
+                CollectTransforms(root.GetChild(i), destination);
+            }
+        }
+
         private static string BuildTransformPath(Transform t)
         {
             if (t == null)
@@ -419,6 +782,89 @@ namespace Hecton8.Editor
             }
 
             return sb.ToString();
+        }
+
+        private static GameObject FindRootGameObject(Scene scene, string name)
+        {
+            if (!scene.IsValid() || string.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root != null && string.Equals(root.name, name, StringComparison.Ordinal))
+                {
+                    return root;
+                }
+            }
+
+            return null;
+        }
+
+        private static RuntimePerformanceProfiler GetOrCreateRuntimePerformanceProfiler()
+        {
+            RuntimePerformanceProfiler profiler = FindExistingRuntimePerformanceProfiler();
+            if (profiler != null)
+            {
+                if (profiler.gameObject.name.StartsWith("__DEV_", StringComparison.Ordinal))
+                    profiler.gameObject.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+
+                return profiler;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
+            {
+                Debug.LogWarning("[Hecton Dev] No active loaded scene for runtime performance profiler.");
+                return null;
+            }
+
+            GameObject parent = FindRootGameObject(activeScene, "--- SYSTEMS ---");
+            GameObject host = new GameObject("__DEV_RuntimePerformanceProfiler");
+            host.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+            host.SetActive(false);
+            SceneManager.MoveGameObjectToScene(host, activeScene);
+            if (parent != null)
+                host.transform.SetParent(parent.transform, false);
+
+            profiler = host.AddComponent<RuntimePerformanceProfiler>();
+            profiler.ConfigureForDevRun(
+                autoStartOnEnable: true,
+                enableBudgetViolationLogging: true,
+                enableWindowLogging: true,
+                sampleWindow: 2f);
+            host.SetActive(true);
+            return profiler;
+        }
+
+        private static RuntimePerformanceProfiler FindExistingRuntimePerformanceProfiler()
+        {
+            RuntimePerformanceProfiler preferred = null;
+            RuntimePerformanceProfiler[] profilers = Resources.FindObjectsOfTypeAll<RuntimePerformanceProfiler>();
+            for (int i = 0; i < profilers.Length; i++)
+            {
+                RuntimePerformanceProfiler profiler = profilers[i];
+                if (profiler == null || EditorUtility.IsPersistent(profiler))
+                    continue;
+
+                GameObject go = profiler.gameObject;
+                if (go == null)
+                    continue;
+
+                Scene scene = go.scene;
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                if (go.name.StartsWith("__DEV_", StringComparison.Ordinal))
+                    return profiler;
+
+                preferred ??= profiler;
+            }
+
+            return preferred;
         }
     }
 }

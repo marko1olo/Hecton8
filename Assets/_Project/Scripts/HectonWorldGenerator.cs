@@ -20,6 +20,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
@@ -440,7 +441,7 @@ public struct HectonColorJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonWorldGenerator
 
-public class HectonWorldGenerator : MonoBehaviour
+public class HectonWorldGenerator : MonoBehaviour, ITickable
 {
     // ╔═══════════════════════════════════════════════╗
     // ║             INSPECTOR SETTINGS                ║
@@ -552,6 +553,7 @@ public class HectonWorldGenerator : MonoBehaviour
 
     int2 _lastChunk = new int2(int.MinValue, int.MinValue);
     bool _streaming;
+    bool _registeredToTickManager;
 
     [HideInInspector] public GameObject previewObj;
 
@@ -572,6 +574,7 @@ public class HectonWorldGenerator : MonoBehaviour
             return;
 
         StartStreaming();
+        RegisterToTickManager();
     }
 
     void OnDisable()
@@ -579,10 +582,11 @@ public class HectonWorldGenerator : MonoBehaviour
         if (!Application.isPlaying)
             return;
 
+        UnregisterFromTickManager();
         StopStreaming();
     }
 
-    void Update()
+    public void Tick(float deltaTime)
     {
         if (!_streaming || viewer == null) return;
 
@@ -598,6 +602,24 @@ public class HectonWorldGenerator : MonoBehaviour
 
         if (_bakeHead < _bakeMeshes.Count)
             BakePhysicsBatch();
+    }
+
+    void RegisterToTickManager()
+    {
+        if (_registeredToTickManager || GameTickManager.Instance == null)
+            return;
+
+        GameTickManager.Instance.Register((ITickable)this);
+        _registeredToTickManager = true;
+    }
+
+    void UnregisterFromTickManager()
+    {
+        if (!_registeredToTickManager || GameTickManager.Instance == null)
+            return;
+
+        GameTickManager.Instance.Unregister((ITickable)this);
+        _registeredToTickManager = false;
     }
 
     void StartStreaming()

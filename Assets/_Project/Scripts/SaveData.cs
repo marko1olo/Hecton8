@@ -43,26 +43,16 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 9; // Increment for discovery latest biome persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
-        /// <summary>Состояние игрока (HP, O2, позиция).</summary>
         public PlayerStatsDTO playerStats;
-
-        /// <summary>Содержимое инвентаря.</summary>
         public InventoryDTO inventory;
-
-        /// <summary>Состояние мира (уничтоженные узлы).</summary>
         public WorldStateDTO worldState;
-
-        /// <summary>Построенные модули базы.</summary>
+        public ProceduralWorldStateDTO proceduralWorldState;
         public ConstructionDTO construction;
-
-        /// <summary>Архив сканирования и разведданных.</summary>
         public ScanLogDTO scanLog;
-
-        /// <summary>Состояние barter/exchange контрактов PDA.</summary>
         public BarterDTO barter;
         public FieldOperationLogDTO fieldOperations;
         public BeaconNetworkDTO beaconNetwork;
@@ -73,29 +63,34 @@ namespace Hecton8.SaveSystem
         /// <summary>Сломанные инструменты (toolID → broken). v2.0 ENTERPRISE</summary>
         public Dictionary<string, bool> toolBrokenMap = new Dictionary<string, bool>();
 
+        /// <summary>Список ID открытых биомов. v3.0 MASTER GRADE</summary>
+        public HashSet<int> discoveredBiomeIds = new HashSet<int>();
+
+        /// <summary>Последний подтвержденный открытый биом для PDA и HUD.</summary>
+        public int lastDiscoveredBiomeId = -1;
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Создаёт новый SaveData с заполненными метаданными.
-        /// Вызывается SaveManager перед сбором данных от ISaveable.
-        /// </summary>
         public static SaveData CreateNew(float playTime)
         {
             return new SaveData
             {
                 version       = CurrentVersion,
-                timestamp     = DateTime.Now.ToString("O"), // ISO 8601
+                timestamp     = DateTime.Now.ToString("O"),
                 totalPlayTime = playTime,
                 playerStats   = new PlayerStatsDTO(),
                 inventory     = new InventoryDTO(),
                 worldState    = new WorldStateDTO(),
+                proceduralWorldState = new ProceduralWorldStateDTO(),
                 construction  = new ConstructionDTO(),
                 scanLog       = new ScanLogDTO(),
                 barter        = new BarterDTO(),
                 fieldOperations = new FieldOperationLogDTO(),
-                beaconNetwork = new BeaconNetworkDTO()
+                beaconNetwork = new BeaconNetworkDTO(),
+                discoveredBiomeIds = new HashSet<int>(),
+                lastDiscoveredBiomeId = -1
             };
         }
     }
@@ -104,90 +99,52 @@ namespace Hecton8.SaveSystem
     //  PlayerStatsDTO — состояние скафандра и позиция игрока
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Статы игрока: O2, энергия, целостность, позиция/поворот.
-    /// Примитивные типы для портируемости сериализации.
-    /// </summary>
     [Serializable]
     public struct PlayerStatsDTO
     {
-        // ── Survival Stats ──
         public float oxygen;
         public float energy;
         public float integrity;
         public float weight;
 
-        // ── Position (world space) ──
         public float posX;
         public float posY;
         public float posZ;
 
-        // ── Rotation (quaternion components) ──
         public float rotX;
         public float rotY;
         public float rotZ;
         public float rotW;
 
-        // ── Helpers (not serialized — computed on access) ──
-
-        /// <summary>Восстанавливает Vector3 из сохранённых компонент.</summary>
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
-
-        /// <summary>Восстанавливает Quaternion из сохранённых компонент.</summary>
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);
 
-        /// <summary>Сохраняет Vector3 в компоненты.</summary>
         public void SetPosition(Vector3 pos)
         {
-            posX = pos.x;
-            posY = pos.y;
-            posZ = pos.z;
+            posX = pos.x; posY = pos.y; posZ = pos.z;
         }
 
-        /// <summary>Сохраняет Quaternion в компоненты.</summary>
         public void SetRotation(Quaternion rot)
         {
-            rotX = rot.x;
-            rotY = rot.y;
-            rotZ = rot.z;
-            rotW = rot.w;
+            rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
         }
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  InventoryDTO — содержимое тетрис-инвентаря
+    //  InventoryDTO
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Снимок инвентаря: массив занятых ячеек + вес.
-    ///
-    /// Каждая InventoryCellDTO представляет якорную ячейку
-    /// (верхний-левый угол) одного предмета. Multi-cell предметы
-    /// сохраняются как одна запись с (x, y) якоря.
-    /// </summary>
     [Serializable]
     public struct InventoryDTO
     {
-        /// <summary>Количество валидных записей в массиве cells.</summary>
         public int cellCount;
-
-        /// <summary>
-        /// Массив занятых ячеек. Pre-allocated с запасом.
-        /// Только первые cellCount записей валидны.
-        /// </summary>
         public InventoryCellDTO[] cells;
-
-        /// <summary>Суммарный вес инвентаря.</summary>
         public float totalWeight;
-
-        /// <summary>Размеры сетки (для валидации при загрузке).</summary>
         public int gridColumns;
         public int gridRows;
 
-        /// <summary>Максимальный размер массива cells.</summary>
         public const int MaxCells = 128;
 
-        /// <summary>Инициализирует пустой массив.</summary>
         public void EnsureCapacity()
         {
             if (cells == null || cells.Length < MaxCells)
@@ -195,52 +152,24 @@ namespace Hecton8.SaveSystem
         }
     }
 
-    /// <summary>
-    /// Одна ячейка инвентаря: позиция в сетке + ID предмета.
-    /// </summary>
     [Serializable]
     public struct InventoryCellDTO
     {
-        /// <summary>Колонка якорной ячейки.</summary>
         public int x;
-
-        /// <summary>Строка якорной ячейки.</summary>
         public int y;
-
-        /// <summary>
-        /// Строковый ID предмета (ItemData.name из ScriptableObject).
-        /// Используется для поиска ассета через каталог при загрузке.
-        /// </summary>
         public string itemId;
-
-        /// <summary>
-        /// Количество единиц предмета в якорном стеке.
-        /// Для не-stackable и старых сейвов трактуется как 1.
-        /// </summary>
         public int stackCount;
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  WorldStateDTO — состояние мира
+    //  WorldStateDTO
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Состояние разрушаемых объектов мира.
-    /// Хранит ID уничтоженных (depleted) ресурсных узлов.
-    ///
-    /// При загрузке: все узлы в сцене — активны по умолчанию.
-    /// Узлы из списка depletedNodeIds — деактивируются.
-    /// </summary>
     [Serializable]
     public struct WorldStateDTO
     {
-        /// <summary>Количество валидных записей.</summary>
         public int depletedCount;
-
-        /// <summary>ID уничтоженных ресурсных узлов.</summary>
         public string[] depletedNodeIds;
-
-        /// <summary>Максимальный размер массива.</summary>
         public const int MaxNodes = 512;
 
         public void EnsureCapacity()
@@ -250,25 +179,45 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    [Serializable]
+    public struct ProceduralFaunaStateDTO
+    {
+        public long runtimeKey;
+        public float cooldownUntilPlayTime;
+        public bool isLargeThreatZone;
+        public bool blocked;
+    }
+
+    [Serializable]
+    public struct ProceduralWorldStateDTO
+    {
+        public int suppressedPlacementCount;
+        public long[] suppressedPlacementKeys;
+        public int faunaStateCount;
+        public ProceduralFaunaStateDTO[] faunaStates;
+
+        public const int MaxSuppressedPlacements = 8192;
+        public const int MaxFaunaStates = 4096;
+
+        public void EnsureCapacity()
+        {
+            if (suppressedPlacementKeys == null || suppressedPlacementKeys.Length < MaxSuppressedPlacements)
+                suppressedPlacementKeys = new long[MaxSuppressedPlacements];
+
+            if (faunaStates == null || faunaStates.Length < MaxFaunaStates)
+                faunaStates = new ProceduralFaunaStateDTO[MaxFaunaStates];
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════════
-    //  ConstructionDTO — построенные модули базы
+    //  ConstructionDTO
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Список всех модулей, построенных игроком.
-    /// При загрузке: все существующие модули удаляются через пул,
-    /// затем спавнятся из сейва.
-    /// </summary>
     [Serializable]
     public struct ConstructionDTO
     {
-        /// <summary>Количество валидных записей.</summary>
         public int moduleCount;
-
-        /// <summary>Массив модулей.</summary>
         public ModuleDTO[] modules;
-
-        /// <summary>Максимальный размер.</summary>
         public const int MaxModules = 256;
 
         public void EnsureCapacity()
@@ -393,17 +342,12 @@ namespace Hecton8.SaveSystem
 
         public void SetPosition(Vector3 pos)
         {
-            posX = pos.x;
-            posY = pos.y;
-            posZ = pos.z;
+            posX = pos.x; posY = pos.y; posZ = pos.z;
         }
 
         public void SetRotation(Quaternion rot)
         {
-            rotX = rot.x;
-            rotY = rot.y;
-            rotZ = rot.z;
-            rotW = rot.w;
+            rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
         }
     }
 
@@ -423,39 +367,18 @@ namespace Hecton8.SaveSystem
         }
     }
 
-    /// <summary>
-    /// Один модуль базы: ID префаба + трансформ + динамическое состояние.
-    ///
-    /// Поля integrity и isFlooded добавлены в v2.
-    /// Старые сейвы (v1) получат дефолтные значения: integrity = 0f, isFlooded = false.
-    /// При загрузке integrity == 0f интерпретируется как «полное здоровье» (миграция).
-    /// </summary>
     [Serializable]
     public struct ModuleDTO
     {
-        /// <summary>Строковый ID префаба (BuildableData.name).</summary>
         public string prefabId;
-
-        // ── Position ──
         public float posX;
         public float posY;
         public float posZ;
-
-        // ── Rotation ──
         public float rotX;
         public float rotY;
         public float rotZ;
         public float rotW;
-
-        // ── Dynamic State (v2) ──
-
-        /// <summary>
-        /// Текущая целостность модуля (0..maxIntegrity).
-        /// Значение 0f в старых сейвах = «не сохранялось» → трактуется как 100%.
-        /// </summary>
         public float integrity;
-
-        /// <summary>Затоплен ли модуль.</summary>
         public bool isFlooded;
 
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);

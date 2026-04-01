@@ -89,6 +89,7 @@ namespace Hecton8.World
         private Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>> _chunkData;
         private Dictionary<int, Matrix4x4[]> _aggregatedMatrices;
         private Dictionary<int, int> _aggregatedCounts;
+        private Dictionary<int, int> _gpuiBufferCapacities;
         private Vector3[] _aggregatedPositions;
         private int _aggregatedPositionCount;
         private bool _isDirty;
@@ -115,6 +116,7 @@ namespace Hecton8.World
             _chunkData = new Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>(8);
             _aggregatedMatrices = new Dictionary<int, Matrix4x4[]>(8);
             _aggregatedCounts = new Dictionary<int, int>(8);
+            _gpuiBufferCapacities = new Dictionary<int, int>(8);
             _aggregatedPositions = new Vector3[maxExpectedInstances];
             _aggregatedPositionCount = 0;
             _isDirty = false;
@@ -151,6 +153,7 @@ namespace Hecton8.World
                         _chunkData[cfg.layerId] = new Dictionary<Vector2Int, Matrix4x4[]>(64);
                         _aggregatedMatrices[cfg.layerId] = new Matrix4x4[maxExpectedInstances];
                         _aggregatedCounts[cfg.layerId] = 0;
+                        _gpuiBufferCapacities[cfg.layerId] = 0;
                     }
                     else
                     {
@@ -321,29 +324,33 @@ namespace Hecton8.World
                 // Push to GPU Instancer
                 if (_prototypeLookup.TryGetValue(layerId, out GPUInstancerPrefabPrototype prototype))
                 {
-                    // GPUI reads .Length for instance count — need exact-length array
-                    Matrix4x4[] gpuiArray;
-                    if (layerBuffer.Length == layerTotal)
+                    bool needsInitialize = !_gpuiInitializedLayers.Contains(layerId);
+                    int requiredCapacity = layerBuffer.Length;
+                    if (!needsInitialize &&
+                        _gpuiBufferCapacities.TryGetValue(layerId, out int currentCapacity) &&
+                        currentCapacity < requiredCapacity)
                     {
-                        gpuiArray = layerBuffer;
-                    }
-                    else
-                    {
-                        gpuiArray = new Matrix4x4[layerTotal];
-                        Array.Copy(layerBuffer, 0, gpuiArray, 0, layerTotal);
+                        needsInitialize = true;
                     }
 
-                    if (!_gpuiInitializedLayers.Contains(layerId))
+                    if (needsInitialize)
                     {
-                        GPUInstancerAPI.InitializeWithMatrix4x4Array(
-                            gpuiManager, prototype, gpuiArray);
+                        GPUInstancerAPI.InitializePrototype(
+                            gpuiManager,
+                            prototype,
+                            requiredCapacity,
+                            layerTotal);
                         _gpuiInitializedLayers.Add(layerId);
+                        _gpuiBufferCapacities[layerId] = requiredCapacity;
                     }
-                    else
-                    {
-                        GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
-                            gpuiManager, prototype, gpuiArray);
-                    }
+
+                    GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+                        gpuiManager,
+                        prototype,
+                        layerBuffer,
+                        0,
+                        0,
+                        layerTotal);
                 }
 
                 totalPositionCount += layerTotal;
@@ -378,16 +385,7 @@ namespace Hecton8.World
 
                 _aggregatedPositionCount = posWriteIndex;
 
-                if (_aggregatedPositions.Length == _aggregatedPositionCount)
-                {
-                    proximityColliderSystem.Initialize(_aggregatedPositions);
-                }
-                else
-                {
-                    Vector3[] trimmed = new Vector3[_aggregatedPositionCount];
-                    Array.Copy(_aggregatedPositions, 0, trimmed, 0, _aggregatedPositionCount);
-                    proximityColliderSystem.Initialize(trimmed);
-                }
+                proximityColliderSystem.Initialize(_aggregatedPositions, _aggregatedPositionCount);
             }
             else if (proximityColliderSystem != null && totalPositionCount == 0)
             {

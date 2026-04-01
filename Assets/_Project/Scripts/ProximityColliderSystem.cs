@@ -158,7 +158,17 @@ namespace Hecton8.Core
         /// <param name="worldPositions">Мировые координаты всех точек.</param>
         public void Initialize(Vector3[] worldPositions)
         {
-            if (worldPositions == null || worldPositions.Length == 0)
+            Initialize(worldPositions, worldPositions != null ? worldPositions.Length : 0);
+        }
+
+        /// <summary>
+        /// Перегрузка для частичного использования предварительно выделенного массива.
+        /// </summary>
+        /// <param name="worldPositions">Буфер мировых координат.</param>
+        /// <param name="count">Количество валидных элементов в начале буфера.</param>
+        public void Initialize(Vector3[] worldPositions, int count)
+        {
+            if (worldPositions == null || count <= 0 || worldPositions.Length < count)
             {
                 Debug.LogError("[ProximityColliderSystem] Initialize: empty positions array!");
                 return;
@@ -167,7 +177,7 @@ namespace Hecton8.Core
             // ── Очистка предыдущего состояния (если переинициализация) ──
             Cleanup();
 
-            _pointCount = worldPositions.Length;
+            _pointCount = count;
 
             // ── Аллокация NativeArrays (Persistent — живут до Dispose) ──
             _positions  = new NativeArray<float3>(_pointCount, Allocator.Persistent,

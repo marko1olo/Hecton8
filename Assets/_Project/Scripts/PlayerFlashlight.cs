@@ -229,8 +229,6 @@ namespace Hecton8.Gameplay
         private float _flickerIntensityMod;
 
         // VolumetricLightBeam integration (cached via reflection to avoid hard dependency)
-        private bool _volumetricBeamChecked;
-        private System.Reflection.PropertyInfo _volumetricIntensityProp;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -716,32 +714,48 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — VOLUMETRIC BEAM
+                // ══════════════════════════════════════════════════════════
+        //  PRIVATE — VOLUMETRIC BEAM (v2.1: direct cast, zero reflection)
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Кэшированная ссылка на типизированный VolumetricLightBeamHD/SD.
+        /// Резолвится один раз при первом вызове. Null если тип не поддерживается.
+        /// </summary>
+        private VolumetricLightBeamHD _vlbHD;
+        private bool _vlbResolved;
+
+        /// <summary>
+        /// Обновляет интенсивность volumetric beam без рефлексии.
+        /// 
+        /// VLB уже является прямой зависимостью (using VLB; + сериализованное поле).
+        /// Рефлексия через PropertyInfo.SetValue вызывала boxing float→object
+        /// каждый кадр при transition/flickering. 
+        ///
+        /// Прямой каст к VolumetricLightBeamHD — zero GC, zero boxing.
+        /// Если VLB использует SD версию, добавить аналогичную ветку.
+        /// </summary>
         private void UpdateVolumetricBeam(float intensity)
         {
             if (volumetricBeam == null) return;
 
-            if (!_volumetricBeamChecked)
+            if (!_vlbResolved)
             {
-                _volumetricBeamChecked = true;
-                var type = volumetricBeam.GetType();
-                _volumetricIntensityProp = type.GetProperty("intensityMultiplier");
+                _vlbResolved = true;
+                _vlbHD = volumetricBeam as VolumetricLightBeamHD;
 
-                if (_volumetricIntensityProp == null)
+                if (_vlbHD == null)
                 {
                     Debug.LogWarning(
-                        "[PlayerFlashlight] VolumetricLightBeam component assigned but " +
-                        "no 'intensityMultiplier' property found. Disabling volumetric integration.");
+                        "[PlayerFlashlight] VolumetricLightBeam assigned but is not " +
+                        "VolumetricLightBeamHD. Disabling volumetric integration.", this);
                     volumetricBeam = null;
                 }
             }
 
-            if (_volumetricIntensityProp != null)
+            if (_vlbHD != null)
             {
-                _volumetricIntensityProp.SetValue(volumetricBeam, intensity / Mathf.Max(0.01f, GetModeIntensity()));
+                _vlbHD.intensityMultiplier = intensity / Mathf.Max(0.01f, GetModeIntensity());
             }
         }
 

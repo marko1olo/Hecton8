@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 2645989851229420323}
   - component: {fileID: 7729243756051763486}
   - component: {fileID: 5372305160425189637}
-  - component: {fileID: 3574999497592621956}
   - component: {fileID: 5772722546686862795}
+  - component: {fileID: 7985043108422708796}
   m_Layer: 3
   m_Name: Item_Titanium
   m_TagString: Untagged
@@ -114,22 +114,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3574999497592621956
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4481981618318248590}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd6e19aefb800044080a83d87ac3da2a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.InteractionHighlighter
-  highlightEmissionColor: {r: 0.8, g: 1.2, b: 2, a: 1}
-  highlightBaseColorTint: {r: 0.7, g: 0.85, b: 1, a: 1}
-  useEmission: 1
-  targetRenderers: []
 --- !u!114 &5772722546686862795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,3 +128,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.PickupItem
   itemData: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
   quantity: 1
+--- !u!114 &7985043108422708796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4481981618318248590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2c1b93c96a0183429ad1cfe015f3b02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.InteractionHighlighter
+  highlightMode: 0
+  highlightColor: {r: 0.25, g: 0.7, b: 1, a: 1}
+  intensity: 2.5
+  fadeDuration: 0.12
+  targetRenderers: []

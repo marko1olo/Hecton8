@@ -218,7 +218,6 @@ namespace Hecton8.UI
             _directiveText = CreateText(left, "Directive", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.BottomLeft);
             Anchor(_directiveText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(14f, 14f), new Vector2(-14f, 30f));
-            _directiveText.enableWordWrapping = true;
             _directiveText.textWrappingMode = TextWrappingModes.Normal;
             _directiveText.color = DimLow;
 
@@ -311,7 +310,7 @@ namespace Hecton8.UI
                 cardTitle.color = Primary;
 
                 TextMeshProUGUI cardBody = CreateText(card, "Body", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-                cardBody.enableWordWrapping = true;
+                cardBody.textWrappingMode = TextWrappingModes.Normal;
                 Anchor(cardBody.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f),
                     new Vector2(16f, 10f), new Vector2(-120f, -34f));
                 cardBody.color = Dim;
@@ -1022,7 +1021,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI CreateBody(RectTransform parent, string name, TMP_FontAsset font)
         {
             TextMeshProUGUI body = CreateText(parent, name, font, 11f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            body.enableWordWrapping = true;
+            body.textWrappingMode = TextWrappingModes.Normal;
             body.color = Dim;
             return body;
         }

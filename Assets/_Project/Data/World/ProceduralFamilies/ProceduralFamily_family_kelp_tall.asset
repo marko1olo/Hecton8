@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 5
   scatterLayer: 0
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 0
   placementMode: 2
@@ -55,5 +58,11 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.kelp.tall.final.placeholder
+    prefab: {fileID: 3270212733484542031, guid: 8385c79e80602d04096a6122d19fd567, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.15}
   futurePrefabRoot: World/Kelp/Kelp_Tall
   gameplayRole: Tall vertical kelp for readable vertical habitat.

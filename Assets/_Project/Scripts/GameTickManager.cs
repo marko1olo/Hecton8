@@ -36,6 +36,8 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -82,6 +84,15 @@ namespace Hecton8.Core
         [SerializeField] private int _debugFixedCount;
         [SerializeField] private int _debugSlowCount;
 
+        [Header("── Slow Tick Profiling ───────────────────────")]
+        [SerializeField] private bool enableSlowTickProfiling = true;
+        [SerializeField] private float slowTickSpikeThresholdMs = 8f;
+        [SerializeField] private int slowTickTopEntries = 6;
+        [SerializeField] private float _debugLastSlowTickDurationMs;
+        [SerializeField] private float _debugTopSlowTickDurationMs;
+        [SerializeField] private string _debugTopSlowTickOwner = "None";
+        [SerializeField] private string _debugLastSlowTickReport = "None";
+
         // ══════════════════════════════════════════════════════════
         //  TICK LISTS — буферизованные коллекции
         // ══════════════════════════════════════════════════════════
@@ -97,6 +108,10 @@ namespace Hecton8.Core
         private Coroutine      _slowTickHandle;
         private WaitForSeconds _cachedWait;
         private float _cachedWaitInterval = -1f;
+        private const int SlowTickProfilerCapacity = 8;
+        private readonly object[] _slowTickTopOwners = new object[SlowTickProfilerCapacity];
+        private readonly double[] _slowTickTopDurationsMs = new double[SlowTickProfilerCapacity];
+        private readonly StringBuilder _slowTickReportBuilder = new StringBuilder(512);
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -275,6 +290,9 @@ namespace Hecton8.Core
 
                 List<ISlowTickable> items = _slowTickables.Items;
                 int count = items.Count;
+                long loopStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
+                if (enableSlowTickProfiling)
+                    ResetSlowTickProfilerFrame();
 
                 for (int i = 0; i < count; i++)
                 {
@@ -293,15 +311,118 @@ namespace Hecton8.Core
                         continue;
                     }
 
+                    long itemStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
                     item.SlowTick();
+                    if (enableSlowTickProfiling)
+                    {
+                        long itemEndTimestamp = Stopwatch.GetTimestamp();
+                        RecordSlowTickSample(item, itemEndTimestamp - itemStartTimestamp);
+                    }
                 }
 
                 _slowTickables.EndIteration();
+
+                if (enableSlowTickProfiling)
+                {
+                    long loopEndTimestamp = Stopwatch.GetTimestamp();
+                    CommitSlowTickProfilerFrame(loopEndTimestamp - loopStartTimestamp, count);
+                }
 
 #if UNITY_EDITOR
                 _debugSlowCount = _slowTickables.Count;
 #endif
             }
+        }
+
+        private void ResetSlowTickProfilerFrame()
+        {
+            for (int i = 0; i < SlowTickProfilerCapacity; i++)
+            {
+                _slowTickTopOwners[i] = null;
+                _slowTickTopDurationsMs[i] = 0d;
+            }
+        }
+
+        private void RecordSlowTickSample(object owner, long elapsedTicks)
+        {
+            double elapsedMs = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            for (int i = 0; i < SlowTickProfilerCapacity; i++)
+            {
+                if (elapsedMs <= _slowTickTopDurationsMs[i])
+                    continue;
+
+                for (int shift = SlowTickProfilerCapacity - 1; shift > i; shift--)
+                {
+                    _slowTickTopOwners[shift] = _slowTickTopOwners[shift - 1];
+                    _slowTickTopDurationsMs[shift] = _slowTickTopDurationsMs[shift - 1];
+                }
+
+                _slowTickTopOwners[i] = owner;
+                _slowTickTopDurationsMs[i] = elapsedMs;
+                return;
+            }
+        }
+
+        private void CommitSlowTickProfilerFrame(long elapsedTicks, int registeredCount)
+        {
+            double totalMs = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            _debugLastSlowTickDurationMs = (float)totalMs;
+
+            if (_slowTickTopOwners[0] != null)
+            {
+                _debugTopSlowTickDurationMs = (float)_slowTickTopDurationsMs[0];
+                _debugTopSlowTickOwner = ResolveTickableLabel(_slowTickTopOwners[0]);
+            }
+            else
+            {
+                _debugTopSlowTickDurationMs = 0f;
+                _debugTopSlowTickOwner = "None";
+            }
+
+            if (totalMs < Mathf.Max(0.1f, slowTickSpikeThresholdMs))
+                return;
+
+            _slowTickReportBuilder.Clear();
+            _slowTickReportBuilder.Append("[TickProfiler] SlowTick spike total=");
+            _slowTickReportBuilder.Append(totalMs.ToString("0.00"));
+            _slowTickReportBuilder.Append("ms registered=");
+            _slowTickReportBuilder.Append(registeredCount);
+            _slowTickReportBuilder.Append(" top=");
+
+            int topCount = Mathf.Clamp(slowTickTopEntries, 1, SlowTickProfilerCapacity);
+            bool hasEntry = false;
+            for (int i = 0; i < topCount; i++)
+            {
+                object owner = _slowTickTopOwners[i];
+                if (owner == null || _slowTickTopDurationsMs[i] <= 0.001d)
+                    continue;
+
+                if (hasEntry)
+                    _slowTickReportBuilder.Append(" | ");
+
+                _slowTickReportBuilder.Append(ResolveTickableLabel(owner));
+                _slowTickReportBuilder.Append('=');
+                _slowTickReportBuilder.Append(_slowTickTopDurationsMs[i].ToString("0.00"));
+                _slowTickReportBuilder.Append("ms");
+                hasEntry = true;
+            }
+
+            if (!hasEntry)
+                _slowTickReportBuilder.Append("none");
+
+            _debugLastSlowTickReport = _slowTickReportBuilder.ToString();
+            UnityEngine.Debug.Log(_debugLastSlowTickReport, this);
+        }
+
+        private static string ResolveTickableLabel(object owner)
+        {
+            if (owner == null)
+                return "Null";
+
+            if (owner is Component component)
+                return $"{component.GetType().Name}@{component.gameObject.name}";
+
+            return owner.GetType().Name;
         }
 
         // ══════════════════════════════════════════════════════════

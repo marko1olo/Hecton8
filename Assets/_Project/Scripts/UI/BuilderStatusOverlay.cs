@@ -13,6 +13,7 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Builder Status Overlay")]
     public sealed class BuilderStatusOverlay : MonoBehaviour
     {
+        private const float AutoResolveRetryInterval = 1f;
         private static readonly Color PanelColor = new Color(0.03f, 0.1f, 0.12f, 0.66f);
         private static readonly Color RuleColor = new Color(0.2f, 0.86f, 0.96f, 0.38f);
         private static readonly Color TitleColor = new Color(0.52f, 0.97f, 0.95f, 0.96f);
@@ -48,6 +49,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _costLine;
         private TextMeshProUGUI _hintLine;
         private float _nextRefreshAt;
+        private float _nextAutoResolveAt;
         private int _lastStateHash;
         private readonly StringBuilder _sb = new StringBuilder(192);
 
@@ -75,49 +77,30 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            if (playerBuilder == null)
-                playerBuilder = FindFirstObjectByType<PlayerBuilder>();
+            bool requiresRuntimeResolve =
+                playerBuilder == null ||
+                inventory == null ||
+                constructionManager == null;
 
-            if (inventory == null)
-                inventory = FindFirstObjectByType<PlayerInventory>();
-
-            if (constructionManager == null)
-                constructionManager = FindFirstObjectByType<ConstructionManager>();
-
-            if (labelFont == null || numericFont == null)
+            if (requiresRuntimeResolve &&
+                (!Application.isPlaying || Time.unscaledTime >= _nextAutoResolveAt))
             {
-                SuitHUDV4CanvasOverlay overlay = GetComponentInParent<SuitHUDV4CanvasOverlay>();
-                if (overlay != null)
-                {
-                    if (labelFont == null)
-                    {
-                        TMP_FontAsset overlayFont = ReadFontField(overlay, "labelFont");
-                        if (overlayFont != null)
-                            labelFont = overlayFont;
-                    }
+                if (playerBuilder == null)
+                    playerBuilder = FindFirstObjectByType<PlayerBuilder>();
 
-                    if (numericFont == null)
-                    {
-                        TMP_FontAsset overlayFont = ReadFontField(overlay, "numericFont");
-                        if (overlayFont != null)
-                            numericFont = overlayFont;
-                    }
-                }
+                if (inventory == null)
+                    inventory = FindFirstObjectByType<PlayerInventory>();
+
+                if (constructionManager == null)
+                    constructionManager = FindFirstObjectByType<ConstructionManager>();
+
+                _nextAutoResolveAt = Time.unscaledTime + AutoResolveRetryInterval;
             }
 
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
-        }
-
-        private static TMP_FontAsset ReadFontField(SuitHUDV4CanvasOverlay overlay, string fieldName)
-        {
-            if (overlay == null || string.IsNullOrEmpty(fieldName))
-                return null;
-
-            var field = typeof(SuitHUDV4CanvasOverlay).GetField(fieldName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            return field != null ? field.GetValue(overlay) as TMP_FontAsset : null;
         }
 
         private void EnsureBuilt()
@@ -194,7 +177,7 @@ namespace Hecton8.UI
             Anchor(_powerLine.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -148f), new Vector2(-14f, 18f));
 
             _costLine = CreateText("CostLine", _self, labelFont, 11f, FontStyles.Normal, DimColor, TextAlignmentOptions.TopLeft);
-            _costLine.enableWordWrapping = true;
+            _costLine.textWrappingMode = TextWrappingModes.Normal;
             Anchor(_costLine.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(14f, 36f), new Vector2(-14f, 58f));
 
             _hintLine = CreateText("HintLine", _self, numericFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left);

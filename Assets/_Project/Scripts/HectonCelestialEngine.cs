@@ -335,7 +335,7 @@ namespace Hecton8.Celestial
             _rotationTimer = (float)_rotationAccumulator;
             _rotationPhase = (float)(_rotationAccumulator % 1.0);
 
-            _gameTime += deltaTime;
+            _gameTime += deltaTime * Mathf.Max(0f, _cloudSpeed);
 
             if (!_eclipseRadiusCalculated && aegirTransform != null && playerTransform != null)
             {
@@ -535,12 +535,40 @@ namespace Hecton8.Celestial
             if (sunVisualTransform == null || sunLight == null) return;
 
             Vector3 towardSun = -sunLight.transform.forward;
-            Vector3 cameraPos = playerTransform != null ? playerTransform.position : Vector3.zero;
+            Vector3 observerPos = playerTransform != null ? playerTransform.position : Vector3.zero;
 
-            sunVisualTransform.position = cameraPos + towardSun * sunDistance;
+            sunVisualTransform.position = observerPos + towardSun * sunDistance;
 
             if (playerTransform != null)
-                sunVisualTransform.LookAt(playerTransform.position, Vector3.up);
+                OrientSunVisualTowardObserver(observerPos);
+        }
+
+        private void OrientSunVisualTowardObserver(Vector3 observerPos)
+        {
+            Vector3 toObserver = observerPos - sunVisualTransform.position;
+            float distanceSqr = toObserver.sqrMagnitude;
+            if (distanceSqr <= 0.0001f)
+                return;
+
+            Vector3 forward = toObserver / Mathf.Sqrt(distanceSqr);
+            Vector3 referenceUp = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.98f
+                ? Vector3.right
+                : Vector3.up;
+
+            Vector3 right = Vector3.Cross(referenceUp, forward);
+            float rightSqr = right.sqrMagnitude;
+            if (rightSqr <= 0.0001f)
+            {
+                referenceUp = Vector3.forward;
+                right = Vector3.Cross(referenceUp, forward);
+                rightSqr = right.sqrMagnitude;
+                if (rightSqr <= 0.0001f)
+                    return;
+            }
+
+            right /= Mathf.Sqrt(rightSqr);
+            Vector3 stableUp = Vector3.Cross(forward, right);
+            sunVisualTransform.rotation = Quaternion.LookRotation(forward, stableUp);
         }
 
         private float CalculateSunElevation()

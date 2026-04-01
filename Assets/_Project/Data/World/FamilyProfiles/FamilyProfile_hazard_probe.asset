@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 0
   scatterLayer: 0
+  overrideStreamingLayer: 0
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 0
   placementMode: 0
@@ -40,5 +43,6 @@ MonoBehaviour:
   secondaryPattern: 1
   patternAffinityWeight: 0.22
   variants: []
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: hazard.probe
   gameplayRole: Planned world family for 'hazard.probe'.

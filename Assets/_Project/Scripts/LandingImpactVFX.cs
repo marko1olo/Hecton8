@@ -16,6 +16,7 @@
 // ZERO GC: No allocations in Update. Cached profile references.
 // ============================================================================
 
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -26,7 +27,7 @@ namespace Hecton8.VFX
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Volume))]
-    public sealed class LandingImpactVFX : MonoBehaviour
+    public sealed class LandingImpactVFX : MonoBehaviour, ITickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -83,6 +84,7 @@ namespace Hecton8.VFX
         private float _baseVignetteIntensity;
         private bool _hasChromatic;
         private bool _hasVignette;
+        private bool _registeredToTickManager;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -138,6 +140,8 @@ namespace Hecton8.VFX
 
         private void OnDisable()
         {
+            UnregisterFromTickManager();
+
             // Reset post-processing to base values
             if (_hasChromatic)
                 _chromatic.intensity.value = _baseChromaticIntensity;
@@ -149,12 +153,16 @@ namespace Hecton8.VFX
         //  UPDATE — Landing detection + effect decay
         // ══════════════════════════════════════════════════════════
 
-        private void Update()
+        private void OnEnable()
+        {
+            RegisterToTickManager();
+        }
+
+        public void Tick(float deltaTime)
         {
             if (playerMovement == null || _playerRb == null) return;
 
-            float dt = Time.deltaTime;
-            if (dt <= 0f) return;
+            if (deltaTime <= 0f) return;
 
             bool isGrounded = playerMovement.IsGrounded;
 
@@ -191,7 +199,7 @@ namespace Hecton8.VFX
             // ── Hold phase: keep intensity at peak ──
             if (_holdTimer > 0f)
             {
-                _holdTimer -= dt;
+                _holdTimer -= deltaTime;
             }
             else
             {
@@ -206,7 +214,7 @@ namespace Hecton8.VFX
                         speed = suit.impactRecoverySpeed;
                     }
 
-                    float t = 1f - math.exp(-speed * dt);
+                    float t = 1f - math.exp(-speed * deltaTime);
                     _currentIntensity = math.lerp(_currentIntensity, 0f, t);
                 }
                 else
@@ -243,6 +251,24 @@ namespace Hecton8.VFX
         {
             _currentIntensity = math.clamp(normalizedIntensity, 0f, 1f);
             _holdTimer = holdDuration;
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register((ITickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Unregister((ITickable)this);
+            _registeredToTickManager = false;
         }
     }
 }

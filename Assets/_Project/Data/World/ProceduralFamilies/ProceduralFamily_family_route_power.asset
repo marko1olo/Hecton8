@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 17
   scatterLayer: 2
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 5
+  contributesLargeThreatZone: 0
   structureAccentRole: 2
   clusterAccentRole: 0
   placementMode: 1
@@ -57,5 +60,17 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.route.power.final.pylon
+    prefab: {fileID: 64260289537814543, guid: 1171decc9d7897e48b74478799d80969, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
+  - variantId: family.route.power.final.current_turbine
+    prefab: {fileID: 7498929676155026764, guid: 850ede05779e5bd46ac311a1e7a0397c, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
   futurePrefabRoot: World/PowerRoute/Route_Power
   gameplayRole: Power nodes, relays and route-linked service fragments.

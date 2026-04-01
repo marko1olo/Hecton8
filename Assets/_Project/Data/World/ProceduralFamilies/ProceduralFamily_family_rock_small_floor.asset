@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 1
   scatterLayer: 0
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 0
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 0
   placementMode: 0
@@ -58,5 +61,17 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.15}
+  - variantId: family.rock.small_floor.final.nordic_beach
+    prefab: {fileID: 6331842899389126255, guid: 7febead2072f1424385131aa2d530a00, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.8, y: 1.08}
+  - variantId: family.rock.small_floor.final.mossy_forest
+    prefab: {fileID: 5286515472059238454, guid: 1ef918a6575e221458708489ec13047b, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.78, y: 1.02}
   futurePrefabRoot: World/Rock/Rock_Small_Floor
   gameplayRole: Base floor stones for seafloor readability.

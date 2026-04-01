@@ -170,6 +170,9 @@ namespace Hecton8.Core
         [SerializeField] private LootTableEntry[] lootTables;
 
         [Header("── Spawn Settings ────────────────────────────")]
+        [Tooltip("Общий профиль чанкового мира. Если задан, ресурсы берут из него размер чанка и дальность жизни.")]
+        [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
+
         [Tooltip("Размер тайла MapMagic (метры). " +
                  "Должен совпадать с MapMagic Tile Size. " +
                  "Используется для координатной конвертации.")]
@@ -196,6 +199,10 @@ namespace Hecton8.Core
         [SerializeField] private int _debugPendingSpawns;
         [SerializeField] private int _debugSkippedDepleted;
         [SerializeField] private string _debugLastHighlightedId;
+        [SerializeField] private float _debugRuntimeChunkSize = 512f;
+        [SerializeField] private float _debugRuntimeUnloadDistance = 300f;
+        [SerializeField] private float _debugRuntimePriorityRadius = 150f;
+        [SerializeField] private int _debugRuntimeMaxSpawnsPerTick = 20;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
@@ -226,6 +233,11 @@ namespace Hecton8.Core
 
         /// <summary>Квадрат unloadDistance — для sqrMagnitude сравнений.</summary>
         private float _unloadDistanceSqr;
+        private float _runtimeTileSize = 512f;
+        private float _runtimeUnloadDistance = 300f;
+        private float _runtimeUnloadDistanceSqr;
+        private float _runtimePriorityLoadRadius = 150f;
+        private int _runtimeMaxSpawnsPerTick = 20;
 
         /// <summary>Счётчик пропущенных depleted узлов (диагностика).</summary>
         private int _skippedDepletedCount;
@@ -259,7 +271,7 @@ namespace Hecton8.Core
             _idBuilder      = new StringBuilder(64);
             _chunksToUnload = new List<Vector2Int>(16);
 
-            _unloadDistanceSqr = unloadDistance * unloadDistance;
+            RefreshRuntimeStreamingSettings();
         }
 
         private void OnEnable()
@@ -302,14 +314,10 @@ namespace Hecton8.Core
         /// <param name="scale">Масштаб из scatter-данных.</param>
         /// <param name="chunkCoord">Координата чанка (tile grid).</param>
         /// <param name="localIndex">Индекс внутри чанка (для детерминированного ID).</param>
-        /// <summary>
-        /// Регистрирует одну точку спавна ресурсного узла.
-        ///
-        /// v4.2: Added SpawnContext parameter for context-aware loot tables.
-        /// Default = Surface for backward compatibility with HectonScatterOutput.
-        ///
-        /// ZERO GC: SpawnRequest — struct, Enqueue — zero GC.
-        /// </summary>
+        /// <param name="context">
+        /// Контекст спавна для выбора таблицы ресурсов.
+        /// По умолчанию Surface для обратной совместимости с существующим scatter-пайплайном.
+        /// </param>
         public void RegisterSpawnPoint(
             Vector3      position,
             Quaternion   rotation,
@@ -378,6 +386,7 @@ namespace Hecton8.Core
         /// </summary>
         public void SlowTick()
         {
+            RefreshRuntimeStreamingSettings();
             ProcessSpawnQueue();
             CullDistantChunks();
             UpdateDiagnostics();
@@ -409,7 +418,7 @@ namespace Hecton8.Core
 
             int spawned = 0;
 
-            while (_spawnQueue.Count > 0 && spawned < maxSpawnsPerTick)
+            while (_spawnQueue.Count > 0 && spawned < _runtimeMaxSpawnsPerTick)
             {
                 SpawnRequest request = _spawnQueue.Dequeue();
 
@@ -507,7 +516,7 @@ namespace Hecton8.Core
                 Vector2 chunkCenter = ChunkCoordToWorldCenter(kvp.Key);
                 Vector2 diff = chunkCenter - playerXZ;
 
-                if (diff.sqrMagnitude > _unloadDistanceSqr)
+                if (diff.sqrMagnitude > _runtimeUnloadDistanceSqr)
                 {
                     _chunksToUnload.Add(kvp.Key);
                 }
@@ -693,8 +702,8 @@ namespace Hecton8.Core
         /// </summary>
         private Vector2Int WorldToChunkCoord(Vector3 worldPos)
         {
-            int cx = Mathf.FloorToInt(worldPos.x / tileSize);
-            int cz = Mathf.FloorToInt(worldPos.z / tileSize);
+            int cx = Mathf.FloorToInt(worldPos.x / _runtimeTileSize);
+            int cz = Mathf.FloorToInt(worldPos.z / _runtimeTileSize);
             return new Vector2Int(cx, cz);
         }
 
@@ -703,8 +712,8 @@ namespace Hecton8.Core
         /// </summary>
         private Vector2 ChunkCoordToWorldCenter(Vector2Int coord)
         {
-            float cx = (coord.x + 0.5f) * tileSize;
-            float cz = (coord.y + 0.5f) * tileSize;
+            float cx = (coord.x + 0.5f) * _runtimeTileSize;
+            float cz = (coord.y + 0.5f) * _runtimeTileSize;
             return new Vector2(cx, cz);
         }
 
@@ -712,11 +721,6 @@ namespace Hecton8.Core
         //  PREFAB SELECTION
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Выбирает префаб из массива resourcePrefabs.
-        /// Детерминированный выбор: localIndex % count.
-        /// Одинаковый индекс → одинаковый префаб (после reload).
-        /// </summary>
         /// <summary>
         /// Selects a ResourceNode prefab from the loot table matching the given context.
         ///
@@ -810,16 +814,16 @@ namespace Hecton8.Core
         /// <summary>Количество запросов в очереди спавна.</summary>
         public int PendingSpawnCount => _spawnQueue.Count;
 
-        public float UnloadDistance => unloadDistance;
-        public float PriorityLoadRadius => priorityLoadRadius;
-        public int MaxSpawnsPerSlowTick => maxSpawnsPerTick;
+        public float UnloadDistance => _runtimeUnloadDistance;
+        public float PriorityLoadRadius => _runtimePriorityLoadRadius;
+        public int MaxSpawnsPerSlowTick => _runtimeMaxSpawnsPerTick;
 
         public void SetRuntimeBudget(float newUnloadDistance, float newPriorityLoadRadius, int newMaxSpawnsPerTick)
         {
             unloadDistance = Mathf.Max(50f, newUnloadDistance);
             priorityLoadRadius = Mathf.Max(10f, newPriorityLoadRadius);
             maxSpawnsPerTick = Mathf.Max(1, newMaxSpawnsPerTick);
-            _unloadDistanceSqr = unloadDistance * unloadDistance;
+            RefreshRuntimeStreamingSettings();
         }
 
         /// <summary>
@@ -946,6 +950,10 @@ namespace Hecton8.Core
             _debugTotalActiveNodes = TotalActiveNodes;
             _debugPendingSpawns    = _spawnQueue.Count;
             _debugSkippedDepleted  = _skippedDepletedCount;
+            _debugRuntimeChunkSize = _runtimeTileSize;
+            _debugRuntimeUnloadDistance = _runtimeUnloadDistance;
+            _debugRuntimePriorityRadius = _runtimePriorityLoadRadius;
+            _debugRuntimeMaxSpawnsPerTick = _runtimeMaxSpawnsPerTick;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -967,7 +975,7 @@ namespace Hecton8.Core
                     Gizmos.color = new Color(0f, 1f, 0.5f, 0.1f);
                     Gizmos.DrawWireCube(
                         new Vector3(center.x, 0f, center.y),
-                        new Vector3(tileSize, 10f, tileSize));
+                        new Vector3(_runtimeTileSize, 10f, _runtimeTileSize));
 
                     UnityEditor.Handles.Label(
                         new Vector3(center.x, 5f, center.y),
@@ -983,14 +991,14 @@ namespace Hecton8.Core
                     Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.05f);
                     Gizmos.DrawWireCube(
                         new Vector3(center.x, 0f, center.y),
-                        new Vector3(tileSize, 5f, tileSize));
+                        new Vector3(_runtimeTileSize, 5f, _runtimeTileSize));
                 }
             }
 
             if (_playerTransform != null)
             {
                 Gizmos.color = new Color(1f, 0.5f, 0f, 0.08f);
-                DrawWireCircle(_playerTransform.position, unloadDistance, 48);
+                DrawWireCircle(_playerTransform.position, _runtimeUnloadDistance, 48);
             }
         }
 
@@ -1023,8 +1031,36 @@ namespace Hecton8.Core
             if (unloadDistance < 50f) unloadDistance = 50f;
             if (priorityLoadRadius < 10f) priorityLoadRadius = 10f;
 
-            _unloadDistanceSqr = unloadDistance * unloadDistance;
+            RefreshRuntimeStreamingSettings();
         }
 #endif
+
+        public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
+        {
+            chunkStreamingProfile = profile;
+            RefreshRuntimeStreamingSettings();
+        }
+
+        private void RefreshRuntimeStreamingSettings()
+        {
+            _runtimeTileSize = Mathf.Max(32f, tileSize);
+            _runtimeUnloadDistance = Mathf.Max(50f, unloadDistance);
+            _runtimePriorityLoadRadius = Mathf.Max(10f, priorityLoadRadius);
+            _runtimeMaxSpawnsPerTick = Mathf.Max(1, maxSpawnsPerTick);
+
+            if (chunkStreamingProfile != null)
+            {
+                WorldChunkStreamingProfile.LayerProfile resourcesLayer =
+                    chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Resources);
+
+                _runtimeTileSize = Mathf.Max(32f, chunkStreamingProfile.chunkSizeMeters);
+                _runtimePriorityLoadRadius = Mathf.Max(24f, chunkStreamingProfile.fullSimulationRadius * Mathf.Max(0.5f, resourcesLayer.nearRadiusScale));
+                _runtimeUnloadDistance = Mathf.Max(_runtimePriorityLoadRadius + 24f, chunkStreamingProfile.midSimulationRadius * Mathf.Max(0.5f, resourcesLayer.midRadiusScale));
+                _runtimeMaxSpawnsPerTick = Mathf.Max(maxSpawnsPerTick, Mathf.Clamp(resourcesLayer.maxActivationsPerTick, 8, 64));
+            }
+
+            _runtimeUnloadDistanceSqr = _runtimeUnloadDistance * _runtimeUnloadDistance;
+            _unloadDistanceSqr = _runtimeUnloadDistanceSqr;
+        }
     }
 }

@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 6
   scatterLayer: 2
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
   structureAccentRole: 4
   clusterAccentRole: 0
   placementMode: 4
@@ -56,5 +59,11 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.plant.giant.final.placeholder
+    prefab: {fileID: 4660554031983498438, guid: 4f7741c3f83213148868c6820b97cfba, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.12}
   futurePrefabRoot: World/Plant/Plant_Giant
   gameplayRole: Huge underwater plants that act as biome-scale silhouettes.

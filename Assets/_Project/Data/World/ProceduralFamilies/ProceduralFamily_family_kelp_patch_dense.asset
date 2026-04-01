@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 5
   scatterLayer: 1
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 1
   placementMode: 2
@@ -54,6 +57,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.kelp.patch.dense.final.placeholder
+    prefab: {fileID: 5619530732131599773, guid: 8436d4fc282a3f24f98d5ea1c54226ba, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.1}
   futurePrefabRoot: World/Kelp/Kelp_Patch_Dense
   gameplayRole: Dense kelp pockets for shelter, occlusion and fauna habitat.

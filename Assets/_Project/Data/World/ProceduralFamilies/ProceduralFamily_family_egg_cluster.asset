@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 8
   scatterLayer: 1
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 4
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 2
   placementMode: 1
@@ -55,6 +58,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.9, y: 1.05}
+  - variantId: family.egg.cluster.final.placeholder
+    prefab: {fileID: 8667903796957094335, guid: da8b87554abd77e40b83bb0dbe6117ab, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.05}
   futurePrefabRoot: World/Egg/Egg_Cluster
   gameplayRole: Biological nests and egg groups for creature storytelling.

@@ -54,6 +54,25 @@ namespace Hecton8.AI
         [Tooltip("Максимальная высота спавна относительно дна (метры).")]
         public float spawnHeightMax = 15f;
 
+        [Header("Large Threat Zone")]
+        [Tooltip("Если включено, у биома есть большой участок воды для крупной угрозы.")]
+        public bool useLargeThreatMacroZone;
+
+        [Tooltip("Короткое имя большого участка воды для отчётов и отладки.")]
+        public string largeThreatZoneLabel = string.Empty;
+
+        [Tooltip("Радиус большого участка воды для крупной угрозы (метры).")]
+        public float largeThreatZoneRadius = 768f;
+
+        [Tooltip("Главная крупная угроза этого места.")]
+        public CreatureArchetypeData largeThreatArchetype;
+
+        [Tooltip("Какой сценарий большой встречи закреплён за местом.")]
+        public LeviathanEncounterType largeThreatEncounterType = LeviathanEncounterType.PresenceCircle;
+
+        [Tooltip("Если включено, место держит тяжёлый хищник, а не левиафан.")]
+        public bool preferHeavyHunterInsteadOfLeviathan;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED — суммарный вес для weighted random
         // ══════════════════════════════════════════════════════════
@@ -186,6 +205,16 @@ namespace Hecton8.AI
             return UnityEngine.Random.Range(minY, maxY);
         }
 
+        public bool HasLargeThreatZone()
+        {
+            return useLargeThreatMacroZone && largeThreatArchetype != null;
+        }
+
+        public bool CountsAsLargeThreat(CreatureArchetypeData archetype)
+        {
+            return HasLargeThreatZone() && archetype != null && ReferenceEquals(largeThreatArchetype, archetype);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
@@ -220,6 +249,7 @@ namespace Hecton8.AI
             if (spawnHeightAboveBottom < 0f) spawnHeightAboveBottom = 0f;
             if (spawnHeightMax < spawnHeightAboveBottom)
                 spawnHeightMax = spawnHeightAboveBottom + 1f;
+            if (largeThreatZoneRadius < 64f) largeThreatZoneRadius = 64f;
         }
 #endif
     }

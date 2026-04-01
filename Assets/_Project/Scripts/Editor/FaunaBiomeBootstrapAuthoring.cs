@@ -12,6 +12,7 @@ namespace Hecton8.AI.Editor
     {
         private const string BiomeCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string RootFolder = "Assets/_Project/Data/AI/FaunaBiomes";
+        private const string WorldChunkStreamingProfilePath = "Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset";
 
         [MenuItem("Hecton/Authoring/Build Fauna Biome Datasets", priority = 183)]
         public static void BuildFaunaBiomeDatasets()
@@ -30,6 +31,8 @@ namespace Hecton8.AI.Editor
             EnsureFolder(RootFolder);
 
             List<CreatureArchetypeData> archetypes = LoadArchetypes();
+            WorldChunkStreamingProfile chunkProfile =
+                AssetDatabase.LoadAssetAtPath<WorldChunkStreamingProfile>(WorldChunkStreamingProfilePath);
             List<FaunaBiomeData> builtDatasets = new List<FaunaBiomeData>(catalog.Profiles.Length);
 
             for (int i = 0; i < catalog.Profiles.Length; i++)
@@ -46,18 +49,22 @@ namespace Hecton8.AI.Editor
                     AssetDatabase.CreateAsset(dataset, assetPath);
                 }
 
-                ConfigureDataset(dataset, profile, archetypes);
+                ConfigureDataset(dataset, profile, archetypes, chunkProfile);
                 EditorUtility.SetDirty(dataset);
                 builtDatasets.Add(dataset);
             }
 
-            AssignDatasetsToSceneDirector(builtDatasets);
+            AssignDatasetsToSceneDirector(builtDatasets, chunkProfile);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[FaunaBiomeBootstrap] Rebuilt {builtDatasets.Count} fauna biome datasets.");
         }
 
-        private static void ConfigureDataset(FaunaBiomeData dataset, HectonBiomeMatrixProfile profile, List<CreatureArchetypeData> archetypes)
+        private static void ConfigureDataset(
+            FaunaBiomeData dataset,
+            HectonBiomeMatrixProfile profile,
+            List<CreatureArchetypeData> archetypes,
+            WorldChunkStreamingProfile chunkProfile)
         {
             dataset.biomeIndex = profile.matrixIndex;
             dataset.biomeName = profile.biomeName;
@@ -65,6 +72,32 @@ namespace Hecton8.AI.Editor
             dataset.spawnHeightAboveBottom = ResolveSpawnHeightMin(profile);
             dataset.spawnHeightMax = ResolveSpawnHeightMax(profile);
             dataset.possibleCreatures = BuildEntries(profile, archetypes);
+            ConfigureLargeThreatZone(dataset, profile, chunkProfile);
+        }
+
+        private static void ConfigureLargeThreatZone(
+            FaunaBiomeData dataset,
+            HectonBiomeMatrixProfile profile,
+            WorldChunkStreamingProfile chunkProfile)
+        {
+            dataset.useLargeThreatMacroZone = false;
+            dataset.largeThreatZoneLabel = string.Empty;
+            dataset.largeThreatArchetype = null;
+            dataset.largeThreatEncounterType = LeviathanEncounterType.PresenceCircle;
+            dataset.preferHeavyHunterInsteadOfLeviathan = false;
+
+            CreatureArchetypeData largeThreat = ResolveLargeThreatArchetype(profile, dataset.possibleCreatures, out bool preferHeavyHunter);
+            if (largeThreat == null)
+                return;
+
+            float baseRadius = chunkProfile != null ? chunkProfile.macroZoneSizeMeters : 768f;
+
+            dataset.useLargeThreatMacroZone = true;
+            dataset.largeThreatArchetype = largeThreat;
+            dataset.preferHeavyHunterInsteadOfLeviathan = preferHeavyHunter;
+            dataset.largeThreatEncounterType = ResolveLargeThreatEncounterType(profile, largeThreat, preferHeavyHunter);
+            dataset.largeThreatZoneRadius = ResolveLargeThreatZoneRadius(profile, baseRadius, preferHeavyHunter);
+            dataset.largeThreatZoneLabel = ResolveLargeThreatZoneLabel(profile, largeThreat, preferHeavyHunter);
         }
 
         private static List<FaunaEntry> BuildEntries(HectonBiomeMatrixProfile profile, List<CreatureArchetypeData> archetypes)
@@ -589,7 +622,7 @@ namespace Hecton8.AI.Editor
             return 0;
         }
 
-        private static void AssignDatasetsToSceneDirector(List<FaunaBiomeData> datasets)
+        private static void AssignDatasetsToSceneDirector(List<FaunaBiomeData> datasets, WorldChunkStreamingProfile chunkProfile)
         {
             Scene activeScene = SceneManager.GetActiveScene();
             if (!activeScene.IsValid() || !activeScene.isLoaded)
@@ -604,7 +637,13 @@ namespace Hecton8.AI.Editor
             array.arraySize = datasets.Count;
             for (int i = 0; i < datasets.Count; i++)
                 array.GetArrayElementAtIndex(i).objectReferenceValue = datasets[i];
+
+            SerializedProperty chunkProfileProperty = directorSo.FindProperty("chunkStreamingProfile");
+            if (chunkProfileProperty != null)
+                chunkProfileProperty.objectReferenceValue = chunkProfile;
+
             directorSo.ApplyModifiedPropertiesWithoutUndo();
+            director.SetChunkStreamingProfile(chunkProfile);
             EditorUtility.SetDirty(director);
             EditorSceneManager.MarkSceneDirty(activeScene);
         }
@@ -693,6 +732,111 @@ namespace Hecton8.AI.Editor
                     return true;
                 default:
                     return false;
+            }
+        }
+
+        private static CreatureArchetypeData ResolveLargeThreatArchetype(
+            HectonBiomeMatrixProfile profile,
+            List<FaunaEntry> entries,
+            out bool preferHeavyHunter)
+        {
+            preferHeavyHunter = IsHeavyHunterSetpiece(profile);
+            if (entries == null || entries.Count == 0)
+                return null;
+
+            if (preferHeavyHunter)
+                return FindFirstRole(entries, CreatureRoleType.Hunter);
+
+            if (ShouldIncludeLeviathan(profile))
+                return FindFirstRole(entries, CreatureRoleType.Leviathan);
+
+            if (IsMassiveSurfaceSetpiece(profile) && profile.survivalPressure >= 4)
+            {
+                preferHeavyHunter = true;
+                return FindFirstRole(entries, CreatureRoleType.Hunter);
+            }
+
+            return null;
+        }
+
+        private static CreatureArchetypeData FindFirstRole(List<FaunaEntry> entries, CreatureRoleType roleType)
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                CreatureArchetypeData archetype = entries[i].archetype;
+                if (archetype != null && archetype.roleType == roleType)
+                    return archetype;
+            }
+
+            return null;
+        }
+
+        private static LeviathanEncounterType ResolveLargeThreatEncounterType(
+            HectonBiomeMatrixProfile profile,
+            CreatureArchetypeData largeThreat,
+            bool preferHeavyHunter)
+        {
+            if (largeThreat == null)
+                return LeviathanEncounterType.PresenceCircle;
+
+            if (largeThreat.roleType == CreatureRoleType.Leviathan)
+                return largeThreat.leviathanEncounterType;
+
+            string creatureId = largeThreat.creatureId != null ? largeThreat.creatureId.ToLowerInvariant() : string.Empty;
+            if (creatureId.Contains("armor_breaker"))
+                return LeviathanEncounterType.SentinelPressure;
+            if (creatureId.Contains("shadow_interceptor") || creatureId.Contains("ambusher"))
+                return LeviathanEncounterType.AmbushBurst;
+            if (preferHeavyHunter && ContainsToken(profile.biomeName, "iron", "pressure", "peak", "gate", "spine"))
+                return LeviathanEncounterType.SentinelPressure;
+            if (ContainsToken(profile.biomeName, "rift", "void"))
+                return LeviathanEncounterType.AmbushBurst;
+
+            return LeviathanEncounterType.PresenceCircle;
+        }
+
+        private static float ResolveLargeThreatZoneRadius(
+            HectonBiomeMatrixProfile profile,
+            float baseRadius,
+            bool preferHeavyHunter)
+        {
+            float radius = Mathf.Max(256f, baseRadius);
+
+            if (preferHeavyHunter)
+                return radius * 0.9f;
+
+            if (IsMassiveSurfaceSetpiece(profile))
+                return radius * 1.3f;
+
+            if (ContainsToken(profile.biomeName, "void", "rift-maw", "heart of the rift", "static matrix"))
+                return radius * 1.2f;
+
+            return radius * 1.05f;
+        }
+
+        private static string ResolveLargeThreatZoneLabel(
+            HectonBiomeMatrixProfile profile,
+            CreatureArchetypeData largeThreat,
+            bool preferHeavyHunter)
+        {
+            string biomeName = string.IsNullOrWhiteSpace(profile.biomeName) ? "Unnamed Biome" : profile.biomeName.Trim();
+            string encounterLabel = DescribeEncounterType(ResolveLargeThreatEncounterType(profile, largeThreat, preferHeavyHunter));
+            if (preferHeavyHunter)
+                return $"{biomeName} / heavy hunter / {encounterLabel}";
+
+            return $"{biomeName} / leviathan / {encounterLabel}";
+        }
+
+        private static string DescribeEncounterType(LeviathanEncounterType encounterType)
+        {
+            switch (encounterType)
+            {
+                case LeviathanEncounterType.AmbushBurst:
+                    return "ambush burst";
+                case LeviathanEncounterType.SentinelPressure:
+                    return "sentinel pressure";
+                default:
+                    return "presence circle";
             }
         }
 

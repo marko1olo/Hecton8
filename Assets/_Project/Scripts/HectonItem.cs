@@ -7,6 +7,12 @@
 //   Добавлен public метод SetItemData(ItemData, int) для программной
 //   инициализации при спавне из BaseModule.Deconstruct().
 //   Позволяет переиспользовать один worldItemPrefab для любых ресурсов.
+//
+// ИЗМЕНЕНИЕ v3.1 (POOL-SAFE SETTLE):
+//   Убран async Awaitable SettleAndSleepAsync — destroyCancellationToken
+//   НЕ срабатывает при SetActive(false) (пулинг). Заменён на ITickable
+//   с конечным автоматом и таймером. Полностью Zero GC.
+//   Сброс состояния в OnDisable() гарантирует корректность при пулинге.
 // ============================================================================
 
 using Hecton8.Core;
@@ -20,12 +26,40 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable
     {
         // ─────────────────────── Data ────────────────────────────
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
         [SerializeField] private int      quantity = 1;
+
+        // ─────────────────────── Settle Config ───────────────────
+        // Время ожидания перед первой попыткой усыпить Rigidbody (сек).
+        private const float SettleDelay       = 2.0f;
+        // Время ожидания перед повторной попыткой (сек).
+        private const float SettleRetryDelay  = 1.0f;
+        // Порог скорости для засыпания (sqrMagnitude).
+        private const float SleepVelocitySqr  = 0.01f;
+
+        // ─────────────────────── Settle State ────────────────────
+        /// <summary>
+        /// Фазы конечного автомата засыпания Rigidbody.
+        /// Idle     — не тикаемся, ждать нечего.
+        /// Waiting  — первичное ожидание (SettleDelay).
+        /// Retrying — повторное ожидание (SettleRetryDelay).
+        /// Done     — Rigidbody усыплён или отказ, тикание остановлено.
+        /// </summary>
+        private enum SettlePhase : byte
+        {
+            Idle,
+            Waiting,
+            Retrying,
+            Done
+        }
+
+        private SettlePhase _settlePhase;
+        private float       _settleTimer;
+        private bool        _isTickRegistered;
 
         // ─────────────────────── Cached ──────────────────────────
         private InteractionHighlighter _highlighter;
@@ -43,62 +77,125 @@ namespace Hecton8.Items
             if (itemData == null)
                 Debug.LogError($"[HectonItem] ItemData не назначен на {gameObject.name}!", this);
         }
-                // ─────────────────────── Physics Sleep (v3.0) ────────────
-        // When loot is spawned (scattered from ResourceNode), it has
-        // Rigidbody with impulse force. After settling on cave floor,
-        // we force-sleep the Rigidbody to prevent perpetual micro-physics
-        // updates on uneven voxel mesh surfaces.
-        //
-        // Uses Unity 6 Awaitable — pooled, zero GC, auto-cancelled
-        // via destroyCancellationToken when object is despawned/destroyed.
 
+        // ─────────────────────── Pool-Safe Settle (v3.1) ─────────
         private void OnEnable()
         {
             if (_rb != null)
             {
-                // Wake up in case it was sleeping from previous pool cycle
                 _rb.WakeUp();
+                BeginSettle();
+            }
+        }
 
-                // Fire and forget — auto-cancelled if despawned before 2s
-                _ = SettleAndSleepAsync();
+        private void OnDisable()
+        {
+            // Гарантированная отписка при деактивации (пулинг).
+            // Сбрасываем фазу — при следующем OnEnable начнём заново.
+            StopSettle();
+        }
+
+        // ─────────────────────── ITickable ───────────────────────
+        public void Tick(float deltaTime)
+        {
+            switch (_settlePhase)
+            {
+                case SettlePhase.Waiting:
+                    _settleTimer -= deltaTime;
+                    if (_settleTimer <= 0f)
+                    {
+                        if (TrySleepRigidbody())
+                        {
+                            FinishSettle();
+                        }
+                        else
+                        {
+                            // Ещё движется — одна повторная попытка
+                            _settlePhase = SettlePhase.Retrying;
+                            _settleTimer = SettleRetryDelay;
+                        }
+                    }
+                    break;
+
+                case SettlePhase.Retrying:
+                    _settleTimer -= deltaTime;
+                    if (_settleTimer <= 0f)
+                    {
+                        TrySleepRigidbody(); // Пытаемся, результат неважен
+                        FinishSettle();
+                    }
+                    break;
+
+                default:
+                    // Idle или Done — не должны тикаться, но на всякий случай
+                    StopSettle();
+                    break;
             }
         }
 
         /// <summary>
-        /// Waits 2 seconds, then force-sleeps Rigidbody if velocity is near zero.
-        /// If the object is still moving (player kicked it, water current), retries once.
-        ///
-        /// Awaitable is pooled by Unity 6 runtime — zero heap allocation.
-        /// destroyCancellationToken auto-cancels if GameObject is destroyed/despawned.
+        /// Пытается усыпить Rigidbody если скорость достаточно мала.
+        /// Возвращает true если усыпил или rb == null.
         /// </summary>
-        private async Awaitable SettleAndSleepAsync()
+        private bool TrySleepRigidbody()
         {
-            try
+            if (_rb == null) return true;
+
+            if (_rb.linearVelocity.sqrMagnitude < SleepVelocitySqr)
             {
-                // Wait for initial scatter impulse to settle
-                await Awaitable.WaitForSecondsAsync(2f, destroyCancellationToken);
-
-                if (_rb == null) return;
-
-                if (_rb.linearVelocity.sqrMagnitude < 0.01f)
-                {
-                    _rb.Sleep();
-                    return;
-                }
-
-                // Still moving — wait one more second and try again
-                await Awaitable.WaitForSecondsAsync(1f, destroyCancellationToken);
-
-                if (_rb != null && _rb.linearVelocity.sqrMagnitude < 0.01f)
-                {
-                    _rb.Sleep();
-                }
+                _rb.Sleep();
+                return true;
             }
-            catch (System.OperationCanceledException)
+
+            return false;
+        }
+
+        private void BeginSettle()
+        {
+            _settlePhase = SettlePhase.Waiting;
+            _settleTimer = SettleDelay;
+            StartTicking();
+        }
+
+        private void FinishSettle()
+        {
+            _settlePhase = SettlePhase.Done;
+            _settleTimer = 0f;
+            StopTicking();
+        }
+
+        private void StopSettle()
+        {
+            _settlePhase = SettlePhase.Idle;
+            _settleTimer = 0f;
+            StopTicking();
+        }
+
+        private void StartTicking()
+        {
+            if (_isTickRegistered) return;
+
+            GameTickManager gtm = GameTickManager.Instance;
+            if (gtm != null)
             {
-                // Object was despawned/destroyed before settling — normal, ignore
+                gtm.Register(this);
+                _isTickRegistered = true;
             }
         }
+
+        private void StopTicking()
+        {
+            if (!_isTickRegistered) return;
+
+            GameTickManager gtm = GameTickManager.Instance;
+            if (gtm != null)
+            {
+                gtm.Unregister(this);
+            }
+
+            _isTickRegistered = false;
+        }
+
         // ─────────────────────── Public API ──────────────────────
 
         /// <summary>

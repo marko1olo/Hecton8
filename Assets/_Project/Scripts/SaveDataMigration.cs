@@ -15,6 +15,9 @@ namespace Hecton8.SaveSystem
         private const float LegacyModuleIntegrityDefault = 100f;
         private const float LegacyBeaconLightRangeDefault = 4f;
         private const string DefaultBeaconLabelPrefix = "BEACON";
+        private const int MinBiomeId = 1;
+        private const int MaxBiomeId = 108;
+        private const int InvalidBiomeId = -1;
 
         public static bool MigrateInPlace(SaveData data, out int originalVersion, out string summary)
         {
@@ -49,8 +52,26 @@ namespace Hecton8.SaveSystem
                 steps.Add("tool broken map created");
             }
 
+            if (data.discoveredBiomeIds == null)
+            {
+                data.discoveredBiomeIds = new HashSet<int>();
+                changed = true;
+                steps.Add("discovered biome set created");
+            }
+
+            int normalizedLastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
+                data.lastDiscoveredBiomeId,
+                data.discoveredBiomeIds);
+            if (normalizedLastDiscoveredBiomeId != data.lastDiscoveredBiomeId)
+            {
+                data.lastDiscoveredBiomeId = normalizedLastDiscoveredBiomeId;
+                changed = true;
+                steps.Add("last discovered biome repaired");
+            }
+
             changed |= EnsureInventory(ref data.inventory, steps);
             changed |= EnsureWorldState(ref data.worldState, steps);
+            changed |= EnsureProceduralWorldState(ref data.proceduralWorldState, steps);
             changed |= EnsureConstruction(ref data.construction, sourceVersion, steps);
             changed |= EnsureScanLog(ref data.scanLog, steps);
             changed |= EnsureBarter(ref data.barter, steps);
@@ -89,6 +110,32 @@ namespace Hecton8.SaveSystem
             }
 
             return changed;
+        }
+
+        private static int NormalizeLastDiscoveredBiomeId(int lastDiscoveredBiomeId, HashSet<int> discoveredBiomeIds)
+        {
+            if (IsValidBiomeId(lastDiscoveredBiomeId) &&
+                discoveredBiomeIds != null &&
+                discoveredBiomeIds.Contains(lastDiscoveredBiomeId))
+            {
+                return lastDiscoveredBiomeId;
+            }
+
+            if (discoveredBiomeIds != null)
+            {
+                foreach (int biomeId in discoveredBiomeIds)
+                {
+                    if (IsValidBiomeId(biomeId))
+                        return biomeId;
+                }
+            }
+
+            return InvalidBiomeId;
+        }
+
+        private static bool IsValidBiomeId(int biomeId)
+        {
+            return biomeId >= MinBiomeId && biomeId <= MaxBiomeId;
         }
 
         private static bool EnsureWorldState(ref WorldStateDTO dto, List<string> steps)
@@ -145,6 +192,36 @@ namespace Hecton8.SaveSystem
 
                 if (changed)
                     steps.Add("legacy construction integrity restored");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureProceduralWorldState(ref ProceduralWorldStateDTO dto, List<string> steps)
+        {
+            bool changed = false;
+            if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length < ProceduralWorldStateDTO.MaxSuppressedPlacements ||
+                dto.faunaStates == null || dto.faunaStates.Length < ProceduralWorldStateDTO.MaxFaunaStates)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("procedural world state capacity repaired");
+            }
+
+            int clampedSuppressed = Mathf.Clamp(dto.suppressedPlacementCount, 0, dto.suppressedPlacementKeys != null ? dto.suppressedPlacementKeys.Length : 0);
+            if (clampedSuppressed != dto.suppressedPlacementCount)
+            {
+                dto.suppressedPlacementCount = clampedSuppressed;
+                changed = true;
+                steps.Add("procedural suppressed placement count clamped");
+            }
+
+            int clampedFauna = Mathf.Clamp(dto.faunaStateCount, 0, dto.faunaStates != null ? dto.faunaStates.Length : 0);
+            if (clampedFauna != dto.faunaStateCount)
+            {
+                dto.faunaStateCount = clampedFauna;
+                changed = true;
+                steps.Add("procedural fauna state count clamped");
             }
 
             return changed;

@@ -38,3 +38,9 @@ MonoBehaviour:
   biomeMaxCreatures: 6
   spawnHeightAboveBottom: 2
   spawnHeightMax: 12
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: The Shattered Spine / leviathan / ambush burst
+  largeThreatZoneRadius: 806.39996
+  largeThreatArchetype: {fileID: 11400000, guid: 7160de7362097ca48bb12c49068bc5ea, type: 2}
+  largeThreatEncounterType: 1
+  preferHeavyHunterInsteadOfLeviathan: 0

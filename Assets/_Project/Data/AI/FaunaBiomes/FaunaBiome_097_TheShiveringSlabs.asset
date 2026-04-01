@@ -38,3 +38,9 @@ MonoBehaviour:
   biomeMaxCreatures: 6
   spawnHeightAboveBottom: 2
   spawnHeightMax: 12
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: The Shivering Slabs / leviathan / sentinel pressure
+  largeThreatZoneRadius: 806.39996
+  largeThreatArchetype: {fileID: 11400000, guid: 35c8a17831c68f040880627e5cb05aab, type: 2}
+  largeThreatEncounterType: 2
+  preferHeavyHunterInsteadOfLeviathan: 0

@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 
 /// <summary>
@@ -5,13 +6,14 @@ using UnityEngine;
 /// frac() на стороне C# гарантирует, что значение НИКОГДА
 /// не выйдет за пределы [0,1] — precision loss невозможен.
 /// </summary>
-public class GasGiantRotationDriver : MonoBehaviour
+public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
 {
     [SerializeField] private Renderer _planetRenderer;
     [SerializeField] private float _baseRotationSpeed = 1f;
 
     private MaterialPropertyBlock _mpb;
     private double _accumulatedRotation;
+    private bool _registeredToTickManager;
     private static readonly int _idGlobalRotation =
         Shader.PropertyToID("_GlobalRotation");
 
@@ -23,15 +25,30 @@ public class GasGiantRotationDriver : MonoBehaviour
             _planetRenderer = GetComponent<Renderer>();
     }
 
-    void Update()
+    private void OnEnable()
+    {
+        if (_registeredToTickManager || GameTickManager.Instance == null)
+            return;
+
+        GameTickManager.Instance.Register((ITickable)this);
+        _registeredToTickManager = true;
+    }
+
+    private void OnDisable()
+    {
+        if (!_registeredToTickManager || GameTickManager.Instance == null)
+            return;
+
+        GameTickManager.Instance.Unregister((ITickable)this);
+        _registeredToTickManager = false;
+    }
+
+    public void Tick(float deltaTime)
     {
         if (_planetRenderer == null)
             return;
 
-        if (_mpb == null)
-            _mpb = new MaterialPropertyBlock();
-
-        _accumulatedRotation += (double)_baseRotationSpeed * Time.deltaTime;
+        _accumulatedRotation += (double)_baseRotationSpeed * deltaTime;
 
         float rotation = (float)(_accumulatedRotation % 1.0);
 

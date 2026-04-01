@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.AI;
 using Hecton8.World;
 using Hecton8.Dev;
 using Hecton8.Environment;
@@ -27,6 +28,7 @@ namespace Hecton8.EditorTools
         private const string WorldProceduralRuleFolder = "Assets/_Project/Data/World/ProceduralPlacementRules";
         private const string WorldProceduralPatternCatalogPath = "Assets/_Project/Data/World/ProceduralPatternCatalog.asset";
         private const string WorldProceduralBiomeContextCatalogPath = "Assets/_Project/Data/World/ProceduralBiomeFamilyContextCatalog.asset";
+        private const string WorldChunkStreamingProfilePath = "Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset";
         private const string BiomeFamilyProfileFolder = "Assets/_Project/Data/Biomes/FamilyProfiles";
         private const string BiomeMatrixCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string ManagersRootName = "[MANAGERS]";
@@ -79,6 +81,7 @@ namespace Hecton8.EditorTools
 
             MapMagicBridge bridge = FindSceneObjectIncludingInactive<MapMagicBridge>();
             ScavengePopulator scavengePopulator = FindSceneObjectIncludingInactive<ScavengePopulator>();
+            FaunaDirector faunaDirector = FindSceneObjectIncludingInactive<FaunaDirector>();
             ObjectPoolManager objectPoolManager = FindSceneObjectIncludingInactive<ObjectPoolManager>();
 
             BiomeSamplerCache biomeCache = GetOrAddComponent<BiomeSamplerCache>(managersRoot);
@@ -92,11 +95,21 @@ namespace Hecton8.EditorTools
             WorldProceduralFillDirector proceduralFillDirector = GetOrAddComponent<WorldProceduralFillDirector>(managersRoot);
             WorldProceduralFieldSampler proceduralFieldSampler = GetOrAddComponent<WorldProceduralFieldSampler>(managersRoot);
             WorldProceduralScatterDirector proceduralScatterDirector = GetOrAddComponent<WorldProceduralScatterDirector>(managersRoot);
+            WorldGenerativeGeologyIntegrationDirector geologyIntegrationDirector = GetOrAddComponent<WorldGenerativeGeologyIntegrationDirector>(managersRoot);
+            WorldGenerativeGeologySeamExecutionDirector geologySeamExecutionDirector = GetOrAddComponent<WorldGenerativeGeologySeamExecutionDirector>(managersRoot);
+            WorldGenerativeGeologyTerrainSeamApplier geologyTerrainSeamApplier = GetOrAddComponent<WorldGenerativeGeologyTerrainSeamApplier>(managersRoot);
+            WorldGenerativeGeologyVoxelBridgeDirector geologyVoxelBridgeDirector = GetOrAddComponent<WorldGenerativeGeologyVoxelBridgeDirector>(managersRoot);
+            WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
+            WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
             ProximityColliderSystem proximityColliderSystem = GetOrAddComponent<ProximityColliderSystem>(managersRoot);
             HectonBiomeMatrixCatalog biomeMatrixCatalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeMatrixCatalogPath);
+            WorldChunkStreamingProfile chunkStreamingProfile = AssetDatabase.LoadAssetAtPath<WorldChunkStreamingProfile>(WorldChunkStreamingProfilePath);
 
             ConfigureBiomeSamplerCache(biomeCache, bridge, playerTransform);
+            ConfigureScavengePopulator(scavengePopulator, chunkStreamingProfile);
+            ConfigureWorldFaunaSpawnRegistry(faunaSpawnRegistry, proceduralStateRegistry);
+            ConfigureFaunaDirector(faunaDirector, chunkStreamingProfile, faunaSpawnRegistry, proceduralStateRegistry);
             ConfigureProximityColliderSystem(proximityColliderSystem, playerTransform, colliderPrefab);
             ConfigureScatterBudgetController(
                 scatterBudgetController,
@@ -104,7 +117,8 @@ namespace Hecton8.EditorTools
                 bridge,
                 scavengePopulator,
                 proximityColliderSystem,
-                biomeCache);
+                biomeCache,
+                chunkStreamingProfile);
             ConfigureWorldStreamingDirector(
                 streamingDirector,
                 playerTransform,
@@ -112,15 +126,40 @@ namespace Hecton8.EditorTools
                 bridge,
                 biomeCache,
                 scatterBudgetController,
-                sliceDirector);
-            ConfigureWorldSliceDirector(sliceDirector, playerTransform);
+                sliceDirector,
+                chunkStreamingProfile);
+            ConfigureWorldSliceDirector(sliceDirector, playerTransform, chunkStreamingProfile);
             ConfigureWorldInterestDirector(interestDirector, playerTransform, scatterBudgetController);
             ConfigureWorldZoneDirector(zoneDirector, playerTransform);
             ConfigureWorldContentDirector(contentDirector, playerTransform, zoneDirector);
             ConfigureWorldPopulationDirector(populationDirector, playerTransform, zoneDirector, contentDirector);
             ConfigureWorldProceduralFillDirector(proceduralFillDirector, playerTransform, zoneDirector, contentDirector, biomeMatrixDirector);
             ConfigureWorldProceduralFieldSampler(proceduralFieldSampler, playerTransform, bridge, zoneDirector, biomeMatrixDirector);
-            ConfigureWorldProceduralScatterDirector(proceduralScatterDirector, playerTransform, proceduralFieldSampler, proceduralFillDirector);
+            ConfigureWorldProceduralScatterDirector(
+                proceduralScatterDirector,
+                playerTransform,
+                proceduralFieldSampler,
+                proceduralFillDirector,
+                chunkStreamingProfile,
+                faunaSpawnRegistry,
+                proceduralStateRegistry);
+            ConfigureWorldGenerativeGeologyIntegrationDirector(
+                geologyIntegrationDirector,
+                playerTransform,
+                bridge,
+                FindSceneObjectIncludingInactive<HectonVoxelEngine>(),
+                chunkStreamingProfile);
+            ConfigureWorldGenerativeGeologySeamExecutionDirector(
+                geologySeamExecutionDirector,
+                geologyIntegrationDirector,
+                playerTransform);
+            ConfigureWorldGenerativeGeologyTerrainSeamApplier(
+                geologyTerrainSeamApplier,
+                geologyIntegrationDirector);
+            ConfigureWorldGenerativeGeologyVoxelBridgeDirector(
+                geologyVoxelBridgeDirector,
+                geologySeamExecutionDirector,
+                FindSceneObjectIncludingInactive<HectonVoxelEngine>());
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
             ConfigureSceneSlices();
             ConfigureSceneInterestAnchors();
@@ -128,6 +167,8 @@ namespace Hecton8.EditorTools
             ConfigureSceneContentSockets();
             ConfigurePopulationRules(populationDirector);
             ConfigureProceduralFill(proceduralFillDirector);
+            WorldProceduralFinalVariantAuthoring.ApplyFirstWave();
+            WorldProceduralPlaceholderAuthoring.RebuildPlaceholderFinalVariants();
 
             if (objectPoolManager != null)
                 EnsureWarmupPreset(objectPoolManager, colliderPrefab, 192);
@@ -168,13 +209,72 @@ namespace Hecton8.EditorTools
             EditorUtility.SetDirty(proximityColliderSystem);
         }
 
+        private static void ConfigureScavengePopulator(
+            ScavengePopulator scavengePopulator,
+            WorldChunkStreamingProfile chunkStreamingProfile)
+        {
+            if (scavengePopulator == null)
+                return;
+
+            SerializedObject so = new SerializedObject(scavengePopulator);
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            scavengePopulator.SetChunkStreamingProfile(chunkStreamingProfile);
+            EditorUtility.SetDirty(scavengePopulator);
+        }
+
+        private static void ConfigureFaunaDirector(
+            FaunaDirector faunaDirector,
+            WorldChunkStreamingProfile chunkStreamingProfile,
+            WorldFaunaSpawnRegistry faunaSpawnRegistry,
+            WorldProceduralStateRegistry proceduralStateRegistry)
+        {
+            if (faunaDirector == null)
+                return;
+
+            SerializedObject so = new SerializedObject(faunaDirector);
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
+            SerializedProperty registryProperty = so.FindProperty("spawnRegistry");
+            if (registryProperty != null)
+                registryProperty.objectReferenceValue = faunaSpawnRegistry;
+            SerializedProperty proceduralStateProperty = so.FindProperty("proceduralStateRegistry");
+            if (proceduralStateProperty != null)
+                proceduralStateProperty.objectReferenceValue = proceduralStateRegistry;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            faunaDirector.SetChunkStreamingProfile(chunkStreamingProfile);
+            faunaDirector.SetSpawnRegistry(faunaSpawnRegistry);
+            faunaDirector.SetProceduralStateRegistry(proceduralStateRegistry);
+            EditorUtility.SetDirty(faunaDirector);
+        }
+
+        private static void ConfigureWorldFaunaSpawnRegistry(
+            WorldFaunaSpawnRegistry faunaSpawnRegistry,
+            WorldProceduralStateRegistry proceduralStateRegistry)
+        {
+            if (faunaSpawnRegistry == null)
+                return;
+
+            SerializedObject so = new SerializedObject(faunaSpawnRegistry);
+            SerializedProperty proceduralStateProperty = so.FindProperty("proceduralStateRegistry");
+            if (proceduralStateProperty != null)
+                proceduralStateProperty.objectReferenceValue = proceduralStateRegistry;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            faunaSpawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
+            EditorUtility.SetDirty(faunaSpawnRegistry);
+        }
+
         private static void ConfigureScatterBudgetController(
             ScatterBudgetController controller,
             Transform playerTransform,
             MapMagicBridge bridge,
             ScavengePopulator scavengePopulator,
             ProximityColliderSystem proximityColliderSystem,
-            BiomeSamplerCache biomeCache)
+            BiomeSamplerCache biomeCache,
+            WorldChunkStreamingProfile chunkStreamingProfile)
         {
             SerializedObject so = new SerializedObject(controller);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
@@ -182,7 +282,11 @@ namespace Hecton8.EditorTools
             so.FindProperty("scavengePopulator").objectReferenceValue = scavengePopulator;
             so.FindProperty("proximityColliderSystem").objectReferenceValue = proximityColliderSystem;
             so.FindProperty("biomeSamplerCache").objectReferenceValue = biomeCache;
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
             so.ApplyModifiedPropertiesWithoutUndo();
+            controller.SetChunkStreamingProfile(chunkStreamingProfile);
             EditorUtility.SetDirty(controller);
         }
 
@@ -193,7 +297,8 @@ namespace Hecton8.EditorTools
             MapMagicBridge bridge,
             BiomeSamplerCache biomeCache,
             ScatterBudgetController scatterBudgetController,
-            WorldSliceDirector sliceDirector)
+            WorldSliceDirector sliceDirector,
+            WorldChunkStreamingProfile chunkStreamingProfile)
         {
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
@@ -202,17 +307,26 @@ namespace Hecton8.EditorTools
             so.FindProperty("biomeSamplerCache").objectReferenceValue = biomeCache;
             so.FindProperty("scatterBudgetController").objectReferenceValue = scatterBudgetController;
             so.FindProperty("worldSliceDirector").objectReferenceValue = sliceDirector;
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
             so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetChunkStreamingProfile(chunkStreamingProfile);
             EditorUtility.SetDirty(director);
         }
 
         private static void ConfigureWorldSliceDirector(
             WorldSliceDirector director,
-            Transform playerTransform)
+            Transform playerTransform,
+            WorldChunkStreamingProfile chunkStreamingProfile)
         {
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
             so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetChunkStreamingProfile(chunkStreamingProfile);
             EditorUtility.SetDirty(director);
         }
 
@@ -354,7 +468,10 @@ namespace Hecton8.EditorTools
             WorldProceduralScatterDirector director,
             Transform playerTransform,
             WorldProceduralFieldSampler fieldSampler,
-            WorldProceduralFillDirector fillDirector)
+            WorldProceduralFillDirector fillDirector,
+            WorldChunkStreamingProfile chunkStreamingProfile,
+            WorldFaunaSpawnRegistry faunaSpawnRegistry,
+            WorldProceduralStateRegistry proceduralStateRegistry)
         {
             WorldProceduralPatternCatalog patternCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralPatternCatalog>(WorldProceduralPatternCatalogPath);
             WorldProceduralBiomeFamilyContextCatalog biomeContextCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralBiomeFamilyContextCatalog>(WorldProceduralBiomeContextCatalogPath);
@@ -364,6 +481,15 @@ namespace Hecton8.EditorTools
             so.FindProperty("proceduralFillDirector").objectReferenceValue = fillDirector;
             so.FindProperty("patternCatalog").objectReferenceValue = patternCatalog;
             so.FindProperty("biomeContextCatalog").objectReferenceValue = biomeContextCatalog;
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
+            SerializedProperty registryProperty = so.FindProperty("faunaSpawnRegistry");
+            if (registryProperty != null)
+                registryProperty.objectReferenceValue = faunaSpawnRegistry;
+            SerializedProperty proceduralStateProperty = so.FindProperty("proceduralStateRegistry");
+            if (proceduralStateProperty != null)
+                proceduralStateProperty.objectReferenceValue = proceduralStateRegistry;
             so.FindProperty("cellSize").floatValue = 22f;
             so.FindProperty("radiusCells").intValue = 7;
             so.FindProperty("groundPlacementsPerCell").intValue = 2;
@@ -373,6 +499,70 @@ namespace Hecton8.EditorTools
             so.FindProperty("spawnCellStride").intValue = 3;
             so.FindProperty("spawnPlacementsPerWindow").intValue = 1;
             so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetChunkStreamingProfile(chunkStreamingProfile);
+            director.SetFaunaSpawnRegistry(faunaSpawnRegistry);
+            director.SetProceduralStateRegistry(proceduralStateRegistry);
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldGenerativeGeologyIntegrationDirector(
+            WorldGenerativeGeologyIntegrationDirector director,
+            Transform playerTransform,
+            MapMagicBridge bridge,
+            HectonVoxelEngine voxelEngine,
+            WorldChunkStreamingProfile chunkStreamingProfile)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.FindProperty("mapMagicBridge").objectReferenceValue = bridge;
+            so.FindProperty("voxelEngine").objectReferenceValue = voxelEngine;
+            SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
+            if (profileProperty != null)
+                profileProperty.objectReferenceValue = chunkStreamingProfile;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetPlayerTransform(playerTransform);
+            director.SetMapMagicBridge(bridge);
+            director.SetVoxelEngine(voxelEngine);
+            director.SetChunkStreamingProfile(chunkStreamingProfile);
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldGenerativeGeologySeamExecutionDirector(
+            WorldGenerativeGeologySeamExecutionDirector director,
+            WorldGenerativeGeologyIntegrationDirector integrationDirector,
+            Transform playerTransform)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("integrationDirector").objectReferenceValue = integrationDirector;
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetIntegrationDirector(integrationDirector);
+            director.SetPlayerTransform(playerTransform);
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldGenerativeGeologyTerrainSeamApplier(
+            WorldGenerativeGeologyTerrainSeamApplier director,
+            WorldGenerativeGeologyIntegrationDirector integrationDirector)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("integrationDirector").objectReferenceValue = integrationDirector;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetIntegrationDirector(integrationDirector);
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldGenerativeGeologyVoxelBridgeDirector(
+            WorldGenerativeGeologyVoxelBridgeDirector director,
+            WorldGenerativeGeologySeamExecutionDirector seamExecutionDirector,
+            HectonVoxelEngine voxelEngine)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("seamExecutionDirector").objectReferenceValue = seamExecutionDirector;
+            so.FindProperty("voxelEngine").objectReferenceValue = voxelEngine;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            director.SetSeamExecutionDirector(seamExecutionDirector);
+            director.SetVoxelEngine(voxelEngine);
             EditorUtility.SetDirty(director);
         }
 

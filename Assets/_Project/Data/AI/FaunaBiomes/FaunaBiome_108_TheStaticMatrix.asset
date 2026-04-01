@@ -38,3 +38,9 @@ MonoBehaviour:
   biomeMaxCreatures: 7
   spawnHeightAboveBottom: 1
   spawnHeightMax: 10
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: The Static Matrix / leviathan / ambush burst
+  largeThreatZoneRadius: 921.60004
+  largeThreatArchetype: {fileID: 11400000, guid: cd98024ec7ce95249ad5355546267525, type: 2}
+  largeThreatEncounterType: 1
+  preferHeavyHunterInsteadOfLeviathan: 0

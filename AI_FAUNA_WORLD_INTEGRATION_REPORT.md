@@ -1,46 +1,72 @@
 ﻿# AI Fauna World Integration Report
 
-## Что есть
+## What Exists
 
-- Профилей видов: `22`
-- Из них без префаба: `0`
-- Наборов фауны по биомам: `108`
+- Creature archetypes: `22`
+- Archetypes without prefab: `0`
+- Fauna datasets by biome: `108`
 
-## Биомы без мирной жизни
+## Biomes Without Passive Life
 
-- Нет.
+- None.
 
-## Биомы без угроз
+## Biomes Without Threats
 
-- Нет.
+- None.
 
-## Биомы с левиафанами
+## Large Water Areas With Major Threats
 
-- The Granite Spine (1)
-- Sea-Stack Forest (1)
-- The Ash-Wastes (1)
-- The Rift-Gates (1)
-- Magma Pools (1)
-- The Shattered Spine (1)
-- The Glass Plains (1)
-- The Shivering Slabs (1)
-- The Pillow-Lava Hives (1)
-- The Rift-Maw (1)
-- The Basalt Flux (1)
-- The Lava Seam (1)
-- The Heart of the Rift (1)
-- The Static Matrix (1)
+- The Granite Spine - Furnace Maw Leviathan / sentinel pressure / zone 998m
+- Sea-Stack Forest - Halo Crown Leviathan / presence circle / zone 998m
+- The Ash-Wastes - Black Choir Leviathan / presence circle / zone 806m
+- The Rift-Gates - Rift Lancer Leviathan / ambush burst / zone 806m
+- Pressure-Slabs - Armor Breaker / sentinel pressure / zone 691m
+- Iron Shards - Armor Breaker / sentinel pressure / zone 691m
+- Magma Pools - Furnace Maw Leviathan / sentinel pressure / zone 806m
+- The Shattered Spine - Rift Lancer Leviathan / ambush burst / zone 806m
+- The Glass Plains - Halo Crown Leviathan / presence circle / zone 806m
+- The Shivering Slabs - Gate Warden Leviathan / sentinel pressure / zone 806m
+- The Pillow-Lava Hives - Furnace Maw Leviathan / sentinel pressure / zone 806m
+- The Rift-Maw - Rift Lancer Leviathan / ambush burst / zone 922m
+- The Basalt Flux - Black Choir Leviathan / presence circle / zone 806m
+- The Iron Peak - Armor Breaker / sentinel pressure / zone 691m
+- The Lava Seam - Furnace Maw Leviathan / sentinel pressure / zone 806m
+- The Heart of the Rift - Black Choir Leviathan / presence circle / zone 922m
+- The Static Matrix - Void Ribbon Leviathan / ambush burst / zone 922m
 
-## Обычные резервные биомы с левиафанами
+## Biomes With Leviathans
 
-- Нет.
+- The Granite Spine (1) - Furnace Maw Leviathan / sentinel pressure
+- Sea-Stack Forest (1) - Halo Crown Leviathan / presence circle
+- The Ash-Wastes (1) - Black Choir Leviathan / presence circle
+- The Rift-Gates (1) - Rift Lancer Leviathan / ambush burst
+- Magma Pools (1) - Furnace Maw Leviathan / sentinel pressure
+- The Shattered Spine (1) - Rift Lancer Leviathan / ambush burst
+- The Glass Plains (1) - Halo Crown Leviathan / presence circle
+- The Shivering Slabs (1) - Gate Warden Leviathan / sentinel pressure
+- The Pillow-Lava Hives (1) - Furnace Maw Leviathan / sentinel pressure
+- The Rift-Maw (1) - Rift Lancer Leviathan / ambush burst
+- The Basalt Flux (1) - Black Choir Leviathan / presence circle
+- The Lava Seam (1) - Furnace Maw Leviathan / sentinel pressure
+- The Heart of the Rift (1) - Black Choir Leviathan / presence circle
+- The Static Matrix (1) - Void Ribbon Leviathan / ambush burst
 
-## Мелководные и среднеглубинные биомы с левиафанами
+## Biomes Using Heavy Hunters Instead Of Leviathans
+
+- Pressure-Slabs
+- Iron Shards
+- The Iron Peak
+
+## Reserve Biomes With Leviathans
+
+- None.
+
+## Shallow And Mid-Depth Biomes With Leviathans
 
 - The Granite Spine
 - Sea-Stack Forest
 
-## Перекосы
+## Skew Warnings
 
-- Нет.
+- None.
 

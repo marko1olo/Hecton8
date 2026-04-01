@@ -23,6 +23,11 @@ namespace Hecton8.World
             public float seafloorHeight;
             public float depthMeters;
             public float slopeDegrees;
+            public float curvature;
+            public float ridgeSignal;
+            public float canyonSignal;
+            public float caveProximity;
+            public float compositionPotential;
             public int biomeIndex;
             public HectonBiomeMatrixProfile biomeProfile;
             public HectonBiomeFamilyProfile biomeFamily;
@@ -85,6 +90,9 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastHeatmapValue;
         [SerializeField] private float _debugLastDepth;
         [SerializeField] private float _debugLastSlope;
+        [SerializeField] private float _debugLastCurvature;
+        [SerializeField] private float _debugLastCaveProximity;
+        [SerializeField] private float _debugLastCompositionPotential;
 
         private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
 
@@ -108,6 +116,7 @@ namespace Hecton8.World
                 : Mathf.Max(position.y + 120f, seafloorHeight + 50f);
             float depthMeters = Mathf.Max(0f, waterSurface - seafloorHeight);
             float slopeDegrees = EvaluateSlope(position.x, position.z, seafloorHeight);
+            float curvature = EvaluateCurvature(position.x, position.z, seafloorHeight);
             WorldZoneAnchor zone = ResolveZone(new Vector3(position.x, seafloorHeight, position.z), out float zoneWeight);
             HectonBiomeMatrixProfile biomeProfile = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
             HectonBiomeFamilyProfile biomeFamily = zone != null
@@ -120,6 +129,10 @@ namespace Hecton8.World
                 : ResolveFallbackZoneKind(position, depthMeters, slopeDegrees);
             if (biomeFamily == null)
                 biomeFamily = ResolveFallbackBiomeFamily(position, depthMeters, slopeDegrees, resolvedZoneKind);
+            float ridgeSignal = EvaluateRidgeSignal(curvature, slopeDegrees, zone);
+            float canyonSignal = EvaluateCanyonSignal(curvature, slopeDegrees, zone);
+            float caveProximity = EvaluateCaveProximity(position, depthMeters, slopeDegrees, zone, resolvedZoneKind);
+            float compositionPotential = EvaluateCompositionPotential(position, slopeDegrees, curvature, ridgeSignal, canyonSignal, caveProximity);
             WorldProceduralPattern resolvedPattern;
             if (!TryApplyPreviewPatternContextOverride(
                     seafloorSource,
@@ -155,6 +168,11 @@ namespace Hecton8.World
                 seafloorHeight = seafloorHeight,
                 depthMeters = depthMeters,
                 slopeDegrees = slopeDegrees,
+                curvature = curvature,
+                ridgeSignal = ridgeSignal,
+                canyonSignal = canyonSignal,
+                caveProximity = caveProximity,
+                compositionPotential = compositionPotential,
                 biomeIndex = biomeIndex,
                 biomeProfile = biomeProfile,
                 biomeFamily = biomeFamily,
@@ -574,6 +592,78 @@ namespace Hecton8.World
             float dz = (forward - back) / (probe * 2f);
             float gradient = Mathf.Sqrt(dx * dx + dz * dz);
             return Mathf.Atan(gradient) * Mathf.Rad2Deg;
+        }
+
+        private float EvaluateCurvature(float x, float z, float centerHeight)
+        {
+            float probe = Mathf.Max(1f, slopeProbeMeters);
+            float left = centerHeight;
+            float right = centerHeight;
+            float forward = centerHeight;
+            float back = centerHeight;
+
+            TryResolveSeafloorHeight(new Vector3(x - probe, centerHeight, z), out left, out _);
+            TryResolveSeafloorHeight(new Vector3(x + probe, centerHeight, z), out right, out _);
+            TryResolveSeafloorHeight(new Vector3(x, centerHeight, z + probe), out forward, out _);
+            TryResolveSeafloorHeight(new Vector3(x, centerHeight, z - probe), out back, out _);
+
+            float laplacian = (left + right + forward + back - (centerHeight * 4f)) / Mathf.Max(0.0001f, probe * probe);
+            return Mathf.Clamp(laplacian / 0.85f, -1f, 1f);
+        }
+
+        private float EvaluateRidgeSignal(float curvature, float slopeDegrees, WorldZoneAnchor zone)
+        {
+            float slope01 = Mathf.Clamp01((slopeDegrees - 8f) / 36f);
+            float rugged = EvaluateRuggedBiomeBias(zone);
+            return Mathf.Clamp01(Mathf.Max(0f, curvature) * 0.62f + slope01 * 0.26f + rugged * 0.12f);
+        }
+
+        private float EvaluateCanyonSignal(float curvature, float slopeDegrees, WorldZoneAnchor zone)
+        {
+            float slope01 = Mathf.Clamp01((slopeDegrees - 10f) / 34f);
+            float hazard = EvaluateHazardBias(zone, zone != null ? zone.Kind : WorldZoneAnchor.ZoneKind.Generic);
+            return Mathf.Clamp01(Mathf.Max(0f, -curvature) * 0.58f + slope01 * 0.22f + hazard * 0.20f);
+        }
+
+        private float EvaluateCaveProximity(
+            Vector3 position,
+            float depthMeters,
+            float slopeDegrees,
+            WorldZoneAnchor zone,
+            WorldZoneAnchor.ZoneKind resolvedZoneKind)
+        {
+            float slope01 = Mathf.Clamp01((slopeDegrees - 8f) / 40f);
+            float deep01 = Mathf.Clamp01((depthMeters - 120f) / 780f);
+            float rugged = EvaluateRuggedBiomeBias(zone);
+            float hazard = EvaluateHazardBias(zone, resolvedZoneKind);
+            float landmark = EvaluateLandmarkBias(zone, resolvedZoneKind);
+            float caveNoise = EvaluateNoise01(position.x - 141.7f, position.z + 208.3f, fieldNoiseScale * 0.78f);
+            return Mathf.Clamp01(
+                slope01 * 0.22f +
+                deep01 * 0.10f +
+                rugged * 0.24f +
+                hazard * 0.18f +
+                landmark * 0.14f +
+                caveNoise * 0.12f);
+        }
+
+        private float EvaluateCompositionPotential(
+            Vector3 position,
+            float slopeDegrees,
+            float curvature,
+            float ridgeSignal,
+            float canyonSignal,
+            float caveProximity)
+        {
+            float slope01 = Mathf.Clamp01((slopeDegrees - 6f) / 42f);
+            float variation = EvaluateNoise01(position.x + 387.2f, position.z - 291.4f, detailNoiseScale * 0.56f);
+            return Mathf.Clamp01(
+                slope01 * 0.16f +
+                Mathf.Abs(curvature) * 0.18f +
+                ridgeSignal * 0.20f +
+                canyonSignal * 0.18f +
+                caveProximity * 0.18f +
+                variation * 0.10f);
         }
 
         private WorldZoneAnchor ResolveZone(Vector3 position, out float zoneWeight)
@@ -1332,6 +1422,9 @@ namespace Hecton8.World
             _debugLastHeatmapValue = value;
             _debugLastDepth = sample.depthMeters;
             _debugLastSlope = sample.slopeDegrees;
+            _debugLastCurvature = sample.curvature;
+            _debugLastCaveProximity = sample.caveProximity;
+            _debugLastCompositionPotential = sample.compositionPotential;
         }
     }
 }

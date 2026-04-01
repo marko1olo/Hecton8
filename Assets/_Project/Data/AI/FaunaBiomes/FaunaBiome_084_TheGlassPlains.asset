@@ -38,3 +38,9 @@ MonoBehaviour:
   biomeMaxCreatures: 6
   spawnHeightAboveBottom: 2
   spawnHeightMax: 8
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: The Glass Plains / leviathan / presence circle
+  largeThreatZoneRadius: 806.39996
+  largeThreatArchetype: {fileID: 11400000, guid: a1affda23555bca45a2c1af4e1506da2, type: 2}
+  largeThreatEncounterType: 0
+  preferHeavyHunterInsteadOfLeviathan: 0

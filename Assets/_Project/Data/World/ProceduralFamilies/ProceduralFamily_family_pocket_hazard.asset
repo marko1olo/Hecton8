@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 15
   scatterLayer: 1
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 5
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 5
   placementMode: 1
@@ -57,6 +60,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.pocket.hazard.final.placeholder
+    prefab: {fileID: 8451184076872599852, guid: fee085d8f7ea9494ba1ca0a060a06d83, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
   futurePrefabRoot: World/HazardPocket/Pocket_Hazard
   gameplayRole: Danger pockets, ambush zones and sharp risk spikes.

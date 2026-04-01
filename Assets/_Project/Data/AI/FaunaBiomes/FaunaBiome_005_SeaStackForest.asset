@@ -42,3 +42,9 @@ MonoBehaviour:
   biomeMaxCreatures: 13
   spawnHeightAboveBottom: 1.5
   spawnHeightMax: 18
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: Sea-Stack Forest / leviathan / presence circle
+  largeThreatZoneRadius: 998.39996
+  largeThreatArchetype: {fileID: 11400000, guid: a1affda23555bca45a2c1af4e1506da2, type: 2}
+  largeThreatEncounterType: 0
+  preferHeavyHunterInsteadOfLeviathan: 0

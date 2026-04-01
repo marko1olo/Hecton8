@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -5,7 +6,7 @@ namespace NASAPunk.Visor
 {
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class VisorHUDController : MonoBehaviour
+    public class VisorHUDController : MonoBehaviour, ITickable
     {
         public enum ProjectionMode
         {
@@ -34,7 +35,6 @@ namespace NASAPunk.Visor
         [SerializeField] private Color _hudTint = new Color(0.2f, 1f, 0.3f, 1f);
         [SerializeField, Range(0f, 2f)] private float _scratchBleed = 0.8f;
         [SerializeField, Range(0f, 0.1f)] private float _distortion = 0.02f;
-        [SerializeField] private bool _manualProjectionRender = true;
         [SerializeField] private bool _previewInEditMode = true;
 
         [Header("Pose Lock")]
@@ -51,7 +51,16 @@ namespace NASAPunk.Visor
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
         private bool _ownsRuntimeTexture;
-        private bool _isRenderingProjection;
+
+        // ── Glitch state machine (replaces coroutine) ────────────
+        private bool  _glitchActive;
+        private float _glitchTimer;
+        private float _glitchDuration;
+        private float _glitchOriginalIntensity;
+        private bool  _isTickRegistered;
+
+        // ── Glitch deterministic RNG (zero GC) ──────────────────
+        private uint _glitchRngState = 1;
 
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
@@ -69,6 +78,14 @@ namespace NASAPunk.Visor
 
         private void OnDisable()
         {
+            // ── Остановить glitch если активен ──
+            if (_glitchActive)
+            {
+                _hudIntensity = _glitchOriginalIntensity;
+                _glitchActive = false;
+            }
+            StopTicking();
+
             ReleaseRT();
         }
 
@@ -87,17 +104,21 @@ namespace NASAPunk.Visor
             _visorRenderer.SetPropertyBlock(_mpb);
         }
 
-        private void LateUpdate()
-        {
-            if (_manualProjectionRender &&
-                _projectionMode != ProjectionMode.Disabled &&
-                _hudCamera != null &&
-                _hudRT != null &&
-                (Application.isPlaying || _previewInEditMode))
-            {
-                RenderProjectionCamera();
-            }
-        }
+        // ══════════════════════════════════════════════════════════
+        //  LateUpdate — REMOVED Camera.Render()
+        // ══════════════════════════════════════════════════════════
+        //
+        //  Ранее здесь вызывался _hudCamera.Render() — синхронный рендер
+        //  вне URP pipeline. Это заставляло GPU полностью флашить пайплайн,
+        //  что на слабых GPU (MX350) приводило к 2-3x падению FPS.
+        //
+        //  Решение: HUD камера настроена как Base camera в URP с enabled=true.
+        //  Она рендерит в свой targetTexture автоматически через URP pipeline,
+        //  синхронно с остальными камерами, без дополнительного flush.
+        //
+        //  SyncCameraRole() обновлён: убрана логика _manualProjectionRender.
+        //  Камера всегда enabled когда projection активна.
+        // ══════════════════════════════════════════════════════════
 
         private void OnValidate()
         {
@@ -110,6 +131,83 @@ namespace NASAPunk.Visor
 
             RebuildProjection();
         }
+
+        // ══════════════════════════════════════════════════════════
+        //  ITickable — GLITCH STATE MACHINE (replaces coroutine)
+        // ══════════════════════════════════════════════════════════
+
+        public void Tick(float deltaTime)
+        {
+            if (!_glitchActive)
+            {
+                StopTicking();
+                return;
+            }
+
+            _glitchTimer += deltaTime;
+
+            if (_glitchTimer >= _glitchDuration)
+            {
+                // ── Glitch завершён ──
+                _hudIntensity = _glitchOriginalIntensity;
+                _glitchActive = false;
+                StopTicking();
+                return;
+            }
+
+            // ── Случайная модуляция интенсивности (zero GC) ──
+            // xorshift32 вместо UnityEngine.Random (deterministic, no static state pollution)
+            float rand01 = XorShift01();
+            _hudIntensity = _glitchOriginalIntensity * (0.1f + rand01 * 1.9f); // range [0.1, 2.0] × original
+        }
+
+        /// <summary>
+        /// xorshift32 — детерминированный, zero GC, zero boxing.
+        /// Возвращает float в [0, 1).
+        /// </summary>
+        private float XorShift01()
+        {
+            _glitchRngState ^= _glitchRngState << 13;
+            _glitchRngState ^= _glitchRngState >> 17;
+            _glitchRngState ^= _glitchRngState << 5;
+            return (_glitchRngState & 0x7FFFFF) / (float)0x800000; // 23-bit mantissa
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  TICK REGISTRATION
+        // ══════════════════════════════════════════════════════════
+
+        private void StartTicking()
+        {
+            if (_isTickRegistered) return;
+
+            // В Edit mode GameTickManager может не существовать
+            if (!Application.isPlaying) return;
+
+            GameTickManager gtm = GameTickManager.Instance;
+            if (gtm != null)
+            {
+                gtm.Register(this);
+                _isTickRegistered = true;
+            }
+        }
+
+        private void StopTicking()
+        {
+            if (!_isTickRegistered) return;
+
+            GameTickManager gtm = GameTickManager.Instance;
+            if (gtm != null)
+            {
+                gtm.Unregister(this);
+            }
+
+            _isTickRegistered = false;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  AUTO-RESOLVE
+        // ══════════════════════════════════════════════════════════
 
         private void AutoResolveReferences()
         {
@@ -239,6 +337,14 @@ namespace NASAPunk.Visor
             _ownsRuntimeTexture = false;
         }
 
+        /// <summary>
+        /// Настраивает роль HUD камеры в URP.
+        /// 
+        /// v2.0 ИЗМЕНЕНИЕ: Убран _manualProjectionRender.
+        /// В projection mode камера ВСЕГДА enabled=true и рендерит
+        /// через URP pipeline в свой targetTexture автоматически.
+        /// Это устраняет синхронный Camera.Render() flush.
+        /// </summary>
         private void SyncCameraRole()
         {
             if (_hudCamera == null)
@@ -256,19 +362,23 @@ namespace NASAPunk.Visor
 
             if (projected)
             {
+                // ── Base camera, рендерит в RT через URP pipeline ──
                 hudCameraData.renderType = CameraRenderType.Base;
 
                 if (baseCameraData != null && baseCameraData.cameraStack.Contains(_hudCamera))
                     baseCameraData.cameraStack.Remove(_hudCamera);
 
                 _hudCamera.clearFlags = CameraClearFlags.SolidColor;
-                _hudCamera.enabled = !_manualProjectionRender;
                 Color color = _hudCamera.backgroundColor;
                 color.a = 0f;
                 _hudCamera.backgroundColor = color;
+
+                // Камера enabled — URP рендерит её автоматически в targetTexture
+                _hudCamera.enabled = true;
                 return;
             }
 
+            // ── Overlay mode — стандартный camera stacking ──
             hudCameraData.renderType = CameraRenderType.Overlay;
 
             if (baseCameraData != null && !baseCameraData.cameraStack.Contains(_hudCamera))
@@ -310,33 +420,9 @@ namespace NASAPunk.Visor
             }
         }
 
-        private void RenderProjectionCamera()
-        {
-            if (_isRenderingProjection || _hudCamera == null)
-                return;
-
-            try
-            {
-                _isRenderingProjection = true;
-                ClearProjectionTarget();
-                _hudCamera.Render();
-            }
-            finally
-            {
-                _isRenderingProjection = false;
-            }
-        }
-
-        private void ClearProjectionTarget()
-        {
-            if (_hudRT == null)
-                return;
-
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = _hudRT;
-            GL.Clear(true, true, Color.clear);
-            RenderTexture.active = previous;
-        }
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API
+        // ══════════════════════════════════════════════════════════
 
         public void SetHUDIntensity(float intensity)
         {
@@ -363,22 +449,29 @@ namespace NASAPunk.Visor
                 RebuildProjection();
         }
 
+        /// <summary>
+        /// Запускает glitch-эффект. Zero GC — без корутин.
+        /// Использует ITickable стейт-машину с таймером.
+        /// 
+        /// Безопасен при повторном вызове: перезапускает таймер.
+        /// </summary>
         public void GlitchPulse(float duration = 0.3f)
         {
-            StartCoroutine(GlitchCoroutine(duration));
-        }
-
-        private System.Collections.IEnumerator GlitchCoroutine(float dur)
-        {
-            float original = _hudIntensity;
-            float elapsed = 0;
-            while (elapsed < dur)
+            if (!_glitchActive)
             {
-                _hudIntensity = original * Random.Range(0.1f, 2f);
-                elapsed += Time.deltaTime;
-                yield return null;
+                _glitchOriginalIntensity = _hudIntensity;
             }
-            _hudIntensity = original;
+            // Если glitch уже активен — перезапускаем таймер,
+            // но сохраняем оригинальную интенсивность от первого вызова.
+
+            _glitchActive = true;
+            _glitchTimer = 0f;
+            _glitchDuration = duration;
+
+            // Seed RNG с текущим временем для вариативности
+            _glitchRngState = (uint)(Time.unscaledTime * 1000f) | 1u; // |1 гарантирует ненулевой state
+
+            StartTicking();
         }
     }
 }

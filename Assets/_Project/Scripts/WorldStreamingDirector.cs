@@ -40,6 +40,7 @@ namespace Hecton8.World
         [SerializeField] private BiomeSamplerCache biomeSamplerCache;
         [SerializeField] private ScatterBudgetController scatterBudgetController;
         [SerializeField] private WorldSliceDirector worldSliceDirector;
+        [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
         [Header("Depth Thresholds")]
         [SerializeField] private float midDepthStart = 60f;
@@ -70,6 +71,7 @@ namespace Hecton8.World
         [SerializeField] private bool _debugBridgeReady;
         [SerializeField] private bool _debugBiomeCacheReady;
         [SerializeField] private bool _debugBudgetReady;
+        [SerializeField] private bool _debugUsingSharedChunkProfile;
 
         private bool _registeredToTickManager;
         private float _smoothedSpeed;
@@ -149,6 +151,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ResolveReferences();
+            RefreshRuntimeProfilesFromChunkProfile();
             ClampSettings();
             UpdateDiagnostics();
         }
@@ -187,9 +190,18 @@ namespace Hecton8.World
             ApplyStreamingProfile(force: false);
         }
 
+        public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
+        {
+            chunkStreamingProfile = profile;
+            RefreshRuntimeProfilesFromChunkProfile();
+            ClampSettings();
+            ApplyStreamingProfile(force: true);
+        }
+
         private void ApplyStreamingProfile(bool force)
         {
             ResolveReferences();
+            RefreshRuntimeProfilesFromChunkProfile();
             ClampSettings();
 
             if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable || scatterBudgetController == null)
@@ -323,6 +335,56 @@ namespace Hecton8.World
             deepTraverseProfile = ClampProfile(deepTraverseProfile);
         }
 
+        private void RefreshRuntimeProfilesFromChunkProfile()
+        {
+            _debugUsingSharedChunkProfile = chunkStreamingProfile != null;
+            if (chunkStreamingProfile == null)
+                return;
+
+            WorldChunkStreamingProfile.LayerProfile terrainLayer =
+                chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.TerrainLod);
+            WorldChunkStreamingProfile.LayerProfile floraLayer =
+                chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Flora);
+            WorldChunkStreamingProfile.LayerProfile debrisLayer =
+                chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Debris);
+            WorldChunkStreamingProfile.LayerProfile resourcesLayer =
+                chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Resources);
+
+            surfaceSurveyProfile = BuildProfileFromWorldScale(1f, false, terrainLayer, floraLayer, debrisLayer, resourcesLayer);
+            surfaceTraverseProfile = BuildProfileFromWorldScale(1f, true, terrainLayer, floraLayer, debrisLayer, resourcesLayer);
+            midSurveyProfile = BuildProfileFromWorldScale(0.86f, false, terrainLayer, floraLayer, debrisLayer, resourcesLayer);
+            midTraverseProfile = BuildProfileFromWorldScale(0.86f, true, terrainLayer, floraLayer, debrisLayer, resourcesLayer);
+            deepSurveyProfile = BuildProfileFromWorldScale(0.72f, false, terrainLayer, floraLayer, debrisLayer, resourcesLayer);
+            deepTraverseProfile = BuildProfileFromWorldScale(0.72f, true, terrainLayer, floraLayer, debrisLayer, resourcesLayer);
+        }
+
+        private static StreamingProfile BuildProfileFromWorldScale(
+            float depthScale,
+            bool traverse,
+            WorldChunkStreamingProfile.LayerProfile terrainLayer,
+            WorldChunkStreamingProfile.LayerProfile floraLayer,
+            WorldChunkStreamingProfile.LayerProfile debrisLayer,
+            WorldChunkStreamingProfile.LayerProfile resourcesLayer)
+        {
+            float traverseScale = traverse ? 1.28f : 1f;
+            float traverseCompression = traverse ? 0.86f : 1f;
+            int objectBudget = Mathf.RoundToInt(
+                (terrainLayer.maxChunkLoadsPerTick * 18f +
+                 floraLayer.maxChunkLoadsPerTick * 10f +
+                 debrisLayer.maxChunkLoadsPerTick * 8f) * depthScale * traverseScale);
+
+            return new StreamingProfile
+            {
+                mapMagicObjectsPerFrame = Mathf.Max(48, objectBudget),
+                scavengeRadiusScale = Mathf.Clamp(resourcesLayer.nearRadiusScale * depthScale * traverseCompression, 0.55f, 1.6f),
+                scavengeSpawnScale = Mathf.Clamp((resourcesLayer.maxActivationsPerTick / 24f) * depthScale * (traverse ? 0.92f : 1f), 0.5f, 1.6f),
+                colliderRadiusScale = Mathf.Clamp(((debrisLayer.nearRadiusScale + terrainLayer.nearRadiusScale) * 0.5f) * depthScale * traverseCompression, 0.55f, 1.5f),
+                colliderOpsScale = Mathf.Clamp((debrisLayer.maxActivationsPerTick / 18f) * depthScale * (traverse ? 0.88f : 1f), 0.55f, 1.6f),
+                nearSliceScale = Mathf.Clamp(terrainLayer.nearRadiusScale * (traverse ? 0.82f : 1f), 0.6f, 1.6f),
+                midSliceScale = Mathf.Clamp(terrainLayer.midRadiusScale * (traverse ? 1.08f : 1f), 0.6f, 1.7f)
+            };
+        }
+
         private static StreamingProfile ClampProfile(StreamingProfile profile)
         {
             profile.mapMagicObjectsPerFrame = Mathf.Clamp(profile.mapMagicObjectsPerFrame, 32, 256);
@@ -341,6 +403,7 @@ namespace Hecton8.World
             _debugBridgeReady = mapMagicBridge != null && mapMagicBridge.IsAvailable;
             _debugBiomeCacheReady = biomeSamplerCache != null && biomeSamplerCache.IsReady;
             _debugBudgetReady = scatterBudgetController != null;
+            _debugUsingSharedChunkProfile = chunkStreamingProfile != null;
         }
     }
 }

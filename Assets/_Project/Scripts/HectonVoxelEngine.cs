@@ -495,14 +495,17 @@ public struct VoxelDensityJob : IJobParallelFor
         //  STEP 1: Terrain density
         // ════════════════════════════════════════════════════════════════
 
+        bool structureOnlyMode = caveParams.structureOnlyMode != 0;
         float terrainH = terrainHeights[ix + iz * ptsX];
-        float terrainDensity = math.clamp(terrainH - wp.y, -50f, 50f);
+        float terrainDensity = structureOnlyMode
+            ? -1f
+            : math.clamp(terrainH - wp.y, -50f, 50f);
 
         // ════════════════════════════════════════════════════════════════
         //  STEP 2: Cave SDF
         // ════════════════════════════════════════════════════════════════
 
-        float caveSDF = EvaluateCaveSDF(wp);
+        float caveSDF = structureOnlyMode ? 1f : EvaluateCaveSDF(wp);
 
         // ════════════════════════════════════════════════════════════════
         //  STEP 3: Subtract cave from terrain
@@ -510,7 +513,7 @@ public struct VoxelDensityJob : IJobParallelFor
 
         float d_final;
 
-        if (caveSDF < caveParams.shellThickness)
+        if (!structureOnlyMode && caveSDF < caveParams.shellThickness)
         {
             d_final = SmoothSubtraction(-caveSDF, terrainDensity, caveParams.shellThickness);
         }
@@ -523,7 +526,7 @@ public struct VoxelDensityJob : IJobParallelFor
         //  STEP 4: Add structures back
         // ════════════════════════════════════════════════════════════════
 
-        if (caveStructures.Length > 0 && caveSDF < 0f)
+        if (caveStructures.Length > 0 && (structureOnlyMode || caveSDF < 0f))
         {
             float structSDF = EvaluateStructuresSDF(wp);
             if (structSDF < caveParams.structureBlendK)
@@ -548,6 +551,8 @@ public struct VoxelDensityJob : IJobParallelFor
         //  while keeping the rest of the border airtight.
         // ════════════════════════════════════════════════════════════════
 
+        if (!structureOnlyMode)
+        {
         float3 localPos = wp - volumeOrigin;
         float3 volumeSize = new float3(ptsX - 1, ptsY - 1, ptsZ - 1) * voxelStep;
 
@@ -620,6 +625,7 @@ public struct VoxelDensityJob : IJobParallelFor
         float dEdge = math.min(dMinX, math.min(dMinY, dMinZ));
         float sealFactor = math.saturate(dEdge / math.max(sealMargin, 0.01f));
         d_final = math.lerp(1f, d_final, sealFactor);
+        }
 
         density[idx] = d_final;
     }
@@ -1606,7 +1612,11 @@ public class HectonVoxelEngine : MonoBehaviour
     const int MC_BUFFER_MULTIPLIER = 2;
 
     // ── Internal ──
+    static int _liveEngineCount;
+    static int _activeGenerationOperations;
+    static int _shutdownRequested;
     readonly List<GameObject> _activeVolumes = new List<GameObject>();
+    bool _registeredLiveEngine;
 
     // ╔═══════════════════════════════════════════════╗
     // ║              LIFECYCLE                        ║
@@ -1616,6 +1626,12 @@ public class HectonVoxelEngine : MonoBehaviour
     {
         if (!Application.isPlaying)
             return;
+
+        if (!_registeredLiveEngine)
+        {
+            Interlocked.Increment(ref _liveEngineCount);
+            _registeredLiveEngine = true;
+        }
 
         MCTables.Initialize();
     }
@@ -1634,7 +1650,12 @@ public class HectonVoxelEngine : MonoBehaviour
             return;
 
         ClearAllVolumes();
-        MCTables.Shutdown();
+        if (_registeredLiveEngine)
+        {
+            _registeredLiveEngine = false;
+            if (Interlocked.Decrement(ref _liveEngineCount) <= 0)
+                RequestSharedTableShutdown();
+        }
     }
 
     // ╔═══════════════════════════════════════════════╗
@@ -1798,12 +1819,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 vertexCounter = counter
             }.Schedule(totalCells, JOB_BATCH, densityHandle);
 
-            while (!mcHandle.IsCompleted)
-            {
-                ct.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(ct);
-            }
-            mcHandle.Complete();
+            await AwaitForJobCompletionAsync(mcHandle, ct);
 
             int rawCount = counter[0];
             if (rawCount < 3) return null;
@@ -1824,12 +1840,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 weldedCounter = weldedCounter
             }.Schedule();
 
-            while (!weldHandle.IsCompleted)
-            {
-                ct.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(ct);
-            }
-            weldHandle.Complete();
+            await AwaitForJobCompletionAsync(weldHandle, ct);
 
             int weldedCount = weldedCounter[0];
             if (weldedCount < 3) return null;
@@ -1900,12 +1911,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 // Await all
                 var allPhase5 = JobHandle.CombineDependencies(colorHandle, spawnHandle);
 
-                while (!allPhase5.IsCompleted)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    await Awaitable.NextFrameAsync(ct);
-                }
-                allPhase5.Complete();
+                await AwaitForJobCompletionAsync(allPhase5, ct);
 
                 ct.ThrowIfCancellationRequested();
 
@@ -2002,6 +2008,7 @@ public class HectonVoxelEngine : MonoBehaviour
             if (caveTunnels.IsCreated) caveTunnels.Dispose();
             if (caveEntrances.IsCreated) caveEntrances.Dispose();
             if (caveStructures.IsCreated) caveStructures.Dispose();
+            EndGenerationOperation();
         }
     }
 
@@ -2023,22 +2030,238 @@ public class HectonVoxelEngine : MonoBehaviour
         CaveGenerationParams caveParams,
         CancellationToken ct = default)
     {
-        // Build a temporary preset just for sizing
-        var tempPreset = new CavePreset
+        BeginGenerationOperation();
+
+        if (mapMagicBridge == null)
         {
-            gridDimension = gridDimension,
-            voxelSize = voxelSize
-        };
+            Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+            EndGenerationOperation();
+            return null;
+        }
 
-        // Delegate to main method via internal implementation
-        // (This avoids duplicating the entire pipeline)
-        // For now, we create a wrapper that uses the data directly
+        MCTables.Initialize();
 
-        // TODO: Factor out the pipeline core to avoid duplication
-        // For v4.0, this overload is a placeholder for future custom editor tools
-        Debug.LogWarning("[HectonVoxel] GenerateVolumeFromDataAsync not yet implemented. " +
-                         "Use GenerateVolumeAsync with seed + preset.");
-        return null;
+        int gridDim = math.clamp(gridDimension, 32, 128);
+        float voxelStep = math.max(voxelSize, 0.25f);
+
+        int ptsX = gridDim + 1, ptsY = gridDim + 1, ptsZ = gridDim + 1;
+        int totalPts = ptsX * ptsY * ptsZ;
+        int totalCells = gridDim * gridDim * gridDim;
+        int maxVerts = totalCells * MC_BUFFER_MULTIPLIER;
+
+        float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
+        float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
+
+        float terrainHeightCenter = worldCenter.y - 10f;
+        if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
+            terrainHeightCenter = h;
+
+        var terrainHeights = new NativeArray<float>(ptsX * ptsZ, Allocator.Persistent,
+                                                     NativeArrayOptions.UninitializedMemory);
+        var gridBiome = new NativeArray<float>(ptsX * ptsZ, Allocator.Persistent,
+                                                NativeArrayOptions.UninitializedMemory);
+        var densityField = new NativeArray<float>(totalPts, Allocator.Persistent,
+                                                    NativeArrayOptions.UninitializedMemory);
+        var rawVerts = new NativeArray<MCRawVertex>(maxVerts, Allocator.Persistent,
+                                                      NativeArrayOptions.UninitializedMemory);
+        var counter = new NativeArray<int>(1, Allocator.Persistent,
+                                            NativeArrayOptions.ClearMemory);
+        var weldedPositions = new NativeArray<float3>(maxVerts, Allocator.Persistent,
+                                                        NativeArrayOptions.UninitializedMemory);
+        var triangleIndices = new NativeArray<int>(maxVerts, Allocator.Persistent,
+                                                     NativeArrayOptions.UninitializedMemory);
+        var weldedCounter = new NativeArray<int>(1, Allocator.Persistent,
+                                                   NativeArrayOptions.ClearMemory);
+        var edgeToVertex = new NativeParallelHashMap<long, int>(maxVerts / 2, Allocator.Persistent);
+
+        try
+        {
+            float fallbackHeight = terrainHeightCenter;
+            for (int iz = 0; iz < ptsZ; iz++)
+            for (int ix = 0; ix < ptsX; ix++)
+            {
+                float wx = volumeOrigin.x + ix * voxelStep;
+                float wz = volumeOrigin.z + iz * voxelStep;
+                int hi = ix + iz * ptsX;
+
+                if (mapMagicBridge.TryGetHeight(wx, wz, out float height))
+                    terrainHeights[hi] = height;
+                else
+                    terrainHeights[hi] = fallbackHeight;
+
+                gridBiome[hi] = 0f;
+            }
+
+            ct.ThrowIfCancellationRequested();
+
+            var densityHandle = new VoxelDensityJob
+            {
+                ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
+                volumeOrigin = volumeOrigin,
+                voxelStep = voxelStep,
+                terrainHeights = terrainHeights,
+                caveNodes = nodes,
+                caveTunnels = tunnels,
+                caveEntrances = entrances,
+                caveStructures = structures,
+                caveParams = caveParams,
+                sealMargin = sealMargin,
+                density = densityField
+            }.Schedule(totalPts, JOB_BATCH);
+
+            var mcHandle = new VoxelMCExtractJob
+            {
+                cellsX = gridDim, cellsY = gridDim, cellsZ = gridDim,
+                ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
+                volumeOrigin = volumeOrigin,
+                voxelStep = voxelStep,
+                density = densityField,
+                edgeTable = MCTables.EdgeTable,
+                triTable = MCTables.TriTable,
+                outVertices = rawVerts,
+                vertexCounter = counter
+            }.Schedule(totalCells, JOB_BATCH, densityHandle);
+
+            await AwaitForJobCompletionAsync(mcHandle, ct);
+
+            int rawCount = counter[0];
+            if (rawCount < 3)
+                return null;
+
+            ct.ThrowIfCancellationRequested();
+
+            var weldHandle = new VoxelWeldJob
+            {
+                rawCount = rawCount,
+                rawVertices = rawVerts,
+                edgeToVertex = edgeToVertex,
+                weldedPositions = weldedPositions,
+                triangleIndices = triangleIndices,
+                weldedCounter = weldedCounter
+            }.Schedule();
+
+            await AwaitForJobCompletionAsync(weldHandle, ct);
+
+            int weldedCount = weldedCounter[0];
+            if (weldedCount < 3)
+                return null;
+
+            ct.ThrowIfCancellationRequested();
+
+            var normals = new NativeArray<float3>(weldedCount, Allocator.Persistent,
+                                                    NativeArrayOptions.UninitializedMemory);
+            var biomeVals = new NativeArray<float>(weldedCount, Allocator.Persistent,
+                                                     NativeArrayOptions.UninitializedMemory);
+            var colors = new NativeArray<Color>(weldedCount, Allocator.Persistent,
+                                                  NativeArrayOptions.UninitializedMemory);
+            int maxSpawnPoints = math.max(weldedCount / 20, 64);
+            var spawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
+
+            try
+            {
+                float volumeHalfExtent = gridDim * voxelStep * 0.5f;
+
+                var normalHandle = new VoxelNormalJob
+                {
+                    ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
+                    volumeOrigin = volumeOrigin, voxelStep = voxelStep,
+                    density = densityField, positions = weldedPositions,
+                    normals = normals
+                }.Schedule(weldedCount, JOB_BATCH);
+
+                var biomeHandle = new VoxelBiomeSampleJob
+                {
+                    ptsX = ptsX, ptsZ = ptsZ,
+                    volumeOrigin = volumeOrigin, voxelStep = voxelStep,
+                    gridBiome = gridBiome, positions = weldedPositions,
+                    biomeValues = biomeVals
+                }.Schedule(weldedCount, JOB_BATCH);
+
+                var colorDeps = JobHandle.CombineDependencies(normalHandle, biomeHandle);
+                var colorHandle = new VoxelColorJob
+                {
+                    maxDepth = ABYSSAL_MAX_DEPTH,
+                    caveEdgeWidth = caveEdgeColorWidth,
+                    volumeCenter = worldCenter,
+                    volumeHalfExtent = volumeHalfExtent,
+                    positions = weldedPositions,
+                    normals = normals,
+                    biomeValues = biomeVals,
+                    colors = colors
+                }.Schedule(weldedCount, JOB_BATCH, colorDeps);
+
+                var spawnHandle = new VoxelSpawnPointJob
+                {
+                    positions = weldedPositions,
+                    normals = normals,
+                    volumeCenter = worldCenter,
+                    volumeHalfExtent = volumeHalfExtent,
+                    floorNormalThreshold = 0.75f,
+                    minInteriorDepth = 0.15f,
+                    keepFraction = 0.03f,
+                    seed = caveParams.seed,
+                    spawnPoints = spawnPointList.AsParallelWriter()
+                }.Schedule(weldedCount, JOB_BATCH, normalHandle);
+
+                var allPhase5 = JobHandle.CombineDependencies(colorHandle, spawnHandle);
+                await AwaitForJobCompletionAsync(allPhase5, ct);
+
+                ct.ThrowIfCancellationRequested();
+
+                GameObject targetGO = SpawnVolume();
+                targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
+                targetGO.transform.position = Vector3.zero;
+
+                BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
+                                     triangleIndices, rawCount, weldedCount, voxelMaterial);
+                _activeVolumes.Add(targetGO);
+
+                int spawnCount = spawnPointList.Length;
+                if (spawnCount > 0 && ScavengePopulator.Instance != null)
+                {
+                    float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
+                    Vector2Int chunkCoord = new Vector2Int(
+                        Mathf.FloorToInt(worldCenter.x / tileSize),
+                        Mathf.FloorToInt(worldCenter.z / tileSize));
+
+                    SpawnContext caveContext = caveParams.spawnContext;
+                    for (int sp = 0; sp < spawnCount; sp++)
+                    {
+                        CaveSpawnData data = spawnPointList[sp];
+                        ScavengePopulator.Instance.RegisterSpawnPoint(
+                            (Vector3)data.position,
+                            Quaternion.identity,
+                            Vector3.one,
+                            chunkCoord,
+                            data.hashId,
+                            caveContext);
+                    }
+                }
+
+                Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2}.");
+                return targetGO;
+            }
+            finally
+            {
+                if (normals.IsCreated) normals.Dispose();
+                if (biomeVals.IsCreated) biomeVals.Dispose();
+                if (colors.IsCreated) colors.Dispose();
+                if (spawnPointList.IsCreated) spawnPointList.Dispose();
+            }
+        }
+        finally
+        {
+            if (terrainHeights.IsCreated) terrainHeights.Dispose();
+            if (gridBiome.IsCreated) gridBiome.Dispose();
+            if (densityField.IsCreated) densityField.Dispose();
+            if (rawVerts.IsCreated) rawVerts.Dispose();
+            if (counter.IsCreated) counter.Dispose();
+            if (weldedPositions.IsCreated) weldedPositions.Dispose();
+            if (triangleIndices.IsCreated) triangleIndices.Dispose();
+            if (weldedCounter.IsCreated) weldedCounter.Dispose();
+            if (edgeToVertex.IsCreated) edgeToVertex.Dispose();
+            EndGenerationOperation();
+        }
     }
 
     // ╔═══════════════════════════════════════════════╗
@@ -2111,19 +2334,70 @@ public class HectonVoxelEngine : MonoBehaviour
 
     public int ActiveVolumeCount => _activeVolumes.Count;
 
+    static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct)
+    {
+        try
+        {
+            while (!handle.IsCompleted)
+            {
+                ct.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(ct);
+            }
+        }
+        finally
+        {
+            handle.Complete();
+        }
+    }
+
     // ╔═══════════════════════════════════════════════╗
     // ║            INTERNAL HELPERS                   ║
     // ╚═══════════════════════════════════════════════╝
 
+    static void BeginGenerationOperation()
+    {
+        Interlocked.Increment(ref _activeGenerationOperations);
+    }
+
+    static void EndGenerationOperation()
+    {
+        int remaining = Interlocked.Decrement(ref _activeGenerationOperations);
+        if (remaining <= 0 && Volatile.Read(ref _shutdownRequested) == 1)
+            TryShutdownSharedTables();
+    }
+
+    static void RequestSharedTableShutdown()
+    {
+        Volatile.Write(ref _shutdownRequested, 1);
+        TryShutdownSharedTables();
+    }
+
+    static void TryShutdownSharedTables()
+    {
+        if (Volatile.Read(ref _liveEngineCount) > 0)
+            return;
+
+        if (Volatile.Read(ref _activeGenerationOperations) > 0)
+            return;
+
+        if (Interlocked.Exchange(ref _shutdownRequested, 0) == 1)
+            MCTables.Shutdown();
+    }
+
     GameObject SpawnVolume()
     {
         if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
-            return ObjectPoolManager.Instance.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
+        {
+            GameObject pooled = ObjectPoolManager.Instance.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
+            PrepareVolumeForBuild(pooled);
+            return pooled;
+        }
 
         var go = new GameObject("CaveVolume");
         go.AddComponent<MeshFilter>();
         go.AddComponent<MeshRenderer>();
         go.AddComponent<MeshCollider>();
+        PrepareVolumeForBuild(go);
         return go;
     }
 
@@ -2184,10 +2458,29 @@ public class HectonVoxelEngine : MonoBehaviour
         mr.sharedMaterial = mat;
         mr.shadowCastingMode = ShadowCastingMode.Off;
         mr.receiveShadows = true;
+        mr.enabled = true;
 
         var mcol = go.GetComponent<MeshCollider>();
         if (mcol == null) mcol = go.AddComponent<MeshCollider>();
         mcol.sharedMesh = mesh;
+        mcol.enabled = true;
+    }
+
+    void PrepareVolumeForBuild(GameObject go)
+    {
+        if (go == null)
+            return;
+
+        var mr = go.GetComponent<MeshRenderer>();
+        if (mr != null)
+            mr.enabled = false;
+
+        var mcol = go.GetComponent<MeshCollider>();
+        if (mcol != null)
+        {
+            mcol.sharedMesh = null;
+            mcol.enabled = false;
+        }
     }
 
     void SafeDestroy(Object obj)

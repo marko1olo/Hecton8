@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_fauna_reef_apex_zone
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.fauna.reef_apex_zone
+  ruleLabel: Reef Apex Territory Zones
+  familyProfile: {fileID: 11400000, guid: 93fa74407b09405f88c798c752d0ef1b, type: 2}
+  gameplayIntent: Sparse apex territories in reef, kelp and biological nesting habitats.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  preferredZoneKinds: 010000000900000002000000
+  preferredSocketKinds: 
+  preferredFidelity: 1
+  minDepthMeters: 80
+  maxDepthMeters: 1800
+  minSlopeDegrees: 0
+  maxSlopeDegrees: 38
+  requiredHeatmapChannel: bio_density
+  minHeatmapValue: 0.52
+  densityScale: 0.36
+  minSpacingOverrideMeters: 180
+  clusterRadiusOverrideMeters: 140
+  minInstances: 1
+  maxInstances: 1
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 1
+  runtimeOnly: 0

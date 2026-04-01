@@ -44,7 +44,9 @@ namespace Hecton8.AI.Editor
 
             var biomesWithoutPassive = new List<string>();
             var biomesWithoutThreat = new List<string>();
+            var biomesWithLargeThreatZone = new List<string>();
             var biomesWithLeviathan = new List<string>();
+            var heavyHunterMacroZones = new List<string>();
             var reserveBiomesWithLeviathan = new List<string>();
             var surfaceBiomesWithLeviathan = new List<string>();
             var skewWarnings = new List<string>();
@@ -59,8 +61,8 @@ namespace Hecton8.AI.Editor
 
                     if (!datasetByBiomeIndex.TryGetValue(profile.matrixIndex, out FaunaBiomeData dataset) || dataset == null)
                     {
-                        biomesWithoutPassive.Add($"{profile.biomeName} - нет датасета");
-                        biomesWithoutThreat.Add($"{profile.biomeName} - нет датасета");
+                        biomesWithoutPassive.Add($"{profile.biomeName} - no dataset");
+                        biomesWithoutThreat.Add($"{profile.biomeName} - no dataset");
                         continue;
                     }
 
@@ -102,9 +104,24 @@ namespace Hecton8.AI.Editor
                     if (threatCount == 0)
                         biomesWithoutThreat.Add(profile.biomeName);
 
+                    if (dataset.HasLargeThreatZone())
+                    {
+                        string zoneLine =
+                            $"{profile.biomeName} - {dataset.largeThreatArchetype.displayName} / {DescribeEncounterType(dataset.largeThreatEncounterType)} / zone {dataset.largeThreatZoneRadius:0}m";
+                        biomesWithLargeThreatZone.Add(zoneLine);
+
+                        if (dataset.preferHeavyHunterInsteadOfLeviathan)
+                            heavyHunterMacroZones.Add(profile.biomeName);
+                    }
+
                     if (leviathanCount > 0)
                     {
-                        biomesWithLeviathan.Add($"{profile.biomeName} ({leviathanCount})");
+                        string leviathanLine = dataset.largeThreatArchetype != null && dataset.largeThreatArchetype.roleType == CreatureRoleType.Leviathan
+                            ? $"{profile.biomeName} ({leviathanCount}) - {dataset.largeThreatArchetype.displayName} / {DescribeEncounterType(dataset.largeThreatEncounterType)}"
+                            : $"{profile.biomeName} ({leviathanCount})";
+
+                        biomesWithLeviathan.Add(leviathanLine);
+
                         if (IsGenericReserveBiomeName(profile.biomeName))
                             reserveBiomesWithLeviathan.Add(profile.biomeName);
                         if (profile.maxDepthMeters <= 3000f)
@@ -112,37 +129,43 @@ namespace Hecton8.AI.Editor
                     }
 
                     if (hunterCount > 2)
-                        skewWarnings.Add($"{profile.biomeName}: слишком много средних угроз ({hunterCount})");
+                        skewWarnings.Add($"{profile.biomeName}: too many mid threats ({hunterCount})");
                     if (leviathanCount > 1)
-                        skewWarnings.Add($"{profile.biomeName}: слишком много крупных угроз ({leviathanCount})");
+                        skewWarnings.Add($"{profile.biomeName}: too many large threats ({leviathanCount})");
                     if (passiveCount == 0 && threatCount > 0)
-                        skewWarnings.Add($"{profile.biomeName}: есть опасность, но нет мирной жизни");
+                        skewWarnings.Add($"{profile.biomeName}: danger exists but passive life is missing");
                     if (IsCalmFamily(profile.familyId) && hunterCount > 1)
-                        skewWarnings.Add($"{profile.biomeName}: спокойная вода ушла в боевую арену");
+                        skewWarnings.Add($"{profile.biomeName}: calm water drifted into combat arena");
+                    if (leviathanCount > 0 && !dataset.HasLargeThreatZone())
+                        skewWarnings.Add($"{profile.biomeName}: leviathan exists but large threat zone is missing");
+                    if (dataset.preferHeavyHunterInsteadOfLeviathan && leviathanCount > 0)
+                        skewWarnings.Add($"{profile.biomeName}: heavy hunter and leviathan are both present");
                 }
             }
 
             if (reserveBiomesWithLeviathan.Count > 0)
-                skewWarnings.Add($"Левиафаны сидят на обычных резервных биомах: {reserveBiomesWithLeviathan.Count}");
+                skewWarnings.Add($"Leviathans are still sitting in generic reserve biomes: {reserveBiomesWithLeviathan.Count}");
             if (surfaceBiomesWithLeviathan.Count > 4)
-                skewWarnings.Add($"Слишком много мелководных и среднеглубинных биомов с левиафанами: {surfaceBiomesWithLeviathan.Count}");
+                skewWarnings.Add($"Too many shallow or mid-depth leviathan biomes: {surfaceBiomesWithLeviathan.Count}");
 
             var sb = new StringBuilder(16384);
             sb.AppendLine("# AI Fauna World Integration Report");
             sb.AppendLine();
-            sb.AppendLine("## Что есть");
+            sb.AppendLine("## What Exists");
             sb.AppendLine();
-            sb.AppendLine($"- Профилей видов: `{archetypeCount}`");
-            sb.AppendLine($"- Из них без префаба: `{archetypeWithoutPrefabCount}`");
-            sb.AppendLine($"- Наборов фауны по биомам: `{datasetByBiomeIndex.Count}`");
+            sb.AppendLine($"- Creature archetypes: `{archetypeCount}`");
+            sb.AppendLine($"- Archetypes without prefab: `{archetypeWithoutPrefabCount}`");
+            sb.AppendLine($"- Fauna datasets by biome: `{datasetByBiomeIndex.Count}`");
             sb.AppendLine();
 
-            AppendList(sb, "Биомы без мирной жизни", biomesWithoutPassive);
-            AppendList(sb, "Биомы без угроз", biomesWithoutThreat);
-            AppendList(sb, "Биомы с левиафанами", biomesWithLeviathan);
-            AppendList(sb, "Обычные резервные биомы с левиафанами", reserveBiomesWithLeviathan);
-            AppendList(sb, "Мелководные и среднеглубинные биомы с левиафанами", surfaceBiomesWithLeviathan);
-            AppendList(sb, "Перекосы", skewWarnings);
+            AppendList(sb, "Biomes Without Passive Life", biomesWithoutPassive);
+            AppendList(sb, "Biomes Without Threats", biomesWithoutThreat);
+            AppendList(sb, "Large Water Areas With Major Threats", biomesWithLargeThreatZone);
+            AppendList(sb, "Biomes With Leviathans", biomesWithLeviathan);
+            AppendList(sb, "Biomes Using Heavy Hunters Instead Of Leviathans", heavyHunterMacroZones);
+            AppendList(sb, "Reserve Biomes With Leviathans", reserveBiomesWithLeviathan);
+            AppendList(sb, "Shallow And Mid-Depth Biomes With Leviathans", surfaceBiomesWithLeviathan);
+            AppendList(sb, "Skew Warnings", skewWarnings);
 
             File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8);
             AssetDatabase.Refresh();
@@ -156,7 +179,7 @@ namespace Hecton8.AI.Editor
 
             if (values.Count == 0)
             {
-                sb.AppendLine("- Нет.");
+                sb.AppendLine("- None.");
                 sb.AppendLine();
                 return;
             }
@@ -178,6 +201,19 @@ namespace Hecton8.AI.Editor
             return !string.IsNullOrWhiteSpace(biomeName) &&
                    biomeName.StartsWith("Tier ", System.StringComparison.OrdinalIgnoreCase) &&
                    biomeName.Contains("Reserve", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string DescribeEncounterType(LeviathanEncounterType encounterType)
+        {
+            switch (encounterType)
+            {
+                case LeviathanEncounterType.AmbushBurst:
+                    return "ambush burst";
+                case LeviathanEncounterType.SentinelPressure:
+                    return "sentinel pressure";
+                default:
+                    return "presence circle";
+            }
         }
     }
 }

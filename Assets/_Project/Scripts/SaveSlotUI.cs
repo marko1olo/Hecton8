@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Hecton.Localization;
+using Hecton8.SaveSystem;
 
 namespace Hecton.UI.MainMenu
 {
@@ -30,7 +31,12 @@ namespace Hecton.UI.MainMenu
         private bool _exists;
         private string _timestamp;
         private float _playtime;
+        private string _sceneName;
+        private string _statusLabel;
+        private SaveSlotIntegrityState _integrityState;
         private Action<string> _onClickCallback;
+        private Color _slotNameBaseColor;
+        private Color _detailsBaseColor;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -39,6 +45,10 @@ namespace Hecton.UI.MainMenu
         private void Awake()
         {
             _button = GetComponent<Button>();
+            if (slotNameText != null)
+                _slotNameBaseColor = slotNameText.color;
+            if (detailsText != null)
+                _detailsBaseColor = detailsText.color;
         }
 
         private void OnEnable()
@@ -93,6 +103,9 @@ namespace Hecton.UI.MainMenu
             _exists          = exists;
             _timestamp       = timestamp;
             _playtime        = playtime;
+            _sceneName       = string.Empty;
+            _statusLabel     = string.Empty;
+            _integrityState  = exists ? SaveSlotIntegrityState.Healthy : SaveSlotIntegrityState.Empty;
             _onClickCallback = onClickCallback;
 
             ApplyTexts();
@@ -112,6 +125,28 @@ namespace Hecton.UI.MainMenu
                     _button.interactable = false;
                 }
             }
+        }
+
+        public void Init(SaveSlotInfo slotInfo, Action<string> onClickCallback)
+        {
+            if (slotInfo == null)
+            {
+                Init(string.Empty, false, string.Empty, 0f, onClickCallback);
+                return;
+            }
+
+            SaveMetadata metadata = slotInfo.metadata;
+            Init(
+                slotInfo.slotName,
+                slotInfo.HasAnySaveData,
+                metadata != null ? metadata.GetDateTime().ToLocalTime().ToString("g") : string.Empty,
+                metadata != null ? metadata.totalPlayTime : 0f,
+                onClickCallback);
+
+            _sceneName = metadata != null ? metadata.sceneName : string.Empty;
+            _statusLabel = slotInfo.GetStatusLabel();
+            _integrityState = slotInfo.IntegrityState;
+            ApplyTexts();
         }
 
         // ══════════════════════════════════════════════
@@ -139,9 +174,12 @@ namespace Hecton.UI.MainMenu
                 if (_exists)
                 {
                     string formattedPlaytime = FormatPlaytime(_playtime);
-                    detailsText.SetText(
-                        string.Concat(_timestamp, " | ", formattedPlaytime)
-                    );
+                    string sceneChunk = string.IsNullOrEmpty(_sceneName) ? string.Empty : string.Concat(" | ", _sceneName);
+                    string statusChunk = string.IsNullOrEmpty(_statusLabel) ? string.Empty : string.Concat("\n", _statusLabel);
+                    detailsText.SetText(string.Concat(_timestamp, " | ", formattedPlaytime, sceneChunk, statusChunk));
+                    detailsText.color = GetStatusColor(_integrityState, _detailsBaseColor);
+                    if (slotNameText != null)
+                        slotNameText.color = GetStatusColor(_integrityState, _slotNameBaseColor);
                 }
                 else
                 {
@@ -150,7 +188,30 @@ namespace Hecton.UI.MainMenu
                         : "NO DATA";
 
                     detailsText.SetText(noData);
+                    detailsText.color = _detailsBaseColor;
+                    if (slotNameText != null)
+                        slotNameText.color = _slotNameBaseColor;
                 }
+            }
+        }
+
+        private static Color GetStatusColor(SaveSlotIntegrityState integrityState, Color fallback)
+        {
+            switch (integrityState)
+            {
+                case SaveSlotIntegrityState.Healthy:
+                case SaveSlotIntegrityState.HealthyWithBackup:
+                    return fallback;
+                case SaveSlotIntegrityState.BackupOnly:
+                case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
+                    return new Color(0.92f, 0.79f, 0.36f, fallback.a);
+                case SaveSlotIntegrityState.MetadataSynthesized:
+                case SaveSlotIntegrityState.MissingMetadata:
+                    return new Color(0.98f, 0.62f, 0.36f, fallback.a);
+                case SaveSlotIntegrityState.CorruptedMetadata:
+                    return new Color(0.94f, 0.36f, 0.36f, fallback.a);
+                default:
+                    return fallback;
             }
         }
 

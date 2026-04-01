@@ -422,22 +422,24 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
 
     private void UpdateNotifications(float deltaTime)
     {
+        float fadeDuration = 1f / Mathf.Max(0.01f, notificationFadeSpeed);
+
         for (int i = _notificationCount - 1; i >= 0; i--)
         {
             ref NotificationEntry notif = ref _notifications[i];
 
             notif.TimeRemaining -= deltaTime;
 
-            // Fade in (first 0.3s)
-            if (notif.TimeRemaining > notificationDuration - 0.3f)
+            // Fade in
+            if (notif.TimeRemaining > notificationDuration - fadeDuration)
             {
-                float fadeIn = (notificationDuration - notif.TimeRemaining) / 0.3f;
+                float fadeIn = (notificationDuration - notif.TimeRemaining) / fadeDuration;
                 notif.Alpha = Mathf.Clamp01(fadeIn);
             }
-            // Fade out (last 0.5s)
-            else if (notif.TimeRemaining < 0.5f)
+            // Fade out
+            else if (notif.TimeRemaining < fadeDuration)
             {
-                notif.Alpha = Mathf.Clamp01(notif.TimeRemaining / 0.5f);
+                notif.Alpha = Mathf.Clamp01(notif.TimeRemaining / fadeDuration);
             }
             // Full opacity
             else

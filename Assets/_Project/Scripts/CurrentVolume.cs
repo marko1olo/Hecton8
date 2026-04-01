@@ -19,7 +19,8 @@ namespace Hecton8.Physics
             Sphere = 1
         }
 
-        private static readonly List<CurrentVolume> ActiveVolumes = new List<CurrentVolume>(32);
+        private static readonly List<CurrentVolume>    ActiveVolumes    = new List<CurrentVolume>(32);
+        private static readonly HashSet<CurrentVolume> ActiveVolumesSet = new HashSet<CurrentVolume>();
 
         [Header("Flow")]
         [SerializeField] private VolumeShape shape = VolumeShape.Box;
@@ -58,13 +59,14 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (!ActiveVolumes.Contains(this))
+            if (ActiveVolumesSet.Add(this))   // O(1)
                 ActiveVolumes.Add(this);
         }
 
         private void OnDisable()
         {
-            ActiveVolumes.Remove(this);
+            if (ActiveVolumesSet.Remove(this))
+                ActiveVolumes.Remove(this);
         }
 
         private Vector3 SampleInternal(Vector3 worldPos)

@@ -36,6 +36,7 @@ namespace Hecton8.UI
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private PlayerPDA playerPDA;
+        [SerializeField] private HUDNotification hudNotification;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
@@ -115,6 +116,8 @@ namespace Hecton8.UI
                 playerPDA = GetComponentInParent<PlayerPDA>();
             if (playerPDA == null)
                 playerPDA = FindFirstObjectByType<PlayerPDA>();
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
@@ -751,16 +754,20 @@ namespace Hecton8.UI
 
         private void NotifyInfo(string message)
         {
-            HUDNotification notification = FindFirstObjectByType<HUDNotification>();
-            if (notification != null)
-                notification.ShowInfo(message);
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
+
+            if (hudNotification != null)
+                hudNotification.ShowInfo(message);
         }
 
         private void NotifyWarning(string message)
         {
-            HUDNotification notification = FindFirstObjectByType<HUDNotification>();
-            if (notification != null)
-                notification.ShowWarning(message);
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
+
+            if (hudNotification != null)
+                hudNotification.ShowWarning(message);
         }
 
         private void BuildPresetStrip(RectTransform self)

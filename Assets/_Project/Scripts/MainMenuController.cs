@@ -279,21 +279,21 @@ namespace Hecton.UI.MainMenu
                     continue;
                 }
 
-                // Query save metadata from YOUR SaveManager
-                bool exists = false;
-                string timestamp = string.Empty;
-                float playtime = 0f;
-
                 if (_saveManager != null)
                 {
-                    exists = _saveManager.TryGetSaveMetadata(
-                        slotName,
-                        out timestamp,
-                        out playtime
-                    );
+                    if (_saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
+                    {
+                        slotUI.Init(slotInfo, OnSlotClicked);
+                    }
+                    else
+                    {
+                        slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
+                    }
                 }
-
-                slotUI.Init(slotName, exists, timestamp, playtime, OnSlotClicked);
+                else
+                {
+                    slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
+                }
             }
 
             SwitchPanel(mainMenuGroup, saveLoadGroup);

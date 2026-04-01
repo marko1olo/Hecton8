@@ -437,9 +437,20 @@ namespace Hecton8.UI
 
             try
             {
+                if (saveManager.IsBusy)
+                {
+                    if (_saveStatus != null)
+                        _saveStatus.text = "SAVE ALREADY IN PROGRESS.";
+                    return;
+                }
+
                 await saveManager.SaveGameAsync(slotName);
                 if (_saveStatus != null)
-                    _saveStatus.text = $"{slotName.ToUpperInvariant()} WRITTEN.";
+                {
+                    _saveStatus.text = saveManager.LastOperationSucceeded
+                        ? $"{slotName.ToUpperInvariant()} WRITTEN."
+                        : $"{slotName.ToUpperInvariant()} FAILED. {saveManager.LastOperationError?.ToUpperInvariant()}";
+                }
             }
             catch (Exception ex)
             {

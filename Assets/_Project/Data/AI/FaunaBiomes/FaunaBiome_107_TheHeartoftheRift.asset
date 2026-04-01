@@ -38,3 +38,9 @@ MonoBehaviour:
   biomeMaxCreatures: 6
   spawnHeightAboveBottom: 2
   spawnHeightMax: 8
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: The Heart of the Rift / leviathan / presence circle
+  largeThreatZoneRadius: 921.60004
+  largeThreatArchetype: {fileID: 11400000, guid: eb24ce391625e03449258c54d64ad191, type: 2}
+  largeThreatEncounterType: 0
+  preferHeavyHunterInsteadOfLeviathan: 0

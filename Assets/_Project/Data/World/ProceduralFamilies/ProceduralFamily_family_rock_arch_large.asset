@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 3
   scatterLayer: 2
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 0
+  contributesLargeThreatZone: 0
   structureAccentRole: 1
   clusterAccentRole: 0
   placementMode: 4
@@ -58,6 +61,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.1}
+  - variantId: family.rock.arch.large.final.placeholder
+    prefab: {fileID: 3311451525547415073, guid: 96d1bd4209b68df47bfedd1ed2a3c942, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.1}
   futurePrefabRoot: World/RockArch/Rock_Arch_Large
   gameplayRole: Big arches for strong biome memory and route readability.

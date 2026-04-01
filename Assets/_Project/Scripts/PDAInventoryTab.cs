@@ -38,6 +38,7 @@ namespace Hecton8.UI
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private PlayerPDA playerPDA;
+        [SerializeField] private HUDNotification hudNotification;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
@@ -214,6 +215,8 @@ namespace Hecton8.UI
                 playerPDA = GetComponentInParent<PlayerPDA>();
             if (playerPDA == null)
                 playerPDA = FindFirstObjectByType<PlayerPDA>();
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
@@ -1419,7 +1422,7 @@ namespace Hecton8.UI
             GameObject prefab = toolManager.GetKnownToolPrefabForItem(_selectedItem);
             if (prefab == null)
             {
-                FindFirstObjectByType<HUDNotification>()?.ShowWarning(
+                NotifyWarning(
                     $"NO HELD PREFAB REGISTERED FOR {_selectedItem.itemName.ToUpperInvariant()}");
                 return;
             }
@@ -1439,13 +1442,13 @@ namespace Hecton8.UI
                 if (toolManager.CurrentSlotIndex == assignedSlot)
                 {
                     toolManager.Holster();
-                    FindFirstObjectByType<HUDNotification>()?.ShowInfo(
+                    NotifyInfo(
                         $"LOADOUT HOLSTERED — {_selectedItem.itemName.ToUpperInvariant()}");
                 }
                 else if (toolManager.IsToolAvailableInSlot(assignedSlot))
                 {
                     toolManager.SwitchToSlot(assignedSlot);
-                    FindFirstObjectByType<HUDNotification>()?.ShowInfo(
+                    NotifyInfo(
                         $"LOADOUT ACTIVATED — SLOT {assignedSlot + 1}");
                 }
                 else
@@ -1720,8 +1723,7 @@ namespace Hecton8.UI
             GameObject prefab = toolManager.GetKnownToolPrefabForItem(_selectedItem);
             if (prefab == null)
             {
-                HUDNotification notification = FindFirstObjectByType<HUDNotification>();
-                notification?.ShowWarning($"NO HELD PREFAB REGISTERED FOR {_selectedItem.itemName.ToUpperInvariant()}");
+                NotifyWarning($"NO HELD PREFAB REGISTERED FOR {_selectedItem.itemName.ToUpperInvariant()}");
                 return;
             }
 
@@ -1730,8 +1732,23 @@ namespace Hecton8.UI
             RefreshLoadoutAssignButtons();
             RefreshDetails();
 
-            HUDNotification hudNotification = FindFirstObjectByType<HUDNotification>();
-            hudNotification?.ShowInfo($"LOADOUT UPDATED — SLOT {slotIndex + 1}: {_selectedItem.itemName.ToUpperInvariant()}");
+            NotifyInfo($"LOADOUT UPDATED - SLOT {slotIndex + 1}: {_selectedItem.itemName.ToUpperInvariant()}");
+        }
+
+        private void NotifyInfo(string message)
+        {
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
+
+            hudNotification?.ShowInfo(message);
+        }
+
+        private void NotifyWarning(string message)
+        {
+            if (hudNotification == null)
+                hudNotification = FindFirstObjectByType<HUDNotification>();
+
+            hudNotification?.ShowWarning(message);
         }
 
         private string GetSelectedItemEffectText()

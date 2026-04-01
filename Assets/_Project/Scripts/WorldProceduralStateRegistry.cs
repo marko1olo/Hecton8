@@ -1,0 +1,297 @@
+using System;
+using System.Collections.Generic;
+using Hecton8.SaveSystem;
+using UnityEngine;
+
+namespace Hecton8.World
+{
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-5900)]
+    public sealed class WorldProceduralStateRegistry : MonoBehaviour, ISaveable
+    {
+        [Serializable]
+        private struct FaunaSpawnState
+        {
+            public float cooldownUntilPlayTime;
+            public bool isLargeThreatZone;
+            public bool blocked;
+        }
+
+        [Header("Settings")]
+        [SerializeField] private int initialSuppressedPlacementCapacity = 256;
+        [SerializeField] private int initialFaunaStateCapacity = 128;
+
+        [Header("Diagnostics")]
+        [SerializeField] private int _debugSuppressedPlacementCount;
+        [SerializeField] private int _debugFaunaStateCount;
+        [SerializeField] private int _debugBlockedFaunaCount;
+        [SerializeField] private int _debugLargeThreatFaunaStateCount;
+        [SerializeField] private float _debugCurrentPlayTime;
+
+        private readonly List<long> _faunaRemovalBuffer = new List<long>(128);
+        private HashSet<long> _suppressedPlacementKeys;
+        private Dictionary<long, FaunaSpawnState> _faunaSpawnStates;
+
+        public event Action PlacementStateChanged;
+
+        public int SavePriority => 55;
+        public int LoadPriority => 55;
+        public int SuppressedPlacementCount => _suppressedPlacementKeys != null ? _suppressedPlacementKeys.Count : 0;
+        public int FaunaStateCount => _faunaSpawnStates != null ? _faunaSpawnStates.Count : 0;
+
+        private void Awake()
+        {
+            _suppressedPlacementKeys = new HashSet<long>(Mathf.Max(32, initialSuppressedPlacementCapacity));
+            _faunaSpawnStates = new Dictionary<long, FaunaSpawnState>(Mathf.Max(16, initialFaunaStateCapacity));
+            UpdateDiagnostics();
+        }
+
+        private void OnEnable()
+        {
+            SaveManager.Instance?.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            SaveManager.Instance?.Unregister(this);
+        }
+
+        public bool IsPlacementSuppressed(long runtimeKey)
+        {
+            return runtimeKey != 0L && _suppressedPlacementKeys != null && _suppressedPlacementKeys.Contains(runtimeKey);
+        }
+
+        public bool SuppressPlacement(long runtimeKey)
+        {
+            if (runtimeKey == 0L || _suppressedPlacementKeys == null || !_suppressedPlacementKeys.Add(runtimeKey))
+                return false;
+
+            UpdateDiagnostics();
+            PlacementStateChanged?.Invoke();
+            return true;
+        }
+
+        public bool RestorePlacement(long runtimeKey)
+        {
+            if (runtimeKey == 0L || _suppressedPlacementKeys == null || !_suppressedPlacementKeys.Remove(runtimeKey))
+                return false;
+
+            UpdateDiagnostics();
+            PlacementStateChanged?.Invoke();
+            return true;
+        }
+
+        public bool IsFaunaAnchorAvailable(long runtimeKey, bool isLargeThreatZone)
+        {
+            if (runtimeKey == 0L || _faunaSpawnStates == null)
+                return true;
+
+            CleanupExpiredFaunaStates();
+            if (!_faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState state))
+                return true;
+
+            if (state.isLargeThreatZone != isLargeThreatZone)
+                return true;
+
+            if (state.blocked)
+                return false;
+
+            return state.cooldownUntilPlayTime <= GetCurrentPlayTimeSeconds();
+        }
+
+        public void MarkFaunaAnchorUsed(long runtimeKey, bool isLargeThreatZone, float cooldownSeconds)
+        {
+            if (runtimeKey == 0L || _faunaSpawnStates == null)
+                return;
+
+            float currentPlayTime = GetCurrentPlayTimeSeconds();
+            FaunaSpawnState state = _faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState existing)
+                ? existing
+                : default;
+            state.isLargeThreatZone = isLargeThreatZone;
+            state.blocked = false;
+            state.cooldownUntilPlayTime = currentPlayTime + Mathf.Max(0f, cooldownSeconds);
+            _faunaSpawnStates[runtimeKey] = state;
+            UpdateDiagnostics();
+        }
+
+        public void BlockFaunaAnchor(long runtimeKey, bool isLargeThreatZone)
+        {
+            if (runtimeKey == 0L || _faunaSpawnStates == null)
+                return;
+
+            FaunaSpawnState state = _faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState existing)
+                ? existing
+                : default;
+            state.isLargeThreatZone = isLargeThreatZone;
+            state.blocked = true;
+            state.cooldownUntilPlayTime = Mathf.Max(state.cooldownUntilPlayTime, GetCurrentPlayTimeSeconds());
+            _faunaSpawnStates[runtimeKey] = state;
+            UpdateDiagnostics();
+        }
+
+        public bool RestoreFaunaAnchor(long runtimeKey)
+        {
+            if (runtimeKey == 0L || _faunaSpawnStates == null)
+                return false;
+
+            bool removed = _faunaSpawnStates.Remove(runtimeKey);
+            if (removed)
+                UpdateDiagnostics();
+
+            return removed;
+        }
+
+        public void ClearAll()
+        {
+            bool hadPlacements = _suppressedPlacementKeys != null && _suppressedPlacementKeys.Count > 0;
+            _suppressedPlacementKeys?.Clear();
+            _faunaSpawnStates?.Clear();
+            UpdateDiagnostics();
+
+            if (hadPlacements)
+                PlacementStateChanged?.Invoke();
+        }
+
+        public void PopulateSaveData(SaveData data)
+        {
+            ref ProceduralWorldStateDTO dto = ref data.proceduralWorldState;
+            dto.EnsureCapacity();
+            CleanupExpiredFaunaStates();
+
+            int suppressedIndex = 0;
+            if (_suppressedPlacementKeys != null)
+            {
+                foreach (long runtimeKey in _suppressedPlacementKeys)
+                {
+                    if (suppressedIndex >= ProceduralWorldStateDTO.MaxSuppressedPlacements)
+                    {
+                        Debug.LogWarning($"[WorldProceduralStateRegistry] Max suppressed placements ({ProceduralWorldStateDTO.MaxSuppressedPlacements}) reached. Extra entries were not saved.");
+                        break;
+                    }
+
+                    dto.suppressedPlacementKeys[suppressedIndex++] = runtimeKey;
+                }
+            }
+
+            dto.suppressedPlacementCount = suppressedIndex;
+
+            int faunaIndex = 0;
+            if (_faunaSpawnStates != null)
+            {
+                foreach (KeyValuePair<long, FaunaSpawnState> pair in _faunaSpawnStates)
+                {
+                    if (faunaIndex >= ProceduralWorldStateDTO.MaxFaunaStates)
+                    {
+                        Debug.LogWarning($"[WorldProceduralStateRegistry] Max fauna states ({ProceduralWorldStateDTO.MaxFaunaStates}) reached. Extra entries were not saved.");
+                        break;
+                    }
+
+                    dto.faunaStates[faunaIndex] = new ProceduralFaunaStateDTO
+                    {
+                        runtimeKey = pair.Key,
+                        cooldownUntilPlayTime = pair.Value.cooldownUntilPlayTime,
+                        isLargeThreatZone = pair.Value.isLargeThreatZone,
+                        blocked = pair.Value.blocked
+                    };
+                    faunaIndex++;
+                }
+            }
+
+            dto.faunaStateCount = faunaIndex;
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            ProceduralWorldStateDTO dto = data.proceduralWorldState;
+            _suppressedPlacementKeys.Clear();
+            _faunaSpawnStates.Clear();
+
+            if (dto.suppressedPlacementKeys != null)
+            {
+                int suppressedCount = Mathf.Min(dto.suppressedPlacementCount, dto.suppressedPlacementKeys.Length);
+                for (int i = 0; i < suppressedCount; i++)
+                {
+                    long runtimeKey = dto.suppressedPlacementKeys[i];
+                    if (runtimeKey != 0L)
+                        _suppressedPlacementKeys.Add(runtimeKey);
+                }
+            }
+
+            if (dto.faunaStates != null)
+            {
+                int faunaCount = Mathf.Min(dto.faunaStateCount, dto.faunaStates.Length);
+                for (int i = 0; i < faunaCount; i++)
+                {
+                    ProceduralFaunaStateDTO entry = dto.faunaStates[i];
+                    if (entry.runtimeKey == 0L)
+                        continue;
+
+                    _faunaSpawnStates[entry.runtimeKey] = new FaunaSpawnState
+                    {
+                        cooldownUntilPlayTime = entry.cooldownUntilPlayTime,
+                        isLargeThreatZone = entry.isLargeThreatZone,
+                        blocked = entry.blocked
+                    };
+                }
+            }
+
+            CleanupExpiredFaunaStates();
+            UpdateDiagnostics();
+            PlacementStateChanged?.Invoke();
+        }
+
+        private void CleanupExpiredFaunaStates()
+        {
+            if (_faunaSpawnStates == null || _faunaSpawnStates.Count == 0)
+                return;
+
+            float currentPlayTime = GetCurrentPlayTimeSeconds();
+            _faunaRemovalBuffer.Clear();
+
+            foreach (KeyValuePair<long, FaunaSpawnState> pair in _faunaSpawnStates)
+            {
+                if (pair.Value.blocked)
+                    continue;
+
+                if (pair.Value.cooldownUntilPlayTime > currentPlayTime)
+                    continue;
+
+                _faunaRemovalBuffer.Add(pair.Key);
+            }
+
+            for (int i = 0; i < _faunaRemovalBuffer.Count; i++)
+                _faunaSpawnStates.Remove(_faunaRemovalBuffer[i]);
+
+            if (_faunaRemovalBuffer.Count > 0)
+                UpdateDiagnostics();
+        }
+
+        private float GetCurrentPlayTimeSeconds()
+        {
+            return SaveManager.Instance != null
+                ? SaveManager.Instance.CurrentPlayTimeSeconds
+                : Time.realtimeSinceStartup;
+        }
+
+        private void UpdateDiagnostics()
+        {
+            _debugCurrentPlayTime = GetCurrentPlayTimeSeconds();
+            _debugSuppressedPlacementCount = _suppressedPlacementKeys != null ? _suppressedPlacementKeys.Count : 0;
+            _debugFaunaStateCount = _faunaSpawnStates != null ? _faunaSpawnStates.Count : 0;
+            _debugBlockedFaunaCount = 0;
+            _debugLargeThreatFaunaStateCount = 0;
+
+            if (_faunaSpawnStates == null)
+                return;
+
+            foreach (KeyValuePair<long, FaunaSpawnState> pair in _faunaSpawnStates)
+            {
+                if (pair.Value.blocked)
+                    _debugBlockedFaunaCount++;
+                if (pair.Value.isLargeThreatZone)
+                    _debugLargeThreatFaunaStateCount++;
+            }
+        }
+    }
+}

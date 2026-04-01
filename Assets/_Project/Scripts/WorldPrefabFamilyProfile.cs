@@ -100,6 +100,9 @@ namespace Hecton8.World
         [Header("Procedural Placement")]
         public ProceduralDomain proceduralDomain = ProceduralDomain.Generic;
         public ScatterLayer scatterLayer = ScatterLayer.Ground;
+        public bool overrideStreamingLayer;
+        public WorldStreamingLayer streamingLayerOverride = WorldStreamingLayer.Flora;
+        public bool contributesLargeThreatZone;
         public StructureAccentRole structureAccentRole = StructureAccentRole.None;
         public ClusterAccentRole clusterAccentRole = ClusterAccentRole.None;
         public PlacementMode placementMode = PlacementMode.Scatter;
@@ -125,8 +128,78 @@ namespace Hecton8.World
         [Header("Variants")]
         public VariantEntry[] variants = new VariantEntry[0];
 
+        [Header("Generative Geology")]
+        public WorldGenerativeGeologyProfile generativeGeologyProfile;
+
         [Header("Future Integration")]
         public string futurePrefabRoot = string.Empty;
         [TextArea(2, 4)] public string gameplayRole = "Generic world family.";
+
+        public bool UsesGenerativeGeology()
+        {
+            if (generativeGeologyProfile != null && generativeGeologyProfile.IsEnabled)
+                return true;
+
+            return proceduralDomain == ProceduralDomain.RockArch
+                || proceduralDomain == ProceduralDomain.RockShelf
+                || proceduralDomain == ProceduralDomain.Landmark
+                || proceduralDomain == ProceduralDomain.CaveEntrance;
+        }
+
+        public WorldStreamingLayer ResolveStreamingLayer()
+        {
+            if (overrideStreamingLayer)
+                return streamingLayerOverride;
+
+            if (ResolveContributesLargeThreatZone())
+                return WorldStreamingLayer.LargeThreats;
+
+            return proceduralDomain switch
+            {
+                ProceduralDomain.Kelp => WorldStreamingLayer.Flora,
+                ProceduralDomain.Plant => WorldStreamingLayer.Flora,
+                ProceduralDomain.Coral => WorldStreamingLayer.Flora,
+                ProceduralDomain.Debris => WorldStreamingLayer.Debris,
+                ProceduralDomain.ResourcePocket => WorldStreamingLayer.Resources,
+                ProceduralDomain.CreatureSpawn => WorldStreamingLayer.Fauna,
+                ProceduralDomain.Egg => WorldStreamingLayer.Fauna,
+                ProceduralDomain.RuinModule => WorldStreamingLayer.Construction,
+                ProceduralDomain.PowerRoute => WorldStreamingLayer.Construction,
+                ProceduralDomain.ServiceScar => WorldStreamingLayer.Construction,
+                ProceduralDomain.HazardPocket => WorldStreamingLayer.Construction,
+                ProceduralDomain.SafePocket => WorldStreamingLayer.Construction,
+                ProceduralDomain.Rock => WorldStreamingLayer.TerrainLod,
+                ProceduralDomain.RockCluster => WorldStreamingLayer.TerrainLod,
+                ProceduralDomain.RockArch => WorldStreamingLayer.TerrainLod,
+                ProceduralDomain.RockShelf => WorldStreamingLayer.TerrainLod,
+                ProceduralDomain.CaveEntrance => WorldStreamingLayer.TerrainLod,
+                ProceduralDomain.Landmark => WorldStreamingLayer.TerrainLod,
+                _ => scatterLayer switch
+                {
+                    ScatterLayer.Spawn => WorldStreamingLayer.Fauna,
+                    ScatterLayer.Structure => WorldStreamingLayer.Construction,
+                    ScatterLayer.Cluster => WorldStreamingLayer.Debris,
+                    _ => WorldStreamingLayer.Flora
+                }
+            };
+        }
+
+        public bool ResolveContributesLargeThreatZone()
+        {
+            return contributesLargeThreatZone || LooksLikeLargeThreatFamilyId(familyId) || LooksLikeLargeThreatFamilyId(gameplayRole);
+        }
+
+        private static bool LooksLikeLargeThreatFamilyId(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            string normalized = value.ToLowerInvariant();
+            return normalized.Contains("leviathan")
+                || normalized.Contains("large_threat")
+                || normalized.Contains("large-threat")
+                || normalized.Contains("apex")
+                || normalized.Contains("macrozone");
+        }
     }
 }

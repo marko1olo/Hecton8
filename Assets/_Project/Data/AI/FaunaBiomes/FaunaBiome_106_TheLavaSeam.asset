@@ -38,3 +38,9 @@ MonoBehaviour:
   biomeMaxCreatures: 6
   spawnHeightAboveBottom: 2
   spawnHeightMax: 8
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: The Lava Seam / leviathan / sentinel pressure
+  largeThreatZoneRadius: 806.39996
+  largeThreatArchetype: {fileID: 11400000, guid: e5ca549f7f6cf9746a8da1b24fd17e40, type: 2}
+  largeThreatEncounterType: 2
+  preferHeavyHunterInsteadOfLeviathan: 0

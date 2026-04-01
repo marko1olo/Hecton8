@@ -11,9 +11,10 @@
 //   3. Запуск генерации мира (MapMagic, если есть)
 //   4. Async загрузка сохранения (или New Game с fallback)
 //   5. World-Ready Check (ожидание ScavengePopulator)
-//   6. Спавн игрока
-//   7. Активация игрока + PlayerController
-//   8. OnGameReady → HUD, музыка, геймплей
+//   6. Ground-Ready Check (ожидание коллайдера под игроком — только при Load)
+//   7. Спавн игрока (fallback позиционирование если не из сейва)
+//   8. Активация игрока + PlayerController (isKinematic → false)
+//   9. OnGameReady → HUD, музыка, геймплей
 //
 // ОТКАЗОУСТОЙЧИВОСТЬ:
 //   • Глобальный таймаут (30с по умолчанию) → OnBootstrapFailed.
@@ -21,6 +22,7 @@
 //   • При ошибке LoadGameAsync — fallback на InitNewGame().
 //   • При отсутствии MapMagic / ScavengePopulator — пропуск шага.
 //   • При ошибке спавна — fallback позиция.
+//   • Ground-Ready таймаут (15с) → Warning + активация anyway.
 //   • Подробный лог каждого шага для отладки.
 //
 // ZERO-GC ASYNC:
@@ -28,6 +30,15 @@
 //   • Awaitable.NextFrameAsync вместо Task.Yield.
 //   • Awaitable.WaitForSecondsAsync вместо Task.Delay.
 //   • Никаких лямбда-замыканий в горячих путях.
+//
+// v2.0 CHANGES:
+//   [ADD] Step 6: Ground-Ready Check — Raycast вниз от позиции игрока.
+//         Ждёт появления коллайдера (террейн, воксель, статика) перед
+//         активацией. Решает race condition с асинхронной генерацией пещер.
+//   [ADD] isKinematic safety — Rigidbody переводится в kinematic на время
+//         загрузки, предотвращая провал даже при преждевременной активации.
+//   [ADD] _isLoadingSave flag — Ground check выполняется только при загрузке
+//         сохранения, не при New Game (fallback на поверхности).
 //
 // НИКАКОГО Update(). Вся логика — async void Start().
 // ============================================================================
@@ -60,6 +71,12 @@ namespace Hecton8.Bootstrap
         ///   • Input System — разблокировать управление
         /// </summary>
         public static event Action OnGameReady;
+
+        /// <summary>
+        /// Indicates that bootstrap fully completed and heavyweight runtime world
+        /// systems may start reacting to the final player state.
+        /// </summary>
+        public static bool IsGameReady { get; private set; }
 
         /// <summary>
         /// Выстреливает при критической ошибке инициализации
@@ -122,6 +139,10 @@ namespace Hecton8.Bootstrap
         [Tooltip("Контроллер игрока (будет включён в самом конце загрузки)")]
         [SerializeField] private MonoBehaviour playerController;
 
+        [Tooltip("Rigidbody игрока. Переводится в isKinematic на время загрузки. " +
+                 "Если не назначен — ищется автоматически на playerObject.")]
+        [SerializeField] private Rigidbody playerRigidbody;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — TIMING
         // ══════════════════════════════════════════════════════════
@@ -134,6 +155,11 @@ namespace Hecton8.Bootstrap
         [Tooltip("Максимальное время на весь bootstrap (секунды). " +
                  "При превышении — OnBootstrapFailed.")]
         [SerializeField] private float bootstrapTimeout = 30f;
+
+        [Tooltip("Максимальное время ожидания коллайдера под ногами игрока " +
+                 "при загрузке сохранения (секунды). При превышении — Warning " +
+                 "и активация anyway.")]
+        [SerializeField] private float groundReadyTimeout = 15f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DEBUG
@@ -165,6 +191,36 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private const int WorldReadyThreshold = 100;
 
+        /// <summary>Интервал проверки коллайдера под игроком (секунды).</summary>
+        private const float GroundCheckPollIntervalSec = 0.2f;
+
+        /// <summary>
+        /// Высота над позицией игрока, откуда бросается raycast вниз.
+        /// 2м — достаточный запас чтобы луч не начинался внутри коллайдера.
+        /// </summary>
+        private const float GroundCheckRayOffset = 2f;
+
+        /// <summary>
+        /// Максимальная длина raycast вниз. 1000м покрывает любую глубину пещеры.
+        /// </summary>
+        private const float GroundCheckRayLength = 1000f;
+
+        /// <summary>
+        /// Интервал диагностического лога при ожидании коллайдера (секунды).
+        /// </summary>
+        private const float GroundCheckLogIntervalSec = 5f;
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE STATE
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// true если в Step 4 был успешно загружен сейв.
+        /// Используется для определения нужен ли Ground-Ready Check.
+        /// При New Game — false, ground check пропускается.
+        /// </summary>
+        private bool _isLoadingSave;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE — единственная точка входа
         // ══════════════════════════════════════════════════════════
@@ -175,6 +231,8 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private async void Start()
         {
+            IsGameReady = false;
+
             // ── Деактивируем игрока на время загрузки ──
             DisablePlayer();
 
@@ -228,12 +286,16 @@ namespace Hecton8.Bootstrap
                 SetStep("Step 5: World-Ready Check");
                 await WaitForWorldReadyAsync(ct);
 
-                // ── STEP 6: Спавн игрока ─────────────────────
-                SetStep("Step 6: Player Spawn");
+                // ── STEP 6: Ground-Ready Check ───────────────
+                SetStep("Step 6: Ground-Ready Check");
+                await WaitForGroundReadyAsync(ct);
+
+                // ── STEP 7: Спавн игрока ─────────────────────
+                SetStep("Step 7: Player Spawn");
                 await SpawnPlayerAsync(ct);
                 ct.ThrowIfCancellationRequested();
 
-                // ── STEP 7: Активация + Game Ready ───────────
+                // ── STEP 8: Активация + Game Ready ───────────
                 ActivatePlayer();
 
                 SetStep("Complete");
@@ -243,10 +305,12 @@ namespace Hecton8.Bootstrap
                 Log("HECTON-8 Scene Bootstrap — GAME READY");
                 Log("═══════════════════════════════════════════════");
 
+                IsGameReady = true;
                 OnGameReady?.Invoke();
             }
             catch (OperationCanceledException)
             {
+                IsGameReady = false;
                 // Если GO уничтожен — тихий выход, не спамим ошибкой
                 if (this == null || destroyCancellationToken.IsCancellationRequested)
                     return;
@@ -256,12 +320,19 @@ namespace Hecton8.Bootstrap
             }
             catch (Exception ex)
             {
+                IsGameReady = false;
                 // Если GO уже уничтожен — не трогаем
                 if (this == null) return;
 
                 Fail($"Bootstrap failed at [{_debugCurrentStep}]: " +
                      $"{ex.Message}\n{ex.StackTrace}");
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (Application.isPlaying)
+                IsGameReady = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -463,6 +534,9 @@ namespace Hecton8.Bootstrap
         /// Если сейв не найден, пуст или forceNewGame — New Game.
         /// При исключении в LoadGameAsync — принудительный fallback
         /// на <see cref="InitNewGame"/>.
+        ///
+        /// Устанавливает <see cref="_isLoadingSave"/> = true при успешной
+        /// загрузке сейва, что активирует Ground-Ready Check в Step 6.
         /// </summary>
         private async Awaitable LoadOrNewGameAsync()
         {
@@ -472,6 +546,7 @@ namespace Hecton8.Bootstrap
             if (forceNewGame)
             {
                 Log("  Force New Game enabled — skipping save load.");
+                _isLoadingSave = false;
                 InitNewGame();
                 return;
             }
@@ -480,6 +555,7 @@ namespace Hecton8.Bootstrap
             if (string.IsNullOrEmpty(saveSlot))
             {
                 Log("  No save slot specified — starting New Game.");
+                _isLoadingSave = false;
                 InitNewGame();
                 return;
             }
@@ -488,6 +564,7 @@ namespace Hecton8.Bootstrap
             if (!save.SaveExists(saveSlot))
             {
                 Log($"  Save '{saveSlot}' not found — starting New Game.");
+                _isLoadingSave = false;
                 InitNewGame();
                 return;
             }
@@ -497,13 +574,33 @@ namespace Hecton8.Bootstrap
             {
                 Log($"  Loading save: '{saveSlot}'...");
                 await save.LoadGameAsync(saveSlot);
-                Log("  Save loaded successfully.");
+
+                if (!save.LastOperationSucceeded)
+                {
+                    string reason = string.IsNullOrEmpty(save.LastOperationError)
+                        ? "unknown load failure"
+                        : save.LastOperationError;
+                    Debug.LogError(
+                        $"[SceneBootstrap] Save load reported failure: {reason}. " +
+                        "Falling back to New Game.");
+                    _isLoadingSave = false;
+                    InitNewGame();
+                    return;
+                }
+
+                string sourceLabel = save.LastLoadUsedBackup ? "backup" : "primary";
+                string repairLabel = save.LastLoadSelfRepaired ? " with self-repair" : string.Empty;
+                string compressionLabel = save.LastLoadUsedLegacyCompression ? " using legacy compression" : string.Empty;
+                Log($"  Save loaded successfully from {sourceLabel}{repairLabel}{compressionLabel}.");
+
+                _isLoadingSave = true;
             }
             catch (Exception ex)
             {
                 Debug.LogError(
                     $"[SceneBootstrap] Save load failed: {ex.Message}. " +
                     "Falling back to New Game.");
+                _isLoadingSave = false;
                 InitNewGame();
             }
         }
@@ -569,7 +666,95 @@ namespace Hecton8.Bootstrap
         }
 
         // ══════════════════════════════════════════════════════════
-        //  STEP 6 — PLAYER SPAWN (ASYNC)
+        //  STEP 6 — GROUND-READY CHECK (v2.0)
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Ожидает появления коллайдера под ногами игрока.
+        ///
+        /// Решает race condition между загрузкой сохранения (игрок на -500м
+        /// в пещере) и асинхронной генерацией вокселей (MeshCollider ещё
+        /// не существует). Без этой проверки Rigidbody провалит игрока
+        /// в бездну при активации.
+        ///
+        /// КОГДА ВЫПОЛНЯЕТСЯ:
+        ///   Только при загрузке сохранения (_isLoadingSave == true).
+        ///   При New Game — пропускается (fallback на поверхности).
+        ///
+        /// КАК РАБОТАЕТ:
+        ///   Raycast вниз от позиции игрока (+2м вверх для запаса).
+        ///   Если под ногами есть ЛЮБОЙ коллайдер — ground ready.
+        ///   Если нет — ждёт, проверяя каждые 0.2 секунды.
+        ///
+        /// ТАЙМАУТ:
+        ///   Максимум groundReadyTimeout секунд. При превышении —
+        ///   Warning и активация anyway (лучше провалиться чем зависнуть).
+        ///
+        /// ZERO GC:
+        ///   Physics.Raycast(Ray, float) без out RaycastHit — zero allocation.
+        ///   Нет строковых операций в цикле ожидания.
+        /// </summary>
+        private async Awaitable WaitForGroundReadyAsync(CancellationToken ct)
+        {
+            // ── Пропуск при New Game ──
+            if (!_isLoadingSave)
+            {
+                Log("  New Game — skipping ground-ready check.");
+                return;
+            }
+
+            // ── Получить целевую позицию ──
+            // Игрок уже позиционирован через ISaveable в Step 4.
+            // playerObject деактивирован, но Transform доступен.
+            if (playerObject == null)
+            {
+                Log("  No playerObject — skipping ground-ready check.");
+                return;
+            }
+
+            Vector3 playerPos = playerObject.transform.position;
+            Log($"  Checking ground at saved position: {playerPos}");
+
+            // ── Raycast loop ──
+            float elapsed = 0f;
+            float lastLogTime = 0f;
+
+            while (elapsed < groundReadyTimeout)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // Луч: от позиции игрока + offset вверх, направлен вниз
+                Vector3 rayOrigin = playerPos + Vector3.up * GroundCheckRayOffset;
+                Ray ray = new Ray(rayOrigin, Vector3.down);
+
+                if (UnityEngine.Physics.Raycast(ray, GroundCheckRayLength))
+                {
+                    Log($"  Ground found after {elapsed:F1}s. Safe to activate.");
+                    return;
+                }
+
+                // ── Диагностический лог каждые N секунд ──
+                if (elapsed - lastLogTime >= GroundCheckLogIntervalSec)
+                {
+                    lastLogTime = elapsed;
+                    Log($"  Waiting for ground collider... ({elapsed:F0}s elapsed)");
+                }
+
+                await Awaitable.WaitForSecondsAsync(
+                    GroundCheckPollIntervalSec, cancellationToken: ct);
+
+                elapsed += GroundCheckPollIntervalSec;
+            }
+
+            // ── Таймаут ──
+            Debug.LogWarning(
+                $"[SceneBootstrap] Ground-ready timed out after {groundReadyTimeout}s " +
+                $"at position {playerPos}. Activating player without ground confirmation. " +
+                "Player may fall through ungenerated geometry.");
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  STEP 7 — PLAYER SPAWN (ASYNC)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
@@ -589,8 +774,7 @@ namespace Hecton8.Bootstrap
         private async Awaitable SpawnPlayerAsync(CancellationToken ct)
         {
             // ── Если сейв загружен — позиция уже установлена ──
-            if (!forceNewGame && !string.IsNullOrEmpty(saveSlot)
-                && SaveManager.Instance.SaveExists(saveSlot))
+            if (_isLoadingSave)
             {
                 Log("  Player position restored from save.");
                 return;
@@ -641,9 +825,29 @@ namespace Hecton8.Bootstrap
         /// <summary>
         /// Деактивирует игрока и его контроллер на время загрузки.
         /// Вызывается первым в Start(), до любых await.
+        ///
+        /// v2.0: Дополнительно переводит Rigidbody в isKinematic = true.
+        /// Это страховка: даже если объект активируется раньше времени,
+        /// физика не потянет его вниз. isKinematic снимается только
+        /// в <see cref="ActivatePlayer"/> после всех проверок.
         /// </summary>
         private void DisablePlayer()
         {
+            // ── Кэширование Rigidbody ──
+            if (playerRigidbody == null && playerObject != null)
+            {
+                playerRigidbody = playerObject.GetComponent<Rigidbody>();
+            }
+
+            // ── isKinematic safety (ПЕРЕД деактивацией) ──
+            // Устанавливаем на АКТИВНОМ объекте, чтобы Rigidbody
+            // не обработал ни одного кадра физики при пробуждении.
+            if (playerRigidbody != null)
+            {
+                playerRigidbody.isKinematic = true;
+                Log("  Rigidbody → isKinematic (physics frozen).");
+            }
+
             if (playerObject != null && playerObject.activeSelf)
             {
                 playerObject.SetActive(false);
@@ -658,6 +862,10 @@ namespace Hecton8.Bootstrap
         /// Включает playerObject и playerController.
         /// Вызывается ТОЛЬКО после прохождения всех шагов pipeline,
         /// непосредственно перед OnGameReady.
+        ///
+        /// v2.0: Снимает isKinematic, возвращая Rigidbody в нормальный
+        /// режим. К этому моменту Ground-Ready Check уже подтвердил
+        /// наличие коллайдера под ногами (или истёк таймаут).
         /// </summary>
         private void ActivatePlayer()
         {
@@ -665,6 +873,14 @@ namespace Hecton8.Bootstrap
             {
                 playerObject.SetActive(true);
                 Log("  Player activated.");
+            }
+
+            // ── Снимаем isKinematic ПОСЛЕ активации объекта ──
+            // Rigidbody нужен активный объект для корректной работы.
+            if (playerRigidbody != null)
+            {
+                playerRigidbody.isKinematic = false;
+                Log("  Rigidbody → dynamic (physics resumed).");
             }
 
             if (playerController != null)
@@ -718,8 +934,9 @@ namespace Hecton8.Bootstrap
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
-            if (worldGenWaitTime < 0f)  worldGenWaitTime = 0f;
-            if (bootstrapTimeout < 1f)  bootstrapTimeout = 1f;
+            if (worldGenWaitTime   < 0f)  worldGenWaitTime   = 0f;
+            if (bootstrapTimeout   < 1f)  bootstrapTimeout   = 1f;
+            if (groundReadyTimeout < 1f)  groundReadyTimeout = 1f;
         }
 #endif
     }

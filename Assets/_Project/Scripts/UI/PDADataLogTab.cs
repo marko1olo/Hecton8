@@ -38,6 +38,7 @@ namespace Hecton8.UI
         [SerializeField] private FieldOperationLogSystem fieldOperationLogSystem;
         [SerializeField] private PDAExchangeSystem exchangeSystem;
         [SerializeField] private BeaconNetworkSystem beaconNetworkSystem;
+        [SerializeField] private HectonDiscoveryManager discoveryManager;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
@@ -122,6 +123,8 @@ namespace Hecton8.UI
                 exchangeSystem = FindFirstObjectByType<PDAExchangeSystem>();
             if (beaconNetworkSystem == null)
                 beaconNetworkSystem = FindFirstObjectByType<BeaconNetworkSystem>();
+            if (discoveryManager == null)
+                discoveryManager = FindFirstObjectByType<HectonDiscoveryManager>();
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
@@ -154,6 +157,8 @@ namespace Hecton8.UI
                 exchangeSystem.ExchangeStateChanged += HandleExchangeStateChanged;
             if (beaconNetworkSystem != null)
                 beaconNetworkSystem.NetworkChanged += HandleBeaconNetworkChanged;
+            if (discoveryManager != null)
+                discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
 
             PDAEvents.OnOpened += HandlePdaOpened;
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
@@ -176,6 +181,8 @@ namespace Hecton8.UI
                 exchangeSystem.ExchangeStateChanged -= HandleExchangeStateChanged;
             if (beaconNetworkSystem != null)
                 beaconNetworkSystem.NetworkChanged -= HandleBeaconNetworkChanged;
+            if (discoveryManager != null)
+                discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
 
             PDAEvents.OnOpened -= HandlePdaOpened;
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
@@ -188,6 +195,7 @@ namespace Hecton8.UI
         private void HandleFieldOperationsChanged() => RefreshConstruction();
         private void HandleExchangeStateChanged() => RefreshConstruction();
         private void HandleBeaconNetworkChanged() => RefreshConstruction();
+        private void HandleBiomeDiscovered(int _) => RefreshConstruction();
 
         private void HandlePdaOpened(int tab)
         {
@@ -466,6 +474,8 @@ namespace Hecton8.UI
                 _sb.AppendLine();
                 AppendFieldOperationsDigest(_sb);
                 _sb.AppendLine();
+                AppendDiscoveryDigest(_sb);
+                _sb.AppendLine();
                 AppendScanArchiveDigest(_sb);
                 _constructionText.SetText(_sb);
                 return;
@@ -492,6 +502,8 @@ namespace Hecton8.UI
             AppendBarterDigest(_sb);
             _sb.AppendLine();
             AppendFieldOperationsDigest(_sb);
+            _sb.AppendLine();
+            AppendDiscoveryDigest(_sb);
             _sb.AppendLine();
             AppendScanArchiveDigest(_sb);
             _constructionText.SetText(_sb);
@@ -619,6 +631,36 @@ namespace Hecton8.UI
                     sb.Append(" — ").Append(entry.Summary);
                 sb.AppendLine();
             }
+        }
+
+        private void AppendDiscoveryDigest(StringBuilder sb)
+        {
+            sb.AppendLine("BIOME DISCOVERY");
+            if (discoveryManager == null)
+            {
+                sb.Append("DATA UNRELIABLE").AppendLine();
+                return;
+            }
+
+            int discovered = discoveryManager.TotalDiscovered;
+            float percent = (discovered / 108f) * 100f;
+            
+            sb.Append("PROGRESS ").AppendFormat("{0:0.0}%", percent)
+              .Append(" [").Append(discovered).Append("/108]").AppendLine();
+
+            if (discovered == 0)
+            {
+                sb.Append("STATUS   NO EXPLORATION LOGS").AppendLine();
+                return;
+            }
+
+            // Show last discovered if applicable
+            sb.Append("LATEST   ").Append(discoveryManager.GetBiomeName(GetLastDiscoveredId())).AppendLine();
+        }
+
+        private int GetLastDiscoveredId()
+        {
+            return discoveryManager != null ? discoveryManager.LastDiscoveredId : -1;
         }
 
         private void AppendScanArchiveDigest(StringBuilder sb)

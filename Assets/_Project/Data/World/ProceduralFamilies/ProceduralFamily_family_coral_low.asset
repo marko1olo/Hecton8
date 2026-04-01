@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 7
   scatterLayer: 0
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 0
   placementMode: 0
@@ -55,5 +58,11 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.05}
+  - variantId: family.coral.low.final.placeholder
+    prefab: {fileID: 9051508937162215285, guid: b130ee1a1d41d6d4b9478d7eb20b7db8, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.85, y: 1.05}
   futurePrefabRoot: World/Coral/Coral_Low
   gameplayRole: Low coral scatter for seafloor color and local variety.

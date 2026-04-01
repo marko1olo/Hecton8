@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton8.Core;
 using Hecton8.Input;
 using UnityEngine;
 
@@ -428,11 +429,12 @@ namespace Hecton8.Gameplay
         }
     }
 
-    public sealed class StunTargetRuntime : MonoBehaviour
+    public sealed class StunTargetRuntime : MonoBehaviour, ITickable
     {
         private HectonBaseAI _target;
         private float _remaining;
         private bool _armed;
+        private bool _registeredToTickManager;
 
         public float RemainingTime => _remaining;
         public bool IsArmed => _armed;
@@ -446,15 +448,16 @@ namespace Hecton8.Gameplay
             {
                 _target.enabled = false;
                 _armed = true;
+                RegisterToTickManager();
             }
         }
 
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!_armed)
                 return;
 
-            _remaining -= Time.deltaTime;
+            _remaining -= deltaTime;
             if (_remaining > 0f)
                 return;
 
@@ -462,16 +465,11 @@ namespace Hecton8.Gameplay
                 _target.enabled = true;
 
             if (_target != null)
-            {
-                FieldOperationLogSystem.RecordOperation(
-                    "STUN",
-                    "BIOFORM RECOVERED",
-                    $"{_target.gameObject.name} recovered from disruption and resumed activity.",
-                    "INFO");
-            }
+                LogRecovery();
 
             _armed = false;
             _remaining = 0f;
+            UnregisterFromTickManager();
         }
 
         private void OnDisable()
@@ -481,6 +479,34 @@ namespace Hecton8.Gameplay
 
             _armed = false;
             _remaining = 0f;
+            UnregisterFromTickManager();
+        }
+
+        private void LogRecovery()
+        {
+            FieldOperationLogSystem.RecordOperation(
+                "STUN",
+                "BIOFORM RECOVERED",
+                $"{_target.gameObject.name} recovered from disruption and resumed activity.",
+                "INFO");
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register((ITickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Unregister((ITickable)this);
+            _registeredToTickManager = false;
         }
     }
 }

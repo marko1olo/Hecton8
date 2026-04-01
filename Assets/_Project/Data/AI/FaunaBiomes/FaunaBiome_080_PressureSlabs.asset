@@ -34,3 +34,9 @@ MonoBehaviour:
   biomeMaxCreatures: 7
   spawnHeightAboveBottom: 1
   spawnHeightMax: 10
+  useLargeThreatMacroZone: 1
+  largeThreatZoneLabel: Pressure-Slabs / heavy hunter / sentinel pressure
+  largeThreatZoneRadius: 691.19995
+  largeThreatArchetype: {fileID: 11400000, guid: 52c17626efb42eb4686f28b1c093de73, type: 2}
+  largeThreatEncounterType: 2
+  preferHeavyHunterInsteadOfLeviathan: 1

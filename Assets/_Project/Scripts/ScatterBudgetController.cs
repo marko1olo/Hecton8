@@ -31,6 +31,7 @@ namespace Hecton8.World
         [SerializeField] private ScavengePopulator scavengePopulator;
         [SerializeField] private ProximityColliderSystem proximityColliderSystem;
         [SerializeField] private BiomeSamplerCache biomeSamplerCache;
+        [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
         [Header("Depth Thresholds")]
         [SerializeField] private float midDepthStart = 60f;
@@ -61,6 +62,8 @@ namespace Hecton8.World
         [SerializeField] private float _debugZoneSpawnScale = 1f;
         [SerializeField] private float _debugZoneColliderRadiusScale = 1f;
         [SerializeField] private float _debugZoneColliderOpsScale = 1f;
+        [SerializeField] private float _debugProfileResourcesNearScale = 1f;
+        [SerializeField] private float _debugProfileDebrisNearScale = 1f;
 
         private bool _registeredToTickManager;
         private BudgetBand _lastAppliedBand = (BudgetBand)(-1);
@@ -113,6 +116,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ResolveReferences();
+            ApplyChunkProfileDefaults();
             ClampProfiles();
             UpdateDiagnostics();
         }
@@ -229,9 +233,18 @@ namespace Hecton8.World
                 ApplyCurrentBudget(force: true);
         }
 
+        public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
+        {
+            chunkStreamingProfile = profile;
+            ApplyChunkProfileDefaults();
+            ClampProfiles();
+            ApplyCurrentBudget(force: true);
+        }
+
         private void ApplyCurrentBudget(bool force)
         {
             ResolveReferences();
+            ApplyChunkProfileDefaults();
             ClampProfiles();
 
             if (playerTransform == null || mapMagicBridge == null)
@@ -324,6 +337,56 @@ namespace Hecton8.World
                 biomeSamplerCache = FindAnyObjectByType<BiomeSamplerCache>();
         }
 
+        private void ApplyChunkProfileDefaults()
+        {
+            if (chunkStreamingProfile == null)
+            {
+                _debugProfileResourcesNearScale = 1f;
+                _debugProfileDebrisNearScale = 1f;
+                return;
+            }
+
+            WorldChunkStreamingProfile.LayerProfile resourcesLayer =
+                chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Resources);
+            WorldChunkStreamingProfile.LayerProfile debrisLayer =
+                chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Debris);
+
+            float basePriority = Mathf.Max(48f, chunkStreamingProfile.fullSimulationRadius * Mathf.Max(0.5f, resourcesLayer.nearRadiusScale));
+            float baseUnload = Mathf.Max(basePriority + 48f, chunkStreamingProfile.midSimulationRadius * Mathf.Max(0.5f, resourcesLayer.midRadiusScale));
+            int baseSpawns = Mathf.Max(8, resourcesLayer.maxActivationsPerTick);
+
+            float baseColliderActivate = Mathf.Max(20f, chunkStreamingProfile.fullSimulationRadius * 0.24f * Mathf.Max(0.5f, debrisLayer.nearRadiusScale));
+            float baseColliderDeactivate = Mathf.Max(baseColliderActivate + 6f, chunkStreamingProfile.fullSimulationRadius * 0.28f * Mathf.Max(0.5f, debrisLayer.midRadiusScale));
+            int baseColliderOps = Mathf.Max(16, debrisLayer.maxActivationsPerTick);
+
+            surfaceProfile = BuildDepthProfile(baseUnload, basePriority, baseSpawns, baseColliderActivate, baseColliderDeactivate, baseColliderOps, 1f);
+            midDepthProfile = BuildDepthProfile(baseUnload, basePriority, baseSpawns, baseColliderActivate, baseColliderDeactivate, baseColliderOps, 0.84f);
+            deepProfile = BuildDepthProfile(baseUnload, basePriority, baseSpawns, baseColliderActivate, baseColliderDeactivate, baseColliderOps, 0.7f);
+
+            _debugProfileResourcesNearScale = resourcesLayer.nearRadiusScale;
+            _debugProfileDebrisNearScale = debrisLayer.nearRadiusScale;
+        }
+
+        private static BudgetProfile BuildDepthProfile(
+            float baseUnload,
+            float basePriority,
+            int baseSpawns,
+            float baseColliderActivate,
+            float baseColliderDeactivate,
+            int baseColliderOps,
+            float depthScale)
+        {
+            return new BudgetProfile
+            {
+                scavengeUnloadDistance = baseUnload * depthScale,
+                scavengePriorityRadius = basePriority * depthScale,
+                scavengeSpawnsPerTick = Mathf.Max(6, Mathf.RoundToInt(baseSpawns * depthScale)),
+                colliderActivateRadius = baseColliderActivate * depthScale,
+                colliderDeactivateRadius = Mathf.Max(baseColliderActivate * depthScale + 4f, baseColliderDeactivate * depthScale),
+                colliderOpsPerTick = Mathf.Max(12, Mathf.RoundToInt(baseColliderOps * depthScale))
+            };
+        }
+
         private void ClampProfiles()
         {
             midDepthStart = Mathf.Max(10f, midDepthStart);
@@ -363,6 +426,11 @@ namespace Hecton8.World
             _debugZoneSpawnScale = _zoneSpawnScale;
             _debugZoneColliderRadiusScale = _zoneColliderRadiusScale;
             _debugZoneColliderOpsScale = _zoneColliderOpsScale;
+            if (chunkStreamingProfile == null)
+            {
+                _debugProfileResourcesNearScale = 1f;
+                _debugProfileDebrisNearScale = 1f;
+            }
         }
     }
 }

@@ -32,6 +32,10 @@ namespace Hecton8.Gameplay
         [SerializeField] private string defaultLabelPrefix = "BEACON";
         [SerializeField] private bool verboseLogging;
 
+        [Header("── Prefabs ───────────────────────────────────")]
+        [Tooltip("Prefab for becons spawned from save data or as fallback. Should have BeaconRuntime component.")]
+        [SerializeField] private GameObject beaconPrefab;
+
         private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32);
         private int _nextSequence = 1;
 
@@ -198,7 +202,9 @@ namespace Hecton8.Gameplay
                 if (string.IsNullOrWhiteSpace(entry.label))
                     continue;
 
-                BeaconRuntime runtime = SpawnFallbackBeacon(
+                // ── Zero-GC Spawn from Pool ──
+                BeaconRuntime runtime = SpawnRuntimeBeacon(
+                    beaconPrefab, 
                     entry.GetPosition(),
                     entry.GetRotation(),
                     entry.GetColor(),
@@ -208,7 +214,7 @@ namespace Hecton8.Gameplay
                 if (runtime == null)
                     continue;
 
-                runtime.Configure(entry.id, entry.label, null, entry.GetColor(), entry.lightRange);
+                runtime.Configure(entry.id, entry.label, beaconPrefab, entry.GetColor(), entry.lightRange);
                 _activeBeacons.Add(runtime);
             }
 

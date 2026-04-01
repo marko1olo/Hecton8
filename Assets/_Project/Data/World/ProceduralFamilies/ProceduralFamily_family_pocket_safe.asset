@@ -20,6 +20,9 @@ MonoBehaviour:
   expectsInteraction: 0
   proceduralDomain: 16
   scatterLayer: 1
+  overrideStreamingLayer: 1
+  streamingLayerOverride: 5
+  contributesLargeThreatZone: 0
   structureAccentRole: 0
   clusterAccentRole: 4
   placementMode: 1
@@ -55,6 +58,12 @@ MonoBehaviour:
     weight: 1
     proxyOnly: 1
     finalReady: 0
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.pocket.safe.final.placeholder
+    prefab: {fileID: 8225299786010096520, guid: d445a1ca2fec4d44fbd2aa2b10a2d0ff, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
   futurePrefabRoot: World/SafePocket/Pocket_Safe
   gameplayRole: Breathing room and shelter pockets between pushes.
