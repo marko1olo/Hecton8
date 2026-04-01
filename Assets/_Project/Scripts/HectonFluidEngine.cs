@@ -153,11 +153,94 @@ namespace Hecton8.Physics
         public Vector3 CurrentVector
         {
             get => currentVector;
-            set => currentVector = value;
+            set
+            {
+                currentVector = value;
+                OnCurrentSettingsChanged();
+            }
+        }
+
+        /// <summary>Сила глобального течения.</summary>
+        public float CurrentStrength
+        {
+            get => currentStrength;
+            set
+            {
+                currentStrength = value;
+                OnCurrentSettingsChanged();
+            }
+        }
+
+        /// <summary>Включено ли phantom течение.</summary>
+        public bool EnablePhantomCurrent
+        {
+            get => enablePhantomCurrent;
+            set
+            {
+                enablePhantomCurrent = value;
+                OnCurrentSettingsChanged();
+            }
+        }
+
+        /// <summary>Масштаб шума phantom течения.</summary>
+        public float CurrentNoiseScale
+        {
+            get => currentNoiseScale;
+            set
+            {
+                currentNoiseScale = value;
+                OnCurrentSettingsChanged();
+            }
+        }
+
+        /// <summary>Временной масштаб phantom течения.</summary>
+        public float CurrentTimeScale
+        {
+            get => currentTimeScale;
+            set
+            {
+                currentTimeScale = value;
+                OnCurrentSettingsChanged();
+            }
+        }
+
+        /// <summary>Вертикальный фактор phantom течения.</summary>
+        public float CurrentVerticalFactor
+        {
+            get => currentVerticalFactor;
+            set
+            {
+                currentVerticalFactor = value;
+                OnCurrentSettingsChanged();
+            }
+        }
+
+        /// <summary>Сила phantom течения.</summary>
+        public float PhantomCurrentStrength
+        {
+            get => phantomCurrentStrength;
+            set
+            {
+                phantomCurrentStrength = value;
+                OnCurrentSettingsChanged();
+            }
         }
 
         /// <summary>Количество зарегистрированных объектов.</summary>
         public int ObjectCount => _objects.Count;
+
+        // ══════════════════════════════════════════════════════════
+        //  EVENTS
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>Вызывается при изменении настроек течений (для визуализаторов).</summary>
+        public event System.Action OnCurrentSettingsChangedEvent;
+
+        /// <summary>Уведомляет подписчиков об изменении настроек течений.</summary>
+        private void OnCurrentSettingsChanged()
+        {
+            OnCurrentSettingsChangedEvent?.Invoke();
+        }
 
         // ══════════════════════════════════════════════════════════
         //  MANAGED REGISTRY (parallel lists)

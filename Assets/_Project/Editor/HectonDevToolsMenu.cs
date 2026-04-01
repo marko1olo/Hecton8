@@ -599,20 +599,11 @@ namespace Hecton8.Editor
                 return;
             }
 
-            RuntimePerformanceProfiler profiler = GetOrCreateRuntimePerformanceProfiler();
-            if (profiler == null)
-                return;
-
-            profiler.ConfigureForDevRun(
-                autoStartOnEnable: true,
-                enableBudgetViolationLogging: true,
-                enableWindowLogging: true,
-                sampleWindow: 2f);
-            profiler.StartProfiling();
-
-            Selection.activeObject = profiler.gameObject;
-            EditorGUIUtility.PingObject(profiler.gameObject);
-            Debug.Log("[Hecton Dev] Started runtime performance profiler.", profiler.gameObject);
+            PlayModePerformanceMonitor.Start(
+                sampleWindowSeconds: 2f,
+                logBudgetViolations: true,
+                logEveryWindow: true);
+            Debug.Log("[Hecton Dev] Started runtime performance profiler.");
         }
 
         [MenuItem(MenuRoot + "Scene/Run Runtime Performance Profiler (Play Mode)", true)]
@@ -630,16 +621,13 @@ namespace Hecton8.Editor
                 return;
             }
 
-            RuntimePerformanceProfiler profiler = FindExistingRuntimePerformanceProfiler();
-            if (profiler == null)
+            if (!PlayModePerformanceMonitor.IsActive)
             {
-                Debug.LogWarning("[Hecton Dev] No RuntimePerformanceProfiler found.");
+                Debug.LogWarning("[Hecton Dev] Runtime performance profiler is not active.");
                 return;
             }
 
-            profiler.LogStatusToConsole();
-            Selection.activeObject = profiler.gameObject;
-            EditorGUIUtility.PingObject(profiler.gameObject);
+            PlayModePerformanceMonitor.LogStatus();
         }
 
         [MenuItem(MenuRoot + "Scene/Log Runtime Performance Profiler Status (Play Mode)", true)]
@@ -657,13 +645,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            RuntimePerformanceProfiler profiler = GetOrCreateRuntimePerformanceProfiler();
-            if (profiler == null)
-                return;
-
-            profiler.LogAvailableCounters();
-            Selection.activeObject = profiler.gameObject;
-            EditorGUIUtility.PingObject(profiler.gameObject);
+            PlayModePerformanceMonitor.LogAvailableCounters();
         }
 
         [MenuItem(MenuRoot + "Scene/Log Runtime Performance Profiler Counters (Play Mode)", true)]
@@ -681,21 +663,176 @@ namespace Hecton8.Editor
                 return;
             }
 
-            RuntimePerformanceProfiler profiler = FindExistingRuntimePerformanceProfiler();
-            if (profiler == null)
+            if (!PlayModePerformanceMonitor.IsActive)
             {
-                Debug.LogWarning("[Hecton Dev] No RuntimePerformanceProfiler found.");
+                Debug.LogWarning("[Hecton Dev] Runtime performance profiler is not active.");
                 return;
             }
 
-            profiler.StopProfiling();
-            profiler.LogStatusToConsole();
-            Selection.activeObject = profiler.gameObject;
-            EditorGUIUtility.PingObject(profiler.gameObject);
+            PlayModePerformanceMonitor.Stop();
+            Debug.Log("[Hecton Dev] Stopped runtime performance profiler.");
         }
 
         [MenuItem(MenuRoot + "Scene/Stop Runtime Performance Profiler (Play Mode)", true)]
         public static bool StopRuntimePerformanceProfilerValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run Tool Runtime Smoke (Play Mode)", false, 131)]
+        public static void RunToolRuntimeSmoke()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Tool smoke can only run in play mode.");
+                return;
+            }
+
+            ToolRuntimeSmokeTester tester = FindOrCreateToolRuntimeSmokeTester();
+            if (tester == null)
+                return;
+
+            tester.ConfigureForDevRun(
+                enableVerboseLogging: true,
+                restoreLoadoutAfterRun: true,
+                startupDelaySeconds: 0.2f,
+                equipTimeoutSeconds: 1.5f,
+                settleDelaySeconds: 0.1f,
+                betweenToolsDelaySeconds: 0.05f,
+                simulatedDeltaSeconds: 0.1f);
+
+            if (!tester.TryRunImmediately())
+            {
+                Debug.LogWarning("[Hecton Dev] Tool smoke is already running. " + tester.DescribeStatus());
+                return;
+            }
+
+            Selection.activeObject = tester.gameObject;
+            EditorGUIUtility.PingObject(tester.gameObject);
+            Debug.Log("[Hecton Dev] Started tool runtime smoke pass.");
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run Tool Runtime Smoke (Play Mode)", true)]
+        public static bool RunToolRuntimeSmokeValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Tool Runtime Smoke Status (Play Mode)", false, 132)]
+        public static void LogToolRuntimeSmokeStatus()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Tool smoke status is only available in play mode.");
+                return;
+            }
+
+            ToolRuntimeSmokeTester tester =
+                UnityEngine.Object.FindFirstObjectByType<ToolRuntimeSmokeTester>(FindObjectsInactive.Include);
+            if (tester == null)
+            {
+                Debug.LogWarning("[Hecton Dev] No ToolRuntimeSmokeTester found.");
+                return;
+            }
+
+            Debug.Log("[Hecton Dev] Tool smoke status: " + tester.DescribeStatus(), tester.gameObject);
+            Selection.activeObject = tester.gameObject;
+            EditorGUIUtility.PingObject(tester.gameObject);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Tool Runtime Smoke Status (Play Mode)", true)]
+        public static bool LogToolRuntimeSmokeStatusValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Start Optimization Audit (Play Mode)", false, 133)]
+        public static void StartOptimizationAudit()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Optimization audit can only run in play mode.");
+                return;
+            }
+
+            PlayModeOptimizationAudit.Start(
+                startRuntimeProfiler: true,
+                sampleWindowSeconds: 2f,
+                logEveryProfilerWindow: true);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Start Optimization Audit (Play Mode)", true)]
+        public static bool StartOptimizationAuditValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Optimization Audit Summary (Play Mode)", false, 134)]
+        public static void LogOptimizationAuditSummary()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Optimization audit summary is only available in play mode.");
+                return;
+            }
+
+            if (!PlayModeOptimizationAudit.IsActive)
+            {
+                Debug.LogWarning("[Hecton Dev] Optimization audit is not active.");
+                return;
+            }
+
+            PlayModeOptimizationAudit.LogSummary();
+        }
+
+        [MenuItem(MenuRoot + "Scene/Log Optimization Audit Summary (Play Mode)", true)]
+        public static bool LogOptimizationAuditSummaryValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Stop Optimization Audit (Play Mode)", false, 135)]
+        public static void StopOptimizationAudit()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Optimization audit can only be stopped in play mode.");
+                return;
+            }
+
+            if (!PlayModeOptimizationAudit.IsActive)
+            {
+                Debug.LogWarning("[Hecton Dev] Optimization audit is not active.");
+                return;
+            }
+
+            PlayModeOptimizationAudit.Stop(logSummary: true);
+        }
+
+        [MenuItem(MenuRoot + "Scene/Stop Optimization Audit (Play Mode)", true)]
+        public static bool StopOptimizationAuditValidate()
+        {
+            return EditorApplication.isPlaying;
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run Tool Smoke + Optimization Audit (Play Mode)", false, 136)]
+        public static void RunToolSmokeWithOptimizationAudit()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Debug.LogWarning("[Hecton Dev] Tool smoke audit can only run in play mode.");
+                return;
+            }
+
+            PlayModeOptimizationAudit.Start(
+                startRuntimeProfiler: true,
+                sampleWindowSeconds: 2f,
+                logEveryProfilerWindow: true);
+            RunToolRuntimeSmoke();
+        }
+
+        [MenuItem(MenuRoot + "Scene/Run Tool Smoke + Optimization Audit (Play Mode)", true)]
+        public static bool RunToolSmokeWithOptimizationAuditValidate()
         {
             return EditorApplication.isPlaying;
         }
@@ -710,6 +847,35 @@ namespace Hecton8.Editor
             }
 
             return list;
+        }
+
+        private static ToolRuntimeSmokeTester FindOrCreateToolRuntimeSmokeTester()
+        {
+            ToolRuntimeSmokeTester tester =
+                UnityEngine.Object.FindFirstObjectByType<ToolRuntimeSmokeTester>(FindObjectsInactive.Include);
+            if (tester != null)
+            {
+                if (tester.gameObject.name.StartsWith("__DEV_", StringComparison.Ordinal))
+                    tester.gameObject.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+
+                return tester;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
+            {
+                Debug.LogWarning("[Hecton Dev] No active loaded scene for tool smoke.");
+                return null;
+            }
+
+            GameObject parent = FindRootGameObject(activeScene, "--- SYSTEMS ---");
+            GameObject host = new GameObject("__DEV_ToolSmoke");
+            host.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+            SceneManager.MoveGameObjectToScene(host, activeScene);
+            if (parent != null)
+                host.transform.SetParent(parent.transform, false);
+
+            return host.AddComponent<ToolRuntimeSmokeTester>();
         }
 
         /// <summary>Предупреждения с ping объектов; возвращает число missing *components*.</summary>
@@ -804,67 +970,5 @@ namespace Hecton8.Editor
             return null;
         }
 
-        private static RuntimePerformanceProfiler GetOrCreateRuntimePerformanceProfiler()
-        {
-            RuntimePerformanceProfiler profiler = FindExistingRuntimePerformanceProfiler();
-            if (profiler != null)
-            {
-                if (profiler.gameObject.name.StartsWith("__DEV_", StringComparison.Ordinal))
-                    profiler.gameObject.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
-
-                return profiler;
-            }
-
-            Scene activeScene = SceneManager.GetActiveScene();
-            if (!activeScene.IsValid() || !activeScene.isLoaded)
-            {
-                Debug.LogWarning("[Hecton Dev] No active loaded scene for runtime performance profiler.");
-                return null;
-            }
-
-            GameObject parent = FindRootGameObject(activeScene, "--- SYSTEMS ---");
-            GameObject host = new GameObject("__DEV_RuntimePerformanceProfiler");
-            host.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
-            host.SetActive(false);
-            SceneManager.MoveGameObjectToScene(host, activeScene);
-            if (parent != null)
-                host.transform.SetParent(parent.transform, false);
-
-            profiler = host.AddComponent<RuntimePerformanceProfiler>();
-            profiler.ConfigureForDevRun(
-                autoStartOnEnable: true,
-                enableBudgetViolationLogging: true,
-                enableWindowLogging: true,
-                sampleWindow: 2f);
-            host.SetActive(true);
-            return profiler;
-        }
-
-        private static RuntimePerformanceProfiler FindExistingRuntimePerformanceProfiler()
-        {
-            RuntimePerformanceProfiler preferred = null;
-            RuntimePerformanceProfiler[] profilers = Resources.FindObjectsOfTypeAll<RuntimePerformanceProfiler>();
-            for (int i = 0; i < profilers.Length; i++)
-            {
-                RuntimePerformanceProfiler profiler = profilers[i];
-                if (profiler == null || EditorUtility.IsPersistent(profiler))
-                    continue;
-
-                GameObject go = profiler.gameObject;
-                if (go == null)
-                    continue;
-
-                Scene scene = go.scene;
-                if (!scene.IsValid() || !scene.isLoaded)
-                    continue;
-
-                if (go.name.StartsWith("__DEV_", StringComparison.Ordinal))
-                    return profiler;
-
-                preferred ??= profiler;
-            }
-
-            return preferred;
-        }
     }
 }

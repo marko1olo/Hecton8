@@ -50,11 +50,15 @@ namespace Hecton8.Atmosphere
         {
             public float  skyExposure;
             public float  sunIntensity;
+            public float  temperature;
+            public float  radiation;
 
             public static AtmosphereSnapshot Default => new AtmosphereSnapshot
             {
                 skyExposure  = 1f,
-                sunIntensity = 1f
+                sunIntensity = 1f,
+                temperature  = 20f,
+                radiation    = 0f
             };
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -63,7 +67,9 @@ namespace Hecton8.Atmosphere
                 return new AtmosphereSnapshot
                 {
                     skyExposure  = p.skyExposure,
-                    sunIntensity = p.sunIntensity
+                    sunIntensity = p.sunIntensity,
+                    temperature  = p.temperature,
+                    radiation    = p.radiation
                 };
             }
 
@@ -76,7 +82,9 @@ namespace Hecton8.Atmosphere
                 return new AtmosphereSnapshot
                 {
                     skyExposure  = math.lerp(from.skyExposure,  to.skyExposure,  t),
-                    sunIntensity = math.lerp(from.sunIntensity, to.sunIntensity, t)
+                    sunIntensity = math.lerp(from.sunIntensity, to.sunIntensity, t),
+                    temperature  = math.lerp(from.temperature,  to.temperature,  t),
+                    radiation    = math.lerp(from.radiation,    to.radiation,    t)
                 };
             }
         }
@@ -233,6 +241,9 @@ namespace Hecton8.Atmosphere
         public float ComputedHorizonFade => _computedHorizonFade;
 
         public float CurrentSunIntensity => _computedSunIntensity;
+
+        public float CurrentTemperature  => _currentValues.temperature;
+        public float CurrentRadiation    => _currentValues.radiation;
 
         #endregion
 

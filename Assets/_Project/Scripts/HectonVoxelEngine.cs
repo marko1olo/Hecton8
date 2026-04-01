@@ -1712,6 +1712,11 @@ public class HectonVoxelEngine : MonoBehaviour
         float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
         float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
 
+
+        // Record current world shift state to compensate if it changes during async work
+        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
+            ? HectonFloatingOrigin.Instance.TotalOffset 
+            : Vector3.zero;
         // ── Terrain height at center (for cave graph) ──
         float terrainHeightCenter = worldCenter.y - 10f; // fallback
         if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
@@ -1921,7 +1926,14 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 GameObject targetGO = SpawnVolume();
                 targetGO.name = $"Cave_{preset.presetType}_{seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
-                targetGO.transform.position = Vector3.zero;
+                
+                // Compensate for any world shifts that happened during generation
+                Vector3 currentShift = HectonFloatingOrigin.Instance != null 
+                    ? HectonFloatingOrigin.Instance.TotalOffset 
+                    : Vector3.zero;
+                Vector3 shiftDelta = currentShift - shiftAtStart;
+                targetGO.transform.position = -shiftDelta;
+
 
                 BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
                                      triangleIndices, rawCount, weldedCount, voxelMaterial);
@@ -2051,6 +2063,26 @@ public class HectonVoxelEngine : MonoBehaviour
 
         float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
         float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
+
+        // Record current world shift state to compensate if it changes during async work
+        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
+            ? HectonFloatingOrigin.Instance.TotalOffset 
+            : Vector3.zero;
+
+        // Record current world shift state to compensate if it changes during async work
+        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
+            ? HectonFloatingOrigin.Instance.TotalOffset 
+            : Vector3.zero;
+
+        // Record current world shift state to compensate if it changes during async work
+        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
+            ? HectonFloatingOrigin.Instance.TotalOffset 
+            : Vector3.zero;
+
+        // Record current world shift state to compensate if it changes during async work
+        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
+            ? HectonFloatingOrigin.Instance.TotalOffset 
+            : Vector3.zero;
 
         float terrainHeightCenter = worldCenter.y - 10f;
         if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
@@ -2210,7 +2242,13 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 GameObject targetGO = SpawnVolume();
                 targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
-                targetGO.transform.position = Vector3.zero;
+
+                // Compensate for any world shifts that happened during generation
+                Vector3 currentShift = HectonFloatingOrigin.Instance != null 
+                    ? HectonFloatingOrigin.Instance.TotalOffset 
+                    : Vector3.zero;
+                Vector3 shiftDelta = currentShift - shiftAtStartData; // Note: using unique name for data overload
+                targetGO.transform.position = -shiftDelta;
 
                 BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
                                      triangleIndices, rawCount, weldedCount, voxelMaterial);

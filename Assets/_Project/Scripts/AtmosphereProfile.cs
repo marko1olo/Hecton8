@@ -37,4 +37,11 @@ public class AtmosphereProfile : ScriptableObject
     [Tooltip("Интенсивность Directional Light (солнца)")]
     [Range(0f, 10f)]
     public float sunIntensity = 1.5f;
+
+    [Header("══ Hazards ══")]
+    [Tooltip("Ambient temperature in Celsius (°C). Affects suit energy consumption and hull integrity if outside safe range.")]
+    public float temperature = 20f;
+
+    [Tooltip("Ambient radiation level in Rem/h. High radiation causes integrity damage.")]
+    public float radiation = 0f;
 }

@@ -194,9 +194,11 @@ namespace Hecton8.UI
 
             bool shouldShow = playerBuilder.IsEquipped && playerBuilder.ActiveBuildable != null;
             if (_canvasGroup != null)
+            {
+                // Keep the overlay object active so the component can recover
+                // when the builder becomes equipped again on the same frame tree.
                 _canvasGroup.alpha = shouldShow ? 1f : 0f;
-            if (_self.gameObject.activeSelf != shouldShow)
-                _self.gameObject.SetActive(shouldShow);
+            }
 
             if (!shouldShow)
                 return;

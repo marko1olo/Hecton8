@@ -290,6 +290,10 @@ namespace Hecton8.UI
                 _cardButtonBgs[i].color = snapshot.CanExecute ? BoxActive : new Color(0.14f, 0.12f, 0.08f, 0.72f);
                 _cardButtonLabels[i].color = snapshot.CanExecute ? Primary : Warn;
                 _cardButtonLabels[i].SetText(GetActionLabel(snapshot));
+
+                PDABarterActionButton button = _cardButtonBgs[i].GetComponent<PDABarterActionButton>();
+                if (button != null)
+                    button.SetVisualState(_cardButtonBgs[i].color);
             }
         }
 
@@ -443,9 +447,17 @@ namespace Hecton8.UI
             _tab = tab;
             _offerIndex = offerIndex;
             _bg = bg;
-            _normalColor = bg != null ? bg.color : Color.white;
-            _hoverColor = _normalColor * 1.15f;
-            _hoverColor.a = _normalColor.a;
+            SetVisualState(bg != null ? bg.color : Color.white);
+        }
+
+        public void SetVisualState(Color normal)
+        {
+            _normalColor = normal;
+            _hoverColor = normal * 1.15f;
+            _hoverColor.a = normal.a;
+
+            if (_bg != null)
+                _bg.color = normal;
         }
 
         public void OnPointerClick(PointerEventData eventData) => _tab?.InvokeOffer(_offerIndex);

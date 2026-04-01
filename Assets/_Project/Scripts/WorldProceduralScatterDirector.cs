@@ -47,6 +47,8 @@ namespace Hecton8.World
         [SerializeField] private float scatterForcedRefreshInterval = 0f;
         [SerializeField] private bool enableScatterRebuildProfiling = true;
         [SerializeField] private float scatterRebuildSpikeThresholdMs = 40f;
+        [Tooltip("Включает подробную строковую диагностику sampling/rebuild. Держи выключенной в обычном runtime, чтобы не тратить CPU на hot path.")]
+        [SerializeField] private bool enableScatterDetailedDiagnostics = false;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -139,6 +141,13 @@ namespace Hecton8.World
         [SerializeField] private float _debugRestoreStageMs;
         [SerializeField] private float _debugReconcileStageMs;
         [SerializeField] private float _debugDiagnosticsStageMs;
+        [SerializeField] private float _debugReconcileCleanupStageMs;
+        [SerializeField] private float _debugReconcileSpawnStageMs;
+        [SerializeField] private float _debugReconcileFaunaStageMs;
+        [SerializeField] private int _debugReconcileRemovedCount;
+        [SerializeField] private int _debugReconcileRebuiltCount;
+        [SerializeField] private int _debugReconcileCreatedCount;
+        [SerializeField] private int _debugReconcileReusedCount;
         [SerializeField] private string _debugLastScatterRefreshReason = "None";
         [SerializeField] private string _debugLastScatterInvalidationReason = "None";
 
@@ -373,6 +382,7 @@ namespace Hecton8.World
             int mapMagicSamples = 0;
             int raycastSamples = 0;
             int fallbackSamples = 0;
+            bool collectDetailedDiagnostics = enableScatterDetailedDiagnostics;
             WorldZoneAnchor debugZone = null;
             WorldZoneAnchor.ZoneKind debugResolvedZoneKind = default;
             WorldProceduralPattern debugPattern = WorldProceduralPattern.SedimentResources;
@@ -405,10 +415,13 @@ namespace Hecton8.World
                     debugBiomeProfile = fieldSample.biomeProfile;
                     debugBiomeFamily = fieldSample.biomeFamily;
                     RegisterProfileCount(sampledMatrixProfileCounts, fieldSample.biomeProfile);
-                    RegisterStringCount(sampledMatrixBiomeCounts, ResolveBiomeMatrixLabel(fieldSample.biomeProfile));
-                    RegisterStringCount(sampledBiomeCounts, ResolveBiomeLabel(fieldSample.biomeFamily));
-                    RegisterStringCount(sampledPatternCounts, fieldSample.resolvedPattern.ToString());
-                    RegisterStringCount(sampledZoneCounts, fieldSample.zone != null ? fieldSample.zone.ZoneLabel : $"Synthetic:{fieldSample.resolvedZoneKind}");
+                    if (collectDetailedDiagnostics)
+                    {
+                        RegisterStringCount(sampledMatrixBiomeCounts, ResolveBiomeMatrixLabel(fieldSample.biomeProfile));
+                        RegisterStringCount(sampledBiomeCounts, ResolveBiomeLabel(fieldSample.biomeFamily));
+                        RegisterStringCount(sampledPatternCounts, fieldSample.resolvedPattern.ToString());
+                        RegisterStringCount(sampledZoneCounts, fieldSample.zone != null ? fieldSample.zone.ZoneLabel : $"Synthetic:{fieldSample.resolvedZoneKind}");
+                    }
                     int localGroundBudget = ResolveScaledBudget(groundBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Ground, 4);
                     int localClusterBudget = ResolveScaledBudget(clusterBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Cluster, 3);
                     int localStructureBudget = ResolveScaledBudget(structureBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Structure, 2);
@@ -548,8 +561,11 @@ namespace Hecton8.World
                         if (!TryRegisterDesiredPlacement(placement, now))
                             continue;
                         layerPlacementCounts[layerIndex]++;
-                        RegisterLayerFamilyCount(layerFamilyCounts, layer, candidate.Family);
-                        RegisterLayerBiomeCount(layerBiomeCounts, layer, candidate.Placement.BiomeFamily);
+                        if (collectDetailedDiagnostics)
+                        {
+                            RegisterLayerFamilyCount(layerFamilyCounts, layer, candidate.Family);
+                            RegisterLayerBiomeCount(layerBiomeCounts, layer, candidate.Placement.BiomeFamily);
+                        }
                         if (!layerTopValid[layerIndex] || candidate.Score > layerTopCandidates[layerIndex].Score)
                         {
                             layerTopCandidates[layerIndex] = candidate;
@@ -621,8 +637,8 @@ namespace Hecton8.World
             RestoreRecentDesiredPlacements(center, now);
             long restoreEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
 
-            ReconcileInstances();
-            long reconcileEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
+            ScatterReconcileMetrics reconcileMetrics = ReconcileInstances(enableScatterRebuildProfiling);
+            long reconcileEndTimestamp = reconcileMetrics.EndTimestamp;
 
             _debugReady = true;
             _debugEvaluatedCells = evaluatedCells;
@@ -662,19 +678,10 @@ namespace Hecton8.World
             _debugPatternSpawnBudgetScale = debugSpawnBudgetScale;
             _debugTopHeat = hasTopCandidate ? topCandidate.Heat : 0f;
             _debugTopScore = hasTopCandidate ? topCandidate.Score : 0f;
-            _debugSampleDominantMatrixBiome = ResolveDominantCounter(sampledMatrixBiomeCounts, out _debugSampleDominantMatrixCount);
             _debugGroundTopFamily = ResolveLayerTopFamily(layerTopCandidates, layerTopValid, WorldPrefabFamilyProfile.ScatterLayer.Ground);
             _debugClusterTopFamily = ResolveLayerTopFamily(layerTopCandidates, layerTopValid, WorldPrefabFamilyProfile.ScatterLayer.Cluster);
             _debugStructureTopFamily = ResolveLayerTopFamily(layerTopCandidates, layerTopValid, WorldPrefabFamilyProfile.ScatterLayer.Structure);
             _debugSpawnTopFamily = ResolveLayerTopFamily(layerTopCandidates, layerTopValid, WorldPrefabFamilyProfile.ScatterLayer.Spawn);
-            _debugGroundDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Ground, out _debugGroundDominantCount);
-            _debugClusterDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Cluster, out _debugClusterDominantCount);
-            _debugStructureDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Structure, out _debugStructureDominantCount);
-            _debugSpawnDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Spawn, out _debugSpawnDominantCount);
-            _debugGroundDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Ground, out _);
-            _debugClusterDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Cluster, out _);
-            _debugStructureDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Structure, out _);
-            _debugSpawnDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Spawn, out _);
             _debugClusterDominantAccentRole = ResolveDominantClusterAccentRole(clusterAccentCounts, out _debugClusterDominantAccentCount);
             _debugStructureDominantAccentRole = ResolveDominantStructureAccentRole(structureAccentCounts, out _debugStructureDominantAccentCount);
             _debugClusterFertileGrowthCount = GetClusterAccentCount(clusterAccentCounts, WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth);
@@ -690,9 +697,44 @@ namespace Hecton8.World
             _debugStructureBiologicalSilhouetteCount = GetStructureAccentCount(structureAccentCounts, WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette);
             _debugSpawnPassiveCount = passiveSpawnCount;
             _debugSpawnPredatorCount = predatorSpawnCount;
-            _debugSampleDominantBiomeFamily = ResolveDominantCounter(sampledBiomeCounts, out _debugSampleDominantBiomeCount);
-            _debugSampleDominantPattern = ResolveDominantCounter(sampledPatternCounts, out _debugSampleDominantPatternCount);
-            _debugSampleDominantZone = ResolveDominantCounter(sampledZoneCounts, out _debugSampleDominantZoneCount);
+            if (collectDetailedDiagnostics)
+            {
+                _debugSampleDominantMatrixBiome = ResolveDominantCounter(sampledMatrixBiomeCounts, out _debugSampleDominantMatrixCount);
+                _debugGroundDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Ground, out _debugGroundDominantCount);
+                _debugClusterDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Cluster, out _debugClusterDominantCount);
+                _debugStructureDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Structure, out _debugStructureDominantCount);
+                _debugSpawnDominantFamily = ResolveDominantLayerFamily(layerFamilyCounts, WorldPrefabFamilyProfile.ScatterLayer.Spawn, out _debugSpawnDominantCount);
+                _debugGroundDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Ground, out _);
+                _debugClusterDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Cluster, out _);
+                _debugStructureDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Structure, out _);
+                _debugSpawnDominantBiomeFamily = ResolveDominantLayerFamily(layerBiomeCounts, WorldPrefabFamilyProfile.ScatterLayer.Spawn, out _);
+                _debugSampleDominantBiomeFamily = ResolveDominantCounter(sampledBiomeCounts, out _debugSampleDominantBiomeCount);
+                _debugSampleDominantPattern = ResolveDominantCounter(sampledPatternCounts, out _debugSampleDominantPatternCount);
+                _debugSampleDominantZone = ResolveDominantCounter(sampledZoneCounts, out _debugSampleDominantZoneCount);
+            }
+            else
+            {
+                _debugSampleDominantMatrixBiome = "Disabled";
+                _debugGroundDominantFamily = "Disabled";
+                _debugClusterDominantFamily = "Disabled";
+                _debugStructureDominantFamily = "Disabled";
+                _debugSpawnDominantFamily = "Disabled";
+                _debugGroundDominantBiomeFamily = "Disabled";
+                _debugClusterDominantBiomeFamily = "Disabled";
+                _debugStructureDominantBiomeFamily = "Disabled";
+                _debugSpawnDominantBiomeFamily = "Disabled";
+                _debugSampleDominantBiomeFamily = "Disabled";
+                _debugSampleDominantPattern = "Disabled";
+                _debugSampleDominantZone = "Disabled";
+                _debugGroundDominantCount = 0;
+                _debugClusterDominantCount = 0;
+                _debugStructureDominantCount = 0;
+                _debugSpawnDominantCount = 0;
+                _debugSampleDominantMatrixCount = 0;
+                _debugSampleDominantBiomeCount = 0;
+                _debugSampleDominantPatternCount = 0;
+                _debugSampleDominantZoneCount = 0;
+            }
             RecordScatterRefreshSample();
             if (enableScatterRebuildProfiling)
             {
@@ -700,11 +742,11 @@ namespace Hecton8.World
                 CommitScatterRebuildProfile(
                     rebuildStartTimestamp,
                     samplingEndTimestamp,
-                    rescueEndTimestamp,
-                    restoreEndTimestamp,
-                    reconcileEndTimestamp,
-                    diagnosticsEndTimestamp,
-                    evaluatedCells);
+                rescueEndTimestamp,
+                restoreEndTimestamp,
+                reconcileMetrics,
+                diagnosticsEndTimestamp,
+                evaluatedCells);
             }
         }
 
@@ -923,16 +965,20 @@ namespace Hecton8.World
             long samplingEndTimestamp,
             long rescueEndTimestamp,
             long restoreEndTimestamp,
-            long reconcileEndTimestamp,
+            in ScatterReconcileMetrics reconcileMetrics,
             long diagnosticsEndTimestamp,
             int evaluatedCells)
         {
+            long reconcileEndTimestamp = reconcileMetrics.EndTimestamp;
             float samplingMs = GetElapsedMilliseconds(rebuildStartTimestamp, samplingEndTimestamp);
             float rescueMs = GetElapsedMilliseconds(samplingEndTimestamp, rescueEndTimestamp);
             float restoreMs = GetElapsedMilliseconds(rescueEndTimestamp, restoreEndTimestamp);
             float reconcileMs = GetElapsedMilliseconds(restoreEndTimestamp, reconcileEndTimestamp);
             float diagnosticsMs = GetElapsedMilliseconds(reconcileEndTimestamp, diagnosticsEndTimestamp);
             float totalMs = GetElapsedMilliseconds(rebuildStartTimestamp, diagnosticsEndTimestamp);
+            float reconcileCleanupMs = GetElapsedMilliseconds(restoreEndTimestamp, reconcileMetrics.CleanupEndTimestamp);
+            float reconcileSpawnMs = GetElapsedMilliseconds(reconcileMetrics.CleanupEndTimestamp, reconcileMetrics.SpawnEndTimestamp);
+            float reconcileFaunaMs = GetElapsedMilliseconds(reconcileMetrics.SpawnEndTimestamp, reconcileMetrics.EndTimestamp);
 
             _debugLastScatterRebuildMs = totalMs;
             _debugSamplingStageMs = samplingMs;
@@ -940,13 +986,23 @@ namespace Hecton8.World
             _debugRestoreStageMs = restoreMs;
             _debugReconcileStageMs = reconcileMs;
             _debugDiagnosticsStageMs = diagnosticsMs;
+            _debugReconcileCleanupStageMs = reconcileCleanupMs;
+            _debugReconcileSpawnStageMs = reconcileSpawnMs;
+            _debugReconcileFaunaStageMs = reconcileFaunaMs;
+            _debugReconcileRemovedCount = reconcileMetrics.RemovedCount;
+            _debugReconcileRebuiltCount = reconcileMetrics.RebuiltCount;
+            _debugReconcileCreatedCount = reconcileMetrics.CreatedCount;
+            _debugReconcileReusedCount = reconcileMetrics.ReusedCount;
 
             if (totalMs < Mathf.Max(1f, scatterRebuildSpikeThresholdMs))
                 return;
 
             UnityEngine.Debug.Log(
                 $"[WorldScatterProfiler] rebuild={totalMs:0.00}ms sample={samplingMs:0.00}ms rescue={rescueMs:0.00}ms " +
-                $"restore={restoreMs:0.00}ms reconcile={reconcileMs:0.00}ms diag={diagnosticsMs:0.00}ms " +
+                $"restore={restoreMs:0.00}ms reconcile={reconcileMs:0.00}ms " +
+                $"cleanup={reconcileCleanupMs:0.00}ms spawn={reconcileSpawnMs:0.00}ms fauna={reconcileFaunaMs:0.00}ms " +
+                $"diag={diagnosticsMs:0.00}ms removed={reconcileMetrics.RemovedCount} rebuilt={reconcileMetrics.RebuiltCount} " +
+                $"created={reconcileMetrics.CreatedCount} reused={reconcileMetrics.ReusedCount} " +
                 $"cells={evaluatedCells} desired={_desiredPlacements.Count} active={_activeInstances.Count} reason={_debugLastScatterRefreshReason}",
                 this);
         }
@@ -957,6 +1013,35 @@ namespace Hecton8.World
                 return 0f;
 
             return (float)((endTimestamp - startTimestamp) * 1000.0d / Stopwatch.Frequency);
+        }
+
+        private readonly struct ScatterReconcileMetrics
+        {
+            public readonly int RemovedCount;
+            public readonly int RebuiltCount;
+            public readonly int CreatedCount;
+            public readonly int ReusedCount;
+            public readonly long CleanupEndTimestamp;
+            public readonly long SpawnEndTimestamp;
+            public readonly long EndTimestamp;
+
+            public ScatterReconcileMetrics(
+                int removedCount,
+                int rebuiltCount,
+                int createdCount,
+                int reusedCount,
+                long cleanupEndTimestamp,
+                long spawnEndTimestamp,
+                long endTimestamp)
+            {
+                RemovedCount = removedCount;
+                RebuiltCount = rebuiltCount;
+                CreatedCount = createdCount;
+                ReusedCount = reusedCount;
+                CleanupEndTimestamp = cleanupEndTimestamp;
+                SpawnEndTimestamp = spawnEndTimestamp;
+                EndTimestamp = endTimestamp;
+            }
         }
 
         private void SubscribeToBootstrap()
@@ -1090,6 +1175,19 @@ namespace Hecton8.World
             _debugGeneratedGeologyCount = 0;
             _debugPublishedFaunaAnchors = 0;
             _debugPublishedLargeThreatZones = 0;
+            _debugLastScatterRebuildMs = 0f;
+            _debugSamplingStageMs = 0f;
+            _debugRescueStageMs = 0f;
+            _debugRestoreStageMs = 0f;
+            _debugReconcileStageMs = 0f;
+            _debugDiagnosticsStageMs = 0f;
+            _debugReconcileCleanupStageMs = 0f;
+            _debugReconcileSpawnStageMs = 0f;
+            _debugReconcileFaunaStageMs = 0f;
+            _debugReconcileRemovedCount = 0;
+            _debugReconcileRebuiltCount = 0;
+            _debugReconcileCreatedCount = 0;
+            _debugReconcileReusedCount = 0;
         }
 
         private ScatterCandidate BuildCandidate(
@@ -1155,13 +1253,18 @@ namespace Hecton8.World
             return new ScatterCandidate(placement, family, rule, heatmapChannel, heat, score);
         }
 
-        private void ReconcileInstances()
+        private ScatterReconcileMetrics ReconcileInstances(bool captureProfiling)
         {
+            long reconcileStartTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : 0L;
             Transform root = GetOrCreateRoot().transform;
             if (_activeInstances.Count == 0)
                 ClearRootChildren(root);
 
             _removalBuffer.Clear();
+            int removedCount = 0;
+            int rebuiltCount = 0;
+            int createdCount = 0;
+            int reusedCount = 0;
 
             foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
             {
@@ -1181,7 +1284,10 @@ namespace Hecton8.World
                     DestroyProxyInstance(instance.gameObject);
 
                 _activeInstances.Remove(key);
+                removedCount++;
             }
+
+            long cleanupEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : reconcileStartTimestamp;
 
             foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
             {
@@ -1201,11 +1307,13 @@ namespace Hecton8.World
                         ApplyPlacement(rebuiltMetadata, placement, runtimeVariant, finalVariantActive);
                         ApplyGeneratedGeology(rebuiltMetadata, placement, finalVariantActive);
                         _activeInstances[pair.Key] = rebuiltMetadata;
+                        rebuiltCount++;
                         continue;
                     }
 
                     ApplyPlacement(instance, placement, runtimeVariant, finalVariantActive);
                     ApplyGeneratedGeology(instance, placement, finalVariantActive);
+                    reusedCount++;
                     continue;
                 }
 
@@ -1217,9 +1325,26 @@ namespace Hecton8.World
                 ApplyPlacement(metadata, placement, runtimeVariant, finalVariantActive);
                 ApplyGeneratedGeology(metadata, placement, finalVariantActive);
                 _activeInstances[pair.Key] = metadata;
+                createdCount++;
             }
 
+            long spawnEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : cleanupEndTimestamp;
             PublishFaunaRegistrySnapshot();
+            long faunaEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : spawnEndTimestamp;
+
+            _debugReconcileRemovedCount = removedCount;
+            _debugReconcileRebuiltCount = rebuiltCount;
+            _debugReconcileCreatedCount = createdCount;
+            _debugReconcileReusedCount = reusedCount;
+
+            return new ScatterReconcileMetrics(
+                removedCount,
+                rebuiltCount,
+                createdCount,
+                reusedCount,
+                cleanupEndTimestamp,
+                spawnEndTimestamp,
+                faunaEndTimestamp);
         }
 
         private void PublishFaunaRegistrySnapshot()

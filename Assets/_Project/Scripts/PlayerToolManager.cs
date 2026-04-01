@@ -25,7 +25,9 @@
 namespace Hecton8.Gameplay
 {
     using System;
+    using Hecton8.Building;
     using Hecton8.Core;
+    using Hecton8.Construction;
     using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Input;
@@ -57,6 +59,14 @@ namespace Hecton8.Gameplay
         [Header("── Known Tool Prefabs ────────────────────────")]
         [Tooltip("Полный реестр held-tool prefab'ов для PDA / quick-slot assignment.")]
         [SerializeField] private GameObject[] knownToolPrefabs = new GameObject[12];
+
+        [Header("â”€â”€ Pool Warmup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐŸÑ€Ð¾Ð³Ñ€ÐµÐ²Ð°ÐµÑ‚ assigned held-tool pools Ð¿Ñ€Ð¸ Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€Ð°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ ÑƒÐ±Ñ€Ð°Ñ‚ÑŒ runtime Instantiate Ð¿Ñ€Ð¸ Ð¿ÐµÑ€Ð²Ð¾Ð¼ ÑÐºÐ¸Ð¿Ðµ.")]
+        [SerializeField] private bool warmupAssignedToolPoolsOnEnable = true;
+        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€ÐµÐ·ÐµÑ€Ð² ÑÐºÐ·ÐµÐ¼Ð¿Ð»ÑÑ€Ð¾Ð² Ð² pool Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ assigned held-tool prefab.")]
+        [SerializeField] private int toolPoolWarmupCount = 1;
+        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€ÐµÐ·ÐµÑ€Ð² ghost prefab'Ð¾Ð² Ð´Ð»Ñ ÑÑ‚Ñ€Ð¾Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾Ð³Ð¾ ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð°.")]
+        [SerializeField] private int constructionGhostWarmupCount = 1;
 
         [Header("── Swap Animation ────────────────────────────")]
         [Tooltip("Скорость анимации смены инструмента (lerp factor per second). " +
@@ -105,6 +115,8 @@ namespace Hecton8.Gameplay
         private Vector3 _anchorLoweredPosition;
         private InputManager _subscribedInputManager;
         private readonly string[] _slotNameCache = new string[4];
+        private bool _assignedPoolsWarmed;
+        private bool _constructionGhostPoolsWarmed;
 
         public event Action<int> ActiveSlotChanged;
         public event Action ToolAssignmentsChanged;
@@ -165,6 +177,7 @@ namespace Hecton8.Gameplay
         {
             GameTickManager.Instance?.Register((ITickable)this);
             RefreshInputSubscriptions();
+            WarmRuntimePoolsIfNeeded();
 
             if (playerInventory != null)
                 playerInventory.InventoryChanged += HandleInventoryChanged;
@@ -336,6 +349,7 @@ namespace Hecton8.Gameplay
                 return true;
 
             toolPrefabs[slotIndex] = prefab;
+            EnsurePoolWarmup(prefab, toolPoolWarmupCount);
             RefreshSlotNameCacheSlot(slotIndex);
             ToolAssignmentsChanged?.Invoke();
 
@@ -452,6 +466,71 @@ namespace Hecton8.Gameplay
         private void ProcessSlotInput()
         {
             // Input is delivered through InputManager events now.
+        }
+
+        private void WarmRuntimePoolsIfNeeded()
+        {
+            WarmAssignedToolPoolsIfNeeded();
+            WarmConstructionGhostPoolsIfNeeded();
+        }
+
+        private void WarmAssignedToolPoolsIfNeeded()
+        {
+            if (_assignedPoolsWarmed || !warmupAssignedToolPoolsOnEnable)
+                return;
+
+            if (toolPrefabs == null || toolPoolWarmupCount <= 0)
+            {
+                _assignedPoolsWarmed = true;
+                return;
+            }
+
+            if (ObjectPoolManager.Instance == null)
+                return;
+
+            for (int i = 0; i < toolPrefabs.Length; i++)
+                EnsurePoolWarmup(toolPrefabs[i], toolPoolWarmupCount);
+
+            _assignedPoolsWarmed = true;
+        }
+
+        private void WarmConstructionGhostPoolsIfNeeded()
+        {
+            if (_constructionGhostPoolsWarmed || constructionGhostWarmupCount <= 0)
+                return;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ConstructionManager constructionManager = ConstructionManager.Instance;
+            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            if (pool == null || catalog == null || catalog.Count <= 0)
+                return;
+
+            for (int i = 0; i < catalog.Count; i++)
+            {
+                BuildableData buildable = catalog.GetAt(i);
+                if (buildable == null || buildable.ghostPrefab == null)
+                    continue;
+
+                EnsurePoolWarmup(buildable.ghostPrefab, constructionGhostWarmupCount);
+            }
+
+            _constructionGhostPoolsWarmed = true;
+        }
+
+        private static void EnsurePoolWarmup(GameObject prefab, int minimumReserve)
+        {
+            if (prefab == null || minimumReserve <= 0)
+                return;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return;
+
+            int availableCount = pool.GetAvailableCount(prefab);
+            if (availableCount >= minimumReserve)
+                return;
+
+            pool.Warmup(prefab, minimumReserve - availableCount);
         }
 
         private void HandleToolSlot1() => HandleToolSlot(0);
@@ -664,6 +743,8 @@ namespace Hecton8.Gameplay
         private void SpawnNewTool(GameObject prefab, int slotIndex)
         {
             LogToolDebug($"SpawnNewTool begin slot={slotIndex} prefab={prefab.name}");
+            EnsurePoolWarmup(prefab, toolPoolWarmupCount);
+            WarmConstructionGhostPoolsIfNeeded();
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null)
             {

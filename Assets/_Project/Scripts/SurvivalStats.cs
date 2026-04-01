@@ -60,6 +60,34 @@ public sealed class SurvivalStats : ScriptableObject
     [Min(0f)]
     [SerializeField] private float pressureScalePerMeter = 0.02f;
 
+
+    // ─── Temperature ─────────────────────────────────────────
+
+    [Header("Temperature")]
+    [Tooltip("Minimum safe temperature (°C). Below this, energy drain increases and integrity may drop.")]
+    [SerializeField] private float minSafeTemp = -5f;
+
+    [Tooltip("Maximum safe temperature (°C). Above this, energy drain increases and integrity may drop.")]
+    [SerializeField] private float maxSafeTemp = 45f;
+
+    [Tooltip("Base integrity damage per second when temperature is outside safe range.")]
+    [Min(0f)]
+    [SerializeField] private float tempDamageRate = 1f;
+
+    [Tooltip("Energy consumption multiplier per degree outside safe range.")]
+    [Min(0f)]
+    [SerializeField] private float tempEnergyScale = 0.05f;
+
+    // ─── Radiation ───────────────────────────────────────────
+
+    [Header("Radiation")]
+    [Tooltip("Radiation threshold (Rem/h) above which the suit takes integrity damage.")]
+    [Min(0f)]
+    [SerializeField] private float radiationThreshold = 0.5f;
+
+    [Tooltip("Integrity damage per Rem/h above threshold.")]
+    [Min(0f)]
+    [SerializeField] private float radiationDamageRate = 5f;
     // ─── Public read-only accessors (inlined by JIT) ─────────
 
     public float MaxOxygen              => maxOxygen;
@@ -70,6 +98,14 @@ public sealed class SurvivalStats : ScriptableObject
     public float SafeDepth              => safeDepth;
     public float PressureDamageRate     => pressureDamageRate;
     public float PressureScalePerMeter  => pressureScalePerMeter;
+
+    public float MinSafeTemp            => minSafeTemp;
+    public float MaxSafeTemp            => maxSafeTemp;
+    public float TempDamageRate         => tempDamageRate;
+    public float TempEnergyScale        => tempEnergyScale;
+
+    public float RadiationThreshold     => radiationThreshold;
+    public float RadiationDamageRate    => radiationDamageRate;
 
     // ─── Editor-only validation ──────────────────────────────
 
@@ -90,6 +126,13 @@ public sealed class SurvivalStats : ScriptableObject
         pressureDamageRate     = Mathf.Max(0f,  pressureDamageRate);
         pressureScalePerMeter  = Mathf.Max(0f,  pressureScalePerMeter);
         safeDepth              = Mathf.Max(0f,  safeDepth);
+
+        tempDamageRate         = Mathf.Max(0f,  tempDamageRate);
+        tempEnergyScale        = Mathf.Max(0f,  tempEnergyScale);
+        radiationThreshold     = Mathf.Max(0f,  radiationThreshold);
+        radiationDamageRate    = Mathf.Max(0f,  radiationDamageRate);
+
+        if (maxSafeTemp < minSafeTemp) maxSafeTemp = minSafeTemp + 10f;
     }
 #endif
 }

@@ -81,10 +81,12 @@ namespace Hecton8.UI
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
             if (UnityEditor.EditorApplication.isCompiling ||
                 UnityEditor.EditorApplication.isUpdating ||
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
+#endif
 
             AutoResolveTabIndex();
         }

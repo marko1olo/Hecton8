@@ -37,7 +37,21 @@ namespace Hecton8.Dev
         [Header("Tool Set")]
         [SerializeField] private GameObject[] heldToolPrefabs = new GameObject[12];
 
+        [Header("Diagnostics")]
+        [SerializeField] private int _debugPassCount;
+        [SerializeField] private int _debugFailCount;
+        [SerializeField] private string _debugLastIssue = string.Empty;
+        [SerializeField] private string _debugLastToolName = "None";
+        [SerializeField] private bool _debugLastPass;
+
         private bool _isRunning;
+
+        public bool IsRunning => _isRunning;
+        public int DebugPassCount => _debugPassCount;
+        public int DebugFailCount => _debugFailCount;
+        public string DebugLastIssue => _debugLastIssue;
+        public string DebugLastToolName => _debugLastToolName;
+        public bool DebugLastPass => _debugLastPass;
 
         private void Awake()
         {
@@ -49,10 +63,69 @@ namespace Hecton8.Dev
 
         private void Start()
         {
+            if (gameObject.name.StartsWith("__DEV_", System.StringComparison.Ordinal))
+            {
+                runOnStart = false;
+                return;
+            }
+
             if (!runOnStart || _isRunning)
                 return;
 
             StartCoroutine(RunSmokePass());
+        }
+
+        [ContextMenu("Run Tool Runtime Smoke Pass")]
+        public void RunFromContextMenu()
+        {
+            if (_isRunning)
+                return;
+
+            StartCoroutine(RunSmokePass());
+        }
+
+        public void ConfigureForDevRun(
+            bool enableVerboseLogging = true,
+            bool restoreLoadoutAfterRun = true,
+            float startupDelaySeconds = 0.35f,
+            float equipTimeoutSeconds = 1.5f,
+            float settleDelaySeconds = 0.15f,
+            float betweenToolsDelaySeconds = 0.05f,
+            float simulatedDeltaSeconds = 0.1f)
+        {
+            runOnStart = false;
+            verboseLogging = enableVerboseLogging;
+            restoreOriginalLoadout = restoreLoadoutAfterRun;
+            startupDelay = Mathf.Clamp(startupDelaySeconds, 0f, 5f);
+            equipTimeout = Mathf.Clamp(equipTimeoutSeconds, 0.25f, 10f);
+            settleDelay = Mathf.Clamp(settleDelaySeconds, 0f, 3f);
+            betweenToolsDelay = Mathf.Clamp(betweenToolsDelaySeconds, 0f, 3f);
+            simulatedDeltaTime = Mathf.Clamp(simulatedDeltaSeconds, 0.01f, 1f);
+            AutoResolveSceneReferences();
+#if UNITY_EDITOR
+            AutoResolveDefaultAssets();
+#endif
+        }
+
+        public bool TryRunImmediately()
+        {
+            if (_isRunning)
+                return false;
+
+            AutoResolveSceneReferences();
+#if UNITY_EDITOR
+            AutoResolveDefaultAssets();
+#endif
+            StartCoroutine(RunSmokePass());
+            return true;
+        }
+
+        public string DescribeStatus()
+        {
+            string issue = string.IsNullOrWhiteSpace(_debugLastIssue) ? "none" : _debugLastIssue;
+            return
+                $"running={_isRunning} pass={_debugPassCount} fail={_debugFailCount} " +
+                $"lastTool={_debugLastToolName} lastPass={_debugLastPass} issue={issue}";
         }
 
         private IEnumerator RunSmokePass()
@@ -63,11 +136,17 @@ namespace Hecton8.Dev
             AutoResolveSceneReferences();
             if (toolManager == null || playerInventory == null)
             {
+                _debugLastIssue = "Missing PlayerToolManager or PlayerInventory.";
                 Debug.LogWarning("[ToolSmoke] Missing PlayerToolManager or PlayerInventory.");
                 yield break;
             }
 
             _isRunning = true;
+            _debugPassCount = 0;
+            _debugFailCount = 0;
+            _debugLastIssue = string.Empty;
+            _debugLastToolName = "None";
+            _debugLastPass = false;
 
             if (startupDelay > 0f)
                 yield return new WaitForSecondsRealtime(startupDelay);
@@ -90,6 +169,7 @@ namespace Hecton8.Dev
                     continue;
 
                 string toolName = prefab.name;
+                _debugLastToolName = toolName;
                 if (!prefab.TryGetComponent(out PlayerTool prefabTool) || prefabTool.ToolData == null)
                 {
                     Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
@@ -137,6 +217,9 @@ namespace Hecton8.Dev
                 catch (System.Exception ex)
                 {
                     failed++;
+                    _debugFailCount++;
+                    _debugLastIssue = "Setup exception for " + toolName;
+                    _debugLastPass = false;
                     setupFailed = true;
                     Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
                 }
@@ -162,6 +245,9 @@ namespace Hecton8.Dev
                 if (liveTool == null || !ReferenceEquals(liveTool.ToolData, prefabTool.ToolData))
                 {
                     failed++;
+                    _debugFailCount++;
+                    _debugLastIssue = "Equip timeout/mismatch for " + toolName;
+                    _debugLastPass = false;
                     Debug.LogWarning(
                         $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
                         $"live={(liveTool != null ? liveTool.GetType().Name : "null")}, " +
@@ -177,9 +263,19 @@ namespace Hecton8.Dev
 
                 bool stepPassed = RunToolInvocation(toolName, liveTool);
                 if (stepPassed)
+                {
                     passed++;
+                    _debugPassCount++;
+                    _debugLastIssue = string.Empty;
+                    _debugLastPass = true;
+                }
                 else
+                {
                     failed++;
+                    _debugFailCount++;
+                    _debugLastIssue = "Invocation failed for " + toolName;
+                    _debugLastPass = false;
+                }
 
                 yield return new WaitForSecondsRealtime(betweenToolsDelay);
             }
