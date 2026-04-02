@@ -52,6 +52,8 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Hecton8.Core;
 using Hecton8.Caves;
+using Hecton8.Dev;
+using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -1936,7 +1938,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
 
                 BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
-                                     triangleIndices, rawCount, weldedCount, voxelMaterial);
+                                     triangleIndices, rawCount, weldedCount, voxelMaterial, true);
                 _activeVolumes.Add(targetGO);
 
                 // ════════════════════════════════════════════════════════
@@ -2040,9 +2042,11 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<CaveEntrance> entrances,
         NativeArray<CaveStructure> structures,
         CaveGenerationParams caveParams,
+        bool buildCollider = true,
         CancellationToken ct = default)
     {
         BeginGenerationOperation();
+        long generationStartTimestamp = Stopwatch.GetTimestamp();
 
         if (mapMagicBridge == null)
         {
@@ -2093,6 +2097,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
         try
         {
+            long setupStartTimestamp = Stopwatch.GetTimestamp();
             float fallbackHeight = terrainHeightCenter;
             for (int iz = 0; iz < ptsZ; iz++)
             for (int ix = 0; ix < ptsX; ix++)
@@ -2108,6 +2113,8 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 gridBiome[hi] = 0f;
             }
+
+            float terrainSampleMs = (float)((Stopwatch.GetTimestamp() - setupStartTimestamp) * 1000.0d / Stopwatch.Frequency);
 
             ct.ThrowIfCancellationRequested();
 
@@ -2139,9 +2146,19 @@ public class HectonVoxelEngine : MonoBehaviour
                 vertexCounter = counter
             }.Schedule(totalCells, JOB_BATCH, densityHandle);
 
+            float preAwaitSetupMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "voxel.pipeline",
+                $"preawait grid={gridDim} voxel={voxelStep:0.00} pts={totalPts} cells={totalCells} " +
+                $"terrainSample={terrainSampleMs:0.00}ms setup={preAwaitSetupMs:0.00}ms collider={buildCollider}");
+
             await AwaitForJobCompletionAsync(mcHandle, ct);
 
             int rawCount = counter[0];
+            float marchingCubesMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "voxel.pipeline",
+                $"marching-cubes grid={gridDim} voxel={voxelStep:0.00} rawVerts={rawCount} elapsed={marchingCubesMs:0.00}ms");
             if (rawCount < 3)
                 return null;
 
@@ -2160,6 +2177,10 @@ public class HectonVoxelEngine : MonoBehaviour
             await AwaitForJobCompletionAsync(weldHandle, ct);
 
             int weldedCount = weldedCounter[0];
+            float weldMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "voxel.pipeline",
+                $"weld grid={gridDim} voxel={voxelStep:0.00} weldedVerts={weldedCount} elapsed={weldMs:0.00}ms");
             if (weldedCount < 3)
                 return null;
 
@@ -2225,6 +2246,11 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 ct.ThrowIfCancellationRequested();
 
+                float shadingMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.pipeline",
+                    $"surface-data grid={gridDim} voxel={voxelStep:0.00} spawnPoints={spawnPointList.Length} elapsed={shadingMs:0.00}ms");
+
                 GameObject targetGO = SpawnVolume();
                 targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
 
@@ -2236,7 +2262,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 targetGO.transform.position = -shiftDelta;
 
                 BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
-                                     triangleIndices, rawCount, weldedCount, voxelMaterial);
+                                     triangleIndices, rawCount, weldedCount, voxelMaterial, buildCollider);
                 _activeVolumes.Add(targetGO);
 
                 int spawnCount = spawnPointList.Length;
@@ -2260,6 +2286,11 @@ public class HectonVoxelEngine : MonoBehaviour
                             caveContext);
                     }
                 }
+
+                float totalMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.pipeline",
+                    $"mesh-build grid={gridDim} voxel={voxelStep:0.00} collider={buildCollider} spawnPoints={spawnCount} total={totalMs:0.00}ms");
 
                 Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2}.");
                 return targetGO;
@@ -2431,7 +2462,8 @@ public class HectonVoxelEngine : MonoBehaviour
                                NativeArray<int> triangleIndices,
                                int triIndexCount,
                                int vertCount,
-                               Material mat)
+                               Material mat,
+                               bool buildCollider)
     {
         var mesh = new Mesh();
         mesh.name = $"CaveMesh_{go.name}";
@@ -2485,8 +2517,16 @@ public class HectonVoxelEngine : MonoBehaviour
 
         var mcol = go.GetComponent<MeshCollider>();
         if (mcol == null) mcol = go.AddComponent<MeshCollider>();
-        mcol.sharedMesh = mesh;
-        mcol.enabled = true;
+        if (buildCollider)
+        {
+            mcol.sharedMesh = mesh;
+            mcol.enabled = true;
+        }
+        else
+        {
+            mcol.sharedMesh = null;
+            mcol.enabled = false;
+        }
     }
 
     void PrepareVolumeForBuild(GameObject go)

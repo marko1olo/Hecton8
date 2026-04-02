@@ -351,6 +351,9 @@ namespace Hecton8.Dev
             if (runtimeKey == 0L)
                 return false;
 
+            if (WorldGenerativeGeologyBinding.TryGetActiveBinding(runtimeKey, out binding))
+                return true;
+
             WorldGenerativeGeologyBinding[] bindings =
                 FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             for (int i = 0; i < bindings.Length; i++)

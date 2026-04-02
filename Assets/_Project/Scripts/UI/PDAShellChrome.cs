@@ -1,5 +1,6 @@
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Hecton8.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,7 +9,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour
+    public sealed class PDAShellChrome : MonoBehaviour, ITickable
     {
         private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
@@ -38,6 +39,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _tabText;
         private TextMeshProUGUI _leftFooterText;
         private TextMeshProUGUI _rightFooterText;
+        private bool _tickRegistered;
 
         private void Awake()
         {
@@ -50,22 +52,13 @@ namespace Hecton8.UI
             EnsureBuilt();
             Subscribe();
             RefreshChrome(true);
+            EvaluateTickRegistration();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
-        }
-
-        private void Update()
-        {
-            if (!PlayerPDA.IsOpen)
-                return;
-
-            if (Time.unscaledTime < _nextRefreshTime)
-                return;
-
-            RefreshChrome(false);
+            UnregisterTick();
         }
 
         private void AutoResolve()
@@ -114,12 +107,54 @@ namespace Hecton8.UI
             }
         }
 
-        private void HandlePdaOpened(int _) => RefreshChrome(true);
-        private void HandlePdaClosed(float _) => RefreshChrome(true);
-        private void HandleTabChanged(int _, int __) => RefreshChrome(true);
-        private void HandleInventoryChanged() => RefreshChrome(true);
-        private void HandleSlotChanged(int _) => RefreshChrome(true);
-        private void HandleAssignmentsChanged() => RefreshChrome(true);
+        private void HandlePdaOpened(int _)
+        {
+            RefreshChrome(true);
+            EvaluateTickRegistration();
+        }
+        private void HandlePdaClosed(float _)
+        {
+            RefreshChrome(true);
+            UnregisterTick();
+        }
+
+        private void HandleTabChanged(int _, int __)
+        {
+            RefreshChrome(true);
+            EvaluateTickRegistration();
+        }
+
+        private void HandleInventoryChanged()
+        {
+            if (PlayerPDA.IsOpen)
+                RefreshChrome(true);
+        }
+
+        private void HandleSlotChanged(int _)
+        {
+            if (PlayerPDA.IsOpen)
+                RefreshChrome(true);
+        }
+
+        private void HandleAssignmentsChanged()
+        {
+            if (PlayerPDA.IsOpen)
+                RefreshChrome(true);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!PlayerPDA.IsOpen)
+            {
+                UnregisterTick();
+                return;
+            }
+
+            if (Time.unscaledTime < _nextRefreshTime)
+                return;
+
+            RefreshChrome(false);
+        }
 
         private void EnsureBuilt()
         {
@@ -216,6 +251,49 @@ namespace Hecton8.UI
             if (_rightFooterText != null) _rightFooterText.color = energy < 0.25f || oxygen < 0.3f ? new Color(1f, 0.88f, 0.72f, 0.96f) : DimLow;
 
             _chromeRoot.gameObject.SetActive(PlayerPDA.IsOpen || immediate);
+        }
+
+        private void EvaluateTickRegistration()
+        {
+            if (!isActiveAndEnabled)
+            {
+                UnregisterTick();
+                return;
+            }
+
+            if (PlayerPDA.IsOpen)
+            {
+                RegisterTick();
+            }
+            else
+            {
+                UnregisterTick();
+            }
+        }
+
+        private void RegisterTick()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
         }
 
         private string GetActiveTabLabel()

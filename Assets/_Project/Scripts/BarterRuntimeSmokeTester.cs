@@ -26,11 +26,14 @@ namespace Hecton8.Dev
         [SerializeField] private int offerIndex = 0;
         [SerializeField] private bool verboseLogging = false;
 
+        // Inspector-only smoke diagnostics for manual runtime validation.
+#pragma warning disable CS0414
         [Header("Debug")]
         [SerializeField] private int _debugRunCount = 0;
         [SerializeField] private string _debugLastPhase = "Idle";
         [SerializeField] private bool _debugLastPass = false;
         [SerializeField] private string _debugLastIssue = "";
+#pragma warning restore CS0414
 
         private bool _isRunning;
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;

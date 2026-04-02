@@ -65,6 +65,7 @@ namespace Hecton8.World
         public string GeologyArchetype => geologyArchetype;
         public bool UsesGenerativeGeology => usesGenerativeGeology;
         public WorldStreamingLayer ActiveStreamingLayer => streamingLayer;
+        public string PlacementSource => placementSource;
         public WorldChunkCoordinate ChunkCoord => new WorldChunkCoordinate(chunkX, chunkZ);
         public bool HasMacroZone => hasMacroZone;
         public WorldMacroZoneCoordinate MacroZoneCoord => new WorldMacroZoneCoordinate(macroZoneX, macroZoneZ);

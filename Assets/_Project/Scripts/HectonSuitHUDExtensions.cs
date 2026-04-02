@@ -25,7 +25,7 @@
 // ============================================================================
 
 using System;
-using System.Collections;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using Shapes;
@@ -35,7 +35,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD Extensions")]
-public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
+public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickable
 {
     // ══════════════════════════════════════════════════════════
     //  INSPECTOR — REFERENCES
@@ -132,6 +132,9 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     private readonly string[] _toolSlotNames = new string[ToolSlotCount];
     private PlayerToolManager _subscribedToolManager;
     private float _nextAutoResolveAt;
+    private bool _tickRegistered;
+    private float _overheatFlagTimer;
+    private float _flickerFlagTimer;
 
     // ══════════════════════════════════════════════════════════
     //  LIFECYCLE
@@ -145,6 +148,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         Subscribe();
         SubscribeToolManager();
         ForceRefresh();
+        RegisterTick();
     }
 
     public override void OnDisable()
@@ -152,6 +156,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         base.OnDisable();
         Unsubscribe();
         UnsubscribeToolManager();
+        UnregisterTick();
     }
 
     // ══════════════════════════════════════════════════════════
@@ -164,11 +169,27 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         DrawExtensions();
     }
 
-    private void LateUpdate()
+    private void Update()
+    {
+        if (Application.isPlaying)
+        {
+            RegisterTick();
+            return;
+        }
+
+        AutoResolveReferences(force: false);
+        PollHeatState();
+        UpdateNotifications(0.016f);
+        UpdateTransientFlags(0.016f);
+        UpdateDiagnostics();
+    }
+
+    public void Tick(float deltaTime)
     {
         AutoResolveReferences(force: false);
         PollHeatState();
-        UpdateNotifications(Time.deltaTime);
+        UpdateNotifications(deltaTime);
+        UpdateTransientFlags(deltaTime);
         UpdateDiagnostics();
     }
 
@@ -619,27 +640,15 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     private void HandleFlashlightOverheat()
     {
         _flashlightOverheated = true;
+        _overheatFlagTimer = 2f;
         AddNotification(STR_FLASHLIGHT_OVERHEAT, criticalColor);
-        StartCoroutine(ClearOverheatFlag());
     }
 
     private void HandleFlashlightFlickerStart()
     {
         _flashlightFlickering = true;
+        _flickerFlagTimer = 2f;
         AddNotification(STR_FLASHLIGHT_LOW_BATTERY, warningColor);
-        StartCoroutine(ClearFlickerFlag());
-    }
-
-    private IEnumerator ClearOverheatFlag()
-    {
-        yield return new WaitForSeconds(2f);
-        _flashlightOverheated = false;
-    }
-
-    private IEnumerator ClearFlickerFlag()
-    {
-        yield return new WaitForSeconds(2f);
-        _flashlightFlickering = false;
     }
 
     // ══════════════════════════════════════════════════════════
@@ -686,5 +695,53 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
         _debugFlashlightHeat = flashlight != null ? flashlight.HeatLevel : 0f;
         _debugPDAOpen = _pdaOpen;
         _debugNotificationCount = _notificationCount;
+    }
+
+    private void UpdateTransientFlags(float deltaTime)
+    {
+        if (_overheatFlagTimer > 0f)
+        {
+            _overheatFlagTimer -= deltaTime;
+            if (_overheatFlagTimer <= 0f)
+            {
+                _overheatFlagTimer = 0f;
+                _flashlightOverheated = false;
+            }
+        }
+
+        if (_flickerFlagTimer > 0f)
+        {
+            _flickerFlagTimer -= deltaTime;
+            if (_flickerFlagTimer <= 0f)
+            {
+                _flickerFlagTimer = 0f;
+                _flashlightFlickering = false;
+            }
+        }
+    }
+
+    private void RegisterTick()
+    {
+        if (!Application.isPlaying || _tickRegistered)
+            return;
+
+        GameTickManager tickManager = GameTickManager.Instance;
+        if (tickManager == null)
+            return;
+
+        tickManager.Register(this);
+        _tickRegistered = true;
+    }
+
+    private void UnregisterTick()
+    {
+        if (!_tickRegistered)
+            return;
+
+        GameTickManager tickManager = GameTickManager.Instance;
+        if (tickManager != null)
+            tickManager.Unregister(this);
+
+        _tickRegistered = false;
     }
 }

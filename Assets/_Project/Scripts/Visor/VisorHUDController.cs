@@ -4,6 +4,11 @@ using UnityEngine.Rendering.Universal;
 
 namespace NASAPunk.Visor
 {
+    /// <summary>
+    /// Drives the visor HUD projection material and optional runtime render texture.
+    /// Runtime refresh runs through <see cref="GameTickManager"/> while edit-mode preview
+    /// stays on <see cref="Update"/> so the inspector workflow remains intact.
+    /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
     public class VisorHUDController : MonoBehaviour, ITickable
@@ -47,6 +52,7 @@ namespace NASAPunk.Visor
         [SerializeField] private Vector3 _hudCameraLocalEulerOffset = Vector3.zero;
         [SerializeField] private float _minimumVisorForwardOffset = 0.02f;
         [SerializeField] private bool _enforceNearClipSafeOffset = false;
+
         private const float AutoResolveRetryInterval = 1f;
 
         private RenderTexture _hudRT;
@@ -54,15 +60,13 @@ namespace NASAPunk.Visor
         private bool _ownsRuntimeTexture;
         private float _nextAutoResolveAt;
 
-        // ── Glitch state machine (replaces coroutine) ────────────
-        private bool  _glitchActive;
+        private bool _glitchActive;
         private float _glitchTimer;
         private float _glitchDuration;
         private float _glitchOriginalIntensity;
-        private bool  _isTickRegistered;
+        private bool _runtimeTickRegistered;
 
-        // ── Glitch deterministic RNG (zero GC) ──────────────────
-        private uint _glitchRngState = 1;
+        private uint _glitchRngState = 1u;
 
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
@@ -76,51 +80,34 @@ namespace NASAPunk.Visor
             AutoResolveReferences(force: true);
             SyncProjectionPose();
             RebuildProjection();
+            TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
         {
-            // ── Остановить glitch если активен ──
             if (_glitchActive)
             {
                 _hudIntensity = _glitchOriginalIntensity;
                 _glitchActive = false;
             }
-            StopTicking();
 
+            UnregisterRuntimeTick();
             ReleaseRT();
         }
 
         private void Update()
         {
-            AutoResolveReferences(force: false);
-            SyncProjectionPose();
+            if (Application.isPlaying)
+            {
+                TryRegisterRuntimeTick();
+                return;
+            }
 
-            if (_visorRenderer == null) return;
+            if (!_previewInEditMode)
+                return;
 
-            _visorRenderer.GetPropertyBlock(_mpb);
-            _mpb.SetFloat(ID_HUDIntensity, _hudIntensity);
-            _mpb.SetColor(ID_HUDColor, _hudTint);
-            _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
-            _mpb.SetFloat(ID_Distortion, _distortion);
-            _visorRenderer.SetPropertyBlock(_mpb);
+            RefreshRuntimeState(forceResolve: false);
         }
-
-        // ══════════════════════════════════════════════════════════
-        //  LateUpdate — REMOVED Camera.Render()
-        // ══════════════════════════════════════════════════════════
-        //
-        //  Ранее здесь вызывался _hudCamera.Render() — синхронный рендер
-        //  вне URP pipeline. Это заставляло GPU полностью флашить пайплайн,
-        //  что на слабых GPU (MX350) приводило к 2-3x падению FPS.
-        //
-        //  Решение: HUD камера настроена как Base camera в URP с enabled=true.
-        //  Она рендерит в свой targetTexture автоматически через URP pipeline,
-        //  синхронно с остальными камерами, без дополнительного flush.
-        //
-        //  SyncCameraRole() обновлён: убрана логика _manualProjectionRender.
-        //  Камера всегда enabled когда projection активна.
-        // ══════════════════════════════════════════════════════════
 
         private void OnValidate()
         {
@@ -134,82 +121,49 @@ namespace NASAPunk.Visor
             RebuildProjection();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ITickable — GLITCH STATE MACHINE (replaces coroutine)
-        // ══════════════════════════════════════════════════════════
-
         public void Tick(float deltaTime)
         {
-            if (!_glitchActive)
-            {
-                StopTicking();
-                return;
-            }
-
-            _glitchTimer += deltaTime;
-
-            if (_glitchTimer >= _glitchDuration)
-            {
-                // ── Glitch завершён ──
-                _hudIntensity = _glitchOriginalIntensity;
-                _glitchActive = false;
-                StopTicking();
-                return;
-            }
-
-            // ── Случайная модуляция интенсивности (zero GC) ──
-            // xorshift32 вместо UnityEngine.Random (deterministic, no static state pollution)
-            float rand01 = XorShift01();
-            _hudIntensity = _glitchOriginalIntensity * (0.1f + rand01 * 1.9f); // range [0.1, 2.0] × original
+            AutoResolveReferences(force: false);
+            SyncProjectionPose();
+            UpdateGlitchState(deltaTime);
+            ApplyMaterialProperties();
         }
 
         /// <summary>
-        /// xorshift32 — детерминированный, zero GC, zero boxing.
-        /// Возвращает float в [0, 1).
+        /// xorshift32 based zero-GC pseudo-random in [0, 1).
         /// </summary>
         private float XorShift01()
         {
             _glitchRngState ^= _glitchRngState << 13;
             _glitchRngState ^= _glitchRngState >> 17;
             _glitchRngState ^= _glitchRngState << 5;
-            return (_glitchRngState & 0x7FFFFF) / (float)0x800000; // 23-bit mantissa
+            return (_glitchRngState & 0x7FFFFF) / (float)0x800000;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  TICK REGISTRATION
-        // ══════════════════════════════════════════════════════════
-
-        private void StartTicking()
+        private void TryRegisterRuntimeTick()
         {
-            if (_isTickRegistered) return;
+            if (!Application.isPlaying || _runtimeTickRegistered)
+                return;
 
-            // В Edit mode GameTickManager может не существовать
-            if (!Application.isPlaying) return;
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-            {
-                gtm.Register(this);
-                _isTickRegistered = true;
-            }
+            tickManager.Register(this);
+            _runtimeTickRegistered = true;
         }
 
-        private void StopTicking()
+        private void UnregisterRuntimeTick()
         {
-            if (!_isTickRegistered) return;
+            if (!_runtimeTickRegistered)
+                return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-            {
-                gtm.Unregister(this);
-            }
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
 
-            _isTickRegistered = false;
+            _runtimeTickRegistered = false;
         }
-
-        // ══════════════════════════════════════════════════════════
-        //  AUTO-RESOLVE
-        // ══════════════════════════════════════════════════════════
 
         private void AutoResolveReferences(bool force)
         {
@@ -295,6 +249,46 @@ namespace NASAPunk.Visor
                 _mpb = new MaterialPropertyBlock();
         }
 
+        private void RefreshRuntimeState(bool forceResolve)
+        {
+            AutoResolveReferences(forceResolve);
+            SyncProjectionPose();
+            ApplyMaterialProperties();
+        }
+
+        private void ApplyMaterialProperties()
+        {
+            if (_visorRenderer == null)
+                return;
+
+            EnsurePropertyBlock();
+
+            _visorRenderer.GetPropertyBlock(_mpb);
+            _mpb.SetFloat(ID_HUDIntensity, _hudIntensity);
+            _mpb.SetColor(ID_HUDColor, _hudTint);
+            _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
+            _mpb.SetFloat(ID_Distortion, _distortion);
+            _visorRenderer.SetPropertyBlock(_mpb);
+        }
+
+        private void UpdateGlitchState(float deltaTime)
+        {
+            if (!_glitchActive)
+                return;
+
+            _glitchTimer += deltaTime;
+
+            if (_glitchTimer >= _glitchDuration)
+            {
+                _hudIntensity = _glitchOriginalIntensity;
+                _glitchActive = false;
+                return;
+            }
+
+            float rand01 = XorShift01();
+            _hudIntensity = _glitchOriginalIntensity * (0.1f + rand01 * 1.9f);
+        }
+
         private void PrepareProjectionTexture()
         {
             _ownsRuntimeTexture = false;
@@ -332,19 +326,14 @@ namespace NASAPunk.Visor
             EnsurePropertyBlock();
 
             if (_hudCamera != null)
-            {
                 _hudCamera.targetTexture = _projectionMode == ProjectionMode.Disabled ? null : _hudRT;
-            }
 
-            if (_visorRenderer != null)
-            {
-                _visorRenderer.GetPropertyBlock(_mpb);
-                if (_hudRT != null)
-                    _mpb.SetTexture(ID_HUDTex, _hudRT);
-                else
-                    _mpb.SetTexture(ID_HUDTex, Texture2D.blackTexture);
-                _visorRenderer.SetPropertyBlock(_mpb);
-            }
+            if (_visorRenderer == null)
+                return;
+
+            _visorRenderer.GetPropertyBlock(_mpb);
+            _mpb.SetTexture(ID_HUDTex, _hudRT != null ? _hudRT : Texture2D.blackTexture);
+            _visorRenderer.SetPropertyBlock(_mpb);
         }
 
         private void ReleaseRT()
@@ -358,7 +347,10 @@ namespace NASAPunk.Visor
             if (_ownsRuntimeTexture && _hudRT != null)
             {
                 _hudRT.Release();
-                DestroyImmediate(_hudRT);
+                if (Application.isPlaying)
+                    Destroy(_hudRT);
+                else
+                    DestroyImmediate(_hudRT);
             }
 
             _hudRT = null;
@@ -366,12 +358,7 @@ namespace NASAPunk.Visor
         }
 
         /// <summary>
-        /// Настраивает роль HUD камеры в URP.
-        /// 
-        /// v2.0 ИЗМЕНЕНИЕ: Убран _manualProjectionRender.
-        /// В projection mode камера ВСЕГДА enabled=true и рендерит
-        /// через URP pipeline в свой targetTexture автоматически.
-        /// Это устраняет синхронный Camera.Render() flush.
+        /// Configures the HUD camera so projection rendering stays inside the URP pipeline.
         /// </summary>
         private void SyncCameraRole()
         {
@@ -387,10 +374,8 @@ namespace NASAPunk.Visor
                 : null;
 
             bool projected = _projectionMode != ProjectionMode.Disabled;
-
             if (projected)
             {
-                // ── Base camera, рендерит в RT через URP pipeline ──
                 hudCameraData.renderType = CameraRenderType.Base;
 
                 if (baseCameraData != null && baseCameraData.cameraStack.Contains(_hudCamera))
@@ -400,13 +385,10 @@ namespace NASAPunk.Visor
                 Color color = _hudCamera.backgroundColor;
                 color.a = 0f;
                 _hudCamera.backgroundColor = color;
-
-                // Камера enabled — URP рендерит её автоматически в targetTexture
                 _hudCamera.enabled = true;
                 return;
             }
 
-            // ── Overlay mode — стандартный camera stacking ──
             hudCameraData.renderType = CameraRenderType.Overlay;
 
             if (baseCameraData != null && !baseCameraData.cameraStack.Contains(_hudCamera))
@@ -420,17 +402,20 @@ namespace NASAPunk.Visor
         {
             if (!_syncToReferenceCamera || _referenceCamera == null)
                 return;
+
             if (!Application.isPlaying && !_syncPoseInEditMode)
                 return;
 
             Transform referenceTransform = _referenceCamera.transform;
             Vector3 visorOffset = _visorLocalOffset;
             visorOffset.z = Mathf.Max(visorOffset.z, _minimumVisorForwardOffset);
+
             if (_enforceNearClipSafeOffset)
             {
                 float nearClipSafeOffset = _referenceCamera.nearClipPlane + 0.12f;
                 visorOffset.z = Mathf.Max(visorOffset.z, nearClipSafeOffset);
             }
+
             Quaternion visorRotation = referenceTransform.rotation * Quaternion.Euler(_visorLocalEulerOffset);
 
             transform.SetPositionAndRotation(
@@ -438,19 +423,15 @@ namespace NASAPunk.Visor
                 visorRotation);
             transform.localScale = _visorLocalScale;
 
-            if (_hudCamera != null)
-            {
-                Transform hudTransform = _hudCamera.transform;
-                Quaternion hudRotation = referenceTransform.rotation * Quaternion.Euler(_hudCameraLocalEulerOffset);
-                hudTransform.SetPositionAndRotation(
-                    referenceTransform.TransformPoint(_hudCameraLocalOffset),
-                    hudRotation);
-            }
-        }
+            if (_hudCamera == null)
+                return;
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+            Transform hudTransform = _hudCamera.transform;
+            Quaternion hudRotation = referenceTransform.rotation * Quaternion.Euler(_hudCameraLocalEulerOffset);
+            hudTransform.SetPositionAndRotation(
+                referenceTransform.TransformPoint(_hudCameraLocalOffset),
+                hudRotation);
+        }
 
         public void SetHUDIntensity(float intensity)
         {
@@ -472,34 +453,22 @@ namespace NASAPunk.Visor
                 return;
 
             _sharedRenderTexture = sharedRenderTexture;
-
             if (_projectionMode == ProjectionMode.SharedRenderTexture)
                 RebuildProjection();
         }
 
         /// <summary>
-        /// Запускает glitch-эффект. Zero GC — без корутин.
-        /// Использует ITickable стейт-машину с таймером.
-        /// 
-        /// Безопасен при повторном вызове: перезапускает таймер.
+        /// Starts a deterministic glitch pulse without coroutines or heap allocations.
         /// </summary>
         public void GlitchPulse(float duration = 0.3f)
         {
             if (!_glitchActive)
-            {
                 _glitchOriginalIntensity = _hudIntensity;
-            }
-            // Если glitch уже активен — перезапускаем таймер,
-            // но сохраняем оригинальную интенсивность от первого вызова.
 
             _glitchActive = true;
             _glitchTimer = 0f;
             _glitchDuration = duration;
-
-            // Seed RNG с текущим временем для вариативности
-            _glitchRngState = (uint)(Time.unscaledTime * 1000f) | 1u; // |1 гарантирует ненулевой state
-
-            StartTicking();
+            _glitchRngState = (uint)(Time.unscaledTime * 1000f) | 1u;
         }
     }
 }

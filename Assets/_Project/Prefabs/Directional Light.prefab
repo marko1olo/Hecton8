@@ -26,9 +26,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3520043342882882718}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000000059604638, y: -0.000000014901159, z: -0.73152804, w: 0.6818114}
-  m_LocalPosition: {x: 0, y: -74573.6, z: -33375.83}
-  m_LocalScale: {x: 150, y: 150, z: 150}
+  m_LocalRotation: {x: 0.000000029802322, y: -0.000000014901161, z: -0.5293821, w: 0.84838355}
+  m_LocalPosition: {x: 20437.418, y: -80190.97, z: -23859.793}
+  m_LocalScale: {x: 1500, y: 1500, z: 1500}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2519710147243308916}
@@ -49,7 +49,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3520043342882882718}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -233,7 +233,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.LensFlareComponentSRP
   m_LensFlareData: {fileID: 11400000, guid: bd7eaf3bd49c39f4cb77bd809459aa72, type: 2}
   version: 0
-  intensity: 0.074480236
+  intensity: 0
   maxAttenuationDistance: 100
   maxAttenuationScale: 100
   distanceAttenuationCurve:
@@ -316,7 +316,7 @@ MonoBehaviour:
   occlusionRadius: 0.1
   sampleCount: 12
   occlusionOffset: 0.05
-  scale: 0.074480236
+  scale: 0
   allowOffScreen: 0
   volumetricCloudOcclusion: 0
   occlusionRemapCurve:

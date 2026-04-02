@@ -64,11 +64,29 @@ namespace Hecton8.UI
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
 
+        // Простой кэш для ToUpperInvariant, чтобы уменьшить аллокации в UI-строках
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            int hash = input.GetHashCode() & 0xF;
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
+        }
+
         private void Awake()
         {
             AutoResolve();
             EnsureBuilt();
-            ApplyClosedState();
+            ApplyClosedState(restorePlayerInput: false);
         }
 
         private void OnEnable()
@@ -88,7 +106,8 @@ namespace Hecton8.UI
                 _registered = false;
             }
 
-            ApplyClosedState();
+            bool restorePlayerInput = _isOpen && ShouldRestorePlayerInputOnDisable();
+            ApplyClosedState(restorePlayerInput: restorePlayerInput);
         }
 
         private void OnValidate()
@@ -172,7 +191,7 @@ namespace Hecton8.UI
             if (!_isOpen)
                 return;
 
-            ApplyClosedState();
+            ApplyClosedState(restorePlayerInput: true);
         }
 
         internal void RefreshSettingsPanel()
@@ -181,7 +200,7 @@ namespace Hecton8.UI
                 _controlsPanel.RefreshAllBindingsNow();
         }
 
-        private void ApplyClosedState()
+        private void ApplyClosedState(bool restorePlayerInput)
         {
             _isOpen = false;
             _activeSection = PauseSection.Main;
@@ -196,12 +215,25 @@ namespace Hecton8.UI
             if (pauseTimeScale)
                 Time.timeScale = Mathf.Approximately(Time.timeScale, 0f) ? _cachedTimeScale : Time.timeScale;
 
-            if (InputManager.Instance != null)
+            if (restorePlayerInput &&
+                InputManager.Instance != null &&
+                InputManager.Instance.CanSwitchActionMaps)
+            {
                 InputManager.Instance.SwitchToPlayerInput();
+            }
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
 
+        }
+
+        private static bool ShouldRestorePlayerInputOnDisable()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            InputManager inputManager = InputManager.Instance;
+            return inputManager != null && inputManager.CanSwitchActionMaps;
         }
 
         private void AutoResolve()
@@ -338,7 +370,7 @@ namespace Hecton8.UI
             for (int i = 0; i < saveSlots.Length; i++)
             {
                 string slotName = saveSlots[i];
-                RectTransform btn = CreateButton(panel, $"SaveSlot_{i}", $"WRITE {slotName.ToUpperInvariant()}",
+                RectTransform btn = CreateButton(panel, $"SaveSlot_{i}", $"WRITE {CachedToUpperInvariant(slotName)}",
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
                     () => SaveSlot(slotName));
@@ -427,7 +459,7 @@ namespace Hecton8.UI
         private async void SaveSlot(string slotName)
         {
             if (_saveStatus != null)
-                _saveStatus.text = $"WRITING {slotName.ToUpperInvariant()}...";
+                _saveStatus.text = $"WRITING {CachedToUpperInvariant(slotName)}...";
 
             SaveManager saveManager = SaveManager.Instance;
             if (saveManager == null)
@@ -450,15 +482,15 @@ namespace Hecton8.UI
                 if (_saveStatus != null)
                 {
                     _saveStatus.text = saveManager.LastOperationSucceeded
-                        ? $"{slotName.ToUpperInvariant()} WRITTEN."
-                        : $"{slotName.ToUpperInvariant()} FAILED. {saveManager.LastOperationError?.ToUpperInvariant()}";
+                        ? $"{CachedToUpperInvariant(slotName)} WRITTEN."
+                        : $"{CachedToUpperInvariant(slotName)} FAILED. {CachedToUpperInvariant(saveManager.LastOperationError ?? string.Empty)}";
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {ex.Message}");
                 if (_saveStatus != null)
-                    _saveStatus.text = $"{slotName.ToUpperInvariant()} FAILED. CHECK CONSOLE.";
+                    _saveStatus.text = $"{CachedToUpperInvariant(slotName)} FAILED. CHECK CONSOLE.";
             }
         }
 

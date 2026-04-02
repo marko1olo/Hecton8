@@ -276,30 +276,43 @@ namespace Hecton8.Gameplay
             if (_flashlight == null || probeOrigin == null)
                 return false;
 
-            if (!Physics.Raycast(
-                    probeOrigin.position,
-                    probeOrigin.forward,
-                    out RaycastHit hit,
-                    contextProbeRange,
-                    contextMask,
-                    QueryTriggerInteraction.Collide))
+            var cache = Hecton8.Physics.GlobalQueryCacheManager.GetContext("PlayerLook");
+            Ray ray = new Ray(probeOrigin.position, probeOrigin.forward);
+            
+            if (!cache.TryGet(ray, contextProbeRange, contextMask, out Hecton8.Physics.QueryResult qResult))
             {
-                return false;
+                if (!Physics.Raycast(
+                        ray.origin,
+                        ray.direction,
+                        out RaycastHit hit,
+                        contextProbeRange,
+                        contextMask,
+                        QueryTriggerInteraction.Collide))
+                {
+                    return false;
+                }
+                qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
+                cache.Set(ray, contextProbeRange, contextMask, qResult);
             }
 
-            Collider collider = hit.collider;
+            if (!qResult.hasHit) 
+                return false;
+
+            RaycastHit finalHit = qResult.hit;
+
+            Collider collider = finalHit.collider;
             if (collider == null)
                 return false;
 
             if (FieldTargetDescriptor.TryResolve(collider, out FieldTargetDescriptor descriptor))
             {
-                if (FieldTargetSemantics.TryBuildFlashlightDirective(descriptor, hit.distance, out directive))
+                if (FieldTargetSemantics.TryBuildFlashlightDirective(descriptor, finalHit.distance, out directive))
                     return true;
             }
 
             if (collider.GetComponent<ScannableTarget>() != null || collider.GetComponentInParent<ScannableTarget>() != null)
             {
-                directive = hit.distance >= 10f
+                directive = finalHit.distance >= 10f
                     ? "Use FOCUS to read distant probes and hazard points before closing in."
                     : "Use STANDARD while you classify the probe and keep route awareness.";
                 return true;
@@ -308,7 +321,7 @@ namespace Hecton8.Gameplay
             PickupItem pickup = collider.GetComponent<PickupItem>() ?? collider.GetComponentInParent<PickupItem>();
             if (pickup != null)
             {
-                directive = hit.distance <= 5f
+                directive = finalHit.distance <= 5f
                     ? "Use FLOOD to sweep the nearby salvage pocket without overshooting the pickup."
                     : "Use STANDARD until the pickup lane tightens, then widen to FLOOD.";
                 return true;
@@ -317,7 +330,7 @@ namespace Hecton8.Gameplay
             ResourceNode node = collider.GetComponent<ResourceNode>() ?? collider.GetComponentInParent<ResourceNode>();
             if (node != null)
             {
-                directive = hit.distance >= 9f
+                directive = finalHit.distance >= 9f
                     ? "Use FOCUS to probe the node edge before committing cutter or sampler."
                     : "Use STANDARD to hold visibility on the extraction face.";
                 return true;
@@ -326,7 +339,7 @@ namespace Hecton8.Gameplay
             BaseModule module = collider.GetComponent<BaseModule>() ?? collider.GetComponentInParent<BaseModule>();
             if (module != null)
             {
-                directive = hit.distance >= 9f
+                directive = finalHit.distance >= 9f
                     ? "Use FOCUS for distant module reads and service planning."
                     : "Use STANDARD to maintain service visibility on the module face.";
                 return true;

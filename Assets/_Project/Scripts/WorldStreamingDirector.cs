@@ -58,6 +58,8 @@ namespace Hecton8.World
         [SerializeField] private StreamingProfile deepSurveyProfile;
         [SerializeField] private StreamingProfile deepTraverseProfile;
 
+        // Inspector-only live diagnostics for streaming-profile switching.
+#pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private string _debugDepthZone = "Surface";
         [SerializeField] private string _debugMotionMode = "Survey";
@@ -72,6 +74,7 @@ namespace Hecton8.World
         [SerializeField] private bool _debugBiomeCacheReady;
         [SerializeField] private bool _debugBudgetReady;
         [SerializeField] private bool _debugUsingSharedChunkProfile;
+#pragma warning restore CS0414
 
         private bool _registeredToTickManager;
         private float _smoothedSpeed;

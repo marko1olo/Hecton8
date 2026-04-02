@@ -73,7 +73,6 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     [SerializeField] private float tempSmoothing = 4f;
 
     [Header("Presence")]
-    [SerializeField] [Range(0.75f, 1.5f)] private float masterAlpha = 1.1f;
     [SerializeField] [Range(0f, 0.25f)] private float visorTintStrength = 0.08f;
     [SerializeField] [Range(0f, 0.35f)] private float edgeGlowStrength = 0.16f;
     [SerializeField] [Range(0f, 6f)] private float bootSequenceDuration = 2.8f;

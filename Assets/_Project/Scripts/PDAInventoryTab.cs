@@ -1061,7 +1061,7 @@ namespace Hecton8.UI
                 if (_detailHint != null)
                     _detailHint.text = _currentFilter == InventoryViewFilter.All
                         ? "SELECT AN ITEM"
-                        : $"NO {GetFilterLabel(_currentFilter).ToUpperInvariant()} ITEM SELECTED";
+                        : $"NO {CachedToUpperInvariant(GetFilterLabel(_currentFilter))} ITEM SELECTED";
                 if (_useButtonRoot != null)
                     _useButtonRoot.gameObject.SetActive(false);
                 if (_useButtonLabel != null)
@@ -1086,7 +1086,7 @@ namespace Hecton8.UI
             }
 
             if (_detailName != null)
-                _detailName.text = _selectedItem.itemName.ToUpperInvariant();
+                _detailName.text = CachedToUpperInvariant(_selectedItem.itemName);
 
             if (_detailIconBoxBg != null)
                 _detailIconBoxBg.color = GetSelectedDetailAccentColor(0.74f);
@@ -1099,7 +1099,7 @@ namespace Hecton8.UI
                 string desc = string.IsNullOrEmpty(_selectedItem.description)
                     ? "No description available."
                     : _selectedItem.description;
-                string cat = _selectedItem.category.ToString().ToUpperInvariant();
+                string cat = CachedToUpperInvariant(_selectedItem.category.ToString());
                 _detailDesc.text = $"<color=#7FBFBA>[{cat}]</color>\n{desc}";
             }
 
@@ -1259,7 +1259,7 @@ namespace Hecton8.UI
                 $"TOOLS {tools}  |  CONS {consumables}  |  MATS {materials}  |  PARTS {components}  |  MISC {misc}";
 
             _filterSummary.text =
-                $"FILTER: {GetFilterLabel(_currentFilter).ToUpperInvariant()}  |  SHOWING {_visiblePlacementCount}/{count} ITEMS";
+                $"FILTER: {CachedToUpperInvariant(GetFilterLabel(_currentFilter))}  |  SHOWING {_visiblePlacementCount}/{count} ITEMS";
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1423,7 +1423,7 @@ namespace Hecton8.UI
             if (prefab == null)
             {
                 NotifyWarning(
-                    $"NO HELD PREFAB REGISTERED FOR {_selectedItem.itemName.ToUpperInvariant()}");
+                    $"NO HELD PREFAB REGISTERED FOR {CachedToUpperInvariant(_selectedItem.itemName)}");
                 return;
             }
 
@@ -1443,7 +1443,7 @@ namespace Hecton8.UI
                 {
                     toolManager.Holster();
                     NotifyInfo(
-                        $"LOADOUT HOLSTERED — {_selectedItem.itemName.ToUpperInvariant()}");
+                        $"LOADOUT HOLSTERED — {CachedToUpperInvariant(_selectedItem.itemName)}");
                 }
                 else if (toolManager.IsToolAvailableInSlot(assignedSlot))
                 {
@@ -1723,7 +1723,7 @@ namespace Hecton8.UI
             GameObject prefab = toolManager.GetKnownToolPrefabForItem(_selectedItem);
             if (prefab == null)
             {
-                NotifyWarning($"NO HELD PREFAB REGISTERED FOR {_selectedItem.itemName.ToUpperInvariant()}");
+                NotifyWarning($"NO HELD PREFAB REGISTERED FOR {CachedToUpperInvariant(_selectedItem.itemName)}");
                 return;
             }
 
@@ -1732,7 +1732,7 @@ namespace Hecton8.UI
             RefreshLoadoutAssignButtons();
             RefreshDetails();
 
-            NotifyInfo($"LOADOUT UPDATED - SLOT {slotIndex + 1}: {_selectedItem.itemName.ToUpperInvariant()}");
+            NotifyInfo($"LOADOUT UPDATED - SLOT {slotIndex + 1}: {CachedToUpperInvariant(_selectedItem.itemName)}");
         }
 
         private void NotifyInfo(string message)
@@ -2065,6 +2065,24 @@ namespace Hecton8.UI
                 if (Application.isPlaying) Destroy(child);
                 else DestroyImmediate(child);
             }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ZERO-GC STRING CACHING
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly string[] _upperCache = new string[16];
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            int hash = input.GetHashCode() & 0xF;
+            string cached = _upperCache[hash];
+            if (cached != null && cached == input)
+                return cached.ToUpperInvariant();
+
+            _upperCache[hash] = input;
+            return input.ToUpperInvariant();
         }
     }
     // ══════════════════════════════════════════════════════════════

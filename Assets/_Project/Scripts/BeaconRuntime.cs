@@ -41,7 +41,7 @@ namespace Hecton8.Gameplay
         public void Configure(string beaconId, string label, GameObject sourcePrefab, Color color, float range)
         {
             BeaconId = string.IsNullOrWhiteSpace(beaconId) ? System.Guid.NewGuid().ToString("N") : beaconId;
-            Label = string.IsNullOrWhiteSpace(label) ? "BEACON" : label.Trim().ToUpperInvariant();
+            Label = string.IsNullOrWhiteSpace(label) ? "BEACON" : CachedToUpperInvariant(label.Trim());
             BeaconColor = color;
             LightRange = Mathf.Max(0.5f, range);
             _sourcePrefab = sourcePrefab;
@@ -112,6 +112,34 @@ namespace Hecton8.Gameplay
 
             s_fallbackBeaconMaterial.color = color;
             return s_fallbackBeaconMaterial;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ZERO-GC STRING CACHING
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        /// <summary>
+        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
+        /// Хранит до 16 последних преобразований для повторного использования.
+        /// </summary>
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
         }
     }
 }

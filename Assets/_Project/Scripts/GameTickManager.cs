@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Hecton8.Core;
+using Hecton8.Dev;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -412,6 +413,7 @@ namespace Hecton8.Core
 
             _debugLastSlowTickReport = _slowTickReportBuilder.ToString();
             UnityEngine.Debug.Log(_debugLastSlowTickReport, this);
+            RuntimeDiagnosticsTrace.WriteEvent("slowtick", _debugLastSlowTickReport);
         }
 
         private static string ResolveTickableLabel(object owner)

@@ -78,24 +78,30 @@ namespace Hecton8.World
 
         public bool IsInsideActivation(Vector3 playerPosition)
         {
-            float distance = GetFlatDistance(playerPosition);
-            _debugLastDistance = distance;
-            _debugActivationWeight = EvaluateActivationWeight(playerPosition);
-            _debugHoldWeight = EvaluateHoldWeight(playerPosition);
-            _debugInsideActivation = _debugActivationWeight > 0.01f;
-            _debugInsideHold = _debugHoldWeight > 0.01f;
-            return _debugInsideActivation;
+            EvaluatePlayerState(
+                playerPosition,
+                out _,
+                out float activationWeight,
+                out _,
+                out bool insideActivation,
+                out _);
+            _debugActivationWeight = activationWeight;
+            _debugInsideActivation = insideActivation;
+            return insideActivation;
         }
 
         public bool IsInsideHold(Vector3 playerPosition)
         {
-            float distance = GetFlatDistance(playerPosition);
-            _debugLastDistance = distance;
-            _debugActivationWeight = EvaluateActivationWeight(playerPosition);
-            _debugHoldWeight = EvaluateHoldWeight(playerPosition);
-            _debugInsideActivation = _debugActivationWeight > 0.01f;
-            _debugInsideHold = _debugHoldWeight > 0.01f;
-            return _debugInsideHold;
+            EvaluatePlayerState(
+                playerPosition,
+                out _,
+                out _,
+                out float holdWeight,
+                out _,
+                out bool insideHold);
+            _debugHoldWeight = holdWeight;
+            _debugInsideHold = insideHold;
+            return insideHold;
         }
 
         public float GetFlatDistance(Vector3 playerPosition)
@@ -105,14 +111,55 @@ namespace Hecton8.World
             return delta.magnitude;
         }
 
+        public float GetFlatDistanceSquared(Vector3 playerPosition)
+        {
+            Vector3 delta = transform.position - playerPosition;
+            delta.y = 0f;
+            return delta.sqrMagnitude;
+        }
+
         public float EvaluateActivationWeight(Vector3 playerPosition)
         {
-            return EvaluateRadiusWeight(playerPosition, activationRadius);
+            float distance = GetFlatDistance(playerPosition);
+            float noisyRadius = activationRadius * EvaluateNoiseRadiusMultiplier(playerPosition);
+            float blend = Mathf.Max(4f, edgeBlendDistance);
+            return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
         }
 
         public float EvaluateHoldWeight(Vector3 playerPosition)
         {
-            return EvaluateRadiusWeight(playerPosition, holdRadius);
+            float distance = GetFlatDistance(playerPosition);
+            float noisyRadius = holdRadius * EvaluateNoiseRadiusMultiplier(playerPosition);
+            float blend = Mathf.Max(4f, edgeBlendDistance);
+            return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
+        }
+
+        public void EvaluatePlayerState(
+            Vector3 playerPosition,
+            out float flatDistanceSqr,
+            out float activationWeight,
+            out float holdWeight,
+            out bool insideActivation,
+            out bool insideHold)
+        {
+            Vector3 delta = transform.position - playerPosition;
+            delta.y = 0f;
+
+            flatDistanceSqr = delta.sqrMagnitude;
+            float distance = Mathf.Sqrt(flatDistanceSqr);
+            float blend = Mathf.Max(4f, edgeBlendDistance);
+            float noiseRadiusMultiplier = EvaluateNoiseRadiusMultiplier(playerPosition);
+
+            activationWeight = EvaluateRadiusWeightFromDistance(distance, activationRadius * noiseRadiusMultiplier, blend);
+            holdWeight = EvaluateRadiusWeightFromDistance(distance, holdRadius * noiseRadiusMultiplier, blend);
+            insideActivation = activationWeight > 0.01f;
+            insideHold = holdWeight > 0.01f;
+
+            _debugLastDistance = distance;
+            _debugActivationWeight = activationWeight;
+            _debugHoldWeight = holdWeight;
+            _debugInsideActivation = insideActivation;
+            _debugInsideHold = insideHold;
         }
 
         private float EvaluateRadiusWeight(Vector3 playerPosition, float radius)
@@ -120,6 +167,11 @@ namespace Hecton8.World
             float distance = GetFlatDistance(playerPosition);
             float noisyRadius = radius * EvaluateNoiseRadiusMultiplier(playerPosition);
             float blend = Mathf.Max(4f, edgeBlendDistance);
+            return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
+        }
+
+        private static float EvaluateRadiusWeightFromDistance(float distance, float noisyRadius, float blend)
+        {
             float innerRadius = Mathf.Max(0f, noisyRadius - blend);
 
             if (distance <= innerRadius)

@@ -389,7 +389,8 @@ namespace Hecton8.World
             }
             else if (proximityColliderSystem != null && totalPositionCount == 0)
             {
-                proximityColliderSystem.Initialize(Array.Empty<Vector3>());
+                _aggregatedPositionCount = 0;
+                proximityColliderSystem.ClearRuntimeData();
             }
 
             UpdateDiagnostics();

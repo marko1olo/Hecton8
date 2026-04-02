@@ -57,6 +57,8 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldGenerativeGeologyBinding : MonoBehaviour
     {
+        private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(256);
+
         [SerializeField] private long runtimeKey;
         [SerializeField] private string familyId = "world.family.generic";
         [SerializeField] private string geologyProfileId = "geology.generic";
@@ -96,6 +98,7 @@ namespace Hecton8.World
         public float SuggestedTerrainRaise => suggestedTerrainRaise;
         public float SuggestedTerrainCut => suggestedTerrainCut;
         public int SuggestedDebrisCount => suggestedDebrisCount;
+        public static int ActiveBindingCount => _activeBindings.Count;
 
         public WorldGenerativeGeologyProfile.ShapeArchetype Archetype
         {
@@ -125,6 +128,72 @@ namespace Hecton8.World
                     ? resolvedMode
                     : WorldGenerativeGeologyProfile.CaveBlendMode.None;
             }
+        }
+
+        private void OnEnable()
+        {
+            RegisterActiveBinding(this);
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveBinding(this);
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveBinding(this);
+        }
+
+        public static void CopyActiveBindingsTo(List<WorldGenerativeGeologyBinding> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            for (int i = 0; i < _activeBindings.Count; i++)
+            {
+                WorldGenerativeGeologyBinding binding = _activeBindings[i];
+                if (binding == null)
+                    continue;
+
+                destination.Add(binding);
+            }
+        }
+
+        public static bool TryGetActiveBinding(long runtimeKey, out WorldGenerativeGeologyBinding binding)
+        {
+            binding = null;
+            if (runtimeKey == 0L)
+                return false;
+
+            for (int i = 0; i < _activeBindings.Count; i++)
+            {
+                WorldGenerativeGeologyBinding candidate = _activeBindings[i];
+                if (candidate == null || candidate.runtimeKey != runtimeKey)
+                    continue;
+
+                binding = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void RegisterActiveBinding(WorldGenerativeGeologyBinding binding)
+        {
+            if (binding == null || _activeBindings.Contains(binding))
+                return;
+
+            _activeBindings.Add(binding);
+        }
+
+        private static void UnregisterActiveBinding(WorldGenerativeGeologyBinding binding)
+        {
+            if (binding == null)
+                return;
+
+            _activeBindings.Remove(binding);
         }
 
         public void Configure(
@@ -162,16 +231,52 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldGenerativeGeologyService : MonoBehaviour
     {
+        private static int _activeGeneratedRootCount;
+        private static int _activeGeneratedRendererCount;
+
         [DisallowMultipleComponent]
         private sealed class GeneratedRuntimeState : MonoBehaviour
         {
             [SerializeField] private int buildSignature;
+            [SerializeField] private int rendererCount;
+
+            private bool _registeredInGlobalCounters;
 
             public int BuildSignature => buildSignature;
+            public int RendererCount => rendererCount;
 
-            public void Configure(int signature)
+            private void OnEnable()
             {
+                if (_registeredInGlobalCounters)
+                    return;
+
+                _registeredInGlobalCounters = true;
+                _activeGeneratedRootCount++;
+                _activeGeneratedRendererCount += Mathf.Max(0, rendererCount);
+            }
+
+            private void OnDisable()
+            {
+                if (!_registeredInGlobalCounters)
+                    return;
+
+                _registeredInGlobalCounters = false;
+                _activeGeneratedRootCount = Mathf.Max(0, _activeGeneratedRootCount - 1);
+                _activeGeneratedRendererCount = Mathf.Max(0, _activeGeneratedRendererCount - Mathf.Max(0, rendererCount));
+            }
+
+            public void Configure(int signature, int configuredRendererCount)
+            {
+                if (_registeredInGlobalCounters)
+                {
+                    _activeGeneratedRendererCount -= Mathf.Max(0, rendererCount);
+                    _activeGeneratedRendererCount += Mathf.Max(0, configuredRendererCount);
+                    if (_activeGeneratedRendererCount < 0)
+                        _activeGeneratedRendererCount = 0;
+                }
+
                 buildSignature = signature;
+                rendererCount = configuredRendererCount;
             }
         }
 
@@ -182,6 +287,9 @@ namespace Hecton8.World
         [SerializeField] private float primitiveThickness = 1.6f;
         [SerializeField] private float debrisScale = 0.28f;
 
+        public static int ActiveGeneratedRootCount => Mathf.Max(0, _activeGeneratedRootCount);
+        public static int ActiveGeneratedRendererCount => Mathf.Max(0, _activeGeneratedRendererCount);
+
         public bool TryApplyGeneratedGeology(GameObject host, in WorldGenerativeGeologyRequest request)
         {
             if (host == null || request.Profile == null || !request.Profile.IsEnabled)
@@ -190,12 +298,16 @@ namespace Hecton8.World
             if (!Application.isPlaying && !allowEditorGeneration)
                 return false;
 
+            bool useFullDetail = request.FinalVariantActive;
             string resolvedComposition = ResolveComposition(request);
-            int lodCount = Mathf.Clamp(request.Profile.lodCount, 1, 3);
+            if (!useFullDetail)
+                resolvedComposition = "SingleFeature";
+
+            int lodCount = Mathf.Clamp(request.Profile.lodCount, 1, useFullDetail ? 3 : 2);
             float blendRadius = Mathf.Max(0.5f, request.Profile.seamBlendRadius * Mathf.Max(0.25f, request.WorldScale));
             float terrainRaise = request.Profile.terrainRaiseMeters * Mathf.Clamp01(request.RidgeSignal + request.CompositionPotential * 0.25f);
             float terrainCut = request.Profile.terrainCutMeters * Mathf.Clamp01(request.CaveProximity + request.CanyonSignal * 0.35f);
-            int debrisCount = request.Profile.ResolveDebrisCount(request.StableHash);
+            int debrisCount = useFullDetail ? request.Profile.ResolveDebrisCount(request.StableHash) : 0;
             int buildSignature = ComputeBuildSignature(
                 request,
                 resolvedComposition,
@@ -219,6 +331,7 @@ namespace Hecton8.World
                 lodGroup = generatedRoot.gameObject.AddComponent<LODGroup>();
 
             List<LOD> lods = new List<LOD>(lodCount);
+            int totalRendererCount = 0;
             for (int lodIndex = 0; lodIndex < lodCount; lodIndex++)
             {
                 Transform lodRoot = new GameObject($"LOD{lodIndex}").transform;
@@ -226,6 +339,7 @@ namespace Hecton8.World
                 Renderer[] renderers = BuildCompositionLod(lodRoot, request, resolvedComposition, lodIndex, debrisCount);
                 float transitionHeight = ResolveLodScreenHeight(request.Profile, lodIndex, lodCount);
                 lods.Add(new LOD(transitionHeight, renderers));
+                totalRendererCount += renderers.Length;
             }
 
             lodGroup.SetLODs(lods.ToArray());
@@ -246,7 +360,7 @@ namespace Hecton8.World
             if (runtimeState == null)
                 runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
 
-            runtimeState.Configure(buildSignature);
+            runtimeState.Configure(buildSignature, totalRendererCount);
 
             return true;
         }

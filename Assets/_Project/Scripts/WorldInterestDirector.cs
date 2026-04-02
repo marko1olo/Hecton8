@@ -13,6 +13,9 @@ namespace Hecton8.World
         [SerializeField] private ScatterBudgetController scatterBudgetController;
         [SerializeField] private WorldSliceDirector worldSliceDirector;
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Defaults")]
         [SerializeField] private float idleScavengeRadiusScale = 1f;
         [SerializeField] private float idleSpawnScale = 1f;
@@ -21,15 +24,19 @@ namespace Hecton8.World
         [SerializeField] private float idleSliceNearScale = 1f;
         [SerializeField] private float idleSliceMidScale = 1f;
 
+        // Inspector-only live diagnostics for tuning the streaming stack.
+#pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private string _debugDominantAnchor = "None";
         [SerializeField] private string _debugDominantKind = "None";
         [SerializeField] private float _debugDominantInfluence;
         [SerializeField] private int _debugAnchorCount;
         [SerializeField] private bool _debugApplied;
+#pragma warning restore CS0414
 
         private readonly List<WorldInterestAnchor> _anchors = new List<WorldInterestAnchor>(24);
         private bool _registeredToTickManager;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         private void Awake()
         {
@@ -158,21 +165,20 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
+            if (playerTransform != null &&
+                scatterBudgetController != null &&
+                worldSliceDirector != null)
+                return;
 
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+            float now = Time.realtimeSinceStartup;
+            if (now < _nextAutoResolveAttemptTime)
+                return;
 
-            if (scatterBudgetController == null)
-                scatterBudgetController = FindAnyObjectByType<ScatterBudgetController>();
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            if (worldSliceDirector == null)
-                worldSliceDirector = FindAnyObjectByType<WorldSliceDirector>();
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref scatterBudgetController);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldSliceDirector);
         }
     }
 }

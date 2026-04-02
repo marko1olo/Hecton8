@@ -29,6 +29,7 @@ namespace Hecton8.Input
         private static readonly object _lock = new object();
         private static bool _isShuttingDown;
         private HectonInputActions _generatedInputActions;
+        private bool _inputMapsInitialized;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -144,6 +145,7 @@ namespace Hecton8.Input
         
         public bool IsPlayerInputEnabled => _playerActionMap?.enabled ?? false;
         public bool IsUIInputEnabled => _uiActionMap?.enabled ?? false;
+        public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _inputActionAsset != null;
         
         public Vector2 MoveInput => _moveAction?.ReadValue<Vector2>() ?? Vector2.zero;
         public Vector2 LookInput => _lookAction?.ReadValue<Vector2>() ?? Vector2.zero;
@@ -181,6 +183,8 @@ namespace Hecton8.Input
         
         private void InitializeInputActions()
         {
+            _inputMapsInitialized = false;
+
             // Prefer a real asset from inspector/resources, but always keep a generated
             // fallback so the project never hard-fails on a missing asset reference.
             if (_inputActionAsset == null)
@@ -219,6 +223,8 @@ namespace Hecton8.Input
             SubscribeToPlayerActions();
             if (_uiActionMap != null)
                 SubscribeToUIActions();
+
+            _inputMapsInitialized = true;
             
             // Enable player input by default
             EnablePlayerInput();
@@ -344,20 +350,23 @@ namespace Hecton8.Input
         
         public void EnablePlayerInput()
         {
-            _playerActionMap?.Enable();
+            if (!CanSwitchActionMaps)
+                return;
+
+            SafeEnableActionMap(_playerActionMap);
         }
         
         public void DisablePlayerInput()
         {
-            _playerActionMap?.Disable();
+            SafeDisableActionMap(_playerActionMap);
         }
         
         public void EnableUIInput()
         {
-            if (_uiActionMap == null)
+            if (!CanSwitchActionMaps || _uiActionMap == null)
                 return;
 
-            _uiActionMap.Enable();
+            SafeEnableActionMap(_uiActionMap);
         }
         
         public void DisableUIInput()
@@ -365,17 +374,23 @@ namespace Hecton8.Input
             if (_uiActionMap == null)
                 return;
 
-            _uiActionMap.Disable();
+            SafeDisableActionMap(_uiActionMap);
         }
         
         public void SwitchToPlayerInput()
         {
+            if (!CanSwitchActionMaps)
+                return;
+
             DisableUIInput();
             EnablePlayerInput();
         }
         
         public void SwitchToUIInput()
         {
+            if (!CanSwitchActionMaps)
+                return;
+
             if (_uiActionMap == null)
             {
                 // Never strand gameplay input just because the UI map is absent.
@@ -393,10 +408,20 @@ namespace Hecton8.Input
         
         public InputAction GetAction(string actionName, string actionMap = "Player")
         {
-            if (actionMap == "Player")
-                return _playerActionMap?.FindAction(actionName);
-            else if (actionMap == "UI")
-                return _uiActionMap?.FindAction(actionName);
+            if (!_inputMapsInitialized || string.IsNullOrWhiteSpace(actionName))
+                return null;
+
+            try
+            {
+                if (actionMap == "Player")
+                    return _playerActionMap?.FindAction(actionName);
+                else if (actionMap == "UI")
+                    return _uiActionMap?.FindAction(actionName);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
             
             return null;
         }
@@ -509,18 +534,36 @@ namespace Hecton8.Input
             if (_instance == this)
                 _isShuttingDown = true;
 
-            if (_playerActionMap != null)
-            {
-                _playerActionMap.Disable();
-            }
-            
-            if (_uiActionMap != null)
-            {
-                _uiActionMap.Disable();
-            }
+            SafeDisableActionMap(_playerActionMap);
+            SafeDisableActionMap(_uiActionMap);
+
+            _inputMapsInitialized = false;
 
             _generatedInputActions?.Dispose();
             _generatedInputActions = null;
+            _inputActionAsset = null;
+            _playerActionMap = null;
+            _uiActionMap = null;
+            _moveAction = null;
+            _lookAction = null;
+            _jumpAction = null;
+            _sprintAction = null;
+            _interactAction = null;
+            _flashlightAction = null;
+            _pdaAction = null;
+            _toolSlot1Action = null;
+            _toolSlot2Action = null;
+            _toolSlot3Action = null;
+            _toolSlot4Action = null;
+            _primaryActionAction = null;
+            _secondaryActionAction = null;
+            _verticalMovementAction = null;
+            _inventoryAction = null;
+            _navigateAction = null;
+            _submitAction = null;
+            _cancelAction = null;
+            _tabNextAction = null;
+            _tabPreviousAction = null;
 
             if (_instance == this)
                 _instance = null;
@@ -529,6 +572,85 @@ namespace Hecton8.Input
         private void OnApplicationQuit()
         {
             _isShuttingDown = true;
+        }
+
+        private void SafeEnableActionMap(InputActionMap actionMap)
+        {
+            if (!IsActionMapUsable(actionMap))
+                return;
+
+            try
+            {
+                actionMap.Enable();
+            }
+            catch (InvalidOperationException)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+            catch (Exception)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+        }
+
+        private void SafeDisableActionMap(InputActionMap actionMap)
+        {
+            if (!IsActionMapUsable(actionMap))
+                return;
+
+            try
+            {
+                actionMap.Disable();
+            }
+            catch (InvalidOperationException)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+            catch (Exception)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+        }
+
+        private void HandleStaleActionMap(InputActionMap actionMap)
+        {
+            if (ReferenceEquals(actionMap, _playerActionMap))
+                _playerActionMap = null;
+            else if (ReferenceEquals(actionMap, _uiActionMap))
+                _uiActionMap = null;
+
+            if (_playerActionMap == null && _uiActionMap == null)
+                _inputMapsInitialized = false;
+        }
+
+        private bool IsActionMapUsable(InputActionMap actionMap)
+        {
+            if (!_inputMapsInitialized || actionMap == null || _isShuttingDown || _inputActionAsset == null)
+                return false;
+
+            try
+            {
+                if (!ReferenceEquals(actionMap.asset, _inputActionAsset))
+                {
+                    HandleStaleActionMap(actionMap);
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                HandleStaleActionMap(actionMap);
+                return false;
+            }
+
+            return true;
         }
     }
 }

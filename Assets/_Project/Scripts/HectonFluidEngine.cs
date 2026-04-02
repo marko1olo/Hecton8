@@ -324,6 +324,11 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             GameTickManager.Instance?.Unregister((IFixedTickable)this);
+
+            // Release runtime job buffers before editor domain/play-mode teardown.
+            // In-editor play transitions do not always guarantee a clean OnDestroy path
+            // for persistent native allocations, so we free them on disable as well.
+            DisposeNativeArrays();
         }
 
         private void OnDestroy()

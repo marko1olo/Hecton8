@@ -79,6 +79,25 @@ namespace Hecton8.Bootstrap
         public static bool IsGameReady { get; private set; }
 
         /// <summary>
+        /// Indicates that a live bootstrap instance currently owns scene startup.
+        /// Runtime systems may use this to avoid premature player searches while
+        /// bootstrap intentionally keeps the player inactive.
+        /// </summary>
+        public static bool HasActiveInstance { get; private set; }
+
+        /// <summary>
+        /// Last known player GameObject managed by bootstrap.
+        /// </summary>
+        public static GameObject CurrentPlayerObject { get; private set; }
+
+        /// <summary>
+        /// Fast-access player transform for runtime systems that should avoid
+        /// repeated scene-wide lookups.
+        /// </summary>
+        public static Transform CurrentPlayerTransform =>
+            CurrentPlayerObject != null ? CurrentPlayerObject.transform : null;
+
+        /// <summary>
         /// Выстреливает при критической ошибке инициализации
         /// или при превышении таймаута.
         /// Param: описание ошибки.
@@ -221,6 +240,12 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private bool _isLoadingSave;
 
+        private void Awake()
+        {
+            HasActiveInstance = true;
+            PublishPlayerRuntimeReference();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE — единственная точка входа
         // ══════════════════════════════════════════════════════════
@@ -331,8 +356,23 @@ namespace Hecton8.Bootstrap
 
         private void OnDestroy()
         {
+            if (CurrentPlayerObject == playerObject)
+                CurrentPlayerObject = null;
+
+            HasActiveInstance = false;
+
             if (Application.isPlaying)
                 IsGameReady = false;
+        }
+
+        /// <summary>
+        /// Tries to return the current player transform without forcing callers
+        /// to query the scene.
+        /// </summary>
+        public static bool TryGetCurrentPlayerTransform(out Transform playerTransform)
+        {
+            playerTransform = CurrentPlayerTransform;
+            return playerTransform != null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -788,6 +828,7 @@ namespace Hecton8.Bootstrap
                     Log("  Using HectonPlayerSpawner (async)...");
                     await spawner.SpawnPlayerAsync(ct);
                     Log("  HectonPlayerSpawner completed.");
+                    PublishPlayerRuntimeReference();
                     return;
                 }
 
@@ -800,6 +841,7 @@ namespace Hecton8.Bootstrap
             {
                 Log($"  Placing player at fallback: {fallbackSpawnPosition}");
                 playerObject.transform.position = fallbackSpawnPosition;
+                PublishPlayerRuntimeReference();
                 return;
             }
 
@@ -809,7 +851,9 @@ namespace Hecton8.Bootstrap
             {
                 Log($"  Found player by tag, " +
                     $"placing at fallback: {fallbackSpawnPosition}");
+                playerObject = player;
                 player.transform.position = fallbackSpawnPosition;
+                PublishPlayerRuntimeReference();
                 return;
             }
 
@@ -833,6 +877,8 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void DisablePlayer()
         {
+            PublishPlayerRuntimeReference();
+
             // ── Кэширование Rigidbody ──
             if (playerRigidbody == null && playerObject != null)
             {
@@ -869,6 +915,8 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void ActivatePlayer()
         {
+            PublishPlayerRuntimeReference();
+
             if (playerObject != null)
             {
                 playerObject.SetActive(true);
@@ -888,6 +936,24 @@ namespace Hecton8.Bootstrap
                 playerController.enabled = true;
                 Log("  PlayerController enabled.");
             }
+        }
+
+        private void PublishPlayerRuntimeReference()
+        {
+            if (playerObject == null && playerRigidbody != null)
+                playerObject = playerRigidbody.gameObject;
+
+            if (playerObject == null && playerController != null)
+                playerObject = playerController.gameObject;
+
+            if (playerObject == null)
+            {
+                GameObject taggedPlayer = GameObject.FindWithTag("Player");
+                if (taggedPlayer != null)
+                    playerObject = taggedPlayer;
+            }
+
+            CurrentPlayerObject = playerObject;
         }
 
         // ══════════════════════════════════════════════════════════

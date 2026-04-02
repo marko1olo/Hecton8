@@ -19,14 +19,13 @@ public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
 
     void Awake()
     {
-        _mpb = new MaterialPropertyBlock();
-
-        if (_planetRenderer == null)
-            _planetRenderer = GetComponent<Renderer>();
+        EnsureRendererResources();
     }
 
     private void OnEnable()
     {
+        EnsureRendererResources();
+
         if (_registeredToTickManager || GameTickManager.Instance == null)
             return;
 
@@ -45,6 +44,7 @@ public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
 
     public void Tick(float deltaTime)
     {
+        EnsureRendererResources();
         if (_planetRenderer == null)
             return;
 
@@ -55,5 +55,13 @@ public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
         _planetRenderer.GetPropertyBlock(_mpb);
         _mpb.SetFloat(_idGlobalRotation, rotation);
         _planetRenderer.SetPropertyBlock(_mpb);
+    }
+
+    private void EnsureRendererResources()
+    {
+        _mpb ??= new MaterialPropertyBlock();
+
+        if (_planetRenderer == null)
+            _planetRenderer = GetComponent<Renderer>();
     }
 }

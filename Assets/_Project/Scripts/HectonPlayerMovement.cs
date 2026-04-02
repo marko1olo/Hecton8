@@ -131,7 +131,9 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugBodyYaw;
         [SerializeField] private float _debugCameraYaw;
         [SerializeField] private float _debugCurrentRoll;
+#pragma warning disable CS0414
         [SerializeField] private bool _debugStepEvent;
+#pragma warning restore CS0414
         [SerializeField] private string _debugSuitName;
         [SerializeField] private float _debugSpeed;
         [SerializeField] private float _debugDynamicWaterY;
@@ -1261,8 +1263,8 @@ namespace Hecton8.Gameplay
             if (_currentTimer > 100000f) _currentTimer -= 100000f;
 
             float strength = suit.ambientCurrentStrength * _waterImmersionRatio;
-            float3 phantom = CurrentManager.SampleCurrent(
-                new float3(transform.position.x, transform.position.y, transform.position.z),
+            Unity.Mathematics.float3 phantom = CurrentManager.SampleCurrent(
+                new Unity.Mathematics.float3(transform.position.x, transform.position.y, transform.position.z),
                 _currentTimer,
                 0.018f,
                 0.12f,

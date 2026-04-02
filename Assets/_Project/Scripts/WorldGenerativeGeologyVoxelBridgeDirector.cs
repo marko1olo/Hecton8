@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Dev;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -12,26 +13,72 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldGenerativeGeologyVoxelRuntime : MonoBehaviour
     {
+        private static int _activeRuntimeCount;
+        private static int _activeColliderCount;
+
         [SerializeField] private long runtimeKey;
         [SerializeField] private int requestSignature;
         [SerializeField] private string familyId = "world.family.generic";
         [SerializeField] private string geologyProfileId = "geology.generic";
+        [SerializeField] private bool colliderEnabled;
+
+        private bool _registeredInActiveSet;
 
         public long RuntimeKey => runtimeKey;
         public int RequestSignature => requestSignature;
+        public string FamilyId => familyId;
+        public string GeologyProfileId => geologyProfileId;
+        public bool ColliderEnabled => colliderEnabled;
+        public static int ActiveRuntimeCount => Mathf.Max(0, _activeRuntimeCount);
+        public static int ActiveColliderCount => Mathf.Max(0, _activeColliderCount);
 
-        public void Configure(long configuredRuntimeKey, int configuredSignature, string configuredFamilyId, string configuredProfileId)
+        private void OnEnable()
         {
+            if (_registeredInActiveSet)
+                return;
+
+            _registeredInActiveSet = true;
+            _activeRuntimeCount++;
+            if (colliderEnabled)
+                _activeColliderCount++;
+        }
+
+        private void OnDisable()
+        {
+            if (!_registeredInActiveSet)
+                return;
+
+            _registeredInActiveSet = false;
+            _activeRuntimeCount = Mathf.Max(0, _activeRuntimeCount - 1);
+            if (colliderEnabled)
+                _activeColliderCount = Mathf.Max(0, _activeColliderCount - 1);
+        }
+
+        public void Configure(
+            long configuredRuntimeKey,
+            int configuredSignature,
+            string configuredFamilyId,
+            string configuredProfileId,
+            bool configuredColliderEnabled)
+        {
+            if (_registeredInActiveSet && colliderEnabled != configuredColliderEnabled)
+            {
+                _activeColliderCount += configuredColliderEnabled ? 1 : -1;
+                if (_activeColliderCount < 0)
+                    _activeColliderCount = 0;
+            }
+
             runtimeKey = configuredRuntimeKey;
             requestSignature = configuredSignature;
             familyId = string.IsNullOrWhiteSpace(configuredFamilyId) ? "world.family.generic" : configuredFamilyId;
             geologyProfileId = string.IsNullOrWhiteSpace(configuredProfileId) ? "geology.generic" : configuredProfileId;
+            colliderEnabled = configuredColliderEnabled;
         }
     }
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4028)]
-    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable
     {
         private sealed class PendingRequestState : System.IDisposable
         {
@@ -55,9 +102,11 @@ namespace Hecton8.World
         [Header("Generation")]
         [SerializeField] private int maxRuntimeVolumes = 12;
         [SerializeField] private int maxSpawnOperationsPerTick = 2;
+        [SerializeField] private int maxAsyncLaunchesPerFrame = 1;
         [SerializeField] private float missingRequestGraceSeconds = 6f;
         [SerializeField] private bool prewarmVoxelPool = true;
         [SerializeField] private int voxelPoolWarmPadding = 3;
+        [SerializeField] private int maxVoxelPoolWarmupPerTick = 1;
         [SerializeField] private float minBlendWeight = 0.28f;
         [SerializeField] private float minVoxelSize = 18f;
         [SerializeField] private float maxVoxelSize = 72f;
@@ -71,11 +120,18 @@ namespace Hecton8.World
         [SerializeField] private float farFieldDistance = 168f;
         [SerializeField] private float maxRequestDistance = 96f;
         [SerializeField] private float requestRetentionDistancePadding = 14f;
+        [SerializeField] private float colliderBuildDistance = 42f;
+        [SerializeField, Range(0.4f, 1f)] private float mediumDistanceResolutionScale = 0.82f;
+        [SerializeField, Range(0.4f, 1f)] private float farDistanceResolutionScale = 0.68f;
+        [SerializeField, Range(0.4f, 1f)] private float lowWeightResolutionScale = 0.85f;
+        [SerializeField] private int maxRuntimeGridDimension = 56;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
         [SerializeField] private int _debugActiveVolumes;
+        [SerializeField] private int _debugActiveColliders;
         [SerializeField] private int _debugPendingVolumes;
+        [SerializeField] private int _debugQueuedLaunches;
         [SerializeField] private int _debugSpawnBudgetUsed;
         [SerializeField] private int _debugWarmedPoolTarget;
         [SerializeField] private string _debugTopVolume = "None";
@@ -86,14 +142,19 @@ namespace Hecton8.World
         private readonly Dictionary<long, int> _desiredSignatures = new Dictionary<long, int>(32);
         private readonly Dictionary<long, WorldGenerativeGeologyVoxelBlendRequest> _requestLookupByKey = new Dictionary<long, WorldGenerativeGeologyVoxelBlendRequest>(64);
         private readonly Dictionary<long, PendingRequestState> _pendingRequests = new Dictionary<long, PendingRequestState>(32);
+        private readonly Dictionary<long, WorldGenerativeGeologyVoxelBlendRequest> _queuedLaunchRequests = new Dictionary<long, WorldGenerativeGeologyVoxelBlendRequest>(32);
+        private readonly Dictionary<long, float> _queuedLaunchTimes = new Dictionary<long, float>(32);
         private readonly HashSet<long> _pendingRuntimeKeys = new HashSet<long>();
+        private readonly HashSet<long> _queuedLaunchKeys = new HashSet<long>();
         private readonly HashSet<long> _desiredRuntimeKeys = new HashSet<long>();
         private readonly List<long> _desiredRuntimeKeyOrder = new List<long>(32);
         private readonly List<long> _retainedDesiredRuntimeKeyOrder = new List<long>(32);
+        private readonly List<long> _queuedLaunchOrder = new List<long>(32);
         private readonly List<long> _removalBuffer = new List<long>(32);
         private readonly List<long> _pendingCancellationBuffer = new List<long>(32);
         private readonly List<WorldGenerativeGeologyVoxelBlendRequest> _sortedRequests = new List<WorldGenerativeGeologyVoxelBlendRequest>(64);
-        private bool _registeredToTickManager;
+        private bool _registeredToFrameTickManager;
+        private bool _registeredToSlowTickManager;
         private int _estimatedWarmedPoolCount;
         private CancellationTokenSource _lifetimeCancellation;
 
@@ -107,19 +168,37 @@ namespace Hecton8.World
         {
             ResolveReferences();
             EnsureLifetimeCancellation();
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
+            if (GameTickManager.Instance != null)
             {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
+                if (!_registeredToFrameTickManager)
+                {
+                    GameTickManager.Instance.Register((ITickable)this);
+                    _registeredToFrameTickManager = true;
+                }
+
+                if (!_registeredToSlowTickManager)
+                {
+                    GameTickManager.Instance.Register((ISlowTickable)this);
+                    _registeredToSlowTickManager = true;
+                }
             }
         }
 
         private void Start()
         {
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
+            if (GameTickManager.Instance != null)
             {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
+                if (!_registeredToFrameTickManager)
+                {
+                    GameTickManager.Instance.Register((ITickable)this);
+                    _registeredToFrameTickManager = true;
+                }
+
+                if (!_registeredToSlowTickManager)
+                {
+                    GameTickManager.Instance.Register((ISlowTickable)this);
+                    _registeredToSlowTickManager = true;
+                }
             }
 
             ReconcileVoxelRequests();
@@ -127,15 +206,29 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            if (_registeredToTickManager && GameTickManager.Instance != null)
+            if (GameTickManager.Instance != null)
             {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredToTickManager = false;
+                if (_registeredToFrameTickManager)
+                {
+                    GameTickManager.Instance.Unregister((ITickable)this);
+                    _registeredToFrameTickManager = false;
+                }
+
+                if (_registeredToSlowTickManager)
+                {
+                    GameTickManager.Instance.Unregister((ISlowTickable)this);
+                    _registeredToSlowTickManager = false;
+                }
             }
 
             CancelLifetimeCancellation();
             CancelAllPendingRequests();
             ClearAllVolumes();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            FlushQueuedLaunches();
         }
 
         public void SlowTick()
@@ -155,6 +248,7 @@ namespace Hecton8.World
 
         public void ReconcileVoxelRequests()
         {
+            long reconcileStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             ResolveReferences();
             _debugTopVolume = "None";
 
@@ -172,6 +266,7 @@ namespace Hecton8.World
             _requestLookupByKey.Clear();
             _desiredRuntimeKeys.Clear();
             _desiredRuntimeKeyOrder.Clear();
+            long requestFilterEndTimestamp = reconcileStartTimestamp;
 
             for (int i = 0; i < requests.Count; i++)
             {
@@ -192,9 +287,12 @@ namespace Hecton8.World
                 _requestLookupByKey[request.runtimeKey] = request;
             }
 
+            requestFilterEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             EnsureVoxelPoolWarm(_sortedRequests.Count);
+            long poolWarmEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _sortedRequests.Sort(CompareRequestsByPriority);
             int spawnBudgetUsed = 0;
+            long sortEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
 
             int capacity = Mathf.Max(1, maxRuntimeVolumes);
 
@@ -273,9 +371,21 @@ namespace Hecton8.World
                 RemoveVolume(_removalBuffer[i]);
 
             CancelStalePendingRequests();
+            long reconcileEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "voxel.reconcile",
+                $"requests={requests.Count} kept={_sortedRequests.Count} desired={_desiredRuntimeKeys.Count} active={_activeVolumes.Count} " +
+                $"pending={_pendingRuntimeKeys.Count} queued={_queuedLaunchOrder.Count} spawnBudget={spawnBudgetUsed} " +
+                $"filter={GetElapsedMilliseconds(reconcileStartTimestamp, requestFilterEndTimestamp):0.00}ms " +
+                $"warm={GetElapsedMilliseconds(requestFilterEndTimestamp, poolWarmEndTimestamp):0.00}ms " +
+                $"sort={GetElapsedMilliseconds(poolWarmEndTimestamp, sortEndTimestamp):0.00}ms " +
+                $"rest={GetElapsedMilliseconds(sortEndTimestamp, reconcileEndTimestamp):0.00}ms total={GetElapsedMilliseconds(reconcileStartTimestamp, reconcileEndTimestamp):0.00}ms");
 
             _debugActiveVolumes = _activeVolumes.Count;
+            _debugActiveColliders = WorldGenerativeGeologyVoxelRuntime.ActiveColliderCount;
             _debugPendingVolumes = _pendingRuntimeKeys.Count;
+            _debugQueuedLaunches = _queuedLaunchOrder.Count;
             _debugSpawnBudgetUsed = spawnBudgetUsed;
             _debugReady = _activeVolumes.Count > 0 || _pendingRuntimeKeys.Count > 0;
         }
@@ -325,8 +435,64 @@ namespace Hecton8.World
             PendingRequestState state = CreatePendingRequestState(signature);
             _pendingRuntimeKeys.Add(request.runtimeKey);
             _pendingRequests[request.runtimeKey] = state;
-            _ = SpawnOrRefreshVolumeAsync(request, signature, state);
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "voxel.request",
+                $"schedule key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                $"weight={request.weight:0.00} dist={request.playerDistance:0.0} active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+            QueueLaunchRequest(request);
             spawnBudgetUsed++;
+        }
+
+        private void QueueLaunchRequest(in WorldGenerativeGeologyVoxelBlendRequest request)
+        {
+            _queuedLaunchRequests[request.runtimeKey] = request;
+            if (_queuedLaunchKeys.Add(request.runtimeKey))
+            {
+                _queuedLaunchOrder.Add(request.runtimeKey);
+                _queuedLaunchTimes[request.runtimeKey] = Application.isPlaying ? Time.unscaledTime : 0f;
+            }
+
+            _debugQueuedLaunches = _queuedLaunchOrder.Count;
+        }
+
+        private void FlushQueuedLaunches()
+        {
+            if (!isActiveAndEnabled || _queuedLaunchOrder.Count == 0)
+                return;
+
+            int launchBudget = Mathf.Max(1, maxAsyncLaunchesPerFrame);
+            for (int i = 0; i < launchBudget && _queuedLaunchOrder.Count > 0; i++)
+            {
+                long runtimeKey = _queuedLaunchOrder[0];
+                _queuedLaunchOrder.RemoveAt(0);
+                _queuedLaunchKeys.Remove(runtimeKey);
+
+                if (!_queuedLaunchRequests.TryGetValue(runtimeKey, out WorldGenerativeGeologyVoxelBlendRequest request) ||
+                    !_pendingRequests.TryGetValue(runtimeKey, out PendingRequestState pendingState) ||
+                    pendingState == null ||
+                    pendingState.Cancellation == null ||
+                    pendingState.Cancellation.IsCancellationRequested)
+                {
+                    _queuedLaunchRequests.Remove(runtimeKey);
+                    _queuedLaunchTimes.Remove(runtimeKey);
+                    continue;
+                }
+
+                float queuedAt = 0f;
+                _queuedLaunchTimes.TryGetValue(runtimeKey, out queuedAt);
+                _queuedLaunchRequests.Remove(runtimeKey);
+                _queuedLaunchTimes.Remove(runtimeKey);
+
+                float queuedMs = Application.isPlaying
+                    ? Mathf.Max(0f, (Time.unscaledTime - queuedAt) * 1000f)
+                    : 0f;
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.launch",
+                    $"start key={runtimeKey} family={request.familyId} queued={queuedMs:0.00}ms active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+                _ = SpawnOrRefreshVolumeAsync(request, pendingState.Signature, pendingState);
+            }
+
+            _debugQueuedLaunches = _queuedLaunchOrder.Count;
         }
 
         private void CaptureRetainedDesiredRuntimeKeyOrder()
@@ -348,6 +514,7 @@ namespace Hecton8.World
             int signature,
             PendingRequestState pendingState)
         {
+            long requestStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             CancellationToken token = pendingState != null && pendingState.Cancellation != null
                 ? pendingState.Cancellation.Token
                 : EnsureLifetimeCancellation().Token;
@@ -356,17 +523,20 @@ namespace Hecton8.World
                 if (voxelEngine == null)
                     return;
 
-                BuildVoxelRequestData(request, out int gridDimension, out float voxelStep, out CaveGenerationParams generationParams, out CaveStructure[] structures);
+                long buildDataStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                BuildVoxelRequestData(request, out int gridDimension, out float voxelStep, out CaveGenerationParams generationParams, out NativeArray<CaveStructure> structureArray);
+                float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
                 NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
                 NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
                 NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(0, Allocator.Persistent);
-                NativeArray<CaveStructure> structureArray = new NativeArray<CaveStructure>(structures.Length, Allocator.Persistent);
+                bool buildCollider = ShouldBuildCollider(request);
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.request",
+                    $"prepared key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                    $"grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} buildData={buildDataMs:0.00}ms");
 
                 try
                 {
-                    for (int i = 0; i < structures.Length; i++)
-                        structureArray[i] = structures[i];
-
                     GameObject volume = await voxelEngine.GenerateVolumeFromDataAsync(
                         request.center,
                         gridDimension,
@@ -376,6 +546,7 @@ namespace Hecton8.World
                         entrances,
                         structureArray,
                         generationParams,
+                        buildCollider,
                         token);
 
                     if (volume == null)
@@ -393,7 +564,7 @@ namespace Hecton8.World
                     WorldGenerativeGeologyVoxelRuntime runtime = volume.GetComponent<WorldGenerativeGeologyVoxelRuntime>();
                     if (runtime == null)
                         runtime = volume.AddComponent<WorldGenerativeGeologyVoxelRuntime>();
-                    runtime.Configure(request.runtimeKey, signature, request.familyId, request.geologyProfileId);
+                    runtime.Configure(request.runtimeKey, signature, request.familyId, request.geologyProfileId, buildCollider);
 
                     if (_activeVolumes.TryGetValue(request.runtimeKey, out GameObject previousVolume) &&
                         previousVolume != null &&
@@ -407,6 +578,13 @@ namespace Hecton8.World
                     _lastSeenTimes[request.runtimeKey] = Application.isPlaying ? Time.unscaledTime : 0f;
                     if (_debugTopVolume == "None")
                         _debugTopVolume = request.familyId;
+
+                    float elapsedMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - requestStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.request",
+                        $"complete key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                        $"grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} took={elapsedMs:0.00}ms " +
+                        $"active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
                 }
                 finally
                 {
@@ -418,6 +596,19 @@ namespace Hecton8.World
             }
             catch (OperationCanceledException)
             {
+                float elapsedMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - requestStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.request",
+                    $"cancel key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} took={elapsedMs:0.00}ms");
+            }
+            catch (Exception ex)
+            {
+                float elapsedMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - requestStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.request",
+                    $"fault key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                    $"took={elapsedMs:0.00}ms error={ex.GetType().Name}:{ex.Message}");
+                throw;
             }
             finally
             {
@@ -428,10 +619,15 @@ namespace Hecton8.World
                     _pendingRuntimeKeys.Remove(request.runtimeKey);
                 }
 
+                _queuedLaunchRequests.Remove(request.runtimeKey);
+                _queuedLaunchTimes.Remove(request.runtimeKey);
+                _queuedLaunchKeys.Remove(request.runtimeKey);
                 pendingState?.Dispose();
 
                 _debugActiveVolumes = _activeVolumes.Count;
+                _debugActiveColliders = WorldGenerativeGeologyVoxelRuntime.ActiveColliderCount;
                 _debugPendingVolumes = _pendingRuntimeKeys.Count;
+                _debugQueuedLaunches = _queuedLaunchOrder.Count;
                 _debugReady = _activeVolumes.Count > 0 || _pendingRuntimeKeys.Count > 0;
             }
         }
@@ -452,13 +648,16 @@ namespace Hecton8.World
             out int gridDimension,
             out float voxelStep,
             out CaveGenerationParams generationParams,
-            out CaveStructure[] structures)
+            out NativeArray<CaveStructure> structures)
         {
             float dominantSize = Mathf.Clamp(math.cmax((float3)request.size), minVoxelSize, maxVoxelSize) + voxelPadding;
             int targetResolution = ResolveTargetResolution(request);
             float stabilizedWeight = Quantize01(request.weight, 0.05f);
             voxelStep = Mathf.Clamp(dominantSize / Mathf.Max(24f, targetResolution), minVoxelStep, maxVoxelStep);
-            gridDimension = Mathf.Clamp(Mathf.CeilToInt(dominantSize / voxelStep), 32, 96);
+            gridDimension = Mathf.Clamp(
+                Mathf.CeilToInt(dominantSize / voxelStep),
+                32,
+                Mathf.Clamp(maxRuntimeGridDimension, 32, 96));
 
             uint seed = unchecked((uint)(request.runtimeKey * 92821L + 15731L));
             CavePreset preset = voxelEngine != null && voxelEngine.defaultPreset != null
@@ -472,16 +671,47 @@ namespace Hecton8.World
             generationParams.spawnContext = SpawnContext.CaveShallow;
 
             Vector3 upOffset = Vector3.up * Mathf.Max(0.75f, request.size.y * 0.08f);
-            structures = request.archetype switch
+            structures = new NativeArray<CaveStructure>(
+                ResolveStructureCount(request.archetype),
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+
+            switch (request.archetype)
             {
-                WorldGenerativeGeologyProfile.ShapeArchetype.Arch => BuildArchStructures(request, upOffset, false),
-                WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge => BuildArchStructures(request, upOffset, true),
-                WorldGenerativeGeologyProfile.ShapeArchetype.Canopy => BuildCanopyStructures(request, upOffset),
-                _ => BuildRockStructures(request)
+                case WorldGenerativeGeologyProfile.ShapeArchetype.Arch:
+                    BuildArchStructures(request, upOffset, structures, false);
+                    break;
+
+                case WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge:
+                    BuildArchStructures(request, upOffset, structures, true);
+                    break;
+
+                case WorldGenerativeGeologyProfile.ShapeArchetype.Canopy:
+                    BuildCanopyStructures(request, upOffset, structures);
+                    break;
+
+                default:
+                    BuildRockStructures(request, structures);
+                    break;
+            }
+        }
+
+        private static int ResolveStructureCount(WorldGenerativeGeologyProfile.ShapeArchetype archetype)
+        {
+            return archetype switch
+            {
+                WorldGenerativeGeologyProfile.ShapeArchetype.Arch => 7,
+                WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge => 7,
+                WorldGenerativeGeologyProfile.ShapeArchetype.Canopy => 4,
+                _ => 5
             };
         }
 
-        private CaveStructure[] BuildArchStructures(in WorldGenerativeGeologyVoxelBlendRequest request, Vector3 upOffset, bool bridgeBias)
+        private void BuildArchStructures(
+            in WorldGenerativeGeologyVoxelBlendRequest request,
+            Vector3 upOffset,
+            NativeArray<CaveStructure> structures,
+            bool bridgeBias)
         {
             float span = Mathf.Max(request.size.x, request.size.z) * (bridgeBias ? 0.68f : 0.62f);
             float radius = Mathf.Max(1.8f, span * 0.14f);
@@ -497,19 +727,26 @@ namespace Hecton8.World
             Vector3 bridgeEnd = crown + forward * (request.size.z * 0.18f);
             float buttressBias = HashSigned(request.runtimeKey, 17) * request.size.z * 0.09f;
 
-            return new[]
-            {
-                CreateColumn(left, radius * 0.9f, height),
-                CreateColumn(right, radius * 0.84f, height * 0.96f),
-                CreateArch(archStart, archEnd, radius, request.weight),
-                CreateBridge(bridgeStart + lateral * buttressBias, bridgeEnd - lateral * buttressBias, radius * 0.55f, request.weight * 0.78f),
-                CreateBoulder(left + forward * (request.size.z * 0.12f), radius * 0.8f, request.weight * 0.72f),
-                CreateBoulder(right - forward * (request.size.z * 0.1f), radius * 0.7f, request.weight * 0.68f),
-                CreateBlock(request.center + upOffset + Vector3.up * (height * 0.22f), new Vector3(span * 0.1f, height * 0.1f, request.size.z * 0.14f), request.weight * 0.55f)
-            };
+            structures[0] = CreateColumn(left, radius * 0.9f, height);
+            structures[1] = CreateColumn(right, radius * 0.84f, height * 0.96f);
+            structures[2] = CreateArch(archStart, archEnd, radius, request.weight);
+            structures[3] = CreateBridge(
+                bridgeStart + lateral * buttressBias,
+                bridgeEnd - lateral * buttressBias,
+                radius * 0.55f,
+                request.weight * 0.78f);
+            structures[4] = CreateBoulder(left + forward * (request.size.z * 0.12f), radius * 0.8f, request.weight * 0.72f);
+            structures[5] = CreateBoulder(right - forward * (request.size.z * 0.1f), radius * 0.7f, request.weight * 0.68f);
+            structures[6] = CreateBlock(
+                request.center + upOffset + Vector3.up * (height * 0.22f),
+                new Vector3(span * 0.1f, height * 0.1f, request.size.z * 0.14f),
+                request.weight * 0.55f);
         }
 
-        private CaveStructure[] BuildCanopyStructures(in WorldGenerativeGeologyVoxelBlendRequest request, Vector3 upOffset)
+        private void BuildCanopyStructures(
+            in WorldGenerativeGeologyVoxelBlendRequest request,
+            Vector3 upOffset,
+            NativeArray<CaveStructure> structures)
         {
             float height = Mathf.Max(4f, request.size.y * 0.44f);
             Vector3 forward = RotateOffset(request.rotation, Vector3.forward);
@@ -517,27 +754,39 @@ namespace Hecton8.World
             Vector3 root = request.center + upOffset;
             Vector3 canopyA = root + Vector3.up * (height * 0.62f) - forward * (request.size.z * 0.12f);
             Vector3 canopyB = root + Vector3.up * (height * 0.62f) + forward * (request.size.z * 0.18f);
-            return new[]
-            {
-                CreateColumn(root - lateral * (request.size.x * 0.06f), Mathf.Max(1.6f, request.size.x * 0.1f), height),
-                CreateWall(root + Vector3.up * (height * 0.62f), new Vector3(request.size.x * 0.28f, height * 0.18f, request.size.z * 0.18f), request.weight),
-                CreateBridge(canopyA, canopyB, Mathf.Max(1f, request.size.y * 0.08f), request.weight * 0.72f),
-                CreateBoulder(root + lateral * (request.size.x * 0.18f) + Vector3.up * (height * 0.24f), Mathf.Max(1.6f, request.size.x * 0.08f), request.weight * 0.64f)
-            };
+            structures[0] = CreateColumn(root - lateral * (request.size.x * 0.06f), Mathf.Max(1.6f, request.size.x * 0.1f), height);
+            structures[1] = CreateWall(
+                root + Vector3.up * (height * 0.62f),
+                new Vector3(request.size.x * 0.28f, height * 0.18f, request.size.z * 0.18f),
+                request.weight);
+            structures[2] = CreateBridge(canopyA, canopyB, Mathf.Max(1f, request.size.y * 0.08f), request.weight * 0.72f);
+            structures[3] = CreateBoulder(
+                root + lateral * (request.size.x * 0.18f) + Vector3.up * (height * 0.24f),
+                Mathf.Max(1.6f, request.size.x * 0.08f),
+                request.weight * 0.64f);
         }
 
-        private CaveStructure[] BuildRockStructures(in WorldGenerativeGeologyVoxelBlendRequest request)
+        private void BuildRockStructures(in WorldGenerativeGeologyVoxelBlendRequest request, NativeArray<CaveStructure> structures)
         {
             Vector3 forward = RotateOffset(request.rotation, Vector3.forward);
             Vector3 lateral = RotateOffset(request.rotation, Vector3.right);
-            return new[]
-            {
-                CreateBlock(request.center, request.size * 0.22f, request.weight),
-                CreateBlock(request.center + lateral * (request.size.x * 0.12f) + Vector3.up * (request.size.y * 0.1f) - forward * (request.size.z * 0.08f), request.size * 0.16f, request.weight * 0.8f),
-                CreateBlock(request.center - lateral * (request.size.x * 0.08f) + Vector3.up * (request.size.y * 0.18f) + forward * (request.size.z * 0.06f), request.size * 0.12f, request.weight * 0.62f),
-                CreateBoulder(request.center - lateral * (request.size.x * 0.1f) + Vector3.up * (request.size.y * 0.06f) + forward * (request.size.z * 0.1f), Mathf.Max(2f, request.size.x * 0.12f), request.weight * 0.9f),
-                CreateBoulder(request.center + lateral * (request.size.x * 0.16f) + Vector3.up * (request.size.y * 0.03f) - forward * (request.size.z * 0.12f), Mathf.Max(1.6f, request.size.x * 0.08f), request.weight * 0.7f)
-            };
+            structures[0] = CreateBlock(request.center, request.size * 0.22f, request.weight);
+            structures[1] = CreateBlock(
+                request.center + lateral * (request.size.x * 0.12f) + Vector3.up * (request.size.y * 0.1f) - forward * (request.size.z * 0.08f),
+                request.size * 0.16f,
+                request.weight * 0.8f);
+            structures[2] = CreateBlock(
+                request.center - lateral * (request.size.x * 0.08f) + Vector3.up * (request.size.y * 0.18f) + forward * (request.size.z * 0.06f),
+                request.size * 0.12f,
+                request.weight * 0.62f);
+            structures[3] = CreateBoulder(
+                request.center - lateral * (request.size.x * 0.1f) + Vector3.up * (request.size.y * 0.06f) + forward * (request.size.z * 0.1f),
+                Mathf.Max(2f, request.size.x * 0.12f),
+                request.weight * 0.9f);
+            structures[4] = CreateBoulder(
+                request.center + lateral * (request.size.x * 0.16f) + Vector3.up * (request.size.y * 0.03f) - forward * (request.size.z * 0.12f),
+                Mathf.Max(1.6f, request.size.x * 0.08f),
+                request.weight * 0.7f);
         }
 
         private CaveStructure CreateColumn(Vector3 position, float radius, float height)
@@ -618,13 +867,15 @@ namespace Hecton8.World
             };
         }
 
-        private static int ComputeRequestSignature(in WorldGenerativeGeologyVoxelBlendRequest request)
+        private int ComputeRequestSignature(in WorldGenerativeGeologyVoxelBlendRequest request)
         {
             unchecked
             {
                 int hash = (int)request.runtimeKey;
                 hash = (hash * 397) ^ request.caveBlendMode.GetHashCode();
                 hash = (hash * 397) ^ request.archetype.GetHashCode();
+                hash = (hash * 397) ^ ResolveTargetResolution(request);
+                hash = (hash * 397) ^ (ShouldBuildCollider(request) ? 1 : 0);
                 return hash;
             }
         }
@@ -653,8 +904,24 @@ namespace Hecton8.World
                 resolvedFarDistance,
                 Mathf.Max(0f, request.playerDistance));
             int distanceCap = Mathf.RoundToInt(Mathf.Lerp(nearResolution, farResolution, distanceT));
+            float resolutionScale = 1f;
+            if (request.playerDistance >= resolvedFarDistance)
+                resolutionScale *= farDistanceResolutionScale;
+            else if (request.playerDistance > Mathf.Max(0f, nearFieldDistance))
+                resolutionScale *= mediumDistanceResolutionScale;
 
-            return Mathf.Clamp(baseResolution, 32, distanceCap);
+            float priority = Mathf.Clamp01(request.planWeight * 0.65f + request.weight * 0.35f);
+            if (priority < 0.45f)
+                resolutionScale *= lowWeightResolutionScale;
+
+            int scaledResolution = Mathf.RoundToInt(baseResolution * resolutionScale);
+            return Mathf.Clamp(Mathf.Min(distanceCap, scaledResolution), 32, nearResolution);
+        }
+
+        private bool ShouldBuildCollider(in WorldGenerativeGeologyVoxelBlendRequest request)
+        {
+            float threshold = Mathf.Max(8f, colliderBuildDistance);
+            return request.playerDistance <= threshold;
         }
 
         private static float Quantize01(float value, float step)
@@ -733,12 +1000,21 @@ namespace Hecton8.World
                 return;
 
             if (state != null && state.Cancellation != null && !state.Cancellation.IsCancellationRequested)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.request",
+                    $"cancel-request key={runtimeKey} removeRegistration={removeRegistration}");
                 state.Cancellation.Cancel();
+            }
 
             if (removeRegistration)
             {
                 _pendingRequests.Remove(runtimeKey);
                 _pendingRuntimeKeys.Remove(runtimeKey);
+                _queuedLaunchRequests.Remove(runtimeKey);
+                _queuedLaunchTimes.Remove(runtimeKey);
+                if (_queuedLaunchKeys.Remove(runtimeKey))
+                    _queuedLaunchOrder.Remove(runtimeKey);
             }
         }
 
@@ -761,10 +1037,16 @@ namespace Hecton8.World
             for (int i = 0; i < _removalBuffer.Count; i++)
                 RemoveVolume(_removalBuffer[i]);
 
+            _queuedLaunchRequests.Clear();
+            _queuedLaunchTimes.Clear();
+            _queuedLaunchKeys.Clear();
+            _queuedLaunchOrder.Clear();
             _pendingRuntimeKeys.Clear();
             _lastSeenTimes.Clear();
             _debugActiveVolumes = 0;
+            _debugActiveColliders = 0;
             _debugPendingVolumes = 0;
+            _debugQueuedLaunches = 0;
             _debugSpawnBudgetUsed = 0;
             _debugTopVolume = "None";
             _debugReady = false;
@@ -808,9 +1090,20 @@ namespace Hecton8.World
             }
 
             int delta = desiredTarget - _estimatedWarmedPoolCount;
-            pool.Warmup(voxelEngine.voxelVolumePrefab, delta);
-            _estimatedWarmedPoolCount = desiredTarget;
+            int warmupBatch = Mathf.Min(
+                delta,
+                Mathf.Max(1, maxVoxelPoolWarmupPerTick));
+            pool.Warmup(voxelEngine.voxelVolumePrefab, warmupBatch);
+            _estimatedWarmedPoolCount += warmupBatch;
             _debugWarmedPoolTarget = _estimatedWarmedPoolCount;
+        }
+
+        private static float GetElapsedMilliseconds(long startTimestamp, long endTimestamp)
+        {
+            if (endTimestamp <= startTimestamp)
+                return 0f;
+
+            return (float)((endTimestamp - startTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
         }
 
         private CancellationTokenSource EnsureLifetimeCancellation()

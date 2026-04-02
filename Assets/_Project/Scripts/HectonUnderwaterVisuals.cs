@@ -229,7 +229,6 @@ namespace Hecton8.Environment
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
         private bool _sunVisualWasDisabled;
-        private bool _biomeFallbackActive;
 
         private float _editorSlowTickAccum;
 
@@ -885,7 +884,6 @@ namespace Hecton8.Environment
             if (biomePalette == null) return;
 
             _targetBiomeIndex = biomeIndex;
-            _biomeFallbackActive = false;
 
             HectonBiomeProfile profile = biomePalette.GetProfile(biomeIndex);
             if (profile == null)
@@ -1057,7 +1055,6 @@ namespace Hecton8.Environment
             {
                 SetCurrentFromProfile(initial);
                 SetTargetFromProfile(initial);
-                _biomeFallbackActive = false;
             }
             else
             {
@@ -1074,8 +1071,6 @@ namespace Hecton8.Environment
                 _targetFogColor        = _currentFogColor;
                 _targetTurbidity       = 1.0f;
                 _targetAmbientColor    = _currentAmbientColor;
-
-                _biomeFallbackActive = true;
             }
 
             _transitionProgress = 1f;

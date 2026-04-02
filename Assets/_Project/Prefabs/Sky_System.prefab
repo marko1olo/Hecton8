@@ -121,6 +121,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5398098224501907262}
+  - component: {fileID: 2406973730838818651}
   m_Layer: 0
   m_Name: Sky_System
   m_TagString: Untagged
@@ -144,3 +145,19 @@ Transform:
   - {fileID: 53497628592264009}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2406973730838818651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6915635413066332390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de81422d3dea9f340a392b4b2e20b79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkySystemFollowCamera
+  runtimeCamera: {fileID: 0}
+  followInEditMode: 1
+  followInPlayMode: 1
+  positionOffset: {x: 0, y: 0, z: 0}

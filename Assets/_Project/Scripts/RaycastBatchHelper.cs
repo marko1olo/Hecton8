@@ -1,149 +1,63 @@
 // ============================================================================
-// HECTON-8 — RaycastBatchHelper.cs  v1.0
-// Efficient raycast batching with query result reuse.
+// HECTON-8 — RaycastBatchHelper.cs  v2.0
+// High-performance asynchronous raycast batching with Unity Jobs.
 //
 // PURPOSE:
-//   Provides a zero-GC raycast batching system for multiple simultaneous
-//   raycasts with shared result storage and query result caching.
-//
-// WHY THIS MATTERS:
-//   • Physics.RaycastNonAlloc allocates RaycastHit[] — expensive each call!
-//   • RaycastBatchHelper pre-allocates result array once.
-//   • Reuses array across multiple raycasts per frame.
-//   • Batching can be parallelized across frames (future: Jobs).
-//
-// USAGE:
-//   1. Create pool of RaycastQueries (usually once at startup).
-//   2. Each frame:
-//      a) Fill query parameters (ray, mask, distance).
-//      b) Call ExecuteBatch().
-//      c) Read results via GetResultCount() and GetResult(index).
-//   3. Results remain valid until next ExecuteBatch().
+//   Offloads multiple raycasts to worker threads via RaycastCommand.
+//   Optimized for Zero-GC and low main-thread overhead.
 //
 // ZERO GC GUARANTEE:
-//   • Pre-allocated QueryBatch[] and result storage.
-//   • RaycastHit[] allocated once in Awake.
-//   • No List.Add/Remove, no foreach, no LINQ.
-//   • All math via Unity.Mathematics.
-//
-// ARCHITECTURE:
-//   • QueryBatch: Query state (ray, mask, range, optional target filter).
-//   • QueryResult[]  : Shared result storage (index-mapped).
-//   • ExecuteBatch() : for-loop raycasts, zero allocations.
-//   • GetResult()    : Safe indexing with null-check.
-//
-// PERFORMANCE:
-//   • Single RaycastNonAlloc call (not per-query).
-//   • Result reuse eliminates allocation overhead.
-//   • 50-100 raycasts: ~2-5x faster than loop of Physics.Raycast.
+//   • Uses NativeArray<RaycastCommand> and NativeArray<RaycastHit>.
+//   • Reuses persistent native memory to avoid allocation frames.
+//   • No C# heap allocations in ExecuteBatch or GetResult.
 //
 // ============================================================================
 
-using Unity.Mathematics;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace Hecton8.Physics
 {
     /// <summary>
-    /// Single raycast query to be executed in a batch.
-    /// Lightweight struct — no heap allocation.
-    /// </summary>
-    public struct QueryBatch
-    {
-        /// <summary>Ray origin (world space).</summary>
-        public Vector3 origin;
-
-        /// <summary>Ray direction (should be normalized).</summary>
-        public Vector3 direction;
-
-        /// <summary>Ray distance (max cast length).</summary>
-        public float distance;
-
-        /// <summary>Layer mask filter.</summary>
-        public int layerMask;
-
-        /// <summary>Trigger interaction.</summary>
-        public QueryTriggerInteraction triggerInteraction;
-
-        /// <summary>
-        /// Index into results array where this query's hit is stored.
-        /// Set after execution.
-        /// </summary>
-        public int resultIndex;
-
-        /// <summary>Did this query produce a hit?</summary>
-        public bool hasHit;
-
-        /// <summary>
-        /// Optional: Collider to exclude from results (e.g., self).
-        /// Used for filtering — set to null to include all hits.
-        /// </summary>
-        public Collider excludeCollider;
-    }
-
-    /// <summary>
     /// Single raycast result (hit or miss).
     /// </summary>
     public struct QueryResult
     {
-        /// <summary>Whether this query produced a hit.</summary>
         public bool hasHit;
-
-        /// <summary>RaycastHit data (valid only if hasHit == true).</summary>
         public RaycastHit hit;
 
-        // ── Convenience getters (for hasHit=false) ──
         public float distance => hasHit ? hit.distance : float.MaxValue;
         public Vector3 point => hasHit ? hit.point : Vector3.zero;
         public Collider collider => hasHit ? hit.collider : null;
     }
 
     /// <summary>
-    /// Zero-GC raycast batch executor.
-    /// Pre-allocates all storage once; reuses across many frames.
+    /// Zero-GC asynchronous raycast batch executor using Unity Jobs.
+    /// Results are synchronized at the end of ExecuteBatch for immediate use,
+    /// but the actual work is distributed across worker threads.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-10000)] // Run BEFORE all gameplay systems
     public sealed class RaycastBatchHelper : MonoBehaviour
     {
-        /// <summary>Maximum queries per batch.</summary>
-        private const int MaxQueries = 256;
+        public static int TotalRaycastsProcessed;
+        private const int MaxQueries = 512;
 
-        /// <summary>Pre-allocated result storage (RaycastHits array for RaycastNonAlloc).</summary>
-        private RaycastHit[] _hitBuffer;
-
-        /// <summary>Mapping from RaycastHit index to QueryResult wrapper (with hasHit flag).</summary>
-        private QueryResult[] _resultBuffer;
-
-        /// <summary>Query batch for current frame (filled by user, cleared after ExecuteBatch).</summary>
-        private QueryBatch[] _queryBuffer;
-
-        /// <summary>Number of active queries in current batch.</summary>
+        // ── Native Buffers (Persistent) ──
+        private NativeArray<RaycastCommand> _commands;
+        private NativeArray<RaycastHit> _hits;
+        
+        // ── Managed Mirror for API ──
+        private QueryResult[] _results;
+        private Collider[] _excludeColliders;
+        
         private int _queryCount;
-
-        /// <summary>Number of valid results from last ExecuteBatch().</summary>
-        private int _resultCount;
-
-        /// <summary>Was ExecuteBatch called this frame?</summary>
         private bool _batchExecuted;
+        private JobHandle _lastJobHandle;
 
-        // ── Singleton access ──
         private static RaycastBatchHelper _instance;
-
-        public static RaycastBatchHelper Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ════════════════════════════════════════════════════════════
+        public static RaycastBatchHelper Instance => _instance;
 
         private void Awake()
         {
@@ -154,177 +68,139 @@ namespace Hecton8.Physics
             }
 
             _instance = this;
+            DontDestroyOnLoad(gameObject);
 
-            // ── Allocate once, reuse forever ──
-            _hitBuffer = new RaycastHit[MaxQueries];
-            _resultBuffer = new QueryResult[MaxQueries];
-            _queryBuffer = new QueryBatch[MaxQueries];
+            // Allocate Native persistence
+            _commands = new NativeArray<RaycastCommand>(MaxQueries, Allocator.Persistent);
+            _hits = new NativeArray<RaycastHit>(MaxQueries, Allocator.Persistent);
+            
+            // Managed mirrors for filtering/API
+            _results = new QueryResult[MaxQueries];
+            _excludeColliders = new Collider[MaxQueries];
+            
             _queryCount = 0;
-            _resultCount = 0;
             _batchExecuted = false;
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            if (_instance == this) _instance = null;
+
+            // CRITICAL: Prevent memory leaks in Native memory
+            if (_commands.IsCreated) _commands.Dispose();
+            if (_hits.IsCreated) _hits.Dispose();
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  PUBLIC API — QUERY SUBMISSION
-        // ════════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Add a query to the current batch.
-        /// Must be called before ExecuteBatch().
+        /// Registers a raycast query for the next batch.
         /// </summary>
-        /// <returns>Query index (-1 if buffer full).</returns>
         public int AddQuery(Vector3 origin, Vector3 direction, float distance,
                            int layerMask = -1,
                            QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Ignore,
                            Collider excludeCollider = null)
         {
             if (_queryCount >= MaxQueries)
+            {
+                Debug.LogWarning("[RaycastBatchHelper] Query buffer overflow!");
                 return -1;
+            }
 
             int idx = _queryCount;
-            _queryBuffer[idx] = new QueryBatch
-            {
-                origin = origin,
-                direction = direction.normalized,
-                distance = distance,
-                layerMask = layerMask,
-                triggerInteraction = triggerInteraction,
-                resultIndex = idx,
-                hasHit = false,
-                excludeCollider = excludeCollider
-            };
+            
+            _commands[idx] = new RaycastCommand(
+                origin, 
+                direction.normalized, 
+                new QueryParameters(layerMask, false, triggerInteraction), 
+                distance);
+
+            _excludeColliders[idx] = excludeCollider;
+            _results[idx].hasHit = false; // Reset placeholder
 
             _queryCount++;
             return idx;
         }
 
         /// <summary>
-        /// Clear all queries and prepare for new batch.
-        /// Call this at the start of each frame if reusing queries.
+        /// Clears the batch buffer. Call at the start of frame if manual management is used.
         /// </summary>
         public void ClearQueries()
         {
             _queryCount = 0;
-            _resultCount = 0;
             _batchExecuted = false;
-
-            // Clear result buffer (optional, but good practice)
-            for (int i = 0; i < _resultBuffer.Length; i++)
-                _resultBuffer[i].hasHit = false;
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  BATCH EXECUTION — ZERO GC
-        // ════════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Execute all queued raycasts in one batch.
-        /// Uses single Physics.RaycastNonAlloc call (most efficient).
-        /// Results available via GetResult() — valid until next ExecuteBatch().
+        /// Orchestrates the batch execution on worker threads.
+        /// Synchronizes at the end of call to provide same-frame results.
         /// </summary>
         public void ExecuteBatch()
         {
-            if (_queryCount == 0)
+            if (_queryCount <= 0)
             {
-                _resultCount = 0;
                 _batchExecuted = true;
                 return;
             }
+            TotalRaycastsProcessed += _queryCount;
 
-            // ── Build unified raycast query ──
-            // We'll treat each query as a separate "logical" operation,
-            // but execute them sequentially via loops (no Jobs yet).
+            // Schedule asynchronous batch on Unity's job threads
+            _lastJobHandle = RaycastCommand.ScheduleBatch(_commands, _hits, 1, default);
+            
+            // Ensure results are ready for immediate use this frame.
+            // In AA systems, we synchronize here to simplify API, but work was parallelized.
+            _lastJobHandle.Complete();
 
+            // Resolve and Filter
             for (int i = 0; i < _queryCount; i++)
             {
-                QueryBatch query = _queryBuffer[i];
+                RaycastHit hit = _hits[i];
+                bool hasHit = hit.collider != null;
 
-                // Raycast using pre-allocated hit buffer
-                bool hit = UnityEngine.Physics.Raycast(
-                    query.origin,
-                    query.direction,
-                    out RaycastHit hitInfo,
-                    query.distance,
-                    query.layerMask,
-                    query.triggerInteraction);
-
-                // ── Filter by excludeCollider if set ──
-                if (hit && query.excludeCollider != null && hitInfo.collider == query.excludeCollider)
-                    hit = false; // Treat as miss if it's the excluded collider
-
-                // Store result (index-mapped to query)
-                _resultBuffer[i] = new QueryResult
+                // Apply exclude filter
+                if (hasHit && _excludeColliders[i] != null && hit.collider == _excludeColliders[i])
                 {
-                    hasHit = hit,
-                    hit = hit ? hitInfo : default
-                };
+                    hasHit = false;
+                    hit = default;
+                }
 
-                _queryBuffer[i].hasHit = hit;
+                _results[i] = new QueryResult
+                {
+                    hasHit = hasHit,
+                    hit = hasHit ? hit : default
+                };
             }
 
-            _resultCount = _queryCount;
             _batchExecuted = true;
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  RESULT ACCESS
-        // ════════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Number of results available from last ExecuteBatch().
-        /// </summary>
-        public int GetResultCount() => _resultCount;
-
-        /// <summary>
-        /// Get result for query at index.
-        /// Valid range: 0..GetResultCount()-1
-        /// Safe to call even if hasHit=false.
-        /// </summary>
         public QueryResult GetResult(int index)
         {
-            if (index < 0 || index >= _resultCount)
-               return default; // Safe: no hit
-
-            return _resultBuffer[index];
+            if (index < 0 || index >= _queryCount) return default;
+            return _results[index];
         }
 
-        /// <summary>
-        /// Check if specific query hit something.
-        /// Convenience wrapper around GetResult().
-        /// </summary>
-        public bool QueryHit(int index) => index >= 0 && index < _resultCount && _resultBuffer[index].hasHit;
-
-        /// <summary>
-        /// Get the RaycastHit for query (safe to call even if no hit).
-        /// Use QueryHit() to check validity.
-        /// </summary>
-        public RaycastHit GetHit(int index)
-        {
-            if (index >= 0 && index < _resultCount && _resultBuffer[index].hasHit)
-                return _resultBuffer[index].hit;
-
-            return default;
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  FRAMESTATE
-        // ════════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Was ExecuteBatch called this frame?
-        /// Useful for debugging or assertions.
-        /// </summary>
+        public int QueryCount => _queryCount;
         public bool WasExecuted => _batchExecuted;
 
-        /// <summary>
-        /// Number of queries currently queued (before ExecuteBatch).
-        /// </summary>
-        public int PendingQueryCount => _queryCount;
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying || !_batchExecuted) return;
+
+            for (int i = 0; i < _queryCount; i++)
+            {
+                if (_results[i].hasHit)
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawLine(_commands[i].from, _results[i].point);
+                    Gizmos.DrawWireSphere(_results[i].point, 0.05f);
+                }
+                else
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawRay(_commands[i].from, _commands[i].direction * _commands[i].distance);
+                }
+            }
+        }
+#endif
     }
 }

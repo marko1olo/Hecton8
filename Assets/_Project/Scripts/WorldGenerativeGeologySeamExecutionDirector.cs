@@ -7,6 +7,8 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldGenerativeGeologySeamRuntime : MonoBehaviour
     {
+        private static readonly List<WorldGenerativeGeologySeamRuntime> _activeRuntimes = new List<WorldGenerativeGeologySeamRuntime>(128);
+
         [SerializeField] private long runtimeKey;
         [SerializeField] private int buildSignature;
         [SerializeField] private float planWeight;
@@ -16,6 +18,35 @@ namespace Hecton8.World
 
         public long RuntimeKey => runtimeKey;
         public int BuildSignature => buildSignature;
+
+        private void OnEnable()
+        {
+            if (_activeRuntimes.Contains(this))
+                return;
+
+            _activeRuntimes.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            _activeRuntimes.Remove(this);
+        }
+
+        public static void CopyActiveRuntimesTo(List<WorldGenerativeGeologySeamRuntime> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            for (int i = 0; i < _activeRuntimes.Count; i++)
+            {
+                WorldGenerativeGeologySeamRuntime runtime = _activeRuntimes[i];
+                if (runtime == null)
+                    continue;
+
+                destination.Add(runtime);
+            }
+        }
 
         public void Configure(long configuredRuntimeKey, int configuredBuildSignature, in WorldGenerativeGeologySeamPlan plan)
         {
@@ -40,6 +71,7 @@ namespace Hecton8.World
 
         [Header("Execution")]
         [SerializeField] private int maxExecutedPlans = 48;
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
         [SerializeField] private float minExecutionWeight = 0.18f;
         [SerializeField] private int terrainSkirtSegments = 6;
         [SerializeField] private int voxelCollarSegments = 5;
@@ -58,8 +90,10 @@ namespace Hecton8.World
         private readonly List<long> _desiredRuntimeKeys = new List<long>(128);
         private readonly List<long> _retainedRuntimeKeys = new List<long>(128);
         private readonly List<WorldGenerativeGeologyVoxelBlendRequest> _voxelRequests = new List<WorldGenerativeGeologyVoxelBlendRequest>(64);
+        private readonly List<WorldGenerativeGeologySeamRuntime> _runtimeCleanupBuffer = new List<WorldGenerativeGeologySeamRuntime>(128);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
         private bool _registeredToTickManager;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public IReadOnlyList<WorldGenerativeGeologyVoxelBlendRequest> ActiveVoxelRequests => _voxelRequests;
 
@@ -456,11 +490,10 @@ namespace Hecton8.World
 
         private void CleanupStaleSeams()
         {
-            WorldGenerativeGeologySeamRuntime[] runtimes =
-                FindObjectsByType<WorldGenerativeGeologySeamRuntime>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < runtimes.Length; i++)
+            WorldGenerativeGeologySeamRuntime.CopyActiveRuntimesTo(_runtimeCleanupBuffer);
+            for (int i = 0; i < _runtimeCleanupBuffer.Count; i++)
             {
-                WorldGenerativeGeologySeamRuntime runtime = runtimes[i];
+                WorldGenerativeGeologySeamRuntime runtime = _runtimeCleanupBuffer[i];
                 if (runtime == null)
                     continue;
 
@@ -477,16 +510,17 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (integrationDirector == null)
-                integrationDirector = FindAnyObjectByType<WorldGenerativeGeologyIntegrationDirector>();
+            if (integrationDirector != null && playerTransform != null)
+                return;
 
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-                playerTransform = player != null ? player.transform : null;
-            }
+            float now = Time.realtimeSinceStartup;
+            if (now < _nextAutoResolveAttemptTime)
+                return;
+
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref integrationDirector);
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
         }
     }
 }

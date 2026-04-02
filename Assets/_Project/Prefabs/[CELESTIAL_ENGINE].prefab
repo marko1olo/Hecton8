@@ -60,7 +60,7 @@ MonoBehaviour:
     horizonColor: {r: 0.08, g: 0.05, b: 0.12, a: 1}
     nadirColor: {r: 0.005, g: 0.003, b: 0.01, a: 1}
   _sunLensFlare: {fileID: 0}
-  sunDistance: 100000
+  sunDistance: 80000
   sunVisualTransform: {fileID: 0}
   flareFadeMarginDegrees: 2
   flareFadeSpeed: 5
@@ -74,13 +74,13 @@ MonoBehaviour:
   eclipseHysteresisMargin: 0.5
   backlitAlignmentSoftStart: 0.97
   backlitAlignmentFullStart: 0.995
-  backlitFactorMultiplier: 1
-  planetShineMaxIntensity: 0.35
+  backlitFactorMultiplier: 0.7
+  planetShineMaxIntensity: 0.06
   planetShineColor: {r: 0.81, g: 0.71999997, b: 0.9, a: 1}
   planetShineNewMoonThreshold: 0.1
   equatorialRotationSpeed: 0.0005
   polarRotationMultiplier: 0.4
-  backlitIntensity: 0.08
+  backlitIntensity: 0.015
   stormEmissionIntensity: 1
-  twilightStartAngle: 5
+  twilightStartAngle: 8
   twilightEndAngle: -5

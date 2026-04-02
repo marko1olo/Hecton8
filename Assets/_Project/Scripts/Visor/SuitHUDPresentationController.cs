@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace NASAPunk.Visor
     [DisallowMultipleComponent]
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
-    public sealed class SuitHUDPresentationController : MonoBehaviour
+    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable
     {
         private const float AutoResolveRetryInterval = 1f;
 
@@ -24,7 +25,6 @@ namespace NASAPunk.Visor
         [SerializeField] private PresentationMode presentationMode = PresentationMode.ModernProjectedSharedRT;
 
         [Header("Core References")]
-        [SerializeField] private HectonSuitHUD legacyHud;
         [SerializeField] private HectonSuitHUD_v4 overlayModernHud;
         [SerializeField] private HectonSuitHUD_v4 projectedModernHud;
         [SerializeField] private VisorHUDController visorController;
@@ -42,12 +42,8 @@ namespace NASAPunk.Visor
         [SerializeField] private bool preferCanvasProjectionSource = true;
         [SerializeField] private bool syncProjectionLayoutFromOverlay = false;
 
-        [Header("Safety")]
-        [SerializeField] private bool suppressAllLegacyHudInScene = true;
-
         [Header("Diagnostics")]
         [SerializeField] private string debugAppliedModeLabel;
-        [SerializeField] private bool debugLegacyEnabled;
         [SerializeField] private bool debugModernEnabled;
         [SerializeField] private bool debugProjectedModeActive;
         [SerializeField] private bool debugOverlaysSuppressed;
@@ -57,6 +53,9 @@ namespace NASAPunk.Visor
         private RenderTexture _appliedSharedTexture;
         private bool _pendingApply = true;
         private float _nextAutoResolveAt;
+        private bool _tickRegistered;
+        private Transform _cachedHudCanvasTransform;
+        private Transform _cachedHudRtCompositorTransform;
         private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
         private const int ProjectionSourceLayer = 17;
 
@@ -65,6 +64,13 @@ namespace NASAPunk.Visor
             AutoResolveReferences(true);
             _pendingApply = true;
             ApplyPresentation(force: true);
+            _pendingApply = false;
+            EvaluateTickRegistration();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterTick();
         }
 
         private void OnValidate()
@@ -73,11 +79,25 @@ namespace NASAPunk.Visor
             _pendingApply = true;
         }
 
-        private void LateUpdate()
+        private void Update()
+        {
+            if (Application.isPlaying)
+            {
+                EvaluateTickRegistration();
+                return;
+            }
+
+            AutoResolveReferences();
+            ApplyPresentation(force: _pendingApply);
+            _pendingApply = false;
+        }
+
+        public void Tick(float deltaTime)
         {
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
+            EvaluateTickRegistration();
         }
 
         private void AutoResolveReferences(bool force = false)
@@ -90,9 +110,6 @@ namespace NASAPunk.Visor
                 return;
 
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
-
-            if (legacyHud == null)
-                legacyHud = GetComponent<HectonSuitHUD>();
 
             if (visorProjectionCamera == null)
                 visorProjectionCamera = GetComponent<Camera>();
@@ -125,19 +142,27 @@ namespace NASAPunk.Visor
                 }
             }
 
-            SuitHUDV4CanvasOverlay[] overlays = FindObjectsByType<SuitHUDV4CanvasOverlay>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            canvasOverlay = FindOverlayByName(overlays, "Suit_HUD_Canvas", canvasOverlay);
+            bool projectedCanvasSourceNeeded =
+                preferCanvasProjectionSource &&
+                (presentationMode == PresentationMode.ModernProjectedSharedRT ||
+                 presentationMode == PresentationMode.ModernProjectedRuntimeRT);
+
+            if (canvasOverlay == null || (projectedCanvasSourceNeeded && projectionSourceOverlay == null))
+            {
+                SuitHUDV4CanvasOverlay[] overlays = FindObjectsByType<SuitHUDV4CanvasOverlay>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+                canvasOverlay = FindOverlayByName(overlays, "Suit_HUD_Canvas", canvasOverlay);
+                projectionSourceOverlay = FindOverlayByName(overlays, ProjectionSourceCanvasName, projectionSourceOverlay);
+            }
 
             if (screenCompositor == null)
                 screenCompositor = FindFirstObjectByType<SuitHUDScreenCompositor>(FindObjectsInactive.Include);
-
-            projectionSourceOverlay = FindOverlayByName(overlays, ProjectionSourceCanvasName, projectionSourceOverlay);
         }
 
         private bool NeedsAutoResolve()
         {
-            if (legacyHud == null ||
-                projectedModernHud == null ||
+            if (projectedModernHud == null ||
                 visorProjectionCamera == null ||
                 overlayPresentationCamera == null ||
                 overlayModernHud == null ||
@@ -174,11 +199,8 @@ namespace NASAPunk.Visor
             PrepareModernHud(overlayModernHud, ResolveOverlayHostCamera());
             PrepareModernHud(projectedModernHud, visorProjectionCamera);
 
-            bool useLegacy = presentationMode == PresentationMode.LegacyOverlay;
-            bool useOverlayModern = !useLegacy && !projectedMode;
-            bool useProjectedModern = !useLegacy && projectedMode;
-
-            ApplyLegacyHudState(useLegacy);
+            bool useOverlayModern = !projectedMode;
+            bool useProjectedModern = projectedMode;
 
             if (visorController != null)
             {
@@ -198,8 +220,9 @@ namespace NASAPunk.Visor
 
             SuppressOverlayPaths(projectedMode);
 
-            debugAppliedModeLabel = presentationMode.ToString();
-            debugLegacyEnabled = legacyHud != null && legacyHud.enabled;
+            debugAppliedModeLabel = presentationMode == PresentationMode.LegacyOverlay
+                ? "ModernOverlay (legacy retired)"
+                : presentationMode.ToString();
             debugModernEnabled =
                 (overlayModernHud != null && overlayModernHud.enabled) ||
                 (projectedModernHud != null && projectedModernHud.enabled);
@@ -216,14 +239,17 @@ namespace NASAPunk.Visor
             bool showProjectionPreview = projectedMode && previewProjectedSourceOnScreen;
 
             if (canvasOverlay != null)
+            {
                 canvasOverlay.SetRenderPathProjectionSource(false);
+                _cachedHudCanvasTransform = canvasOverlay.transform;
+            }
 
             if (screenCompositor != null)
                 screenCompositor.enabled = showProjectionPreview;
 
-            Transform canvasTransform = ResolveHudCanvasTransform();
-            if (canvasTransform != null)
-                SetChildActive(canvasTransform, "HUD_RT_Compositor", showProjectionPreview);
+            Transform compositorTransform = ResolveHudRtCompositorTransform();
+            if (compositorTransform != null && compositorTransform.gameObject.activeSelf != showProjectionPreview)
+                compositorTransform.gameObject.SetActive(showProjectionPreview);
 
             debugOverlaysSuppressed = suppress && !showProjectionPreview;
         }
@@ -306,29 +332,40 @@ namespace NASAPunk.Visor
         private Transform ResolveHudCanvasTransform()
         {
             if (canvasOverlay != null)
-                return canvasOverlay.transform;
+            {
+                _cachedHudCanvasTransform = canvasOverlay.transform;
+                return _cachedHudCanvasTransform;
+            }
+
+            if (_cachedHudCanvasTransform != null)
+                return _cachedHudCanvasTransform;
 
             Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (int i = 0; i < canvases.Length; i++)
             {
                 Canvas candidate = canvases[i];
                 if (candidate != null && candidate.name == "Suit_HUD_Canvas")
-                    return candidate.transform;
+                {
+                    _cachedHudCanvasTransform = candidate.transform;
+                    _cachedHudRtCompositorTransform = null;
+                    return _cachedHudCanvasTransform;
+                }
             }
 
             return null;
         }
 
-        private static void SetChildActive(Transform parent, string childName, bool active)
+        private Transform ResolveHudRtCompositorTransform()
         {
-            if (parent == null)
-                return;
+            if (_cachedHudRtCompositorTransform != null)
+                return _cachedHudRtCompositorTransform;
 
-            Transform child = parent.Find(childName);
-            if (child == null || child.gameObject.activeSelf == active)
-                return;
+            Transform canvasTransform = ResolveHudCanvasTransform();
+            if (canvasTransform == null)
+                return null;
 
-            child.gameObject.SetActive(active);
+            _cachedHudRtCompositorTransform = canvasTransform.Find("HUD_RT_Compositor");
+            return _cachedHudRtCompositorTransform;
         }
 
         private static VisorHUDController.ProjectionMode ResolveProjectionMode(PresentationMode mode)
@@ -357,6 +394,33 @@ namespace NASAPunk.Visor
             return GetComponent<Camera>();
         }
 
+        public void SetPresentationMode(PresentationMode mode)
+        {
+            if (presentationMode == mode)
+                return;
+
+            presentationMode = mode;
+            MarkDirty();
+        }
+
+        public void SetSharedProjectionTexture(RenderTexture texture)
+        {
+            if (sharedProjectionTexture == texture)
+                return;
+
+            sharedProjectionTexture = texture;
+            MarkDirty();
+        }
+
+        public void SetFallbackProfile(SuitHUDProfile profile)
+        {
+            if (ReferenceEquals(standardFallbackProfile, profile))
+                return;
+
+            standardFallbackProfile = profile;
+            MarkDirty();
+        }
+
         private void PrepareModernHud(HectonSuitHUD_v4 hud, Camera targetCamera)
         {
             if (hud == null)
@@ -369,28 +433,54 @@ namespace NASAPunk.Visor
                 hud.SetHudCamera(targetCamera);
         }
 
-        private void ApplyLegacyHudState(bool useLegacy)
+        private void MarkDirty()
         {
-            if (suppressAllLegacyHudInScene)
+            _pendingApply = true;
+            EvaluateTickRegistration();
+        }
+
+        private bool ShouldTickInPlay()
+        {
+            return _pendingApply || NeedsAutoResolve();
+        }
+
+        private void EvaluateTickRegistration()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
             {
-                HectonSuitHUD[] allLegacyHud = FindObjectsByType<HectonSuitHUD>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-
-                for (int i = 0; i < allLegacyHud.Length; i++)
-                {
-                    HectonSuitHUD candidate = allLegacyHud[i];
-                    if (candidate == null)
-                        continue;
-
-                    candidate.enabled = useLegacy && candidate == legacyHud;
-                }
-
+                UnregisterTick();
                 return;
             }
 
-            if (legacyHud != null)
-                legacyHud.enabled = useLegacy;
+            if (ShouldTickInPlay())
+                RegisterTick();
+            else
+                UnregisterTick();
+        }
+
+        private void RegisterTick()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _tickRegistered = false;
         }
     }
 }

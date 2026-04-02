@@ -52,13 +52,6 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
     [SerializeField] private TMP_FontAsset   font;
 
     // ══════════════════════════════════════════════════════════════════
-    //  INSPECTOR — INPUT
-    // ══════════════════════════════════════════════════════════════════
-
-    [Header("── Input ─────────────────────────────────────")]
-    [SerializeField] private KeyCode toggleKey = KeyCode.Tab;
-
-    // ══════════════════════════════════════════════════════════════════
     //  INSPECTOR — GRID LAYOUT
     // ══════════════════════════════════════════════════════════════════
 

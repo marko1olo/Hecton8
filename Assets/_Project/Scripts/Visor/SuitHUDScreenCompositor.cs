@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +7,7 @@ namespace NASAPunk.Visor
     [DisallowMultipleComponent]
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
-    public sealed class SuitHUDScreenCompositor : MonoBehaviour
+    public sealed class SuitHUDScreenCompositor : MonoBehaviour, ITickable
     {
         private const float AutoResolveRetryInterval = 1f;
 
@@ -29,23 +30,33 @@ namespace NASAPunk.Visor
         [SerializeField] private Vector2 insetSize = new Vector2(340f, 340f);
         [SerializeField] private Vector2 insetMargin = new Vector2(18f, 18f);
 
+        // Inspector-only compositor diagnostics for visor HUD bring-up.
+#pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private bool debugCanvasReady;
         [SerializeField] private bool debugOverlayReady;
         [SerializeField] private bool debugTextureAssigned;
+#pragma warning restore CS0414
 
         private RawImage _overlayImage;
         private RectTransform _overlayRect;
         private float _nextAutoResolveAt;
+        private bool _tickRegistered;
+        private bool _pendingRefresh = true;
+        private string _appliedOverlayName;
 
         private void OnEnable()
         {
             AutoResolveReferences(true);
+            _pendingRefresh = true;
             RefreshCompositor();
+            TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
         {
+            UnregisterRuntimeTick();
+
             if (_overlayImage != null)
                 _overlayImage.enabled = false;
 
@@ -55,10 +66,34 @@ namespace NASAPunk.Visor
 
         private void Update()
         {
-            if (!Application.isPlaying && !manageCanvasInEditMode)
+            if (Application.isPlaying)
+            {
+                TryRegisterRuntimeTick();
+                return;
+            }
+
+            if (!manageCanvasInEditMode)
                 return;
 
             RefreshCompositor();
+            _pendingRefresh = false;
+        }
+
+        private void OnValidate()
+        {
+            _pendingRefresh = true;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!_pendingRefresh && !NeedsAutoResolve())
+            {
+                UnregisterRuntimeTick();
+                return;
+            }
+
+            RefreshCompositor();
+            _pendingRefresh = false;
         }
 
         private void RefreshCompositor()
@@ -149,7 +184,9 @@ namespace NASAPunk.Visor
             if (targetCanvas == null)
                 return;
 
-            Transform overlayTransform = targetCanvas.transform.Find(overlayName);
+            Transform overlayTransform = _overlayRect != null && _appliedOverlayName == overlayName
+                ? _overlayRect.transform
+                : targetCanvas.transform.Find(overlayName);
             if (overlayTransform == null)
             {
                 GameObject overlayObject = new GameObject(overlayName, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
@@ -164,6 +201,7 @@ namespace NASAPunk.Visor
 
             _overlayRect = overlayTransform as RectTransform;
             _overlayImage = overlayTransform.GetComponent<RawImage>();
+            _appliedOverlayName = overlayName;
 
             if (_overlayRect == null || _overlayImage == null)
                 return;
@@ -215,6 +253,56 @@ namespace NASAPunk.Visor
             _overlayImage.texture = sharedProjectionTexture;
             debugTextureAssigned = sharedProjectionTexture != null;
             _overlayImage.enabled = !hideWhenTextureMissing || sharedProjectionTexture != null;
+        }
+
+        private void TryRegisterRuntimeTick()
+        {
+            if (!Application.isPlaying || _tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterRuntimeTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
+        }
+
+        public void SetSharedProjectionTexture(RenderTexture texture)
+        {
+            if (sharedProjectionTexture == texture)
+                return;
+
+            sharedProjectionTexture = texture;
+            MarkDirty();
+        }
+
+        public void SetOverlayAlpha(float alpha)
+        {
+            float clampedAlpha = Mathf.Clamp01(alpha);
+            if (Mathf.Approximately(overlayAlpha, clampedAlpha))
+                return;
+
+            overlayAlpha = clampedAlpha;
+            MarkDirty();
+        }
+
+        private void MarkDirty()
+        {
+            _pendingRefresh = true;
+            TryRegisterRuntimeTick();
         }
     }
 }

@@ -248,6 +248,8 @@ namespace Hecton8.Core
         /// Dictionary modification during iteration.
         /// </summary>
         private List<Vector2Int> _chunksToUnload;
+        private bool _initialized;
+        private bool _isDuplicateInstance;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -258,6 +260,8 @@ namespace Hecton8.Core
             // ── Singleton ──
             if (_instance != null && _instance != this)
             {
+                _isDuplicateInstance = true;
+                enabled = false;
                 Debug.LogWarning(
                     "[ScavengePopulator] Duplicate instance detected. Destroying this one.");
                 Destroy(this);
@@ -270,12 +274,16 @@ namespace Hecton8.Core
             _spawnQueue     = new Queue<SpawnRequest>(512);
             _idBuilder      = new StringBuilder(64);
             _chunksToUnload = new List<Vector2Int>(16);
+            _initialized    = true;
 
             RefreshRuntimeStreamingSettings();
         }
 
         private void OnEnable()
         {
+            if (_isDuplicateInstance || !_initialized)
+                return;
+
             GameTickManager.Instance?.Register((ISlowTickable)this);
 
             if (_playerTransform == null)
@@ -284,6 +292,9 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            if (_isDuplicateInstance || !_initialized)
+                return;
+
             GameTickManager.Instance?.Unregister((ISlowTickable)this);
 
             DespawnAllChunks();
@@ -386,6 +397,9 @@ namespace Hecton8.Core
         /// </summary>
         public void SlowTick()
         {
+            if (!_initialized || _spawnQueue == null || _chunks == null || _chunksToUnload == null)
+                return;
+
             RefreshRuntimeStreamingSettings();
             ProcessSpawnQueue();
             CullDistantChunks();

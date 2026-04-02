@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5372305160425189637}
   - component: {fileID: 5772722546686862795}
   - component: {fileID: 7985043108422708796}
+  - component: {fileID: 3681440915742643614}
   m_Layer: 3
   m_Name: Item_Titanium
   m_TagString: Untagged
@@ -31,7 +32,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -467.73694, y: 1.8000984, z: -860.1595}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -145,3 +146,20 @@ MonoBehaviour:
   intensity: 2.5
   fadeDuration: 0.12
   targetRenderers: []
+--- !u!114 &3681440915742643614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4481981618318248590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cb9acdb70dafc645b37e39c0a97187d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.ScannableTarget
+  entryId: resource.titanium_fragment
+  entryTitle: TITANIUM FRAGMENT
+  entryCategory: Material
+  entrySummary: Recovered structural alloy fragment. Suitable for baseline fabrication
+    and starter hull work.

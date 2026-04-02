@@ -17,6 +17,7 @@ namespace Hecton8.World
         [Header("Planning")]
         [SerializeField] private bool includeInactiveBindings;
         [SerializeField] private int maxTrackedPlans = 256;
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
         [SerializeField] private float searchRadiusPadding = 24f;
         [SerializeField] private float terrainDeltaBlendWindow = 18f;
         [SerializeField] private float minPlanWeight = 0.12f;
@@ -45,12 +46,14 @@ namespace Hecton8.World
         private readonly List<WorldGenerativeGeologySeamPlan> _orderedPlans = new List<WorldGenerativeGeologySeamPlan>(256);
         private readonly List<long> _retainedRuntimeKeys = new List<long>(256);
         private readonly List<WorldGenerativeGeologySeamPlan> _selectionBuffer = new List<WorldGenerativeGeologySeamPlan>(256);
+        private readonly List<WorldGenerativeGeologyBinding> _bindingScanBuffer = new List<WorldGenerativeGeologyBinding>(256);
         private readonly List<long> _dictionaryTrimBuffer = new List<long>(256);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
         private bool _registeredToTickManager;
         private bool _hasPlanRefreshSample;
         private Vector3 _lastPlanRefreshPosition;
         private float _lastPlanRefreshTime = float.NegativeInfinity;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public IReadOnlyList<WorldGenerativeGeologySeamPlan> ActivePlans => _orderedPlans;
 
@@ -168,24 +171,19 @@ namespace Hecton8.World
             float now = Application.isPlaying ? Time.unscaledTime : 0f;
             _debugSearchRadius = searchRadius;
 
-            FindObjectsInactive inactiveMode = FindObjectsInactive.Include;
-            WorldGenerativeGeologyBinding[] bindings =
-                FindObjectsByType<WorldGenerativeGeologyBinding>(inactiveMode, FindObjectsSortMode.None);
-
-            for (int i = 0; i < bindings.Length; i++)
+            if (includeInactiveBindings)
             {
-                WorldGenerativeGeologyBinding binding = bindings[i];
-                if (binding == null)
-                    continue;
+                WorldGenerativeGeologyBinding[] bindings =
+                    FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-                _debugBindingsSeen++;
-                if (!TryBuildPlan(binding, searchRadius, out WorldGenerativeGeologySeamPlan plan))
-                    continue;
-
-                _plansByKey[plan.runtimeKey] = plan;
-                _bindingsByKey[plan.runtimeKey] = binding;
-                _bindingLastSeenTimes[plan.runtimeKey] = now;
-                _orderedPlans.Add(plan);
+                for (int i = 0; i < bindings.Length; i++)
+                    ConsumeBinding(bindings[i], searchRadius, now);
+            }
+            else
+            {
+                WorldGenerativeGeologyBinding.CopyActiveBindingsTo(_bindingScanBuffer);
+                for (int i = 0; i < _bindingScanBuffer.Count; i++)
+                    ConsumeBinding(_bindingScanBuffer[i], searchRadius, now);
             }
 
             RestoreRecentlyMissingPlans(searchRadius, now);
@@ -214,6 +212,21 @@ namespace Hecton8.World
             _debugTrackedPlans = _orderedPlans.Count;
             _debugReady = _orderedPlans.Count > 0;
             RecordPlanRefreshSample();
+        }
+
+        private void ConsumeBinding(WorldGenerativeGeologyBinding binding, float searchRadius, float now)
+        {
+            if (binding == null)
+                return;
+
+            _debugBindingsSeen++;
+            if (!TryBuildPlan(binding, searchRadius, out WorldGenerativeGeologySeamPlan plan))
+                return;
+
+            _plansByKey[plan.runtimeKey] = plan;
+            _bindingsByKey[plan.runtimeKey] = binding;
+            _bindingLastSeenTimes[plan.runtimeKey] = now;
+            _orderedPlans.Add(plan);
         }
 
         private bool ShouldSkipPlanRefresh()
@@ -550,19 +563,18 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-                playerTransform = player != null ? player.transform : null;
-            }
+            if (playerTransform != null && mapMagicBridge != null && voxelEngine != null)
+                return;
 
-            if (mapMagicBridge == null)
-                mapMagicBridge = MapMagicBridge.Instance ?? FindAnyObjectByType<MapMagicBridge>();
+            float now = Time.realtimeSinceStartup;
+            if (now < _nextAutoResolveAttemptTime)
+                return;
 
-            if (voxelEngine == null)
-                voxelEngine = FindAnyObjectByType<HectonVoxelEngine>();
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref voxelEngine);
         }
 
         private static int CompareByWeightDescending(WorldGenerativeGeologySeamPlan left, WorldGenerativeGeologySeamPlan right)

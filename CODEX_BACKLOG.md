@@ -1913,9 +1913,9 @@ Notes:
 - Verification:
   - compile succeeded with no new red errors
   - starter construction assets now contain real serialized `buildCost` entries
-- Honest remaining gap:
-  - the project still emits pre-existing input/rebinding warnings (`Computed binding index is out of range`, `Map must be contained in state`) during refresh/runtime paths
-  - these warnings are not introduced by the construction pass, but the input/rebind layer still needs a dedicated hardening pass
+- Historical note:
+  - at the time of this construction pass the project still emitted input/rebinding warnings during refresh/runtime paths
+  - that input teardown tail was closed later in the 2026-04-02 runtime hardening wave
 
 ## 2026-03-27 - Builder loop registration / recovery pass
 
@@ -1930,7 +1930,8 @@ Notes:
   - compile succeeded with no new red errors
 - Honest remaining gap:
   - the builder deploy/recover loop still needs a dedicated live interaction smoke pass
-  - non-fatal Input System/rebinding warnings still pollute compile/runtime smoke and should be isolated separately
+  - historical note: at the time of this builder pass, non-fatal Input System/rebinding warnings still polluted compile/runtime smoke
+  - that input teardown tail was closed later in the 2026-04-02 runtime hardening wave
 ## 2026-03-27 - Builder smoke / HUD navigation pass
 
 - Added `BuilderRuntimeSmokeTester.cs` as a dedicated dev-only construction smoke path for `deploy -> registry -> recover`.
@@ -1994,7 +1995,8 @@ Notes:
   - `Copper x2` spend now behaves correctly: `12 -> 10`
 - Honest remaining gap:
   - temporary `BuilderSmoke` / `BuilderDebug` telemetry should be reduced or gated once the builder loop hardening sprint is finished
-  - non-fatal input/rebinding warning hygiene is still an open independent task
+  - historical note: input/rebinding warning hygiene was still open during this pass
+  - that runtime warning tail was closed later in the 2026-04-02 `InputManager` hardening pass
 
 ## 2026-03-27 - PDA construction browser UX pass
 

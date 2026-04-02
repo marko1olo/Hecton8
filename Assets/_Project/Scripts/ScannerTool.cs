@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Construction;
@@ -160,7 +161,7 @@ namespace Hecton8.Gameplay
         private bool _hasLastResult;
 
         internal bool PulseActive { get; private set; }
-        internal float3 PulseOrigin { get; private set; }
+        internal Unity.Mathematics.float3 PulseOrigin { get; private set; }
         internal float PulseStartTime { get; private set; }
 
         internal float PulseDuration => pulseDuration;
@@ -209,7 +210,7 @@ namespace Hecton8.Gameplay
 
             _lastScanTime = now;
 
-            float3 origin = _cachedTransform.position;
+            Unity.Mathematics.float3 origin = _cachedTransform.position;
             ScanResultSummary result = PerformScan(origin, _scanMode);
 
             PulseActive = true;
@@ -296,7 +297,7 @@ namespace Hecton8.Gameplay
             return BuildModeSummary(_scanMode);
         }
 
-        private ScanResultSummary PerformScan(float3 origin, ScanMode mode)
+        private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode)
         {
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 origin,
@@ -365,7 +366,7 @@ namespace Hecton8.Gameplay
                         continue;
                     }
 
-                    float3 nodePos = col.transform.position;
+                    Unity.Mathematics.float3 nodePos = col.transform.position;
                     ScanEvents.OnNodeFound?.Invoke(nodePos);
                     if (!genericResourceLogged)
                     {
@@ -513,7 +514,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(itemId))
                 return false;
 
-            string title = string.IsNullOrWhiteSpace(item.itemName) ? "UNIDENTIFIED PICKUP" : item.itemName.ToUpperInvariant();
+            string title = string.IsNullOrWhiteSpace(item.itemName) ? "UNIDENTIFIED PICKUP" : ZeroGCStringCache.CachedToUpperInvariant(item.itemName);
             string category = DescribeItemCategory(item.category);
             string summary = BuildPickupSummary(item, pickup.Quantity);
             ScanEvents.OnEntryDiscovered?.Invoke($"item.{itemId}".ToLowerInvariant(), title, category, summary);
@@ -530,7 +531,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(moduleId))
                 return false;
 
-            string title = string.IsNullOrWhiteSpace(data.moduleName) ? "UNIDENTIFIED MODULE" : data.moduleName.ToUpperInvariant();
+            string title = string.IsNullOrWhiteSpace(data.moduleName) ? "UNIDENTIFIED MODULE" : ZeroGCStringCache.CachedToUpperInvariant(data.moduleName);
             string category = $"Construction/{data.FamilyLabel}";
             string summary = string.IsNullOrWhiteSpace(data.description)
                 ? $"Base module archived. Power role: {DescribePowerRole(data)}."
@@ -631,6 +632,8 @@ namespace Hecton8.Gameplay
 
             return "Passive";
         }
+
+        // Zero-GC behavior is now provided by Hecton8.Core.ZeroGCStringCache.
     }
 
     [DisallowMultipleComponent]

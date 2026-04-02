@@ -676,7 +676,7 @@ namespace Hecton8.World
 
             WorldZoneAnchor best = null;
             float bestWeight = 0f;
-            float bestDistance = float.MaxValue;
+            float bestDistanceSqr = float.MaxValue;
 
             for (int i = 0; i < _anchors.Count; i++)
             {
@@ -684,18 +684,24 @@ namespace Hecton8.World
                 if (anchor == null)
                     continue;
 
-                float weight = anchor.EvaluateActivationWeight(position);
-                float distance = anchor.GetFlatDistance(position);
+                anchor.EvaluatePlayerState(
+                    position,
+                    out float distanceSqr,
+                    out float weight,
+                    out _,
+                    out _,
+                    out _);
+
                 if (weight <= 0.001f)
                     continue;
 
                 if (best == null ||
                     weight > bestWeight ||
-                    (Mathf.Approximately(weight, bestWeight) && distance < bestDistance))
+                    (Mathf.Approximately(weight, bestWeight) && distanceSqr < bestDistanceSqr))
                 {
                     best = anchor;
                     bestWeight = weight;
-                    bestDistance = distance;
+                    bestDistanceSqr = distanceSqr;
                 }
             }
 

@@ -297,21 +297,28 @@ namespace Hecton8.Core
                 _lastGCAllocCount += gcAlloc;
             }
 
+            int totalPhysics = trackPhysicsCalls ? Hecton8.Physics.RaycastBatchHelper.TotalRaycastsProcessed : 0;
+            int cachedHits = trackPhysicsCalls ? Hecton8.Physics.QueryCacheContext.CacheHits : 0;
+            int pendingJobs = trackJobSystem ? 0 : 0;
+
             _currentSnapshot = new PerformanceSnapshot(
                 frameTimeMs: (float)_frameStopwatch.Elapsed.TotalMilliseconds * sampleIntervalFrames,
                 deltaTime: deltaTime,
                 frameCount: Time.frameCount,
-                // Requires explicit instrumentation around physics wrappers to be exact.
-                physicsCallCount: 0,
-                physicsTimeMs: 0f, // Would need more instrumentation
-                pendingJobCount: 0, // No reliable global job backlog API in this runtime path.
-                activeCoroutineCount: 0, // Would need coroutine registry
+                physicsCallCount: totalPhysics,
+                physicsTimeMs: cachedHits, // Repurposing field: Hits are more important than avg time here
+                pendingJobCount: pendingJobs,
+                activeCoroutineCount: 0, 
                 gcAllocatedThisFrame: gcAlloc,
                 gcTotalMemory: gcTotal,
                 gcPeakMemory: System.Math.Max(_lastSnapshot.gcPeakMemory, gcTotal),
                 gcCollectionCount: gcCollections,
                 gcCollectionDetected: gcCollectionDetected
             );
+
+            // Reset counters for next sampling window
+            Hecton8.Physics.RaycastBatchHelper.TotalRaycastsProcessed = 0;
+            Hecton8.Physics.QueryCacheContext.CacheHits = 0;
 
             _lastGCTotalMemory = gcTotal;
             _lastGCCollectionCount = gcCollections;

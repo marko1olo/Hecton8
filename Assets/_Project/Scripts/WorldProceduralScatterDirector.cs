@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Hecton8.Dev;
 using Hecton8.Core;
 using Hecton8.Bootstrap;
 using Hecton8.Environment;
@@ -13,6 +14,7 @@ namespace Hecton8.World
     public sealed class WorldProceduralScatterDirector : MonoBehaviour, ISlowTickable
     {
         private const string ScatterRootName = "__PROCEDURAL_SCATTER_WORLD";
+        private const string GeneratedGeologyRootName = "__GENERATED_GEOLOGY";
         private const int ScatterLayerCount = 4;
         private static readonly int _ClusterAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.ClusterAccentRole)).Length;
         private static readonly int _StructureAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.StructureAccentRole)).Length;
@@ -40,16 +42,28 @@ namespace Hecton8.World
         [SerializeField] private float surfaceYOffset = 0.2f;
         [SerializeField] private float missingPlacementGraceSeconds = 8f;
         [SerializeField] private bool waitForSceneBootstrap = true;
-        [Tooltip("Максимум ожидания появления SceneBootstrap в сцене. Если bootstrap отсутствует дольше этого времени, scatter продолжит работу без него. 0 = не ждать.")]
-        [SerializeField] private float bootstrapWaitTimeoutSeconds = 12f;
         [SerializeField] private float scatterRefreshDistanceThreshold = 8f;
         [SerializeField] private bool enableForcedScatterRefresh = false;
         [SerializeField] private float scatterForcedRefreshInterval = 0f;
+        [SerializeField] private bool spreadInitialScatterWarmupAcrossTicks = true;
+        [Tooltip("Максимум объектов, которые scatter разрешает догреть в пуле за один rebuild.")]
+        [SerializeField] private int maxPoolWarmupPerRebuild = 10;
+        [Tooltip("Ограничение warmup для одного prefab за один rebuild, чтобы не было резких аллокаций пачками.")]
+        [SerializeField] private int maxPoolWarmupPerPrefabPerRebuild = 4;
+        [Tooltip("Если runtime rebuild внезапно требует много экземпляров одного prefab, scatter догреет более крупную пачку, чтобы не расширять пул по 4 несколько раз подряд.")]
+        [SerializeField] private int hotPrefabWarmupThreshold = 6;
+        [Tooltip("Максимальный размер догревающей пачки для горячего prefab во время обычного runtime rebuild.")]
+        [SerializeField] private int hotPrefabWarmupCap = 12;
+        [SerializeField, Range(0.25f, 1f)] private float coralLowFinalRadiusScale = 0.58f;
+        [Tooltip("Какую долю near-радиуса разрешено тратить на proxy generated geology до перехода в final variant.")]
+        [SerializeField, Range(0f, 1f)] private float proxyGeneratedGeologyNearRadiusScale = 0.45f;
         [SerializeField] private bool enableScatterRebuildProfiling = true;
         [SerializeField] private float scatterRebuildSpikeThresholdMs = 40f;
         [Tooltip("Включает подробную строковую диагностику sampling/rebuild. Держи выключенной в обычном runtime, чтобы не тратить CPU на hot path.")]
         [SerializeField] private bool enableScatterDetailedDiagnostics = false;
 
+        // Inspector-only scatter diagnostics are intentionally serialized for live tuning.
+#pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
         [SerializeField] private int _debugEvaluatedCells;
@@ -150,6 +164,7 @@ namespace Hecton8.World
         [SerializeField] private int _debugReconcileReusedCount;
         [SerializeField] private string _debugLastScatterRefreshReason = "None";
         [SerializeField] private string _debugLastScatterInvalidationReason = "None";
+#pragma warning restore CS0414
 
         private readonly Dictionary<long, WorldProceduralProxyInstance> _activeInstances = new Dictionary<long, WorldProceduralProxyInstance>(1024);
         private readonly Dictionary<long, ScatterPlacement> _desiredPlacements = new Dictionary<long, ScatterPlacement>(1024);
@@ -200,6 +215,9 @@ namespace Hecton8.World
         private readonly Dictionary<string, int> _sampledBiomeCounts = new Dictionary<string, int>(16);
         private readonly Dictionary<string, int> _sampledPatternCounts = new Dictionary<string, int>(8);
         private readonly Dictionary<string, int> _sampledZoneCounts = new Dictionary<string, int>(8);
+        private readonly Dictionary<int, int> _prefabWarmupCounts = new Dictionary<int, int>(32);
+        private readonly Dictionary<int, GameObject> _prefabWarmupPrefabs = new Dictionary<int, GameObject>(32);
+        private readonly Dictionary<int, string> _prefabWarmupFamilyIds = new Dictionary<int, string>(32);
         private static WorldProceduralPatternProfile _emergencyPatternProfile;
         private static WorldGenerativeGeologyProfile _emergencyArchGeologyProfile;
         private static WorldGenerativeGeologyProfile _emergencyCanopyGeologyProfile;
@@ -210,8 +228,7 @@ namespace Hecton8.World
         private bool _sceneBootstrapPresenceResolved;
         private bool _sceneBootstrapPresent;
         private bool _bootstrapFailed;
-        private float _bootstrapWaitStartTime = -1f;
-        private bool _bootstrapTimeoutReported;
+        private Transform _scatterRootTransform;
         private bool _hasScatterRefreshSample;
         private Vector3 _lastScatterRefreshPosition;
         private int _lastScatterRefreshCenterCellX;
@@ -221,6 +238,7 @@ namespace Hecton8.World
         private int _runtimeRadiusCells = 7;
         private float _runtimeChunkSize = 192f;
         private float _runtimeMacroZoneSize = 768f;
+        private bool _hasPendingStartupPlacements;
 
         public int ActivePlacementCount => _activeInstances.Count;
 
@@ -230,13 +248,12 @@ namespace Hecton8.World
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
             RefreshRuntimeStreamingSettings();
-            if (!ShouldDeferUntilBootstrapReady())
+            if (!Application.isPlaying && !ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
         }
 
         private void OnEnable()
         {
-            BeginBootstrapWaitWindow();
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
@@ -253,6 +270,12 @@ namespace Hecton8.World
             {
                 GameTickManager.Instance.Register((ISlowTickable)this);
                 _registeredToTickManager = true;
+            }
+
+            if (Application.isPlaying)
+            {
+                InvalidateScatterRefreshSample("startup");
+                return;
             }
 
             if (!ShouldDeferUntilBootstrapReady())
@@ -314,8 +337,7 @@ namespace Hecton8.World
             if (faunaSpawnRegistry != null)
                 faunaSpawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
 
-            InvalidateScatterRefreshSample("state-registry");
-            RebuildScatterPreview();
+            RequestScatterRefresh("state-registry");
         }
 
         public void RebuildScatterPreview()
@@ -433,14 +455,20 @@ namespace Hecton8.World
                         RegisterStringCount(sampledPatternCounts, fieldSample.resolvedPattern.ToString());
                         RegisterStringCount(sampledZoneCounts, fieldSample.zone != null ? fieldSample.zone.ZoneLabel : $"Synthetic:{fieldSample.resolvedZoneKind}");
                     }
-                    int localGroundBudget = ResolveScaledBudget(groundBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Ground, 4);
-                    int localClusterBudget = ResolveScaledBudget(clusterBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Cluster, 3);
-                    int localStructureBudget = ResolveScaledBudget(structureBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Structure, 2);
-                    int localSpawnBudget = ResolveScaledBudget(spawnBudget, fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Spawn, 2);
-                    debugGroundBudgetScale = GetCombinedBudgetScale(fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Ground);
-                    debugClusterBudgetScale = GetCombinedBudgetScale(fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Cluster);
-                    debugStructureBudgetScale = GetCombinedBudgetScale(fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Structure);
-                    debugSpawnBudgetScale = GetCombinedBudgetScale(fieldSample.resolvedPattern, fieldSample.biomeFamily, WorldPrefabFamilyProfile.ScatterLayer.Spawn);
+                    WorldProceduralPatternProfile cellPatternProfile = ResolvePatternProfile(fieldSample.resolvedPattern, out _);
+                    WorldProceduralBiomeFamilyContextProfile cellBiomeContext = ResolveBiomeContextProfile(fieldSample.biomeFamily, out _);
+                    float localGroundBudgetScale = GetCombinedBudgetScale(cellPatternProfile, cellBiomeContext, WorldPrefabFamilyProfile.ScatterLayer.Ground);
+                    float localClusterBudgetScale = GetCombinedBudgetScale(cellPatternProfile, cellBiomeContext, WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+                    float localStructureBudgetScale = GetCombinedBudgetScale(cellPatternProfile, cellBiomeContext, WorldPrefabFamilyProfile.ScatterLayer.Structure);
+                    float localSpawnBudgetScale = GetCombinedBudgetScale(cellPatternProfile, cellBiomeContext, WorldPrefabFamilyProfile.ScatterLayer.Spawn);
+                    int localGroundBudget = ResolveScaledBudget(groundBudget, localGroundBudgetScale, 4);
+                    int localClusterBudget = ResolveScaledBudget(clusterBudget, localClusterBudgetScale, 3);
+                    int localStructureBudget = ResolveScaledBudget(structureBudget, localStructureBudgetScale, 2);
+                    int localSpawnBudget = ResolveScaledBudget(spawnBudget, localSpawnBudgetScale, 2);
+                    debugGroundBudgetScale = localGroundBudgetScale;
+                    debugClusterBudgetScale = localClusterBudgetScale;
+                    debugStructureBudgetScale = localStructureBudgetScale;
+                    debugSpawnBudgetScale = localSpawnBudgetScale;
 
                     _candidateBuffer.Clear();
                     for (int i = 0; i < rules.Count; i++)
@@ -479,7 +507,7 @@ namespace Hecton8.World
                             + GetClusterAccentPatternBonus(fieldSample.resolvedPattern, family)
                             + GetSpawnFamilyPatternBonus(fieldSample.resolvedPattern, family)
                             + GetPatternContextBonus(fieldSample.resolvedPattern, family)
-                            + GetBiomeContextBonus(fieldSample.biomeFamily, family)
+                            + GetBiomeContextBonus(cellBiomeContext, family)
                             + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family)
                             + GetBiomeSignatureScoreBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family);
                         ScatterCandidate candidate = BuildCandidate(cellXIndex, cellZIndex, fieldSample, family, rule, heatmapChannel, heat, score, size);
@@ -650,6 +678,8 @@ namespace Hecton8.World
 
             ScatterReconcileMetrics reconcileMetrics = ReconcileInstances(enableScatterRebuildProfiling);
             long reconcileEndTimestamp = reconcileMetrics.EndTimestamp;
+            if (_hasPendingStartupPlacements)
+                InvalidateScatterRefreshSample("startup-batch");
 
             _debugReady = true;
             _debugEvaluatedCells = evaluatedCells;
@@ -777,11 +807,8 @@ namespace Hecton8.World
             _sceneBootstrapPresenceResolved = true;
             _sceneBootstrapPresent = true;
             _bootstrapFailed = false;
-            _bootstrapWaitStartTime = -1f;
-            _bootstrapTimeoutReported = false;
-            InvalidateScatterRefreshSample("scene-bootstrap");
             RefreshRuntimeStreamingSettings();
-            RebuildScatterPreview();
+            RequestScatterRefresh("scene-bootstrap");
         }
 
         private void HandleSceneBootstrapFailed(string reason)
@@ -789,8 +816,6 @@ namespace Hecton8.World
             _sceneBootstrapPresenceResolved = true;
             _sceneBootstrapPresent = true;
             _bootstrapFailed = true;
-            _bootstrapWaitStartTime = -1f;
-            _bootstrapTimeoutReported = false;
 
             if (!string.IsNullOrWhiteSpace(reason))
             {
@@ -799,60 +824,28 @@ namespace Hecton8.World
                     this);
             }
 
-            InvalidateScatterRefreshSample("scene-bootstrap-failed");
             RefreshRuntimeStreamingSettings();
-            RebuildScatterPreview();
-        }
-
-        private void BeginBootstrapWaitWindow()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            if (_bootstrapWaitStartTime >= 0f)
-                return;
-
-            _bootstrapWaitStartTime = Time.unscaledTime;
-            _bootstrapTimeoutReported = false;
+            RequestScatterRefresh("scene-bootstrap-failed");
         }
 
         private bool ResolveSceneBootstrapPresence()
         {
+            if (SceneBootstrap.HasActiveInstance)
+            {
+                _sceneBootstrapPresenceResolved = true;
+                _sceneBootstrapPresent = true;
+                return true;
+            }
+
             if (_sceneBootstrapPresenceResolved)
                 return _sceneBootstrapPresent;
 
             SceneBootstrap bootstrap = FindFirstObjectByType<SceneBootstrap>(FindObjectsInactive.Include);
-            if (bootstrap != null)
-            {
-                _sceneBootstrapPresenceResolved = true;
-                _sceneBootstrapPresent = true;
-                _bootstrapWaitStartTime = -1f;
-                _bootstrapTimeoutReported = false;
-                return true;
-            }
-
-            BeginBootstrapWaitWindow();
-
-            if (bootstrapWaitTimeoutSeconds > 0f)
-            {
-                float elapsed = Time.unscaledTime - _bootstrapWaitStartTime;
-                if (elapsed < bootstrapWaitTimeoutSeconds)
-                    return true;
-            }
-
-            if (!_bootstrapTimeoutReported)
-            {
-                _bootstrapTimeoutReported = true;
-                UnityEngine.Debug.LogWarning(
-                    $"[WorldScatter] SceneBootstrap was not found after {bootstrapWaitTimeoutSeconds:0.0}s. " +
-                    "Continuing procedural scatter warmup without bootstrap gating.",
-                    this);
-            }
-
             _sceneBootstrapPresenceResolved = true;
-            _sceneBootstrapPresent = false;
-            _bootstrapWaitStartTime = -1f;
-            return false;
+            _sceneBootstrapPresent = bootstrap != null
+                && bootstrap.isActiveAndEnabled
+                && bootstrap.gameObject.activeInHierarchy;
+            return _sceneBootstrapPresent;
         }
 
         private bool ShouldSkipScatterRefresh()
@@ -913,6 +906,18 @@ namespace Hecton8.World
             _hasScatterRefreshSample = false;
             _lastScatterRefreshTime = float.NegativeInfinity;
             _debugLastScatterInvalidationReason = string.IsNullOrWhiteSpace(reason) ? "manual" : reason;
+        }
+
+        private void RequestScatterRefresh(string reason)
+        {
+            InvalidateScatterRefreshSample(reason);
+
+            if (Application.isPlaying)
+                return;
+
+            RefreshRuntimeStreamingSettings();
+            if (!ShouldDeferUntilBootstrapReady())
+                RebuildScatterPreview();
         }
 
         private bool TryGetScatterCenterCell(out int centerCellX, out int centerCellZ)
@@ -1005,17 +1010,20 @@ namespace Hecton8.World
             _debugReconcileCreatedCount = reconcileMetrics.CreatedCount;
             _debugReconcileReusedCount = reconcileMetrics.ReusedCount;
 
+            string report =
+                $"[WorldScatterProfiler] rebuild={totalMs:0.00}ms sample={samplingMs:0.00}ms rescue={rescueMs:0.00}ms " +
+                $"restore={restoreMs:0.00}ms reconcile={reconcileMs:0.00}ms cleanup={reconcileCleanupMs:0.00}ms " +
+                $"spawn={reconcileSpawnMs:0.00}ms fauna={reconcileFaunaMs:0.00}ms diag={diagnosticsMs:0.00}ms " +
+                $"removed={reconcileMetrics.RemovedCount} rebuilt={reconcileMetrics.RebuiltCount} created={reconcileMetrics.CreatedCount} " +
+                $"reused={reconcileMetrics.ReusedCount} cells={evaluatedCells} desired={_desiredPlacements.Count} " +
+                $"active={_activeInstances.Count} reason={_debugLastScatterRefreshReason}";
+
+            RuntimeDiagnosticsTrace.WriteEvent("scatter", report);
+
             if (totalMs < Mathf.Max(1f, scatterRebuildSpikeThresholdMs))
                 return;
 
-            UnityEngine.Debug.Log(
-                $"[WorldScatterProfiler] rebuild={totalMs:0.00}ms sample={samplingMs:0.00}ms rescue={rescueMs:0.00}ms " +
-                $"restore={restoreMs:0.00}ms reconcile={reconcileMs:0.00}ms " +
-                $"cleanup={reconcileCleanupMs:0.00}ms spawn={reconcileSpawnMs:0.00}ms fauna={reconcileFaunaMs:0.00}ms " +
-                $"diag={diagnosticsMs:0.00}ms removed={reconcileMetrics.RemovedCount} rebuilt={reconcileMetrics.RebuiltCount} " +
-                $"created={reconcileMetrics.CreatedCount} reused={reconcileMetrics.ReusedCount} " +
-                $"cells={evaluatedCells} desired={_desiredPlacements.Count} active={_activeInstances.Count} reason={_debugLastScatterRefreshReason}",
-                this);
+            UnityEngine.Debug.Log(report, this);
         }
 
         private static float GetElapsedMilliseconds(long startTimestamp, long endTimestamp)
@@ -1077,7 +1085,7 @@ namespace Hecton8.World
 
         public void ClearScatterPreview()
         {
-            GameObject root = GameObject.Find(ScatterRootName);
+            GameObject root = GetScatterRoot(false);
             if (root != null && _activeInstances.Count == 0)
                 ClearRootChildren(root.transform);
 
@@ -1276,6 +1284,8 @@ namespace Hecton8.World
             int rebuiltCount = 0;
             int createdCount = 0;
             int reusedCount = 0;
+            bool initialWarmupPass = Application.isPlaying && spreadInitialScatterWarmupAcrossTicks && _activeInstances.Count == 0;
+            _hasPendingStartupPlacements = false;
 
             foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
             {
@@ -1299,6 +1309,7 @@ namespace Hecton8.World
             }
 
             long cleanupEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : reconcileStartTimestamp;
+            PrepareScatterPoolWarmup(initialWarmupPass);
 
             foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
             {
@@ -1325,6 +1336,12 @@ namespace Hecton8.World
                     ApplyPlacement(instance, placement, runtimeVariant, finalVariantActive);
                     ApplyGeneratedGeology(instance, placement, finalVariantActive);
                     reusedCount++;
+                    continue;
+                }
+
+                if (initialWarmupPass && !ShouldCreateDuringInitialWarmup(placement))
+                {
+                    _hasPendingStartupPlacements = true;
                     continue;
                 }
 
@@ -1403,6 +1420,103 @@ namespace Hecton8.World
             faunaSpawnRegistry.ReplaceProceduralAnchors(_faunaAnchorBuffer);
             _debugPublishedFaunaAnchors = faunaAnchorCount;
             _debugPublishedLargeThreatZones = largeThreatZoneCount;
+        }
+
+        private void PrepareScatterPoolWarmup(bool initialWarmupPass)
+        {
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return;
+
+            _prefabWarmupCounts.Clear();
+            _prefabWarmupPrefabs.Clear();
+            _prefabWarmupFamilyIds.Clear();
+            bool useExactStartupWarmup = initialWarmupPass;
+            int remainingWarmupBudget = useExactStartupWarmup
+                ? int.MaxValue
+                : Mathf.Max(0, maxPoolWarmupPerRebuild);
+            int perPrefabWarmupLimit = useExactStartupWarmup
+                ? int.MaxValue
+                : Mathf.Max(0, maxPoolWarmupPerPrefabPerRebuild);
+
+            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            {
+                ScatterPlacement placement = pair.Value;
+                if (initialWarmupPass && !ShouldCreateDuringInitialWarmup(placement))
+                    continue;
+
+                bool finalVariantActive = ShouldUseFinalVariant(placement);
+                WorldPrefabFamilyProfile.VariantEntry runtimeVariant = ResolvePlacementVariant(placement, finalVariantActive);
+                GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
+                if (prefab == null)
+                    continue;
+
+                bool requiresSpawn = true;
+                if (_activeInstances.TryGetValue(pair.Key, out WorldProceduralProxyInstance instance) && instance != null)
+                    requiresSpawn = RequiresInstanceRebuild(instance, placement, runtimeVariant, finalVariantActive);
+
+                if (!requiresSpawn)
+                    continue;
+
+                int prefabId = prefab.GetInstanceID();
+                if (_prefabWarmupCounts.TryGetValue(prefabId, out int count))
+                    _prefabWarmupCounts[prefabId] = count + 1;
+                else
+                    _prefabWarmupCounts.Add(prefabId, 1);
+
+                _prefabWarmupPrefabs[prefabId] = prefab;
+                _prefabWarmupFamilyIds[prefabId] = placement.Family != null ? placement.Family.familyId : string.Empty;
+            }
+
+            foreach (KeyValuePair<int, int> pair in _prefabWarmupCounts)
+            {
+                if (remainingWarmupBudget <= 0)
+                    break;
+
+                GameObject prefab = _prefabWarmupPrefabs[pair.Key];
+                _prefabWarmupFamilyIds.TryGetValue(pair.Key, out string familyId);
+                int reserveCount = useExactStartupWarmup ? 0 : GetHotspotWarmupReserve(familyId);
+                int missingCount = pair.Value + reserveCount - pool.GetAvailableCount(prefab);
+                if (missingCount > 0)
+                {
+                    int effectivePerPrefabLimit = perPrefabWarmupLimit;
+                    if (!useExactStartupWarmup &&
+                        missingCount >= Mathf.Max(1, hotPrefabWarmupThreshold))
+                    {
+                        effectivePerPrefabLimit = Mathf.Max(
+                            effectivePerPrefabLimit,
+                            Mathf.Max(1, hotPrefabWarmupCap));
+                    }
+
+                    int effectiveBudget = remainingWarmupBudget;
+                    if (!useExactStartupWarmup && effectivePerPrefabLimit > effectiveBudget)
+                        effectiveBudget = effectivePerPrefabLimit;
+
+                    int warmupCount = Mathf.Min(
+                        missingCount,
+                        effectivePerPrefabLimit,
+                        effectiveBudget);
+                    if (warmupCount > 0)
+                    {
+                        pool.Warmup(prefab, warmupCount);
+                        remainingWarmupBudget = Mathf.Max(0, remainingWarmupBudget - warmupCount);
+                    }
+                }
+            }
+
+            _prefabWarmupCounts.Clear();
+            _prefabWarmupPrefabs.Clear();
+            _prefabWarmupFamilyIds.Clear();
+        }
+
+        private bool ShouldCreateDuringInitialWarmup(in ScatterPlacement placement)
+        {
+            if (playerTransform == null)
+                return true;
+
+            ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out float midRadius, out _);
+            float allowedRadius = Mathf.Max(nearRadius, midRadius);
+            return (placement.Position - playerTransform.position).sqrMagnitude <= allowedRadius * allowedRadius;
         }
 
         private bool TryRegisterDesiredPlacement(in ScatterPlacement placement, float now)
@@ -1514,7 +1628,51 @@ namespace Hecton8.World
 
         private WorldPrefabFamilyProfile.VariantEntry ResolvePlacementVariant(in ScatterPlacement placement)
         {
-            return ResolveRuntimeVariant(placement.Family, placement.StableHash, ShouldUseFinalVariant(placement));
+            return ResolvePlacementVariant(placement, ShouldUseFinalVariant(placement));
+        }
+
+        private WorldPrefabFamilyProfile.VariantEntry ResolvePlacementVariant(
+            in ScatterPlacement placement,
+            bool finalVariantActive)
+        {
+            if (!finalVariantActive)
+            {
+                WorldPrefabFamilyProfile.VariantEntry preferredProxyVariant =
+                    ResolvePreferredCheapProxyVariant(placement.Family, placement.StableHash);
+                if (preferredProxyVariant != null)
+                    return preferredProxyVariant;
+
+                if (placement.Variant != null)
+                    return placement.Variant;
+            }
+
+            return ResolveRuntimeVariant(placement.Family, placement.StableHash, finalVariantActive);
+        }
+
+        private static WorldPrefabFamilyProfile.VariantEntry ResolvePreferredCheapProxyVariant(
+            WorldPrefabFamilyProfile family,
+            int stableHash)
+        {
+            if (family == null || family.variants == null || family.variants.Length == 0)
+                return null;
+
+            if (!IsCheapProxyFamily(family.familyId))
+                return null;
+
+            return ResolveVariantByPredicate(
+                family,
+                stableHash,
+                variant => variant != null &&
+                           variant.proxyOnly &&
+                           !string.IsNullOrWhiteSpace(variant.variantId) &&
+                           variant.variantId.EndsWith(".proxy.simple", StringComparison.Ordinal));
+        }
+
+        private static bool IsCheapProxyFamily(string familyId)
+        {
+            return string.Equals(familyId, "family.coral.low", StringComparison.Ordinal) ||
+                   string.Equals(familyId, "family.landmark.spire", StringComparison.Ordinal) ||
+                   string.Equals(familyId, "family.cave.entrance", StringComparison.Ordinal);
         }
 
         private float GetGenerativeGeologyContextBonus(
@@ -1544,16 +1702,20 @@ namespace Hecton8.World
             if (metadata == null)
                 return;
 
-            WorldGenerativeGeologyProfile geologyProfile = placement.GeologyProfile ?? ResolveEffectiveGenerativeGeologyProfile(placement.Family);
-            if (placement.Family == null || !placement.Family.UsesGenerativeGeology() || geologyProfile == null)
+            if (!ShouldApplyGeneratedGeology(placement, finalVariantActive))
             {
-                WorldGenerativeGeologyService existingService = ResolveGenerativeGeologyService(false);
-                if (existingService != null)
-                    existingService.ClearGeneratedGeology(metadata.gameObject);
+                ClearGeneratedGeologyInstance(metadata.gameObject);
                 return;
             }
 
-            WorldGenerativeGeologyService service = ResolveGenerativeGeologyService(true);
+            WorldGenerativeGeologyProfile geologyProfile = placement.GeologyProfile ?? ResolveEffectiveGenerativeGeologyProfile(placement.Family);
+            if (placement.Family == null || !placement.Family.UsesGenerativeGeology() || geologyProfile == null)
+            {
+                ClearGeneratedGeologyInstance(metadata.gameObject);
+                return;
+            }
+
+            WorldGenerativeGeologyService service = generativeGeologyService ?? ResolveGenerativeGeologyService(true);
             if (service == null)
                 return;
 
@@ -1575,6 +1737,37 @@ namespace Hecton8.World
 
             if (service.TryApplyGeneratedGeology(metadata.gameObject, request))
                 _debugGeneratedGeologyCount++;
+        }
+
+        private bool ShouldApplyGeneratedGeology(in ScatterPlacement placement, bool finalVariantActive)
+        {
+            if (placement.Family == null || !placement.Family.UsesGenerativeGeology())
+                return false;
+
+            if (finalVariantActive || playerTransform == null)
+                return true;
+
+            ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out _, out _);
+            float allowedRadius = nearRadius * Mathf.Clamp01(proxyGeneratedGeologyNearRadiusScale);
+            if (allowedRadius <= 0.01f)
+                return false;
+
+            return (placement.Position - playerTransform.position).sqrMagnitude <= allowedRadius * allowedRadius;
+        }
+
+        private static void ClearGeneratedGeologyInstance(GameObject host)
+        {
+            if (host == null)
+                return;
+
+            Transform generatedRoot = host.transform.Find(GeneratedGeologyRootName);
+            if (generatedRoot == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(generatedRoot.gameObject);
+            else
+                DestroyImmediate(generatedRoot.gameObject);
         }
 
         private WorldGenerativeGeologyService ResolveGenerativeGeologyService(bool createIfMissing)
@@ -1679,7 +1872,39 @@ namespace Hecton8.World
                 return false;
 
             ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out _, out _);
+            nearRadius *= ResolveFinalVariantRadiusScale(placement.Family);
             return (placement.Position - playerTransform.position).sqrMagnitude <= nearRadius * nearRadius;
+        }
+
+        private float ResolveFinalVariantRadiusScale(WorldPrefabFamilyProfile family)
+        {
+            if (family == null)
+                return 1f;
+
+            if (string.Equals(family.familyId, "family.coral.low", StringComparison.Ordinal))
+                return Mathf.Clamp(coralLowFinalRadiusScale, 0.25f, 1f);
+
+            return 1f;
+        }
+
+        private static int GetHotspotWarmupReserve(string familyId)
+        {
+            if (string.IsNullOrWhiteSpace(familyId))
+                return 0;
+
+            if (string.Equals(familyId, "family.coral.low", StringComparison.Ordinal))
+                return 8;
+
+            if (string.Equals(familyId, "family.creature.spawn.passive", StringComparison.Ordinal))
+                return 4;
+
+            if (string.Equals(familyId, "family.landmark.spire", StringComparison.Ordinal) ||
+                string.Equals(familyId, "family.cave.entrance", StringComparison.Ordinal))
+            {
+                return 3;
+            }
+
+            return 0;
         }
 
         private static bool RequiresInstanceRebuild(
@@ -4416,9 +4641,25 @@ namespace Hecton8.World
             bool finalVariantActive)
         {
             GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
-            GameObject instance = prefab != null
-                ? Instantiate(prefab, placement.Position, placement.Rotation, parent)
-                : GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject instance = null;
+
+            if (prefab != null)
+            {
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool != null)
+                {
+                    instance = pool.Spawn(prefab, placement.Position, placement.Rotation);
+                    if (instance != null)
+                        instance.transform.SetParent(parent, true);
+                }
+
+                if (instance == null)
+                    instance = Instantiate(prefab, placement.Position, placement.Rotation, parent);
+            }
+            else
+            {
+                instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            }
 
             if (prefab == null)
             {
@@ -4444,6 +4685,13 @@ namespace Hecton8.World
         {
             if (instance == null)
                 return;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool != null && instance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            {
+                pool.Despawn(instance);
+                return;
+            }
 
             if (Application.isPlaying)
                 Destroy(instance);
@@ -4594,6 +4842,14 @@ namespace Hecton8.World
             int maxBudget)
         {
             float scale = GetCombinedBudgetScale(pattern, biomeFamily, layer);
+            return ResolveScaledBudget(baseBudget, scale, maxBudget);
+        }
+
+        private static int ResolveScaledBudget(
+            int baseBudget,
+            float scale,
+            int maxBudget)
+        {
             int scaledBudget = Mathf.RoundToInt(Mathf.Max(0f, baseBudget * scale));
             if (baseBudget > 0)
                 scaledBudget = Mathf.Max(1, scaledBudget);
@@ -4606,7 +4862,17 @@ namespace Hecton8.World
             Hecton8.Environment.HectonBiomeFamilyProfile biomeFamily,
             WorldPrefabFamilyProfile.ScatterLayer layer)
         {
-            return GetPatternBudgetScale(pattern, layer) * GetBiomeContextBudgetScale(biomeFamily, layer);
+            WorldProceduralPatternProfile patternProfile = ResolvePatternProfile(pattern, out _);
+            WorldProceduralBiomeFamilyContextProfile biomeContext = ResolveBiomeContextProfile(biomeFamily, out _);
+            return GetCombinedBudgetScale(patternProfile, biomeContext, layer);
+        }
+
+        private static float GetCombinedBudgetScale(
+            WorldProceduralPatternProfile patternProfile,
+            WorldProceduralBiomeFamilyContextProfile biomeContext,
+            WorldPrefabFamilyProfile.ScatterLayer layer)
+        {
+            return GetPatternBudgetScale(patternProfile, layer) * GetBiomeContextBudgetScale(biomeContext, layer);
         }
 
         private float GetPatternBudgetScale(
@@ -4614,6 +4880,13 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.ScatterLayer layer)
         {
             WorldProceduralPatternProfile profile = ResolvePatternProfile(pattern, out _);
+            return GetPatternBudgetScale(profile, layer);
+        }
+
+        private static float GetPatternBudgetScale(
+            WorldProceduralPatternProfile profile,
+            WorldPrefabFamilyProfile.ScatterLayer layer)
+        {
             return profile != null ? profile.GetBudgetScale(layer) : 1f;
         }
 
@@ -4622,6 +4895,13 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.ScatterLayer layer)
         {
             WorldProceduralBiomeFamilyContextProfile context = ResolveBiomeContextProfile(biomeFamily, out _);
+            return GetBiomeContextBudgetScale(context, layer);
+        }
+
+        private static float GetBiomeContextBudgetScale(
+            WorldProceduralBiomeFamilyContextProfile context,
+            WorldPrefabFamilyProfile.ScatterLayer layer)
+        {
             return context != null ? context.GetBudgetScale(layer) : 1f;
         }
 
@@ -4705,10 +4985,17 @@ namespace Hecton8.World
             Hecton8.Environment.HectonBiomeFamilyProfile biomeFamily,
             WorldPrefabFamilyProfile family)
         {
+            WorldProceduralBiomeFamilyContextProfile context = ResolveBiomeContextProfile(biomeFamily, out _);
+            return GetBiomeContextBonus(context, family);
+        }
+
+        private static float GetBiomeContextBonus(
+            WorldProceduralBiomeFamilyContextProfile context,
+            WorldPrefabFamilyProfile family)
+        {
             if (family == null)
                 return 0f;
 
-            WorldProceduralBiomeFamilyContextProfile context = ResolveBiomeContextProfile(biomeFamily, out _);
             if (context == null)
                 return 0f;
 
@@ -6326,11 +6613,27 @@ namespace Hecton8.World
             return normalized / (float)int.MaxValue;
         }
 
-        private static GameObject GetOrCreateRoot()
+        private GameObject GetOrCreateRoot()
         {
+            GameObject root = GetScatterRoot(true);
+            return root;
+        }
+
+        private GameObject GetScatterRoot(bool createIfMissing)
+        {
+            if (_scatterRootTransform != null)
+                return _scatterRootTransform.gameObject;
+
             GameObject root = GameObject.Find(ScatterRootName);
             if (root == null)
+            {
+                if (!createIfMissing)
+                    return null;
+
                 root = new GameObject(ScatterRootName);
+            }
+
+            _scatterRootTransform = root.transform;
 
             return root;
         }
@@ -6421,15 +6724,7 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             if (fieldSampler == null)
                 fieldSampler = FindAnyObjectByType<WorldProceduralFieldSampler>();

@@ -27,6 +27,8 @@ namespace Hecton8.Dev
         [SerializeField] private bool corruptBackupMetadata = false;
         [SerializeField] private bool verboseLogging = false;
 
+        // Inspector-only smoke diagnostics for save recovery validation.
+#pragma warning disable CS0414
         [Header("Debug")]
         [SerializeField] private int _debugRunCount;
         [SerializeField] private string _debugLastPhase = "Idle";
@@ -38,6 +40,7 @@ namespace Hecton8.Dev
         [SerializeField] private bool _debugLastLoadUsedBackup;
         [SerializeField] private int _debugLastLoadBackupGeneration;
         [SerializeField] private bool _debugLastLoadSelfRepaired;
+#pragma warning restore CS0414
 
         private bool _isRunning;
 

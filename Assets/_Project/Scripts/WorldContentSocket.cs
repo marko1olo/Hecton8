@@ -76,6 +76,8 @@ namespace Hecton8.World
         [SerializeField] private float _debugProceduralMinSpacingMeters;
         [SerializeField] private float _debugProceduralClusterRadiusMeters;
 
+        private WorldZoneAnchor _cachedZoneAnchor;
+
         public string SocketId => socketId;
         public string SocketLabel => socketLabel;
         public ContentKind Kind => contentKind;
@@ -86,12 +88,27 @@ namespace Hecton8.World
         public string FuturePrefabKey => futurePrefabKey;
         public string ContentIntent => contentIntent;
 
+        public WorldZoneAnchor GetZoneAnchor()
+        {
+            if (_cachedZoneAnchor == null)
+                _cachedZoneAnchor = GetComponentInParent<WorldZoneAnchor>();
+
+            return _cachedZoneAnchor;
+        }
+
         public float GetFlatDistance(Vector3 position)
         {
             Vector3 delta = transform.position - position;
             delta.y = 0f;
             _debugLastDistance = delta.magnitude;
             return _debugLastDistance;
+        }
+
+        public float GetFlatDistanceSquared(Vector3 position)
+        {
+            Vector3 delta = transform.position - position;
+            delta.y = 0f;
+            return delta.sqrMagnitude;
         }
 
         public string ResolvedPopulationRule => _debugPopulationRule;
@@ -253,6 +270,11 @@ namespace Hecton8.World
             _debugProceduralScore = 0f;
             _debugProceduralMinSpacingMeters = 0f;
             _debugProceduralClusterRadiusMeters = 0f;
+        }
+
+        private void OnTransformParentChanged()
+        {
+            _cachedZoneAnchor = null;
         }
 
         private WorldSliceAnchor.SliceState ResolvePopulationFidelity()

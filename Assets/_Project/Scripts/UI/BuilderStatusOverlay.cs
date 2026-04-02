@@ -1,6 +1,7 @@
 using System.Text;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using TMPro;
@@ -11,12 +12,29 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Builder Status Overlay")]
-    public sealed class BuilderStatusOverlay : MonoBehaviour
+    public sealed class BuilderStatusOverlay : MonoBehaviour, ITickable
     {
         private const float AutoResolveRetryInterval = 1f;
         private static readonly Color PanelColor = new Color(0.03f, 0.1f, 0.12f, 0.66f);
         private static readonly Color RuleColor = new Color(0.2f, 0.86f, 0.96f, 0.38f);
         private static readonly Color TitleColor = new Color(0.52f, 0.97f, 0.95f, 0.96f);
+
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            int hash = input.GetHashCode() & 0xF;
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
+        }
         private static readonly Color ValueColor = new Color(0.9f, 0.98f, 1f, 0.96f);
         private static readonly Color DimColor = new Color(0.58f, 0.77f, 0.82f, 0.8f);
         private static readonly Color ReadyColor = new Color(0.34f, 0.95f, 0.74f, 0.96f);
@@ -27,6 +45,7 @@ namespace Hecton8.UI
         [SerializeField] private PlayerBuilder playerBuilder;
         [SerializeField] private ConstructionManager constructionManager;
         [SerializeField] private PlayerInventory inventory;
+        [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
@@ -52,15 +71,33 @@ namespace Hecton8.UI
         private float _nextAutoResolveAt;
         private int _lastStateHash;
         private readonly StringBuilder _sb = new StringBuilder(192);
+        private bool _tickRegistered;
+        private PlayerInventory _subscribedInventory;
+        private PlayerToolManager _subscribedToolManager;
 
         private void OnEnable()
         {
+            AutoResolve();
             EnsureBuilt();
+            Subscribe();
             ForceRefresh();
+            EvaluateTickRegistration();
         }
 
-        private void Update()
+        private void OnDisable()
         {
+            Unsubscribe();
+            UnregisterTick();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!ShouldKeepTicking())
+            {
+                UnregisterTick();
+                return;
+            }
+
             if (Time.unscaledTime < _nextRefreshAt)
                 return;
 
@@ -80,7 +117,8 @@ namespace Hecton8.UI
             bool requiresRuntimeResolve =
                 playerBuilder == null ||
                 inventory == null ||
-                constructionManager == null;
+                constructionManager == null ||
+                toolManager == null;
 
             if (requiresRuntimeResolve &&
                 (!Application.isPlaying || Time.unscaledTime >= _nextAutoResolveAt))
@@ -94,6 +132,9 @@ namespace Hecton8.UI
                 if (constructionManager == null)
                     constructionManager = FindFirstObjectByType<ConstructionManager>();
 
+                if (toolManager == null)
+                    toolManager = FindFirstObjectByType<PlayerToolManager>();
+
                 _nextAutoResolveAt = Time.unscaledTime + AutoResolveRetryInterval;
             }
 
@@ -101,6 +142,76 @@ namespace Hecton8.UI
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
+
+            RefreshSubscriptions();
+        }
+
+        private void RefreshSubscriptions()
+        {
+            if (!ReferenceEquals(_subscribedInventory, inventory))
+            {
+                if (_subscribedInventory != null)
+                    _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
+
+                _subscribedInventory = inventory;
+                if (_subscribedInventory != null)
+                    _subscribedInventory.InventoryChanged += HandleInventoryChanged;
+            }
+
+            if (!ReferenceEquals(_subscribedToolManager, toolManager))
+            {
+                if (_subscribedToolManager != null)
+                {
+                    _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
+                    _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
+                }
+
+                _subscribedToolManager = toolManager;
+                if (_subscribedToolManager != null)
+                {
+                    _subscribedToolManager.ActiveSlotChanged += HandleActiveSlotChanged;
+                    _subscribedToolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
+                }
+            }
+        }
+
+        private void Subscribe()
+        {
+            RefreshSubscriptions();
+        }
+
+        private void Unsubscribe()
+        {
+            if (_subscribedInventory != null)
+            {
+                _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
+                _subscribedInventory = null;
+            }
+
+            if (_subscribedToolManager != null)
+            {
+                _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
+                _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
+                _subscribedToolManager = null;
+            }
+        }
+
+        private void HandleInventoryChanged()
+        {
+            if (IsBuilderOverlayVisible())
+                ForceRefresh();
+        }
+
+        private void HandleActiveSlotChanged(int _)
+        {
+            EvaluateTickRegistration();
+            ForceRefresh();
+        }
+
+        private void HandleToolAssignmentsChanged()
+        {
+            EvaluateTickRegistration();
+            ForceRefresh();
         }
 
         private void EnsureBuilt()
@@ -218,7 +329,7 @@ namespace Hecton8.UI
 
             _lastStateHash = stateHash;
             if (data != null)
-                _moduleName.text = data.moduleName.ToUpperInvariant() + " [" + data.FamilyShortCode + "]";
+                _moduleName.text = CachedToUpperInvariant(data.moduleName) + " [" + data.FamilyShortCode + "]";
             else
                 _moduleName.text = "NO MODULE";
             _indexLine.SetText("MODULE {0}/{1}  //  BUILT {2}", activeIndex + 1, Mathf.Max(1, buildCount), builtModuleCount);
@@ -256,7 +367,72 @@ namespace Hecton8.UI
                 _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}";
 
             BuildCostSummary(data);
-            _hintLine.SetText(playerBuilder.GetActiveBuildAdvice().ToUpperInvariant());
+            _hintLine.SetText(CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()));
+        }
+
+        private bool ShouldKeepTicking()
+        {
+            AutoResolve();
+            return RequiresRuntimeResolve() || IsBuilderOverlayVisible();
+        }
+
+        private bool RequiresRuntimeResolve()
+        {
+            return playerBuilder == null ||
+                   inventory == null ||
+                   constructionManager == null ||
+                   toolManager == null;
+        }
+
+        private bool IsBuilderOverlayVisible()
+        {
+            if (playerBuilder != null)
+                return playerBuilder.IsEquipped && playerBuilder.ActiveBuildable != null;
+
+            return toolManager != null && toolManager.CurrentTool is BuilderTool;
+        }
+
+        private void EvaluateTickRegistration()
+        {
+            if (!isActiveAndEnabled)
+            {
+                UnregisterTick();
+                return;
+            }
+
+            if (ShouldKeepTicking())
+            {
+                RegisterTick();
+            }
+            else
+            {
+                UnregisterTick();
+            }
+        }
+
+        private void RegisterTick()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
         }
 
         private int ComputeStateHash(BuildableData data, bool hasResources, bool canPlace, bool snapped, int activeIndex, int buildCount, float powerRating, int builtModuleCount)
@@ -298,11 +474,11 @@ namespace Hecton8.UI
 
             _sb.Clear();
             _sb.Append("QUEUE // ");
-            _sb.Append(prev != null ? prev.moduleName.ToUpperInvariant() : "NONE");
+            _sb.Append(prev != null ? CachedToUpperInvariant(prev.moduleName) : "NONE");
             _sb.Append("  <  ");
             _sb.Append(activeIndex + 1);
             _sb.Append("  >  ");
-            _sb.Append(next != null ? next.moduleName.ToUpperInvariant() : "NONE");
+            _sb.Append(next != null ? CachedToUpperInvariant(next.moduleName) : "NONE");
             return _sb.ToString();
         }
 

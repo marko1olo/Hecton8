@@ -2442,49 +2442,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 255
---- !u!114 &1313306488501293246
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2631486575886313125}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d4b45afee6f39c41bb282d2da1041b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUD
-  useCullingMasks: 0
-  survival: {fileID: 0}
-  hudCamera: {fileID: 0}
-  hudFont: {fileID: 0}
-  normalColor: {r: 0, g: 0.898, b: 1, a: 1}
-  warningColor: {r: 1, g: 0.878, b: 0, a: 1}
-  criticalColor: {r: 1, g: 0.384, b: 0, a: 1}
-  frameColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
-  gridColor: {r: 0, g: 0.5, b: 0.7, a: 0.15}
-  depthScaleColor: {r: 0, g: 0.8, b: 1, a: 0.4}
-  textDimColor: {r: 0, g: 0.7, b: 0.9, a: 0.5}
-  bgPanelColor: {r: 0, g: 0.05, b: 0.1, a: 0.25}
-  modulePoweredColor: {r: 0, g: 1, b: 0.4, a: 1}
-  moduleFloodedColor: {r: 0.2, g: 0.5, b: 1, a: 1}
-  moduleOfflineColor: {r: 1, g: 0.384, b: 0, a: 1}
-  moduleNeutralColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
-  lineThickness: 1.5
-  thinLine: 1
-  fontSize: 14
-  fontSizeSmall: 10
-  fontSizeTiny: 8
-  arcRadius: 38
-  arcThickness: 4
-  arcSpacing: 90
-  pulsePeriod: 1.2
-  noiseMinInterval: 5
-  noiseMaxInterval: 10
-  noiseDuration: 0.1
-  promptBracketHalfW: 120
-  promptBracketHalfH: 26
-  promptBracketArm: 18
 --- !u!114 &5920354388807484853
 MonoBehaviour:
   m_ObjectHideFlags: 0

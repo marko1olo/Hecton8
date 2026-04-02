@@ -203,7 +203,7 @@ namespace Hecton8.World
 
             Vector3 playerPosition = playerTransform.position;
             WorldZoneAnchor nearest = null;
-            float nearestDistance = float.MaxValue;
+            float nearestDistanceSqr = float.MaxValue;
             float nearestWeight = 0f;
             WorldZoneAnchor bestCandidate = null;
             float bestCandidateWeight = 0f;
@@ -216,17 +216,19 @@ namespace Hecton8.World
                 if (anchor == null)
                     continue;
 
-                float distance = anchor.GetFlatDistance(playerPosition);
-                if (distance < nearestDistance)
+                anchor.EvaluatePlayerState(
+                    playerPosition,
+                    out float distanceSqr,
+                    out float activationWeight,
+                    out float holdWeight,
+                    out bool insideActivation,
+                    out bool insideHold);
+
+                if (distanceSqr < nearestDistanceSqr)
                 {
-                    nearestDistance = distance;
+                    nearestDistanceSqr = distanceSqr;
                     nearest = anchor;
                 }
-
-                bool insideActivation = anchor.IsInsideActivation(playerPosition);
-                bool insideHold = anchor.IsInsideHold(playerPosition);
-                float activationWeight = anchor.EvaluateActivationWeight(playerPosition);
-                float holdWeight = anchor.EvaluateHoldWeight(playerPosition);
 
                 if (_currentZone == anchor && insideHold)
                 {
@@ -284,7 +286,7 @@ namespace Hecton8.World
             if (priorityCompare != 0)
                 return priorityCompare;
 
-            return a.GetFlatDistance(playerPosition).CompareTo(b.GetFlatDistance(playerPosition));
+            return a.GetFlatDistanceSquared(playerPosition).CompareTo(b.GetFlatDistanceSquared(playerPosition));
         }
 
         private bool NeedsAutoResolve()
@@ -305,21 +307,9 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-
-                if (player != null)
-                    playerTransform = player.transform;
-            }
-
-            if (scatterBudgetController == null)
-                scatterBudgetController = FindAnyObjectByType<ScatterBudgetController>();
-
-            if (worldSliceDirector == null)
-                worldSliceDirector = FindAnyObjectByType<WorldSliceDirector>();
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref scatterBudgetController);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldSliceDirector);
         }
 
         private void ApplyZoneProfile(WorldZoneAnchor primaryZone, WorldZoneAnchor secondaryZone, float blendFactor)

@@ -168,14 +168,25 @@ namespace Hecton8.Core
         /// <param name="count">Количество валидных элементов в начале буфера.</param>
         public void Initialize(Vector3[] worldPositions, int count)
         {
-            if (worldPositions == null || count <= 0 || worldPositions.Length < count)
+            if (worldPositions == null)
             {
-                Debug.LogError("[ProximityColliderSystem] Initialize: empty positions array!");
+                Debug.LogError("[ProximityColliderSystem] Initialize: worldPositions is null!");
                 return;
             }
 
-            // ── Очистка предыдущего состояния (если переинициализация) ──
-            Cleanup();
+            if (count <= 0)
+            {
+                ClearRuntimeData();
+                return;
+            }
+
+            if (worldPositions.Length < count)
+            {
+                Debug.LogError("[ProximityColliderSystem] Initialize: count exceeds buffer length!");
+                return;
+            }
+
+            PrepareForReinitialize();
 
             _pointCount = count;
 
@@ -220,13 +231,19 @@ namespace Hecton8.Core
         /// </summary>
         public void Initialize(NativeArray<float3> worldPositions)
         {
-            if (!worldPositions.IsCreated || worldPositions.Length == 0)
+            if (!worldPositions.IsCreated)
             {
                 Debug.LogError("[ProximityColliderSystem] Initialize: invalid NativeArray!");
                 return;
             }
 
-            Cleanup();
+            if (worldPositions.Length == 0)
+            {
+                ClearRuntimeData();
+                return;
+            }
+
+            PrepareForReinitialize();
 
             _pointCount = worldPositions.Length;
 
@@ -254,6 +271,20 @@ namespace Hecton8.Core
         public float ActivateRadius => activateRadius;
         public float DeactivateRadius => deactivateRadius;
         public int MaxOperationsPerFrame => maxOperationsPerTick;
+
+        /// <summary>
+        /// Полностью очищает runtime-состояние системы.
+        /// </summary>
+        /// <remarks>
+        /// Безопасно завершает активную Job, возвращает все выданные collider proxy
+        /// обратно в пул и освобождает внутренние буферы. Используется, когда
+        /// в мире больше не осталось точек для ближней физики или требуется
+        /// переинициализировать систему новым набором позиций.
+        /// </remarks>
+        public void ClearRuntimeData()
+        {
+            PrepareForReinitialize();
+        }
 
         public void SetRuntimeBudget(float newActivateRadius, float newDeactivateRadius, int newMaxOperations)
         {
@@ -527,6 +558,26 @@ namespace Hecton8.Core
             // ── Освобождаем TempJob, если не был disposed ──
             if (_prevStatusNative.IsCreated)
                 _prevStatusNative.Dispose();
+        }
+
+        /// <summary>
+        /// Готовит систему к безопасной переинициализации.
+        /// </summary>
+        /// <remarks>
+        /// Важно вызывать этот путь перед освобождением массивов. Иначе можно
+        /// dispose-нуть данные, пока Job еще работает, или оставить активные
+        /// collider proxy висеть после смены world-данных.
+        /// </remarks>
+        private void PrepareForReinitialize()
+        {
+            CompleteCurrentJob();
+            DespawnAllColliders();
+            Cleanup();
+#if UNITY_EDITOR
+            _debugTotalPoints = 0;
+            _debugActiveColliders = 0;
+            _debugJobFrameDelay = 0;
+#endif
         }
 
         /// <summary>

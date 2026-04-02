@@ -48,6 +48,7 @@ namespace Hecton8.Interaction
     using Unity.Mathematics;
     using UnityEngine;
     using Hecton8.Audio;
+    using Hecton8.Physics;
     using Hecton8.Input;
 
     [DisallowMultipleComponent]
@@ -318,10 +319,10 @@ namespace Hecton8.Interaction
         private void PerformRaycast()
         {
             // ── Unity.Mathematics for offset calculation ──
-            float3 camPos = _cameraTransform.position;
-            float3 camFwd = _cameraTransform.forward;
+            Unity.Mathematics.float3 camPos = _cameraTransform.position;
+            Unity.Mathematics.float3 camFwd = _cameraTransform.forward;
 
-            float3 origin = camPos + camFwd * rayOriginOffset;
+            Unity.Mathematics.float3 origin = camPos + camFwd * rayOriginOffset;
 
             _ray.origin    = origin;
             _ray.direction = camFwd;
@@ -337,12 +338,22 @@ namespace Hecton8.Interaction
                 false);
 #endif
 
-            if (Physics.Raycast(
-                    _ray, out _hitInfo, effectiveReach,
-                    interactableMask, QueryTriggerInteraction.Ignore))
+            // USE GLOBAL CACHE — Zero Redundancy
+            var cache = GlobalQueryCacheManager.GetContext("PlayerLook");
+            if (!cache.TryGet(_ray, effectiveReach, (int)interactableMask, out QueryResult qResult))
             {
-                if (_hitInfo.collider.TryGetComponent(
-                        out IInteractable interactable))
+                bool hit = Physics.Raycast(_ray, out _hitInfo, effectiveReach, interactableMask, QueryTriggerInteraction.Ignore);
+                qResult = new QueryResult { hasHit = hit, hit = hit ? _hitInfo : default };
+                cache.Set(_ray, effectiveReach, (int)interactableMask, qResult);
+            }
+            else
+            {
+                _hitInfo = qResult.hit;
+            }
+
+            if (qResult.hasHit)
+            {
+                if (qResult.hit.collider.TryGetComponent(out IInteractable interactable))
                 {
                     if (ReferenceEquals(interactable, _currentHovered))
                         return;

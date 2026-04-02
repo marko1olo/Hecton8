@@ -16,7 +16,6 @@ GameObject:
   - component: {fileID: 9079297290110143596}
   - component: {fileID: 4480347836946963800}
   - component: {fileID: 3941918104802718226}
-  - component: {fileID: 8839750873754648490}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -39,6 +38,7 @@ Transform:
   m_Children:
   - {fileID: 8195025464374568172}
   - {fileID: 4682786218128819181}
+  - {fileID: 8691835576943467737}
   m_Father: {fileID: 2516292804375615598}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &2887721374667799330
@@ -50,7 +50,7 @@ Camera:
   m_GameObject: {fileID: 2193605564943894971}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 4
   m_BackGroundColor: {r: 0.056781795, g: 0.28103197, b: 0.41509444, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -80,7 +80,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 191
+    m_Bits: 262335
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -308,68 +308,6 @@ MonoBehaviour:
   maxVignetteIntensity: 0.35
   recoverySpeed: 4
   holdDuration: 0.08
---- !u!114 &8839750873754648490
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 183f78654e3ec0c41b80a693b6de37b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUD_v4
-  useCullingMasks: 0
-  hudCamera: {fileID: 2887721374667799330}
-  hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
-  survival: {fileID: 9217988090672240742}
-  playerMovement: {fileID: 4126722323519124583}
-  flashlight: {fileID: 0}
-  underwaterVisuals: {fileID: 0}
-  defaultHudProfile: {fileID: 11400000, guid: afa020d643a1d0c4ca083efa623f8308, type: 2}
-  primaryColor: {r: 0.48, g: 1, b: 0.94, a: 1}
-  secondaryColor: {r: 0.18, g: 0.74, b: 0.66, a: 0.62}
-  dimColor: {r: 0.74, g: 1, b: 0.94, a: 0.28}
-  warningColor: {r: 1, g: 0.76, b: 0.24, a: 1}
-  criticalColor: {r: 1, g: 0.36, b: 0.18, a: 1}
-  glassGlowColor: {r: 0.26, g: 1, b: 0.84, a: 0.14}
-  lineThickness: 1.6
-  thinLine: 1
-  gaugeRadius: 42
-  gaugeThickness: 5
-  gaugeSpacing: 88
-  bottomOffset: 92
-  leftOffset: 82
-  rightOffset: 58
-  useVisorSafeArea: 1
-  visorSafeMarginX: 0.18
-  visorSafeMarginY: 0.15
-  visorSafeRadialLimit: 0.82
-  coldSurfaceTemp: 13.5
-  abyssTemp: 2.4
-  abyssReferenceDepth: 1450
-  tempSmoothing: 4
-  masterAlpha: 1.1
-  visorTintStrength: 0.08
-  edgeGlowStrength: 0.16
-  bootSequenceDuration: 2.8
-  _debugOxygenPct: 0
-  _debugPowerPct: 0
-  _debugHealthPct: 0
-  _debugDepthMeters: 0
-  _debugTemperature: 9.855774
-  _debugFlashlightOn: 0
-  _debugPdaOpen: 0
-  _debugDrawCallCount: 20761
-  _debugMatchedDrawCallCount: 3449
-  _debugRejectedDrawCallCount: 17312
-  _debugLastRenderedFrame: 5486
-  _debugLastRenderCameraId: -790074
-  _debugLastMatchedCameraId: 117800
-  _debugCameraMatched: 0
-  _debugForceVisibilityProbe: 1
-  _debugProbeOpacity: 0.92
 --- !u!1 &5129315572005764086
 GameObject:
   m_ObjectHideFlags: 0
@@ -586,6 +524,23 @@ GameObject:
   - component: {fileID: 3954223694506301739}
   - component: {fileID: 8889624962428220854}
   - component: {fileID: 1176052483651863644}
+  - component: {fileID: 3371836465853191098}
+  - component: {fileID: 6761570206243547513}
+  - component: {fileID: 5504917601675018705}
+  - component: {fileID: 533655622894388290}
+  - component: {fileID: 5524661116298737230}
+  - component: {fileID: 1539808072678103349}
+  - component: {fileID: 4191344839043985569}
+  - component: {fileID: 4656932134778068554}
+  - component: {fileID: 857534350306462743}
+  - component: {fileID: 8731192099951809429}
+  - component: {fileID: 4619971454044554607}
+  - component: {fileID: 7830577294006793524}
+  - component: {fileID: 2326622526001841543}
+  - component: {fileID: 8520377445789091778}
+  - component: {fileID: 1023361912689161536}
+  - component: {fileID: 6308054762889959174}
+  - component: {fileID: 3915202389596888619}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -742,9 +697,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d480f5510764cb74982243ff9d0a6dbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.BuoyancyObject
+  profile: {fileID: 0}
+  autoApplyProfile: 1
   density: 1000
   volume: 0.001
   height: 0.3
+  currentResponse: 1
+  surfaceStability: 0.75
+  lodBias: 1
+  allowDistanceLod: 1
   groundCheckInterval: 3
   groundCheckDistance: 1
   groundLayers:
@@ -765,10 +726,10 @@ MonoBehaviour:
   handAnchor: {fileID: 4682786218128819181}
   playerInventory: {fileID: 8889624962428220854}
   toolPrefabs:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
+  - {fileID: 3486443233350383320, guid: 5d922653eb929b94e9882b6e241eefa9, type: 3}
+  - {fileID: 493671988579274469, guid: 93bb5a6d42216914abf2e747410b61b1, type: 3}
+  - {fileID: 5076310524989112150, guid: 9ca050d6528fee3448cf92682aff30f2, type: 3}
   knownToolPrefabs:
   - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
   - {fileID: 3486443233350383320, guid: 5d922653eb929b94e9882b6e241eefa9, type: 3}
@@ -782,6 +743,9 @@ MonoBehaviour:
   - {fileID: 4272986197542876413, guid: 3fe44b7eed0229040aa15c0270b92326, type: 3}
   - {fileID: 2166434716932352637, guid: 8aba6c744939ce54ab4d6ed98e920b77, type: 3}
   - {fileID: 4612592341407459497, guid: 5d4c7102c6623d842a18e690fd88ea2e, type: 3}
+  warmupAssignedToolPoolsOnEnable: 1
+  toolPoolWarmupCount: 1
+  constructionGhostWarmupCount: 1
   swapSpeed: 8
   lowerOffset: {x: 0, y: -0.5, z: 0}
   _debugCurrentSlot: -1
@@ -802,7 +766,7 @@ MonoBehaviour:
   columns: 8
   rows: 6
   survival: {fileID: 9217988090672240742}
-  itemCatalog: {fileID: 0}
+  itemCatalog: {fileID: 11400000, guid: e3e4f9b6922abcc44b85e1d8a6d8f46c, type: 2}
 --- !u!136 &1176052483651863644
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -826,6 +790,451 @@ CapsuleCollider:
   m_Height: 1.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &3371836465853191098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e90bad476ef07a4e9aab19dd3bdc59a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.UI.PlayerPDA
+  pdaPanel: {fileID: 0}
+  pdaCanvasGroup: {fileID: 0}
+  tabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  survivalSystem: {fileID: 9217988090672240742}
+  defaultTab: 0
+  fadeSpeed: 5
+  enableBatteryDrain: 1
+  batteryDrainRate: 0.5
+  lowBatteryThreshold: 5
+  enableTabHistory: 1
+  openSound: {fileID: 8300000, guid: e4cd905e355be6c4eadf8ff9a6b8aff6, type: 3}
+  closeSound: {fileID: 8300000, guid: 1c435bf08460e9a4eb733ac067520435, type: 3}
+  tabSwitchSound: {fileID: 8300000, guid: c1c5616d9797e3440b9ef52131f1c3e0, type: 3}
+  lowBatterySound: {fileID: 8300000, guid: e4cd905e355be6c4eadf8ff9a6b8aff6, type: 3}
+  audioVolume: 0.6
+  _debugIsOpen: 0
+  _debugActiveTab: -1
+  _debugOpenDuration: 0
+  _debugCurrentAlpha: 0
+  _debugBatteryDrainAccum: 0
+  _debugTabHistoryDepth: 0
+--- !u!114 &6761570206243547513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a85f4901312cfd84d965c5716dab8009, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.PlayerFlashlight
+  flashlightLight: {fileID: 2802120109601820515}
+  survivalSystem: {fileID: 9217988090672240742}
+  onByDefault: 0
+  baseIntensity: 3.2
+  transitionSpeed: 8
+  defaultBeamMode: 0
+  enableBatteryDrain: 1
+  batteryDrainRate: 0.2
+  lowBatteryThreshold: 10
+  enableHeatBuildup: 1
+  overheatTime: 120
+  cooldownRate: 0.5
+  flickerHeatThreshold: 0.7
+  overheatCooldownPeriod: 10
+  flickerMinIntensity: 0.3
+  flickerFrequency: 10
+  toggleOnSound: {fileID: 0}
+  toggleOffSound: {fileID: 0}
+  lowBatterySound: {fileID: 0}
+  overheatSound: {fileID: 0}
+  audioVolume: 0.5
+  volumetricBeam: {fileID: 0}
+  _debugIsOn: 0
+  _debugCurrentIntensity: 0
+  _debugHeatLevel: 0
+  _debugBatteryDrainAccum: 0
+  _debugIsFlickering: 0
+  _debugIsOverheated: 0
+  _debugCooldownRemaining: 0
+--- !u!114 &5504917601675018705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57a1749681a46854585001efc12f1034, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.ToolLoadoutProvisioner
+  playerInventory: {fileID: 8889624962428220854}
+  toolManager: {fileID: 3954223694506301739}
+  provisionInventoryOnStart: 1
+  assignCoreLoadoutOnStart: 1
+  holsterBeforeAssigning: 1
+  provisionConstructionMaterialsOnStart: 1
+  startupPreset: {fileID: 0}
+  coreQuickSlotPrefabs:
+  - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
+  - {fileID: 3486443233350383320, guid: 5d922653eb929b94e9882b6e241eefa9, type: 3}
+  - {fileID: 493671988579274469, guid: 93bb5a6d42216914abf2e747410b61b1, type: 3}
+  - {fileID: 5076310524989112150, guid: 9ca050d6528fee3448cf92682aff30f2, type: 3}
+  allToolItems:
+  - {fileID: 11400000, guid: 924f3f93fb7dd5146bdcdb0da71c7b19, type: 2}
+  - {fileID: 11400000, guid: b7348927f9bf50f49a10a940fad34081, type: 2}
+  - {fileID: 11400000, guid: 297ef47c9aa836f4389d8bfd135c94be, type: 2}
+  - {fileID: 11400000, guid: d8fcb47bfb390ba419cca007a7dcabb4, type: 2}
+  - {fileID: 11400000, guid: 2b9ecc74c262da64da17563638a017c1, type: 2}
+  - {fileID: 11400000, guid: 80236d2aa35d0814782b8cd7b3a0ebcc, type: 2}
+  - {fileID: 11400000, guid: 0b4ba642bbd13cc4e909b28a175a8e1b, type: 2}
+  - {fileID: 11400000, guid: 4846ebe52601fe541b8359ee47eae89a, type: 2}
+  - {fileID: 11400000, guid: a2439d90148d25c42a60223a0da9d505, type: 2}
+  - {fileID: 11400000, guid: 4fbd2a228f3f01d48a034fe0a9715333, type: 2}
+  - {fileID: 11400000, guid: 3e2e240b485c95542b2065beeabfa98f, type: 2}
+  - {fileID: 11400000, guid: 06eaf0cc1d3b75a448b18b1b0dfa38c5, type: 2}
+  starterConstructionItems:
+  - {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  starterConstructionAmounts: 0c000000
+--- !u!114 &533655622894388290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5561a79656a695549bd21d17b0346a77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.ToolRuntimeSmokeTester
+  toolManager: {fileID: 3954223694506301739}
+  playerInventory: {fileID: 8889624962428220854}
+  runOnStart: 0
+  restoreOriginalLoadout: 1
+  startupDelay: 0.75
+  equipTimeout: 1.25
+  settleDelay: 0.2
+  betweenToolsDelay: 0.1
+  simulatedDeltaTime: 0.1
+  verboseLogging: 0
+  heldToolPrefabs:
+  - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
+  - {fileID: 3486443233350383320, guid: 5d922653eb929b94e9882b6e241eefa9, type: 3}
+  - {fileID: 493671988579274469, guid: 93bb5a6d42216914abf2e747410b61b1, type: 3}
+  - {fileID: 5076310524989112150, guid: 9ca050d6528fee3448cf92682aff30f2, type: 3}
+  - {fileID: 6454695462912670554, guid: cd122cc810f53fb4e943bcca187c5735, type: 3}
+  - {fileID: 1883046840169899827, guid: 5dc3c28d8d02bdd4e85ce79380a857df, type: 3}
+  - {fileID: 6564105744471423693, guid: f57d76c5db394a34aa52a3e94785f1de, type: 3}
+  - {fileID: 3322295463934918442, guid: cd9a43bda1d7a2740b47629d54731c97, type: 3}
+  - {fileID: 7743704587066382820, guid: 6c238274f01396e4abf84994c62699e5, type: 3}
+  - {fileID: 4272986197542876413, guid: 3fe44b7eed0229040aa15c0270b92326, type: 3}
+  - {fileID: 2166434716932352637, guid: 8aba6c744939ce54ab4d6ed98e920b77, type: 3}
+  - {fileID: 4612592341407459497, guid: 5d4c7102c6623d842a18e690fd88ea2e, type: 3}
+  _debugPassCount: 0
+  _debugFailCount: 0
+  _debugLastIssue: 
+  _debugLastToolName: None
+  _debugLastPass: 0
+--- !u!114 &5524661116298737230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52f20a4de3f9ffe4c8be741f8050535a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.UI.SuitAdvisoryController
+  survival: {fileID: 0}
+  hudNotification: {fileID: 0}
+  oxygenWarningThreshold: 0.35
+  oxygenCriticalThreshold: 0.15
+  energyWarningThreshold: 0.25
+  integrityWarningThreshold: 0.35
+  integrityCriticalThreshold: 0.18
+  safeDepthWarningMargin: 20
+  safeDepthCriticalMargin: 6
+  resetHysteresis: 0.06
+  warningClip: {fileID: 0}
+  criticalClip: {fileID: 0}
+  uiVolume: 0.45
+--- !u!114 &1539808072678103349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3eca1e949a2753d40adefdd8190745ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.PlayerBuilder
+  _toolData: {fileID: 0}
+  _toolMetadata: {fileID: 0}
+  enableDurabilityDrain: 1
+  enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  inventory: {fileID: 0}
+  playerCamera: {fileID: 0}
+  buildAnchor: {fileID: 0}
+  hudNotification: {fileID: 0}
+  activeBuildable: {fileID: 11400000, guid: fa3ca23ae9a17394da4887b3b8968a6a, type: 2}
+  autoResolveCatalogSelection: 1
+  buildDistance: 8
+  ghostFollowSpeed: 12
+  surfaceMask:
+    serializedVersion: 2
+    m_Bits: 1048575
+  rotationStep: 90
+  builderDebugLogging: 0
+  snapRadius: 2
+  unsnapRadius: 2.5
+  socketLayerMask:
+    serializedVersion: 2
+    m_Bits: 524288
+  snapSpeed: 20
+  buildSound: {fileID: 0}
+  errorSound: {fileID: 0}
+  rotateSound: {fileID: 0}
+  snapSound: {fileID: 0}
+--- !u!114 &4191344839043985569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f7f581132be125429fabca35db5305a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.BuilderRuntimeSmokeTester
+  playerBuilder: {fileID: 1539808072678103349}
+  constructionManager: {fileID: 0}
+  playerInventory: {fileID: 8889624962428220854}
+  loadoutProvisioner: {fileID: 5504917601675018705}
+  runOnStart: 0
+  provisionConstructionMaterials: 1
+  consumeBuildCostOnDeploy: 1
+  startupDelay: 0
+  recoverDelay: 0
+  verboseLogging: 0
+  forwardDistance: 4.5
+  verticalOffset: -1.25
+  lateralStep: 2.25
+  depthStep: 1.5
+--- !u!114 &4656932134778068554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70eb835208d2ab3419784e2cb8434f41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.UIRuntimeSmokeTester
+  playerPDA: {fileID: 3371836465853191098}
+  pauseMenu: {fileID: 0}
+  constructionTab: {fileID: 0}
+  toolManager: {fileID: 3954223694506301739}
+  runOnStart: 0
+  startupDelay: 0.5
+  actionTimeout: 1.25
+  settleDelay: 0.1
+  verboseLogging: 0
+--- !u!114 &857534350306462743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a7ecb1e01c93d04986322eb3a666462, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.ScanLogSystem
+  maxTrackedEntries: 128
+  maxRecentEntries: 6
+--- !u!114 &8731192099951809429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31d928f0ec68f204098e0bc1365c9f79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.ScanRuntimeSmokeTester
+  toolManager: {fileID: 3954223694506301739}
+  scanLogSystem: {fileID: 857534350306462743}
+  probeTarget: {fileID: 0}
+  playerRoot: {fileID: 2516292804375615598}
+  runOnStart: 0
+  startupDelay: 0.75
+  actionTimeout: 1.5
+  settleDelay: 0.15
+  verboseLogging: 0
+--- !u!114 &4619971454044554607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3dd5f59b2a11014fb09336bc2d5354d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.FieldToolRuntimeSmokeTester
+  toolManager: {fileID: 3954223694506301739}
+  playerInventory: {fileID: 8889624962428220854}
+  playerBuilder: {fileID: 1539808072678103349}
+  constructionManager: {fileID: 0}
+  loadoutProvisioner: {fileID: 5504917601675018705}
+  salvageProbeItem: {fileID: 11400000, guid: b7348927f9bf50f49a10a940fad34081, type: 2}
+  runOnStart: 0
+  startupDelay: 0
+  equipTimeout: 1.25
+  settleDelay: 0.2
+  salvageForwardDistance: 2.5
+  cutterForwardDistance: 4.5
+  verticalOffset: -1.1
+  verboseLogging: 0
+  _debugRunCount: 0
+  _debugLastPhase: Idle
+  _debugLastStep: 
+  _debugLastSalvagePass: 0
+  _debugLastCutterPass: 0
+  _debugLastIssue: 
+--- !u!114 &7830577294006793524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 677c0a3a68555af418db5779851129a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.PDAExchangeSystem
+  playerInventory: {fileID: 0}
+  scanLogSystem: {fileID: 0}
+  hudNotification: {fileID: 0}
+  offerCatalog: {fileID: 11400000, guid: 5e5c752d4c4750f4dbca085d3d20150e, type: 2}
+--- !u!114 &2326622526001841543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d260c63250d8c34aa0763bdd864a403, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.BarterRuntimeSmokeTester
+  exchangeSystem: {fileID: 7830577294006793524}
+  playerInventory: {fileID: 8889624962428220854}
+  scanLogSystem: {fileID: 857534350306462743}
+  runOnStart: 0
+  startupDelay: 0
+  offerIndex: 0
+  verboseLogging: 0
+  _debugRunCount: 0
+  _debugLastPhase: Idle
+  _debugLastPass: 0
+  _debugLastIssue: 
+--- !u!114 &8520377445789091778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bda5fabb5af48d40a7cd8e56bcd1f47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.FieldOperationLogSystem
+  maxRecentEntries: 10
+  verboseLogging: 0
+--- !u!114 &1023361912689161536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc429959f92a913408237f15a2e6a8d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.BeaconNetworkSystem
+  maxTrackedBeacons: 24
+  defaultLabelPrefix: BEACON
+  verboseLogging: 0
+  beaconPrefab: {fileID: 0}
+--- !u!114 &6308054762889959174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 462fb2749dd02d140971364abbb631e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.ToolTrialRangeRuntimeSmokeTester
+  toolManager: {fileID: 3954223694506301739}
+  beaconNetwork: {fileID: 1023361912689161536}
+  playerRoot: {fileID: 2516292804375615598}
+  runOnStart: 0
+  startupDelay: 0.75
+  equipTimeout: 1.5
+  settleDelay: 0.15
+  verboseLogging: 0
+--- !u!114 &3915202389596888619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70230025c0e0b1248a0fa94fd8308b1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Debugging.FabricationRuntimeSmokeTester
+  runOnStart: 0
+  verboseLogging: 0
+  targetFabricatorName: Forward_Fabricator
+  targetRecipeName: Dive Flashlight
+  startupDelay: 0.75
+  completionPadding: 0.5
 --- !u!1 &6786399830664702900
 GameObject:
   m_ObjectHideFlags: 0
@@ -1027,7 +1436,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6170868172906761239
 Transform:
   m_ObjectHideFlags: 0
@@ -1036,13 +1445,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7083179055082406996}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.8, z: 0.2999878}
-  m_LocalScale: {x: 1, y: 1, z: 0.6}
+  m_LocalRotation: {x: -0.008726535, y: -0, z: -0, w: 0.9999619}
+  m_LocalPosition: {x: 0, y: 1.7998047, z: 0.2000122}
+  m_LocalScale: {x: 2, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2516292804375615598}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 33.071, z: 0}
 --- !u!33 &2241469833112970620
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1058,7 +1467,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7083179055082406996}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -1128,7 +1537,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7083179055082406996}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: edaf5e3f44864434da5c1324285eb34e, type: 3}
   m_Name: 
@@ -1139,24 +1548,150 @@ MonoBehaviour:
   _referenceCamera: {fileID: 2887721374667799330}
   _sharedRenderTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
   _projectionMode: 1
-  _rtWidth: 1024
-  _rtHeight: 1024
+  _rtWidth: 1920
+  _rtHeight: 1080
   _filterMode: 1
-  _hudIntensity: 2.5
-  _hudTint: {r: 0.2, g: 1, b: 0.3, a: 1}
-  _scratchBleed: 0.8
-  _distortion: 0.02
-  _manualProjectionRender: 1
+  _hudIntensity: 5
+  _hudTint: {r: 0.66543734, g: 1, b: 0, a: 1}
+  _scratchBleed: 0.25
+  _distortion: 0.01
   _previewInEditMode: 1
   _syncToReferenceCamera: 1
-  _syncPoseInEditMode: 0
-  _visorLocalOffset: {x: 0, y: 0, z: 0.3}
-  _visorLocalEulerOffset: {x: 0, y: 0, z: 0}
-  _visorLocalScale: {x: 1, y: 1, z: 0.6}
+  _syncPoseInEditMode: 1
+  _visorLocalOffset: {x: 0, y: 0, z: 0.2}
+  _visorLocalEulerOffset: {x: -1, y: 0, z: 0}
+  _visorLocalScale: {x: 2, y: 0.5, z: 1}
   _hudCameraLocalOffset: {x: 0, y: 0, z: 0}
   _hudCameraLocalEulerOffset: {x: 0, y: 0, z: 0}
   _minimumVisorForwardOffset: 0.02
   _enforceNearClipSafeOffset: 0
+--- !u!1 &7319841547223980745
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8691835576943467737}
+  - component: {fileID: 2802120109601820515}
+  - component: {fileID: 3639884314710622818}
+  m_Layer: 0
+  m_Name: DiveLamp_Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8691835576943467737
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7319841547223980745}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.08}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 198848781283951679}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!108 &2802120109601820515
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7319841547223980745}
+  m_Enabled: 0
+  serializedVersion: 12
+  m_Type: 0
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 0
+  m_Range: 18
+  m_SpotAngle: 42
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!114 &3639884314710622818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7319841547223980745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &7338754024745434685
 GameObject:
   m_ObjectHideFlags: 0
@@ -1297,8 +1832,6 @@ GameObject:
   - component: {fileID: 9045556955369050131}
   - component: {fileID: 4738717749101629275}
   - component: {fileID: 2417417034809354582}
-  - component: {fileID: 7685304760766666158}
-  - component: {fileID: 6316095183516097212}
   - component: {fileID: 6023419987654321091}
   - component: {fileID: 7485984485082269955}
   m_Layer: 6
@@ -1307,7 +1840,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &9045556955369050131
 Transform:
   m_ObjectHideFlags: 0
@@ -1317,7 +1850,7 @@ Transform:
   m_GameObject: {fileID: 7350136928691967875}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.8, z: 0}
+  m_LocalPosition: {x: 0, y: 1.7998047, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1330,7 +1863,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7350136928691967875}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
@@ -1364,7 +1897,7 @@ Camera:
     serializedVersion: 2
     m_Bits: 131072
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
+  m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
@@ -1418,111 +1951,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!114 &7685304760766666158
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7350136928691967875}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d4b45afee6f39c41bb282d2da1041b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUD
-  useCullingMasks: 0
-  survival: {fileID: 9217988090672240742}
-  hudCamera: {fileID: 4738717749101629275}
-  hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
-  normalColor: {r: 0, g: 0.898, b: 1, a: 1}
-  warningColor: {r: 1, g: 0.878, b: 0, a: 1}
-  criticalColor: {r: 1, g: 0.384, b: 0, a: 1}
-  frameColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
-  gridColor: {r: 0, g: 0.5, b: 0.7, a: 0.15}
-  depthScaleColor: {r: 0, g: 0.8, b: 1, a: 0.4}
-  textDimColor: {r: 0, g: 0.7, b: 0.9, a: 0.5}
-  bgPanelColor: {r: 0, g: 0.05, b: 0.1, a: 0.25}
-  modulePoweredColor: {r: 0, g: 1, b: 0.4, a: 1}
-  moduleFloodedColor: {r: 0.2, g: 0.5, b: 1, a: 1}
-  moduleOfflineColor: {r: 1, g: 0.384, b: 0, a: 1}
-  moduleNeutralColor: {r: 0, g: 0.6, b: 0.8, a: 0.6}
-  lineThickness: 1.5
-  thinLine: 1
-  fontSize: 14
-  fontSizeSmall: 10
-  fontSizeTiny: 8
-  arcRadius: 38
-  arcThickness: 4
-  arcSpacing: 90
-  pulsePeriod: 1.2
-  noiseMinInterval: 5
-  noiseMaxInterval: 10
-  noiseDuration: 0.1
-  promptBracketHalfW: 120
-  promptBracketHalfH: 26
-  promptBracketArm: 18
---- !u!114 &6316095183516097212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7350136928691967875}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 183f78654e3ec0c41b80a693b6de37b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUD_v4
-  useCullingMasks: 0
-  hudCamera: {fileID: 4738717749101629275}
-  hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
-  survival: {fileID: 9217988090672240742}
-  playerMovement: {fileID: 4126722323519124583}
-  flashlight: {fileID: 0}
-  underwaterVisuals: {fileID: 0}
-  defaultHudProfile: {fileID: 11400000, guid: afa020d643a1d0c4ca083efa623f8308, type: 2}
-  primaryColor: {r: 0.48, g: 1, b: 0.94, a: 1}
-  secondaryColor: {r: 0.18, g: 0.74, b: 0.66, a: 0.62}
-  dimColor: {r: 0.74, g: 1, b: 0.94, a: 0.28}
-  warningColor: {r: 1, g: 0.76, b: 0.24, a: 1}
-  criticalColor: {r: 1, g: 0.36, b: 0.18, a: 1}
-  glassGlowColor: {r: 0.26, g: 1, b: 0.84, a: 0.14}
-  lineThickness: 1.6
-  thinLine: 1
-  gaugeRadius: 42
-  gaugeThickness: 5
-  gaugeSpacing: 88
-  bottomOffset: 92
-  leftOffset: 82
-  rightOffset: 58
-  useVisorSafeArea: 1
-  visorSafeMarginX: 0.18
-  visorSafeMarginY: 0.15
-  visorSafeRadialLimit: 0.82
-  coldSurfaceTemp: 13.5
-  abyssTemp: 2.4
-  abyssReferenceDepth: 1450
-  tempSmoothing: 4
-  masterAlpha: 1.1
-  visorTintStrength: 0.08
-  edgeGlowStrength: 0.16
-  bootSequenceDuration: 2.8
-  _debugOxygenPct: 0
-  _debugPowerPct: 0
-  _debugHealthPct: 0
-  _debugDepthMeters: 0
-  _debugTemperature: 1.6000011
-  _debugFlashlightOn: 0
-  _debugPdaOpen: 0
-  _debugDrawCallCount: 12869
-  _debugMatchedDrawCallCount: 176
-  _debugRejectedDrawCallCount: 11768
-  _debugLastRenderedFrame: 1
-  _debugLastRenderCameraId: -818046
-  _debugLastMatchedCameraId: 117800
-  _debugCameraMatched: 0
-  _debugForceVisibilityProbe: 1
-  _debugProbeOpacity: 0.92
 --- !u!114 &6023419987654321091
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1535,11 +1963,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3326f90608010d64d95faa9a9216de96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HectonSuitHUDExtensions
+  useCullingMasks: 0
   hudCamera: {fileID: 4738717749101629275}
   hudFont: {fileID: 11400000, guid: eee8f454c9e5b0c49afb5f180b1310ef, type: 2}
   flashlight: {fileID: 0}
   toolManager: {fileID: 3954223694506301739}
-  primaryHud: {fileID: 6316095183516097212}
+  primaryHud: {fileID: 0}
   canvasOverlay: {fileID: 0}
   normalColor: {r: 0, g: 0.898, b: 1, a: 1}
   warningColor: {r: 1, g: 0.878, b: 0, a: 1}
@@ -1566,15 +1995,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7350136928691967875}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 413d0a43e93c5564da334e37d575591c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NASAPunk.Visor.SuitHUDPresentationController
   presentationMode: 2
-  legacyHud: {fileID: 7685304760766666158}
-  overlayModernHud: {fileID: 8839750873754648490}
-  projectedModernHud: {fileID: 6316095183516097212}
+  overlayModernHud: {fileID: 0}
+  projectedModernHud: {fileID: 0}
   visorController: {fileID: 7392659766808570678}
   standardFallbackProfile: {fileID: 11400000, guid: afa020d643a1d0c4ca083efa623f8308, type: 2}
   sharedProjectionTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
@@ -1584,12 +2012,10 @@ MonoBehaviour:
   projectionSourceOverlay: {fileID: 0}
   screenCompositor: {fileID: 0}
   suppressOverlaysInProjectedMode: 1
-  previewProjectedSourceOnScreen: 1
+  previewProjectedSourceOnScreen: 0
   preferCanvasProjectionSource: 1
   syncProjectionLayoutFromOverlay: 0
-  suppressAllLegacyHudInScene: 1
   debugAppliedModeLabel: ModernProjectedSharedRT
-  debugLegacyEnabled: 0
-  debugModernEnabled: 1
+  debugModernEnabled: 0
   debugProjectedModeActive: 1
-  debugOverlaysSuppressed: 0
+  debugOverlaysSuppressed: 1

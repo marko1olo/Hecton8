@@ -189,9 +189,11 @@ namespace Hecton8.Gameplay
         private void HandleTemperature(float dt)
         {
             var atmosphere = HectonAtmosphereManager.Instance;
-            if (atmosphere == null) return;
+            float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
             
-            float currentTemp = atmosphere.CurrentTemperature;
+            // Add local heat sources
+            float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
+            float currentTemp = baseTemp + localHeat;
 
             float excess = 0f;
             if (currentTemp < stats.MinSafeTemp)
@@ -220,9 +222,11 @@ namespace Hecton8.Gameplay
         private void HandleRadiation(float dt)
         {
             var atmosphere = HectonAtmosphereManager.Instance;
-            if (atmosphere == null) return;
-            
-            float currentRad = atmosphere.CurrentRadiation;
+            float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
+
+            // Add local radiation sources
+            float localRad = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Radiation);
+            float currentRad = baseRad + localRad;
 
             if (currentRad <= stats.RadiationThreshold)
             {
@@ -277,21 +281,23 @@ namespace Hecton8.Gameplay
             }
 
             var atmosphere = HectonAtmosphereManager.Instance;
-            if (atmosphere != null)
+            
+            // Temperature Publishing (Atmosphere + Local)
+            float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
+            float totalTemp = baseTemp + HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
+            if (math.abs(totalTemp - lastPubTemp) > Epsilon)
             {
-                float currentTemp = atmosphere.CurrentTemperature;
-                if (math.abs(currentTemp - lastPubTemp) > Epsilon)
-                {
-                    lastPubTemp = currentTemp;
-                    OnTemperatureChanged?.Invoke(currentTemp);
-                }
+                lastPubTemp = totalTemp;
+                OnTemperatureChanged?.Invoke(totalTemp);
+            }
 
-                float currentRad = atmosphere.CurrentRadiation;
-                if (math.abs(currentRad - lastPubRad) > Epsilon)
-                {
-                    lastPubRad = currentRad;
-                    OnRadiationChanged?.Invoke(currentRad);
-                }
+            // Radiation Publishing (Atmosphere + Local)
+            float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
+            float totalRad = baseRad + HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Radiation);
+            if (math.abs(totalRad - lastPubRad) > Epsilon)
+            {
+                lastPubRad = totalRad;
+                OnRadiationChanged?.Invoke(totalRad);
             }
         }
 

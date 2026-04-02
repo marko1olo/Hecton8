@@ -1108,20 +1108,27 @@ namespace Hecton8.AI
 
         private void HandleEnvironmentalHazards()
         {
-            HectonAtmosphereManager atmosphere = HectonAtmosphereManager.Instance;
-            if (atmosphere == null) return;
+            var atmosphere = HectonAtmosphereManager.Instance;
+            float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
+            float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
+
+            // Считываем локальные источники (радиация, тепло) из реестра (Zero-GC)
+            float localRad = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Radiation);
+            float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
+
+            float totalRad = baseRad + localRad;
+            float totalTemp = baseTemp + localHeat;
 
             bool takenDamage = false;
 
             // 1. Радиация
-            if (!radAdapted && atmosphere.CurrentRadiation > radiationThreshold)
+            if (!radAdapted && totalRad > radiationThreshold)
             {
                 takenDamage = true;
             }
 
             // 2. Температура
-            float currentTemperature = atmosphere.CurrentTemperature;
-            if (!thermalAdapted && (currentTemperature < minSafeTemp || currentTemperature > maxSafeTemp))
+            if (!thermalAdapted && (totalTemp < minSafeTemp || totalTemp > maxSafeTemp))
             {
                 takenDamage = true;
             }

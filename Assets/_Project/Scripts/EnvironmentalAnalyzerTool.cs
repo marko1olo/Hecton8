@@ -291,7 +291,7 @@ namespace Hecton8.Gameplay
             }
 
             return new AnalyzerAssessment(
-                $"UNCLASSIFIED | {collider.gameObject.name.ToUpperInvariant()} | RANGE {hit.distance:0.0} M",
+                $"UNCLASSIFIED | {CachedToUpperInvariant(collider.gameObject.name)} | RANGE {hit.distance:0.0} M",
                 "Signature does not match a known expedition profile.",
                 "WARN",
                 "Analyzer",
@@ -743,7 +743,7 @@ namespace Hecton8.Gameplay
             }
 
             return new AnalyzerAssessment(
-                $"BIOFORM {ai.CurrentState.ToString().ToUpperInvariant()} | HP {healthPercent:0}% | RANGE {distance:0.0} M",
+                $"BIOFORM {CachedToUpperInvariant(ai.CurrentState.ToString())} | HP {healthPercent:0}% | RANGE {distance:0.0} M",
                 summary,
                 severity,
                 "Bioform",
@@ -769,6 +769,34 @@ namespace Hecton8.Gameplay
             }
 
             notification.ShowInfo(message);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ZERO-GC STRING CACHING
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        /// <summary>
+        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
+        /// Хранит до 16 последних преобразований для повторного использования.
+        /// </summary>
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
         }
     }
 }

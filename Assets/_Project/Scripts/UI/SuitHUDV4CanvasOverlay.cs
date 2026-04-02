@@ -1,5 +1,6 @@
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,12 +14,29 @@ namespace Hecton8.UI
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable
     {
         public enum RenderPath
         {
             ScreenOverlay,
             ProjectionSource
+        }
+
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            int hash = input.GetHashCode() & 0xF;
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
         }
 
         private const int LayoutRevision = 12;
@@ -110,6 +128,7 @@ namespace Hecton8.UI
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
         private float _nextAutoResolveAt;
+        private bool _tickRegistered;
 
         private struct GaugeRefs
         {
@@ -127,20 +146,34 @@ namespace Hecton8.UI
         {
             _layoutBuilt = false;
             RefreshAll(0.016f, forceResolve: true);
+            TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
         {
+            UnregisterRuntimeTick();
+
             if (_root != null)
                 _root.gameObject.SetActive(false);
         }
 
         private void Update()
         {
-            if (!Application.isPlaying && !keepVisibleInEditMode)
+            if (Application.isPlaying)
+            {
+                TryRegisterRuntimeTick();
+                return;
+            }
+
+            if (!keepVisibleInEditMode)
                 return;
 
-            RefreshAll(Application.isPlaying ? Time.deltaTime : 0.016f, forceResolve: false);
+            RefreshAll(0.016f, forceResolve: false);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            RefreshAll(deltaTime, forceResolve: false);
         }
 
         private void RefreshAll(float dt, bool forceResolve)
@@ -259,10 +292,6 @@ namespace Hecton8.UI
                 scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 0.5f;
             }
-
-            HectonSuitHUD legacyHud = targetCanvas.GetComponent<HectonSuitHUD>();
-            if (legacyHud != null)
-                legacyHud.enabled = false;
 
         }
 
@@ -555,10 +584,10 @@ namespace Hecton8.UI
         private string ResolveSuitLabel()
         {
             if (_activeProfile != null && !string.IsNullOrWhiteSpace(_activeProfile.DisplayNameOverride))
-                return _activeProfile.DisplayNameOverride.ToUpperInvariant();
+                return CachedToUpperInvariant(_activeProfile.DisplayNameOverride);
 
             if (_activeSuit != null)
-                return _activeSuit.name.Replace('_', ' ').ToUpperInvariant();
+                return CachedToUpperInvariant(_activeSuit.name.Replace('_', ' '));
 
             return "EXPEDITION SUIT";
         }
@@ -1002,6 +1031,31 @@ namespace Hecton8.UI
             statusOffset = source.statusOffset;
             reticleOffset = source.reticleOffset;
             _layoutBuilt = false;
+        }
+
+        private void TryRegisterRuntimeTick()
+        {
+            if (!Application.isPlaying || _tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterRuntimeTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
         }
     }
 }

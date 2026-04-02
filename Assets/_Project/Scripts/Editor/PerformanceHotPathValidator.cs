@@ -67,7 +67,6 @@ namespace Hecton8.EditorTools
             "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
             "Assets/_Project/Scripts/HUDNotification.cs",
             "Assets/_Project/Scripts/HUDQuickBar.cs",
-            "Assets/_Project/Scripts/HectonSuitHUD.cs",
             "Assets/_Project/Scripts/HectonSuitHUD_v4.cs",
             "Assets/_Project/Scripts/HectonSuitHUDExtensions.cs",
             "Assets/_Project/Scripts/RuntimePerformanceProfiler.cs",

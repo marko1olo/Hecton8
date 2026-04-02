@@ -40,6 +40,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private float verticalOffset = -1.1f;
         [SerializeField] private bool verboseLogging = false;
 
+        // Inspector-only smoke diagnostics for manual field tool validation.
+#pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private int _debugRunCount;
         [SerializeField] private string _debugLastPhase = "Idle";
@@ -47,6 +49,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugLastSalvagePass;
         [SerializeField] private bool _debugLastCutterPass;
         [SerializeField] private string _debugLastIssue = string.Empty;
+#pragma warning restore CS0414
 
         private bool _isRunning;
 

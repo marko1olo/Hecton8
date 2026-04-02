@@ -144,7 +144,7 @@ namespace Hecton8.World
                     if (candidateSocket == null)
                         continue;
 
-                    WorldZoneAnchor candidateZone = candidateSocket.GetComponentInParent<WorldZoneAnchor>();
+                    WorldZoneAnchor candidateZone = candidateSocket.GetZoneAnchor();
                     PopulationSelection candidateSelection = FindPrimaryRule(candidateZone, candidateSocket, out int candidateMatchCount);
                     WorldPopulationRule candidateRule = candidateSelection.Rule;
                     if (candidateRule != null)
@@ -213,7 +213,7 @@ namespace Hecton8.World
 
             IReadOnlyList<WorldContentSocket> sockets = worldContentDirector.Sockets;
             WorldContentSocket best = null;
-            float bestDistance = float.MaxValue;
+            float bestDistanceSqr = float.MaxValue;
 
             for (int i = 0; i < sockets.Count; i++)
             {
@@ -221,14 +221,14 @@ namespace Hecton8.World
                 if (socket == null)
                     continue;
 
-                WorldZoneAnchor socketZone = socket.GetComponentInParent<WorldZoneAnchor>();
+                WorldZoneAnchor socketZone = socket.GetZoneAnchor();
                 if (socketZone == null || socketZone.ZoneId != zone.ZoneId)
                     continue;
 
-                float distance = socket.GetFlatDistance(playerTransform.position);
-                if (distance < bestDistance)
+                float distanceSqr = socket.GetFlatDistanceSquared(playerTransform.position);
+                if (distanceSqr < bestDistanceSqr)
                 {
-                    bestDistance = distance;
+                    bestDistanceSqr = distanceSqr;
                     best = socket;
                 }
             }
@@ -254,21 +254,9 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-
-                if (player != null)
-                    playerTransform = player.transform;
-            }
-
-            if (worldZoneDirector == null)
-                worldZoneDirector = FindAnyObjectByType<WorldZoneDirector>();
-
-            if (worldContentDirector == null)
-                worldContentDirector = FindAnyObjectByType<WorldContentDirector>();
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldContentDirector);
         }
 
         private PopulationSelection FindPrimaryRule(WorldZoneAnchor zone, WorldContentSocket socket, out int matchedCount)

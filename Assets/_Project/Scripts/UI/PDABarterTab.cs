@@ -10,7 +10,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Barter Tab")]
-    public sealed class PDABarterTab : MonoBehaviour
+    public sealed class PDABarterTab : MonoBehaviour, ITickable
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -46,6 +46,7 @@ namespace Hecton8.UI
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
         private readonly StringBuilder _sb = new StringBuilder(512);
+        private bool _tickRegistered;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -88,19 +89,13 @@ namespace Hecton8.UI
             EnsureBuilt();
             Subscribe();
             RefreshAll(true);
+            EvaluateTickRegistration();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
-        }
-
-        private void Update()
-        {
-            if (!IsTabActive || Time.unscaledTime < _nextRefreshAt)
-                return;
-
-            RefreshAll(false);
+            UnregisterTick();
         }
 
         private void AutoResolve()
@@ -124,6 +119,7 @@ namespace Hecton8.UI
             if (exchangeSystem != null)
                 exchangeSystem.ExchangeStateChanged += HandleExchangeStateChanged;
             PDAEvents.OnOpened += HandlePdaOpened;
+            PDAEvents.OnClosed += HandlePdaClosed;
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
         }
 
@@ -132,21 +128,59 @@ namespace Hecton8.UI
             if (exchangeSystem != null)
                 exchangeSystem.ExchangeStateChanged -= HandleExchangeStateChanged;
             PDAEvents.OnOpened -= HandlePdaOpened;
+            PDAEvents.OnClosed -= HandlePdaClosed;
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
         }
 
-        private void HandleExchangeStateChanged() => RefreshAll(true);
+        private void HandleExchangeStateChanged()
+        {
+            if (IsTabActive)
+                RefreshAll(true);
+        }
 
         private void HandlePdaOpened(int tab)
         {
             if (tab == barterTabIndex)
+            {
                 RefreshAll(true);
+                EvaluateTickRegistration();
+            }
+            else
+            {
+                UnregisterTick();
+            }
+        }
+
+        private void HandlePdaClosed(float _)
+        {
+            UnregisterTick();
         }
 
         private void HandlePdaTabChanged(int _, int newTab)
         {
             if (newTab == barterTabIndex)
+            {
                 RefreshAll(true);
+                EvaluateTickRegistration();
+            }
+            else
+            {
+                UnregisterTick();
+            }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsTabActive)
+            {
+                UnregisterTick();
+                return;
+            }
+
+            if (Time.unscaledTime < _nextRefreshAt)
+                return;
+
+            RefreshAll(false);
         }
 
         private void EnsureBuilt()
@@ -242,6 +276,49 @@ namespace Hecton8.UI
             _nextRefreshAt = Time.unscaledTime + refreshInterval;
             RefreshSummary();
             RefreshCards();
+        }
+
+        private void EvaluateTickRegistration()
+        {
+            if (!isActiveAndEnabled)
+            {
+                UnregisterTick();
+                return;
+            }
+
+            if (IsTabActive)
+            {
+                RegisterTick();
+            }
+            else
+            {
+                UnregisterTick();
+            }
+        }
+
+        private void RegisterTick()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
         }
 
         private void RefreshSummary()

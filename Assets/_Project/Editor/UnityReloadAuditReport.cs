@@ -22,7 +22,6 @@ namespace Hecton8.EditorTools
             "SuitHUDScreenCompositor",
             "SuitHUDPresentationController",
             "SuitHUDV4CanvasOverlay",
-            "HectonSuitHUD",
             "HectonSuitHUD_v4",
             "HectonSuitHUDExtensions",
         };

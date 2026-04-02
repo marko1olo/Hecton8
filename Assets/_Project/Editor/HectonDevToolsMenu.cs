@@ -550,8 +550,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            Selection.activeObject = tester.gameObject;
-            EditorGUIUtility.PingObject(tester.gameObject);
+            FocusDevRuntimeObject(tester.gameObject);
             Debug.Log("[Hecton Dev] Started world generative geology smoke pass.");
         }
 
@@ -580,8 +579,7 @@ namespace Hecton8.Editor
             }
 
             Debug.Log("[Hecton Dev] Geology smoke status: " + tester.DescribeStatus(), tester.gameObject);
-            Selection.activeObject = tester.gameObject;
-            EditorGUIUtility.PingObject(tester.gameObject);
+            FocusDevRuntimeObject(tester.gameObject);
         }
 
         [MenuItem(MenuRoot + "Scene/Log World Generative Geology Smoke Status (Play Mode)", true)]
@@ -707,8 +705,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            Selection.activeObject = tester.gameObject;
-            EditorGUIUtility.PingObject(tester.gameObject);
+            FocusDevRuntimeObject(tester.gameObject);
             Debug.Log("[Hecton Dev] Started tool runtime smoke pass.");
         }
 
@@ -736,8 +733,7 @@ namespace Hecton8.Editor
             }
 
             Debug.Log("[Hecton Dev] Tool smoke status: " + tester.DescribeStatus(), tester.gameObject);
-            Selection.activeObject = tester.gameObject;
-            EditorGUIUtility.PingObject(tester.gameObject);
+            FocusDevRuntimeObject(tester.gameObject);
         }
 
         [MenuItem(MenuRoot + "Scene/Log Tool Runtime Smoke Status (Play Mode)", true)]
@@ -835,6 +831,21 @@ namespace Hecton8.Editor
         public static bool RunToolSmokeWithOptimizationAuditValidate()
         {
             return EditorApplication.isPlaying;
+        }
+
+        private static void FocusDevRuntimeObject(UnityEngine.Object target)
+        {
+            if (target == null)
+                return;
+
+            // Runtime smoke helpers already appear as context objects in the console log.
+            // Avoid forcing editor selection during play mode while automation is driving
+            // the session, as this can destabilize MCP observation.
+            if (EditorApplication.isPlaying)
+                return;
+
+            Selection.activeObject = target;
+            EditorGUIUtility.PingObject(target);
         }
 
         private static Scene[] GetLoadedScenesSnapshot()

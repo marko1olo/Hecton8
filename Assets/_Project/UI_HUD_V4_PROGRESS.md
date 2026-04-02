@@ -19,19 +19,18 @@
   - `SpaceCamera` = `Base`
   - `Main Camera` = world `Overlay`
   - `HUD_Render_Camera` = HUD `Overlay`
-- `HUD_Render_Camera` currently has `HectonSuitHUD`.
-- `HUD_Render_Camera` also has `HectonSuitHUD_v4` and now a dedicated presentation orchestrator.
+- `HUD_Render_Camera` currently uses `SuitHUDPresentationController` plus `HectonSuitHUDExtensions`.
+- The actual active HUD path is `SuitHUDV4CanvasOverlay` + `SuitHUDPresentationController` + `VisorHUDController`.
 - `Suit_Visor` uses visor material/shader path and is the right long-term anchor for immersive projected HUD.
 - `RT_HUD_Display.renderTexture` already exists and is referenced by `Mat_Visor_Glass`.
 - `VisorHUDController` is attached to `Suit_Visor` in scene and prefab in safe `Disabled` projection mode.
 - `SuitHUDPresentationController` is now attached to `HUD_Render_Camera` in the active scene.
 - `SuitHUDPresentationController` is now also wired into `Assets/_Project/Prefabs/Player.prefab`.
-- Active scene state was normalized to:
-  - `presentationMode = ModernOverlay`
-  - standard fallback profile assigned
-  - shared visor RT assigned for future projected mode
-  - legacy `HectonSuitHUD` explicitly disabled in scene
-  - `ModernOverlay` now routes v4 back to `HUD_Render_Camera`, which is the correct host for this scene topology
+- Active scene state later moved beyond that baseline:
+  - legacy `HectonSuitHUD` has now been retired from the player stack
+  - `SuitHUDV4CanvasOverlay` is the active data/render source
+  - `SuitHUDPresentationController` orchestrates overlay vs projected delivery
+  - `VisorHUDController` remains the visor projection endpoint
 
 ## Design Goal
 
@@ -148,7 +147,7 @@ Temporary enterprise-safe approach:
 
 ## Next High-Value Steps
 
-1. Decide whether legacy `HectonSuitHUD` stays as a fallback-only component or is fully retired from the player stack.
+1. Legacy `HectonSuitHUD` is already retired from the player stack.
 2. Run visual verification in play mode for:
    - `ModernOverlay`
    - `ModernProjectedSharedRT`
@@ -178,7 +177,7 @@ Temporary enterprise-safe approach:
 
 - Do not revive `Suit_HUD_Canvas` as the primary path unless there is a very specific reason.
 - Favor `Shapes` for diegetic visor HUD.
-- Treat `HectonSuitHUD.cs` as stable fallback/reference and `HectonSuitHUD_v4.cs` as the future-facing visual prototype branch.
+- Treat the canvas/visor presentation stack as the current truth, not `HectonSuitHUD.cs`.
 - Before changing visor projection, verify whether `HUD_Render_Camera` should stay in the main camera stack or move fully to render-texture output.
 - Do not hardcode one universal telemetry set for all suits. Suit-specific reduction/expansion is now a core design requirement.
 

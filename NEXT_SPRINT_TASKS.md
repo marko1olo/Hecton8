@@ -29,7 +29,7 @@
 - [x] Verify placed modules now enter `ConstructionManager` registry and increase built-module count.
 - [x] Verify builder `Interact` recovery/deconstruct path against real built modules.
 - [ ] Identify whether additional construction resources must be authored now or deferred behind a dedicated materials sprint.
-- [ ] Harden the remaining input/rebinding warning path so refresh/play smoke does not spam non-fatal Input System messages.
+- [x] Harden the remaining input/rebinding warning path so refresh/play smoke does not spam non-fatal Input System messages.
 - [x] Promote PDA Construction tab from plain selector to a richer module browser with role/cost/directive context.
 - [x] Add direct builder arm/activate/holster control path inside `PDAConstructionTab`.
 
@@ -89,6 +89,7 @@
 - [ ] Verify the new PDA preset strip in play mode and tune spacing/text density if the footer becomes too crowded on 16:9.
 - [ ] Stabilize `ScanRuntimeSmokeTester` so the scanner -> scan-log loop has the same deterministic smoke coverage as PDA/builder.
 - [ ] Stabilize `FieldToolRuntimeSmokeTester` so the salvage/cutter field loop reaches a deterministic PASS instead of stalling in the salvage holster/equip phase.
+- [ ] Stabilize dev play-mode smoke triggering/observation for `ToolRuntimeSmokeTester` and `WorldGenerativeGeologyRuntimeSmokeTester`, because MCP sessions still drift into unreliable `playmode_transition` observation even after runtime cleanup.
 - [x] Add authored `ScannableTarget` coverage to real world points of interest beyond starter construction modules.
 - [x] Add dedicated builder runtime smoke hook for deploy/register/recover verification.
 - [x] Promote builder HUD from plain status panel to navigation-aware construction overlay.
@@ -126,7 +127,7 @@ Notes:
 - `FieldToolRuntimeSmokeTester` now exists on `Player` with inspectable debug state; current localization shows the coroutine reaches `Salvage/HolsterForSalvage` before stalling, so the harness is narrowed but not yet closed.
 - `ScanLogSystem` now also emits first-unlock HUD feedback through `HUDNotification`, and `ScannerTool` archives derived intel from real `PickupItem` and `ModuleMarker` world objects in addition to authored `ScannableTarget` points.
 - `Hecton/Validation/Validate Scan Intel` now validates the active scene scan-intel layer (`ScanLogSystem`, scene `ScannableTarget`s, starter titanium POI) and currently passes clean.
-- `PauseControlsPanel` and `PDAControlsRebindUI` no longer hard-reference `RebindingManager.Instance` in hot input paths; finish this warning-hygiene task only after Unity MCP smoke confirms the remaining Input System spam level.
+- `PauseControlsPanel` and `PDAControlsRebindUI` no longer hard-reference `RebindingManager.Instance` in hot input paths, and the input teardown/runtime spam path has now been hardened in `InputManager`.
 - `ScannerTool`, `SalvageSamplerTool`, and `LaserCutter` now have a first mission-grade HUD feedback layer; keep the broader interaction-feedback task open until live smoke covers these loops in play mode.
 - `ScannerTool` now also has three real scan modes, so its next check is no longer code completeness but authored gameplay usefulness in real caves/resources/modules.
 - `ToolHitUtility.TryCollectItem(...)` now supports both `HectonItem` and `PickupItem`, so `SalvageSamplerTool` can recover real staged/world pickups instead of only one pickup implementation.

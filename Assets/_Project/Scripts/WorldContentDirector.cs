@@ -133,7 +133,7 @@ namespace Hecton8.World
             string currentZoneId = currentZone != null ? currentZone.ZoneId : "zone.none";
 
             WorldContentSocket nearestSocket = null;
-            float nearestDistance = float.MaxValue;
+            float nearestDistanceSqr = float.MaxValue;
             int zoneSocketCount = 0;
 
             for (int i = 0; i < _sockets.Count; i++)
@@ -142,15 +142,15 @@ namespace Hecton8.World
                 if (socket == null)
                     continue;
 
-                WorldZoneAnchor zoneAnchor = socket.GetComponentInParent<WorldZoneAnchor>();
+                WorldZoneAnchor zoneAnchor = socket.GetZoneAnchor();
                 if (zoneAnchor == null || zoneAnchor.ZoneId != currentZoneId)
                     continue;
 
                 zoneSocketCount++;
-                float distance = socket.GetFlatDistance(playerTransform.position);
-                if (distance < nearestDistance)
+                float distanceSqr = socket.GetFlatDistanceSquared(playerTransform.position);
+                if (distanceSqr < nearestDistanceSqr)
                 {
-                    nearestDistance = distance;
+                    nearestDistanceSqr = distanceSqr;
                     nearestSocket = socket;
                 }
             }
@@ -174,18 +174,8 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-
-                if (player != null)
-                    playerTransform = player.transform;
-            }
-
-            if (worldZoneDirector == null)
-                worldZoneDirector = FindAnyObjectByType<WorldZoneDirector>();
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
         }
 
         private void UpdateDiagnostics(WorldContentSocket nearestSocket, int zoneSocketCount)

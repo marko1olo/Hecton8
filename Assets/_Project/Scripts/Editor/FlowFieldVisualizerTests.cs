@@ -23,12 +23,25 @@ public class FlowFieldVisualizerTests
     {
         _testObject = new GameObject("TestFlowFieldVisualizer");
         _visualizer = _testObject.AddComponent<FlowFieldVisualizer>();
+
+        var debugField = typeof(FlowFieldVisualizer).GetField("showDebugInfo",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        debugField?.SetValue(_visualizer, false);
     }
 
     [TearDown]
     public void Teardown()
     {
         Object.DestroyImmediate(_testObject);
+    }
+
+    private void InvokePerformCalculation(int totalPoints)
+    {
+        var method = typeof(FlowFieldVisualizer).GetMethod("PerformCalculation",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        Assert.IsNotNull(method);
+        Assert.DoesNotThrow(() => method!.Invoke(_visualizer, new object[] { totalPoints }));
     }
 
     [Test]
@@ -102,9 +115,20 @@ public class FlowFieldVisualizerTests
         _visualizer.UseJobSystem = false;
 
         Assert.DoesNotThrow(() => _visualizer.Recalculate());
+        InvokePerformCalculation(_visualizer.GridResolution.x * _visualizer.GridResolution.y);
+    }
 
-        // Trigger draw to run calculation if needed
-        Assert.DoesNotThrow(() => _visualizer.DrawFlowField());
+    [Test]
+    public void Recalculate_JobSamplingSupportsLocalOnlyModeWithoutFluidEngine()
+    {
+        _visualizer.GridResolution = new Vector2Int(40, 40);
+        _visualizer.AsyncThreshold = 100;
+        _visualizer.ShowGlobalCurrent = false;
+        _visualizer.UseBurstSampling = true;
+        _visualizer.UseJobSystem = true;
+
+        Assert.DoesNotThrow(() => _visualizer.Recalculate());
+        InvokePerformCalculation(_visualizer.GridResolution.x * _visualizer.GridResolution.y);
     }
 
     [Test]

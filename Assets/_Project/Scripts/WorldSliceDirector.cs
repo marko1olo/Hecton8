@@ -12,6 +12,9 @@ namespace Hecton8.World
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Runtime Scales")]
         [SerializeField] private float nearDistanceScale = 1f;
         [SerializeField] private float midDistanceScale = 1f;
@@ -31,6 +34,7 @@ namespace Hecton8.World
         private bool _registeredToTickManager;
         private float _profileNearDistanceScale = 1f;
         private float _profileMidDistanceScale = 1f;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         private void Awake()
         {
@@ -154,12 +158,12 @@ namespace Hecton8.World
             if (playerTransform != null)
                 return;
 
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player == null)
-                player = GameObject.Find("Player");
+            float now = Time.realtimeSinceStartup;
+            if (now < _nextAutoResolveAttemptTime)
+                return;
 
-            if (player != null)
-                playerTransform = player.transform;
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
         }
 
         private void RefreshChunkProfileScales()

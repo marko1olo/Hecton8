@@ -1,359 +1,240 @@
 # CURRENT SESSION HANDOFF
 
-Статус: актуальное саммари для нового диалога.  
-Дата: 2026-04-01
+Status: active runtime/gameplay handoff for the next dialog.  
+Date: 2026-04-02
 
-## Читать первым
+## Read First
 
-Этот файл нужен, чтобы новый диалог не начинал работу с нуля.
+This file keeps only the parts that are still operationally relevant.
 
-Здесь сохранено:
-- как со мной надо работать
-- как отвечать пользователю
-- что уже реально сделано
-- что реально проверено в Unity
-- что сейчас является правильной следующей целью
+Use it to understand:
+- what is actually verified in Unity right now
+- which recent fixes changed the current baseline
+- what is still honestly open
+- what the next best tasks are
 
----
+Companion files for the next dialog:
 
-## Жёсткие правила общения с пользователем
-
-- Всегда писать простым и понятным русским языком.
-- Не использовать жаргон без перевода.
-- Не писать `family` без перевода.
-- Вместо этого писать:
-  - `категория объектов`
-  - `тип наполнения`
-  - `большой участок воды`
-  - `общий профиль мира`
-- Всегда объяснять по схеме:
-  - `Что сделал`
-  - `Что это значит простыми словами`
-  - `Что это даёт в игре`
-  - `Что проверил`
-  - `Что осталось проблемой`
-- Всегда быть честным.
-- Не врать про Unity-проверку, если она реально не прогонялась.
-- Не топтаться на месте.
-- Делать сразу как под финальный продукт, enterprise / AAA уровень.
-- Если место слабое или решение плохое, говорить это прямо.
-- Не перегружать ответ пустой “умной” терминологией.
+- `RUNTIME_SYMPTOMS_AND_DIAGNOSTICS_2026-04-02.md`
+- `NEW_DIALOG_START_PROMPT_2026-04-02.md`
 
 ---
 
-## Личные установки пользователя, которые нельзя терять
+## Communication Rules
 
-- Нужен не прототип ради прототипа, а готовый коммерческий продукт.
-- Стиль проекта: `Master Grade`, `Enterprise level`, `AAA feeling`.
-- Это не коридорная игра и не набор уровней с боссами.
-- Это большая подводная песочница с памятью места, интересом исследования, риском и наградой.
-- Мир должен быть:
-  - живым
-  - густым
-  - интересным
-  - масштабным
-  - оптимизированным
-- Нужно не “умно на бумаге”, а реально работающее наполнение мира.
-- Пользователь не любит, когда агент останавливается слишком часто.
-- Нужно работать проактивно и самостоятельно, если нет скрытого опасного решения.
+- Answer in simple Russian.
+- Explain directly, without empty terminology.
+- Prefer the structure:
+  - `What was done`
+  - `What this means in simple terms`
+  - `What this gives`
+  - `What was verified`
+  - `What remains open`
+- Do not claim Unity verification unless it really happened.
+- Work proactively, but do not hide risk.
 
 ---
 
-## Важные факты о мире игры
+## Current Verified State
 
-- Размер карты: `15 x 15 км`.
-- Большой не-донный слой мира: примерно `6 x 8 км`.
-- Это огромная площадь воды.
-- Значит:
-  - существ должно быть сильно больше
-  - жизнь мира нельзя строить только вокруг игрока коротким кольцом
-  - нужны чанки и слои стриминга
-  - причём не только для фауны
+- Unity currently compiles without `Error`.
+- Editor reaches idle state after the latest passes.
+- The old scan/runtime compile blockers are closed.
+- The old input teardown spam is closed.
+- The old persistent native leak on clean play start is closed.
+- The `GasGiantRotationDriver` null `MaterialPropertyBlock` crash is closed.
 
-Пользователь отдельно зафиксировал:
-- чанки нужны не только для существ
-- чанки должны работать для:
-  - LOD
-  - флоры
-  - построек
-  - обломков
-  - ресурсов
-  - существ
-  - крупных угроз
+### Recently fixed and already part of the baseline
 
-Это уже выбрано как правильная цель.
+- `ProximityColliderSystem` / `HectonRockManager`
+  - safe runtime cleanup and reinit path
+- `FlashlightTool`
+  - dead `hit` references removed
+- `ScanEvents` / `ScannerTool` / scan consumers
+  - explicit `Unity.Mathematics.float3` contract restored
+- `FlowFieldVisualizer`
+  - job/global-current/local-volume path hardened
+  - preview cleanup improved
+  - editor tests were restored
+- `ZeroGCStringCache`
+  - now behaves like a real cache for repeated uppercase labels
+- `HectonFluidEngine`
+  - persistent native arrays now release safely on disable
+- `InputManager`
+  - stale `InputActionMap` teardown is now guarded
+- `GasGiantRotationDriver`
+  - renderer/property-block resources are re-established safely before use
+- `HectonDevToolsMenu`
+  - play-mode smoke menu no longer forces selection/ping on runtime helper objects
+- `PDABarterTab` / `PDAConstructionTab` / `PDAShellChrome`
+  - native `Update()` polling replaced with dynamic `ITickable` registration
+  - PDA UI tabs now tick only while actually active/open
+- `BuilderStatusOverlay`
+  - native `Update()` replaced with dynamic `ITickable` registration
+  - overlay now stays out of tick path while Builder Tool is inactive
+- `SuitHUDV4CanvasOverlay` / `SuitHUDScreenCompositor`
+  - play-mode refresh moved onto `ITickable`
+  - editor preview paths preserved through editor-only `Update()`
+- `VisorHUDController`
+  - runtime HUD refresh moved off native `Update()` onto `ITickable`
+  - edit preview preserved
+  - runtime RT release path is now safe in both play and edit mode
+- `SuitHUDPresentationController`
+  - play-mode orchestration no longer lives in native `LateUpdate()`
+  - dynamic `ITickable` registration added
+  - overlay/canvas lookups are now more selective and cached where useful
+- `HectonSuitHUDExtensions`
+  - runtime `LateUpdate()` replaced with `ITickable`
+  - flashlight overheat/flicker reset coroutines replaced with timer state
+  - compile plus clean play-stop smoke confirmed
+- legacy `HectonSuitHUD`
+  - retired from the active player HUD stack
+  - removed from first-party prefabs and code paths
+- `HudNumericStringCache`
+  - inherited the old prebuilt integer string cache used by scan markers
+- HUD stack truth
+  - current active path is `SuitHUDV4CanvasOverlay` + `SuitHUDPresentationController` + `VisorHUDController`
+  - compile plus clean play-stop smoke confirmed after legacy HUD retirement
+- `SuitHUDScreenCompositor`
+  - no longer keeps ticking every frame after its setup is already stable
+  - wakes back up only when a real refresh is needed
+  - live compile plus clean play-stop smoke confirmed
+- `WorldGenerativeGeologyBinding` / `WorldGenerativeGeologyIntegrationDirector`
+  - active bindings now use a registry instead of repeated whole-scene scans
+  - `includeInactiveBindings` now actually controls whether the slow full scan path is used
+  - geology smoke lookup also uses the fast registry path first
+  - compile plus clean play-stop smoke confirmed
+- bootstrap/world runtime reference path
+  - `SceneBootstrap` now publishes a fast current-player reference for runtime systems
+  - duplicated player auto-resolve across world directors now uses a shared bootstrap-aware helper
+  - several world directors now throttle auto-resolve instead of retrying too aggressively during startup
+  - compile/import plus clean play-stop smoke confirmed
+- `WorldContentSocket`
+  - now caches its parent `WorldZoneAnchor` instead of re-running `GetComponentInParent` through multiple world directors
+  - `WorldContentDirector`, `WorldPopulationDirector`, and `WorldProceduralFillDirector` now reuse that cached zone link
+  - clean play-stop smoke confirmed
+- world zone/content hot paths
+  - nearest socket / zone selection now uses squared-distance comparisons where exact distance was unnecessary
+  - `WorldZoneDirector` now evaluates zone activation/hold state through a single shared anchor pass instead of repeating the same work several times
+  - console stayed free of new first-party errors after the pass
+- `WorldProceduralFieldSampler`
+  - zone resolution now reuses the shared `WorldZoneAnchor` evaluation path instead of duplicating distance and activation work
+  - console stayed free of new first-party errors after the pass
+- dev runtime profiler hook
+  - disabled `__DEV_RuntimePerformanceProfiler` object added to the active world scene under `--- SYSTEMS ---`
+  - scene saved cleanly and console stayed empty after the addition
+- `WorldProceduralScatterDirector`
+  - false bootstrap waiting is removed; scatter now defers only behind a real active `SceneBootstrap`
+  - scatter instance reuse now goes through `ObjectPoolManager` without `Pool exhausted` warning spam
+  - repeated pattern/context budget lookups inside the sampling loop were reduced
+  - long play profiling showed startup scatter improving from roughly `407ms / sample 224ms` to roughly `311ms / sample 108ms`
+  - incremental movement rebuilds stayed around `70-122ms` instead of startup-scale spikes
+
+### Documents that already describe these passes
+
+- [COMPILE_HARDENING_2026-04-02.md](C:/hades/Hecton8/COMPILE_HARDENING_2026-04-02.md)
+- [WORLD_RUNTIME_HARDENING_2026-04-02.md](C:/hades/Hecton8/WORLD_RUNTIME_HARDENING_2026-04-02.md)
+- [FLOW_FIELD_VISUALIZER_HARDENING_2026-04-02.md](C:/hades/Hecton8/FLOW_FIELD_VISUALIZER_HARDENING_2026-04-02.md)
+- [RUNTIME_SMOKE_HARDENING_2026-04-02.md](C:/hades/Hecton8/RUNTIME_SMOKE_HARDENING_2026-04-02.md)
+- [INPUT_RUNTIME_HARDENING_2026-04-02.md](C:/hades/Hecton8/INPUT_RUNTIME_HARDENING_2026-04-02.md)
+- [PDA_UI_TICK_HARDENING_2026-04-02.md](C:/hades/Hecton8/PDA_UI_TICK_HARDENING_2026-04-02.md)
+- [BUILDER_OVERLAY_TICK_HARDENING_2026-04-02.md](C:/hades/Hecton8/BUILDER_OVERLAY_TICK_HARDENING_2026-04-02.md)
+- [HUD_RUNTIME_TICK_HARDENING_2026-04-02.md](C:/hades/Hecton8/HUD_RUNTIME_TICK_HARDENING_2026-04-02.md)
+- [VISOR_HUD_CONTROLLER_HARDENING_2026-04-02.md](C:/hades/Hecton8/VISOR_HUD_CONTROLLER_HARDENING_2026-04-02.md)
+- [SUIT_HUD_PRESENTATION_HARDENING_2026-04-02.md](C:/hades/Hecton8/SUIT_HUD_PRESENTATION_HARDENING_2026-04-02.md)
+- [SUIT_HUD_EXTENSIONS_RUNTIME_HARDENING_2026-04-02.md](C:/hades/Hecton8/SUIT_HUD_EXTENSIONS_RUNTIME_HARDENING_2026-04-02.md)
+- [HECTON_SUIT_HUD_GLITCH_ZERO_GC_2026-04-02.md](C:/hades/Hecton8/HECTON_SUIT_HUD_GLITCH_ZERO_GC_2026-04-02.md)
+- [SUIT_HUD_SCREEN_COMPOSITOR_HARDENING_2026-04-02.md](C:/hades/Hecton8/SUIT_HUD_SCREEN_COMPOSITOR_HARDENING_2026-04-02.md)
+- [WORLD_GEOLOGY_BINDING_REGISTRY_HARDENING_2026-04-02.md](C:/hades/Hecton8/WORLD_GEOLOGY_BINDING_REGISTRY_HARDENING_2026-04-02.md)
+- [WORLD_RUNTIME_REFERENCE_HARDENING_2026-04-02.md](C:/hades/Hecton8/WORLD_RUNTIME_REFERENCE_HARDENING_2026-04-02.md)
+- [WORLD_CONTENT_SOCKET_ZONE_CACHE_HARDENING_2026-04-02.md](C:/hades/Hecton8/WORLD_CONTENT_SOCKET_ZONE_CACHE_HARDENING_2026-04-02.md)
+- [WORLD_ZONE_HOTPATH_HARDENING_2026-04-02.md](C:/hades/Hecton8/WORLD_ZONE_HOTPATH_HARDENING_2026-04-02.md)
+- [DEV_RUNTIME_PROFILER_SCENE_HOOK_2026-04-02.md](C:/hades/Hecton8/DEV_RUNTIME_PROFILER_SCENE_HOOK_2026-04-02.md)
+- [WORLD_SCATTER_RUNTIME_HARDENING_2026-04-02.md](C:/hades/Hecton8/WORLD_SCATTER_RUNTIME_HARDENING_2026-04-02.md)
 
 ---
 
-## Что уже реально сделано по миру
+## What Is Still Not Closed
 
-### 1. Вода и биомы
+These items should not be called “done” yet:
 
-Сделан верхний слой “характера воды”:
-- `9` типов воды
-- они уже не в жёстком коде, а в data-driven профилях
+- `ToolRuntimeSmokeTester` is not yet a deterministic PASS path through MCP-driven play sessions.
+- `WorldGenerativeGeologyRuntimeSmokeTester` is not yet a deterministic PASS path through MCP-driven play sessions.
+- `FieldToolRuntimeSmokeTester` still has an automation tail around salvage/equip flow.
+- `ScanRuntimeSmokeTester` still wants a deterministic smoke pass, not just compile/runtime correctness.
+- Real authored play verification is still missing for several improved tools:
+  - flashlight guidance
+  - scanner mode usefulness
+  - analyzer readouts
+  - repair/cutter service-lane feedback
+  - weaker non-core tools as a whole
+- Big-world streaming/content integration is still not complete for all layers:
+  - flora
+  - debris
+  - broader construction/service roots
+  - hybrid near/mid/far density slices
+- The first startup scatter burst is still too heavy even after the latest pass.
+- Scene/prefab `missing script` warnings are now visible during longer sessions and should be audited separately from scatter profiling.
 
-Сделан слой матричных биомов:
-- `108` биомов
-- у биомов есть своя память места
-- биомы умеют влиять на:
-  - средний слой наполнения
-  - крупные акценты
-  - настроение фауны
+---
 
-Сделаны отчёты:
-- [PROCEDURAL_WATER_PATTERN_REPORT.md](C:/hades/Hecton8/PROCEDURAL_WATER_PATTERN_REPORT.md)
-- [PROCEDURAL_MATRIX_BIOME_MEMORY_REPORT.md](C:/hades/Hecton8/PROCEDURAL_MATRIX_BIOME_MEMORY_REPORT.md)
-- [PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md](C:/hades/Hecton8/PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md)
+## Important Clarification About Smoke
 
-### 2. Procedural world fill
+The current high-signal remaining issue is no longer input teardown or compile hygiene.
 
-Сделан рабочий proxy-слой мира:
-- природный фон
-- карманы
-- крупные ориентиры
-- руины
-- точки спавна
+The real tail is this:
+- dev smoke menu items do start
+- but MCP observation of play-mode smoke remains unreliable and often sits in `playmode_transition`
 
-Есть field-driven preview и scatter-слой.
+This should currently be treated as:
+- partly a tooling/observation problem
+- and partly an unfinished deterministic smoke-trigger path
 
-Главные документы:
-- [PROCEDURAL_WORLD_FILL_ENTERPRISE_PLAN.md](C:/hades/Hecton8/PROCEDURAL_WORLD_FILL_ENTERPRISE_PLAN.md)
-- [Что_и_как_исправляем_—_живой_план.md](C:/hades/Hecton8/Что_и_как_исправляем_—_живой_план.md)
+It should not automatically be interpreted as proof that the gameplay systems themselves are broken.
 
-### 3. AI существ
+Additional current limitation:
+- the recent PDA / builder / HUD / visor presentation passes are now live-verified through compile plus clean play-stop smoke
+- MCP observation during active play can still briefly lose ping responsiveness
+- so mid-play MCP telemetry is still less trustworthy than post-play idle verification
 
-Сделан сильный базовый мозг существ:
-- шум
-- свет
-- память
-- расследование
-- предупреждение
-- преследование
-- ложный заход
-- защита территории
-- защита гнезда
-- помощь соседей
-- совместная охота
-- разные сценарии крупных угроз
+---
 
-Есть парк видов:
-- мирные
-- территориальные
-- хищники
-- левиафаны
+## Best Next Tasks
 
-Сделаны документы:
-- [AI_ENTERPRISE_LAYER_PLAN.md](C:/hades/Hecton8/AI_ENTERPRISE_LAYER_PLAN.md)
-- [AI_CREATURE_ROSTER_ENTERPRISE.md](C:/hades/Hecton8/AI_CREATURE_ROSTER_ENTERPRISE.md)
-- [AI_CREATURE_ROSTER_REPORT.md](C:/hades/Hecton8/AI_CREATURE_ROSTER_REPORT.md)
-- [AI_FAUNA_ARCHETYPE_REPORT.md](C:/hades/Hecton8/AI_FAUNA_ARCHETYPE_REPORT.md)
-- [AI_FAUNA_WORLD_INTEGRATION_REPORT.md](C:/hades/Hecton8/AI_FAUNA_WORLD_INTEGRATION_REPORT.md)
+The best next sequence is:
 
-### 4. AI реально посажен в мир
+1. Stabilize dev smoke triggering and observation
+   - `ToolRuntimeSmokeTester`
+   - `WorldGenerativeGeologyRuntimeSmokeTester`
+   - `FieldToolRuntimeSmokeTester`
+   - `ScanRuntimeSmokeTester`
 
-Уже было реально подтверждено через Unity:
-- профилей видов: `22`
-- наборов фауны по биомам: `108`
-- биомов без мирной жизни: `0`
-- биомов без угроз: `0`
-- профилей видов без префаба: `0`
+2. Run authored real-play verification for the upgraded tool stack
+   - flashlight
+   - scanner
+   - analyzer
+   - repair
+   - cutter
+   - non-core tools
 
-Важный баланс, уже выбранный правильно:
-- левиафаны не должны сидеть “в каждой дыре”
-- обычные поздние резервные биомы очищены от лишних левиафанов
-- пара левиафанов ближе к поверхности допустима, если место огромное и запоминающееся
+3. Continue the large-world runtime track
+   - enable and use the new scene profiler hook to collect actual numbers
+   - continue reducing the first `WorldProceduralScatterDirector` startup burst
+   - audit scene/prefab `missing script` warnings so runtime profiling stays clean
+   - hybrid-density world slices
+   - broader streamed roots
+   - flora/debris/construction propagation onto the shared world profile
 
-Последнее подтверждённое состояние по большим угрозам:
-- левиафан-записей: `14`
-- тяжёлые хищники вместо левиафанов стоят в части тяжёлых мест
-- обычные резервные биомы с левиафанами: `нет`
+---
 
-### 5. Общий чанковый мир
+## What To Read Next
 
-Это теперь уже не идея, а живая цель с кодовым фундаментом.
+Start with:
+- [Live Fix Plan](C:/hades/Hecton8/Что_и_как_исправляем_—_живой_план.md)
+- [NEXT_SPRINT_TASKS.md](C:/hades/Hecton8/NEXT_SPRINT_TASKS.md)
+- [TOOLS_ENTERPRISE_SPRINT.md](C:/hades/Hecton8/TOOLS_ENTERPRISE_SPRINT.md)
 
-Сделан общий профиль мира:
-- [WorldChunkStreamingProfile.asset](C:/hades/Hecton8/Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset)
-
-Ключевые параметры:
-- мир: `15000 м`
-- чанк: `192 м`
-- внутренняя клетка: `64 м`
-- большая зона: `768 м`
-
-Сделаны документы:
+Then read as needed:
 - [WORLD_CHUNK_STREAMING_ENTERPRISE_PLAN.md](C:/hades/Hecton8/WORLD_CHUNK_STREAMING_ENTERPRISE_PLAN.md)
 - [AI_FAUNA_CHUNK_STREAMING_PLAN.md](C:/hades/Hecton8/AI_FAUNA_CHUNK_STREAMING_PLAN.md)
-
-На общий профиль мира уже реально посажены:
-- существа
-- ресурсы
-- бюджеты scatter и коллайдеров
-- стриминг директор
-- дистанции world slice / LOD-кольца
-
-Файлы, которые уже реально переведены на общий профиль мира:
-- [FaunaDirector.cs](C:/hades/Hecton8/Assets/_Project/Scripts/FaunaDirector.cs)
-- [ScavengePopulator.cs](C:/hades/Hecton8/Assets/_Project/Scripts/ScavengePopulator.cs)
-- [ScatterBudgetController.cs](C:/hades/Hecton8/Assets/_Project/Scripts/ScatterBudgetController.cs)
-- [WorldStreamingDirector.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldStreamingDirector.cs)
-- [WorldSliceDirector.cs](C:/hades/Hecton8/Assets/_Project/Scripts/WorldSliceDirector.cs)
-- [WorldRuntimeBootstrapAuthoring.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs)
-- [WorldStreamingWiringValidator.cs](C:/hades/Hecton8/Assets/_Project/Scripts/Editor/WorldStreamingWiringValidator.cs)
-
----
-
-## Что реально было проверено в Unity
-
-Последнее честно подтверждённое состояние:
-
-- compile clean после фиксов save system
-- console errors: `0`
-- новые ошибки от последней волны чанкового мира не появились
-
-Реально были прогнаны:
-- `Build World Chunk Streaming Profile`
-- `Rebuild World Runtime Stack`
-- `Validate World Streaming Wiring`
-- AI authoring и отчёты по фауне
-
-Реально подтверждено:
-- `FaunaDirector` использует общий профиль мира
-- `ScavengePopulator` использует общий профиль мира
-- `ScatterBudgetController` использует общий профиль мира
-- `WorldStreamingDirector` использует общий профиль мира
-- `WorldSliceDirector` использует общий профиль мира
-
-Подтверждённые runtime-значения:
-- `FaunaDirector._debugRuntimeChunkSize = 192`
-- `FaunaDirector._debugRuntimeMacroZoneSize = 768`
-- `FaunaDirector._debugRuntimeLargeThreatSpawnOuter = 420`
-- `FaunaDirector._debugRuntimeLargeThreatCullDistance = 900`
-
-Ещё важный факт:
-- `MapMagicBridge.IsAvailable = false` в текущем preview-состоянии сцены
-- значит часть world preview всё ещё живёт через fallback-путь
-
----
-
-## Что уже было исправлено отдельно
-
-### Save system compile blockers
-
-Были реально исправлены:
-- [SaveManager.cs](C:/hades/Hecton8/Assets/_Project/Scripts/SaveManager.cs)
-- [SaveMetadata.cs](C:/hades/Hecton8/Assets/_Project/Scripts/SaveMetadata.cs)
-
-Смысл:
-- сохранения снова компилируются нормально
-- есть совместимость со старыми UI / editor вызовами
-- работают реальные slot file path
-- включена миграция save data при загрузке
-
-Это важно не потерять.
-
----
-
-## Что ещё НЕ сделано
-
-Вот честный список, который нельзя в новом диалоге объявлять “готовым”:
-
-- флора ещё не посажена массово на общий чанковый профиль мира
-- обломки ещё не посажены массово на общий чанковый профиль мира
-- постройки ещё не посажены массово на общий чанковый профиль мира
-- большие угрозы ещё не разведены по всем местам до финальной режиссуры встречи
-- нет полного финального play-pass по огромной карте
-- нет финальной сцены bootstrap / main menu / sandbox блока
-- save system ещё не закрыт как полный продакшн-цикл для всего мира
-
----
-
-## Что сейчас является ПРАВИЛЬНОЙ следующей целью
-
-Следующая большая цель уже выбрана:
-
-### Не отдельные мелкие фиксы, а единый стриминг большого мира
-
-Надо продолжать не в сторону новых абстракций, а в сторону:
-- общего чанкового мира
-- единой логики стриминга
-- единой логики дальних и ближних слоёв
-
-Правильный следующий порядок:
-
-1. Посадить на общий профиль мира ещё и:
-- флору
-- обломки
-- постройки
-
-2. Довести большие угрозы до режима больших участков мира:
-- не “спавн по маленькому чанку”
-- а хозяева больших зон
-
-3. После этого уже честно смотреть:
-- где мира мало
-- где слишком пусто
-- где слишком шумно
-- где нужно больше жизни
-- где нужно меньше тяжёлых угроз
-
----
-
-## Ключевая инженерная мысль, которую нельзя потерять
-
-Для карты `15 x 15 км` нельзя делать мир только по схеме:
-- “игрок плывёт, рядом что-то досыпаем”
-
-Нужна взрослая схема:
-
-- дальняя жизнь как данные
-- дальние дешёвые видимые слои
-- средняя симуляция
-- ближняя полная симуляция
-
-И это должно работать не только для существ, а для всего:
-- LOD
-- флора
-- ресурсы
-- обломки
-- постройки
-- существа
-- крупные угрозы
-
-Это уже выбрано как основа final-версии.
-
----
-
-## Что читать в новом диалоге кроме этого файла
-
-Сначала:
-- [Что_и_как_исправляем_—_живой_план.md](C:/hades/Hecton8/Что_и_как_исправляем_—_живой_план.md)
-- [WORLD_CHUNK_STREAMING_ENTERPRISE_PLAN.md](C:/hades/Hecton8/WORLD_CHUNK_STREAMING_ENTERPRISE_PLAN.md)
-- [AI_ENTERPRISE_LAYER_PLAN.md](C:/hades/Hecton8/AI_ENTERPRISE_LAYER_PLAN.md)
-- [AI_FAUNA_WORLD_INTEGRATION_REPORT.md](C:/hades/Hecton8/AI_FAUNA_WORLD_INTEGRATION_REPORT.md)
-
-Потом по необходимости:
 - [PROCEDURAL_WORLD_FILL_ENTERPRISE_PLAN.md](C:/hades/Hecton8/PROCEDURAL_WORLD_FILL_ENTERPRISE_PLAN.md)
-- [PROCEDURAL_WATER_PATTERN_REPORT.md](C:/hades/Hecton8/PROCEDURAL_WATER_PATTERN_REPORT.md)
-- [PROCEDURAL_MATRIX_BIOME_MEMORY_REPORT.md](C:/hades/Hecton8/PROCEDURAL_MATRIX_BIOME_MEMORY_REPORT.md)
-- [PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md](C:/hades/Hecton8/PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md)
-
----
-
-## Короткая стартовая формула для нового диалога
-
-Если новый диалог начинается с нуля, правильная короткая рамка такая:
-
-- Мы делаем большую подводную песочницу enterprise-уровня.
-- Мир огромный, значит всё должно жить через общий чанковый стриминг.
-- Уже сделаны:
-  - вода и биомы
-  - procedural fill
-  - сильный AI
-  - посадка AI в мир
-  - общий профиль мира для части систем
-- Сейчас главный следующий шаг:
-  - посадить на общий профиль мира остальные большие слои мира
-  - и довести это до финального цельного стриминга
-

@@ -9,8 +9,6 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using System;
-using Unity.Mathematics;
-
 namespace Hecton8.Gameplay
 {
     /// <summary>
@@ -30,14 +28,14 @@ namespace Hecton8.Gameplay
         /// Parameters: world-space center of scan, scan radius in meters.
         /// Used by VFX systems to render the expanding ring.
         /// </summary>
-        public static Action<float3, float> OnScanTriggered;
+        public static Action<Unity.Mathematics.float3, float> OnScanTriggered;
 
         /// <summary>
         /// Fired for each ResourceNode detected by a scan pulse.
         /// Parameter: world-space position of the detected node.
         /// HectonScanMarkerSystem creates a timed HUD marker at this position.
         /// </summary>
-        public static Action<float3> OnNodeFound;
+        public static Action<Unity.Mathematics.float3> OnNodeFound;
 
         /// <summary>
         /// Fired when scanner logic resolves a meaningful databank-style entry.

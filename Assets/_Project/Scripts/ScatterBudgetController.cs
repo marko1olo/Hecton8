@@ -33,6 +33,9 @@ namespace Hecton8.World
         [SerializeField] private BiomeSamplerCache biomeSamplerCache;
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Depth Thresholds")]
         [SerializeField] private float midDepthStart = 60f;
         [SerializeField] private float deepDepthStart = 180f;
@@ -42,6 +45,8 @@ namespace Hecton8.World
         [SerializeField] private BudgetProfile midDepthProfile;
         [SerializeField] private BudgetProfile deepProfile;
 
+        // Inspector-only live diagnostics for depth-band budget tuning.
+#pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private string _debugCurrentBand = "Surface";
         [SerializeField] private float _debugCurrentDepth;
@@ -64,6 +69,7 @@ namespace Hecton8.World
         [SerializeField] private float _debugZoneColliderOpsScale = 1f;
         [SerializeField] private float _debugProfileResourcesNearScale = 1f;
         [SerializeField] private float _debugProfileDebrisNearScale = 1f;
+#pragma warning restore CS0414
 
         private bool _registeredToTickManager;
         private BudgetBand _lastAppliedBand = (BudgetBand)(-1);
@@ -79,6 +85,7 @@ namespace Hecton8.World
         private float _zoneSpawnScale = 1f;
         private float _zoneColliderRadiusScale = 1f;
         private float _zoneColliderOpsScale = 1f;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         private void Reset()
         {
@@ -317,24 +324,24 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+            if (playerTransform != null &&
+                mapMagicBridge != null &&
+                scavengePopulator != null &&
+                proximityColliderSystem != null &&
+                biomeSamplerCache != null)
+                return;
 
-            if (mapMagicBridge == null)
-                mapMagicBridge = MapMagicBridge.Instance ?? FindAnyObjectByType<MapMagicBridge>();
+            float now = Time.realtimeSinceStartup;
+            if (now < _nextAutoResolveAttemptTime)
+                return;
 
-            if (scavengePopulator == null)
-                scavengePopulator = ScavengePopulator.Instance ?? FindAnyObjectByType<ScavengePopulator>();
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            if (proximityColliderSystem == null)
-                proximityColliderSystem = FindAnyObjectByType<ProximityColliderSystem>();
-
-            if (biomeSamplerCache == null)
-                biomeSamplerCache = FindAnyObjectByType<BiomeSamplerCache>();
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+            WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proximityColliderSystem);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeSamplerCache);
         }
 
         private void ApplyChunkProfileDefaults()

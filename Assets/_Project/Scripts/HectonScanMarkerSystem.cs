@@ -27,12 +27,13 @@
 // ║  ZERO GC:                                                                   ║
 // ║  ─────────                                                                  ║
 // ║  • No List.Add/Remove — index cycling over fixed array.                   ║
-// ║  • Distance text from HectonSuitHUD.IntStrings (pre-allocated strings).   ║
+// ║  • Distance text from HudNumericStringCache.IntStrings (pre-allocated).   ║
 // ║  • All math via Unity.Mathematics (float3, math.sin, etc.)                ║
 // ║  • Shapes immediate mode — no GameObjects, no materials allocated.         ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using Hecton8.Core;
+using Hecton8.UI;
 using Shapes;
 using Unity.Mathematics;
 using UnityEngine;
@@ -54,7 +55,7 @@ namespace Hecton8.Gameplay
         private struct ActiveMarker
         {
             /// <summary>World-space position of the detected resource.</summary>
-            public float3 worldPos;
+            public Unity.Mathematics.float3 worldPos;
 
             /// <summary>Remaining display time in seconds. ≤ 0 = inactive.</summary>
             public float timer;
@@ -184,7 +185,7 @@ namespace Hecton8.Gameplay
         /// Writes into pre-allocated array at cycling index.
         /// Zero GC: struct assignment to array slot.
         /// </summary>
-        private void HandleNodeFound(float3 worldPos)
+        private void HandleNodeFound(Unity.Mathematics.float3 worldPos)
         {
             // ── Check for duplicate (same position already active) ──
             // Prevents stacking markers on same resource if scanned twice
@@ -251,7 +252,7 @@ namespace Hecton8.Gameplay
             if (cam != hudCamera) return;
             if (_playerTransform == null) return;
 
-            float3 playerPos = _playerTransform.position;
+            Unity.Mathematics.float3 playerPos = _playerTransform.position;
             float time = Time.time;
 
             using (Draw.Command(cam))
@@ -278,8 +279,8 @@ namespace Hecton8.Gameplay
         /// Renders one marker: diamond + distance text.
         /// All math is struct-based — zero GC.
         /// </summary>
-        private void DrawSingleMarker(Camera cam, float3 worldPos, float timer,
-                                       float3 playerPos, float time)
+        private void DrawSingleMarker(Camera cam, Unity.Mathematics.float3 worldPos, float timer,
+                                       Unity.Mathematics.float3 playerPos, float time)
         {
             // ── World → Screen projection ──
             Vector3 screenPos = cam.WorldToScreenPoint((Vector3)worldPos);
@@ -346,7 +347,7 @@ namespace Hecton8.Gameplay
 
             // ── Distance text below diamond ──
             int distInt = math.clamp((int)distance, 0, 5000);
-            string distText = HectonSuitHUD.IntStrings[distInt];
+            string distText = HudNumericStringCache.IntStrings[distInt];
 
             // Offset below diamond
             Vector3 textScreenPos = new Vector3(screenPos.x, screenPos.y - size * 0.8f, screenPos.z);

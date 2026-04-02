@@ -1,5 +1,131 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7947137463635322242
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5026404498028821356}
+  - component: {fileID: 3115699276648779180}
+  - component: {fileID: 5555822276606302648}
+  m_Layer: 0
+  m_Name: Rock_Runtime
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &5026404498028821356
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7947137463635322242}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1342121906950029394}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3115699276648779180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7947137463635322242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a61b0404ba3e80438650c720ee964b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefabManager
+  prototypeList:
+  - {fileID: 11400000, guid: 6aa8ff5c98924294788a12cba58aab59, type: 2}
+  - {fileID: 11400000, guid: ad6bb3e1cf4a98b4bbf1c7fb4b16f66a, type: 2}
+  - {fileID: 11400000, guid: 4565dbaa4a2c4ef488c76bddf12ee4b0, type: 2}
+  - {fileID: 11400000, guid: c7482753df7852c4ea902080135c60c5, type: 2}
+  - {fileID: 11400000, guid: 40e863f976f44c74782ebb671009ab04, type: 2}
+  autoSelectCamera: 1
+  cameraData:
+    mainCamera: {fileID: 0}
+    renderOnlySelectedCamera: 0
+  useFloatingOriginHandler: 0
+  applyFloatingOriginRotationAndScale: 0
+  floatingOriginTransform: {fileID: 0}
+  isFrustumCulling: 1
+  isOcclusionCulling: 1
+  minCullingDistance: 0
+  selectedPrototypeList: []
+  isPrototypeTextMode: 0
+  showSceneSettingsBox: 1
+  showPrototypeBox: 1
+  showAdvancedBox: 0
+  showHelpText: 0
+  showDebugBox: 1
+  showGlobalValuesBox: 1
+  showRegisteredPrefabsBox: 1
+  showPrototypesBox: 1
+  keepSimulationLive: 0
+  updateSimulation: 1
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  lightProbeDisabled: 0
+  registeredPrefabs:
+  - prefabPrototype: {fileID: 11400000, guid: 6aa8ff5c98924294788a12cba58aab59, type: 2}
+    registeredPrefabs: []
+  - prefabPrototype: {fileID: 11400000, guid: ad6bb3e1cf4a98b4bbf1c7fb4b16f66a, type: 2}
+    registeredPrefabs: []
+  - prefabPrototype: {fileID: 11400000, guid: 4565dbaa4a2c4ef488c76bddf12ee4b0, type: 2}
+    registeredPrefabs: []
+  - prefabPrototype: {fileID: 11400000, guid: c7482753df7852c4ea902080135c60c5, type: 2}
+    registeredPrefabs: []
+  - prefabPrototype: {fileID: 11400000, guid: 40e863f976f44c74782ebb671009ab04, type: 2}
+    registeredPrefabs: []
+  prefabList:
+  - {fileID: 3097752584336557879, guid: 44d05711f0dac994392b890336877751, type: 3}
+  - {fileID: 5286515472059238454, guid: 1ef918a6575e221458708489ec13047b, type: 3}
+  - {fileID: 6331842899389126255, guid: 7febead2072f1424385131aa2d530a00, type: 3}
+  - {fileID: 1537715959788787414, guid: 6b2c0cd7b85119243b9947ad4e7a1a1a, type: 3}
+  - {fileID: 4666239515671607768, guid: 01bb530e18459d94f833b8135928d191, type: 3}
+  enableMROnManagerDisable: 1
+  enableMROnRemoveInstance: 1
+--- !u!114 &5555822276606302648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7947137463635322242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 122dab7a8c5c95a43b4b5bb51d611dd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonRockManager
+  rockLayers:
+  - layerId: 0
+    prefabReference: {fileID: 1567123226945249798, guid: 44d05711f0dac994392b890336877751, type: 3}
+  - layerId: 1
+    prefabReference: {fileID: 8692367705718467946, guid: 1ef918a6575e221458708489ec13047b, type: 3}
+  - layerId: 2
+    prefabReference: {fileID: 4021818475406858350, guid: 7febead2072f1424385131aa2d530a00, type: 3}
+  - layerId: 3
+    prefabReference: {fileID: 2322219988976594689, guid: 6b2c0cd7b85119243b9947ad4e7a1a1a, type: 3}
+  - layerId: 4
+    prefabReference: {fileID: 1918788942808942594, guid: 01bb530e18459d94f833b8135928d191, type: 3}
+  gpuiManager: {fileID: 3115699276648779180}
+  proximityColliderSystem: {fileID: 7188378405454682209}
+  maxExpectedInstances: 160000
+  _debugTotalChunks: 0
+  _debugTotalInstances: 0
+  _debugDirtyRebuilds: 0
+  _debugGPUIReady: 0
 --- !u!1 &8209430670174248936
 GameObject:
   m_ObjectHideFlags: 0
@@ -17,6 +143,26 @@ GameObject:
   - component: {fileID: 4334505745138054749}
   - component: {fileID: 9140334739692092775}
   - component: {fileID: 7530029900573544159}
+  - component: {fileID: 1327195000556008813}
+  - component: {fileID: 2755054704185373847}
+  - component: {fileID: 6357410893914944049}
+  - component: {fileID: 2260934476488783066}
+  - component: {fileID: 7188378405454682209}
+  - component: {fileID: 7229653515599356197}
+  - component: {fileID: 2289867282957195680}
+  - component: {fileID: 2087684184080029191}
+  - component: {fileID: 8456313356375406051}
+  - component: {fileID: 8001638159277805258}
+  - component: {fileID: 5471377331748409986}
+  - component: {fileID: 7023830671875881651}
+  - component: {fileID: 402511700257237360}
+  - component: {fileID: 1393505268358642515}
+  - component: {fileID: 2600687116124757052}
+  - component: {fileID: 1598910344647599498}
+  - component: {fileID: 3394406694337368004}
+  - component: {fileID: 7082379652201203123}
+  - component: {fileID: 8129537788799962042}
+  - component: {fileID: 6213219039242345317}
   m_Layer: 0
   m_Name: '[MANAGERS]'
   m_TagString: Untagged
@@ -36,7 +182,8 @@ Transform:
   m_LocalPosition: {x: -1710.9994, y: -0.0001, z: 863.9985}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 5026404498028821356}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7708331952162077753
@@ -53,9 +200,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HectonAtmosphereManager
   _sunLight: {fileID: 0}
   _cycleDuration: 3600
-  _initialTimeOfDay: 0.241
-  _sunOrbitalYAngle: 40
-  _orbitalInclination: 29.9
+  _initialTimeOfDay: 0.198
+  _sunOrbitalYAngle: 63
+  _orbitalInclination: 32.5
   _nightThresholdAngle: 10
   _sunHorizonFadeAngle: 10
   _profileDay: {fileID: 11400000, guid: c7300d65ab765cb40bd9fb323fe5735c, type: 2}
@@ -85,8 +232,30 @@ MonoBehaviour:
   angularDrag: 1
   currentVector: {x: 0, y: 0, z: 0}
   currentStrength: 1.5
+  enablePhantomCurrent: 1
+  currentNoiseScale: 0.018
+  currentTimeScale: 0.12
+  currentVerticalFactor: 0.18
+  phantomCurrentStrength: 0.9
   jobBatchSize: 32
+  enableDistanceLod: 1
+  lodObserver: {fileID: 0}
+  nearLodDistance: 20
+  mediumLodDistance: 45
+  farLodDistance: 90
+  cullLodDistance: 160
+  mediumLodDivisor: 2
+  farLodDivisor: 4
+  cullLodDivisor: 8
   _debugObjectCount: 0
+  _debugNearCount: 0
+  _debugMediumCount: 0
+  _debugFarCount: 0
+  _debugCulledCount: 0
+  _debugCurrentVolumeCount: 0
+  drawLodGizmos: 1
+  drawCurrentVectors: 1
+  gizmoCurrentVectorScale: 4
 --- !u!114 &2760208560575084952
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -99,7 +268,120 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eaafa4c661a665841810a6d6e15e56f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.FaunaDirector
-  biomeDatasets: []
+  biomeDatasets:
+  - {fileID: 11400000, guid: 6fcf2d3b6c61f1945bbf0c865bf8c96d, type: 2}
+  - {fileID: 11400000, guid: 8679faa089474c142aa8b9605d9e28c2, type: 2}
+  - {fileID: 11400000, guid: 76f1a992e8642a9489a702fd1276f40d, type: 2}
+  - {fileID: 11400000, guid: 9624d674b0b374147adaca62bc99e1de, type: 2}
+  - {fileID: 11400000, guid: d311cebccff2c9c4a8639f063a86b516, type: 2}
+  - {fileID: 11400000, guid: bdae450a2fc944d47a5844cda39a3193, type: 2}
+  - {fileID: 11400000, guid: 07a6fb1548576ff4797b7f315f679fb2, type: 2}
+  - {fileID: 11400000, guid: 11a4ddf9fda784d428e90edff0e6177b, type: 2}
+  - {fileID: 11400000, guid: 076d6b57dd09f3c44a303de06a461cb9, type: 2}
+  - {fileID: 11400000, guid: 449552ab744e1a04eb70eb3280bfc63e, type: 2}
+  - {fileID: 11400000, guid: 84c28e9e20adc5d4c94eea161aae977e, type: 2}
+  - {fileID: 11400000, guid: ac4359fb78bb7db4f88102236b919a51, type: 2}
+  - {fileID: 11400000, guid: b15875594f0a3164eb06716ad3a5e33f, type: 2}
+  - {fileID: 11400000, guid: 9204b9552af81b4438f0e65996b417e0, type: 2}
+  - {fileID: 11400000, guid: e205e2220d1b0104f825ba58b4c37874, type: 2}
+  - {fileID: 11400000, guid: 6ab75392c01813849b9db523fc15ce98, type: 2}
+  - {fileID: 11400000, guid: 4c8af294844533f4ebdf8feb18d1063b, type: 2}
+  - {fileID: 11400000, guid: ec02fc9bdb132754abced3b80c6d65e9, type: 2}
+  - {fileID: 11400000, guid: 12e12d8324fab1e4fbc73ea1e66581d0, type: 2}
+  - {fileID: 11400000, guid: 51309347e7fb51448a3d502717b84751, type: 2}
+  - {fileID: 11400000, guid: 70a3d0035ea1fe444961393555c141a2, type: 2}
+  - {fileID: 11400000, guid: c4bb51729d3d47144a105ef89f5fecb7, type: 2}
+  - {fileID: 11400000, guid: c18cb941a6895584d9469cd95e96bea0, type: 2}
+  - {fileID: 11400000, guid: a3183f7013056ea4ead34775b0094f1e, type: 2}
+  - {fileID: 11400000, guid: cd6f4b57af0367248ac3c57a829a9c51, type: 2}
+  - {fileID: 11400000, guid: dc1d7521931662649883e453cccc4d8a, type: 2}
+  - {fileID: 11400000, guid: bb06fd8aba3acda4ab6dd8c5e6a56849, type: 2}
+  - {fileID: 11400000, guid: 22834c8a25055544ca6b3b0ec14847be, type: 2}
+  - {fileID: 11400000, guid: 4c8e2b83b34ecfe4f9a06c38efea55b5, type: 2}
+  - {fileID: 11400000, guid: 5260e4f25042e7f4999f3ecd1027aa01, type: 2}
+  - {fileID: 11400000, guid: 1a43cb7302fda5d4bab62acfdd36f7cd, type: 2}
+  - {fileID: 11400000, guid: 26c4b90e4aaf527448b5536f13c40495, type: 2}
+  - {fileID: 11400000, guid: 7794042bed5cf3442b2213ae4d41f05d, type: 2}
+  - {fileID: 11400000, guid: 1c609660e431caa44b586c3ce909c80a, type: 2}
+  - {fileID: 11400000, guid: 8139f7b726dd817429ddb96a4d452913, type: 2}
+  - {fileID: 11400000, guid: 0e4244ef454d06c4b9eeaa8234c8fdb2, type: 2}
+  - {fileID: 11400000, guid: a7b99ec79589aa949913b6af0805c971, type: 2}
+  - {fileID: 11400000, guid: a4cec8d83d041394f873ffd69b004160, type: 2}
+  - {fileID: 11400000, guid: f07bab57f8c08c24c84a6dcbcd16fdc2, type: 2}
+  - {fileID: 11400000, guid: d841d3ee4188594498d37d351e2d59df, type: 2}
+  - {fileID: 11400000, guid: c6e5d6f44889b5f48aa32fa7885d7925, type: 2}
+  - {fileID: 11400000, guid: b192ed62d935f4d44ac80b27b672926f, type: 2}
+  - {fileID: 11400000, guid: 2f498f90b0580e345b65f28e6a355beb, type: 2}
+  - {fileID: 11400000, guid: e9d361d95f97c6748b2ca7d3c88850ae, type: 2}
+  - {fileID: 11400000, guid: 771667c17fea8564cadc305c5b4b75e7, type: 2}
+  - {fileID: 11400000, guid: 9fa32a72df6cbcf4d9238b72ed24cc75, type: 2}
+  - {fileID: 11400000, guid: 48514d4eb55edf243a94baabb6b1e91d, type: 2}
+  - {fileID: 11400000, guid: f218ee5232bf3214cbd3b1f15689c18a, type: 2}
+  - {fileID: 11400000, guid: 8425c7be9c5d5b149a900675687f8ef4, type: 2}
+  - {fileID: 11400000, guid: 0826450077a60fb4bb4ac69f05470c78, type: 2}
+  - {fileID: 11400000, guid: cb3bce36084805345ba92533221524c9, type: 2}
+  - {fileID: 11400000, guid: d190a4c3c1f8ad547a35aaf61b1514bf, type: 2}
+  - {fileID: 11400000, guid: c0ef7f9a03471c441bb2c3ee6650b664, type: 2}
+  - {fileID: 11400000, guid: 545e421a7f85954469f979f55e8869f1, type: 2}
+  - {fileID: 11400000, guid: 9a52b6756312aa542a569889f8c72f7d, type: 2}
+  - {fileID: 11400000, guid: 40e157863c5ad9f4cbf96243f95c9c56, type: 2}
+  - {fileID: 11400000, guid: a3311e2689b6650419c4eac114802b52, type: 2}
+  - {fileID: 11400000, guid: 7587ca514c3c8e8409f69d643c30221c, type: 2}
+  - {fileID: 11400000, guid: 088b8aeca5acf8541bd167492e2fc37e, type: 2}
+  - {fileID: 11400000, guid: d4651ffa62bb01f43b24c6642d8ef2ef, type: 2}
+  - {fileID: 11400000, guid: 4a235acfeddc68740817998ac06dcb62, type: 2}
+  - {fileID: 11400000, guid: e1ab85e7ce4eb344fb46061330b6ff13, type: 2}
+  - {fileID: 11400000, guid: e36e1c13af6fc6a4985d2145e7f3d8bb, type: 2}
+  - {fileID: 11400000, guid: 1339e95cc45953d428e3db9f12fa2437, type: 2}
+  - {fileID: 11400000, guid: 393cf5ceb7c27894d9bc2ef4308bb08b, type: 2}
+  - {fileID: 11400000, guid: 2b32b0f4402bbdf41a3165d9028e0307, type: 2}
+  - {fileID: 11400000, guid: 7753382e49d2b644cad8b167e42de47b, type: 2}
+  - {fileID: 11400000, guid: f75c7f8f77e4c384884cca94385e4efa, type: 2}
+  - {fileID: 11400000, guid: 75e15ef38986f9846b36f93979af5385, type: 2}
+  - {fileID: 11400000, guid: 0a7bee4bf49b36a4ea35385049fbcb8b, type: 2}
+  - {fileID: 11400000, guid: e4fae77cf9f701d41a373e106317684d, type: 2}
+  - {fileID: 11400000, guid: c7250b451a359ac43b78a0a4692da057, type: 2}
+  - {fileID: 11400000, guid: 1e9de6a30e0ab7940b47515668a29df1, type: 2}
+  - {fileID: 11400000, guid: afd3c86c2109a594aba85567f6afc6cf, type: 2}
+  - {fileID: 11400000, guid: 1e6dfd3425031394ebc64891f69f5e17, type: 2}
+  - {fileID: 11400000, guid: dd969556aa7579c408ec59ef82372d72, type: 2}
+  - {fileID: 11400000, guid: b5ad913de1f5f5f4faa5c0e92f8248e6, type: 2}
+  - {fileID: 11400000, guid: 0f520ae40e2484a468977afba17b1394, type: 2}
+  - {fileID: 11400000, guid: fc05bcfdc8f0b14418ec1e51f59a3219, type: 2}
+  - {fileID: 11400000, guid: a50e8121f4baaaa429a31160d1a00134, type: 2}
+  - {fileID: 11400000, guid: a305ccce97e8cb347a6a7c6fd559c101, type: 2}
+  - {fileID: 11400000, guid: aa81bc6480d238f41a638521562b2c39, type: 2}
+  - {fileID: 11400000, guid: 2f379fc57bb060349b8d17d9438686b7, type: 2}
+  - {fileID: 11400000, guid: ab2e1bf4db2ffe446aeadaf346660f38, type: 2}
+  - {fileID: 11400000, guid: 6f50efc8266693e4592df309cc081fc8, type: 2}
+  - {fileID: 11400000, guid: 5164eec31ccf9b64d8f8898ad3ce6ba7, type: 2}
+  - {fileID: 11400000, guid: 924616a3e85c50d42afffc707f4cc44e, type: 2}
+  - {fileID: 11400000, guid: 1e2a6efffc3f11245bce6eb592cd7eb1, type: 2}
+  - {fileID: 11400000, guid: b4130940df147654aa863f3623ac29c6, type: 2}
+  - {fileID: 11400000, guid: fc29a2aa70d84434db9766843eb1da4e, type: 2}
+  - {fileID: 11400000, guid: a1db5e4cbf3952e40a2e769ac4b480e6, type: 2}
+  - {fileID: 11400000, guid: bec1202d2512841429c1ef9779636a84, type: 2}
+  - {fileID: 11400000, guid: 9b2a52b3cb495184db286b272268ce94, type: 2}
+  - {fileID: 11400000, guid: 63524d67dc7c46c49a7715f63ab6b11a, type: 2}
+  - {fileID: 11400000, guid: 1de5f5b37339f044f902deb5f0631cbd, type: 2}
+  - {fileID: 11400000, guid: 4c889c5e81f928d4ba276859b6943fe7, type: 2}
+  - {fileID: 11400000, guid: 2fe062ed291401e428b661326cced6a4, type: 2}
+  - {fileID: 11400000, guid: 5ad71060aa539c841a12d540deacc7eb, type: 2}
+  - {fileID: 11400000, guid: 925256fa1e7287343843b4cb131dfc44, type: 2}
+  - {fileID: 11400000, guid: 4887f16151febb84581c760f38033072, type: 2}
+  - {fileID: 11400000, guid: 5786dd3e182076c43aa66a1332cf05c7, type: 2}
+  - {fileID: 11400000, guid: 052ee0b590fe1e54094620df186aea43, type: 2}
+  - {fileID: 11400000, guid: 74e440cc1708915408af9cd1b963676f, type: 2}
+  - {fileID: 11400000, guid: edd40a7cb474b584095fde68bfd097ae, type: 2}
+  - {fileID: 11400000, guid: a32cc58ed9bfc5a469651fbeecae3f95, type: 2}
+  - {fileID: 11400000, guid: f5ae185743ef0ae47b92906579c269cd, type: 2}
+  - {fileID: 11400000, guid: 371eee3618571df40a438b0c25f57ebb, type: 2}
+  - {fileID: 11400000, guid: 77e193ce05df7494695f29d23395cf29, type: 2}
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
+  spawnRegistry: {fileID: 2600687116124757052}
+  proceduralStateRegistry: {fileID: 1598910344647599498}
+  ordinaryAnchorReuseCooldownSeconds: 90
+  largeThreatZoneReuseCooldownSeconds: 300
   globalMaxCount: 30
   maxSpawnsPerTick: 3
   spawnRingInner: 50
@@ -115,6 +397,20 @@ MonoBehaviour:
   _debugCullCount: 0
   _debugPressureEnabled: 1
   _debugLastHordeSpawned: 0
+  _debugActiveChunks: 0
+  _debugActiveMacroZones: 0
+  _debugRegistryFaunaAnchors: 0
+  _debugRegistryLargeThreatZones: 0
+  _debugCurrentChunk: (0,0)
+  _debugCurrentMacroZone: (0,0)
+  _debugRuntimeChunkSize: 192
+  _debugRuntimeMacroZoneSize: 768
+  _debugRuntimeGlobalMaxCount: 30
+  _debugRuntimePerChunkMaxCount: 6
+  _debugRuntimeSpawnOuter: 150
+  _debugRuntimeLargeThreatSpawnOuter: 420
+  _debugRuntimeCullDistance: 200
+  _debugRuntimeLargeThreatCullDistance: 900
 --- !u!114 &19336647242332347
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -128,16 +424,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.ScavengePopulator
   lootTables: []
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
   tileSize: 999
-  maxSpawnsPerTick: 20
-  unloadDistance: 300
-  priorityLoadRadius: 150
+  maxSpawnsPerTick: 24
+  unloadDistance: 399
+  priorityLoadRadius: 180
   idPrefix: rn
   _debugActiveChunks: 0
   _debugTotalActiveNodes: 0
   _debugPendingSpawns: 0
   _debugSkippedDepleted: 0
   _debugLastHighlightedId: 
+  _debugRuntimeChunkSize: 512
+  _debugRuntimeUnloadDistance: 300
+  _debugRuntimePriorityRadius: 150
+  _debugRuntimeMaxSpawnsPerTick: 20
 --- !u!114 &5856769925989962686
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -181,6 +482,13 @@ MonoBehaviour:
   _debugTickCount: 0
   _debugFixedCount: 0
   _debugSlowCount: 0
+  enableSlowTickProfiling: 1
+  slowTickSpikeThresholdMs: 8
+  slowTickTopEntries: 6
+  _debugLastSlowTickDurationMs: 0
+  _debugTopSlowTickDurationMs: 0
+  _debugTopSlowTickOwner: None
+  _debugLastSlowTickReport: None
 --- !u!114 &9140334739692092775
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -295,3 +603,1030 @@ MonoBehaviour:
   _debugSunVisualActive: 0
   _debugSunScatter: 1
   _debugEditorDriven: 1
+--- !u!114 &1327195000556008813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a07f0f11cd3e5ad42a111925de0904e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.AmbientWaterMotionManager
+  lodObserver: {fileID: 0}
+  nearDistance: 20
+  mediumDistance: 45
+  farDistance: 90
+  cullDistance: 150
+  mediumDivisor: 2
+  farDivisor: 4
+  cullDivisor: 8
+  globalAmplitude: 1
+  globalFrequency: 1
+  _debugActiveObjects: 0
+  _debugNearCount: 0
+  _debugMediumCount: 0
+  _debugFarCount: 0
+  _debugCulledCount: 0
+--- !u!114 &2755054704185373847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da75d804c75233246b54017e3962252b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.BiomeSamplerCache
+  mapMagicBridge: {fileID: 9140334739692092775}
+  playerTransform: {fileID: 0}
+  cellSize: 48
+  radiusCells: 3
+  rebuildDistance: 24
+  _debugBridgeReady: 0
+  _debugPlayerReady: 0
+  _debugCacheReady: 0
+  _debugSampleCount: 0
+  _debugLastCenterBiome: -1
+  _debugLastCenterPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &6357410893914944049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1853ba58b90e06548a96adec67d76493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.ScatterBudgetController
+  playerTransform: {fileID: 0}
+  mapMagicBridge: {fileID: 9140334739692092775}
+  scavengePopulator: {fileID: 19336647242332347}
+  proximityColliderSystem: {fileID: 7188378405454682209}
+  biomeSamplerCache: {fileID: 2755054704185373847}
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
+  midDepthStart: 60
+  deepDepthStart: 180
+  surfaceProfile:
+    scavengeUnloadDistance: 399
+    scavengePriorityRadius: 180
+    scavengeSpawnsPerTick: 24
+    colliderActivateRadius: 49.679996
+    colliderDeactivateRadius: 55.679996
+    colliderOpsPerTick: 18
+  midDepthProfile:
+    scavengeUnloadDistance: 335.16
+    scavengePriorityRadius: 151.2
+    scavengeSpawnsPerTick: 20
+    colliderActivateRadius: 41.731197
+    colliderDeactivateRadius: 46.771194
+    colliderOpsPerTick: 15
+  deepProfile:
+    scavengeUnloadDistance: 279.3
+    scavengePriorityRadius: 126
+    scavengeSpawnsPerTick: 17
+    colliderActivateRadius: 34.775997
+    colliderDeactivateRadius: 38.975998
+    colliderOpsPerTick: 13
+  _debugCurrentBand: Surface
+  _debugCurrentDepth: 0
+  _debugApplied: 1
+  _debugPlayerReady: 1
+  _debugBridgeReady: 0
+  _debugScavengeReady: 1
+  _debugColliderReady: 1
+  _debugDirectorScavengeRadiusScale: 1
+  _debugDirectorSpawnScale: 1
+  _debugDirectorColliderRadiusScale: 1
+  _debugDirectorColliderOpsScale: 1
+  _debugInterestScavengeRadiusScale: 1
+  _debugInterestSpawnScale: 1
+  _debugInterestColliderRadiusScale: 1
+  _debugInterestColliderOpsScale: 1
+  _debugZoneScavengeRadiusScale: 1
+  _debugZoneSpawnScale: 1
+  _debugZoneColliderRadiusScale: 1
+  _debugZoneColliderOpsScale: 1
+  _debugProfileResourcesNearScale: 1
+  _debugProfileDebrisNearScale: 1.15
+--- !u!114 &2260934476488783066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547a39a8034a57a47b65413eb12885d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldStreamingDirector
+  playerTransform: {fileID: 0}
+  playerRigidbody: {fileID: 0}
+  mapMagicBridge: {fileID: 9140334739692092775}
+  biomeSamplerCache: {fileID: 2755054704185373847}
+  scatterBudgetController: {fileID: 6357410893914944049}
+  worldSliceDirector: {fileID: 7229653515599356197}
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
+  midDepthStart: 60
+  deepDepthStart: 180
+  traverseSpeedStart: 4.5
+  speedSmoothing: 0.2
+  surfaceSurveyProfile:
+    mapMagicObjectsPerFrame: 126
+    scavengeRadiusScale: 1
+    scavengeSpawnScale: 1
+    colliderRadiusScale: 1.275
+    colliderOpsScale: 1
+    nearSliceScale: 1.4
+    midSliceScale: 1.35
+  surfaceTraverseProfile:
+    mapMagicObjectsPerFrame: 161
+    scavengeRadiusScale: 0.86
+    scavengeSpawnScale: 0.92
+    colliderRadiusScale: 1.0965
+    colliderOpsScale: 0.88
+    nearSliceScale: 1.148
+    midSliceScale: 1.4580001
+  midSurveyProfile:
+    mapMagicObjectsPerFrame: 108
+    scavengeRadiusScale: 0.86
+    scavengeSpawnScale: 0.86
+    colliderRadiusScale: 1.0965
+    colliderOpsScale: 0.86
+    nearSliceScale: 1.4
+    midSliceScale: 1.35
+  midTraverseProfile:
+    mapMagicObjectsPerFrame: 139
+    scavengeRadiusScale: 0.7396
+    scavengeSpawnScale: 0.79120004
+    colliderRadiusScale: 0.94299
+    colliderOpsScale: 0.7568
+    nearSliceScale: 1.148
+    midSliceScale: 1.4580001
+  deepSurveyProfile:
+    mapMagicObjectsPerFrame: 91
+    scavengeRadiusScale: 0.72
+    scavengeSpawnScale: 0.72
+    colliderRadiusScale: 0.91800004
+    colliderOpsScale: 0.72
+    nearSliceScale: 1.4
+    midSliceScale: 1.35
+  deepTraverseProfile:
+    mapMagicObjectsPerFrame: 116
+    scavengeRadiusScale: 0.61920005
+    scavengeSpawnScale: 0.66240007
+    colliderRadiusScale: 0.78948003
+    colliderOpsScale: 0.6336
+    nearSliceScale: 1.148
+    midSliceScale: 1.4580001
+  _debugDepthZone: Surface
+  _debugMotionMode: Survey
+  _debugDepth: 0
+  _debugSpeed: 0
+  _debugMapMagicObjectsPerFrame: 0
+  _debugNearSliceScale: 1
+  _debugMidSliceScale: 1
+  _debugApplied: 0
+  _debugPlayerReady: 1
+  _debugBridgeReady: 0
+  _debugBiomeCacheReady: 0
+  _debugBudgetReady: 1
+  _debugUsingSharedChunkProfile: 1
+--- !u!114 &7188378405454682209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fba4f1c340b57f48b6c605269bf88d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Core.ProximityColliderSystem
+  playerTransform: {fileID: 0}
+  colliderPrefab: {fileID: 8242149277635521876, guid: 1aec6a41792df9b40a23be2c40387cf6, type: 3}
+  activateRadius: 49.679996
+  deactivateRadius: 55.679996
+  maxOperationsPerTick: 18
+  _debugTotalPoints: 0
+  _debugActiveColliders: 0
+  _debugJobFrameDelay: 0
+--- !u!114 &7229653515599356197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08882f8d684a31448f05528852d252b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldSliceDirector
+  playerTransform: {fileID: 0}
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
+  nearDistanceScale: 1
+  midDistanceScale: 1
+  interestNearDistanceScale: 1
+  interestMidDistanceScale: 1
+  zoneNearDistanceScale: 1
+  zoneMidDistanceScale: 1
+  _debugSliceCount: 0
+  _debugPlayerReady: 0
+  _debugApplied: 0
+  _debugProfileNearScale: 1.4
+  _debugProfileMidScale: 1.35
+--- !u!114 &2289867282957195680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab036c315907d9649a285c5617fdd8e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldInterestDirector
+  playerTransform: {fileID: 0}
+  scatterBudgetController: {fileID: 6357410893914944049}
+  worldSliceDirector: {fileID: 7229653515599356197}
+  idleScavengeRadiusScale: 1
+  idleSpawnScale: 1
+  idleColliderRadiusScale: 1
+  idleColliderOpsScale: 1
+  idleSliceNearScale: 1
+  idleSliceMidScale: 1
+  _debugDominantAnchor: None
+  _debugDominantKind: None
+  _debugDominantInfluence: 0
+  _debugAnchorCount: 0
+  _debugApplied: 0
+--- !u!114 &2087684184080029191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0f0614986573774cad5648f74210ecb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldZoneDirector
+  playerTransform: {fileID: 0}
+  scatterBudgetController: {fileID: 0}
+  worldSliceDirector: {fileID: 0}
+  autoResolveRetryInterval: 1
+  _debugCurrentZoneId: zone.none
+  _debugCurrentZoneLabel: None
+  _debugCurrentZoneKind: Generic
+  _debugCurrentZoneTier: Starter
+  _debugZonePlan: None
+  _debugExpeditionLoop: None
+  _debugSandboxAttraction: None
+  _debugMotivationProfile: None
+  _debugSurvivalNeed: None
+  _debugResourceNeed: None
+  _debugEngineeringNeed: None
+  _debugCuriosityPull: None
+  _debugStoryPull: None
+  _debugRareValuePull: None
+  _debugHeroFamily: None
+  _debugNearFamily: None
+  _debugMidFamily: None
+  _debugFarFamily: None
+  _debugResourcePocketFamily: None
+  _debugNodeClusterFamily: None
+  _debugSafePocketFamily: None
+  _debugBuildSocketFamily: None
+  _debugPowerSpineFamily: None
+  _debugServiceChokeFamily: None
+  _debugRouteAnchorFamily: None
+  _debugHazardGateFamily: None
+  _debugRareObjectiveFamily: None
+  _debugDominantBiome: None
+  _debugDominantBiomeFamily: None
+  _debugSecondaryBiome: None
+  _debugSecondaryBiomeFamily: None
+  _debugDominantVisitPurpose: None
+  _debugDominantLandmark: None
+  _debugDominantRisk: None
+  _debugDominantEarlyFarm: None
+  _debugDominantLateReturn: None
+  _debugPocketResource: None
+  _debugNodeResource: None
+  _debugSafePocketResource: None
+  _debugRareObjectiveResource: None
+  _debugDominantLandmarkRole: None
+  _debugDominantExtraction: None
+  _debugDominantLandmarkGuidance: None
+  _debugLoosePickupBias: 0
+  _debugNodeBias: 0
+  _debugSalvageBias: 0
+  _debugCommonBias: 0
+  _debugUncommonBias: 0
+  _debugRareBias: 0
+  _debugBlendedLoosePickupBias: 0
+  _debugBlendedNodeBias: 0
+  _debugBlendedSalvageBias: 0
+  _debugBlendedCommonBias: 0
+  _debugBlendedUncommonBias: 0
+  _debugBlendedRareBias: 0
+  _debugEffectiveScavengeScale: 1
+  _debugEffectiveSpawnScale: 1
+  _debugEffectiveColliderRadiusScale: 1
+  _debugEffectiveColliderOpsScale: 1
+  _debugEffectiveNearSliceScale: 1
+  _debugEffectiveMidSliceScale: 1
+  _debugEffectiveNearDensity: 0
+  _debugEffectiveMidDensity: 0
+  _debugEffectiveFarDensity: 0
+  _debugZoneRewardRhythm: None
+  _debugZoneRouteRhythm: None
+  _debugZoneSafePocketRhythm: None
+  _debugLoopEntryBeat: None
+  _debugLoopRoutineBeat: None
+  _debugLoopReliefBeat: None
+  _debugLoopPressureBeat: None
+  _debugLoopPayoffBeat: None
+  _debugLoopExitBeat: None
+  _debugLoopFreedomRule: None
+  _debugLoopSoftPull: None
+  _debugLoopDetourRule: None
+  _debugLoopMasteryRule: None
+  _debugSandboxEntryRead: None
+  _debugSandboxAmbientValue: None
+  _debugSandboxDetourValue: None
+  _debugSandboxShelterRead: None
+  _debugSandboxPressureRead: None
+  _debugSandboxDeepLure: None
+  _debugSandboxReturnValue: None
+  _debugSandboxFreedomRule: None
+  _debugSandboxCrosslinkRule: None
+  _debugSandboxDangerRule: None
+  _debugBlendedRewardRhythm: None
+  _debugBlendedRouteRhythm: None
+  _debugBlendedSafePocketRhythm: None
+  _debugBlendedExtraction: None
+  _debugBlendedLandmarkGuidance: None
+  _debugNearestZone: None
+  _debugCurrentZoneWeight: 0
+  _debugNearestZoneWeight: 0
+  _debugSecondaryZone: None
+  _debugSecondaryZoneWeight: 0
+  _debugZoneBlendFactor: 0
+  _debugZoneCount: 0
+  _debugApplied: 0
+--- !u!114 &8456313356375406051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aace504e056d7824a9dfb6b2522093a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldContentDirector
+  playerTransform: {fileID: 0}
+  worldZoneDirector: {fileID: 2087684184080029191}
+  autoResolveRetryInterval: 1
+  _debugSocketCount: 0
+  _debugZoneSocketCount: 0
+  _debugNearestSocket: None
+  _debugNearestKind: Generic
+  _debugNearestProfile: None
+  _debugNearestPopulationFamily: None
+  _debugNearestPopulationRule: None
+  _debugNearestPopulationBiomeFit: None
+  _debugNearestPopulationExtraction: None
+  _debugNearestPopulationLandmark: None
+  _debugNearestPopulationSpatialRole: None
+  _debugNearestPopulationSpatialReason: None
+  _debugNearestPopulationBorderRole: None
+  _debugNearestPopulationBorderReason: None
+  _debugNearestPopulationResourceItem: None
+  _debugNearestPopulationResourceReason: None
+  _debugNearestPopulationMotivationPull: None
+  _debugNearestPopulationMotivationReason: None
+  _debugNearestPopulationSandboxAttractionRole: None
+  _debugNearestPopulationSandboxAttractionReason: None
+  _debugNearestZoneRoleFamily: None
+  _debugNearestZoneRoleLayout: None
+  _debugNearestZoneRolePriority: None
+  _debugNearestPopulationPurpose: None
+  _debugNearestPopulationDensity: 0
+  _debugNearestProceduralRule: None
+  _debugNearestProceduralFamily: None
+  _debugNearestProceduralVariant: None
+  _debugNearestProceduralSource: None
+  _debugNearestProceduralDomain: Generic
+  _debugNearestProceduralPlacementMode: Scatter
+  _debugNearestProceduralHeatmap: None
+  _debugNearestProceduralIntent: None
+  _debugNearestProceduralReason: None
+  _debugNearestProceduralScore: 0
+  _debugCurrentZone: None
+--- !u!114 &8001638159277805258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b26b2096c18fec1448a3b49857520a79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPopulationDirector
+  playerTransform: {fileID: 0}
+  worldZoneDirector: {fileID: 2087684184080029191}
+  worldContentDirector: {fileID: 8456313356375406051}
+  rules:
+  - {fileID: 11400000, guid: 78cb711be24e4a640b8fbc99ab4dbb2c, type: 2}
+  - {fileID: 11400000, guid: 60a80424efc2c6d4492cc209cfb0bc0c, type: 2}
+  - {fileID: 11400000, guid: 98b05716cc84f4345bd70cef64c1be8a, type: 2}
+  - {fileID: 11400000, guid: 10153e9f81cda8349997889cf5c8fd9d, type: 2}
+  - {fileID: 11400000, guid: d5bd15958f18dc7478da394a58da4c8d, type: 2}
+  - {fileID: 11400000, guid: 170a61b1c4d37ef4e82d11e3b3d86b99, type: 2}
+  - {fileID: 11400000, guid: a1a1dc3685b4d5849b34190b96122ac9, type: 2}
+  - {fileID: 11400000, guid: 0e821eb287225b34889474518ab8def9, type: 2}
+  - {fileID: 11400000, guid: a3e4b2c0c1d19b145a09a392d4586028, type: 2}
+  - {fileID: 11400000, guid: 9391cd85c705de8429ec3dbe488936c8, type: 2}
+  autoResolveRetryInterval: 1
+  _debugRuleCount: 0
+  _debugMatchedRuleCount: 0
+  _debugResolvedSocketCount: 0
+  _debugCurrentZone: None
+  _debugCurrentZoneBiome: None
+  _debugSecondaryZone: None
+  _debugSecondaryZoneBiome: None
+  _debugZoneBlendFactor: 0
+  _debugCurrentSocket: None
+  _debugPrimaryRule: None
+  _debugPrimaryPrefabFamily: None
+  _debugPrimaryBiomeFit: None
+  _debugPrimaryExtraction: None
+  _debugPrimaryLandmark: None
+  _debugPrimarySpatialRole: None
+  _debugPrimarySpatialReason: None
+  _debugPrimaryBorderRole: None
+  _debugPrimaryBorderReason: None
+  _debugPrimaryResourceItem: None
+  _debugPrimaryResourceReason: None
+  _debugPrimaryMotivationPull: None
+  _debugPrimaryMotivationReason: None
+  _debugPrimarySandboxAttractionRole: None
+  _debugPrimarySandboxAttractionReason: None
+  _debugPrimaryZoneRoleFamily: None
+  _debugPrimaryZoneRoleLayout: None
+  _debugPrimaryZoneRolePriority: None
+  _debugPrimaryPurpose: None
+  _debugPrimaryEffectiveDensity: 0
+--- !u!114 &5471377331748409986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5edcfefa47837a147a16a78401507398, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.BiomeMatrixDirector
+  playerTransform: {fileID: 0}
+  matrixCatalog: {fileID: 11400000, guid: 8c6f4f1442c684b44a5b9146a36faa10, type: 2}
+  surfaceOffsetMeters: 0
+  worldOrigin: {x: 0, y: 0, z: 0}
+  regionDeadZone: 24
+  _debugTier: 1
+  _debugRegion: North
+  _debugBiomeName: None
+  _debugMatrixIndex: -1
+  _debugPlaceholder: 0
+  _debugFamilyId: None
+  _debugFamilyLabel: None
+  _debugAtmosphereMood: None
+  _debugPrimaryResourceTheme: None
+  _debugNavigationStyle: None
+  _debugAtmosphereProfile: None
+  _debugFaunaFamily: None
+  _debugThreatStyle: None
+  _debugRecommendedLoadout: None
+  _debugResourcePlan: None
+  _debugResourceChannels: None
+  _debugEarlyFarmReason: None
+  _debugLateReturnReason: None
+  _debugExtractionStyle: None
+  _debugPocketResource: None
+  _debugNodeResource: None
+  _debugSafePocketResource: None
+  _debugRareObjectiveResource: None
+  _debugLoosePickupWeight: 0
+  _debugNodeExtractionWeight: 0
+  _debugSalvageRecoveryWeight: 0
+  _debugCommonResourcePull: 0
+  _debugUncommonResourcePull: 0
+  _debugRareResourcePull: 0
+  _debugLandmarkPlan: None
+  _debugDominantLandmarkRole: None
+  _debugRouteUse: None
+  _debugEmotionalRead: None
+  _debugSpatialPattern: None
+  _debugResourcePocketPattern: None
+  _debugNodeClusterPattern: None
+  _debugSafePocketPattern: None
+  _debugRouteAnchorPattern: None
+  _debugRareObjectivePattern: None
+  _debugExplorationLoop: None
+  _debugWhyPlayerComesHere: None
+  _debugRouteClarity: 0
+  _debugSafePocketFrequency: 0
+  _debugRareRewardPull: 0
+  _debugEncounterPressure: 0
+  _debugHazardPressure: 0
+  _debugVisitPurpose: None
+  _debugCommonRewardHook: None
+  _debugRareRewardHook: None
+  _debugLandmarkIdentity: None
+  _debugSafePocketIdentity: None
+  _debugRiskSummary: None
+  _debugExtractionFocus: None
+  _debugLandmarkGuidance: None
+  _debugLoosePickupBias: 0
+  _debugNodeExtractionBias: 0
+  _debugSalvageBias: 0
+  _debugCommonResourceBias: 0
+  _debugUncommonResourceBias: 0
+  _debugRareResourceBias: 0
+  _debugRoutePressure: 0
+  _debugLandmarkStrengthValue: 0
+  _debugRewardPullValue: 0
+  _debugSurvivalPressure: 0
+  _debugPrimaryClusterFocus: None
+  _debugSecondaryClusterFocus: None
+  _debugPrimaryStructureFocus: None
+  _debugSecondaryStructureFocus: None
+  _debugFaunaMoodValue: None
+--- !u!114 &7023830671875881651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b2b370c2eb6b964994eff463fe88fe5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralFillDirector
+  playerTransform: {fileID: 0}
+  worldZoneDirector: {fileID: 2087684184080029191}
+  worldContentDirector: {fileID: 8456313356375406051}
+  biomeMatrixDirector: {fileID: 5471377331748409986}
+  rules:
+  - {fileID: 11400000, guid: 48d24cd7ecc616e4b965043a8915bad0, type: 2}
+  - {fileID: 11400000, guid: ae7a4dd4d2fff7e45be85939485711a8, type: 2}
+  - {fileID: 11400000, guid: 28ddb5e8241557640af807cc43550dfe, type: 2}
+  - {fileID: 11400000, guid: 55a578c24fd803e4781a566fa0db121c, type: 2}
+  - {fileID: 11400000, guid: 807f74cb6a541f8449ad489360bd9aa5, type: 2}
+  - {fileID: 11400000, guid: 37e5d1a8382c56042881debca01082c0, type: 2}
+  - {fileID: 11400000, guid: 27f89c813c8ff26459336331c6371bf2, type: 2}
+  - {fileID: 11400000, guid: 22301c91c88e3304dbdee1d2fc2d944d, type: 2}
+  - {fileID: 11400000, guid: 3ff2451b047d4721a26b2f4403203378, type: 2}
+  - {fileID: 11400000, guid: f603e30c3fe5408c9152f67ba02383ef, type: 2}
+  - {fileID: 11400000, guid: 4fb9216b3795dc44fa7fc7a5f3b7081a, type: 2}
+  - {fileID: 11400000, guid: f521fe4a24df90b48986d26289aebb73, type: 2}
+  - {fileID: 11400000, guid: 00d529e4f6fb4fbbb8f7d05b99465808, type: 2}
+  - {fileID: 11400000, guid: d71b85cea69f4000a33656a0b8e90159, type: 2}
+  - {fileID: 11400000, guid: 105b5bc028ad7eb49a12775bf2f74f25, type: 2}
+  - {fileID: 11400000, guid: 193e69efcc4af224f860e06eef5ab55a, type: 2}
+  - {fileID: 11400000, guid: 68c027bbffd435747a35db57571e0bc1, type: 2}
+  - {fileID: 11400000, guid: 06b46a5987f9d3648844e0fe1de952e8, type: 2}
+  - {fileID: 11400000, guid: 4188d2a712d2e04469ef517006805276, type: 2}
+  - {fileID: 11400000, guid: 3be4f1a4c0b0df74abfe7f0bca2e8a1d, type: 2}
+  - {fileID: 11400000, guid: 29fc3ba9c3ccd234583ba27b5693d6aa, type: 2}
+  - {fileID: 11400000, guid: e00f23a7450c48e4a87632f4892eaf85, type: 2}
+  - {fileID: 11400000, guid: 7757117976df37144be18808692b6e02, type: 2}
+  - {fileID: 11400000, guid: 0855c046621605c49b4b31c8e485cb03, type: 2}
+  - {fileID: 11400000, guid: 963e6b053b0556f4cb1c6a79fb05326a, type: 2}
+  - {fileID: 11400000, guid: 254eb5fe3d4983a4895d4f1535bd8ad5, type: 2}
+  - {fileID: 11400000, guid: c6e9362851d0e49439382e3dbbdc1f66, type: 2}
+  - {fileID: 11400000, guid: fd2b6e55f9e2e1a458523be1c5e9669d, type: 2}
+  - {fileID: 11400000, guid: 0e406ac45309e3d40b7d423e077bd5e2, type: 2}
+  - {fileID: 11400000, guid: 97e823adad78d834b8a071df4b921f62, type: 2}
+  - {fileID: 11400000, guid: 6e262ecc83df80846ab26816de3d2597, type: 2}
+  families:
+  - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}
+  - {fileID: 11400000, guid: 20ff4b803a538544ca9a58d36bb90883, type: 2}
+  - {fileID: 11400000, guid: 955b39d9404026347907d5f43bc57220, type: 2}
+  - {fileID: 11400000, guid: 9b6f9e64950b8fe4da7ee795ca6c1126, type: 2}
+  - {fileID: 11400000, guid: ad5ca7d3c4eae3041861b15fa48a9ec7, type: 2}
+  - {fileID: 11400000, guid: 043faf5f795e41729883909059c17c86, type: 2}
+  - {fileID: 11400000, guid: bb7698a0476e4daea0430abf50bb19e8, type: 2}
+  - {fileID: 11400000, guid: 93fa74407b09405f88c798c752d0ef1b, type: 2}
+  - {fileID: 11400000, guid: 7513b7df3e564610a7477ee8806d3874, type: 2}
+  - {fileID: 11400000, guid: ff8b34f9718db3a4f93ea8552b5cbe30, type: 2}
+  - {fileID: 11400000, guid: 78eb1922d7c5fc74eb0be51563fc58fb, type: 2}
+  - {fileID: 11400000, guid: 602b90081c9370b42a85e2acf29ac8ea, type: 2}
+  - {fileID: 11400000, guid: 7b58fe2e803894e40af5c5c5e1cf5d24, type: 2}
+  - {fileID: 11400000, guid: 7b5718118935ca14ead61b4f0f007a13, type: 2}
+  - {fileID: 11400000, guid: 3248410377598bf4b935417906c28fd5, type: 2}
+  - {fileID: 11400000, guid: e78426c2ce06cb445a353611d1608196, type: 2}
+  - {fileID: 11400000, guid: 46f6128afde1266448f05be291b36efe, type: 2}
+  - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
+  - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
+  - {fileID: 11400000, guid: 723bfa18be2651148ba5aec371fae323, type: 2}
+  - {fileID: 11400000, guid: 012a279da4249d24b8c22dbce26e55b8, type: 2}
+  - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
+  - {fileID: 11400000, guid: 4713708ed9ef09d469a6f7640237809a, type: 2}
+  - {fileID: 11400000, guid: c9d9f836a335df94bb74b3b58c842615, type: 2}
+  - {fileID: 11400000, guid: d279bd884179d0541b4f78f0255b7fb7, type: 2}
+  - {fileID: 11400000, guid: 6cbd01b092811a34898cf4376bf66851, type: 2}
+  - {fileID: 11400000, guid: dcc251612f752f4408558a43bce429ab, type: 2}
+  autoResolveRetryInterval: 1
+  _debugRuleCount: 0
+  _debugFamilyCount: 0
+  _debugResolvedSocketCount: 0
+  _debugCurrentZone: None
+  _debugCurrentBiome: None
+  _debugCurrentSocket: None
+  _debugPrimaryRule: None
+  _debugPrimaryFamily: None
+  _debugPrimarySource: None
+  _debugPrimaryVariant: None
+  _debugPrimaryDomain: Generic
+  _debugPrimaryPlacementMode: Scatter
+  _debugPrimaryHeatmap: None
+  _debugPrimaryIntent: None
+  _debugPrimaryReason: None
+  _debugPrimaryScore: 0
+  _debugPrimaryMinCount: 0
+  _debugPrimaryMaxCount: 0
+  _debugPrimarySpacingMeters: 0
+  _debugPrimaryClusterRadiusMeters: 0
+--- !u!114 &402511700257237360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbd6e7c465d9a604e9c5a9f7e8e57c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralFieldSampler
+  playerTransform: {fileID: 0}
+  mapMagicBridge: {fileID: 9140334739692092775}
+  worldZoneDirector: {fileID: 2087684184080029191}
+  biomeMatrixDirector: {fileID: 5471377331748409986}
+  autoResolveRetryInterval: 1
+  littoralKarstFamily: {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  fossilReefFamily: {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  sedimentDriftFamily: {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  abyssalSiltFamily: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  graniteEscarpmentFamily: {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  tectonicSpineFamily: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
+  riftSpineFamily: {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}
+  riftVoidFamily: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
+  volcanicGlassFamily: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
+  volcanicHadalFamily: {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
+  metallicHadalFamily: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  chemosyntheticBrineFamily: {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  crystalGrowthFamily: {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  slopeProbeMeters: 4
+  fieldNoiseScale: 0.0035
+  detailNoiseScale: 0.0125
+  forcePatternPreviewOverride: 0
+  previewPatternOverride: 2
+  limitPatternOverrideToFallback: 1
+  forceMatrixBiomePreviewOverride: 0
+  previewMatrixBiomeOverride: {fileID: 0}
+  limitMatrixBiomeOverrideToFallback: 1
+  _debugBridgeReady: 1
+  _debugZoneDirectorReady: 1
+  _debugBiomeDirectorReady: 1
+  _debugLastZone: Synthetic:Resources
+  _debugLastBiomeProfile: Soft Domes
+  _debugLastBiomeFamily: Sediment Drift
+  _debugLastPattern: SedimentResources
+  _debugPatternOverride: None
+  _debugPreviewBiomeOverride: None
+  _debugPreviewMatrixOverride: None
+  _debugPreviewZoneOverride: None
+  _debugLastHeatmap: service_density
+  _debugLastHeightSource: FallbackSynthetic
+  _debugLastHeatmapValue: 0.37201256
+  _debugLastDepth: 143.07324
+  _debugLastSlope: 7.6100407
+  _debugLastCurvature: 0
+  _debugLastCaveProximity: 0
+  _debugLastCompositionPotential: 0
+--- !u!114 &1393505268358642515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b262a941fc9cd384d941d93430ecedee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralScatterDirector
+  playerTransform: {fileID: 0}
+  fieldSampler: {fileID: 402511700257237360}
+  proceduralFillDirector: {fileID: 7023830671875881651}
+  patternCatalog: {fileID: 11400000, guid: 4dea9d835941cd440b89dfff4f4c6ca7, type: 2}
+  biomeContextCatalog: {fileID: 11400000, guid: ee7d6058293d9a049b22a2255c8b2033, type: 2}
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
+  faunaSpawnRegistry: {fileID: 2600687116124757052}
+  proceduralStateRegistry: {fileID: 1598910344647599498}
+  generativeGeologyService: {fileID: 0}
+  cellSize: 22
+  radiusCells: 7
+  groundPlacementsPerCell: 2
+  clusterPlacementsPerCell: 1
+  structureCellStride: 2
+  structurePlacementsPerWindow: 1
+  spawnCellStride: 3
+  spawnPlacementsPerWindow: 1
+  surfaceYOffset: 0.2
+  missingPlacementGraceSeconds: 8
+  waitForSceneBootstrap: 1
+  bootstrapWaitTimeoutSeconds: 12
+  scatterRefreshDistanceThreshold: 8
+  enableForcedScatterRefresh: 0
+  scatterForcedRefreshInterval: 4
+  enableScatterRebuildProfiling: 1
+  scatterRebuildSpikeThresholdMs: 40
+  enableScatterDetailedDiagnostics: 0
+  _debugReady: 1
+  _debugEvaluatedCells: 225
+  _debugDesiredPlacements: 82
+  _debugActivePlacements: 82
+  _debugGroundPlacements: 42
+  _debugClusterPlacements: 19
+  _debugStructurePlacements: 11
+  _debugSpawnPlacements: 10
+  _debugMapMagicSamples: 0
+  _debugRaycastSamples: 0
+  _debugFallbackSamples: 225
+  _debugZone: Synthetic:Resources
+  _debugBiomeMatrixProfile: Soft Domes
+  _debugBiomeFamily: Sediment Drift
+  _debugPattern: SedimentResources
+  _debugResolvedPatternProfile: Sediment Resources
+  _debugUsedFallbackPatternProfile: 0
+  _debugResolvedBiomeContextProfile: Sediment Drift Context
+  _debugUsedFallbackBiomeContextProfile: 0
+  _debugTopRule: Resource Pockets
+  _debugTopFamily: Pocket Resource
+  _debugTopHeatmap: resource_density
+  _debugGroundTopFamily: Coral Low
+  _debugClusterTopFamily: Pocket Resource
+  _debugStructureTopFamily: Rock Arch Large
+  _debugSpawnTopFamily: Creature Spawn Passive
+  _debugGroundDominantFamily: Coral Low
+  _debugClusterDominantFamily: Pocket Resource
+  _debugStructureDominantFamily: Ruin Module Single
+  _debugSpawnDominantFamily: Creature Spawn Passive
+  _debugSampleDominantMatrixBiome: Soft Domes
+  _debugSampleDominantBiomeFamily: Sediment Drift
+  _debugSampleDominantPattern: SedimentResources
+  _debugSampleDominantZone: Synthetic:Resources
+  _debugGroundDominantBiomeFamily: Fossil Reef
+  _debugClusterDominantBiomeFamily: Sediment Drift
+  _debugStructureDominantBiomeFamily: Sediment Drift
+  _debugSpawnDominantBiomeFamily: Fossil Reef
+  _debugClusterDominantAccentRole: ResourcePocket
+  _debugStructureDominantAccentRole: TechFragment
+  _debugGroundDominantCount: 42
+  _debugClusterDominantCount: 19
+  _debugStructureDominantCount: 7
+  _debugSpawnDominantCount: 10
+  _debugSampleDominantMatrixCount: 156
+  _debugSampleDominantBiomeCount: 156
+  _debugSampleDominantPatternCount: 152
+  _debugSampleDominantZoneCount: 152
+  _debugClusterDominantAccentCount: 19
+  _debugStructureDominantAccentCount: 7
+  _debugClusterFertileGrowthCount: 0
+  _debugClusterBiologicalNestCount: 0
+  _debugClusterResourcePocketCount: 19
+  _debugClusterShelterPocketCount: 0
+  _debugClusterHazardPocketCount: 0
+  _debugClusterDebrisFieldCount: 0
+  _debugClusterRockCoverCount: 0
+  _debugStructureNaturalLandmarkCount: 4
+  _debugStructureTechFragmentCount: 7
+  _debugStructureCaveReadCount: 0
+  _debugStructureBiologicalSilhouetteCount: 0
+  _debugSpawnPassiveCount: 10
+  _debugSpawnPredatorCount: 0
+  _debugTargetGroundMin: 40
+  _debugTargetGroundMax: 50
+  _debugTargetClusterMin: 15
+  _debugTargetClusterMax: 19
+  _debugTargetStructureMin: 9
+  _debugTargetStructureMax: 11
+  _debugTargetSpawnMin: 8
+  _debugTargetSpawnMax: 10
+  _debugPatternGroundBudgetScale: 1.1448
+  _debugPatternClusterBudgetScale: 1.35
+  _debugPatternStructureBudgetScale: 1.1664001
+  _debugPatternSpawnBudgetScale: 0.765
+  _debugTopHeat: 1
+  _debugTopScore: 3.6940088
+  _debugRuntimeCellSize: 22
+  _debugRuntimeRadiusCells: 7
+  _debugRuntimeChunkSize: 192
+  _debugRuntimeMacroZoneSize: 768
+  _debugGeneratedGeologyCount: 0
+  _debugPublishedFaunaAnchors: 0
+  _debugPublishedLargeThreatZones: 0
+  _debugLastScatterRebuildMs: 0
+  _debugSamplingStageMs: 0
+  _debugRescueStageMs: 0
+  _debugRestoreStageMs: 0
+  _debugReconcileStageMs: 0
+  _debugDiagnosticsStageMs: 0
+  _debugReconcileCleanupStageMs: 0
+  _debugReconcileSpawnStageMs: 0
+  _debugReconcileFaunaStageMs: 0
+  _debugReconcileRemovedCount: 0
+  _debugReconcileRebuiltCount: 0
+  _debugReconcileCreatedCount: 0
+  _debugReconcileReusedCount: 0
+  _debugLastScatterRefreshReason: None
+  _debugLastScatterInvalidationReason: fauna-registry
+--- !u!114 &2600687116124757052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62021429d446f5041b972c2af626ad05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldFaunaSpawnRegistry
+  _debugOrdinaryAnchorCount: 0
+  _debugLargeThreatZoneCount: 0
+  proceduralStateRegistry: {fileID: 1598910344647599498}
+--- !u!114 &1598910344647599498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fd2ec75b148e474a848babf859ac6dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralStateRegistry
+  initialSuppressedPlacementCapacity: 256
+  initialFaunaStateCapacity: 128
+  _debugSuppressedPlacementCount: 0
+  _debugFaunaStateCount: 0
+  _debugBlockedFaunaCount: 0
+  _debugLargeThreatFaunaStateCount: 0
+  _debugCurrentPlayTime: 0
+--- !u!114 &3394406694337368004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa6d65264a67ecf41a00d6935692e15c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyIntegrationDirector
+  playerTransform: {fileID: 0}
+  mapMagicBridge: {fileID: 9140334739692092775}
+  voxelEngine: {fileID: 0}
+  chunkStreamingProfile: {fileID: 11400000, guid: 8365d013b25edce4da2d87568a61cea2, type: 2}
+  includeInactiveBindings: 0
+  maxTrackedPlans: 256
+  searchRadiusPadding: 24
+  terrainDeltaBlendWindow: 18
+  minPlanWeight: 0.12
+  missingBindingGraceSeconds: 8
+  planRefreshDistanceThreshold: 6
+  planForcedRefreshInterval: 3
+  _debugReady: 0
+  _debugBridgeReady: 0
+  _debugVoxelEngineReady: 0
+  _debugSearchRadius: 0
+  _debugBindingsSeen: 0
+  _debugTrackedPlans: 0
+  _debugTerrainBlendPlans: 0
+  _debugVoxelBlendPlans: 0
+  _debugDebrisPlans: 0
+  _debugTopPlan: None
+  _debugTopPlanWeight: 0
+--- !u!114 &7082379652201203123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b22a582337f2f5a47be8eb43a3d57659, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologySeamExecutionDirector
+  integrationDirector: {fileID: 3394406694337368004}
+  playerTransform: {fileID: 0}
+  maxExecutedPlans: 48
+  minExecutionWeight: 0.18
+  terrainSkirtSegments: 6
+  voxelCollarSegments: 5
+  verticalBlendScale: 0.42
+  debrisScale: 0.42
+  _debugReady: 0
+  _debugAppliedSeams: 0
+  _debugTerrainSeams: 0
+  _debugVoxelSeams: 0
+  _debugDebrisSeams: 0
+  _debugVoxelRequests: 0
+  _debugTopExecuted: None
+--- !u!114 &8129537788799962042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54d356a89bc5ef848908c3694e4f9f0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyTerrainSeamApplier
+  integrationDirector: {fileID: 3394406694337368004}
+  maxAppliedPlans: 32
+  minPlanWeight: 0.2
+  radiusPaddingMeters: 2
+  raiseStrength: 0.9
+  cutStrength: 0.8
+  rimSmoothing: 0.35
+  _debugReady: 0
+  _debugAppliedTerrains: 0
+  _debugAppliedPlans: 0
+  _debugRestoredTerrains: 0
+  _debugTopTerrain: None
+--- !u!114 &6213219039242345317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8209430670174248936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73e38b46d593061479a84e8dab10ba90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyVoxelBridgeDirector
+  seamExecutionDirector: {fileID: 7082379652201203123}
+  voxelEngine: {fileID: 0}
+  maxRuntimeVolumes: 12
+  maxSpawnOperationsPerTick: 2
+  missingRequestGraceSeconds: 6
+  prewarmVoxelPool: 1
+  voxelPoolWarmPadding: 3
+  minBlendWeight: 0.28
+  minVoxelSize: 18
+  maxVoxelSize: 72
+  voxelPadding: 8
+  minVoxelStep: 0.75
+  maxVoxelStep: 2
+  structureNoiseAmount: 0.12
+  nearFieldTargetResolution: 56
+  farFieldTargetResolution: 38
+  nearFieldDistance: 58
+  farFieldDistance: 168
+  maxRequestDistance: 96
+  requestRetentionDistancePadding: 14
+  _debugReady: 0
+  _debugActiveVolumes: 0
+  _debugPendingVolumes: 0
+  _debugSpawnBudgetUsed: 0
+  _debugWarmedPoolTarget: 0
+  _debugTopVolume: None

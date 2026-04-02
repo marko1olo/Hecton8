@@ -282,7 +282,6 @@ namespace Hecton8.Core
                 int totalPoolsActive = 0;
                 int totalActiveObjects = 0;
                 int totalSpawned = 0;
-                int maxUtilization = 0;
 
                 foreach (var kvp in _poolMetrics)
                 {
@@ -293,7 +292,6 @@ namespace Hecton8.Core
                     totalPoolsActive++;
                     totalActiveObjects += currentActive;
                     totalSpawned += metrics.totalSpawns;
-                    // Note: maxUtilization needs capacity data from ObjectPoolManager
 
                     sb.Append($"\n  Pool: {poolName}\n");
                     sb.Append($"    Active: {currentActive} | Peak: {metrics.peakConcurrentCount}\n");

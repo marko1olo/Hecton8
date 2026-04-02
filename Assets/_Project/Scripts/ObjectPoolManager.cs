@@ -27,6 +27,7 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Dev;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -62,6 +63,8 @@ namespace Hecton8.Core
         [Tooltip("Автоматический прогрев при старте сцены. " +
                 "Добавь сюда часто используемые префабы.")]
         [SerializeField] private WarmupEntry[] warmupPresets;
+        [Tooltip("На сколько экземпляров расширять пул за один fallback, если warmup всё же не успел.")]
+        [SerializeField] private int fallbackExpandBatchSize = 4;
 
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugPoolCount;
@@ -447,20 +450,24 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Расширяет пул на один объект. Аллокация Instantiate неизбежна,
-        /// но это fallback — при правильном Warmup никогда не вызывается.
+        /// Расширяет пул fallback-пачкой. Аллокация Instantiate неизбежна,
+        /// но это аварийный путь — при правильном Warmup почти не нужен.
         /// </summary>
         private void ExpandPool(Pool pool, GameObject prefab, int prefabId)
         {
-            WarnExpand(prefab, "Pool exhausted, expanding by 1.");
+            int expandCount = Mathf.Max(1, fallbackExpandBatchSize);
+            WarnExpand(prefab, $"Pool exhausted, expanding by {expandCount}.");
 
 #if UNITY_EDITOR
             _debugTotalExpands++;
 #endif
 
-            GameObject obj = InstantiatePooled(prefab, prefabId, pool);
-            obj.SetActive(false);
-            pool.available.Enqueue(obj);
+            for (int i = 0; i < expandCount; i++)
+            {
+                GameObject obj = InstantiatePooled(prefab, prefabId, pool);
+                obj.SetActive(false);
+                pool.available.Enqueue(obj);
+            }
         }
 
         /// <summary>
@@ -529,9 +536,10 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private static void WarnExpand(GameObject prefab, string reason)
         {
-            Debug.LogWarning(
-                $"[ObjectPoolManager] '{prefab.name}': {reason} " +
-                "Consider increasing Warmup count.");
+            string prefabName = prefab != null ? prefab.name : "NullPrefab";
+            string report = $"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.";
+            RuntimeDiagnosticsTrace.WriteEvent("pool", report);
+            Debug.LogWarning(report);
         }
 
         // ══════════════════════════════════════════════════════════

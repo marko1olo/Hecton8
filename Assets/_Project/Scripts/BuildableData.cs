@@ -174,7 +174,7 @@ namespace Hecton8.Building
 
         public bool IsPassive => Mathf.Approximately(powerRating, 0f);
 
-        public string FamilyLabel => family.ToString().ToUpperInvariant();
+        public string FamilyLabel => CachedToUpperInvariant(family.ToString());
 
         public string FamilyShortCode
         {
@@ -200,6 +200,34 @@ namespace Hecton8.Building
         private void RebuildCache()
         {
             _cachedBuildText = $"Построить {moduleName}";
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ZERO-GC STRING CACHING
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        /// <summary>
+        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
+        /// Хранит до 16 последних преобразований для повторного использования.
+        /// </summary>
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
         }
     }
 }
