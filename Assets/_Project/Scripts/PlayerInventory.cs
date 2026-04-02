@@ -15,6 +15,7 @@
 namespace Hecton8.Inventory
 {
     using System;
+    using Hecton8.Gameplay;
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.SaveSystem;
@@ -82,11 +83,8 @@ namespace Hecton8.Inventory
         /// </summary>
         public event Action InventoryChanged;
 
-        /// <summary>
-        /// Fired when an item pickup fails due to full inventory.
-        /// Parameter: ItemData that couldn't fit.
-        /// </summary>
-        public event Action<ItemData> InventoryFull;
+        // DEPRECATED: use InventoryEvents.OnInventoryFull
+        // public event Action<ItemData> InventoryFull;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -286,7 +284,7 @@ namespace Hecton8.Inventory
                 else
                 {
                     allAdded = false;
-                    InventoryFull?.Invoke(item);
+                    InventoryEvents.NotifyInventoryFull(item);
                     break;
                 }
             }

@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using UnityEngine;
 

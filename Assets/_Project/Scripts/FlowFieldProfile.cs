@@ -10,6 +10,9 @@ using UnityEngine;
 
 namespace Hecton8.Physics
 {
+    /// <summary>
+    /// ScriptableObject-профиль с сериализуемыми настройками визуализатора течений.
+    /// </summary>
     [CreateAssetMenu(
         fileName = "FlowFieldProfile",
         menuName = "Hecton/Physics/Flow Field Profile",

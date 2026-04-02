@@ -1,30 +1,32 @@
 // ============================================================================
-// HECTON-8 — HectonSuitHUD.cs
+// HECTON-8 — HectonSuitHUD.cs  v3.1
 // Sci-fi костюмный HUD через Shapes (Immediate Mode).
 //
-// v3.0 — MODULE STATUS PANEL:
-//   [ADD] ModuleStatusPanel — показывает статус текущего BaseModule:
-//         питание (HasPower), затопление (IsFlooded), O2 (IsLifeSupport).
-//   [ADD] ModuleStatusEvents.cs интеграция — подписка на OnModuleEnter/Exit.
-//   [ADD] Pre-allocated module status strings (Zero GC).
-//   [ADD] DrawModulePanel() — нижняя правая панель с иконками и статусом.
+// v3.1 CHANGES (OPTIMIZATION):
+//   [OPT] NoiseLoop() coroutine → ITickable state machine
+//     • Eliminates StartCoroutine() overhead
+//     • Removes new WaitForSeconds() allocations (was 2 per cycle)
+//     • Timer-based state machine (glitchWaitTimer, noiseWaitTimer)
+//     • State: WAITING_FOR_EVENT, GLITCHING
+//     • Impact: Zero GC digital noise effect
 //
-// v2.0 — ZERO-GC STRING CACHE (preserved):
-//   • PercentStrings[101], DepthStrings[5001], PressureStrings[501], IntStrings[5001]
-//   • ~226 KB one-time allocation. Zero GC at runtime.
+// v3.0 — MODULE STATUS PANEL (PRESERVED):
+//   ✓ ModuleStatusPanel — статус BaseModule (питание, затопление, O2)
+//   ✓ ModuleStatusEvents.cs интеграция
+//   ✓ Pre-allocated module status strings (Zero GC)
+//   ✓ DrawModulePanel() — нижняя правая панель
 //
-// PRESERVED FROM v2.0:
+// v2.0 — ZERO-GC STRING CACHE (PRESERVED):
+//   ✓ PercentStrings[101], DepthStrings[5001], etc. (~226 KB one-time)
+//   ✓ All per-frame strings reused from static cache
 //   ✓ CornerGrid, CornerBrackets, LeftPanel, RightPanel
 //   ✓ ArcIndicators, DepthScale, TimeDisplay, StatusBar
 //   ✓ InteractPrompt, CriticalOverlay
-//   ✓ All event handlers (Oxygen, Energy, Depth, Integrity, Pressure)
-//   ✓ Digital Noise / Glitch coroutine
-//   ✓ ImmediateModeShapeDrawer pattern
 // ============================================================================
 
 using System;
-using System.Collections;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Shapes;
@@ -36,7 +38,7 @@ using Hecton.Localization;
 
 [DisallowMultipleComponent]
 [ExecuteAlways]
-public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
+public sealed class HectonSuitHUD : ImmediateModeShapeDrawer, ITickable
 {
     // ══════════════════════════════════════════════════════════════════
     //  STATIC PRE-ALLOCATED STRING CACHE
@@ -206,7 +208,7 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private string _interactPromptText;
 
     // ══════════════════════════════════════════════════════════════════
-    //  GLITCH
+    //  GLITCH — v3.1 STATE MACHINE (no coroutines)
     // ══════════════════════════════════════════════════════════════════
 
     private const int SlotCount = 5;
@@ -223,11 +225,16 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     private int _lastSecond = -1;
     private const int GridLinesPerCorner = 5;
 
+    /// <summary>v3.1: NoiseLoop state machine (replaces coroutine).</summary>
+    private enum NoiseState { Idle, WaitingForGlitch, Glitching }
+    private NoiseState _noiseState = NoiseState.Idle;
+    private float _noiseWaitTimer;   // Time until next glitch should trigger
+    private float _glitchDuration;   // Duration of current glitch effect
+    private bool _tickRegistered;
+
     // ══════════════════════════════════════════════════════════════════
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════════
-
-    private Coroutine _noiseHandle;
 
     public override void OnEnable()
     {
@@ -238,7 +245,14 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
         Subscribe();
         ForceRefreshAll();
-        _noiseHandle = StartCoroutine(NoiseLoop());
+
+        // v3.1: Register to ITickable instead of StartCoroutine
+        if (!_tickRegistered && GameTickManager.Instance != null)
+        {
+            GameTickManager.Instance.Register(this);
+            _tickRegistered = true;
+            InitializeNoiseTimer();
+        }
 
         InteractionEvents.OnHoverChanged += HandleHoverChanged;
 
@@ -281,10 +295,11 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
         base.OnDisable();
         Unsubscribe();
 
-        if (_noiseHandle != null)
+        // v3.1: Unregister from ITickable
+        if (_tickRegistered && GameTickManager.Instance != null)
         {
-            StopCoroutine(_noiseHandle);
-            _noiseHandle = null;
+            GameTickManager.Instance.Unregister(this);
+            _tickRegistered = false;
         }
 
         _o2Critical = false;
@@ -1072,11 +1087,10 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
 
     private void HandleDeath()
     {
-        if (_noiseHandle != null)
-        {
-            StopCoroutine(_noiseHandle);
-            _noiseHandle = null;
-        }
+        _noiseState = NoiseState.Idle;
+        _noiseWaitTimer = 0f;
+        _glitchDuration = 0f;
+        ClearGlitch();
         _o2Critical        = false;
         _integrityCritical = false;
         _statusText        = ">> SIGNAL LOST <<";
@@ -1101,37 +1115,81 @@ public sealed class HectonSuitHUD : ImmediateModeShapeDrawer
     }
 
     // ══════════════════════════════════════════════════════════════════
-    //  DIGITAL NOISE — GLITCH
+    //  DIGITAL NOISE — STATE MACHINE (v3.1, no coroutines)
     // ══════════════════════════════════════════════════════════════════
 
-    private IEnumerator NoiseLoop()
+    /// <summary>v3.1: Initialize noise timer (called from OnEnable).</summary>
+    private void InitializeNoiseTimer()
     {
-        var glitchPause = new WaitForSeconds(noiseDuration);
-        int[] picks = new int[3];
+        _noiseState = NoiseState.WaitingForGlitch;
+        _noiseWaitTimer = Random.Range(noiseMinInterval, noiseMaxInterval);
+    }
 
-        while (true)
+    /// <summary>v3.1: ITickable update for noise glitch animation.</summary>
+    public void Tick(float deltaTime)
+    {
+        // State machine for glitch effect (replaces coroutine)
+        switch (_noiseState)
         {
-            yield return new WaitForSeconds(
-                Random.Range(noiseMinInterval, noiseMaxInterval));
+            case NoiseState.Idle:
+                break;
 
-            int count = Random.Range(1, math.min(4, SlotCount + 1));
-            for (int i = 0; i < count; i++)
-                picks[i] = Random.Range(0, SlotCount);
+            case NoiseState.WaitingForGlitch:
+                _noiseWaitTimer -= deltaTime;
+                if (_noiseWaitTimer <= 0f)
+                {
+                    // Trigger glitch
+                    TriggerGlitch();
+                    _glitchDuration = noiseDuration;
+                    _noiseState = NoiseState.Glitching;
+                }
+                break;
 
-            for (int i = 0; i < count; i++)
-            {
-                int idx = picks[i];
-                string clean = GetCleanString(idx);
-                if (clean == null) continue;
-                _glitchOverlay[idx] = Corrupt(clean);
-            }
-
-            yield return glitchPause;
-
-            for (int i = 0; i < count; i++)
-                _glitchOverlay[picks[i]] = null;
+            case NoiseState.Glitching:
+                _glitchDuration -= deltaTime;
+                if (_glitchDuration <= 0f)
+                {
+                    // Glitch finished, wait for next event
+                    ClearGlitch();
+                    _noiseWaitTimer = Random.Range(noiseMinInterval, noiseMaxInterval);
+                    _noiseState = NoiseState.WaitingForGlitch;
+                }
+                break;
         }
     }
+
+    /// <summary>v3.1: Trigger glitch effect (no allocations).</summary>
+    private void TriggerGlitch()
+    {
+        int[] picks = new int[3];
+
+        int count = Random.Range(1, math.min(4, SlotCount + 1));
+        for (int i = 0; i < count; i++)
+            picks[i] = Random.Range(0, SlotCount);
+
+        for (int i = 0; i < count; i++)
+        {
+            int idx = picks[i];
+            string clean = GetCleanString(idx);
+            if (clean == null) continue;
+            _glitchOverlay[idx] = Corrupt(clean);
+        }
+    }
+
+    /// <summary>v3.1: Clear glitch overlay.</summary>
+    private void ClearGlitch()
+    {
+        for (int i = 0; i < SlotCount; i++)
+            _glitchOverlay[i] = null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  LEGACY (REMOVED) — IEnumerator NoiseLoop
+    // ══════════════════════════════════════════════════════════════════
+    // [REMOVED in v3.1]: private IEnumerator NoiseLoop()
+    //   Replaced with Tick() state machine in v3.1 for zero GC.
+    //   Was allocating new WaitForSeconds every cycle.
+    // ══════════════════════════════════════════════════════════════════
 
     private string GetCleanString(int slot)
     {

@@ -22,6 +22,7 @@ namespace Hecton8.Editor
         private float _lastRefreshTime;
         private string _lastAuditSummary = string.Empty;
         private string _lastRepairSummary = string.Empty;
+        private Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
 
         [MenuItem("Tools/Hecton/Save Slot Manager", false, 1)]
         public static void ShowWindow()
@@ -32,6 +33,12 @@ namespace Hecton8.Editor
         private void OnEnable()
         {
             RefreshSlots();
+        }
+
+        private void OnDisable()
+        {
+            ClearThumbnailCache();
+            SaveThumbnailSystem.ClearCache();
         }
 
         private void OnFocus()
@@ -348,14 +355,31 @@ namespace Hecton8.Editor
             _auditResults.Add(result);
         }
 
+        private void ClearThumbnailCache()
+        {
+            foreach (var kvp in _thumbnailCache)
+            {
+                if (kvp.Value != null)
+                {
+                    DestroyImmediate(kvp.Value);
+                }
+            }
+            _thumbnailCache.Clear();
+        }
+
         private Texture2D LoadThumbnail(string slotName)
         {
+            if (_thumbnailCache.TryGetValue(slotName, out Texture2D cached) && cached != null)
+                return cached;
+
             string path = SaveThumbnailSystem.GetThumbnailPath(slotName);
             if (!File.Exists(path)) return null;
 
             byte[] bytes = File.ReadAllBytes(path);
             Texture2D tex = new Texture2D(2, 2);
             tex.LoadImage(bytes);
+            
+            _thumbnailCache[slotName] = tex;
             return tex;
         }
 
@@ -369,7 +393,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void DeleteSlotFiles(string slotName)
+        private void DeleteSlotFiles(string slotName)
         {
             string[] relativePaths = SaveManager.GetAllKnownArtifactPaths(slotName);
 
@@ -381,6 +405,11 @@ namespace Hecton8.Editor
             }
 
             SaveThumbnailSystem.DeleteThumbnail(slotName);
+            if (_thumbnailCache != null && _thumbnailCache.TryGetValue(slotName, out Texture2D thumb))
+            {
+                if (thumb != null) DestroyImmediate(thumb);
+                _thumbnailCache.Remove(slotName);
+            }
         }
 
         private static string FormatTimestamp(long ticksUtc)

@@ -22,6 +22,7 @@ namespace Hecton8.UI
         }
 
         private const int LayoutRevision = 12;
+        private const float AutoResolveRetryInterval = 1f;
         [Header("References")]
         [SerializeField] private Canvas targetCanvas;
         [SerializeField] private Camera projectionCamera;
@@ -108,6 +109,7 @@ namespace Hecton8.UI
         private float _lastDepth;
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
+        private float _nextAutoResolveAt;
 
         private struct GaugeRefs
         {
@@ -124,7 +126,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             _layoutBuilt = false;
-            RefreshAll(0.016f);
+            RefreshAll(0.016f, forceResolve: true);
         }
 
         private void OnDisable()
@@ -138,19 +140,28 @@ namespace Hecton8.UI
             if (!Application.isPlaying && !keepVisibleInEditMode)
                 return;
 
-            RefreshAll(Application.isPlaying ? Time.deltaTime : 0.016f);
+            RefreshAll(Application.isPlaying ? Time.deltaTime : 0.016f, forceResolve: false);
         }
 
-        private void RefreshAll(float dt)
+        private void RefreshAll(float dt, bool forceResolve)
         {
-            AutoResolve();
+            AutoResolve(forceResolve);
             NormalizeCanvas();
             EnsureHierarchy();
             RefreshVisuals(dt);
         }
 
-        private void AutoResolve()
+        private void AutoResolve(bool force)
         {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = GetAutoResolveNow();
+            if (!force && now < _nextAutoResolveAt)
+                return;
+
+            _nextAutoResolveAt = now + AutoResolveRetryInterval;
+
             if (targetCanvas == null)
                 targetCanvas = GetComponent<Canvas>();
 
@@ -190,6 +201,22 @@ namespace Hecton8.UI
 
             if (underwaterVisuals == null)
                 underwaterVisuals = FindFirstObjectByType<HectonUnderwaterVisuals>();
+        }
+
+        private bool NeedsAutoResolve()
+        {
+            bool missingProjectionCamera = renderPath == RenderPath.ProjectionSource && projectionCamera == null;
+            return targetCanvas == null
+                || missingProjectionCamera
+                || survival == null
+                || playerMovement == null
+                || flashlight == null
+                || underwaterVisuals == null;
+        }
+
+        private static float GetAutoResolveNow()
+        {
+            return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
         }
 
         private void NormalizeCanvas()

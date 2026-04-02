@@ -7,6 +7,7 @@
 using System.Text;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using TMPro;
@@ -72,6 +73,29 @@ namespace Hecton8.UI
             PlayerPDA.IsOpen &&
             playerPDA != null &&
             playerPDA.ActiveTab == constructionTabIndex;
+
+        // ══════════════════════════════════════════════════════════
+        //  CACHED STRING OPERATIONS — ZERO GC
+        // ══════════════════════════════════════════════════════════
+
+        private readonly string[] _cachedUpperStrings = new string[16];
+
+        private string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
+        }
 
         private void Awake()
         {
@@ -406,7 +430,7 @@ namespace Hecton8.UI
                 .Append(" | DEF ").Append(defenseCount).AppendLine();
             _sb.Append("BUILT       ").Append(builtCount).AppendLine(" REGISTERED");
             _sb.Append("BUILDER     ").Append(DescribeBuilderState(builderSlot, builderReady, builderActive)).AppendLine();
-            _sb.Append("ACTIVE      ").Append(active != null ? active.moduleName.ToUpperInvariant() : "NONE").AppendLine();
+            _sb.Append("ACTIVE      ").Append(active != null ? CachedToUpperInvariant(active.moduleName) : "NONE").AppendLine();
             _sb.Append("FAMILY      ").Append(active != null ? active.FamilyLabel : "N/A").AppendLine();
             _sb.Append("ROLE        ").Append(active != null ? DescribePowerRole(active) : "N/A").AppendLine();
             _sb.Append("INDEX       ").Append(activeIndex >= 0 ? $"{activeIndex + 1}/{Mathf.Max(1, catalog != null ? catalog.Count : 0)}" : "N/A").AppendLine();
@@ -428,7 +452,7 @@ namespace Hecton8.UI
                 AppendCostDigest(_sb, active);
             }
 
-            _statusText.SetText(_sb.ToString());
+            _statusText.SetText(_sb);
             RefreshDirective(catalog, active, next, hasResources, canPlace, snapped, builtCount);
             RefreshBuilderAction(builderSlot, builderReady, builderActive);
             RefreshFieldAction(active, hasResources, canPlace, builderSlot, builderReady, builderActive, hasPreview);
@@ -455,7 +479,7 @@ namespace Hecton8.UI
                 bool isReadyCandidate = !isActive && hasCost;
 
                 _cardBgs[i].color = isActive ? BoxActive : BoxBg;
-                _cardTitles[i].SetText(data != null ? data.moduleName.ToUpperInvariant() : "UNKNOWN MODULE");
+                _cardTitles[i].SetText(data != null ? CachedToUpperInvariant(data.moduleName) : "UNKNOWN MODULE");
                 _cardTitles[i].color = isActive ? Primary : (hasCost ? Dim : Warn);
                 _cardBodies[i].SetText(BuildCardBody(data, isActive, hasCost));
 
@@ -485,7 +509,7 @@ namespace Hecton8.UI
                 return;
 
             playerBuilder.SetActiveBuildable(data);
-            hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — {data.moduleName.ToUpperInvariant()} ARMED");
+            hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — {CachedToUpperInvariant(data.moduleName)} ARMED");
             RefreshAll(true);
         }
 
@@ -564,7 +588,7 @@ namespace Hecton8.UI
                 if (playerBuilder.CanPlaceActiveBuildable)
                 {
                     if (playerBuilder.TryDeployActiveBuildableFromPreview())
-                        hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - {playerBuilder.ActiveBuildable.moduleName.ToUpperInvariant()} DEPLOYED");
+                        hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - {CachedToUpperInvariant(playerBuilder.ActiveBuildable.moduleName)} DEPLOYED");
                     else
                         hudNotification?.ShowWarning("CONSTRUCTION MATRIX - DEPLOY FAILED");
 
@@ -647,7 +671,7 @@ namespace Hecton8.UI
             if (!string.IsNullOrWhiteSpace(data.description))
             {
                 _sb.AppendLine();
-                _sb.Append("NOTES    ").Append(TrimForCard(data.description, 56).ToUpperInvariant());
+                _sb.Append("NOTES    ").Append(CachedToUpperInvariant(TrimForCard(data.description, 56)));
             }
             return _sb.ToString();
         }
@@ -678,27 +702,27 @@ namespace Hecton8.UI
             else if (!hasResources)
             {
                 _directiveText.color = Warn;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? playerBuilder.GetActiveBuildAdvice().ToUpperInvariant() : "GATHER COST BEFORE DEPLOYMENT.");
+                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "GATHER COST BEFORE DEPLOYMENT.");
                 if (next != null && !ReferenceEquals(next, active))
-                    _sb.Append(" NEXT VIABLE CANDIDATE: ").Append(next.moduleName.ToUpperInvariant())
+                    _sb.Append(" NEXT VIABLE CANDIDATE: ").Append(CachedToUpperInvariant(next.moduleName))
                         .Append(" (").Append(next.FamilyShortCode).Append(" / ").Append(DescribePowerRole(next)).Append(").");
             }
             else if (!canPlace)
             {
                 _directiveText.color = Blocked;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? playerBuilder.GetActiveBuildAdvice().ToUpperInvariant() : "REPOSITION UNTIL BUILD VOLUME CLEARS.");
+                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "REPOSITION UNTIL BUILD VOLUME CLEARS.");
                 if (builtCount <= 0)
                     _sb.Append(" OPEN WITH FOUNDATION OR PYLON FOR FIRST ANCHOR.");
             }
             else if (snapped)
             {
                 _directiveText.color = Ready;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? playerBuilder.GetActiveBuildAdvice().ToUpperInvariant() : "SOCKET LOCK ACQUIRED. DEPLOY FOR CLEAN CHAIN EXTENSION.");
+                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "SOCKET LOCK ACQUIRED. DEPLOY FOR CLEAN CHAIN EXTENSION.");
             }
             else
             {
                 _directiveText.color = Ready;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? playerBuilder.GetActiveBuildAdvice().ToUpperInvariant() : "FIELD-READY. DEPLOY ACTIVE MODULE.");
+                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "FIELD-READY. DEPLOY ACTIVE MODULE.");
             }
 
             _directiveText.SetText(_sb.ToString());
@@ -709,11 +733,11 @@ namespace Hecton8.UI
             _sb.Clear();
             _sb.Append("Select to arm. ");
             if (active != null)
-                _sb.Append("Active: ").Append(active.moduleName.ToUpperInvariant()).Append(" [")
+                _sb.Append("Active: ").Append(CachedToUpperInvariant(active.moduleName)).Append(" [")
                     .Append(active.FamilyShortCode).Append(" / ").Append(DescribePowerRole(active)).Append("]. ");
             _sb.Append("TAB / Q-E cycle in the field. INTERACT recovers a placed module. ");
             if (next != null && !ReferenceEquals(next, active))
-                _sb.Append("Next: ").Append(next.moduleName.ToUpperInvariant()).Append(" [").Append(next.FamilyShortCode).Append("].");
+                _sb.Append("Next: ").Append(CachedToUpperInvariant(next.moduleName)).Append(" [").Append(next.FamilyShortCode).Append("].");
             _hintText.SetText(_sb.ToString());
         }
 
@@ -926,7 +950,7 @@ namespace Hecton8.UI
                     continue;
                 if (i > 0)
                     sb.Append(" | ");
-                sb.Append(cost.item.itemName.ToUpperInvariant()).Append(' ').Append(cost.amount);
+                sb.Append(CachedToUpperInvariant(cost.item.itemName)).Append(' ').Append(cost.amount);
             }
         }
 
@@ -945,7 +969,7 @@ namespace Hecton8.UI
                     continue;
 
                 int owned = playerInventory != null ? playerInventory.CountTotal(cost.item) : 0;
-                sb.Append(cost.item.itemName.ToUpperInvariant())
+                sb.Append(CachedToUpperInvariant(cost.item.itemName))
                     .Append(' ')
                     .Append(owned)
                     .Append('/')

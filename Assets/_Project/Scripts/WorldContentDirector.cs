@@ -12,6 +12,9 @@ namespace Hecton8.World
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldZoneDirector worldZoneDirector;
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Diagnostics")]
         [SerializeField] private int _debugSocketCount;
         [SerializeField] private int _debugZoneSocketCount;
@@ -52,12 +55,13 @@ namespace Hecton8.World
 
         private readonly List<WorldContentSocket> _sockets = new List<WorldContentSocket>(128);
         private bool _registeredToTickManager;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public IReadOnlyList<WorldContentSocket> Sockets => _sockets;
 
         private void Awake()
         {
-            ResolveReferences();
+            ResolveReferences(force: true);
             RefreshSockets();
             UpdateDiagnostics(null, 0);
         }
@@ -154,8 +158,22 @@ namespace Hecton8.World
             UpdateDiagnostics(nearestSocket, zoneSocketCount);
         }
 
-        private void ResolveReferences()
+        private bool NeedsAutoResolve()
         {
+            return playerTransform == null || worldZoneDirector == null;
+        }
+
+        private void ResolveReferences(bool force = false)
+        {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAttemptTime)
+                return;
+
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
             if (playerTransform == null)
             {
                 GameObject player = GameObject.FindWithTag("Player");

@@ -7,6 +7,7 @@
 using System.Text;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -68,6 +69,29 @@ namespace Hecton8.UI
             PlayerPDA.IsOpen &&
             playerPDA != null &&
             playerPDA.ActiveTab == dataLogTabIndex;
+
+        // ══════════════════════════════════════════════════════════
+        //  CACHED STRING OPERATIONS — ZERO GC
+        // ══════════════════════════════════════════════════════════
+
+        private readonly string[] _cachedUpperStrings = new string[16];
+
+        private string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
+        }
 
         private void Awake()
         {
@@ -483,7 +507,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _sb.Append("ACTIVE   ").Append(activeBuildable.moduleName.ToUpperInvariant()).AppendLine();
+            _sb.Append("ACTIVE   ").Append(CachedToUpperInvariant(activeBuildable.moduleName)).AppendLine();
             _sb.Append("FAMILY   ").Append(activeBuildable.FamilyLabel).AppendLine();
             _sb.Append("ROLE     ").Append(DescribeConstructionRole(activeBuildable)).AppendLine();
             _sb.Append("STATUS   ");
@@ -534,7 +558,7 @@ namespace Hecton8.UI
                     continue;
 
                 if (topOffer == "NONE" && snapshot.CanExecute)
-                    topOffer = snapshot.Offer.offerName.ToUpperInvariant();
+                    topOffer = CachedToUpperInvariant(snapshot.Offer.offerName);
 
                 if (!snapshot.Unlocked) locked++;
                 else if (snapshot.Status == "CONTRACT CLOSED") closed++;
@@ -552,7 +576,7 @@ namespace Hecton8.UI
             if (txCount > 0)
             {
                 PDAExchangeSystem.TransactionSnapshot tx = _barterTxBuffer[0];
-                sb.Append("LATEST   ").Append(string.IsNullOrWhiteSpace(tx.OfferName) ? "UNKNOWN" : tx.OfferName.ToUpperInvariant()).AppendLine();
+                sb.Append("LATEST   ").Append(string.IsNullOrWhiteSpace(tx.OfferName) ? "UNKNOWN" : CachedToUpperInvariant(tx.OfferName)).AppendLine();
                 sb.Append("OUT      ").Append(string.IsNullOrWhiteSpace(tx.RewardSummary) ? "NONE" : tx.RewardSummary).AppendLine();
             }
             else
@@ -945,12 +969,12 @@ namespace Hecton8.UI
                 _barterTxBuffer = new PDAExchangeSystem.TransactionSnapshot[required];
         }
 
-        private static void AppendUpper(StringBuilder sb, string value)
+        private void AppendUpper(StringBuilder sb, string value)
         {
             if (string.IsNullOrEmpty(value))
                 return;
 
-            sb.Append(value.ToUpperInvariant());
+            sb.Append(CachedToUpperInvariant(value));
         }
 
         private void AppendBuildCostDigest(StringBuilder sb, BuildableData data)

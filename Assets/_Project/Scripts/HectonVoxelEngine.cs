@@ -2069,21 +2069,6 @@ public class HectonVoxelEngine : MonoBehaviour
             ? HectonFloatingOrigin.Instance.TotalOffset 
             : Vector3.zero;
 
-        // Record current world shift state to compensate if it changes during async work
-        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
-            ? HectonFloatingOrigin.Instance.TotalOffset 
-            : Vector3.zero;
-
-        // Record current world shift state to compensate if it changes during async work
-        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
-            ? HectonFloatingOrigin.Instance.TotalOffset 
-            : Vector3.zero;
-
-        // Record current world shift state to compensate if it changes during async work
-        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
-            ? HectonFloatingOrigin.Instance.TotalOffset 
-            : Vector3.zero;
-
         float terrainHeightCenter = worldCenter.y - 10f;
         if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
             terrainHeightCenter = h;
@@ -2247,7 +2232,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 Vector3 currentShift = HectonFloatingOrigin.Instance != null 
                     ? HectonFloatingOrigin.Instance.TotalOffset 
                     : Vector3.zero;
-                Vector3 shiftDelta = currentShift - shiftAtStartData; // Note: using unique name for data overload
+                Vector3 shiftDelta = currentShift - shiftAtStart;
                 targetGO.transform.position = -shiftDelta;
 
                 BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,

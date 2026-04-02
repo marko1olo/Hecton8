@@ -50,7 +50,6 @@ namespace Hecton8.UI
         private float _timer;
         private float _currentAlpha;
         private bool _built;
-        private PlayerInventory _inventory;
         private readonly System.Collections.Generic.List<NotificationRequest> _queue =
             new System.Collections.Generic.List<NotificationRequest>(8);
         private string _currentMessage;
@@ -75,17 +74,16 @@ namespace Hecton8.UI
         {
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
-            _inventory = FindFirstObjectByType<PlayerInventory>();
-            if (_inventory != null)
-                _inventory.InventoryFull += OnInventoryFull;
+            InventoryEvents.OnInventoryFull += OnInventoryFull;
+            NotificationEvents.OnPushNotification += OnPushNotification;
 
             EnsureBuilt();
         }
 
         private void OnDisable()
         {
-            if (_inventory != null)
-                _inventory.InventoryFull -= OnInventoryFull;
+            InventoryEvents.OnInventoryFull -= OnInventoryFull;
+            NotificationEvents.OnPushNotification -= OnPushNotification;
         }
 
         private void LateUpdate()
@@ -229,6 +227,11 @@ namespace Hecton8.UI
             }
 
             _notifText.text = message;
+        }
+
+        private void OnPushNotification(string message, int severity)
+        {
+            Enqueue(message, (NotificationSeverity)severity);
         }
 
         private void OnInventoryFull(ItemData item)

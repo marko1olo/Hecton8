@@ -14,6 +14,9 @@ namespace Hecton8.World
         [SerializeField] private WorldContentDirector worldContentDirector;
         [SerializeField] private List<WorldPopulationRule> rules = new List<WorldPopulationRule>();
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Diagnostics")]
         [SerializeField] private int _debugRuleCount;
         [SerializeField] private int _debugMatchedRuleCount;
@@ -46,10 +49,11 @@ namespace Hecton8.World
         [SerializeField] private float _debugPrimaryEffectiveDensity;
 
         private bool _registeredToTickManager;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         private void Awake()
         {
-            ResolveReferences();
+            ResolveReferences(force: true);
             UpdateDiagnostics(null, null, 0f, null, null, 0f, "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", "None", 0, 0);
         }
 
@@ -232,8 +236,24 @@ namespace Hecton8.World
             return best;
         }
 
-        private void ResolveReferences()
+        private bool NeedsAutoResolve()
         {
+            return playerTransform == null ||
+                   worldZoneDirector == null ||
+                   worldContentDirector == null;
+        }
+
+        private void ResolveReferences(bool force = false)
+        {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAttemptTime)
+                return;
+
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
             if (playerTransform == null)
             {
                 GameObject player = GameObject.FindWithTag("Player");

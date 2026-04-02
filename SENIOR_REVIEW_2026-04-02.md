@@ -80,14 +80,116 @@ Resolution:
 
 - Switched the call to `UnityEngine.Physics.SyncTransforms()` explicitly.
 
+### 6. Flow field runtime/editor contracts drifted apart and blocked compile
+
+Files:
+
+- `Assets/_Project/Scripts/FlowFieldVisualizer.cs`
+- `Assets/_Project/Scripts/CurrentVolume.cs`
+- `Assets/_Project/Scripts/Editor/FlowFieldVisualizerTests.cs`
+
+- The visualizer/tests expected a public `Recalculate()` entry point and a configurable minimum flow threshold.
+- `FlowFieldVisualizer` also needed per-volume current sampling, but the only available sampler on `CurrentVolume` was private.
+- The jobified global-current path had compile/runtime-shape issues around temporary native container lifetime and vector conversion.
+
+Resolution:
+
+- Restored the missing public surface on `FlowFieldVisualizer` (`Recalculate()`, `MinFlowStrength`).
+- Added a safe public sampling bridge on `CurrentVolume` so the visualizer no longer reaches through private API.
+- Fixed the global-current accumulation path to use explicit `float3` -> `Vector3` conversion and deterministic `NativeArray` disposal.
+- Added the missing `UnityEngine.TestTools` import so the editor tests compile against `LogAssert`.
+
+### 7. Survival API regressions broke dependent gameplay scripts
+
+Files:
+
+- `Assets/_Project/Scripts/HectonSurvivalSystem.cs`
+- `Assets/_Project/Scripts/HectonDirectorAI.cs`
+- `Assets/_Project/Scripts/PlayerInventory.cs`
+- `Assets/_Project/Scripts/UI/SuitAdvisoryController.cs`
+
+- Runtime callers still expected a public energy percentage and an imperative energy-drain API.
+- `HectonSurvivalSystem` only exposed normalized energy and had an internal passive-drain method name collision.
+- Several dependent files also missed the gameplay namespace import needed after recent code movement.
+
+Resolution:
+
+- Added `EnergyPercent` and restored a public `DrainEnergy(float amount)` API with clamping and dirty-state updates.
+- Renamed the internal passive drain path to avoid signature ambiguity.
+- Restored missing `using Hecton8.Gameplay;` imports in affected runtime callers.
+
+### 8. Voxel generation contained merge-artifact compile blockers
+
+File:
+
+- `Assets/_Project/Scripts/HectonVoxelEngine.cs`
+
+- The async generation path had duplicated local declarations for `shiftAtStart`.
+- One branch also referenced a non-existent `shiftAtStartData` symbol.
+
+Resolution:
+
+- Removed the duplicate local declarations.
+- Unified the code path on the valid `shiftAtStart` variable.
+
+### 9. Base AI had hard compile issues in the shared runtime layer
+
+File:
+
+- `Assets/_Project/Scripts/HectonBaseAI.cs`
+
+- The type declaration contained a malformed `IPoolable` interface token.
+- One field initializer was syntactically broken.
+- Atmosphere reads in the current implementation needed to bind against the actual runtime API shape.
+
+Resolution:
+
+- Corrected the interface list so the class implements `IPoolable` cleanly.
+- Fixed the broken field initializer.
+- Bound the hazard reads to the current atmosphere properties used elsewhere in the project.
+
+### 10. Two visor HUD runtime scripts polled scene-wide searches too aggressively
+
+Files:
+
+- `Assets/_Project/Scripts/Visor/SuitHUDPresentationController.cs`
+- `Assets/_Project/Scripts/Visor/SuitHUDScreenCompositor.cs`
+
+- Both scripts auto-resolved references through scene-wide search helpers whenever references were missing.
+- In practice that pattern could re-run every frame and become a noisy runtime `Find*` hotspot.
+
+Resolution:
+
+- Converted auto-resolve to an on-demand path with `force` support for lifecycle/editor hooks.
+- Added `NeedsAutoResolve()` guards plus a 1-second retry interval so scene-wide searches only run while references are actually missing.
+
+### 11. Additional HUD/visor runtime overlays still retried auto-resolve too often
+
+Files:
+
+- `Assets/_Project/Scripts/HectonSuitHUDExtensions.cs`
+- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
+- `Assets/_Project/Scripts/Visor/VisorHUDController.cs`
+
+- These scripts still performed reference auto-resolution from `Update()` / `LateUpdate()` paths.
+- In the failure case that meant repeated `FindFirstObjectByType`, `FindObjectsByType`, or hierarchy searches every frame while links were missing.
+- Because the whole stack runs in HUD/visor presentation, this is exactly the kind of low-grade polling cost that quietly accumulates.
+
+Resolution:
+
+- Moved all three scripts to the same guarded pattern used in the previous visor pass.
+- Added `NeedsAutoResolve()` checks, a `force` path for lifecycle validation, and a 1-second retry interval.
+- Kept behavior intact when references genuinely need to be reacquired, but removed the per-frame retry pressure.
+
 ## Verified
 
 - Unity Editor state was ready before and after the change.
-- Script refresh/compile completed with `0` console errors.
+- Script refresh/compile completed with no blocking errors; the current console contains warnings only.
+- Runtime first-party guard audit returned `NO_UNGUARDED_UNITYEDITOR_CALLS` across `Assets/_Project/Scripts` outside `Editor/`.
 - Existing warnings remain in third-party/editor code and were not introduced by these fixes.
 
 ## Not Fixed In This Pass
 
 - There are still multiple known runtime `Find*` usages and UI `Update()` loops across the project.
-- There is a broader project-wide pattern of runtime scripts referencing `UnityEditor.EditorApplication`; only the directly touched UI files were guarded in this pass.
-- Those areas need a dedicated pass because several related files are already in active work or require broader behavioral validation.
+- Some runtime-heavy files already had substantial in-flight edits (`FlowFieldVisualizer.cs`, `HectonBaseAI.cs`), so this pass stayed focused on compile safety, API restoration, and high-signal polling reduction rather than broad refactors.
+- The remaining `Find*` / polling cleanup needs a dedicated behavioral pass because several systems still need scene validation, not just compile validation.

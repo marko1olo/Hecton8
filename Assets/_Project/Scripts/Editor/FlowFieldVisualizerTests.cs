@@ -6,8 +6,10 @@
 // ============================================================================
 
 #if UNITY_EDITOR
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Hecton8.Physics;
 
 [TestFixture]
@@ -82,7 +84,7 @@ public class FlowFieldVisualizerTests
         _visualizer.MaxGridResolution = 50;
 
         // Should clamp the resolution and log warning
-        LogAssert.Expect(LogType.Warning, "Grid too large");
+        LogAssert.Expect(LogType.Warning, new Regex("Grid too large"));
 
         var validateMethod = typeof(FlowFieldVisualizer).GetMethod("ValidateSettings",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -90,6 +92,19 @@ public class FlowFieldVisualizerTests
 
         Assert.LessOrEqual(_visualizer.GridResolution.x, _visualizer.MaxGridResolution);
         Assert.LessOrEqual(_visualizer.GridResolution.y, _visualizer.MaxGridResolution);
+    }
+
+    [Test]
+    public void Recalculate_JobSystemDisabledFallsBackWithoutErrors()
+    {
+        _visualizer.GridResolution = new Vector2Int(10, 10);
+        _visualizer.UseBurstSampling = false;
+        _visualizer.UseJobSystem = false;
+
+        Assert.DoesNotThrow(() => _visualizer.Recalculate());
+
+        // Trigger draw to run calculation if needed
+        Assert.DoesNotThrow(() => _visualizer.DrawFlowField());
     }
 
     [Test]

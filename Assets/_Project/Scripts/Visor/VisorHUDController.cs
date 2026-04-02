@@ -47,10 +47,12 @@ namespace NASAPunk.Visor
         [SerializeField] private Vector3 _hudCameraLocalEulerOffset = Vector3.zero;
         [SerializeField] private float _minimumVisorForwardOffset = 0.02f;
         [SerializeField] private bool _enforceNearClipSafeOffset = false;
+        private const float AutoResolveRetryInterval = 1f;
 
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
         private bool _ownsRuntimeTexture;
+        private float _nextAutoResolveAt;
 
         // ── Glitch state machine (replaces coroutine) ────────────
         private bool  _glitchActive;
@@ -71,7 +73,7 @@ namespace NASAPunk.Visor
         private void OnEnable()
         {
             EnsurePropertyBlock();
-            AutoResolveReferences();
+            AutoResolveReferences(force: true);
             SyncProjectionPose();
             RebuildProjection();
         }
@@ -91,7 +93,7 @@ namespace NASAPunk.Visor
 
         private void Update()
         {
-            AutoResolveReferences();
+            AutoResolveReferences(force: false);
             SyncProjectionPose();
 
             if (_visorRenderer == null) return;
@@ -123,7 +125,7 @@ namespace NASAPunk.Visor
         private void OnValidate()
         {
             EnsurePropertyBlock();
-            AutoResolveReferences();
+            AutoResolveReferences(force: true);
             SyncProjectionPose();
 
             if (!isActiveAndEnabled)
@@ -209,8 +211,17 @@ namespace NASAPunk.Visor
         //  AUTO-RESOLVE
         // ══════════════════════════════════════════════════════════
 
-        private void AutoResolveReferences()
+        private void AutoResolveReferences(bool force)
         {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = GetAutoResolveNow();
+            if (!force && now < _nextAutoResolveAt)
+                return;
+
+            _nextAutoResolveAt = now + AutoResolveRetryInterval;
+
             if (_visorRenderer == null)
                 _visorRenderer = GetComponent<Renderer>();
 
@@ -259,6 +270,23 @@ namespace NASAPunk.Visor
                         _referenceCamera = baseParent.GetComponent<Camera>();
                 }
             }
+        }
+
+        private bool NeedsAutoResolve()
+        {
+            bool needsBaseStackCamera = _projectionMode != ProjectionMode.Disabled && _baseStackCamera == null;
+            bool needsReferenceCamera = _syncToReferenceCamera && _referenceCamera == null;
+            bool needsHudCamera = _projectionMode != ProjectionMode.Disabled && _hudCamera == null;
+
+            return _visorRenderer == null
+                || needsHudCamera
+                || needsBaseStackCamera
+                || needsReferenceCamera;
+        }
+
+        private static float GetAutoResolveNow()
+        {
+            return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
         }
 
         private void EnsurePropertyBlock()

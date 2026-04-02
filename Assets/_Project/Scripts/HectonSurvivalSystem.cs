@@ -95,6 +95,7 @@ namespace Hecton8.Gameplay
         public float OxygenNormalized    => oxygen    / stats.MaxOxygen;
         public float EnergyNormalized    => energy    / stats.MaxEnergy;
         public float IntegrityNormalized => integrity / stats.MaxIntegrity;
+        public float EnergyPercent       => EnergyNormalized * 100f;
 
         // ═════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -148,7 +149,7 @@ namespace Hecton8.Gameplay
             float dt = _slowTickDt;
 
             DrainOxygen(dt);
-            DrainEnergy(dt);
+            DrainPassiveEnergy(dt);
             ApplyPressureDamage(dt);
             HandleTemperature(dt);
             HandleRadiation(dt);
@@ -170,7 +171,7 @@ namespace Hecton8.Gameplay
             oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * dt);
         }
 
-        private void DrainEnergy(float dt)
+        private void DrainPassiveEnergy(float dt)
         {
             float weightFactor = 1f + weight * 0.005f;
             energy = math.max(0f, energy - stats.EnergyConsumptionRate * weightFactor * dt);
@@ -317,6 +318,20 @@ namespace Hecton8.Gameplay
         {
             energy = math.clamp(energy + amount, 0f, stats.MaxEnergy);
             ForceDirty(ref lastPubEnergy);
+        }
+
+        /// <summary>
+        /// Consumes a fixed amount of suit energy immediately.
+        /// </summary>
+        /// <param name="amount">Absolute amount of energy to remove.</param>
+        public void DrainEnergy(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            energy = math.max(0f, energy - amount);
+            ForceDirty(ref lastPubEnergy);
+            CheckLethalConditions();
         }
 
         public void TakeDamage(float amount)

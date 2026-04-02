@@ -1,4 +1,5 @@
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using TMPro;
 using UnityEngine;
@@ -52,6 +53,29 @@ namespace Hecton8.UI
             PlayerPDA.IsOpen &&
             playerPDA != null &&
             playerPDA.ActiveTab == barterTabIndex;
+
+        // ════════════════════════════════════════════════════════════════════════════════
+        //  CACHED STRING OPERATIONS — ZERO GC
+        // ════════════════════════════════════════════════════════════════════════════════
+
+        private static readonly string[] _cachedUpperStrings = new string[16];
+
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
+        }
 
         private void Awake()
         {
@@ -252,10 +276,10 @@ namespace Hecton8.UI
             if (txCount > 0)
             {
                 PDAExchangeSystem.TransactionSnapshot tx = _transactionBuffer[0];
-                _sb.Append("LATEST       ").Append(string.IsNullOrWhiteSpace(tx.OfferName) ? "UNKNOWN" : tx.OfferName.ToUpperInvariant()).AppendLine();
+                _sb.Append("LATEST       ").Append(string.IsNullOrWhiteSpace(tx.OfferName) ? "UNKNOWN" : CachedToUpperInvariant(tx.OfferName)).AppendLine();
                 _sb.Append("OUTPUT       ").Append(string.IsNullOrWhiteSpace(tx.RewardSummary) ? "NONE" : tx.RewardSummary).AppendLine();
             }
-            _summaryText.SetText(_sb.ToString());
+            _summaryText.SetText(_sb);
 
             if (_directiveText != null)
                 _directiveText.SetText(GetDirectiveText(ready, locked, closed));
@@ -277,14 +301,14 @@ namespace Hecton8.UI
                 PDAExchangeSystem.OfferSnapshot snapshot = _snapshotBuffer[i];
                 BarterOfferData offer = snapshot.Offer;
 
-                _cardTitles[i].text = offer.offerName.ToUpperInvariant() + "  //  " + offer.channelName.ToUpperInvariant();
+                _cardTitles[i].text = CachedToUpperInvariant(offer.offerName) + "  //  " + CachedToUpperInvariant(offer.channelName);
                 _sb.Length = 0;
                 _sb.Append("REQ  ").Append(exchangeSystem.BuildBundleSummary(offer.costs, "NONE")).AppendLine();
                 _sb.Append("OUT  ").Append(exchangeSystem.BuildBundleSummary(offer.rewards, "NO PAYOUT")).AppendLine();
                 if (!string.IsNullOrWhiteSpace(offer.requiredScanEntryId))
-                    _sb.Append("GATE ").Append(offer.requiredScanEntryId.ToUpperInvariant()).AppendLine();
+                    _sb.Append("GATE ").Append(CachedToUpperInvariant(offer.requiredScanEntryId)).AppendLine();
                 _sb.Append("STAT ").Append(snapshot.Status);
-                _cardBodies[i].SetText(_sb.ToString());
+                _cardBodies[i].SetText(_sb);
 
                 _cardBgs[i].color = snapshot.CanExecute ? BoxActive : BoxBg;
                 _cardButtonBgs[i].color = snapshot.CanExecute ? BoxActive : new Color(0.14f, 0.12f, 0.08f, 0.72f);
@@ -326,12 +350,12 @@ namespace Hecton8.UI
             return "Exchange relay is online but no active requisitions are currently actionable.";
         }
 
-        private static string GetHintText(PDAExchangeSystem.TransactionSnapshot latest)
+        private string GetHintText(PDAExchangeSystem.TransactionSnapshot latest)
         {
             if (!string.IsNullOrWhiteSpace(latest.OfferName))
             {
                 return "Last confirmed contract: " +
-                       latest.OfferName.ToUpperInvariant() +
+                       CachedToUpperInvariant(latest.OfferName) +
                        "  //  " +
                        (string.IsNullOrWhiteSpace(latest.RewardSummary) ? "NO OUTPUT" : latest.RewardSummary);
             }

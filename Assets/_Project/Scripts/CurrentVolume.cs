@@ -35,11 +35,28 @@ namespace Hecton8.Physics
         [SerializeField] private float turbulenceScale = 0.08f;
         [SerializeField] private float turbulenceTimeScale = 0.16f;
 
+        public VolumeShape Shape => shape;
+        public Vector3 LocalDirection => localDirection;
+        public float Strength => strength;
+        public float VerticalFactor => verticalFactor;
+        public float EdgeSoftness => edgeSoftness;
+        public float PulseAmplitude => pulseAmplitude;
+        public float PulseFrequency => pulseFrequency;
+        public float PhaseOffset => phaseOffset;
+        public float TurbulenceStrength => turbulenceStrength;
+        public float TurbulenceScale => turbulenceScale;
+        public float TurbulenceTimeScale => turbulenceTimeScale;
+
         [Header("Bounds")]
         [SerializeField] private Vector3 boxSize = new Vector3(10f, 6f, 10f);
         [SerializeField] private float sphereRadius = 8f;
 
+        public Vector3 BoxSize => boxSize;
+        public float SphereRadius => sphereRadius;
+
         public static int ActiveCount => ActiveVolumes.Count;
+
+        public static IReadOnlyList<CurrentVolume> ActiveVolumeList => ActiveVolumes;
 
         public static Vector3 SampleAt(Vector3 worldPos)
         {
@@ -55,6 +72,15 @@ namespace Hecton8.Physics
             }
 
             return total;
+        }
+
+        /// <summary>
+        /// Samples this volume only at the specified world position.
+        /// </summary>
+        /// <param name="worldPos">World-space position to evaluate.</param>
+        public Vector3 Sample(Vector3 worldPos)
+        {
+            return SampleInternal(worldPos);
         }
 
         private void OnEnable()

@@ -160,6 +160,17 @@ namespace Hecton8.World
         private readonly List<long> _removalBuffer = new List<long>(256);
         private readonly List<ScatterCandidate> _candidateBuffer = new List<ScatterCandidate>(32);
         private readonly List<WorldFaunaSpawnRegistry.Anchor> _faunaAnchorBuffer = new List<WorldFaunaSpawnRegistry.Anchor>(128);
+        private readonly List<ScatterCandidate> _clusterAccentOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _clusterOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _exactClusterOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _groundOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _windowOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _patternStructureOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _structureAccentOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _patternSpawnOrderedCandidates = new List<ScatterCandidate>(128);
+        private readonly List<ScatterCandidate> _patternSpawnPassiveOrderedCandidates = new List<ScatterCandidate>(96);
+        private readonly List<ScatterCandidate> _patternSpawnPredatorOrderedCandidates = new List<ScatterCandidate>(64);
+        private readonly HashSet<long> _occupiedCellBuffer = new HashSet<long>();
         private readonly ScatterCandidate[] _layerTopCandidatesBuffer = new ScatterCandidate[ScatterLayerCount];
         private readonly bool[] _layerTopValidBuffer = new bool[ScatterLayerCount];
         private readonly int[] _layerPlacementCountsBuffer = new int[ScatterLayerCount];
@@ -2025,6 +2036,40 @@ namespace Hecton8.World
             };
         }
 
+        private static void FillOrderedCandidateBuffer(
+            IDictionary<long, ScatterCandidate> source,
+            List<ScatterCandidate> buffer)
+        {
+            buffer.Clear();
+            if (source == null || source.Count == 0)
+                return;
+
+            if (source is Dictionary<long, ScatterCandidate> concreteDictionary)
+            {
+                foreach (KeyValuePair<long, ScatterCandidate> pair in concreteDictionary)
+                    buffer.Add(pair.Value);
+            }
+            else
+            {
+                foreach (KeyValuePair<long, ScatterCandidate> pair in source)
+                    buffer.Add(pair.Value);
+            }
+
+            buffer.Sort(ScatterCandidateComparer.Instance);
+        }
+
+        private void RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer layer)
+        {
+            _occupiedCellBuffer.Clear();
+            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            {
+                if (pair.Value.Family == null || pair.Value.Family.scatterLayer != layer)
+                    continue;
+
+                _occupiedCellBuffer.Add(ComposeWindowKey(pair.Value.CellX, pair.Value.CellZ, 1));
+            }
+        }
+
         private static void RegisterLayerFamilyCount(
             IReadOnlyList<Dictionary<string, int>> counters,
             WorldPrefabFamilyProfile.ScatterLayer layer,
@@ -2800,8 +2845,8 @@ namespace Hecton8.World
             if (rescueCandidates == null || rescueCandidates.Count == 0 || requiredCount <= 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _clusterAccentOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int currentCount = GetClusterAccentCount(clusterAccentCounts, accentRole);
             int needed = Mathf.Max(0, requiredCount - currentCount);
@@ -2809,14 +2854,7 @@ namespace Hecton8.World
                 return 0;
 
             int added = 0;
-            HashSet<long> occupiedCells = new HashSet<long>();
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
-            {
-                if (pair.Value.Family == null || pair.Value.Family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Cluster)
-                    continue;
-
-                occupiedCells.Add(ComposeWindowKey(pair.Value.CellX, pair.Value.CellZ, 1));
-            }
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             for (int i = 0; i < ordered.Count && needed > 0; i++)
             {
@@ -2825,7 +2863,7 @@ namespace Hecton8.World
                     continue;
 
                 long cellKey = ComposeWindowKey(candidate.Placement.CellX, candidate.Placement.CellZ, 1);
-                if (occupiedCells.Contains(cellKey) || perCellBudget <= 0)
+                if (_occupiedCellBuffer.Contains(cellKey) || perCellBudget <= 0)
                     continue;
 
                 if (!CanAcceptPatternAccentBudget(
@@ -2848,7 +2886,7 @@ namespace Hecton8.World
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
-                occupiedCells.Add(cellKey);
+                _occupiedCellBuffer.Add(cellKey);
                 int layerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Cluster;
                 if (!layerTopValid[layerIndex] || candidate.Score > layerTopCandidates[layerIndex].Score)
                 {
@@ -2887,27 +2925,20 @@ namespace Hecton8.World
             if (targetCount <= 0 || rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _clusterOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
-            HashSet<long> occupiedCells = new HashSet<long>();
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
-            {
-                if (pair.Value.Family == null || pair.Value.Family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Cluster)
-                    continue;
-
-                occupiedCells.Add(ComposeWindowKey(pair.Value.CellX, pair.Value.CellZ, 1));
-            }
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             for (int i = 0; i < ordered.Count && added < targetCount; i++)
             {
                 ScatterCandidate candidate = ordered[i];
                 long cellKey = ComposeWindowKey(candidate.Placement.CellX, candidate.Placement.CellZ, 1);
-                if (occupiedCells.Contains(cellKey))
+                if (_occupiedCellBuffer.Contains(cellKey))
                     continue;
 
                 if (perCellBudget <= 0)
@@ -2933,7 +2964,7 @@ namespace Hecton8.World
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
-                occupiedCells.Add(cellKey);
+                _occupiedCellBuffer.Add(cellKey);
                 int layerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Cluster;
                 if (!layerTopValid[layerIndex] || candidate.Score > layerTopCandidates[layerIndex].Score)
                 {
@@ -3030,18 +3061,11 @@ namespace Hecton8.World
             if (needed <= 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _exactClusterOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
-            HashSet<long> occupiedCells = new HashSet<long>();
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
-            {
-                if (pair.Value.Family == null || pair.Value.Family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Cluster)
-                    continue;
-
-                occupiedCells.Add(ComposeWindowKey(pair.Value.CellX, pair.Value.CellZ, 1));
-            }
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             for (int i = 0; i < ordered.Count && needed > 0; i++)
             {
@@ -3050,7 +3074,7 @@ namespace Hecton8.World
                     continue;
 
                 long cellKey = ComposeWindowKey(candidate.Placement.CellX, candidate.Placement.CellZ, 1);
-                if (occupiedCells.Contains(cellKey) || perCellBudget <= 0)
+                if (_occupiedCellBuffer.Contains(cellKey) || perCellBudget <= 0)
                     continue;
 
                 if (!CanAcceptPatternAccentBudget(
@@ -3073,7 +3097,7 @@ namespace Hecton8.World
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
-                occupiedCells.Add(cellKey);
+                _occupiedCellBuffer.Add(cellKey);
                 int layerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Cluster;
                 if (!layerTopValid[layerIndex] || candidate.Score > layerTopCandidates[layerIndex].Score)
                 {
@@ -3104,24 +3128,17 @@ namespace Hecton8.World
             if (targetCount <= 0 || rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _groundOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
-            HashSet<long> occupiedCells = new HashSet<long>();
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
-            {
-                if (pair.Value.Family == null || pair.Value.Family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Ground)
-                    continue;
-
-                occupiedCells.Add(ComposeWindowKey(pair.Value.CellX, pair.Value.CellZ, 1));
-            }
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Ground);
 
             for (int i = 0; i < ordered.Count && added < targetCount; i++)
             {
                 ScatterCandidate candidate = ordered[i];
                 long cellKey = ComposeWindowKey(candidate.Placement.CellX, candidate.Placement.CellZ, 1);
-                if (occupiedCells.Contains(cellKey))
+                if (_occupiedCellBuffer.Contains(cellKey))
                     continue;
 
                 if (!CanAcceptCandidate(candidate))
@@ -3129,7 +3146,7 @@ namespace Hecton8.World
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
-                occupiedCells.Add(cellKey);
+                _occupiedCellBuffer.Add(cellKey);
                 int layerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Ground;
                 if (!layerTopValid[layerIndex] || candidate.Score > layerTopCandidates[layerIndex].Score)
                 {
@@ -3165,8 +3182,8 @@ namespace Hecton8.World
             if (targetCount <= 0 || rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _windowOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
@@ -3327,8 +3344,8 @@ namespace Hecton8.World
             if (needed <= 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _windowOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             for (int i = 0; i < ordered.Count && needed > 0; i++)
@@ -3385,8 +3402,8 @@ namespace Hecton8.World
             if (rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _patternStructureOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
@@ -3479,8 +3496,8 @@ namespace Hecton8.World
             if (rescueCandidates == null || rescueCandidates.Count == 0 || requiredCount <= 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _structureAccentOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int currentCount = GetStructureAccentCount(structureAccentCounts, accentRole);
             int needed = Mathf.Max(0, requiredCount - currentCount);
@@ -3544,16 +3561,12 @@ namespace Hecton8.World
             if (rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = new List<ScatterCandidate>(rescueCandidates.Values);
-            ordered.Sort(ScatterCandidateComparer.Instance);
-            List<ScatterCandidate> orderedPassive = passiveCandidates != null
-                ? new List<ScatterCandidate>(passiveCandidates.Values)
-                : new List<ScatterCandidate>();
-            orderedPassive.Sort(ScatterCandidateComparer.Instance);
-            List<ScatterCandidate> orderedPredator = predatorCandidates != null
-                ? new List<ScatterCandidate>(predatorCandidates.Values)
-                : new List<ScatterCandidate>();
-            orderedPredator.Sort(ScatterCandidateComparer.Instance);
+            List<ScatterCandidate> ordered = _patternSpawnOrderedCandidates;
+            List<ScatterCandidate> orderedPassive = _patternSpawnPassiveOrderedCandidates;
+            List<ScatterCandidate> orderedPredator = _patternSpawnPredatorOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
+            FillOrderedCandidateBuffer(passiveCandidates, orderedPassive);
+            FillOrderedCandidateBuffer(predatorCandidates, orderedPredator);
 
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];

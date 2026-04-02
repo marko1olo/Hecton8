@@ -119,6 +119,8 @@ Notes:
 - Construction family layer is now data-driven via `BuildableData.family` and surfaced in `PDAConstructionTab` / `PDADataLogTab`.
 - `Hecton/Validation/Validate Construction Catalog` now validates starter `BuildableData` / `ModuleCatalog` content and currently passes clean.
 - `Hecton/Validation/Validate Tool Stack` now validates tool `ItemData`, `ToolMetadata`, held prefabs, `ToolLoadoutProvisioner`, `ItemCatalog`, and `Tool_Staging`; it currently passes clean.
+- `Hecton/Validation/Validate World Population` now exists as the dedicated authoring gate for `WorldPopulationDirector + WorldContentSocket + WorldPopulationRule` coverage in the active scene.
+- After the latest `Rebuild World Runtime Stack`, `Validate World Population` currently passes clean with `uncovered=0`, `weakSpatial=0`, and full `14/14` socket coverage in `02_HECTON_WORLD`.
 - `ScanLogSystem` is now a real save/load-backed system on `Player`; `ScannerTool` feeds it through `ScanEvents.OnEntryDiscovered`, and `PDADataLogTab` surfaces archive counts and recent entries.
 - `SalvageSamplerTool` and `LaserCutter` now archive first-time recovery intel into `ScanLogSystem`, so field recovery loops contribute to PDA/Data Log instead of living outside the intel layer.
 - `FieldToolRuntimeSmokeTester` now exists on `Player` with inspectable debug state; current localization shows the coroutine reaches `Salvage/HolsterForSalvage` before stalling, so the harness is narrowed but not yet closed.
@@ -187,7 +189,7 @@ Notes:
   - population rules
   - population director
   - socket-level resolved population diagnostics
-- [ ] add world population validation strong enough to catch uncovered sockets before content-authoring starts
+- [x] add world population validation strong enough to catch uncovered sockets before content-authoring starts
 - [x] strengthen world population validation so it catches:
   - uncovered sockets
   - weak biome spatial coverage

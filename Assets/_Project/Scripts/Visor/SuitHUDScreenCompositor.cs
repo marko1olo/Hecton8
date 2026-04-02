@@ -8,6 +8,8 @@ namespace NASAPunk.Visor
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
     public sealed class SuitHUDScreenCompositor : MonoBehaviour
     {
+        private const float AutoResolveRetryInterval = 1f;
+
         [Header("References")]
         [SerializeField] private Canvas targetCanvas;
         [SerializeField] private RenderTexture sharedProjectionTexture;
@@ -34,10 +36,11 @@ namespace NASAPunk.Visor
 
         private RawImage _overlayImage;
         private RectTransform _overlayRect;
+        private float _nextAutoResolveAt;
 
         private void OnEnable()
         {
-            AutoResolveReferences();
+            AutoResolveReferences(true);
             RefreshCompositor();
         }
 
@@ -67,8 +70,17 @@ namespace NASAPunk.Visor
             BindTexture();
         }
 
-        private void AutoResolveReferences()
+        private void AutoResolveReferences(bool force = false)
         {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAt)
+                return;
+
+            _nextAutoResolveAt = now + AutoResolveRetryInterval;
+
             if (targetCanvas == null)
             {
                 Canvas[] canvases = Resources.FindObjectsOfTypeAll<Canvas>();
@@ -99,6 +111,13 @@ namespace NASAPunk.Visor
                     }
                 }
             }
+        }
+
+        private bool NeedsAutoResolve()
+        {
+            return targetCanvas == null ||
+                   visorController == null ||
+                   sharedProjectionTexture == null;
         }
 
         private void EnsureCanvasState()

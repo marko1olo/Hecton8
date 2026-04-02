@@ -33,9 +33,6 @@ namespace Hecton8.Gameplay
         [Tooltip("Реестр всех 108 биомов для именования и PDA-представления.")]
         [SerializeField] private HectonBiomeRegistry _registry;
 
-        [Tooltip("Необязательная ссылка на HUD-уведомления. Если не задана, ищется лениво.")]
-        [SerializeField] private HUDNotification _hudNotification;
-
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -92,7 +89,6 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterWithSaveManager();
-            ResolveHudNotification();
         }
 
         private void Start()
@@ -131,9 +127,7 @@ namespace Hecton8.Gameplay
 
             OnBiomeDiscovered?.Invoke(biomeId);
 
-            ResolveHudNotification();
-            if (_hudNotification != null)
-                _hudNotification.ShowInfo($"NEW BIOME DISCOVERED: {biomeName}");
+            NotificationEvents.PushInfo($"ИЗУЧЕН НОВЫЙ БИОМ: {biomeName}");
         }
 
         /// <summary>
@@ -236,11 +230,6 @@ namespace Hecton8.Gameplay
             return InvalidBiomeId;
         }
 
-        private void ResolveHudNotification()
-        {
-            if (_hudNotification == null)
-                _hudNotification = FindFirstObjectByType<HUDNotification>();
-        }
 
         private void TryRegisterWithSaveManager()
         {

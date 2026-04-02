@@ -8,6 +8,7 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
+using Hecton8.Core;
 using TMPro;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -46,6 +47,22 @@ namespace Hecton8.UI
         [SerializeField] private ToolLoadoutPreset[] loadoutPresets = new ToolLoadoutPreset[4];
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = ~0;
+
+        // ════════════════════════════════════════════════════════════
+        //  CACHED FIELDS FOR ZERO-GC OPTIMIZATION
+        // ════════════════════════════════════════════════════════════
+
+        /// <summary>Кэшированный StringBuilder для сборки текста слотов (избегает аллокаций в RefreshSlots)</summary>
+        private readonly System.Text.StringBuilder _slotBodyBuilder = new System.Text.StringBuilder(256);
+
+        /// <summary>Кэшированный StringBuilder для сборки summary текста (избегает аллокаций в RefreshSummary)</summary>
+        private readonly System.Text.StringBuilder _summaryBuilder = new System.Text.StringBuilder(512);
+
+        /// <summary>Кэшированный StringBuilder для сборки preset текста (избегает аллокаций в RefreshPresets)</summary>
+        private readonly System.Text.StringBuilder _presetBuilder = new System.Text.StringBuilder(128);
+
+        /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
+        private static readonly string[] _cachedUpperStrings = new string[16];
 
         private bool _built;
         private RectTransform[] _slotRoots;
@@ -104,6 +121,32 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             Unsubscribe();
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  ZERO-GC OPTIMIZATION HELPERS
+        // ════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
+        /// Хранит до 16 последних преобразований для повторного использования.
+        /// </summary>
+        private static string CachedToUpperInvariant(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Простой hash для кэширования (не криптографический)
+            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
+
+            string cached = _cachedUpperStrings[hash];
+            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
+                return cached;
+
+            // Создаем новую строку и кэшируем
+            string upper = input.ToUpperInvariant();
+            _cachedUpperStrings[hash] = upper;
+            return upper;
         }
 
         private void AutoResolve()
@@ -458,7 +501,7 @@ namespace Hecton8.UI
                 if (_slotActionRoots[i] != null) _slotActionRoots[i].gameObject.SetActive(true);
                 if (_slotClearRoots[i] != null) _slotClearRoots[i].gameObject.SetActive(true);
 
-                _slotTitles[i].SetText(item != null ? item.itemName.ToUpperInvariant() : prefab.name.ToUpperInvariant());
+                _slotTitles[i].SetText(item != null ? CachedToUpperInvariant(item.itemName) : CachedToUpperInvariant(prefab.name));
 
                 if (broken)
                 {
@@ -492,7 +535,7 @@ namespace Hecton8.UI
                     _slotStatuses[i].SetText(active ? "READY / ACTIVE" : "READY");
                 }
 
-                string category = item != null ? item.category.ToString().ToUpperInvariant() : "TOOL";
+                string category = item != null ? CachedToUpperInvariant(item.category.ToString()) : "TOOL";
                 float weight = item != null ? item.weight : 0f;
                 float currentDurability = meta != null && durabilitySystem != null
                     ? durabilitySystem.GetDurability(meta.toolID, meta.maxDurability)
@@ -501,12 +544,15 @@ namespace Hecton8.UI
                     ? Mathf.Clamp01(currentDurability / Mathf.Max(1f, meta.maxDurability))
                     : 1f;
 
-                _slotBodies[i].text =
-                    $"CLASS    {category}\n" +
-                    $"IN CARGO  {(item != null && playerInventory != null ? playerInventory.CountTotal(item) : 0)}\n" +
-                    $"MASS     {weight:0.0} kg\n" +
-                    $"DURAB.   {normalized:0%}\n" +
-                    $"ENERGY   {(meta != null ? Mathf.Max(0f, meta.energyConsumptionRate) : 0f):0.0}/s";
+                // Используем кэшированный StringBuilder для сборки текста слота (zero-GC)
+                _slotBodyBuilder.Clear();
+                _slotBodyBuilder.Append("CLASS    ").Append(category).Append('\n');
+                _slotBodyBuilder.Append("IN CARGO  ").Append(item != null && playerInventory != null ? playerInventory.CountTotal(item) : 0).Append('\n');
+                _slotBodyBuilder.Append("MASS     ").Append(weight.ToString("0.0")).Append(" kg\n");
+                _slotBodyBuilder.Append("DURAB.   ").Append(normalized.ToString("0%")).Append('\n');
+                _slotBodyBuilder.Append("ENERGY   ").Append((meta != null ? Mathf.Max(0f, meta.energyConsumptionRate) : 0f).ToString("0.0")).Append("/s");
+
+                _slotBodies[i].SetText(_slotBodyBuilder);
 
                 if (_slotActionLabels[i] != null)
                 {
@@ -554,14 +600,30 @@ namespace Hecton8.UI
                     missing++;
             }
 
-            _summaryText.text =
-                $"LOADOUT: {assigned}/4 assigned | READY {ready} | MISSING {missing} | " +
-                $"BROKEN {broken} | ACTIVE SLOT {(toolManager.CurrentSlotIndex >= 0 ? (toolManager.CurrentSlotIndex + 1).ToString() : "--")} | " +
-                $"KIT MASS {totalWeight:0.0} kg | PRESET {GetMatchedPresetName()} | SUGGESTED {GetRecommendedPresetName()}\n" +
-                $"ACTIVE TOOL: {toolManager.GetCurrentToolOperationalSummary()}";
+            // Используем кэшированный StringBuilder для сборки summary текста (zero-GC)
+            _summaryBuilder.Clear();
+            _summaryBuilder.Append("LOADOUT: ").Append(assigned).Append("/4 assigned | READY ").Append(ready);
+            _summaryBuilder.Append(" | MISSING ").Append(missing).Append(" | BROKEN ").Append(broken);
+            _summaryBuilder.Append(" | ACTIVE SLOT ").Append(toolManager.CurrentSlotIndex >= 0 ? (toolManager.CurrentSlotIndex + 1).ToString() : "--");
+            _summaryBuilder.Append(" | KIT MASS ").Append(totalWeight.ToString("0.0")).Append(" kg");
+            _summaryBuilder.Append(" | PRESET ").Append(GetMatchedPresetName());
+            _summaryBuilder.Append(" | SUGGESTED ").Append(GetRecommendedPresetName());
+            _summaryBuilder.Append('\n');
+            _summaryBuilder.Append("ACTIVE TOOL: ").Append(toolManager.GetCurrentToolOperationalSummary());
 
-            if (_hintText != null)
-                _hintText.SetText($"{GetLoadoutDirective(assigned, ready, missing, broken)}  LIVE: {toolManager.GetCurrentToolOperationalDirective()}  FIELD: {GetRecommendedPresetDirective()}");
+            _summaryText.SetText(_summaryBuilder);
+
+            // Оптимизируем hint текст через StringBuilder
+            using (var scope = StringBuilderScope.Get())
+            {
+                var sb = scope.Value;
+                sb.Append(GetLoadoutDirective(assigned, ready, missing, broken));
+                sb.Append("  LIVE: ").Append(toolManager.GetCurrentToolOperationalDirective());
+                sb.Append("  FIELD: ").Append(GetRecommendedPresetDirective());
+
+                if (_hintText != null)
+                    _hintText.SetText(sb);
+            }
 
             RefreshRecommendedAction();
         }
@@ -636,14 +698,20 @@ namespace Hecton8.UI
                 }
 
                 if (_presetTitles[i] != null)
-                    _presetTitles[i].SetText(preset.presetName.ToUpperInvariant());
+                    _presetTitles[i].SetText(CachedToUpperInvariant(preset.presetName));
 
                 if (_presetBodies[i] != null)
                 {
                     int ready = CountReadyToolsInPreset(preset);
-                    _presetBodies[i].SetText(
-                        $"{GetPresetBrief(preset)}\n" +
-                        $"READY NOW {ready}/4{(matched ? " | ACTIVE" : string.Empty)}");
+
+                    // Используем кэшированный StringBuilder для сборки preset текста (zero-GC)
+                    _presetBuilder.Clear();
+                    _presetBuilder.Append(GetPresetBrief(preset)).Append('\n');
+                    _presetBuilder.Append("READY NOW ").Append(ready).Append("/4");
+                    if (matched)
+                        _presetBuilder.Append(" | ACTIVE");
+
+                    _presetBodies[i].SetText(_presetBuilder);
                 }
             }
         }
@@ -680,13 +748,13 @@ namespace Hecton8.UI
             ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
             if (tool.Metadata != null && durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID))
             {
-                NotifyWarning($"{(item != null ? item.itemName.ToUpperInvariant() : "TOOL")} IS BROKEN");
+                NotifyWarning($"{(item != null ? CachedToUpperInvariant(item.itemName) : "TOOL")} IS BROKEN");
                 return;
             }
 
             if (!toolManager.IsToolAvailableInSlot(slotIndex))
             {
-                NotifyWarning($"{(item != null ? item.itemName.ToUpperInvariant() : "TOOL")} IS NOT IN CARGO");
+                NotifyWarning($"{(item != null ? CachedToUpperInvariant(item.itemName) : "TOOL")} IS NOT IN CARGO");
                 return;
             }
 
@@ -700,7 +768,7 @@ namespace Hecton8.UI
 
             toolManager.SwitchToSlot(slotIndex);
             RefreshAll();
-            NotifyInfo($"LOADOUT ACTIVE — SLOT {slotIndex + 1}: {(item != null ? item.itemName.ToUpperInvariant() : prefab.name.ToUpperInvariant())}");
+            NotifyInfo($"LOADOUT ACTIVE — SLOT {slotIndex + 1}: {(item != null ? CachedToUpperInvariant(item.itemName) : CachedToUpperInvariant(prefab.name))}");
         }
 
         internal void InvokePresetAction(int presetIndex)
@@ -717,12 +785,12 @@ namespace Hecton8.UI
 
             if (!toolManager.ApplyLoadoutPreset(preset, holsterBeforeApplyingPreset))
             {
-                NotifyWarning($"FAILED TO APPLY {preset.presetName.ToUpperInvariant()}");
+                NotifyWarning($"FAILED TO APPLY {CachedToUpperInvariant(preset.presetName)}");
                 return;
             }
 
             RefreshAll();
-            NotifyInfo($"LOADOUT PRESET APPLIED - {preset.presetName.ToUpperInvariant()}");
+            NotifyInfo($"LOADOUT PRESET APPLIED - {CachedToUpperInvariant(preset.presetName)}");
         }
 
         internal void InvokeRecommendedPresetAction()
@@ -745,7 +813,7 @@ namespace Hecton8.UI
 
             if (MatchesPreset(preset))
             {
-                NotifyInfo($"SUGGESTED KIT ALREADY ACTIVE - {preset.presetName.ToUpperInvariant()}");
+                NotifyInfo($"SUGGESTED KIT ALREADY ACTIVE - {CachedToUpperInvariant(preset.presetName)}");
                 return;
             }
 
@@ -860,8 +928,8 @@ namespace Hecton8.UI
                 : null;
             bool matched = preset != null && MatchesPreset(preset);
             _recommendedActionLabel.SetText(matched
-                ? $"SUGGESTED ACTIVE - {preset.presetName.ToUpperInvariant()}"
-                : $"APPLY SUGGESTED - {preset.presetName.ToUpperInvariant()}");
+                ? $"SUGGESTED ACTIVE - {CachedToUpperInvariant(preset.presetName)}"
+                : $"APPLY SUGGESTED - {CachedToUpperInvariant(preset.presetName)}");
             _recommendedActionBg.color = matched
                 ? new Color(0.1f, 0.3f, 0.3f, 0.9f)
                 : new Color(0.08f, 0.18f, 0.2f, 0.82f);
@@ -876,7 +944,7 @@ namespace Hecton8.UI
             {
                 ToolLoadoutPreset preset = loadoutPresets[i];
                 if (preset != null && MatchesPreset(preset))
-                    return preset.presetName.ToUpperInvariant();
+                    return CachedToUpperInvariant(preset.presetName);
             }
 
             return "CUSTOM";

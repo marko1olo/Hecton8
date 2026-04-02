@@ -128,8 +128,10 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     private static readonly string[] SlotIndexLabels = { "1", "2", "3", "4" };
 
     private const int ToolSlotCount = 4;
+    private const float AutoResolveRetryInterval = 1f;
     private readonly string[] _toolSlotNames = new string[ToolSlotCount];
     private PlayerToolManager _subscribedToolManager;
+    private float _nextAutoResolveAt;
 
     // ══════════════════════════════════════════════════════════
     //  LIFECYCLE
@@ -138,7 +140,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
     public override void OnEnable()
     {
         base.OnEnable();
-        AutoResolveReferences();
+        AutoResolveReferences(force: true);
 
         Subscribe();
         SubscribeToolManager();
@@ -164,14 +166,23 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
 
     private void LateUpdate()
     {
-        AutoResolveReferences();
+        AutoResolveReferences(force: false);
         PollHeatState();
         UpdateNotifications(Time.deltaTime);
         UpdateDiagnostics();
     }
 
-    private void AutoResolveReferences()
+    private void AutoResolveReferences(bool force)
     {
+        if (!force && !NeedsAutoResolve())
+            return;
+
+        float now = GetAutoResolveNow();
+        if (!force && now < _nextAutoResolveAt)
+            return;
+
+        _nextAutoResolveAt = now + AutoResolveRetryInterval;
+
         if (primaryHud == null)
             primaryHud = GetComponent<HectonSuitHUD_v4>();
         if (primaryHud == null)
@@ -198,6 +209,20 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
             toolManager = FindFirstObjectByType<PlayerToolManager>();
 
         SubscribeToolManager();
+    }
+
+    private bool NeedsAutoResolve()
+    {
+        return primaryHud == null
+            || canvasOverlay == null
+            || hudCamera == null
+            || flashlight == null
+            || toolManager == null;
+    }
+
+    private static float GetAutoResolveNow()
+    {
+        return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
     }
 
     private void PollHeatState()
@@ -642,7 +667,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer
 
     private void ForceRefresh()
     {
-        AutoResolveReferences();
+        AutoResolveReferences(force: true);
         _flashlightOn = flashlight != null && flashlight.IsOn;
         _flashlightHeat = flashlight != null ? flashlight.HeatLevel : 0f;
         _flashlightOverheated = flashlight != null && flashlight.IsOverheated;

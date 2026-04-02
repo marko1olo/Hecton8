@@ -26,6 +26,7 @@ MonoBehaviour:
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
   - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   densityWeight: 1.2
   suggestedClusterCount: 3
   suggestedMinCount: 2

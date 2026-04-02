@@ -14,6 +14,9 @@ namespace Hecton8.World
         [SerializeField] private ScatterBudgetController scatterBudgetController;
         [SerializeField] private WorldSliceDirector worldSliceDirector;
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Diagnostics")]
         [SerializeField] private string _debugCurrentZoneId = "zone.none";
         [SerializeField] private string _debugCurrentZoneLabel = "None";
@@ -121,6 +124,7 @@ namespace Hecton8.World
         private WorldZoneAnchor _currentZone;
         private WorldZoneAnchor _secondaryZone;
         private float _currentBlendFactor;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public WorldZoneAnchor CurrentZone => _currentZone;
         public WorldZoneAnchor SecondaryZone => _secondaryZone;
@@ -128,7 +132,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ResolvePlayer();
+            ResolvePlayer(force: true);
             RefreshAnchors();
             UpdateDiagnostics();
         }
@@ -283,17 +287,33 @@ namespace Hecton8.World
             return a.GetFlatDistance(playerPosition).CompareTo(b.GetFlatDistance(playerPosition));
         }
 
-        private void ResolvePlayer()
+        private bool NeedsAutoResolve()
         {
-            if (playerTransform != null)
+            return playerTransform == null ||
+                   scatterBudgetController == null ||
+                   worldSliceDirector == null;
+        }
+
+        private void ResolvePlayer(bool force = false)
+        {
+            if (!force && !NeedsAutoResolve())
                 return;
 
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player == null)
-                player = GameObject.Find("Player");
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAttemptTime)
+                return;
 
-            if (player != null)
-                playerTransform = player.transform;
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
+            if (playerTransform == null)
+            {
+                GameObject player = GameObject.FindWithTag("Player");
+                if (player == null)
+                    player = GameObject.Find("Player");
+
+                if (player != null)
+                    playerTransform = player.transform;
+            }
 
             if (scatterBudgetController == null)
                 scatterBudgetController = FindAnyObjectByType<ScatterBudgetController>();

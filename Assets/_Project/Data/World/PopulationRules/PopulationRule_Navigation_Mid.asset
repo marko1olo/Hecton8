@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPopulationRule
   ruleId: population.rule.navigation.mid
   ruleLabel: Navigation Guide Chain
-  zoneKind: 9
-  minTier: 2
+  zoneKind: 0
+  minTier: 1
   maxTier: 4
   contentKind: 7
   prefabFamily: navigation.marker.chain

@@ -45,6 +45,9 @@ namespace Hecton8.World
         [SerializeField] private WorldZoneDirector worldZoneDirector;
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Fallback Biome Families")]
         [SerializeField] private HectonBiomeFamilyProfile littoralKarstFamily;
         [SerializeField] private HectonBiomeFamilyProfile fossilReefFamily;
@@ -95,6 +98,7 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastCompositionPotential;
 
         private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public bool TrySampleSeafloor(Vector3 position, out FieldSample sample)
         {
@@ -1365,8 +1369,30 @@ namespace Hecton8.World
             return Mathf.Clamp01(value / 5f);
         }
 
-        private void ResolveReferences()
+        private bool NeedsAutoResolve()
         {
+            return playerTransform == null ||
+                   mapMagicBridge == null ||
+                   worldZoneDirector == null ||
+                   biomeMatrixDirector == null;
+        }
+
+        private void ResolveReferences(bool force = false)
+        {
+            if (!force && !NeedsAutoResolve())
+            {
+                _debugBridgeReady = true;
+                _debugZoneDirectorReady = true;
+                _debugBiomeDirectorReady = true;
+                return;
+            }
+
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAttemptTime)
+                return;
+
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
             if (playerTransform == null)
             {
                 GameObject player = GameObject.FindWithTag("Player");

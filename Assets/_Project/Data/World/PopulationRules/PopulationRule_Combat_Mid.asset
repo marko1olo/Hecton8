@@ -27,6 +27,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}
   - {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
+  - {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
   densityWeight: 0.95
   suggestedClusterCount: 2
   suggestedMinCount: 1

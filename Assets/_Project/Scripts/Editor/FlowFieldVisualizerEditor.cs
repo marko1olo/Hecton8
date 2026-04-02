@@ -68,7 +68,8 @@ public static class FlowFieldVisualizerMenu
     private static void CreateProfile()
     {
         FlowFieldProfile profile = ScriptableObject.CreateInstance<FlowFieldProfile>();
-        string path = "Assets/_Project/Data/FlowFieldProfile.asset";
+        const string FolderPath = "Assets/_Project/Data";
+        string path = AssetDatabase.GenerateUniqueAssetPath(FolderPath + "/FlowFieldProfile.asset");
 
         // Создаём папку, если не существует
         string dir = System.IO.Path.GetDirectoryName(path);

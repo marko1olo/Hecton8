@@ -1,9 +1,23 @@
 // ══════════════════════════════════════════════════════════════════
-// HectonAtmosphereManager.cs  v4.3
+// HectonAtmosphereManager.cs  v2.1 (OPTIMIZATION PASS)
 // Орбитальная модель солнца + время суток + затмения + _SunDirection
 //
 // ═══════════════════════════════════════════════════════════════
-// v4.3 CHANGES:
+// v2.1 CHANGES (OPTIMIZATION):
+// ═══════════════════════════════════════════════════════════════
+//
+//   [OPT] Shader property dirty-write batching in RotateSun()
+//     • Caches _cachedShaderSunDirection (float3, stack)
+//     • Only calls Shader.SetGlobalVector() if changed
+//     • Impact: eliminates redundant GPU command buffer writes
+//
+//   [OPT] Dictionary<int, AtmosphereProfile> for biome lookup
+//     • HandleBiomeChanged() from O(N) linear search → O(1) TryGetValue
+//     • Built once in Awake() from _biomeOverrides[]
+//     • Impact: O(N) one-time cost, O(1) per biome change
+//
+// ═══════════════════════════════════════════════════════════════
+// v4.3 BASELINE (PRESERVED):
 // ═══════════════════════════════════════════════════════════════
 //
 //   [FIX] DefaultExecutionOrder(-6000):
@@ -19,17 +33,17 @@
 //       3. CelestialEngine.Tick()    → multiply sunLight.intensity by visibility
 //
 // ═══════════════════════════════════════════════════════════════
-// v4.2 PRESERVED (all previous behavior intact):
+// v4.2 DETAILS:
 //   ✓ [ExecuteAlways] for Scene View preview
-//   ✓ sunLight.intensity NEVER WRITTEN
+//   ✓ sunLight.intensity NEVER WRITTEN (read-only)
 //   ✓ ProfileSunIntensity = profile × transition
 //   ✓ ComputedHorizonFade = smoothstep by SunElevation
-//   ✓ _SunDirection global shader write
 //   ✓ Biome atmosphere overrides
 //   ✓ Eclipse timer + state machine
 // ══════════════════════════════════════════════════════════════════
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using UnityEngine;
@@ -193,6 +207,12 @@ namespace Hecton8.Atmosphere
         private float _computedHorizonFade;
         private float _computedSunIntensity;
 
+        /// <summary>Cached shader property values (for dirty-write batching).</summary>
+        private float3 _cachedShaderSunDirection = new float3(0f, -1f, 0f);
+
+        /// <summary>Dictionary for O(1) biome profile lookup (instead of linear search).</summary>
+        private Dictionary<int, AtmosphereProfile> _biomeProfileDict;
+
         #endregion
 
         #region ══════════ Biome Override Struct ══════════
@@ -266,6 +286,16 @@ namespace Hecton8.Atmosphere
             }
 
             _registeredToTickManager = false;
+
+            // Build biome profile dictionary (ONE-TIME, O(n) initialization)
+            _biomeProfileDict = new Dictionary<int, AtmosphereProfile>(16);
+            if (_biomeOverrides != null)
+            {
+                for (int i = 0; i < _biomeOverrides.Length; i++)
+                {
+                    _biomeProfileDict[_biomeOverrides[i].biomeID] = _biomeOverrides[i].profile;
+                }
+            }
 
             InitializeCycleTimer();
             InitializeAtmosphereValues();
@@ -482,9 +512,14 @@ namespace Hecton8.Atmosphere
             float3 sunForward = math.mul(finalRotation, new float3(0f, 0f, 1f));
             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
 
-            Shader.SetGlobalVector(
-                _shaderID_SunDirection,
-                new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
+            // v2.1 OPT: Dirty-write batching — only write to shader if changed
+            if (!sunForward.Equals(_cachedShaderSunDirection))
+            {
+                _cachedShaderSunDirection = sunForward;
+                Shader.SetGlobalVector(
+                    _shaderID_SunDirection,
+                    new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
+            }
         }
 
         #endregion
@@ -628,19 +663,11 @@ namespace Hecton8.Atmosphere
         {
             _currentBiomeID = biomeID;
 
+            // v2.1 OPT: O(1) dictionary lookup instead of O(n) linear search
             AtmosphereProfile biomeProfile = null;
-
-            if (_biomeOverrides != null)
+            if (_biomeProfileDict != null && _biomeProfileDict.TryGetValue(biomeID, out var profile))
             {
-                int count = _biomeOverrides.Length;
-                for (int i = 0; i < count; i++)
-                {
-                    if (_biomeOverrides[i].biomeID == biomeID)
-                    {
-                        biomeProfile = _biomeOverrides[i].profile;
-                        break;
-                    }
-                }
+                biomeProfile = profile;
             }
 
             _activeBiomeProfile = biomeProfile;

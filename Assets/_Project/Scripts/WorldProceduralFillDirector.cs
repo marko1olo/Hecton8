@@ -18,6 +18,9 @@ namespace Hecton8.World
         [SerializeField] private List<WorldProceduralPlacementRule> rules = new List<WorldProceduralPlacementRule>();
         [SerializeField] private List<WorldPrefabFamilyProfile> families = new List<WorldPrefabFamilyProfile>();
 
+        [Header("Runtime Auto Resolve")]
+        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
+
         [Header("Diagnostics")]
         [SerializeField] private int _debugRuleCount;
         [SerializeField] private int _debugFamilyCount;
@@ -41,13 +44,14 @@ namespace Hecton8.World
         [SerializeField] private float _debugPrimaryClusterRadiusMeters;
 
         private bool _registeredToTickManager;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public IReadOnlyList<WorldProceduralPlacementRule> Rules => rules;
         public IReadOnlyList<WorldPrefabFamilyProfile> Families => families;
 
         private void Awake()
         {
-            ResolveReferences();
+            ResolveReferences(force: true);
             UpdateDiagnostics(null, null, default, 0);
         }
 
@@ -465,8 +469,25 @@ namespace Hecton8.World
             return $"{source}: {socketLabel} in {zoneLabel} falls back to {familyLabel} for {biomeLabel}.";
         }
 
-        private void ResolveReferences()
+        private bool NeedsAutoResolve()
         {
+            return playerTransform == null ||
+                   worldZoneDirector == null ||
+                   worldContentDirector == null ||
+                   biomeMatrixDirector == null;
+        }
+
+        private void ResolveReferences(bool force = false)
+        {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAttemptTime)
+                return;
+
+            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+
             if (playerTransform == null)
             {
                 GameObject player = GameObject.FindWithTag("Player");

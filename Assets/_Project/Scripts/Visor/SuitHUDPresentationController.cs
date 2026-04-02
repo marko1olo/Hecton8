@@ -10,6 +10,8 @@ namespace NASAPunk.Visor
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
     public sealed class SuitHUDPresentationController : MonoBehaviour
     {
+        private const float AutoResolveRetryInterval = 1f;
+
         public enum PresentationMode
         {
             LegacyOverlay,
@@ -54,19 +56,20 @@ namespace NASAPunk.Visor
         private SuitHUDProfile _appliedFallbackProfile;
         private RenderTexture _appliedSharedTexture;
         private bool _pendingApply = true;
+        private float _nextAutoResolveAt;
         private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
         private const int ProjectionSourceLayer = 17;
 
         private void OnEnable()
         {
-            AutoResolveReferences();
+            AutoResolveReferences(true);
             _pendingApply = true;
             ApplyPresentation(force: true);
         }
 
         private void OnValidate()
         {
-            AutoResolveReferences();
+            AutoResolveReferences(true);
             _pendingApply = true;
         }
 
@@ -77,8 +80,17 @@ namespace NASAPunk.Visor
             _pendingApply = false;
         }
 
-        private void AutoResolveReferences()
+        private void AutoResolveReferences(bool force = false)
         {
+            if (!force && !NeedsAutoResolve())
+                return;
+
+            float now = Time.realtimeSinceStartup;
+            if (!force && now < _nextAutoResolveAt)
+                return;
+
+            _nextAutoResolveAt = now + AutoResolveRetryInterval;
+
             if (legacyHud == null)
                 legacyHud = GetComponent<HectonSuitHUD>();
 
@@ -120,6 +132,28 @@ namespace NASAPunk.Visor
                 screenCompositor = FindFirstObjectByType<SuitHUDScreenCompositor>(FindObjectsInactive.Include);
 
             projectionSourceOverlay = FindOverlayByName(overlays, ProjectionSourceCanvasName, projectionSourceOverlay);
+        }
+
+        private bool NeedsAutoResolve()
+        {
+            if (legacyHud == null ||
+                projectedModernHud == null ||
+                visorProjectionCamera == null ||
+                overlayPresentationCamera == null ||
+                overlayModernHud == null ||
+                visorController == null ||
+                canvasOverlay == null ||
+                screenCompositor == null)
+            {
+                return true;
+            }
+
+            bool projectedCanvasSourceNeeded =
+                preferCanvasProjectionSource &&
+                (presentationMode == PresentationMode.ModernProjectedSharedRT ||
+                 presentationMode == PresentationMode.ModernProjectedRuntimeRT);
+
+            return projectedCanvasSourceNeeded && projectionSourceOverlay == null;
         }
 
         private void ApplyPresentation(bool force)

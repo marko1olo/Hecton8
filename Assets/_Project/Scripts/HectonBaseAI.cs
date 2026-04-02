@@ -49,6 +49,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
@@ -57,7 +58,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public class HectonBaseAI : MonoBehaviour, ITickable, IFixedTickable, IPoolable
+    public class HectonBaseAI : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IPoolable
     {
         // ══════════════════════════════════════════════════════════
         //  AI STATE
@@ -349,6 +350,25 @@ namespace Hecton8.AI
         [Tooltip("Максимальное здоровье существа.")]
         [SerializeField] private float maxHealth = 50f;
 
+        [Header("── Environmental Hazards ─────────────────────")]
+        [Tooltip("If true, the creature is immune to radiation damage.")]
+        [SerializeField] private bool radAdapted;
+
+        [Tooltip("If true, the creature is immune to extreme temperatures.")]
+        [SerializeField] private bool thermalAdapted;
+
+        [Tooltip("Damage per second from environmental hazards (applied in SlowTick).")]
+        [SerializeField] private float ambientDamageRate = 2f;
+
+        [Tooltip("Radiation level above which the creature takes damage (if not adapted).")]
+        [SerializeField] private float radiationThreshold = 40f;
+
+        [Tooltip("Minimum safe temperature for this species (°C).")]
+        [SerializeField] private float minSafeTemp = 2f;
+
+        [Tooltip("Maximum safe temperature for this species (°C).")]
+        [SerializeField] private float maxSafeTemp = 35f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PERFORMANCE
         // ══════════════════════════════════════════════════════════
@@ -626,6 +646,7 @@ namespace Hecton8.AI
             {
                 GameTickManager.Instance.Register((ITickable)this);
                 GameTickManager.Instance.Register((IFixedTickable)this);
+                GameTickManager.Instance.Register((ISlowTickable)this);
                 _registeredToTickManager = true;
             }
 
@@ -653,6 +674,7 @@ namespace Hecton8.AI
             {
                 GameTickManager.Instance.Register((ITickable)this);
                 GameTickManager.Instance.Register((IFixedTickable)this);
+                GameTickManager.Instance.Register((ISlowTickable)this);
                 _registeredToTickManager = true;
             }
             else
@@ -678,6 +700,7 @@ namespace Hecton8.AI
             {
                 GameTickManager.Instance.Unregister((ITickable)this);
                 GameTickManager.Instance.Unregister((IFixedTickable)this);
+                GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
 
@@ -729,6 +752,7 @@ namespace Hecton8.AI
             {
                 GameTickManager.Instance.Register((ITickable)this);
                 GameTickManager.Instance.Register((IFixedTickable)this);
+                GameTickManager.Instance.Register((ISlowTickable)this);
                 _registeredToTickManager = true;
             }
 
@@ -1069,6 +1093,51 @@ namespace Hecton8.AI
             }
         }
 
+
+        /// <summary>
+        /// Вызывается централизованно через GameTickManager (~раз в 0.5с).
+        /// Используется для некритичных по времени проверок (чувствительность к среде).
+        /// </summary>
+        public void SlowTick()
+        {
+            if (_isDead || _isSleeping) return;
+            
+            // ── Проверка выживаемости (Hazel-Sens) ──
+            HandleEnvironmentalHazards();
+        }
+
+        private void HandleEnvironmentalHazards()
+        {
+            HectonAtmosphereManager atmosphere = HectonAtmosphereManager.Instance;
+            if (atmosphere == null) return;
+
+            bool takenDamage = false;
+
+            // 1. Радиация
+            if (!radAdapted && atmosphere.CurrentRadiation > radiationThreshold)
+            {
+                takenDamage = true;
+            }
+
+            // 2. Температура
+            float currentTemperature = atmosphere.CurrentTemperature;
+            if (!thermalAdapted && (currentTemperature < minSafeTemp || currentTemperature > maxSafeTemp))
+            {
+                takenDamage = true;
+            }
+
+            if (takenDamage)
+            {
+                // Применяем урон (зависящий от времени SlowTick ~0.5с)
+                TakeDamage(ambientDamageRate * 0.5f);
+                
+                // Если существо не в агрессивном состоянии — заставляем его убегать
+                if (_currentState != AIState.Aggressive && _currentState != AIState.Escape)
+                {
+                    TransitionTo(AIState.Escape);
+                }
+            }
+        }
         // ══════════════════════════════════════════════════════════
         //  STATE TRANSITIONS
         // ══════════════════════════════════════════════════════════
