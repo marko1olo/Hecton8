@@ -200,6 +200,18 @@ namespace Hecton8.Core
         /// <returns>Активированный экземпляр из пула.</returns>
         public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation)
         {
+            return Spawn(prefab, position, rotation, true);
+        }
+
+        /// <summary>
+        /// Извлекает объект из пула, устанавливает позицию/поворот,
+        /// активирует и вызывает OnSpawn().
+        ///
+        /// Если allowExpand == false, strict path никогда не вызывает
+        /// ExpandPool и возвращает null, если доступных экземпляров нет.
+        /// </summary>
+        public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, bool allowExpand)
+        {
             if (prefab == null)
             {
                 Debug.LogError("[ObjectPoolManager] Spawn: prefab is null!");
@@ -218,6 +230,9 @@ namespace Hecton8.Core
             // ── Расширяем, если пуст ──
             if (pool.available.Count == 0)
             {
+                if (!allowExpand)
+                    return null;
+
                 ExpandPool(pool, prefab, id);
             }
 
@@ -230,8 +245,8 @@ namespace Hecton8.Core
             if (instance == null)
             {
                 // Рекурсивно пробуем следующий в очереди.
-                // В худшем случае — создаст новый через ExpandPool.
-                return Spawn(prefab, position, rotation);
+                // В strict path выйдет через allowExpand == false.
+                return Spawn(prefab, position, rotation, allowExpand);
             }
 
             // ── Отцепляем от контейнера пула ──

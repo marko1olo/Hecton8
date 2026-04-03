@@ -1,5 +1,6 @@
 using System.Text;
 using Hecton8.Building;
+using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -123,17 +124,21 @@ namespace Hecton8.UI
             if (requiresRuntimeResolve &&
                 (!Application.isPlaying || Time.unscaledTime >= _nextAutoResolveAt))
             {
-                if (playerBuilder == null)
-                    playerBuilder = FindFirstObjectByType<PlayerBuilder>();
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    if (playerBuilder == null)
+                        playerBuilder = playerTransform.GetComponentInChildren<PlayerBuilder>(true);
 
-                if (inventory == null)
-                    inventory = FindFirstObjectByType<PlayerInventory>();
+                    if (inventory == null)
+                        inventory = playerTransform.GetComponent<PlayerInventory>();
+
+                    if (toolManager == null)
+                        toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                }
 
                 if (constructionManager == null)
-                    constructionManager = FindFirstObjectByType<ConstructionManager>();
-
-                if (toolManager == null)
-                    toolManager = FindFirstObjectByType<PlayerToolManager>();
+                    constructionManager = ConstructionManager.Instance;
 
                 _nextAutoResolveAt = Time.unscaledTime + AutoResolveRetryInterval;
             }

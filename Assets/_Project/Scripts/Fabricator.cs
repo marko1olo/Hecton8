@@ -648,7 +648,7 @@ namespace Hecton8.Crafting
         private void EnsureScanLogSystem()
         {
             if (_scanLogSystem == null)
-                _scanLogSystem = FindFirstObjectByType<ScanLogSystem>();
+                _scanLogSystem = ScanLogSystem.Instance;
         }
 
         private void SubscribeToScanLog()

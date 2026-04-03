@@ -396,8 +396,7 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (integrationDirector == null)
-                integrationDirector = FindAnyObjectByType<WorldGenerativeGeologyIntegrationDirector>();
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref integrationDirector);
         }
     }
 }

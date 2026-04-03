@@ -29,6 +29,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Bootstrap;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -301,12 +302,10 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            // ── Авто-поиск игрока, если не назначен ──
+            // ── Авто-resolve игрока через bootstrap, если ссылка не задана ──
             if (playerTransform == null)
             {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    playerTransform = player.transform;
+                SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform);
             }
 
             // ── Валидация ──
@@ -321,7 +320,7 @@ namespace Hecton8.Core
             if (playerTransform == null)
             {
                 Debug.LogError("[ProximityColliderSystem] playerTransform is not assigned " +
-                               "and no GameObject with tag 'Player' found!");
+                               "and bootstrap player transform could not be resolved!");
                 enabled = false;
                 return;
             }

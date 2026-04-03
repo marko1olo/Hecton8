@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +11,9 @@ namespace NASAPunk.Visor
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
     public sealed class SuitHUDScreenCompositor : MonoBehaviour, ITickable
     {
+        private static readonly List<SuitHUDScreenCompositor> s_activeCompositors = new List<SuitHUDScreenCompositor>(2);
+        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
+        private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
         private const float AutoResolveRetryInterval = 1f;
 
         [Header("References")]
@@ -45,8 +50,23 @@ namespace NASAPunk.Visor
         private bool _pendingRefresh = true;
         private string _appliedOverlayName;
 
+        public static void CopyActiveCompositorsTo(List<SuitHUDScreenCompositor> results)
+        {
+            if (results == null)
+                return;
+
+            results.Clear();
+            for (int i = 0; i < s_activeCompositors.Count; i++)
+            {
+                SuitHUDScreenCompositor compositor = s_activeCompositors[i];
+                if (compositor != null && compositor.isActiveAndEnabled)
+                    results.Add(compositor);
+            }
+        }
+
         private void OnEnable()
         {
+            RegisterActiveCompositor();
             AutoResolveReferences(true);
             _pendingRefresh = true;
             RefreshCompositor();
@@ -55,6 +75,7 @@ namespace NASAPunk.Visor
 
         private void OnDisable()
         {
+            UnregisterActiveCompositor();
             UnregisterRuntimeTick();
 
             if (_overlayImage != null)
@@ -118,34 +139,72 @@ namespace NASAPunk.Visor
 
             if (targetCanvas == null)
             {
-                Canvas[] canvases = Resources.FindObjectsOfTypeAll<Canvas>();
-                for (int i = 0; i < canvases.Length; i++)
+                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
+                Transform root = transform.root;
+                for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
                 {
-                    if (canvases[i] != null && canvases[i].name == "Suit_HUD_Canvas")
+                    SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                    Canvas candidateCanvas = overlay != null ? overlay.TargetCanvas : null;
+                    if (candidateCanvas == null || candidateCanvas.transform.root != root)
+                        continue;
+
+                    if (candidateCanvas.name == "Suit_HUD_Canvas")
                     {
-                        targetCanvas = canvases[i];
+                        targetCanvas = candidateCanvas;
                         break;
                     }
                 }
+
+                if (targetCanvas == null)
+                {
+                    for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+                    {
+                        SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                        Canvas candidateCanvas = overlay != null ? overlay.TargetCanvas : null;
+                        if (candidateCanvas != null && candidateCanvas.name == "Suit_HUD_Canvas")
+                        {
+                            targetCanvas = candidateCanvas;
+                            break;
+                        }
+                    }
+                }
+
+                s_overlayResolveBuffer.Clear();
             }
 
             if (visorController == null)
             {
-                visorController = FindFirstObjectByType<VisorHUDController>(FindObjectsInactive.Include);
-            }
-
-            if (sharedProjectionTexture == null)
-            {
-                RenderTexture[] textures = Resources.FindObjectsOfTypeAll<RenderTexture>();
-                for (int i = 0; i < textures.Length; i++)
+                Transform parent = transform.parent;
+                if (parent != null)
                 {
-                    if (textures[i] != null && textures[i].name == "RT_HUD_Display")
+                    Transform visor = parent.Find("Suit_Visor");
+                    if (visor != null)
+                        visorController = visor.GetComponent<VisorHUDController>();
+                }
+
+                if (visorController == null)
+                {
+                    VisorHUDController.CopyActiveControllersTo(s_controllerResolveBuffer);
+                    Transform root = transform.root;
+                    for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
                     {
-                        sharedProjectionTexture = textures[i];
-                        break;
+                        VisorHUDController controller = s_controllerResolveBuffer[i];
+                        if (controller != null && controller.transform.root == root)
+                        {
+                            visorController = controller;
+                            break;
+                        }
                     }
+
+                    if (visorController == null && s_controllerResolveBuffer.Count > 0)
+                        visorController = s_controllerResolveBuffer[0];
+
+                    s_controllerResolveBuffer.Clear();
                 }
             }
+
+            if (sharedProjectionTexture == null && visorController != null)
+                sharedProjectionTexture = visorController.SharedRenderTexture;
         }
 
         private bool NeedsAutoResolve()
@@ -303,6 +362,19 @@ namespace NASAPunk.Visor
         {
             _pendingRefresh = true;
             TryRegisterRuntimeTick();
+        }
+
+        private void RegisterActiveCompositor()
+        {
+            if (s_activeCompositors.Contains(this))
+                return;
+
+            s_activeCompositors.Add(this);
+        }
+
+        private void UnregisterActiveCompositor()
+        {
+            s_activeCompositors.Remove(this);
         }
     }
 }

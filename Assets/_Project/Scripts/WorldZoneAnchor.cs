@@ -1,4 +1,5 @@
 using Hecton8.Environment;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -6,6 +7,9 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldZoneAnchor : MonoBehaviour
     {
+        private static readonly List<WorldZoneAnchor> _ActiveAnchors = new List<WorldZoneAnchor>(32);
+        private static int _ActiveAnchorVersion;
+
         public enum ZoneKind
         {
             Generic,
@@ -75,6 +79,44 @@ namespace Hecton8.World
         public float EdgeBlendDistance => edgeBlendDistance;
         public float EdgeNoiseScale => edgeNoiseScale;
         public float EdgeNoiseStrength => edgeNoiseStrength;
+        public Vector2 EdgeNoiseOffset => edgeNoiseOffset;
+
+        private void OnEnable()
+        {
+            RegisterActiveAnchor(this);
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveAnchor(this);
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveAnchor(this);
+        }
+
+        public static void CopyActiveAnchorsTo(List<WorldZoneAnchor> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            for (int i = 0; i < _ActiveAnchors.Count; i++)
+            {
+                WorldZoneAnchor anchor = _ActiveAnchors[i];
+                if (anchor == null)
+                    continue;
+
+                GameObject go = anchor.gameObject;
+                if (go == null || !go.scene.IsValid())
+                    continue;
+
+                destination.Add(anchor);
+            }
+        }
+
+        public static int ActiveAnchorVersion => _ActiveAnchorVersion;
 
         public bool IsInsideActivation(Vector3 playerPosition)
         {
@@ -192,6 +234,24 @@ namespace Hecton8.World
             return Mathf.Clamp(1f + centered * edgeNoiseStrength, 0.75f, 1.35f);
         }
 
+        private static void RegisterActiveAnchor(WorldZoneAnchor anchor)
+        {
+            if (anchor == null || _ActiveAnchors.Contains(anchor))
+                return;
+
+            _ActiveAnchors.Add(anchor);
+            _ActiveAnchorVersion++;
+        }
+
+        private static void UnregisterActiveAnchor(WorldZoneAnchor anchor)
+        {
+            if (anchor == null)
+                return;
+
+            if (_ActiveAnchors.Remove(anchor))
+                _ActiveAnchorVersion++;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -216,6 +276,8 @@ namespace Hecton8.World
 
             if (dominantMatrixBiome != null && dominantBiomeFamily == null)
                 dominantBiomeFamily = dominantMatrixBiome.familyProfile;
+
+            _ActiveAnchorVersion++;
         }
 #endif
     }

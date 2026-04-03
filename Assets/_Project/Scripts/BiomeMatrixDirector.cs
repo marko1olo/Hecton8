@@ -170,14 +170,7 @@ namespace Hecton8.Environment
         private void ResolveReferences()
         {
             if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player == null)
-                    player = GameObject.Find("Player");
-
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
         }
 
         private int ResolveDepthTier(float depth)

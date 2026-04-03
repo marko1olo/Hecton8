@@ -37,6 +37,7 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Bootstrap;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -284,6 +285,8 @@ namespace Hecton8.Physics
         /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
         private int _nativeCapacity;
         private int _lodFrameCounter;
+        private float _observerResolveRetryTimer;
+        private const float ObserverResolveRetryInterval = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -309,8 +312,9 @@ namespace Hecton8.Physics
                 DontDestroyOnLoad(gameObject);
             }
 
-            // ONE-TIME observer resolution (NOT in FixedTick)
-            TryResolveObserverOnce();
+            // Initial observer resolution. If player/camera appears later,
+            // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
+            TryResolveObserver(force: true);
             
             // Cache LOD distances once (update if parameters change via property)
             UpdateCachedLodDistances();
@@ -422,6 +426,13 @@ namespace Hecton8.Physics
             _debugFarCount = 0;
             _debugCulledCount = 0;
             _lodFrameCounter++;
+
+            if (lodObserver == null)
+            {
+                _observerResolveRetryTimer -= fixedDeltaTime;
+                if (_observerResolveRetryTimer <= 0f)
+                    TryResolveObserver(force: false);
+            }
 
             // ── 1. Ensure capacity (Capacity Doubling) ──
             if (count > _nativeCapacity)
@@ -701,21 +712,25 @@ namespace Hecton8.Physics
             _debugCurrentVolumeCount = CurrentVolume.ActiveCount;
         }
 
-        private void TryResolveObserverOnce()
+        private void TryResolveObserver(bool force)
         {
             if (lodObserver != null)
                 return;
 
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
+            if (!force && _observerResolveRetryTimer > 0f)
+                return;
+
+            _observerResolveRetryTimer = ObserverResolveRetryInterval;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
-                lodObserver = mainCam.transform;
+                lodObserver = playerTransform;
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-                lodObserver = player.transform;
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+                lodObserver = mainCam.transform;
         }
 
         /// <summary>

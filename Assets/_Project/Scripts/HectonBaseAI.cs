@@ -52,6 +52,7 @@ using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -60,6 +61,8 @@ namespace Hecton8.AI
     [RequireComponent(typeof(Rigidbody))]
     public class HectonBaseAI : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IPoolable
     {
+        private const float StimulusSourceResolveRetryInterval = 1f;
+
         // ══════════════════════════════════════════════════════════
         //  AI STATE
         // ══════════════════════════════════════════════════════════
@@ -468,6 +471,7 @@ namespace Hecton8.AI
         private HectonSurvivalSystem _playerSurvival;
         private Rigidbody _playerRigidbody;
         private PlayerFlashlight _playerFlashlight;
+        private float _nextStimulusSourceResolveTime;
         private CreatureRoleType _roleType = CreatureRoleType.Ambient;
         private CreatureLocomotionType _locomotionType = CreatureLocomotionType.SteeringSolo;
 
@@ -795,6 +799,7 @@ namespace Hecton8.AI
             _playerSurvival = null;
             _playerRigidbody = null;
             _playerFlashlight = null;
+            _nextStimulusSourceResolveTime = 0f;
             ResetStimulusDebug();
             _allyAlertCooldownTimer = 0f;
             _debugAlliesAlertedLastCall = 0;
@@ -2275,6 +2280,7 @@ namespace Hecton8.AI
                 _playerSurvival = null;
                 _playerRigidbody = null;
                 _playerFlashlight = null;
+                _nextStimulusSourceResolveTime = 0f;
                 ResetStimulusDebug();
                 return false;
             }
@@ -2285,19 +2291,16 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Ленивый поиск игрока по тегу "Player".
+        /// Лениво подтягивает ссылку на игрока через общий runtime-resolve path.
         /// Вызывается один раз при первом OnEnable или если ссылка потеряна.
-        /// GameObject.FindWithTag — аллокация только если тег не найден (null return).
-        /// При нахождении — сразу кэширует HectonSurvivalSystem.
+        /// При нахождении сразу кэширует survival и stimulus-источники.
         /// </summary>
         private void FindPlayer()
         {
-            GameObject playerGO = GameObject.FindWithTag("Player");
-            if (playerGO != null)
+            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform))
             {
-                _playerTransform = playerGO.transform;
                 CachePlayerSurvival();
-                CachePlayerStimulusSources();
+                CachePlayerStimulusSources(true);
             }
         }
 
@@ -2316,9 +2319,18 @@ namespace Hecton8.AI
             _playerTransform.TryGetComponent(out _playerSurvival);
         }
 
-        private void CachePlayerStimulusSources()
+        private void CachePlayerStimulusSources(bool force = false)
         {
             if (_playerTransform == null) return;
+
+            bool needsResolve = _playerRigidbody == null || _playerFlashlight == null;
+            if (!needsResolve)
+                return;
+
+            if (!force && Time.time < _nextStimulusSourceResolveTime)
+                return;
+
+            _nextStimulusSourceResolveTime = Time.time + StimulusSourceResolveRetryInterval;
 
             if (_playerRigidbody == null)
             {
@@ -2333,6 +2345,9 @@ namespace Hecton8.AI
                     _playerFlashlight = _playerTransform.GetComponentInChildren<PlayerFlashlight>();
                 }
             }
+
+            if (_playerRigidbody != null && _playerFlashlight != null)
+                _nextStimulusSourceResolveTime = 0f;
         }
 
         private void UpdatePlayerStimulus(float deltaTime)

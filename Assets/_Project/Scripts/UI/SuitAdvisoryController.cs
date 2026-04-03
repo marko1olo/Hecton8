@@ -1,4 +1,5 @@
 using Hecton8.Audio;
+using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
 using TMPro;
 using UnityEngine;
@@ -66,10 +67,19 @@ namespace Hecton8.UI
         private void ResolveReferences()
         {
             if (survival == null)
-                survival = GetComponent<HectonSurvivalSystem>() ?? FindFirstObjectByType<HectonSurvivalSystem>();
+            {
+                survival = GetComponent<HectonSurvivalSystem>();
+
+                if (survival == null &&
+                    SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    survival = playerTransform.GetComponent<HectonSurvivalSystem>();
+                }
+            }
 
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
         }
 
         private void Subscribe()

@@ -787,9 +787,7 @@ namespace Hecton8.Core
 
         private void FindPlayer()
         {
-            GameObject playerGO = GameObject.FindWithTag("Player");
-            if (playerGO != null)
-                _playerTransform = playerGO.transform;
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
         }
 
         // ══════════════════════════════════════════════════════════

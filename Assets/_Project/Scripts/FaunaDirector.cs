@@ -56,6 +56,9 @@ namespace Hecton8.AI
     [DefaultExecutionOrder(-5000)]
     public sealed class FaunaDirector : MonoBehaviour, ISlowTickable
     {
+        private const float PlayerResolveRetryInterval = 1f;
+        private const float RuntimeSettingsRefreshInterval = 5f;
+
         // ══════════════════════════════════════════════════════════
         //  ACTIVE CREATURE — struct tracker
         // ══════════════════════════════════════════════════════════
@@ -254,6 +257,10 @@ namespace Hecton8.AI
         /// Заменяет O(n) CountCreatureTypes.
         /// </summary>
         private Dictionary<FaunaBiomeData, int[]> _countsPerTypePerBiome;
+        private Dictionary<FaunaBiomeData, Dictionary<GameObject, int>> _prefabTypeIndexLookup;
+        private float _nextPlayerResolveTime = float.NegativeInfinity;
+        private float _nextRuntimeSettingsRefreshTime = float.NegativeInfinity;
+        private bool _runtimeSettingsDirty = true;
 
         // ══════════════════════════════════════════════════════════
         //  PREDATOR PRESSURE STATE
@@ -277,6 +284,8 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolveSpawnRegistry();
             RefreshRuntimeStreamingSettings();
+            _runtimeSettingsDirty = false;
+            _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
         }
 
         private void OnEnable()
@@ -284,7 +293,7 @@ namespace Hecton8.AI
             GameTickManager.Instance?.Register((ISlowTickable)this);
 
             if (_playerTransform == null)
-                FindPlayer();
+                FindPlayer(true);
 
             if (spawnRegistry == null)
                 ResolveSpawnRegistry();
@@ -312,7 +321,12 @@ namespace Hecton8.AI
         public void SlowTick()
         {
             EnsureRuntimeStateInitialized();
-            RefreshRuntimeStreamingSettings();
+            if (_runtimeSettingsDirty || Time.time >= _nextRuntimeSettingsRefreshTime)
+            {
+                RefreshRuntimeStreamingSettings();
+                _runtimeSettingsDirty = false;
+                _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
+            }
             // ══════════════════════════════════════════════════════
             //  1. PLAYER CHECK
             // ══════════════════════════════════════════════════════
@@ -328,6 +342,7 @@ namespace Hecton8.AI
             if (_playerTransform == null)
             {
                 _playerTransform = null;
+                _nextPlayerResolveTime = 0f;
                 return;
             }
 
@@ -780,6 +795,7 @@ namespace Hecton8.AI
         {
             if (_biomeLookup != null &&
                 _countsPerTypePerBiome != null &&
+                _prefabTypeIndexLookup != null &&
                 _countsPerChunk != null &&
                 _largeThreatCountsPerMacroZone != null &&
                 _activeCreatures != null &&
@@ -791,11 +807,13 @@ namespace Hecton8.AI
             int capacity = biomeDatasets != null ? biomeDatasets.Length : 4;
             _biomeLookup ??= new Dictionary<int, FaunaBiomeData>(capacity);
             _countsPerTypePerBiome ??= new Dictionary<FaunaBiomeData, int[]>(capacity);
+            _prefabTypeIndexLookup ??= new Dictionary<FaunaBiomeData, Dictionary<GameObject, int>>(capacity);
             _countsPerChunk ??= new Dictionary<long, int>(32);
             _largeThreatCountsPerMacroZone ??= new Dictionary<long, int>(16);
 
             _biomeLookup.Clear();
             _countsPerTypePerBiome.Clear();
+            _prefabTypeIndexLookup.Clear();
 
             int maxBiomeIndex = 0;
             if (biomeDatasets != null)
@@ -812,6 +830,21 @@ namespace Hecton8.AI
 
                     int creatureCount = data.possibleCreatures != null ? data.possibleCreatures.Count : 0;
                     _countsPerTypePerBiome[data] = new int[creatureCount];
+
+                    Dictionary<GameObject, int> prefabLookup = new Dictionary<GameObject, int>(Mathf.Max(1, creatureCount));
+                    if (data.possibleCreatures != null)
+                    {
+                        for (int creatureIndex = 0; creatureIndex < creatureCount; creatureIndex++)
+                        {
+                            GameObject resolvedPrefab = data.possibleCreatures[creatureIndex].GetResolvedPrefab();
+                            if (resolvedPrefab == null || prefabLookup.ContainsKey(resolvedPrefab))
+                                continue;
+
+                            prefabLookup.Add(resolvedPrefab, creatureIndex);
+                        }
+                    }
+
+                    _prefabTypeIndexLookup[data] = prefabLookup;
                 }
             }
 
@@ -843,15 +876,17 @@ namespace Hecton8.AI
         /// Находит индекс существа в possibleCreatures по префабу.
         /// ReferenceEquals — zero GC. O(n) по типам (обычно 3-5).
         /// </summary>
-        private static int FindCreatureTypeIndex(FaunaBiomeData biomeData, GameObject prefab)
+        private int FindCreatureTypeIndex(FaunaBiomeData biomeData, GameObject prefab)
         {
-            List<FaunaEntry> creatures = biomeData.possibleCreatures;
-            int count = creatures.Count;
+            if (biomeData == null || prefab == null)
+                return -1;
 
-            for (int i = 0; i < count; i++)
+            if (_prefabTypeIndexLookup != null &&
+                _prefabTypeIndexLookup.TryGetValue(biomeData, out Dictionary<GameObject, int> prefabLookup) &&
+                prefabLookup != null &&
+                prefabLookup.TryGetValue(prefab, out int cachedIndex))
             {
-                if (ReferenceEquals(creatures[i].GetResolvedPrefab(), prefab))
-                    return i;
+                return cachedIndex;
             }
 
             return -1;
@@ -886,17 +921,25 @@ namespace Hecton8.AI
         /// Ленивый поиск игрока по тегу "Player".
         /// Вызывается один раз при OnEnable или если ссылка потеряна.
         /// </summary>
-        private void FindPlayer()
+        private void FindPlayer(bool force = false)
         {
-            GameObject playerGO = GameObject.FindWithTag("Player");
-            if (playerGO != null)
-                _playerTransform = playerGO.transform;
+            if (_playerTransform != null)
+                return;
+
+            if (!force && Time.time < _nextPlayerResolveTime)
+                return;
+
+            _nextPlayerResolveTime = Time.time + PlayerResolveRetryInterval;
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+
+            if (_playerTransform != null)
+                _nextPlayerResolveTime = float.NegativeInfinity;
         }
 
         private void ResolveSpawnRegistry()
         {
             if (spawnRegistry == null)
-                spawnRegistry = FindAnyObjectByType<WorldFaunaSpawnRegistry>();
+                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref spawnRegistry);
 
             if (spawnRegistry != null && proceduralStateRegistry != null)
                 spawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
@@ -905,7 +948,7 @@ namespace Hecton8.AI
         private void ResolveProceduralStateRegistry()
         {
             if (proceduralStateRegistry == null)
-                proceduralStateRegistry = FindAnyObjectByType<WorldProceduralStateRegistry>();
+                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proceduralStateRegistry);
 
             if (spawnRegistry != null && proceduralStateRegistry != null)
                 spawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
@@ -1309,7 +1352,10 @@ namespace Hecton8.AI
         public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
         {
             chunkStreamingProfile = profile;
+            _runtimeSettingsDirty = true;
             RefreshRuntimeStreamingSettings();
+            _runtimeSettingsDirty = false;
+            _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
         }
 
         public void SetSpawnRegistry(WorldFaunaSpawnRegistry registry)

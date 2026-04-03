@@ -36,6 +36,7 @@
 // ============================================================================
 
 using Hecton8.Audio;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Input;
@@ -221,7 +222,9 @@ namespace Hecton8.UI
             // Auto-resolve SurvivalSystem if not assigned
             if (survivalSystem == null && enableBatteryDrain)
             {
-                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+
                 if (survivalSystem == null)
                 {
                     Debug.LogWarning(

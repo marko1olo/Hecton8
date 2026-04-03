@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -13,6 +14,8 @@ namespace NASAPunk.Visor
     [ExecuteAlways]
     public class VisorHUDController : MonoBehaviour, ITickable
     {
+        private static readonly List<VisorHUDController> s_activeControllers = new List<VisorHUDController>(2);
+
         public enum ProjectionMode
         {
             Disabled,
@@ -74,8 +77,26 @@ namespace NASAPunk.Visor
         private static readonly int ID_ScratchBleed = Shader.PropertyToID("_HUD_ScratchBleed");
         private static readonly int ID_Distortion = Shader.PropertyToID("_DistortionStrength");
 
+        public Camera HudCamera => _hudCamera;
+        public RenderTexture SharedRenderTexture => _sharedRenderTexture;
+
+        public static void CopyActiveControllersTo(List<VisorHUDController> results)
+        {
+            if (results == null)
+                return;
+
+            results.Clear();
+            for (int i = 0; i < s_activeControllers.Count; i++)
+            {
+                VisorHUDController controller = s_activeControllers[i];
+                if (controller != null && controller.isActiveAndEnabled)
+                    results.Add(controller);
+            }
+        }
+
         private void OnEnable()
         {
+            RegisterActiveController();
             EnsurePropertyBlock();
             AutoResolveReferences(force: true);
             SyncProjectionPose();
@@ -85,6 +106,8 @@ namespace NASAPunk.Visor
 
         private void OnDisable()
         {
+            UnregisterActiveController();
+
             if (_glitchActive)
             {
                 _hudIntensity = _glitchOriginalIntensity;
@@ -163,6 +186,19 @@ namespace NASAPunk.Visor
                 tickManager.Unregister(this);
 
             _runtimeTickRegistered = false;
+        }
+
+        private void RegisterActiveController()
+        {
+            if (s_activeControllers.Contains(this))
+                return;
+
+            s_activeControllers.Add(this);
+        }
+
+        private void UnregisterActiveController()
+        {
+            s_activeControllers.Remove(this);
         }
 
         private void AutoResolveReferences(bool force)

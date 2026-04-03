@@ -13,6 +13,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
     [SerializeField] private bool followInEditMode = true;
     [SerializeField] private bool followInPlayMode = true;
     [SerializeField] private Vector3 positionOffset = Vector3.zero;
+    private Camera _cachedResolvedCamera;
 
     private void OnEnable()
     {
@@ -75,8 +76,19 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         if (runtimeCamera != null)
             return runtimeCamera;
 
-        if (Camera.main != null)
-            return Camera.main;
+        if (_cachedResolvedCamera != null &&
+            _cachedResolvedCamera.enabled &&
+            _cachedResolvedCamera.gameObject.activeInHierarchy)
+        {
+            return _cachedResolvedCamera;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            _cachedResolvedCamera = mainCamera;
+            return _cachedResolvedCamera;
+        }
 
 #if UNITY_EDITOR
         if (!Application.isPlaying)
@@ -92,7 +104,10 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         {
             Camera candidate = cameras[i];
             if (candidate != null && candidate.enabled && candidate.gameObject.activeInHierarchy)
-                return candidate;
+            {
+                _cachedResolvedCamera = candidate;
+                return _cachedResolvedCamera;
+            }
         }
 
         return null;

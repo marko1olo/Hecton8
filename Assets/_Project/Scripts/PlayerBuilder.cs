@@ -932,12 +932,12 @@ namespace Hecton8.Building
             LogBuilderDebug($"ResolveRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
 
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
             LogBuilderDebug($"ResolveRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
 
             if (_buildCatalog == null)
             {
-                ConstructionManager manager = ConstructionManager.Instance ?? FindFirstObjectByType<ConstructionManager>();
+                ConstructionManager manager = ConstructionManager.Instance;
                 if (manager != null)
                     _buildCatalog = manager.Catalog;
             }

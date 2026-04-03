@@ -1,9 +1,12 @@
+using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using NASAPunk.Visor;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -16,6 +19,9 @@ namespace Hecton8.UI
     [RequireComponent(typeof(Canvas))]
     public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable
     {
+        private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
+        private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
+
         public enum RenderPath
         {
             ScreenOverlay,
@@ -130,6 +136,23 @@ namespace Hecton8.UI
         private float _nextAutoResolveAt;
         private bool _tickRegistered;
 
+        public Canvas TargetCanvas => targetCanvas != null ? targetCanvas : GetComponent<Canvas>();
+        public Camera ProjectionCamera => projectionCamera;
+
+        public static void CopyActiveOverlaysTo(List<SuitHUDV4CanvasOverlay> results)
+        {
+            if (results == null)
+                return;
+
+            results.Clear();
+            for (int i = 0; i < s_activeOverlays.Count; i++)
+            {
+                SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
+                if (overlay != null && overlay.isActiveAndEnabled)
+                    results.Add(overlay);
+            }
+        }
+
         private struct GaugeRefs
         {
             public RectTransform Root;
@@ -144,6 +167,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            RegisterActiveOverlay();
             _layoutBuilt = false;
             RefreshAll(0.016f, forceResolve: true);
             TryRegisterRuntimeTick();
@@ -151,6 +175,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            UnregisterActiveOverlay();
             UnregisterRuntimeTick();
 
             if (_root != null)
@@ -200,16 +225,35 @@ namespace Hecton8.UI
 
             if (projectionCamera == null)
             {
-                Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-                for (int i = 0; i < cameras.Length; i++)
+                VisorHUDController.CopyActiveControllersTo(s_controllerResolveBuffer);
+                Transform root = transform.root;
+                for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
                 {
-                    Camera candidate = cameras[i];
-                    if (candidate != null && candidate.name == "HUD_Render_Camera")
+                    VisorHUDController controller = s_controllerResolveBuffer[i];
+                    if (controller == null || controller.HudCamera == null)
+                        continue;
+
+                    if (controller.transform.root != root)
+                        continue;
+
+                    projectionCamera = controller.HudCamera;
+                    break;
+                }
+
+                if (projectionCamera == null)
+                {
+                    for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
                     {
-                        projectionCamera = candidate;
-                        break;
+                        VisorHUDController controller = s_controllerResolveBuffer[i];
+                        if (controller != null && controller.HudCamera != null)
+                        {
+                            projectionCamera = controller.HudCamera;
+                            break;
+                        }
                     }
                 }
+
+                s_controllerResolveBuffer.Clear();
             }
 
             if (uiFont == null)
@@ -224,16 +268,28 @@ namespace Hecton8.UI
             TryResolveDefaultIconTextures();
 
             if (survival == null)
-                survival = FindFirstObjectByType<HectonSurvivalSystem>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                    survival = playerTransformRoot.GetComponent<HectonSurvivalSystem>();
+            }
 
             if (playerMovement == null)
-                playerMovement = FindFirstObjectByType<HectonPlayerMovement>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                    playerMovement = playerTransformRoot.GetComponent<HectonPlayerMovement>();
+            }
 
             if (flashlight == null)
-                flashlight = FindFirstObjectByType<PlayerFlashlight>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                    flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+            }
 
             if (underwaterVisuals == null)
-                underwaterVisuals = FindFirstObjectByType<HectonUnderwaterVisuals>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                    underwaterVisuals = playerTransformRoot.GetComponentInChildren<HectonUnderwaterVisuals>(true);
+            }
         }
 
         private bool NeedsAutoResolve()
@@ -1056,6 +1112,19 @@ namespace Hecton8.UI
                 tickManager.Unregister((ITickable)this);
 
             _tickRegistered = false;
+        }
+
+        private void RegisterActiveOverlay()
+        {
+            if (s_activeOverlays.Contains(this))
+                return;
+
+            s_activeOverlays.Add(this);
+        }
+
+        private void UnregisterActiveOverlay()
+        {
+            s_activeOverlays.Remove(this);
         }
     }
 }

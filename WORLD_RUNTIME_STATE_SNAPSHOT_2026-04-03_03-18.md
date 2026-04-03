@@ -1,0 +1,272 @@
+# WORLD RUNTIME STATE SNAPSHOT - 2026-04-03 03:18
+
+Scope of this pass:
+- code-only audit and hardening
+- no Unity run in this pass
+- focus: active runtime scripts that still violate the zero-GC target by design
+
+What was confirmed in code:
+- The remaining runtime problem is not a single 7-line bug.
+- Multiple active runtime systems were still doing scene-wide scans or rebuilding managed arrays on live paths.
+- The hot-path risk was spread across:
+  - scatter warmup
+  - generated geology LOD/rebuild plumbing
+  - zone/interest/slice/content anchor discovery
+
+What was changed in this pass:
+- `WorldZoneAnchor.cs`
+  - added static active-anchor registry
+  - anchors now self-register in `OnEnable/OnDisable/OnDestroy`
+- `WorldInterestAnchor.cs`
+  - added static active-anchor registry
+- `WorldSliceAnchor.cs`
+  - added static active-anchor registry
+- `WorldContentSocket.cs`
+  - added static active-socket registry
+- `WorldProceduralFieldSampler.cs`
+  - removed `Resources.FindObjectsOfTypeAll<WorldZoneAnchor>()` from runtime anchor refresh
+  - sampler now copies active anchors from registry
+- `WorldZoneDirector.cs`
+  - removed runtime scene scan for `WorldZoneAnchor`
+- `WorldInterestDirector.cs`
+  - removed runtime scene scan for `WorldInterestAnchor`
+- `WorldSliceDirector.cs`
+  - removed runtime scene scan for `WorldSliceAnchor`
+- `WorldContentDirector.cs`
+  - removed runtime scene scan for `WorldContentSocket`
+- `WorldGenerativeGeologyService.cs`
+  - removed per-rebuild `ToArray()` on LOD list
+  - removed per-rebuild fresh renderer arrays on the normal stable rebuild path
+  - added per-runtime cached LOD array and per-LOD renderer arrays
+- `VisorHUDController.cs`
+  - added active-controller registry
+  - exposed resolved HUD camera/shared RT for reuse by other visor systems
+- `SuitHUDV4CanvasOverlay.cs`
+  - added active-overlay registry
+  - removed global camera scan from projection-camera resolve
+  - player-linked references now try bootstrap player hierarchy first
+- `SuitHUDScreenCompositor.cs`
+  - added active-compositor registry
+  - removed runtime `Resources.FindObjectsOfTypeAll<Canvas/RenderTexture>()` fallback
+  - now resolves canvas/controller/RT from registries and local hierarchy
+- `SuitHUDPresentationController.cs`
+  - removed runtime HUD overlay/compositor scene scans
+  - now resolves same-root overlay/compositor from registries
+- `HectonSuitHUD_v4.cs`
+  - added active-HUD registry
+  - player-linked dependencies now try bootstrap player hierarchy first
+- `HectonSuitHUDExtensions.cs`
+  - now resolves primary HUD from HUD registry
+  - now resolves overlay from overlay registry
+  - player flashlight/tool manager now try bootstrap player hierarchy first
+- `AmbientWaterMotionManager.cs`
+  - observer fallback now uses bootstrap player transform instead of tag search
+- `AcousticZoneController.cs`
+  - player buoyancy fallback now uses bootstrap player transform instead of tag search
+- `FaunaDirector.cs`
+  - player/spawn-registry/procedural-state-registry resolution now uses shared runtime helpers
+- `HectonDirectorAI.cs`
+  - player/fauna/scavenge dependency resolution now uses shared runtime helpers
+- `HectonFluidEngine.cs`
+  - observer fallback now uses bootstrap player transform instead of tag search
+- `HectonBaseAI.cs`
+  - player resolve now uses `WorldRuntimeReferenceUtility` instead of direct tag search
+- `HectonBoidController.cs`
+  - player resolve now uses `WorldRuntimeReferenceUtility` instead of direct tag search
+- `ProximityColliderSystem.cs`
+  - player resolve now uses `SceneBootstrap` instead of tag search in `OnEnable`
+- `BuilderTool.cs`
+  - pooled tool spawn binding now resolves player via `SceneBootstrap`
+- `LaserCutter.cs`
+  - startup/inventory fallback now resolves player via `SceneBootstrap`
+- `ScavengePopulator.cs`
+  - player resolve now uses `WorldRuntimeReferenceUtility`
+- `HectonSuitHUD_v4.cs`
+  - removed `FindFirstObjectByType` fallbacks for player-linked systems
+- `HectonSuitHUDExtensions.cs`
+  - removed `FindFirstObjectByType` fallbacks for flashlight/tool manager
+- `UI/SuitHUDV4CanvasOverlay.cs`
+  - removed `FindFirstObjectByType` fallbacks for player-linked systems
+- `PlayerTool.cs`
+  - base tool survival binding now resolves through `SceneBootstrap`
+- `PlayerFlashlight.cs`
+  - flashlight survival binding now resolves through `SceneBootstrap`
+- `PlayerPDA.cs`
+  - PDA survival binding now resolves through `SceneBootstrap`
+- `HUDQuickBar.cs`
+  - quick-bar tool manager now resolves through bootstrap player hierarchy
+- `ToolLoadoutProvisioner.cs`
+  - inventory/tool manager auto-resolve now uses bootstrap player hierarchy
+- `PDAInventoryTab.cs`
+  - player inventory/tool manager/player PDA now resolve through bootstrap player hierarchy
+  - HUD notification fallback now prefers active notification registry instead of scene search
+- `UI/PDALoadoutTab.cs`
+  - player inventory/tool manager/player PDA now resolve through bootstrap player hierarchy
+  - HUD notification fallback now prefers active notification registry
+- `UI/PDAConstructionTab.cs`
+  - player builder/inventory/tool manager/player PDA now resolve through bootstrap player hierarchy
+  - construction manager now resolves through singleton `Instance`
+  - HUD notification fallback now prefers active notification registry
+- `UI/PDADataLogTab.cs`
+  - player inventory/tool manager/player PDA/survival/player builder now resolve through bootstrap player hierarchy
+  - construction manager now resolves through singleton `Instance`
+- `UI/PDABarterTab.cs`
+  - exchange system now resolves through singleton `Instance`
+- `Fabricator.cs`
+  - scan log system now resolves through singleton `Instance`
+- `Gameplay/PDAExchangeSystem.cs`
+  - scan log system now resolves through singleton `Instance`
+- `WorldRuntimeReferenceUtility.cs`
+  - successful player/service/world resolve is now cached after the first hit
+  - bootstrap player transform remains the preferred source over fallback cache
+- `FieldTargetDescriptor.cs`
+  - added active descriptor registry for authored field targets
+- `FieldTargetSemantics.cs`
+  - nearest route-marker lookup no longer rebuilds a full `FieldTargetDescriptor[]` scene array
+- `SkySystemFollowCamera.cs`
+  - cached resolved camera added so the helper does not keep falling back to full camera search each frame
+- `WorldFaunaSpawnRegistry.cs`
+  - procedural state registry resolve now uses shared cached runtime helper
+- `WorldGenerativeGeologyVoxelBridgeDirector.cs`
+  - seam director / voxel engine resolve now use shared cached runtime helper
+- `WorldGenerativeGeologyTerrainSeamApplier.cs`
+  - integration director resolve now uses shared cached runtime helper
+- `WorldProceduralScatterDirector.cs`
+  - world-side dependency resolve now uses shared cached runtime helper for field sampler / fill / fauna / state / geology service
+
+What still remains after this pass:
+- `WorldProceduralScatterDirector.cs`
+  - still the main confirmed runtime enemy from trace because of scatter warmup / rebuild cost
+- `WorldRuntimeReferenceUtility.cs`
+  - still contains last-resort `GameObject.FindWithTag("Player")` / `GameObject.Find("Player")`
+  - this path is now cached after success, but the fallback still exists as an emergency bridge
+- `SkySystemFollowCamera.cs`
+  - still has a full camera scan fallback if no assigned/cached camera exists
+  - now this is a recovery path, not the default every-frame path
+- `HectonFabricatorUI.cs`
+  - still has one-shot startup fallbacks for `Camera.main` and `FindFirstObjectByType<TextMeshProUGUI>()`
+  - not treated as the source of live scatter/GC spikes
+- `WorldGenerativeGeologyIntegrationDirector.cs`
+  - retains `FindObjectsByType<WorldGenerativeGeologyBinding>(Include)` only for the explicit inactive-binding editor/non-play path
+- `SceneBootstrap.cs`, `HectonPlayerSpawner.cs`, `MapMagicBridge.cs`, `WorldStateManager.cs`
+  - still use search APIs in bootstrap/load flows
+  - these are not steady-state gameplay hot paths
+
+What was reviewed and classified in the broader project pass:
+- `HectonRockManager.cs`
+  - one-shot startup dependency discovery, not confirmed hot-path runtime debt
+- `HectonPlayerSpawner.cs`
+  - player tag search exists in `Awake`, but this is spawn/bootstrap logic
+- `MapMagicBridge.cs`
+  - player/map object search exists in startup integration path
+- `RuntimePerformanceProfiler.cs`
+  - renderer ownership scan is diagnostic-only work, not normal gameplay logic
+- `BeaconNetworkSystem.cs`
+  - `GetOrCreate()` singleton discovery is bootstrap utility logic, not active frame/tick churn
+- `UI/PDAShellChrome.cs`
+  - player PDA/inventory/tool manager/survival now resolve through bootstrap player hierarchy
+- `HUDNotification.cs`
+  - added active-instance registry for runtime callers
+- `EnvironmentalAnalyzerTool.cs`
+  - survival now resolves through bootstrap player hierarchy
+  - HUD notification now resolves through active notification registry
+- `FlashlightTool.cs`
+  - flashlight now resolves through bootstrap player hierarchy
+  - HUD notification now resolves through active notification registry
+- `Gameplay/PDAExchangeSystem.cs`
+  - player inventory now resolves through bootstrap player hierarchy
+  - HUD notification now resolves through active notification registry
+- `PlayerBuilder.cs`
+  - HUD notification now resolves through active notification registry
+  - build catalog no longer falls back to scene search for `ConstructionManager`
+- `ScanLogSystem.cs`
+  - HUD notification now resolves through active notification registry
+- `ToolHitUtility.cs`
+  - shared notification path now uses active notification registry instead of global scene search
+- `UI/SuitAdvisoryController.cs`
+  - survival now resolves through bootstrap player hierarchy
+  - HUD notification now resolves through active notification registry
+- `Interaction/SaveStation.cs`
+  - HUD notification now resolves through active notification registry
+- `UI/PDABarterTab.cs`
+  - player PDA now resolves through bootstrap player hierarchy
+- `UI/BuilderStatusOverlay.cs`
+  - player builder/inventory/tool manager now resolve through bootstrap player hierarchy
+  - construction manager now resolves through singleton `Instance`
+- `UI/PauseMenuController.cs`
+  - player PDA now resolves through bootstrap player hierarchy
+- `WorldProceduralScatterDirector.cs`
+  - runtime warmup no longer adds reserve headroom on normal rebuilds
+  - startup reserve now scales from direct warmup demand instead of static family reserve alone
+  - startup warmup/create path now has a hard batch limit through `maxInitialScatterCreatesPerRebuild`
+  - initial warmup no longer warms a larger batch than the same reconcile is allowed to create
+- `AmbientWaterMotionManager.cs`
+  - near/medium/far/cull squared distances are now cached once and refreshed only when settings change
+  - live tick no longer recomputes the same four squares every frame
+- `HectonFluidEngine.cs`
+  - fluid LOD observer resolve is no longer startup-only
+  - engine now retries observer binding on a cooldown if player/camera was not ready during `Awake`
+  - this closes a real CPU-risk path where fluid LOD could silently stay disabled and keep too many objects in near-detail simulation
+- `WorldPopulationDirector.cs`
+  - non-primary sockets no longer build full blended diagnostic strings every slow tick
+  - verbose blended reasoning is now generated only for the active nearest socket around the player
+  - background sockets keep summary recommendation data without the string churn
+- `AcousticZoneController.cs`
+  - player buoyancy lookup now retries on a cooldown instead of probing bootstrap every tick while the player is still spawning
+- `HectonBaseAI.cs`
+  - late-bound player rigidbody/flashlight lookup now retries on a cooldown instead of probing player hierarchy from every AI tick
+  - direct resolve still happens immediately when the player is first acquired, so gameplay reactions to light/noise do not get intentionally delayed
+- `WorldProceduralScatterDirector.cs`
+  - scatter rebuild report is no longer formatted when neither diagnostics trace nor spike logging needs it
+  - pool warmup trace lines are no longer formatted in the hot loop when runtime diagnostics tracing is disabled
+
+What this should improve:
+- less managed garbage from active world directors that re-scan scene objects
+- less rebuild churn when generated geology reuses the same root and same primitive topology
+- more of the runtime path now depends on stable reusable buffers instead of new managed arrays
+- less useless string churn inside confirmed scatter rebuild/warmup hot paths when trace is off
+- less repeated hierarchy probing from every active AI while player-linked stimulus sources are still binding
+- less visor/HUD recovery churn from global canvas/render-texture/controller searches
+- fewer repeated player tag/name lookups in active runtime systems that retry until references appear
+- less duplicated lazy scene-search logic across active AI/physics/director systems
+- fewer tag-search fallbacks in pooled tools and active AI systems
+- tighter HUD/player wiring so visor/HUD layers stay on bootstrap hierarchy instead of scene-wide last-resort lookups
+- less duplicated survival-system scene search across the whole player tool stack
+- fewer repeated player-linked scene searches across PDA tabs and quick-bar/loadout UI
+- less duplicated global HUD notification scanning across tools, PDA systems, builder flow, and interaction helpers
+- less lazy scene-search churn in barter/build/pause UI flows
+- smaller startup scatter bursts
+- less runtime scatter warmup over-allocation for hot families like `family.coral.low`
+- less chance of large runtime `Instantiate` spikes caused by reserve-only or headroom warmup
+- less pointless per-frame math in ambient prop motion
+- less chance that fluid simulation stays in an expensive no-LOD state after late player/camera spawn
+- less slow-tick string churn from population diagnostics spread across all sockets
+- less startup/player-bringup retry noise in acoustic zone detection
+- less repeated fauna runtime config recalculation on every slow tick
+- fewer repeated fauna player resolve retries while the player is still spawning
+- fewer per-spawn linear scans for fauna type index lookup
+
+What still honestly remains:
+- `WorldGenerativeGeologyIntegrationDirector.cs`
+  - still has `FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Include, ...)`
+  - this path is only used when `includeInactiveBindings` is enabled
+  - normal runtime path already uses `WorldGenerativeGeologyBinding.CopyActiveBindingsTo(...)`
+- `WorldGenerativeGeologyService.cs`
+  - renderer/LOD caches still allocate once when the exact topology/count changes
+  - this is much better than per-rebuild allocation, but not yet a mathematically perfect zero-allocation path for every possible topology change
+- `WorldProceduralScatterDirector.cs`
+  - scatter pool warmup is still the main confirmed source of the giant startup/runtime spikes from the last validated traces
+  - latest code now goes further: runtime reserve is removed and startup batching is explicit
+  - this pass still did not run Unity, so there is no honest new trace yet
+- there is still non-editor search debt in other gameplay/UI/service files
+  - especially the remaining global-service fallbacks in `UI/PDADataLogTab` and `UI/PDABarterTab`
+  - plus the remaining gameplay/service callers that still search for non-player global systems
+  - this pass focused first on active world, AI, pooled tools, and visor/HUD runtime layers
+
+Honest status after this pass:
+- active runtime code is cleaner than before
+- this pass removed more hidden design-level GC sources from the active world stack
+- the visor/HUD stack is now materially less scan-heavy than it was before this pass
+- pooled tools and active AI/player-adjacent runtime code also lost another batch of direct player scene searches
+- but zero-GC is still not achieved yet
+- the next verified target is still scatter warmup, followed by any remaining topology-change churn that appears in new traces

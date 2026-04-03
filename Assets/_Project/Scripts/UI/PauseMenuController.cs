@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.SaveSystem;
@@ -239,7 +240,13 @@ namespace Hecton8.UI
         private void AutoResolve()
         {
             if (playerPDA == null)
-                playerPDA = FindFirstObjectByType<PlayerPDA>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                }
+            }
             labelFont = ResolveReadableFont(labelFont);
             if (numericFont == null)
                 numericFont = labelFont;

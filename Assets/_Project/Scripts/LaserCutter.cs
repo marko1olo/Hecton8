@@ -50,6 +50,7 @@
 namespace Hecton8.Gameplay
 {
     using System;
+    using Hecton8.Bootstrap;
     using Hecton8.Building;
     using Hecton8.Construction;
     using Hecton8.Core;
@@ -260,10 +261,9 @@ namespace Hecton8.Gameplay
             CacheSparksEmission();
             SetVisualsActive(false);
             
-            // ONE-TIME cache: Try to find PlayerInventory at startup (not in hot loop)
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-                player.TryGetComponent(out _cachedInventory);
+            // ONE-TIME cache: Try to resolve PlayerInventory at startup (not in hot loop)
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                playerTransform.TryGetComponent(out _cachedInventory);
         }
 
         public override void OnSpawn()
@@ -681,9 +681,8 @@ namespace Hecton8.Gameplay
             if (!gameObject.scene.isLoaded)
                 return;
 
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-                player.TryGetComponent(out _cachedInventory);
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                playerTransform.TryGetComponent(out _cachedInventory);
         }
 
         private static void ArchiveRecoveredModule(BaseModule module)

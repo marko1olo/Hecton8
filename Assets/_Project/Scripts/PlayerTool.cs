@@ -25,6 +25,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Items;
     using Hecton8.Tools;
@@ -162,7 +163,8 @@ namespace Hecton8.Gameplay
             // Auto-resolve SurvivalSystem
             if (_survivalSystem == null && enableEnergyConsumption)
             {
-                _survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                    _survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
             }
         }
 

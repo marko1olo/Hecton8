@@ -45,14 +45,10 @@ namespace Hecton8.World
         private void Awake()
         {
             if (mapMagicBridge == null)
-                mapMagicBridge = MapMagicBridge.Instance ?? FindAnyObjectByType<MapMagicBridge>();
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
             if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             EnsureStorage();
             UpdateDiagnostics();
@@ -211,14 +207,10 @@ namespace Hecton8.World
         private void EnsureReferences()
         {
             if (mapMagicBridge == null)
-                mapMagicBridge = MapMagicBridge.Instance ?? FindAnyObjectByType<MapMagicBridge>();
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
             if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
         }
 
         private void EnsureStorage()

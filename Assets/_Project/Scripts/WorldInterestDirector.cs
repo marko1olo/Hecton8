@@ -80,22 +80,7 @@ namespace Hecton8.World
 
         public void RefreshAnchors()
         {
-            _anchors.Clear();
-
-            WorldInterestAnchor[] anchors = Resources.FindObjectsOfTypeAll<WorldInterestAnchor>();
-            for (int i = 0; i < anchors.Length; i++)
-            {
-                WorldInterestAnchor anchor = anchors[i];
-                if (anchor == null)
-                    continue;
-
-                GameObject go = anchor.gameObject;
-                if (go == null || !go.scene.IsValid())
-                    continue;
-
-                _anchors.Add(anchor);
-            }
-
+            WorldInterestAnchor.CopyActiveAnchorsTo(_anchors);
             _debugAnchorCount = _anchors.Count;
         }
 

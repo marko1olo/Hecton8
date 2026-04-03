@@ -33,6 +33,7 @@ using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Systems.AI
@@ -852,11 +853,7 @@ namespace Hecton8.Systems.AI
         private void ResolvePlayerAndSurvival()
         {
             if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             if (survivalSystem == null && playerTransform != null)
             {
@@ -874,10 +871,10 @@ namespace Hecton8.Systems.AI
             _resolvedDirectors = true;
 
             if (faunaDirector == null)
-                faunaDirector = FindAnyObjectByType<FaunaDirector>();
+                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref faunaDirector);
 
             if (scavengePopulator == null)
-                scavengePopulator = FindAnyObjectByType<ScavengePopulator>();
+                WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
         }
 
         private Vector3 GetEventPositionAroundPlayer()

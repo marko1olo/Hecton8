@@ -2329,20 +2329,25 @@ public class HectonVoxelEngine : MonoBehaviour
         _activeVolumes.Remove(volume);
 
         var mf = volume.GetComponent<MeshFilter>();
-        if (mf != null && mf.sharedMesh != null)
-        {
-            mf.sharedMesh.Clear();
-            SafeDestroy(mf.sharedMesh);
-            mf.sharedMesh = null;
-        }
-
         var mc = volume.GetComponent<MeshCollider>();
         if (mc != null) mc.sharedMesh = null;
 
         if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
+        {
+            if (mf != null && mf.sharedMesh != null)
+                mf.sharedMesh.Clear(false);
             ObjectPoolManager.Instance.Despawn(volume);
+        }
         else
+        {
+            if (mf != null && mf.sharedMesh != null)
+            {
+                mf.sharedMesh.Clear();
+                SafeDestroy(mf.sharedMesh);
+                mf.sharedMesh = null;
+            }
             SafeDestroy(volume);
+        }
     }
 
     /// <summary>Removes null references from active volumes list.</summary>
@@ -2367,20 +2372,25 @@ public class HectonVoxelEngine : MonoBehaviour
             if (_activeVolumes[i] != null)
             {
                 var mf = _activeVolumes[i].GetComponent<MeshFilter>();
-                if (mf != null && mf.sharedMesh != null)
-                {
-                    mf.sharedMesh.Clear();
-                    SafeDestroy(mf.sharedMesh);
-                    mf.sharedMesh = null;
-                }
-
                 var mc = _activeVolumes[i].GetComponent<MeshCollider>();
                 if (mc != null) mc.sharedMesh = null;
 
                 if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
+                {
+                    if (mf != null && mf.sharedMesh != null)
+                        mf.sharedMesh.Clear(false);
                     ObjectPoolManager.Instance.Despawn(_activeVolumes[i]);
+                }
                 else
+                {
+                    if (mf != null && mf.sharedMesh != null)
+                    {
+                        mf.sharedMesh.Clear();
+                        SafeDestroy(mf.sharedMesh);
+                        mf.sharedMesh = null;
+                    }
                     SafeDestroy(_activeVolumes[i]);
+                }
             }
         }
         _activeVolumes.Clear();
@@ -2465,9 +2475,25 @@ public class HectonVoxelEngine : MonoBehaviour
                                Material mat,
                                bool buildCollider)
     {
-        var mesh = new Mesh();
-        mesh.name = $"CaveMesh_{go.name}";
-        if (vertCount > 65535) mesh.indexFormat = IndexFormat.UInt32;
+        var mf = go.GetComponent<MeshFilter>();
+        if (mf == null) mf = go.AddComponent<MeshFilter>();
+
+        Mesh mesh = mf.sharedMesh;
+        if (mesh == null)
+        {
+            mesh = new Mesh
+            {
+                name = $"CaveMesh_{go.name}"
+            };
+            mesh.MarkDynamic();
+            mf.sharedMesh = mesh;
+        }
+        else
+        {
+            mesh.Clear(false);
+        }
+
+        mesh.indexFormat = vertCount > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
 
         var mPos = new NativeArray<Vector3>(vertCount, Allocator.Temp,
                                               NativeArrayOptions.UninitializedMemory);
@@ -2498,15 +2524,6 @@ public class HectonVoxelEngine : MonoBehaviour
 
         mesh.RecalculateTangents();
         mesh.RecalculateBounds();
-
-        var mf = go.GetComponent<MeshFilter>();
-        if (mf == null) mf = go.AddComponent<MeshFilter>();
-        if (mf.sharedMesh != null)
-        {
-            mf.sharedMesh.Clear();
-            SafeDestroy(mf.sharedMesh);
-        }
-        mf.sharedMesh = mesh;
 
         var mr = go.GetComponent<MeshRenderer>();
         if (mr == null) mr = go.AddComponent<MeshRenderer>();

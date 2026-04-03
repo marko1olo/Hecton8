@@ -241,6 +241,10 @@ namespace Hecton8.World
             [SerializeField] private int rendererCount;
 
             private bool _registeredInGlobalCounters;
+            private LOD[] _lodArrayCache = _EmptyLods;
+            private Renderer[] _lod0RendererCache = System.Array.Empty<Renderer>();
+            private Renderer[] _lod1RendererCache = System.Array.Empty<Renderer>();
+            private Renderer[] _lod2RendererCache = System.Array.Empty<Renderer>();
 
             public int BuildSignature => buildSignature;
             public int RendererCount => rendererCount;
@@ -278,14 +282,55 @@ namespace Hecton8.World
                 buildSignature = signature;
                 rendererCount = configuredRendererCount;
             }
+
+            public LOD[] GetOrCreateLodArray(int lodCount)
+            {
+                if (lodCount <= 0)
+                {
+                    _lodArrayCache = _EmptyLods;
+                    return _lodArrayCache;
+                }
+
+                if (_lodArrayCache == null || _lodArrayCache.Length != lodCount)
+                    _lodArrayCache = new LOD[lodCount];
+
+                return _lodArrayCache;
+            }
+
+            public Renderer[] GetOrCreateRendererArray(int lodIndex, int rendererCountForLod)
+            {
+                if (rendererCountForLod <= 0)
+                    return System.Array.Empty<Renderer>();
+
+                switch (lodIndex)
+                {
+                    case 0:
+                        return EnsureRendererArray(ref _lod0RendererCache, rendererCountForLod);
+                    case 1:
+                        return EnsureRendererArray(ref _lod1RendererCache, rendererCountForLod);
+                    default:
+                        return EnsureRendererArray(ref _lod2RendererCache, rendererCountForLod);
+                }
+            }
+
+            private static Renderer[] EnsureRendererArray(ref Renderer[] cache, int requiredCount)
+            {
+                if (cache == null || cache.Length != requiredCount)
+                    cache = new Renderer[requiredCount];
+
+                return cache;
+            }
         }
 
         private const string GeneratedRootName = "__GENERATED_GEOLOGY";
+        private static readonly LOD[] _EmptyLods = new LOD[0];
 
         [Header("Fallback Generation")]
         [SerializeField] private bool allowEditorGeneration = true;
         [SerializeField] private float primitiveThickness = 1.6f;
         [SerializeField] private float debrisScale = 0.28f;
+
+        private readonly List<Renderer> _rendererBuildBuffer = new List<Renderer>(24);
 
         public static int ActiveGeneratedRootCount => Mathf.Max(0, _activeGeneratedRootCount);
         public static int ActiveGeneratedRendererCount => Mathf.Max(0, _activeGeneratedRendererCount);
@@ -323,26 +368,28 @@ namespace Hecton8.World
             if (runtimeState != null && runtimeState.BuildSignature == buildSignature && binding != null)
                 return true;
 
-            ClearGeneratedRoot(generatedRoot);
             StripHostPrimitiveVisuals(host);
 
             LODGroup lodGroup = generatedRoot.GetComponent<LODGroup>();
             if (lodGroup == null)
                 lodGroup = generatedRoot.gameObject.AddComponent<LODGroup>();
 
-            List<LOD> lods = new List<LOD>(lodCount);
+            if (runtimeState == null)
+                runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
+
+            LOD[] lodArray = runtimeState.GetOrCreateLodArray(lodCount);
             int totalRendererCount = 0;
             for (int lodIndex = 0; lodIndex < lodCount; lodIndex++)
             {
-                Transform lodRoot = new GameObject($"LOD{lodIndex}").transform;
-                lodRoot.SetParent(generatedRoot, false);
-                Renderer[] renderers = BuildCompositionLod(lodRoot, request, resolvedComposition, lodIndex, debrisCount);
+                Transform lodRoot = GetOrCreateLodRoot(generatedRoot, lodIndex);
+                Renderer[] renderers = BuildCompositionLod(runtimeState, lodRoot, request, resolvedComposition, lodIndex, debrisCount);
                 float transitionHeight = ResolveLodScreenHeight(request.Profile, lodIndex, lodCount);
-                lods.Add(new LOD(transitionHeight, renderers));
+                lodArray[lodIndex] = new LOD(transitionHeight, renderers);
                 totalRendererCount += renderers.Length;
             }
 
-            lodGroup.SetLODs(lods.ToArray());
+            DisableUnusedLodRoots(generatedRoot, lodCount);
+            lodGroup.SetLODs(lodArray);
             lodGroup.RecalculateBounds();
 
             if (binding == null)
@@ -356,9 +403,6 @@ namespace Hecton8.World
                 terrainCut,
                 debrisCount,
                 lodCount);
-
-            if (runtimeState == null)
-                runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
 
             runtimeState.Configure(buildSignature, totalRendererCount);
 
@@ -378,35 +422,46 @@ namespace Hecton8.World
         }
 
         private Renderer[] BuildCompositionLod(
+            GeneratedRuntimeState runtimeState,
             Transform lodRoot,
             in WorldGenerativeGeologyRequest request,
             string composition,
             int lodIndex,
             int debrisCount)
         {
-            List<Renderer> renderers = new List<Renderer>(12);
+            _rendererBuildBuffer.Clear();
+            ActivateTransform(lodRoot);
+            int primitiveIndex = 0;
             float lodScale = Mathf.Lerp(1f, 0.7f, lodIndex / 2f);
 
             switch (request.Profile.shapeArchetype)
             {
                 case WorldGenerativeGeologyProfile.ShapeArchetype.Arch:
                 case WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge:
-                    BuildArch(renderers, lodRoot, request, composition, lodScale, lodIndex);
+                    BuildArch(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
                     break;
 
                 case WorldGenerativeGeologyProfile.ShapeArchetype.Canopy:
-                    BuildCanopy(renderers, lodRoot, request, composition, lodScale, lodIndex);
+                    BuildCanopy(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
                     break;
 
                 default:
-                    BuildRockPack(renderers, lodRoot, request, composition, lodScale, lodIndex);
+                    BuildRockPack(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
                     break;
             }
 
             if (lodIndex == 0 && request.Profile.terrainSeamMode != WorldGenerativeGeologyProfile.TerrainSeamMode.None)
-                BuildDebris(renderers, lodRoot, request, debrisCount);
+                BuildDebris(_rendererBuildBuffer, lodRoot, request, debrisCount, ref primitiveIndex);
 
-            return renderers.ToArray();
+            DisableUnusedPrimitiveChildren(lodRoot, primitiveIndex);
+
+            int rendererCount = _rendererBuildBuffer.Count;
+            if (rendererCount == 0)
+                return System.Array.Empty<Renderer>();
+
+            Renderer[] renderers = runtimeState.GetOrCreateRendererArray(lodIndex, rendererCount);
+            _rendererBuildBuffer.CopyTo(renderers);
+            return renderers;
         }
 
         private void BuildArch(
@@ -415,20 +470,21 @@ namespace Hecton8.World
             in WorldGenerativeGeologyRequest request,
             string composition,
             float lodScale,
-            int lodIndex)
+            int lodIndex,
+            ref int primitiveIndex)
         {
             float width = Mathf.Lerp(10f, 5f, lodIndex / 2f) * request.WorldScale;
             float height = Mathf.Lerp(7f, 4f, lodIndex / 2f) * request.WorldScale;
             float thickness = primitiveThickness * request.WorldScale * lodScale;
 
-            CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(-width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness));
-            CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness));
-            CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 0f, Mathf.Lerp(18f, 6f, lodIndex / 2f)), new Vector3(width, thickness, thickness * 1.1f));
+            CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(-width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness), ref primitiveIndex);
+            CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness), ref primitiveIndex);
+            CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 0f, Mathf.Lerp(18f, 6f, lodIndex / 2f)), new Vector3(width, thickness, thickness * 1.1f), ref primitiveIndex);
 
             if (composition == "ContextPack" && lodIndex == 0)
             {
-                CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.55f, width * 0.22f), Quaternion.Euler(0f, 24f, -14f), new Vector3(width * 0.42f, thickness * 0.8f, thickness));
-                CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.42f, -width * 0.24f), Quaternion.Euler(0f, -22f, 10f), new Vector3(width * 0.36f, thickness * 0.75f, thickness));
+                CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.55f, width * 0.22f), Quaternion.Euler(0f, 24f, -14f), new Vector3(width * 0.42f, thickness * 0.8f, thickness), ref primitiveIndex);
+                CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.42f, -width * 0.24f), Quaternion.Euler(0f, -22f, 10f), new Vector3(width * 0.36f, thickness * 0.75f, thickness), ref primitiveIndex);
             }
         }
 
@@ -438,20 +494,21 @@ namespace Hecton8.World
             in WorldGenerativeGeologyRequest request,
             string composition,
             float lodScale,
-            int lodIndex)
+            int lodIndex,
+            ref int primitiveIndex)
         {
             float span = Mathf.Lerp(12f, 6f, lodIndex / 2f) * request.WorldScale;
             float shelfThickness = primitiveThickness * request.WorldScale * lodScale;
             float height = Mathf.Lerp(4.5f, 2.2f, lodIndex / 2f) * request.WorldScale;
 
-            CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(0f, height * 0.65f, 0f), Quaternion.identity, new Vector3(shelfThickness * 1.1f, height, shelfThickness * 1.1f));
-            CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 18f, request.CanyonSignal * 14f), new Vector3(span, shelfThickness, span * 0.55f));
+            CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(0f, height * 0.65f, 0f), Quaternion.identity, new Vector3(shelfThickness * 1.1f, height, shelfThickness * 1.1f), ref primitiveIndex);
+            CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 18f, request.CanyonSignal * 14f), new Vector3(span, shelfThickness, span * 0.55f), ref primitiveIndex);
 
             if (composition != "SingleFeature")
             {
-                CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(span * 0.18f, height * 0.82f, span * 0.16f), Quaternion.Euler(0f, -16f, 8f), new Vector3(span * 0.56f, shelfThickness * 0.8f, span * 0.28f));
+                CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(span * 0.18f, height * 0.82f, span * 0.16f), Quaternion.Euler(0f, -16f, 8f), new Vector3(span * 0.56f, shelfThickness * 0.8f, span * 0.28f), ref primitiveIndex);
                 if (lodIndex == 0)
-                    CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(-span * 0.22f, height * 0.72f, -span * 0.2f), Quaternion.Euler(0f, 24f, -10f), new Vector3(span * 0.42f, shelfThickness * 0.75f, span * 0.22f));
+                    CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(-span * 0.22f, height * 0.72f, -span * 0.2f), Quaternion.Euler(0f, 24f, -10f), new Vector3(span * 0.42f, shelfThickness * 0.75f, span * 0.22f), ref primitiveIndex);
             }
         }
 
@@ -461,21 +518,22 @@ namespace Hecton8.World
             in WorldGenerativeGeologyRequest request,
             string composition,
             float lodScale,
-            int lodIndex)
+            int lodIndex,
+            ref int primitiveIndex)
         {
             float baseScale = Mathf.Lerp(6f, 3f, lodIndex / 2f) * request.WorldScale;
-            CreatePrimitive(renderers, root, PrimitiveType.Sphere, new Vector3(0f, baseScale * 0.45f, 0f), Quaternion.identity, Vector3.one * baseScale);
-            CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(baseScale * 0.36f, baseScale * 0.52f, -baseScale * 0.18f), Quaternion.Euler(18f, 22f, 12f), new Vector3(baseScale * 0.9f, baseScale * 0.45f, baseScale * 0.64f));
+            CreatePrimitive(renderers, root, PrimitiveType.Sphere, new Vector3(0f, baseScale * 0.45f, 0f), Quaternion.identity, Vector3.one * baseScale, ref primitiveIndex);
+            CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(baseScale * 0.36f, baseScale * 0.52f, -baseScale * 0.18f), Quaternion.Euler(18f, 22f, 12f), new Vector3(baseScale * 0.9f, baseScale * 0.45f, baseScale * 0.64f), ref primitiveIndex);
 
             if (composition != "SingleFeature")
             {
-                CreatePrimitive(renderers, root, PrimitiveType.Sphere, new Vector3(-baseScale * 0.42f, baseScale * 0.34f, baseScale * 0.24f), Quaternion.identity, Vector3.one * (baseScale * 0.7f));
+                CreatePrimitive(renderers, root, PrimitiveType.Sphere, new Vector3(-baseScale * 0.42f, baseScale * 0.34f, baseScale * 0.24f), Quaternion.identity, Vector3.one * (baseScale * 0.7f), ref primitiveIndex);
                 if (lodIndex == 0)
-                    CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, baseScale * 0.92f, 0f), Quaternion.Euler(-8f, 32f, 20f), new Vector3(baseScale * 0.55f, baseScale * 0.18f, baseScale * 0.42f));
+                    CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, baseScale * 0.92f, 0f), Quaternion.Euler(-8f, 32f, 20f), new Vector3(baseScale * 0.55f, baseScale * 0.18f, baseScale * 0.42f), ref primitiveIndex);
             }
         }
 
-        private void BuildDebris(List<Renderer> renderers, Transform root, in WorldGenerativeGeologyRequest request, int debrisCount)
+        private void BuildDebris(List<Renderer> renderers, Transform root, in WorldGenerativeGeologyRequest request, int debrisCount, ref int primitiveIndex)
         {
             float radius = Mathf.Max(2f, request.Profile.seamBlendRadius * 0.22f) * request.WorldScale;
             int count = Mathf.Max(0, debrisCount);
@@ -487,7 +545,7 @@ namespace Hecton8.World
                 localPos.y = debrisScale * request.WorldScale;
                 float scale = Mathf.Lerp(0.35f, 1f, ((i % 3) + 1) / 3f) * debrisScale * request.WorldScale * 4f;
                 PrimitiveType primitive = (i % 2 == 0) ? PrimitiveType.Sphere : PrimitiveType.Cube;
-                CreatePrimitive(renderers, root, primitive, localPos, Quaternion.Euler(11f * i, angle, 17f), Vector3.one * scale);
+                CreatePrimitive(renderers, root, primitive, localPos, Quaternion.Euler(11f * i, angle, 17f), Vector3.one * scale, ref primitiveIndex);
             }
         }
 
@@ -546,22 +604,77 @@ namespace Hecton8.World
         {
             Transform existing = host.Find(GeneratedRootName);
             if (existing != null)
+            {
+                ActivateTransform(existing);
                 return existing;
+            }
 
             Transform created = new GameObject(GeneratedRootName).transform;
             created.SetParent(host, false);
             return created;
         }
 
-        private static void ClearGeneratedRoot(Transform generatedRoot)
+        private static Transform GetOrCreateLodRoot(Transform generatedRoot, int lodIndex)
         {
-            for (int i = generatedRoot.childCount - 1; i >= 0; i--)
-                DestroyGeneratedObject(generatedRoot.GetChild(i).gameObject);
+            string lodName = $"LOD{lodIndex}";
+            for (int i = 0; i < generatedRoot.childCount; i++)
+            {
+                Transform child = generatedRoot.GetChild(i);
+                if (child != null && child.name == lodName)
+                {
+                    ActivateTransform(child);
+                    return child;
+                }
+            }
 
-            LODGroup lodGroup = generatedRoot.GetComponent<LODGroup>();
-            if (lodGroup != null)
-                DestroyGeneratedObject(lodGroup);
+            Transform created = new GameObject(lodName).transform;
+            created.SetParent(generatedRoot, false);
+            return created;
         }
+
+        private static void DisableUnusedLodRoots(Transform generatedRoot, int activeLodCount)
+        {
+            for (int i = 0; i < generatedRoot.childCount; i++)
+            {
+                Transform child = generatedRoot.GetChild(i);
+                if (child == null || !child.name.StartsWith("LOD"))
+                    continue;
+
+                bool keepActive = TryParseLodIndex(child.name, out int lodIndex) && lodIndex < activeLodCount;
+                if (child.gameObject.activeSelf != keepActive)
+                    child.gameObject.SetActive(keepActive);
+            }
+        }
+
+        private static void DisableUnusedPrimitiveChildren(Transform lodRoot, int activePrimitiveCount)
+        {
+            for (int i = 0; i < lodRoot.childCount; i++)
+            {
+                Transform child = lodRoot.GetChild(i);
+                if (child == null)
+                    continue;
+
+                bool keepActive = i < activePrimitiveCount;
+                if (child.gameObject.activeSelf != keepActive)
+                    child.gameObject.SetActive(keepActive);
+            }
+        }
+
+        private static bool TryParseLodIndex(string name, out int lodIndex)
+        {
+            lodIndex = -1;
+            if (string.IsNullOrEmpty(name) || name.Length <= 3 || !name.StartsWith("LOD"))
+                return false;
+
+            return int.TryParse(name.Substring(3), out lodIndex);
+        }
+
+        private static void ActivateTransform(Transform target)
+        {
+            if (target != null && !target.gameObject.activeSelf)
+                target.gameObject.SetActive(true);
+        }
+
 
         private void CreatePrimitive(
             List<Renderer> renderers,
@@ -569,20 +682,34 @@ namespace Hecton8.World
             PrimitiveType primitiveType,
             Vector3 localPosition,
             Quaternion localRotation,
-            Vector3 localScale)
+            Vector3 localScale,
+            ref int primitiveIndex)
         {
-            GameObject primitive = GameObject.CreatePrimitive(primitiveType);
-            primitive.name = primitiveType.ToString();
-            primitive.transform.SetParent(parent, false);
-            primitive.transform.localPosition = localPosition;
-            primitive.transform.localRotation = localRotation;
-            primitive.transform.localScale = localScale;
+            Renderer renderer;
+            if (primitiveIndex < parent.childCount)
+            {
+                GameObject existing = parent.GetChild(primitiveIndex).gameObject;
+                ActivateTransform(existing.transform);
+                renderer = WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                    existing,
+                    primitiveType,
+                    WorldGeneratedPrimitiveFactory.GetPrimitiveName(primitiveType),
+                    localPosition,
+                    localRotation,
+                    localScale);
+            }
+            else
+            {
+                renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    parent,
+                    primitiveType,
+                    WorldGeneratedPrimitiveFactory.GetPrimitiveName(primitiveType),
+                    localPosition,
+                    localRotation,
+                    localScale);
+            }
 
-            Collider collider = primitive.GetComponent<Collider>();
-            if (collider != null)
-                DestroyGeneratedObject(collider);
-
-            Renderer renderer = primitive.GetComponent<Renderer>();
+            primitiveIndex++;
             if (renderer != null)
                 renderers.Add(renderer);
         }

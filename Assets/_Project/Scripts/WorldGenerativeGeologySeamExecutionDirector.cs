@@ -91,6 +91,7 @@ namespace Hecton8.World
         private readonly List<long> _retainedRuntimeKeys = new List<long>(128);
         private readonly List<WorldGenerativeGeologyVoxelBlendRequest> _voxelRequests = new List<WorldGenerativeGeologyVoxelBlendRequest>(64);
         private readonly List<WorldGenerativeGeologySeamRuntime> _runtimeCleanupBuffer = new List<WorldGenerativeGeologySeamRuntime>(128);
+        private readonly List<Transform> _rendererTraversalBuffer = new List<Transform>(64);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
@@ -264,17 +265,19 @@ namespace Hecton8.World
                 return;
             }
 
-            ClearChildren(seamRoot);
-            Material seamMaterial = ResolveSeamMaterial(binding);
+            Material seamMaterial = ResolveSeamMaterial(binding.transform);
+            int primitiveIndex = 0;
 
             if (plan.RequiresTerrainBlend)
-                BuildTerrainSkirt(seamRoot, seamMaterial, plan);
+                BuildTerrainSkirt(seamRoot, seamMaterial, plan, ref primitiveIndex);
 
             if (plan.RequiresVoxelBlend)
-                BuildVoxelCollar(seamRoot, seamMaterial, plan);
+                BuildVoxelCollar(seamRoot, seamMaterial, plan, ref primitiveIndex);
 
             if (plan.RequiresDebrisSeam)
-                BuildDebrisBand(seamRoot, seamMaterial, plan);
+                BuildDebrisBand(seamRoot, seamMaterial, plan, ref primitiveIndex);
+
+            DisableUnusedChildren(seamRoot, primitiveIndex);
 
             if (runtime == null)
                 runtime = seamRoot.gameObject.AddComponent<WorldGenerativeGeologySeamRuntime>();
@@ -307,7 +310,7 @@ namespace Hecton8.World
             });
         }
 
-        private void BuildTerrainSkirt(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan)
+        private void BuildTerrainSkirt(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
         {
             int segments = Mathf.Clamp(terrainSkirtSegments, 4, 12);
             float radius = Mathf.Max(1.8f, plan.seamBlendRadius * 0.72f);
@@ -321,11 +324,11 @@ namespace Hecton8.World
                 Vector3 localPosition = new Vector3(contact.x + offset.x, contact.y + height * 0.35f, contact.z + offset.z);
                 Vector3 localScale = new Vector3(Mathf.Max(0.5f, radius * 0.28f), height, Mathf.Max(0.45f, radius * 0.22f));
                 Quaternion localRotation = Quaternion.Euler(0f, angle, Mathf.Lerp(-14f, 14f, i / Mathf.Max(1f, segments - 1f)));
-                CreatePrimitive(root, seamMaterial, PrimitiveType.Cube, $"TerrainSkirt_{i}", localPosition, localRotation, localScale);
+                CreatePrimitive(root, seamMaterial, PrimitiveType.Cube, $"TerrainSkirt_{i}", localPosition, localRotation, localScale, ref primitiveIndex);
             }
         }
 
-        private void BuildVoxelCollar(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan)
+        private void BuildVoxelCollar(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
         {
             int segments = Mathf.Clamp(voxelCollarSegments, 3, 10);
             float radius = Mathf.Max(1.4f, plan.seamBlendRadius * 0.48f);
@@ -338,11 +341,11 @@ namespace Hecton8.World
                 Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * radius;
                 Vector3 localPosition = new Vector3(center.x + offset.x, center.y - height * 0.15f, center.z + offset.z);
                 Vector3 localScale = new Vector3(Mathf.Max(0.42f, radius * 0.18f), height, Mathf.Max(0.42f, radius * 0.18f));
-                CreatePrimitive(root, seamMaterial, PrimitiveType.Cylinder, $"VoxelCollar_{i}", localPosition, Quaternion.identity, localScale);
+                CreatePrimitive(root, seamMaterial, PrimitiveType.Cylinder, $"VoxelCollar_{i}", localPosition, Quaternion.identity, localScale, ref primitiveIndex);
             }
         }
 
-        private void BuildDebrisBand(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan)
+        private void BuildDebrisBand(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
         {
             int debrisCount = Mathf.Clamp(plan.suggestedDebrisCount, 1, 14);
             float radius = Mathf.Max(0.8f, plan.seamBlendRadius * 0.68f);
@@ -367,7 +370,8 @@ namespace Hecton8.World
                     $"Debris_{i}",
                     new Vector3(contact.x + offset.x, contact.y + scale * 0.3f, contact.z + offset.z),
                     rotation,
-                    Vector3.one * scale);
+                    Vector3.one * scale,
+                    ref primitiveIndex);
             }
         }
 
@@ -385,23 +389,14 @@ namespace Hecton8.World
         {
             Transform seamRoot = host.Find(SeamRootName);
             if (seamRoot != null)
+            {
+                ActivateTransform(seamRoot);
                 return seamRoot;
+            }
 
             seamRoot = new GameObject(SeamRootName).transform;
             seamRoot.SetParent(host, false);
             return seamRoot;
-        }
-
-        private static void ClearChildren(Transform root)
-        {
-            for (int i = root.childCount - 1; i >= 0; i--)
-            {
-                GameObject child = root.GetChild(i).gameObject;
-                if (Application.isPlaying)
-                    Object.Destroy(child);
-                else
-                    Object.DestroyImmediate(child);
-            }
         }
 
         private static void CreatePrimitive(
@@ -411,53 +406,59 @@ namespace Hecton8.World
             string name,
             Vector3 localPosition,
             Quaternion localRotation,
-            Vector3 localScale)
+            Vector3 localScale,
+            ref int primitiveIndex)
         {
-            GameObject primitive = GameObject.CreatePrimitive(primitiveType);
-            primitive.name = name;
-            primitive.transform.SetParent(root, false);
-            primitive.transform.localPosition = localPosition;
-            primitive.transform.localRotation = localRotation;
-            primitive.transform.localScale = localScale;
-
-            Collider collider = primitive.GetComponent<Collider>();
-            if (collider != null)
+            if (primitiveIndex < root.childCount)
             {
-                if (Application.isPlaying)
-                    Object.Destroy(collider);
-                else
-                    Object.DestroyImmediate(collider);
+                GameObject existing = root.GetChild(primitiveIndex).gameObject;
+                ActivateTransform(existing.transform);
+                WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                    existing,
+                    primitiveType,
+                    name,
+                    localPosition,
+                    localRotation,
+                    localScale,
+                    seamMaterial);
+            }
+            else
+            {
+                WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    root,
+                    primitiveType,
+                    name,
+                    localPosition,
+                    localRotation,
+                    localScale,
+                    seamMaterial);
             }
 
-            if (seamMaterial != null)
-            {
-                Renderer renderer = primitive.GetComponent<Renderer>();
-                if (renderer != null)
-                    renderer.sharedMaterial = seamMaterial;
-            }
+            primitiveIndex++;
         }
 
-        private static Material ResolveSeamMaterial(Component context)
+        private Material ResolveSeamMaterial(Transform contextRoot)
         {
-            if (context == null)
+            if (contextRoot == null)
                 return null;
 
-            Renderer[] renderers = context.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
+            _rendererTraversalBuffer.Clear();
+            _rendererTraversalBuffer.Add(contextRoot);
+            for (int i = 0; i < _rendererTraversalBuffer.Count; i++)
             {
-                Renderer renderer = renderers[i];
-                if (renderer == null)
+                Transform current = _rendererTraversalBuffer[i];
+                if (current == null)
                     continue;
 
-                Material[] materials = renderer.sharedMaterials;
-                if (materials == null)
-                    continue;
-
-                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                if (current.TryGetComponent(out Renderer renderer))
                 {
-                    if (materials[materialIndex] != null)
-                        return materials[materialIndex];
+                    Material material = renderer.sharedMaterial;
+                    if (material != null)
+                        return material;
                 }
+
+                for (int childIndex = 0; childIndex < current.childCount; childIndex++)
+                    _rendererTraversalBuffer.Add(current.GetChild(childIndex));
             }
 
             return null;
@@ -500,12 +501,29 @@ namespace Hecton8.World
                 if (_desiredRuntimeKeys.Contains(runtime.RuntimeKey))
                     continue;
 
-                GameObject target = runtime.gameObject;
-                if (Application.isPlaying)
-                    Object.Destroy(target);
-                else
-                    Object.DestroyImmediate(target);
+                if (runtime.gameObject.activeSelf)
+                    runtime.gameObject.SetActive(false);
             }
+        }
+
+        private static void DisableUnusedChildren(Transform root, int activeChildCount)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child == null)
+                    continue;
+
+                bool keepActive = i < activeChildCount;
+                if (child.gameObject.activeSelf != keepActive)
+                    child.gameObject.SetActive(keepActive);
+            }
+        }
+
+        private static void ActivateTransform(Transform target)
+        {
+            if (target != null && !target.gameObject.activeSelf)
+                target.gameObject.SetActive(true);
         }
 
         private void ResolveReferences()

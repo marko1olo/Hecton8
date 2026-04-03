@@ -16,6 +16,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
     public sealed class HUDNotification : MonoBehaviour
     {
+        private static HUDNotification _ActiveInstance;
+
         private enum NotificationSeverity
         {
             Info = 0,
@@ -58,6 +60,12 @@ namespace Hecton8.UI
         private NotificationSeverity _lastEnqueuedSeverity;
         private float _lastEnqueueTime = -999f;
 
+        public static bool TryGetActive(out HUDNotification notification)
+        {
+            notification = _ActiveInstance;
+            return notification != null;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -72,6 +80,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            _ActiveInstance = this;
+
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
             InventoryEvents.OnInventoryFull += OnInventoryFull;
@@ -82,6 +92,9 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            if (ReferenceEquals(_ActiveInstance, this))
+                _ActiveInstance = null;
+
             InventoryEvents.OnInventoryFull -= OnInventoryFull;
             NotificationEvents.OnPushNotification -= OnPushNotification;
         }

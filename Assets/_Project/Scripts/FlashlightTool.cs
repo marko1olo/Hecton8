@@ -6,6 +6,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Hecton8.Bootstrap;
     using Hecton8.Input;
     using Hecton8.Interaction;
     using Hecton8.Scavenging;
@@ -160,10 +161,16 @@ namespace Hecton8.Gameplay
                 _flashlight = GetComponentInParent<PlayerFlashlight>();
 
             if (_flashlight == null)
-                _flashlight = FindFirstObjectByType<PlayerFlashlight>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    _flashlight = playerTransform.GetComponentInChildren<PlayerFlashlight>(true);
+                }
+            }
 
             if (_hudNotification == null)
-                _hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out _hudNotification);
         }
 
         private bool TryResolveFlashlight()

@@ -134,6 +134,22 @@ namespace Hecton8.World
         [Header("Future Integration")]
         public string futurePrefabRoot = string.Empty;
         [TextArea(2, 4)] public string gameplayRole = "Generic world family.";
+        [System.NonSerialized] private string _generatedVariantId;
+
+        public string GeneratedVariantId
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_generatedVariantId))
+                    return _generatedVariantId;
+
+                string resolvedFamilyId = string.IsNullOrWhiteSpace(familyId)
+                    ? "world.family.generic"
+                    : familyId;
+                _generatedVariantId = string.Concat(resolvedFamilyId, ".generated");
+                return _generatedVariantId;
+            }
+        }
 
         public bool UsesGenerativeGeology()
         {
@@ -201,5 +217,12 @@ namespace Hecton8.World
                 || normalized.Contains("apex")
                 || normalized.Contains("macrozone");
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _generatedVariantId = null;
+        }
+#endif
     }
 }

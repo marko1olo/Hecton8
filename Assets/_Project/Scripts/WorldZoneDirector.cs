@@ -173,18 +173,7 @@ namespace Hecton8.World
 
         public void RefreshAnchors()
         {
-            _anchors.Clear();
-
-            WorldZoneAnchor[] anchors = Resources.FindObjectsOfTypeAll<WorldZoneAnchor>();
-            for (int i = 0; i < anchors.Length; i++)
-            {
-                WorldZoneAnchor anchor = anchors[i];
-                if (anchor == null || anchor.gameObject == null || !anchor.gameObject.scene.IsValid())
-                    continue;
-
-                _anchors.Add(anchor);
-            }
-
+            WorldZoneAnchor.CopyActiveAnchorsTo(_anchors);
             _debugZoneCount = _anchors.Count;
         }
 

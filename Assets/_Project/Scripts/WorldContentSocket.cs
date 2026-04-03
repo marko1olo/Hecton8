@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -5,6 +6,8 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldContentSocket : MonoBehaviour
     {
+        private static readonly List<WorldContentSocket> _ActiveSockets = new List<WorldContentSocket>(128);
+
         public enum ContentKind
         {
             Generic,
@@ -87,6 +90,41 @@ namespace Hecton8.World
         public int Weight => weight;
         public string FuturePrefabKey => futurePrefabKey;
         public string ContentIntent => contentIntent;
+
+        private void OnEnable()
+        {
+            RegisterActiveSocket(this);
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveSocket(this);
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveSocket(this);
+        }
+
+        public static void CopyActiveSocketsTo(List<WorldContentSocket> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            for (int i = 0; i < _ActiveSockets.Count; i++)
+            {
+                WorldContentSocket socket = _ActiveSockets[i];
+                if (socket == null)
+                    continue;
+
+                GameObject go = socket.gameObject;
+                if (go == null || !go.scene.IsValid())
+                    continue;
+
+                destination.Add(socket);
+            }
+        }
 
         public WorldZoneAnchor GetZoneAnchor()
         {
@@ -283,6 +321,22 @@ namespace Hecton8.World
                 return contentProfile.preferredFidelity;
 
             return preferredFidelity;
+        }
+
+        private static void RegisterActiveSocket(WorldContentSocket socket)
+        {
+            if (socket == null || _ActiveSockets.Contains(socket))
+                return;
+
+            _ActiveSockets.Add(socket);
+        }
+
+        private static void UnregisterActiveSocket(WorldContentSocket socket)
+        {
+            if (socket == null)
+                return;
+
+            _ActiveSockets.Remove(socket);
         }
 
 #if UNITY_EDITOR

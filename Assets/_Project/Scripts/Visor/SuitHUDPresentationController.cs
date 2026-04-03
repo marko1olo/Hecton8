@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -12,6 +13,8 @@ namespace NASAPunk.Visor
     public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable
     {
         private const float AutoResolveRetryInterval = 1f;
+        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
+        private static readonly List<SuitHUDScreenCompositor> s_compositorResolveBuffer = new List<SuitHUDScreenCompositor>(2);
 
         public enum PresentationMode
         {
@@ -149,15 +152,22 @@ namespace NASAPunk.Visor
 
             if (canvasOverlay == null || (projectedCanvasSourceNeeded && projectionSourceOverlay == null))
             {
-                SuitHUDV4CanvasOverlay[] overlays = FindObjectsByType<SuitHUDV4CanvasOverlay>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                canvasOverlay = FindOverlayByName(overlays, "Suit_HUD_Canvas", canvasOverlay);
-                projectionSourceOverlay = FindOverlayByName(overlays, ProjectionSourceCanvasName, projectionSourceOverlay);
+                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
+                Transform root = transform.root;
+                canvasOverlay = FindOverlayByName(s_overlayResolveBuffer, "Suit_HUD_Canvas", canvasOverlay, root);
+                projectionSourceOverlay = FindOverlayByName(s_overlayResolveBuffer, ProjectionSourceCanvasName, projectionSourceOverlay, root);
+                s_overlayResolveBuffer.Clear();
             }
 
             if (screenCompositor == null)
-                screenCompositor = FindFirstObjectByType<SuitHUDScreenCompositor>(FindObjectsInactive.Include);
+            {
+                SuitHUDScreenCompositor.CopyActiveCompositorsTo(s_compositorResolveBuffer);
+                screenCompositor = FindCompositor(s_compositorResolveBuffer, screenCompositor, transform.root);
+                s_compositorResolveBuffer.Clear();
+            }
+
+            if (sharedProjectionTexture == null && visorController != null)
+                sharedProjectionTexture = visorController.SharedRenderTexture;
         }
 
         private bool NeedsAutoResolve()
@@ -312,14 +322,24 @@ namespace NASAPunk.Visor
         }
 
         private static SuitHUDV4CanvasOverlay FindOverlayByName(
-            SuitHUDV4CanvasOverlay[] overlays,
+            List<SuitHUDV4CanvasOverlay> overlays,
             string expectedName,
-            SuitHUDV4CanvasOverlay current)
+            SuitHUDV4CanvasOverlay current,
+            Transform preferredRoot)
         {
             if (current != null && current.name == expectedName)
                 return current;
 
-            for (int i = 0; i < overlays.Length; i++)
+            for (int i = 0; i < overlays.Count; i++)
+            {
+                SuitHUDV4CanvasOverlay candidate = overlays[i];
+                if (candidate != null &&
+                    candidate.name == expectedName &&
+                    candidate.transform.root == preferredRoot)
+                    return candidate;
+            }
+
+            for (int i = 0; i < overlays.Count; i++)
             {
                 SuitHUDV4CanvasOverlay candidate = overlays[i];
                 if (candidate != null && candidate.name == expectedName)
@@ -340,16 +360,15 @@ namespace NASAPunk.Visor
             if (_cachedHudCanvasTransform != null)
                 return _cachedHudCanvasTransform;
 
-            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < canvases.Length; i++)
+            SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
+            canvasOverlay = FindOverlayByName(s_overlayResolveBuffer, "Suit_HUD_Canvas", canvasOverlay, transform.root);
+            s_overlayResolveBuffer.Clear();
+
+            if (canvasOverlay != null)
             {
-                Canvas candidate = canvases[i];
-                if (candidate != null && candidate.name == "Suit_HUD_Canvas")
-                {
-                    _cachedHudCanvasTransform = candidate.transform;
-                    _cachedHudRtCompositorTransform = null;
-                    return _cachedHudCanvasTransform;
-                }
+                _cachedHudCanvasTransform = canvasOverlay.transform;
+                _cachedHudRtCompositorTransform = null;
+                return _cachedHudCanvasTransform;
             }
 
             return null;
@@ -481,6 +500,27 @@ namespace NASAPunk.Visor
                 tickManager.Unregister(this);
 
             _tickRegistered = false;
+        }
+
+        private static SuitHUDScreenCompositor FindCompositor(
+            List<SuitHUDScreenCompositor> compositors,
+            SuitHUDScreenCompositor current,
+            Transform preferredRoot)
+        {
+            if (current != null && current.isActiveAndEnabled)
+                return current;
+
+            for (int i = 0; i < compositors.Count; i++)
+            {
+                SuitHUDScreenCompositor candidate = compositors[i];
+                if (candidate != null &&
+                    candidate.transform.root == preferredRoot)
+                {
+                    return candidate;
+                }
+            }
+
+            return compositors.Count > 0 ? compositors[0] : null;
         }
     }
 }

@@ -73,6 +73,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Inventory;
@@ -283,8 +284,14 @@ namespace Hecton8.UI
                 }
             }
 
-            if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
+            if (playerInventory == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                if (playerInventory == null)
+                    playerInventory = playerTransform.GetComponentInChildren<PlayerInventory>(true);
+            }
         }
 
         public override void OnEnable()

@@ -11,6 +11,15 @@ namespace Hecton8.World
     /// </summary>
     internal static class WorldRuntimeReferenceUtility
     {
+        private static Transform _CachedPlayerTransform;
+        private static MapMagicBridge _CachedMapMagicBridge;
+        private static ScavengePopulator _CachedScavengePopulator;
+
+        private static class SceneObjectCache<T> where T : Object
+        {
+            public static T Cached;
+        }
+
         public static bool TryResolvePlayerTransform(ref Transform target)
         {
             if (target != null)
@@ -18,7 +27,14 @@ namespace Hecton8.World
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer))
             {
+                _CachedPlayerTransform = bootstrapPlayer;
                 target = bootstrapPlayer;
+                return true;
+            }
+
+            if (_CachedPlayerTransform != null)
+            {
+                target = _CachedPlayerTransform;
                 return true;
             }
 
@@ -32,7 +48,8 @@ namespace Hecton8.World
             if (player == null)
                 return false;
 
-            target = player.transform;
+            _CachedPlayerTransform = player.transform;
+            target = _CachedPlayerTransform;
             return true;
         }
 
@@ -41,7 +58,15 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
+            if (SceneObjectCache<T>.Cached != null)
+            {
+                target = SceneObjectCache<T>.Cached;
+                return true;
+            }
+
             target = Object.FindAnyObjectByType<T>();
+            if (target != null)
+                SceneObjectCache<T>.Cached = target;
             return target != null;
         }
 
@@ -50,7 +75,15 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
+            if (_CachedMapMagicBridge != null)
+            {
+                target = _CachedMapMagicBridge;
+                return true;
+            }
+
             target = MapMagicBridge.Instance ?? Object.FindAnyObjectByType<MapMagicBridge>();
+            if (target != null)
+                _CachedMapMagicBridge = target;
             return target != null;
         }
 
@@ -59,7 +92,15 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
+            if (_CachedScavengePopulator != null)
+            {
+                target = _CachedScavengePopulator;
+                return true;
+            }
+
             target = ScavengePopulator.Instance ?? Object.FindAnyObjectByType<ScavengePopulator>();
+            if (target != null)
+                _CachedScavengePopulator = target;
             return target != null;
         }
     }

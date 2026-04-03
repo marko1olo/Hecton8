@@ -60,6 +60,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -935,13 +936,11 @@ namespace Hecton8.AI.GPU
         }
 
         /// <summary>
-        /// Lazy player lookup by tag. Called once.
+        /// Resolves the player transform through the shared runtime path.
         /// </summary>
         private void FindPlayer()
         {
-            GameObject playerGO = GameObject.FindWithTag("Player");
-            if (playerGO != null)
-                _playerTransform = playerGO.transform;
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Hecton8.Bootstrap;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -341,11 +342,17 @@ namespace Hecton8.Gameplay
         private void AutoResolve()
         {
             if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                }
+            }
             if (scanLogSystem == null)
-                scanLogSystem = FindFirstObjectByType<ScanLogSystem>();
+                scanLogSystem = ScanLogSystem.Instance;
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
         }
 
         private void HandleInventoryChanged() => ExchangeStateChanged?.Invoke();

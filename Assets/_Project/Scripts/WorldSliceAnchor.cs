@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -5,6 +6,8 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldSliceAnchor : MonoBehaviour
     {
+        private static readonly List<WorldSliceAnchor> _ActiveAnchors = new List<WorldSliceAnchor>(32);
+
         public enum SliceState
         {
             Far,
@@ -44,6 +47,41 @@ namespace Hecton8.World
         public float NearDistance => nearDistance;
         public float MidDistance => midDistance;
         public float HysteresisPadding => hysteresisPadding;
+
+        private void OnEnable()
+        {
+            RegisterActiveAnchor(this);
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveAnchor(this);
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveAnchor(this);
+        }
+
+        public static void CopyActiveAnchorsTo(List<WorldSliceAnchor> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            for (int i = 0; i < _ActiveAnchors.Count; i++)
+            {
+                WorldSliceAnchor anchor = _ActiveAnchors[i];
+                if (anchor == null)
+                    continue;
+
+                GameObject go = anchor.gameObject;
+                if (go == null || !go.scene.IsValid())
+                    continue;
+
+                destination.Add(anchor);
+            }
+        }
 
         private void Awake()
         {
@@ -188,6 +226,22 @@ namespace Hecton8.World
             nearDistance = Mathf.Max(20f, nearDistance);
             midDistance = Mathf.Max(nearDistance + 20f, midDistance);
             hysteresisPadding = Mathf.Clamp(hysteresisPadding, 4f, 80f);
+        }
+
+        private static void RegisterActiveAnchor(WorldSliceAnchor anchor)
+        {
+            if (anchor == null || _ActiveAnchors.Contains(anchor))
+                return;
+
+            _ActiveAnchors.Add(anchor);
+        }
+
+        private static void UnregisterActiveAnchor(WorldSliceAnchor anchor)
+        {
+            if (anchor == null)
+                return;
+
+            _ActiveAnchors.Remove(anchor);
         }
     }
 }

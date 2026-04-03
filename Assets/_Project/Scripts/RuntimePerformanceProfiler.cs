@@ -48,6 +48,8 @@ namespace Hecton8.Dev
         [SerializeField] private bool writeTraceToFile = true;
         [SerializeField] private string traceSessionLabel = "runtime";
         [SerializeField] private bool traceRendererOwnershipOnSpike = true;
+        [SerializeField] private bool traceRendererOwnershipOnGcSpike = false;
+        [SerializeField] private float rendererOwnershipAuditCooldownSeconds = 20f;
         [SerializeField] private int rendererOwnershipAuditBatchesThreshold = 900;
         [SerializeField] private int rendererOwnershipAuditGcThresholdBytes = 4 * 1024 * 1024;
 
@@ -119,6 +121,7 @@ namespace Hecton8.Dev
         private float _peakSystemMemoryMb;
         private int _peakSetPassCalls;
         private int _peakBatches;
+        private float _nextOwnershipAuditAllowedTime;
 
         private void Awake()
         {
@@ -513,18 +516,29 @@ namespace Hecton8.Dev
             systemMemoryBudgetMb = Mathf.Clamp(systemMemoryBudgetMb, 128f, 16384f);
             setPassBudget = Mathf.Clamp(setPassBudget, 1, 10000);
             batchesBudget = Mathf.Clamp(batchesBudget, 1, 20000);
+            rendererOwnershipAuditCooldownSeconds = Mathf.Clamp(rendererOwnershipAuditCooldownSeconds, 0f, 300f);
             rendererOwnershipAuditBatchesThreshold = Mathf.Clamp(rendererOwnershipAuditBatchesThreshold, 1, 20000);
             rendererOwnershipAuditGcThresholdBytes = Mathf.Clamp(rendererOwnershipAuditGcThresholdBytes, 0, 32 * 1024 * 1024);
         }
 
         private bool ShouldCaptureRendererOwnershipAudit()
         {
-            return _peakBatches >= rendererOwnershipAuditBatchesThreshold ||
+            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            if (now < _nextOwnershipAuditAllowedTime)
+                return false;
+
+            if (_peakBatches >= rendererOwnershipAuditBatchesThreshold)
+                return true;
+
+            return traceRendererOwnershipOnGcSpike &&
                    _peakGcAllocBytes >= rendererOwnershipAuditGcThresholdBytes;
         }
 
         private void CaptureRendererOwnershipAudit()
         {
+            if (Application.isPlaying)
+                _nextOwnershipAuditAllowedTime = Time.unscaledTime + rendererOwnershipAuditCooldownSeconds;
+
             Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             _auditScatterFamilies.Clear();
             _auditGeologyFamilies.Clear();

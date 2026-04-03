@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton8.Bootstrap;
 using Hecton8.Items;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
@@ -62,10 +63,16 @@ namespace Hecton8.Gameplay
             base.OnEquip();
 
             if (_survival == null)
-                _survival = FindFirstObjectByType<HectonSurvivalSystem>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    _survival = playerTransform.GetComponent<HectonSurvivalSystem>();
+                }
+            }
 
             if (_notification == null)
-                _notification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out _notification);
         }
 
         public override void UsePrimary(float deltaTime)
@@ -125,7 +132,13 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_survival == null)
-                _survival = FindFirstObjectByType<HectonSurvivalSystem>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    _survival = playerTransform.GetComponent<HectonSurvivalSystem>();
+                }
+            }
 
             if (_survival == null)
             {
@@ -364,7 +377,7 @@ namespace Hecton8.Gameplay
             _debugLastMessage = message;
 
             if (_notification == null)
-                _notification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out _notification);
 
             if (_notification != null)
                 PublishBySeverity(_notification, _debugLastMessage);

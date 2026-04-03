@@ -25,6 +25,8 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -37,6 +39,9 @@ using UnityEngine;
 [AddComponentMenu("Hecton8/HUD/Suit HUD Extensions")]
 public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickable
 {
+    private static readonly List<HectonSuitHUD_v4> s_hudResolveBuffer = new List<HectonSuitHUD_v4>(4);
+    private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
+
     // ══════════════════════════════════════════════════════════
     //  INSPECTOR — REFERENCES
     // ══════════════════════════════════════════════════════════
@@ -207,27 +212,39 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         if (primaryHud == null)
             primaryHud = GetComponent<HectonSuitHUD_v4>();
         if (primaryHud == null)
-            primaryHud = FindFirstObjectByType<HectonSuitHUD_v4>();
+        {
+            HectonSuitHUD_v4.CopyActiveHudsTo(s_hudResolveBuffer);
+            primaryHud = FindHudForRoot(s_hudResolveBuffer, transform.root);
+            s_hudResolveBuffer.Clear();
+        }
 
         if (canvasOverlay == null)
             canvasOverlay = GetComponent<SuitHUDV4CanvasOverlay>();
         if (canvasOverlay == null)
-            canvasOverlay = FindFirstObjectByType<SuitHUDV4CanvasOverlay>();
+        {
+            SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
+            canvasOverlay = FindOverlayForRoot(s_overlayResolveBuffer, transform.root);
+            s_overlayResolveBuffer.Clear();
+        }
 
         if (hudCamera == null)
         {
             hudCamera = GetComponent<Camera>();
-            if (hudCamera == null && canvasOverlay != null)
-                hudCamera = canvasOverlay.GetComponent<Camera>();
             if (hudCamera == null && primaryHud != null)
                 hudCamera = primaryHud.GetComponent<Camera>();
         }
 
         if (flashlight == null)
-            flashlight = FindFirstObjectByType<PlayerFlashlight>();
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+        }
 
         if (toolManager == null)
-            toolManager = FindFirstObjectByType<PlayerToolManager>();
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                toolManager = playerTransformRoot.GetComponentInChildren<PlayerToolManager>(true);
+        }
 
         SubscribeToolManager();
     }
@@ -244,6 +261,30 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     private static float GetAutoResolveNow()
     {
         return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
+    }
+
+    private static HectonSuitHUD_v4 FindHudForRoot(List<HectonSuitHUD_v4> huds, Transform preferredRoot)
+    {
+        for (int i = 0; i < huds.Count; i++)
+        {
+            HectonSuitHUD_v4 candidate = huds[i];
+            if (candidate != null && candidate.transform.root == preferredRoot)
+                return candidate;
+        }
+
+        return huds.Count > 0 ? huds[0] : null;
+    }
+
+    private static SuitHUDV4CanvasOverlay FindOverlayForRoot(List<SuitHUDV4CanvasOverlay> overlays, Transform preferredRoot)
+    {
+        for (int i = 0; i < overlays.Count; i++)
+        {
+            SuitHUDV4CanvasOverlay candidate = overlays[i];
+            if (candidate != null && candidate.transform.root == preferredRoot)
+                return candidate;
+        }
+
+        return overlays.Count > 0 ? overlays[0] : null;
     }
 
     private void PollHeatState()

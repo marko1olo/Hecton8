@@ -1,4 +1,5 @@
 using System.Text;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using TMPro;
@@ -101,9 +102,18 @@ namespace Hecton8.UI
         private void AutoResolve()
         {
             if (exchangeSystem == null)
-                exchangeSystem = FindFirstObjectByType<PDAExchangeSystem>();
+                exchangeSystem = PDAExchangeSystem.Instance;
             if (playerPDA == null)
-                playerPDA = GetComponentInParent<PlayerPDA>() ?? FindFirstObjectByType<PlayerPDA>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                }
+
+                if (playerPDA == null)
+                    playerPDA = GetComponentInParent<PlayerPDA>();
+            }
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)

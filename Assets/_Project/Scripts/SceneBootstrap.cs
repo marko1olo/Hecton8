@@ -48,6 +48,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Bootstrap
@@ -114,6 +115,12 @@ namespace Hecton8.Bootstrap
 
         [Tooltip("Если true — всегда начинать новую игру (игнорировать сейв)")]
         [SerializeField] private bool forceNewGame;
+
+        [Header("Runtime World Prime")]
+        [Tooltip("If enabled, SceneBootstrap runs the first scatter rebuild passes before the player gets control.")]
+        [SerializeField] private bool prewarmProceduralScatterBeforePlayerActivation = true;
+        [Tooltip("How many bootstrap passes are allowed for scatter prewarm before ActivatePlayer.")]
+        [SerializeField, Range(1, 4)] private int scatterBootstrapPrimePasses = 2;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — POOL WARMUP
@@ -239,6 +246,7 @@ namespace Hecton8.Bootstrap
         /// При New Game — false, ground check пропускается.
         /// </summary>
         private bool _isLoadingSave;
+        private WorldProceduralScatterDirector _worldProceduralScatterDirector;
 
         private void Awake()
         {
@@ -321,6 +329,10 @@ namespace Hecton8.Bootstrap
                 ct.ThrowIfCancellationRequested();
 
                 // ── STEP 8: Активация + Game Ready ───────────
+                SetStep("Step 8: Runtime World Prime");
+                await PrimeRuntimeWorldAsync(ct);
+                ct.ThrowIfCancellationRequested();
+
                 ActivatePlayer();
 
                 SetStep("Complete");
@@ -865,6 +877,54 @@ namespace Hecton8.Bootstrap
         // ══════════════════════════════════════════════════════════
         //  PLAYER ACTIVATION / DEACTIVATION
         // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Выполняет скрытый предзапуск тяжёлого scatter rebuild до того, как
+        /// игрок получит управление. Это убирает первый стартовый burst из
+        /// первых секунд плавания и не меняет сами правила появления мира.
+        /// </summary>
+        private async Awaitable PrimeRuntimeWorldAsync(CancellationToken ct)
+        {
+            if (!prewarmProceduralScatterBeforePlayerActivation)
+            {
+                Log("  Runtime world prime disabled.");
+                return;
+            }
+
+            _worldProceduralScatterDirector ??=
+                FindAnyObjectByType<WorldProceduralScatterDirector>(FindObjectsInactive.Include);
+
+            if (_worldProceduralScatterDirector == null)
+            {
+                Log("  WorldProceduralScatterDirector not found — skipping runtime world prime.");
+                return;
+            }
+
+            int passCount = Mathf.Clamp(scatterBootstrapPrimePasses, 1, 4);
+            Log($"  Priming procedural scatter before player activation ({passCount} pass(es))...");
+
+            for (int i = 0; i < passCount; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                SetStep($"Step 8: Runtime World Prime ({i + 1}/{passCount})");
+                if (!_worldProceduralScatterDirector.TryPrimeBootstrapScatterPass())
+                {
+                    Log("  Scatter prime skipped — runtime prerequisites are not ready yet.");
+                    return;
+                }
+
+                if (!_worldProceduralScatterDirector.HasPendingStartupPlacements)
+                {
+                    Log($"  Scatter prime completed in {i + 1} pass(es).");
+                    return;
+                }
+
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+            }
+
+            Log("  Scatter prime reached pass limit. Remaining startup placements will finish after activation.");
+        }
 
         /// <summary>
         /// Деактивирует игрока и его контроллер на время загрузки.

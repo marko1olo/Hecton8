@@ -64,13 +64,12 @@ namespace Hecton8.Gameplay
             descriptor = null;
             distance = 0f;
 
-            FieldTargetDescriptor[] descriptors = Object.FindObjectsByType<FieldTargetDescriptor>(FindObjectsSortMode.None);
             float maxSqr = maxDistance * maxDistance;
             float bestSqr = maxSqr;
 
-            for (int i = 0; i < descriptors.Length; i++)
+            for (int i = 0; i < FieldTargetDescriptor.ActiveCount; i++)
             {
-                FieldTargetDescriptor candidate = descriptors[i];
+                FieldTargetDescriptor candidate = FieldTargetDescriptor.GetActiveDescriptorAt(i);
                 if (candidate == null || !IsRouteRole(candidate.Role))
                     continue;
 

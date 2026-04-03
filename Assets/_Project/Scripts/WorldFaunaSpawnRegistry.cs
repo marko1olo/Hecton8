@@ -148,8 +148,7 @@ namespace Hecton8.World
 
         private void ResolveProceduralStateRegistry()
         {
-            if (proceduralStateRegistry == null)
-                proceduralStateRegistry = FindAnyObjectByType<WorldProceduralStateRegistry>();
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proceduralStateRegistry);
         }
     }
 }

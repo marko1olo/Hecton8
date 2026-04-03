@@ -32,8 +32,11 @@
 // ║  • Shapes immediate mode — no GameObjects, no materials allocated.         ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
+using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.UI;
+using NASAPunk.Visor;
 using Shapes;
 using Unity.Mathematics;
 using UnityEngine;
@@ -44,6 +47,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class HectonScanMarkerSystem : ImmediateModeShapeDrawer, ITickable
     {
+        private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
         // ══════════════════════════════════════════════════════════
         //  MARKER DATA — Pre-allocated, Zero GC
         // ══════════════════════════════════════════════════════════
@@ -151,15 +155,22 @@ namespace Hecton8.Gameplay
             // ── Find HUD camera if not assigned ──
             if (hudCamera == null)
             {
-                GameObject hudCamGO = GameObject.Find("HUD_Render_Camera");
-                if (hudCamGO != null)
-                    hudCamera = hudCamGO.GetComponent<Camera>();
+                VisorHUDController.CopyActiveControllersTo(s_controllerResolveBuffer);
+                for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
+                {
+                    VisorHUDController controller = s_controllerResolveBuffer[i];
+                    if (controller != null && controller.HudCamera != null)
+                    {
+                        hudCamera = controller.HudCamera;
+                        break;
+                    }
+                }
+
+                s_controllerResolveBuffer.Clear();
             }
 
             // ── Find player ──
-            GameObject playerGO = GameObject.FindWithTag("Player");
-            if (playerGO != null)
-                _playerTransform = playerGO.transform;
+            SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
         public override void OnEnable()

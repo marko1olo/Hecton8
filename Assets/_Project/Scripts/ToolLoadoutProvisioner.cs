@@ -5,6 +5,7 @@
 // ============================================================================
 
 using Hecton8.Gameplay;
+using Hecton8.Bootstrap;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
@@ -147,11 +148,16 @@ namespace Hecton8.Dev
 
         private void AutoResolveSceneReferences()
         {
-            if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
+            if ((!playerInventory || !toolManager) &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerInventory == null)
+                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
 
-            if (toolManager == null)
-                toolManager = FindFirstObjectByType<PlayerToolManager>();
+                if (toolManager == null)
+                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+            }
         }
 
 #if UNITY_EDITOR

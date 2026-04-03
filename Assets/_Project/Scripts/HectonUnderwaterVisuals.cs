@@ -48,6 +48,7 @@
 
 using Hecton8.Core;
 using Hecton8.Atmosphere;
+using Hecton8.Bootstrap;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -63,6 +64,8 @@ namespace Hecton8.Environment
     [ExecuteAlways]
     public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, ISlowTickable
     {
+        private const float RuntimeCameraResolveRetryInterval = 1f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
         // ══════════════════════════════════════════════════════════
@@ -229,6 +232,8 @@ namespace Hecton8.Environment
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
         private bool _sunVisualWasDisabled;
+        private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
+        private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
 
         private float _editorSlowTickAccum;
 
@@ -950,6 +955,23 @@ namespace Hecton8.Environment
             if (playerCamera != null) return;
             if (Application.isPlaying)
             {
+                if (Time.unscaledTime < _nextRuntimePlayerCameraResolveTime)
+                    return;
+
+                _nextRuntimePlayerCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                {
+                    Camera playerOwnedCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    if (playerOwnedCamera != null)
+                    {
+                        playerCamera = playerOwnedCamera.transform;
+                        return;
+                    }
+
+                    playerCamera = playerTransform;
+                    return;
+                }
+
                 Camera cam = Camera.main;
                 if (cam != null) playerCamera = cam.transform;
             }
@@ -966,6 +988,17 @@ namespace Hecton8.Environment
             if (mainCamera != null) return;
             if (Application.isPlaying)
             {
+                if (Time.unscaledTime < _nextRuntimeMainCameraResolveTime)
+                    return;
+
+                _nextRuntimeMainCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                {
+                    mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    if (mainCamera != null)
+                        return;
+                }
+
                 mainCamera = Camera.main;
             }
 #if UNITY_EDITOR

@@ -6,6 +6,7 @@
 
 using System.Text;
 using Hecton8.Building;
+using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -127,30 +128,40 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
-            if (toolManager == null)
-                toolManager = FindFirstObjectByType<PlayerToolManager>();
+            if ((!playerInventory || !toolManager || !playerPDA || !survivalSystem || !playerBuilder) &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerInventory == null)
+                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+
+                if (toolManager == null)
+                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+
+                if (playerPDA == null)
+                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+
+                if (survivalSystem == null)
+                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+
+                if (playerBuilder == null)
+                    playerBuilder = playerTransform.GetComponentInChildren<PlayerBuilder>(true);
+            }
+
             if (playerPDA == null)
                 playerPDA = GetComponentInParent<PlayerPDA>();
-            if (playerPDA == null)
-                playerPDA = FindFirstObjectByType<PlayerPDA>();
-            if (survivalSystem == null)
-                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
-            if (playerBuilder == null)
-                playerBuilder = FindFirstObjectByType<PlayerBuilder>();
             if (constructionManager == null)
-                constructionManager = FindFirstObjectByType<ConstructionManager>();
+                constructionManager = ConstructionManager.Instance;
             if (scanLogSystem == null)
-                scanLogSystem = FindFirstObjectByType<ScanLogSystem>();
+                scanLogSystem = ScanLogSystem.Instance;
             if (fieldOperationLogSystem == null)
-                fieldOperationLogSystem = FindFirstObjectByType<FieldOperationLogSystem>();
+                fieldOperationLogSystem = FieldOperationLogSystem.Instance;
             if (exchangeSystem == null)
-                exchangeSystem = FindFirstObjectByType<PDAExchangeSystem>();
+                exchangeSystem = PDAExchangeSystem.Instance;
             if (beaconNetworkSystem == null)
-                beaconNetworkSystem = FindFirstObjectByType<BeaconNetworkSystem>();
+                beaconNetworkSystem = BeaconNetworkSystem.Instance;
             if (discoveryManager == null)
-                discoveryManager = FindFirstObjectByType<HectonDiscoveryManager>();
+                discoveryManager = HectonDiscoveryManager.Instance;
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)

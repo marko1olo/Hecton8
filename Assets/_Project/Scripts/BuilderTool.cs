@@ -27,6 +27,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Hecton8.Bootstrap;
     using Hecton8.Building;
     using Hecton8.Core;
     using Hecton8.Inventory;
@@ -143,15 +144,15 @@ namespace Hecton8.Gameplay
             _bound         = false;
 
             // ── Auto-Binding: найти Player root ──
-            GameObject playerRoot = GameObject.FindWithTag("Player");
-
-            if (playerRoot == null)
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 Debug.LogError(
-                    "[BuilderTool] OnSpawn: No GameObject with tag 'Player' found! " +
+                    "[BuilderTool] OnSpawn: Player transform could not be resolved via SceneBootstrap. " +
                     "Builder tool will not function.");
                 return;
             }
+
+            GameObject playerRoot = playerTransform.gameObject;
 
             // ── Извлечение компонентов с Player root ──
             // GetComponent на конкретном GameObject — zero GC (TryGetComponent).

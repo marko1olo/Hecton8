@@ -30,6 +30,7 @@
 // ============================================================================
 
 using Hecton8.Audio;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -513,7 +514,10 @@ namespace Hecton8.Gameplay
             ResolveFlashlightLight();
 
             if (survivalSystem == null && enableBatteryDrain)
-                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+            }
         }
 
         private void ResolveFlashlightLight()

@@ -128,7 +128,7 @@ namespace Hecton8.Interaction
         private void ResolveHudNotification()
         {
             if (_hudNotification == null)
-                _hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out _hudNotification);
         }
 
         private void RefreshCachedInteractText()

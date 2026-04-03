@@ -5,6 +5,7 @@
 // ============================================================================
 
 using Hecton8.Gameplay;
+using Hecton8.Bootstrap;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
@@ -151,16 +152,24 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
-            if (toolManager == null)
-                toolManager = FindFirstObjectByType<PlayerToolManager>();
+            if ((!playerInventory || !toolManager || !playerPDA) &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerInventory == null)
+                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+
+                if (toolManager == null)
+                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+
+                if (playerPDA == null)
+                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+            }
+
             if (playerPDA == null)
                 playerPDA = GetComponentInParent<PlayerPDA>();
-            if (playerPDA == null)
-                playerPDA = FindFirstObjectByType<PlayerPDA>();
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
@@ -823,7 +832,7 @@ namespace Hecton8.UI
         private void NotifyInfo(string message)
         {
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
 
             if (hudNotification != null)
                 hudNotification.ShowInfo(message);
@@ -832,7 +841,7 @@ namespace Hecton8.UI
         private void NotifyWarning(string message)
         {
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
 
             if (hudNotification != null)
                 hudNotification.ShowWarning(message);

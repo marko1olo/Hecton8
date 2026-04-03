@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -5,6 +6,8 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldInterestAnchor : MonoBehaviour
     {
+        private static readonly List<WorldInterestAnchor> _ActiveAnchors = new List<WorldInterestAnchor>(24);
+
         public enum InterestKind
         {
             ResourceField,
@@ -46,6 +49,41 @@ namespace Hecton8.World
         public float SliceNearScale => sliceNearScale;
         public float SliceMidScale => sliceMidScale;
 
+        private void OnEnable()
+        {
+            RegisterActiveAnchor(this);
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveAnchor(this);
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveAnchor(this);
+        }
+
+        public static void CopyActiveAnchorsTo(List<WorldInterestAnchor> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            for (int i = 0; i < _ActiveAnchors.Count; i++)
+            {
+                WorldInterestAnchor anchor = _ActiveAnchors[i];
+                if (anchor == null)
+                    continue;
+
+                GameObject go = anchor.gameObject;
+                if (go == null || !go.scene.IsValid())
+                    continue;
+
+                destination.Add(anchor);
+            }
+        }
+
         public float EvaluateInfluence(Vector3 playerPosition)
         {
             Vector3 delta = transform.position - playerPosition;
@@ -67,6 +105,22 @@ namespace Hecton8.World
             float t = Mathf.InverseLerp(falloffRadius, fullInfluenceRadius, distance);
             _debugLastInfluence = t;
             return t;
+        }
+
+        private static void RegisterActiveAnchor(WorldInterestAnchor anchor)
+        {
+            if (anchor == null || _ActiveAnchors.Contains(anchor))
+                return;
+
+            _ActiveAnchors.Add(anchor);
+        }
+
+        private static void UnregisterActiveAnchor(WorldInterestAnchor anchor)
+        {
+            if (anchor == null)
+                return;
+
+            _ActiveAnchors.Remove(anchor);
         }
 
 #if UNITY_EDITOR

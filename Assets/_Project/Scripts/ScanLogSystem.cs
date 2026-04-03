@@ -302,7 +302,7 @@ namespace Hecton8.Gameplay
         private void AutoResolveHud()
         {
             if (_hudNotification == null)
-                _hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out _hudNotification);
         }
 
         private void ShowUnlockFeedback(string title, string category)

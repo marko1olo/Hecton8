@@ -171,7 +171,7 @@ namespace Hecton8.World
             float now = Application.isPlaying ? Time.unscaledTime : 0f;
             _debugSearchRadius = searchRadius;
 
-            if (includeInactiveBindings)
+            if (includeInactiveBindings && !Application.isPlaying)
             {
                 WorldGenerativeGeologyBinding[] bindings =
                     FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Include, FindObjectsSortMode.None);

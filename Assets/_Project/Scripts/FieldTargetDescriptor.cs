@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Hecton8.Gameplay
 {
@@ -37,16 +38,42 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class FieldTargetDescriptor : MonoBehaviour
     {
+        private static readonly List<FieldTargetDescriptor> _ActiveDescriptors = new List<FieldTargetDescriptor>(64);
+
         [SerializeField] private FieldTargetRole role = FieldTargetRole.Generic;
         [SerializeField] [TextArea(2, 4)] private string operatorNote = string.Empty;
 
         public FieldTargetRole Role => role;
         public string OperatorNote => operatorNote;
+        public static int ActiveCount => _ActiveDescriptors.Count;
+
+        private void OnEnable()
+        {
+            if (!_ActiveDescriptors.Contains(this))
+                _ActiveDescriptors.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            _ActiveDescriptors.Remove(this);
+        }
+
+        private void OnDestroy()
+        {
+            _ActiveDescriptors.Remove(this);
+        }
 
         public void Configure(FieldTargetRole targetRole, string note)
         {
             role = targetRole;
             operatorNote = note ?? string.Empty;
+        }
+
+        public static FieldTargetDescriptor GetActiveDescriptorAt(int index)
+        {
+            return index >= 0 && index < _ActiveDescriptors.Count
+                ? _ActiveDescriptors[index]
+                : null;
         }
 
         public static bool TryResolve(Component source, out FieldTargetDescriptor descriptor)

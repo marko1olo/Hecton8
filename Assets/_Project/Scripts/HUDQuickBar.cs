@@ -7,6 +7,7 @@
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Tools;
+using Hecton8.Bootstrap;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -106,7 +107,13 @@ namespace Hecton8.UI
         private void AutoResolve()
         {
             if (toolManager == null)
-                toolManager = FindFirstObjectByType<PlayerToolManager>();
+            {
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                    playerTransform != null)
+                {
+                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                }
+            }
             if (font == null)
                 font = TMP_Settings.defaultFontAsset;
         }

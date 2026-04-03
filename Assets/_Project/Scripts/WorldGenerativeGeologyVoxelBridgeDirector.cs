@@ -18,6 +18,8 @@ namespace Hecton8.World
 
         [SerializeField] private long runtimeKey;
         [SerializeField] private int requestSignature;
+        [SerializeField] private int resolvedResolution;
+        [SerializeField] private int detailBand;
         [SerializeField] private string familyId = "world.family.generic";
         [SerializeField] private string geologyProfileId = "geology.generic";
         [SerializeField] private bool colliderEnabled;
@@ -26,6 +28,8 @@ namespace Hecton8.World
 
         public long RuntimeKey => runtimeKey;
         public int RequestSignature => requestSignature;
+        public int ResolvedResolution => resolvedResolution;
+        public int DetailBand => detailBand;
         public string FamilyId => familyId;
         public string GeologyProfileId => geologyProfileId;
         public bool ColliderEnabled => colliderEnabled;
@@ -57,6 +61,8 @@ namespace Hecton8.World
         public void Configure(
             long configuredRuntimeKey,
             int configuredSignature,
+            int configuredResolution,
+            int configuredDetailBand,
             string configuredFamilyId,
             string configuredProfileId,
             bool configuredColliderEnabled)
@@ -70,6 +76,8 @@ namespace Hecton8.World
 
             runtimeKey = configuredRuntimeKey;
             requestSignature = configuredSignature;
+            resolvedResolution = Mathf.Max(32, configuredResolution);
+            detailBand = Mathf.Clamp(configuredDetailBand, 0, 2);
             familyId = string.IsNullOrWhiteSpace(configuredFamilyId) ? "world.family.generic" : configuredFamilyId;
             geologyProfileId = string.IsNullOrWhiteSpace(configuredProfileId) ? "geology.generic" : configuredProfileId;
             colliderEnabled = configuredColliderEnabled;
@@ -121,10 +129,12 @@ namespace Hecton8.World
         [SerializeField] private float maxRequestDistance = 96f;
         [SerializeField] private float requestRetentionDistancePadding = 14f;
         [SerializeField] private float colliderBuildDistance = 42f;
+        [SerializeField] private float colliderBuildHysteresis = 8f;
         [SerializeField, Range(0.4f, 1f)] private float mediumDistanceResolutionScale = 0.82f;
         [SerializeField, Range(0.4f, 1f)] private float farDistanceResolutionScale = 0.68f;
         [SerializeField, Range(0.4f, 1f)] private float lowWeightResolutionScale = 0.85f;
         [SerializeField] private int maxRuntimeGridDimension = 56;
+        [SerializeField] private float resolutionBandHysteresis = 12f;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -524,12 +534,19 @@ namespace Hecton8.World
                     return;
 
                 long buildDataStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                BuildVoxelRequestData(request, out int gridDimension, out float voxelStep, out CaveGenerationParams generationParams, out NativeArray<CaveStructure> structureArray);
+                BuildVoxelRequestData(
+                    request,
+                    out int gridDimension,
+                    out float voxelStep,
+                    out bool buildCollider,
+                    out int resolvedResolution,
+                    out int detailBand,
+                    out CaveGenerationParams generationParams,
+                    out NativeArray<CaveStructure> structureArray);
                 float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
                 NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
                 NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
                 NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(0, Allocator.Persistent);
-                bool buildCollider = ShouldBuildCollider(request);
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "voxel.request",
                     $"prepared key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
@@ -564,7 +581,14 @@ namespace Hecton8.World
                     WorldGenerativeGeologyVoxelRuntime runtime = volume.GetComponent<WorldGenerativeGeologyVoxelRuntime>();
                     if (runtime == null)
                         runtime = volume.AddComponent<WorldGenerativeGeologyVoxelRuntime>();
-                    runtime.Configure(request.runtimeKey, signature, request.familyId, request.geologyProfileId, buildCollider);
+                    runtime.Configure(
+                        request.runtimeKey,
+                        signature,
+                        resolvedResolution,
+                        detailBand,
+                        request.familyId,
+                        request.geologyProfileId,
+                        buildCollider);
 
                     if (_activeVolumes.TryGetValue(request.runtimeKey, out GameObject previousVolume) &&
                         previousVolume != null &&
@@ -647,13 +671,16 @@ namespace Hecton8.World
             in WorldGenerativeGeologyVoxelBlendRequest request,
             out int gridDimension,
             out float voxelStep,
+            out bool buildCollider,
+            out int resolvedResolution,
+            out int detailBand,
             out CaveGenerationParams generationParams,
             out NativeArray<CaveStructure> structures)
         {
             float dominantSize = Mathf.Clamp(math.cmax((float3)request.size), minVoxelSize, maxVoxelSize) + voxelPadding;
-            int targetResolution = ResolveTargetResolution(request);
+            ResolveRequestBuildSettings(request, out resolvedResolution, out buildCollider, out detailBand);
             float stabilizedWeight = Quantize01(request.weight, 0.05f);
-            voxelStep = Mathf.Clamp(dominantSize / Mathf.Max(24f, targetResolution), minVoxelStep, maxVoxelStep);
+            voxelStep = Mathf.Clamp(dominantSize / Mathf.Max(24f, resolvedResolution), minVoxelStep, maxVoxelStep);
             gridDimension = Mathf.Clamp(
                 Mathf.CeilToInt(dominantSize / voxelStep),
                 32,
@@ -869,18 +896,46 @@ namespace Hecton8.World
 
         private int ComputeRequestSignature(in WorldGenerativeGeologyVoxelBlendRequest request)
         {
+            ResolveRequestBuildSettings(request, out int resolvedResolution, out bool buildCollider, out _);
             unchecked
             {
                 int hash = (int)request.runtimeKey;
                 hash = (hash * 397) ^ request.caveBlendMode.GetHashCode();
                 hash = (hash * 397) ^ request.archetype.GetHashCode();
-                hash = (hash * 397) ^ ResolveTargetResolution(request);
-                hash = (hash * 397) ^ (ShouldBuildCollider(request) ? 1 : 0);
+                hash = (hash * 397) ^ resolvedResolution;
+                hash = (hash * 397) ^ (buildCollider ? 1 : 0);
                 return hash;
             }
         }
 
-        private int ResolveTargetResolution(in WorldGenerativeGeologyVoxelBlendRequest request)
+        private void ResolveRequestBuildSettings(
+            in WorldGenerativeGeologyVoxelBlendRequest request,
+            out int resolvedResolution,
+            out bool buildCollider,
+            out int detailBand)
+        {
+            int previousBand = -1;
+            int previousResolution = 0;
+            bool currentColliderEnabled = false;
+
+            if (_activeVolumes.TryGetValue(request.runtimeKey, out GameObject activeVolume) &&
+                activeVolume != null &&
+                activeVolume.TryGetComponent(out WorldGenerativeGeologyVoxelRuntime runtime))
+            {
+                previousBand = runtime.DetailBand;
+                previousResolution = runtime.ResolvedResolution;
+                currentColliderEnabled = runtime.ColliderEnabled;
+            }
+
+            detailBand = ResolveDetailBand(request.playerDistance, previousBand);
+            resolvedResolution = ResolveTargetResolution(request, detailBand, previousResolution);
+            buildCollider = ShouldBuildCollider(request.playerDistance, currentColliderEnabled);
+        }
+
+        private int ResolveTargetResolution(
+            in WorldGenerativeGeologyVoxelBlendRequest request,
+            int detailBand,
+            int previousResolution)
         {
             float dominantSize = Mathf.Max(request.size.x, request.size.y, request.size.z);
             int baseResolution = request.archetype switch
@@ -898,16 +953,17 @@ namespace Hecton8.World
 
             int nearResolution = Mathf.Max(36, nearFieldTargetResolution);
             int farResolution = Mathf.Clamp(farFieldTargetResolution, 32, nearResolution);
-            float resolvedFarDistance = Mathf.Max(nearFieldDistance + 1f, farFieldDistance);
-            float distanceT = Mathf.InverseLerp(
-                Mathf.Max(0f, nearFieldDistance),
-                resolvedFarDistance,
-                Mathf.Max(0f, request.playerDistance));
-            int distanceCap = Mathf.RoundToInt(Mathf.Lerp(nearResolution, farResolution, distanceT));
+            int mediumResolution = Mathf.RoundToInt((nearResolution + farResolution) * 0.5f);
+            int distanceCap = detailBand switch
+            {
+                0 => nearResolution,
+                2 => farResolution,
+                _ => mediumResolution
+            };
             float resolutionScale = 1f;
-            if (request.playerDistance >= resolvedFarDistance)
+            if (detailBand == 2)
                 resolutionScale *= farDistanceResolutionScale;
-            else if (request.playerDistance > Mathf.Max(0f, nearFieldDistance))
+            else if (detailBand == 1)
                 resolutionScale *= mediumDistanceResolutionScale;
 
             float priority = Mathf.Clamp01(request.planWeight * 0.65f + request.weight * 0.35f);
@@ -915,13 +971,59 @@ namespace Hecton8.World
                 resolutionScale *= lowWeightResolutionScale;
 
             int scaledResolution = Mathf.RoundToInt(baseResolution * resolutionScale);
-            return Mathf.Clamp(Mathf.Min(distanceCap, scaledResolution), 32, nearResolution);
+            int resolvedResolution = Mathf.Clamp(Mathf.Min(distanceCap, scaledResolution), 32, nearResolution);
+            if (previousResolution > 0 && Mathf.Abs(previousResolution - resolvedResolution) <= 4)
+                return previousResolution;
+
+            return resolvedResolution;
         }
 
-        private bool ShouldBuildCollider(in WorldGenerativeGeologyVoxelBlendRequest request)
+        private int ResolveDetailBand(float playerDistance, int previousBand)
+        {
+            float nearThreshold = Mathf.Max(0f, nearFieldDistance);
+            float farThreshold = Mathf.Max(nearThreshold + 1f, farFieldDistance);
+            float hysteresis = Mathf.Max(0f, resolutionBandHysteresis);
+            float distance = Mathf.Max(0f, playerDistance);
+
+            switch (previousBand)
+            {
+                case 0:
+                    if (distance <= nearThreshold + hysteresis)
+                        return 0;
+
+                    return distance >= farThreshold + hysteresis ? 2 : 1;
+
+                case 1:
+                    if (distance <= Mathf.Max(0f, nearThreshold - hysteresis))
+                        return 0;
+
+                    if (distance >= farThreshold + hysteresis)
+                        return 2;
+
+                    return 1;
+
+                case 2:
+                    if (distance >= Mathf.Max(0f, farThreshold - hysteresis))
+                        return 2;
+
+                    return distance <= Mathf.Max(0f, nearThreshold - hysteresis) ? 0 : 1;
+            }
+
+            if (distance <= nearThreshold)
+                return 0;
+
+            return distance >= farThreshold ? 2 : 1;
+        }
+
+        private bool ShouldBuildCollider(float playerDistance, bool currentColliderEnabled)
         {
             float threshold = Mathf.Max(8f, colliderBuildDistance);
-            return request.playerDistance <= threshold;
+            float hysteresis = Mathf.Clamp(colliderBuildHysteresis, 0f, threshold * 0.5f);
+            float distance = Mathf.Max(0f, playerDistance);
+            if (currentColliderEnabled)
+                return distance <= threshold + hysteresis;
+
+            return distance <= Mathf.Max(0f, threshold - hysteresis);
         }
 
         private static float Quantize01(float value, float step)
@@ -1054,11 +1156,8 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (seamExecutionDirector == null)
-                seamExecutionDirector = FindAnyObjectByType<WorldGenerativeGeologySeamExecutionDirector>();
-
-            if (voxelEngine == null)
-                voxelEngine = FindAnyObjectByType<HectonVoxelEngine>();
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref seamExecutionDirector);
+            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref voxelEngine);
         }
 
         private void EnsureVoxelPoolWarm(int requestCount)

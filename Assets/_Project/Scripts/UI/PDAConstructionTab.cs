@@ -6,6 +6,7 @@
 
 using System.Text;
 using Hecton8.Building;
+using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Inventory;
@@ -133,18 +134,30 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            if (playerBuilder == null)
-                playerBuilder = FindFirstObjectByType<PlayerBuilder>();
+            if ((!playerBuilder || !playerInventory || !toolManager || !playerPDA) &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerBuilder == null)
+                    playerBuilder = playerTransform.GetComponentInChildren<PlayerBuilder>(true);
+
+                if (playerInventory == null)
+                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+
+                if (toolManager == null)
+                    toolManager = playerTransform.GetComponentInChildren<Hecton8.Gameplay.PlayerToolManager>(true);
+
+                if (playerPDA == null)
+                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+            }
+
             if (constructionManager == null)
-                constructionManager = FindFirstObjectByType<ConstructionManager>();
-            if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
-            if (toolManager == null)
-                toolManager = FindFirstObjectByType<Hecton8.Gameplay.PlayerToolManager>();
+                constructionManager = ConstructionManager.Instance;
+
             if (playerPDA == null)
-                playerPDA = GetComponentInParent<PlayerPDA>() ?? FindFirstObjectByType<PlayerPDA>();
+                playerPDA = GetComponentInParent<PlayerPDA>();
             if (hudNotification == null)
-                hudNotification = FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out hudNotification);
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)

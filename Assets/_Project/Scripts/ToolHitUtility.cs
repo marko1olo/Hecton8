@@ -150,7 +150,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (s_notification == null)
-                s_notification = Object.FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out s_notification);
 
             if (s_notification != null)
                 s_notification.ShowInfo(message);
@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (s_notification == null)
-                s_notification = Object.FindFirstObjectByType<HUDNotification>();
+                HUDNotification.TryGetActive(out s_notification);
 
             if (s_notification != null)
                 s_notification.ShowWarning(message);

@@ -8,6 +8,12 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4150)]
     public sealed class WorldStreamingDirector : MonoBehaviour, ISlowTickable
     {
+        private const string DepthZoneSurfaceLabel = "Surface";
+        private const string DepthZoneMidLabel = "Mid";
+        private const string DepthZoneDeepLabel = "Deep";
+        private const string MotionModeSurveyLabel = "Survey";
+        private const string MotionModeTraverseLabel = "Traverse";
+
         private enum DepthZone
         {
             Surface,
@@ -224,8 +230,8 @@ namespace Hecton8.World
 
             _debugDepth = depth;
             _debugSpeed = _smoothedSpeed;
-            _debugDepthZone = depthZone.ToString();
-            _debugMotionMode = motionMode.ToString();
+            _debugDepthZone = GetDepthZoneLabel(depthZone);
+            _debugMotionMode = GetMotionModeLabel(motionMode);
 
             bool changed =
                 force ||
@@ -244,7 +250,6 @@ namespace Hecton8.World
                 profile.scavengeSpawnScale,
                 profile.colliderRadiusScale,
                 profile.colliderOpsScale);
-
             if (worldSliceDirector != null)
                 worldSliceDirector.SetDistanceScales(profile.nearSliceScale, profile.midSliceScale);
 
@@ -298,29 +303,45 @@ namespace Hecton8.World
             return motionMode == MotionMode.Traverse ? surfaceTraverseProfile : surfaceSurveyProfile;
         }
 
+        private static string GetDepthZoneLabel(DepthZone depthZone)
+        {
+            switch (depthZone)
+            {
+                case DepthZone.Mid:
+                    return DepthZoneMidLabel;
+                case DepthZone.Deep:
+                    return DepthZoneDeepLabel;
+                default:
+                    return DepthZoneSurfaceLabel;
+            }
+        }
+
+        private static string GetMotionModeLabel(MotionMode motionMode)
+        {
+            return motionMode == MotionMode.Traverse
+                ? MotionModeTraverseLabel
+                : MotionModeSurveyLabel;
+        }
+
         private void ResolveReferences()
         {
             if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             if (playerRigidbody == null && playerTransform != null)
                 playerRigidbody = playerTransform.GetComponent<Rigidbody>();
 
             if (mapMagicBridge == null)
-                mapMagicBridge = MapMagicBridge.Instance ?? FindAnyObjectByType<MapMagicBridge>();
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
             if (biomeSamplerCache == null)
-                biomeSamplerCache = FindAnyObjectByType<BiomeSamplerCache>();
+                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeSamplerCache);
 
             if (scatterBudgetController == null)
-                scatterBudgetController = FindAnyObjectByType<ScatterBudgetController>();
+                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref scatterBudgetController);
 
             if (worldSliceDirector == null)
-                worldSliceDirector = FindAnyObjectByType<WorldSliceDirector>();
+                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldSliceDirector);
         }
 
         private void ClampSettings()

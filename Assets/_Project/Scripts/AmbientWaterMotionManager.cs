@@ -12,6 +12,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -53,6 +54,10 @@ namespace Hecton8.Physics
 
         private float _time;
         private int   _frameCounter;
+        private float _nearDistanceSqr;
+        private float _mediumDistanceSqr;
+        private float _farDistanceSqr;
+        private float _cullDistanceSqr;
 
         // ── Observer resolve cooldown ────────────────────────────────────────
         // Если observer не назначен и не найден — не ищем каждый кадр.
@@ -75,6 +80,7 @@ namespace Hecton8.Physics
             }
 
             _instance = this;
+            RefreshDistanceThresholds();
             // Пробуем сразу при старте
             TryResolveObserver(force: true);
         }
@@ -151,11 +157,6 @@ namespace Hecton8.Physics
                 : Vector3.zero;
 
             // Квадраты дистанций — считаем один раз за тик
-            float nearSq   = nearDistance   * nearDistance;
-            float mediumSq = mediumDistance * mediumDistance;
-            float farSq    = farDistance    * farDistance;
-            float cullSq   = cullDistance   * cullDistance;
-
             for (int i = _objects.Count - 1; i >= 0; i--)
             {
                 AmbientWaterMotion motion = _objects[i];
@@ -176,7 +177,7 @@ namespace Hecton8.Physics
                 Vector3 worldPos = motion.CachedTransform.position;
 
                 if (!ShouldUpdate(motion, i, worldPos, observerPos,
-                                  nearSq, mediumSq, farSq, cullSq))
+                                  _nearDistanceSqr, _mediumDistanceSqr, _farDistanceSqr, _cullDistanceSqr))
                     continue;
 
                 ApplyMotion(motion, worldPos);
@@ -309,9 +310,16 @@ namespace Hecton8.Physics
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-                lodObserver = player.transform;
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                lodObserver = playerTransform;
+        }
+
+        private void RefreshDistanceThresholds()
+        {
+            _nearDistanceSqr = nearDistance * nearDistance;
+            _mediumDistanceSqr = mediumDistance * mediumDistance;
+            _farDistanceSqr = farDistance * farDistance;
+            _cullDistanceSqr = cullDistance * cullDistance;
         }
 
 #if UNITY_EDITOR
@@ -323,6 +331,7 @@ namespace Hecton8.Physics
             if (cullDistance   < farDistance)     cullDistance   = farDistance;
             if (globalAmplitude < 0f)             globalAmplitude = 0f;
             if (globalFrequency < 0f)             globalFrequency = 0f;
+            RefreshDistanceThresholds();
         }
 #endif
     }

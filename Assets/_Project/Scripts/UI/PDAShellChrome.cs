@@ -1,4 +1,5 @@
 using Hecton8.Gameplay;
+using Hecton8.Bootstrap;
 using Hecton8.Inventory;
 using Hecton8.Core;
 using TMPro;
@@ -63,14 +64,25 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            if ((!playerPDA || !playerInventory || !toolManager || !survivalSystem) &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerInventory == null)
+                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+
+                if (toolManager == null)
+                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+
+                if (survivalSystem == null)
+                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+
+                if (playerPDA == null)
+                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+            }
+
             if (playerPDA == null)
-                playerPDA = GetComponent<PlayerPDA>() ?? GetComponentInParent<PlayerPDA>() ?? FindFirstObjectByType<PlayerPDA>();
-            if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
-            if (toolManager == null)
-                toolManager = FindFirstObjectByType<PlayerToolManager>();
-            if (survivalSystem == null)
-                survivalSystem = FindFirstObjectByType<HectonSurvivalSystem>();
+                playerPDA = GetComponent<PlayerPDA>() ?? GetComponentInParent<PlayerPDA>();
             if (labelFont == null)
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)

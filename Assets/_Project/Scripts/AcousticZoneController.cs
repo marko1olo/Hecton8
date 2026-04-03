@@ -23,7 +23,7 @@
 //   • Читает BuoyancyObject.IsInAir через кэшированную ссылку.
 //   • BuoyancyObject.IsInAir = true → игрок внутри сухого модуля.
 //   • BuoyancyObject.IsInAir = false → игрок в воде.
-//   • Ленивый поиск по тегу "Player" (один раз).
+//   • Ленивый resolve игрока через SceneBootstrap (один раз).
 //
 // TRANSITION FLOW:
 //   FixedTick: BuoyancyObject.IsInAir changes
@@ -36,7 +36,7 @@
 //   • Tick: один bool comparison + edge detection. Zero alloc.
 //   • TransitionTo: Unity internal, no managed alloc.
 //   • PlayStatic2D: пул 2D-голосов SpatialAudioManager.
-//   • Ленивый поиск игрока: FindWithTag один раз.
+//   • Ленивый resolve игрока через SceneBootstrap.
 //   • Нет Update, нет корутин, нет LINQ.
 //
 // CPU COST:
@@ -46,6 +46,7 @@
 
 using System;
 using Hecton8.Audio;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Physics;
 using UnityEngine;
@@ -179,6 +180,8 @@ namespace Hecton8.Audio
         /// Registration tracking для GameTickManager.
         /// </summary>
         private bool _registeredToTickManager;
+        private float _nextPlayerResolveTime;
+        private const float PlayerResolveRetryInterval = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -220,7 +223,7 @@ namespace Hecton8.Audio
             // ── Ленивый поиск игрока ──
             if (playerBuoyancy == null)
             {
-                FindPlayerBuoyancy();
+                FindPlayerBuoyancy(true);
             }
 
             // ── Deferred registration ──
@@ -309,7 +312,7 @@ namespace Hecton8.Audio
             // ── Ленивый поиск игрока (если ещё не найден) ──
             if (playerBuoyancy == null)
             {
-                FindPlayerBuoyancy();
+                FindPlayerBuoyancy(false);
                 if (playerBuoyancy == null)
                     return; // Игрок не найден — skip
             }
@@ -476,18 +479,22 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Ленивый поиск BuoyancyObject на игроке по тегу "Player".
-        /// Вызывается один раз. Если игрок не найден — повторяет в Tick.
+        /// Ленивый resolve BuoyancyObject на текущем игроке через SceneBootstrap.
+        /// Вызывается один раз. Если игрок ещё не готов — повторяет позже в Tick.
         ///
         /// TryGetComponent — zero GC.
-        /// FindWithTag — одна аллокация при null result (допустимо, вызывается редко).
+        /// TryGetComponent — zero GC.
         /// </summary>
-        private void FindPlayerBuoyancy()
+        private void FindPlayerBuoyancy(bool force)
         {
-            GameObject playerGO = GameObject.FindWithTag("Player");
-            if (playerGO != null)
+            if (!force && Time.unscaledTime < _nextPlayerResolveTime)
+                return;
+
+            _nextPlayerResolveTime = Time.unscaledTime + PlayerResolveRetryInterval;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
-                playerGO.TryGetComponent(out playerBuoyancy);
+                playerTransform.TryGetComponent(out playerBuoyancy);
             }
 
             UpdatePlayerFoundDiagnostic();

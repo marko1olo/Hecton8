@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -10,6 +12,7 @@ using UnityEngine;
 [AddComponentMenu("Hecton8/HUD/Suit HUD v4")]
 public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 {
+    private static readonly List<HectonSuitHUD_v4> s_activeHuds = new List<HectonSuitHUD_v4>(4);
     private const int MaxPercent = 100;
     private const int MaxDepth = 5000;
     private const int MaxPressure = 600;
@@ -132,9 +135,24 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     private float _safeWidth;
     private float _safeHeight;
 
+    public static void CopyActiveHudsTo(List<HectonSuitHUD_v4> results)
+    {
+        if (results == null)
+            return;
+
+        results.Clear();
+        for (int i = 0; i < s_activeHuds.Count; i++)
+        {
+            HectonSuitHUD_v4 hud = s_activeHuds[i];
+            if (hud != null && hud.isActiveAndEnabled)
+                results.Add(hud);
+        }
+    }
+
     public override void OnEnable()
     {
         base.OnEnable();
+        RegisterActiveHud();
 
         CacheBasePalette();
 
@@ -143,13 +161,25 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         if (hudFont == null)
             hudFont = TMP_Settings.defaultFontAsset;
         if (survival == null)
-            survival = FindFirstObjectByType<HectonSurvivalSystem>();
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                survival = playerTransformRoot.GetComponent<HectonSurvivalSystem>();
+        }
         if (playerMovement == null)
-            playerMovement = FindFirstObjectByType<HectonPlayerMovement>();
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                playerMovement = playerTransformRoot.GetComponent<HectonPlayerMovement>();
+        }
         if (flashlight == null)
-            flashlight = FindFirstObjectByType<PlayerFlashlight>();
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+        }
         if (underwaterVisuals == null)
-            underwaterVisuals = FindFirstObjectByType<HectonUnderwaterVisuals>();
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
+                underwaterVisuals = playerTransformRoot.GetComponentInChildren<HectonUnderwaterVisuals>(true);
+        }
 
         Subscribe();
         ForceRefresh();
@@ -159,6 +189,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     public override void OnDisable()
     {
         base.OnDisable();
+        UnregisterActiveHud();
         Unsubscribe();
     }
 
@@ -234,6 +265,19 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         ResolveSuitVariant();
         UpdateTemperature(dt);
         UpdateDiagnostics();
+    }
+
+    private void RegisterActiveHud()
+    {
+        if (s_activeHuds.Contains(this))
+            return;
+
+        s_activeHuds.Add(this);
+    }
+
+    private void UnregisterActiveHud()
+    {
+        s_activeHuds.Remove(this);
     }
 
     private void PollRuntimeData()

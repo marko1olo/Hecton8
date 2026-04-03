@@ -102,18 +102,7 @@ namespace Hecton8.World
 
         public void RefreshSockets()
         {
-            _sockets.Clear();
-
-            WorldContentSocket[] sockets = Resources.FindObjectsOfTypeAll<WorldContentSocket>();
-            for (int i = 0; i < sockets.Length; i++)
-            {
-                WorldContentSocket socket = sockets[i];
-                if (socket == null || socket.gameObject == null || !socket.gameObject.scene.IsValid())
-                    continue;
-
-                _sockets.Add(socket);
-            }
-
+            WorldContentSocket.CopyActiveSocketsTo(_sockets);
             _debugSocketCount = _sockets.Count;
         }
 
