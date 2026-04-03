@@ -45,7 +45,7 @@ namespace Crest
         }
 
         [System.Obsolete]
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        public void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             passData.Init(renderingData.GetFrameData());
             var buffer = CommandBufferPool.Get(PassName);

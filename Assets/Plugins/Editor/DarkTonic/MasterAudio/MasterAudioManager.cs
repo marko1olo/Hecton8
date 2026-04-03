@@ -67,7 +67,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
             var ma = MasterAudio.Instance;
             var maInScene = ma != null;
 
-            var organizer = FindObjectOfType(typeof(SoundGroupOrganizer));
+            var organizer = FindAnyObjectByType<SoundGroupOrganizer>();
             var hasOrganizer = organizer != null;
 
             DTGUIHelper.ShowColorWarning("The Master Audio prefab holds sound FX group and mixer controls. Add this first (only one per scene).");

@@ -539,7 +539,7 @@ namespace Hecton8.Dev
             if (Application.isPlaying)
                 _nextOwnershipAuditAllowedTime = Time.unscaledTime + rendererOwnershipAuditCooldownSeconds;
 
-            Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude);
             _auditScatterFamilies.Clear();
             _auditGeologyFamilies.Clear();
             _auditVoxelFamilies.Clear();

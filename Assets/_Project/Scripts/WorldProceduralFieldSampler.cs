@@ -1552,7 +1552,9 @@ namespace Hecton8.World
                 HectonBiomeFamilyProfile family = _biomeFamilyBakeList[i];
                 _burstBiomeFamilyData[i] = new BiomeFamilyData
                 {
+                    #pragma warning disable CS0618
                     FamilyInstanceId = family != null ? family.GetInstanceID() : 0,
+                    #pragma warning restore CS0618
                     Flags = TokenizeFamilyFlags(family)
                 };
             }

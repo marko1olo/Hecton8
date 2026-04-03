@@ -526,7 +526,7 @@ namespace Hecton8.Environment
                     _cachedAtmoManager = HectonAtmosphereManager.Instance;
 #if UNITY_EDITOR
                 else
-                    _cachedAtmoManager = FindFirstObjectByType<HectonAtmosphereManager>();
+                    _cachedAtmoManager = FindAnyObjectByType<HectonAtmosphereManager>();
 #endif
             }
 

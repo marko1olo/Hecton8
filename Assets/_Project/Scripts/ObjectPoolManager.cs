@@ -163,7 +163,15 @@ namespace Hecton8.Core
 
             if (count <= 0) return;
 
+            #pragma warning disable CS0618
+            #pragma warning disable CS0618
+            #pragma warning disable CS0618
+            #pragma warning disable CS0618
             int id = prefab.GetInstanceID();
+            #pragma warning restore CS0618
+            #pragma warning restore CS0618
+            #pragma warning restore CS0618
+            #pragma warning restore CS0618
 
             if (!_pools.TryGetValue(id, out Pool pool))
             {
@@ -218,7 +226,9 @@ namespace Hecton8.Core
                 return null;
             }
 
+            #pragma warning disable CS0618
             int id = prefab.GetInstanceID();
+            #pragma warning restore CS0618
 
             // ── Получаем или создаём пул ──
             if (!_pools.TryGetValue(id, out Pool pool))
@@ -375,7 +385,9 @@ namespace Hecton8.Core
         public int GetAvailableCount(GameObject prefab)
         {
             if (prefab == null) return 0;
+            #pragma warning disable CS0618
             int id = prefab.GetInstanceID();
+            #pragma warning restore CS0618
             return _pools.TryGetValue(id, out Pool pool) ? pool.available.Count : 0;
         }
 
@@ -383,7 +395,9 @@ namespace Hecton8.Core
         public bool HasPool(GameObject prefab)
         {
             if (prefab == null) return false;
+            #pragma warning disable CS0618
             return _pools.ContainsKey(prefab.GetInstanceID());
+            #pragma warning restore CS0618
         }
 
         // ══════════════════════════════════════════════════════════
@@ -397,7 +411,9 @@ namespace Hecton8.Core
         public void ClearPool(GameObject prefab)
         {
             if (prefab == null) return;
+            #pragma warning disable CS0618
             int id = prefab.GetInstanceID();
+            #pragma warning restore CS0618
 
             if (!_pools.TryGetValue(id, out Pool pool)) return;
 

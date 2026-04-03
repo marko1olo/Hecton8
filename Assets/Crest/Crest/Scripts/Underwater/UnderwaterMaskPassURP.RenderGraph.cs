@@ -43,13 +43,13 @@ namespace Crest
 
         // Called before Configure.
         [System.Obsolete]
-        public override void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
+        public void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
         {
             passData.Init(renderingData.GetFrameData());
         }
 
         [System.Obsolete]
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        public void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             passData.Init(renderingData.GetFrameData());
             var cmd = CommandBufferPool.Get(PassName);

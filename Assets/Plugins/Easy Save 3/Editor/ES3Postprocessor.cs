@@ -140,21 +140,21 @@ public class ES3Postprocessor : UnityEditor.AssetModificationProcessor
             for (int i = 0; i < stream.length; i++)
         {
             var eventType = stream.GetEventType(i);
-            int[] instanceIds;
+            EntityId[] entityIds;
             Scene scene;
 
             if (eventType == ObjectChangeKind.ChangeGameObjectOrComponentProperties)
             {
                 ChangeGameObjectOrComponentPropertiesEventArgs evt;
                 stream.GetChangeGameObjectOrComponentPropertiesEvent(i, out evt);
-                instanceIds = new int[] { evt.instanceId };
+                entityIds = new EntityId[] { evt.entityId };
                 scene = evt.scene;
             }
             else if (eventType == ObjectChangeKind.CreateGameObjectHierarchy)
             {
                 CreateGameObjectHierarchyEventArgs evt;
                 stream.GetCreateGameObjectHierarchyEvent(i, out evt);
-                instanceIds = new int[] { evt.instanceId };
+                entityIds = new EntityId[] { evt.entityId };
                 scene = evt.scene;
             }
             /*else if (eventType == ObjectChangeKind.ChangeAssetObjectProperties)
@@ -167,7 +167,7 @@ public class ES3Postprocessor : UnityEditor.AssetModificationProcessor
             {
                 UpdatePrefabInstancesEventArgs evt;
                 stream.GetUpdatePrefabInstancesEvent(i, out evt);
-                instanceIds = evt.instanceIds.ToArray();
+                entityIds = evt.entityIds.ToArray();
                 scene = evt.scene;
             }
             else
@@ -178,11 +178,11 @@ public class ES3Postprocessor : UnityEditor.AssetModificationProcessor
             if (mgr == null)
                 return;
 
-            foreach (var id in instanceIds)
+            foreach (var id in entityIds)
             {
                 try
                 {
-                    var obj = EditorUtility.InstanceIDToObject(id);
+                    var obj = EditorUtility.EntityIdToObject(id);
 
                     if (obj == null)
                         continue;

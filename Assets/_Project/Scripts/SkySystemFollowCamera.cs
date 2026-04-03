@@ -99,7 +99,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         }
 #endif
 
-        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include);
         for (int i = 0; i < cameras.Length; i++)
         {
             Camera candidate = cameras[i];

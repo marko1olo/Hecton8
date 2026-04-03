@@ -63,7 +63,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
                 if (_instance == null)
                 {
-                    _instance = FindFirstObjectByType<FlowFieldVisualizer>();
+                    _instance = FindAnyObjectByType<FlowFieldVisualizer>();
                     if (_instance == null)
                     {
                         GameObject go = new GameObject("FlowFieldVisualizer");

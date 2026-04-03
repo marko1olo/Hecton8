@@ -333,8 +333,8 @@ namespace LlockhamIndustries.Decals
             if (this != null)
             {
                 #if UNITY_EDITOR
-                PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-                if (prefabType == PrefabType.ModelPrefab || prefabType == PrefabType.Prefab) return false;
+                var prefabType = PrefabUtility.GetPrefabAssetType(gameObject);
+                if (prefabType == PrefabAssetType.Model || prefabType == PrefabAssetType.Regular) return false;
                 #endif
 
                 return DynamicDecals.System.Register(this);
@@ -346,8 +346,8 @@ namespace LlockhamIndustries.Decals
             if (this != null)
             {
                 #if UNITY_EDITOR
-                PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-                if (prefabType == PrefabType.ModelPrefab || prefabType == PrefabType.Prefab) return;
+                var prefabType = PrefabUtility.GetPrefabAssetType(gameObject);
+                if (prefabType == PrefabAssetType.Model || prefabType == PrefabAssetType.Regular) return;
                 #endif
 
                 DynamicDecals.System.Deregister(this);
@@ -630,6 +630,7 @@ namespace LlockhamIndustries.Decals
         {
             if (!Application.isPlaying)
             {
+#pragma warning disable CS0618
                 if (instanceID == 0)
                 {
                     instanceID = GetInstanceID();
@@ -642,6 +643,7 @@ namespace LlockhamIndustries.Decals
                     //Clone properties
                     properties = (ProjectionProperty[])properties.Clone();
                 }
+#pragma warning restore CS0618
             }
         }
 

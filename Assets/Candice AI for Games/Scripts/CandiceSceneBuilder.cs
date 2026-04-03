@@ -110,7 +110,7 @@ namespace CandiceAIforGames.AI
             Store();
 
             //destroy
-            GameObject[] allObj = UnityEngine.Object.FindObjectsOfType<GameObject>();
+            GameObject[] allObj = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
             foreach (GameObject sceneObject in allObj) {
                 if (sceneObject.name != "SceneBuilder") {
                     Destroy(sceneObject);
@@ -150,7 +150,7 @@ namespace CandiceAIforGames.AI
             
             yield return new WaitForSeconds(resetTime);
 
-            if (toSet.active) {
+            if (toSet.activeSelf) {
 
                 toSet.SetActive(false);
 

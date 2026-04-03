@@ -20,7 +20,7 @@ public class HectonWaterPhysics : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindFirstObjectByType<HectonWaterPhysics>();
+                _instance = FindAnyObjectByType<HectonWaterPhysics>();
                 if (_instance == null)
                     Debug.LogError("[HectonWaterPhysics] No instance found in scene!");
             }

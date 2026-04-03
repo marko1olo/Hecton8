@@ -317,8 +317,7 @@ namespace Hecton8.World
             // FindObjectsByType — Unity 2022.3+
             // Flags: включаем неактивные объекты
             ResourceNode[] allNodes = FindObjectsByType<ResourceNode>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
 
             int deactivated = 0;
 

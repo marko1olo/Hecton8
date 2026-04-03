@@ -38,7 +38,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
                 labelText += " (MA not in Scene)";
             }
 
-            var creators = Object.FindObjectsOfType(typeof(DynamicSoundGroupCreator)) as DynamicSoundGroupCreator[];
+            var creators = Object.FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
             // ReSharper disable once PossibleNullReferenceException
             foreach (var dsgc in creators)
             {

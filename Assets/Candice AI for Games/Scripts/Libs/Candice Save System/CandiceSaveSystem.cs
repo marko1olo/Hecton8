@@ -17,7 +17,9 @@ namespace CandiceAIforGames.Data
         private string storagePath;
         //private string saveFilename = "SaveFile.bin";
         private string databaseName = "TestDB";
+        #pragma warning disable CS0414
         private string defaultExtension = ".bin";
+        #pragma warning restore CS0414
         private CandiceProviderBase providerBase;
 
         public static CandiceSaveSystem Instance

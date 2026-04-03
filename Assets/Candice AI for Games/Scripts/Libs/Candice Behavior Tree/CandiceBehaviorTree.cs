@@ -23,7 +23,9 @@ namespace CandiceAIforGames.AI
         List<MethodInfo> lstFunctions;
 
         // Define the completion event
+        #pragma warning disable CS0067
         public event Action<CandiceBehaviorTreeEvent> OnComplete;
+        #pragma warning restore CS0067
 
         public void Initialise()
         {

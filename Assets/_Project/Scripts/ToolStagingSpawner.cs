@@ -70,7 +70,7 @@ namespace Hecton8.Dev
         [MenuItem("Hecton8/Dev/Rebuild Tool Staging")]
         private static void RebuildToolStagingFromMenu()
         {
-            ToolStagingSpawner spawner = FindFirstObjectByType<ToolStagingSpawner>();
+            ToolStagingSpawner spawner = FindAnyObjectByType<ToolStagingSpawner>();
             if (spawner == null || Application.isPlaying)
                 return;
 

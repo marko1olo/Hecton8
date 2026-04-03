@@ -69,7 +69,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
                 sources.Add(ma.gameObject);
             }
 
-            var dgscs = FindObjectsOfType(typeof(DynamicSoundGroupCreator));
+            var dgscs = FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
             // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var t in dgscs)
             {

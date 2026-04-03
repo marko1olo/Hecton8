@@ -278,7 +278,7 @@ namespace Hecton8.UI
 
                 if (font == null)
                 {
-                    TextMeshProUGUI sampleText = FindFirstObjectByType<TextMeshProUGUI>();
+                    TextMeshProUGUI sampleText = FindAnyObjectByType<TextMeshProUGUI>();
                     if (sampleText != null)
                         font = sampleText.font;
                 }

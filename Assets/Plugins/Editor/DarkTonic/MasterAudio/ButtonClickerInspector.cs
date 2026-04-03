@@ -16,7 +16,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
         {
             if (groups != null)
             {
-                var creators = FindObjectsOfType(typeof(DynamicSoundGroupCreator)) as DynamicSoundGroupCreator[];
+                var creators = FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
                 // ReSharper disable once PossibleNullReferenceException
                 foreach (var dsgc in creators)
                 {

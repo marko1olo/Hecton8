@@ -766,7 +766,7 @@ namespace DarkTonic.MasterAudio {
         // ReSharper disable once UnusedMember.Local
         // ReSharper disable once FunctionComplexityOverflow
         private void Awake() {
-            var mas = FindObjectsOfType(typeof(MasterAudio));
+            var mas = FindObjectsByType<MasterAudio>(FindObjectsInactive.Exclude);
             if (mas.Length > 1) {
                 Destroy(gameObject);
 
@@ -1109,7 +1109,7 @@ namespace DarkTonic.MasterAudio {
 
                 // Event Sounds warmer
                 // ReSharper disable once ArrangeStaticMemberQualifier
-                var evts = GameObject.FindObjectsOfType(typeof(EventSounds));
+                var evts = GameObject.FindObjectsByType<EventSounds>(FindObjectsInactive.Exclude);
                 if (evts.Length > 0) {
                     var evt = evts[0] as EventSounds;
                     evt.PlaySounds(evt.particleCollisionSound, EventSounds.EventType.UserDefinedEvent);
@@ -5201,8 +5201,8 @@ namespace DarkTonic.MasterAudio {
                 }
             }
 
-            var dgscs = FindObjectsOfType<DynamicSoundGroupCreator>();
-            for (var i = 0; i < dgscs.Count(); i++) {
+            var dgscs = FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
+            for (var i = 0; i < dgscs.Length; i++) {
                 var d = dgscs[i];
                 grp = d.transform.GetChildTransform(sType);
 
@@ -8530,7 +8530,7 @@ namespace DarkTonic.MasterAudio {
                 if (_listenerTrans == null || !DTMonoHelper.IsActive(_listenerTrans.gameObject)) {
                     _listenerTrans = null; // to make sure
 
-                    var listeners = FindObjectsOfType<AudioListener>();
+                    var listeners = FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude);
                     // ReSharper disable once ForCanBeConvertedToForeach
                     for (var i = 0; i < listeners.Length; i++) {
                         var listener = listeners[i];
@@ -8704,7 +8704,7 @@ namespace DarkTonic.MasterAudio {
                 }
 
                 // ReSharper disable once ArrangeStaticMemberQualifier
-                _instance = (MasterAudio)GameObject.FindObjectOfType(typeof(MasterAudio));
+                _instance = GameObject.FindAnyObjectByType<MasterAudio>();
                 return _instance;
             }
         }
@@ -8718,7 +8718,7 @@ namespace DarkTonic.MasterAudio {
                     return _instance;
                 }
                 // ReSharper disable once ArrangeStaticMemberQualifier
-                _instance = (MasterAudio)GameObject.FindObjectOfType(typeof(MasterAudio));
+                _instance = GameObject.FindAnyObjectByType<MasterAudio>();
 
                 if (_instance == null && Application.isPlaying) {
                     Debug.LogError("There is no Master Audio prefab in this Scene. Subsequent method calls will fail.");
@@ -8762,7 +8762,7 @@ namespace DarkTonic.MasterAudio {
                     others.Add(childName);
                 }
 
-                var creators = FindObjectsOfType(typeof(DynamicSoundGroupCreator)) as DynamicSoundGroupCreator[];
+                var creators = FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
                 // ReSharper disable once PossibleNullReferenceException
                 foreach (var dsgc in creators) {
                     var trans = dsgc.transform;

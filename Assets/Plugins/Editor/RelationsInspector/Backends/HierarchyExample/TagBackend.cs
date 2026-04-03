@@ -67,7 +67,7 @@ namespace RelationsInspector.Backend.Scene
 			{
 				// option: use all gameobjects of the active scene as targets
 				if ( GUILayout.Button( "Show active scene", EditorStyles.toolbarButton ) )
-					api.ResetTargets( Object.FindObjectsOfType<GameObject>().Cast<object>().ToArray() );
+					api.ResetTargets( Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude).Cast<object>().ToArray() );
 
 				// option: remove untagged objects
 				if ( ContainsUntaggedTargets() &&

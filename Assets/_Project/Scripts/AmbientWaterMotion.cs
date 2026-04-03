@@ -52,7 +52,9 @@ namespace Hecton8.Physics
             _cachedTransform = transform;
             CaptureRestPose();
 
+            #pragma warning disable CS0618
             int id = GetInstanceID();
+            #pragma warning restore CS0618
             float seed = id < 0 ? -id : id;
             _phase = seed * 0.173f;
         }

@@ -214,16 +214,16 @@ namespace Hecton8.Dev
         private void AutoResolveSceneReferences()
         {
             if (playerBuilder == null)
-                playerBuilder = FindFirstObjectByType<PlayerBuilder>();
+                playerBuilder = FindAnyObjectByType<PlayerBuilder>();
 
             if (constructionManager == null)
-                constructionManager = FindFirstObjectByType<ConstructionManager>();
+                constructionManager = FindAnyObjectByType<ConstructionManager>();
 
             if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
+                playerInventory = FindAnyObjectByType<PlayerInventory>();
 
             if (loadoutProvisioner == null)
-                loadoutProvisioner = FindFirstObjectByType<ToolLoadoutProvisioner>();
+                loadoutProvisioner = FindAnyObjectByType<ToolLoadoutProvisioner>();
         }
 
         private string DescribeResolvedRefs()

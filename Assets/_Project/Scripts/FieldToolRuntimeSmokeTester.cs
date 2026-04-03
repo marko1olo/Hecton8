@@ -465,18 +465,18 @@ namespace Hecton8.Gameplay
         private void AutoResolveSceneReferences()
         {
             if (toolManager == null)
-                toolManager = FindFirstObjectByType<PlayerToolManager>();
+                toolManager = FindAnyObjectByType<PlayerToolManager>();
             if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
+                playerInventory = FindAnyObjectByType<PlayerInventory>();
             if (playerBuilder == null)
-                playerBuilder = FindFirstObjectByType<PlayerBuilder>();
+                playerBuilder = FindAnyObjectByType<PlayerBuilder>();
             if (constructionManager == null)
-                constructionManager = FindFirstObjectByType<ConstructionManager>();
+                constructionManager = FindAnyObjectByType<ConstructionManager>();
             if (loadoutProvisioner == null)
-                loadoutProvisioner = FindFirstObjectByType<ToolLoadoutProvisioner>();
+                loadoutProvisioner = FindAnyObjectByType<ToolLoadoutProvisioner>();
             if (salvageProbeItem == null)
             {
-                PickupItem pickup = FindFirstObjectByType<PickupItem>();
+                PickupItem pickup = FindAnyObjectByType<PickupItem>();
                 if (pickup != null)
                     salvageProbeItem = pickup.ItemData;
             }

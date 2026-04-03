@@ -219,7 +219,7 @@ namespace DarkTonic.MasterAudio {
 
             // check for "extra" Playlist Controllers of the same name.
             // ReSharper disable once ArrangeStaticMemberQualifier
-            var controllers = (PlaylistController[])GameObject.FindObjectsOfType(typeof(PlaylistController));
+            var controllers = GameObject.FindObjectsByType<PlaylistController>(FindObjectsInactive.Exclude);
             var sameNameCount = 0;
 
             // ReSharper disable once ForCanBeConvertedToForeach
@@ -233,7 +233,7 @@ namespace DarkTonic.MasterAudio {
             if (sameNameCount > 1) {
                 DestroyImmediate(gameObject);
 
-                var mas = FindObjectsOfType(typeof(MasterAudio));
+                var mas = FindObjectsByType<MasterAudio>(FindObjectsInactive.Exclude);
                 bool shouldLog = false;
                 for (var i = 0; i < mas.Length; i++) {
                     MasterAudio ama = mas[i] as MasterAudio;
@@ -2138,7 +2138,7 @@ namespace DarkTonic.MasterAudio {
                 }
                 _instances = new List<PlaylistController>();
 
-                var controllers = FindObjectsOfType(typeof(PlaylistController));
+                var controllers = FindObjectsByType<PlaylistController>(FindObjectsInactive.Exclude);
                 // ReSharper disable once ForCanBeConvertedToForeach
                 for (var i = 0; i < controllers.Length; i++) {
                     _instances.Add(controllers[i] as PlaylistController);

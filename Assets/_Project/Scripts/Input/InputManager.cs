@@ -51,7 +51,7 @@ namespace Hecton8.Input
                     {
                         if (_instance == null)
                         {
-                            _instance = FindFirstObjectByType<InputManager>();
+                            _instance = FindAnyObjectByType<InputManager>();
                             
                             if (_instance == null)
                             {

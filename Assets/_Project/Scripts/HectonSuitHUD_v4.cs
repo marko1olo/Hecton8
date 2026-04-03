@@ -212,7 +212,9 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 
     public override void DrawShapes(Camera cam)
     {
+        #pragma warning disable CS0618
         _debugLastRenderCameraId = cam != null ? cam.GetInstanceID() : 0;
+        #pragma warning restore CS0618
         _debugCameraMatched = hudCamera != null && cam == hudCamera;
 
         _debugDrawCallCount++;

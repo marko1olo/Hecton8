@@ -37,6 +37,7 @@ MonoBehaviour:
     - BakeryRuntimeAssembly
     - Crest
     - Den.Tools
+    - Domain_Reload
     - GPUInstancer
     - JBooth.MicroSplat.Core
     - Lofelt.NiceVibrations

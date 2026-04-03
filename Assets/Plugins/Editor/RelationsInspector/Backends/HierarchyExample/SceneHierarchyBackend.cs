@@ -110,7 +110,7 @@ namespace RelationsInspector.Backend.Scene
 			// the fake scene object gets special care
 			if ( IsSceneObject( entity ) )
 			{
-				var allGOs = Object.FindObjectsOfType<GameObject>();
+				var allGOs = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
 				var rootGOs = allGOs.Where( go => go.transform.parent == null );
 				foreach ( var go in rootGOs )
 					yield return new Relation<Object, string>( entity, go, string.Empty );

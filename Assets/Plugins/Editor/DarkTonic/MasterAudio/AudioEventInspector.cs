@@ -40,7 +40,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
                 groups = ma.GroupNames;
             }
 
-            var creators = FindObjectsOfType(typeof(DynamicSoundGroupCreator)) as DynamicSoundGroupCreator[];
+            var creators = FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
             // ReSharper disable once PossibleNullReferenceException
             foreach (var dsgc in creators)
             {
@@ -79,7 +79,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
                 events = new List<string>();
             }
 
-            var creators = FindObjectsOfType(typeof(DynamicSoundGroupCreator)) as DynamicSoundGroupCreator[];
+            var creators = FindObjectsByType<DynamicSoundGroupCreator>(FindObjectsInactive.Exclude);
             // ReSharper disable once PossibleNullReferenceException
             foreach (var dsgc in creators)
             {
@@ -175,7 +175,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
             _hasMechanim = anim != null;
 
             _changedList.Clear();
-            var pcs = FindObjectsOfType(typeof(PlaylistController));
+            var pcs = FindObjectsByType<PlaylistController>(FindObjectsInactive.Exclude);
             foreach (var t in pcs)
             {
                 _playlistControllerNames.Add(t.name);

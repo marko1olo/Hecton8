@@ -12,7 +12,7 @@ namespace Shapes {
 		public static ShapesTextDrawer Instance {
 			get {
 				if( instance == null ) {
-					instance = Object.FindObjectOfType<ShapesTextDrawer>();
+					instance = Object.FindAnyObjectByType<ShapesTextDrawer>();
 					if( instance == null )
 						instance = ShapesTextDrawer.Create();
 				}
@@ -29,7 +29,7 @@ namespace Shapes {
 				DontDestroyOnLoad( holder ); // might be a lil gross, not sure
 			ShapesTextDrawer text = holder.AddComponent<ShapesTextDrawer>();
 			text.tmp = holder.AddComponent<TextMeshPro>();
-			text.tmp.enableWordWrapping = false;
+			text.tmp.textWrappingMode = TextWrappingModes.NoWrap;
 			text.tmp.overflowMode = TextOverflowModes.Overflow;
 
 			// mesh renderer should exist now due to TMP requiring the component

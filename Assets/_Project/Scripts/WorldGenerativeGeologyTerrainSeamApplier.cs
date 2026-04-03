@@ -120,7 +120,9 @@ namespace Hecton8.World
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
+                #pragma warning disable CS0618
                 int terrainId = terrain.GetInstanceID();
+                #pragma warning restore CS0618
                 if (!_plansByTerrain.TryGetValue(terrainId, out List<WorldGenerativeGeologySeamPlan> terrainPlans))
                 {
                     terrainPlans = new List<WorldGenerativeGeologySeamPlan>(8);
@@ -299,7 +301,9 @@ namespace Hecton8.World
             if (terrain == null || terrain.terrainData == null)
                 return;
 
+            #pragma warning disable CS0618
             int terrainId = terrain.GetInstanceID();
+            #pragma warning restore CS0618
             if (_terrainStates.ContainsKey(terrainId))
                 return;
 

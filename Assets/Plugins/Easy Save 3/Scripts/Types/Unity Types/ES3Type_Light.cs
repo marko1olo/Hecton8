@@ -30,7 +30,7 @@ namespace ES3Types
 			writer.WriteProperty("shadowNearPlane", instance.shadowNearPlane, ES3Type_float.Instance);
 			writer.WriteProperty("range", instance.range, ES3Type_float.Instance);
 			writer.WriteProperty("spotAngle", instance.spotAngle, ES3Type_float.Instance);
-			writer.WriteProperty("cookieSize", instance.cookieSize, ES3Type_float.Instance);
+			writer.WriteProperty("cookieSize", instance.cookieSize2D.x, ES3Type_float.Instance);
 			writer.WriteProperty("cookie", instance.cookie, ES3Type_Texture2D.Instance);
 			writer.WriteProperty("flare", instance.flare, ES3Type_Texture2D.Instance);
 			writer.WriteProperty("renderMode", instance.renderMode);
@@ -87,7 +87,8 @@ namespace ES3Types
 						instance.spotAngle = reader.Read<System.Single>(ES3Type_float.Instance);
 						break;
 					case "cookieSize":
-						instance.cookieSize = reader.Read<System.Single>(ES3Type_float.Instance);
+						var cookieSize = reader.Read<System.Single>(ES3Type_float.Instance);
+						instance.cookieSize2D = new UnityEngine.Vector2(cookieSize, cookieSize);
 						break;
 					case "cookie":
 						instance.cookie = reader.Read<UnityEngine.Texture>();

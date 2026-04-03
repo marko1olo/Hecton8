@@ -52,7 +52,9 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            #pragma warning disable CS0618
             _instanceID = GetInstanceID();
+            #pragma warning restore CS0618
             _tr = transform;
         }
 

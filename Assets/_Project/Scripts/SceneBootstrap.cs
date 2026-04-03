@@ -538,8 +538,7 @@ namespace Hecton8.Bootstrap
         private void StartWorldGeneration()
         {
             var allBehaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Exclude);
 
             MonoBehaviour hectonWorldGen = null;
             MonoBehaviour mapMagic = null;

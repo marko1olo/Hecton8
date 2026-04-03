@@ -433,7 +433,9 @@ namespace Hecton8.Gameplay
             if (!other.TryGetComponent(out BuoyancyObject buoyancy))
                 return;
 
+            #pragma warning disable CS0618
             int key = other.GetInstanceID();
+            #pragma warning restore CS0618
 
             if (_trackedObjects.ContainsKey(key))
                 return;
@@ -462,7 +464,9 @@ namespace Hecton8.Gameplay
                 ModuleStatusEvents.NotifyExit(this);
             }
             // ── Interior Zone: BuoyancyObject tracking ──
+            #pragma warning disable CS0618
             int key = other.GetInstanceID();
+            #pragma warning restore CS0618
 
             if (_trackedObjects.TryGetValue(key, out BuoyancyObject buoyancy))
             {

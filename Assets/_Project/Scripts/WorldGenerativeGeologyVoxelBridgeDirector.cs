@@ -259,6 +259,7 @@ namespace Hecton8.World
         public void ReconcileVoxelRequests()
         {
             long reconcileStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            bool diagnosticsTraceActive = RuntimeDiagnosticsTrace.IsActive;
             ResolveReferences();
             _debugTopVolume = "None";
 
@@ -383,14 +384,17 @@ namespace Hecton8.World
             CancelStalePendingRequests();
             long reconcileEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
 
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "voxel.reconcile",
-                $"requests={requests.Count} kept={_sortedRequests.Count} desired={_desiredRuntimeKeys.Count} active={_activeVolumes.Count} " +
-                $"pending={_pendingRuntimeKeys.Count} queued={_queuedLaunchOrder.Count} spawnBudget={spawnBudgetUsed} " +
-                $"filter={GetElapsedMilliseconds(reconcileStartTimestamp, requestFilterEndTimestamp):0.00}ms " +
-                $"warm={GetElapsedMilliseconds(requestFilterEndTimestamp, poolWarmEndTimestamp):0.00}ms " +
-                $"sort={GetElapsedMilliseconds(poolWarmEndTimestamp, sortEndTimestamp):0.00}ms " +
-                $"rest={GetElapsedMilliseconds(sortEndTimestamp, reconcileEndTimestamp):0.00}ms total={GetElapsedMilliseconds(reconcileStartTimestamp, reconcileEndTimestamp):0.00}ms");
+            if (diagnosticsTraceActive)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.reconcile",
+                    $"requests={requests.Count} kept={_sortedRequests.Count} desired={_desiredRuntimeKeys.Count} active={_activeVolumes.Count} " +
+                    $"pending={_pendingRuntimeKeys.Count} queued={_queuedLaunchOrder.Count} spawnBudget={spawnBudgetUsed} " +
+                    $"filter={GetElapsedMilliseconds(reconcileStartTimestamp, requestFilterEndTimestamp):0.00}ms " +
+                    $"warm={GetElapsedMilliseconds(requestFilterEndTimestamp, poolWarmEndTimestamp):0.00}ms " +
+                    $"sort={GetElapsedMilliseconds(poolWarmEndTimestamp, sortEndTimestamp):0.00}ms " +
+                    $"rest={GetElapsedMilliseconds(sortEndTimestamp, reconcileEndTimestamp):0.00}ms total={GetElapsedMilliseconds(reconcileStartTimestamp, reconcileEndTimestamp):0.00}ms");
+            }
 
             _debugActiveVolumes = _activeVolumes.Count;
             _debugActiveColliders = WorldGenerativeGeologyVoxelRuntime.ActiveColliderCount;
@@ -445,10 +449,13 @@ namespace Hecton8.World
             PendingRequestState state = CreatePendingRequestState(signature);
             _pendingRuntimeKeys.Add(request.runtimeKey);
             _pendingRequests[request.runtimeKey] = state;
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "voxel.request",
-                $"schedule key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
-                $"weight={request.weight:0.00} dist={request.playerDistance:0.0} active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+            if (RuntimeDiagnosticsTrace.IsActive)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.request",
+                    $"schedule key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                    $"weight={request.weight:0.00} dist={request.playerDistance:0.0} active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+            }
             QueueLaunchRequest(request);
             spawnBudgetUsed++;
         }
@@ -496,9 +503,12 @@ namespace Hecton8.World
                 float queuedMs = Application.isPlaying
                     ? Mathf.Max(0f, (Time.unscaledTime - queuedAt) * 1000f)
                     : 0f;
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.launch",
-                    $"start key={runtimeKey} family={request.familyId} queued={queuedMs:0.00}ms active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+                if (RuntimeDiagnosticsTrace.IsActive)
+                {
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.launch",
+                        $"start key={runtimeKey} family={request.familyId} queued={queuedMs:0.00}ms active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+                }
                 _ = SpawnOrRefreshVolumeAsync(request, pendingState.Signature, pendingState);
             }
 
@@ -525,6 +535,7 @@ namespace Hecton8.World
             PendingRequestState pendingState)
         {
             long requestStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            bool diagnosticsTraceActive = RuntimeDiagnosticsTrace.IsActive;
             CancellationToken token = pendingState != null && pendingState.Cancellation != null
                 ? pendingState.Cancellation.Token
                 : EnsureLifetimeCancellation().Token;
@@ -547,10 +558,13 @@ namespace Hecton8.World
                 NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
                 NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
                 NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(0, Allocator.Persistent);
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.request",
-                    $"prepared key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
-                    $"grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} buildData={buildDataMs:0.00}ms");
+                if (diagnosticsTraceActive)
+                {
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.request",
+                        $"prepared key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                        $"grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} buildData={buildDataMs:0.00}ms");
+                }
 
                 try
                 {
@@ -604,11 +618,14 @@ namespace Hecton8.World
                         _debugTopVolume = request.familyId;
 
                     float elapsedMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - requestStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
-                    RuntimeDiagnosticsTrace.WriteEvent(
-                        "voxel.request",
-                        $"complete key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
-                        $"grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} took={elapsedMs:0.00}ms " +
-                        $"active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+                    if (diagnosticsTraceActive)
+                    {
+                        RuntimeDiagnosticsTrace.WriteEvent(
+                            "voxel.request",
+                            $"complete key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                            $"grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} took={elapsedMs:0.00}ms " +
+                            $"active={_activeVolumes.Count} pending={_pendingRuntimeKeys.Count}");
+                    }
                 }
                 finally
                 {
@@ -621,17 +638,23 @@ namespace Hecton8.World
             catch (OperationCanceledException)
             {
                 float elapsedMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - requestStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.request",
-                    $"cancel key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} took={elapsedMs:0.00}ms");
+                if (diagnosticsTraceActive)
+                {
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.request",
+                        $"cancel key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} took={elapsedMs:0.00}ms");
+                }
             }
             catch (Exception ex)
             {
                 float elapsedMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - requestStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.request",
-                    $"fault key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
-                    $"took={elapsedMs:0.00}ms error={ex.GetType().Name}:{ex.Message}");
+                if (diagnosticsTraceActive)
+                {
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.request",
+                        $"fault key={request.runtimeKey} family={request.familyId} profile={request.geologyProfileId} " +
+                        $"took={elapsedMs:0.00}ms error={ex.GetType().Name}:{ex.Message}");
+                }
                 throw;
             }
             finally

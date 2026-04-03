@@ -9,9 +9,7 @@ namespace Hellmade.Sound
     /// Static class responsible for playing and managing audio and sounds.
     ///
     /// UNITY 6 FIX:
-    ///   FindObjectOfType → FindFirstObjectByType (non-deprecated API).
-    ///   FindFirstObjectByType uses FindObjectsSortMode.None by default
-    ///   which is faster than the sorted variant.
+    ///   FindObjectOfType → FindAnyObjectByType (non-deprecated API).
     /// </summary>
     public class EazySoundManager : MonoBehaviour
     {
@@ -68,12 +66,12 @@ namespace Hellmade.Sound
         /// Singleton accessor.
         ///
         /// UNITY 6 FIX: FindObjectOfType(typeof(T)) replaced with
-        /// FindFirstObjectByType&lt;T&gt;(). The generic variant is:
+        /// FindAnyObjectByType&lt;T&gt;(). The generic variant is:
         ///   - Non-deprecated in Unity 6
         ///   - Type-safe (no cast needed)
         ///   - Uses FindObjectsSortMode.None (faster — no InstanceID sort)
         ///
-        /// FindFirstObjectByType returns the first found instance
+        /// FindAnyObjectByType returns any found instance
         /// with no guaranteed order — identical behavior to the
         /// previous FindObjectOfType for singleton patterns.
         /// </summary>
@@ -83,9 +81,9 @@ namespace Hellmade.Sound
             {
                 if (instance == null)
                 {
-                    // ── Unity 6 API: FindFirstObjectByType<T>() ──
+                    // ── Unity 6 API: FindAnyObjectByType<T>() ──
                     // Replaces deprecated FindObjectOfType(typeof(T))
-                    instance = FindFirstObjectByType<EazySoundManager>();
+                    instance = FindAnyObjectByType<EazySoundManager>();
 
                     if (instance == null)
                     {

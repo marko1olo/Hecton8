@@ -14,7 +14,8 @@ namespace DarkTonic.MasterAudio.EditorScripts
         /// </summary>
         public static bool DoesScriptingDefineSymbolExist(string symbol)
         {
-            var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup).Split(';');
+            var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
+            var defines = PlayerSettings.GetScriptingDefineSymbols(buildTarget).Split(';');
             for (int i = 0; i < defines.Length; i++)
             {
                 if (string.Equals(symbol, defines[i].Trim())) return true;
@@ -52,10 +53,11 @@ namespace DarkTonic.MasterAudio.EditorScripts
             {
                 try
                 {
-                    var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(group);
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group);
+                    var defines = PlayerSettings.GetScriptingDefineSymbols(buildTarget);
                     if (!string.IsNullOrEmpty(defines)) defines += ";";
                     defines += symbol;
-                    PlayerSettings.SetScriptingDefineSymbolsForGroup(group, defines);
+                    PlayerSettings.SetScriptingDefineSymbols(buildTarget, defines);
                 }
                 catch (Exception e)
                 {
@@ -75,10 +77,11 @@ namespace DarkTonic.MasterAudio.EditorScripts
             {
                 try
                 {
-                    var symbols = new List<string>(PlayerSettings.GetScriptingDefineSymbolsForGroup(group).Split(';'));
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group);
+                    var symbols = new List<string>(PlayerSettings.GetScriptingDefineSymbols(buildTarget).Split(';'));
                     symbols.Remove(symbol);
                     var defines = string.Join(";", symbols.ToArray());
-                    PlayerSettings.SetScriptingDefineSymbolsForGroup(group, defines);
+                    PlayerSettings.SetScriptingDefineSymbols(buildTarget, defines);
                 }
                 catch (Exception e)
                 {

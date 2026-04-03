@@ -445,7 +445,9 @@ namespace Hecton8.UI
             unchecked
             {
                 int hash = 17;
+                #pragma warning disable CS0618
                 hash = hash * 31 + (data != null ? data.GetInstanceID() : 0);
+                #pragma warning restore CS0618
                 hash = hash * 31 + (hasResources ? 1 : 0);
                 hash = hash * 31 + (canPlace ? 1 : 0);
                 hash = hash * 31 + (snapped ? 1 : 0);
@@ -460,7 +462,9 @@ namespace Hecton8.UI
                         var cost = data.buildCost[i];
                         if (cost == null || cost.item == null)
                             continue;
+                        #pragma warning disable CS0618
                         hash = hash * 31 + cost.item.GetInstanceID();
+                        #pragma warning restore CS0618
                         hash = hash * 31 + cost.amount;
                         hash = hash * 31 + inventory.CountTotal(cost.item);
                     }

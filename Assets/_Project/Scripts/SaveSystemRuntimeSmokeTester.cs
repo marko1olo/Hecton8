@@ -396,7 +396,7 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (saveManager == null)
-                saveManager = SaveManager.Instance != null ? SaveManager.Instance : FindFirstObjectByType<SaveManager>();
+                saveManager = SaveManager.Instance != null ? SaveManager.Instance : FindAnyObjectByType<SaveManager>();
         }
 
         private void LogVerbose(string message)

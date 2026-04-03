@@ -24,17 +24,11 @@ namespace Crest
                 var resources = frameData.Get<UniversalResourceData>();
                 cameraData = frameData.Get<UniversalCameraData>();
 
-                if (builder == null)
+                colorTargetHandle = resources.activeColorTexture;
+                depthTargetHandle = resources.activeDepthTexture;
+
+                if (builder != null)
                 {
-#pragma warning disable CS0618 // Type or member is obsolete
-                    colorTargetHandle = cameraData.renderer.cameraColorTargetHandle;
-                    depthTargetHandle = cameraData.renderer.cameraDepthTargetHandle;
-#pragma warning restore CS0618 // Type or member is obsolete
-                }
-                else
-                {
-                    colorTargetHandle = resources.activeColorTexture;
-                    depthTargetHandle = resources.activeDepthTexture;
                     builder.UseTexture(colorTargetHandle, AccessFlags.ReadWrite);
                     builder.UseTexture(depthTargetHandle, AccessFlags.ReadWrite);
                 }
@@ -60,13 +54,13 @@ namespace Crest
         }
 
         [System.Obsolete]
-        public override void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
+        public void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
         {
             passData.Init(renderingData.GetFrameData());
         }
 
         [System.Obsolete]
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        public void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             passData.Init(renderingData.GetFrameData());
             var buffer = CommandBufferPool.Get(PassName);
@@ -112,13 +106,13 @@ namespace Crest
             }
 
             [System.Obsolete]
-            public override void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
+            public void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
             {
                 passData.Init(renderingData.GetFrameData());
             }
 
             [System.Obsolete]
-            public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+            public void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
                 passData.Init(renderingData.GetFrameData());
                 var buffer = CommandBufferPool.Get(PassName);

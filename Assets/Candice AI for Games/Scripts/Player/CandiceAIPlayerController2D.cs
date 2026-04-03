@@ -12,11 +12,13 @@ public class CandiceAIPlayerController2D : MonoBehaviour
     [SerializeField] float speed = 4.0f;    
     public float animSpeedControl = 1f; //animation speed control
     [SerializeField] float jumpForce = 7.5f;
+    #pragma warning disable CS0414
     [SerializeField] float rollForce = 6.0f;
 
     //facing
     private int direction = 1;
     private bool grounded = false;
+    #pragma warning restore CS0414
     private bool rolling = false;
 
     // Start is called before the first frame update

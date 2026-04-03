@@ -194,6 +194,7 @@ namespace Hecton8.World
         [SerializeField] private float scatterForcedRefreshInterval = 0f;
         [SerializeField] private bool spreadInitialScatterWarmupAcrossTicks = true;
         [Tooltip("Максимум объектов, которые scatter разрешает догреть в пуле за один startup rebuild.")]
+        #pragma warning disable CS0414
         [SerializeField] private int maxPoolWarmupPerRebuild = 10;
         [Tooltip("Ограничение startup warmup для одного prefab за один rebuild, чтобы не было резких аллокаций пачками.")]
         [SerializeField] private int maxPoolWarmupPerPrefabPerRebuild = 4;
@@ -207,6 +208,7 @@ namespace Hecton8.World
         [SerializeField] private int maxRuntimeReserveTopUpPerPrefabPerRebuild = 4;
         [Tooltip("Legacy runtime warmup tuning. Runtime warmup disabled by zero-instantiate policy.")]
         [SerializeField] private float runtimeWarmupCooldownSeconds = 2f;
+        #pragma warning restore CS0414
         [SerializeField, Range(0.25f, 1f)] private float coralLowFinalRadiusScale = 0.58f;
         [Tooltip("Какую долю near-радиуса разрешено тратить на proxy generated geology до перехода в final variant.")]
         [SerializeField, Range(0f, 1f)] private float proxyGeneratedGeologyNearRadiusScale = 0.45f;
@@ -1145,7 +1147,7 @@ namespace Hecton8.World
             if (_sceneBootstrapPresenceResolved)
                 return _sceneBootstrapPresent;
 
-            SceneBootstrap bootstrap = FindFirstObjectByType<SceneBootstrap>(FindObjectsInactive.Include);
+            SceneBootstrap bootstrap = FindAnyObjectByType<SceneBootstrap>(FindObjectsInactive.Include);
             _sceneBootstrapPresenceResolved = true;
             _sceneBootstrapPresent = bootstrap != null
                 && bootstrap.isActiveAndEnabled
@@ -2085,7 +2087,9 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return true;
 
+            #pragma warning disable CS0618
             int prefabId = prefab.GetInstanceID();
+            #pragma warning restore CS0618
             if (!_prefabCreateAllowances.TryGetValue(prefabId, out int remainingCount))
                 return false;
 
@@ -2105,7 +2109,9 @@ namespace Hecton8.World
             if (prefab == null)
                 return;
 
+            #pragma warning disable CS0618
             int prefabId = prefab.GetInstanceID();
+            #pragma warning restore CS0618
             if (_prefabWarmupCounts.TryGetValue(prefabId, out int count))
                 _prefabWarmupCounts[prefabId] = count + Mathf.Max(0, requiredCount);
             else
@@ -5411,7 +5417,9 @@ namespace Hecton8.World
             };
 
             float angle = Mathf.Abs(stableHash % 360) * Mathf.Deg2Rad;
+            #pragma warning disable CS0618
             float radiusT = StableRandom01(stableHash, stableHash >> 4, family != null ? family.GetInstanceID() : 0);
+            #pragma warning restore CS0618
             float radius = baseRadius * Mathf.Lerp(0.18f, 1f, radiusT);
             Vector3 offset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             return origin + offset;
@@ -6048,14 +6056,18 @@ namespace Hecton8.World
             if (preferredFamilies == null || family == null)
                 return -1;
 
+            #pragma warning disable CS0618
             int familyInstanceId = family.GetInstanceID();
+            #pragma warning restore CS0618
             for (int i = 0; i < preferredFamilies.Length; i++)
             {
                 WorldPrefabFamilyProfile preferred = preferredFamilies[i];
                 if (preferred == null)
                     continue;
 
+                #pragma warning disable CS0618
                 if (ReferenceEquals(preferred, family) || preferred.GetInstanceID() == familyInstanceId)
+                #pragma warning restore CS0618
                     return i;
             }
 
@@ -6067,7 +6079,9 @@ namespace Hecton8.World
             if (a == null || b == null)
                 return false;
 
+            #pragma warning disable CS0618
             return ReferenceEquals(a, b) || a.GetInstanceID() == b.GetInstanceID();
+            #pragma warning restore CS0618
         }
 
         private int CountPlacedFamily(

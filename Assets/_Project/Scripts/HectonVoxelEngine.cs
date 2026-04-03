@@ -2147,18 +2147,24 @@ public class HectonVoxelEngine : MonoBehaviour
             }.Schedule(totalCells, JOB_BATCH, densityHandle);
 
             float preAwaitSetupMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "voxel.pipeline",
-                $"preawait grid={gridDim} voxel={voxelStep:0.00} pts={totalPts} cells={totalCells} " +
-                $"terrainSample={terrainSampleMs:0.00}ms setup={preAwaitSetupMs:0.00}ms collider={buildCollider}");
+            if (RuntimeDiagnosticsTrace.IsActive)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.pipeline",
+                    $"preawait grid={gridDim} voxel={voxelStep:0.00} pts={totalPts} cells={totalCells} " +
+                    $"terrainSample={terrainSampleMs:0.00}ms setup={preAwaitSetupMs:0.00}ms collider={buildCollider}");
+            }
 
             await AwaitForJobCompletionAsync(mcHandle, ct);
 
             int rawCount = counter[0];
             float marchingCubesMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "voxel.pipeline",
-                $"marching-cubes grid={gridDim} voxel={voxelStep:0.00} rawVerts={rawCount} elapsed={marchingCubesMs:0.00}ms");
+            if (RuntimeDiagnosticsTrace.IsActive)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.pipeline",
+                    $"marching-cubes grid={gridDim} voxel={voxelStep:0.00} rawVerts={rawCount} elapsed={marchingCubesMs:0.00}ms");
+            }
             if (rawCount < 3)
                 return null;
 
@@ -2178,9 +2184,12 @@ public class HectonVoxelEngine : MonoBehaviour
 
             int weldedCount = weldedCounter[0];
             float weldMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "voxel.pipeline",
-                $"weld grid={gridDim} voxel={voxelStep:0.00} weldedVerts={weldedCount} elapsed={weldMs:0.00}ms");
+            if (RuntimeDiagnosticsTrace.IsActive)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.pipeline",
+                    $"weld grid={gridDim} voxel={voxelStep:0.00} weldedVerts={weldedCount} elapsed={weldMs:0.00}ms");
+            }
             if (weldedCount < 3)
                 return null;
 
@@ -2247,9 +2256,12 @@ public class HectonVoxelEngine : MonoBehaviour
                 ct.ThrowIfCancellationRequested();
 
                 float shadingMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.pipeline",
-                    $"surface-data grid={gridDim} voxel={voxelStep:0.00} spawnPoints={spawnPointList.Length} elapsed={shadingMs:0.00}ms");
+                if (RuntimeDiagnosticsTrace.IsActive)
+                {
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.pipeline",
+                        $"surface-data grid={gridDim} voxel={voxelStep:0.00} spawnPoints={spawnPointList.Length} elapsed={shadingMs:0.00}ms");
+                }
 
                 GameObject targetGO = SpawnVolume();
                 targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
@@ -2288,9 +2300,12 @@ public class HectonVoxelEngine : MonoBehaviour
                 }
 
                 float totalMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.pipeline",
-                    $"mesh-build grid={gridDim} voxel={voxelStep:0.00} collider={buildCollider} spawnPoints={spawnCount} total={totalMs:0.00}ms");
+                if (RuntimeDiagnosticsTrace.IsActive)
+                {
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "voxel.pipeline",
+                        $"mesh-build grid={gridDim} voxel={voxelStep:0.00} collider={buildCollider} spawnPoints={spawnCount} total={totalMs:0.00}ms");
+                }
 
                 Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2}.");
                 return targetGO;

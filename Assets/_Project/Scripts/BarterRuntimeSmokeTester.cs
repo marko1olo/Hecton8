@@ -249,11 +249,11 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (exchangeSystem == null)
-                exchangeSystem = FindFirstObjectByType<PDAExchangeSystem>();
+                exchangeSystem = FindAnyObjectByType<PDAExchangeSystem>();
             if (playerInventory == null)
-                playerInventory = FindFirstObjectByType<PlayerInventory>();
+                playerInventory = FindAnyObjectByType<PlayerInventory>();
             if (scanLogSystem == null)
-                scanLogSystem = FindFirstObjectByType<ScanLogSystem>();
+                scanLogSystem = FindAnyObjectByType<ScanLogSystem>();
         }
 
         private void Fail(string issue)

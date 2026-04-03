@@ -6424,7 +6424,7 @@ namespace DarkTonic.MasterAudio.EditorScripts
 
         private static void SetSpatialBlendForPlaylistsEdit()
         {
-            var controllers = FindObjectsOfType(typeof(PlaylistController));
+            var controllers = FindObjectsByType<PlaylistController>(FindObjectsInactive.Exclude);
             // ReSharper disable once ForCanBeConvertedToForeach
             for (var i = 0; i < controllers.Length; i++)
             {

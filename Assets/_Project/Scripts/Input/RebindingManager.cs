@@ -34,7 +34,7 @@ namespace Hecton8.Input
 
                 if (_instance != null) return _instance;
 
-                _instance = FindFirstObjectByType<RebindingManager>();
+                _instance = FindAnyObjectByType<RebindingManager>();
                 if (_instance != null) return _instance;
 
                 var go = new GameObject("[RebindingManager]");

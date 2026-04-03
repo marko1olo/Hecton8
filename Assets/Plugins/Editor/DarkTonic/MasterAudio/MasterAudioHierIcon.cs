@@ -40,15 +40,15 @@ namespace DarkTonic.MasterAudio.EditorScripts
                 return;
             }
 
-            EditorApplication.hierarchyWindowItemOnGUI -= HierarchyItemCB;
-            EditorApplication.hierarchyWindowItemOnGUI += HierarchyItemCB;
+            EditorApplication.hierarchyWindowItemByEntityIdOnGUI -= HierarchyItemCB;
+            EditorApplication.hierarchyWindowItemByEntityIdOnGUI += HierarchyItemCB;
             EditorApplication.RepaintHierarchyWindow();
         }
 
         // ReSharper disable once InconsistentNaming
-        static void HierarchyItemCB(int instanceId, Rect selectionRect)
+        static void HierarchyItemCB(EntityId entityId, Rect selectionRect)
         {
-            var masterAudioGameObject = EditorUtility.InstanceIDToObject(instanceId) as GameObject;
+            var masterAudioGameObject = EditorUtility.EntityIdToObject(entityId) as GameObject;
 
             if (masterAudioGameObject == null)
             {

@@ -595,7 +595,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            #pragma warning disable CS0618
             int targetId = _hitInfo.collider.GetInstanceID();
+            #pragma warning restore CS0618
 
             // ── Target changed? ──
             if (targetId != _cachedDeconstructTargetId)

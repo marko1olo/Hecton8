@@ -174,7 +174,7 @@ namespace Hecton8.World
             if (includeInactiveBindings && !Application.isPlaying)
             {
                 WorldGenerativeGeologyBinding[] bindings =
-                    FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                    FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Include);
 
                 for (int i = 0; i < bindings.Length; i++)
                     ConsumeBinding(bindings[i], searchRadius, now);

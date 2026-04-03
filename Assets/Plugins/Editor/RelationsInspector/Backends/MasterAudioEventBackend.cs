@@ -450,26 +450,26 @@ public class MasterAudioEventBackend : MinimalBackend<object, string> {
 
     void ResetGraph() {
         var eventSoundsComponents = UnityEngine.Object
-            .FindObjectsOfType<EventSounds>()
+            .FindObjectsByType<EventSounds>(FindObjectsInactive.Exclude)
             .Where(comp => GetGroupNodes(comp).Any());
 
         var newTargets = eventSoundsComponents
             .Cast<object>();
 
         var mechanimStateSoundsObjects = UnityEngine.Object
-            .FindObjectsOfType<Animator>()
+            .FindObjectsByType<Animator>(FindObjectsInactive.Exclude)
             .Where(animator => GetSoundGroups(animator).Any());
 
         newTargets = newTargets.Concat(mechanimStateSoundsObjects.Cast<object>());
 
         var mechanimStateCustomEventObjects = UnityEngine.Object
-            .FindObjectsOfType<Animator>()
+            .FindObjectsByType<Animator>(FindObjectsInactive.Exclude)
             .Where(animator => GetCustomEvents(animator).Any());
 
         newTargets = newTargets.Concat(mechanimStateCustomEventObjects.Cast<object>());
 
         var ambientSoundsComponents = UnityEngine.Object
-            .FindObjectsOfType<DarkTonic.MasterAudio.AmbientSound>()
+            .FindObjectsByType<DarkTonic.MasterAudio.AmbientSound>(FindObjectsInactive.Exclude)
             .Where(f => IncludeAmbientSound(f))
             .ToArray();
 
@@ -477,7 +477,7 @@ public class MasterAudioEventBackend : MinimalBackend<object, string> {
         // put all components in an object array
 
         var footstepSoundsComponents = UnityEngine.Object
-            .FindObjectsOfType<DarkTonic.MasterAudio.FootstepSounds>()
+            .FindObjectsByType<DarkTonic.MasterAudio.FootstepSounds>(FindObjectsInactive.Exclude)
             .Where(f => IncludeFootstepSounds(f))
             .ToArray();
 

@@ -75,7 +75,7 @@ namespace Hecton8.Gameplay
             if (Instance != null)
                 return Instance;
 
-            BeaconNetworkSystem existing = FindFirstObjectByType<BeaconNetworkSystem>();
+            BeaconNetworkSystem existing = FindAnyObjectByType<BeaconNetworkSystem>();
             if (existing != null)
                 return existing;
 

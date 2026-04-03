@@ -246,7 +246,9 @@ namespace Hecton8.Physics
 
             // Compute frame offset from instance ID for staggered checks.
             // Abs because GetInstanceID can be negative.
+            #pragma warning disable CS0618
             int id = GetInstanceID();
+            #pragma warning restore CS0618
             _frameOffset = (id < 0 ? -id : id) % groundCheckInterval;
         }
 
