@@ -34,8 +34,8 @@ namespace NASAPunk.Visor
         [SerializeField] private ProjectionMode _projectionMode = ProjectionMode.Disabled;
 
         [Header("Runtime Render Texture Settings")]
-        [SerializeField] private int _rtWidth = 1920;
-        [SerializeField] private int _rtHeight = 1080;
+        [SerializeField] private int _rtWidth = 1280;
+        [SerializeField] private int _rtHeight = 720;
         [SerializeField] private FilterMode _filterMode = FilterMode.Bilinear;
 
         [Header("Runtime Tuning")]
@@ -62,6 +62,20 @@ namespace NASAPunk.Visor
         private MaterialPropertyBlock _mpb;
         private bool _ownsRuntimeTexture;
         private float _nextAutoResolveAt;
+        private bool _materialPropertiesDirty = true;
+        private UniversalAdditionalCameraData _cachedHudCameraData;
+        private UniversalAdditionalCameraData _cachedBaseCameraData;
+        private bool _poseApplied;
+        private Vector3 _appliedVisorPosition;
+        private Quaternion _appliedVisorRotation;
+        private Vector3 _appliedVisorScale;
+        private bool _hudPoseApplied;
+        private Vector3 _appliedHudPosition;
+        private Quaternion _appliedHudRotation;
+        private Vector3 _cachedVisorEulerOffset;
+        private Quaternion _cachedVisorOffsetRotation = Quaternion.identity;
+        private Vector3 _cachedHudEulerOffset;
+        private Quaternion _cachedHudOffsetRotation = Quaternion.identity;
 
         private bool _glitchActive;
         private float _glitchTimer;
@@ -98,6 +112,7 @@ namespace NASAPunk.Visor
         {
             RegisterActiveController();
             EnsurePropertyBlock();
+            _materialPropertiesDirty = true;
             AutoResolveReferences(force: true);
             SyncProjectionPose();
             RebuildProjection();
@@ -116,6 +131,7 @@ namespace NASAPunk.Visor
 
             UnregisterRuntimeTick();
             ReleaseRT();
+            InvalidatePoseCache();
         }
 
         private void Update()
@@ -135,6 +151,7 @@ namespace NASAPunk.Visor
         private void OnValidate()
         {
             EnsurePropertyBlock();
+            _materialPropertiesDirty = true;
             AutoResolveReferences(force: true);
             SyncProjectionPose();
 
@@ -149,7 +166,8 @@ namespace NASAPunk.Visor
             AutoResolveReferences(force: false);
             SyncProjectionPose();
             UpdateGlitchState(deltaTime);
-            ApplyMaterialProperties();
+            if (_materialPropertiesDirty)
+                ApplyMaterialProperties();
         }
 
         /// <summary>
@@ -305,6 +323,7 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
             _mpb.SetFloat(ID_Distortion, _distortion);
             _visorRenderer.SetPropertyBlock(_mpb);
+            _materialPropertiesDirty = false;
         }
 
         private void UpdateGlitchState(float deltaTime)
@@ -318,11 +337,13 @@ namespace NASAPunk.Visor
             {
                 _hudIntensity = _glitchOriginalIntensity;
                 _glitchActive = false;
+                _materialPropertiesDirty = true;
                 return;
             }
 
             float rand01 = XorShift01();
             _hudIntensity = _glitchOriginalIntensity * (0.1f + rand01 * 1.9f);
+            _materialPropertiesDirty = true;
         }
 
         private void PrepareProjectionTexture()
@@ -351,6 +372,7 @@ namespace NASAPunk.Visor
 
         private void RebuildProjection()
         {
+            InvalidatePoseCache();
             ReleaseRT();
             PrepareProjectionTexture();
             SyncCameraRole();
@@ -370,6 +392,7 @@ namespace NASAPunk.Visor
             _visorRenderer.GetPropertyBlock(_mpb);
             _mpb.SetTexture(ID_HUDTex, _hudRT != null ? _hudRT : Texture2D.blackTexture);
             _visorRenderer.SetPropertyBlock(_mpb);
+            _materialPropertiesDirty = true;
         }
 
         private void ReleaseRT()
@@ -401,13 +424,11 @@ namespace NASAPunk.Visor
             if (_hudCamera == null)
                 return;
 
-            UniversalAdditionalCameraData hudCameraData = _hudCamera.GetComponent<UniversalAdditionalCameraData>();
+            UniversalAdditionalCameraData hudCameraData = GetCachedHudCameraData();
             if (hudCameraData == null)
                 return;
 
-            UniversalAdditionalCameraData baseCameraData = _baseStackCamera != null
-                ? _baseStackCamera.GetComponent<UniversalAdditionalCameraData>()
-                : null;
+            UniversalAdditionalCameraData baseCameraData = GetCachedBaseCameraData();
 
             bool projected = _projectionMode != ProjectionMode.Disabled;
             if (projected)
@@ -443,6 +464,8 @@ namespace NASAPunk.Visor
                 return;
 
             Transform referenceTransform = _referenceCamera.transform;
+            Vector3 referencePosition = referenceTransform.position;
+            Quaternion referenceRotation = referenceTransform.rotation;
             Vector3 visorOffset = _visorLocalOffset;
             visorOffset.z = Mathf.Max(visorOffset.z, _minimumVisorForwardOffset);
 
@@ -452,26 +475,106 @@ namespace NASAPunk.Visor
                 visorOffset.z = Mathf.Max(visorOffset.z, nearClipSafeOffset);
             }
 
-            Quaternion visorRotation = referenceTransform.rotation * Quaternion.Euler(_visorLocalEulerOffset);
+            Quaternion visorRotation = referenceRotation * GetCachedVisorOffsetRotation();
+            Vector3 visorPosition = referencePosition + referenceRotation * visorOffset;
+            if (!_poseApplied || _appliedVisorPosition != visorPosition || _appliedVisorRotation != visorRotation)
+            {
+                transform.SetPositionAndRotation(visorPosition, visorRotation);
+                _appliedVisorPosition = visorPosition;
+                _appliedVisorRotation = visorRotation;
+                _poseApplied = true;
+            }
 
-            transform.SetPositionAndRotation(
-                referenceTransform.TransformPoint(visorOffset),
-                visorRotation);
-            transform.localScale = _visorLocalScale;
+            if (_appliedVisorScale != _visorLocalScale)
+            {
+                transform.localScale = _visorLocalScale;
+                _appliedVisorScale = _visorLocalScale;
+            }
 
             if (_hudCamera == null)
                 return;
 
             Transform hudTransform = _hudCamera.transform;
-            Quaternion hudRotation = referenceTransform.rotation * Quaternion.Euler(_hudCameraLocalEulerOffset);
-            hudTransform.SetPositionAndRotation(
-                referenceTransform.TransformPoint(_hudCameraLocalOffset),
-                hudRotation);
+            Quaternion hudRotation = referenceRotation * GetCachedHudOffsetRotation();
+            Vector3 hudPosition = referencePosition + referenceRotation * _hudCameraLocalOffset;
+            if (!_hudPoseApplied || _appliedHudPosition != hudPosition || _appliedHudRotation != hudRotation)
+            {
+                hudTransform.SetPositionAndRotation(hudPosition, hudRotation);
+                _appliedHudPosition = hudPosition;
+                _appliedHudRotation = hudRotation;
+                _hudPoseApplied = true;
+            }
+        }
+
+        private UniversalAdditionalCameraData GetCachedHudCameraData()
+        {
+            if (_hudCamera == null)
+                return null;
+
+            if (_cachedHudCameraData == null || _cachedHudCameraData.gameObject != _hudCamera.gameObject)
+                _cachedHudCameraData = _hudCamera.GetComponent<UniversalAdditionalCameraData>();
+
+            return _cachedHudCameraData;
+        }
+
+        private UniversalAdditionalCameraData GetCachedBaseCameraData()
+        {
+            if (_baseStackCamera == null)
+                return null;
+
+            if (_cachedBaseCameraData == null || _cachedBaseCameraData.gameObject != _baseStackCamera.gameObject)
+                _cachedBaseCameraData = _baseStackCamera.GetComponent<UniversalAdditionalCameraData>();
+
+            return _cachedBaseCameraData;
+        }
+
+        private void InvalidatePoseCache()
+        {
+            _cachedHudCameraData = null;
+            _cachedBaseCameraData = null;
+            _poseApplied = false;
+            _appliedVisorPosition = default;
+            _appliedVisorRotation = default;
+            _appliedVisorScale = default;
+            _hudPoseApplied = false;
+            _appliedHudPosition = default;
+            _appliedHudRotation = default;
+            _cachedVisorEulerOffset = default;
+            _cachedVisorOffsetRotation = Quaternion.identity;
+            _cachedHudEulerOffset = default;
+            _cachedHudOffsetRotation = Quaternion.identity;
+        }
+
+        private Quaternion GetCachedVisorOffsetRotation()
+        {
+            if (_cachedVisorEulerOffset != _visorLocalEulerOffset)
+            {
+                _cachedVisorEulerOffset = _visorLocalEulerOffset;
+                _cachedVisorOffsetRotation = Quaternion.Euler(_visorLocalEulerOffset);
+            }
+
+            return _cachedVisorOffsetRotation;
+        }
+
+        private Quaternion GetCachedHudOffsetRotation()
+        {
+            if (_cachedHudEulerOffset != _hudCameraLocalEulerOffset)
+            {
+                _cachedHudEulerOffset = _hudCameraLocalEulerOffset;
+                _cachedHudOffsetRotation = Quaternion.Euler(_hudCameraLocalEulerOffset);
+            }
+
+            return _cachedHudOffsetRotation;
         }
 
         public void SetHUDIntensity(float intensity)
         {
-            _hudIntensity = Mathf.Clamp(intensity, 0f, 5f);
+            float clampedIntensity = Mathf.Clamp(intensity, 0f, 5f);
+            if (Mathf.Approximately(_hudIntensity, clampedIntensity))
+                return;
+
+            _hudIntensity = clampedIntensity;
+            _materialPropertiesDirty = true;
         }
 
         public void SetProjectionMode(ProjectionMode projectionMode)
@@ -489,6 +592,7 @@ namespace NASAPunk.Visor
                 return;
 
             _sharedRenderTexture = sharedRenderTexture;
+            InvalidatePoseCache();
             if (_projectionMode == ProjectionMode.SharedRenderTexture)
                 RebuildProjection();
         }

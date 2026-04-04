@@ -21,6 +21,18 @@ namespace Hecton8.UI
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
+        private static readonly string[] s_headingLabels = BuildHeadingLabels();
+        private const string DefaultSuitLabel = "EXPEDITION SUIT";
+        private const string StatusPressureLimitExceeded = "PRESSURE LIMIT EXCEEDED";
+        private const string StatusApproachingSafeDepth = "APPROACHING SAFE DEPTH LIMIT";
+        private const string StatusSuitDamageCritical = "SUIT DAMAGE CRITICAL";
+        private const string StatusOxygenReserveLow = "OXYGEN RESERVE LOW";
+        private const string StatusPowerCellsLow = "POWER CELLS LOW";
+        private const string StatusLampThermalLimit = "LAMP THERMAL LIMIT";
+        private const string StatusSuitLinkRoutingPda = "SUIT LINK ROUTING PDA";
+        private const string StatusLifeSupportNominalStable = "LIFE SUPPORT NOMINAL / STABLE";
+        private const string StatusLifeSupportNominalAscending = "LIFE SUPPORT NOMINAL / ASCENDING";
+        private const string StatusLifeSupportNominalDescending = "LIFE SUPPORT NOMINAL / DESCENDING";
 
         public enum RenderPath
         {
@@ -129,14 +141,50 @@ namespace Hecton8.UI
 
         private SuitData _activeSuit;
         private SuitHUDProfile _activeProfile;
+        private SuitHUDProfile _cachedPaletteProfile;
+        private Color _cachedPalettePrimary;
+        private Color _cachedPaletteSecondary;
+        private Color _cachedPaletteDim;
+        private Color _cachedPaletteWarning;
         private float _displayTemperature = 8f;
         private float _lastDepth;
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
         private float _nextAutoResolveAt;
         private bool _tickRegistered;
+        private SuitData _cachedSuitLabelSuit;
+        private string _cachedSuitLabelOverride;
+        private string _cachedSuitLabelText = DefaultSuitLabel;
+        private string _appliedSuitLabelText;
+        private Color _appliedSuitLabelColor;
+        private string _appliedHeadingLabelText;
+        private Color _appliedHeadingLabelColor;
+        private string _appliedStatusLabelText;
+        private Color _appliedStatusLabelColor;
+        private int _appliedDepthValue;
+        private bool _hasAppliedDepthValue;
+        private Color _appliedDepthColor;
+        private int _appliedTemperatureTenths;
+        private bool _hasAppliedTemperatureTenths;
+        private Color _appliedTemperatureColor;
+        private int _appliedPressureTenths;
+        private bool _hasAppliedPressureTenths;
+        private Color _appliedPressureColor;
+        private bool _styleApplied;
+        private bool _canvasStateApplied;
+        private Canvas _appliedCanvasTarget;
+        private Camera _appliedProjectionCamera;
+        private RenderPath _appliedRenderPath;
+        private int _appliedOverlaySortingOrder;
+        private float _appliedOverallScale;
+        private float _appliedChromeAlpha;
+        private Color _appliedPrimary;
+        private Color _appliedSecondary;
+        private Color _appliedDim;
+        private Color _appliedWarning;
+        private CanvasScaler _cachedCanvasScaler;
 
-        public Canvas TargetCanvas => targetCanvas != null ? targetCanvas : GetComponent<Canvas>();
+        public Canvas TargetCanvas => ResolveTargetCanvas();
         public Camera ProjectionCamera => projectionCamera;
 
         public static void CopyActiveOverlaysTo(List<SuitHUDV4CanvasOverlay> results)
@@ -163,12 +211,26 @@ namespace Hecton8.UI
             public TextMeshProUGUI Label;
             public TextMeshProUGUI Value;
             public TextMeshProUGUI Sub;
+            public string CachedLabel;
+            public string CachedSubLabel;
+            public int CachedRoundedValue;
+            public bool HasCachedRoundedValue;
+            public float CachedFillAmount;
+            public bool HasCachedFillAmount;
+            public Color CachedIconColor;
+            public Color CachedRingBackColor;
+            public Color CachedRingFillColor;
+            public Color CachedRingFrameColor;
+            public Color CachedLabelColor;
+            public Color CachedValueColor;
+            public Color CachedSubColor;
         }
 
         private void OnEnable()
         {
             RegisterActiveOverlay();
             _layoutBuilt = false;
+            InvalidateVisualCaches();
             RefreshAll(0.016f, forceResolve: true);
             TryRegisterRuntimeTick();
         }
@@ -221,7 +283,12 @@ namespace Hecton8.UI
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
 
             if (targetCanvas == null)
-                targetCanvas = GetComponent<Canvas>();
+                targetCanvas = ResolveTargetCanvas();
+
+            Transform playerRoot = null;
+            bool hasPlayerRoot = false;
+            if (survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null)
+                hasPlayerRoot = SceneBootstrap.TryGetCurrentPlayerTransform(out playerRoot);
 
             if (projectionCamera == null)
             {
@@ -269,26 +336,26 @@ namespace Hecton8.UI
 
             if (survival == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                    survival = playerTransformRoot.GetComponent<HectonSurvivalSystem>();
+                if (hasPlayerRoot)
+                    survival = playerRoot.GetComponent<HectonSurvivalSystem>();
             }
 
             if (playerMovement == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                    playerMovement = playerTransformRoot.GetComponent<HectonPlayerMovement>();
+                if (hasPlayerRoot)
+                    playerMovement = playerRoot.GetComponent<HectonPlayerMovement>();
             }
 
             if (flashlight == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                    flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+                if (hasPlayerRoot)
+                    flashlight = playerRoot.GetComponentInChildren<PlayerFlashlight>(true);
             }
 
             if (underwaterVisuals == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                    underwaterVisuals = playerTransformRoot.GetComponentInChildren<HectonUnderwaterVisuals>(true);
+                if (hasPlayerRoot)
+                    underwaterVisuals = playerRoot.GetComponentInChildren<HectonUnderwaterVisuals>(true);
             }
         }
 
@@ -311,6 +378,16 @@ namespace Hecton8.UI
         private void NormalizeCanvas()
         {
             if (targetCanvas == null)
+                return;
+
+            bool canvasStateMatches =
+                _canvasStateApplied &&
+                ReferenceEquals(_appliedCanvasTarget, targetCanvas) &&
+                ReferenceEquals(_appliedProjectionCamera, projectionCamera) &&
+                _appliedRenderPath == renderPath &&
+                _appliedOverlaySortingOrder == overlaySortingOrder;
+
+            if (canvasStateMatches)
                 return;
 
             if (renderPath == RenderPath.ProjectionSource && projectionCamera != null)
@@ -340,7 +417,7 @@ namespace Hecton8.UI
                 canvasRect.localScale = Vector3.one;
             }
 
-            CanvasScaler scaler = targetCanvas.GetComponent<CanvasScaler>();
+            CanvasScaler scaler = ResolveCanvasScaler();
             if (scaler != null)
             {
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -348,11 +425,16 @@ namespace Hecton8.UI
                 scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 0.5f;
             }
-
+            _canvasStateApplied = true;
+            _appliedCanvasTarget = targetCanvas;
+            _appliedProjectionCamera = projectionCamera;
+            _appliedRenderPath = renderPath;
+            _appliedOverlaySortingOrder = overlaySortingOrder;
         }
 
         private void EnsureHierarchy()
         {
+            targetCanvas = ResolveTargetCanvas();
             if (targetCanvas == null)
                 return;
 
@@ -365,6 +447,7 @@ namespace Hecton8.UI
                 Stretch(_root, 0f, 0f, 0f, 0f);
                 _root.SetAsLastSibling();
                 _layoutBuilt = false;
+                InvalidateVisualCaches();
             }
 
             if (_root != null && !_root.gameObject.activeSelf)
@@ -374,6 +457,7 @@ namespace Hecton8.UI
             {
                 _layoutBuilt = false;
                 _appliedLayoutRevision = LayoutRevision;
+                InvalidateVisualCaches();
             }
 
             if (_layoutBuilt)
@@ -549,40 +633,22 @@ namespace Hecton8.UI
             float depthDelta = depth - _lastDepth;
             _lastDepth = depth;
 
-            _root.localScale = Vector3.one * overallScale;
+            ApplyStaticStyleIfNeeded(primary, secondary, dim, warning);
 
-            _topVeil.color = new Color(0.01f, 0.04f, 0.06f, chromeAlpha * 0.45f);
-            _bottomVeil.color = new Color(0.01f, 0.04f, 0.06f, chromeAlpha * 0.55f);
-            _leftVeil.color = new Color(0.01f, 0.03f, 0.05f, chromeAlpha * 0.16f);
-            _rightVeil.color = new Color(0.01f, 0.03f, 0.05f, chromeAlpha * 0.16f);
-            _headerLine.color = Alpha(primary, 0.22f);
-            _headerWingLeft.color = Alpha(primary, 0.16f);
-            _headerWingRight.color = Alpha(primary, 0.16f);
-            _footerLine.color = Alpha(primary, 0.18f);
-            _statusRuleLeft.color = Alpha(primary, 0.14f);
-            _statusRuleRight.color = Alpha(primary, 0.14f);
-            _telemetryRule.color = Alpha(primary, 0.18f);
-            _telemetryBraceUpper.color = Alpha(primary, 0.18f);
-            _telemetryBraceLower.color = Alpha(primary, 0.12f);
-            _reticleH.color = Alpha(primary, 0.76f);
-            _reticleV.color = Alpha(primary, 0.5f);
-            _reticleBracketLeft.color = Alpha(primary, 0.42f);
-            _reticleBracketRight.color = Alpha(primary, 0.42f);
-
-            SetText(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f));
-            SetText(_headingLabel, "HEADING " + Mathf.RoundToInt(heading).ToString("000") + " / " + ResolveCardinal(heading), Alpha(dim, 0.58f));
-            SetMetricInt(_depthLabel, "DEPTH: -{0:0} m", Mathf.RoundToInt(depth), Alpha(primary, 0.96f));
-            SetMetricFloat(_temperatureLabel, "TEMPERATURE: {0:0.0} C", _displayTemperature, Alpha(dim, 0.84f));
-            SetMetricFloat(_pressureLabel, "PRESSURE: {0:0.0} atm", pressure, Alpha(dim, 0.64f));
-            SetText(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, primary, warning));
+            SetTextIfChanged(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
+            SetTextIfChanged(_headingLabel, ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
+            SetMetricIntIfChanged(_depthLabel, "DEPTH: -{0:0} m", Mathf.RoundToInt(depth), Alpha(primary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+            SetMetricFloatTenthsIfChanged(_temperatureLabel, "TEMPERATURE: {0:0.0} C", _displayTemperature, Alpha(dim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+            SetMetricFloatTenthsIfChanged(_pressureLabel, "PRESSURE: {0:0.0} atm", pressure, Alpha(dim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+            SetTextIfChanged(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, primary, warning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
 
             Color oxygenAccent = primary;
             Color healthAccent = Color.Lerp(primary, dim, 0.24f);
             Color energyAccent = Color.Lerp(primary, warning, 0.28f);
 
-            UpdateGauge(_oxygenGauge, "OXYGEN", string.Empty, oxygen, oxygenCurrent, oxygenMax, oxygenAccent, secondary, dim, warning);
-            UpdateGauge(_healthGauge, "HEALTH", string.Empty, health, healthCurrent, healthMax, healthAccent, secondary, dim, warning);
-            UpdateGauge(_powerGauge, "ENERGY", string.Empty, power, energyCurrent, energyMax, energyAccent, secondary, dim, warning);
+            UpdateGauge(ref _oxygenGauge, "OXYGEN", string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, dim, warning);
+            UpdateGauge(ref _healthGauge, "HEALTH", string.Empty, health, healthCurrent, healthAccent, secondary, dim, warning);
+            UpdateGauge(ref _powerGauge, "ENERGY", string.Empty, power, energyCurrent, energyAccent, secondary, dim, warning);
         }
 
         private void ResolveProfile()
@@ -593,13 +659,25 @@ namespace Hecton8.UI
 
         private void ResolvePalette(out Color primary, out Color secondary, out Color dim, out Color warning)
         {
+            if (ReferenceEquals(_cachedPaletteProfile, _activeProfile))
+            {
+                primary = _cachedPalettePrimary;
+                secondary = _cachedPaletteSecondary;
+                dim = _cachedPaletteDim;
+                warning = _cachedPaletteWarning;
+                return;
+            }
+
             primary = new Color(0.46f, 0.98f, 0.94f, 1f);
             secondary = new Color(0.13f, 0.6f, 0.58f, 1f);
             dim = new Color(0.78f, 0.98f, 0.95f, 1f);
             warning = new Color(1f, 0.74f, 0.22f, 1f);
 
             if (_activeProfile == null)
+            {
+                CacheResolvedPalette(null, primary, secondary, dim, warning);
                 return;
+            }
 
             if (_activeProfile.OverridePalette)
             {
@@ -607,6 +685,7 @@ namespace Hecton8.UI
                 secondary = _activeProfile.SecondaryColor;
                 dim = _activeProfile.DimColor;
                 warning = _activeProfile.WarningColor;
+                CacheResolvedPalette(_activeProfile, primary, secondary, dim, warning);
                 return;
             }
 
@@ -626,6 +705,8 @@ namespace Hecton8.UI
                     warning = new Color(1f, 0.68f, 0.22f, 1f);
                     break;
             }
+
+            CacheResolvedPalette(_activeProfile, primary, secondary, dim, warning);
         }
 
         private float EstimateTemperature(float depth)
@@ -639,13 +720,30 @@ namespace Hecton8.UI
 
         private string ResolveSuitLabel()
         {
-            if (_activeProfile != null && !string.IsNullOrWhiteSpace(_activeProfile.DisplayNameOverride))
-                return CachedToUpperInvariant(_activeProfile.DisplayNameOverride);
+            string overrideLabel = _activeProfile != null ? _activeProfile.DisplayNameOverride : null;
+            if (ReferenceEquals(_cachedSuitLabelSuit, _activeSuit) &&
+                string.Equals(_cachedSuitLabelOverride, overrideLabel, System.StringComparison.Ordinal))
+            {
+                return _cachedSuitLabelText;
+            }
+
+            _cachedSuitLabelSuit = _activeSuit;
+            _cachedSuitLabelOverride = overrideLabel;
+
+            if (!string.IsNullOrWhiteSpace(overrideLabel))
+            {
+                _cachedSuitLabelText = CachedToUpperInvariant(overrideLabel);
+                return _cachedSuitLabelText;
+            }
 
             if (_activeSuit != null)
-                return CachedToUpperInvariant(_activeSuit.name.Replace('_', ' '));
+            {
+                _cachedSuitLabelText = CachedToUpperInvariant(_activeSuit.name.Replace('_', ' '));
+                return _cachedSuitLabelText;
+            }
 
-            return "EXPEDITION SUIT";
+            _cachedSuitLabelText = DefaultSuitLabel;
+            return _cachedSuitLabelText;
         }
 
         private static string ResolveCardinal(float heading)
@@ -666,20 +764,25 @@ namespace Hecton8.UI
         private string ResolveStatus(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta)
         {
             if (safeDepthNormalized <= 0.08f || depth >= safeDepth)
-                return "PRESSURE LIMIT EXCEEDED";
+                return StatusPressureLimitExceeded;
             if (safeDepthNormalized <= 0.22f)
-                return "APPROACHING SAFE DEPTH LIMIT";
+                return StatusApproachingSafeDepth;
             if (health <= 0.2f)
-                return "SUIT DAMAGE CRITICAL";
+                return StatusSuitDamageCritical;
             if (oxygen <= 0.2f)
-                return "OXYGEN RESERVE LOW";
+                return StatusOxygenReserveLow;
             if (power <= 0.2f)
-                return "POWER CELLS LOW";
+                return StatusPowerCellsLow;
             if (flashlight != null && flashlight.IsOverheated)
-                return "LAMP THERMAL LIMIT";
+                return StatusLampThermalLimit;
             if (PlayerPDA.IsOpen)
-                return "SUIT LINK ROUTING PDA";
-            return "LIFE SUPPORT NOMINAL / " + ResolveTrend(depthDelta);
+                return StatusSuitLinkRoutingPda;
+
+            if (depthDelta > 0.04f)
+                return StatusLifeSupportNominalDescending;
+            if (depthDelta < -0.04f)
+                return StatusLifeSupportNominalAscending;
+            return StatusLifeSupportNominalStable;
         }
 
         private static Color PickAccent(float oxygen, float power, float health, float safeDepthNormalized, Color primary, Color warning)
@@ -698,32 +801,106 @@ namespace Hecton8.UI
             return 1f - Mathf.Clamp01(depth / safeDepth);
         }
 
-        private static void UpdateGauge(GaugeRefs gauge, string label, string subLabel, float normalized, float currentValue, float maxValue, Color primary, Color secondary, Color dim, Color warning)
+        private static void UpdateGauge(ref GaugeRefs gauge, string label, string subLabel, float normalized, float currentValue, Color primary, Color secondary, Color dim, Color warning)
         {
             float clamped = Mathf.Clamp01(normalized);
             Color accent = clamped <= 0.2f ? warning : primary;
-
-            gauge.Root.localScale = Vector3.one;
             if (gauge.Icon != null)
-                gauge.Icon.color = Alpha(accent, 0.94f);
+            {
+                Color iconColor = Alpha(accent, 0.94f);
+                if (gauge.CachedIconColor != iconColor)
+                {
+                    gauge.Icon.color = iconColor;
+                    gauge.CachedIconColor = iconColor;
+                }
+            }
 
             if (gauge.RingBack != null)
-                gauge.RingBack.color = Alpha(primary, 0.08f);
+            {
+                Color ringBackColor = Alpha(primary, 0.08f);
+                if (gauge.CachedRingBackColor != ringBackColor)
+                {
+                    gauge.RingBack.color = ringBackColor;
+                    gauge.CachedRingBackColor = ringBackColor;
+                }
+            }
 
             if (gauge.RingFill != null)
             {
-                gauge.RingFill.color = Alpha(accent, 0.94f);
-                gauge.RingFill.fillAmount = clamped;
+                Color ringFillColor = Alpha(accent, 0.94f);
+                if (gauge.CachedRingFillColor != ringFillColor)
+                {
+                    gauge.RingFill.color = ringFillColor;
+                    gauge.CachedRingFillColor = ringFillColor;
+                }
+
+                if (!gauge.HasCachedFillAmount || !Mathf.Approximately(gauge.CachedFillAmount, clamped))
+                {
+                    gauge.RingFill.fillAmount = clamped;
+                    gauge.CachedFillAmount = clamped;
+                    gauge.HasCachedFillAmount = true;
+                }
             }
 
             if (gauge.RingFrame != null)
-                gauge.RingFrame.color = Alpha(dim, 0.28f);
+            {
+                Color ringFrameColor = Alpha(dim, 0.28f);
+                if (gauge.CachedRingFrameColor != ringFrameColor)
+                {
+                    gauge.RingFrame.color = ringFrameColor;
+                    gauge.CachedRingFrameColor = ringFrameColor;
+                }
+            }
 
-            gauge.Label.text = label;
-            gauge.Label.color = Alpha(dim, 0.84f);
-            SetMetricInt(gauge.Value, "{0:0}", Mathf.RoundToInt(currentValue), Alpha(accent, 0.98f));
-            gauge.Sub.text = subLabel;
-            gauge.Sub.color = Alpha(secondary, 0.55f);
+            Color labelColor = Alpha(dim, 0.84f);
+            if (gauge.Label != null)
+            {
+                if (!string.Equals(gauge.CachedLabel, label, System.StringComparison.Ordinal))
+                {
+                    gauge.Label.text = label;
+                    gauge.CachedLabel = label;
+                }
+
+                if (gauge.CachedLabelColor != labelColor)
+                {
+                    gauge.Label.color = labelColor;
+                    gauge.CachedLabelColor = labelColor;
+                }
+            }
+
+            Color valueColor = Alpha(accent, 0.98f);
+            int roundedValue = Mathf.RoundToInt(currentValue);
+            if (gauge.Value != null)
+            {
+                if (!gauge.HasCachedRoundedValue || gauge.CachedRoundedValue != roundedValue)
+                {
+                    gauge.Value.SetText("{0:0}", roundedValue);
+                    gauge.CachedRoundedValue = roundedValue;
+                    gauge.HasCachedRoundedValue = true;
+                }
+
+                if (gauge.CachedValueColor != valueColor)
+                {
+                    gauge.Value.color = valueColor;
+                    gauge.CachedValueColor = valueColor;
+                }
+            }
+
+            if (gauge.Sub != null)
+            {
+                if (!string.Equals(gauge.CachedSubLabel, subLabel, System.StringComparison.Ordinal))
+                {
+                    gauge.Sub.text = subLabel;
+                    gauge.CachedSubLabel = subLabel;
+                }
+
+                Color subColor = Alpha(secondary, 0.55f);
+                if (gauge.CachedSubColor != subColor)
+                {
+                    gauge.Sub.color = subColor;
+                    gauge.CachedSubColor = subColor;
+                }
+            }
         }
 
         private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition, Sprite iconSprite)
@@ -1004,6 +1181,29 @@ namespace Hecton8.UI
             label.color = color;
         }
 
+        private static void SetTextIfChanged(
+            TextMeshProUGUI label,
+            string text,
+            Color color,
+            ref string cachedText,
+            ref Color cachedColor)
+        {
+            if (label == null)
+                return;
+
+            if (!string.Equals(cachedText, text, System.StringComparison.Ordinal))
+            {
+                label.text = text;
+                cachedText = text;
+            }
+
+            if (cachedColor != color)
+            {
+                label.color = color;
+                cachedColor = color;
+            }
+        }
+
         private static void SetMetricInt(TextMeshProUGUI label, string pattern, int value, Color color)
         {
             if (label == null)
@@ -1020,6 +1220,59 @@ namespace Hecton8.UI
 
             label.color = color;
             label.SetText(pattern, value);
+        }
+
+        private static void SetMetricIntIfChanged(
+            TextMeshProUGUI label,
+            string pattern,
+            int value,
+            Color color,
+            ref int cachedValue,
+            ref bool hasCachedValue,
+            ref Color cachedColor)
+        {
+            if (label == null)
+                return;
+
+            if (!hasCachedValue || cachedValue != value)
+            {
+                label.SetText(pattern, value);
+                cachedValue = value;
+                hasCachedValue = true;
+            }
+
+            if (cachedColor != color)
+            {
+                label.color = color;
+                cachedColor = color;
+            }
+        }
+
+        private static void SetMetricFloatTenthsIfChanged(
+            TextMeshProUGUI label,
+            string pattern,
+            float value,
+            Color color,
+            ref int cachedTenths,
+            ref bool hasCachedTenths,
+            ref Color cachedColor)
+        {
+            if (label == null)
+                return;
+
+            int roundedTenths = Mathf.RoundToInt(value * 10f);
+            if (!hasCachedTenths || cachedTenths != roundedTenths)
+            {
+                label.SetText(pattern, roundedTenths * 0.1f);
+                cachedTenths = roundedTenths;
+                hasCachedTenths = true;
+            }
+
+            if (cachedColor != color)
+            {
+                label.color = color;
+                cachedColor = color;
+            }
         }
 
         private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
@@ -1039,6 +1292,130 @@ namespace Hecton8.UI
             rect.sizeDelta = size;
         }
 
+        private void ApplyStaticStyleIfNeeded(Color primary, Color secondary, Color dim, Color warning)
+        {
+            if (_styleApplied &&
+                Mathf.Approximately(_appliedOverallScale, overallScale) &&
+                Mathf.Approximately(_appliedChromeAlpha, chromeAlpha) &&
+                _appliedPrimary == primary &&
+                _appliedSecondary == secondary &&
+                _appliedDim == dim &&
+                _appliedWarning == warning)
+            {
+                return;
+            }
+
+            _root.localScale = Vector3.one * overallScale;
+
+            _topVeil.color = new Color(0.01f, 0.04f, 0.06f, chromeAlpha * 0.45f);
+            _bottomVeil.color = new Color(0.01f, 0.04f, 0.06f, chromeAlpha * 0.55f);
+            _leftVeil.color = new Color(0.01f, 0.03f, 0.05f, chromeAlpha * 0.16f);
+            _rightVeil.color = new Color(0.01f, 0.03f, 0.05f, chromeAlpha * 0.16f);
+            _headerLine.color = Alpha(primary, 0.22f);
+            _headerWingLeft.color = Alpha(primary, 0.16f);
+            _headerWingRight.color = Alpha(primary, 0.16f);
+            _footerLine.color = Alpha(primary, 0.18f);
+            _statusRuleLeft.color = Alpha(primary, 0.14f);
+            _statusRuleRight.color = Alpha(primary, 0.14f);
+            _telemetryRule.color = Alpha(primary, 0.18f);
+            _telemetryBraceUpper.color = Alpha(primary, 0.18f);
+            _telemetryBraceLower.color = Alpha(primary, 0.12f);
+            _reticleH.color = Alpha(primary, 0.76f);
+            _reticleV.color = Alpha(primary, 0.5f);
+            _reticleBracketLeft.color = Alpha(primary, 0.42f);
+            _reticleBracketRight.color = Alpha(primary, 0.42f);
+
+            _appliedOverallScale = overallScale;
+            _appliedChromeAlpha = chromeAlpha;
+            _appliedPrimary = primary;
+            _appliedSecondary = secondary;
+            _appliedDim = dim;
+            _appliedWarning = warning;
+            _styleApplied = true;
+        }
+
+        private void InvalidateVisualCaches()
+        {
+            _appliedSuitLabelText = null;
+            _appliedSuitLabelColor = default;
+            _appliedHeadingLabelText = null;
+            _appliedHeadingLabelColor = default;
+            _appliedStatusLabelText = null;
+            _appliedStatusLabelColor = default;
+            _appliedDepthValue = 0;
+            _hasAppliedDepthValue = false;
+            _appliedDepthColor = default;
+            _appliedTemperatureTenths = 0;
+            _hasAppliedTemperatureTenths = false;
+            _appliedTemperatureColor = default;
+            _appliedPressureTenths = 0;
+            _hasAppliedPressureTenths = false;
+            _appliedPressureColor = default;
+            _styleApplied = false;
+            _appliedOverallScale = 0f;
+            _appliedChromeAlpha = 0f;
+            _appliedPrimary = default;
+            _appliedSecondary = default;
+            _appliedDim = default;
+            _appliedWarning = default;
+            _canvasStateApplied = false;
+            _appliedCanvasTarget = null;
+            _appliedProjectionCamera = null;
+            _appliedRenderPath = default;
+            _appliedOverlaySortingOrder = 0;
+            _cachedCanvasScaler = null;
+        }
+
+        private Canvas ResolveTargetCanvas()
+        {
+            if (targetCanvas == null)
+                targetCanvas = GetComponent<Canvas>();
+
+            return targetCanvas;
+        }
+
+        private CanvasScaler ResolveCanvasScaler()
+        {
+            Canvas canvas = ResolveTargetCanvas();
+            if (canvas == null)
+            {
+                _cachedCanvasScaler = null;
+                return null;
+            }
+
+            if (_cachedCanvasScaler == null || _cachedCanvasScaler.gameObject != canvas.gameObject)
+                _cachedCanvasScaler = canvas.GetComponent<CanvasScaler>();
+
+            return _cachedCanvasScaler;
+        }
+
+        private void CacheResolvedPalette(SuitHUDProfile profile, Color primary, Color secondary, Color dim, Color warning)
+        {
+            _cachedPaletteProfile = profile;
+            _cachedPalettePrimary = primary;
+            _cachedPaletteSecondary = secondary;
+            _cachedPaletteDim = dim;
+            _cachedPaletteWarning = warning;
+        }
+
+        private static string ResolveHeadingLabel(int roundedHeading)
+        {
+            int normalizedHeading = roundedHeading % 360;
+            if (normalizedHeading < 0)
+                normalizedHeading += 360;
+
+            return s_headingLabels[normalizedHeading];
+        }
+
+        private static string[] BuildHeadingLabels()
+        {
+            string[] labels = new string[360];
+            for (int i = 0; i < labels.Length; i++)
+                labels[i] = "HEADING " + i.ToString("000") + " / " + ResolveCardinal(i);
+
+            return labels;
+        }
+
         public void SetRenderPathProjectionSource(bool projectionSource)
         {
             RenderPath nextPath = projectionSource ? RenderPath.ProjectionSource : RenderPath.ScreenOverlay;
@@ -1047,6 +1424,7 @@ namespace Hecton8.UI
 
             renderPath = nextPath;
             _layoutBuilt = false;
+            InvalidateVisualCaches();
         }
 
         public void SetProjectionCamera(Camera camera)
@@ -1056,6 +1434,7 @@ namespace Hecton8.UI
 
             projectionCamera = camera;
             _layoutBuilt = false;
+            InvalidateVisualCaches();
         }
 
         public void CopyConfigurationFrom(SuitHUDV4CanvasOverlay source)
@@ -1087,6 +1466,7 @@ namespace Hecton8.UI
             statusOffset = source.statusOffset;
             reticleOffset = source.reticleOffset;
             _layoutBuilt = false;
+            InvalidateVisualCaches();
         }
 
         private void TryRegisterRuntimeTick()

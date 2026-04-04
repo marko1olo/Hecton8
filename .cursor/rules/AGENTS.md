@@ -310,7 +310,34 @@ WITHOUT THIS BLOCK — CODE IS REJECTED.
 3. Identify dependencies: managers, interfaces, events
 4. Find reference code — use similar class as template
 5. Plan edge cases: pooled reuse, null manager, null deps, post-OnDisable
+### [RULE] PREFAB / SCENE CONSISTENCY GUARD
 
+**Source of Truth**
+- Reusable gameplay objects → **prefab is source of truth**
+- Scene-only composition (terrain roots, one-off layout, scene lighting) → **scene object is source of truth**
+- [FORBID] Declaring "scene is newer" / "prefab is newer" without inspection
+
+**After ANY prefab-affecting change**
+[REQ] Verify both prefab asset values AND active scene instance values
+[REQ] Report: what object changed · what properties changed · whether scene instance matches prefab
+
+**Override Discipline**
+[FORBID] Blanket `Apply All` / `Revert All` on performance-critical prefab instances:
+`Player`, `HUD_Render_Camera`, `Suit_Visor`, visor/HUD cameras, RenderTexture-driving cameras, pooling/streaming/world-runtime prefabs
+[REQ] Apply or revert only specific inspected overrides
+
+**Scene Drift**
+- Prefab correct, scene stale → sync scene instance to prefab values, report scene dirty
+- Scene correct, prefab stale → [FORBID] blind scene→prefab push; verify change is intended for all future instances first
+
+**Save Safety**
+[FORBID] Auto-saving dirty scene after prefab-sync if unrelated user edits may be present
+[REQ] Always state: `"live scene instance synced"` + `"scene saved"` OR `"scene not yet saved"`
+No consistency claim is valid until both asset state and scene state are verified
+
+**Verification**
+[REQ] After any prefab/perf change: perform scene-instance readback, compare against prefab-critical properties
+Without readback → task status remains `PENDING VERIFICATION`
 ### During Code
 [REQ] Follow existing patterns (ITickable, pooling, events)
 [REQ] Check every line against FORBIDDEN list

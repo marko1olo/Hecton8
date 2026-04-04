@@ -234,17 +234,16 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
                 hudCamera = primaryHud.GetComponent<Camera>();
         }
 
-        if (flashlight == null)
-        {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
-        }
+        Transform playerTransformRoot = null;
+        bool hasPlayerTransformRoot = false;
+        if (flashlight == null || toolManager == null)
+            hasPlayerTransformRoot = SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransformRoot);
 
-        if (toolManager == null)
-        {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                toolManager = playerTransformRoot.GetComponentInChildren<PlayerToolManager>(true);
-        }
+        if (flashlight == null && hasPlayerTransformRoot)
+            flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+
+        if (toolManager == null && hasPlayerTransformRoot)
+            toolManager = playerTransformRoot.GetComponentInChildren<PlayerToolManager>(true);
 
         SubscribeToolManager();
     }
@@ -733,7 +732,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     private void UpdateDiagnostics()
     {
         _debugFlashlightOn = _flashlightOn;
-        _debugFlashlightHeat = flashlight != null ? flashlight.HeatLevel : 0f;
+        _debugFlashlightHeat = _flashlightHeat;
         _debugPDAOpen = _pdaOpen;
         _debugNotificationCount = _notificationCount;
     }

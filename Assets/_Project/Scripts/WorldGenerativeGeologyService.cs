@@ -57,6 +57,25 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldGenerativeGeologyBinding : MonoBehaviour
     {
+        private const string GeneratorModeDisabledLabel = "Disabled";
+        private const string GeneratorModeNeuralPreferredLabel = "NeuralPreferred";
+        private const string GeneratorModeHeuristicSdfFallbackLabel = "HeuristicSdfFallback";
+        private const string ArchetypeArchLabel = "Arch";
+        private const string ArchetypeCanopyLabel = "Canopy";
+        private const string ArchetypeComplexRockLabel = "ComplexRock";
+        private const string ArchetypeArchClusterLabel = "ArchCluster";
+        private const string ArchetypeReefPackLabel = "ReefPack";
+        private const string ArchetypeCaveBridgeLabel = "CaveBridge";
+        private const string TerrainSeamNoneLabel = "None";
+        private const string TerrainSeamHeightBlendLabel = "HeightBlend";
+        private const string TerrainSeamSdfBlendLabel = "SdfBlend";
+        private const string TerrainSeamDebrisBridgeLabel = "DebrisBridge";
+        private const string TerrainSeamCarveAndDebrisLabel = "CarveAndDebris";
+        private const string CaveBlendNoneLabel = "None";
+        private const string CaveBlendProbeOnlyLabel = "ProbeOnly";
+        private const string CaveBlendSdfBlendLabel = "SdfBlend";
+        private const string CaveBlendCarvePortalLabel = "CarvePortal";
+
         private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(256);
 
         [SerializeField] private long runtimeKey;
@@ -196,6 +215,64 @@ namespace Hecton8.World
             _activeBindings.Remove(binding);
         }
 
+        private static string ResolveGeneratorModeLabel(WorldGenerativeGeologyProfile profile)
+        {
+            if (profile == null)
+                return GeneratorModeDisabledLabel;
+
+            return profile.generatorMode switch
+            {
+                WorldGenerativeGeologyProfile.GeneratorMode.NeuralPreferred => GeneratorModeNeuralPreferredLabel,
+                WorldGenerativeGeologyProfile.GeneratorMode.HeuristicSdfFallback => GeneratorModeHeuristicSdfFallbackLabel,
+                _ => GeneratorModeDisabledLabel
+            };
+        }
+
+        private static string ResolveArchetypeLabel(WorldGenerativeGeologyProfile profile)
+        {
+            if (profile == null)
+                return ArchetypeComplexRockLabel;
+
+            return profile.shapeArchetype switch
+            {
+                WorldGenerativeGeologyProfile.ShapeArchetype.Arch => ArchetypeArchLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.Canopy => ArchetypeCanopyLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.ArchCluster => ArchetypeArchClusterLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.ReefPack => ArchetypeReefPackLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge => ArchetypeCaveBridgeLabel,
+                _ => ArchetypeComplexRockLabel
+            };
+        }
+
+        private static string ResolveTerrainSeamLabel(WorldGenerativeGeologyProfile profile)
+        {
+            if (profile == null)
+                return TerrainSeamNoneLabel;
+
+            return profile.terrainSeamMode switch
+            {
+                WorldGenerativeGeologyProfile.TerrainSeamMode.HeightBlend => TerrainSeamHeightBlendLabel,
+                WorldGenerativeGeologyProfile.TerrainSeamMode.SdfBlend => TerrainSeamSdfBlendLabel,
+                WorldGenerativeGeologyProfile.TerrainSeamMode.DebrisBridge => TerrainSeamDebrisBridgeLabel,
+                WorldGenerativeGeologyProfile.TerrainSeamMode.CarveAndDebris => TerrainSeamCarveAndDebrisLabel,
+                _ => TerrainSeamNoneLabel
+            };
+        }
+
+        private static string ResolveCaveBlendLabel(WorldGenerativeGeologyProfile profile)
+        {
+            if (profile == null)
+                return CaveBlendNoneLabel;
+
+            return profile.caveBlendMode switch
+            {
+                WorldGenerativeGeologyProfile.CaveBlendMode.ProbeOnly => CaveBlendProbeOnlyLabel,
+                WorldGenerativeGeologyProfile.CaveBlendMode.SdfBlend => CaveBlendSdfBlendLabel,
+                WorldGenerativeGeologyProfile.CaveBlendMode.CarvePortal => CaveBlendCarvePortalLabel,
+                _ => CaveBlendNoneLabel
+            };
+        }
+
         public void Configure(
             WorldGenerativeGeologyRequest request,
             string resolvedComposition,
@@ -208,11 +285,11 @@ namespace Hecton8.World
             runtimeKey = request.RuntimeKey;
             familyId = request.Family != null ? request.Family.familyId : "world.family.generic";
             geologyProfileId = request.Profile != null ? request.Profile.profileId : "geology.generic";
-            generatorMode = request.Profile != null ? request.Profile.generatorMode.ToString() : "Disabled";
-            archetype = request.Profile != null ? request.Profile.shapeArchetype.ToString() : "ComplexRock";
+            generatorMode = ResolveGeneratorModeLabel(request.Profile);
+            archetype = ResolveArchetypeLabel(request.Profile);
             composition = string.IsNullOrWhiteSpace(resolvedComposition) ? "SingleFeature" : resolvedComposition;
-            terrainSeam = request.Profile != null ? request.Profile.terrainSeamMode.ToString() : "None";
-            caveBlend = request.Profile != null ? request.Profile.caveBlendMode.ToString() : "None";
+            terrainSeam = ResolveTerrainSeamLabel(request.Profile);
+            caveBlend = ResolveCaveBlendLabel(request.Profile);
             lodCount = resolvedLodCount;
             finalVariantActive = request.FinalVariantActive;
             slopeDegrees = request.SlopeDegrees;

@@ -2417,7 +2417,7 @@ MonoBehaviour:
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 1920, y: 1080}
+  m_ReferenceResolution: {x: 1600, y: 900}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
@@ -2464,8 +2464,8 @@ MonoBehaviour:
   underwaterVisuals: {fileID: 0}
   defaultHudProfile: {fileID: 0}
   keepVisibleInEditMode: 1
-  overallScale: 1.16
-  chromeAlpha: 0.36
+  overallScale: 0.98
+  chromeAlpha: 0.14
 --- !u!1 &2686821459172600369
 GameObject:
   m_ObjectHideFlags: 0

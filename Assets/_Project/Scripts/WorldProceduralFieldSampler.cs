@@ -28,6 +28,7 @@ namespace Hecton8.World
         private const string SeafloorSourceMapMagicLabel = "MapMagicHeight";
         private const string SeafloorSourceRaycastLabel = "SceneRaycast";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
+        private const int MaxSeafloorHeightCacheEntries = 4096;
 
         public enum SeafloorSource
         {
@@ -1287,19 +1288,18 @@ namespace Hecton8.World
         public void BeginScatterSamplingFrame()
         {
             PrepareBurstData();
-            _seafloorHeightCache.Clear();
             _samplingFramePrepared = true;
         }
 
         public void EndScatterSamplingFrame()
         {
-            _seafloorHeightCache.Clear();
             _samplingFramePrepared = false;
         }
 
         public void MarkBurstDataDirty()
         {
             _isDataDirty = true;
+            _seafloorHeightCache.Clear();
         }
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile _)
@@ -2131,7 +2131,10 @@ namespace Hecton8.World
 
             bool resolved = TryResolveSeafloorHeightUncached(position, out seafloorHeight, out seafloorSource);
             if (resolved)
+            {
+                TrimSeafloorHeightCacheIfNeeded();
                 _seafloorHeightCache[cacheKey] = new CachedHeightSample(seafloorHeight, seafloorSource);
+            }
 
             return resolved;
         }
@@ -3216,6 +3219,14 @@ namespace Hecton8.World
             return new Vector2Int(
                 Mathf.RoundToInt(x * 100f),
                 Mathf.RoundToInt(z * 100f));
+        }
+
+        private void TrimSeafloorHeightCacheIfNeeded()
+        {
+            if (_seafloorHeightCache.Count < MaxSeafloorHeightCacheEntries)
+                return;
+
+            _seafloorHeightCache.Clear();
         }
 
         private void ResolveReferences(bool force = false)

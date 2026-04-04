@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2cd0a26230a82814f9bc8693bf6bc066, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.PickupItem
-  itemData: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  itemData: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
   quantity: 1
 --- !u!114 &7985043108422708796
 MonoBehaviour:

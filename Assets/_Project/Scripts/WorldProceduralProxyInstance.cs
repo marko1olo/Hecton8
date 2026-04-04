@@ -5,6 +5,21 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldProceduralProxyInstance : MonoBehaviour
     {
+        private const string ScatterLayerGroundLabel = "Ground";
+        private const string ScatterLayerClusterLabel = "Cluster";
+        private const string ScatterLayerStructureLabel = "Structure";
+        private const string ScatterLayerSpawnLabel = "Spawn";
+        private const string FieldSourceNoneLabel = "None";
+        private const string FieldSourceMapMagicLabel = "MapMagicHeight";
+        private const string FieldSourceRaycastLabel = "SceneRaycast";
+        private const string FieldSourceFallbackLabel = "FallbackSynthetic";
+        private const string GeologyArchetypeArchLabel = "Arch";
+        private const string GeologyArchetypeCanopyLabel = "Canopy";
+        private const string GeologyArchetypeComplexRockLabel = "ComplexRock";
+        private const string GeologyArchetypeArchClusterLabel = "ArchCluster";
+        private const string GeologyArchetypeReefPackLabel = "ReefPack";
+        private const string GeologyArchetypeCaveBridgeLabel = "CaveBridge";
+
         [Header("Identity")]
         [SerializeField] private string familyId = "world.family.generic";
         [SerializeField] private string familyLabel = "Generic World Family";
@@ -55,6 +70,8 @@ namespace Hecton8.World
         [SerializeField] private bool hasMacroZone;
         [SerializeField] private int macroZoneX;
         [SerializeField] private int macroZoneZ;
+        [SerializeField, HideInInspector] private int scatterSyncSignature;
+        [SerializeField, HideInInspector] private bool generatedGeologyApplied;
 
         public string ActiveVariantId => variantId;
         public bool IsFinalVariantActive => finalVariantActive;
@@ -76,6 +93,48 @@ namespace Hecton8.World
         public float RidgeSignal => ridgeSignal;
         public float CanyonSignal => canyonSignal;
         public float CompositionPotential => compositionPotential;
+        public bool IsGeneratedGeologyApplied => generatedGeologyApplied;
+
+        private static string ResolveScatterLayerLabel(WorldPrefabFamilyProfile family)
+        {
+            WorldPrefabFamilyProfile.ScatterLayer scatterLayer = family != null
+                ? family.scatterLayer
+                : WorldPrefabFamilyProfile.ScatterLayer.Ground;
+            return scatterLayer switch
+            {
+                WorldPrefabFamilyProfile.ScatterLayer.Cluster => ScatterLayerClusterLabel,
+                WorldPrefabFamilyProfile.ScatterLayer.Structure => ScatterLayerStructureLabel,
+                WorldPrefabFamilyProfile.ScatterLayer.Spawn => ScatterLayerSpawnLabel,
+                _ => ScatterLayerGroundLabel
+            };
+        }
+
+        private static string ResolveFieldSourceLabel(WorldProceduralFieldSampler.SeafloorSource source)
+        {
+            return source switch
+            {
+                WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight => FieldSourceMapMagicLabel,
+                WorldProceduralFieldSampler.SeafloorSource.SceneRaycast => FieldSourceRaycastLabel,
+                WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic => FieldSourceFallbackLabel,
+                _ => FieldSourceNoneLabel
+            };
+        }
+
+        private static string ResolveGeologyArchetypeLabel(WorldPrefabFamilyProfile family)
+        {
+            if (family == null || family.generativeGeologyProfile == null)
+                return FieldSourceNoneLabel;
+
+            return family.generativeGeologyProfile.shapeArchetype switch
+            {
+                WorldGenerativeGeologyProfile.ShapeArchetype.Arch => GeologyArchetypeArchLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.Canopy => GeologyArchetypeCanopyLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.ArchCluster => GeologyArchetypeArchClusterLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.ReefPack => GeologyArchetypeReefPackLabel,
+                WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge => GeologyArchetypeCaveBridgeLabel,
+                _ => GeologyArchetypeComplexRockLabel
+            };
+        }
 
         public void Configure(
             WorldPrefabFamilyProfile family,
@@ -104,8 +163,8 @@ namespace Hecton8.World
             runtimeKey = 0L;
             streamingLayer = family != null ? family.ResolveStreamingLayer() : WorldStreamingLayer.Flora;
             placementSource = "Socket";
-            scatterLayer = family != null ? family.scatterLayer.ToString() : "Ground";
-            fieldSource = "None";
+            scatterLayer = ResolveScatterLayerLabel(family);
+            fieldSource = FieldSourceNoneLabel;
             seafloorHeight = socket != null ? socket.transform.position.y : 0f;
             depthMeters = 0f;
             slopeDegrees = 0f;
@@ -122,7 +181,7 @@ namespace Hecton8.World
             sourceBiomeContext = "None";
             usesGenerativeGeology = family != null && family.UsesGenerativeGeology();
             geologyProfileId = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.profileId : "None";
-            geologyArchetype = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.shapeArchetype.ToString() : "None";
+            geologyArchetype = ResolveGeologyArchetypeLabel(family);
             cellX = 0;
             cellZ = 0;
             chunkX = 0;
@@ -182,8 +241,8 @@ namespace Hecton8.World
             runtimeKey = configuredRuntimeKey;
             streamingLayer = configuredStreamingLayer;
             placementSource = "FieldScatter";
-            scatterLayer = family != null ? family.scatterLayer.ToString() : "Ground";
-            fieldSource = configuredFieldSource.ToString();
+            scatterLayer = ResolveScatterLayerLabel(family);
+            fieldSource = ResolveFieldSourceLabel(configuredFieldSource);
             seafloorHeight = configuredSeafloorHeight;
             depthMeters = configuredDepthMeters;
             slopeDegrees = configuredSlopeDegrees;
@@ -200,7 +259,7 @@ namespace Hecton8.World
             sourceBiomeContext = string.IsNullOrWhiteSpace(configuredBiomeContext) ? "None" : configuredBiomeContext;
             usesGenerativeGeology = family != null && family.UsesGenerativeGeology();
             geologyProfileId = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.profileId : "None";
-            geologyArchetype = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.shapeArchetype.ToString() : "None";
+            geologyArchetype = ResolveGeologyArchetypeLabel(family);
             cellX = configuredCellX;
             cellZ = configuredCellZ;
             chunkX = configuredChunkCoord.x;
@@ -208,6 +267,17 @@ namespace Hecton8.World
             hasMacroZone = configuredHasMacroZone;
             macroZoneX = configuredMacroZoneCoord.x;
             macroZoneZ = configuredMacroZoneCoord.z;
+        }
+
+        public bool IsScatterSyncCurrent(int syncSignature, bool geologyApplied)
+        {
+            return scatterSyncSignature == syncSignature && generatedGeologyApplied == geologyApplied;
+        }
+
+        public void MarkScatterSync(int syncSignature, bool geologyApplied)
+        {
+            scatterSyncSignature = syncSignature;
+            generatedGeologyApplied = geologyApplied;
         }
     }
 }

@@ -56,6 +56,9 @@ MonoBehaviour:
   preserveExistingChildren: 1
   overlaySortingOrder: 80
   manageCanvasInEditMode: 0
+  showAsInsetPreview: 1
+  insetSize: {x: 340, y: 340}
+  insetMargin: {x: 18, y: 18}
   debugCanvasReady: 1
   debugOverlayReady: 1
   debugTextureAssigned: 1

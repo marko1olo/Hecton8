@@ -3669,3 +3669,317 @@ Notes:
   - honest status:
     - the report count rose back above `77` because the unsafe partial extraction was reverted cleanly
     - this is the correct tradeoff: stable code first, asmdef-split prep second
+
+## 2026-04-03 - Scatter movement spike pass
+
+- verified new heavy-world run facts through Unity MCP profiler + console:
+  - repeated `WorldProceduralScatterDirector` slow-tick spikes remained the top runtime offender
+  - fresh console spikes included `221.25ms`, `160.24ms`, `128.09ms`, `108.52ms`, `102.56ms`, `93.28ms`, `85.32ms`, `76.56ms`
+  - current editor-side memory snapshot after the run was still heavy:
+    - `Total Used Memory = 8.56 GB`
+    - `Texture Memory = 1.92 GB`
+    - `Gfx Used Memory = 2.59 GB`
+    - `GC Reserved Memory = 3.14 GB`
+    - `GC Used Memory = 1.56 GB`
+    - `Profiler Used Memory = 1.87 GB`
+- confirmed an important runtime-state fact from the live scene:
+  - `WorldProceduralScatterDirector` was sampling `225 / 225` cells from fallback synthetic data
+  - `MapMagicBridge.IsAvailable = false` during that inspected run
+  - active desired/active scatter placements were `82 / 82`
+- applied a narrow first-party trigger fix in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - scatter center-cell math no longer uses `Mathf.RoundToInt(...)`
+  - it now uses a floor-based partition helper `WorldToScatterCellIndex(...)`
+  - this removes premature half-cell rebuild triggers when the player moves across the world
+- kept the earlier pending-reconcile continuation pass live:
+  - same-cell slow ticks now continue pending reconcile work instead of forcing another full rebuild
+- added spike-only scatter phase logging for the next run:
+  - `CommitScatterRebuildProfile(...)` now logs spike breakdowns in editor/development builds even when detailed diagnostics are off
+  - next live run should expose `sample / wait / post / rescue / restore / reconcile / spawn / fauna`
+- compile/runtime status for this package:
+  - Unity refresh + compile completed
+  - no new first-party compile errors from this pass
+  - console still contains unrelated third-party `UDR0001` warnings
+- honest status:
+  - this package is not verified yet against a fresh post-patch swim run
+  - the next checkpoint must be a heavier play pass, not another blind micro-edit loop
+
+- added a second tightly scoped first-party runtime pass in `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`:
+  - the seafloor height cache no longer clears at the start and end of every scatter sampling frame
+  - the cache now survives across neighboring rebuilds, which is important because movement rebuilds reuse most of the same probe positions
+  - cache invalidation still happens on `MarkBurstDataDirty()`
+  - a hard cap was added so the cache self-clears before it grows without bound
+- reason for this pass:
+  - previous code kept a cache object alive but erased all value before every rebuild
+  - that forced repeated height/raycast/fallback sampling work across adjacent scatter windows
+- compile/runtime status after this second pass:
+  - Unity refresh + compile completed again
+  - no new first-party compile errors from this pass
+- honest status:
+  - this is still unverified until the next heavy swim run produces new profiler/log evidence
+
+- next validated heavy-run analysis changed the diagnosis shape:
+  - `WorldScatterProfiler` is now the main evidence source, not only `TickProfiler`
+  - repeated movement rebuilds showed:
+    - `rebuild ~59-73ms`
+    - `sample ~54-68ms`
+    - `wait ~0.20-0.32ms`
+    - `post ~52-65ms`
+    - `reconcile ~3-5ms`
+  - startup dirty rebuild still showed:
+    - `rebuild 160.97ms`
+    - `sample 124.48ms`
+    - `input 25.24ms`
+    - `post 91.00ms`
+    - `reconcile 24.59ms`
+- important verdict from those numbers:
+  - the main remaining movement cost is no longer job wait and no longer reconcile/spawn
+  - the main remaining movement cost is post-sampling work after the job completes
+  - rebuild frequency is still driven mostly by `reason=cell-changed`
+- applied another safe movement-pass fix in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - a new `cell-hysteresis` gate was added inside `ShouldSkipScatterRefresh()`
+  - crossing into the next scatter cell no longer forces an immediate rebuild if the observer has not yet moved at least one full runtime cell from the last refresh sample
+  - goal: reduce repeated full 225-cell rebuilds while moving across nearby cell boundaries
+- applied the next post-sampling cost reduction pass in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - runtime rule preparation now precomputes `ScoreBaseBonus` once per rule instead of recomputing placement/scatter-layer bonuses for every candidate
+  - candidate accumulation now uses ordered insertion instead of appending all candidates and sorting the whole per-cell buffer afterward
+  - target:
+    - reduce the confirmed `post`-phase hotspot without touching third-party systems or changing public runtime behavior
+    - cut repeated per-candidate bonus work and eliminate one full `_candidateBuffer.Sort(...)` pass per populated cell
+- applied the next build-path reduction pass in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - non-rescue candidates that already fail the random spawn gate now exit before `BuildCandidate(...)`
+  - rescue candidates keep the old behavior and are still materialized/tracked even when the normal gate fails
+  - runtime rule preparation now also precomputes family-level build data:
+    - `StreamingLayer`
+    - `GeologyProfile`
+    - `HasMacroZone`
+    - `SupportsFinalVariant`
+  - per-cell biome-context label is now resolved once and reused during placement initialization
+  - target:
+    - reduce repeated family-level resolve work inside the confirmed hot post-sampling loop
+    - avoid pooled placement realization for obviously rejected non-rescue candidates
+- compile/runtime status after this scoring pass:
+  - Unity refresh + compile completed
+  - no new first-party compile errors from this pass
+- honest status:
+  - this hysteresis + post-sampling reduction package is still unverified
+  - the next heavy swim run must confirm whether rebuild frequency drops meaningfully
+
+- added a startup-focused scatter cleanup pass in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - `_faunaSnapshotDirty` now gates `PublishFaunaRegistrySnapshot()` so continuation ticks do not republish anchors when `_desiredPlacements` did not change
+  - startup pending semantics were tightened so far-tail placements no longer keep `_hasPendingStartupPlacements = true` forever
+  - observer position is now cached once per reconcile/warmup pass and reused by `PrepareScatterPoolWarmup(...)`, `GetResolvedPlacementVariant(...)`, `ShouldCreateDuringInitialWarmup(...)`, and `ShouldUseFinalVariant(...)`
+  - goal:
+    - cut repeated startup reconcile work after movement cost had already dropped
+    - reduce needless fauna export and observer-distance recalculation in the startup dirty path
+- removed a zero-GC violation from scatter metadata setup in `Assets/_Project/Scripts/WorldProceduralProxyInstance.cs`:
+  - `ConfigureScatter(...)` and related setup paths no longer rely on `Enum.ToString()`
+  - static label resolvers now map scatter layer / seafloor source / geology archetype directly to cached strings
+  - goal:
+    - eliminate managed string churn from the reconcile/spawn metadata path
+- added another narrow spawn-path cleanup in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - `CreateScatterInstance(...)` no longer performs a second `pool.GetAvailableCount(prefab)` check after `TryReserveScatterCreate(...)` already reserved the allowance
+  - goal:
+    - remove a redundant pool query from the confirmed startup spawn hotspot
+- ran a first-party RAM / VRAM importer pass before the next runtime validation:
+  - enabled `streamingMipmaps` on 42 first-party world textures under rocks / terrain / sandbox / organic texture groups
+  - removed `isReadable` from the large first-party sky textures `eb2.png`, `bo3.png`, and `oblakajip.png`
+  - restored default compression on `Assets/_Project/Art/TEXTURES/Sky/eb2.png.meta`
+  - goal:
+    - let large world textures participate in the existing texture streaming budget instead of forcing full residency
+    - remove pointless CPU-readable copies from large sky textures
+- compile/runtime status after the startup + importer package:
+  - Unity refresh + compile completed
+  - no new first-party compile errors were introduced
+  - console still showed the existing editor-side `LifecycleManagement` null-reference error and unrelated third-party `UDR0001` warnings
+- latest validated heavy-run results after this package:
+  - `[WorldScatterProfiler] rebuild=77.76ms sample=53.42ms input=15.23ms wait=2.42ms post=35.77ms rescue=10.12ms restore=0.30ms reconcile=13.59ms cleanup=1.93ms spawn=9.19ms fauna=2.47ms diag=0.33ms removed=0 rebuilt=0 created=9 reused=0 cells=225 desired=160 active=9 reason=dirty`
+  - `[TickProfiler] SlowTick spike total=96.97ms ... WorldProceduralScatterDirector=89.79ms`
+  - follow-up slow ticks dropped to `14.56ms`, `0.72ms`, and `20.34ms` for scatter-dominant frames
+- comparison against the previous validated startup dirty rebuild:
+  - previous dirty rebuild: `144.95ms` total, `sample=100.81ms`, `post=60.44ms`, `spawn=20.95ms`
+  - latest dirty rebuild: `77.76ms` total, `sample=53.42ms`, `post=35.77ms`, `spawn=9.19ms`
+  - verdict:
+    - startup scatter cost dropped materially again
+    - scatter is still the main first-party CPU offender, but the startup dirty burst is now far smaller than the earlier 145-161ms range
+- latest memory / profiler snapshot after the run:
+  - `GC Allocated In Frame = 1325 B`
+  - `GC Allocation In Frame Count = 20`
+  - `Texture Memory = 2010269152 B`
+  - `Gfx Used Memory = 2788252503 B`
+  - `Profiler Used Memory = 1887579840 B`
+  - `Total Used Memory = 8783733599 B`
+  - `render_textures = 1101`
+  - `render_textures_bytes = 1631522368 B`
+- honest status:
+  - current CPU work has reduced the verified scatter startup burst again
+  - GC in the validated run remains low but not zero
+  - VRAM / RT pressure is still far above target for MX350
+  - all of this remains `PENDING VERIFICATION` until the next runtime pass confirms the same behavior under repeat conditions
+
+- appended the next validated runtime checkpoint after the heavier terrain + water run:
+  - console/runtime facts:
+    - `[WorldScatterProfiler] rebuild=77.76ms sample=53.42ms input=15.23ms wait=2.42ms post=35.77ms rescue=10.12ms restore=0.30ms reconcile=13.59ms cleanup=1.93ms spawn=9.19ms fauna=2.47ms diag=0.33ms removed=0 rebuilt=0 created=9 reused=0 cells=225 desired=160 active=9 reason=dirty`
+    - `[TickProfiler] SlowTick spike total=96.97ms registered=20 top=WorldProceduralScatterDirector@[MANAGERS]=89.79ms ...`
+    - follow-up scatter-dominant spikes were much smaller: `14.56ms`, `0.72ms`, `20.34ms`
+  - profiler counter facts:
+    - `GC Allocated In Frame = 1325 B`
+    - `GC Allocation In Frame Count = 20`
+    - `Texture Memory = 2010269152 B`
+    - `Gfx Used Memory = 2788252503 B`
+    - `Profiler Used Memory = 1887579840 B`
+    - `Total Used Memory = 8783733599 B`
+    - `render_textures = 1101`
+    - `render_textures_bytes = 1631522368 B`
+- screenshot analysis was recorded explicitly:
+  - selected render-path frames were not dominated by gameplay scripts
+  - `RenderPlayModeViewCameras` and `UpdateScene` on the chosen profiler frames were only in the low-single-digit millisecond range
+  - render tree breakdown showed:
+    - `Ocean Mask` / `Underwater Effect` present but not dominant in CPU terms for those captured frames
+    - `ScriptableRenderContext.Submit` and `ExecuteRenderGraph` were visible, but still only low-millisecond contributors
+  - verdict from screenshot + live-log combination:
+    - the latest big first-party CPU offender remains scatter startup/rebuild, not Crest/water render work
+    - the next major non-CPU problem is VRAM / render-texture pressure, not GC
+- comparison against the previous validated scatter startup checkpoint:
+  - previous dirty rebuild: `144.95ms total`, `sample=100.81ms`, `post=60.44ms`, `spawn=20.95ms`
+  - latest dirty rebuild: `77.76ms total`, `sample=53.42ms`, `post=35.77ms`, `spawn=9.19ms`
+  - meaning:
+    - recent scatter passes materially reduced startup CPU cost again
+    - scatter is still not solved, but it is no longer at the earlier catastrophic level
+- next technical direction was updated:
+  - continue honest scatter work on the remaining startup/reconcile tail
+  - begin focused first-party RT/VRAM audit because `render_textures_bytes ~ 1.63 GB` is now too large to ignore for MX350
+- status remains `PENDING VERIFICATION`
+
+- completed the first focused first-party RT / VRAM audit after the latest profiler screenshots:
+  - only one explicit first-party `RenderTexture` asset exists in the project:
+    - `Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture`
+  - it is configured as:
+    - `1920x1080`
+    - shared visor HUD projection target
+  - the player prefab uses the visor in shared RT mode:
+    - `Assets/_Project/Prefabs/Player.prefab` has `_projectionMode: 1`
+    - shared RT asset is bound directly to the visor controller
+  - practical verdict:
+    - the very large `render_textures_bytes ~ 1.63 GB` figure is not caused by dozens of first-party custom RT assets
+    - it is mostly URP / internal render graph / editor / camera pipeline footprint, with the first-party visor RT path still being the only explicit custom runtime RT target worth tightening
+- inspected the visor HUD camera setup in `Assets/_Project/Prefabs/Player.prefab`:
+  - `HUD_Render_Camera` was still configured with expensive options for a dedicated HUD-only layer camera:
+    - HDR on
+    - MSAA on
+    - occlusion culling on
+    - URP render shadows on
+    - URP depth texture option using pipeline settings
+    - URP opaque texture option using pipeline settings
+    - XR rendering allowed
+    - HDR output allowed
+- applied a narrow first-party visor-camera render-cost reduction in `Assets/_Project/Prefabs/Player.prefab`:
+  - for `HUD_Render_Camera`:
+    - `m_HDR: 0`
+    - `m_AllowMSAA: 0`
+    - `m_OcclusionCulling: 0`
+  - for its URP `UniversalAdditionalCameraData`:
+    - `m_RenderShadows: 0`
+    - `m_RequiresDepthTextureOption: 0`
+    - `m_RequiresOpaqueTextureOption: 0`
+    - `m_AllowXRRendering: 0`
+    - `m_AllowHDROutput: 0`
+- reason for this visor-camera pass:
+  - this camera renders only the internal HUD projection layer to the visor RT
+  - those pipeline features add bandwidth / RT overhead without contributing meaningful gameplay value on the MX350 target
+- verification status after the prefab camera pass:
+  - Unity asset refresh completed
+  - no new first-party import or compile errors were introduced
+  - console came back clean after refresh
+- honest status:
+  - the visor camera pass is still unverified against a fresh runtime profiler capture
+  - no memory or CPU win is claimed yet without the next run
+
+- continued autonomous first-party work after the latest validated run:
+  - recorded the profiler/screenshot interpretation and latest counters in both local logs so the session can resume without losing the CPU/VRAM diagnosis
+- added a small first-party reconcile optimization in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - `ReconcileInstances(...)` now resolves `WorldGenerativeGeologyService` once per reconcile pass and passes the cached reference through to `ApplyGeneratedGeology(...)`
+  - the same pass now reuses the already-cached observer position for `ShouldApplyGeneratedGeology(...)`
+  - goal:
+    - remove repeated service resolution and repeated `playerTransform.position` reads from the startup reconcile/spawn path
+- completed the next explicit first-party RT pass in `Assets/_Project/Prefabs/Player.prefab`:
+  - for `HUD_Render_Camera`, disabled:
+    - HDR
+    - MSAA
+    - occlusion culling
+  - for its `UniversalAdditionalCameraData`, disabled:
+    - render shadows
+    - depth texture requirement
+    - opaque texture requirement
+    - XR rendering
+    - HDR output
+  - goal:
+    - reduce bandwidth / RT overhead on the dedicated HUD-only projection camera without touching world cameras or project-wide render settings
+- verification status after this autonomous block:
+  - Unity refresh + compile completed
+  - no new first-party compile/import errors were introduced
+  - console came back clean after refresh
+- honest status:
+  - this code + prefab block is not runtime-verified yet
+  - next heavy run must confirm whether scatter `reconcile/spawn` and visor RT pressure moved measurably
+- 2026-04-04 scene/prefab consistency guard: confirmed live scene drift on `--- GAMEPLAY ---/Player/HUD_Render_Camera` vs `Assets/_Project/Prefabs/Player.prefab`. Scene instance had stale heavy camera flags (`allowHDR=true`, `allowMSAA=true`, `renderShadows=true`, `requiresDepthOption=2`, `requiresColorOption=2`, `allowXRRendering=true`, `allowHDROutput=true`) while prefab asset already had optimized values. Live scene instance synced back to prefab-equivalent values via Unity MCP. Scene remains dirty/unsaved; prefab asset is still source of truth. Do not use blanket `Apply All` on Player/HUD/visor prefab instances without re-verifying perf-critical camera/RT properties.
+- 2026-04-04 AGENTS verification: root `AGENTS.md` now contains `### [RULE] PREFAB / SCENE CONSISTENCY GUARD` at line 313. Confirmed camera subtree audit for `Player` prefab instance. `Main Camera`, `SpaceCamera`, and `Suit_Visor` matched expected critical values. Confirmed actual drift on `HUD_Render_Camera`: prefab asset still had heavy camera flags while live scene had optimized values. Normalized `Assets/_Project/Prefabs/Player.prefab` `HUD_Render_Camera` camera block to `m_HDR=0`, `m_AllowMSAA=0`, `m_OcclusionCulling=0`; URP block already normalized (`m_RenderShadows=0`, `m_RequiresDepthTextureOption=0`, `m_RequiresOpaqueTextureOption=0`, `m_AllowXRRendering=0`, `m_AllowHDROutput=0`). Re-imported assets, verified live scene readback matches, and saved `Assets/_Project/Scenes/02_HECTON_WORLD.unity` so scene is no longer dirty.
+- 2026-04-04 broad scene consistency pass continued. Active HUD path confirmed as `--- UI ---/Suit_HUD_Canvas` + `--- UI ---/Suit_HUD_ProjectionSource`; `HUD_Internal` is inactive and not the primary path. `Player` camera subtree re-verified. `HUD_Render_Camera` live scene kept synced to lightweight values and saved earlier. Normalized `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab` to the live scene on stable HUD tuning fields: `CanvasScaler.m_ReferenceResolution=1600x900`, `SuitHUDV4CanvasOverlay.overallScale=0.98`, `chromeAlpha=0.14`. Materialized missing stable compositor fields in `Assets/_Project/Prefabs/HUD_Internal.prefab`: `showAsInsetPreview=1`, `insetSize=340x340`, `insetMargin=18x18` without pushing scene refs. During the same pass found and corrected a confirmed asset bug: `Assets/_Project/Prefabs/Item_Titanium.prefab` had `PickupItem.itemData` pointing to `Data_Copper.asset`; fixed to `Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset` and live scene readback now matches. `Global Volume` matches prefab; `Directional Light` scene differs from prefab on light intensity, but was left untouched because it is likely scene/runtime-authored rather than a safe prefab sync candidate.
+- 2026-04-04 continued broad scene consistency pass. Remaining exact-match prefab-backed roots were classified: `Global Volume` matches prefab; `VoxelChunk` matches prefab; `Objects` matches prefab; `Sky_System` appears runtime/scene-authored (follow-camera root position differs, script defaults match); `GasGiant_Aegir` root transform differs from prefab and is scene-placement data, not a safe blind sync; `Ocean_Crest` contains runtime camera/light refs and third-party state, so no blind prefab push was made. Nested `Tool_Staging` world-item prefabs were validated in bulk: all `Item_Tool_*_World.prefab` assets point to the correct matching `Item_Tool_*.asset` itemData and did not show the titanium-style mismatch.
+- 2026-04-04 autonomous CPU pass resumed after scene/prefab cleanup. Returned to the original optimization plan: CPU first (`WorldProceduralScatterDirector` startup/reconcile/spawn), RAM/VRAM second (first-party RT/texture footprint).
+- added a pass-local reconcile-plan cache in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - new director field `_reconcilePlanVersion`
+  - `PrepareScatterPoolWarmup(...)` and `ReconcileInstances(...)` now share one cached decision per placement for:
+    - active instance reference
+    - resolved runtime variant
+    - final-variant flag
+    - `requiresSpawn` / rebuild decision
+  - goal:
+    - remove duplicate variant/rebuild evaluation between warmup and reconcile during the startup dirty rebuild
+- added low-risk hot-path cleanup in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`:
+  - `ApplyPlacement(...)` now uses `transform.SetPositionAndRotation(...)`
+  - `ScatterPlacement` now caches biome/profile/pattern labels at initialize time instead of resolving property labels on every placement apply
+  - goal:
+    - shave repeated scalar work from the remaining reconcile/apply path without adding allocations
+- verification after this block:
+  - Unity script refresh/compile requested and completed without new first-party compile errors
+  - console still shows only pre-existing third-party `UDR0001` warnings
+- honest status:
+  - runtime CPU/GC impact of the new reconcile-plan cache is still unmeasured
+  - remains `PENDING VERIFICATION` until the next heavy run
+- 2026-04-04 additional autonomous memory-hardening pass:
+  - aligned `Assets/_Project/Scripts/Visor/VisorHUDController.cs` runtime RT defaults with the already-optimized shared visor RT path
+  - changed default runtime RT size from `1920x1080` to `1280x720`
+  - reason:
+    - if projection mode is switched back to runtime RT on any instance, new components now default to the MX350-safe target instead of silently allocating a larger full-HD RT
+- verification after the visor default RT pass:
+  - Unity script refresh/compile completed
+  - no new first-party compile errors were introduced
+  - console still shows only existing third-party `UDR0001` warnings
+
+- 2026-04-04 active HUD runtime pass on `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`:
+  - removed per-tick heading/status string churn by switching to static/cached labels
+  - added dirty-gated text updates for suit label, heading label, and status label
+  - added dirty-gated gauge label/value/fill/color updates so unchanged gauge state is no longer rewritten every tick
+  - added `ApplyStaticStyleIfNeeded(...)` so static chrome/reticle/telemetry colors and root scale are only pushed when palette/scale actually changes
+  - added `_canvasStateApplied` guard so `NormalizeCanvas()` no longer rewrites render mode / world camera / sorting / scaler state every tick
+  - added `InvalidateVisualCaches()` fail-safe on hierarchy/layout invalidation so rebuilt UI nodes always receive a fresh style/text push
+  - goal:
+    - reduce Canvas dirtiness and eliminate first-party string churn in the actual active HUD path (`Suit_HUD_Canvas`)
+- verification after the active HUD pass:
+  - no new first-party compile errors surfaced in console
+  - console still shows only pre-existing third-party `UDR0001` warnings
+  - runtime impact remains unmeasured until the next heavy run
+
+- follow-up CPU / HUD block:
+  - `WorldProceduralScatterDirector` reconcile-plan cache now also carries:
+    - generated geology decision
+    - placement sync signature
+    - initial warmup eligibility
+  - `PrepareScatterPoolWarmup()` no longer does a second allowance pass over warmed prefabs
+  - `CreateScatterInstance()` now resolves `WorldProceduralProxyInstance` internally, removing duplicate metadata lookups in create/rebuild paths
+  - `SuitHUDV4CanvasOverlay` now caches `Canvas` / `CanvasScaler` instead of using fallback `GetComponent` paths
+  - `HectonSuitHUDExtensions` now resolves current player root once per auto-resolve pass and reuses polled flashlight heat for diagnostics
+  - verification:
+    - Unity refresh/compile completed
+    - console shows no new first-party compile errors
+    - runtime impact remains `PENDING VERIFICATION`
