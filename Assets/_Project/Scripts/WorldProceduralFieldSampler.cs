@@ -29,6 +29,7 @@ namespace Hecton8.World
         private const string SeafloorSourceRaycastLabel = "SceneRaycast";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
         private const int MaxSeafloorHeightCacheEntries = 4096;
+        private const int MaxBiomeIndexCacheEntries = 4096;
 
         public enum SeafloorSource
         {
@@ -307,6 +308,8 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastCurvature;
         [SerializeField] private float _debugLastCaveProximity;
         [SerializeField] private float _debugLastCompositionPotential;
+        [SerializeField] private int _debugBiomeCacheHits;
+        [SerializeField] private int _debugBiomeCacheMisses;
 
         private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
         private readonly List<WorldZoneAnchor> _zoneBakeList = new List<WorldZoneAnchor>(32);
@@ -316,6 +319,7 @@ namespace Hecton8.World
         private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
         private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
         private readonly Dictionary<Vector2Int, CachedHeightSample> _seafloorHeightCache = new Dictionary<Vector2Int, CachedHeightSample>(1536);
+        private readonly Dictionary<Vector2Int, CachedBiomeSample> _biomeIndexCache = new Dictionary<Vector2Int, CachedBiomeSample>(1536);
         private readonly RaycastHit[] _seafloorRaycastHits = new RaycastHit[4]; // COLD ALLOC: reused non-alloc seafloor probes.
         private NativeArray<ZoneData> _burstZoneData;
         private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
@@ -340,6 +344,18 @@ namespace Hecton8.World
 
             public float Height;
             public SeafloorSource Source;
+            public int SamplingFrameId;
+        }
+
+        private struct CachedBiomeSample
+        {
+            public CachedBiomeSample(int biomeIndex, int samplingFrameId)
+            {
+                BiomeIndex = biomeIndex;
+                SamplingFrameId = samplingFrameId;
+            }
+
+            public int BiomeIndex;
             public int SamplingFrameId;
         }
 
@@ -1294,6 +1310,11 @@ namespace Hecton8.World
             PrepareBurstData();
             _samplingFrameId++;
             _samplingFramePrepared = true;
+            if (enableLiveRuntimeDiagnostics)
+            {
+                _debugBiomeCacheHits = 0;
+                _debugBiomeCacheMisses = 0;
+            }
         }
 
         public void EndScatterSamplingFrame()
@@ -1305,6 +1326,7 @@ namespace Hecton8.World
         {
             _isDataDirty = true;
             _seafloorHeightCache.Clear();
+            _biomeIndexCache.Clear();
         }
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile _)
@@ -1321,9 +1343,7 @@ namespace Hecton8.World
             if (!TryGetLocalTerrainContext(position, out LocalTerrainContext terrainContext))
                 return false;
 
-            int biomeIndex = 0;
-            if (mapMagicBridge != null)
-                mapMagicBridge.TryGetBiomeIndex(position.x, position.z, out biomeIndex);
+            TryResolveBiomeIndex(position.x, position.z, out int biomeIndex);
 
             float waterSurface = mapMagicBridge != null
                 ? mapMagicBridge.WaterSurfaceLevel
@@ -2157,6 +2177,31 @@ namespace Hecton8.World
             }
 
             return resolved;
+        }
+
+        private bool TryResolveBiomeIndex(float x, float z, out int biomeIndex)
+        {
+            biomeIndex = 0;
+            Vector2Int cacheKey = GetHeightCacheKey(x, z);
+            if (_biomeIndexCache.TryGetValue(cacheKey, out CachedBiomeSample cachedSample) &&
+                cachedSample.SamplingFrameId == _samplingFrameId)
+            {
+                if (enableLiveRuntimeDiagnostics)
+                    _debugBiomeCacheHits++;
+
+                biomeIndex = cachedSample.BiomeIndex;
+                return true;
+            }
+
+            if (enableLiveRuntimeDiagnostics)
+                _debugBiomeCacheMisses++;
+
+            if (mapMagicBridge != null)
+                mapMagicBridge.TryGetBiomeIndex(x, z, out biomeIndex);
+
+            TrimBiomeIndexCacheIfNeeded();
+            _biomeIndexCache[cacheKey] = new CachedBiomeSample(biomeIndex, _samplingFrameId);
+            return true;
         }
 
         private bool TryResolveSeafloorHeightUncached(Vector3 position, out float seafloorHeight, out SeafloorSource seafloorSource)
@@ -3280,6 +3325,14 @@ namespace Hecton8.World
                 return;
 
             _seafloorHeightCache.Clear();
+        }
+
+        private void TrimBiomeIndexCacheIfNeeded()
+        {
+            if (_biomeIndexCache.Count < MaxBiomeIndexCacheEntries)
+                return;
+
+            _biomeIndexCache.Clear();
         }
 
         private void ResolveReferences(bool force = false)

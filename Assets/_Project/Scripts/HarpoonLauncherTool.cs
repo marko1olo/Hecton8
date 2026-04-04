@@ -29,6 +29,12 @@ namespace Hecton8.Gameplay
 
         private static Material s_tracerMaterial;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_tracerMaterial = null;
+        }
+
         [Header("Harpoon")]
         [SerializeField] private float range = 36f;
         [SerializeField] private float damage = 42f;

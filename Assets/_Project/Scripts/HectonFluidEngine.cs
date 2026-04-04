@@ -59,6 +59,12 @@ namespace Hecton8.Physics
 
         private static HectonFluidEngine _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         public static HectonFluidEngine Instance
         {
             get

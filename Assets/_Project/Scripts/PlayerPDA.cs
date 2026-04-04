@@ -67,6 +67,15 @@ namespace Hecton8.UI
         internal static void RaiseClosed(float duration) => OnClosed?.Invoke(duration);
         internal static void RaiseTabChanged(int oldTab, int newTab) => OnTabChanged?.Invoke(oldTab, newTab);
         internal static void RaiseLowBatteryShutdown() => OnLowBatteryShutdown?.Invoke();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            OnOpened = null;
+            OnClosed = null;
+            OnTabChanged = null;
+            OnLowBatteryShutdown = null;
+        }
     }
 
     [DisallowMultipleComponent]
@@ -154,6 +163,12 @@ namespace Hecton8.UI
         /// PlayerInteraction для блокировки ввода.
         /// </summary>
         public static bool IsOpen { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            IsOpen = false;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE

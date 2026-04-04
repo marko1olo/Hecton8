@@ -16,6 +16,13 @@ namespace Hecton8.World
         private static int _activeRuntimeCount;
         private static int _activeColliderCount;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeRuntimeCount = 0;
+            _activeColliderCount = 0;
+        }
+
         [SerializeField] private long runtimeKey;
         [SerializeField] private int requestSignature;
         [SerializeField] private int resolvedResolution;

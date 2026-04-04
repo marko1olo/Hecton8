@@ -15,6 +15,12 @@ namespace Hecton8.EditorTools
         private const string ReportFileName = "PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md";
         private static ISet<string> _activeRepresentativeSignatures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeRepresentativeSignatures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
         [MenuItem("Hecton/Validation/Generate Procedural Matrix Biome Content Report", priority = 239)]
         public static void GenerateReport()
         {

@@ -61,6 +61,12 @@ namespace Hecton8.Gameplay
 
         public static PDAExchangeSystem Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+        }
+
         public int SavePriority => 36;
         public int LoadPriority => 36;
         public int OfferCount => offerCatalog != null ? offerCatalog.Count : 0;

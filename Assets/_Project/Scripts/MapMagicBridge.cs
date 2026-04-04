@@ -57,6 +57,13 @@ namespace Hecton8.Core
 
         private static MapMagicBridge _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            OnBiomeChanged = null;
+        }
+
         public static MapMagicBridge Instance
         {
             get

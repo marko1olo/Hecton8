@@ -139,7 +139,7 @@ namespace Hecton8.Editor
         [MenuItem(MenuRoot + "Select SpatialAudioManager In Loaded Scenes", false, 50)]
         public static void SelectSpatialAudioManager()
         {
-            SpatialAudioManager sam = UnityEngine.Object.FindFirstObjectByType<SpatialAudioManager>(
+            SpatialAudioManager sam = UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(
                 FindObjectsInactive.Include);
             if (sam == null)
             {
@@ -154,8 +154,7 @@ namespace Hecton8.Editor
         [MenuItem(MenuRoot + "Select Main Camera In Loaded Scenes", false, 51)]
         public static void SelectMainCamera()
         {
-            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(
-                FindObjectsSortMode.None);
+            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>();
             for (int i = 0; i < cameras.Length; i++)
             {
                 Camera c = cameras[i];
@@ -336,7 +335,7 @@ namespace Hecton8.Editor
             }
 
             SpatialAudioManager[] sams = UnityEngine.Object.FindObjectsByType<SpatialAudioManager>(
-                FindObjectsInactive.Include, FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             sb.Append("SpatialAudioManager count: ").AppendLine(sams.Length.ToString());
             if (sams.Length > 1)
             {
@@ -366,7 +365,7 @@ namespace Hecton8.Editor
             int gameObjectsTouched = 0;
             int removedComponents = 0;
             GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(
-                FindObjectsInactive.Include, FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
 
             for (int i = 0; i < gos.Length; i++)
             {
@@ -507,7 +506,7 @@ namespace Hecton8.Editor
             }
 
             WorldGenerativeGeologyRuntimeSmokeTester tester =
-                UnityEngine.Object.FindFirstObjectByType<WorldGenerativeGeologyRuntimeSmokeTester>(
+                UnityEngine.Object.FindAnyObjectByType<WorldGenerativeGeologyRuntimeSmokeTester>(
                     FindObjectsInactive.Include);
 
             if (tester == null)
@@ -570,7 +569,7 @@ namespace Hecton8.Editor
             }
 
             WorldGenerativeGeologyRuntimeSmokeTester tester =
-                UnityEngine.Object.FindFirstObjectByType<WorldGenerativeGeologyRuntimeSmokeTester>(
+                UnityEngine.Object.FindAnyObjectByType<WorldGenerativeGeologyRuntimeSmokeTester>(
                     FindObjectsInactive.Include);
             if (tester == null)
             {
@@ -725,7 +724,7 @@ namespace Hecton8.Editor
             }
 
             ToolRuntimeSmokeTester tester =
-                UnityEngine.Object.FindFirstObjectByType<ToolRuntimeSmokeTester>(FindObjectsInactive.Include);
+                UnityEngine.Object.FindAnyObjectByType<ToolRuntimeSmokeTester>(FindObjectsInactive.Include);
             if (tester == null)
             {
                 Debug.LogWarning("[Hecton Dev] No ToolRuntimeSmokeTester found.");
@@ -863,7 +862,7 @@ namespace Hecton8.Editor
         private static ToolRuntimeSmokeTester FindOrCreateToolRuntimeSmokeTester()
         {
             ToolRuntimeSmokeTester tester =
-                UnityEngine.Object.FindFirstObjectByType<ToolRuntimeSmokeTester>(FindObjectsInactive.Include);
+                UnityEngine.Object.FindAnyObjectByType<ToolRuntimeSmokeTester>(FindObjectsInactive.Include);
             if (tester != null)
             {
                 if (tester.gameObject.name.StartsWith("__DEV_", StringComparison.Ordinal))
@@ -893,7 +892,7 @@ namespace Hecton8.Editor
         private static int LogMissingScriptsInLoadedScenes()
         {
             GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(
-                FindObjectsInactive.Include, FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
 
             int missing = 0;
             for (int i = 0; i < gos.Length; i++)

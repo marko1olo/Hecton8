@@ -269,6 +269,13 @@ namespace Hecton8.Core
     {
         private static EntityChangeManager _instance;
         private static readonly Dictionary<string, EntityChangeDetector> _detectors = new Dictionary<string, EntityChangeDetector>(256);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            _detectors.Clear();
+        }
         private bool _registered = false;
 
         public static EntityChangeManager Instance

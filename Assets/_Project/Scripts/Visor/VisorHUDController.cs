@@ -2,13 +2,16 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace NASAPunk.Visor
 {
     /// <summary>
     /// Drives the visor HUD projection material and optional runtime render texture.
     /// Runtime refresh runs through <see cref="GameTickManager"/> while edit-mode preview
-    /// stays on <see cref="Update"/> so the inspector workflow remains intact.
+    /// stays on an editor callback so play mode avoids MonoBehaviour Update polling.
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
@@ -117,6 +120,18 @@ namespace NASAPunk.Visor
             SyncProjectionPose();
             RebuildProjection();
             TryRegisterRuntimeTick();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
+            }
+#endif
+        }
+
+        private void Start()
+        {
+            TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
@@ -132,21 +147,20 @@ namespace NASAPunk.Visor
             UnregisterRuntimeTick();
             ReleaseRT();
             InvalidatePoseCache();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorTick;
+#endif
         }
 
-        private void Update()
+#if UNITY_EDITOR
+        private void EditorTick()
         {
-            if (Application.isPlaying)
-            {
-                TryRegisterRuntimeTick();
-                return;
-            }
-
-            if (!_previewInEditMode)
+            if (Application.isPlaying || !isActiveAndEnabled || !_previewInEditMode)
                 return;
 
             RefreshRuntimeState(forceResolve: false);
         }
+#endif
 
         private void OnValidate()
         {

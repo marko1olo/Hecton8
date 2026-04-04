@@ -7,6 +7,12 @@ namespace Hecton8.Gameplay
     {
         private static Material s_fallbackBeaconMaterial;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_fallbackBeaconMaterial = null;
+        }
+
         private GameObject _sourcePrefab;
         private Light _light;
         private float _baseIntensity;

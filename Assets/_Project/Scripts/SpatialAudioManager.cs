@@ -66,6 +66,12 @@ namespace Hecton8.Audio
 
         private static SpatialAudioManager s_Instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_Instance = null;
+        }
+
         /// <summary>
         /// Глобальный доступ к менеджеру. Не создаёт объект автоматически —
         /// менеджер должен быть размещён на сцене вручную или через bootstrap.

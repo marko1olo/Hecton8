@@ -15,6 +15,27 @@ public static class SceneViewSkyboxEnforcer
 
     static SceneViewSkyboxEnforcer()
     {
+        RegisterCallbacks();
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        EditorApplication.update -= ApplySceneViewDefaults;
+        RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+        AssemblyReloadEvents.beforeAssemblyReload -= CleanupPreview;
+        EditorApplication.quitting -= CleanupPreview;
+        CleanupPreview();
+        RegisterCallbacks();
+    }
+
+    private static void RegisterCallbacks()
+    {
+        EditorApplication.update -= ApplySceneViewDefaults;
+        RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+        AssemblyReloadEvents.beforeAssemblyReload -= CleanupPreview;
+        EditorApplication.quitting -= CleanupPreview;
+
         EditorApplication.update += ApplySceneViewDefaults;
         RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
         AssemblyReloadEvents.beforeAssemblyReload += CleanupPreview;

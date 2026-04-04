@@ -46,6 +46,12 @@ namespace Hecton8.Gameplay
 
         public static HectonDiscoveryManager Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+        }
+
         /// <summary>
         /// Последний корректно подтвержденный ID открытого биома.
         /// </summary>

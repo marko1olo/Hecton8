@@ -118,6 +118,14 @@ namespace Hecton8.Core
         private static readonly List<PendingLoad> _pendingLoads = new List<PendingLoad>(64);
         private static readonly Dictionary<string, UnityEngine.Object> _loadedAssets = new Dictionary<string, UnityEngine.Object>(128);
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            _pendingLoads.Clear();
+            _loadedAssets.Clear();
+        }
+
         private int _nextRequestId = 1;
         private bool _registered = false;
 

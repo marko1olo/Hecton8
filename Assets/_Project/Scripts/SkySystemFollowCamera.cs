@@ -35,21 +35,10 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (Application.isPlaying)
-        {
-            if (!followInPlayMode)
-                return;
-
-            ApplyFollow();
-            return;
-        }
-
-#if UNITY_EDITOR
-        if (!followInEditMode)
+        if (!Application.isPlaying || !followInPlayMode)
             return;
 
         ApplyFollow();
-#endif
     }
 
     private void ApplyFollow()

@@ -26,6 +26,12 @@ namespace Hecton8.Physics
     {
         private static AmbientWaterMotionManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         [Header("Observer / LOD")]
         [SerializeField] private Transform lodObserver;
         [SerializeField] private float nearDistance    = 20f;

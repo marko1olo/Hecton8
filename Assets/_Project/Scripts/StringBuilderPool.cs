@@ -67,6 +67,17 @@ namespace Hecton8.Core
         private static int _currentPoolSize;
         private static int _onceCreated;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            lock (_pool)
+                _pool.Clear();
+
+            _totalAllocations = 0;
+            _currentPoolSize = 0;
+            _onceCreated = 0;
+        }
+
         // ════════════════════════════════════════════════════════════
         //  PUBLIC API
         // ════════════════════════════════════════════════════════════

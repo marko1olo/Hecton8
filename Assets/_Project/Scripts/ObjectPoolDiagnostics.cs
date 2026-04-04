@@ -147,6 +147,16 @@ namespace Hecton8.Core
 
         private static int _lastDiagnosticsFrame = -1;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            OnPoolWarning = null;
+            OnPoolExhausted = null;
+            OnSpawnRateAlert = null;
+            _poolMetrics.Clear();
+            _lastDiagnosticsFrame = -1;
+        }
+
         // ════════════════════════════════════════════════════════════
         //  PUBLIC API
         // ════════════════════════════════════════════════════════════
@@ -316,13 +326,6 @@ namespace Hecton8.Core
         // ════════════════════════════════════════════════════════════
 
 #if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void EditorRegisterDebugMenu()
-        {
-            // In editor: Ctrl+Shift+P can trigger pool diagnostics output
-            // (Would need editor menu integration in real project)
-        }
-
         public static void PrintReport()
         {
             Debug.Log(GenerateReport());

@@ -397,7 +397,7 @@ public static class HectonUIBuilder
         }
 
         // Priority 3: any Canvas in scene
-        Canvas fallback = Object.FindFirstObjectByType<Canvas>();
+        Canvas fallback = Object.FindAnyObjectByType<Canvas>();
         return fallback;
     }
 }

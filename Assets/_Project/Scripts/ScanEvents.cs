@@ -23,6 +23,14 @@ namespace Hecton8.Gameplay
     /// </summary>
     public static class ScanEvents
     {
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            OnScanTriggered = null;
+            OnNodeFound = null;
+            OnEntryDiscovered = null;
+        }
+
         /// <summary>
         /// Fired once when a scan pulse is triggered.
         /// Parameters: world-space center of scan, scan radius in meters.

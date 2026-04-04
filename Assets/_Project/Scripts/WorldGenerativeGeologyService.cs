@@ -78,6 +78,12 @@ namespace Hecton8.World
 
         private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(256);
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeBindings.Clear();
+        }
+
         [SerializeField] private long runtimeKey;
         [SerializeField] private string familyId = "world.family.generic";
         [SerializeField] private string geologyProfileId = "geology.generic";
@@ -310,6 +316,13 @@ namespace Hecton8.World
     {
         private static int _activeGeneratedRootCount;
         private static int _activeGeneratedRendererCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeGeneratedRootCount = 0;
+            _activeGeneratedRendererCount = 0;
+        }
 
         [DisallowMultipleComponent]
         private sealed class GeneratedRuntimeState : MonoBehaviour

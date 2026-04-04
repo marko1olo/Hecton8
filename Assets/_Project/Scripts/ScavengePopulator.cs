@@ -77,6 +77,12 @@ namespace Hecton8.Core
 
         private static ScavengePopulator _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         /// <summary>
         /// Глобальный доступ. Используется из HectonScatterOutput
         /// для регистрации спавн-точек без промежуточных аллокаций.

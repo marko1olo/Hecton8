@@ -31,6 +31,26 @@ namespace Hecton8.Dev
         /// </summary>
         public static string CurrentFilePath => _currentFilePath;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            lock (_Gate)
+            {
+                if (_writer != null)
+                {
+                    _writer.Dispose();
+                    _writer = null;
+                }
+
+                _currentFilePath = string.Empty;
+                _approximateBytesWritten = 0L;
+                _sizeLimitReached = false;
+                _startupLogged = false;
+                _lastMessageByChannel.Clear();
+                _suppressedDuplicateCountByChannel.Clear();
+            }
+        }
+
         /// <summary>
         /// Gets whether the trace currently has an open output file.
         /// </summary>

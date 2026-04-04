@@ -58,6 +58,12 @@ namespace Hecton8.Dev
                 QueueRebuildAfterReset();
         }
 
+        private void OnDisable()
+        {
+            EditorApplication.delayCall -= TryRebuildAfterReset;
+            _rebuildQueued = false;
+        }
+
         [ContextMenu("Rebuild Tool Staging")]
         private void RebuildToolStaging()
         {
@@ -101,6 +107,7 @@ namespace Hecton8.Dev
                 return;
 
             _rebuildQueued = true;
+            EditorApplication.delayCall -= TryRebuildAfterReset;
             EditorApplication.delayCall += TryRebuildAfterReset;
         }
 

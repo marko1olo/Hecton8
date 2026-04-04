@@ -139,6 +139,18 @@ namespace Hecton8.UI
         private static Sprite s_healthIconSprite;
         private static Sprite s_energyIconSprite;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeOverlays.Clear();
+            s_controllerResolveBuffer.Clear();
+            s_ringFillSprite = null;
+            s_ringFrameSprite = null;
+            s_oxygenIconSprite = null;
+            s_healthIconSprite = null;
+            s_energyIconSprite = null;
+        }
+
         private SuitData _activeSuit;
         private SuitHUDProfile _activeProfile;
         private SuitHUDProfile _cachedPaletteProfile;
@@ -233,30 +245,41 @@ namespace Hecton8.UI
             InvalidateVisualCaches();
             RefreshAll(0.016f, forceResolve: true);
             TryRegisterRuntimeTick();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
+            }
+#endif
+        }
+
+        private void Start()
+        {
+            TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
         {
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorTick;
+#endif
 
             if (_root != null)
                 _root.gameObject.SetActive(false);
         }
 
-        private void Update()
+#if UNITY_EDITOR
+        private void EditorTick()
         {
-            if (Application.isPlaying)
-            {
-                TryRegisterRuntimeTick();
-                return;
-            }
-
-            if (!keepVisibleInEditMode)
+            if (Application.isPlaying || !isActiveAndEnabled || !keepVisibleInEditMode)
                 return;
 
             RefreshAll(0.016f, forceResolve: false);
         }
+#endif
 
         public void Tick(float deltaTime)
         {

@@ -41,6 +41,12 @@ namespace Hecton8.Gameplay
 
         public static BeaconNetworkSystem Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+        }
+
         public int SavePriority => 37;
         public int LoadPriority => 37;
         public int ActiveCount => _activeBeacons.Count;

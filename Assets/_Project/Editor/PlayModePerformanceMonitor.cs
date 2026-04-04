@@ -79,10 +79,62 @@ namespace Hecton8.Editor
 
         static PlayModePerformanceMonitor()
         {
-            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+            RegisterCallbacks();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            Stop();
+
+            _logBudgetViolations = false;
+            _logEveryWindow = false;
+            _windowCount = 0;
+            _violationWindowStreak = 0;
+            _lastWindowExceededBudget = false;
+            _lastViolationWarningAtEditorTime = 0d;
+            _lastEditorTimestamp = 0d;
+            _sampleWindowSeconds = 2f;
+            _sampleElapsed = 0f;
+            _lastFrameTimeMs = 0f;
+            _lastMainThreadMs = 0f;
+            _lastGcAllocBytes = 0;
+            _lastSystemMemoryMb = 0f;
+            _lastSetPassCalls = 0;
+            _lastBatches = 0;
+            _peakFrameTimeMs = 0f;
+            _peakMainThreadMs = 0f;
+            _peakGcAllocBytes = 0;
+            _peakSystemMemoryMb = 0f;
+            _peakSetPassCalls = 0;
+            _peakBatches = 0;
+            _frameTimeBudgetMs = 16.67f;
+            _mainThreadBudgetMs = 12f;
+            _gcAllocBudgetBytes = 0;
+            _systemMemoryBudgetMb = 4096f;
+            _setPassBudget = 600;
+            _batchesBudget = 1800;
+            _frameTimeStat = "Unresolved";
+            _mainThreadStat = "Unresolved";
+            _gcAllocStat = "Unresolved";
+            _systemMemoryStat = "Unresolved";
+            _setPassStat = "Unresolved";
+            _batchesStat = "Unresolved";
+            _lastReport = "None";
+            _availableHandles.Clear();
+            _reportBuilder.Clear();
+
+            RegisterCallbacks();
         }
 
         public static bool IsActive => _active;
+
+        private static void RegisterCallbacks()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+        }
 
         public static void Start(
             float sampleWindowSeconds = 2f,

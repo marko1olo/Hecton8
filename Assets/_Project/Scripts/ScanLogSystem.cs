@@ -51,6 +51,12 @@ namespace Hecton8.Gameplay
 
         public static ScanLogSystem Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+        }
+
         public int SavePriority => 35;
         public int LoadPriority => 35;
         public int EntryCount => _entries.Count;

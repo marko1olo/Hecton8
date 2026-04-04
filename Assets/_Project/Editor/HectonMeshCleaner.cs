@@ -29,9 +29,9 @@ public class HectonMeshCleaner : EditorWindow
     // ═══════════════════════════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════════════════════════
-    private int analyzedObjectInstanceID = 0;
+    private ulong analyzedObjectEntityId = 0UL;
     private string analyzedObjectPath = "";
-    private Dictionary<int, PerMeshAnalysis> perMeshAnalysis = new Dictionary<int, PerMeshAnalysis>();
+    private Dictionary<ulong, PerMeshAnalysis> perMeshAnalysis = new Dictionary<ulong, PerMeshAnalysis>();
     private bool analysisReady = false;
     private Mesh previewSourceMesh;
     private GameObject previewTarget;
@@ -45,8 +45,8 @@ public class HectonMeshCleaner : EditorWindow
 
     private struct PerMeshAnalysis
     {
-        public int meshFilterID;
-        public int meshID;
+        public ulong meshFilterID;
+        public ulong meshID;
         public int vertCount;
         public int triCount;
         public string goName;
@@ -106,7 +106,7 @@ public class HectonMeshCleaner : EditorWindow
         lodResults.Clear();
         previewSourceMesh = null;
         previewTarget = null;
-        analyzedObjectInstanceID = 0;
+        analyzedObjectEntityId = 0UL;
         analyzedObjectPath = "";
         if (!string.IsNullOrEmpty(reason)) Debug.Log($"[HectonCleaner] Reset: {reason}");
         SceneView.RepaintAll();
@@ -117,13 +117,14 @@ public class HectonMeshCleaner : EditorWindow
     {
         if (!analysisReady) return false;
         if (targetObject == null) { FullReset("Target null"); return false; }
-        if (targetObject.GetInstanceID() != analyzedObjectInstanceID) { FullReset("Target changed"); return false; }
+        if (GetStableObjectId(targetObject) != analyzedObjectEntityId) { FullReset("Target changed"); return false; }
         if (GetHierarchyPath(targetObject) != analyzedObjectPath) { FullReset("Hierarchy changed"); return false; }
         foreach (var mf in GetMeshFilters())
         {
-            if (!perMeshAnalysis.ContainsKey(mf.GetInstanceID())) continue;
-            var a = perMeshAnalysis[mf.GetInstanceID()];
-            if (mf.sharedMesh == null || mf.sharedMesh.GetInstanceID() != a.meshID ||
+            ulong meshFilterId = GetStableObjectId(mf);
+            if (!perMeshAnalysis.ContainsKey(meshFilterId)) continue;
+            var a = perMeshAnalysis[meshFilterId];
+            if (mf.sharedMesh == null || GetStableObjectId(mf.sharedMesh) != a.meshID ||
                 mf.sharedMesh.vertexCount != a.vertCount || mf.sharedMesh.triangles.Length / 3 != a.triCount)
             { FullReset("Mesh data changed"); return false; }
         }
@@ -135,6 +136,11 @@ public class HectonMeshCleaner : EditorWindow
         string p = go.name; Transform t = go.transform.parent;
         while (t != null) { p = t.name + "/" + p; t = t.parent; }
         return p;
+    }
+
+    private static ulong GetStableObjectId(UnityEngine.Object obj)
+    {
+        return obj != null ? EntityId.ToULong(obj.GetEntityId()) : 0UL;
     }
 
     private string GetUniqueSaveName(MeshFilter mf)
@@ -264,7 +270,7 @@ public class HectonMeshCleaner : EditorWindow
         { FullReset("Fresh analyze"); AnalyzeAll(); }
 
         bool canApply = targetObject != null && analysisReady && perMeshAnalysis.Count > 0
-            && targetObject.GetInstanceID() == analyzedObjectInstanceID;
+            && GetStableObjectId(targetObject) == analyzedObjectEntityId;
         GUI.enabled = canApply;
         GUI.backgroundColor = new Color(0.2f, 0.85f, 0.3f);
         if (GUILayout.Button("▶ APPLY\n(modify)", GUILayout.Height(50)))
@@ -301,11 +307,11 @@ public class HectonMeshCleaner : EditorWindow
             EditorUtility.DisplayProgressBar("Analyzing...", $"{mfs[m].gameObject.name} ({m + 1}/{mfs.Length})", (float)m / mfs.Length);
             var res = AnalyzeMesh(mfs[m]);
             lodResults.Add(res.lod);
-            perMeshAnalysis[mfs[m].GetInstanceID()] = res.data;
+            perMeshAnalysis[GetStableObjectId(mfs[m])] = res.data;
         }
 
         EditorUtility.ClearProgressBar();
-        analyzedObjectInstanceID = targetObject.GetInstanceID();
+        analyzedObjectEntityId = GetStableObjectId(targetObject);
         analyzedObjectPath = GetHierarchyPath(targetObject);
         analysisReady = true;
         lastTime = EditorApplication.timeSinceStartup - t0;
@@ -392,8 +398,8 @@ public class HectonMeshCleaner : EditorWindow
 
         var data = new PerMeshAnalysis
         {
-            meshFilterID = mf.GetInstanceID(),
-            meshID = mesh.GetInstanceID(),
+            meshFilterID = GetStableObjectId(mf),
+            meshID = GetStableObjectId(mesh),
             vertCount = mesh.vertexCount,
             triCount = triCount,
             goName = mf.gameObject.name,
@@ -473,13 +479,13 @@ public class HectonMeshCleaner : EditorWindow
         for (int m = 0; m < mfs.Length; m++)
         {
             MeshFilter mf = mfs[m];
-            int mfID = mf.GetInstanceID();
+            ulong mfID = GetStableObjectId(mf);
 
             EditorUtility.DisplayProgressBar("Applying...", $"{mf.gameObject.name} ({m + 1}/{mfs.Length})", (float)m / mfs.Length);
 
             if (!perMeshAnalysis.ContainsKey(mfID)) { skipped++; continue; }
             var analysis = perMeshAnalysis[mfID];
-            if (mf.sharedMesh == null || mf.sharedMesh.GetInstanceID() != analysis.meshID) { skipped++; continue; }
+            if (mf.sharedMesh == null || GetStableObjectId(mf.sharedMesh) != analysis.meshID) { skipped++; continue; }
             if (analysis.hiddenTris.Count == 0) { skipped++; continue; }
 
             Mesh cleaned = BuildCleanedMesh(mf.sharedMesh, analysis);
@@ -906,7 +912,7 @@ public class HectonMeshCleaner : EditorWindow
 
     private void CleanupTemp()
     {
-        foreach (var g in FindObjectsOfType<GameObject>())
+        foreach (var g in UnityEngine.Object.FindObjectsByType<GameObject>())
             if (g.name.StartsWith("_HectonTemp_")) DestroyImmediate(g);
     }
 
@@ -937,7 +943,7 @@ public class HectonMeshCleaner : EditorWindow
     private void OnSceneGUI(SceneView sv)
     {
         if (!showPreview || !analysisReady || previewSourceMesh == null || previewTarget == null) return;
-        if (targetObject == null || targetObject.GetInstanceID() != analyzedObjectInstanceID) return;
+        if (targetObject == null || GetStableObjectId(targetObject) != analyzedObjectEntityId) return;
 
         Vector3[] verts = previewSourceMesh.vertices;
         int[] tris = previewSourceMesh.triangles;

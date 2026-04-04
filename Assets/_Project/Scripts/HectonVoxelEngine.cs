@@ -100,7 +100,14 @@ public static class MCTables
 #endif
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    static void DomainReloadCleanup() { Shutdown(); }
+    static void DomainReloadCleanup()
+    {
+        Shutdown();
+        _edgeTable = default;
+        _triTable = default;
+        _ready = 0;
+        _editorHooksInstalled = false;
+    }
 
     public static void Initialize()
     {
@@ -1617,6 +1624,14 @@ public class HectonVoxelEngine : MonoBehaviour
     static int _liveEngineCount;
     static int _activeGenerationOperations;
     static int _shutdownRequested;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStaticRuntimeState()
+    {
+        _liveEngineCount = 0;
+        _activeGenerationOperations = 0;
+        _shutdownRequested = 0;
+    }
     readonly List<GameObject> _activeVolumes = new List<GameObject>();
     bool _registeredLiveEngine;
 

@@ -41,6 +41,12 @@ namespace Hecton8.Tools
 
         public static ToolDurabilitySystem Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
         // ══════════════════════════════════════════════════════════

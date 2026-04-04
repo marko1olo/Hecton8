@@ -56,6 +56,12 @@ namespace Hecton8.Physics
 
         private static FlowFieldVisualizer _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         public static FlowFieldVisualizer Instance
         {
             get
@@ -64,11 +70,6 @@ namespace Hecton8.Physics
                 if (_instance == null)
                 {
                     _instance = FindAnyObjectByType<FlowFieldVisualizer>();
-                    if (_instance == null)
-                    {
-                        GameObject go = new GameObject("FlowFieldVisualizer");
-                        _instance = go.AddComponent<FlowFieldVisualizer>();
-                    }
                 }
 #endif
                 return _instance;

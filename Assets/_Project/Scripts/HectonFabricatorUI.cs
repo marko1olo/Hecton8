@@ -201,6 +201,12 @@ namespace Hecton8.UI
         /// </summary>
         public static bool IsMenuOpen { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            IsMenuOpen = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════

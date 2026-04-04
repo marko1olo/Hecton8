@@ -10,6 +10,12 @@ namespace Hecton8.Gameplay
     {
         private static HUDNotification s_notification;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_notification = null;
+        }
+
         public static bool ApplyDamage(
             Collider hitCollider,
             float damage,

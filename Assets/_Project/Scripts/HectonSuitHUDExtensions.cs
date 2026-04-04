@@ -33,6 +33,9 @@ using Hecton8.UI;
 using Shapes;
 using TMPro;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [DisallowMultipleComponent]
 [ExecuteAlways]
@@ -124,10 +127,10 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     }
 
     // Pre-allocated notification strings (zero GC)
-    private static string STR_FLASHLIGHT_OVERHEAT = "FLASHLIGHT OVERHEAT";
-    private static string STR_FLASHLIGHT_LOW_BATTERY = "FLASHLIGHT LOW BATTERY";
-    private static string STR_PDA_LOW_BATTERY = "PDA LOW BATTERY";
-    private static string STR_BATTERY_DEPLETED = "BATTERY DEPLETED";
+    private static readonly string STR_FLASHLIGHT_OVERHEAT = "FLASHLIGHT OVERHEAT";
+    private static readonly string STR_FLASHLIGHT_LOW_BATTERY = "FLASHLIGHT LOW BATTERY";
+    private static readonly string STR_PDA_LOW_BATTERY = "PDA LOW BATTERY";
+    private static readonly string STR_BATTERY_DEPLETED = "BATTERY DEPLETED";
     private static readonly string STR_LOADOUT = "LOADOUT";
     private static readonly string STR_EMPTY_SLOT = "EMPTY";
     private static readonly string[] SlotIndexLabels = { "1", "2", "3", "4" };
@@ -154,6 +157,18 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         SubscribeToolManager();
         ForceRefresh();
         RegisterTick();
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            EditorApplication.update -= EditorTick;
+            EditorApplication.update += EditorTick;
+        }
+#endif
+    }
+
+    private void Start()
+    {
+        RegisterTick();
     }
 
     public override void OnDisable()
@@ -162,6 +177,9 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         Unsubscribe();
         UnsubscribeToolManager();
         UnregisterTick();
+#if UNITY_EDITOR
+        EditorApplication.update -= EditorTick;
+#endif
     }
 
     // ══════════════════════════════════════════════════════════
@@ -174,13 +192,11 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         DrawExtensions();
     }
 
-    private void Update()
+#if UNITY_EDITOR
+    private void EditorTick()
     {
-        if (Application.isPlaying)
-        {
-            RegisterTick();
+        if (Application.isPlaying || !isActiveAndEnabled)
             return;
-        }
 
         AutoResolveReferences(force: false);
         PollHeatState();
@@ -188,6 +204,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         UpdateTransientFlags(0.016f);
         UpdateDiagnostics();
     }
+#endif
 
     public void Tick(float deltaTime)
     {

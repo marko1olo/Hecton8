@@ -50,6 +50,14 @@ namespace Hecton8.Power
 
         private static PowerGridManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            if (_allGrids != null)
+                _allGrids.Clear();
+        }
+
         public static PowerGridManager Instance
         {
             get

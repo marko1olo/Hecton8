@@ -4,6 +4,9 @@ using Hecton8.Gameplay;
 using Hecton8.UI;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace NASAPunk.Visor
 {
@@ -69,11 +72,26 @@ namespace NASAPunk.Visor
             ApplyPresentation(force: true);
             _pendingApply = false;
             EvaluateTickRegistration();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
+            }
+#endif
+        }
+
+        private void Start()
+        {
+            EvaluateTickRegistration();
         }
 
         private void OnDisable()
         {
             UnregisterTick();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorTick;
+#endif
         }
 
         private void OnValidate()
@@ -82,18 +100,17 @@ namespace NASAPunk.Visor
             _pendingApply = true;
         }
 
-        private void Update()
+#if UNITY_EDITOR
+        private void EditorTick()
         {
-            if (Application.isPlaying)
-            {
-                EvaluateTickRegistration();
+            if (Application.isPlaying || !isActiveAndEnabled)
                 return;
-            }
 
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
         }
+#endif
 
         public void Tick(float deltaTime)
         {

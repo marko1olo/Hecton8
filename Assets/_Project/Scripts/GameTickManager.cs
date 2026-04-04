@@ -54,6 +54,12 @@ namespace Hecton8.Core
 
         private static GameTickManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         /// <summary>
         /// Глобальный доступ к менеджеру тиков.
         /// Гарантированно не-null после Awake менеджера.

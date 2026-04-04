@@ -61,6 +61,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
 using Hecton8.Atmosphere;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Celestial
 {
@@ -289,6 +292,13 @@ namespace Hecton8.Celestial
                 if (tickManager != null)
                     tickManager.Register((ITickable)this);
             }
+#if UNITY_EDITOR
+            else
+            {
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
+            }
+#endif
         }
 
         private void OnDisable()
@@ -302,6 +312,12 @@ namespace Hecton8.Celestial
                 if (tickManager != null)
                     tickManager.Unregister((ITickable)this);
             }
+#if UNITY_EDITOR
+            else
+            {
+                EditorApplication.update -= EditorTick;
+            }
+#endif
         }
 
         private void OnDestroy()
@@ -313,13 +329,13 @@ namespace Hecton8.Celestial
         }
 
 #if UNITY_EDITOR
-        private void Update()
+        private void EditorTick()
         {
-            if (!Application.isPlaying)
-            {
-                float dt = Time.deltaTime > 0f ? Time.deltaTime : 0.016f;
-                Tick(dt);
-            }
+            if (Application.isPlaying || this == null)
+                return;
+
+            float dt = Time.deltaTime > 0f ? Time.deltaTime : 0.016f;
+            Tick(dt);
         }
 #endif
 

@@ -24,6 +24,12 @@ public static class AsymmetricContinentalDivideGraphBuilder
 
     private static ulong _idCounter = 1000UL;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        _idCounter = 1000UL;
+    }
+
     private static ulong GenerateId()
     {
         return System.Threading.Interlocked.Increment(ref _idCounter);

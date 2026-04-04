@@ -59,6 +59,13 @@ namespace Hecton8.Physics
         private static RaycastBatchHelper _instance;
         public static RaycastBatchHelper Instance => _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            TotalRaycastsProcessed = 0;
+        }
+
         private void Awake()
         {
             if (_instance != null && _instance != this)

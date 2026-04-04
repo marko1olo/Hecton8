@@ -1,5 +1,7 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -14,10 +16,15 @@ namespace Hecton8.World
         private static Transform _CachedPlayerTransform;
         private static MapMagicBridge _CachedMapMagicBridge;
         private static ScavengePopulator _CachedScavengePopulator;
+        private static readonly Dictionary<Type, UnityEngine.Object> _SceneObjectCache = new Dictionary<Type, UnityEngine.Object>(32);
 
-        private static class SceneObjectCache<T> where T : Object
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
         {
-            public static T Cached;
+            _CachedPlayerTransform = null;
+            _CachedMapMagicBridge = null;
+            _CachedScavengePopulator = null;
+            _SceneObjectCache.Clear();
         }
 
         public static bool TryResolvePlayerTransform(ref Transform target)
@@ -53,20 +60,24 @@ namespace Hecton8.World
             return true;
         }
 
-        public static bool TryResolveSceneObject<T>(ref T target) where T : Object
+        public static bool TryResolveSceneObject<T>(ref T target) where T : UnityEngine.Object
         {
             if (target != null)
                 return true;
 
-            if (SceneObjectCache<T>.Cached != null)
+            Type targetType = typeof(T);
+            if (_SceneObjectCache.TryGetValue(targetType, out UnityEngine.Object cachedObject) && cachedObject != null)
             {
-                target = SceneObjectCache<T>.Cached;
-                return true;
+                target = cachedObject as T;
+                if (target != null)
+                    return true;
+
+                _SceneObjectCache.Remove(targetType);
             }
 
-            target = Object.FindAnyObjectByType<T>();
+            target = UnityEngine.Object.FindAnyObjectByType<T>();
             if (target != null)
-                SceneObjectCache<T>.Cached = target;
+                _SceneObjectCache[targetType] = target;
             return target != null;
         }
 
@@ -81,7 +92,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            target = MapMagicBridge.Instance ?? Object.FindAnyObjectByType<MapMagicBridge>();
+            target = MapMagicBridge.Instance ?? UnityEngine.Object.FindAnyObjectByType<MapMagicBridge>();
             if (target != null)
                 _CachedMapMagicBridge = target;
             return target != null;
@@ -98,7 +109,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            target = ScavengePopulator.Instance ?? Object.FindAnyObjectByType<ScavengePopulator>();
+            target = ScavengePopulator.Instance ?? UnityEngine.Object.FindAnyObjectByType<ScavengePopulator>();
             if (target != null)
                 _CachedScavengePopulator = target;
             return target != null;

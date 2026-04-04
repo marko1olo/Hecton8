@@ -27,6 +27,12 @@ namespace Hecton8.World
 
         private static HectonRockManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         public static HectonRockManager Instance
         {
             get

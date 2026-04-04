@@ -4003,3 +4003,27 @@ Notes:
 - Evidence-based fixes applied after that run: persisted `MapMagicBridge.mapMagicObject` + `playerTransform` scene wiring through `WorldStreamingWiringValidator` / `WorldRuntimeBootstrapAuthoring`; scene saved. Raised `FaunaDirector` creature pool warmup target from 4 to 8 because `SmallPassiveProxy` and `HunterProxy` still expanded by 4 at runtime.
 - Current edit-time verification after wiring: `MapMagicBridge.IsAvailable=true`, `RuntimeMapMagicObject=Terrain`, `playerTransform=Player`, scene `Assets/_Project/Scenes/02_HECTON_WORLD.unity` saved.
 - Additional objective fixes after code inspection: `WorldProceduralScatterDirector.SetFaunaSpawnRegistry(...)` is now idempotent for same-registry rebinds, editor wiring now calls live `MapMagicBridge` setters, and `FaunaDirector.TryWarmupCreaturePools()` dedupes repeated creature prefabs across all biome datasets before warmup to cut cold-start fauna cost. Compile clean. Runtime effect still `PENDING VERIFICATION`.
+- 2026-04-04 latest user-provided runtime verification:
+  - fresh logs now show `[WorldScatterProfiler] rebuild=69.36ms sample=51.37ms input=19.55ms wait=2.79ms post=29.04ms rescue=6.78ms reconcile=10.49ms spawn=4.29ms desired=8 active=0 reason=dirty`
+  - paired slow-tick log: `[TickProfiler] SlowTick spike total=104.71ms ... WorldProceduralScatterDirector=84.77ms | FaunaDirector=11.52ms | ScavengePopulator=1.97ms | HectonSurvivalSystem=1.17ms | HectonUnderwaterVisuals=1.07ms | MapMagicBridge=0.90ms`
+  - compared to the previous handoff baseline (`144.60ms` total, `106.40ms` scatter, `25.66ms` fauna, `79.24ms` rebuild), the runtime is materially better:
+    - total slow tick: `144.60 -> 104.71ms`
+    - top scatter cost: `106.40 -> 84.77ms`
+    - fauna cost: `25.66 -> 11.52ms`
+    - scatter rebuild: `79.24 -> 69.36ms`
+    - sample: `64.29 -> 51.37ms`
+  - user-reported feel of "less freezing" is consistent with these numbers
+  - honest status:
+    - runtime is still not normalized
+    - main verified stall is still `WorldProceduralScatterDirector`
+    - `active=0` while `desired=8` remains a bad signal
+    - `rescue` regressed from `3.38ms` to `6.78ms` and is now a live investigation target
+  - editor/domain-reload noise seen in the same launch:
+    - `LifecycleManagement ... NullReferenceException`
+    - `SerializedObjectNotCreatableException`
+    - `MCP-FOR-UNITY [WebSocket] Unexpected receive error: WebSocket is not initialised`
+    - these are not yet proven root cause of the gameplay spike
+  - memory positioning:
+    - no fresh resident/native/managed/render-texture counters were captured in this latest console run
+    - current memory facts remain the older profiler screenshot-derived set (`Resident 6.73 GB`, `Allocated 11.37 GB`, `Native 4.65 GB`, `Managed 3.55 GB`, `Render Textures 426.5 MB`)
+  - status: `PENDING VERIFICATION`

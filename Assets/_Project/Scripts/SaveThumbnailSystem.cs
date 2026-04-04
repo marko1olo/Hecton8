@@ -22,6 +22,14 @@ namespace Hecton8.SaveSystem
         private static Texture2D _pooledTexture2D;
         private static readonly Dictionary<string, Sprite> _spriteCache = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _pooledRenderTexture = null;
+            _pooledTexture2D = null;
+            _spriteCache.Clear();
+        }
+
         public static string GetThumbnailPath(string slotName)
         {
             return Path.Combine(Application.persistentDataPath, slotName + Extension);

@@ -12,31 +12,31 @@ namespace Hecton8.EditorTools
         {
             List<string> issues = new List<string>();
 
-            if (Object.FindFirstObjectByType<FieldOperationLogSystem>() == null)
+            if (Object.FindAnyObjectByType<FieldOperationLogSystem>() == null)
                 issues.Add("FieldOperationLogSystem is missing from the active scene.");
 
-            if (Object.FindFirstObjectByType<ScanLogSystem>() == null)
+            if (Object.FindAnyObjectByType<ScanLogSystem>() == null)
                 issues.Add("ScanLogSystem is missing from the active scene.");
 
-            if (Object.FindFirstObjectByType<ScannerTool>() == null)
+            if (Object.FindAnyObjectByType<ScannerTool>() == null)
                 issues.Add("No ScannerTool instance is reachable in the active scene.");
 
-            if (Object.FindFirstObjectByType<SalvageSamplerTool>() == null)
+            if (Object.FindAnyObjectByType<SalvageSamplerTool>() == null)
                 issues.Add("No SalvageSamplerTool instance is reachable in the active scene.");
 
-            if (Object.FindFirstObjectByType<LaserCutter>() == null)
+            if (Object.FindAnyObjectByType<LaserCutter>() == null)
                 issues.Add("No LaserCutter instance is reachable in the active scene.");
 
-            if (Object.FindFirstObjectByType<EnvironmentalAnalyzerTool>() == null)
+            if (Object.FindAnyObjectByType<EnvironmentalAnalyzerTool>() == null)
                 issues.Add("No EnvironmentalAnalyzerTool instance is reachable in the active scene.");
 
-            if (Object.FindFirstObjectByType<StunPistolTool>() == null)
+            if (Object.FindAnyObjectByType<StunPistolTool>() == null)
                 issues.Add("No StunPistolTool instance is reachable in the active scene.");
 
-            if (Object.FindFirstObjectByType<KnifeTool>() == null)
+            if (Object.FindAnyObjectByType<KnifeTool>() == null)
                 issues.Add("No KnifeTool instance is reachable in the active scene.");
 
-            if (Object.FindFirstObjectByType<HarpoonLauncherTool>() == null)
+            if (Object.FindAnyObjectByType<HarpoonLauncherTool>() == null)
                 issues.Add("No HarpoonLauncherTool instance is reachable in the active scene.");
 
             ValidateDescriptorCoverage(issues);
@@ -55,7 +55,7 @@ namespace Hecton8.EditorTools
 
         private static void ValidateDescriptorCoverage(List<string> issues)
         {
-            FieldTargetDescriptor[] descriptors = Object.FindObjectsByType<FieldTargetDescriptor>(FindObjectsSortMode.None);
+            FieldTargetDescriptor[] descriptors = Object.FindObjectsByType<FieldTargetDescriptor>();
             if (descriptors == null || descriptors.Length == 0)
             {
                 issues.Add("No FieldTargetDescriptor instances are present in the active scene.");

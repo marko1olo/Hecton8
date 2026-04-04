@@ -1160,7 +1160,7 @@ public sealed class HectonSurfacePainter : EditorWindow
         unchecked
         {
             int hash = 17;
-            hash = hash * 31 + root.GetInstanceID();
+            hash = hash * 31 + (int)EntityId.ToULong(root.GetEntityId());
 
             MeshFilter[] filters = root.GetComponentsInChildren<MeshFilter>(true);
             for (int i = 0; i < filters.Length; i++)
@@ -1169,8 +1169,8 @@ public sealed class HectonSurfacePainter : EditorWindow
                 if (mf == null)
                     continue;
 
-                hash = hash * 31 + mf.GetInstanceID();
-                hash = hash * 31 + (mf.sharedMesh != null ? mf.sharedMesh.GetInstanceID() : 0);
+                hash = hash * 31 + (int)EntityId.ToULong(mf.GetEntityId());
+                hash = hash * 31 + (mf.sharedMesh != null ? (int)EntityId.ToULong(mf.sharedMesh.GetEntityId()) : 0);
                 hash = hash * 31 + (mf.gameObject.activeInHierarchy ? 1 : 0);
             }
 

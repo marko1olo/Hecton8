@@ -34,6 +34,13 @@ namespace Hecton8.Core
         private static HectonFloatingOrigin _instance;
         public static HectonFloatingOrigin Instance => _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            OnWorldShift = null;
+        }
+
         /// <summary>
         /// Fired immediately after the world has shifted.
         /// Parameter: the world-space offset applied to all objects.

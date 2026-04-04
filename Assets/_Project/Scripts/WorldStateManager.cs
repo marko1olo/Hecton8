@@ -53,6 +53,12 @@ namespace Hecton8.World
 
         private static WorldStateManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         public static WorldStateManager Instance
         {
             get

@@ -135,6 +135,15 @@ namespace Hecton8.Core
         private static PerformanceMonitor _instance;
         public static PerformanceMonitor Instance => _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            OnFrameTimeSpike = null;
+            OnGCAllocExceeded = null;
+            OnJobQueueBacklog = null;
+        }
+
         // ════════════════════════════════════════════════════════════
         //  EVENTS
         // ════════════════════════════════════════════════════════════

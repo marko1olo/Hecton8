@@ -76,10 +76,31 @@ namespace Hecton8.Editor
 
         static PlayModeOptimizationAudit()
         {
-            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+            RegisterCallbacks();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            Application.logMessageReceived -= HandleLogMessage;
+
+            _active = false;
+            _startedProfiler = false;
+            _startedAtEditorTime = 0d;
+            ResetSession();
+            _summaryBuilder.Clear();
+
+            RegisterCallbacks();
         }
 
         public static bool IsActive => _active;
+
+        private static void RegisterCallbacks()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+        }
 
         public static void Start(
             bool startRuntimeProfiler = true,

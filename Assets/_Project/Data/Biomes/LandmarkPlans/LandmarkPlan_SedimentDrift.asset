@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 9842f2ee36658c7409d1a0084426e4d2, type: 3}
   m_Name: LandmarkPlan_SedimentDrift
-  m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeLandmarkPlanProfile
   profileId: biome.landmark_plan.sediment_drift
   profileLabel: Sediment Drift Landmark Plan
   dominantLandmarkRole: basin lip or dune crest line

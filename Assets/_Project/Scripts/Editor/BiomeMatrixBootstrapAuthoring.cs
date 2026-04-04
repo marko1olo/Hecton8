@@ -27,6 +27,12 @@ namespace Hecton8.EditorTools
         private const string ManagersRootName = "[MANAGERS]";
         private static Dictionary<string, WorldPrefabFamilyProfile> _worldFamilyLookup;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _worldFamilyLookup = null;
+        }
+
         [MenuItem("Hecton/Authoring/Rebuild 108 Biome Matrix", priority = 178)]
         public static void Rebuild108BiomeMatrix()
         {

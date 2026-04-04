@@ -24,6 +24,12 @@ namespace Hecton.UI.MainMenu
         /// </summary>
         public static string TargetSaveSlot = string.Empty;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            TargetSaveSlot = string.Empty;
+        }
+
         // ──────────────────────────────────────────────
         // INSPECTOR — Panels (CanvasGroup)
         // ──────────────────────────────────────────────

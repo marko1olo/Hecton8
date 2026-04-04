@@ -15,6 +15,13 @@ namespace Hecton8.Input
         private static RebindingManager _instance;
         private static bool _isShuttingDown;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            _isShuttingDown = false;
+        }
+
         [Header("Persistence")]
         [SerializeField] private bool loadOverridesOnAwake = true;
         [SerializeField] private bool saveOverridesAfterRebind = true;

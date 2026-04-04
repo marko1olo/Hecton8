@@ -26,6 +26,12 @@ namespace Hecton8.Physics
 
     public sealed class QueryCacheContext
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            CacheHits = 0;
+        }
+
         private readonly string _name;
         private readonly Dictionary<ulong, CachedQueryResult> _cache = new Dictionary<ulong, CachedQueryResult>(32);
         
@@ -98,6 +104,13 @@ namespace Hecton8.Physics
     {
         private static GlobalQueryCacheManager _instance;
         private static readonly Dictionary<string, QueryCacheContext> _contexts = new Dictionary<string, QueryCacheContext>(8);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            _contexts.Clear();
+        }
 
         public static QueryCacheContext GetContext(string name)
         {

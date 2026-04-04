@@ -231,6 +231,10 @@ namespace Hecton8.World
         [SerializeField] private int _debugMapMagicSamples;
         [SerializeField] private int _debugRaycastSamples;
         [SerializeField] private int _debugFallbackSamples;
+        [SerializeField] private int _debugMaxCandidatesBeforePrunePerCell;
+        [SerializeField] private int _debugMaxCandidatesAfterPrunePerCell;
+        [SerializeField] private int _debugTrackedSpawnRescueCandidates;
+        [SerializeField] private int _debugInjectedSpawnRescuePlacements;
         [SerializeField] private string _debugZone = "None";
         [SerializeField] private string _debugBiomeMatrixProfile = "None";
         [SerializeField] private string _debugBiomeFamily = "None";
@@ -403,6 +407,16 @@ namespace Hecton8.World
         private static WorldGenerativeGeologyProfile _emergencyCanopyGeologyProfile;
         private static WorldGenerativeGeologyProfile _emergencyLandmarkGeologyProfile;
         private static WorldGenerativeGeologyProfile _emergencyCaveGeologyProfile;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _emergencyPatternProfile = null;
+            _emergencyArchGeologyProfile = null;
+            _emergencyCanopyGeologyProfile = null;
+            _emergencyLandmarkGeologyProfile = null;
+            _emergencyCaveGeologyProfile = null;
+        }
         private bool _registeredToTickManager;
         private bool _subscribedToBootstrap;
         private bool _sceneBootstrapPresenceResolved;
@@ -657,6 +671,8 @@ namespace Hecton8.World
             int mapMagicSamples = 0;
             int raycastSamples = 0;
             int fallbackSamples = 0;
+            int maxCandidatesBeforePrunePerCell = 0;
+            int maxCandidatesAfterPrunePerCell = 0;
             bool collectDetailedDiagnostics = enableScatterDetailedDiagnostics;
             WorldZoneAnchor debugZone = null;
             WorldZoneAnchor.ZoneKind debugResolvedZoneKind = default;
@@ -760,6 +776,9 @@ namespace Hecton8.World
                     int cellClusterCount = 0;
                     int cellStructureCount = 0;
                     int cellSpawnCount = 0;
+                    int cellCandidatesBeforePrune = 0;
+                    int worstCandidateIndex = -1;
+                    float worstCandidateScore = float.MaxValue;
                     ReleaseCandidateListPlacements(_candidateBuffer);
                     for (int i = 0; i < _runtimeRuleBuffer.Count; i++)
                     {
@@ -843,8 +862,10 @@ namespace Hecton8.World
                         }
 
                         bool needsPreviewRescue = NeedsPreviewRescue(fieldSample, family);
+                        bool needsSpawnRescue = ShouldTrackRuntimeSpawnRescue(fieldSample, family);
+                        bool needsRescueTracking = needsPreviewRescue || needsSpawnRescue;
                         float gate = StableRandom01(cellXIndex, cellZIndex, runtimeRule.RuleIdHash);
-                        if (gate > spawnProbability && !needsPreviewRescue)
+                        if (gate > spawnProbability && !needsRescueTracking)
                             continue;
 
                         ScatterCandidate candidate = BuildCandidate(
@@ -862,7 +883,7 @@ namespace Hecton8.World
                             continue;
                         }
 
-                        if (needsPreviewRescue)
+                        if (needsRescueTracking)
                         {
                             TrackRescueCandidate(
                                 candidate,
@@ -895,8 +916,13 @@ namespace Hecton8.World
                         }
 
                         RetainPlacement(candidate.Placement);
-                        InsertCandidateByScore(_candidateBuffer, candidate);
-                        TrimCandidateBuffer(_candidateBuffer, cellCandidateBufferLimit);
+                        cellCandidatesBeforePrune++;
+                        RetainTopCandidate(
+                            _candidateBuffer,
+                            candidate,
+                            cellCandidateBufferLimit,
+                            ref worstCandidateIndex,
+                            ref worstCandidateScore);
 
                         if (!hasTopCandidate || candidate.Score > topCandidate.Score)
                         {
@@ -907,8 +933,17 @@ namespace Hecton8.World
                         ReleasePlacement(candidate.Placement);
                     }
 
+                    if (cellCandidatesBeforePrune > maxCandidatesBeforePrunePerCell)
+                        maxCandidatesBeforePrunePerCell = cellCandidatesBeforePrune;
+
                     if (_candidateBuffer.Count == 0)
                         continue;
+
+                    if (_candidateBuffer.Count > maxCandidatesAfterPrunePerCell)
+                        maxCandidatesAfterPrunePerCell = _candidateBuffer.Count;
+
+                    if (_candidateBuffer.Count > 1)
+                        SortCandidateBufferByScore(_candidateBuffer);
 
                     for (int i = 0; i < _candidateBuffer.Count; i++)
                     {
@@ -1030,7 +1065,9 @@ namespace Hecton8.World
                 structureCaveCandidates,
                 structureBioCandidates,
                 passiveSpawnCandidates,
-                predatorSpawnCandidates);
+                predatorSpawnCandidates,
+                out int injectedSpawnRescuePlacements);
+            int trackedSpawnRescueCandidates = spawnRescueCandidates.Count;
             ReleaseRescueCandidateBuffers();
             long rescueEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
 
@@ -1051,6 +1088,10 @@ namespace Hecton8.World
             _debugMapMagicSamples = mapMagicSamples;
             _debugRaycastSamples = raycastSamples;
             _debugFallbackSamples = fallbackSamples;
+            _debugMaxCandidatesBeforePrunePerCell = maxCandidatesBeforePrunePerCell;
+            _debugMaxCandidatesAfterPrunePerCell = maxCandidatesAfterPrunePerCell;
+            _debugTrackedSpawnRescueCandidates = trackedSpawnRescueCandidates;
+            _debugInjectedSpawnRescuePlacements = injectedSpawnRescuePlacements;
             _lastScatterUsedFallbackOnly = evaluatedCells > 0 && fallbackSamples >= evaluatedCells;
             _debugTargetGroundMin = ResolveMinimumGroundPlacements(debugPattern, dominantBiomeProfile);
             _debugTargetGroundMax = ResolvePatternLayerTargetMax(debugPattern, dominantBiomeProfile, WorldPrefabFamilyProfile.ScatterLayer.Ground);
@@ -1345,13 +1386,43 @@ namespace Hecton8.World
                 : (_hasPendingRuntimePlacements ? "pending-runtime-budget" : "pending-complete");
         }
 
-        private static void InsertCandidateByScore(List<ScatterCandidate> candidates, in ScatterCandidate candidate)
+        private void RetainTopCandidate(
+            List<ScatterCandidate> candidates,
+            in ScatterCandidate candidate,
+            int maxCount,
+            ref int worstIndex,
+            ref float worstScore)
         {
-            int insertIndex = candidates.Count;
-            while (insertIndex > 0 && candidate.Score > candidates[insertIndex - 1].Score)
-                insertIndex--;
+            if (maxCount <= 0)
+            {
+                ReleasePlacement(candidate.Placement);
+                return;
+            }
 
-            candidates.Insert(insertIndex, candidate);
+            if (candidates.Count < maxCount)
+            {
+                candidates.Add(candidate);
+                if (worstIndex < 0 || candidate.Score < worstScore)
+                {
+                    worstIndex = candidates.Count - 1;
+                    worstScore = candidate.Score;
+                }
+
+                return;
+            }
+
+            if (worstIndex < 0 || worstIndex >= candidates.Count)
+                RefreshWorstCandidate(candidates, out worstIndex, out worstScore);
+
+            if (candidate.Score <= worstScore)
+            {
+                ReleasePlacement(candidate.Placement);
+                return;
+            }
+
+            ReleasePlacement(candidates[worstIndex].Placement);
+            candidates[worstIndex] = candidate;
+            RefreshWorstCandidate(candidates, out worstIndex, out worstScore);
         }
 
         private static int ResolvePerCellCandidateBufferLimit(
@@ -1364,14 +1435,27 @@ namespace Hecton8.World
             return Mathf.Clamp(placementBudget * 2 + 6, 12, 64);
         }
 
-        private void TrimCandidateBuffer(List<ScatterCandidate> candidates, int maxCount)
+        private static void RefreshWorstCandidate(
+            List<ScatterCandidate> candidates,
+            out int worstIndex,
+            out float worstScore)
         {
-            while (candidates.Count > maxCount)
+            worstIndex = -1;
+            worstScore = float.MaxValue;
+            for (int i = 0; i < candidates.Count; i++)
             {
-                int lastIndex = candidates.Count - 1;
-                ReleasePlacement(candidates[lastIndex].Placement);
-                candidates.RemoveAt(lastIndex);
+                float candidateScore = candidates[i].Score;
+                if (candidateScore >= worstScore)
+                    continue;
+
+                worstScore = candidateScore;
+                worstIndex = i;
             }
+        }
+
+        private static void SortCandidateBufferByScore(List<ScatterCandidate> candidates)
+        {
+            candidates.Sort();
         }
 
         private void ResolveCombinedBudgetScales(
@@ -1827,6 +1911,10 @@ namespace Hecton8.World
             _debugMapMagicSamples = 0;
             _debugRaycastSamples = 0;
             _debugFallbackSamples = 0;
+            _debugMaxCandidatesBeforePrunePerCell = 0;
+            _debugMaxCandidatesAfterPrunePerCell = 0;
+            _debugTrackedSpawnRescueCandidates = 0;
+            _debugInjectedSpawnRescuePlacements = 0;
             _debugZone = "None";
             _debugBiomeMatrixProfile = "None";
             _debugBiomeFamily = "None";
@@ -2063,10 +2151,11 @@ namespace Hecton8.World
             int createdCount = 0;
             int reusedCount = 0;
             bool initialWarmupPass = Application.isPlaying &&
-                                     spreadInitialScatterWarmupAcrossTicks &&
                                      (_activeInstances.Count == 0 || _hasPendingStartupPlacements);
             int remainingInitialCreateBudget = initialWarmupPass
-                ? Mathf.Max(1, maxInitialScatterCreatesPerRebuild)
+                ? (spreadInitialScatterWarmupAcrossTicks
+                    ? Mathf.Max(1, maxInitialScatterCreatesPerRebuild)
+                    : int.MaxValue)
                 : int.MaxValue;
             _hasPendingStartupPlacements = false;
             _hasPendingRuntimePlacements = false;
@@ -2313,12 +2402,16 @@ namespace Hecton8.World
             _prefabWarmupCounts.Clear();
             _prefabWarmupPrefabs.Clear();
             _prefabWarmupFamilyIds.Clear();
-            bool useExactStartupWarmup = initialWarmupPass;
-            int remainingWarmupBudget = useExactStartupWarmup
-                ? Mathf.Max(0, maxPoolWarmupPerRebuild)
+            bool useExactStartupWarmup = initialWarmupPass && spreadInitialScatterWarmupAcrossTicks;
+            int remainingWarmupBudget = initialWarmupPass
+                ? (useExactStartupWarmup
+                    ? Mathf.Max(0, maxPoolWarmupPerRebuild)
+                    : int.MaxValue)
                 : 0;
-            int perPrefabWarmupLimit = useExactStartupWarmup
-                ? Mathf.Max(0, maxPoolWarmupPerPrefabPerRebuild)
+            int perPrefabWarmupLimit = initialWarmupPass
+                ? (useExactStartupWarmup
+                    ? Mathf.Max(0, maxPoolWarmupPerPrefabPerRebuild)
+                    : int.MaxValue)
                 : 0;
             int remainingInitialWarmupCreates = initialWarmupPass
                 ? Mathf.Max(0, initialCreateBudget)
@@ -4089,7 +4182,9 @@ namespace Hecton8.World
             Dictionary<long, ScatterCandidate> passiveSpawnCandidates,
             Dictionary<long, ScatterCandidate> predatorSpawnCandidates)
         {
-            if (!NeedsPreviewRescue(sample, candidate.Family))
+            bool needsPreviewRescue = NeedsPreviewRescue(sample, candidate.Family);
+            bool needsRuntimeSpawnRescue = ShouldTrackRuntimeSpawnRescue(sample, candidate.Family);
+            if (!needsPreviewRescue && !needsRuntimeSpawnRescue)
                 return;
 
             switch (candidate.Family.scatterLayer)
@@ -4206,8 +4301,10 @@ namespace Hecton8.World
             Dictionary<long, ScatterCandidate> structureCaveCandidates,
             Dictionary<long, ScatterCandidate> structureBioCandidates,
             Dictionary<long, ScatterCandidate> passiveSpawnCandidates,
-            Dictionary<long, ScatterCandidate> predatorSpawnCandidates)
+            Dictionary<long, ScatterCandidate> predatorSpawnCandidates,
+            out int injectedSpawnPlacements)
         {
+            injectedSpawnPlacements = 0;
             int groundLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Ground;
             int minimumGroundCount = ResolveMinimumGroundPlacements(pattern, biomeProfile);
             if (layerPlacementCounts[groundLayerIndex] < minimumGroundCount)
@@ -4362,6 +4459,7 @@ namespace Hecton8.World
                     layerFamilyCounts,
                     layerBiomeCounts);
                 layerPlacementCounts[spawnLayerIndex] += added;
+                injectedSpawnPlacements += added;
             }
 
             int minimumSpawnCount = ResolveMinimumSpawnPlacements(pattern, biomeProfile);
@@ -4402,6 +4500,7 @@ namespace Hecton8.World
                         biomeProfile,
                         WorldPrefabFamilyProfile.ScatterLayer.Spawn);
                 layerPlacementCounts[spawnLayerIndex] += added;
+                injectedSpawnPlacements += added;
             }
         }
 
@@ -5749,6 +5848,15 @@ namespace Hecton8.World
                    family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure ||
                    family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn ||
                    family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Cluster;
+        }
+
+        private bool ShouldTrackRuntimeSpawnRescue(
+            in WorldProceduralFieldSampler.FieldSample sample,
+            WorldPrefabFamilyProfile family)
+        {
+            return family != null &&
+                   family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn &&
+                   ResolveMinimumSpawnPlacements(sample.resolvedPattern, sample.biomeProfile) > 0;
         }
 
         private static float GetPatternFallbackMinHeatScale(

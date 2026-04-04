@@ -72,6 +72,13 @@ namespace Hecton8.Building
 
         private static GUIStyle s_LabelStyle;
         private static Color s_LastLabelColor = new Color(-1f, -1f, -1f, -1f);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_LabelStyle = null;
+            s_LastLabelColor = new Color(-1f, -1f, -1f, -1f);
+        }
 #endif
 
         // ══════════════════════════════════════════════════════════

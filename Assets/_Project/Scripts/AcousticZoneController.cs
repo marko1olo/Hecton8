@@ -64,6 +64,13 @@ namespace Hecton8.Audio
 
         private static AcousticZoneController _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            OnAcousticZoneChanged = null;
+        }
+
         public static AcousticZoneController Instance
         {
             get

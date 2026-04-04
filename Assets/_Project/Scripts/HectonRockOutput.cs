@@ -73,6 +73,12 @@ namespace Hecton8.World
 
         public static FinalizeAction finalizeAction = Finalize;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            finalizeAction = Finalize;
+        }
+
         public static void Finalize(TileData data, StopToken stop)
         {
             if (stop != null && stop.stop) return;

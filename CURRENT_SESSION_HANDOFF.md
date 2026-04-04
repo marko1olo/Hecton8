@@ -44,6 +44,47 @@ Companion files for the next dialog:
 - The old persistent native leak on clean play start is closed.
 - The `GasGiantRotationDriver` null `MaterialPropertyBlock` crash is closed.
 
+### Current runtime situation
+
+- The latest verified runtime is materially better than the previous handoff baseline.
+- User-reported feel of "less freezing" is consistent with the new numbers.
+- The improvement is real, but runtime is still above budget.
+- Main verified offender is still `WorldProceduralScatterDirector`.
+- Secondary verified offender is still `FaunaDirector`, even after a large drop.
+- Editor/domain-reload errors are still present, but they are not proven root cause of the gameplay stall.
+
+### Latest verified runtime comparison
+
+- Previous handoff baseline:
+  - `[WorldScatterProfiler] rebuild=79.24ms sample=64.29ms input=25.95ms wait=8.20ms post=30.14ms rescue=3.38ms reconcile=10.63ms spawn=4.53ms desired=6 active=0`
+  - `[TickProfiler] SlowTick spike total=144.60ms ... WorldProceduralScatterDirector=106.40ms | FaunaDirector=25.66ms`
+- Latest user-provided run:
+  - `[WorldScatterProfiler] rebuild=69.36ms sample=51.37ms input=19.55ms wait=2.79ms post=29.04ms rescue=6.78ms reconcile=10.49ms spawn=4.29ms desired=8 active=0`
+  - `[TickProfiler] SlowTick spike total=104.71ms ... WorldProceduralScatterDirector=84.77ms | FaunaDirector=11.52ms`
+- Direct deltas:
+  - total slow-tick spike: `144.60 -> 104.71ms`
+  - top scatter cost: `106.40 -> 84.77ms`
+  - fauna cost: `25.66 -> 11.52ms`
+  - scatter rebuild: `79.24 -> 69.36ms`
+  - sample: `64.29 -> 51.37ms`
+  - rescue: `3.38 -> 6.78ms`
+- Hard conclusion:
+  - yes, the new baseline is better
+  - no, the runtime issue is not closed
+  - `active=0` with `desired>0` remains a bad signal
+  - `rescue` regression is now a live investigation target
+
+### Memory and profiler positioning
+
+- Latest console/runtime logs do not include fresh resident/native/managed/render-texture counters.
+- The only currently available memory snapshot in the handoff is still the older profiler screenshot set:
+  - Resident: `6.73 GB`
+  - Total Allocated: `11.37 GB`
+  - Native: `4.65 GB`
+  - Managed: `3.55 GB`
+  - Render Textures: `426.5 MB`
+- Treat those memory numbers as historical context, not as proof for the latest runtime baseline.
+
 ### Recently fixed and already part of the baseline
 
 - `ProximityColliderSystem` / `HectonRockManager`
@@ -156,6 +197,20 @@ Companion files for the next dialog:
 
 ## What Is Still Not Closed
 
+- `WorldProceduralScatterDirector` is still the main runtime stall:
+  - `dirty` rebuild is still `69.36ms`
+  - `sample` is still `51.37ms`
+  - `post` is still `29.04ms`
+  - `active=0` while `desired=8`
+- `FaunaDirector` is better than before, but still remains the second verified runtime offender.
+- `rescue` cost regressed:
+  - `3.38 -> 6.78ms`
+- Domain reload / volume editor noise is still unresolved:
+  - `LifecycleManagement ... NullReferenceException`
+  - `SerializedObjectNotCreatableException`
+  - `MCP-FOR-UNITY [WebSocket] Unexpected receive error: WebSocket is not initialised`
+- Fresh verified memory counters for the latest runtime baseline are still missing.
+
 These items should not be called “done” yet:
 
 - `ToolRuntimeSmokeTester` is not yet a deterministic PASS path through MCP-driven play sessions.
@@ -203,13 +258,18 @@ Additional current limitation:
 
 The best next sequence is:
 
-1. Stabilize dev smoke triggering and observation
+1. Continue the runtime perf track with the latest verified baseline
+   - investigate why scatter still reports `active=0` with `desired>0`
+   - investigate why `rescue` grew while most other scatter stages improved
+   - continue reducing `sample` and `post` cost in `WorldProceduralScatterDirector`
+
+2. Stabilize dev smoke triggering and observation
    - `ToolRuntimeSmokeTester`
    - `WorldGenerativeGeologyRuntimeSmokeTester`
    - `FieldToolRuntimeSmokeTester`
    - `ScanRuntimeSmokeTester`
 
-2. Run authored real-play verification for the upgraded tool stack
+3. Run authored real-play verification for the upgraded tool stack
    - flashlight
    - scanner
    - analyzer
@@ -217,8 +277,9 @@ The best next sequence is:
    - cutter
    - non-core tools
 
-3. Continue the large-world runtime track
+4. Continue the large-world runtime track
    - enable and use the new scene profiler hook to collect actual numbers
+   - capture fresh memory counters for the new runtime baseline
    - continue reducing the first `WorldProceduralScatterDirector` startup burst
    - audit scene/prefab `missing script` warnings so runtime profiling stays clean
    - hybrid-density world slices

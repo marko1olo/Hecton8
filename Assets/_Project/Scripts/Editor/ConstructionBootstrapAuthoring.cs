@@ -1362,7 +1362,7 @@ namespace Hecton8.EditorTools
 
         private static void AssignCatalogToScene(ModuleCatalog catalog, BuildableData defaultBuildable)
         {
-            ConstructionManager manager = Object.FindFirstObjectByType<ConstructionManager>(FindObjectsInactive.Include);
+            ConstructionManager manager = Object.FindAnyObjectByType<ConstructionManager>(FindObjectsInactive.Include);
             if (manager != null)
             {
                 SerializedObject managerSo = new SerializedObject(manager);
@@ -1371,7 +1371,7 @@ namespace Hecton8.EditorTools
                 EditorUtility.SetDirty(manager);
             }
 
-            PlayerBuilder builder = Object.FindFirstObjectByType<PlayerBuilder>(FindObjectsInactive.Include);
+            PlayerBuilder builder = Object.FindAnyObjectByType<PlayerBuilder>(FindObjectsInactive.Include);
             if (builder != null)
             {
                 SerializedObject builderSo = new SerializedObject(builder);

@@ -42,6 +42,12 @@ namespace Hecton8.Core
 
         private static ObjectPoolManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         /// <summary>Глобальный доступ к пулу объектов.</summary>
         public static ObjectPoolManager Instance
         {

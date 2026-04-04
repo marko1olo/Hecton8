@@ -95,6 +95,16 @@ namespace Hecton8.AI
             public bool isLargeThreat;
         }
 
+        private struct ResolvedFaunaEntry
+        {
+            public GameObject prefab;
+            public CreatureArchetypeData archetype;
+            public float spawnWeight;
+            public int maxAlive;
+            public int creatureTypeIndex;
+            public bool isLargeThreat;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DATASETS
         // ══════════════════════════════════════════════════════════
@@ -185,6 +195,10 @@ namespace Hecton8.AI
         [SerializeField] private float _debugRuntimeLargeThreatSpawnOuter = 420f;
         [SerializeField] private float _debugRuntimeCullDistance = 200f;
         [SerializeField] private float _debugRuntimeLargeThreatCullDistance = 900f;
+        [SerializeField] private int _debugSpawnValidationAttempts;
+        [SerializeField] private int _debugSpawnValidationSuccesses;
+        [SerializeField] private int _debugAnchorBasedSpawns;
+        [SerializeField] private int _debugFallbackRingSpawns;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
@@ -258,6 +272,7 @@ namespace Hecton8.AI
         /// Заменяет O(n) CountCreatureTypes.
         /// </summary>
         private Dictionary<FaunaBiomeData, int[]> _countsPerTypePerBiome;
+        private Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]> _resolvedEntriesPerBiome;
         private Dictionary<FaunaBiomeData, Dictionary<GameObject, int>> _prefabTypeIndexLookup;
         private float _nextPlayerResolveTime = float.NegativeInfinity;
         private float _nextRuntimeSettingsRefreshTime = float.NegativeInfinity;
@@ -356,6 +371,10 @@ namespace Hecton8.AI
             }
 
             Vector3 playerPos = _playerTransform.position;
+            int spawnValidationAttempts = 0;
+            int spawnValidationSuccesses = 0;
+            int anchorBasedSpawns = 0;
+            int fallbackRingSpawns = 0;
 
             // ══════════════════════════════════════════════════════
             //  2. CULLING — деспавн далёких существ
@@ -372,7 +391,7 @@ namespace Hecton8.AI
             MapMagicBridge bridge = MapMagicBridge.Instance;
             if (bridge == null)
             {
-                UpdateDiagnostics(cullCount, 0);
+                UpdateDiagnostics(cullCount, 0, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
                 return;
             }
 
@@ -390,7 +409,7 @@ namespace Hecton8.AI
             if (currentBiome == -1)
             {
                 // Биом ещё не определён — пропускаем спавн
-                UpdateDiagnostics(cullCount, 0);
+                UpdateDiagnostics(cullCount, 0, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
                 return;
             }
 
@@ -405,11 +424,18 @@ namespace Hecton8.AI
                 // Ищем данные биома
                 if (_biomeLookup.TryGetValue(currentBiome, out FaunaBiomeData biomeData))
                 {
-                    spawnAttempts = TrySpawnCreatures(biomeData, playerPos, bridge);
+                    spawnAttempts = TrySpawnCreatures(
+                        biomeData,
+                        playerPos,
+                        bridge,
+                        ref spawnValidationAttempts,
+                        ref spawnValidationSuccesses,
+                        ref anchorBasedSpawns,
+                        ref fallbackRingSpawns);
                 }
             }
 
-            UpdateDiagnostics(cullCount, spawnAttempts);
+            UpdateDiagnostics(cullCount, spawnAttempts, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -504,8 +530,14 @@ namespace Hecton8.AI
         /// ZERO GC: Mathf.Sin/Cos → float, Random.Range → float,
         /// stateful counters (no per-tick O(n) scan), struct ActiveCreature.
         /// </summary>
-        private int TrySpawnCreatures(FaunaBiomeData biomeData, Vector3 playerPos,
-                                      MapMagicBridge bridge)
+        private int TrySpawnCreatures(
+            FaunaBiomeData biomeData,
+            Vector3 playerPos,
+            MapMagicBridge bridge,
+            ref int spawnValidationAttempts,
+            ref int spawnValidationSuccesses,
+            ref int anchorBasedSpawns,
+            ref int fallbackRingSpawns)
         {
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null) return 0;
@@ -523,6 +555,13 @@ namespace Hecton8.AI
             // Массив per-type counts для этого биома (ссылка, не копия)
             if (!_countsPerTypePerBiome.TryGetValue(biomeData, out int[] creatureTypeCounts))
                 return 0;
+            if (_resolvedEntriesPerBiome == null ||
+                !_resolvedEntriesPerBiome.TryGetValue(biomeData, out ResolvedFaunaEntry[] resolvedEntries) ||
+                resolvedEntries == null ||
+                resolvedEntries.Length == 0)
+            {
+                return 0;
+            }
 
             int spawned = 0;
 
@@ -536,21 +575,41 @@ namespace Hecton8.AI
                 if (biomeAlive >= biomeData.biomeMaxCreatures)
                     break;
 
-                FaunaEntry selectedEntry;
-                if (!biomeData.TrySelectCreature(creatureTypeCounts, out selectedEntry))
+                if (!TrySelectResolvedEntry(resolvedEntries, creatureTypeCounts, out ResolvedFaunaEntry selectedEntry))
                 {
                     // Все типы на лимите — прекращаем
                     break;
                 }
 
-                bool isLargeThreat = IsLargeThreatEntry(biomeData, selectedEntry);
+                bool isLargeThreat = selectedEntry.isLargeThreat;
                 Vector3 spawnPos;
                 WorldMacroZoneCoordinate spawnMacroZone = default;
                 WorldFaunaSpawnRegistry.Anchor sourceAnchor = default;
                 bool usedRegistryAnchor = false;
                 bool hasSpawnPoint = isLargeThreat
-                    ? TryResolveLargeThreatSpawnLocation(playerPos, bridge, biomeData, out spawnPos, out spawnMacroZone, out sourceAnchor, out usedRegistryAnchor)
-                    : TryResolveOrdinarySpawnLocation(playerPos, bridge, biomeData, out spawnPos, out sourceAnchor, out usedRegistryAnchor);
+                    ? TryResolveLargeThreatSpawnLocation(
+                        playerPos,
+                        bridge,
+                        biomeData,
+                        out spawnPos,
+                        out spawnMacroZone,
+                        out sourceAnchor,
+                        out usedRegistryAnchor,
+                        ref spawnValidationAttempts,
+                        ref spawnValidationSuccesses,
+                        ref anchorBasedSpawns,
+                        ref fallbackRingSpawns)
+                    : TryResolveOrdinarySpawnLocation(
+                        playerPos,
+                        bridge,
+                        biomeData,
+                        out spawnPos,
+                        out sourceAnchor,
+                        out usedRegistryAnchor,
+                        ref spawnValidationAttempts,
+                        ref spawnValidationSuccesses,
+                        ref anchorBasedSpawns,
+                        ref fallbackRingSpawns);
                 if (!hasSpawnPoint)
                     continue;
 
@@ -566,7 +625,7 @@ namespace Hecton8.AI
                         continue;
                 }
 
-                GameObject resolvedPrefab = selectedEntry.GetResolvedPrefab();
+                GameObject resolvedPrefab = selectedEntry.prefab;
                 if (resolvedPrefab == null)
                     continue;
 
@@ -593,8 +652,7 @@ namespace Hecton8.AI
                     ai.SetSpawnPoint(spawnPos);
                 }
 
-                // ── Определяем typeIndex (индекс в possibleCreatures) ──
-                int typeIndex = FindCreatureTypeIndex(biomeData, resolvedPrefab);
+                int typeIndex = selectedEntry.creatureTypeIndex;
 
                 // ── Регистрация в трекере ──
                 ActiveCreature record = new ActiveCreature
@@ -644,7 +702,11 @@ namespace Hecton8.AI
             FaunaBiomeData biomeData,
             out Vector3 spawnPos,
             out WorldFaunaSpawnRegistry.Anchor registryAnchor,
-            out bool usedRegistryAnchor)
+            out bool usedRegistryAnchor,
+            ref int spawnValidationAttempts,
+            ref int spawnValidationSuccesses,
+            ref int anchorBasedSpawns,
+            ref int fallbackRingSpawns)
         {
             ResolveSpawnRegistry();
 
@@ -652,17 +714,30 @@ namespace Hecton8.AI
             {
                 WorldChunkCoordinate playerChunk = WorldChunkCoordinate.FromWorldPosition(playerPos, _runtimeChunkSize);
                 if (spawnRegistry.TryGetOrdinaryAnchor(playerPos, playerChunk, _runtimeFaunaAnchorChunkDistance, out WorldFaunaSpawnRegistry.Anchor anchor) &&
-                    TryBuildSpawnPointAroundAnchor(anchor.position, anchor.radius, biomeData, bridge, out spawnPos))
+                    TryBuildSpawnPointAroundAnchor(anchor.position, anchor.radius, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                 {
                     registryAnchor = anchor;
                     usedRegistryAnchor = true;
+                    anchorBasedSpawns++;
                     return true;
                 }
             }
 
             registryAnchor = default;
             usedRegistryAnchor = false;
-            return TryBuildSpawnPointInRing(playerPos, _runtimeSpawnRingInner, _runtimeSpawnRingOuter, biomeData, bridge, out spawnPos);
+            bool builtInRing = TryBuildSpawnPointInRing(
+                playerPos,
+                _runtimeSpawnRingInner,
+                _runtimeSpawnRingOuter,
+                biomeData,
+                bridge,
+                out spawnPos,
+                ref spawnValidationAttempts,
+                ref spawnValidationSuccesses);
+            if (builtInRing)
+                fallbackRingSpawns++;
+
+            return builtInRing;
         }
 
         private bool TryResolveLargeThreatSpawnLocation(
@@ -672,7 +747,11 @@ namespace Hecton8.AI
             out Vector3 spawnPos,
             out WorldMacroZoneCoordinate macroZoneCoord,
             out WorldFaunaSpawnRegistry.Anchor registryAnchor,
-            out bool usedRegistryAnchor)
+            out bool usedRegistryAnchor,
+            ref int spawnValidationAttempts,
+            ref int spawnValidationSuccesses,
+            ref int anchorBasedSpawns,
+            ref int fallbackRingSpawns)
         {
             ResolveSpawnRegistry();
 
@@ -681,20 +760,30 @@ namespace Hecton8.AI
                 WorldMacroZoneCoordinate playerMacroZone = WorldMacroZoneCoordinate.FromWorldPosition(playerPos, _runtimeMacroZoneSize);
                 if (spawnRegistry.TryGetLargeThreatZone(playerPos, playerMacroZone, _runtimeLargeThreatMacroZoneDistance, out WorldFaunaSpawnRegistry.Anchor zoneAnchor) &&
                     CanSpawnLargeThreatNearPlayer(zoneAnchor.macroZoneCoord, playerPos) &&
-                    TryBuildSpawnPointAroundAnchor(zoneAnchor.position, zoneAnchor.radius, biomeData, bridge, out spawnPos))
+                    TryBuildSpawnPointAroundAnchor(zoneAnchor.position, zoneAnchor.radius, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                 {
                     macroZoneCoord = zoneAnchor.macroZoneCoord;
                     registryAnchor = zoneAnchor;
                     usedRegistryAnchor = true;
+                    anchorBasedSpawns++;
                     return true;
                 }
             }
 
-            if (TryBuildSpawnPointInRing(playerPos, _runtimeLargeThreatSpawnInner, _runtimeLargeThreatSpawnOuter, biomeData, bridge, out spawnPos))
+            if (TryBuildSpawnPointInRing(
+                    playerPos,
+                    _runtimeLargeThreatSpawnInner,
+                    _runtimeLargeThreatSpawnOuter,
+                    biomeData,
+                    bridge,
+                    out spawnPos,
+                    ref spawnValidationAttempts,
+                    ref spawnValidationSuccesses))
             {
                 macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(spawnPos, _runtimeMacroZoneSize);
                 registryAnchor = default;
                 usedRegistryAnchor = false;
+                fallbackRingSpawns++;
                 return CanSpawnLargeThreatNearPlayer(macroZoneCoord, playerPos);
             }
 
@@ -711,7 +800,9 @@ namespace Hecton8.AI
             float outerRadius,
             FaunaBiomeData biomeData,
             MapMagicBridge bridge,
-            out Vector3 spawnPos)
+            out Vector3 spawnPos,
+            ref int spawnValidationAttempts,
+            ref int spawnValidationSuccesses)
         {
             for (int attempt = 0; attempt < 4; attempt++)
             {
@@ -722,7 +813,7 @@ namespace Hecton8.AI
                     center.y,
                     center.z + Mathf.Sin(angle) * distance);
 
-                if (TryBuildValidatedSpawnPoint(candidateCenter, biomeData, bridge, out spawnPos))
+                if (TryBuildValidatedSpawnPoint(candidateCenter, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                     return true;
             }
 
@@ -735,7 +826,9 @@ namespace Hecton8.AI
             float anchorRadius,
             FaunaBiomeData biomeData,
             MapMagicBridge bridge,
-            out Vector3 spawnPos)
+            out Vector3 spawnPos,
+            ref int spawnValidationAttempts,
+            ref int spawnValidationSuccesses)
         {
             float safeRadius = Mathf.Max(6f, anchorRadius);
             for (int attempt = 0; attempt < 4; attempt++)
@@ -747,7 +840,7 @@ namespace Hecton8.AI
                     anchorPosition.y,
                     anchorPosition.z + Mathf.Sin(angle) * distance);
 
-                if (TryBuildValidatedSpawnPoint(candidateCenter, biomeData, bridge, out spawnPos))
+                if (TryBuildValidatedSpawnPoint(candidateCenter, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                     return true;
             }
 
@@ -759,8 +852,11 @@ namespace Hecton8.AI
             Vector3 candidateCenter,
             FaunaBiomeData biomeData,
             MapMagicBridge bridge,
-            out Vector3 spawnPos)
+            out Vector3 spawnPos,
+            ref int spawnValidationAttempts,
+            ref int spawnValidationSuccesses)
         {
+            spawnValidationAttempts++;
             if (!bridge.TryGetHeight(candidateCenter.x, candidateCenter.z, out float bottomHeight))
             {
                 spawnPos = default;
@@ -768,14 +864,92 @@ namespace Hecton8.AI
             }
 
             float spawnY = biomeData.GetRandomSpawnHeight(bottomHeight);
-            if (!bridge.IsValidSpawnPoint(candidateCenter.x, spawnY, candidateCenter.z, out _))
+            if (spawnY >= bridge.WaterSurfaceLevel || spawnY <= bottomHeight)
             {
                 spawnPos = default;
                 return false;
             }
 
             spawnPos = new Vector3(candidateCenter.x, spawnY, candidateCenter.z);
+            spawnValidationSuccesses++;
             return true;
+        }
+
+        private static bool TrySelectResolvedEntry(
+            ResolvedFaunaEntry[] resolvedEntries,
+            int[] currentCounts,
+            out ResolvedFaunaEntry selectedEntry)
+        {
+            selectedEntry = default;
+            if (resolvedEntries == null || resolvedEntries.Length == 0)
+                return false;
+
+            float availableWeight = 0f;
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (currentCounts != null &&
+                    typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                availableWeight += entry.spawnWeight;
+            }
+
+            if (availableWeight <= 0f)
+                return false;
+
+            float roll = Random.Range(0f, availableWeight);
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (currentCounts != null &&
+                    typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                roll -= entry.spawnWeight;
+                if (roll <= 0f)
+                {
+                    selectedEntry = entry;
+                    return true;
+                }
+            }
+
+            for (int i = resolvedEntries.Length - 1; i >= 0; i--)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (currentCounts != null &&
+                    typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                selectedEntry = entry;
+                return true;
+            }
+
+            return false;
         }
 
         private void DecrementCreatureCounters(in ActiveCreature creature)
@@ -804,6 +978,7 @@ namespace Hecton8.AI
         {
             if (_biomeLookup != null &&
                 _countsPerTypePerBiome != null &&
+                _resolvedEntriesPerBiome != null &&
                 _prefabTypeIndexLookup != null &&
                 _countsPerChunk != null &&
                 _largeThreatCountsPerMacroZone != null &&
@@ -816,12 +991,14 @@ namespace Hecton8.AI
             int capacity = biomeDatasets != null ? biomeDatasets.Length : 4;
             _biomeLookup ??= new Dictionary<int, FaunaBiomeData>(capacity);
             _countsPerTypePerBiome ??= new Dictionary<FaunaBiomeData, int[]>(capacity);
+            _resolvedEntriesPerBiome ??= new Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]>(capacity);
             _prefabTypeIndexLookup ??= new Dictionary<FaunaBiomeData, Dictionary<GameObject, int>>(capacity);
             _countsPerChunk ??= new Dictionary<long, int>(32);
             _largeThreatCountsPerMacroZone ??= new Dictionary<long, int>(16);
 
             _biomeLookup.Clear();
             _countsPerTypePerBiome.Clear();
+            _resolvedEntriesPerBiome.Clear();
             _prefabTypeIndexLookup.Clear();
 
             int maxBiomeIndex = 0;
@@ -839,13 +1016,25 @@ namespace Hecton8.AI
 
                     int creatureCount = data.possibleCreatures != null ? data.possibleCreatures.Count : 0;
                     _countsPerTypePerBiome[data] = new int[creatureCount];
+                    ResolvedFaunaEntry[] resolvedEntries = new ResolvedFaunaEntry[creatureCount];
 
                     Dictionary<GameObject, int> prefabLookup = new Dictionary<GameObject, int>(Mathf.Max(1, creatureCount));
                     if (data.possibleCreatures != null)
                     {
                         for (int creatureIndex = 0; creatureIndex < creatureCount; creatureIndex++)
                         {
-                            GameObject resolvedPrefab = data.possibleCreatures[creatureIndex].GetResolvedPrefab();
+                            FaunaEntry faunaEntry = data.possibleCreatures[creatureIndex];
+                            GameObject resolvedPrefab = faunaEntry.GetResolvedPrefab();
+                            resolvedEntries[creatureIndex] = new ResolvedFaunaEntry
+                            {
+                                prefab = resolvedPrefab,
+                                archetype = faunaEntry.archetype,
+                                spawnWeight = faunaEntry.GetResolvedSpawnWeight(),
+                                maxAlive = Mathf.Max(1, faunaEntry.GetResolvedMaxAlive()),
+                                creatureTypeIndex = creatureIndex,
+                                isLargeThreat = IsLargeThreatEntry(data, faunaEntry)
+                            };
+
                             if (resolvedPrefab == null || prefabLookup.ContainsKey(resolvedPrefab))
                                 continue;
 
@@ -853,6 +1042,7 @@ namespace Hecton8.AI
                         }
                     }
 
+                    _resolvedEntriesPerBiome[data] = resolvedEntries;
                     _prefabTypeIndexLookup[data] = prefabLookup;
                 }
             }
@@ -1272,7 +1462,13 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void UpdateDiagnostics(int cullCount, int spawnAttempts)
+        private void UpdateDiagnostics(
+            int cullCount,
+            int spawnAttempts,
+            int spawnValidationAttempts,
+            int spawnValidationSuccesses,
+            int anchorBasedSpawns,
+            int fallbackRingSpawns)
         {
             _debugActiveCount    = _activeCreatures.Count;
             _debugCurrentBiome   = _cachedBiomeIndex;
@@ -1291,6 +1487,10 @@ namespace Hecton8.AI
             _debugRuntimeLargeThreatSpawnOuter = _runtimeLargeThreatSpawnOuter;
             _debugRuntimeCullDistance = _runtimeKillDistance;
             _debugRuntimeLargeThreatCullDistance = _runtimeLargeThreatKillDistance;
+            _debugSpawnValidationAttempts = spawnValidationAttempts;
+            _debugSpawnValidationSuccesses = spawnValidationSuccesses;
+            _debugAnchorBasedSpawns = anchorBasedSpawns;
+            _debugFallbackRingSpawns = fallbackRingSpawns;
 
             if (_playerTransform != null)
             {

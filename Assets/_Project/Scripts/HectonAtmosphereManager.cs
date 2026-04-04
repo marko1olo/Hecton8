@@ -49,6 +49,9 @@ using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Atmosphere
 {
@@ -108,6 +111,13 @@ namespace Hecton8.Atmosphere
         #region ══════════ Singleton ══════════
 
         private static HectonAtmosphereManager _instance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            OnStateChanged = null;
+        }
 
         public static HectonAtmosphereManager Instance
         {
@@ -313,6 +323,13 @@ namespace Hecton8.Atmosphere
 
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
             }
+#if UNITY_EDITOR
+            else
+            {
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
+            }
+#endif
         }
 
         private void Start()
@@ -346,6 +363,12 @@ namespace Hecton8.Atmosphere
 
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
             }
+#if UNITY_EDITOR
+            else
+            {
+                EditorApplication.update -= EditorTick;
+            }
+#endif
         }
 
         private void OnDestroy()
@@ -358,9 +381,10 @@ namespace Hecton8.Atmosphere
         }
 
 #if UNITY_EDITOR
-        private void Update()
+        private void EditorTick()
         {
-            if (Application.isPlaying) return;
+            if (Application.isPlaying || this == null)
+                return;
 
             if (!_editorInitialized)
             {

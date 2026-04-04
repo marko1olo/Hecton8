@@ -28,6 +28,13 @@ namespace Hecton.Localization
         // ──────────────────────────────────────────────
         public static LocalizationManager Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+            OnLanguageChanged = null;
+        }
+
         // ──────────────────────────────────────────────
         // EVENTS
         // ──────────────────────────────────────────────

@@ -64,6 +64,12 @@ namespace Hecton8.SaveSystem
         // ══════════════════════════════════════════════════════════
 
         private static SaveManager _instance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
         public static SaveManager Instance => _instance;
         public bool IsBusy => _isBusy;
         public float CurrentPlayTimeSeconds => _totalPlayTime + (Time.realtimeSinceStartup - _sessionStartTime);

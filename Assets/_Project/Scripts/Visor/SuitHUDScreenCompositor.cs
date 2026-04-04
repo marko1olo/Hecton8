@@ -3,6 +3,9 @@ using Hecton8.Core;
 using Hecton8.UI;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace NASAPunk.Visor
 {
@@ -71,12 +74,27 @@ namespace NASAPunk.Visor
             _pendingRefresh = true;
             RefreshCompositor();
             TryRegisterRuntimeTick();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
+            }
+#endif
+        }
+
+        private void Start()
+        {
+            TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
         {
             UnregisterActiveCompositor();
             UnregisterRuntimeTick();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorTick;
+#endif
 
             if (_overlayImage != null)
                 _overlayImage.enabled = false;
@@ -85,20 +103,16 @@ namespace NASAPunk.Visor
                 _overlayRect.gameObject.SetActive(false);
         }
 
-        private void Update()
+#if UNITY_EDITOR
+        private void EditorTick()
         {
-            if (Application.isPlaying)
-            {
-                TryRegisterRuntimeTick();
-                return;
-            }
-
-            if (!manageCanvasInEditMode)
+            if (Application.isPlaying || !isActiveAndEnabled || !manageCanvasInEditMode)
                 return;
 
             RefreshCompositor();
             _pendingRefresh = false;
         }
+#endif
 
         private void OnValidate()
         {

@@ -18,6 +18,12 @@ namespace Hecton8.UI
     {
         private static HUDNotification _ActiveInstance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _ActiveInstance = null;
+        }
+
         private enum NotificationSeverity
         {
             Info = 0,

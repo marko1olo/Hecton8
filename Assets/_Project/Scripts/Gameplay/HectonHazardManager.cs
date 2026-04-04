@@ -42,6 +42,14 @@ namespace Hecton8.Gameplay
         private static readonly RegisteredSource[] _sources = new RegisteredSource[MAX_SOURCES];
         private static int _sourceCount;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+            _sourceCount = 0;
+            System.Array.Clear(_sources, 0, _sources.Length);
+        }
+
         // ══════════════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════════════

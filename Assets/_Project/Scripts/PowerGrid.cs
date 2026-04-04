@@ -47,6 +47,12 @@ namespace Hecton8.Power
 
         private static int _nextId;
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _nextId = 0;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  STORAGE — узлы сети
         // ══════════════════════════════════════════════════════════

@@ -19,6 +19,12 @@ namespace Hecton.UI.MainMenu
         // ──────────────────────────────────────────────
         private static ModalWindow _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         // ──────────────────────────────────────────────
         // INSPECTOR
         // ──────────────────────────────────────────────

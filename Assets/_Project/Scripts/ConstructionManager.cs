@@ -41,6 +41,12 @@ namespace Hecton8.Construction
 
         private static ConstructionManager _instance;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+        }
+
         public static ConstructionManager Instance
         {
             get

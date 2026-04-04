@@ -89,7 +89,7 @@ namespace Hecton8.EditorTools
 
         private static void AssignCatalogToScene(BarterOfferCatalog catalog)
         {
-            PDAExchangeSystem exchange = Object.FindFirstObjectByType<PDAExchangeSystem>(FindObjectsInactive.Include);
+            PDAExchangeSystem exchange = Object.FindAnyObjectByType<PDAExchangeSystem>(FindObjectsInactive.Include);
             if (exchange == null)
             {
                 GameObject player = GameObject.Find("Player");

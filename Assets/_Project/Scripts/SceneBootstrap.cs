@@ -105,6 +105,16 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static event Action<string> OnBootstrapFailed;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            OnGameReady = null;
+            OnBootstrapFailed = null;
+            IsGameReady = false;
+            HasActiveInstance = false;
+            CurrentPlayerObject = null;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SAVE
         // ══════════════════════════════════════════════════════════

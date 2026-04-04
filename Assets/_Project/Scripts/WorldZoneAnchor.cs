@@ -10,6 +10,13 @@ namespace Hecton8.World
         private static readonly List<WorldZoneAnchor> _ActiveAnchors = new List<WorldZoneAnchor>(32);
         private static int _ActiveAnchorVersion;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _ActiveAnchors.Clear();
+            _ActiveAnchorVersion = 0;
+        }
+
         public enum ZoneKind
         {
             Generic,
