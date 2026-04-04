@@ -88,6 +88,7 @@ namespace Hecton8.Core
         [Header("── Slow Tick Profiling ───────────────────────")]
         [SerializeField] private bool enableSlowTickProfiling = true;
         [SerializeField] private float slowTickSpikeThresholdMs = 8f;
+        [SerializeField] private float slowTickReportCooldownSeconds = 1.5f;
         [SerializeField] private int slowTickTopEntries = 6;
         [SerializeField] private float _debugLastSlowTickDurationMs;
         [SerializeField] private float _debugTopSlowTickDurationMs;
@@ -113,6 +114,7 @@ namespace Hecton8.Core
         private readonly object[] _slowTickTopOwners = new object[SlowTickProfilerCapacity];
         private readonly double[] _slowTickTopDurationsMs = new double[SlowTickProfilerCapacity];
         private readonly StringBuilder _slowTickReportBuilder = new StringBuilder(512);
+        private float _nextSlowTickReportTime;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -383,6 +385,9 @@ namespace Hecton8.Core
             if (totalMs < Mathf.Max(0.1f, slowTickSpikeThresholdMs))
                 return;
 
+            if (Time.unscaledTime < _nextSlowTickReportTime)
+                return;
+
             _slowTickReportBuilder.Clear();
             _slowTickReportBuilder.Append("[TickProfiler] SlowTick spike total=");
             _slowTickReportBuilder.Append(totalMs.ToString("0.00"));
@@ -412,6 +417,7 @@ namespace Hecton8.Core
                 _slowTickReportBuilder.Append("none");
 
             _debugLastSlowTickReport = _slowTickReportBuilder.ToString();
+            _nextSlowTickReportTime = Time.unscaledTime + Mathf.Max(0.1f, slowTickReportCooldownSeconds);
             UnityEngine.Debug.Log(_debugLastSlowTickReport, this);
             RuntimeDiagnosticsTrace.WriteEvent("slowtick", _debugLastSlowTickReport);
         }
@@ -422,7 +428,7 @@ namespace Hecton8.Core
                 return "Null";
 
             if (owner is Component component)
-                return $"{component.GetType().Name}@{component.gameObject.name}";
+                return component.GetType().Name;
 
             return owner.GetType().Name;
         }

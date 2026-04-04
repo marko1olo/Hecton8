@@ -665,3 +665,41 @@ Then read as needed:
       - Unity editor returned `ready_for_tools=true`
       - console still shows only pre-existing warnings
       - runtime remains `PENDING VERIFICATION` until the user runs the next heavy scenario
+37. Latest autonomous block:
+    - new run facts captured:
+      - startup dirty rebuild `186.35ms` (`sample=131.68`, `post=76.63`, `reconcile=35.62`, `spawn=20.78`)
+      - recurring movement `cell-changed` rebuild `43.54ms` (`sample=27.02`, `post=24.42`, `reconcile=11.95`, `spawn=3.91`)
+      - worst capture frame is polluted by `Mono.JIT`, Burst JIT and profiler callstack; recurring gameplay hitch is still scatter, not GC
+      - current counters: `GC Allocated In Frame=1260 B`, `Texture Memory=2018604839 B`, `Gfx Used Memory=2162094879 B`, `Total Used Memory=8128271343 B`
+    - code changes:
+      - `ScatterPlacement` caches effective spacing, fauna anchor flags, and fauna radius
+      - `PublishFaunaRegistrySnapshot`, placement-grid registration, candidate spacing, and required-distance checks now use cached placement data
+      - `GameTickManager` slow-tick diagnostics now rate-limit spike logs and use type-only labels, reducing profiler/log-induced allocations on repeated spike frames
+      - `WorldProceduralScatterDirector.ShouldSkipScatterRefresh()` now applies a one-cell `cell-drift-buffer` for large runtime windows, deferring full rebuilds on every adjacent-cell crossing
+    - verification:
+      - Unity compile passed
+      - console shows no new first-party compile errors
+      - runtime status stays `PENDING VERIFICATION`
+    - new runtime finding:
+      - live MapMagic tiles near player had `ActiveTerrain=null` and only inactive `Draft Terrain` children with valid `TerrainData`
+      - this made `MapMagicBridge.FindTerrainAt()` miss terrain completely because it relied on `Terrain.activeTerrains`
+      - patched bridge now caches `TerrainTile[]` on hierarchy change and resolves `ActiveTerrain -> main -> draft`
+      - `WorldProceduralFieldSampler` seafloor probe switched to `RaycastNonAlloc` and ignores player/self hits to stop false `terrain-source-upgraded` reprimes
+38. Runtime regression fix-up:
+    - latest pre-patch evidence:
+      - scatter spike still active: `rebuild=96.67ms`, `sample=71.53ms`, `post=41.44ms`, `reconcile=18.09ms`, `spawn=8.69ms`, `reason=dirty`
+      - secondary runtime offender: `FaunaDirector=38.13ms` with explicit pool creation/exhaustion warnings for `SmallPassiveProxy`, `HunterProxy`, `TerritorialProxy`
+      - `HectonPlayerMovement.UpdateCrestWaterHeight()` was throwing `NullReferenceException` every `FixedTick`
+      - live MCP showed `MapMagicBridge.IsAvailable=false`, `mapMagicObject=null`, `playerTransform=null`, and field sampler still on `FallbackSynthetic`
+    - code changes:
+      - `HectonPlayerMovement` now cold-allocates `Crest.SampleHeightHelper` in `Awake()` and null-guards the runtime sampling path
+      - `MapMagicBridge` now performs throttled scene-binding recovery in `SlowTick()` and uses `WorldRuntimeReferenceUtility` for player rebinding
+      - `FaunaDirector` now warms resolved creature prefabs up to `4` pooled instances before runtime spawn pressure hits
+    - verification:
+      - Unity compile passed
+      - console shows no new first-party compile errors
+      - runtime effect is still `PENDING VERIFICATION`
+- Latest profiled runtime before current fixes: scatter still top offender (`rebuild=105.39ms`, `sample=77.57ms`, `post=44.25ms`, `reconcile=20.53ms`, `spawn=9.00ms`, `reason=dirty`), `TickProfiler` peak `162.19ms` with `WorldProceduralScatterDirector=130.81ms`, `FaunaDirector=17.21ms`.
+- Concrete follow-up applied: scene wiring fix for `MapMagicBridge` (serialized `mapMagicObject`/`playerTransform` now present and scene saved) plus `FaunaDirector` warmup target increased to 8 due continued pool expansion warnings for `SmallPassiveProxy` and `HunterProxy`.
+- Verification pending next gameplay run.
+- Further objective pass: `WorldProceduralScatterDirector.SetFaunaSpawnRegistry(...)` now short-circuits same-registry assignments to avoid redundant fauna-registry invalidation; editor wiring now invokes live `MapMagicBridge` setters; `FaunaDirector.TryWarmupCreaturePools()` dedupes repeated prefabs across biome datasets before warmup. Compile clean. Runtime effect still pending.

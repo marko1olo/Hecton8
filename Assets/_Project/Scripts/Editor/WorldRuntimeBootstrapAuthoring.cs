@@ -80,6 +80,7 @@ namespace Hecton8.EditorTools
             Rigidbody playerBody = player != null ? player.GetComponent<Rigidbody>() : null;
 
             MapMagicBridge bridge = FindSceneObjectIncludingInactive<MapMagicBridge>();
+            MapMagic.Core.MapMagicObject mapMagicObject = FindSceneObjectIncludingInactive<MapMagic.Core.MapMagicObject>();
             ScavengePopulator scavengePopulator = FindSceneObjectIncludingInactive<ScavengePopulator>();
             FaunaDirector faunaDirector = FindSceneObjectIncludingInactive<FaunaDirector>();
             ObjectPoolManager objectPoolManager = FindSceneObjectIncludingInactive<ObjectPoolManager>();
@@ -106,6 +107,7 @@ namespace Hecton8.EditorTools
             HectonBiomeMatrixCatalog biomeMatrixCatalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeMatrixCatalogPath);
             WorldChunkStreamingProfile chunkStreamingProfile = AssetDatabase.LoadAssetAtPath<WorldChunkStreamingProfile>(WorldChunkStreamingProfilePath);
 
+            ConfigureMapMagicBridge(bridge, mapMagicObject, playerTransform);
             ConfigureBiomeSamplerCache(biomeCache, bridge, playerTransform);
             ConfigureScavengePopulator(scavengePopulator, chunkStreamingProfile);
             ConfigureWorldFaunaSpawnRegistry(faunaSpawnRegistry, proceduralStateRegistry);
@@ -192,6 +194,34 @@ namespace Hecton8.EditorTools
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(biomeCache);
+        }
+
+        private static void ConfigureMapMagicBridge(
+            MapMagicBridge bridge,
+            MapMagic.Core.MapMagicObject mapMagicObject,
+            Transform playerTransform)
+        {
+            if (bridge == null)
+                return;
+
+            SerializedObject so = new SerializedObject(bridge);
+            SerializedProperty mapMagicProperty = so.FindProperty("mapMagicObject");
+            SerializedProperty playerProperty = so.FindProperty("playerTransform");
+
+            if (mapMagicProperty != null)
+                mapMagicProperty.objectReferenceValue = mapMagicObject;
+
+            if (playerProperty != null)
+                playerProperty.objectReferenceValue = playerTransform;
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(bridge);
+
+            if (mapMagicObject != null)
+                bridge.SetMapMagicObject(mapMagicObject);
+
+            if (playerTransform != null)
+                bridge.SetPlayerTransform(playerTransform);
         }
 
         private static void ConfigureProximityColliderSystem(

@@ -37,9 +37,11 @@
 
 using System;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using MapMagic.Core;
+using MapMagic.Terrains;
 
 namespace Hecton8.Core
 {
@@ -47,6 +49,8 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-7000)]
     public sealed class MapMagicBridge : MonoBehaviour, ISlowTickable
     {
+        private const float SceneBindingRefreshInterval = 1f;
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -140,6 +144,29 @@ namespace Hecton8.Core
         /// </summary>
         private bool _initialBiomePublished;
 
+        /// <summary>
+        /// Cached MapMagic terrain tiles. Uses tile-backed draft terrain when
+        /// MapMagic keeps active terrain references null.
+        /// </summary>
+        private TerrainTile[] _cachedTerrainTiles = Array.Empty<TerrainTile>(); // COLD ALLOC: tile cache for MapMagic terrain lookup
+
+        /// <summary>
+        /// Tracks root child count to avoid reallocating tile cache when the
+        /// MapMagic hierarchy has not structurally changed.
+        /// </summary>
+        private int _cachedTerrainTileRootCount = -1;
+
+        /// <summary>
+        /// Last tile resolved for height/biome sampling. Scatter samples cluster
+        /// spatially, so this avoids full tile scans on repeated queries.
+        /// </summary>
+        private TerrainTile _lastResolvedTerrainTile;
+
+        /// <summary>
+        /// Retry gate for recovering lost scene bindings after reload.
+        /// </summary>
+        private float _nextSceneBindingRefreshTime = float.NegativeInfinity;
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
@@ -179,14 +206,12 @@ namespace Hecton8.Core
                 mapMagicObject = FindMapMagicObjectIncludingInactive();
             }
 
+            RefreshTerrainTileCache(force: true);
+
             // ── Поиск игрока ──
             if (playerTransform == null)
             {
-                GameObject playerGO = GameObject.FindWithTag("Player");
-                if (playerGO != null)
-                {
-                    playerTransform = playerGO.transform;
-                }
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
             }
 
             _lastBiomeID = -1;
@@ -283,6 +308,8 @@ namespace Hecton8.Core
         /// </summary>
         public void SlowTick()
         {
+            RefreshSceneBindingsIfNeeded(force: false);
+            RefreshTerrainTileCache(force: false);
             DetectAndPublishBiome();
         }
 
@@ -377,8 +404,24 @@ namespace Hecton8.Core
             if (terrain == null || terrain.terrainData == null)
                 return false;
 
-            float localHeight = terrain.SampleHeight(new Vector3(x, 0f, z));
-            height = localHeight + terrain.transform.position.y;
+            TerrainData terrainData = terrain.terrainData;
+            Vector3 terrainPosition = terrain.transform.position;
+
+            if (terrain.isActiveAndEnabled)
+            {
+                float localHeight = terrain.SampleHeight(new Vector3(x, 0f, z));
+                height = localHeight + terrainPosition.y;
+                return true;
+            }
+
+            Vector3 terrainSize = terrainData.size;
+            if (terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float normalizedX = math.saturate((x - terrainPosition.x) / terrainSize.x);
+            float normalizedZ = math.saturate((z - terrainPosition.z) / terrainSize.z);
+            float interpolatedHeight = terrainData.GetInterpolatedHeight(normalizedX, normalizedZ);
+            height = interpolatedHeight + terrainPosition.y;
 
             return true;
         }
@@ -581,6 +624,21 @@ namespace Hecton8.Core
         public void SetPlayerTransform(Transform player)
         {
             playerTransform = player;
+            _nextSceneBindingRefreshTime = float.NegativeInfinity;
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Assigns the scene MapMagicObject and refreshes cached tile state.
+        /// </summary>
+        public void SetMapMagicObject(MapMagicObject target)
+        {
+            mapMagicObject = target;
+            _cachedTerrainTileRootCount = -1;
+            _lastResolvedTerrainTile = null;
+            RefreshTerrainTileCache(force: true);
+            _nextSceneBindingRefreshTime = float.NegativeInfinity;
+            UpdateDiagnostics();
         }
 
         /// <summary>
@@ -604,8 +662,16 @@ namespace Hecton8.Core
         ///
         /// ZERO GC: Terrain.activeTerrains — Unity cached array.
         /// </summary>
-        private static Terrain FindTerrainAt(float x, float z)
+        private Terrain FindTerrainAt(float x, float z)
         {
+            if (_lastResolvedTerrainTile != null &&
+                _lastResolvedTerrainTile.ContainsWorldPosition(x, z))
+            {
+                Terrain cachedTerrain = ResolveTileTerrain(_lastResolvedTerrainTile);
+                if (cachedTerrain != null && cachedTerrain.terrainData != null)
+                    return cachedTerrain;
+            }
+
             Terrain active = Terrain.activeTerrain;
             if (active != null && IsPointInTerrain(active, x, z))
                 return active;
@@ -621,6 +687,102 @@ namespace Hecton8.Core
                 if (t != null && IsPointInTerrain(t, x, z))
                     return t;
             }
+
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Length;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null || !tile.ContainsWorldPosition(x, z))
+                    continue;
+
+                Terrain tileTerrain = ResolveTileTerrain(tile);
+                if (tileTerrain == null || tileTerrain.terrainData == null)
+                    continue;
+
+                _lastResolvedTerrainTile = tile;
+                return tileTerrain;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Restores scene bindings after reload without touching hot query
+        /// paths. Searches only when bindings are missing.
+        /// </summary>
+        private void RefreshSceneBindingsIfNeeded(bool force)
+        {
+            if (!force && mapMagicObject != null && playerTransform != null)
+                return;
+
+            float currentTime = Time.unscaledTime;
+            if (!force && currentTime < _nextSceneBindingRefreshTime)
+                return;
+
+            _nextSceneBindingRefreshTime = currentTime + SceneBindingRefreshInterval;
+
+            if (mapMagicObject == null)
+            {
+                mapMagicObject = FindMapMagicObjectIncludingInactive(); // COLD ALLOC: recovery search only when MapMagic binding is missing
+                _cachedTerrainTileRootCount = -1;
+                _lastResolvedTerrainTile = null;
+            }
+
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Refreshes cached TerrainTile array when the MapMagic root hierarchy
+        /// changes. Hot queries then reuse this cache without allocations.
+        /// </summary>
+        private void RefreshTerrainTileCache(bool force)
+        {
+            if (mapMagicObject == null)
+            {
+                _cachedTerrainTiles = Array.Empty<TerrainTile>();
+                _cachedTerrainTileRootCount = -1;
+                _lastResolvedTerrainTile = null;
+                return;
+            }
+
+            Transform mapMagicTransform = mapMagicObject.transform;
+            if (mapMagicTransform == null)
+                return;
+
+            int rootChildCount = mapMagicTransform.childCount;
+            if (!force && rootChildCount == _cachedTerrainTileRootCount)
+                return;
+
+            _cachedTerrainTiles = mapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: refresh only on MapMagic hierarchy change
+            _cachedTerrainTileRootCount = rootChildCount;
+            _lastResolvedTerrainTile = null;
+        }
+
+        /// <summary>
+        /// Resolves the best terrain representation for a tile. MapMagic keeps
+        /// runtime data on draft terrain when ActiveTerrain/main are null.
+        /// </summary>
+        private static Terrain ResolveTileTerrain(TerrainTile tile)
+        {
+            if (tile == null)
+                return null;
+
+            Terrain activeTerrain = tile.ActiveTerrain;
+            if (activeTerrain != null && activeTerrain.terrainData != null)
+                return activeTerrain;
+
+            Terrain mainTerrain = tile.GetTerrain(false);
+            if (mainTerrain != null && mainTerrain.terrainData != null)
+                return mainTerrain;
+
+            Terrain draftTerrain = tile.GetTerrain(true);
+            if (draftTerrain != null && draftTerrain.terrainData != null)
+                return draftTerrain;
 
             return null;
         }
@@ -650,8 +812,8 @@ namespace Hecton8.Core
         {
             _debugMapMagicFound = mapMagicObject != null;
             _debugPlayerFound   = playerTransform != null;
-            _debugTileCount     = Terrain.activeTerrains != null
-                ? Terrain.activeTerrains.Length
+            _debugTileCount     = _cachedTerrainTiles != null
+                ? _cachedTerrainTiles.Length
                 : 0;
         }
 

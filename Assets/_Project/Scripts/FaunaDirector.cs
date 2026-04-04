@@ -56,6 +56,7 @@ namespace Hecton8.AI
     [DefaultExecutionOrder(-5000)]
     public sealed class FaunaDirector : MonoBehaviour, ISlowTickable
     {
+        private const int CreaturePoolWarmupCount = 8;
         private const float PlayerResolveRetryInterval = 1f;
         private const float RuntimeSettingsRefreshInterval = 5f;
 
@@ -274,6 +275,8 @@ namespace Hecton8.AI
         /// Default = true (давление разрешено при старте).
         /// </summary>
         private bool _pressureEnabled = true;
+        private bool _creaturePoolsWarmed;
+        private readonly HashSet<GameObject> _warmupPrefabs = new HashSet<GameObject>(128); // COLD ALLOC: dedupe fauna pool warmup prefabs across biome datasets
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -284,6 +287,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolveSpawnRegistry();
             RefreshRuntimeStreamingSettings();
+            TryWarmupCreaturePools();
             _runtimeSettingsDirty = false;
             _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
         }
@@ -297,6 +301,9 @@ namespace Hecton8.AI
 
             if (spawnRegistry == null)
                 ResolveSpawnRegistry();
+
+            if (!_creaturePoolsWarmed)
+                TryWarmupCreaturePools();
         }
 
         private void OnDisable()
@@ -321,6 +328,8 @@ namespace Hecton8.AI
         public void SlowTick()
         {
             EnsureRuntimeStateInitialized();
+            if (!_creaturePoolsWarmed)
+                TryWarmupCreaturePools();
             if (_runtimeSettingsDirty || Time.time >= _nextRuntimeSettingsRefreshTime)
             {
                 RefreshRuntimeStreamingSettings();
@@ -954,6 +963,47 @@ namespace Hecton8.AI
                 spawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
         }
 
+        private void TryWarmupCreaturePools()
+        {
+            if (_creaturePoolsWarmed || biomeDatasets == null || biomeDatasets.Length == 0)
+                return;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return;
+
+            _warmupPrefabs.Clear();
+
+            for (int biomeIndex = 0; biomeIndex < biomeDatasets.Length; biomeIndex++)
+            {
+                FaunaBiomeData biomeData = biomeDatasets[biomeIndex];
+                if (biomeData == null || biomeData.possibleCreatures == null)
+                    continue;
+
+                List<FaunaEntry> possibleCreatures = biomeData.possibleCreatures;
+                int creatureCount = possibleCreatures.Count;
+
+                for (int creatureIndex = 0; creatureIndex < creatureCount; creatureIndex++)
+                {
+                    GameObject resolvedPrefab = possibleCreatures[creatureIndex].GetResolvedPrefab();
+                    if (resolvedPrefab == null)
+                        continue;
+                    _warmupPrefabs.Add(resolvedPrefab);
+                }
+            }
+
+            foreach (GameObject warmupPrefab in _warmupPrefabs)
+            {
+                int availableCount = pool.GetAvailableCount(warmupPrefab);
+                if (availableCount >= CreaturePoolWarmupCount)
+                    continue;
+
+                pool.Warmup(warmupPrefab, CreaturePoolWarmupCount - availableCount);
+            }
+
+            _creaturePoolsWarmed = true;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
@@ -1576,3 +1626,4 @@ namespace Hecton8.AI
         }
     }
 }
+

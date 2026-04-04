@@ -3983,3 +3983,23 @@ Notes:
     - Unity refresh/compile completed
     - console shows no new first-party compile errors
     - runtime impact remains `PENDING VERIFICATION`
+- 2026-04-04 latest block:
+  - current run facts logged: startup dirty rebuild `186.35ms` (`sample=131.68`, `post=76.63`, `reconcile=35.62`, `spawn=20.78`); recurring `cell-changed` rebuild `43.54ms` (`sample=27.02`, `post=24.42`, `reconcile=11.95`, `spawn=3.91`)
+  - current counters: `GC Allocated In Frame=1260 B`, `Texture Memory=2018604839 B`, `Gfx Used Memory=2162094879 B`, `Profiler Used Memory=1445347120 B`, `Total Used Memory=8128271343 B`
+  - `ScatterPlacement` now caches `EffectiveSpacing`, fauna anchor flags, and fauna radius; scatter publish/spacing checks consume cached values instead of recomputing from `Family/Rule`
+  - `GameTickManager` slow-tick spike diagnostics now use cooldown-gated logging and type-only labels to cut profiler/log-induced editor GC on repeated spike frames
+  - runtime-focused scatter change: one-cell center drift now stays inside a `cell-drift-buffer` when runtime radius is large enough, so the system no longer pays a full rebuild on every adjacent-cell transition
+  - verification: Unity compile passed; no new first-party compile errors; runtime remains `PENDING VERIFICATION`
+  - runtime terrain fix: `WorldProceduralFieldSampler` now uses `Physics.RaycastNonAlloc` and ignores player/self hits for seafloor probes; `MapMagicBridge` no longer relies only on `Terrain.activeTerrains` and now resolves cached `TerrainTile` draft/main/active terrains, which matched live MCP evidence (`ActiveTerrain=null`, inactive `Draft Terrain` with valid `TerrainData`)
+- 2026-04-04 runtime regression pass:
+  - fresh run facts before patch: `WorldProceduralScatterDirector` still top offender (`rebuild=96.67ms`, `sample=71.53ms`, `post=41.44ms`, `reconcile=18.09ms`, `spawn=8.69ms`, `reason=dirty`); `FaunaDirector=38.13ms`; runtime pool warnings for `SmallPassiveProxy`, `HunterProxy`, `TerritorialProxy`; `HectonPlayerMovement.UpdateCrestWaterHeight()` spammed `NullReferenceException`
+  - live MCP state before patch: `MapMagicBridge.IsAvailable=false`, `mapMagicObject=null`, `playerTransform=null`, `WorldProceduralFieldSampler._debugLastHeightSource=FallbackSynthetic`
+  - fixes applied:
+    - `HectonPlayerMovement` now allocates `Crest.SampleHeightHelper` once in `Awake()` and hard-guards null in `UpdateCrestWaterHeight()`; removed hot-path `new`
+    - `MapMagicBridge` now retries lost scene bindings in `SlowTick()` via throttled recovery path and resolves player via `WorldRuntimeReferenceUtility`
+    - `FaunaDirector` now pre-warms resolved creature pools to `4` instances, matching observed on-demand expansion warnings
+  - verification: Unity compile passed, no new first-party compile errors, runtime impact remains `PENDING VERIFICATION`
+- 2026-04-04 runtime pass: latest run still hit `[WorldScatterProfiler] rebuild=105.39ms sample=77.57ms post=44.25ms reconcile=20.53ms spawn=9.00ms reason=dirty` and `[TickProfiler] SlowTick spike total=162.19ms ... WorldProceduralScatterDirector=130.81ms | FaunaDirector=17.21ms`.
+- Evidence-based fixes applied after that run: persisted `MapMagicBridge.mapMagicObject` + `playerTransform` scene wiring through `WorldStreamingWiringValidator` / `WorldRuntimeBootstrapAuthoring`; scene saved. Raised `FaunaDirector` creature pool warmup target from 4 to 8 because `SmallPassiveProxy` and `HunterProxy` still expanded by 4 at runtime.
+- Current edit-time verification after wiring: `MapMagicBridge.IsAvailable=true`, `RuntimeMapMagicObject=Terrain`, `playerTransform=Player`, scene `Assets/_Project/Scenes/02_HECTON_WORLD.unity` saved.
+- Additional objective fixes after code inspection: `WorldProceduralScatterDirector.SetFaunaSpawnRegistry(...)` is now idempotent for same-registry rebinds, editor wiring now calls live `MapMagicBridge` setters, and `FaunaDirector.TryWarmupCreaturePools()` dedupes repeated creature prefabs across all biome datasets before warmup to cut cold-start fauna cost. Compile clean. Runtime effect still `PENDING VERIFICATION`.

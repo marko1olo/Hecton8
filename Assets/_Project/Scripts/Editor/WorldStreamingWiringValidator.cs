@@ -315,6 +315,25 @@ namespace Hecton8.EditorTools
             }
 
             int fixedCount = 0;
+            MapMagicBridge bridge = FindSceneObjectIncludingInactive<MapMagicBridge>();
+            MapMagic.Core.MapMagicObject mapMagicObject = FindSceneObjectIncludingInactive<MapMagic.Core.MapMagicObject>();
+            GameObject player = GameObject.FindWithTag("Player");
+            if (player == null)
+                player = GameObject.Find("Player");
+
+            Transform playerTransform = player != null ? player.transform : null;
+
+            if (bridge != null && mapMagicObject != null && AssignObjectIfMissing(bridge, "mapMagicObject", mapMagicObject))
+            {
+                bridge.SetMapMagicObject(mapMagicObject);
+                fixedCount++;
+            }
+            if (bridge != null && playerTransform != null && AssignObjectIfMissing(bridge, "playerTransform", playerTransform))
+            {
+                bridge.SetPlayerTransform(playerTransform);
+                fixedCount++;
+            }
+
             WorldProceduralStateRegistry proceduralStateRegistry = FindSceneObjectIncludingInactive<WorldProceduralStateRegistry>();
             if (proceduralStateRegistry == null)
             {

@@ -316,6 +316,7 @@ namespace Hecton8.World
         private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
         private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
         private readonly Dictionary<Vector2Int, CachedHeightSample> _seafloorHeightCache = new Dictionary<Vector2Int, CachedHeightSample>(1536);
+        private readonly RaycastHit[] _seafloorRaycastHits = new RaycastHit[4]; // COLD ALLOC: reused non-alloc seafloor probes.
         private NativeArray<ZoneData> _burstZoneData;
         private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
         private NativeArray<BiomeFamilyData> _burstBiomeFamilyData;
@@ -326,17 +327,20 @@ namespace Hecton8.World
         private int _lastActiveAnchorVersion = -1;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private bool _samplingFramePrepared;
+        private int _samplingFrameId;
 
         private struct CachedHeightSample
         {
-            public CachedHeightSample(float height, SeafloorSource source)
+            public CachedHeightSample(float height, SeafloorSource source, int samplingFrameId)
             {
                 Height = height;
                 Source = source;
+                SamplingFrameId = samplingFrameId;
             }
 
             public float Height;
             public SeafloorSource Source;
+            public int SamplingFrameId;
         }
 
         private struct LocalTerrainContext
@@ -1288,6 +1292,7 @@ namespace Hecton8.World
         public void BeginScatterSamplingFrame()
         {
             PrepareBurstData();
+            _samplingFrameId++;
             _samplingFramePrepared = true;
         }
 
@@ -1756,6 +1761,16 @@ namespace Hecton8.World
             return true;
         }
 
+        public bool TryResolveSeafloorSource(Vector3 position, out SeafloorSource seafloorSource)
+        {
+            seafloorSource = SeafloorSource.None;
+
+            if (!_samplingFramePrepared)
+                BeginScatterSamplingFrame();
+
+            return TryResolveSeafloorHeight(position, out _, out seafloorSource);
+        }
+
         public float EvaluateHeatmap(
             string heatmapChannel,
             in FieldSample sample,
@@ -2124,16 +2139,21 @@ namespace Hecton8.World
             Vector2Int cacheKey = GetHeightCacheKey(position.x, position.z);
             if (_seafloorHeightCache.TryGetValue(cacheKey, out CachedHeightSample cachedSample))
             {
-                seafloorHeight = cachedSample.Height;
-                seafloorSource = cachedSample.Source;
-                return true;
+                bool staleFallbackSample = cachedSample.Source == SeafloorSource.FallbackSynthetic &&
+                                           cachedSample.SamplingFrameId != _samplingFrameId;
+                if (!staleFallbackSample)
+                {
+                    seafloorHeight = cachedSample.Height;
+                    seafloorSource = cachedSample.Source;
+                    return true;
+                }
             }
 
             bool resolved = TryResolveSeafloorHeightUncached(position, out seafloorHeight, out seafloorSource);
             if (resolved)
             {
                 TrimSeafloorHeightCacheIfNeeded();
-                _seafloorHeightCache[cacheKey] = new CachedHeightSample(seafloorHeight, seafloorSource);
+                _seafloorHeightCache[cacheKey] = new CachedHeightSample(seafloorHeight, seafloorSource, _samplingFrameId);
             }
 
             return resolved;
@@ -2153,8 +2173,19 @@ namespace Hecton8.World
             float waterSurface = mapMagicBridge != null ? mapMagicBridge.WaterSurfaceLevel : Mathf.Max(position.y + 500f, 1000f);
             float rayOriginY = Mathf.Max(waterSurface + 1000f, position.y + 1000f);
             Vector3 origin = new Vector3(position.x, rayOriginY, position.z);
-            if (UnityEngine.Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 40000f, ~0, QueryTriggerInteraction.Ignore))
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                _seafloorRaycastHits,
+                40000f,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
+                RaycastHit hit = _seafloorRaycastHits[hitIndex];
+                if (ShouldIgnoreSeafloorHit(hit))
+                    continue;
+
                 seafloorHeight = hit.point.y;
                 seafloorSource = SeafloorSource.SceneRaycast;
                 return true;
@@ -2164,6 +2195,28 @@ namespace Hecton8.World
             seafloorHeight = fallbackSurface - EstimateFallbackDepth(position.x, position.z);
             seafloorSource = SeafloorSource.FallbackSynthetic;
             return true;
+        }
+
+        private bool ShouldIgnoreSeafloorHit(in RaycastHit hit)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return true;
+
+            Transform hitTransform = hitCollider.transform;
+            if (playerTransform != null &&
+                (hitTransform == playerTransform || hitTransform.IsChildOf(playerTransform)))
+            {
+                return true;
+            }
+
+            Rigidbody hitBody = hit.rigidbody;
+            if (hitBody == null)
+                return false;
+
+            Transform hitBodyTransform = hitBody.transform;
+            return playerTransform != null &&
+                   (hitBodyTransform == playerTransform || hitBodyTransform.IsChildOf(playerTransform));
         }
 
         private bool TryGetLocalTerrainContext(Vector3 position, out LocalTerrainContext terrainContext)

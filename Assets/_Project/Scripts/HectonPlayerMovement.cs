@@ -344,6 +344,11 @@ namespace Hecton8.Gameplay
             _juiceProcessor.Initialize(leanIntoTurn);
 
             // ── Crest integration ──
+            if (useCrestOceanHeight && _crestHeightSampler == null)
+            {
+                _crestHeightSampler = new Crest.SampleHeightHelper(); // COLD ALLOC: reused Crest sampler for the whole scene lifetime
+            }
+
             _dynamicWaterSurfaceY = waterSurfaceY;
             _crestSamplingSucceeded = false;
             InitCrest();
@@ -432,7 +437,6 @@ namespace Hecton8.Gameplay
 
             if (Crest.OceanRenderer.Instance != null)
             {
-                _crestHeightSampler = new Crest.SampleHeightHelper();
                 _crestAvailable = true;
                 _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
             }
@@ -448,7 +452,6 @@ namespace Hecton8.Gameplay
             {
                 if (Crest.OceanRenderer.Instance != null)
                 {
-                    _crestHeightSampler = new Crest.SampleHeightHelper();
                     _crestAvailable = true;
                     _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
                     UpdateCrestDiagnostics();
@@ -460,6 +463,13 @@ namespace Hecton8.Gameplay
             }
 
             if (Crest.OceanRenderer.Instance == null)
+            {
+                _crestAvailable = false;
+                UpdateCrestDiagnostics();
+                return;
+            }
+
+            if (_crestHeightSampler == null)
             {
                 _crestAvailable = false;
                 UpdateCrestDiagnostics();

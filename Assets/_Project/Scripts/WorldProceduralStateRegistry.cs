@@ -27,6 +27,8 @@ namespace Hecton8.World
         [SerializeField] private int _debugBlockedFaunaCount;
         [SerializeField] private int _debugLargeThreatFaunaStateCount;
         [SerializeField] private float _debugCurrentPlayTime;
+        [SerializeField] private string _debugLastPlacementStateChangeReason = "None";
+        [SerializeField] private long _debugLastPlacementStateChangeRuntimeKey;
 
         private readonly List<long> _faunaRemovalBuffer = new List<long>(128);
         private HashSet<long> _suppressedPlacementKeys;
@@ -67,6 +69,7 @@ namespace Hecton8.World
                 return false;
 
             UpdateDiagnostics();
+            RecordPlacementStateChange("suppress", runtimeKey);
             PlacementStateChanged?.Invoke();
             return true;
         }
@@ -77,6 +80,7 @@ namespace Hecton8.World
                 return false;
 
             UpdateDiagnostics();
+            RecordPlacementStateChange("restore", runtimeKey);
             PlacementStateChanged?.Invoke();
             return true;
         }
@@ -150,7 +154,10 @@ namespace Hecton8.World
             UpdateDiagnostics();
 
             if (hadPlacements)
+            {
+                RecordPlacementStateChange("clear-all", 0L);
                 PlacementStateChanged?.Invoke();
+            }
         }
 
         public void PopulateSaveData(SaveData data)
@@ -238,8 +245,12 @@ namespace Hecton8.World
 
             CleanupExpiredFaunaStates();
             UpdateDiagnostics();
+            RecordPlacementStateChange("load-save", 0L);
             PlacementStateChanged?.Invoke();
         }
+
+        public string DebugLastPlacementStateChangeReason => _debugLastPlacementStateChangeReason;
+        public long DebugLastPlacementStateChangeRuntimeKey => _debugLastPlacementStateChangeRuntimeKey;
 
         private void CleanupExpiredFaunaStates()
         {
@@ -292,6 +303,12 @@ namespace Hecton8.World
                 if (pair.Value.isLargeThreatZone)
                     _debugLargeThreatFaunaStateCount++;
             }
+        }
+
+        private void RecordPlacementStateChange(string reason, long runtimeKey)
+        {
+            _debugLastPlacementStateChangeReason = string.IsNullOrEmpty(reason) ? "unknown" : reason;
+            _debugLastPlacementStateChangeRuntimeKey = runtimeKey;
         }
     }
 }
