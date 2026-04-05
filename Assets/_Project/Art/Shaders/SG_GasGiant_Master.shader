@@ -76,7 +76,8 @@
 //   1x _DetailTex (upper haze)
 //   1x _EmissionTex (storms)
 //   1x _EmissionMap (atmospheric glow) -- NEW
-//   = 4 in forward pass (detail uses same ConstantRotation)
+//   1x _CelestialOcclusionTex (soft atmospheric transmittance)
+//   = 5 in forward pass
 //
 // All rotation uses float (32-bit) precision.
 // All color math uses half (16-bit) for ALU efficiency.
@@ -96,9 +97,24 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
         _EmissionMap ("Emission Map (Atmospheric Glow)", 2D) = "black" {}
         [HDR] _EmissionColor ("Emission Color HDR", Color) = (0.5, 0.3, 0.8, 1)
 
+        [Header(Celestial Occlusion)]
+        _CelestialOcclusionTex ("Celestial Occlusion", 2D) = "gray" {}
+        _CelestialOcclusionTiling ("Occlusion Tiling", Vector) = (0.05, 0.08, 0, 0)
+        _CelestialOcclusionScrollSpeed ("Occlusion Scroll Speed", Float) = 0.001
+        _CelestialOcclusionThreshold ("Occlusion Threshold", Range(0, 1)) = 0.5
+        _CelestialOcclusionSoftness ("Occlusion Softness", Range(0.01, 0.5)) = 0.24
+        _CelestialOcclusionStrength ("Occlusion Strength", Range(0, 1)) = 0.42
+        _CelestialOcclusionDetailFade ("Occlusion Detail Fade", Range(0, 1)) = 0.75
+        _CelestialOcclusionHorizonBoost ("Occlusion Horizon Boost", Range(0, 2)) = 1.25
+        _CelestialOcclusionVeilBoost ("Occlusion Veil Boost", Range(0, 1)) = 0.65
+
         [Header(Atmosphere Colors HDR)]
         [HDR] _AtmosColorInner ("Atmos Inner", Color) = (0.4, 0.3, 0.7, 1)
         [HDR] _AtmosColorOuter ("Atmos Outer", Color) = (0.5, 0.4, 0.9, 1)
+        [HDR] _SkyColorZenith ("Sky Zenith", Color) = (0.05, 0.08, 0.25, 1)
+        [HDR] _SkyColorHorizon ("Sky Horizon", Color) = (0.56, 0.52, 0.7, 1)
+        [HDR] _SkyColorNadir ("Sky Nadir", Color) = (0.02, 0.03, 0.08, 1)
+        [HDR] _SkyHazeColor ("Sky Haze Color", Color) = (0.72, 0.74, 0.82, 1)
 
         [Header(Rotation)]
         _GlobalRotation ("Global Rotation (set from C#)", Float) = 0.0
@@ -133,6 +149,25 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
         [Header(Phase Data from C Sharp)]
         _PlanetPhase ("Planet Phase", Range(-1, 1)) = 0
+        _NightBlend ("Night Blend", Range(0, 1)) = 0
+
+        [Header(Distance Veil)]
+        _DistanceVeilStrength ("Distance Veil Strength", Range(0, 1)) = 0.38
+        _DistanceVeilRimStrength ("Distance Veil Rim", Range(0, 2)) = 0.7
+        _DistanceVeilHorizonStrength ("Distance Veil Horizon", Range(0, 2)) = 0.9
+        _DistanceVeilPower ("Distance Veil Rim Power", Range(0.5, 8)) = 1.7
+        _DistanceNightDarken ("Distance Night Darken", Range(0, 1)) = 0.42
+        _DistanceHorizonBandStart ("Horizon Band Start", Range(0, 0.2)) = 0.015
+        _DistanceHorizonBandEnd ("Horizon Band End", Range(0.05, 0.35)) = 0.16
+        _DistanceHorizonDetailFade ("Horizon Detail Fade", Range(0, 1)) = 0.82
+        _DistanceHorizonDesaturate ("Horizon Desaturate", Range(0, 1)) = 0.22
+        _DistanceHorizonVeilBoost ("Horizon Veil Boost", Range(0, 1)) = 0.35
+        _DistanceBottomArcStart ("Bottom Arc Start", Range(0, 0.08)) = 0.0
+        _DistanceBottomArcEnd ("Bottom Arc End", Range(0.02, 0.16)) = 0.06
+        _DistanceBottomArcDetailFade ("Bottom Arc Detail Fade", Range(0, 1)) = 0.36
+        _DistanceBottomArcDesaturate ("Bottom Arc Desaturate", Range(0, 1)) = 0.22
+        _DistanceBottomArcVeilBoost ("Bottom Arc Veil Boost", Range(0, 1)) = 0.38
+        _DistanceBottomArcHazeBlend ("Bottom Arc Haze Blend", Range(0, 1)) = 0.72
     }
 
     SubShader
@@ -178,6 +213,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             TEXTURE2D(_DetailTex);      SAMPLER(sampler_DetailTex);
             TEXTURE2D(_EmissionTex);    SAMPLER(sampler_EmissionTex);
             TEXTURE2D(_EmissionMap);    SAMPLER(sampler_EmissionMap);    // ═══ NEW ═══
+            TEXTURE2D(_CelestialOcclusionTex); SAMPLER(sampler_CelestialOcclusionTex);
 
             // ─────────────────────────────────────────────────────────
             // CBUFFER (SRP Batcher compatible)
@@ -194,19 +230,34 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float4 _DetailTex_ST;
                 float4 _EmissionTex_ST;
                 float4 _EmissionMap_ST;             // ═══ NEW ═══
+                float4 _CelestialOcclusionTex_ST;
 
                 half4  _EmissionColor;              // ═══ NEW ═══
 
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
+                half4  _SkyColorZenith;
+                half4  _SkyColorHorizon;
+                half4  _SkyColorNadir;
+                half4  _SkyHazeColor;
 
                 float  _GlobalRotation;
                 float  _EquatorialSpeed;
                 float  _DetailSpeedMult;
+                float  _GameTime;
 
                 float4 _DetailTiling;
+                float4 _CelestialOcclusionTiling;
+                float4 _WindDirection;
 
                 half   _DetailStrength;
+                half   _CelestialOcclusionScrollSpeed;
+                half   _CelestialOcclusionThreshold;
+                half   _CelestialOcclusionSoftness;
+                half   _CelestialOcclusionStrength;
+                half   _CelestialOcclusionDetailFade;
+                half   _CelestialOcclusionHorizonBoost;
+                half   _CelestialOcclusionVeilBoost;
 
                 half   _BacklitIntensity;
                 half   _TerminatorWidth;
@@ -227,6 +278,23 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float  _StormSpeed;
 
                 half   _PlanetPhase;
+                half   _NightBlend;
+                half   _DistanceVeilStrength;
+                half   _DistanceVeilRimStrength;
+                half   _DistanceVeilHorizonStrength;
+                half   _DistanceVeilPower;
+                half   _DistanceNightDarken;
+                half   _DistanceHorizonBandStart;
+                half   _DistanceHorizonBandEnd;
+                half   _DistanceHorizonDetailFade;
+                half   _DistanceHorizonDesaturate;
+                half   _DistanceHorizonVeilBoost;
+                half   _DistanceBottomArcStart;
+                half   _DistanceBottomArcEnd;
+                half   _DistanceBottomArcDetailFade;
+                half   _DistanceBottomArcDesaturate;
+                half   _DistanceBottomArcVeilBoost;
+                half   _DistanceBottomArcHazeBlend;
             CBUFFER_END
 
             // ─────────────────────────────────
@@ -299,6 +367,35 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     : raw / len;
 
                 return (half3)resolved;
+            }
+
+            float2 ComputeCelestialOcclusionUV(half3 skyRay)
+            {
+                float2 uv;
+                uv.x = atan2((float)skyRay.z, (float)skyRay.x) * (0.5 / 3.14159265) + 0.5;
+                uv.y = (float)skyRay.y * 0.5 + 0.5;
+                uv *= _CelestialOcclusionTiling.xy;
+                uv.x += _WindDirection.x * _GameTime * _CelestialOcclusionScrollSpeed;
+                uv.y += _WindDirection.y * _GameTime * (_CelestialOcclusionScrollSpeed * 0.25);
+                return uv;
+            }
+
+            half SampleCelestialOcclusion(half3 skyRay)
+            {
+                float2 occlusionUV = ComputeCelestialOcclusionUV(skyRay);
+                half occlusionSample = SAMPLE_TEXTURE2D(
+                    _CelestialOcclusionTex,
+                    sampler_CelestialOcclusionTex,
+                    occlusionUV).r;
+
+                half edge0 = saturate(_CelestialOcclusionThreshold - _CelestialOcclusionSoftness);
+                half edge1 = saturate(_CelestialOcclusionThreshold + _CelestialOcclusionSoftness);
+                half softCloudField = smoothstep(edge0, edge1, occlusionSample);
+
+                half horizonBand = pow(saturate(1.0h - abs(skyRay.y)), 2.0h);
+                half horizonBoost = saturate(0.2h + horizonBand * _CelestialOcclusionHorizonBoost);
+
+                return softCloudField * _CelestialOcclusionStrength * horizonBoost;
             }
 
             // ─────────────────────────────────
@@ -423,6 +520,22 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
 
                 half3 N = normalize(input.normalWS);
                 half3 V = normalize(input.viewDirWS);
+                half3 skyRay = normalize(-input.viewDirWS);
+                half celestialOcclusion = SampleCelestialOcclusion(skyRay);
+                half horizonBand = 1.0h - smoothstep(
+                    _DistanceHorizonBandStart,
+                    _DistanceHorizonBandEnd,
+                    saturate(skyRay.y));
+                half bottomArc = 1.0h - smoothstep(
+                    _DistanceBottomArcStart,
+                    _DistanceBottomArcEnd,
+                    saturate(skyRay.y));
+                half bottomArcTight = bottomArc * bottomArc;
+                half limbMask = pow(1.0h - saturate(dot(N, V)), 3.5h);
+                half horizonLimbWeld = saturate(horizonBand * limbMask * 0.58h);
+                half bottomLimbWeld = saturate(
+                    bottomArcTight * limbMask * (0.65h + _DistanceBottomArcHazeBlend));
+                half limbWeld = saturate(horizonLimbWeld + bottomLimbWeld);
 
                 // ═════════════════════════════════════════════════════
                 // SUN DIRECTION — Fallback-safe resolution.
@@ -452,6 +565,16 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 // COMBINE: Pseudo-volume blend
                 // ═══════════════════════════════════════
                 half hazeMask = hazeColor.a * _DetailStrength;
+                hazeMask *= saturate(1.0h - celestialOcclusion * _CelestialOcclusionDetailFade);
+                hazeMask *= lerp(1.0h,
+                                 1.0h - _DistanceHorizonDetailFade,
+                                 horizonBand);
+                hazeMask *= lerp(1.0h,
+                                 1.0h - _DistanceBottomArcDetailFade,
+                                 bottomArcTight);
+                hazeMask *= lerp(1.0h,
+                                 0.76h,
+                                 horizonLimbWeld);
                 half3 combinedAlbedo = lerp(
                     baseColor.rgb,
                     hazeColor.rgb,
@@ -479,6 +602,8 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     _AtmosColorInner.rgb,
                     _AtmosColorOuter.rgb,
                     _SunBacklitFactor);
+                rim.rimColor *= 1.0h - limbWeld * 0.85h;
+                rim.rimAlpha *= 1.0h - limbWeld * 0.85h;
 
                 // ═══ STORM EMISSION ═══
                 float stormSpeedRatio = _StormSpeed / (_EquatorialSpeed + 0.0001);
@@ -520,6 +645,48 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 // _EmissionColor.rgb contains the desired hue and HDR intensity.
                 half3 emissionMapContrib = emissionMapSample.rgb * _EmissionColor.rgb;
 
+                half horizonVeil = pow(saturate(1.0h - abs(skyRay.y)), 3.0h)
+                                 * _DistanceVeilHorizonStrength;
+                half rimVeil = pow(1.0h - saturate(dot(N, V)), _DistanceVeilPower)
+                             * _DistanceVeilRimStrength;
+                half distanceVeil = saturate(_DistanceVeilStrength
+                                   * (0.18h + horizonVeil + rimVeil));
+                distanceVeil = saturate(distanceVeil
+                              + horizonBand * _DistanceHorizonVeilBoost
+                              + bottomArcTight * _DistanceBottomArcVeilBoost
+                              + limbWeld * (_DistanceBottomArcVeilBoost * 0.65h)
+                              + celestialOcclusion * _CelestialOcclusionVeilBoost);
+
+                half zenithMask = saturate(skyRay.y);
+                half nadirMask = saturate(-skyRay.y);
+                half horizonMask = 1.0h - zenithMask - nadirMask;
+                half3 skyGradient = _SkyColorZenith.rgb * zenithMask
+                                  + _SkyColorHorizon.rgb * horizonMask
+                                  + _SkyColorNadir.rgb * nadirMask;
+                half albedoLuma = dot(combinedAlbedo, half3(0.299h, 0.587h, 0.114h));
+                combinedAlbedo = lerp(
+                    combinedAlbedo,
+                    half3(albedoLuma, albedoLuma, albedoLuma),
+                    horizonBand * _DistanceHorizonDesaturate);
+                combinedAlbedo = lerp(
+                    combinedAlbedo,
+                    skyGradient,
+                    bottomArcTight * _DistanceBottomArcDesaturate);
+                combinedAlbedo = lerp(
+                    combinedAlbedo,
+                    skyGradient,
+                    horizonLimbWeld * _DistanceBottomArcDesaturate);
+
+                half3 veilDayColor = lerp(skyGradient, _SkyColorHorizon.rgb, 0.55h);
+                half3 veilNightColor = lerp(_SkyColorHorizon.rgb * 0.55h,
+                                            _SkyColorNadir.rgb,
+                                            0.65h);
+                half3 distanceVeilColor = lerp(veilDayColor, veilNightColor, _NightBlend);
+                distanceVeilColor = lerp(
+                    distanceVeilColor,
+                    _SkyHazeColor.rgb,
+                    saturate(bottomArcTight * _DistanceBottomArcHazeBlend + horizonLimbWeld * 0.55h));
+
                 // ═══ FINAL COMPOSITE ═══
                 half3 finalColor = daylight
                                  + terminatorContrib
@@ -527,6 +694,17 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                  + rim.rimColor
                                  + stormEmission
                                  + emissionMapContrib;    // ═══ NEW ═══
+
+                finalColor = lerp(finalColor, distanceVeilColor, distanceVeil);
+                finalColor = lerp(finalColor, _SkyHazeColor.rgb, limbWeld);
+                half nightDarkenMask = saturate(
+                    _NightBlend * (0.28h + distanceVeil * 0.72h + horizonBand * 0.18h));
+                half nightTintMask = saturate(
+                    _NightBlend * (0.18h + horizonBand * 0.32h + limbWeld * 0.35h));
+                finalColor *= lerp(1.0h, 1.0h - _DistanceNightDarken, nightDarkenMask);
+                finalColor = lerp(finalColor,
+                                  lerp(finalColor, veilNightColor, 0.35h),
+                                  nightTintMask);
 
                 return half4(finalColor, 1.0h);
             }
@@ -678,14 +856,28 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float4 _DetailTex_ST;
                 float4 _EmissionTex_ST;
                 float4 _EmissionMap_ST;             // ═══ NEW ═══
+                float4 _CelestialOcclusionTex_ST;
                 half4  _EmissionColor;              // ═══ NEW ═══
                 half4  _AtmosColorInner;
                 half4  _AtmosColorOuter;
+                half4  _SkyColorZenith;
+                half4  _SkyColorHorizon;
+                half4  _SkyColorNadir;
                 float  _GlobalRotation;
                 float  _EquatorialSpeed;
                 float  _DetailSpeedMult;
+                float  _GameTime;
                 float4 _DetailTiling;
+                float4 _CelestialOcclusionTiling;
+                float4 _WindDirection;
                 half   _DetailStrength;
+                half   _CelestialOcclusionScrollSpeed;
+                half   _CelestialOcclusionThreshold;
+                half   _CelestialOcclusionSoftness;
+                half   _CelestialOcclusionStrength;
+                half   _CelestialOcclusionDetailFade;
+                half   _CelestialOcclusionHorizonBoost;
+                half   _CelestialOcclusionVeilBoost;
                 half   _BacklitIntensity;
                 half   _TerminatorWidth;
                 half4  _TerminatorTintColor;
@@ -701,6 +893,23 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 float4 _StormTiling;
                 float  _StormSpeed;
                 half   _PlanetPhase;
+                half   _NightBlend;
+                half   _DistanceVeilStrength;
+                half   _DistanceVeilRimStrength;
+                half   _DistanceVeilHorizonStrength;
+                half   _DistanceVeilPower;
+                half   _DistanceNightDarken;
+                half   _DistanceHorizonBandStart;
+                half   _DistanceHorizonBandEnd;
+                half   _DistanceHorizonDetailFade;
+                half   _DistanceHorizonDesaturate;
+                half   _DistanceHorizonVeilBoost;
+                half   _DistanceBottomArcStart;
+                half   _DistanceBottomArcEnd;
+                half   _DistanceBottomArcDetailFade;
+                half   _DistanceBottomArcDesaturate;
+                half   _DistanceBottomArcVeilBoost;
+                half   _DistanceBottomArcHazeBlend;
             CBUFFER_END
 
             struct Attributes

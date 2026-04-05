@@ -103,6 +103,7 @@ namespace Hecton8.EditorTools
             WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
+            WorldCaveDirector caveDirector = GetOrAddComponent<WorldCaveDirector>(managersRoot);
             ProximityColliderSystem proximityColliderSystem = GetOrAddComponent<ProximityColliderSystem>(managersRoot);
             HectonBiomeMatrixCatalog biomeMatrixCatalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeMatrixCatalogPath);
             WorldChunkStreamingProfile chunkStreamingProfile = AssetDatabase.LoadAssetAtPath<WorldChunkStreamingProfile>(WorldChunkStreamingProfilePath);
@@ -163,6 +164,14 @@ namespace Hecton8.EditorTools
                 geologySeamExecutionDirector,
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>());
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
+            ConfigureWorldCaveDirector(
+                caveDirector,
+                playerTransform,
+                biomeMatrixDirector,
+                zoneDirector,
+                bridge,
+                FindSceneObjectIncludingInactive<HectonVoxelEngine>(),
+                chunkStreamingProfile);
             ConfigureSceneSlices();
             ConfigureSceneInterestAnchors();
             ConfigureSceneZones();
@@ -417,6 +426,26 @@ namespace Hecton8.EditorTools
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
             so.FindProperty("matrixCatalog").objectReferenceValue = catalog;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldCaveDirector(
+            WorldCaveDirector director,
+            Transform playerTransform,
+            BiomeMatrixDirector biomeMatrixDirector,
+            WorldZoneDirector zoneDirector,
+            MapMagicBridge mapMagicBridge,
+            HectonVoxelEngine voxelEngine,
+            WorldChunkStreamingProfile chunkStreamingProfile)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.FindProperty("biomeMatrixDirector").objectReferenceValue = biomeMatrixDirector;
+            so.FindProperty("worldZoneDirector").objectReferenceValue = zoneDirector;
+            so.FindProperty("mapMagicBridge").objectReferenceValue = mapMagicBridge;
+            so.FindProperty("voxelEngine").objectReferenceValue = voxelEngine;
+            so.FindProperty("chunkStreamingProfile").objectReferenceValue = chunkStreamingProfile;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(director);
         }

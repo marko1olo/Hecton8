@@ -160,7 +160,15 @@ public static class CaveGraphGenerator
         GenerateEntrances(ref rng, preset, worldCenter, terrainHeightAtCenter,
                           volumeHalfExtent, dynamicMargin, roomList, ref entranceList);
 
-        // Phase 4: Copy to output
+        // Phase 4: Generate interior structures
+        var structureList = new NativeList<CaveStructure>(preset.maxStructures, Allocator.Temp);
+        if (preset.enableStructures && preset.maxStructures > 0)
+        {
+            GenerateStructures(ref rng, preset, worldCenter, volumeHalfExtent,
+                               roomList, tunnelList, ref structureList);
+        }
+
+        // Phase 5: Copy to output
         nodes = new NativeArray<CaveNode>(roomList.Length, allocator);
         for (int i = 0; i < roomList.Length; i++)
             nodes[i] = roomList[i];
@@ -173,11 +181,14 @@ public static class CaveGraphGenerator
         for (int i = 0; i < entranceList.Length; i++)
             entrances[i] = entranceList[i];
 
-        structures = new NativeArray<CaveStructure>(0, allocator);
+        structures = new NativeArray<CaveStructure>(structureList.Length, allocator);
+        for (int i = 0; i < structureList.Length; i++)
+            structures[i] = structureList[i];
 
         roomList.Dispose();
         tunnelList.Dispose();
         entranceList.Dispose();
+        structureList.Dispose();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -792,5 +803,214 @@ public static class CaveGraphGenerator
                $"{tunnels.Length} tunnels (R:{roundT} T:{tallT} W:{wideT}) | " +
                $"{entrances.Length} entrances | " +
                $"Depth span: {depth:F0}m | Max radius: {maxRadius:F1}m";
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  PHASE 4: INTERIOR STRUCTURES GENERATION
+    // ════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Generates interior structures (stalactites, boulders, columns, etc.)
+    /// to add visual interest and readability cues to cave interiors.
+    ///
+    /// Algorithm:
+    /// 1. For each room, place structures based on density and allowed types.
+    /// 2. Stalactites/Stalagmites placed near ceiling/floor.
+    /// 3. Boulders placed on floors.
+    /// 4. Columns span floor to ceiling.
+    /// 5. Structures avoid overlapping entrances and tunnels.
+    /// </summary>
+    static void GenerateStructures(
+        ref Random rng,
+        CavePreset preset,
+        float3 worldCenter,
+        float volumeHalfExtent,
+        NativeList<CaveNode> rooms,
+        NativeList<CaveTunnel> tunnels,
+        ref NativeList<CaveStructure> structures)
+    {
+        if (preset.allowedStructureTypes == null || preset.allowedStructureTypes.Length == 0)
+            return;
+
+        int targetCount = (int)(preset.maxStructures * preset.structureDensity);
+        targetCount = math.clamp(targetCount, 0, preset.maxStructures);
+
+        for (int i = 0; i < targetCount; i++)
+        {
+            // Pick random room
+            int roomIdx = rng.NextInt(0, rooms.Length);
+            CaveNode room = rooms[roomIdx];
+
+            // Pick random structure type from allowed types
+            CaveStructureType type = preset.allowedStructureTypes[
+                rng.NextInt(0, preset.allowedStructureTypes.Length)];
+
+            CaveStructure structure = CreateStructure(ref rng, type, room, worldCenter, volumeHalfExtent);
+
+            // Check if structure overlaps with entrances or tunnels too much
+            if (!IsStructureBlocked(structure, tunnels))
+            {
+                structures.Add(structure);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a single structure of the specified type within the given room.
+    /// </summary>
+    static CaveStructure CreateStructure(
+        ref Random rng,
+        CaveStructureType type,
+        CaveNode room,
+        float3 worldCenter,
+        float volumeHalfExtent)
+    {
+        float3 roomCenter = room.position;
+        float3 roomRadii = room.radii;
+
+        CaveStructure s = new CaveStructure
+        {
+            blendRadius = 2f,
+            noiseAmount = rng.NextFloat(0f, 0.3f),
+            structureType = type
+        };
+
+        switch (type)
+        {
+            case CaveStructureType.Stalactite:
+                // Hanging from ceiling
+                float ceilingY = roomCenter.y + roomRadii.y * 0.8f;
+                float3 basePos = roomCenter + rng.NextFloat3(-roomRadii * 0.6f, roomRadii * 0.6f);
+                basePos.y = ceilingY;
+                s.position = basePos;
+                s.size = new float3(
+                    rng.NextFloat(0.5f, 1.5f),  // base radius
+                    rng.NextFloat(2f, 5f),      // height
+                    rng.NextFloat(0.1f, 0.5f)); // tip radius
+                break;
+
+            case CaveStructureType.Stalagmite:
+                // Growing from floor
+                float floorY = roomCenter.y - roomRadii.y * 0.8f;
+                float3 basePos2 = roomCenter + rng.NextFloat3(-roomRadii * 0.6f, roomRadii * 0.6f);
+                basePos2.y = floorY;
+                s.position = basePos2;
+                s.size = new float3(
+                    rng.NextFloat(0.5f, 1.5f),  // base radius
+                    rng.NextFloat(2f, 5f),      // height
+                    rng.NextFloat(0.1f, 0.5f)); // tip radius
+                break;
+
+            case CaveStructureType.Boulder:
+                // Resting on floor
+                float floorY2 = roomCenter.y - roomRadii.y * 0.9f;
+                float3 boulderPos = roomCenter + rng.NextFloat3(-roomRadii * 0.7f, roomRadii * 0.7f);
+                boulderPos.y = floorY2;
+                s.position = boulderPos;
+                s.size = new float3(rng.NextFloat(1f, 3f), 0, 0); // radius
+                break;
+
+            case CaveStructureType.Column:
+                // Vertical pillar from floor to ceiling
+                float3 columnBase = roomCenter + rng.NextFloat3(-roomRadii * 0.5f, roomRadii * 0.5f);
+                columnBase.y = roomCenter.y - roomRadii.y * 0.9f;
+                s.position = columnBase;
+                float height = roomRadii.y * 1.8f;
+                s.size = new float3(
+                    rng.NextFloat(0.3f, 0.8f),  // radius
+                    height,                     // height
+                    rng.NextFloat(0.05f, 0.2f)); // taper
+                break;
+
+            case CaveStructureType.Bridge:
+                // Horizontal span between walls
+                float3 bridgeStart = roomCenter + rng.NextFloat3(-roomRadii * 0.7f, roomRadii * 0.7f);
+                float3 bridgeEnd = bridgeStart + rng.NextFloat3(-roomRadii * 0.5f, roomRadii * 0.5f);
+                bridgeEnd.y = bridgeStart.y; // keep horizontal
+                s.position = bridgeStart;
+                s.pointB = bridgeEnd;
+                s.size = new float3(rng.NextFloat(0.2f, 0.5f), 0, 0); // radius
+                break;
+
+            case CaveStructureType.Arch:
+                // Curved opening
+                float3 archPos = roomCenter + rng.NextFloat3(-roomRadii * 0.6f, roomRadii * 0.6f);
+                s.position = archPos;
+                s.size = new float3(
+                    rng.NextFloat(2f, 4f),     // major radius
+                    rng.NextFloat(0.5f, 1.5f), // minor radius
+                    rng.NextFloat(0.3f, 0.8f)); // thickness
+                break;
+
+            case CaveStructureType.Block:
+                // Rectangular ruin block
+                float3 blockPos = roomCenter + rng.NextFloat3(-roomRadii * 0.8f, roomRadii * 0.8f);
+                blockPos.y = roomCenter.y - roomRadii.y * 0.85f; // on floor
+                s.position = blockPos;
+                s.size = new float3(
+                    rng.NextFloat(1f, 3f),     // width
+                    rng.NextFloat(0.5f, 2f),   // height
+                    rng.NextFloat(1f, 3f));    // depth
+                break;
+
+            case CaveStructureType.Wall:
+                // Partial wall or ledge
+                float3 wallPos = roomCenter + rng.NextFloat3(-roomRadii * 0.7f, roomRadii * 0.7f);
+                s.position = wallPos;
+                s.size = new float3(
+                    rng.NextFloat(2f, 5f),     // width
+                    rng.NextFloat(1f, 3f),     // height
+                    rng.NextFloat(0.2f, 0.5f)); // thickness
+                break;
+        }
+
+        // Clamp to volume bounds
+        float3 vMin = worldCenter - volumeHalfExtent + 2f;
+        float3 vMax = worldCenter + volumeHalfExtent - 2f;
+        s.position = math.clamp(s.position, vMin, vMax);
+
+        return s;
+    }
+
+    /// <summary>
+    /// Checks if a structure would be blocked by tunnels or entrances.
+    /// Returns true if the structure should be skipped.
+    /// </summary>
+    static bool IsStructureBlocked(CaveStructure structure, NativeList<CaveTunnel> tunnels)
+    {
+        // Simple check: if structure position is too close to any tunnel
+        for (int i = 0; i < tunnels.Length; i++)
+        {
+            CaveTunnel tunnel = tunnels[i];
+            float distToTunnel = DistanceToTunnel(structure.position, tunnel);
+            if (distToTunnel < tunnel.radiusA * 1.5f)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Approximate distance from point to tunnel capsule.
+    /// </summary>
+    static float DistanceToTunnel(float3 point, CaveTunnel tunnel)
+    {
+        float3 a = tunnel.pointA;
+        float3 b = tunnel.pointB;
+        float3 ab = b - a;
+        float abLen = math.length(ab);
+
+        if (abLen < 0.001f)
+            return math.length(point - a) - tunnel.radiusA;
+
+        float3 dir = ab / abLen;
+        float t = math.dot(point - a, dir);
+        t = math.clamp(t, 0, abLen);
+
+        float3 closest = a + dir * t;
+        float distToAxis = math.length(point - closest);
+
+        float radiusAtT = math.lerp(tunnel.radiusA, tunnel.radiusB, t / abLen);
+        return distToAxis - radiusAtT;
     }
 }

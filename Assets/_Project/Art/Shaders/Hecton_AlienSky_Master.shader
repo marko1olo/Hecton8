@@ -31,7 +31,7 @@
 //   ✓ Aegir cloud illumination at night
 //   ✓ Planar ceiling UV, flowmap, dither
 //   ✓ SRP Batcher compatible
-//   ✓ 4 texture samples total
+//   ✓ 5 texture samples total
 // ============================================================================
 
 Shader "HECTON/Sky/Hecton_AlienSky_Master"
@@ -102,6 +102,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _SunScatterPower ("Scatter Falloff", Range(1, 32)) = 8.0
         _SunScatterIntensity ("Scatter Intensity", Range(0, 5)) = 2.0
         [HDR] _SunScatterColor ("Scatter Color", Color) = (1.0, 0.7, 0.3, 1)
+
+        [Header(Celestial Transmittance)]
+        _CelestialTransmittanceTiling ("Transmittance Tiling", Vector) = (0.04, 0.06, 0, 0)
+        _CelestialTransmittanceScrollSpeed ("Transmittance Scroll Speed", Range(0.0, 0.01)) = 0.001
+        _CelestialTransmittanceThreshold ("Transmittance Threshold", Range(0, 1)) = 0.52
+        _CelestialTransmittanceSoftness ("Transmittance Softness", Range(0.01, 0.5)) = 0.24
+        _CelestialTransmittanceStrength ("Transmittance Strength", Range(0, 1)) = 0.4
+        _CelestialStarFade ("Star Fade", Range(0, 1)) = 0.85
+        _CelestialSunFade ("Sun Fade", Range(0, 1)) = 0.65
+        _CelestialHaloFade ("Halo Fade", Range(0, 1)) = 0.55
 
         [Header(Wind and Timing)]
         _GameTime ("Game Time (set from C#)", Float) = 0.0
@@ -205,6 +215,15 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _SunScatterIntensity;
                 half4  _SunScatterColor;
 
+                float4 _CelestialTransmittanceTiling;
+                float  _CelestialTransmittanceScrollSpeed;
+                half   _CelestialTransmittanceThreshold;
+                half   _CelestialTransmittanceSoftness;
+                half   _CelestialTransmittanceStrength;
+                half   _CelestialStarFade;
+                half   _CelestialSunFade;
+                half   _CelestialHaloFade;
+
                 float  _GameTime;
                 float  _NightBlend;
                 float  _SunElevation;
@@ -274,6 +293,35 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return skyUV;
             }
 
+            float2 ComputeCelestialTransmittanceUV(float3 V)
+            {
+                float2 uv;
+                uv.x = atan2(V.z, V.x) * (0.5 / 3.14159265) + 0.5;
+                uv.y = V.y * 0.5 + 0.5;
+                uv *= _CelestialTransmittanceTiling.xy;
+                uv.x += _WindDirection.x * _GameTime * _CelestialTransmittanceScrollSpeed;
+                uv.y += _WindDirection.y * _GameTime * (_CelestialTransmittanceScrollSpeed * 0.25);
+                return uv;
+            }
+
+            half SampleCelestialTransmittance(float3 V, half horizonFactor)
+            {
+                float2 uv = ComputeCelestialTransmittanceUV(V);
+                half sample = SAMPLE_TEXTURE2D(
+                    _MainCloudTex, sampler_MainCloudTex, uv).r;
+
+                half edge0 = saturate(_CelestialTransmittanceThreshold
+                                    - _CelestialTransmittanceSoftness);
+                half edge1 = saturate(_CelestialTransmittanceThreshold
+                                    + _CelestialTransmittanceSoftness);
+                half softField = smoothstep(edge0, edge1, sample);
+
+                half horizonBoost = pow(saturate(1.0h - abs(horizonFactor)), 2.0h);
+                return softField
+                     * _CelestialTransmittanceStrength
+                     * saturate(0.25h + horizonBoost * 1.25h);
+            }
+
             half2 SampleFlowmap(
                 TEXTURE2D_PARAM(flowTex, flowSampler),
                 float2 baseUV)
@@ -337,6 +385,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float3 Vf = normalize(input.viewDirWS);
                 half3  V  = (half3)Vf;
                 half   horizonFactor = input.horizonFactor;
+                half celestialExtinction = SampleCelestialTransmittance(Vf, horizonFactor);
+                half celestialTransmittance = saturate(1.0h - celestialExtinction);
 
                 // =======================================
                 // RESOLVE GLOBAL DIRECTIONS
@@ -420,6 +470,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                 * flicker
                                 * starVisibility
                                 * zenithMask;
+                    starContrib *= lerp(1.0h, celestialTransmittance, _CelestialStarFade);
                 }
 
                 skyColor += starContrib;
@@ -576,6 +627,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     sunDist);
 
                 sunDisc *= (1.0h - finalCloudMask) * eclipseVis;
+                sunDisc *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);
                 skyColor += _SunDiscColor.rgb * sunDisc;
 
                 // =======================================
@@ -589,6 +641,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                               * _SunScatterIntensity;
 
                 sunGlow *= (1.0h - finalCloudMask * 0.7h) * eclipseVis;
+                sunGlow *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);
                 skyColor += sunGlow;
 
                 // =======================================
@@ -603,6 +656,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                * nightBoost;
 
                 aegirHalo *= (1.0h - finalCloudMask * 0.5h);
+                aegirHalo *= lerp(1.0h, celestialTransmittance, _CelestialHaloFade);
                 skyColor += _AegirHaloColor.rgb * aegirHalo;
 
                 return half4(skyColor, 1.0h);

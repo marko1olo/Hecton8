@@ -318,6 +318,7 @@ P0 rules:
   - gas giant
   - cloud layer
   - atmospheric haze
+  - celestial transmittance layer for sun / stars / halo / gas giant
   - eclipse/occlusion logic
   - exposure chain
 - [ ] Bring gas giant to perceptual truth:
@@ -325,6 +326,14 @@ P0 rules:
   - giant softened by haze
   - giant does not read as a flat poster
   - giant does not break cloud depth illusion
+  - architectural rule:
+    gas giant depth must live on the giant shader or the same world-space sky ray logic
+  - architectural rule:
+    horizon compression must be applied at the shared sky-response source before any giant-specific extinction tuning
+  - architectural rule:
+    visible clouds and celestial occlusion must be separate systems; celestial objects read transmittance, not the visible cloud shapes themselves
+  - ban:
+    no camera-centered proxy haze shells for celestial depth cues
 - [ ] Check giant at:
   - surface
   - mid-depth
@@ -333,16 +342,34 @@ P0 rules:
   - dim state
   - cloud overlap
   - horizon silhouette
+  - sun / star / halo consistency under the same atmospheric transmittance rules
 - [ ] Plan a real surface weather / cloud-cover system:
   - clear sky
   - broken cloud
   - overcast
   - storm pressure state
   - cloud cover driven by weather state instead of one static sky look
+  - visible cloud art layer separated from low-frequency celestial transmittance layer
   - gas giant readability must survive every weather state
   - surface brightness, haze, and cloud quality must stay MX350-safe
 - [ ] Only close the task after user-check:
   - `does it now feel distant?`
+  - note from this pass:
+    fake overlay geometry in front of the camera reads as a patch, not atmosphere
+  - note from this pass:
+    if the horizon and the giant do not share the same atmospheric color logic, the giant will always read as pasted in front
+  - note from this pass:
+    if the visible cloud texture is used directly as celestial masking, the result will look fake even when the depth logic is technically correct
+  - note from this pass:
+    extinction must live in a narrow horizon band, not as a broad full-disc wash across the lower half of the giant
+  - note from this pass:
+    the lowest edge needs its own tighter bottom-arc extinction on top of the broader horizon band, otherwise the middle dies before the horizon merge becomes convincing
+  - note from this pass:
+    the bottom arc must use a steeper response curve than the broader horizon band, or the extra extinction leaks upward and flattens the middle of the disc
+  - note from this pass:
+    the final giveaway is the lower side silhouette; horizon merge must include a lower horizon-facing limb crescent, not only the bottom-center strip
+  - note from this pass:
+    day-proof and night-proof must be validated separately; a horizon weld that reads correctly by day can still leave the night branch underpowered or under-observable on the current camera path
 
 ## World Generation Philosophy
 

@@ -126,12 +126,19 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CirrusOpacity: 1
+    - _CelestialHaloFade: 0.55
+    - _CelestialStarFade: 0.85
+    - _CelestialSunFade: 0.65
+    - _CelestialTransmittanceScrollSpeed: 0.001
+    - _CelestialTransmittanceSoftness: 0.24
+    - _CelestialTransmittanceStrength: 0.4
+    - _CelestialTransmittanceThreshold: 0.52
+    - _CirrusOpacity: 0.55
     - _CirrusParallaxStrength: 0.5
     - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CloudDensityThreshold: 0
+    - _CloudDensityThreshold: 0.14
     - _CloudOverlayMode: 0
     - _CloudSoftness: 0.246
     - _CloudSpeedMult: 0.001
@@ -139,7 +146,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DetailStrength: 1
+    - _DetailStrength: 0.42
     - _DitherScale: 4
     - _DstBlend: 0
     - _DstBlendAlpha: 0
@@ -147,14 +154,14 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 0.23816204
+    - _GameTime: 28.81631
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HazeFalloff: 3
-    - _HazeIntensity: 1.5
-    - _HazeSunTintStrength: 0.8
+    - _HazeIntensity: 0.82
+    - _HazeSunTintStrength: 0.18
     - _HighCloudOpacity: 0.885
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
@@ -178,8 +185,8 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.6003457
-    - _SunScatterIntensity: 1.49
+    - _SunElevation: 0.49802148
+    - _SunScatterIntensity: 0.62
     - _SunScatterPower: 11.9
     - _SunSize: 0.002
     - _Surface: 0
@@ -190,19 +197,20 @@ Material:
     - _AegirHaloColor: {r: 0.6, g: 0.5, b: 0.8, a: 1}
     - _BacklitColor: {r: 0.39999998, g: 0.90006435, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
     - _CirrusColor: {r: 0.8330811, g: 0.8330811, b: 0.9150943, a: 1}
     - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _CloudColorLit: {r: 0.8, g: 0.8346785, b: 0.9019608, a: 1}
-    - _CloudColorShadow: {r: 1, g: 1, b: 1, a: 1}
+    - _CloudColorShadow: {r: 0.32, g: 0.36, b: 0.48, a: 1}
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.4509804, g: 0.4846907, b: 0.54901963, a: 1}
+    - _HazeColor: {r: 0.3, g: 0.35, b: 0.43, a: 1}
     - _HighCloudColor: {r: 0.75, g: 0.75, b: 0.95, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.04, g: 0.03, b: 0.079999976, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.8, g: 0.7, b: 1, a: 1}
+    - _SkyColorHorizon: {r: 0.56, g: 0.52, b: 0.7, a: 1}
     - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
     - _SkyColorZenith: {r: 0.1, g: 0.16, b: 0.5, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

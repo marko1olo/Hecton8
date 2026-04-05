@@ -37,6 +37,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _CelestialOcclusionTex:
+        m_Texture: {fileID: 2800000, guid: 0457f161a38fbb1489e989696048ed6c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _DetailTex:
         m_Texture: {fileID: 2800000, guid: e1aefa60ab4517644bb884257440872b, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -68,15 +72,39 @@ Material:
     m_Ints: []
     m_Floats:
     - _BacklitIntensity: 0.08
+    - _CelestialOcclusionDetailFade: 0.75
+    - _CelestialOcclusionHorizonBoost: 1.25
+    - _CelestialOcclusionScrollSpeed: 0.001
+    - _CelestialOcclusionSoftness: 0.24
+    - _CelestialOcclusionStrength: 0.42
+    - _CelestialOcclusionThreshold: 0.5
+    - _CelestialOcclusionVeilBoost: 0.65
     - _DetailSpeed: 0.005
     - _DetailSpeedMult: 1.249
     - _DetailStrength: 0.181
+    - _DistanceBottomArcDesaturate: 0.22
+    - _DistanceBottomArcDetailFade: 0.36
+    - _DistanceBottomArcEnd: 0.06
+    - _DistanceBottomArcHazeBlend: 0.72
+    - _DistanceBottomArcStart: 0
+    - _DistanceBottomArcVeilBoost: 0.38
+    - _DistanceHorizonBandEnd: 0.12
+    - _DistanceHorizonBandStart: 0.01
+    - _DistanceHorizonDesaturate: 0.18
+    - _DistanceHorizonDetailFade: 0.72
+    - _DistanceHorizonVeilBoost: 0.28
+    - _DistanceNightDarken: 0.56
+    - _DistanceVeilHorizonStrength: 1.55
+    - _DistanceVeilPower: 1.25
+    - _DistanceVeilRimStrength: 0.7
+    - _DistanceVeilStrength: 0.44
     - _EclipseRimIntensity: 5
     - _EclipseRimPower: 6
     - _EquatorialSpeed: 0.02
     - _FresnelSunBias: -0.1
     - _GlobalRotation: 0
     - _InnerPower: 2
+    - _NightBlend: 0
     - _OuterPower: 5
     - _PlanetPhase: 0.52
     - _PolarMultiplier: 0
@@ -92,11 +120,17 @@ Material:
     m_Colors:
     - _AtmosColorInner: {r: 0.19463302, g: 0.18115878, b: 0.6509434, a: 1}
     - _AtmosColorOuter: {r: 0.0013177982, g: 0, b: 0.16037738, a: 0.98039216}
+    - _CelestialOcclusionTiling: {r: 0.05, g: 0.08, b: 0, a: 0}
     - _DetailTiling: {r: 3, g: 3, b: 0, a: 0}
     - _EclipseRimColor: {r: 0.8, g: 0.85, b: 1, a: 1}
     - _EmissionColor: {r: 0.5, g: 0.3, b: 0.8, a: 1}
     - _EmissionMapColor: {r: 0.3, g: 0.25, b: 0.5, a: 1}
+    - _SkyColorHorizon: {r: 0.56, g: 0.52, b: 0.7, a: 1}
+    - _SkyColorNadir: {r: 0.02, g: 0.03, b: 0.08, a: 1}
+    - _SkyColorZenith: {r: 0.05, g: 0.08, b: 0.25, a: 1}
+    - _SkyHazeColor: {r: 0.72, g: 0.74, b: 0.82, a: 1}
     - _StormTiling: {r: 2, g: 2, b: 0, a: 0}
     - _TerminatorTintColor: {r: 1, g: 0.45, b: 0.11999995, a: 1}
+    - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -9,11 +9,17 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
 {
     Properties
     {
+        [HDR] _SkyColorZenith ("Zenith Color", Color) = (0.05, 0.08, 0.25, 1)
+        [HDR] _SkyColorHorizon ("Horizon Color", Color) = (0.4, 0.35, 0.5, 1)
+        [HDR] _SkyColorNadir ("Nadir Color", Color) = (0.02, 0.03, 0.08, 1)
         [HDR] _HazeColor ("Haze Color", Color) = (0.5, 0.45, 0.55, 1)
         _HazeIntensity ("Haze Intensity", Range(0, 3)) = 1.5
         _HazeFalloff ("Haze Falloff", Range(0.5, 8)) = 3.0
         _HazeSunTintStrength ("Haze Sun Tint", Range(0, 2)) = 0.8
         _OverlayAlpha ("Overlay Alpha", Range(0, 1)) = 0.42
+        _DiscBaseVeil ("Disc Base Veil", Range(0, 1)) = 0.18
+        _DiscEdgeVeil ("Disc Edge Veil", Range(0, 2)) = 0.55
+        _DiscEdgePower ("Disc Edge Power", Range(0.5, 8)) = 2.5
         _OverlayDiscInnerDot ("Overlay Disc Inner Dot", Range(-1, 1)) = 0.995
         _OverlayDiscOuterDot ("Overlay Disc Outer Dot", Range(-1, 1)) = 0.985
         _GameTime ("Game Time (unused sync)", Float) = 0.0
@@ -58,11 +64,17 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                half4 _SkyColorZenith;
+                half4 _SkyColorHorizon;
+                half4 _SkyColorNadir;
                 half4 _HazeColor;
                 half _HazeIntensity;
                 half _HazeFalloff;
                 half _HazeSunTintStrength;
                 half _OverlayAlpha;
+                half _DiscBaseVeil;
+                half _DiscEdgeVeil;
+                half _DiscEdgePower;
                 half _OverlayDiscInnerDot;
                 half _OverlayDiscOuterDot;
                 float _GameTime;
@@ -116,7 +128,7 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                 output.viewDirWS = viewDirWS;
 
                 float3 normalizedView = SafeNormalizeDir(viewDirWS, float3(0.0, 1.0, 0.0));
-                output.horizonFactor = saturate(normalizedView.y * 0.5 + 0.5 + HORIZON_CLAMP);
+                output.horizonFactor = normalizedView.y;
                 return output;
             }
 
@@ -129,17 +141,36 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                 float3 aegirDir = SafeNormalizeDir(_AegirDirection.xyz, FALLBACK_AEGIR_DIR);
 
                 half horizonFactor = input.horizonFactor;
+                half zenithMask = saturate(horizonFactor);
+                half nadirMask = saturate(-horizonFactor);
+                half horizonSkyMask = 1.0h - zenithMask - nadirMask;
+
+                half3 skyGradient = _SkyColorZenith.rgb * zenithMask
+                                  + _SkyColorHorizon.rgb * horizonSkyMask
+                                  + _SkyColorNadir.rgb * nadirMask;
+
                 half hazeRaw = 1.0h - abs(horizonFactor);
-                half hazeMask = pow(hazeRaw, _HazeFalloff) * _HazeIntensity;
+                half horizonVeil = saturate(pow(hazeRaw, _HazeFalloff) * _HazeIntensity);
 
                 half sunViewDot = saturate(dot(V, -sunDir));
                 half3 hazeSunTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h, 0.7h, 0.3h), sunViewDot * _HazeSunTintStrength);
 
                 half aegirDot = saturate(dot(V, aegirDir));
                 half discMask = smoothstep(_OverlayDiscOuterDot, _OverlayDiscInnerDot, aegirDot);
-                half alpha = saturate(hazeMask * discMask * _OverlayAlpha);
+                half discRange = max(0.0001h, _OverlayDiscInnerDot - _OverlayDiscOuterDot);
+                half discRadial = saturate((aegirDot - _OverlayDiscOuterDot) / discRange);
+                half edgeVeil = pow(1.0h - discRadial, _DiscEdgePower);
 
-                return half4(_HazeColor.rgb * hazeSunTint, alpha);
+                half baseVeil = _DiscBaseVeil
+                              + horizonVeil * 0.65h
+                              + _NightBlend * 0.10h
+                              + _EclipseOcclusion * 0.15h;
+
+                half alpha = saturate(discMask * _OverlayAlpha * (baseVeil + edgeVeil * _DiscEdgeVeil));
+                half3 atmosphericColor = lerp(_HazeColor.rgb, skyGradient, 0.55h + horizonVeil * 0.25h);
+                atmosphericColor = lerp(atmosphericColor, _SkyColorHorizon.rgb, horizonVeil * 0.45h + _NightBlend * 0.15h);
+
+                return half4(atmosphericColor * hazeSunTint, alpha);
             }
             ENDHLSL
         }

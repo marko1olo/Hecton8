@@ -701,6 +701,40 @@ namespace Hecton8.Caves
         public SpawnContext spawnContext = SpawnContext.CaveShallow;
 
         // ═══════════════════════════════════════════════════════════════════
+        //  INTERIOR STRUCTURES
+        // ═══════════════════════════════════════════════════════════════════
+
+        [Header("═══ INTERIOR STRUCTURES ═══")]
+
+        [Tooltip("Enable generation of interior structures (stalactites, boulders, etc.)\n" +
+                 "Adds visual interest and readability cues to cave interiors.")]
+        public bool enableStructures = true;
+
+        [Tooltip("Maximum number of structures to generate per cave.\n" +
+                 "Higher = more cluttered caves. 0 = no structures.")]
+        [Range(0, 20)]
+        public int maxStructures = 8;
+
+        [Tooltip("Density multiplier for structure placement.\n" +
+                 "1.0 = normal density. 0.5 = sparse. 2.0 = crowded.")]
+        [Range(0.1f, 3f)]
+        public float structureDensity = 1.0f;
+
+        [Tooltip("Which structure types to generate.\n" +
+                 "Stalactites/Stalagmites = hanging/standing cones\n" +
+                 "Boulders = floor spheres\n" +
+                 "Columns = vertical pillars\n" +
+                 "Bridges = horizontal spans\n" +
+                 "Arches = curved openings")]
+        public CaveStructureType[] allowedStructureTypes = new CaveStructureType[]
+        {
+            CaveStructureType.Stalactite,
+            CaveStructureType.Stalagmite,
+            CaveStructureType.Boulder,
+            CaveStructureType.Column
+        };
+
+        // ═══════════════════════════════════════════════════════════════════
         //  CONVERSION TO BURST-COMPATIBLE PARAMS
         // ═══════════════════════════════════════════════════════════════════
 
