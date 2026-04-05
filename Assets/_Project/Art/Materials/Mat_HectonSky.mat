@@ -132,6 +132,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _CloudDensityThreshold: 0
+    - _CloudOverlayMode: 0
     - _CloudSoftness: 0.246
     - _CloudSpeedMult: 0.001
     - _Cull: 2
@@ -146,7 +147,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 0.087311246
+    - _GameTime: 0.23816204
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -160,6 +161,9 @@ Material:
     - _Metallic: 0
     - _NightBlend: 0
     - _OcclusionStrength: 1
+    - _OverlayAlpha: 1
+    - _OverlayDiscInnerDot: 0.9214169
+    - _OverlayDiscOuterDot: 0.8842817
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
@@ -174,7 +178,7 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.59332454
+    - _SunElevation: 0.6003457
     - _SunScatterIntensity: 1.49
     - _SunScatterPower: 11.9
     - _SunSize: 0.002

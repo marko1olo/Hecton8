@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
@@ -458,3 +459,4 @@ public class HectonWaterPhysicsEditor : Editor
         EditorGUILayout.Space(2);
     }
 }
+#endif

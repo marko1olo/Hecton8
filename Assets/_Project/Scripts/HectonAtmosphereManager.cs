@@ -46,6 +46,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -203,6 +204,8 @@ namespace Hecton8.Atmosphere
         private float _eclipseRemainingTime;
 
         private bool _underwaterExternalFlag;
+        private bool _autoUnderwaterState;
+        private HectonPlayerMovement _playerMovement;
 
         private AtmosphereSnapshot _transitionOrigin;
         private AtmosphereSnapshot _currentValues;
@@ -309,6 +312,7 @@ namespace Hecton8.Atmosphere
 
             InitializeCycleTimer();
             InitializeAtmosphereValues();
+            CachePlayerMovement();
         }
 
         private void OnEnable()
@@ -353,6 +357,8 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            _autoUnderwaterState = false;
+
             if (Application.isPlaying)
             {
                 if (_registeredToTickManager && GameTickManager.Instance != null)
@@ -579,10 +585,23 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool EvaluateUnderwater()
         {
-            if (_underwaterExternalFlag) return true;
-            if (_useAutoUnderwaterDetection && _playerTransform != null)
-                return _playerTransform.position.y < _waterSurfaceY;
-            return false;
+            if (_underwaterExternalFlag)
+            {
+                _autoUnderwaterState = true;
+                return true;
+            }
+
+            if (!_useAutoUnderwaterDetection)
+            {
+                _autoUnderwaterState = false;
+                return false;
+            }
+
+            float depth = ResolvePlayerDepth();
+            _autoUnderwaterState =
+                SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, _autoUnderwaterState);
+
+            return _autoUnderwaterState;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -734,6 +753,7 @@ namespace Hecton8.Atmosphere
         public void SetPlayerTransform(Transform player)
         {
             _playerTransform = player;
+            CachePlayerMovement();
         }
 
         public void SetCycleDuration(float seconds)
@@ -744,6 +764,26 @@ namespace Hecton8.Atmosphere
         public void SetTransitionSpeed(float speed)
         {
             _transitionSpeed = math.clamp(speed, 0.1f, 10f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolvePlayerDepth()
+        {
+            if (_playerMovement != null)
+                return _playerMovement.CurrentDepth;
+
+            if (_playerTransform != null)
+                return math.max(0f, _waterSurfaceY - _playerTransform.position.y);
+
+            return 0f;
+        }
+
+        private void CachePlayerMovement()
+        {
+            _playerMovement = null;
+
+            if (_playerTransform != null)
+                _playerTransform.TryGetComponent(out _playerMovement);
         }
 
         public void SetOrbitalInclination(float degrees)

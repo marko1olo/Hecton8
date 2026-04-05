@@ -273,7 +273,7 @@ namespace Hecton8.Interaction
             if (_currentHovered == null)
                 return;
 
-            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
+            if (IsGameplayInputBlockedByMenu())
                 return;
 
             ExecuteInteraction();
@@ -310,6 +310,11 @@ namespace Hecton8.Interaction
                 _raycastTimer = 0f;
                 PerformRaycast();
             }
+        }
+
+        private static bool IsGameplayInputBlockedByMenu()
+        {
+            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
         }
 
         // ====================================================================

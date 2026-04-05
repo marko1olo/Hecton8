@@ -5,16 +5,12 @@ using System.Collections.Generic;
 //Unity
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
-using UnityEditorInternal;
 //Candice AI
 using CandiceAIforGames.AI;
 
 public class Possessor : MonoBehaviour
 {
 
-
-    [CustomEditor(typeof(CandiceAIController))]
     public GameObject[] PossessableObjects; //must have an instance of CandiceAIController script attached
     public bool PlayerCanPossessProjectile = false;
     public float ProjectilePossessionTimer = 10f;

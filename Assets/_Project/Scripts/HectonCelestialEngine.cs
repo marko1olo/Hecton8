@@ -112,6 +112,7 @@ namespace Hecton8.Celestial
 
         [Header("═══ SKY MATERIAL ═══")]
         [SerializeField] private Material _skyMaterial;
+        [SerializeField] private Material _skyOverlayMaterial;
         [SerializeField] private float _cloudSpeed = 0.01f;
 
         [Header("═══ SKY COLOR PROFILES ═══")]
@@ -248,6 +249,8 @@ namespace Hecton8.Celestial
         private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
         private static readonly int _ID_SunElevation       = Shader.PropertyToID("_SunElevation");
         private static readonly int _ID_EclipseOcclusion   = Shader.PropertyToID("_EclipseOcclusion");
+        private static readonly int _ID_OverlayDiscInnerDot = Shader.PropertyToID("_OverlayDiscInnerDot");
+        private static readonly int _ID_OverlayDiscOuterDot = Shader.PropertyToID("_OverlayDiscOuterDot");
 
         // ─────────────────────────────────────────────
         // LIFECYCLE
@@ -600,33 +603,33 @@ namespace Hecton8.Celestial
 
         private void UpdateSkyMaterial()
         {
-            if (_skyMaterial == null) return;
+            if (_skyMaterial == null && _skyOverlayMaterial == null)
+                return;
 
-            _skyMaterial.SetFloat(_ID_GameTime, _gameTime);
-            _skyMaterial.SetFloat(_ID_NightBlend, _currentBlend);
-            _skyMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
-            _skyMaterial.SetFloat(_ID_SunElevation,
-                math.clamp(_currentSunAngle / 90f, -1f, 1f));
-
-            // v5.1: Eclipse occlusion for sky shader.
-            // The shader must multiply sun glow by (1 - _EclipseOcclusion).
-            // This makes the sun disc in the sky darken during eclipse,
-            // matching the dimmed Directional Light.
-            _skyMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
-
+            float sunElevationNormalized = math.clamp(_currentSunAngle / 90f, -1f, 1f);
             float3 fromSun = -_resolvedSunDirection;
-            _skyMaterial.SetVector(_ID_SunDirection,
-                new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
+            Vector4 sunDirection = new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f);
+            Vector4 aegirDirection = Vector4.zero;
+            float overlayDiscInnerDot = 0.995f;
+            float overlayDiscOuterDot = 0.985f;
 
             if (aegirTransform != null && playerTransform != null)
             {
                 float3 playerPos = (float3)playerTransform.position;
                 float3 aegirPos  = (float3)aegirTransform.position;
                 float3 toAegir   = math.normalizesafe(aegirPos - playerPos);
+                aegirDirection = new Vector4(toAegir.x, toAegir.y, toAegir.z, 0f);
 
-                _skyMaterial.SetVector(_ID_AegirDirection,
-                    new Vector4(toAegir.x, toAegir.y, toAegir.z, 0f));
+                float radius = GetAegirWorldRadius();
+                float dist = math.max(math.length(aegirPos - playerPos), 0.01f);
+                float angularRadius = math.atan2(radius, dist);
+                overlayDiscInnerDot = math.clamp(math.cos(angularRadius * 0.92f), -1f, 1f);
+                overlayDiscOuterDot = math.clamp(math.cos(angularRadius * 1.12f), -1f, 1f);
             }
+
+            ApplySkyMaterialProperties(_skyMaterial, sunElevationNormalized, sunDirection, aegirDirection, overlayDiscInnerDot, overlayDiscOuterDot);
+            if (_skyOverlayMaterial != null && _skyOverlayMaterial != _skyMaterial)
+                ApplySkyMaterialProperties(_skyOverlayMaterial, sunElevationNormalized, sunDirection, aegirDirection, overlayDiscInnerDot, overlayDiscOuterDot);
 
             float blendDelta = math.abs(_currentBlend - _previousBlendForColors);
 
@@ -641,10 +644,42 @@ namespace Hecton8.Celestial
                 Color nadir   = Color.Lerp(
                     _dayProfile.nadirColor, _nightProfile.nadirColor, _currentBlend);
 
-                _skyMaterial.SetColor(_ID_SkyColorZenith,  zenith);
-                _skyMaterial.SetColor(_ID_SkyColorHorizon, horizon);
-                _skyMaterial.SetColor(_ID_SkyColorNadir,   nadir);
+                if (_skyMaterial != null)
+                {
+                    _skyMaterial.SetColor(_ID_SkyColorZenith,  zenith);
+                    _skyMaterial.SetColor(_ID_SkyColorHorizon, horizon);
+                    _skyMaterial.SetColor(_ID_SkyColorNadir,   nadir);
+                }
+
+                if (_skyOverlayMaterial != null && _skyOverlayMaterial != _skyMaterial)
+                {
+                    _skyOverlayMaterial.SetColor(_ID_SkyColorZenith,  zenith);
+                    _skyOverlayMaterial.SetColor(_ID_SkyColorHorizon, horizon);
+                    _skyOverlayMaterial.SetColor(_ID_SkyColorNadir,   nadir);
+                }
             }
+        }
+
+        private void ApplySkyMaterialProperties(
+            Material targetMaterial,
+            float sunElevationNormalized,
+            Vector4 sunDirection,
+            Vector4 aegirDirection,
+            float overlayDiscInnerDot,
+            float overlayDiscOuterDot)
+        {
+            if (targetMaterial == null)
+                return;
+
+            targetMaterial.SetFloat(_ID_GameTime, _gameTime);
+            targetMaterial.SetFloat(_ID_NightBlend, _currentBlend);
+            targetMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
+            targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
+            targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+            targetMaterial.SetVector(_ID_SunDirection, sunDirection);
+            targetMaterial.SetVector(_ID_AegirDirection, aegirDirection);
+            targetMaterial.SetFloat(_ID_OverlayDiscInnerDot, overlayDiscInnerDot);
+            targetMaterial.SetFloat(_ID_OverlayDiscOuterDot, overlayDiscOuterDot);
         }
 
         // ─────────────────────────────────────────────

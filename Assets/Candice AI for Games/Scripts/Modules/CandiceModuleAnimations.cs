@@ -7,8 +7,10 @@ using System.Reflection.Emit;
 //Unity
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Animations;
+#endif
 //Candice AI
 using CandiceAIforGames.AI;
 
@@ -18,13 +20,16 @@ namespace CandiceAIforGames.AI
     public class CandiceModuleAnimations : CandiceCreateAnimationActions
     {   
         public Animator TemplateAnimator;
+#if UNITY_EDITOR
         public AnimatorController controller;
+#endif
         public AnimatorControllerParameter[] Triggers;
         public CandiceStandardActions StandardActions;
         public CandiceHumanoidMelee HumanoidMeleeActions;
         public CandicePlayerOverrides PlayerOverrides;
 
         //check Model (rig) type if any
+#if UNITY_EDITOR
         public ModelImporterAnimationType GetRigType(ModelImporter importer) {
             ModelImporterAnimationType thisType = importer.animationType;
             return thisType;
@@ -101,6 +106,7 @@ namespace CandiceAIforGames.AI
             //return the controller
             return controller;
         }
+#endif
 
         //get controller triggers
         public AnimatorControllerParameter[] GetTriggers() {
@@ -126,12 +132,15 @@ namespace CandiceAIforGames.AI
 
         //modify a trigger
         public void ModifyParameter(int parameterIndex, string newName)
-        {            
-            AnimatorControllerParameter[] parameters = GetTriggers();
-            parameters[parameterIndex].name = newName;
-            //TemplateAnimator.parameters = parameters;
+        {
+            // AnimatorControllerParameter.name is read-only in current Unity.
+            // This plugin path never persisted the modified array back to the controller,
+            // so keep this as a safe no-op instead of breaking player compilation.
+            _ = parameterIndex;
+            _ = newName;
         }
 
+#if UNITY_EDITOR
         //add a trigger to the specified controller
         public void AddParameter(AnimatorController controller, string newName, AnimatorControllerParameterType type) {
 
@@ -141,6 +150,7 @@ namespace CandiceAIforGames.AI
             controller.AddParameter(param);
 
         }
+#endif
 
     }
 }

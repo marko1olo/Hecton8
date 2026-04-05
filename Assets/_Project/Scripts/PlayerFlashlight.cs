@@ -327,7 +327,7 @@ namespace Hecton8.Gameplay
 
         private void HandleFlashlightInput()
         {
-            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
+            if (IsGameplayInputBlockedByMenu())
                 return;
 
             Toggle();
@@ -339,7 +339,7 @@ namespace Hecton8.Gameplay
 
             // Блокируем логику в меню (хотя InputManager должен отключать Player map, 
             // мы всё равно обрабатываем переходы и батарею)
-            bool isMenuOpen = HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen;
+            bool isMenuOpen = IsGameplayInputBlockedByMenu();
 
             // ── Overheat cooldown ──
             if (_isOverheated)
@@ -518,6 +518,11 @@ namespace Hecton8.Gameplay
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
                     survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
             }
+        }
+
+        private static bool IsGameplayInputBlockedByMenu()
+        {
+            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
         }
 
         private void ResolveFlashlightLight()

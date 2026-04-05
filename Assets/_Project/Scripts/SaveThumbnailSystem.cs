@@ -25,9 +25,8 @@ namespace Hecton8.SaveSystem
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _pooledRenderTexture = null;
-            _pooledTexture2D = null;
-            _spriteCache.Clear();
+            ReleasePooledResources();
+            ClearCache();
         }
 
         public static string GetThumbnailPath(string slotName)
@@ -46,26 +45,33 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static void CaptureThumbnail(string slotName)
         {
-            if (Camera.main == null) return;
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+                return;
 
             if (_pooledRenderTexture == null)
             {
                 _pooledRenderTexture = new RenderTexture(Width, Height, 24);
                 _pooledRenderTexture.name = "SaveThumbnail_PooledRT";
+                _pooledRenderTexture.useMipMap = false;
+                _pooledRenderTexture.autoGenerateMips = false;
+                _pooledRenderTexture.hideFlags = HideFlags.HideAndDontSave;
             }
 
             if (_pooledTexture2D == null)
             {
                 _pooledTexture2D = new Texture2D(Width, Height, TextureFormat.RGB24, false);
                 _pooledTexture2D.name = "SaveThumbnail_PooledTex";
+                _pooledTexture2D.hideFlags = HideFlags.HideAndDontSave;
             }
 
-            Camera.main.targetTexture = _pooledRenderTexture;
-            Camera.main.Render();
+            mainCamera.targetTexture = _pooledRenderTexture;
+            mainCamera.Render();
 
             RenderTexture.active = _pooledRenderTexture;
             _pooledTexture2D.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
-            Camera.main.targetTexture = null;
+            _pooledTexture2D.Apply(false, false);
+            mainCamera.targetTexture = null;
             RenderTexture.active = null;
 
             byte[] bytes = _pooledTexture2D.EncodeToJPG(Quality);
@@ -119,9 +125,11 @@ namespace Hecton8.SaveSystem
 
             byte[] bytes = File.ReadAllBytes(path);
             Texture2D tex = new Texture2D(2, 2);
-            if (tex.LoadImage(bytes))
+            tex.hideFlags = HideFlags.HideAndDontSave;
+            if (tex.LoadImage(bytes, true))
             {
                 Sprite s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                s.hideFlags = HideFlags.HideAndDontSave;
                 _spriteCache[slotName] = s;
                 return s;
             }
@@ -150,7 +158,7 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static void ClearCache()
         {
-            foreach (var kvp in _spriteCache)
+            foreach (KeyValuePair<string, Sprite> kvp in _spriteCache)
             {
                 if (kvp.Value != null)
                 {
@@ -160,6 +168,22 @@ namespace Hecton8.SaveSystem
                 }
             }
             _spriteCache.Clear();
+        }
+
+        private static void ReleasePooledResources()
+        {
+            if (_pooledRenderTexture != null)
+            {
+                _pooledRenderTexture.Release();
+                UnityEngine.Object.Destroy(_pooledRenderTexture);
+                _pooledRenderTexture = null;
+            }
+
+            if (_pooledTexture2D != null)
+            {
+                UnityEngine.Object.Destroy(_pooledTexture2D);
+                _pooledTexture2D = null;
+            }
         }
 
         public static void DeleteThumbnail(string slotName)

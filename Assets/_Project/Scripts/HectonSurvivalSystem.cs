@@ -32,6 +32,8 @@ namespace Hecton8.Gameplay
         [Header("── Scene ───────────────────────────────────")]
         [Tooltip("World-space Y coordinate of the water surface.")]
         [SerializeField] private float surfaceWorldY;
+        [Tooltip("Surface oxygen refill rate per second when the shared surface contract says the head is in air.")]
+        [SerializeField] private float surfaceOxygenRefillRate = 15f;
 
         // ═════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -59,6 +61,8 @@ namespace Hecton8.Gameplay
         // Hazard Grace Periods
         private float _tempGraceTimer;
         private float _radGraceTimer;
+        private HectonPlayerMovement _playerMovement;
+        private bool _surfaceContractUnderwater;
         private const float HazardGraceDuration = 3f;
 
         private const float Epsilon       = 0.1f;
@@ -110,6 +114,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            TryGetComponent(out _playerMovement);
             ResetToMax();
         }
 
@@ -148,7 +153,7 @@ namespace Hecton8.Gameplay
 
             float dt = _slowTickDt;
 
-            DrainOxygen(dt);
+            UpdateOxygen(dt);
             DrainPassiveEnergy(dt);
             ApplyPressureDamage(dt);
             HandleTemperature(dt);
@@ -161,12 +166,33 @@ namespace Hecton8.Gameplay
 
         private void ComputeDepthAndPressure()
         {
+            if (_playerMovement != null)
+            {
+                surfaceWorldY = _playerMovement.CurrentWaterSurfaceY;
+                depth = math.max(0f, _playerMovement.CurrentDepth);
+                pressure = 1f + depth * 0.1f;
+                return;
+            }
+
             depth    = math.max(0f, surfaceWorldY - transform.position.y);
             pressure = 1f + depth * 0.1f;
         }
 
-        private void DrainOxygen(float dt)
+        private void UpdateOxygen(float dt)
         {
+            _surfaceContractUnderwater =
+                SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                    depth,
+                    _surfaceContractUnderwater);
+
+            if (!_surfaceContractUnderwater)
+            {
+                oxygen = math.min(
+                    stats.MaxOxygen,
+                    oxygen + surfaceOxygenRefillRate * dt);
+                return;
+            }
+
             float pressureFactor = math.max(1f, pressure * 0.5f);
             oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * dt);
         }

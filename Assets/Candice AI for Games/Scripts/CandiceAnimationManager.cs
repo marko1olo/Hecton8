@@ -5,8 +5,6 @@ using System.Collections.Generic;
 //Unity
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
-using UnityEditor.Animations;
 //Candice AI
 using CandiceAIforGames.AI;
 

@@ -49,6 +49,7 @@
 using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
+using Hecton8.Gameplay;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -201,6 +202,7 @@ namespace Hecton8.Environment
 
         private HectonAtmosphereManager _cachedAtmoManager;
         private bool _atmoManagerCached;
+        private HectonPlayerMovement _playerMovement;
 
         private int _targetBiomeIndex;
 
@@ -383,10 +385,9 @@ namespace Hecton8.Environment
                 if (playerCamera == null) return;
             }
 
-            float waterLevel = ResolveWaterLevel();
-            float cameraY = playerCamera.position.y;
-            float depth = math.max(0f, waterLevel - cameraY);
-            bool isUnderwater = cameraY < waterLevel;
+            float depth = ResolveCurrentDepth();
+            bool isUnderwater =
+                SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, _wasUnderwater);
 
             UpdateDepthDiagnostics(depth, isUnderwater);
 
@@ -704,9 +705,8 @@ namespace Hecton8.Environment
         {
             if (cam.cameraType != CameraType.Game && cam.cameraType != CameraType.SceneView)
                 return;
-            if (playerCamera == null) return;
 
-            if (playerCamera.position.y < ResolveWaterLevel())
+            if (_wasUnderwater)
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogColor = _currentFogColor;
@@ -914,8 +914,7 @@ namespace Hecton8.Environment
         {
             get
             {
-                if (playerCamera == null) return 0f;
-                return math.max(0f, ResolveWaterLevel() - playerCamera.position.y);
+                return ResolveCurrentDepth();
             }
         }
 
@@ -933,8 +932,10 @@ namespace Hecton8.Environment
         {
             get
             {
-                if (playerCamera == null) return false;
-                return playerCamera.position.y < ResolveWaterLevel();
+                if (Application.isPlaying)
+                    return _wasUnderwater;
+
+                return ResolveCurrentDepth() > 0f;
             }
         }
 
@@ -961,6 +962,8 @@ namespace Hecton8.Environment
                 _nextRuntimePlayerCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 {
+                    CachePlayerMovement(playerTransform);
+
                     Camera playerOwnedCamera = playerTransform.GetComponentInChildren<Camera>(true);
                     if (playerOwnedCamera != null)
                     {
@@ -1054,6 +1057,25 @@ namespace Hecton8.Environment
             if (_physicsEngine != null)
                 return _physicsEngine.WaterLevel;
             return waterLevelFallback;
+        }
+
+        private float ResolveCurrentDepth()
+        {
+            if (_playerMovement != null)
+                return _playerMovement.CurrentDepth;
+
+            if (playerCamera == null)
+                return 0f;
+
+            return math.max(0f, ResolveWaterLevel() - playerCamera.position.y);
+        }
+
+        private void CachePlayerMovement(Transform playerTransform)
+        {
+            _playerMovement = null;
+
+            if (playerTransform != null)
+                playerTransform.TryGetComponent(out _playerMovement);
         }
 
         private void CachePhysicsEngine()

@@ -561,7 +561,7 @@ namespace Hecton8.Gameplay
 
             RefreshInputManagerBinding();
 
-            if (HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen)
+            if (IsGameplayInputBlockedByMenu())
             {
                 _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
                 _isSprinting = false;
@@ -776,6 +776,11 @@ namespace Hecton8.Gameplay
                     _cameraComponent.fieldOfView, targetFov,
                     1f - math.exp(-8f * _juiceInput.deltaTime));
             }
+        }
+
+        private static bool IsGameplayInputBlockedByMenu()
+        {
+            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
         }
 
         // ══════════════════════════════════════════════════════════

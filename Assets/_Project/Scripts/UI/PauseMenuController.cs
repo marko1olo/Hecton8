@@ -43,6 +43,8 @@ namespace Hecton8.UI
         [SerializeField] private string[] saveSlots = { "slot_1", "slot_2", "slot_3" };
         [SerializeField] private bool pauseTimeScale = true;
 
+        private static int _openMenuCount;
+
         private bool _registered;
         private bool _built;
         private bool _isOpen;
@@ -64,6 +66,7 @@ namespace Hecton8.UI
 
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
+        public static bool IsAnyOpen => _openMenuCount > 0;
 
         // Простой кэш для ToUpperInvariant, чтобы уменьшить аллокации в UI-строках
         private static readonly string[] _cachedUpperStrings = new string[16];
@@ -139,7 +142,7 @@ namespace Hecton8.UI
 
             if (!_isOpen)
             {
-                if (PlayerPDA.IsOpen)
+                if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
                     return;
 
                 Open();
@@ -163,6 +166,7 @@ namespace Hecton8.UI
             EnsureBuilt();
 
             _isOpen = true;
+            RegisterOpenMenu();
             _activeSection = PauseSection.Main;
 
             if (pauseTimeScale)
@@ -203,7 +207,10 @@ namespace Hecton8.UI
 
         private void ApplyClosedState(bool restorePlayerInput)
         {
+            bool wasOpen = _isOpen;
             _isOpen = false;
+            if (wasOpen)
+                UnregisterOpenMenu();
             _activeSection = PauseSection.Main;
 
             if (_canvasGroup != null)
@@ -226,6 +233,18 @@ namespace Hecton8.UI
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
 
+        }
+
+        private static void RegisterOpenMenu()
+        {
+            if (_openMenuCount < int.MaxValue)
+                _openMenuCount++;
+        }
+
+        private static void UnregisterOpenMenu()
+        {
+            if (_openMenuCount > 0)
+                _openMenuCount--;
         }
 
         private static bool ShouldRestorePlayerInputOnDisable()
