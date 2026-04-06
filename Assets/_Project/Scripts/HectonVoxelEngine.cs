@@ -48,10 +48,10 @@ using System.Threading;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-using Hecton8.Core;
 using Hecton8.Caves;
+using Unity.Collections.LowLevel.Unsafe;
+using Hecton8.Core;
 using Hecton8.Dev;
 using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
@@ -2491,6 +2491,7 @@ public class HectonVoxelEngine : MonoBehaviour
         go.AddComponent<MeshFilter>();
         go.AddComponent<MeshRenderer>();
         go.AddComponent<MeshCollider>();
+        go.AddComponent<HectonVoxelVolume>(); // Add volume component
         PrepareVolumeForBuild(go);
         return go;
     }

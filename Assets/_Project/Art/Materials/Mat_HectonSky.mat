@@ -154,7 +154,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 28.81631
+    - _GameTime: 0.20676883
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -185,7 +185,7 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.49802148
+    - _SunElevation: 0.30725798
     - _SunScatterIntensity: 0.62
     - _SunScatterPower: 11.9
     - _SunSize: 0.002
@@ -210,7 +210,7 @@ Material:
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.04, g: 0.03, b: 0.079999976, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.56, g: 0.52, b: 0.7, a: 1}
+    - _SkyColorHorizon: {r: 0.4248, g: 0.38736, b: 0.61200005, a: 1}
     - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
     - _SkyColorZenith: {r: 0.1, g: 0.16, b: 0.5, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

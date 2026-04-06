@@ -57,9 +57,11 @@ namespace Hecton8.World
         private bool _registeredToTickManager;
         private readonly HashSet<long> _activeCaveKeys = new HashSet<long>();
         private readonly Dictionary<long, CaveInstance> _caveInstances = new Dictionary<long, CaveInstance>(32);
+        private readonly List<Vector3> _candidateBuffer = new List<Vector3>(8); // COLD ALLOC: buffered cave candidates, capped by maxCavesPerBiome.
         private float _lastEvaluationTime = float.NegativeInfinity;
 
-        private struct CaveInstance
+        /// <summary>Represents an active cave instance in the world.</summary>
+        public struct CaveInstance
         {
             public long key;
             public Vector3 position;
@@ -157,10 +159,10 @@ namespace Hecton8.World
 
         private List<Vector3> GenerateCaveCandidates(HectonBiomeFamilyProfile biomeFamily, WorldZoneAnchor zone)
         {
-            List<Vector3> candidates = new List<Vector3>();
+            _candidateBuffer.Clear();
 
             if (playerTransform == null)
-                return candidates;
+                return _candidateBuffer;
 
             Vector3 playerPos = playerTransform.position;
 
@@ -168,6 +170,10 @@ namespace Hecton8.World
             // Use deterministic seeding based on biome and position
             int biomeSeed = biomeFamily.familyId.GetHashCode();
             Unity.Mathematics.Random rng = new Unity.Mathematics.Random((uint)(biomeSeed + Mathf.FloorToInt(playerPos.x / 100f) + Mathf.FloorToInt(playerPos.z / 100f)));
+            float spawnChance = math.saturate(caveSpawnProbability);
+
+            if (rng.NextFloat() > spawnChance)
+                return _candidateBuffer;
 
             int candidateCount = rng.NextInt(1, maxCavesPerBiome + 1);
 
@@ -181,16 +187,18 @@ namespace Hecton8.World
                 Vector3 candidatePos = playerPos + offset;
 
                 // Sample terrain height
-                if (mapMagicBridge != null)
+                if (mapMagicBridge != null && mapMagicBridge.TryGetHeight(candidatePos.x, candidatePos.z, out float terrainHeight))
                 {
-                    float terrainHeight = mapMagicBridge.SampleHeight(candidatePos.x, candidatePos.z);
                     candidatePos.y = terrainHeight - 5f; // Slightly below surface for cave entrance
                 }
 
                 // Check spacing from existing caves
                 bool tooClose = false;
-                foreach (CaveInstance existing in _caveInstances.Values)
+                Dictionary<long, CaveInstance>.Enumerator caveEnumerator = _caveInstances.GetEnumerator();
+                while (caveEnumerator.MoveNext())
                 {
+                    CaveInstance existing = caveEnumerator.Current.Value;
+
                     if (Vector3.Distance(existing.position, candidatePos) < minCaveSpacing)
                     {
                         tooClose = true;
@@ -200,11 +208,11 @@ namespace Hecton8.World
 
                 if (!tooClose)
                 {
-                    candidates.Add(candidatePos);
+                    _candidateBuffer.Add(candidatePos);
                 }
             }
 
-            return candidates;
+            return _candidateBuffer;
         }
 
         private async void TrySpawnCaveAt(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
@@ -248,7 +256,7 @@ namespace Hecton8.World
                         _activeCaveKeys.Add(caveKey);
 
                         // Add entrance visual cues for readability
-                        SpawnEntranceVisualCues(instance, preset);
+                        SpawnEntranceVisualCues(instance, preset, position, seed);
 
                         Debug.Log($"[WorldCaveDirector] Successfully generated cave at {position}");
                     }
@@ -355,6 +363,32 @@ namespace Hecton8.World
             preset.tunnelWarpAmount = 2f;
             preset.extraConnectionChance = 0.2f;
 
+            // Set spawn context based on biome and depth
+            if (biomeId.Contains("cliff") || biomeId.Contains("escarpment"))
+            {
+                preset.spawnContext = SpawnContext.CaveShallow;
+                preset.hazardLevel = 0.2f; // Low hazard, accessible
+                preset.moodLevel = 0.4f;   // Moderate life
+            }
+            else if (biomeId.Contains("canyon") || biomeId.Contains("rift"))
+            {
+                preset.spawnContext = SpawnContext.CaveMid;
+                preset.hazardLevel = 0.5f; // Medium hazard
+                preset.moodLevel = 0.6f;   // Active ecosystem
+            }
+            else if (biomeId.Contains("deep") || biomeId.Contains("abyss") || biomeId.Contains("hadal"))
+            {
+                preset.spawnContext = SpawnContext.CaveDeep;
+                preset.hazardLevel = 0.8f; // High hazard
+                preset.moodLevel = 0.2f;   // Sparse life, dangerous
+            }
+            else
+            {
+                preset.spawnContext = SpawnContext.CaveShallow;
+                preset.hazardLevel = 0.3f;
+                preset.moodLevel = 0.3f;
+            }
+
             // Interior structures based on biome
             if (biomeId.Contains("cliff") || biomeId.Contains("escarpment"))
             {
@@ -375,12 +409,14 @@ namespace Hecton8.World
                 preset.enableStructures = true;
                 preset.maxStructures = 8;
                 preset.structureDensity = 1.0f;
+                preset.isRuinLinked = true; // Canyon caves often have ruins
                 preset.allowedStructureTypes = new CaveStructureType[]
                 {
                     CaveStructureType.Boulder,
                     CaveStructureType.Arch,
                     CaveStructureType.Bridge,
-                    CaveStructureType.Block
+                    CaveStructureType.Block,
+                    CaveStructureType.Wall
                 };
             }
             else if (biomeId.Contains("deep") || biomeId.Contains("abyss") || biomeId.Contains("hadal"))
@@ -488,6 +524,115 @@ namespace Hecton8.World
         public IEnumerable<CaveInstance> GetActiveCaves()
         {
             return _caveInstances.Values;
+        }
+
+        private void SpawnEntranceVisualCues(CaveInstance instance, CavePreset preset, Vector3 position, uint seed)
+        {
+            // Generate cave graph to get entrance positions
+            float volumeHalfExtent = preset.VolumeCoverage * 0.5f;
+            float terrainHeight = position.y; // Approximate
+
+            CaveGraphGenerator.Generate(
+                seed, preset, position, terrainHeight, volumeHalfExtent,
+                out var nodes, out var tunnels, out var entrances, out var structures,
+                Allocator.Temp);
+
+            try
+            {
+                // Spawn visual cues at entrance positions
+                for (int i = 0; i < entrances.Length; i++)
+                {
+                    CaveEntrance entrance = entrances[i];
+                    SpawnEntranceMarker(entrance.surfacePosition, entrance.inwardDirection, instance);
+                }
+            }
+            finally
+            {
+                // Dispose temp arrays
+                if (nodes.IsCreated) nodes.Dispose();
+                if (tunnels.IsCreated) tunnels.Dispose();
+                if (entrances.IsCreated) entrances.Dispose();
+                if (structures.IsCreated) structures.Dispose();
+            }
+        }
+
+        private void SpawnEntranceMarker(Vector3 position, Vector3 inwardDirection, CaveInstance instance)
+        {
+            // Spawn a simple visual marker (light or particle system) at entrance
+            GameObject marker = new GameObject($"CaveEntranceMarker_{position.x:F0}_{position.z:F0}");
+            marker.transform.position = position + Vector3.up * 0.5f; // Slightly above ground
+
+            // Adjust effects based on cave mood and hazard
+            float mood = instance.preset.moodLevel;
+            float hazard = instance.preset.hazardLevel;
+
+            // Light color based on mood/hazard
+            Color lightColor;
+            if (hazard > 0.7f)
+            {
+                lightColor = new Color(0.9f, 0.3f, 0.2f); // Red for danger
+            }
+            else if (mood > 0.6f)
+            {
+                lightColor = new Color(0.4f, 0.8f, 0.4f); // Green for life
+            }
+            else
+            {
+                lightColor = new Color(0.8f, 0.6f, 0.2f); // Warm for neutral
+            }
+
+            // Add a light for visibility
+            Light entranceLight = marker.AddComponent<Light>();
+            entranceLight.type = LightType.Point;
+            entranceLight.color = lightColor;
+            entranceLight.intensity = 1f + mood * 2f; // Brighter for active caves
+            entranceLight.range = 4f + hazard * 2f; // Wider for dangerous caves
+
+            // Add particle system for atmospheric effect
+            ParticleSystem ps = marker.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startSize = 0.05f + mood * 0.15f;
+            main.startSpeed = 0.2f + mood * 0.8f;
+            main.startLifetime = 2f + mood * 2f;
+            main.maxParticles = 10 + (int)(mood * 30);
+
+            var emission = ps.emission;
+            emission.rateOverTime = 3f + mood * 10f;
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.3f + hazard * 0.4f;
+
+            // Particle color based on context
+            var colorOverLifetime = ps.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            if (instance.preset.spawnContext == SpawnContext.CaveDeep)
+            {
+                gradient.SetKeys(
+                    new GradientColorKey[] { new GradientColorKey(new Color(0.2f, 0.8f, 1f), 0f), new GradientColorKey(Color.clear, 1f) },
+                    new GradientAlphaKey[] { new GradientAlphaKey(0.5f, 0f), new GradientAlphaKey(0f, 1f) }
+                );
+            }
+            else
+            {
+                gradient.SetKeys(
+                    new GradientColorKey[] { new GradientColorKey(lightColor, 0f), new GradientColorKey(Color.clear, 1f) },
+                    new GradientAlphaKey[] { new GradientAlphaKey(0.3f, 0f), new GradientAlphaKey(0f, 1f) }
+                );
+            }
+            colorOverLifetime.color = gradient;
+
+            // Parent to cave volume for cleanup
+            if (instance.volume != null)
+            {
+                marker.transform.SetParent(instance.volume.transform);
+            }
+            else
+            {
+                // Fallback: destroy after some time
+                Object.Destroy(marker, 300f); // 5 minutes
+            }
         }
     }
 }

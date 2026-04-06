@@ -369,7 +369,17 @@ P0 rules:
   - note from this pass:
     the final giveaway is the lower side silhouette; horizon merge must include a lower horizon-facing limb crescent, not only the bottom-center strip
   - note from this pass:
+    horizon merge alone is not enough; the disc also needs a lower-mid `air-mass shoulder`, otherwise the planet welds at the waterline but immediately becomes too crisp again above it
+  - note from this pass:
+    that upper haze must be continuous with the horizon haze and darker than the white horizon milk; if it is treated as a separate bright band, the result becomes `white strip at the horizon -> clean blue giant above`, which is the exact fake look to avoid
+  - note from this pass:
+    after the horizon band is accepted, upper and middle distance cues should live in a separate `upper haze` layer so the lower merge can stay artist-tuned; low-frequency celestial occlusion may modulate that layer, but visible cloud silhouettes must still stay out of the giant
+  - note from this pass:
     day-proof and night-proof must be validated separately; a horizon weld that reads correctly by day can still leave the night branch underpowered or under-observable on the current camera path
+  - note from this pass:
+    terrain close-up blur is not only a texture-density question; first verify whether the player is looking at final world art or at proxy-only scatter families with placeholder geometry/materials
+  - note from this pass:
+    stale cached `SupportsFinalVariant` state in scatter placement data can keep families stuck on proxy variants even after final-ready variants exist in the family asset
 
 ## World Generation Philosophy
 
@@ -495,6 +505,8 @@ P0 rules:
   - pressure-scar cave
   - volcanic vent mouth
 - [ ] Connect `HectonVoxelEngine` and `CaveGraphGenerator` to MapMagic/world-fill/biome logic as a live pipeline
+  - note from `2026-04-05` compile hygiene pass:
+    `WorldCaveDirector` had drifted onto a dead `MapMagicBridge.SampleHeight` call; restored live contract through `TryGetHeight` fail-safe, reconnected `caveSpawnProbability` as the intended biome-evaluation gate, and removed duplicate `using` noise from `HectonVoxelEngine`
 - [ ] Verify seam logic:
   - terrain -> geology
   - geology -> voxel bridge

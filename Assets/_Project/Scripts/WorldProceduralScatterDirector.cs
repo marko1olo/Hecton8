@@ -2916,7 +2916,9 @@ namespace Hecton8.World
                 return null;
             }
 
-            if (placement.HasResolvedVariantState)
+            bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
+            if (placement.HasResolvedVariantState
+                && placement.CachedSupportsFinalVariant == supportsFinalVariant)
             {
                 finalVariantActive = placement.CachedFinalVariantActive;
                 return placement.CachedResolvedVariant;
@@ -2924,7 +2926,7 @@ namespace Hecton8.World
 
             finalVariantActive = ShouldUseFinalVariant(placement, observerPosition, hasObserverPosition);
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant = ResolvePlacementVariant(placement, finalVariantActive);
-            placement.CacheResolvedVariantState(runtimeVariant, finalVariantActive);
+            placement.CacheResolvedVariantState(runtimeVariant, finalVariantActive, supportsFinalVariant);
             return runtimeVariant;
         }
 
@@ -3119,10 +3121,11 @@ namespace Hecton8.World
         {
             unchecked
             {
+                bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
                 int signature = 17;
                 signature = signature * 31 + placement.Key.GetHashCode();
                 signature = signature * 31 + placement.StreamingLayer.GetHashCode();
-                signature = signature * 31 + (placement.SupportsFinalVariant ? 1 : 0);
+                signature = signature * 31 + (supportsFinalVariant ? 1 : 0);
                 signature = signature * 31 + (finalVariantActive ? 1 : 0);
                 signature = signature * 31 + placement.CellX;
                 signature = signature * 31 + placement.CellZ;
@@ -3263,7 +3266,7 @@ namespace Hecton8.World
             Vector3 observerPosition,
             bool hasObserverPosition)
         {
-            if (!placement.SupportsFinalVariant || !hasObserverPosition)
+            if (!ResolvePlacementSupportsFinalVariant(placement) || !hasObserverPosition)
                 return false;
 
             ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out _, out _);
@@ -3323,6 +3326,8 @@ namespace Hecton8.World
             if (instance == null)
                 return true;
 
+            bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
+
             if (placement.Family != null && placement.Family.UsesGenerativeGeology())
             {
                 return instance.ActiveStreamingLayer != placement.StreamingLayer;
@@ -3333,7 +3338,7 @@ namespace Hecton8.World
                 : (placement.Family != null ? placement.Family.GeneratedVariantId : "world.family.generic.generated");
             return !string.Equals(instance.ActiveVariantId, runtimeVariantId, StringComparison.Ordinal)
                 || instance.IsFinalVariantActive != finalVariantActive
-                || instance.SupportsFinalVariant != placement.SupportsFinalVariant
+                || instance.SupportsFinalVariant != supportsFinalVariant
                 || instance.ActiveStreamingLayer != placement.StreamingLayer;
         }
 
@@ -6104,6 +6109,7 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
             bool finalVariantActive)
         {
+            bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
             Transform transform = metadata.transform;
             transform.SetPositionAndRotation(placement.Position, placement.Rotation);
             transform.localScale = Vector3.one * placement.Scale;
@@ -6139,7 +6145,7 @@ namespace Hecton8.World
                 placement.ChunkCoord,
                 placement.HasMacroZone,
                 placement.MacroZoneCoord,
-                placement.SupportsFinalVariant,
+                supportsFinalVariant,
                 finalVariantActive);
         }
 
@@ -6271,6 +6277,14 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        private static bool ResolvePlacementSupportsFinalVariant(ScatterPlacement placement)
+        {
+            if (placement == null)
+                return false;
+
+            return placement.SupportsFinalVariant || FamilySupportsFinalVariant(placement.Family);
         }
 
         private static WorldPrefabFamilyProfile.VariantEntry ResolveRuntimeVariant(
@@ -8791,6 +8805,7 @@ namespace Hecton8.World
                 Scale = 0f;
                 CachedResolvedVariant = null;
                 CachedFinalVariantActive = false;
+                CachedSupportsFinalVariant = false;
                 HasResolvedVariantState = false;
                 CachedReconcilePlanVersion = 0;
                 CachedReconcileInstance = null;
@@ -8805,10 +8820,12 @@ namespace Hecton8.World
 
             public void CacheResolvedVariantState(
                 WorldPrefabFamilyProfile.VariantEntry variant,
-                bool finalVariantActive)
+                bool finalVariantActive,
+                bool supportsFinalVariant)
             {
                 CachedResolvedVariant = variant;
                 CachedFinalVariantActive = finalVariantActive;
+                CachedSupportsFinalVariant = supportsFinalVariant;
                 HasResolvedVariantState = true;
             }
 
@@ -8816,6 +8833,7 @@ namespace Hecton8.World
             {
                 CachedResolvedVariant = null;
                 CachedFinalVariantActive = false;
+                CachedSupportsFinalVariant = false;
                 HasResolvedVariantState = false;
             }
 
@@ -8912,6 +8930,7 @@ namespace Hecton8.World
             public float Scale { get; private set; }
             public WorldPrefabFamilyProfile.VariantEntry CachedResolvedVariant { get; private set; }
             public bool CachedFinalVariantActive { get; private set; }
+            public bool CachedSupportsFinalVariant { get; private set; }
             public bool HasResolvedVariantState { get; private set; }
             public int CachedReconcilePlanVersion { get; private set; }
             public WorldProceduralProxyInstance CachedReconcileInstance { get; private set; }

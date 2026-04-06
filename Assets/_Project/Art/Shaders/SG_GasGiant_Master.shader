@@ -162,6 +162,20 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
         _DistanceHorizonDetailFade ("Horizon Detail Fade", Range(0, 1)) = 0.82
         _DistanceHorizonDesaturate ("Horizon Desaturate", Range(0, 1)) = 0.22
         _DistanceHorizonVeilBoost ("Horizon Veil Boost", Range(0, 1)) = 0.35
+        _DistanceAirMassStart ("Air Mass Start", Range(0.02, 0.18)) = 0.06
+        _DistanceAirMassEnd ("Air Mass End", Range(0.16, 0.5)) = 0.34
+        _DistanceAirMassDetailFade ("Air Mass Detail Fade", Range(0, 1)) = 0.24
+        _DistanceAirMassDesaturate ("Air Mass Desaturate", Range(0, 1)) = 0.14
+        _DistanceAirMassVeilBoost ("Air Mass Veil Boost", Range(0, 1)) = 0.18
+        _DistanceAirMassHazeBlend ("Air Mass Haze Blend", Range(0, 1)) = 0.24
+        _DistanceAirMassDarken ("Air Mass Darken", Range(0, 1)) = 0.12
+        _DistanceUpperHazeStart ("Upper Haze Start", Range(0.08, 0.45)) = 0.18
+        _DistanceUpperHazePeak ("Upper Haze Peak", Range(0.2, 0.75)) = 0.48
+        _DistanceUpperHazeEnd ("Upper Haze End", Range(0.55, 1.0)) = 0.92
+        _DistanceUpperHazeBlend ("Upper Haze Blend", Range(0, 1)) = 0.18
+        _DistanceUpperHazeDarken ("Upper Haze Darken", Range(0, 1)) = 0.12
+        _DistanceUpperHazeDesaturate ("Upper Haze Desaturate", Range(0, 1)) = 0.12
+        _DistanceUpperHazeDetailFade ("Upper Haze Detail Fade", Range(0, 1)) = 0.18
         _DistanceBottomArcStart ("Bottom Arc Start", Range(0, 0.08)) = 0.0
         _DistanceBottomArcEnd ("Bottom Arc End", Range(0.02, 0.16)) = 0.06
         _DistanceBottomArcDetailFade ("Bottom Arc Detail Fade", Range(0, 1)) = 0.36
@@ -289,6 +303,20 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half   _DistanceHorizonDetailFade;
                 half   _DistanceHorizonDesaturate;
                 half   _DistanceHorizonVeilBoost;
+                half   _DistanceAirMassStart;
+                half   _DistanceAirMassEnd;
+                half   _DistanceAirMassDetailFade;
+                half   _DistanceAirMassDesaturate;
+                half   _DistanceAirMassVeilBoost;
+                half   _DistanceAirMassHazeBlend;
+                half   _DistanceAirMassDarken;
+                half   _DistanceUpperHazeStart;
+                half   _DistanceUpperHazePeak;
+                half   _DistanceUpperHazeEnd;
+                half   _DistanceUpperHazeBlend;
+                half   _DistanceUpperHazeDarken;
+                half   _DistanceUpperHazeDesaturate;
+                half   _DistanceUpperHazeDetailFade;
                 half   _DistanceBottomArcStart;
                 half   _DistanceBottomArcEnd;
                 half   _DistanceBottomArcDetailFade;
@@ -526,6 +554,20 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     _DistanceHorizonBandStart,
                     _DistanceHorizonBandEnd,
                     saturate(skyRay.y));
+                half broadAirMass = 1.0h - smoothstep(
+                    _DistanceAirMassStart,
+                    _DistanceAirMassEnd,
+                    saturate(skyRay.y));
+                half upperHazeRise = smoothstep(
+                    _DistanceUpperHazeStart,
+                    _DistanceUpperHazePeak,
+                    saturate(skyRay.y));
+                half upperHazeFall = 1.0h - smoothstep(
+                    _DistanceUpperHazePeak,
+                    _DistanceUpperHazeEnd,
+                    saturate(skyRay.y));
+                half upperHaze = saturate(upperHazeRise * upperHazeFall);
+                half upperHazeField = saturate(upperHaze * (0.78h + celestialOcclusion * 0.35h));
                 half bottomArc = 1.0h - smoothstep(
                     _DistanceBottomArcStart,
                     _DistanceBottomArcEnd,
@@ -569,6 +611,12 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 hazeMask *= lerp(1.0h,
                                  1.0h - _DistanceHorizonDetailFade,
                                  horizonBand);
+                hazeMask *= lerp(1.0h,
+                                 1.0h - _DistanceAirMassDetailFade,
+                                 broadAirMass);
+                hazeMask *= lerp(1.0h,
+                                 1.0h - _DistanceUpperHazeDetailFade,
+                                 upperHazeField);
                 hazeMask *= lerp(1.0h,
                                  1.0h - _DistanceBottomArcDetailFade,
                                  bottomArcTight);
@@ -653,6 +701,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                    * (0.18h + horizonVeil + rimVeil));
                 distanceVeil = saturate(distanceVeil
                               + horizonBand * _DistanceHorizonVeilBoost
+                              + broadAirMass * _DistanceAirMassVeilBoost
                               + bottomArcTight * _DistanceBottomArcVeilBoost
                               + limbWeld * (_DistanceBottomArcVeilBoost * 0.65h)
                               + celestialOcclusion * _CelestialOcclusionVeilBoost);
@@ -664,6 +713,14 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                   + _SkyColorHorizon.rgb * horizonMask
                                   + _SkyColorNadir.rgb * nadirMask;
                 half albedoLuma = dot(combinedAlbedo, half3(0.299h, 0.587h, 0.114h));
+                combinedAlbedo = lerp(
+                    combinedAlbedo,
+                    half3(albedoLuma, albedoLuma, albedoLuma),
+                    broadAirMass * _DistanceAirMassDesaturate);
+                combinedAlbedo = lerp(
+                    combinedAlbedo,
+                    half3(albedoLuma, albedoLuma, albedoLuma),
+                    upperHazeField * _DistanceUpperHazeDesaturate);
                 combinedAlbedo = lerp(
                     combinedAlbedo,
                     half3(albedoLuma, albedoLuma, albedoLuma),
@@ -682,6 +739,18 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                             _SkyColorNadir.rgb,
                                             0.65h);
                 half3 distanceVeilColor = lerp(veilDayColor, veilNightColor, _NightBlend);
+                half3 airMassVeilColor = lerp(
+                    skyGradient,
+                    _SkyColorHorizon.rgb,
+                    0.28h);
+                distanceVeilColor = lerp(
+                    distanceVeilColor,
+                    airMassVeilColor,
+                    broadAirMass * _DistanceAirMassHazeBlend);
+                distanceVeilColor = lerp(
+                    distanceVeilColor,
+                    airMassVeilColor,
+                    upperHazeField * _DistanceUpperHazeBlend);
                 distanceVeilColor = lerp(
                     distanceVeilColor,
                     _SkyHazeColor.rgb,
@@ -696,6 +765,12 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                  + emissionMapContrib;    // ═══ NEW ═══
 
                 finalColor = lerp(finalColor, distanceVeilColor, distanceVeil);
+                finalColor *= lerp(1.0h,
+                                   1.0h - _DistanceAirMassDarken,
+                                   broadAirMass);
+                finalColor *= lerp(1.0h,
+                                   1.0h - _DistanceUpperHazeDarken,
+                                   upperHazeField);
                 finalColor = lerp(finalColor, _SkyHazeColor.rgb, limbWeld);
                 half nightDarkenMask = saturate(
                     _NightBlend * (0.28h + distanceVeil * 0.72h + horizonBand * 0.18h));
@@ -904,6 +979,20 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half   _DistanceHorizonDetailFade;
                 half   _DistanceHorizonDesaturate;
                 half   _DistanceHorizonVeilBoost;
+                half   _DistanceAirMassStart;
+                half   _DistanceAirMassEnd;
+                half   _DistanceAirMassDetailFade;
+                half   _DistanceAirMassDesaturate;
+                half   _DistanceAirMassVeilBoost;
+                half   _DistanceAirMassHazeBlend;
+                half   _DistanceAirMassDarken;
+                half   _DistanceUpperHazeStart;
+                half   _DistanceUpperHazePeak;
+                half   _DistanceUpperHazeEnd;
+                half   _DistanceUpperHazeBlend;
+                half   _DistanceUpperHazeDarken;
+                half   _DistanceUpperHazeDesaturate;
+                half   _DistanceUpperHazeDetailFade;
                 half   _DistanceBottomArcStart;
                 half   _DistanceBottomArcEnd;
                 half   _DistanceBottomArcDetailFade;

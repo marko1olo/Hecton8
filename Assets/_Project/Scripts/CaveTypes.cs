@@ -157,9 +157,12 @@ namespace Hecton8.Caves
         /// Bioluminescent flora, quartz, cave-adapted fauna.</summary>
         CaveShallow = 1,
 
+        /// <summary>Mid-depth caves: moderate complexity, mixed resources.</summary>
+        CaveMid = 2,
+
         /// <summary>Deep caves: Labyrinth, Abyss, Mega.
         /// Uranium, crystals, aggressive fauna, rare materials.</summary>
-        CaveDeep = 2
+        CaveDeep = 3
     }
     #endregion
 
@@ -733,6 +736,23 @@ namespace Hecton8.Caves
             CaveStructureType.Boulder,
             CaveStructureType.Column
         };
+
+        [Tooltip("Hazard level of this cave type (0-1).\n" +
+                 "0 = safe exploration cave\n" +
+                 "1 = maximum danger (predators, traps, radiation)")]
+        [Range(0f, 1f)]
+        public float hazardLevel = 0f;
+
+        [Tooltip("Mood atmosphere of this cave.\n" +
+                 "0 = silent/empty\n" +
+                 "0.5 = moderate life activity\n" +
+                 "1 = busy with fauna/ecosystem")]
+        [Range(0f, 1f)]
+        public float moodLevel = 0.3f;
+
+        [Tooltip("Whether this cave contains ancient ruins/structures.\n" +
+                 "Adds Block and Wall structures for exploration interest.")]
+        public bool isRuinLinked = false;
 
         // ═══════════════════════════════════════════════════════════════════
         //  CONVERSION TO BURST-COMPATIBLE PARAMS

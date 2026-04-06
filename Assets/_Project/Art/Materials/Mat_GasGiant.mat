@@ -82,20 +82,34 @@ Material:
     - _DetailSpeed: 0.005
     - _DetailSpeedMult: 1.249
     - _DetailStrength: 0.181
+    - _DistanceAirMassDarken: 0.096
+    - _DistanceAirMassDesaturate: 0.16
+    - _DistanceAirMassDetailFade: 0.32
+    - _DistanceAirMassEnd: 0.5
+    - _DistanceAirMassHazeBlend: 0.12
+    - _DistanceAirMassStart: 0.02
+    - _DistanceAirMassVeilBoost: 0.2
     - _DistanceBottomArcDesaturate: 0.22
     - _DistanceBottomArcDetailFade: 0.36
-    - _DistanceBottomArcEnd: 0.06
-    - _DistanceBottomArcHazeBlend: 0.72
+    - _DistanceBottomArcEnd: 0.1585
+    - _DistanceBottomArcHazeBlend: 0.742
     - _DistanceBottomArcStart: 0
     - _DistanceBottomArcVeilBoost: 0.38
-    - _DistanceHorizonBandEnd: 0.12
+    - _DistanceHorizonBandEnd: 0.35
     - _DistanceHorizonBandStart: 0.01
-    - _DistanceHorizonDesaturate: 0.18
-    - _DistanceHorizonDetailFade: 0.72
+    - _DistanceHorizonDesaturate: 0
+    - _DistanceHorizonDetailFade: 0
     - _DistanceHorizonVeilBoost: 0.28
     - _DistanceNightDarken: 0.56
+    - _DistanceUpperHazeBlend: 0.18
+    - _DistanceUpperHazeDarken: 0.12
+    - _DistanceUpperHazeDesaturate: 0.12
+    - _DistanceUpperHazeDetailFade: 0.18
+    - _DistanceUpperHazeEnd: 0.92
+    - _DistanceUpperHazePeak: 0.48
+    - _DistanceUpperHazeStart: 0.18
     - _DistanceVeilHorizonStrength: 1.55
-    - _DistanceVeilPower: 1.25
+    - _DistanceVeilPower: 0.95
     - _DistanceVeilRimStrength: 0.7
     - _DistanceVeilStrength: 0.44
     - _EclipseRimIntensity: 5
