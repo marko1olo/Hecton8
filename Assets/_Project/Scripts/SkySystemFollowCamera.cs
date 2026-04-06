@@ -14,6 +14,12 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
     [SerializeField] private bool followInPlayMode = true;
     [SerializeField] private Vector3 positionOffset = Vector3.zero;
     private Camera _cachedResolvedCamera;
+    private Camera _cachedMainCamera;
+
+    private void Awake()
+    {
+        _cachedMainCamera = Camera.main;
+    }
 
     private void OnEnable()
     {
@@ -72,10 +78,9 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
             return _cachedResolvedCamera;
         }
 
-        Camera mainCamera = Camera.main;
-        if (mainCamera != null)
+        if (_cachedMainCamera != null)
         {
-            _cachedResolvedCamera = mainCamera;
+            _cachedResolvedCamera = _cachedMainCamera;
             return _cachedResolvedCamera;
         }
 
@@ -88,7 +93,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         }
 #endif
 
-        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include);
+        Camera[] cameras = Camera.allCameras;
         for (int i = 0; i < cameras.Length; i++)
         {
             Camera candidate = cameras[i];

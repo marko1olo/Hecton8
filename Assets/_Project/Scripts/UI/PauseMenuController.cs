@@ -61,6 +61,10 @@ namespace Hecton8.UI
         private RectTransform _savesPanel;
         private RectTransform _helpPanel;
         private RectTransform _settingsPanel;
+        private CanvasGroup _mainPanelCanvasGroup;
+        private CanvasGroup _savesPanelCanvasGroup;
+        private CanvasGroup _helpPanelCanvasGroup;
+        private CanvasGroup _settingsPanelCanvasGroup;
         private TextMeshProUGUI _saveStatus;
         private PauseControlsPanel _controlsPanel;
 
@@ -230,9 +234,21 @@ namespace Hecton8.UI
                 InputManager.Instance.SwitchToPlayerInput();
             }
 
+            ApplyCursorState(restorePlayerInput);
+
+        }
+
+        private static void ApplyCursorState(bool restorePlayerInput)
+        {
+            if (restorePlayerInput)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                return;
+            }
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
-
         }
 
         private static void RegisterOpenMenu()
@@ -285,6 +301,31 @@ namespace Hecton8.UI
             _root = self;
             Stretch(_root, 0f, 0f, 0f, 0f);
 
+            // Ensure Canvas for UI rendering and cursor
+            Canvas canvas = gameObject.GetComponent<Canvas>();
+            if (canvas == null)
+            {
+                canvas = gameObject.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 1000; // High order to appear on top
+            }
+
+            // Ensure CanvasScaler for proper scaling
+            UnityEngine.UI.CanvasScaler scaler = gameObject.GetComponent<UnityEngine.UI.CanvasScaler>();
+            if (scaler == null)
+            {
+                scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
+                scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0.5f;
+            }
+
+            // Ensure GraphicRaycaster for input
+            UnityEngine.UI.GraphicRaycaster raycaster = gameObject.GetComponent<UnityEngine.UI.GraphicRaycaster>();
+            if (raycaster == null)
+                raycaster = gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+
             _canvasGroup = gameObject.GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -332,6 +373,10 @@ namespace Hecton8.UI
             _savesPanel = CreatePanel(content, "SavesPanel");
             _helpPanel = CreatePanel(content, "HelpPanel");
             _settingsPanel = CreatePanel(content, "SettingsPanel");
+            _mainPanelCanvasGroup = EnsurePanelCanvasGroup(_mainPanel);
+            _savesPanelCanvasGroup = EnsurePanelCanvasGroup(_savesPanel);
+            _helpPanelCanvasGroup = EnsurePanelCanvasGroup(_helpPanel);
+            _settingsPanelCanvasGroup = EnsurePanelCanvasGroup(_settingsPanel);
 
             BuildMainPanel(_mainPanel);
             BuildSavesPanel(_savesPanel);
@@ -456,10 +501,10 @@ namespace Hecton8.UI
         {
             _activeSection = section;
 
-            SetPanelVisible(_mainPanel, section == PauseSection.Main);
-            SetPanelVisible(_savesPanel, section == PauseSection.Saves);
-            SetPanelVisible(_helpPanel, section == PauseSection.Help);
-            SetPanelVisible(_settingsPanel, section == PauseSection.Settings);
+            SetPanelVisible(_mainPanelCanvasGroup, section == PauseSection.Main);
+            SetPanelVisible(_savesPanelCanvasGroup, section == PauseSection.Saves);
+            SetPanelVisible(_helpPanelCanvasGroup, section == PauseSection.Help);
+            SetPanelVisible(_settingsPanelCanvasGroup, section == PauseSection.Settings);
 
             if (_headerSub == null)
                 return;
@@ -540,12 +585,26 @@ namespace Hecton8.UI
 #endif
         }
 
-        private static void SetPanelVisible(RectTransform panel, bool visible)
+        private static CanvasGroup EnsurePanelCanvasGroup(RectTransform panel)
         {
             if (panel == null)
+                return null;
+
+            CanvasGroup group = panel.GetComponent<CanvasGroup>();
+            if (group == null)
+                group = panel.gameObject.AddComponent<CanvasGroup>();
+
+            return group;
+        }
+
+        private static void SetPanelVisible(CanvasGroup group, bool visible)
+        {
+            if (group == null)
                 return;
 
-            panel.gameObject.SetActive(visible);
+            group.alpha = visible ? 1f : 0f;
+            group.interactable = visible;
+            group.blocksRaycasts = visible;
         }
 
         private static RectTransform CreatePanel(Transform parent, string name)

@@ -1,0 +1,304 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  HADES HECTON-8 | HectonBiolumZone (MEGA-OPTIMIZED v2.0)                   ║
+// ║  Light pooling + Pre-computed spectrums + LOD + Dirty-flag caching          ║
+// ║  Zero allocations in hot path | Static color lookup | Cached components     ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+using UnityEngine;
+using Hecton8.Caves;
+using Hecton8.Core;
+
+namespace Hecton8.Biolum
+{
+    /// <summary>
+    /// PRE-COMPUTED COLOR SPECTRUMS — No allocations, static readonly.
+    /// 11-step gradient for smooth Lerp transitions and fast sampling.
+    /// </summary>
+    public static class BiolumSpectrums
+    {
+        // 11-step cave spectrum: warm (0) → white (0.5) → cold (1)
+        public static readonly Color[] CaveSpectrum = new Color[11]
+        {
+            new Color(1.0f, 0.8f, 0.3f), new Color(1.0f, 0.7f, 0.3f), new Color(1.0f, 0.6f, 0.3f),
+            new Color(0.9f, 0.5f, 0.3f), new Color(0.8f, 0.4f, 0.3f), new Color(1.0f, 1.0f, 1.0f),
+            new Color(0.8f, 0.9f, 1.0f), new Color(0.6f, 0.8f, 1.0f), new Color(0.4f, 0.7f, 1.0f),
+            new Color(0.3f, 0.6f, 1.0f), new Color(0.2f, 0.5f, 1.0f),
+        };
+
+        // 11-step ocean spectrum: surface (0) → twilight (0.5) → abyss (1)
+        public static readonly Color[] OceanSpectrum = new Color[11]
+        {
+            new Color(0.3f, 0.7f, 1.0f), new Color(0.25f, 0.6f, 0.9f), new Color(0.2f, 0.5f, 0.8f),
+            new Color(0.2f, 0.4f, 0.8f), new Color(0.2f, 0.3f, 0.7f), new Color(0.25f, 0.8f, 0.5f),
+            new Color(0.3f, 0.85f, 0.4f), new Color(0.5f, 0.7f, 0.3f), new Color(0.7f, 0.5f, 0.5f),
+            new Color(0.8f, 0.3f, 0.8f), new Color(0.85f, 0.2f, 1.0f),
+        };
+
+        // Floor cluster colors (static readonly, fast ref)
+        public static readonly Color CoralRed = new Color(1f, 0.3f, 0.2f);
+        public static readonly Color CoralOrange = new Color(1f, 0.6f, 0.2f);
+        public static readonly Color FungiGreen = new Color(0.3f, 1f, 0.5f);
+        public static readonly Color VentRed = new Color(1f, 0.2f, 0.1f);
+        public static readonly Color VentOrange = new Color(1f, 0.4f, 0.1f);
+        public static readonly Color GardenCyan = new Color(0.2f, 1f, 0.8f);
+
+        /// <summary>
+        /// O(1) spectrum lookup with rounding (no Lerp overhead).
+        /// </summary>
+        public static Color Sample(Color[] spectrum, float position)
+        {
+            position = Mathf.Clamp01(position);
+            int idx = Mathf.RoundToInt(position * (spectrum.Length - 1));
+            return spectrum[idx];
+        }
+    }
+
+    /// <summary>
+    /// MEGA-OPTIMIZED abstract bioluminescence zone.
+    /// - Light pooling (GameObject reuse, no destroy)
+    /// - Pre-computed color spectrums
+    /// - Distance-based LOD culling
+    /// - Cached component references
+    /// - Dirty-flag optimization
+    /// - Zero allocations in Tick()
+    /// </summary>
+    [DisallowMultipleComponent, RequireComponent(typeof(Transform))]
+    public abstract class HectonBiolumZone : MonoBehaviour, ITickable
+    {
+        // ───────────────────────────────────────────────────────────────────────────────
+        // INSPECTOR SETTINGS (Compact)
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        [Header("── Biolum Zone ──────────────────")]
+        [SerializeField] protected string _zoneKey = "Zone";
+        [SerializeField, Range(0f, 1f)] protected float _moodLevel = 0.5f;
+        [SerializeField, Range(0f, 1f)] protected float _hazardLevel = 0.1f;
+        [SerializeField, Range(0.1f, 3f)] protected float _intensityMultiplier = 1.5f;
+        [SerializeField, Range(0.5f, 30f)] protected float _rangeMultiplier = 10f;
+        [SerializeField, Range(1, 100)] protected int _updateInterval = 5;
+        [SerializeField, Range(2, 16)] protected int _maxLights = 8;
+        [SerializeField, Range(0f, 1f)] protected float _lodDistanceScale = 1.0f;
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // CACHED COMPONENTS (No GetComponent in hot path)
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        protected Transform _cachedTransform;
+        protected Light[] _activeLights;
+        protected int _activeLightCount = 0;
+        protected bool _isRegistered = false;
+        protected int _lastUpdateFrame = -1;
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // DIRTY-FLAG CACHING (Avoid redundant property updates)
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        private float _lastIntensity = 0f;
+        private float _lastRange = 0f;
+        private Color _lastColor = Color.white;
+
+        #if UNITY_EDITOR
+        [SerializeField] protected bool _debugLogSpawn = false;
+        #endif
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // LIFECYCLE
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        protected virtual void Awake()
+        {
+            _cachedTransform = transform;
+            _activeLights = new Light[_maxLights]; // ONE-TIME COLD ALLOC
+        }
+
+        protected virtual void OnEnable()
+        {
+            if (GameTickManager.Instance != null && !_isRegistered)
+            {
+                GameTickManager.Instance.Register(this as ITickable);
+                _isRegistered = true;
+            }
+            if (HectonBiolumManager.Instance != null)
+                HectonBiolumManager.Instance.RegisterZone(this);
+        }
+
+        protected virtual void OnDisable()
+        {
+            if (GameTickManager.Instance != null && _isRegistered)
+            {
+                GameTickManager.Instance.Unregister(this as ITickable);
+                _isRegistered = false;
+            }
+            if (HectonBiolumManager.Instance != null)
+                HectonBiolumManager.Instance.UnregisterZone(this);
+            CleanupLights();
+        }
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // INTERFACE: ITickable (ZERO allocations)
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Lazy tick with frame-count and LOD culling.
+        /// ZERO allocations guaranteed.
+        /// </summary>
+        public void Tick(float deltaTime)
+        {
+            int frame = Time.frameCount;
+            if (frame - _lastUpdateFrame < _updateInterval) return;
+            _lastUpdateFrame = frame;
+
+            if (ShouldSkipLOD()) return;
+
+            EvaluateBiolumState();
+        }
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // ABSTRACT METHODS (Subclass Override)
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        protected abstract void EvaluateBiolumState();
+        protected abstract Color GetBiolumColor();
+        protected abstract float GetBiolumIntensity();
+        protected abstract float GetBiolumRange();
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // PROTECTED HELPERS: Light Pooling
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Get or create light from pre-allocated pool.
+        /// Reuses GameObject to avoid allocations.
+        /// </summary>
+        protected Light GetOrCreateLight(Vector3 pos, Color color, float range, float intensity)
+        {
+            if (_activeLightCount >= _maxLights) return null;
+
+            Light light = _activeLights[_activeLightCount];
+            if (light == null)
+            {
+                // Create only once per pool slot
+                GameObject go = new GameObject($"BiolumLight_{_activeLightCount}");
+                go.transform.SetParent(_cachedTransform);
+                light = go.AddComponent<Light>();
+                light.type = LightType.Point;
+                light.shadows = LightShadows.None;
+                light.renderingLayerMask = 1;
+                _activeLights[_activeLightCount] = light;
+            }
+
+            light.transform.position = pos;
+            light.color = color;
+            light.range = range;
+            light.intensity = intensity;
+            _activeLightCount++;
+
+            #if UNITY_EDITOR
+            if (_debugLogSpawn) Debug.Log($"[Biolum] {_zoneKey} light {_activeLightCount - 1}");
+            #endif
+
+            return light;
+        }
+
+        /// <summary>
+        /// Update light with dirty-flag optimization (skip redundant SetProperty calls).
+        /// </summary>
+        protected void UpdateLight(Light light, Color color, float range, float intensity)
+        {
+            if (light == null) return;
+
+            // DIRTY-FLAG: only update if value changed
+            if (!Approximately(intensity, _lastIntensity))
+            {
+                light.intensity = intensity;
+                _lastIntensity = intensity;
+            }
+            if (!Approximately(range, _lastRange))
+            {
+                light.range = range;
+                _lastRange = range;
+            }
+            if (color != _lastColor)
+            {
+                light.color = color;
+                _lastColor = color;
+            }
+        }
+
+        /// <summary>
+        /// Cleanup (deactivate lights, don't destroy).
+        /// </summary>
+        protected void CleanupLights()
+        {
+            for (int i = 0; i < _activeLightCount; i++)
+                if (_activeLights[i] != null)
+                    _activeLights[i].gameObject.SetActive(false);
+            _activeLightCount = 0;
+        }
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // PROTECTED HELPERS: Scaling Functions
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        protected float ScaleIntensityByMood(float baseIntensity)
+        {
+            float mood = Mathf.Lerp(0.5f, 1.5f, _moodLevel);
+            float mgr = HectonBiolumManager.Instance != null 
+                ? HectonBiolumManager.Instance._globalIntensityScale 
+                : 1f;
+            return baseIntensity * mood * mgr;
+        }
+
+        protected float ScaleRangeByHazard(float baseRange)
+        {
+            float hazard = Mathf.Lerp(1.5f, 0.5f, _hazardLevel);
+            float mgr = HectonBiolumManager.Instance != null 
+                ? HectonBiolumManager.Instance._globalRangeScale 
+                : 1f;
+            return baseRange * hazard * mgr;
+        }
+
+        protected Color GetHazardTint() => Color.Lerp(Color.white, Color.red, _hazardLevel * 0.3f);
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // PRIVATE HELPERS: LOD System
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Distance-based LOD: distant zones skip updates.
+        /// </summary>
+        private bool ShouldSkipLOD()
+        {
+            if (_lodDistanceScale >= 1.0f) return false;
+
+            Vector3 camPos = HectonBiolumManager.Instance != null 
+                ? HectonBiolumManager.Instance.GetCameraPosition() 
+                : Vector3.zero;
+
+            float dist = Vector3.Distance(_cachedTransform.position, camPos);
+            float lodThreshold = Mathf.Lerp(5f, 500f, _lodDistanceScale);
+
+            // Skip 2 out of 3 frames if beyond threshold
+            return dist > lodThreshold && (Time.frameCount % 3) != 0;
+        }
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // UTILITY: Fast Float Comparison
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        private static bool Approximately(float a, float b, float epsilon = 0.001f) =>
+            Mathf.Abs(a - b) < epsilon;
+
+        // ───────────────────────────────────────────────────────────────────────────────
+        // EDITOR
+        // ───────────────────────────────────────────────────────────────────────────────
+
+        #if UNITY_EDITOR
+        protected virtual void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, 2f);
+        }
+        #endif
+    }
+}

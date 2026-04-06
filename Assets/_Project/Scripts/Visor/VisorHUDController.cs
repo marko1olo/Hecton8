@@ -64,6 +64,8 @@ namespace NASAPunk.Visor
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
         private bool _ownsRuntimeTexture;
+        private int _cachedRTWidth = -1;
+        private int _cachedRTHeight = -1;
         private float _nextAutoResolveAt;
         private bool _materialPropertiesDirty = true;
         private UniversalAdditionalCameraData _cachedHudCameraData;
@@ -374,6 +376,22 @@ namespace NASAPunk.Visor
                 return;
             }
 
+            // Reuse RT if size matches
+            if (_hudRT != null && _hudRT.width == _rtWidth && _hudRT.height == _rtHeight && _hudRT.format == RenderTextureFormat.ARGB32)
+            {
+                _ownsRuntimeTexture = true;
+                return;
+            }
+
+            // Release old RT if size changed
+            if (_ownsRuntimeTexture && _hudRT != null)
+            {
+                if (Application.isPlaying)
+                    Destroy(_hudRT);
+                else
+                    DestroyImmediate(_hudRT);
+            }
+
             _hudRT = new RenderTexture(_rtWidth, _rtHeight, 0, RenderTextureFormat.ARGB32)
             {
                 filterMode = _filterMode,
@@ -382,6 +400,8 @@ namespace NASAPunk.Visor
             };
             _hudRT.Create();
             _ownsRuntimeTexture = true;
+            _cachedRTWidth = _rtWidth;
+            _cachedRTHeight = _rtHeight;
         }
 
         private void RebuildProjection()
@@ -428,6 +448,8 @@ namespace NASAPunk.Visor
 
             _hudRT = null;
             _ownsRuntimeTexture = false;
+            _cachedRTWidth = -1;
+            _cachedRTHeight = -1;
         }
 
         /// <summary>

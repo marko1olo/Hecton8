@@ -49,6 +49,9 @@ namespace Hecton8.UI
         [SerializeField] private int manifestVisibleRows = 10;
 
         private bool _built;
+        private bool _cargoDirty;
+        private bool _loadoutDirty;
+        private bool _constructionDirty;
         private TextMeshProUGUI _summaryText;
         private Image _directiveBg;
         private TextMeshProUGUI _directiveText;
@@ -118,6 +121,7 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            MarkAllDirty();
             RefreshAll();
         }
 
@@ -225,25 +229,96 @@ namespace Hecton8.UI
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
         }
 
-        private void HandleInventoryChanged() => RefreshCargo();
-        private void HandleToolSlotChanged(int _) => RefreshLoadout();
-        private void HandleToolAssignmentsChanged() => RefreshLoadout();
-        private void HandleScanLogChanged() => RefreshConstruction();
-        private void HandleFieldOperationsChanged() => RefreshConstruction();
-        private void HandleExchangeStateChanged() => RefreshConstruction();
-        private void HandleBeaconNetworkChanged() => RefreshConstruction();
-        private void HandleBiomeDiscovered(int _) => RefreshConstruction();
+        private void HandleInventoryChanged()
+        {
+            _cargoDirty = true;
+            if (IsTabActive)
+            {
+                RefreshCargo();
+                _cargoDirty = false;
+            }
+        }
+
+        private void HandleToolSlotChanged(int _)
+        {
+            _loadoutDirty = true;
+            if (IsTabActive)
+            {
+                RefreshLoadout();
+                _loadoutDirty = false;
+            }
+        }
+
+        private void HandleToolAssignmentsChanged()
+        {
+            _loadoutDirty = true;
+            if (IsTabActive)
+            {
+                RefreshLoadout();
+                _loadoutDirty = false;
+            }
+        }
+
+        private void HandleScanLogChanged()
+        {
+            _constructionDirty = true;
+            if (IsTabActive)
+            {
+                RefreshConstruction();
+                _constructionDirty = false;
+            }
+        }
+
+        private void HandleFieldOperationsChanged()
+        {
+            _constructionDirty = true;
+            if (IsTabActive)
+            {
+                RefreshConstruction();
+                _constructionDirty = false;
+            }
+        }
+
+        private void HandleExchangeStateChanged()
+        {
+            _constructionDirty = true;
+            if (IsTabActive)
+            {
+                RefreshConstruction();
+                _constructionDirty = false;
+            }
+        }
+
+        private void HandleBeaconNetworkChanged()
+        {
+            _constructionDirty = true;
+            if (IsTabActive)
+            {
+                RefreshConstruction();
+                _constructionDirty = false;
+            }
+        }
+
+        private void HandleBiomeDiscovered(int _)
+        {
+            _constructionDirty = true;
+            if (IsTabActive)
+            {
+                RefreshConstruction();
+                _constructionDirty = false;
+            }
+        }
 
         private void HandlePdaOpened(int tab)
         {
             if (tab != dataLogTabIndex) return;
-            RefreshAll();
+            FlushPendingRefresh(forceAll: true);
         }
 
         private void HandlePdaTabChanged(int oldTab, int newTab)
         {
             if (newTab != dataLogTabIndex) return;
-            RefreshAll();
+            FlushPendingRefresh(forceAll: true);
         }
 
         private void EnsureBuilt()
@@ -335,6 +410,34 @@ namespace Hecton8.UI
             RefreshCargo();
             RefreshLoadout();
             RefreshConstruction();
+            _cargoDirty = false;
+            _loadoutDirty = false;
+            _constructionDirty = false;
+        }
+
+        private void MarkAllDirty()
+        {
+            _cargoDirty = true;
+            _loadoutDirty = true;
+            _constructionDirty = true;
+        }
+
+        private void FlushPendingRefresh(bool forceAll = false)
+        {
+            if (forceAll || _cargoDirty)
+                RefreshCargo();
+
+            if (forceAll || _loadoutDirty)
+                RefreshLoadout();
+
+            if (forceAll || _constructionDirty)
+                RefreshConstruction();
+
+            RefreshSummary();
+
+            _cargoDirty = false;
+            _loadoutDirty = false;
+            _constructionDirty = false;
         }
 
         private void RefreshSummary()

@@ -192,6 +192,7 @@ namespace Hecton8.UI
         // Tab history (pre-allocated stack, max 8 entries)
         private readonly int[] _tabHistory = new int[8];
         private int _tabHistoryCount;
+        private CanvasGroup[] _tabCanvasGroups;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -212,8 +213,6 @@ namespace Hecton8.UI
             IsOpen = false;
             _currentAlpha = 0f;
             _targetAlpha = 0f;
-
-            if (pdaPanel != null) pdaPanel.SetActive(false);
 
             if (pdaCanvasGroup != null)
             {
@@ -248,6 +247,8 @@ namespace Hecton8.UI
                     enableBatteryDrain = false;
                 }
             }
+
+            PrepareRuntimeVisibility();
         }
 
         private void OnEnable()
@@ -455,12 +456,11 @@ namespace Hecton8.UI
         {
             if (IsOpen) return;
 
+            PrepareRuntimeVisibility();
             IsOpen = true;
             _openStartTime = Time.time;
             _batteryDrainAccumulator = 0f;
             _lowBatteryWarningPlayed = false;
-
-            if (pdaPanel != null) pdaPanel.SetActive(true);
 
             // Switch to UI input map
             if (InputManager.Instance != null)
@@ -536,12 +536,7 @@ namespace Hecton8.UI
                 PushTabHistory(oldTab);
 
             _activeTab = newTab;
-
-            for (int i = 0; i < tabs.Length; i++)
-            {
-                if (tabs[i] != null)
-                    tabs[i].SetActive(i == _activeTab);
-            }
+            ApplyTabVisibility(_activeTab);
 
             if (oldTab >= 0) // not initial open
             {
@@ -561,8 +556,6 @@ namespace Hecton8.UI
             _isFading = false;
             _currentAlpha = 0f;
             _targetAlpha = 0f;
-
-            if (pdaPanel != null) pdaPanel.SetActive(false);
 
             if (pdaCanvasGroup != null)
             {
@@ -590,15 +583,14 @@ namespace Hecton8.UI
             pdaCanvasGroup = panelCanvasGroup;
             tabs = configuredTabs ?? Array.Empty<GameObject>();
 
-            if (pdaPanel != null && !IsOpen)
-                pdaPanel.SetActive(false);
-
             if (pdaCanvasGroup != null && !IsOpen)
             {
                 pdaCanvasGroup.alpha = 0f;
                 pdaCanvasGroup.interactable = false;
                 pdaCanvasGroup.blocksRaycasts = false;
             }
+
+            PrepareRuntimeVisibility();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -612,10 +604,6 @@ namespace Hecton8.UI
                 // No CanvasGroup or instant mode — snap to target
                 _currentAlpha = _targetAlpha;
                 _isFading = false;
-
-                if (_targetAlpha <= 0f && pdaPanel != null)
-                    pdaPanel.SetActive(false);
-
                 return;
             }
 
@@ -638,13 +626,86 @@ namespace Hecton8.UI
                     pdaCanvasGroup.interactable = true;
                     pdaCanvasGroup.blocksRaycasts = true;
                 }
-                else if (_targetAlpha <= 0f)
-                {
-                    // Fade-out complete — hide panel
-                    if (pdaPanel != null)
-                        pdaPanel.SetActive(false);
-                }
             }
+        }
+
+        private void PrepareRuntimeVisibility()
+        {
+            if (!Application.isPlaying || pdaPanel == null)
+                return;
+
+            if (pdaCanvasGroup == null)
+            {
+                pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
+                if (pdaCanvasGroup == null)
+                    pdaCanvasGroup = pdaPanel.AddComponent<CanvasGroup>();
+            }
+
+            if (!pdaPanel.activeSelf)
+                pdaPanel.SetActive(true);
+
+            EnsureTabCanvasGroups();
+
+            pdaCanvasGroup.alpha = 0f;
+            pdaCanvasGroup.interactable = false;
+            pdaCanvasGroup.blocksRaycasts = false;
+
+            ApplyTabVisibility(_activeTab);
+        }
+
+        private void EnsureTabCanvasGroups()
+        {
+            if (tabs == null || tabs.Length == 0)
+            {
+                _tabCanvasGroups = Array.Empty<CanvasGroup>();
+                return;
+            }
+
+            if (_tabCanvasGroups == null || _tabCanvasGroups.Length != tabs.Length)
+                _tabCanvasGroups = new CanvasGroup[tabs.Length];
+
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                GameObject tab = tabs[i];
+                if (tab == null)
+                {
+                    _tabCanvasGroups[i] = null;
+                    continue;
+                }
+
+                if (!tab.activeSelf)
+                    tab.SetActive(true);
+
+                CanvasGroup group = _tabCanvasGroups[i];
+                if (group == null)
+                {
+                    group = tab.GetComponent<CanvasGroup>();
+                    if (group == null)
+                        group = tab.AddComponent<CanvasGroup>();
+                    _tabCanvasGroups[i] = group;
+                }
+
+                SetCanvasGroupVisible(group, i == _activeTab);
+            }
+        }
+
+        private void ApplyTabVisibility(int activeTab)
+        {
+            if (_tabCanvasGroups == null)
+                return;
+
+            for (int i = 0; i < _tabCanvasGroups.Length; i++)
+                SetCanvasGroupVisible(_tabCanvasGroups[i], i == activeTab);
+        }
+
+        private static void SetCanvasGroupVisible(CanvasGroup group, bool visible)
+        {
+            if (group == null)
+                return;
+
+            group.alpha = visible ? 1f : 0f;
+            group.interactable = visible;
+            group.blocksRaycasts = visible;
         }
 
         // ══════════════════════════════════════════════════════════

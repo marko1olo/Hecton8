@@ -15,6 +15,7 @@
 // ZERO GC: No allocations. Cached references. Math only.
 // ============================================================================
 
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioSource))]
-    public sealed class PlayerThrusterAudio : MonoBehaviour
+    public sealed class PlayerThrusterAudio : MonoBehaviour, ITickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -81,6 +82,7 @@ namespace Hecton8.Audio
         private float _currentVolume;
         private float _currentPitch;
         private float _modeBlend;       // 0 = walk (silent), 1 = swim (active)
+        private bool _registered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -110,6 +112,12 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            if (GameTickManager.Instance != null && !_registered)
+            {
+                GameTickManager.Instance.Register(this);
+                _registered = true;
+            }
+
             if (thrusterLoopClip != null && _audioSource != null)
             {
                 _audioSource.Play();
@@ -118,6 +126,12 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
+            if (GameTickManager.Instance != null && _registered)
+            {
+                GameTickManager.Instance.Unregister(this);
+                _registered = false;
+            }
+
             if (_audioSource != null && _audioSource.isPlaying)
             {
                 _audioSource.Stop();
@@ -125,19 +139,18 @@ namespace Hecton8.Audio
         }
 
         // ══════════════════════════════════════════════════════════
-        //  UPDATE — runs every frame for smooth audio response
+        //  TICK — runs every frame for smooth audio response
         //
-        //  Not using ITickable because this is a self-contained
-        //  audio component. Keeps it decoupled from GameTickManager.
-        //  Unity's Update is fine for audio parameter smoothing.
+        //  Converted to ITickable for architecture compliance.
+        //  Maintains same timing as Update for audio smoothing.
         // ══════════════════════════════════════════════════════════
 
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (playerMovement == null || _playerRb == null) return;
             if (thrusterLoopClip == null) return;
 
-            float dt = Time.deltaTime;
+            float dt = deltaTime;
             if (dt <= 0f) return;
 
             // ── Mode blend: swim=1, walk=0 ──

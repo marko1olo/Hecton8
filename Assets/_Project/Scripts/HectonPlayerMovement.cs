@@ -108,6 +108,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private LayerMask groundLayers = ~0;
         [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
         [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
+        [SerializeField, Range(0f, 0.3f)] private float jumpBufferTime = 0.12f;
+        [SerializeField, Range(0f, 0.3f)] private float shoreGroundGraceTime = 0.14f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — FOV
@@ -189,6 +191,7 @@ namespace Hecton8.Gameplay
         private bool _inputCleared;
         private bool _jumpRequested;
         private bool _isSprinting;
+        private float _jumpBufferTimer;
 
         // ══════════════════════════════════════════════════════════
         //  BODY YAW (decoupled from camera)
@@ -204,6 +207,7 @@ namespace Hecton8.Gameplay
         private bool _isWalking;
         private bool _isGrounded;
         private bool _wasGroundedLastFrame;
+        private float _shoreGroundGraceTimer;
         private float _waterImmersionRatio;
         private float _smoothedImmersionRatio;
         private float _currentLinearDamping;
@@ -533,8 +537,8 @@ namespace Hecton8.Gameplay
 
         private void HandleJumpInput()
         {
-            if (_isWalking && _isGrounded)
-                _jumpRequested = true;
+            _jumpRequested = true;
+            _jumpBufferTimer = jumpBufferTime;
         }
 
         private void HandleSprintStarted()
@@ -846,7 +850,30 @@ namespace Hecton8.Gameplay
             }
 
             float physicsImmersion = _smoothedImmersionRatio;
-            bool groundedOnShore = _isGrounded && physicsImmersion < swimTransitionThreshold;
+            bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold;
+            if (_isGrounded && isShallowEnoughForShore)
+            {
+                _shoreGroundGraceTimer = shoreGroundGraceTime;
+            }
+            else if (_shoreGroundGraceTimer > 0f)
+            {
+                _shoreGroundGraceTimer -= fixedDeltaTime;
+                if (_shoreGroundGraceTimer < 0f)
+                    _shoreGroundGraceTimer = 0f;
+            }
+
+            if (_jumpBufferTimer > 0f)
+            {
+                _jumpBufferTimer -= fixedDeltaTime;
+                if (_jumpBufferTimer <= 0f)
+                {
+                    _jumpBufferTimer = 0f;
+                    _jumpRequested = false;
+                }
+            }
+
+            bool hasShoreGroundSupport = _isGrounded || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+            bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
 
             // ═══════════════════════════════════════════════
             //  7A. GRADUATED GRAVITY
@@ -890,7 +917,7 @@ namespace Hecton8.Gameplay
             bool shouldWalk;
             if (!inWater)
             {
-                shouldWalk = _isGrounded;
+                shouldWalk = _isGrounded || _shoreGroundGraceTimer > 0f;
             }
             else if (deepEnough)
             {
@@ -898,7 +925,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                shouldWalk = _isGrounded;
+                shouldWalk = hasShoreGroundSupport;
             }
 
             if (shouldWalk != _isWalking)
@@ -918,9 +945,21 @@ namespace Hecton8.Gameplay
             // ═══════════════════════════════════════════════
             if (_jumpRequested)
             {
-                _jumpRequested = false;
-                if (_isWalking && _isGrounded)
+                if (_isWalking && groundedOnShore && _jumpBufferTimer > 0f)
+                {
+                    _jumpRequested = false;
+                    _jumpBufferTimer = 0f;
+                    _shoreGroundGraceTimer = 0f;
+
+                    _velocity = _rb.linearVelocity;
+                    if (_velocity.y < 0f)
+                    {
+                        _velocity.y = 0f;
+                        _rb.linearVelocity = _velocity;
+                    }
+
                     _rb.AddForce(Vector3.up * suit.jumpImpulse, ForceMode.Impulse);
+                }
             }
 
             // ═══════════════════════════════════════════════
@@ -1108,6 +1147,7 @@ namespace Hecton8.Gameplay
             if (isDiving || isDescending) return;
 
             if (_isGrounded) return;
+            if (_shoreGroundGraceTimer > 0f && _waterImmersionRatio < swimTransitionThreshold) return;
 
             float surfaceY = EffectiveWaterSurfaceY;
             float feetY = _rb.position.y;

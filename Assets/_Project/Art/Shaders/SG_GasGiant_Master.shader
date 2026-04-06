@@ -173,9 +173,17 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
         _DistanceUpperHazePeak ("Upper Haze Peak", Range(0.2, 0.75)) = 0.48
         _DistanceUpperHazeEnd ("Upper Haze End", Range(0.55, 1.0)) = 0.92
         _DistanceUpperHazeBlend ("Upper Haze Blend", Range(0, 1)) = 0.18
+        _DistanceUpperHazeVeilBoost ("Upper Haze Veil Boost", Range(0, 1)) = 0.24
+        _DistanceUpperHazeWhiten ("Upper Haze Whiten", Range(0, 1)) = 0.45
         _DistanceUpperHazeDarken ("Upper Haze Darken", Range(0, 1)) = 0.12
         _DistanceUpperHazeDesaturate ("Upper Haze Desaturate", Range(0, 1)) = 0.12
         _DistanceUpperHazeDetailFade ("Upper Haze Detail Fade", Range(0, 1)) = 0.18
+        _DistanceMediumHazeStart ("Medium Haze Start", Range(0.02, 0.28)) = 0.08
+        _DistanceMediumHazePeak ("Medium Haze Peak", Range(0.08, 0.42)) = 0.18
+        _DistanceMediumHazeEnd ("Medium Haze End", Range(0.22, 0.7)) = 0.52
+        _DistanceMediumHazeBlend ("Medium Haze Blend", Range(0, 1)) = 0.45
+        _DistanceMediumHazeVeilBoost ("Medium Haze Veil Boost", Range(0, 1)) = 0.28
+        _DistanceMediumHazeWhiten ("Medium Haze Whiten", Range(0, 1)) = 0.58
         _DistanceBottomArcStart ("Bottom Arc Start", Range(0, 0.08)) = 0.0
         _DistanceBottomArcEnd ("Bottom Arc End", Range(0.02, 0.16)) = 0.06
         _DistanceBottomArcDetailFade ("Bottom Arc Detail Fade", Range(0, 1)) = 0.36
@@ -314,9 +322,17 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half   _DistanceUpperHazePeak;
                 half   _DistanceUpperHazeEnd;
                 half   _DistanceUpperHazeBlend;
+                half   _DistanceUpperHazeVeilBoost;
+                half   _DistanceUpperHazeWhiten;
                 half   _DistanceUpperHazeDarken;
                 half   _DistanceUpperHazeDesaturate;
                 half   _DistanceUpperHazeDetailFade;
+                half   _DistanceMediumHazeStart;
+                half   _DistanceMediumHazePeak;
+                half   _DistanceMediumHazeEnd;
+                half   _DistanceMediumHazeBlend;
+                half   _DistanceMediumHazeVeilBoost;
+                half   _DistanceMediumHazeWhiten;
                 half   _DistanceBottomArcStart;
                 half   _DistanceBottomArcEnd;
                 half   _DistanceBottomArcDetailFade;
@@ -549,29 +565,67 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half3 N = normalize(input.normalWS);
                 half3 V = normalize(input.viewDirWS);
                 half3 skyRay = normalize(-input.viewDirWS);
+                half skyY = saturate(skyRay.y);
                 half celestialOcclusion = SampleCelestialOcclusion(skyRay);
                 half horizonBand = 1.0h - smoothstep(
                     _DistanceHorizonBandStart,
                     _DistanceHorizonBandEnd,
-                    saturate(skyRay.y));
+                    skyY);
                 half broadAirMass = 1.0h - smoothstep(
                     _DistanceAirMassStart,
                     _DistanceAirMassEnd,
-                    saturate(skyRay.y));
-                half upperHazeRise = smoothstep(
+                    skyY);
+                // Upper haze must bridge smoothly from the upper disc into the middle.
+                // If it only lives as a narrow top lobe, the eye reads "fog on top,
+                // clean sticker below". We derive a lower shoulder from the same
+                // inspector range so artist tuning still uses one coherent control set.
+                half upperHazePeak = max(_DistanceUpperHazePeak, _DistanceUpperHazeStart + 0.001h);
+                half upperHazeCeilingStart = max(_DistanceUpperHazeEnd, upperHazePeak + 0.001h);
+                half upperHazeShoulderStart = _DistanceUpperHazeStart * 0.55h;
+                half upperHazeShoulder = smoothstep(
+                    upperHazeShoulderStart,
+                    upperHazePeak,
+                    skyY);
+                half upperHazeShelf = smoothstep(
                     _DistanceUpperHazeStart,
-                    _DistanceUpperHazePeak,
-                    saturate(skyRay.y));
-                half upperHazeFall = 1.0h - smoothstep(
-                    _DistanceUpperHazePeak,
-                    _DistanceUpperHazeEnd,
-                    saturate(skyRay.y));
-                half upperHaze = saturate(upperHazeRise * upperHazeFall);
-                half upperHazeField = saturate(upperHaze * (0.78h + celestialOcclusion * 0.35h));
+                    upperHazePeak,
+                    skyY);
+                half upperHazeCeiling = 1.0h - smoothstep(
+                    upperHazeCeilingStart,
+                    1.0h,
+                    skyY);
+                half upperAirMass = pow(saturate(1.0h - skyY), 0.65h);
+                half upperHaze = saturate(upperHazeShelf * upperHazeCeiling);
+                half middleExtension = saturate(upperHazeShoulder * upperHazeCeiling);
+                half upperHazeField = saturate(
+                    (middleExtension * 0.7h + upperHaze * 0.3h)
+                    * (0.68h + upperAirMass * 0.42h + celestialOcclusion * 0.35h));
+                half mediumHazePeak = max(
+                    _DistanceMediumHazePeak,
+                    _DistanceMediumHazeStart + 0.001h);
+                half mediumHazeEnd = max(
+                    _DistanceMediumHazeEnd,
+                    mediumHazePeak + 0.001h);
+                half mediumHazeRise = smoothstep(
+                    _DistanceMediumHazeStart,
+                    mediumHazePeak,
+                    skyY);
+                half mediumHazeFall = 1.0h - smoothstep(
+                    mediumHazePeak,
+                    mediumHazeEnd,
+                    skyY);
+                half mediumHazeCore = saturate(mediumHazeRise * mediumHazeFall);
+                half mediumHazeLink = saturate(mediumHazeRise * (1.0h - smoothstep(
+                    mediumHazeEnd,
+                    upperHazePeak,
+                    skyY)));
+                half mediumHazeField = saturate(
+                    (mediumHazeCore * 0.72h + mediumHazeLink * 0.28h)
+                    * (0.72h + celestialOcclusion * 0.22h));
                 half bottomArc = 1.0h - smoothstep(
                     _DistanceBottomArcStart,
                     _DistanceBottomArcEnd,
-                    saturate(skyRay.y));
+                    skyY);
                 half bottomArcTight = bottomArc * bottomArc;
                 half limbMask = pow(1.0h - saturate(dot(N, V)), 3.5h);
                 half horizonLimbWeld = saturate(horizonBand * limbMask * 0.58h);
@@ -702,6 +756,8 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 distanceVeil = saturate(distanceVeil
                               + horizonBand * _DistanceHorizonVeilBoost
                               + broadAirMass * _DistanceAirMassVeilBoost
+                              + mediumHazeField * _DistanceMediumHazeVeilBoost
+                              + upperHazeField * _DistanceUpperHazeVeilBoost
                               + bottomArcTight * _DistanceBottomArcVeilBoost
                               + limbWeld * (_DistanceBottomArcVeilBoost * 0.65h)
                               + celestialOcclusion * _CelestialOcclusionVeilBoost);
@@ -743,13 +799,25 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                     skyGradient,
                     _SkyColorHorizon.rgb,
                     0.28h);
+                half3 upperHazeVeilColor = lerp(
+                    airMassVeilColor,
+                    _SkyHazeColor.rgb,
+                    _DistanceUpperHazeWhiten);
+                half3 mediumHazeVeilColor = lerp(
+                    skyGradient,
+                    _SkyHazeColor.rgb,
+                    _DistanceMediumHazeWhiten);
                 distanceVeilColor = lerp(
                     distanceVeilColor,
                     airMassVeilColor,
                     broadAirMass * _DistanceAirMassHazeBlend);
                 distanceVeilColor = lerp(
                     distanceVeilColor,
-                    airMassVeilColor,
+                    mediumHazeVeilColor,
+                    mediumHazeField * _DistanceMediumHazeBlend);
+                distanceVeilColor = lerp(
+                    distanceVeilColor,
+                    upperHazeVeilColor,
                     upperHazeField * _DistanceUpperHazeBlend);
                 distanceVeilColor = lerp(
                     distanceVeilColor,
@@ -990,9 +1058,17 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half   _DistanceUpperHazePeak;
                 half   _DistanceUpperHazeEnd;
                 half   _DistanceUpperHazeBlend;
+                half   _DistanceUpperHazeVeilBoost;
+                half   _DistanceUpperHazeWhiten;
                 half   _DistanceUpperHazeDarken;
                 half   _DistanceUpperHazeDesaturate;
                 half   _DistanceUpperHazeDetailFade;
+                half   _DistanceMediumHazeStart;
+                half   _DistanceMediumHazePeak;
+                half   _DistanceMediumHazeEnd;
+                half   _DistanceMediumHazeBlend;
+                half   _DistanceMediumHazeVeilBoost;
+                half   _DistanceMediumHazeWhiten;
                 half   _DistanceBottomArcStart;
                 half   _DistanceBottomArcEnd;
                 half   _DistanceBottomArcDetailFade;

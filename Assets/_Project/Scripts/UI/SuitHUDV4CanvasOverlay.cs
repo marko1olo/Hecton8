@@ -102,6 +102,7 @@ namespace Hecton8.UI
         private const string RootName = "HUD_V4_CanvasRoot";
 
         private RectTransform _root;
+        private CanvasGroup _rootCanvasGroup;
         private RectTransform _headerRoot;
         private RectTransform _telemetryRoot;
         private RectTransform _gaugeClusterRoot;
@@ -267,8 +268,7 @@ namespace Hecton8.UI
             EditorApplication.update -= EditorTick;
 #endif
 
-            if (_root != null)
-                _root.gameObject.SetActive(false);
+            SetRootVisible(false);
         }
 
 #if UNITY_EDITOR
@@ -473,8 +473,8 @@ namespace Hecton8.UI
                 InvalidateVisualCaches();
             }
 
-            if (_root != null && !_root.gameObject.activeSelf)
-                _root.gameObject.SetActive(true);
+            EnsureRootCanvasGroup();
+            SetRootVisible(true);
 
             if (_appliedLayoutRevision != LayoutRevision)
             {
@@ -594,6 +594,36 @@ namespace Hecton8.UI
             _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), GetEnergyIconSprite());
 
             _layoutBuilt = true;
+        }
+
+        private void EnsureRootCanvasGroup()
+        {
+            if (_root == null)
+                return;
+
+            if (!_root.gameObject.activeSelf)
+                _root.gameObject.SetActive(true);
+
+            if (_rootCanvasGroup == null)
+            {
+                _rootCanvasGroup = _root.GetComponent<CanvasGroup>();
+                if (_rootCanvasGroup == null)
+                    _rootCanvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
+        private void SetRootVisible(bool visible)
+        {
+            if (_root == null)
+                return;
+
+            EnsureRootCanvasGroup();
+            if (_rootCanvasGroup == null)
+                return;
+
+            _rootCanvasGroup.alpha = visible ? 1f : 0f;
+            _rootCanvasGroup.interactable = visible;
+            _rootCanvasGroup.blocksRaycasts = visible;
         }
 
         private Vector2 ResolveTelemetryOffset()

@@ -54,6 +54,7 @@ namespace Hecton8.UI
         private const float CellStep = CellSize + CellGap;
         private const int MaxItems = 48;
         private const int ToolSlotCount = 4;
+        private const int InventoryTabIndex = 0;
 
         // Grid area pixel dimensions
         private static readonly Vector2 GridAreaSize = new Vector2(
@@ -96,6 +97,7 @@ namespace Hecton8.UI
         private RectTransform[] _blockRects;
         private Image[] _blockBgs;
         private Image[] _blockIcons;
+        private CanvasGroup[] _blockCanvasGroups;
         private int _activeBlockCount;
         // Stack count labels
         private TextMeshProUGUI[] _blockCounts;
@@ -103,6 +105,7 @@ namespace Hecton8.UI
         // Drop button
         private RectTransform _dropButtonRoot;
         private Image _dropButtonBg;
+        private CanvasGroup _dropButtonCanvasGroup;
 
         // Highlights
         private RectTransform _hoverRect;
@@ -153,9 +156,11 @@ namespace Hecton8.UI
         private RectTransform _useButtonRoot;
         private Image _useButtonBg;
         private TextMeshProUGUI _useButtonLabel;
+        private CanvasGroup _useButtonCanvasGroup;
         private RectTransform _loadoutAssignRoot;
         private Image[] _loadoutAssignBgs;
         private TextMeshProUGUI[] _loadoutAssignLabels;
+        private CanvasGroup _loadoutAssignCanvasGroup;
 
         // SORT button
         private RectTransform _sortButtonRoot;
@@ -179,6 +184,16 @@ namespace Hecton8.UI
 
         // Placement buffer (pre-allocated)
         private PlayerInventory.ItemPlacement[] _placementBuffer;
+        private bool _gridDirty;
+        private bool _detailsDirty;
+        private bool _toolStripDirty;
+
+        private bool IsTabActive =>
+            isActiveAndEnabled &&
+            gameObject.activeInHierarchy &&
+            PlayerPDA.IsOpen &&
+            playerPDA != null &&
+            playerPDA.ActiveTab == InventoryTabIndex;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -194,6 +209,7 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            MarkAllDirty();
             RefreshAll();
         }
 
@@ -245,6 +261,7 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged += OnToolSlotChanged;
                 toolManager.ToolAssignmentsChanged += OnToolAssignmentsChanged;
             }
+            PDAEvents.OnOpened += OnPdaOpened;
             PDAEvents.OnTabChanged += OnTabChanged;
         }
 
@@ -257,12 +274,39 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged -= OnToolSlotChanged;
                 toolManager.ToolAssignmentsChanged -= OnToolAssignmentsChanged;
             }
+            PDAEvents.OnOpened -= OnPdaOpened;
             PDAEvents.OnTabChanged -= OnTabChanged;
         }
 
-        private void OnInventoryChanged() => RefreshGrid();
-        private void OnToolSlotChanged(int _) => RefreshToolStrip();
-        private void OnToolAssignmentsChanged() => RefreshToolStrip();
+        private void OnInventoryChanged()
+        {
+            _gridDirty = true;
+            _detailsDirty = true;
+            if (IsTabActive)
+                FlushPendingRefresh();
+        }
+
+        private void OnToolSlotChanged(int _)
+        {
+            _toolStripDirty = true;
+            _detailsDirty = true;
+            if (IsTabActive)
+                FlushPendingRefresh();
+        }
+
+        private void OnToolAssignmentsChanged()
+        {
+            _toolStripDirty = true;
+            _detailsDirty = true;
+            if (IsTabActive)
+                FlushPendingRefresh();
+        }
+
+        private void OnPdaOpened(int tab)
+        {
+            if (tab == InventoryTabIndex)
+                FlushPendingRefresh(forceAll: true);
+        }
 
         private void OnTabChanged(int oldTab, int newTab)
         {
@@ -274,6 +318,9 @@ namespace Hecton8.UI
                         _tabButtons[i].SetActive(i == newTab);
                 }
             }
+
+            if (newTab == InventoryTabIndex)
+                FlushPendingRefresh(forceAll: true);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -431,7 +478,7 @@ namespace Hecton8.UI
             _hoverRect.pivot = new Vector2(0f, 1f);
             _hoverRect.anchorMin = new Vector2(0f, 1f);
             _hoverRect.anchorMax = new Vector2(0f, 1f);
-            _hoverRect.gameObject.SetActive(false);
+            _hoverImage.enabled = false;
 
             // Selection highlight
             _selectRect = CreateRect("Select", _gridArea);
@@ -441,12 +488,13 @@ namespace Hecton8.UI
             _selectRect.pivot = new Vector2(0f, 1f);
             _selectRect.anchorMin = new Vector2(0f, 1f);
             _selectRect.anchorMax = new Vector2(0f, 1f);
-            _selectRect.gameObject.SetActive(false);
+            _selectImage.enabled = false;
 
             // Item block pool
             _blockRects = new RectTransform[MaxItems];
             _blockBgs = new Image[MaxItems];
             _blockIcons = new Image[MaxItems];
+            _blockCanvasGroups = new CanvasGroup[MaxItems];
             _blockCounts = new TextMeshProUGUI[MaxItems];
 
             for (int i = 0; i < MaxItems; i++)
@@ -459,6 +507,8 @@ namespace Hecton8.UI
                 Image bbg = br.gameObject.AddComponent<Image>();
                 bbg.color = ItemBlock;
                 bbg.raycastTarget = false;
+                CanvasGroup blockCanvasGroup = EnsureCanvasGroup(br);
+                SetCanvasGroupVisible(blockCanvasGroup, false);
 
                 RectTransform iconRect = CreateRect("Icon", br);
                 Stretch(iconRect, 6f, 6f, 6f, 6f);
@@ -466,6 +516,7 @@ namespace Hecton8.UI
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
                 icon.color = Color.white;
+                icon.enabled = false;
                 // Stack count label (bottom-right corner)
                 TextMeshProUGUI countLbl = CreateText("Count", br, 11f,
                     FontStyles.Bold, TextAlignmentOptions.BottomRight);
@@ -476,14 +527,14 @@ namespace Hecton8.UI
                 countLbl.color = Color.white;
                 countLbl.enableAutoSizing = false;
                 countLbl.raycastTarget = false;
-                countLbl.gameObject.SetActive(false);
-                br.gameObject.SetActive(false);
+                countLbl.enabled = false;
 
                 _blockCounts[i] = countLbl;
 
                 _blockRects[i] = br;
                 _blockBgs[i] = bbg;
                 _blockIcons[i] = icon;
+                _blockCanvasGroups[i] = blockCanvasGroup;
             }
 
             // Pointer overlay (transparent, catches all clicks)
@@ -648,7 +699,8 @@ namespace Hecton8.UI
                 new Color(0.6f, 0.15f, 0.12f, 0.6f),
                 new Color(0.8f, 0.2f, 0.15f, 0.8f));
 
-            _dropButtonRoot.gameObject.SetActive(false);
+            _dropButtonCanvasGroup = EnsureCanvasGroup(_dropButtonRoot);
+            SetCanvasGroupVisible(_dropButtonCanvasGroup, false);
 
             // USE button
             _useButtonRoot = CreateRect("UseButton", _detailsRoot);
@@ -670,7 +722,8 @@ namespace Hecton8.UI
                 new Color(0.1f, 0.4f, 0.35f, 0.6f),
                 new Color(0.15f, 0.55f, 0.48f, 0.8f));
 
-            _useButtonRoot.gameObject.SetActive(false);
+            _useButtonCanvasGroup = EnsureCanvasGroup(_useButtonRoot);
+            SetCanvasGroupVisible(_useButtonCanvasGroup, false);
 
             BuildLoadoutAssignButtons();
         }
@@ -714,7 +767,8 @@ namespace Hecton8.UI
                     new Color(0.12f, 0.25f, 0.28f, 0.82f));
             }
 
-            _loadoutAssignRoot.gameObject.SetActive(false);
+            _loadoutAssignCanvasGroup = EnsureCanvasGroup(_loadoutAssignRoot);
+            SetCanvasGroupVisible(_loadoutAssignCanvasGroup, false);
         }
 
         // ──────────────────────────────────────────────────────────
@@ -776,7 +830,7 @@ namespace Hecton8.UI
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
                 icon.color = Color.white;
-                icon.gameObject.SetActive(false);
+                icon.enabled = false;
                 _toolSlotIcons[i] = icon;
 
                 TextMeshProUGUI keyLbl = CreateText("Key", slot, 9f,
@@ -954,6 +1008,32 @@ namespace Hecton8.UI
             RefreshDetails();
             RefreshToolStrip();
             RefreshWeight();
+            _gridDirty = false;
+            _detailsDirty = false;
+            _toolStripDirty = false;
+        }
+
+        private void MarkAllDirty()
+        {
+            _gridDirty = true;
+            _detailsDirty = true;
+            _toolStripDirty = true;
+        }
+
+        private void FlushPendingRefresh(bool forceAll = false)
+        {
+            if (forceAll || _gridDirty)
+                RefreshGrid();
+
+            if (forceAll || _detailsDirty)
+                RefreshDetails();
+
+            if (forceAll || _toolStripDirty)
+                RefreshToolStrip();
+
+            _gridDirty = false;
+            _detailsDirty = false;
+            _toolStripDirty = false;
         }
 
         private void RefreshGrid()
@@ -989,14 +1069,15 @@ namespace Hecton8.UI
                     bool visible = MatchesFilter(p.item);
                     if (!visible)
                     {
-                        _blockRects[i].gameObject.SetActive(false);
+                        SetCanvasGroupVisible(_blockCanvasGroups[i], false);
+                        SetGraphicVisible(_blockIcons[i], false);
                         if (_blockCounts != null && i < _blockCounts.Length && _blockCounts[i] != null)
-                            _blockCounts[i].gameObject.SetActive(false);
+                            SetGraphicVisible(_blockCounts[i], false);
                         continue;
                     }
 
                     _visiblePlacementCount++;
-                    _blockRects[i].gameObject.SetActive(true);
+                    SetCanvasGroupVisible(_blockCanvasGroups[i], true);
                     _blockRects[i].anchoredPosition = new Vector2(
                         p.x * CellStep,
                         -p.y * CellStep);
@@ -1009,11 +1090,11 @@ namespace Hecton8.UI
                     if (p.item.icon != null)
                     {
                         _blockIcons[i].sprite = p.item.icon;
-                        _blockIcons[i].gameObject.SetActive(true);
+                        SetGraphicVisible(_blockIcons[i], true);
                     }
                     else
                     {
-                        _blockIcons[i].gameObject.SetActive(false);
+                        SetGraphicVisible(_blockIcons[i], false);
                     }
 
                     // Stack count badge
@@ -1021,20 +1102,21 @@ namespace Hecton8.UI
                     {
                         if (p.stackCount > 1)
                         {
-                            _blockCounts[i].gameObject.SetActive(true);
+                            SetGraphicVisible(_blockCounts[i], true);
                             _blockCounts[i].SetText("×{0}", p.stackCount);
                         }
                         else
                         {
-                            _blockCounts[i].gameObject.SetActive(false);
+                            SetGraphicVisible(_blockCounts[i], false);
                         }
                     }
                 }
                 else
                 {
-                    _blockRects[i].gameObject.SetActive(false);
+                    SetCanvasGroupVisible(_blockCanvasGroups[i], false);
+                    SetGraphicVisible(_blockIcons[i], false);
                     if (_blockCounts != null && i < _blockCounts.Length && _blockCounts[i] != null)
-                        _blockCounts[i].gameObject.SetActive(false);
+                        SetGraphicVisible(_blockCounts[i], false);
                 }
             }
 
@@ -1049,21 +1131,21 @@ namespace Hecton8.UI
         {
             bool hasSelection = _selectedItem != null;
 
-            if (_detailIcon != null) _detailIcon.gameObject.SetActive(hasSelection);
-            if (_detailName != null) _detailName.gameObject.SetActive(hasSelection);
-            if (_detailDesc != null) _detailDesc.gameObject.SetActive(hasSelection);
-            if (_detailWeight != null) _detailWeight.gameObject.SetActive(hasSelection);
-            if (_detailSize != null) _detailSize.gameObject.SetActive(hasSelection);
-            if (_detailEffect != null) _detailEffect.gameObject.SetActive(hasSelection);
-            if (_detailStatus != null) _detailStatus.gameObject.SetActive(hasSelection);
-            if (_detailAction != null) _detailAction.gameObject.SetActive(hasSelection);
-            if (_detailHint != null) _detailHint.gameObject.SetActive(!hasSelection);
-            if (_dropButtonRoot != null) _dropButtonRoot.gameObject.SetActive(hasSelection);
-            if (_loadoutAssignRoot != null) _loadoutAssignRoot.gameObject.SetActive(hasSelection && IsSelectedItemAssignableTool());
-            if (_detailIconBoxBg != null) _detailIconBoxBg.gameObject.SetActive(hasSelection);
-            if (_detailNameBg != null) _detailNameBg.gameObject.SetActive(hasSelection);
-            if (_detailStatusBg != null) _detailStatusBg.gameObject.SetActive(hasSelection);
-            if (_detailActionBg != null) _detailActionBg.gameObject.SetActive(hasSelection);
+            SetGraphicVisible(_detailIcon, hasSelection);
+            SetGraphicVisible(_detailName, hasSelection);
+            SetGraphicVisible(_detailDesc, hasSelection);
+            SetGraphicVisible(_detailWeight, hasSelection);
+            SetGraphicVisible(_detailSize, hasSelection);
+            SetGraphicVisible(_detailEffect, hasSelection);
+            SetGraphicVisible(_detailStatus, hasSelection);
+            SetGraphicVisible(_detailAction, hasSelection);
+            SetGraphicVisible(_detailHint, !hasSelection);
+            SetCanvasGroupVisible(_dropButtonCanvasGroup, hasSelection);
+            SetCanvasGroupVisible(_loadoutAssignCanvasGroup, hasSelection && IsSelectedItemAssignableTool());
+            SetGraphicVisible(_detailIconBoxBg, hasSelection);
+            SetGraphicVisible(_detailNameBg, hasSelection);
+            SetGraphicVisible(_detailStatusBg, hasSelection);
+            SetGraphicVisible(_detailActionBg, hasSelection);
 
             if (!hasSelection)
             {
@@ -1071,12 +1153,10 @@ namespace Hecton8.UI
                     _detailHint.text = _currentFilter == InventoryViewFilter.All
                         ? "SELECT AN ITEM"
                         : $"NO {CachedToUpperInvariant(GetFilterLabel(_currentFilter))} ITEM SELECTED";
-                if (_useButtonRoot != null)
-                    _useButtonRoot.gameObject.SetActive(false);
+                SetCanvasGroupVisible(_useButtonCanvasGroup, false);
                 if (_useButtonLabel != null)
                     _useButtonLabel.text = string.Empty;
-                if (_loadoutAssignRoot != null)
-                    _loadoutAssignRoot.gameObject.SetActive(false);
+                SetCanvasGroupVisible(_loadoutAssignCanvasGroup, false);
                 if (_detailEffect != null)
                     _detailEffect.text = string.Empty;
                 if (_detailStatus != null)
@@ -1163,7 +1243,7 @@ namespace Hecton8.UI
 
             if (_selectedItem == null)
             {
-                _useButtonRoot.gameObject.SetActive(false);
+                SetCanvasGroupVisible(_useButtonCanvasGroup, false);
                 if (_useButtonLabel != null)
                     _useButtonLabel.text = string.Empty;
                 return;
@@ -1171,7 +1251,7 @@ namespace Hecton8.UI
 
             string label = GetSelectedPrimaryActionLabel();
             bool visible = !string.IsNullOrEmpty(label);
-            _useButtonRoot.gameObject.SetActive(visible);
+            SetCanvasGroupVisible(_useButtonCanvasGroup, visible);
 
             if (_useButtonLabel != null)
                 _useButtonLabel.text = label;
@@ -1196,14 +1276,14 @@ namespace Hecton8.UI
                     && tool.ToolData != null && tool.ToolData.icon != null)
                 {
                     _toolSlotIcons[i].sprite = tool.ToolData.icon;
-                    _toolSlotIcons[i].gameObject.SetActive(true);
+                    SetGraphicVisible(_toolSlotIcons[i], true);
                     _toolSlotIcons[i].color = toolManager.IsToolAvailableInSlot(i)
                         ? Color.white
                         : new Color(1f, 1f, 1f, 0.25f);
                 }
                 else
                 {
-                    _toolSlotIcons[i].gameObject.SetActive(false);
+                    SetGraphicVisible(_toolSlotIcons[i], false);
                 }
 
                 _toolSlotKeys[i].color = isActive ? A(Primary, 0.9f) : A(DimLow, 0.5f);
@@ -1341,13 +1421,13 @@ namespace Hecton8.UI
                 // Find anchor of this item
                 FindAnchor(cell, gx, gy, out int ax, out int ay);
                 PositionHighlight(_hoverRect, ax, ay, cell.width, cell.height);
-                _hoverRect.gameObject.SetActive(true);
+                _hoverImage.enabled = true;
                 _hoverImage.color = HoverTint;
             }
             else
             {
                 PositionHighlight(_hoverRect, gx, gy, 1, 1);
-                _hoverRect.gameObject.SetActive(true);
+                _hoverImage.enabled = true;
                 _hoverImage.color = A(HoverTint, 0.1f);
             }
         }
@@ -1379,7 +1459,7 @@ namespace Hecton8.UI
                 _selectedY = ay;
                 _selectedItem = cell;
                 PositionHighlight(_selectRect, ax, ay, cell.width, cell.height);
-                _selectRect.gameObject.SetActive(true);
+                _selectImage.enabled = true;
             }
             else
             {
@@ -1493,7 +1573,7 @@ namespace Hecton8.UI
             _hoverX = -1;
             _hoverY = -1;
             if (_hoverRect != null)
-                _hoverRect.gameObject.SetActive(false);
+                _hoverImage.enabled = false;
         }
 
         private void ClearSelection()
@@ -1502,7 +1582,7 @@ namespace Hecton8.UI
             _selectedY = -1;
             _selectedItem = null;
             if (_selectRect != null)
-                _selectRect.gameObject.SetActive(false);
+                _selectImage.enabled = false;
             RefreshDetails();
         }
 
@@ -1512,7 +1592,7 @@ namespace Hecton8.UI
             _selectedY = -1;
             _selectedItem = null;
             if (_selectRect != null)
-                _selectRect.gameObject.SetActive(false);
+                _selectImage.enabled = false;
             RefreshDetails();
         }
 
@@ -1598,6 +1678,36 @@ namespace Hecton8.UI
             r.pivot = new Vector2(0.5f, 0.5f);
             r.anchoredPosition = pos;
             r.sizeDelta = size;
+        }
+
+        private static CanvasGroup EnsureCanvasGroup(RectTransform rect)
+        {
+            if (rect == null)
+                return null;
+
+            CanvasGroup group = rect.GetComponent<CanvasGroup>();
+            if (group == null)
+                group = rect.gameObject.AddComponent<CanvasGroup>();
+
+            return group;
+        }
+
+        private static void SetCanvasGroupVisible(CanvasGroup group, bool visible)
+        {
+            if (group == null)
+                return;
+
+            group.alpha = visible ? 1f : 0f;
+            group.interactable = visible;
+            group.blocksRaycasts = visible;
+        }
+
+        private static void SetGraphicVisible(MaskableGraphic graphic, bool visible)
+        {
+            if (graphic == null || graphic.enabled == visible)
+                return;
+
+            graphic.enabled = visible;
         }
 
         private static Color A(Color c, float a) { c.a = a; return c; }

@@ -35,12 +35,6 @@
 
 ## Next Targets After Builder HUD
 
-- [x] Add a PDA barter/exchange relay backed by real inventory transactions and scan-gated offer availability.
-- [x] Add save/load support for barter offer execution state.
-- [x] Add starter barter content authoring + validation path.
-- [ ] Run live PDA barter trade smoke to verify actual offer execution and post-trade inventory/state updates.
-- [x] Surface barter relay readiness inside PDA Data Log / operations directive.
-- [x] Persist and surface recent barter transaction history in PDA Data Log.
 - [x] Add mission-grade interaction feedback for scanning / salvage / cutter loops.
 - [x] Add persistent scan-log backbone and surface it in PDA Data Log.
 - [x] Add construction category families and module cycling hints inside PDA/Data Log.
@@ -96,9 +90,24 @@
 - [x] Add dedicated PDA Construction tab backed by the real builder/catalog systems.
 - [x] Investigate why `BuilderRuntimeSmokeTester` does not emit expected runtime logs on startup despite valid component state in play mode.
 - [x] Decide next builder UX pass: richer module browser/deploy UX inside the new PDA Construction tab.
-- [ ] Add a direct deploy/preview control path inside `PDAConstructionTab` for pre-field planning without replacing in-world placement.
-- [x] Run one live PDA interaction smoke to verify the new builder handoff button against real `PlayerToolManager` slot state.
-- [x] Run live deploy/recover verification against `ConstructionManager.ModuleCount` once startup-trigger issue is isolated.
+- [x] Add a direct deploy/preview control path inside `PDAConstructionTab` for pre-field planning without replacing in-world placement.
+- [ ] Run one live PDA interaction smoke to verify the new builder handoff button against real `PlayerToolManager` slot state.
+## Performance & Stability Tasks
+
+- [ ] Profile GC/VRAM after recent optimizations (baseline vs after Camera.main cache, Biolum cleanup, PlayerThrusterAudio ITickable).
+- [ ] Audit remaining forbidden patterns: any missed GetComponent, Instantiate in hot paths.
+- [ ] Check HectonUnderwaterVisuals Tick for heavy operations (23 signals - optimize subscriptions).
+- [ ] Optimize VisorHUD RT: reduce to 1024x576, RGB565 if visual OK.
+- [ ] Profile FaunaDirector (25ms -> 11ms bottleneck).
+- [ ] Add Addressables for dynamic asset loading to reduce bundle size.
+
+## New Systems & Features
+
+- [x] Add mission system: quests, objectives, PDA integration.
+- [x] Add environmental hazards: radiation, toxins with survival impact.
+- [x] Add multiplayer prep: basic networking, session management.
+- [ ] Expand world content: more caves, ruins, biomes.
+- [ ] Add advanced tool interactions: tool combos, synergies.- [x] Run live deploy/recover verification against `ConstructionManager.ModuleCount` once startup-trigger issue is isolated.
 - [ ] Remove or gate temporary `BuilderSmoke` / `BuilderDebug` instrumentation once the builder loop stabilisation sprint closes.
 - [ ] If needed later, retry a standalone tool-status HUD only after the shared quickbar-integrated version proves insufficient; do not re-open the broken `ToolStatusOverlay` path blindly.
 - [x] Add an editor-side construction catalog quality gate for `BuildableData` / `ModuleCatalog`.

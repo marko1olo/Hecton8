@@ -11,9 +11,11 @@ Rules:
 
 - Only log real observations from builds, live runs, or manual playtests
 - Do not log abstract ideas here
-- Do not mark anything solved without new evidence
+- Do not mark anything fully solved without new evidence
 - Every item remains `PENDING VERIFICATION` until a new build or user check confirms the fix
 - Player build is the main arbiter, not editor feel
+- Use `[c]` for code-fixed issues that are closed for current coding work but still await build or user confirmation
+- Use `[x]` only after new proof from build, live run, or explicit user confirmation
 
 ## Entry Template
 
@@ -30,7 +32,7 @@ Rules:
 - New Blocker: yes / no
 
 ### [ ] Issue Name
-- Status: [ ] / [~] / [x] / [!] / [?]
+- Status: [ ] / [~] / [c] / [x] / [!] / [?]
 - Need User Check: yes / no
 - Need Build Check: yes / no
 - Need In-World Swim Check: yes / no
@@ -58,39 +60,39 @@ Rules:
 - Main Content Gap: underwater world still lacks full life, caves, ruins, and density layers
 - New Blocker: `yes`
 
-### [!] Surface Transition Hitch
-- Status: [!]
+### [c] Surface Transition Hitch
+- Status: [c]
 - Need User Check: no
 - Need Build Check: yes
 - Need In-World Swim Check: yes
 - Why: this is an immediate feel-breaker during normal play
 - Evidence: user report says the game can hitch when moving from underwater to above water while turning the camera
 - Problems: editor is not reliable as final truth because build is smoother overall
-- Short Comment: must be solved and verified in build
-- Next Step: isolate transition cost across water, atmosphere, camera, sound, and post-processing
+- Short Comment: code fix accepted; closed for current coding work, waiting for build proof
+- Next Step: build swim verification while rotating camera across the surface
 
 - Did: diagnosed live runtime mismatch at the waterline (`Atmosphere=UNDERWATER` while `Visuals=false`, `Movement=false`, `Survival depth≈0`) and replaced it with one shared hysteresis contract based on `HectonPlayerMovement.CurrentDepth` for atmosphere, underwater visuals, and survival.
 - Result: editor runtime no longer splits state at the surface boundary; current readback keeps `Atmosphere=surface`, `Visuals=false`, `Survival depth≈0.0049` on the same near-surface frame instead of contradictory surface/underwater states.
 - Failed: build verification not run yet; could not force a scripted underwater transition sweep because Unity MCP runtime code execution fails on this machine (`mono.exe: filename or extension is too long`).
 - Broke: no compile errors from the patch; console still shows unrelated warnings from `Dynamic Decals` and one generic `Leak Detected : Persistent allocates 8 individual allocations` warning after recompilation.
-- Remaining: real swim test in player build while rotating the camera across the surface; confirm hitch is gone under build timing, not just editor runtime.
+- Remaining: real swim test in player build while rotating the camera across the surface; confirm hitch is gone under build timing, not just editor runtime. Closed for coding unless new evidence reopens it.
 
-### [!] Surface Oxygen Refill Missing
-- Status: [!]
+### [c] Surface Oxygen Refill Missing
+- Status: [c]
 - Need User Check: no
 - Need Build Check: yes
 - Need In-World Swim Check: yes
 - Why: survival trust collapses if surface safety does not work
 - Evidence: user report says oxygen does not refill correctly when surfacing
 - Problems: likely tied to surface-state truth and crossing logic
-- Short Comment: this is a core survival blocker
-- Next Step: bind refill to the shared surface truth contract with hysteresis and fail-safe checks
+- Short Comment: code fix accepted; closed for current coding work, waiting for build proof
+- Next Step: build swim verification with depleted oxygen and natural surfacing
 
 - Did: survival oxygen flow now uses the same shared surface hysteresis contract and explicit surface refill path instead of unconditional underwater-style drain.
 - Result: refill logic is now present in gameplay code and bound to the same surface truth used by atmosphere and visuals; near-surface runtime readback holds the player in surface state instead of flickering underwater.
 - Failed: direct refill proof is still missing because automated oxygen field manipulation could not be executed through Unity MCP on this machine.
 - Broke: no compile errors observed from the survival change.
-- Remaining: lower oxygen during live play, surface naturally, and confirm refill resumes immediately in build and during in-world swim.
+- Remaining: lower oxygen during live play, surface naturally, and confirm refill resumes immediately in build and during in-world swim. Closed for coding unless new evidence reopens it.
 
 ### [!] Pause Cursor Missing / Pause Button Audit Needed
 - Status: [!]
@@ -180,10 +182,141 @@ Rules:
 - Next Step: keep player-build-first discipline for P0 blockers and perceptual quality
 
 - Did: observation recorded
-- Result: promoted into workflow rule
+- Result: promoted into workflow rule. Standalone profiler screenshots from `2026-04-06` reinforce the same conclusion: the player build baseline is materially better than editor play mode, so editor-only spikes must not be treated as final truth without build capture.
 - Failed: nothing
 - Broke: nothing
 - Remaining: maintain this discipline on all future passes
+
+### [~] Standalone Player Profiling Snapshot
+- Status: [~]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: performance work now has real standalone evidence instead of editor noise
+- Evidence: attached standalone player profiler screenshots from `Shinobu - Submerge`
+- Problems: the build console warned that the player was built with uncompiled code changes, so the captured player may lag behind the latest source edits; GPU timings were not available in the screenshots (`GPU --ms`), and current MCP profiler attachment is not active
+- Short Comment: baseline build performance is not a blanket CPU disaster; the real blockers are intermittent spike classes
+- Next Step: re-capture the same build with named scenarios (`idle swim`, `surface crossing`, `PDA/pause open`, `dense world route`) and correlate each spike to a concrete action
+
+- Did: extracted the standalone screenshots into one frame table:
+
+| Frame | CPU Frame | Primary Marker | Read |
+| --- | ---: | --- | --- |
+| `3327` | `14.72 ms` | `WaitForLastPresent ≈ 9.06 ms` | Healthy baseline frame. Real gameplay + render work is much lower than total frame time; a large part is present/frame-pacing wait. |
+| `3676` | `42.18 ms` | `WaitForLastPresent / DXGI.WaitOnSwapChain ≈ 36.14 ms` | Present-bound miss. Main thread total looks scary, but the frame is dominated by waiting, not by script saturation. |
+| `2483` | `22.19 ms` | `Coroutine: MoveNext ≈ 10.01 ms` | Real intermittent CPU hitch. Matches the project pattern where `GameTickManager` still runs a global `SlowTickRoutine()` coroutine. |
+| `3826` | `53.55 ms` | `EventSystem.Update() ≈ 42.89 ms` -> `GameObject.ActivateAwakeRecursively ≈ 23.54 ms` | Real CPU spike from UI activation cascade. `Collect ≈ 2.27 ms` is visible on the same frame. |
+
+- Result: the screenshots separate the frame into two different problems instead of one fake general slowdown:
+  1. Baseline standalone frames are often `present-bound`, not logic-bound.
+  2. The real CPU hitches are intermittent and currently fall into two buckets:
+     - UI activation storms
+     - coroutine / slow-tick spikes
+  3. The current geometry load does not read as the main blocker from these screenshots alone: visible counters sit roughly around `73-117` batches, `~101k-346k` triangles, `~181k-346k` vertices, `~0.73 GB` total memory, `~366 MB` texture memory, `239` materials, `~16.1k-16.6k` objects, and `~82-85 MB` GC used memory.
+  4. The `3676` render-thread screenshot supports the same interpretation: it spends `~40.2 ms` mostly in `Semaphore.WaitForSignal / WaitForGfxCommandsFromMainThread`, which is consistent with a present-bound frame rather than a render-thread work explosion.
+
+- Failed: GPU-side truth is still incomplete because the screenshots do not expose actual GPU frame time, and MCP currently reports profiler disabled; its fallback rendering snapshot is not trustworthy as a live player oracle here.
+- Broke: nothing.
+- Remaining: audit and reduce:
+  - `EventSystem` -> `GameObject.Activate/ActivateAwakeRecursively` spikes
+  - UI `SetActive` cascades in `PlayerPDA`, `PDAInventoryTab`, `PauseMenuController`, and HUD roots
+  - `GameTickManager.SlowTickRoutine()` / coroutine spike ownership
+  - only after that decide whether a broader render reduction pass is even justified
+
+### [c] UI Activation Cascade In PDA / Pause / HUD Roots
+- Status: [c]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: standalone frame `3826` already showed a real CPU spike from `EventSystem.Update() -> GameObject.ActivateAwakeRecursively`
+- Evidence: standalone profiler screenshots from `2026-04-06`
+- Problems: build still has unrelated compile blockers in other files, so a clean end-to-end compile oracle is currently contaminated
+- Short Comment: code pass applied; closed for current implementation work until new build evidence
+- Next Step: capture new standalone profile around `open PDA`, `switch PDA tabs`, `open pause`, and `resume gameplay`
+
+- Did: replaced UI root visibility churn with cached visibility gates in the confirmed hot stack. `PlayerPDA` shell and tabs now use warmed `CanvasGroup` visibility instead of repeated hierarchy wake/sleep; `PDAInventoryTab` now hides item blocks, detail widgets, selection/hover markers, and action roots without `SetActive`; `PDALoadoutTab` action buttons, preset cards, and suggested-action root now use cached `CanvasGroup` visibility; `PDADataLogTab` now defers hidden-tab refresh work instead of refreshing in the background; `PauseMenuController` section switching now uses per-panel `CanvasGroup` visibility; `SuitHUDV4CanvasOverlay` root hide/show no longer toggles the overlay root active state.
+- Result: the known `ActivateAwakeRecursively` path is now attacked at the actual sources instead of at profiler symptoms. The intended runtime effect is fewer UI activation spikes, less activation-adjacent GC on open/switch frames, and lower `EventSystem` cost when toggling PDA/pause/HUD visibility.
+- Failed: standalone before/after capture for `open PDA`, `switch PDA tab`, `open pause`, and `resume gameplay` still has not been re-run, and Unity MCP `execute_code` remains blocked on this machine by `mono.exe: filename or extension is too long`.
+- Broke: the unrelated compile contamination that previously blocked this verification path is now cleared. Current compile readback shows warnings and editor-inspector null spam, but no new `CS` errors from the UI pass.
+- Remaining: rebuild after clearing unrelated compile blockers, then compare standalone profiler frames before/after for `PDA open`, `tab switch`, `pause open`, `pause close`, and `idle gameplay with HUD active`.
+
+### [~] GPU / Present Pacing Track Still Separate
+- Status: [~]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: some scary CPU totals are actually `present wait`, not script overload
+- Evidence: standalone frames `3327` and `3676` are dominated by `WaitForLastPresent / DXGI.WaitOnSwapChain`
+- Problems: current screenshots do not include trustworthy GPU frame times (`GPU --ms`), and MCP profiler attachment is not live
+- Short Comment: do not mix this track with UI or slow-tick CPU hitches
+- Next Step: recapture standalone with real `GPU` timings enabled and scenario labels
+
+- Did: separated the render/present track in the ledger and master plan so future passes do not falsely blame script systems for present-bound frames.
+- Result: the project now has an explicit rule: `WaitForLastPresent / DXGI.WaitOnSwapChain` must be treated as a separate render/pacing investigation, not as proof that gameplay CPU is overloaded.
+- Failed: no new GPU timing evidence yet.
+- Broke: nothing.
+- Remaining: collect player build captures with actual GPU milliseconds before attempting any broad render cuts.
+
+### [~] Fauna SlowTick Spike / `SmallPassiveProxy` Pool Exhaustion
+- Status: [~]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: live runtime log now points to a concrete world offender instead of a vague `SlowTick` bucket
+- Evidence: user console log from `2026-04-06` shows `[TickProfiler] SlowTick spike total=19.64ms ... FaunaDirector=12.05ms` and repeated `[ObjectPoolManager] 'SmallPassiveProxy': Pool exhausted, expanding by 4`
+- Problems: the old fauna pool warmup used one static reserve of `8`, while live runtime streaming settings can increase `_runtimeMaxSpawnsPerTick` far above that after scene start
+- Short Comment: active runtime offender; this is not editor noise
+- Next Step: run the same swim route again and confirm whether `SmallPassiveProxy` expansion warnings stop and whether `FaunaDirector` drops out of the top `SlowTick` offender slot
+
+- Did: cleared the hard runtime crash in `WorldProceduralScatterDirector` by removing the invalid `NativeArray<ScatterCandidate>` use from `CandidateMap`; `ScatterCandidate` contains managed references and cannot live in `NativeArray<T>`. The cache now uses managed arrays in cold/runtime cache space instead of invalid job memory. Then patched `FaunaDirector` pool warmup so reserve targets are derived from live runtime streaming limits instead of a dead constant `8`, and so a later runtime settings refresh can reopen warmup when those limits grow. `SmallPassiveProxy` now gets a stronger reserve target than ordinary fauna prefabs because it is the prefab named in the live expansion warnings.
+- Result: compile state remains clean of `CS` errors after the fauna/scatter pass. The runtime scatter blocker that previously aborted `WorldProceduralScatterDirector.Awake()` is code-fixed, and the fauna director no longer locks its warmup to a one-time static reserve disconnected from live activation limits.
+- Failed: no new in-world proof yet that `SmallPassiveProxy` warnings are gone, because the user has not supplied the next live swim/build log after this patch and `execute_code` remains unusable on this machine.
+- Broke: no new compile errors from `FaunaDirector` or `WorldProceduralScatterDirector`. The remaining console noise is editor selection null spam (`GameObjectInspector` / `SerializedObjectNotCreatableException`) plus unrelated warnings.
+- Remaining: re-run the same underwater route in live game/build, capture the next `TickProfiler` line, and confirm:
+  - `FaunaDirector` no longer dominates the top offender list at the same magnitude
+  - `SmallPassiveProxy` no longer expands on-demand
+  - close-up fish density still looks acceptable after the stronger prewarm
+
+### [~] Camera Turn Overshoot / Reverse Lean After Mouse Stop
+- Status: [~]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: camera feel breaks trust immediately if horizontal look gives a reverse tail after release
+- Evidence: user report from `2026-04-06` says horizontal mouse turns can accumulate and then lean/shift back in the opposite direction after the mouse stops
+- Problems: the live camera juice stack applies spring-driven `swim roll` and `turn sway`, so release-phase overshoot can read like false head inertia instead of believable underwater mass
+- Short Comment: active feel blocker
+- Next Step: user/build verification while doing sharp left-right mouse turns at surface swim and in deeper water
+
+- Did: patched `CameraJuiceProcessor` so the horizontal `swim roll` and `turn sway` tracks cannot spring past their target on release. The old spring behaviour could cross zero and create a visible opposite-direction tail after mouse stop. The new helper clamps to the target and zeroes the spring velocity as soon as an overshoot is detected, instead of letting the effect rebound through the center.
+- Result: the code path now specifically attacks the reported symptom without deleting the whole camera-mass layer. The intended runtime effect is: the camera can still lean and sway during the turn, but when input stops it should settle to neutral instead of kicking to the opposite side.
+- Failed: no user/build proof yet. I have only compile confirmation and code-path inspection, not a new live swim check.
+- Broke: no new compile errors; console remains limited to editor selection null spam.
+- Remaining: verify in live game/build with:
+  - steady left-right mouse sweeps underwater
+  - fast flick then release
+  - same test near the surface where bob + sway stack together
+
+### [~] Surface Jump / Shoreline Climb Reliability
+
+- Status: [~]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Shore Check: yes
+- Why: if the player cannot reliably jump or climb out of shallow shoreline geometry, surface trust collapses even if oxygen/surface-state code is technically correct
+- Evidence: user report from `2026-04-06 15:56` says jumping on the surface does not work and climbing slopes/shoreline edges feels blocked
+- Problems: `HectonPlayerMovement` only accepted jump on the exact `_isWalking && _isGrounded` frame, while shoreline mode could drop out of `walking` on shallow-water/slope transitions and let `surface lock` fight the same movement window
+- Short Comment: active surface locomotion blocker
+- Next Step: user/build verification on shoreline and shallow incline routes
+
+- Did: added a short `jump buffer` and `shore ground grace` in `HectonPlayerMovement` so shallow shoreline movement no longer depends on a single exact grounded frame. The jump request now survives briefly until the next valid shore-support frame, shallow-water walk mode can hold through tiny ground-check gaps, and `surface lock` is suppressed during that shallow grace window instead of pushing against the same movement.
+- Result: the code path now targets the reported symptom directly. Intended runtime effect: pressing jump near the waterline should still fire when the player is in a valid shallow-ground transition, and shoreline climbing should stop dropping into false swim/surface-lock behaviour on tiny contact losses.
+- Failed: no live build proof yet. I have compile/console confirmation only, not a new shoreline traversal test.
+- Broke: no new compile errors detected; console remains limited to editor inspector null spam.
+- Remaining: verify in live game/build with:
+  - jump spam while partially submerged at the shoreline
+  - walking up shallow wet slopes and rock lips
+  - surfacing against an incline and then trying to climb out without losing control
 
 ## Next Build Question
 

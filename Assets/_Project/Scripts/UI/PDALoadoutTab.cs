@@ -66,6 +66,7 @@ namespace Hecton8.UI
         private static readonly string[] _cachedUpperStrings = new string[16];
 
         private bool _built;
+        private bool _refreshDirty;
         private RectTransform[] _slotRoots;
         private Image[] _slotBgs;
         private Image[] _slotAccents;
@@ -76,19 +77,30 @@ namespace Hecton8.UI
         private TextMeshProUGUI[] _slotBodies;
         private RectTransform[] _slotActionRoots;
         private RectTransform[] _slotClearRoots;
+        private CanvasGroup[] _slotActionCanvasGroups;
+        private CanvasGroup[] _slotClearCanvasGroups;
         private Image[] _slotActionBgs;
         private Image[] _slotClearBgs;
         private TextMeshProUGUI[] _slotActionLabels;
         private TextMeshProUGUI[] _slotClearLabels;
         private RectTransform[] _presetRoots;
+        private CanvasGroup[] _presetCanvasGroups;
         private Image[] _presetBgs;
         private TextMeshProUGUI[] _presetTitles;
         private TextMeshProUGUI[] _presetBodies;
         private TextMeshProUGUI _summaryText;
         private TextMeshProUGUI _hintText;
         private RectTransform _recommendedActionRoot;
+        private CanvasGroup _recommendedActionCanvasGroup;
         private Image _recommendedActionBg;
         private TextMeshProUGUI _recommendedActionLabel;
+
+        private bool IsTabActive =>
+            isActiveAndEnabled &&
+            gameObject.activeInHierarchy &&
+            PlayerPDA.IsOpen &&
+            playerPDA != null &&
+            playerPDA.ActiveTab == loadoutTabIndex;
 
         private void Awake()
         {
@@ -116,6 +128,7 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            _refreshDirty = true;
             RefreshAll();
         }
 
@@ -231,19 +244,38 @@ namespace Hecton8.UI
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
         }
 
-        private void HandleInventoryChanged() => RefreshAll();
-        private void HandleActiveSlotChanged(int _) => RefreshSlots();
-        private void HandleToolAssignmentsChanged() => RefreshAll();
+        private void HandleInventoryChanged()
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
+
+        private void HandleActiveSlotChanged(int _)
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
+
+        private void HandleToolAssignmentsChanged()
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
 
         private void HandlePdaOpened(int tab)
         {
             if (tab != loadoutTabIndex) return;
+            _refreshDirty = true;
             RefreshAll();
         }
 
         private void HandlePdaTabChanged(int _, int newTab)
         {
             if (newTab != loadoutTabIndex) return;
+            _refreshDirty = true;
             RefreshAll();
         }
 
@@ -284,11 +316,14 @@ namespace Hecton8.UI
             _slotBodies = new TextMeshProUGUI[4];
             _slotActionRoots = new RectTransform[4];
             _slotClearRoots = new RectTransform[4];
+            _slotActionCanvasGroups = new CanvasGroup[4];
+            _slotClearCanvasGroups = new CanvasGroup[4];
             _slotActionBgs = new Image[4];
             _slotClearBgs = new Image[4];
             _slotActionLabels = new TextMeshProUGUI[4];
             _slotClearLabels = new TextMeshProUGUI[4];
             _presetRoots = new RectTransform[loadoutPresets != null ? loadoutPresets.Length : 0];
+            _presetCanvasGroups = new CanvasGroup[_presetRoots.Length];
             _presetBgs = new Image[_presetRoots.Length];
             _presetTitles = new TextMeshProUGUI[_presetRoots.Length];
             _presetBodies = new TextMeshProUGUI[_presetRoots.Length];
@@ -396,6 +431,7 @@ namespace Hecton8.UI
                 Stretch(actionLabel.rectTransform, 0f, 0f, 0f, 0f);
                 actionLabel.color = Primary;
                 _slotActionRoots[i] = actionRoot;
+                _slotActionCanvasGroups[i] = EnsureCanvasGroup(actionRoot);
                 _slotActionBgs[i] = actionBg;
                 _slotActionLabels[i] = actionLabel;
                 PDALoadoutSlotActionButton actionButton = actionRoot.gameObject.AddComponent<PDALoadoutSlotActionButton>();
@@ -417,6 +453,7 @@ namespace Hecton8.UI
                 clearLabel.color = new Color(1f, 0.82f, 0.78f, 0.94f);
                 clearLabel.SetText("CLEAR");
                 _slotClearRoots[i] = clearRoot;
+                _slotClearCanvasGroups[i] = EnsureCanvasGroup(clearRoot);
                 _slotClearBgs[i] = clearBg;
                 _slotClearLabels[i] = clearLabel;
                 PDALoadoutSlotActionButton clearButton = clearRoot.gameObject.AddComponent<PDALoadoutSlotActionButton>();
@@ -445,12 +482,14 @@ namespace Hecton8.UI
             Stretch(_recommendedActionLabel.rectTransform, 0f, 0f, 0f, 0f);
             _recommendedActionLabel.color = Primary;
             _recommendedActionLabel.SetText("APPLY SUGGESTED");
+            _recommendedActionCanvasGroup = EnsureCanvasGroup(_recommendedActionRoot);
             PDALoadoutRecommendedButton recommendedButton = _recommendedActionRoot.gameObject.AddComponent<PDALoadoutRecommendedButton>();
             recommendedButton.Init(
                 this,
                 _recommendedActionBg,
                 new Color(0.08f, 0.18f, 0.2f, 0.82f),
                 new Color(0.14f, 0.28f, 0.3f, 0.94f));
+            SetCanvasGroupVisible(_recommendedActionCanvasGroup, false);
 
             _hintText = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Italic, TextAlignmentOptions.Right);
             Anchor(_hintText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
@@ -463,10 +502,14 @@ namespace Hecton8.UI
 
         private void RefreshAll()
         {
+            if (!IsTabActive && !_refreshDirty)
+                return;
+
             EnsureBuilt();
             RefreshSlots();
             RefreshPresets();
             RefreshSummary();
+            _refreshDirty = false;
         }
 
         private void RefreshSlots()
@@ -502,13 +545,13 @@ namespace Hecton8.UI
                     _slotStatuses[i].SetText("EMPTY");
                     _slotBodies[i].SetText("No held-tool prefab is mapped to this quick slot.\nAssign a tool from Inventory to arm the slot.");
                     if (_slotActionLabels[i] != null) _slotActionLabels[i].SetText("UNASSIGNED");
-                    if (_slotActionRoots[i] != null) _slotActionRoots[i].gameObject.SetActive(false);
-                    if (_slotClearRoots[i] != null) _slotClearRoots[i].gameObject.SetActive(false);
+                    SetCanvasGroupVisible(_slotActionCanvasGroups[i], false);
+                    SetCanvasGroupVisible(_slotClearCanvasGroups[i], false);
                     continue;
                 }
 
-                if (_slotActionRoots[i] != null) _slotActionRoots[i].gameObject.SetActive(true);
-                if (_slotClearRoots[i] != null) _slotClearRoots[i].gameObject.SetActive(true);
+                SetCanvasGroupVisible(_slotActionCanvasGroups[i], true);
+                SetCanvasGroupVisible(_slotClearCanvasGroups[i], true);
 
                 _slotTitles[i].SetText(item != null ? CachedToUpperInvariant(item.itemName) : CachedToUpperInvariant(prefab.name));
 
@@ -693,8 +736,7 @@ namespace Hecton8.UI
                 bool hasPreset = preset != null;
                 bool matched = hasPreset && MatchesPreset(preset);
 
-                if (_presetRoots[i] != null)
-                    _presetRoots[i].gameObject.SetActive(hasPreset);
+                SetCanvasGroupVisible(_presetCanvasGroups[i], hasPreset);
 
                 if (!hasPreset)
                     continue;
@@ -890,6 +932,7 @@ namespace Hecton8.UI
                     new Color(0.12f, 0.22f, 0.24f, 0.92f));
 
                 _presetRoots[i] = root;
+                _presetCanvasGroups[i] = EnsureCanvasGroup(root);
                 _presetBgs[i] = bg;
                 _presetTitles[i] = title;
                 _presetBodies[i] = body;
@@ -926,11 +969,11 @@ namespace Hecton8.UI
             int presetIndex = GetRecommendedPresetIndex();
             if (presetIndex < 0)
             {
-                _recommendedActionRoot.gameObject.SetActive(false);
+                SetCanvasGroupVisible(_recommendedActionCanvasGroup, false);
                 return;
             }
 
-            _recommendedActionRoot.gameObject.SetActive(true);
+            SetCanvasGroupVisible(_recommendedActionCanvasGroup, true);
 
             ToolLoadoutPreset preset = loadoutPresets != null && presetIndex < loadoutPresets.Length
                 ? loadoutPresets[presetIndex]
@@ -1031,6 +1074,28 @@ namespace Hecton8.UI
             if (image == null)
                 image = target.AddComponent<Image>();
             return image;
+        }
+
+        private static CanvasGroup EnsureCanvasGroup(RectTransform target)
+        {
+            if (target == null)
+                return null;
+
+            CanvasGroup group = target.GetComponent<CanvasGroup>();
+            if (group == null)
+                group = target.gameObject.AddComponent<CanvasGroup>();
+
+            return group;
+        }
+
+        private static void SetCanvasGroupVisible(CanvasGroup group, bool visible)
+        {
+            if (group == null)
+                return;
+
+            group.alpha = visible ? 1f : 0f;
+            group.interactable = visible;
+            group.blocksRaycasts = visible;
         }
 
         private static RectTransform CreateRect(Transform parent, string name)

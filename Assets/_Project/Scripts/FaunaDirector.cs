@@ -56,7 +56,11 @@ namespace Hecton8.AI
     [DefaultExecutionOrder(-5000)]
     public sealed class FaunaDirector : MonoBehaviour, ISlowTickable
     {
-        private const int CreaturePoolWarmupCount = 8;
+        private const int CreaturePoolMinimumReserve = 8;
+        private const int CreaturePoolBurstReserveMultiplier = 2;
+        private const int SmallPassiveProxyMinimumReserve = 24;
+        private const int SmallPassiveProxyBurstReserveMultiplier = 3;
+        private const string SmallPassiveProxyPrefabName = "SmallPassiveProxy";
         private const float PlayerResolveRetryInterval = 1f;
         private const float RuntimeSettingsRefreshInterval = 5f;
 
@@ -291,6 +295,8 @@ namespace Hecton8.AI
         /// </summary>
         private bool _pressureEnabled = true;
         private bool _creaturePoolsWarmed;
+        private int _defaultCreaturePoolWarmupReserve;
+        private int _smallPassiveCreaturePoolWarmupReserve;
         private readonly HashSet<GameObject> _warmupPrefabs = new HashSet<GameObject>(128); // COLD ALLOC: dedupe fauna pool warmup prefabs across biome datasets
 
         // ══════════════════════════════════════════════════════════
@@ -1184,14 +1190,50 @@ namespace Hecton8.AI
 
             foreach (GameObject warmupPrefab in _warmupPrefabs)
             {
+                int requiredReserve = GetRequiredCreaturePoolWarmupReserve(warmupPrefab);
                 int availableCount = pool.GetAvailableCount(warmupPrefab);
-                if (availableCount >= CreaturePoolWarmupCount)
+                if (availableCount >= requiredReserve)
                     continue;
 
-                pool.Warmup(warmupPrefab, CreaturePoolWarmupCount - availableCount);
+                pool.Warmup(warmupPrefab, requiredReserve - availableCount);
             }
 
             _creaturePoolsWarmed = true;
+        }
+
+        private int GetRequiredCreaturePoolWarmupReserve(GameObject prefab)
+        {
+            return IsSmallPassiveProxyPrefab(prefab)
+                ? _smallPassiveCreaturePoolWarmupReserve
+                : _defaultCreaturePoolWarmupReserve;
+        }
+
+        private static bool IsSmallPassiveProxyPrefab(GameObject prefab)
+        {
+            return prefab != null && prefab.name == SmallPassiveProxyPrefabName;
+        }
+
+        private void RefreshCreaturePoolWarmupTargets()
+        {
+            int maxAllowedReserve = Mathf.Max(CreaturePoolMinimumReserve, _runtimeGlobalMaxCount);
+            int defaultReserve = Mathf.Clamp(
+                Mathf.Max(CreaturePoolMinimumReserve, _runtimeMaxSpawnsPerTick * CreaturePoolBurstReserveMultiplier),
+                CreaturePoolMinimumReserve,
+                maxAllowedReserve);
+            int smallPassiveReserve = Mathf.Clamp(
+                Mathf.Max(defaultReserve, Mathf.Max(SmallPassiveProxyMinimumReserve, _runtimeMaxSpawnsPerTick * SmallPassiveProxyBurstReserveMultiplier)),
+                CreaturePoolMinimumReserve,
+                maxAllowedReserve);
+
+            if (defaultReserve == _defaultCreaturePoolWarmupReserve &&
+                smallPassiveReserve == _smallPassiveCreaturePoolWarmupReserve)
+            {
+                return;
+            }
+
+            _defaultCreaturePoolWarmupReserve = defaultReserve;
+            _smallPassiveCreaturePoolWarmupReserve = smallPassiveReserve;
+            _creaturePoolsWarmed = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1684,6 +1726,7 @@ namespace Hecton8.AI
             _runtimeKillDistanceSqr = _runtimeKillDistance * _runtimeKillDistance;
             _runtimeLargeThreatKillDistanceSqr = _runtimeLargeThreatKillDistance * _runtimeLargeThreatKillDistance;
             _killDistanceSqr = _runtimeKillDistanceSqr;
+            RefreshCreaturePoolWarmupTargets();
         }
 
         private static int EstimateChunkCoverage(float radius, float chunkSize)

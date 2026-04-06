@@ -633,7 +633,7 @@ namespace Hecton8.Gameplay
             _targetRoll = math.clamp(strafeContrib + mouseContrib, -maxTotal, maxTotal);
             _targetRoll *= rollScale;
 
-            _currentRoll = SpringDamp(_currentRoll, _targetRoll,
+            _currentRoll = SpringDampNoOvershoot(_currentRoll, _targetRoll,
                 ref _rollVelocity, suit.rollSpringOmega, dt);
 
             _output.rollOffset += _currentRoll;
@@ -665,7 +665,7 @@ namespace Hecton8.Gameplay
             float targetX = -input.yawDelta * TURN_SWAY_SENSITIVITY * scale;
             targetX = math.clamp(targetX, -TURN_SWAY_MAX_OFFSET, TURN_SWAY_MAX_OFFSET);
 
-            _turnSwayX = SpringDamp(_turnSwayX, targetX,
+            _turnSwayX = SpringDampNoOvershoot(_turnSwayX, targetX,
                 ref _turnSwayXVelocity, TURN_SWAY_OMEGA, dt);
 
             _output.localPositionOffset.x += _turnSwayX;
@@ -680,7 +680,7 @@ namespace Hecton8.Gameplay
             _targetRoll = 0f;
             if (math.abs(_currentRoll) > 0.01f || math.abs(_rollVelocity) > 0.01f)
             {
-                _currentRoll = SpringDamp(_currentRoll, 0f, ref _rollVelocity, suit.rollSpringOmega, dt);
+                _currentRoll = SpringDampNoOvershoot(_currentRoll, 0f, ref _rollVelocity, suit.rollSpringOmega, dt);
                 _output.rollOffset += _currentRoll;
             }
             else { _currentRoll = 0f; _rollVelocity = 0f; }
@@ -701,7 +701,7 @@ namespace Hecton8.Gameplay
 
             if (math.abs(_turnSwayX) > 0.0001f || math.abs(_turnSwayXVelocity) > 0.0001f)
             {
-                _turnSwayX = SpringDamp(_turnSwayX, 0f, ref _turnSwayXVelocity, TURN_SWAY_OMEGA, dt);
+                _turnSwayX = SpringDampNoOvershoot(_turnSwayX, 0f, ref _turnSwayXVelocity, TURN_SWAY_OMEGA, dt);
                 _output.localPositionOffset.x += _turnSwayX;
             }
             else { _turnSwayX = 0f; _turnSwayXVelocity = 0f; }
@@ -750,6 +750,21 @@ namespace Hecton8.Gameplay
             float n2 = 1f + omega * dt;
             velocity = n1 / (n2 * n2);
             return current + velocity * dt;
+        }
+
+        private static float SpringDampNoOvershoot(float current, float target, ref float velocity, float omega, float dt)
+        {
+            float next = SpringDamp(current, target, ref velocity, omega, dt);
+            float prevDelta = current - target;
+            float nextDelta = next - target;
+
+            if ((prevDelta > 0f && nextDelta < 0f) || (prevDelta < 0f && nextDelta > 0f))
+            {
+                velocity = 0f;
+                return target;
+            }
+
+            return next;
         }
     }
 }

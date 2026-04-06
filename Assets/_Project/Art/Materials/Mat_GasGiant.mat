@@ -27,7 +27,7 @@ Material:
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 2
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
@@ -91,23 +91,31 @@ Material:
     - _DistanceAirMassVeilBoost: 0.2
     - _DistanceBottomArcDesaturate: 0.22
     - _DistanceBottomArcDetailFade: 0.36
-    - _DistanceBottomArcEnd: 0.1585
-    - _DistanceBottomArcHazeBlend: 0.742
-    - _DistanceBottomArcStart: 0
+    - _DistanceBottomArcEnd: 0.16
+    - _DistanceBottomArcHazeBlend: 0.748
+    - _DistanceBottomArcStart: 0.08
     - _DistanceBottomArcVeilBoost: 0.38
     - _DistanceHorizonBandEnd: 0.35
     - _DistanceHorizonBandStart: 0.01
     - _DistanceHorizonDesaturate: 0
     - _DistanceHorizonDetailFade: 0
     - _DistanceHorizonVeilBoost: 0.28
+    - _DistanceMediumHazeBlend: 1
+    - _DistanceMediumHazeEnd: 0.415
+    - _DistanceMediumHazePeak: 0.1
+    - _DistanceMediumHazeStart: 0.02
+    - _DistanceMediumHazeVeilBoost: 0.34
+    - _DistanceMediumHazeWhiten: 0.7
     - _DistanceNightDarken: 0.56
-    - _DistanceUpperHazeBlend: 0.18
-    - _DistanceUpperHazeDarken: 0.12
-    - _DistanceUpperHazeDesaturate: 0.12
-    - _DistanceUpperHazeDetailFade: 0.18
-    - _DistanceUpperHazeEnd: 0.92
-    - _DistanceUpperHazePeak: 0.48
-    - _DistanceUpperHazeStart: 0.18
+    - _DistanceUpperHazeBlend: 0.82
+    - _DistanceUpperHazeDarken: 0
+    - _DistanceUpperHazeDesaturate: 0
+    - _DistanceUpperHazeDetailFade: 0
+    - _DistanceUpperHazeEnd: 0.98
+    - _DistanceUpperHazePeak: 0.738
+    - _DistanceUpperHazeStart: 0.24
+    - _DistanceUpperHazeVeilBoost: 0.361
+    - _DistanceUpperHazeWhiten: 0.552
     - _DistanceVeilHorizonStrength: 1.55
     - _DistanceVeilPower: 0.95
     - _DistanceVeilRimStrength: 0.7

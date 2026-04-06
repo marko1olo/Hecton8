@@ -52,6 +52,7 @@ Status legend:
 
 - `[ ]` not started
 - `[~]` in progress
+- `[c]` code-fixed; closed for active coding, waiting for build/user proof
 - `[x]` verified and confirmed
 - `[!]` blocker
 - `[?]` user feedback required
@@ -60,7 +61,7 @@ Task card standard for all active tasks:
 
 ```md
 ### [ ] Task Name
-- Status: [ ] / [~] / [x] / [!] / [?]
+- Status: [ ] / [~] / [c] / [x] / [!] / [?]
 - Need User Check: yes / no
 - Need Build Check: yes / no
 - Need In-World Swim Check: yes / no
@@ -86,6 +87,8 @@ Rules:
 - Visual and feel tasks always require `Need User Check: yes`
 - Performance and render tasks always require `Need Build Check: yes`
 - Ecology, caves, ruins, world-fill tasks always require `Need In-World Swim Check: yes`
+- Use `[c]` when code is patched and the issue is closed for current implementation work, but the result still lacks final build or user confirmation
+- Use `[x]` only when a new build, playtest, or explicit user confirmation proves the fix
 - If the same task is reopened 2-3 times without perceptual gain, record what failed and switch approach
 - Do not reopen old paths without new evidence
 
@@ -177,8 +180,8 @@ Confirmed build-truth from `2026-04-05`:
 
 ## P0 Build Truth Track
 
-- [!] Fix hitch on underwater -> above-water transition with camera rotation
-- [!] Fix surface oxygen refill
+- [c] Fix hitch on underwater -> above-water transition with camera rotation
+- [c] Fix surface oxygen refill
 - [!] Bring pause menu to a stable product flow
 - [!] Audit all pause buttons
 - [!] Separate gas giant and cloud/haze stack so the giant reads as distant
@@ -188,9 +191,9 @@ Confirmed build-truth from `2026-04-05`:
 
 P0 rules:
 
-- do not close in editor
-- close only in build
-- verify by direct user/build evidence
+- use `[c]` when coding is complete and the task is closed for current implementation work
+- use `[x]` only after direct build or user evidence
+- do not promote `[c]` to `[x]` in editor only
 
 ## Product Shell / Bootstrap / Menu / Pause
 
@@ -244,6 +247,23 @@ P0 rules:
   - caves/geology
   - far silhouettes
 - [ ] Keep explicit watch on render textures and camera stack because those are already confirmed MX350 headroom risks
+- [ ] Read build captures honestly:
+  - separate `WaitForLastPresent / DXGI.WaitOnSwapChain` from real CPU work
+  - do not call a frame `CPU-bound` if the main thread is mostly waiting on present
+- [ ] Current standalone profile truth:
+  - baseline build frames can be materially better than editor and often look `present-bound`, not script-saturated
+  - current true spike classes are:
+    - `EventSystem -> GameObject.ActivateAwakeRecursively`
+    - coroutine / `SlowTickRoutine()` style spikes
+- [ ] Current confirmed live-log offender:
+  - `FaunaDirector` can dominate `SlowTick` and trigger `ObjectPoolManager` on-demand expansion for `SmallPassiveProxy`
+  - fauna pool warmup must track live `_runtimeMaxSpawnsPerTick` and reopen after runtime streaming settings grow; a static reserve fixed at scene start is invalid
+- [ ] Current UI visibility rule:
+  - `PlayerPDA`, pause sections, and HUD roots must prefer warmed `CanvasGroup` visibility over hierarchy `SetActive` churn
+  - hidden PDA tabs must defer refresh work instead of continuing full refresh on gameplay events
+- [ ] Keep `GPU / present pacing` as a separate investigation track:
+  - do not blame scripts for frames dominated by `WaitForLastPresent / DXGI.WaitOnSwapChain`
+  - do not cut broad render quality until real standalone `GPU ms` capture exists
 - [ ] Every beautiful layer must justify its perceptual gain in build
 
 ## Terrain / MapMagic / LOD / Streaming
@@ -281,10 +301,12 @@ P0 rules:
 - [ ] Bring `FloatingOrigin` in as a required large-world architecture pass
 - [ ] Check surface/island terrain layering separately from underwater floor
 - [ ] Check steep cliffs, terrain walls, island edges, shoreline seams, and surfacing near walls
+  - shoreline locomotion must survive shallow-water ground flicker; no fake swim flip when climbing out
+  - jump input at the waterline must be buffered across the shallow ground-transition window, not lost on one bad grounded frame
 
 ## Water / Surface / Oxygen / Transition
 
-- [ ] Localize and remove the surface transition hitch
+- [c] Localize and remove the surface transition hitch
 - [ ] Verify switching of:
   - underwater visuals
   - atmosphere profile
@@ -294,8 +316,12 @@ P0 rules:
   - post process
   - oxygen logic
   - camera feel
+- [ ] Keep camera inertia honest:
+  - no reverse-direction tail after mouse stop
+  - underwater mass can exist, but it must settle toward neutral without overshooting through center
+  - verify separately near surface and in deeper swim because bob + sway stacking can hide the true offender
 - [ ] Bring one water-level truth across survival, fluid, visuals, and world bridge
-- [ ] Fix surface oxygen refill with hysteresis and fail-safe logic
+- [c] Fix surface oxygen refill with hysteresis and fail-safe logic
 - [ ] Verify edge cases:
   - fast ascent
   - slow ascent
@@ -352,6 +378,26 @@ P0 rules:
   - visible cloud art layer separated from low-frequency celestial transmittance layer
   - gas giant readability must survive every weather state
   - surface brightness, haze, and cloud quality must stay MX350-safe
+- [ ] Build a visual preset / A-B review system for water / sky / gas giant:
+  - preserve the current look as `baseline_00`
+  - allow fast switching between multiple scene looks in `Game`
+  - preset scope must include:
+    - water
+    - sky
+    - gas giant
+    - fog / ambient / global palette
+  - presets must restore one coherent scene state, not only one material
+  - current source-of-truth baseline is recorded in `SCENE_SKY_NOTES.md`
+- [ ] Build a visual preset / A-B review system for water / sky / gas giant:
+  - preserve the current look as `baseline_00`
+  - allow fast switching between multiple scene looks in `Game`
+  - preset scope must include:
+    - water
+    - sky
+    - gas giant
+    - fog / ambient / global palette
+  - presets must restore one coherent scene state, not only one material
+  - current source-of-truth baseline is recorded in `SCENE_SKY_NOTES.md`
 - [ ] Only close the task after user-check:
   - `does it now feel distant?`
   - note from this pass:
@@ -927,6 +973,7 @@ P0 rules:
 - [ ] Menu, pause, loading, return, and quit all work without broken input
 - [ ] Surface transition is no longer irritating
 - [ ] Surface oxygen refill is stable
+  - treat this as reopened for trust if new build evidence says surface escape or shoreline exit still feels broken, even when refill code exists
 - [ ] Gas giant reads as a distant layer
 - [ ] Terrain in build looks sharp and convincing in close-up
 - [ ] The world contains caves, arches, overhangs, ruins, biolum pockets, route hints, support pockets, clutter, trash, microfauna, passive fauna, predators, and major threats

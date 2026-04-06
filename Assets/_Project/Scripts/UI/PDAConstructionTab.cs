@@ -60,6 +60,9 @@ namespace Hecton8.UI
         private RectTransform _fieldActionRoot;
         private Image _fieldActionBg;
         private TextMeshProUGUI _fieldActionLabel;
+        private RectTransform _deployActionRoot;
+        private Image _deployActionBg;
+        private TextMeshProUGUI _deployActionLabel;
         private RectTransform[] _cardRoots;
         private Image[] _cardBgs;
         private TextMeshProUGUI[] _cardTitles;
@@ -337,6 +340,29 @@ namespace Hecton8.UI
             fieldButton.Init(
                 this,
                 _fieldActionBg,
+                new Color(0.08f, 0.16f, 0.18f, 0.58f),
+                new Color(0.12f, 0.24f, 0.28f, 0.82f));
+
+            _deployActionRoot = CreateRect(left, "DeployAction");
+            _deployActionRoot.anchorMin = new Vector2(1f, 0f);
+            _deployActionRoot.anchorMax = new Vector2(1f, 0f);
+            _deployActionRoot.pivot = new Vector2(1f, 0f);
+            _deployActionRoot.anchoredPosition = new Vector2(-326f, 14f);
+            _deployActionRoot.sizeDelta = new Vector2(146f, 28f);
+
+            _deployActionBg = EnsureImage(_deployActionRoot.gameObject);
+            _deployActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
+            _deployActionBg.raycastTarget = true;
+
+            _deployActionLabel = CreateText(_deployActionRoot, "DeployActionLabel", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_deployActionLabel.rectTransform);
+            _deployActionLabel.color = Dim;
+            _deployActionLabel.SetText("DEPLOY NOW");
+
+            PDAConstructionDeployActionButton deployButton = _deployActionRoot.gameObject.AddComponent<PDAConstructionDeployActionButton>();
+            deployButton.Init(
+                this,
+                _deployActionBg,
                 new Color(0.08f, 0.16f, 0.18f, 0.58f),
                 new Color(0.12f, 0.24f, 0.28f, 0.82f));
 
@@ -717,6 +743,43 @@ namespace Hecton8.UI
             toolManager.SwitchToSlot(builderSlot);
             playerPDA?.Close();
             hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - FIELD PREVIEW [S{builderSlot + 1}]");
+        }
+
+        internal void InvokeDeployAction()
+        {
+            if (toolManager == null || playerBuilder == null)
+            {
+                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - SYSTEM OFFLINE");
+                return;
+            }
+
+            if (!(toolManager.CurrentTool is Hecton8.Gameplay.BuilderTool))
+            {
+                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - BUILDER NOT ACTIVE");
+                return;
+            }
+
+            if (playerBuilder.ActiveBuildable == null)
+            {
+                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - NO MODULE SELECTED");
+                return;
+            }
+
+            if (!playerBuilder.CanPlaceActiveBuildable)
+            {
+                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - CANNOT PLACE HERE");
+                return;
+            }
+
+            if (playerBuilder.TryDeployActiveBuildableFromPreview())
+            {
+                hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - {CachedToUpperInvariant(playerBuilder.ActiveBuildable.moduleName)} DEPLOYED");
+                RefreshAll(true);
+            }
+            else
+            {
+                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - DEPLOY FAILED");
+            }
         }
 
         private bool HasCost(BuildableData data)
@@ -1305,6 +1368,46 @@ namespace Hecton8.UI
         public void OnPointerClick(PointerEventData eventData)
         {
             _tab?.InvokeFieldAction();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (_bg != null)
+                _bg.color = _hover;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (_bg != null)
+                _bg.color = _normal;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    internal sealed class PDAConstructionDeployActionButton : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+    {
+        private PDAConstructionTab _tab;
+        private Image _bg;
+        private Color _normal;
+        private Color _hover;
+
+        public void Init(PDAConstructionTab tab, Image bg, Color normal, Color hover)
+        {
+            _tab = tab;
+            _bg = bg;
+            _normal = normal;
+            _hover = hover;
+        }
+
+        public void SetVisualState(Color normal, Color hover)
+        {
+            _normal = normal;
+            _hover = hover;
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            _tab?.InvokeDeployAction();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
