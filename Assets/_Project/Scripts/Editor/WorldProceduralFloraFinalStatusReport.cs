@@ -122,6 +122,9 @@ namespace Hecton8.EditorTools
                 if (prefabStatus.HasValidLodCascade)
                     status.PrefabsWithValidLodCascadeCount++;
 
+                if (prefabStatus.MeetsFidelityFloor)
+                    status.PrefabsMeetingFidelityFloorCount++;
+
                 if (prefabStatus.BudgetTriangleCount > status.MaxBudgetTriangles)
                     status.MaxBudgetTriangles = prefabStatus.BudgetTriangleCount;
 
@@ -135,6 +138,7 @@ namespace Hecton8.EditorTools
                 WorldProceduralFloraFinalBudgetCatalog.Budget budget = WorldProceduralFloraFinalBudgetCatalog.Resolve(status.FamilyId);
                 status.Prefabs.Sort(ComparePrefabStatus);
                 status.TriangleBudgetLimit = budget.MaxTriangles;
+                status.TriangleFidelityFloor = budget.MinRecommendedTriangles;
                 status.RendererBudgetLimit = budget.MaxRenderers;
                 status.ExpectedLinkedRealFinalCount = status.AuthoredPrefabCount > 0
                     ? status.AuthoredPrefabCount
@@ -178,6 +182,8 @@ namespace Hecton8.EditorTools
                     metadata.HasCustomWeight,
                     metadata.HasCustomScaleRange,
                     BuildLodTriangleCascade(lodGroups),
+                    WorldProceduralFloraFinalBudgetCatalog.Resolve(familyId).MaxTriangles,
+                    WorldProceduralFloraFinalBudgetCatalog.Resolve(familyId).MinRecommendedTriangles,
                     EvaluateMaterialState(familyId, renderers),
                     EvaluateRendererState(renderers),
                     metadata.HasError,
@@ -472,8 +478,8 @@ namespace Hecton8.EditorTools
             builder.AppendLine();
             builder.AppendLine("## Summary");
             builder.AppendLine();
-            builder.AppendLine("| Family | Coverage | Expected Linked | Actual Linked | Linked Placeholder | Max Budget Triangles | Triangle Headroom | Max Renderers | LOD Prefabs | Material Ready | LOD Cascade |");
-            builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+            builder.AppendLine("| Family | Coverage | Expected Linked | Actual Linked | Linked Placeholder | Max Budget Triangles | Triangle Headroom | Max Renderers | LOD Prefabs | Material Ready | LOD Cascade | Fidelity Floor |");
+            builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
 
             IReadOnlyList<string> supportedFamilies = WorldProceduralFloraFinalVariantAuthoring.GetSupportedFloraFamiliesInOrder();
             for (int familyIndex = 0; familyIndex < supportedFamilies.Count; familyIndex++)
@@ -496,6 +502,7 @@ namespace Hecton8.EditorTools
                     .Append(" | ").Append(status.PrefabsWithLodCount).Append('/').Append(status.Prefabs.Count)
                     .Append(" | ").Append(status.MaterialReadyPrefabCount).Append('/').Append(status.Prefabs.Count)
                     .Append(" | ").Append(status.PrefabsWithValidLodCascadeCount).Append('/').Append(status.Prefabs.Count)
+                    .Append(" | ").Append(status.PrefabsMeetingFidelityFloorCount).Append('/').Append(status.Prefabs.Count)
                     .AppendLine(" |");
             }
 
@@ -520,10 +527,12 @@ namespace Hecton8.EditorTools
                 builder.Append("- Max budget triangles: `").Append(status.MaxBudgetTriangles).Append("`").AppendLine();
                 builder.Append("- Triangle budget limit: `").Append(status.TriangleBudgetLimit).Append("`").AppendLine();
                 builder.Append("- Triangle headroom: `").Append(status.TriangleBudgetLimit - status.MaxBudgetTriangles).Append("`").AppendLine();
+                builder.Append("- Minimum recommended triangles: `").Append(status.TriangleFidelityFloor).Append("`").AppendLine();
                 builder.Append("- Max renderer count: `").Append(status.MaxRendererCount).Append("`").AppendLine();
                 builder.Append("- Renderer budget limit: `").Append(status.RendererBudgetLimit).Append("`").AppendLine();
                 builder.Append("- Material-ready prefabs: `").Append(status.MaterialReadyPrefabCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
                 builder.Append("- Strict LOD cascade prefabs: `").Append(status.PrefabsWithValidLodCascadeCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
+                builder.Append("- Prefabs meeting fidelity floor: `").Append(status.PrefabsMeetingFidelityFloorCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
 
                 if (status.Prefabs.Count == 0)
                 {
@@ -551,6 +560,7 @@ namespace Hecton8.EditorTools
                     builder.Append(" | lodTriangles=").Append(FormatLodTriangleCascade(prefab.LodTriangleCascade));
                     builder.Append(" | material=").Append(prefab.MaterialStateLabel);
                     builder.Append(" | renderState=").Append(prefab.RendererStateLabel);
+                    builder.Append(" | fidelity=").Append(prefab.FidelityLabel);
                     builder.Append(" | path=`").Append(prefab.Path).AppendLine("`");
                     if (prefab.HasMetadataError)
                         builder.Append("    - metadataError=`").Append(prefab.MetadataError).AppendLine("`");
@@ -590,9 +600,11 @@ namespace Hecton8.EditorTools
             public int MaxBudgetTriangles { get; set; }
             public int MaxRendererCount { get; set; }
             public int TriangleBudgetLimit { get; set; }
+            public int TriangleFidelityFloor { get; set; }
             public int RendererBudgetLimit { get; set; }
             public int MaterialReadyPrefabCount { get; set; }
             public int PrefabsWithValidLodCascadeCount { get; set; }
+            public int PrefabsMeetingFidelityFloorCount { get; set; }
             public List<PrefabStatus> Prefabs { get; }
         }
 
@@ -613,6 +625,8 @@ namespace Hecton8.EditorTools
                 bool hasCustomWeight,
                 bool hasCustomScaleRange,
                 int[] lodTriangleCascade,
+                int triangleBudgetLimit,
+                int triangleFidelityFloor,
                 MaterialState materialState,
                 RendererState rendererState,
                 bool hasMetadataError,
@@ -632,11 +646,15 @@ namespace Hecton8.EditorTools
                 HasCustomWeight = hasCustomWeight;
                 HasCustomScaleRange = hasCustomScaleRange;
                 LodTriangleCascade = lodTriangleCascade ?? Array.Empty<int>();
+                TriangleBudgetLimit = triangleBudgetLimit;
+                TriangleFidelityFloor = triangleFidelityFloor;
+                MeetsFidelityFloor = budgetTriangleCount >= triangleFidelityFloor;
                 HasValidLodCascade = HasStrictLodCascade(LodTriangleCascade);
                 MaterialStateOk = materialState.IsOk;
                 MaterialStateLabel = materialState.Label ?? string.Empty;
                 RendererStateOk = rendererState.IsOk;
                 RendererStateLabel = rendererState.Label ?? string.Empty;
+                FidelityLabel = MeetsFidelityFloor ? "ok" : "underbuilt";
                 HasMetadataError = hasMetadataError;
                 MetadataError = metadataError ?? string.Empty;
             }
@@ -655,11 +673,15 @@ namespace Hecton8.EditorTools
             public bool HasCustomWeight { get; }
             public bool HasCustomScaleRange { get; }
             public int[] LodTriangleCascade { get; }
+            public int TriangleBudgetLimit { get; }
+            public int TriangleFidelityFloor { get; }
+            public bool MeetsFidelityFloor { get; }
             public bool HasValidLodCascade { get; }
             public bool MaterialStateOk { get; }
             public string MaterialStateLabel { get; }
             public bool RendererStateOk { get; }
             public string RendererStateLabel { get; }
+            public string FidelityLabel { get; }
             public bool HasMetadataError { get; }
             public string MetadataError { get; }
         }

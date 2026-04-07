@@ -325,6 +325,9 @@ namespace Hecton8.EditorTools
             if (triangleCount > budget.MaxTriangles)
                 issues.Add($"{prefabPath}: triangle count {triangleCount} exceeds budget {budget.MaxTriangles} for {familyId}.");
 
+            if (triangleCount < budget.MinRecommendedTriangles)
+                warnings.Add($"{prefabPath}: triangle count {triangleCount} is below recommended fidelity floor {budget.MinRecommendedTriangles} for {familyId}; silhouette may read as underbuilt.");
+
             if (triangleCount >= budget.LodRecommendedTriangleThreshold && lodGroups.Length == 0)
                 issues.Add($"{prefabPath}: triangle count {triangleCount} suggests LODGroup, but none is present.");
 

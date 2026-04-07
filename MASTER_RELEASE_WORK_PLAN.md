@@ -363,7 +363,8 @@ P0 rules:
 - [ ] Current confirmed live-log offender:
   - `FaunaDirector` can dominate `SlowTick` and trigger `ObjectPoolManager` on-demand expansion for `SmallPassiveProxy`
   - fauna pool warmup must track live `_runtimeMaxSpawnsPerTick` and reopen after runtime streaming settings grow; a static reserve fixed at scene start is invalid
-  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, now reuse one per-rule preferred-family index instead of rescanning the same preferred-family array across multiple score helpers, now reuse one per-cell pattern score context instead of repeating the same pattern-category guards through multiple runtime score helpers, now consolidate the four pattern-dependent score helper calls for one `pattern + runtimeRule` pair into a single combined helper, now consolidate the three heat-scale helper calls for one `pattern + runtimeRule + depth` tuple into one combined helper, and now skip redundant preferred-biome / preferred-zone rescans for accepted rules by replacing post-gate `GetFamilyAffinityBonus(...)` with `GetAcceptedFamilyAffinityBonus(...)`, but scatter startup truth is still `PENDING VERIFICATION`
+  - the main `SlowTick` fauna selector must also respect live pool availability, otherwise strict `allowExpand:false` still burns spawn attempts on prefabs that are already dry even after warmup hardening
+  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, now reuse one per-rule preferred-family index instead of rescanning the same preferred-family array across multiple score helpers, now reuse one per-cell pattern score context instead of repeating the same pattern-category guards through multiple runtime score helpers, now consolidate the four pattern-dependent score helper calls for one `pattern + runtimeRule` pair into a single combined helper, now consolidate the three heat-scale helper calls for one `pattern + runtimeRule + depth` tuple into one combined helper, now skip redundant preferred-biome / preferred-zone rescans for accepted rules by replacing post-gate `GetFamilyAffinityBonus(...)` with `GetAcceptedFamilyAffinityBonus(...)`, now defer full pooled `ScatterPlacement` construction until after residency pass via `ScatterCandidatePreview`, now defer full score math plus preview rotation until after candidates survive gate/residency rejection, now reuse cell-local geology score results for repeated `GeologyProfile` hits inside the same sampled cell, now resolve the spawn rescue minimum once per cell instead of once per spawn rule, now precompute accepted-family affinity plus geology score scale into `ScatterRuntimeRuleEntry` instead of recalculating those same per-rule constants inside the live score loop, now reject dead non-rescue candidates on `gate` before expensive budget checks, and now replace better rescue candidates in `CandidateMap` by index instead of rescanning the same map twice, but scatter startup truth is still `PENDING VERIFICATION`
 - [ ] Current UI visibility rule:
   - `PlayerPDA`, pause sections, and HUD roots must prefer warmed `CanvasGroup` visibility over hierarchy `SetActive` churn
   - hidden PDA tabs must defer refresh work instead of continuing full refresh on gameplay events
@@ -1254,6 +1255,39 @@ P0 rules:
   - coral still does not read as photoreal authored final art
   - low/massive silhouettes are more coherent
   - branching coral may now be too cheap and needs a direct beauty pass before it is trusted
+- Follow-up control layer now exists on paper and in code:
+  - flora family budgets now include a minimum recommended triangle floor
+  - validator is expected to warn on underbuilt silhouettes, not only on overbudget meshes
+  - status report is expected to expose fidelity state family-by-family after the next successful Unity compile
+- Status:
+  - `PENDING VERIFICATION`
+  - missing proof: in-world beauty pass, profiler/build evidence, authored coral finals
+
+## Flora Wave 5 Addendum â€” 2026-04-08 Underbuilt Coral Follow-Up
+
+- Verified target:
+  - the fidelity-floor validator exposed two real underbuilt starter variants:
+    - `family.coral.low__bed`
+    - `family.coral.plate__ledge`
+- Implemented only in the correct owner layer:
+  - `WorldProceduralCoralMeshBuilder.BuildLow()` now adds extra mound lobes and a shallow top plate for `__bed`
+  - `WorldProceduralCoralMeshBuilder.BuildPlate()` now adds a secondary overhang plate and underside buttress for `__ledge`
+- Verified Unity passes on `2026-04-08`:
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+  - `Generate Procedural Flora Final Status Report`
+- Verified outcomes:
+  - `GEN_family_coral_low__bed` triangles `824/472 -> 1658/1006`
+  - `GEN_family_coral_plate__ledge` triangles `176/144 -> 340/292`
+  - both variants now clear the fidelity floor
+  - validator warning count drops back from `9` to `7`
+  - remaining warnings are only the known `generated-only, no authored photoreal finals yet` warnings
+- Verified visual readback:
+  - `Assets/Screenshots/coral_low_bed_stage_v2.png`
+  - `Assets/Screenshots/coral_plate_ledge_stage_v2.png`
+- Honest verdict:
+  - starter coral readability and form connection improved materially
+  - this is still not authored photoreal coral art
 - Status:
   - `PENDING VERIFICATION`
   - missing proof: in-world beauty pass, profiler/build evidence, authored coral finals

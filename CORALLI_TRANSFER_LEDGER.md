@@ -341,3 +341,47 @@ Verification: `PENDING VERIFICATION`
   - `family.coral.branching` became much cheaper (`380` max budget triangles), which is good for MX350 but now needs a dedicated beauty readback so we do not ship visibly artificial branch tubes under the label of “improved coral”
 - Status: `PENDING VERIFICATION`
   - next correct step: authored photoreal coral finals family-by-family, plus in-world beauty/playtest/profiler proof
+- Immediate next pass focused specifically on `family.coral.branching`:
+  - `BuildBranching()` in `WorldProceduralCoralMeshBuilder` was expanded with:
+    - more primary branches
+    - organic tip clusters
+    - thicker knuckles at branch joints
+    - fan cross-links so `__fan` reads more like a reef fan and less like isolated tubes
+  - supporting self-check layer added:
+    - family budgets now include a minimum recommended triangle floor
+    - validator warns on underbuilt silhouettes
+    - status report now exposes fidelity state explicitly instead of only reporting headroom
+  - reason:
+    - the previous optimization pass drove `family.coral.branching` down to `380` max budget triangles
+    - that solved cost, but created a real beauty risk
+  - current verification state:
+    - local script validation on the coral builder passes
+    - live Unity regeneration is blocked by unrelated compile errors in `WorldProceduralScatterDirector.cs`:
+      - `ScatterCandidatePreview` missing at lines `2233` and `2254`
+  - status: `PENDING VERIFICATION`
+- Underbuilt coral variants are now closed on verified Unity passes:
+  - `family.coral.low__bed`
+    - previous problem: `824` triangles and visibly smooth flat-blob read in prefab-stage preview
+    - geometry fix: added extra mound lobes plus a shallow top plate in `BuildLow()`
+    - verified result: `1658/1006` triangles and fidelity state `ok`
+    - screenshot evidence: `Assets/Screenshots/coral_low_bed_stage_v2.png`
+  - `family.coral.plate__ledge`
+    - previous problem: `176` triangles and empty thin-disc read in prefab-stage preview
+    - geometry fix: added secondary overhang plate plus underside buttress in `BuildPlate()`
+    - verified result: `340/292` triangles and fidelity state `ok`
+    - screenshot evidence: `Assets/Screenshots/coral_plate_ledge_stage_v2.png`
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified family-level effect:
+    - `family.coral.low` max budget triangles `1488 -> 1658`
+    - `family.coral.plate` max budget triangles `312 -> 340`
+    - both coral families now report `Fidelity Floor 3/3`
+  - blocker correction:
+    - the earlier `ScatterCandidatePreview` compile failure did not reproduce on the clean domain refresh
+    - it is no longer treated as the active coral blocker
+  - remaining honest gap:
+    - all coral finals are still `a0/g3`
+    - generated starters are cleaner and safer, but still not authored photoreal coral finals
+  - status: `PENDING VERIFICATION`

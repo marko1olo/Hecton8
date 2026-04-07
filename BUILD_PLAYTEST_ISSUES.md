@@ -359,6 +359,13 @@ Rules:
   13. New scatter CPU addendum: one runtime rule was still issuing four separate pattern-dependent score helper calls on the same `resolvedPattern` (`GetPatternAffinityBonus`, `GetClusterAccentPatternBonus`, `GetSpawnFamilyPatternBonus`, `GetPatternContextBonus`). The score branch now consolidates that into one `GetCombinedPatternScoreBonus(...)` call so the same pattern/runtimeRule pair is evaluated once instead of through four separate helper dispatches.
   14. New scatter CPU addendum: the heat branch was still multiplying three separate scale helpers for the same `pattern + runtimeRule + depth` tuple (`GetPatternHeatScale`, `GetLandmarkSoftWaterHeatScale`, `GetDepthDomainScale`). That path now goes through one `GetCombinedHeatScale(...)` helper so the same tuple is resolved once instead of via three separate helper dispatches.
   15. New scatter CPU addendum: after `MatchesScatter(...)` had already proven preferred-biome and preferred-zone acceptance, the score branch still rescanned `PreferredBiomeFamilies` and `PreferredZoneKinds` in `GetFamilyAffinityBonus(fieldSample, runtimeRule)`. The post-gate score path now uses `GetAcceptedFamilyAffinityBonus(...)`, which reuses that already-proven truth and removes the duplicate array scans from accepted rules.
+  16. New scatter CPU addendum: `BuildCandidate(...)` was still doing full variant / scale / chunk / macro / pooled-placement work before residency reject. The startup scatter loop now builds a lightweight `ScatterCandidatePreview` first, checks residency from preview `position + streamingLayer`, and only constructs the full pooled `ScatterPlacement` after the candidate is already inside the residency envelope.
+  17. New scatter CPU addendum: even after that residency split, the loop was still computing full score math before `gate` and `residency` rejection, and preview build still spent `Quaternion.Euler(...)` on candidates that died before placement. The score branch now runs only after residency pass, and preview rotation is deferred to full `BuildCandidate(...)`, so geology/pattern/biome score work and rotation math no longer run for dead candidates.
+  18. New scatter CPU addendum: within one sampled cell, the score branch was still re-running `WorldGenerativeGeologyProfile.EvaluatePlacementFitness(...)` for every accepted rule that shared the same `GeologyProfile`. The loop now uses a small cell-local profile cache, so repeated geology profiles on the same sampled cell reuse the same computed bonus instead of paying the same geology fitness solve again.
+  19. New scatter CPU addendum: `ShouldTrackRuntimeSpawnRescue(...)` was recalculating `ResolveMinimumSpawnPlacements(pattern, biomeProfile)` for every spawn-family rule in the same sampled cell. That spawn minimum is now resolved once per cell and reused through the rule loop instead of re-deriving the same `pattern + biomeProfile` spawn floor for every spawn rule.
+  20. New scatter CPU addendum: two score constants in the inner loop were still static per runtime rule: accepted family affinity and geology composition scale. Those are now precomputed once in `PrepareRuntimeRuleBuffer()` and stored on `ScatterRuntimeRuleEntry`, so accepted rules no longer redo the same preferred-family bonus derivation and geology weight clamp on every sampled-cell evaluation.
+  21. New scatter CPU addendum: `gate` and `needsRescueTracking` were still being evaluated after `HasPatternLayerGlobalBudget(...)`, `HasLayerBudget(...)`, and `CanAcceptPatternAccentBudget(...)`. The rule loop now rejects dead non-rescue candidates on `gate` before those budget checks, so cells no longer pay that budget work for candidates that cannot survive the random gate anyway.
+  22. New scatter CPU addendum: `TrackWindowCandidate(..., ref CandidateMap)` was scanning the same `CandidateMap` twice on replace (`TryGetValue` then `TryAdd`). The hot rescue-map path now uses an index lookup and replaces in-place, removing the duplicate linear scan for better-candidate replacement.
 
 - Failed: GPU-side truth is still incomplete because the screenshots do not expose actual GPU frame time, and MCP currently reports profiler disabled; its fallback rendering snapshot is not trustworthy as a live player oracle here.
 - Broke: nothing.
@@ -415,6 +422,7 @@ Rules:
 
 - Did: cleared the hard runtime crash in `WorldProceduralScatterDirector` by removing the invalid `NativeArray<ScatterCandidate>` use from `CandidateMap`; `ScatterCandidate` contains managed references and cannot live in `NativeArray<T>`. The cache now uses managed arrays in cold/runtime cache space instead of invalid job memory. Then patched `FaunaDirector` pool warmup so reserve targets are derived from live runtime streaming limits instead of a dead constant `8`, and so a later runtime settings refresh can reopen warmup when those limits grow. `SmallPassiveProxy` now gets a stronger reserve target than ordinary fauna prefabs because it is the prefab named in the live expansion warnings.
 - Did Addendum: patched both gameplay spawn sites in `FaunaDirector` to call `ObjectPoolManager.Spawn(..., allowExpand:false)` instead of the default expanding path. This closes the remaining zero-GC hole where `SlowTick` could still trigger runtime `Instantiate` via pool expansion when reserve was temporarily exhausted.
+- Did Addendum: the main `SlowTick` selector in `FaunaDirector` still ignored pool availability and could keep choosing prefabs that had already run dry, wasting spawn attempts on strict `allowExpand:false` paths. `TrySelectResolvedEntry(...)` now receives `ObjectPoolManager`, filters out entries with `GetAvailableCount(prefab) <= 0`, and falls back only among entries that are both under `maxAlive` and actually spawnable from the current pool state.
 - Result: compile state remains clean of `CS` errors after the fauna/scatter pass. The runtime scatter blocker that previously aborted `WorldProceduralScatterDirector.Awake()` is code-fixed, and the fauna director no longer locks its warmup to a one-time static reserve disconnected from live activation limits.
 - Result Addendum: fauna is now fail-soft under pool pressure. If reserve is insufficient, the director skips that spawn attempt instead of injecting pool expansion and allocation spikes into gameplay.
 - Failed: no new in-world proof yet that `SmallPassiveProxy` warnings are gone, because the user has not supplied the next live swim/build log after this patch and `execute_code` remains unusable on this machine.
@@ -505,3 +513,23 @@ After each new build, ask one short question:
   - this was a temporary stale compile-truth incident during the coral parity pass
 - Short Comment: not reproduced on the next forced compile; no longer the active blocker for flora verification
 - Next Step: only reopen if the same `WorldProceduralScatterDirector` compile errors recur on a fresh forced compile
+
+### [c] Compile Oracle Blocked Again By Parallel Scatter Work
+- Status: [c]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: flora branching beauty regeneration was temporarily blocked by a fresh compile failure in the giant scatter owner, but that blocker did not reproduce on the next clean refresh
+- Evidence:
+  - transient console on `2026-04-08`:
+    - `Assets\\_Project\\Scripts\\WorldProceduralScatterDirector.cs(2233,17): error CS0246: The type or namespace name 'ScatterCandidatePreview' could not be found`
+    - `Assets\\_Project\\Scripts\\WorldProceduralScatterDirector.cs(2254,16): error CS0246: The type or namespace name 'ScatterCandidatePreview' could not be found`
+  - follow-up clean-domain verification:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+- Problems:
+  - no active flora-side compile blocker remains from this incident
+  - the remaining blockers are now content quality and missing in-world/build evidence, not compile truth
+- Short Comment: resolved as stale/parallel compile contamination; do not treat this as the current flora blocker unless it reproduces again on a fresh refresh
+- Next Step: reopen only if the same scatter compile failure reproduces on a clean compile

@@ -277,6 +277,7 @@ namespace Hecton8.AI
         /// </summary>
         private Dictionary<FaunaBiomeData, int[]> _countsPerTypePerBiome;
         private Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]> _resolvedEntriesPerBiome;
+        private Dictionary<FaunaBiomeData, int[]> _availablePoolCountsPerBiome;
         private Dictionary<FaunaBiomeData, Dictionary<GameObject, int>> _prefabTypeIndexLookup;
         private float _nextPlayerResolveTime = float.NegativeInfinity;
         private float _nextRuntimeSettingsRefreshTime = float.NegativeInfinity;
@@ -568,6 +569,19 @@ namespace Hecton8.AI
             {
                 return 0;
             }
+            if (_availablePoolCountsPerBiome == null ||
+                !_availablePoolCountsPerBiome.TryGetValue(biomeData, out int[] availablePoolCounts) ||
+                availablePoolCounts == null ||
+                availablePoolCounts.Length < resolvedEntries.Length)
+            {
+                return 0;
+            }
+
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                GameObject prefab = resolvedEntries[i].prefab;
+                availablePoolCounts[i] = prefab != null ? pool.GetAvailableCount(prefab) : 0;
+            }
 
             int spawned = 0;
 
@@ -581,7 +595,7 @@ namespace Hecton8.AI
                 if (biomeAlive >= biomeData.biomeMaxCreatures)
                     break;
 
-                if (!TrySelectResolvedEntry(resolvedEntries, creatureTypeCounts, out ResolvedFaunaEntry selectedEntry))
+                if (!TrySelectResolvedEntry(resolvedEntries, creatureTypeCounts, availablePoolCounts, out ResolvedFaunaEntry selectedEntry))
                 {
                     // Все типы на лимите — прекращаем
                     break;
@@ -681,6 +695,8 @@ namespace Hecton8.AI
 
                 if (typeIndex >= 0 && typeIndex < creatureTypeCounts.Length)
                     creatureTypeCounts[typeIndex]++;
+                if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
+                    availablePoolCounts[typeIndex]--;
 
                 IncrementChunkCount(spawnChunk);
                 if (isLargeThreat)
@@ -884,13 +900,15 @@ namespace Hecton8.AI
         private static bool TrySelectResolvedEntry(
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
+            ObjectPoolManager pool,
             out ResolvedFaunaEntry selectedEntry)
         {
             selectedEntry = default;
-            if (resolvedEntries == null || resolvedEntries.Length == 0)
+            if (resolvedEntries == null || resolvedEntries.Length == 0 || pool == null)
                 return false;
 
             float availableWeight = 0f;
+            int fallbackIndex = -1;
             for (int i = 0; i < resolvedEntries.Length; i++)
             {
                 ResolvedFaunaEntry entry = resolvedEntries[i];
@@ -906,7 +924,11 @@ namespace Hecton8.AI
                     continue;
                 }
 
+                if (pool.GetAvailableCount(entry.prefab) <= 0)
+                    continue;
+
                 availableWeight += entry.spawnWeight;
+                fallbackIndex = i;
             }
 
             if (availableWeight <= 0f)
@@ -928,6 +950,9 @@ namespace Hecton8.AI
                     continue;
                 }
 
+                if (pool.GetAvailableCount(entry.prefab) <= 0)
+                    continue;
+
                 roll -= entry.spawnWeight;
                 if (roll <= 0f)
                 {
@@ -936,22 +961,9 @@ namespace Hecton8.AI
                 }
             }
 
-            for (int i = resolvedEntries.Length - 1; i >= 0; i--)
+            if (fallbackIndex >= 0)
             {
-                ResolvedFaunaEntry entry = resolvedEntries[i];
-                if (entry.prefab == null || entry.spawnWeight <= 0f)
-                    continue;
-
-                int typeIndex = entry.creatureTypeIndex;
-                if (currentCounts != null &&
-                    typeIndex >= 0 &&
-                    typeIndex < currentCounts.Length &&
-                    currentCounts[typeIndex] >= entry.maxAlive)
-                {
-                    continue;
-                }
-
-                selectedEntry = entry;
+                selectedEntry = resolvedEntries[fallbackIndex];
                 return true;
             }
 
@@ -985,6 +997,7 @@ namespace Hecton8.AI
             if (_biomeLookup != null &&
                 _countsPerTypePerBiome != null &&
                 _resolvedEntriesPerBiome != null &&
+                _availablePoolCountsPerBiome != null &&
                 _prefabTypeIndexLookup != null &&
                 _countsPerChunk != null &&
                 _largeThreatCountsPerMacroZone != null &&
@@ -998,6 +1011,7 @@ namespace Hecton8.AI
             _biomeLookup ??= new Dictionary<int, FaunaBiomeData>(capacity);
             _countsPerTypePerBiome ??= new Dictionary<FaunaBiomeData, int[]>(capacity);
             _resolvedEntriesPerBiome ??= new Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]>(capacity);
+            _availablePoolCountsPerBiome ??= new Dictionary<FaunaBiomeData, int[]>(capacity);
             _prefabTypeIndexLookup ??= new Dictionary<FaunaBiomeData, Dictionary<GameObject, int>>(capacity);
             _countsPerChunk ??= new Dictionary<long, int>(32);
             _largeThreatCountsPerMacroZone ??= new Dictionary<long, int>(16);
@@ -1005,6 +1019,7 @@ namespace Hecton8.AI
             _biomeLookup.Clear();
             _countsPerTypePerBiome.Clear();
             _resolvedEntriesPerBiome.Clear();
+            _availablePoolCountsPerBiome.Clear();
             _prefabTypeIndexLookup.Clear();
 
             int maxBiomeIndex = 0;
@@ -1023,6 +1038,7 @@ namespace Hecton8.AI
                     int creatureCount = data.possibleCreatures != null ? data.possibleCreatures.Count : 0;
                     _countsPerTypePerBiome[data] = new int[creatureCount];
                     ResolvedFaunaEntry[] resolvedEntries = new ResolvedFaunaEntry[creatureCount];
+                    _availablePoolCountsPerBiome[data] = new int[creatureCount];
 
                     Dictionary<GameObject, int> prefabLookup = new Dictionary<GameObject, int>(Mathf.Max(1, creatureCount));
                     if (data.possibleCreatures != null)

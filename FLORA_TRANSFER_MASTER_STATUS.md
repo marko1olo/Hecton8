@@ -481,3 +481,52 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
   - `family.coral.branching` is now very cheap and needs a dedicated beauty pass to confirm it did not oversimplify into visibly artificial tubes
 - Status: `PENDING VERIFICATION`
   - missing proof: in-world beauty check, profiler/build evidence, authored photoreal coral finals
+- Follow-up branching beauty pass was started immediately after this owner split:
+  - `WorldProceduralCoralMeshBuilder.BuildBranching()` was strengthened with:
+    - denser primary branch distribution
+    - tip clusters
+    - branch knuckles at connection points
+    - cross-links for `family.coral.branching__fan`
+  - goal: avoid visibly artificial tube silhouettes after the previous heavy triangle reduction
+  - new self-check layer added in editor validation/reporting:
+    - `WorldProceduralFloraFinalBudgetCatalog` now carries a `MinRecommendedTriangles` fidelity floor per flora family
+    - `WorldProceduralFloraFinalVariantValidator` now warns when a baked final falls below that floor, even if it is still well inside the hard max budget
+    - `WorldProceduralFloraFinalStatusReport` now exposes family-level and prefab-level fidelity state so “cheap but ugly” can no longer hide behind a pure perf pass
+  - local script validation:
+    - `WorldProceduralCoralMeshBuilder.cs` validates cleanly
+  - current blocker:
+    - live Unity regeneration is blocked by external compile errors in `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`
+    - current console:
+      - `CS0246: ScatterCandidatePreview could not be found` at lines `2233` and `2254`
+  - ownership verdict:
+    - this blocker is outside the flora editor owner and sits in the giant runtime scatter file already being edited in parallel
+    - flora geometry pass should not “fix around” that owner while another agent is actively inside it
+  - status: `PENDING VERIFICATION`
+- Underbuilt coral follow-up is now verified on a clean Unity domain:
+  - `WorldProceduralCoralMeshBuilder.BuildLow()` now gives `family_coral_low__bed` extra mound lobes plus a shallow top plate so the silhouette stops reading as a single smooth blob
+  - `WorldProceduralCoralMeshBuilder.BuildPlate()` now gives `family_coral_plate__ledge` an additional overhang plate and underside buttress so it stops reading as an empty thin disc
+  - updated spec budgets:
+    - `family_coral_low__bed` estimated vertices `1200 -> 1800`
+    - `family_coral_plate__ledge` estimated vertices `1100 -> 1500`
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified report deltas:
+    - `family.coral.low` max budget triangles `1488 -> 1658`
+    - `GEN_family_coral_low__bed` triangles `824/472 -> 1658/1006`
+    - `family.coral.plate` max budget triangles `312 -> 340`
+    - `GEN_family_coral_plate__ledge` triangles `176/144 -> 340/292`
+  - verified outcome:
+    - both previously underbuilt variants now clear the fidelity floor
+    - validator warning count returns from `9` back to `7`
+    - remaining warnings are only the known `generated-only, no authored photoreal finals yet` warnings
+  - verified viewport readback:
+    - `Assets/Screenshots/coral_low_bed_stage_v2.png` shows `GEN_family_coral_low__bed` as a layered mound instead of a single flat blob
+    - `Assets/Screenshots/coral_plate_ledge_stage_v2.png` shows `GEN_family_coral_plate__ledge` with a stronger overhang/support read
+  - corrected blocker note:
+    - the earlier `WorldProceduralScatterDirector` `ScatterCandidatePreview` compile blocker did not reproduce on the clean refresh and is no longer the active blocker for flora verification
+  - honest verdict:
+    - starter-grade coral quality improved materially
+    - photoreal authored coral finals still do not exist
+  - status: `PENDING VERIFICATION`

@@ -231,6 +231,21 @@ namespace Hecton8.World
                 return false;
             }
 
+            public bool TryGetIndex(long key, out int index)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    if (keys[i] == key)
+                    {
+                        index = i;
+                        return true;
+                    }
+                }
+
+                index = -1;
+                return false;
+            }
+
             public void Clear()
             {
                 count = 0;
@@ -881,6 +896,7 @@ namespace Hecton8.World
                     bool usesPatternAccentQuotas = UsesPatternAccentQuotas(fieldSample.resolvedPattern);
                     PopulatePatternQuotaCache(fieldSample.resolvedPattern, fieldSample.biomeProfile);
                     int clusterRatioStart = _cachedPatternClusterRatioStart;
+                    int minimumSpawnPlacements = ResolveMinimumSpawnPlacements(fieldSample.resolvedPattern, fieldSample.biomeProfile);
                     int passiveSpawnMax = Mathf.Max(
                         _cachedPatternPassiveSpawnMin,
                         _patternLayerTargetMaxBuffer[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn]);
@@ -915,6 +931,10 @@ namespace Hecton8.World
                     int cellCandidatesBeforePrune = 0;
                     int worstCandidateIndex = -1;
                     float worstCandidateScore = float.MaxValue;
+                    WorldGenerativeGeologyProfile cachedGeologyProfileA = null;
+                    float cachedGeologyBonusA = 0f;
+                    WorldGenerativeGeologyProfile cachedGeologyProfileB = null;
+                    float cachedGeologyBonusB = 0f;
                     ReleaseCandidateListPlacements(_candidateBuffer);
                     for (int i = 0; i < _runtimeRuleBuffer.Count; i++)
                     {
@@ -949,19 +969,14 @@ namespace Hecton8.World
 
                         float normalizedHeat = Mathf.InverseLerp(effectiveMinHeat, 1f, heat);
                         float spawnProbability = Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
+                        bool needsSpawnRescue = minimumSpawnPlacements > 0 &&
+                                                family != null &&
+                                                family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
+                        bool needsRescueTracking = needsPreviewRescue || needsSpawnRescue;
+                        float gate = StableRandom01(cellXIndex, cellZIndex, runtimeRule.RuleIdHash);
+                        if (gate > spawnProbability && !needsRescueTracking)
+                            continue;
                         WorldPrefabFamilyProfile.ScatterLayer layer = runtimeRule.ScatterLayer;
-                        int layerPreferredFamilyIndex = GetPreferredFamilyIndexForLayer(fieldSample.biomeProfile, family, layer);
-                        float score = spawnProbability
-                            + heat
-                            + runtimeRule.ScoreBaseBonus
-                            + GetAcceptedFamilyAffinityBonus(runtimeRule)
-                            + GetGenerativeGeologyContextBonus(fieldSample, runtimeRule)
-                            + GetCombinedPatternScoreBonus(fieldSample.resolvedPattern, runtimeRule)
-                            + GetBiomeContextBonus(cellBiomeContext, runtimeRule)
-                            + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
-                            + GetBiomeSignatureScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext)
-                            + GetSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
-                            + GetLandmarkSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
                         int layerIndex = (int)layer;
                         if (!HasPatternLayerGlobalBudget(layer, layerPlacementCounts[layerIndex], _patternLayerTargetMaxBuffer))
                             continue;
@@ -1006,44 +1021,64 @@ namespace Hecton8.World
                             continue;
                         }
 
-                        bool needsSpawnRescue = ShouldTrackRuntimeSpawnRescue(fieldSample, family);
-                        bool needsRescueTracking = needsPreviewRescue || needsSpawnRescue;
-                        float gate = StableRandom01(cellXIndex, cellZIndex, runtimeRule.RuleIdHash);
-                        if (gate > spawnProbability && !needsRescueTracking)
-                            continue;
                         if (collectDetailedDiagnostics)
                             gatePassedRules++;
+
+                        ScatterCandidatePreview candidatePreview = BuildCandidatePreview(
+                            cellXIndex,
+                            cellZIndex,
+                            fieldSample,
+                            runtimeRule,
+                            size);
+                        float residencyRadius = 0f;
+                        float residencyDistanceSqr = 0f;
+                        if (collectDetailedDiagnostics)
+                        {
+                            ResolveLayerRadii(runtimeRule.StreamingLayer, out _, out _, out residencyRadius);
+                            residencyDistanceSqr = GetHorizontalDistanceSqr(candidatePreview.Position, center);
+                        }
+
+                        if (!IsPlacementWithinResidency(candidatePreview.Position, runtimeRule.StreamingLayer, center))
+                        {
+                            if (collectDetailedDiagnostics && rejectedResidencyFamily == "None")
+                            {
+                                rejectedResidencyFamily = family != null ? family.familyId : "None";
+                                rejectedResidencyDistance = residencyDistanceSqr > 0f ? Mathf.Sqrt(residencyDistanceSqr) : 0f;
+                                rejectedResidencyRadius = residencyRadius;
+                            }
+                            continue;
+                        }
+                        if (collectDetailedDiagnostics)
+                            residencyPassedCandidates++;
+
+                        int layerPreferredFamilyIndex = GetPreferredFamilyIndexForLayer(fieldSample.biomeProfile, family, layer);
+                        float score = spawnProbability
+                            + heat
+                            + runtimeRule.ScoreBaseBonus
+                            + runtimeRule.AcceptedFamilyAffinityBonus
+                            + GetCachedGenerativeGeologyContextBonus(
+                                fieldSample,
+                                runtimeRule,
+                                ref cachedGeologyProfileA,
+                                ref cachedGeologyBonusA,
+                                ref cachedGeologyProfileB,
+                                ref cachedGeologyBonusB)
+                            + GetCombinedPatternScoreBonus(fieldSample.resolvedPattern, runtimeRule)
+                            + GetBiomeContextBonus(cellBiomeContext, runtimeRule)
+                            + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
+                            + GetBiomeSignatureScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext)
+                            + GetSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
+                            + GetLandmarkSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
 
                         ScatterCandidate candidate = BuildCandidate(
                             cellXIndex,
                             cellZIndex,
                             fieldSample,
                             runtimeRule,
+                            candidatePreview,
                             cellBiomeContextLabel,
                             heat,
-                            score,
-                            size);
-                        float residencyRadius = 0f;
-                        float residencyDistanceSqr = 0f;
-                        if (collectDetailedDiagnostics)
-                        {
-                            ResolveLayerRadii(candidate.Placement.StreamingLayer, out _, out _, out residencyRadius);
-                            residencyDistanceSqr = GetHorizontalDistanceSqr(candidate.Placement.Position, center);
-                        }
-
-                        if (!IsPlacementWithinResidency(candidate.Placement, center))
-                        {
-                            if (collectDetailedDiagnostics && rejectedResidencyFamily == "None")
-                            {
-                                rejectedResidencyFamily = candidate.Family != null ? candidate.Family.familyId : "None";
-                                rejectedResidencyDistance = residencyDistanceSqr > 0f ? Mathf.Sqrt(residencyDistanceSqr) : 0f;
-                                rejectedResidencyRadius = residencyRadius;
-                            }
-                            ReleasePlacement(candidate.Placement);
-                            continue;
-                        }
-                        if (collectDetailedDiagnostics)
-                            residencyPassedCandidates++;
+                            score);
 
                         if (needsRescueTracking)
                         {
@@ -1877,6 +1912,11 @@ namespace Hecton8.World
                 bool predatorSpawnFamily = IsPredatorSpawnFamily(family);
                 float biomeAffinityWeight = Mathf.Clamp01(family.biomeAffinityWeight);
                 float zoneAffinityWeight = Mathf.Clamp01(family.zoneAffinityWeight);
+                float acceptedFamilyAffinityBonus = 0f;
+                if (rule.preferredBiomeFamilies != null && rule.preferredBiomeFamilies.Length > 0)
+                    acceptedFamilyAffinityBonus += biomeAffinityWeight;
+                if (rule.preferredZoneKinds != null && rule.preferredZoneKinds.Length > 0)
+                    acceptedFamilyAffinityBonus += zoneAffinityWeight;
                 float patternAffinityWeight = Mathf.Clamp01(family.patternAffinityWeight);
                 float patternMismatchScale = family.scatterLayer switch
                 {
@@ -1910,8 +1950,10 @@ namespace Hecton8.World
                     family.secondaryPattern,
                     biomeAffinityWeight,
                     zoneAffinityWeight,
+                    acceptedFamilyAffinityBonus,
                     patternAffinityWeight,
                     patternMismatchScale,
+                    geologyProfile != null ? Mathf.Max(0.15f, geologyProfile.compositionWeight) : 0f,
                     hasGameplayIntent ? 0.95f + Mathf.Clamp01(rule.densityScale * 0.12f) : 1f,
                     rule.minDepthMeters,
                     rule.maxDepthMeters,
@@ -2224,37 +2266,49 @@ namespace Hecton8.World
             _debugReconcileReusedCount = 0;
         }
 
-        private ScatterCandidate BuildCandidate(
+        private ScatterCandidatePreview BuildCandidatePreview(
             int cellXIndex,
             int cellZIndex,
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in ScatterRuntimeRuleEntry runtimeRule,
-            string biomeContextLabel,
-            float heat,
-            float score,
             float size)
         {
             WorldPrefabFamilyProfile family = runtimeRule.Family;
             WorldProceduralPlacementRule rule = runtimeRule.Rule;
             int stableHash = ComputeStableHash(runtimeRule.RuleIdHash, cellXIndex, cellZIndex);
-            WorldPrefabFamilyProfile.VariantEntry variant = ResolveRuntimeVariant(family, stableHash, preferFinalVariant: false);
             Vector3 position = ResolvePlacementPosition(fieldSample.position, family, rule, stableHash, size);
             position.y = fieldSample.seafloorHeight + surfaceYOffset;
-            Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(stableHash % 360), 0f);
-            float scale = ResolveScaleMultiplier(variant, stableHash);
+            return new ScatterCandidatePreview(stableHash, position);
+        }
+
+        private ScatterCandidate BuildCandidate(
+            int cellXIndex,
+            int cellZIndex,
+            in WorldProceduralFieldSampler.FieldSample fieldSample,
+            in ScatterRuntimeRuleEntry runtimeRule,
+            in ScatterCandidatePreview preview,
+            string biomeContextLabel,
+            float heat,
+            float score)
+        {
+            WorldPrefabFamilyProfile family = runtimeRule.Family;
+            WorldProceduralPlacementRule rule = runtimeRule.Rule;
+            WorldPrefabFamilyProfile.VariantEntry variant = ResolveRuntimeVariant(family, preview.StableHash, preferFinalVariant: false);
+            float scale = ResolveScaleMultiplier(variant, preview.StableHash);
+            Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(preview.StableHash % 360), 0f);
             WorldStreamingLayer streamingLayer = runtimeRule.StreamingLayer;
             WorldGenerativeGeologyProfile geologyProfile = runtimeRule.GeologyProfile;
-            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(position, _runtimeChunkSize);
+            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(preview.Position, _runtimeChunkSize);
             bool hasMacroZone = runtimeRule.HasMacroZone;
             WorldMacroZoneCoordinate macroZoneCoord = hasMacroZone
-                ? WorldMacroZoneCoordinate.FromWorldPosition(position, _runtimeMacroZoneSize)
+                ? WorldMacroZoneCoordinate.FromWorldPosition(preview.Position, _runtimeMacroZoneSize)
                 : default;
             bool supportsFinalVariant = runtimeRule.SupportsFinalVariant;
 
             ScatterPlacement placement = GetPooledPlacement();
             placement.Initialize(
                 ComposeKey(cellXIndex, cellZIndex, runtimeRule.RuleIdHash),
-                stableHash,
+                preview.StableHash,
                 family,
                 rule,
                 fieldSample.zone,
@@ -2282,7 +2336,7 @@ namespace Hecton8.World
                 chunkCoord,
                 hasMacroZone,
                 macroZoneCoord,
-                position,
+                preview.Position,
                 rotation,
                 scale);
 
@@ -3037,6 +3091,15 @@ namespace Hecton8.World
             return GetHorizontalDistanceSqr(placement.Position, observerPosition) <= farRadius * farRadius;
         }
 
+        private bool IsPlacementWithinResidency(Vector3 position, WorldStreamingLayer streamingLayer, Vector3 observerPosition)
+        {
+            ResolveLayerRadii(streamingLayer, out _, out _, out float farRadius);
+            if (farRadius <= 0f)
+                return false;
+
+            return GetHorizontalDistanceSqr(position, observerPosition) <= farRadius * farRadius;
+        }
+
         private void ResolveLayerRadii(
             WorldStreamingLayer layer,
             out float nearRadius,
@@ -3224,7 +3287,7 @@ namespace Hecton8.World
             in ScatterRuntimeRuleEntry runtimeRule)
         {
             WorldGenerativeGeologyProfile geologyProfile = runtimeRule.GeologyProfile;
-            if (geologyProfile == null)
+            if (geologyProfile == null || runtimeRule.GeologyScoreScale <= 0f)
                 return 0f;
 
             float fit = geologyProfile.EvaluatePlacementFitness(
@@ -3235,7 +3298,33 @@ namespace Hecton8.World
                 sample.canyonSignal,
                 sample.compositionPotential);
 
-            return fit * Mathf.Max(0.15f, geologyProfile.compositionWeight);
+            return fit * runtimeRule.GeologyScoreScale;
+        }
+
+        private static float GetCachedGenerativeGeologyContextBonus(
+            in WorldProceduralFieldSampler.FieldSample sample,
+            in ScatterRuntimeRuleEntry runtimeRule,
+            ref WorldGenerativeGeologyProfile cachedProfileA,
+            ref float cachedBonusA,
+            ref WorldGenerativeGeologyProfile cachedProfileB,
+            ref float cachedBonusB)
+        {
+            WorldGenerativeGeologyProfile geologyProfile = runtimeRule.GeologyProfile;
+            if (geologyProfile == null)
+                return 0f;
+
+            if (geologyProfile == cachedProfileA)
+                return cachedBonusA;
+
+            if (geologyProfile == cachedProfileB)
+                return cachedBonusB;
+
+            float bonus = GetGenerativeGeologyContextBonus(sample, runtimeRule);
+            cachedProfileB = cachedProfileA;
+            cachedBonusB = cachedBonusA;
+            cachedProfileA = geologyProfile;
+            cachedBonusA = bonus;
+            return bonus;
         }
 
         private void ApplyGeneratedGeology(
@@ -4550,13 +4639,14 @@ namespace Hecton8.World
             ref CandidateMap windowCandidates)
         {
             long windowKey = ComposeWindowKey(candidate.Placement.CellX, candidate.Placement.CellZ, stride);
-            if (windowCandidates.TryGetValue(windowKey, out ScatterCandidate existing))
+            if (windowCandidates.TryGetIndex(windowKey, out int existingIndex))
             {
+                ScatterCandidate existing = windowCandidates.values[existingIndex];
                 if (candidate.Score <= existing.Score)
                     return;
 
                 ReleasePlacement(existing.Placement);
-                windowCandidates.TryAdd(windowKey, candidate); // replace
+                windowCandidates.values[existingIndex] = candidate;
                 RetainPlacement(candidate.Placement);
                 return;
             }
@@ -6321,15 +6411,6 @@ namespace Hecton8.World
                    family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Cluster;
         }
 
-        private bool ShouldTrackRuntimeSpawnRescue(
-            in WorldProceduralFieldSampler.FieldSample sample,
-            WorldPrefabFamilyProfile family)
-        {
-            return family != null &&
-                   family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn &&
-                   ResolveMinimumSpawnPlacements(sample.resolvedPattern, sample.biomeProfile) > 0;
-        }
-
         private static float GetPatternFallbackMinHeatScale(
             WorldProceduralPattern pattern,
             WorldPrefabFamilyProfile family)
@@ -7015,18 +7096,6 @@ namespace Hecton8.World
                     ? runtimeRule.ZoneAffinityWeight
                     : -runtimeRule.ZoneAffinityWeight * 0.18f;
             }
-
-            return bonus;
-        }
-
-        private static float GetAcceptedFamilyAffinityBonus(in ScatterRuntimeRuleEntry runtimeRule)
-        {
-            float bonus = 0f;
-            if (runtimeRule.PreferredBiomeFamilies != null && runtimeRule.PreferredBiomeFamilies.Length > 0)
-                bonus += runtimeRule.BiomeAffinityWeight;
-
-            if (runtimeRule.PreferredZoneKinds != null && runtimeRule.PreferredZoneKinds.Length > 0)
-                bonus += runtimeRule.ZoneAffinityWeight;
 
             return bonus;
         }
@@ -10032,8 +10101,10 @@ namespace Hecton8.World
                 WorldProceduralPattern secondaryPattern,
                 float biomeAffinityWeight,
                 float zoneAffinityWeight,
+                float acceptedFamilyAffinityBonus,
                 float patternAffinityWeight,
                 float patternMismatchScale,
+                float geologyScoreScale,
                 float densityScaleFactor,
                 float minDepthMeters,
                 float maxDepthMeters,
@@ -10062,8 +10133,10 @@ namespace Hecton8.World
                 SecondaryPattern = secondaryPattern;
                 BiomeAffinityWeight = biomeAffinityWeight;
                 ZoneAffinityWeight = zoneAffinityWeight;
+                AcceptedFamilyAffinityBonus = acceptedFamilyAffinityBonus;
                 PatternAffinityWeight = patternAffinityWeight;
                 PatternMismatchScale = patternMismatchScale;
+                GeologyScoreScale = geologyScoreScale;
                 DensityScaleFactor = densityScaleFactor;
                 MinDepthMeters = minDepthMeters;
                 MaxDepthMeters = maxDepthMeters;
@@ -10096,8 +10169,10 @@ namespace Hecton8.World
             public WorldProceduralPattern SecondaryPattern { get; }
             public float BiomeAffinityWeight { get; }
             public float ZoneAffinityWeight { get; }
+            public float AcceptedFamilyAffinityBonus { get; }
             public float PatternAffinityWeight { get; }
             public float PatternMismatchScale { get; }
+            public float GeologyScoreScale { get; }
             public float DensityScaleFactor { get; }
             public float MinDepthMeters { get; }
             public float MaxDepthMeters { get; }
@@ -10106,6 +10181,18 @@ namespace Hecton8.World
             public HectonBiomeFamilyProfile[] PreferredBiomeFamilies { get; }
             public WorldZoneAnchor.ZoneKind[] PreferredZoneKinds { get; }
             public WorldContentSocket.ContentKind[] PreferredSocketKinds { get; }
+        }
+
+        private readonly struct ScatterCandidatePreview
+        {
+            public ScatterCandidatePreview(int stableHash, Vector3 position)
+            {
+                StableHash = stableHash;
+                Position = position;
+            }
+
+            public int StableHash { get; }
+            public Vector3 Position { get; }
         }
 
         private readonly struct ScatterCandidate : IComparable<ScatterCandidate>
