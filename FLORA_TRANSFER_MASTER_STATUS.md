@@ -405,6 +405,33 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
   - `ScannerTool` now recognizes `flora / coral / kelp / seaweed / botany` categories as flora contacts in expedition sweeps
   - `EnvironmentalAnalyzerTool` now gives flora-specific recommendations instead of treating those contacts as generic databank entries
   - result: shelter/fish/ecology concepts from the coral/seaweed docs are now explicitly mapped to the existing fauna stack instead of waiting for a separate coral/seaweed runtime manager
+- Coral shader/material parity pass has now moved from plan to implementation:
+  - added dedicated shader `Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader`
+  - `WorldProceduralFloraTextureAuthoring` now owns coral `Base / Detail / Normal / Mask` texture generation for:
+    - `family.coral.low`
+    - `family.coral.branching`
+    - `family.coral.massive`
+    - `family.coral.plate`
+  - `WorldProceduralFloraMaterialAuthoring` now binds coral materials to `Hecton8/Flora/CoralMaster` plus the generated texture stack
+  - validator/status-report logic now treat coral shader + texture completeness as first-class checks, not kelp-only checks
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
+    - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified readback:
+    - coral texture assets now exist under `Assets/_Project/Art/Textures/WorldProceduralFlora` for all 4 coral families
+    - `MAT_family_coral_low.mat` now binds `_BaseMap`, `_DetailMap`, `_NormalMap`, `_MaskMap`
+    - `MAT_family_coral_low.mat` now uses the new `Hecton_CoralMaster` shader GUID and keeps instancing enabled
+    - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` now confirms `Material Ready 3/3` for all 4 coral families under the new coral stack
+  - editor viewport readback:
+    - `GEN_family_kelp_tall__ribbon` reads as a usable starter silhouette with visible material breakup
+    - `GEN_family_coral_low__knoll` confirms the shader stack is alive, but the form still reads as starter/proxy-grade rather than photoreal coral art
+  - conclusion:
+    - kelp starter branch is materially stronger than coral starter branch
+    - next beauty-critical step remains authored photoreal coral finals, not more validator work
+  - stale compile blocker note:
+    - the earlier `WorldProceduralScatterDirector` compile errors did not reproduce on the fresh forced compile and are no longer treated as the active blocker for coral verification
 
 ## Next Pass
 
@@ -414,3 +441,43 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
 - Use `Assets/_Project/Prefabs/Nature/Flora/Baked/README.md` budget table as the authored-final intake contract before asking for any family budget expansion.
 - Run broader in-world beauty/readability verification now that real final-ready flora variants exist in the intake root.
 - Capture GC/build evidence and isolate the persistent leak warning with a stack trace before claiming perf safety.
+
+## 2026-04-08 Coral Geometry Pass
+
+- New owner added for coral starter geometry:
+  - `Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs`
+  - purpose: move coral starter finals off the primitive-combine path and into a dedicated procedural mesh owner, matching the architecture already used for kelp
+- `WorldProceduralFloraBakedStarterGenerator` now routes all `family.coral.*` starters through `WorldProceduralCoralMeshBuilder` before falling back to proxy-combine generation.
+- Verified editor compile/import path:
+  - first compile failed because the new script had not yet been imported and therefore had no `.meta`
+  - after forced asset refresh the `.meta` was created and the compile errors disappeared
+- Verified prefab topology readback:
+  - `GEN_family_coral_low__knoll.prefab` now contains exactly:
+    - root `LODGroup`
+    - `__LOD0` `MeshFilter + MeshRenderer`
+    - `__LOD1` `MeshFilter + MeshRenderer`
+  - `GEN_family_coral_branching__fan.prefab` now contains the same clean hierarchy
+  - result: coral starters are no longer represented as visible primitive child hierarchies in baked finals
+- Verified status-report triangle deltas after regeneration:
+  - `family.coral.low`: `3840 -> 1488`
+  - `family.coral.branching`: `4320 -> 380`
+  - `family.coral.massive`: `3840 -> 1668`
+  - `family.coral.plate`: `400 -> 312`
+- Verified live report after regeneration:
+  - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` now reports:
+    - `family.coral.low` max budget triangles `1488`
+    - `family.coral.branching` max budget triangles `380`
+    - `family.coral.massive` max budget triangles `1668`
+    - `family.coral.plate` max budget triangles `312`
+  - all 4 coral families remain:
+    - `Material Ready 3/3`
+    - `LOD Cascade 3/3`
+    - coverage `a0/g3`
+- Verified viewport readback:
+  - Scene View screenshot `Assets/Screenshots/screenshot-20260408-020830.png` for `GEN_family_coral_low__knoll` shows a cleaner single coral mound than the old primitive stack, but it still reads as a starter asset rather than photoreal authored coral
+- Honest quality verdict:
+  - this pass improved geometry ownership, silhouette coherence, and triangle cost
+  - this pass did **not** achieve photoreal coral finals
+  - `family.coral.branching` is now very cheap and needs a dedicated beauty pass to confirm it did not oversimplify into visibly artificial tubes
+- Status: `PENDING VERIFICATION`
+  - missing proof: in-world beauty check, profiler/build evidence, authored photoreal coral finals

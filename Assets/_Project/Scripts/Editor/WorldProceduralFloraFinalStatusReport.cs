@@ -12,6 +12,8 @@ namespace Hecton8.EditorTools
     {
         private const string ReportFileName = "PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md";
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
+        private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
+        private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
 
         [MenuItem("Hecton/Validation/Generate Procedural Flora Final Status Report", priority = 241)]
         public static void GenerateReport()
@@ -348,7 +350,7 @@ namespace Hecton8.EditorTools
 
         private static MaterialState EvaluateMaterialState(string familyId, Renderer[] renderers)
         {
-            bool requiresKelpStack = familyId.StartsWith("family.kelp.", StringComparison.Ordinal);
+            string expectedShaderName = ResolveExpectedShaderName(familyId);
             bool instancingOk = true;
             bool shaderOk = true;
             bool textureStackOk = true;
@@ -386,10 +388,10 @@ namespace Hecton8.EditorTools
                         if (!material.enableInstancing)
                             instancingOk = false;
 
-                        if (!requiresKelpStack)
+                        if (string.IsNullOrEmpty(expectedShaderName))
                             continue;
 
-                        if (material.shader == null || material.shader.name != "Hecton8/Flora/KelpMaster")
+                        if (material.shader == null || material.shader.name != expectedShaderName)
                             shaderOk = false;
 
                         if (material.GetTexture("_BaseMap") == null
@@ -406,7 +408,7 @@ namespace Hecton8.EditorTools
             if (!anyMaterial)
                 return new MaterialState(false, false, false, "missing-materials");
 
-            if (!requiresKelpStack)
+            if (string.IsNullOrEmpty(expectedShaderName))
                 return new MaterialState(instancingOk, true, true, instancingOk ? "ok" : "instancing-off");
 
             if (instancingOk && shaderOk && textureStackOk)
@@ -419,6 +421,17 @@ namespace Hecton8.EditorTools
                 return new MaterialState(instancingOk, true, false, "texture-stack-missing");
 
             return new MaterialState(false, true, true, "instancing-off");
+        }
+
+        private static string ResolveExpectedShaderName(string familyId)
+        {
+            if (familyId.StartsWith("family.kelp.", StringComparison.Ordinal))
+                return KelpShaderName;
+
+            if (familyId.StartsWith("family.coral.", StringComparison.Ordinal))
+                return CoralShaderName;
+
+            return string.Empty;
         }
 
         private static RendererState EvaluateRendererState(Renderer[] renderers)

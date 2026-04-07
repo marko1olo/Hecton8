@@ -280,3 +280,64 @@ Verification: `PENDING VERIFICATION`
   - `ScannableCategoryUtility` classifies `flora / coral / kelp / seaweed / botany`
   - `ScannerTool` now counts coral/flora scan contacts in expedition sweeps
   - `EnvironmentalAnalyzerTool` now emits flora-specific recommendations instead of generic databank advice
+- Coral creation-side visual stack is no longer limited to generic material hardening:
+  - new shader: `Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader`
+  - `WorldProceduralFloraTextureAuthoring` now generates coral `Base / Detail / Normal / Mask` textures for all 4 coral families
+  - `WorldProceduralFloraMaterialAuthoring` now binds:
+    - `MAT_family_coral_low.mat`
+    - `MAT_family_coral_branching.mat`
+    - `MAT_family_coral_massive.mat`
+    - `MAT_family_coral_plate.mat`
+    to the coral shader and full texture stack
+  - validator/report owners are extended so coral shader mismatch or missing coral texture slots can no longer pass silently
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
+    - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - fresh verified coral readback:
+    - `MAT_family_coral_low.mat` now uses the coral shader and binds `_BaseMap`, `_DetailMap`, `_NormalMap`, `_MaskMap`
+    - generated coral texture assets now exist for all 4 coral families under `Assets/_Project/Art/Textures/WorldProceduralFlora`
+    - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` confirms `Material Ready 3/3` for:
+      - `family.coral.low`
+      - `family.coral.branching`
+      - `family.coral.massive`
+      - `family.coral.plate`
+    - Scene View prefab-stage preview of `GEN_family_coral_low__knoll` confirms:
+      - shader/material path is active
+      - silhouette is still starter-grade and too simple for claimed photoreal final quality
+  - blocker correction:
+    - the earlier `WorldProceduralScatterDirector` compile errors were not reproduced on the next forced compile
+    - coral shader/material parity is now verified at the editor-authoring level
+  - status remains `PENDING VERIFICATION` only for in-world beauty/profiler/build proof, not for the editor-side coral stack itself
+- Coral geometry owner is now separated from primitive proxy assembly:
+  - added `Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs`
+  - `WorldProceduralFloraBakedStarterGenerator` now uses that builder for all 4 coral families instead of combining visible primitive child trees
+- Verified compile/import fact:
+  - first compile failed because the new coral builder had no `.meta` yet
+  - forced asset refresh generated the `.meta`, after which the coral builder compiled cleanly and generator errors disappeared
+- Verified baked-final hierarchy readback:
+  - `GEN_family_coral_low__knoll.prefab` and `GEN_family_coral_branching__fan.prefab` now each resolve to:
+    - root `LODGroup`
+    - `__LOD0` mesh child
+    - `__LOD1` mesh child
+  - no primitive child hierarchy survives into the baked-final prefab structure
+- Verified coral triangle deltas after the new builder:
+  - `family.coral.low`: `3840 -> 1488`
+  - `family.coral.branching`: `4320 -> 380`
+  - `family.coral.massive`: `3840 -> 1668`
+  - `family.coral.plate`: `400 -> 312`
+- Verified report state after regeneration:
+  - all 4 coral families still pass:
+    - `Material Ready 3/3`
+    - `LOD Cascade 3/3`
+    - coverage `a0/g3`
+- Verified viewport readback:
+  - `Assets/Screenshots/screenshot-20260408-020830.png` for `GEN_family_coral_low__knoll`
+  - verdict:
+    - cleaner mound silhouette than the old primitive-combine version
+    - still obviously starter-grade, not photoreal final coral
+- Honest risk note:
+  - `family.coral.branching` became much cheaper (`380` max budget triangles), which is good for MX350 but now needs a dedicated beauty readback so we do not ship visibly artificial branch tubes under the label of “improved coral”
+- Status: `PENDING VERIFICATION`
+  - next correct step: authored photoreal coral finals family-by-family, plus in-world beauty/playtest/profiler proof

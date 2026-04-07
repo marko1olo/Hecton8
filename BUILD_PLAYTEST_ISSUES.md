@@ -354,6 +354,11 @@ Rules:
   8. New scatter CPU addendum: the inner scatter rule loop was recomputing `NeedsPreviewRescue(sample, family)` three times for the same rule path: once through `ResolveEffectiveMinHeat`, once through `ResolveEffectiveDensityScale`, and once again for rescue tracking. That gate is now resolved once per rule and reused through the rest of the branch.
   9. New scatter CPU addendum: the same hot loop already knew `needsPreviewRescue` and `needsSpawnRescue`, but `TrackRescueCandidate(...)` recalculated both from the same `sample + family` before touching the rescue maps. The loop now passes those existing booleans through directly, so rescue tracking no longer pays duplicate gate resolution for every retained rescue candidate.
   10. New scatter CPU addendum: the score branch was still rebuilding the same biome-matrix signals and focus-role derivations for every runtime rule inside one sampled cell. `WorldProceduralScatterDirector` now builds one stack-only `ScatterBiomeScoreContext` per cell and reuses those cached `resource / salvage / landmark / pressure / survival` signals plus preferred/focus roles across heat/score helpers instead of re-deriving them for every rule.
+  11. New scatter CPU addendum: even after the biome-score context pass, one runtime rule could still linearly scan the same `preferred*Families` array multiple times through `GetPreferredContentScoreBonus`, `GetBiomeSignatureScoreBonus`, `GetPatternSpecificPreferredCategoryScoreBonus`, and structure-only soft-water bonus helpers. The loop now resolves one `layerPreferredFamilyIndex` per rule and reuses that index across those score helpers instead of rescanning the same preferred-family array 2-4 times for the same rule.
+  12. New scatter CPU addendum: one sampled cell also kept re-evaluating the same pattern-category gates (`soft water`, `service-like`, `landmark corridor`, `industrial signature`, `sediment resources`) across multiple score helpers for every runtime rule. `WorldProceduralScatterDirector` now builds one stack-only `ScatterPatternScoreContext` per cell and reuses those booleans through the runtime score/heat helpers instead of repeating the same pattern guards for each rule.
+  13. New scatter CPU addendum: one runtime rule was still issuing four separate pattern-dependent score helper calls on the same `resolvedPattern` (`GetPatternAffinityBonus`, `GetClusterAccentPatternBonus`, `GetSpawnFamilyPatternBonus`, `GetPatternContextBonus`). The score branch now consolidates that into one `GetCombinedPatternScoreBonus(...)` call so the same pattern/runtimeRule pair is evaluated once instead of through four separate helper dispatches.
+  14. New scatter CPU addendum: the heat branch was still multiplying three separate scale helpers for the same `pattern + runtimeRule + depth` tuple (`GetPatternHeatScale`, `GetLandmarkSoftWaterHeatScale`, `GetDepthDomainScale`). That path now goes through one `GetCombinedHeatScale(...)` helper so the same tuple is resolved once instead of via three separate helper dispatches.
+  15. New scatter CPU addendum: after `MatchesScatter(...)` had already proven preferred-biome and preferred-zone acceptance, the score branch still rescanned `PreferredBiomeFamilies` and `PreferredZoneKinds` in `GetFamilyAffinityBonus(fieldSample, runtimeRule)`. The post-gate score path now uses `GetAcceptedFamilyAffinityBonus(...)`, which reuses that already-proven truth and removes the duplicate array scans from accepted rules.
 
 - Failed: GPU-side truth is still incomplete because the screenshots do not expose actual GPU frame time, and MCP currently reports profiler disabled; its fallback rendering snapshot is not trustworthy as a live player oracle here.
 - Broke: nothing.
@@ -481,3 +486,22 @@ Rules:
 After each new build, ask one short question:
 
 `What breaks belief in the world the most right now?`
+
+### [c] Build Compile Oracle Contaminated By `WorldProceduralScatterDirector`
+- Status: [c]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: new flora verification is currently contaminated by a giant scatter-file compile blocker, so old compiled domains can still execute editor menus and fake a partial pass
+- Evidence:
+  - console compile errors on `2026-04-08`:
+    - `Assets\\_Project\\Scripts\\WorldProceduralScatterDirector.cs(949,57): error CS0103: The name 'GetPreferredFamilyIndexForLayer' does not exist in the current context`
+    - `Assets\\_Project\\Scripts\\WorldProceduralScatterDirector.cs(960,31): error CS1501: No overload for method 'GetBiomeMatrixBonus' takes 5 arguments`
+    - follow-up argument mismatch errors on lines `961-963`
+  - `validate_script` on `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` reports widespread duplicate method signatures, indicating a corrupted edit history in that giant owner
+  - coral parity pass symptom:
+    - `Generate Procedural Flora Textures` still logs `TouchedTextures=12`, which is the old kelp-only count and proves the new coral texture branch did not enter the active compiled domain
+- Problems:
+  - this was a temporary stale compile-truth incident during the coral parity pass
+- Short Comment: not reproduced on the next forced compile; no longer the active blocker for flora verification
+- Next Step: only reopen if the same `WorldProceduralScatterDirector` compile errors recur on a fresh forced compile

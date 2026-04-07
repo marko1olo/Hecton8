@@ -9,6 +9,13 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralFloraTextureAuthoring
     {
         private const string TextureRoot = "Assets/_Project/Art/Textures/WorldProceduralFlora";
+        private const string FamilyKelpTall = "family.kelp.tall";
+        private const string FamilyKelpPatchDense = "family.kelp.patch.dense";
+        private const string FamilyKelpCanopy = "family.kelp.canopy";
+        private const string FamilyCoralLow = "family.coral.low";
+        private const string FamilyCoralBranching = "family.coral.branching";
+        private const string FamilyCoralMassive = "family.coral.massive";
+        private const string FamilyCoralPlate = "family.coral.plate";
 
         [MenuItem("Hecton/Authoring/Generate Procedural Flora Textures", priority = 175)]
         public static void Apply()
@@ -30,6 +37,22 @@ namespace Hecton8.EditorTools
             touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpTall_Mask.asset", 11, 0.62f, 0.94f) ? 1 : 0;
             touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpPatch_Mask.asset", 23, 0.54f, 0.88f) ? 1 : 0;
             touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpCanopy_Mask.asset", 37, 0.68f, 0.98f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralLow_Base.asset", new Color(0.48f, 0.28f, 0.26f), new Color(0.70f, 0.42f, 0.34f), new Color(0.88f, 0.64f, 0.48f), 0.12f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralBranching_Base.asset", new Color(0.42f, 0.24f, 0.30f), new Color(0.68f, 0.40f, 0.48f), new Color(0.90f, 0.72f, 0.52f), 0.16f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralMassive_Base.asset", new Color(0.54f, 0.30f, 0.22f), new Color(0.78f, 0.48f, 0.34f), new Color(0.94f, 0.72f, 0.56f), 0.10f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralPlate_Base.asset", new Color(0.30f, 0.34f, 0.40f), new Color(0.50f, 0.54f, 0.62f), new Color(0.82f, 0.78f, 0.62f), 0.14f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralLow_Detail.asset", 41) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralBranching_Detail.asset", 53) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralMassive_Detail.asset", 67) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralPlate_Detail.asset", 79) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralLow_Normal.asset", 41, 0.62f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralBranching_Normal.asset", 53, 0.84f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralMassive_Normal.asset", 67, 0.70f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralPlate_Normal.asset", 79, 0.58f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralLow_Mask.asset", 41, 0.44f, 0.78f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralBranching_Mask.asset", 53, 0.36f, 0.86f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralMassive_Mask.asset", 67, 0.52f, 0.74f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralPlate_Mask.asset", 79, 0.34f, 0.92f) ? 1 : 0;
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -55,6 +78,26 @@ namespace Hecton8.EditorTools
         public static Texture2D LoadKelpMaskTexture(string familyId)
         {
             return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveMaskTexturePath(familyId));
+        }
+
+        public static Texture2D LoadCoralBaseTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveCoralBaseTexturePath(familyId));
+        }
+
+        public static Texture2D LoadCoralDetailTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveCoralDetailTexturePath(familyId));
+        }
+
+        public static Texture2D LoadCoralNormalTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveCoralNormalTexturePath(familyId));
+        }
+
+        public static Texture2D LoadCoralMaskTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveCoralMaskTexturePath(familyId));
         }
 
         private static bool CreateOrUpdateBaseTexture(string path, Color lowColor, Color midColor, Color highColor, float bandStrength)
@@ -215,15 +258,93 @@ namespace Hecton8.EditorTools
             return true;
         }
 
+        private static bool CreateOrUpdateCoralNormalTexture(string path, int seed, float normalScale)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+            {
+                texture = new Texture2D(128, 128, TextureFormat.RGBA32, false, true)
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                    anisoLevel = 1
+                };
+                AssetDatabase.CreateAsset(texture, path);
+            }
+
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = y / (float)(height - 1);
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (float)(width - 1);
+                    float center = SampleCoralHeight(u, v, seed);
+                    float sampleX = SampleCoralHeight(Mathf.Repeat(u + 1.0f / width, 1.0f), v, seed);
+                    float sampleY = SampleCoralHeight(u, Mathf.Repeat(v + 1.0f / height, 1.0f), seed);
+                    Vector3 tangent = new Vector3(1f, 0f, (sampleX - center) * normalScale);
+                    Vector3 bitangent = new Vector3(0f, 1f, (sampleY - center) * normalScale);
+                    Vector3 normal = Vector3.Cross(tangent, bitangent).normalized;
+                    pixels[y * width + x] = new Color(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f, 1f);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            EditorUtility.SetDirty(texture);
+            return true;
+        }
+
+        private static bool CreateOrUpdateCoralMaskTexture(string path, int seed, float cavityBase, float thicknessBase)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+            {
+                texture = new Texture2D(128, 128, TextureFormat.RGBA32, false, true)
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                    anisoLevel = 1
+                };
+                AssetDatabase.CreateAsset(texture, path);
+            }
+
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = y / (float)(height - 1);
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (float)(width - 1);
+                    float ridge = Mathf.Clamp01(0.5f + Mathf.Sin((u * (8.0f + seed * 0.05f) + v * 5.2f) * Mathf.PI) * 0.34f);
+                    float cavity = Mathf.Clamp01(cavityBase + Mathf.Sin((u * 17.0f - v * (9.0f + seed * 0.03f)) * Mathf.PI) * 0.22f);
+                    float gloss = Mathf.Clamp01(0.42f + ridge * 0.34f + Mathf.Sin((u + v) * (7.0f + seed * 0.02f) * Mathf.PI) * 0.12f);
+                    float thickness = Mathf.Clamp01(thicknessBase + ridge * 0.18f + Mathf.Sin((u * 5.0f + v * 11.0f) * Mathf.PI) * 0.08f);
+                    pixels[y * width + x] = new Color(ridge, gloss, cavity, thickness);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            EditorUtility.SetDirty(texture);
+            return true;
+        }
+
         private static string ResolveBaseTexturePath(string familyId)
         {
             switch (familyId)
             {
-                case "family.kelp.tall":
+                case FamilyKelpTall:
                     return TextureRoot + "/TX_KelpTall_Base.asset";
-                case "family.kelp.patch.dense":
+                case FamilyKelpPatchDense:
                     return TextureRoot + "/TX_KelpPatch_Base.asset";
-                case "family.kelp.canopy":
+                case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Base.asset";
                 default:
                     return string.Empty;
@@ -234,11 +355,11 @@ namespace Hecton8.EditorTools
         {
             switch (familyId)
             {
-                case "family.kelp.tall":
+                case FamilyKelpTall:
                     return TextureRoot + "/TX_KelpTall_Detail.asset";
-                case "family.kelp.patch.dense":
+                case FamilyKelpPatchDense:
                     return TextureRoot + "/TX_KelpPatch_Detail.asset";
-                case "family.kelp.canopy":
+                case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Detail.asset";
                 default:
                     return string.Empty;
@@ -249,11 +370,11 @@ namespace Hecton8.EditorTools
         {
             switch (familyId)
             {
-                case "family.kelp.tall":
+                case FamilyKelpTall:
                     return TextureRoot + "/TX_KelpTall_Normal.asset";
-                case "family.kelp.patch.dense":
+                case FamilyKelpPatchDense:
                     return TextureRoot + "/TX_KelpPatch_Normal.asset";
-                case "family.kelp.canopy":
+                case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Normal.asset";
                 default:
                     return string.Empty;
@@ -264,12 +385,80 @@ namespace Hecton8.EditorTools
         {
             switch (familyId)
             {
-                case "family.kelp.tall":
+                case FamilyKelpTall:
                     return TextureRoot + "/TX_KelpTall_Mask.asset";
-                case "family.kelp.patch.dense":
+                case FamilyKelpPatchDense:
                     return TextureRoot + "/TX_KelpPatch_Mask.asset";
-                case "family.kelp.canopy":
+                case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Mask.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveCoralBaseTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case FamilyCoralLow:
+                    return TextureRoot + "/TX_CoralLow_Base.asset";
+                case FamilyCoralBranching:
+                    return TextureRoot + "/TX_CoralBranching_Base.asset";
+                case FamilyCoralMassive:
+                    return TextureRoot + "/TX_CoralMassive_Base.asset";
+                case FamilyCoralPlate:
+                    return TextureRoot + "/TX_CoralPlate_Base.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveCoralDetailTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case FamilyCoralLow:
+                    return TextureRoot + "/TX_CoralLow_Detail.asset";
+                case FamilyCoralBranching:
+                    return TextureRoot + "/TX_CoralBranching_Detail.asset";
+                case FamilyCoralMassive:
+                    return TextureRoot + "/TX_CoralMassive_Detail.asset";
+                case FamilyCoralPlate:
+                    return TextureRoot + "/TX_CoralPlate_Detail.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveCoralNormalTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case FamilyCoralLow:
+                    return TextureRoot + "/TX_CoralLow_Normal.asset";
+                case FamilyCoralBranching:
+                    return TextureRoot + "/TX_CoralBranching_Normal.asset";
+                case FamilyCoralMassive:
+                    return TextureRoot + "/TX_CoralMassive_Normal.asset";
+                case FamilyCoralPlate:
+                    return TextureRoot + "/TX_CoralPlate_Normal.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveCoralMaskTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case FamilyCoralLow:
+                    return TextureRoot + "/TX_CoralLow_Mask.asset";
+                case FamilyCoralBranching:
+                    return TextureRoot + "/TX_CoralBranching_Mask.asset";
+                case FamilyCoralMassive:
+                    return TextureRoot + "/TX_CoralMassive_Mask.asset";
+                case FamilyCoralPlate:
+                    return TextureRoot + "/TX_CoralPlate_Mask.asset";
                 default:
                     return string.Empty;
             }
@@ -282,6 +471,14 @@ namespace Hecton8.EditorTools
             float curl = Mathf.Sin(((u * 0.75f + v) * (12.0f + seed * 0.02f)) * Mathf.PI);
             float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
             return stripeA * 0.18f + stripeB * 0.10f + curl * 0.08f + centerRib * 0.14f;
+        }
+
+        private static float SampleCoralHeight(float u, float v, int seed)
+        {
+            float cells = Mathf.Sin((u * (10.0f + seed * 0.06f) + v * 7.0f) * Mathf.PI);
+            float ridges = Mathf.Sin((u * 19.0f - v * (11.0f + seed * 0.04f)) * Mathf.PI);
+            float pores = Mathf.Sin(((u + v * 0.85f) * (15.0f + seed * 0.03f)) * Mathf.PI);
+            return cells * 0.16f + ridges * 0.12f + pores * 0.10f;
         }
 
         private static void EnsureFolder(string assetPath)

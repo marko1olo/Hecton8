@@ -9,6 +9,8 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralFloraFinalVariantValidator
     {
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
+        private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
+        private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
 
         [MenuItem("Hecton/Validation/Validate Procedural Flora Final Variants", priority = 240)]
         public static void Validate()
@@ -373,35 +375,51 @@ namespace Hecton8.EditorTools
             if (!material.enableInstancing)
                 warnings.Add($"{prefabPath}: material '{material.name}' on renderer '{renderer.name}' has instancing disabled.");
 
-            if (!familyId.StartsWith("family.kelp.", System.StringComparison.Ordinal))
+            if (familyId.StartsWith("family.kelp.", System.StringComparison.Ordinal))
+            {
+                AppendFloraStackFindings(prefabPath, renderer, material, KelpShaderName, "kelp", warnings, issues);
                 return;
+            }
 
-            if (material.shader == null || material.shader.name != "Hecton8/Flora/KelpMaster")
-                issues.Add($"{prefabPath}: kelp renderer '{renderer.name}' must use shader 'Hecton8/Flora/KelpMaster', found '{(material.shader != null ? material.shader.name : "<null>")}'.");
+            if (familyId.StartsWith("family.coral.", System.StringComparison.Ordinal))
+                AppendFloraStackFindings(prefabPath, renderer, material, CoralShaderName, "coral", warnings, issues);
+        }
+
+        private static void AppendFloraStackFindings(
+            string prefabPath,
+            Renderer renderer,
+            Material material,
+            string expectedShaderName,
+            string floraLabel,
+            ICollection<string> warnings,
+            ICollection<string> issues)
+        {
+            if (material.shader == null || material.shader.name != expectedShaderName)
+                issues.Add($"{prefabPath}: {floraLabel} renderer '{renderer.name}' must use shader '{expectedShaderName}', found '{(material.shader != null ? material.shader.name : "<null>")}'.");
 
             if (material.GetTexture("_BaseMap") == null)
-                issues.Add($"{prefabPath}: kelp material '{material.name}' is missing _BaseMap.");
+                issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _BaseMap.");
 
             if (material.GetTexture("_DetailMap") == null)
-                issues.Add($"{prefabPath}: kelp material '{material.name}' is missing _DetailMap.");
+                issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _DetailMap.");
 
             if (material.GetTexture("_NormalMap") == null)
-                issues.Add($"{prefabPath}: kelp material '{material.name}' is missing _NormalMap.");
+                issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _NormalMap.");
 
             if (material.GetTexture("_MaskMap") == null)
-                issues.Add($"{prefabPath}: kelp material '{material.name}' is missing _MaskMap.");
+                issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _MaskMap.");
 
             if (material.HasFloat("_ReceiveShadows") && material.GetFloat("_ReceiveShadows") > 0.001f)
-                warnings.Add($"{prefabPath}: kelp material '{material.name}' keeps _ReceiveShadows enabled.");
+                warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' keeps _ReceiveShadows enabled.");
 
             if (material.HasFloat("_EnvironmentReflections") && material.GetFloat("_EnvironmentReflections") > 0.001f)
-                warnings.Add($"{prefabPath}: kelp material '{material.name}' keeps _EnvironmentReflections enabled.");
+                warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' keeps _EnvironmentReflections enabled.");
 
             if (material.HasFloat("_SpecularHighlights") && material.GetFloat("_SpecularHighlights") > 0.001f)
-                warnings.Add($"{prefabPath}: kelp material '{material.name}' keeps _SpecularHighlights enabled.");
+                warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' keeps _SpecularHighlights enabled.");
 
             if (material.HasFloat("_GlossyReflections") && material.GetFloat("_GlossyReflections") > 0.001f)
-                warnings.Add($"{prefabPath}: kelp material '{material.name}' keeps _GlossyReflections enabled.");
+                warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' keeps _GlossyReflections enabled.");
         }
 
         private static Renderer[] ResolveBudgetRenderers(Renderer[] allRenderers, LODGroup[] lodGroups)

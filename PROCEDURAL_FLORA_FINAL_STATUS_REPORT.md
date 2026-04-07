@@ -12,10 +12,10 @@
 | family.kelp.tall | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 584 | 7416 | 4 | 3/3 | 3/3 | 3/3 |
 | family.kelp.patch.dense | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 496 | 11504 | 4 | 3/3 | 3/3 | 3/3 |
 | family.kelp.canopy | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 684 | 9316 | 4 | 3/3 | 3/3 | 3/3 |
-| family.coral.low | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 3840 | 3160 | 2 | 3/3 | 3/3 | 3/3 |
-| family.coral.branching | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 4320 | 7680 | 2 | 3/3 | 3/3 | 3/3 |
-| family.coral.massive | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 3840 | 5160 | 2 | 3/3 | 3/3 | 3/3 |
-| family.coral.plate | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 400 | 8100 | 2 | 3/3 | 3/3 | 3/3 |
+| family.coral.low | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 1488 | 5512 | 2 | 3/3 | 3/3 | 3/3 |
+| family.coral.branching | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 380 | 11620 | 2 | 3/3 | 3/3 | 3/3 |
+| family.coral.massive | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 1668 | 7332 | 2 | 3/3 | 3/3 | 3/3 |
+| family.coral.plate | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 312 | 8188 | 2 | 3/3 | 3/3 | 3/3 |
 
 ## family.kelp.tall - Kelp Tall
 
@@ -81,17 +81,17 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `3840`
+- Max budget triangles: `1488`
 - Triangle budget limit: `7000`
-- Triangle headroom: `3160`
+- Triangle headroom: `5512`
 - Max renderer count: `2`
 - Renderer budget limit: `10`
 - Material-ready prefabs: `3/3`
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs:
-  - `GEN_family_coral_low__bed` generated | variantId=`family.coral.low.final.flora.gen_family_coral_low__bed` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=2304 | weight=2 | scale=92-106 | lodTriangles=2304/1536 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_low/GEN_family_coral_low__bed.prefab`
-  - `GEN_family_coral_low__knoll` generated | variantId=`family.coral.low.final.flora.gen_family_coral_low__knoll` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=3840 | weight=2 | scale=92-106 | lodTriangles=3840/2304 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_low/GEN_family_coral_low__knoll.prefab`
-  - `GEN_family_coral_low__plate` generated | variantId=`family.coral.low.final.flora.gen_family_coral_low__plate` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=2384 | weight=2 | scale=92-106 | lodTriangles=2384/1536 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_low/GEN_family_coral_low__plate.prefab`
+  - `GEN_family_coral_low__bed` generated | variantId=`family.coral.low.final.flora.gen_family_coral_low__bed` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=824 | weight=2 | scale=92-106 | lodTriangles=824/472 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_low/GEN_family_coral_low__bed.prefab`
+  - `GEN_family_coral_low__knoll` generated | variantId=`family.coral.low.final.flora.gen_family_coral_low__knoll` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=1488 | weight=2 | scale=92-106 | lodTriangles=1488/928 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_low/GEN_family_coral_low__knoll.prefab`
+  - `GEN_family_coral_low__plate` generated | variantId=`family.coral.low.final.flora.gen_family_coral_low__plate` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=1008 | weight=2 | scale=92-106 | lodTriangles=1008/616 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_low/GEN_family_coral_low__plate.prefab`
 
 ## family.coral.branching - Coral Branching
 
@@ -100,17 +100,17 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `4320`
+- Max budget triangles: `380`
 - Triangle budget limit: `12000`
-- Triangle headroom: `7680`
+- Triangle headroom: `11620`
 - Max renderer count: `2`
 - Renderer budget limit: `16`
 - Material-ready prefabs: `3/3`
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs:
-  - `GEN_family_coral_branching__branch` generated | variantId=`family.coral.branching.final.flora.gen_family_coral_branching__branch` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=2624 | weight=1 | scale=94-108 | lodTriangles=2624/240 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_branching/GEN_family_coral_branching__branch.prefab`
-  - `GEN_family_coral_branching__fan` generated | variantId=`family.coral.branching.final.flora.gen_family_coral_branching__fan` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=4320 | weight=1 | scale=94-108 | lodTriangles=4320/240 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_branching/GEN_family_coral_branching__fan.prefab`
-  - `GEN_family_coral_branching__mass` generated | variantId=`family.coral.branching.final.flora.gen_family_coral_branching__mass` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=3392 | weight=1 | scale=94-108 | lodTriangles=3392/928 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_branching/GEN_family_coral_branching__mass.prefab`
+  - `GEN_family_coral_branching__branch` generated | variantId=`family.coral.branching.final.flora.gen_family_coral_branching__branch` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=316 | weight=1 | scale=94-108 | lodTriangles=316/112 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_branching/GEN_family_coral_branching__branch.prefab`
+  - `GEN_family_coral_branching__fan` generated | variantId=`family.coral.branching.final.flora.gen_family_coral_branching__fan` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=380 | weight=1 | scale=94-108 | lodTriangles=380/136 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_branching/GEN_family_coral_branching__fan.prefab`
+  - `GEN_family_coral_branching__mass` generated | variantId=`family.coral.branching.final.flora.gen_family_coral_branching__mass` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=340 | weight=1 | scale=94-108 | lodTriangles=340/232 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_branching/GEN_family_coral_branching__mass.prefab`
 
 ## family.coral.massive - Coral Massive
 
@@ -119,17 +119,17 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `3840`
+- Max budget triangles: `1668`
 - Triangle budget limit: `9000`
-- Triangle headroom: `5160`
+- Triangle headroom: `7332`
 - Max renderer count: `2`
 - Renderer budget limit: `12`
 - Material-ready prefabs: `3/3`
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs:
-  - `GEN_family_coral_massive__boulder` generated | variantId=`family.coral.massive.final.flora.gen_family_coral_massive__boulder` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=3840 | weight=1 | scale=95-105 | lodTriangles=3840/2304 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_massive/GEN_family_coral_massive__boulder.prefab`
-  - `GEN_family_coral_massive__head` generated | variantId=`family.coral.massive.final.flora.gen_family_coral_massive__head` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=2304 | weight=1 | scale=95-105 | lodTriangles=2304/1536 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_massive/GEN_family_coral_massive__head.prefab`
-  - `GEN_family_coral_massive__porous` generated | variantId=`family.coral.massive.final.flora.gen_family_coral_massive__porous` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=2328 | weight=1 | scale=95-105 | lodTriangles=2328/2304 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_massive/GEN_family_coral_massive__porous.prefab`
+  - `GEN_family_coral_massive__boulder` generated | variantId=`family.coral.massive.final.flora.gen_family_coral_massive__boulder` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=1668 | weight=1 | scale=95-105 | lodTriangles=1668/1076 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_massive/GEN_family_coral_massive__boulder.prefab`
+  - `GEN_family_coral_massive__head` generated | variantId=`family.coral.massive.final.flora.gen_family_coral_massive__head` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=1136 | weight=1 | scale=95-105 | lodTriangles=1136/712 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_massive/GEN_family_coral_massive__head.prefab`
+  - `GEN_family_coral_massive__porous` generated | variantId=`family.coral.massive.final.flora.gen_family_coral_massive__porous` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=1352 | weight=1 | scale=95-105 | lodTriangles=1352/904 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_massive/GEN_family_coral_massive__porous.prefab`
 
 ## family.coral.plate - Coral Plate
 
@@ -138,14 +138,14 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `400`
+- Max budget triangles: `312`
 - Triangle budget limit: `8500`
-- Triangle headroom: `8100`
+- Triangle headroom: `8188`
 - Max renderer count: `2`
 - Renderer budget limit: `12`
 - Material-ready prefabs: `3/3`
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs:
-  - `GEN_family_coral_plate__ledge` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__ledge` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=240 | weight=1 | scale=96-104 | lodTriangles=240/160 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__ledge.prefab`
-  - `GEN_family_coral_plate__shelf` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__shelf` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=320 | weight=1 | scale=96-104 | lodTriangles=320/160 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__shelf.prefab`
-  - `GEN_family_coral_plate__stack` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__stack` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=400 | weight=1 | scale=96-104 | lodTriangles=400/240 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__stack.prefab`
+  - `GEN_family_coral_plate__ledge` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__ledge` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=176 | weight=1 | scale=96-104 | lodTriangles=176/144 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__ledge.prefab`
+  - `GEN_family_coral_plate__shelf` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__shelf` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=232 | weight=1 | scale=96-104 | lodTriangles=232/184 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__shelf.prefab`
+  - `GEN_family_coral_plate__stack` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__stack` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=312 | weight=1 | scale=96-104 | lodTriangles=312/248 | material=ok | renderState=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__stack.prefab`

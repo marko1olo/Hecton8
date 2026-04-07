@@ -363,7 +363,7 @@ P0 rules:
 - [ ] Current confirmed live-log offender:
   - `FaunaDirector` can dominate `SlowTick` and trigger `ObjectPoolManager` on-demand expansion for `SmallPassiveProxy`
   - fauna pool warmup must track live `_runtimeMaxSpawnsPerTick` and reopen after runtime streaming settings grow; a static reserve fixed at scene start is invalid
-  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, and now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, but scatter startup truth is still `PENDING VERIFICATION`
+  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, now reuse one per-rule preferred-family index instead of rescanning the same preferred-family array across multiple score helpers, now reuse one per-cell pattern score context instead of repeating the same pattern-category guards through multiple runtime score helpers, now consolidate the four pattern-dependent score helper calls for one `pattern + runtimeRule` pair into a single combined helper, now consolidate the three heat-scale helper calls for one `pattern + runtimeRule + depth` tuple into one combined helper, and now skip redundant preferred-biome / preferred-zone rescans for accepted rules by replacing post-gate `GetFamilyAffinityBonus(...)` with `GetAcceptedFamilyAffinityBonus(...)`, but scatter startup truth is still `PENDING VERIFICATION`
 - [ ] Current UI visibility rule:
   - `PlayerPDA`, pause sections, and HUD roots must prefer warmed `CanvasGroup` visibility over hierarchy `SetActive` churn
   - hidden PDA tabs must defer refresh work instead of continuing full refresh on gameplay events
@@ -1149,6 +1149,15 @@ P0 rules:
         - all 7 flora families show `LOD Cascade 3/3`
       - authored-final intake now rejects malformed metadata instead of silently falling back to family defaults
       - controlled kelp test confirmed generated fallback stays active when authored metadata is broken
+      - coral visual stack is now being raised to kelp parity in the editor-owned layer:
+        - dedicated shader `Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader`
+        - procedural coral `Base / Detail / Normal / Mask` texture generation for all 4 coral families
+        - coral materials now bind to the coral shader and full texture stack instead of generic URP hardening only
+        - verified Unity passes on `2026-04-08`:
+          - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
+          - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+          - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+          - `Generate Procedural Flora Final Status Report`
 - [ ] Wave 6: passive fauna, predators, boids, macro-zone threat logic
 - [ ] Wave 7: ruins, old modules, service scars, trash/human traces
 - [ ] Wave 8: surface/island ecology and shoreline life
@@ -1227,3 +1236,24 @@ P0 rules:
 - Small life is critical for immersion
 - Silence matters as much as saturation
 - This document is the integrated master version and should be used as the live production roadmap
+
+## Flora Wave 5 Addendum — 2026-04-08 Coral Geometry Ownership
+
+- Verified architecture step:
+  - coral starter geometry now has its own editor-only owner `WorldProceduralCoralMeshBuilder`
+  - coral no longer depends only on primitive proxy assembly before entering baked finals
+- Verified outcomes:
+  - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` after regeneration now shows:
+    - `family.coral.low` max budget triangles `1488` (was `3840`)
+    - `family.coral.branching` max budget triangles `380` (was `4320`)
+    - `family.coral.massive` max budget triangles `1668` (was `3840`)
+    - `family.coral.plate` max budget triangles `312` (was `400`)
+  - baked prefabs `GEN_family_coral_low__knoll` and `GEN_family_coral_branching__fan` now resolve to clean `LODGroup + 2 mesh children` hierarchies instead of primitive child trees
+- Honest visual verdict:
+  - geometry ownership and cost are improved
+  - coral still does not read as photoreal authored final art
+  - low/massive silhouettes are more coherent
+  - branching coral may now be too cheap and needs a direct beauty pass before it is trusted
+- Status:
+  - `PENDING VERIFICATION`
+  - missing proof: in-world beauty pass, profiler/build evidence, authored coral finals

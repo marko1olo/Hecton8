@@ -886,6 +886,7 @@ namespace Hecton8.World
                         _patternLayerTargetMaxBuffer[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn]);
                     int predatorSpawnMax = _cachedPatternPredatorSpawnMax;
                     ScatterBiomeScoreContext biomeScoreContext = BuildScatterBiomeScoreContext(fieldSample.biomeProfile);
+                    ScatterPatternScoreContext patternScoreContext = BuildScatterPatternScoreContext(fieldSample.resolvedPattern);
                     ResolveCombinedBudgetScales(
                         cellPatternProfile,
                         cellBiomeContext,
@@ -932,9 +933,12 @@ namespace Hecton8.World
                             runtimeRule.DensityScaleFactor);
                         heat = Mathf.Clamp01(
                             heat
-                            * GetPatternHeatScale(fieldSample.resolvedPattern, runtimeRule)
-                            * GetLandmarkSoftWaterHeatScale(fieldSample.resolvedPattern, runtimeRule, biomeScoreContext)
-                            * GetDepthDomainScale(fieldSample.depthMeters, runtimeRule));
+                            * GetCombinedHeatScale(
+                                fieldSample.resolvedPattern,
+                                fieldSample.depthMeters,
+                                runtimeRule,
+                                biomeScoreContext,
+                                patternScoreContext));
                         bool needsPreviewRescue = NeedsPreviewRescue(fieldSample, family);
                         float effectiveMinHeat = ResolveEffectiveMinHeat(rule, family, fieldSample, needsPreviewRescue);
                         float effectiveDensityScale = ResolveEffectiveDensityScale(rule, family, fieldSample, needsPreviewRescue);
@@ -945,21 +949,19 @@ namespace Hecton8.World
 
                         float normalizedHeat = Mathf.InverseLerp(effectiveMinHeat, 1f, heat);
                         float spawnProbability = Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
+                        WorldPrefabFamilyProfile.ScatterLayer layer = runtimeRule.ScatterLayer;
+                        int layerPreferredFamilyIndex = GetPreferredFamilyIndexForLayer(fieldSample.biomeProfile, family, layer);
                         float score = spawnProbability
                             + heat
                             + runtimeRule.ScoreBaseBonus
-                            + GetFamilyAffinityBonus(fieldSample, runtimeRule)
+                            + GetAcceptedFamilyAffinityBonus(runtimeRule)
                             + GetGenerativeGeologyContextBonus(fieldSample, runtimeRule)
-                            + GetPatternAffinityBonus(fieldSample.resolvedPattern, runtimeRule)
-                            + GetClusterAccentPatternBonus(fieldSample.resolvedPattern, runtimeRule)
-                            + GetSpawnFamilyPatternBonus(fieldSample.resolvedPattern, runtimeRule)
-                            + GetPatternContextBonus(fieldSample.resolvedPattern, runtimeRule)
+                            + GetCombinedPatternScoreBonus(fieldSample.resolvedPattern, runtimeRule)
                             + GetBiomeContextBonus(cellBiomeContext, runtimeRule)
-                            + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext)
-                            + GetBiomeSignatureScoreBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule)
-                            + GetSoftWaterStructureFamilyBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext)
-                            + GetLandmarkSoftWaterStructureFamilyBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext);
-                        WorldPrefabFamilyProfile.ScatterLayer layer = runtimeRule.ScatterLayer;
+                            + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
+                            + GetBiomeSignatureScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext)
+                            + GetSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
+                            + GetLandmarkSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
                         int layerIndex = (int)layer;
                         if (!HasPatternLayerGlobalBudget(layer, layerPlacementCounts[layerIndex], _patternLayerTargetMaxBuffer))
                             continue;
@@ -7017,6 +7019,18 @@ namespace Hecton8.World
             return bonus;
         }
 
+        private static float GetAcceptedFamilyAffinityBonus(in ScatterRuntimeRuleEntry runtimeRule)
+        {
+            float bonus = 0f;
+            if (runtimeRule.PreferredBiomeFamilies != null && runtimeRule.PreferredBiomeFamilies.Length > 0)
+                bonus += runtimeRule.BiomeAffinityWeight;
+
+            if (runtimeRule.PreferredZoneKinds != null && runtimeRule.PreferredZoneKinds.Length > 0)
+                bonus += runtimeRule.ZoneAffinityWeight;
+
+            return bonus;
+        }
+
         private static float GetPatternAffinityBonus(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             WorldPrefabFamilyProfile family)
@@ -7160,7 +7174,9 @@ namespace Hecton8.World
             WorldProceduralPattern pattern,
             HectonBiomeMatrixProfile biomeProfile,
             in ScatterRuntimeRuleEntry runtimeRule,
-            in ScatterBiomeScoreContext biomeScoreContext)
+            in ScatterBiomeScoreContext biomeScoreContext,
+            int layerPreferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
         {
             WorldPrefabFamilyProfile family = runtimeRule.Family;
             if (!biomeScoreContext.HasBiomeProfile || family == null)
@@ -7190,8 +7206,8 @@ namespace Hecton8.World
             bonus += GetMatrixClusterFocusScoreBonus(biomeProfile, runtimeRule, biomeScoreContext);
             bonus += GetMatrixStructureFocusScoreBonus(biomeProfile, runtimeRule, biomeScoreContext);
             bonus += GetMatrixFaunaMoodScoreBonus(biomeProfile, runtimeRule);
-            bonus += GetPreferredContentScoreBonus(biomeProfile, family);
-            bonus += GetPatternSpecificPreferredCategoryScoreBonus(pattern, biomeProfile, family);
+            bonus += GetPreferredContentScoreBonus(runtimeRule, layerPreferredFamilyIndex);
+            bonus += GetPatternSpecificPreferredCategoryScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext);
             return bonus;
         }
 
@@ -7376,6 +7392,20 @@ namespace Hecton8.World
             };
         }
 
+        private static float GetPreferredContentScoreBonus(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            int preferredFamilyIndex)
+        {
+            return runtimeRule.ScatterLayer switch
+            {
+                WorldPrefabFamilyProfile.ScatterLayer.Ground => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.20f, 0.12f, 0.06f, 0f),
+                WorldPrefabFamilyProfile.ScatterLayer.Cluster => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.24f, 0.14f, 0.08f, 0.04f),
+                WorldPrefabFamilyProfile.ScatterLayer.Structure => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.26f, 0.16f, 0.10f, 0.05f),
+                WorldPrefabFamilyProfile.ScatterLayer.Spawn => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.20f, 0.10f, 0f, 0f),
+                _ => 0f
+            };
+        }
+
         private static float GetBiomeSignatureScoreBonus(
             WorldProceduralPattern pattern,
             HectonBiomeMatrixProfile biomeProfile,
@@ -7423,6 +7453,25 @@ namespace Hecton8.World
             in ScatterRuntimeRuleEntry runtimeRule)
         {
             return GetBiomeSignatureScoreBonus(pattern, biomeProfile, runtimeRule.Family);
+        }
+
+        private static float GetBiomeSignatureScoreBonus(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            int preferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
+        {
+            if (!patternScoreContext.IsIndustrialSignature)
+            {
+                return 0f;
+            }
+
+            return runtimeRule.ScatterLayer switch
+            {
+                WorldPrefabFamilyProfile.ScatterLayer.Structure => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.34f, 0.18f, 0.10f, 0.05f),
+                WorldPrefabFamilyProfile.ScatterLayer.Cluster => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.28f, 0.18f, 0.10f, 0.05f),
+                WorldPrefabFamilyProfile.ScatterLayer.Spawn => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.18f, 0.10f, 0f, 0f),
+                _ => 0f
+            };
         }
 
         private static float GetPatternSpecificPreferredCategoryScoreBonus(
@@ -7516,6 +7565,46 @@ namespace Hecton8.World
             return 0f;
         }
 
+        private static float GetPatternSpecificPreferredCategoryScoreBonus(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            int preferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
+        {
+            if (patternScoreContext.IsSoftWater)
+            {
+                return runtimeRule.ScatterLayer switch
+                {
+                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.18f, 0.10f, 0.04f, 0f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Structure => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.20f, 0.12f, 0.06f, 0f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.12f, 0.06f, 0f, 0f),
+                    _ => 0f
+                };
+            }
+
+            if (patternScoreContext.IsServiceLike)
+            {
+                return runtimeRule.ScatterLayer switch
+                {
+                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.16f, 0.10f, 0.05f, 0f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Structure => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.22f, 0.14f, 0.08f, 0.04f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.12f, 0.08f, 0f, 0f),
+                    _ => 0f
+                };
+            }
+
+            if (patternScoreContext.IsSedimentResources)
+            {
+                return runtimeRule.ScatterLayer switch
+                {
+                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.12f, 0.07f, 0.03f, 0f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Structure => GetPreferredFamilyScoreBonus(preferredFamilyIndex, 0.14f, 0.08f, 0.04f, 0f),
+                    _ => 0f
+                };
+            }
+
+            return 0f;
+        }
+
         private static float GetSoftWaterStructureFamilyBonus(
             WorldProceduralPattern pattern,
             HectonBiomeMatrixProfile biomeProfile,
@@ -7553,16 +7642,15 @@ namespace Hecton8.World
         }
 
         private static float GetSoftWaterStructureFamilyBonus(
-            WorldProceduralPattern pattern,
-            HectonBiomeMatrixProfile biomeProfile,
             in ScatterRuntimeRuleEntry runtimeRule,
-            in ScatterBiomeScoreContext biomeScoreContext)
+            in ScatterBiomeScoreContext biomeScoreContext,
+            int preferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
         {
-            WorldPrefabFamilyProfile family = runtimeRule.Family;
             if (!biomeScoreContext.HasBiomeProfile ||
-                family == null ||
+                runtimeRule.Family == null ||
                 runtimeRule.ScatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
-                !IsSoftWaterPattern(pattern))
+                !patternScoreContext.IsSoftWater)
             {
                 return 0f;
             }
@@ -7572,44 +7660,48 @@ namespace Hecton8.World
 
             if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
             {
-                int preferredIndex = GetPreferredFamilyIndex(biomeProfile.preferredStructureFamilies, family);
-                return preferredIndex switch
-                {
-                    0 => pattern == WorldProceduralPattern.ReefNavigation ? 0.28f : 0.24f,
-                    1 => pattern == WorldProceduralPattern.ReefNavigation ? 0.20f : 0.16f,
-                    2 => 0.10f,
-                    _ => 0.06f
-                };
+                return GetSoftWaterStructurePreferredBonus(patternScoreContext.Pattern, preferredFamilyIndex);
             }
 
             if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
-                return pattern == WorldProceduralPattern.ReefNavigation ? -0.16f : -0.12f;
+                return patternScoreContext.Pattern == WorldProceduralPattern.ReefNavigation ? -0.16f : -0.12f;
 
             return 0f;
         }
 
-        private static float GetLandmarkSoftWaterStructureFamilyBonus(
+        private static float GetSoftWaterStructurePreferredBonus(
             WorldProceduralPattern pattern,
-            HectonBiomeMatrixProfile biomeProfile,
-            WorldPrefabFamilyProfile family)
+            int preferredFamilyIndex)
         {
-            if (pattern != WorldProceduralPattern.LandmarkCorridor ||
-                biomeProfile == null ||
-                family == null ||
-                family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure)
+            return preferredFamilyIndex switch
+            {
+                0 => pattern == WorldProceduralPattern.ReefNavigation ? 0.28f : 0.24f,
+                1 => pattern == WorldProceduralPattern.ReefNavigation ? 0.20f : 0.16f,
+                2 => 0.10f,
+                _ => 0.06f
+            };
+        }
+
+        private static float GetLandmarkSoftWaterStructureFamilyBonus(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            in ScatterBiomeScoreContext biomeScoreContext,
+            int preferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
+        {
+            if (!patternScoreContext.IsLandmarkCorridor ||
+                !biomeScoreContext.HasBiomeProfile ||
+                runtimeRule.Family == null ||
+                runtimeRule.ScatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure)
             {
                 return 0f;
             }
 
-            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
-            if (preferredRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+            if (biomeScoreContext.PreferredStructureRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
                 return 0f;
 
-            WorldPrefabFamilyProfile.StructureAccentRole role = GetStructureAccentRole(family);
-            if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
             {
-                int preferredIndex = GetPreferredFamilyIndex(biomeProfile.preferredStructureFamilies, family);
-                return preferredIndex switch
+                return preferredFamilyIndex switch
                 {
                     0 => 0.68f,
                     1 => 0.46f,
@@ -7618,13 +7710,13 @@ namespace Hecton8.World
                 };
             }
 
-            if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
                 return -0.62f;
 
-            if (role == WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
+            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
                 return -0.22f;
 
-            if (role == WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark)
+            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark)
                 return -0.16f;
 
             return 0f;
@@ -7654,54 +7746,12 @@ namespace Hecton8.World
             };
         }
 
-        private static float GetLandmarkSoftWaterStructureFamilyBonus(
-            WorldProceduralPattern pattern,
-            HectonBiomeMatrixProfile biomeProfile,
-            in ScatterRuntimeRuleEntry runtimeRule,
-            in ScatterBiomeScoreContext biomeScoreContext)
-        {
-            WorldPrefabFamilyProfile family = runtimeRule.Family;
-            if (pattern != WorldProceduralPattern.LandmarkCorridor ||
-                !biomeScoreContext.HasBiomeProfile ||
-                family == null ||
-                runtimeRule.ScatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure)
-            {
-                return 0f;
-            }
-
-            if (biomeScoreContext.PreferredStructureRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
-                return 0f;
-
-            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
-            {
-                int preferredIndex = GetPreferredFamilyIndex(biomeProfile.preferredStructureFamilies, family);
-                return preferredIndex switch
-                {
-                    0 => 0.68f,
-                    1 => 0.46f,
-                    2 => 0.26f,
-                    _ => 0.14f
-                };
-            }
-
-            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
-                return -0.62f;
-
-            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
-                return -0.22f;
-
-            if (runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark)
-                return -0.16f;
-
-            return 0f;
-        }
-
         private static float GetLandmarkSoftWaterHeatScale(
-            WorldProceduralPattern pattern,
             in ScatterRuntimeRuleEntry runtimeRule,
-            in ScatterBiomeScoreContext biomeScoreContext)
+            in ScatterBiomeScoreContext biomeScoreContext,
+            in ScatterPatternScoreContext patternScoreContext)
         {
-            if (pattern != WorldProceduralPattern.LandmarkCorridor || !biomeScoreContext.HasBiomeProfile)
+            if (!patternScoreContext.IsLandmarkCorridor || !biomeScoreContext.HasBiomeProfile)
                 return 1f;
 
             if (biomeScoreContext.PreferredStructureRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
@@ -7724,6 +7774,11 @@ namespace Hecton8.World
             return new ScatterBiomeScoreContext(biomeProfile);
         }
 
+        private static ScatterPatternScoreContext BuildScatterPatternScoreContext(WorldProceduralPattern pattern)
+        {
+            return new ScatterPatternScoreContext(pattern);
+        }
+
         private static float GetPreferredFamilyScoreBonus(
             WorldPrefabFamilyProfile[] preferredFamilies,
             WorldPrefabFamilyProfile family,
@@ -7740,6 +7795,41 @@ namespace Hecton8.World
                 2 => index2Bonus,
                 3 => index3Bonus,
                 _ => 0f
+            };
+        }
+
+        private static float GetPreferredFamilyScoreBonus(
+            int preferredFamilyIndex,
+            float index0Bonus,
+            float index1Bonus,
+            float index2Bonus,
+            float index3Bonus)
+        {
+            return preferredFamilyIndex switch
+            {
+                0 => index0Bonus,
+                1 => index1Bonus,
+                2 => index2Bonus,
+                3 => index3Bonus,
+                _ => 0f
+            };
+        }
+
+        private static int GetPreferredFamilyIndexForLayer(
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile family,
+            WorldPrefabFamilyProfile.ScatterLayer layer)
+        {
+            if (biomeProfile == null || family == null)
+                return -1;
+
+            return layer switch
+            {
+                WorldPrefabFamilyProfile.ScatterLayer.Ground => GetPreferredFamilyIndex(biomeProfile.preferredGroundFamilies, family),
+                WorldPrefabFamilyProfile.ScatterLayer.Cluster => GetPreferredFamilyIndex(biomeProfile.preferredClusterFamilies, family),
+                WorldPrefabFamilyProfile.ScatterLayer.Structure => GetPreferredFamilyIndex(biomeProfile.preferredStructureFamilies, family),
+                WorldPrefabFamilyProfile.ScatterLayer.Spawn => GetPreferredFamilyIndex(biomeProfile.preferredSpawnFamilies, family),
+                _ => -1
             };
         }
 
@@ -8592,6 +8682,16 @@ namespace Hecton8.World
             };
         }
 
+        private static float GetCombinedPatternScoreBonus(
+            WorldProceduralPattern pattern,
+            in ScatterRuntimeRuleEntry runtimeRule)
+        {
+            return GetPatternAffinityBonus(pattern, runtimeRule)
+                   + GetClusterAccentPatternBonus(pattern, runtimeRule)
+                   + GetSpawnFamilyPatternBonus(pattern, runtimeRule)
+                   + GetPatternContextBonus(pattern, runtimeRule);
+        }
+
         private static float GetClusterAccentPatternBonus(
             WorldProceduralPattern pattern,
             WorldPrefabFamilyProfile family)
@@ -8961,6 +9061,18 @@ namespace Hecton8.World
                 },
                 _ => 1f
             };
+        }
+
+        private static float GetCombinedHeatScale(
+            WorldProceduralPattern pattern,
+            float depthMeters,
+            in ScatterRuntimeRuleEntry runtimeRule,
+            in ScatterBiomeScoreContext biomeScoreContext,
+            in ScatterPatternScoreContext patternScoreContext)
+        {
+            return GetPatternHeatScale(pattern, runtimeRule)
+                   * GetLandmarkSoftWaterHeatScale(runtimeRule, biomeScoreContext, patternScoreContext)
+                   * GetDepthDomainScale(depthMeters, runtimeRule);
         }
 
         private static float GetDepthDomainScale(
@@ -9873,6 +9985,26 @@ namespace Hecton8.World
             public WorldPrefabFamilyProfile.StructureAccentRole PrimaryStructureFocusRole { get; }
             public WorldPrefabFamilyProfile.StructureAccentRole SecondaryStructureFocusRole { get; }
             public WorldPrefabFamilyProfile.StructureAccentRole PreferredStructureRole { get; }
+        }
+
+        private readonly struct ScatterPatternScoreContext
+        {
+            public ScatterPatternScoreContext(WorldProceduralPattern pattern)
+            {
+                Pattern = pattern;
+                IsSoftWater = IsSoftWaterPattern(pattern);
+                IsServiceLike = IsServiceLikePattern(pattern);
+                IsLandmarkCorridor = pattern == WorldProceduralPattern.LandmarkCorridor;
+                IsIndustrialSignature = pattern == WorldProceduralPattern.IndustrialService || pattern == WorldProceduralPattern.BrineToxic;
+                IsSedimentResources = pattern == WorldProceduralPattern.SedimentResources;
+            }
+
+            public WorldProceduralPattern Pattern { get; }
+            public bool IsSoftWater { get; }
+            public bool IsServiceLike { get; }
+            public bool IsLandmarkCorridor { get; }
+            public bool IsIndustrialSignature { get; }
+            public bool IsSedimentResources { get; }
         }
 
         private readonly struct ScatterRuntimeRuleEntry

@@ -84,6 +84,15 @@ namespace Hecton8.EditorTools
                         return false;
                     }
                 }
+                else if (WorldProceduralCoralMeshBuilder.CanBuild(spec.RootToken))
+                {
+                    if (!WorldProceduralCoralMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 0, out generatedLod0Mesh)
+                        || !WorldProceduralCoralMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 1, out generatedLod1Mesh))
+                    {
+                        Debug.LogWarning($"[WorldProceduralFloraBakedStarterGenerator] Could not generate coral mesh starter for '{spec.RootToken}'.");
+                        return false;
+                    }
+                }
                 else
                 {
                     if (!WorldProceduralFloraProxyShapeBuilder.TryBuild(spec.RootToken, spec.ShapeScale, material, out sourceRoot) || sourceRoot == null)
