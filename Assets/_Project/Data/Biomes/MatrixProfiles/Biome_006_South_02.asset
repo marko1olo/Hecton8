@@ -64,10 +64,11 @@ MonoBehaviour:
   preferredClusterFamilies:
   - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
   - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
+  - {fileID: 11400000, guid: a95fcfd9bc5695a47ae5e0acc0ae5cc0, type: 2}
   - {fileID: 11400000, guid: 20ff4b803a538544ca9a58d36bb90883, type: 2}
-  - {fileID: 11400000, guid: 602b90081c9370b42a85e2acf29ac8ea, type: 2}
   preferredStructureFamilies:
   - {fileID: 11400000, guid: e78426c2ce06cb445a353611d1608196, type: 2}
+  - {fileID: 11400000, guid: 64d81c99ce34b9d4eb1ac1073702564a, type: 2}
   - {fileID: 11400000, guid: 3248410377598bf4b935417906c28fd5, type: 2}
   - {fileID: 11400000, guid: 723bfa18be2651148ba5aec371fae323, type: 2}
   preferredSpawnFamilies:

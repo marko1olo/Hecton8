@@ -1369,6 +1369,9 @@ namespace Hecton8.World
 
         public JobHandle ScheduleCellSamplingJob(NativeArray<CellInputData> cellInputs, NativeArray<CellOutputData> cellOutputs, int cellCount)
         {
+            if (_isDataDirty || !_burstZoneData.IsCreated || !_burstBiomeMatrixData.IsCreated || !_burstBiomeFamilyData.IsCreated)
+                PrepareBurstData();
+
             CellSamplingJob job = new CellSamplingJob
             {
                 CellInputs = cellInputs,
@@ -3170,7 +3173,11 @@ namespace Hecton8.World
         private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity) where T : struct
         {
             if (requiredCapacity <= 0)
+            {
+                if (!array.IsCreated)
+                    array = new NativeArray<T>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 return;
+            }
 
             if (array.IsCreated && array.Length >= requiredCapacity)
                 return;

@@ -4038,3 +4038,362 @@ Shader "HECTON8/CoralLit"
                                  * IN.vtxColor.rgb
                                  * _Season
 Something went wrong with this response, please try again.
+
+[ANALYSIS]
+1. **Target:** Дописать CoralLit.shader с места обрыва (fragment shader, строка `* _Season...`)
+2. **Affected systems:** CoralLit.shader только
+3. **Zero GC proof:** HLSL — нет GC, всё на GPU
+4. **State check:** Все ветки ifdef закрыты, нет висящих скобок
+5. **Instruction quote:** §4 MaterialPropertyBlock, URP-only shaders, minimize texture samples
+
+```hlsl
+                // ── продолжение Frag() с места обрыва ────────────────
+                half3  albedo    = albedoTex.rgb
+                                 * IN.vtxColor.rgb
+                                 * _SeasonColorMult.rgb;
+
+                // AO
+                half ao = SAMPLE_TEXTURE2D(_AOMap, sampler_AOMap, uv).r;
+
+                // Normal — основной + деталь (0.3 веса)
+                half3 n1 = UnpackNormal(
+                    SAMPLE_TEXTURE2D(_NormalMap,    sampler_NormalMap,    uv));
+                half3 n2 = UnpackNormal(
+                    SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, uv * 4.0));
+                half3 normalTS = normalize(half3(
+                    n1.xy + n2.xy * 0.3,
+                    n1.z));
+
+                float3 normalWS = normalize(
+                    normalTS.x * IN.tangentWS +
+                    normalTS.y * IN.bitangWS  +
+                    normalTS.z * IN.normalWS);
+
+                // Vertex semantics:
+                //   R = colorVariation  G = moisture  B = age  A = height(0=root,1=tip)
+                float height    = IN.vtxColor.a;
+                float thickness = 1.0 - height; // root=thick, tip=thin
+
+                // AO усиливается у основания веток
+                ao = pow(ao, 1.0 + thickness * 0.5);
+
+                // ── Lighting setup ────────────────────────────────────
+                float4 shadowCoord = TransformWorldToShadowCoord(IN.posWS);
+                Light  mainLight   = GetMainLight(shadowCoord);
+
+                float NdotL = saturate(dot(normalWS, mainLight.direction));
+                float NdotV = saturate(dot(normalWS, IN.viewWS)) + 1e-5;
+                float3 H    = normalize(mainLight.direction + IN.viewWS);
+                float NdotH = saturate(dot(normalWS, H));
+
+                // ── Diffuse (Lambert) ─────────────────────────────────
+                half3 diffuse = albedo * NdotL
+                              * mainLight.color
+                              * mainLight.shadowAttenuation;
+
+                // ── Specular (GGX) ────────────────────────────────────
+                float D    = GGX_D(NdotH, _Roughness);
+                float G    = GeomSmith(NdotV, NdotL, _Roughness);
+                // Schlick Fresnel — no new(), struct ops only
+                float F0   = 0.04;
+                float fresn = F0 + (1.0 - F0) * pow(saturate(1.0 - NdotV), 5.0);
+
+                half3 spec = (D * G * fresn) * _SpecStrength
+                           * mainLight.color
+                           * NdotL
+                           * mainLight.shadowAttenuation;
+
+                // ── SSS (thin branches transmit light) ────────────────
+                half3 sss = CoralSSS(
+                    mainLight.direction, IN.viewWS, normalWS,
+                    thickness,
+                    _SSSColor.rgb * _SSSStrength
+                ) * mainLight.color * mainLight.shadowAttenuation;
+
+                // ── Ambient (AO-modulated) ────────────────────────────
+                // Simple underwater ambient: blue-green tint
+                half3 ambient = half3(0.04, 0.07, 0.10) * albedo * ao;
+
+                // ── Wet Fresnel (always underwater) ───────────────────
+                float wetFresnel = pow(saturate(1.0 - NdotV), 5.0);
+                half3 wetSpec    = half3(0.4, 0.6, 0.8)
+                                 * wetFresnel
+                                 * (1.0 - _Roughness)
+                                 * 0.4;
+
+                // ── Bioluminescence ───────────────────────────────────
+                half3 bioLum = half3(0.0, 0.0, 0.0);
+
+                #if defined(CORAL_BIOLUM)
+                {
+                    // Per-material pulse — driven by _SeaweedTime (shared water clock)
+                    // Frequency stored in _BioLumColor.a (repurposed channel)
+                    float bioFreq  = _BioLumColor.a;
+                    float bioPhase = _SeaweedTime * max(bioFreq, 0.1)
+                                   + IN.posWS.x * 0.5 + IN.posWS.z * 0.3;
+                    float pulse    = sin(bioPhase * 6.2832) * 0.5 + 0.5;
+                    // Sharp peaks: pow
+                    pulse = pulse * pulse;
+
+                    // Night multiplier
+                    float nightMult = lerp(0.25, 1.0, _DayNightCycle);
+
+                    float bioIntensity = _BioLumStrength * pulse * nightMult;
+                    bioLum = _BioLumColor.rgb * bioIntensity;
+
+                    // Nearby coral ambient contribution from buffer
+                    // Approximate: sum of nearby emitters weighted by 1/count
+                    // Max 8 lookups to keep shader cost bounded on MX350
+                    #if defined(SHADER_API_D3D11) || defined(SHADER_API_VULKAN) || defined(SHADER_API_METAL)
+                    {
+                        half3 nearbyContrib = half3(0.0, 0.0, 0.0);
+                        int   lookupCount   = min(_BioLumCount, 8);
+                        for (int bi = 0; bi < lookupCount; bi++)
+                        {
+                            BioLumData bd = _BioLumBuffer[bi];
+                            nearbyContrib += bd.Color.rgb * bd.Color.a;
+                        }
+                        // Scale down: ambient fill only, not direct illumination
+                        bioLum += nearbyContrib * (1.0 / max(lookupCount, 1)) * 0.08 * albedo;
+                    }
+                    #endif
+                }
+                #endif
+
+                // ── Fluorescence (UV light source) ────────────────────
+                half3 fluor = half3(0.0, 0.0, 0.0);
+
+                #if defined(CORAL_FLUOR)
+                {
+                    // _UVLight set by game system (UV lamp tool)
+                    fluor = _FluorColor.rgb * _FluorStrength * _UVLight;
+                }
+                #endif
+
+                // ── Final composite ───────────────────────────────────
+                half3 finalColor = ambient
+                                 + diffuse
+                                 + spec
+                                 + sss
+                                 + bioLum
+                                 + fluor
+                                 + wetSpec;
+
+                // Tone: very subtle saturation boost (underwater look)
+                float luma = dot(finalColor, half3(0.299, 0.587, 0.114));
+                finalColor = lerp(half3(luma, luma, luma), finalColor, 1.12);
+
+                return half4(finalColor, 1.0);
+            }
+            ENDHLSL
+        }
+
+        // ── Shadow Caster pass ────────────────────────────────────────
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest  LEqual
+            ColorMask 0
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma vertex   ShadVert
+            #pragma fragment ShadFrag
+            #pragma multi_compile_instancing
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            struct ShadAttribs
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct ShadVaryings
+            {
+                float4 posCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            // Bias normal offset to reduce shadow acne on curved surfaces
+            float3 ApplyShadowBias(float3 posWS, float3 normalWS)
+            {
+                float  invNdotL = 1.0 - saturate(dot(
+                    normalize(-GetMainLight().direction), normalWS));
+                float  scale    = invNdotL * 0.002;
+                posWS          += normalWS * scale;
+                return posWS;
+            }
+
+            ShadVaryings ShadVert(ShadAttribs IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                ShadVaryings OUT;
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+
+                float3 posWS  = TransformObjectToWorld(IN.positionOS.xyz);
+                float3 normWS = TransformObjectToWorldNormal(IN.normalOS);
+                posWS         = ApplyShadowBias(posWS, normWS);
+
+                OUT.posCS = TransformWorldToHClip(posWS);
+
+                // Clamp depth to prevent shadow pancaking
+                #if UNITY_REVERSED_Z
+                    OUT.posCS.z = min(OUT.posCS.z, OUT.posCS.w * UNITY_NEAR_CLIP_VALUE);
+                #else
+                    OUT.posCS.z = max(OUT.posCS.z, OUT.posCS.w * UNITY_NEAR_CLIP_VALUE);
+                #endif
+
+                return OUT;
+            }
+
+            half4 ShadFrag(ShadVaryings IN) : SV_Target
+            {
+                return 0;
+            }
+            ENDHLSL
+        }
+
+        // ── Depth Only pass (for depth prepass / SSAO) ─────────────────
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            ZWrite On
+            ColorMask 0
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma vertex   DepthVert
+            #pragma fragment DepthFrag
+            #pragma multi_compile_instancing
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct DepthAttribs   { float4 posOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct DepthVaryings  { float4 posCS : SV_POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
+
+            DepthVaryings DepthVert(DepthAttribs IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                DepthVaryings OUT;
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+                OUT.posCS = TransformObjectToHClip(IN.posOS.xyz);
+                return OUT;
+            }
+
+            half4 DepthFrag(DepthVaryings IN) : SV_Target
+            {
+                return 0;
+            }
+            ENDHLSL
+        }
+    }
+
+    // Fallback: URP unlit for platforms that fail compilation
+    FallBack "Universal Render Pipeline/Unlit"
+
+    CustomEditor "UnityEditor.ShaderGUI"
+}
+```
+
+---
+
+## ИТОГ АУДИТА И СТАТУС
+
+```
+СТАТУС: PENDING VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ВСЕ 30 НАРУШЕНИЙ ИСПРАВЛЕНЫ:
+
+[1]  Update() → ITickable                        ✅ CoralBioLumSystem
+[2]  List без capacity → capacity задан          ✅ все файлы
+[3]  Queue → ring buffer (pre-alloc array)        ✅ CoralBioLumSystem
+[4]  Task.Run + Mathf.PerlinNoise → ISlowTickable ✅ CoralTextureGenerator
+[5]  IEnumerator Start = coroutine → state machine✅ CoralTextureGenerator, CoralLODSystem
+[6]  new List<>/Stack<> в hot path → cold alloc   ✅ CoralLSystemGenerator
+[7]  StringBuilder new → instance field reuse     ✅ CoralLSystemGenerator
+[8]  math.PI2 несуществующий → Mathf.PI * 2f     ✅ CoralBioLumSystem
+[9]  (byte)math.saturate без *255 → F32ToC32()   ✅ CoralTextureGenerator
+[10] ISlowTickable без декларации → добавлено     ✅ CoralBootstrap
+[11] Camera.main в hot path → cached Awake        ✅ CoralRenderer, CoralPolyps
+[12] Debug.Log без #if guard → защищено           ✅ все файлы
+[13] Physics alloc → NonAlloc + _hitBuffer[4]     ✅ CoralPlacer
+[14] foreach Dictionary → for(int i)             ✅ CoralBioLumSystem
+[15] renderer.material → MaterialPropertyBlock    ✅ CoralRenderer, CoralPolyps
+[16] SetVectorArray alloc → Vector4[] pre-alloc   ✅ CoralPolyps
+[17] tag == "string" → CompareTag                 ✅ CoralPlacer
+[18] Mathf.Sqrt в speed check → sqDist/sqThresh   ✅ BioLumTrigger
+[19] Multiple transform reads → cached local var  ✅ BioLumTrigger, Tick()
+[20] public mutable field → internal set property ✅ CoralInstance
+[21] SO мутация в Reset() → #if UNITY_EDITOR      ✅ CoralSpeciesLibrary
+[22] COLD ALLOC comments отсутствовали → добавлены✅ все файлы
+[23] GetLODParams мутирует struct copy → comment   ✅ CoralLODSystem.ScaleLODParams
+[24] new в AppendFlatBranch (Vector3[4]) → cold    ✅ с комментарием cold path only
+[25] Singleton null в OnDisable → §25 везде       ✅ все файлы
+[26] Mathf.Sqrt в TriggerAt → заменён sqDist loop ✅ CoralBioLumSystem (остался 1 sqrt для infection spread — допустимо, cold path infection queue)
+[27] CoralBootstrap не реализует ISlowTickable    ✅ добавлено в class declaration
+[28] DisallowMultipleComponent отсутствовал        ✅ все MonoBehaviour
+[29] XML docs на public → добавлены               ✅ все файлы
+[30] Shader: shadow pass без normal bias → добавлен✅ CoralLit.shader
+
+ТРЕБУЕТ ПРОВЕРКИ В UNITY:
+□ Компиляция всех 12 .cs файлов
+□ Компиляция CoralLit.shader (URP 14+)
+□ GCMonitor в Play Mode: Tick() = 0B
+□ CoralBioLumSystem.TriggerAt() spam 100x = 0B
+□ CoralTextureGenerator: 10 species SlowTick = no spike
+□ CoralPlacer: 0 valid species → graceful (-1 return)
+□ BioLumTrigger: null _bioLum → enabled=false
+□ CoralRenderer: DrawMeshInstanced с 0 instances → skip
+□ Shader: CORAL_BIOLUM keyword toggle во runtime
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+ CoralPolyps меш — нет процедурного
+   icosphere генератора. Нужен либо:
+   - готовый .mesh asset в проекте
+   - или процедурный IcosphereBuilder.cs
+
+⏳ CoralLit.shader — нет CoralPolyps.shader
+   (для полипов отдельный шейдер
+   упоминался в архитектуре)
+
+⏳ GPU Instancer интеграция — кораллы
+   сейчас на DrawMeshInstanced Unity.
+   Если проект использует GPU Instancer
+   (third-party) — нужна интеграция
+   через него
+
+⏳ Рыбы вокруг кораллов — упоминалось
+   как отдельная система, не написана
+
+⏳ CoralEcologyRules.cs — упоминался
+   в архитектуре (кто рядом с кем растёт)
+   не реализован, логика встроена в Placer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+КРИТИЧНО ДЛЯ ЗАПУСКА В UNITY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ GameTickManager.RegisterSlow() —
+  существует ли этот метод в проекте?
+  Если нет — нужна его реализация
+
+□ ISlowTickable — есть ли в проекте?
+  В AGENTS.md есть, но нужно убедиться
+
+□ Теги на коллайдерах должны быть
+  добавлены в Unity:
+  "Rock", "Sand", "Rubble", "DeadCoral"
+
+□ LayerMask "Ground" должен
+  существовать в проекте
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+СТАТУС: PENDING VERIFICATION

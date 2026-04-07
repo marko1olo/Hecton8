@@ -24,9 +24,12 @@ namespace Hecton8.EditorTools
             new FamilyDefinition("family.rock.arch.large", "Rock Arch Large", WorldPrefabFamilyProfile.ProceduralDomain.RockArch, WorldPrefabFamilyProfile.ScatterLayer.Structure, WorldPrefabFamilyProfile.PlacementMode.Landmark, WorldSliceAnchor.SliceState.Far, WorldPrefabFamilyProfile.BudgetClass.Heavy, 28f, 32f, 1, 1, "landmark_strength", new Color(0.44f, 0.5f, 0.58f, 1f), "Big arches for strong biome memory and route readability."),
             new FamilyDefinition("family.kelp.tall", "Kelp Tall", WorldPrefabFamilyProfile.ProceduralDomain.Kelp, WorldPrefabFamilyProfile.ScatterLayer.Ground, WorldPrefabFamilyProfile.PlacementMode.Patch, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Light, 3f, 12f, 5, 12, "kelp_density", new Color(0.24f, 0.72f, 0.34f, 1f), "Tall vertical kelp for readable vertical habitat."),
             new FamilyDefinition("family.kelp.patch.dense", "Kelp Patch Dense", WorldPrefabFamilyProfile.ProceduralDomain.Kelp, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Patch, WorldSliceAnchor.SliceState.Near, WorldPrefabFamilyProfile.BudgetClass.Medium, 2f, 16f, 10, 24, "kelp_density", new Color(0.18f, 0.64f, 0.28f, 1f), "Dense kelp pockets for shelter, occlusion and fauna habitat."),
+            new FamilyDefinition("family.kelp.canopy", "Kelp Canopy", WorldPrefabFamilyProfile.ProceduralDomain.Kelp, WorldPrefabFamilyProfile.ScatterLayer.Structure, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Medium, 8f, 18f, 2, 4, "kelp_density", new Color(0.22f, 0.58f, 0.26f, 1f), "Upper-canopy kelp crowns for route silhouettes, overhead shelter and surface-near identity."),
             new FamilyDefinition("family.plant.giant", "Plant Giant", WorldPrefabFamilyProfile.ProceduralDomain.Plant, WorldPrefabFamilyProfile.ScatterLayer.Structure, WorldPrefabFamilyProfile.PlacementMode.Landmark, WorldSliceAnchor.SliceState.Far, WorldPrefabFamilyProfile.BudgetClass.Medium, 18f, 20f, 1, 2, "flora_density", new Color(0.16f, 0.78f, 0.52f, 1f), "Huge underwater plants that act as biome-scale silhouettes."),
             new FamilyDefinition("family.coral.low", "Coral Low", WorldPrefabFamilyProfile.ProceduralDomain.Coral, WorldPrefabFamilyProfile.ScatterLayer.Ground, WorldPrefabFamilyProfile.PlacementMode.Scatter, WorldSliceAnchor.SliceState.Near, WorldPrefabFamilyProfile.BudgetClass.Light, 2.5f, 8f, 4, 10, "coral_density", new Color(0.92f, 0.48f, 0.42f, 1f), "Low coral scatter for seafloor color and local variety."),
             new FamilyDefinition("family.coral.branching", "Coral Branching", WorldPrefabFamilyProfile.ProceduralDomain.Coral, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Medium, 4f, 10f, 3, 7, "coral_density", new Color(1f, 0.56f, 0.48f, 1f), "Readable branching coral clusters for reef identity."),
+            new FamilyDefinition("family.coral.massive", "Coral Massive", WorldPrefabFamilyProfile.ProceduralDomain.Coral, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Near, WorldPrefabFamilyProfile.BudgetClass.Medium, 3.5f, 9f, 3, 8, "coral_density", new Color(0.86f, 0.58f, 0.4f, 1f), "Massive coral heads for shelter pockets, porosity and believable reef bulk."),
+            new FamilyDefinition("family.coral.plate", "Coral Plate", WorldPrefabFamilyProfile.ProceduralDomain.Coral, WorldPrefabFamilyProfile.ScatterLayer.Structure, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Medium, 6f, 14f, 2, 5, "coral_density", new Color(0.94f, 0.66f, 0.5f, 1f), "Layered plate coral ledges for side-light read, route cover and mid-reef structure."),
             new FamilyDefinition("family.egg.cluster", "Egg Cluster", WorldPrefabFamilyProfile.ProceduralDomain.Egg, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Near, WorldPrefabFamilyProfile.BudgetClass.Light, 3f, 6f, 2, 5, "bio_density", new Color(0.92f, 0.9f, 0.72f, 1f), "Biological nests and egg groups for creature storytelling."),
             new FamilyDefinition("family.debris.scatter", "Debris Scatter", WorldPrefabFamilyProfile.ProceduralDomain.Debris, WorldPrefabFamilyProfile.ScatterLayer.Ground, WorldPrefabFamilyProfile.PlacementMode.Scatter, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Light, 4f, 10f, 3, 8, "debris_density", new Color(0.72f, 0.52f, 0.34f, 1f), "General wreck and junk scatter for lived-in seabed."),
             new FamilyDefinition("family.debris.field", "Debris Field", WorldPrefabFamilyProfile.ProceduralDomain.Debris, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Medium, 8f, 18f, 6, 14, "debris_density", new Color(0.64f, 0.46f, 0.28f, 1f), "Dense salvageable debris fields."),
@@ -48,11 +51,14 @@ namespace Hecton8.EditorTools
         {
             new RuleDefinition("rule.kelp.tall", "Kelp Starter Fields", "Tall kelp for early biome readability and shelter.", "family.kelp.tall", WorldContentSocket.ContentKind.Generic, 0f, 180f, 0f, 18f, "kelp_density", 0.35f, 1.2f, 6, 18, new[] { "biome.family.littoral_karst", "biome.family.fossil_reef", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Fabrication }),
             new RuleDefinition("rule.kelp.patch.dense", "Dense Kelp Patches", "Dense kelp shelters and visual occlusion pockets.", "family.kelp.patch.dense", WorldContentSocket.ContentKind.Generic, 0f, 220f, 0f, 22f, "kelp_density", 0.52f, 1.15f, 3, 9, new[] { "biome.family.littoral_karst", "biome.family.fossil_reef", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation }),
+            new RuleDefinition("rule.kelp.canopy", "Kelp Canopy Crowns", "Upper canopy kelp that makes shallow reef routes feel layered and inhabited.", "family.kelp.canopy", WorldContentSocket.ContentKind.Landmark, 0f, 180f, 0f, 20f, "kelp_density", 0.4f, 1.05f, 1, 3, new[] { "biome.family.littoral_karst", "biome.family.fossil_reef", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Fabrication }),
             new RuleDefinition("rule.rocks.floor", "Seafloor Rock Scatter", "Base rock language for most seafloor biomes.", "family.rock.small_floor", WorldContentSocket.ContentKind.Generic, 0f, 5000f, 0f, 35f, "rock_density", 0.25f, 1f, 4, 12, Array.Empty<string>(), Array.Empty<WorldZoneAnchor.ZoneKind>()),
             new RuleDefinition("rule.rocks.cluster", "Clustered Rock Cover", "Medium rock groupings that create silhouette and cover.", "family.rock.cluster.medium", WorldContentSocket.ContentKind.Generic, 0f, 5000f, 0f, 42f, "rock_density", 0.45f, 0.9f, 2, 6, Array.Empty<string>(), Array.Empty<WorldZoneAnchor.ZoneKind>()),
             new RuleDefinition("rule.rocks.arch", "Rock Arch Landmarks", "Large natural stone arches that hold route memory.", "family.rock.arch.large", WorldContentSocket.ContentKind.Landmark, 40f, 5000f, 4f, 55f, "landmark_strength", 0.38f, 1.02f, 1, 1, new[] { "biome.family.granite_escarpment", "biome.family.tectonic_spine", "biome.family.rift_spine", "biome.family.volcanic_glass", "biome.family.chemosynthetic_brine", "biome.family.abyssal_silt", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Combat }),
             new RuleDefinition("rule.coral.low", "Low Coral Beds", "Low colorful coral that makes the floor feel alive.", "family.coral.low", WorldContentSocket.ContentKind.Generic, 0f, 550f, 0f, 34f, "coral_density", 0.28f, 1.05f, 5, 12, new[] { "biome.family.littoral_karst", "biome.family.fossil_reef", "biome.family.crystal_growth" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Fabrication }),
             new RuleDefinition("rule.coral.branching", "Coral Reef Growth", "Branching reef masses for readable coral structure.", "family.coral.branching", WorldContentSocket.ContentKind.Generic, 0f, 600f, 0f, 40f, "coral_density", 0.4f, 1f, 3, 8, new[] { "biome.family.fossil_reef", "biome.family.littoral_karst", "biome.family.crystal_growth" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation }),
+            new RuleDefinition("rule.coral.massive", "Massive Coral Heads", "Bulky coral mounds that create shelter, porosity and reef trust at close range.", "family.coral.massive", WorldContentSocket.ContentKind.Generic, 6f, 420f, 0f, 32f, "coral_density", 0.34f, 1.08f, 3, 9, new[] { "biome.family.fossil_reef", "biome.family.littoral_karst", "biome.family.crystal_growth", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Fabrication }),
+            new RuleDefinition("rule.coral.plate", "Plate Coral Ledges", "Layered plate coral that catches side light and turns reef walls into readable shelves.", "family.coral.plate", WorldContentSocket.ContentKind.Landmark, 18f, 520f, 0f, 28f, "coral_density", 0.32f, 1f, 2, 5, new[] { "biome.family.fossil_reef", "biome.family.crystal_growth", "biome.family.granite_escarpment" }, new[] { WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Resources }),
             new RuleDefinition("rule.egg.cluster", "Egg Cluster Nests", "Nest-like biological pockets in fertile quiet water.", "family.egg.cluster", WorldContentSocket.ContentKind.Generic, 20f, 800f, 0f, 28f, "bio_density", 0.48f, 0.96f, 1, 3, new[] { "biome.family.fossil_reef", "biome.family.littoral_karst", "biome.family.sediment_drift", "biome.family.crystal_growth" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Fabrication }),
             new RuleDefinition("rule.plant.giant", "Giant Flora Silhouettes", "Huge plant silhouettes that make the biome readable from afar.", "family.plant.giant", WorldContentSocket.ContentKind.Landmark, 30f, 1200f, 0f, 26f, "flora_density", 0.42f, 1.02f, 1, 2, new[] { "biome.family.littoral_karst", "biome.family.fossil_reef", "biome.family.crystal_growth", "biome.family.chemosynthetic_brine" }, new[] { WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Fabrication }),
             new RuleDefinition("rule.debris.scatter", "Debris Scatter", "Light industrial litter and scrap traces.", "family.debris.scatter", WorldContentSocket.ContentKind.Generic, 30f, 5000f, 0f, 30f, "debris_density", 0.3f, 0.95f, 3, 8, new[] { "biome.family.sediment_drift", "biome.family.metallic_hadal", "biome.family.chemosynthetic_brine", "biome.family.abyssal_silt" }, new[] { WorldZoneAnchor.ZoneKind.Service, WorldZoneAnchor.ZoneKind.Power, WorldZoneAnchor.ZoneKind.Progression }),
@@ -973,6 +979,12 @@ namespace Hecton8.EditorTools
                         new VariantRecipe("patch", VariantShape.Patch, PrimitiveType.Cylinder, new Vector3(0.28f, 2.8f, 0.28f), 2, new Vector2(0.9f, 1.1f)),
                         new VariantRecipe("grove", VariantShape.Cluster, PrimitiveType.Cylinder, new Vector3(0.34f, 3.2f, 0.34f), 1, new Vector2(0.9f, 1.1f))
                     };
+                case "family.kelp.canopy":
+                    return new[]
+                    {
+                        new VariantRecipe("crown", VariantShape.Canopy, PrimitiveType.Cylinder, new Vector3(0.42f, 3.8f, 0.42f), 2, new Vector2(0.92f, 1.12f)),
+                        new VariantRecipe("frond", VariantShape.Branch, PrimitiveType.Cylinder, new Vector3(0.34f, 3.4f, 0.34f), 1, new Vector2(0.92f, 1.08f))
+                    };
                 case "family.plant.giant":
                     return new[]
                     {
@@ -990,6 +1002,18 @@ namespace Hecton8.EditorTools
                     {
                         new VariantRecipe("branch", VariantShape.Branch, PrimitiveType.Cylinder, new Vector3(0.45f, 1.8f, 0.45f), 2, new Vector2(0.9f, 1.08f)),
                         new VariantRecipe("mass", VariantShape.Cluster, PrimitiveType.Sphere, new Vector3(1.2f, 1.2f, 1.2f), 1, new Vector2(0.9f, 1.1f))
+                    };
+                case "family.coral.massive":
+                    return new[]
+                    {
+                        new VariantRecipe("head", VariantShape.Cluster, PrimitiveType.Sphere, new Vector3(1.24f, 0.9f, 1.24f), 2, new Vector2(0.92f, 1.08f)),
+                        new VariantRecipe("porous", VariantShape.Patch, PrimitiveType.Sphere, new Vector3(1.1f, 0.76f, 1.1f), 1, new Vector2(0.92f, 1.08f))
+                    };
+                case "family.coral.plate":
+                    return new[]
+                    {
+                        new VariantRecipe("ledge", VariantShape.Canopy, PrimitiveType.Cylinder, new Vector3(0.6f, 1.6f, 0.6f), 2, new Vector2(0.92f, 1.08f)),
+                        new VariantRecipe("shelf", VariantShape.Line, PrimitiveType.Cylinder, new Vector3(0.58f, 1.4f, 0.58f), 1, new Vector2(0.92f, 1.08f))
                     };
                 case "family.egg.cluster":
                     return new[]
@@ -1335,11 +1359,16 @@ namespace Hecton8.EditorTools
             {
                 case "family.kelp.tall":
                 case "family.kelp.patch.dense":
-                case "family.coral.low":
-                case "family.coral.branching":
                 case "family.egg.cluster":
                 case "family.creature.spawn.passive":
                     return WorldProceduralPattern.FertileShallows;
+                case "family.coral.low":
+                case "family.coral.massive":
+                case "family.coral.branching":
+                    return WorldProceduralPattern.FertileShallows;
+                case "family.kelp.canopy":
+                case "family.coral.plate":
+                    return WorldProceduralPattern.ReefNavigation;
                 case "family.pocket.resource":
                 case "family.pocket.safe":
                 case "family.rock.small_floor":
@@ -1374,11 +1403,16 @@ namespace Hecton8.EditorTools
             {
                 case "family.kelp.tall":
                 case "family.kelp.patch.dense":
-                case "family.coral.low":
-                case "family.coral.branching":
                 case "family.egg.cluster":
                 case "family.creature.spawn.passive":
                     return WorldProceduralPattern.ReefNavigation;
+                case "family.coral.low":
+                case "family.coral.massive":
+                case "family.coral.branching":
+                    return WorldProceduralPattern.ReefNavigation;
+                case "family.kelp.canopy":
+                case "family.coral.plate":
+                    return WorldProceduralPattern.FertileShallows;
                 case "family.pocket.resource":
                 case "family.pocket.safe":
                 case "family.rock.small_floor":
@@ -1441,6 +1475,8 @@ namespace Hecton8.EditorTools
                 case "family.cave.entrance":
                     return WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
                 case "family.plant.giant":
+                case "family.kelp.canopy":
+                case "family.coral.plate":
                     return WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette;
                 default:
                     return WorldPrefabFamilyProfile.StructureAccentRole.None;
@@ -1452,6 +1488,7 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case "family.kelp.patch.dense":
+                case "family.coral.massive":
                 case "family.coral.branching":
                     return WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth;
                 case "family.egg.cluster":

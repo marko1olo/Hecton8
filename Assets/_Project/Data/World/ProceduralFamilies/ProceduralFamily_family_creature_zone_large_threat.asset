@@ -49,24 +49,19 @@ MonoBehaviour:
   secondaryPattern: 5
   patternAffinityWeight: 0.34
   variants:
-  - variantId: family.creature.zone.large_threat.proxy.nest
-    prefab: {fileID: 2199568151896303710, guid: 6031b4a5031d41f4a900d5ed664f8be2, type: 3}
-    weight: 2
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 1.2, y: 1.45}
-  - variantId: family.creature.zone.large_threat.proxy.tooth
-    prefab: {fileID: 734499636847575940, guid: 95632499f5d71b040aef365a9216e976, type: 3}
+  - variantId: family.creature.zone.large_threat.proxy.a
+    prefab: {fileID: 7805432408556174400, guid: 880ae144cef78b041b6946b41b574f5f, type: 3}
     weight: 1
     proxyOnly: 1
     finalReady: 0
-    uniformScaleRange: {x: 1.18, y: 1.4}
+    uniformScaleRange: {x: 0.9, y: 1.1}
   - variantId: family.creature.zone.large_threat.final.placeholder
     prefab: {fileID: 8921512551962036007, guid: bbef63ac874ed9b499a1dc4836213c7d, type: 3}
-    weight: 2
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 1.18, y: 1.45}
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/LargeThreatZone
   gameplayRole: Authoritative large-threat ownership zone for macro-scale predator
     territories.

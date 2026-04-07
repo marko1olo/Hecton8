@@ -61,23 +61,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.85, y: 1.1}
-  - variantId: family.rock.cluster.medium.final.beach_formation
-    prefab: {fileID: 1537715959788787414, guid: 6b2c0cd7b85119243b9947ad4e7a1a1a, type: 3}
+  - variantId: family.rock.cluster.medium.final.placeholder
+    prefab: {fileID: 6420579946502605339, guid: d1742cd6a59acbf4db4ffe27cfb8e9c8, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.82, y: 1.12}
-  - variantId: family.rock.cluster.medium.final.forest_shelf
-    prefab: {fileID: 3097752584336557879, guid: 44d05711f0dac994392b890336877751, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.86, y: 1.05}
-  - variantId: family.rock.cluster.medium.final.skala
-    prefab: {fileID: 4666239515671607768, guid: 01bb530e18459d94f833b8135928d191, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.78, y: 0.98}
+    uniformScaleRange: {x: 0.85, y: 1.15}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/RockCluster/Rock_Cluster_Medium
   gameplayRole: Grouped floor rocks that create silhouette and cover.

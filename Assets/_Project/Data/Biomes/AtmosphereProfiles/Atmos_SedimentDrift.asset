@@ -17,3 +17,5 @@ MonoBehaviour:
   skyExposure: 1.05
   ambientColor: {r: 0.42, g: 0.42, b: 0.46, a: 1}
   sunIntensity: 1.1
+  temperature: 20
+  radiation: 0

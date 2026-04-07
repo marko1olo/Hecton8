@@ -154,7 +154,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 2.0852244
+    - _GameTime: 0.023038957
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -185,7 +185,7 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.008178316
-    - _SunElevation: 0.4641271
+    - _SunElevation: 0.57651573
     - _SunScatterIntensity: 0.62
     - _SunScatterPower: 11.9
     - _SunSize: 0.0041290396

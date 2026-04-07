@@ -72,5 +72,6 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.98, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/RuinModule/Ruin_Megastructure
   gameplayRole: Huge abandoned structure silhouettes, up to multi-storey scale.

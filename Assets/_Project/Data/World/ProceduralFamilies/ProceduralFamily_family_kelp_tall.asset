@@ -64,5 +64,6 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.15}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Tall
   gameplayRole: Tall vertical kelp for readable vertical habitat.

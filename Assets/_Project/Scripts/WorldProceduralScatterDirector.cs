@@ -3107,6 +3107,7 @@ namespace Hecton8.World
         private static bool IsCheapProxyFamily(string familyId)
         {
             return string.Equals(familyId, "family.coral.low", StringComparison.Ordinal) ||
+                   string.Equals(familyId, "family.coral.massive", StringComparison.Ordinal) ||
                    string.Equals(familyId, "family.landmark.spire", StringComparison.Ordinal) ||
                    string.Equals(familyId, "family.cave.entrance", StringComparison.Ordinal);
         }
@@ -3437,8 +3438,17 @@ namespace Hecton8.World
             if (string.Equals(familyId, "family.kelp.tall", StringComparison.Ordinal))
                 return 24;
 
+            if (string.Equals(familyId, "family.kelp.patch.dense", StringComparison.Ordinal))
+                return 18;
+
+            if (string.Equals(familyId, "family.kelp.canopy", StringComparison.Ordinal))
+                return 12;
+
             if (string.Equals(familyId, "family.coral.low", StringComparison.Ordinal))
                 return 20;
+
+            if (string.Equals(familyId, "family.coral.massive", StringComparison.Ordinal))
+                return 12;
 
             if (string.Equals(familyId, "family.rock.small_floor", StringComparison.Ordinal))
                 return 12;
@@ -3451,6 +3461,9 @@ namespace Hecton8.World
 
             if (string.Equals(familyId, "family.coral.branching", StringComparison.Ordinal))
                 return 8;
+
+            if (string.Equals(familyId, "family.coral.plate", StringComparison.Ordinal))
+                return 6;
 
             if (string.Equals(familyId, "family.creature.spawn.passive", StringComparison.Ordinal))
                 return 6;

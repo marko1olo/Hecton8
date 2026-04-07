@@ -635,7 +635,7 @@ namespace Hecton8.AI
                 if (resolvedPrefab == null)
                     continue;
 
-                GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot);
+                GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot, false);
 
                 if (instance == null)
                     continue;
@@ -1457,7 +1457,7 @@ namespace Hecton8.AI
                     continue;
 
                 // ── Спавн через пул ──
-                GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot);
+                GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot, false);
                 if (instance == null)
                     continue;
 

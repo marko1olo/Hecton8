@@ -48,7 +48,7 @@ MonoBehaviour:
   variants:
   - variantId: family.coral.low.proxy.bed
     prefab: {fileID: 6396328827120921837, guid: 940576041ba0f5a4fb322b3ef505e08e, type: 3}
-    weight: 1
+    weight: 2
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.85, y: 1.05}
@@ -58,17 +58,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.05}
-  - variantId: family.coral.low.proxy.simple
-    prefab: {fileID: 7026545068237901071, guid: 0c39ca9e9a820554d90474a99e0a3f8b, type: 3}
-    weight: 4
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 0.9, y: 1.08}
   - variantId: family.coral.low.final.placeholder
     prefab: {fileID: 9051508937162215285, guid: b130ee1a1d41d6d4b9478d7eb20b7db8, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.85, y: 1.05}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Low
   gameplayRole: Low coral scatter for seafloor color and local variety.

@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_coral_massive
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.coral.massive
+  familyLabel: Coral Massive
+  defaultFidelity: 2
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 7
+  scatterLayer: 1
+  overrideStreamingLayer: 0
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
+  structureAccentRole: 0
+  clusterAccentRole: 1
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 3.5
+  clusterRadiusMeters: 9
+  clusterCountMin: 3
+  clusterCountMax: 8
+  heatmapChannel: coral_density
+  proxyColor: {r: 0.86, g: 0.58, b: 0.4, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 010000000900000002000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 0
+  secondaryPattern: 1
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.coral.massive.proxy.head
+    prefab: {fileID: 7981855000982878316, guid: f26dffe6ffc1ee34e8886d69c8f6280b, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.coral.massive.proxy.porous
+    prefab: {fileID: 1007601709044639244, guid: 92bcd7e0880b1734ea3680ea32013fbc, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.coral.massive.final.placeholder
+    prefab: {fileID: 90234356084688861, guid: 3611a5401167541468f2217ca8b83caf, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
+  futurePrefabRoot: World/Coral/Coral_Massive
+  gameplayRole: Massive coral heads for shelter pockets, porosity and believable
+    reef bulk.

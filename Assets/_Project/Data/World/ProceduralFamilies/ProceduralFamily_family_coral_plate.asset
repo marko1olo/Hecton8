@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_coral_plate
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.coral.plate
+  familyLabel: Coral Plate
+  defaultFidelity: 1
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 7
+  scatterLayer: 2
+  overrideStreamingLayer: 0
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
+  structureAccentRole: 4
+  clusterAccentRole: 0
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 6
+  clusterRadiusMeters: 14
+  clusterCountMin: 2
+  clusterCountMax: 5
+  heatmapChannel: coral_density
+  proxyColor: {r: 0.94, g: 0.66, b: 0.5, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
+  - {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  preferredZoneKinds: 0900000001000000
+  biomeAffinityWeight: 0.3
+  zoneAffinityWeight: 0.18
+  primaryPattern: 1
+  secondaryPattern: 0
+  patternAffinityWeight: 0.33
+  variants:
+  - variantId: family.coral.plate.proxy.ledge
+    prefab: {fileID: 5682300831812646682, guid: 0242dbf8ebea3014abf14a7311cdb09f, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.coral.plate.proxy.shelf
+    prefab: {fileID: 5222634015834055874, guid: a5a7d67959ec6214b83c1634890831f9, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.coral.plate.final.placeholder
+    prefab: {fileID: 1010151544191109893, guid: cfa5e8a3ca3ae10458db4ce8f98b7cc3, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
+  futurePrefabRoot: World/Coral/Coral_Plate
+  gameplayRole: Layered plate coral ledges for side-light read, route cover and mid-reef
+    structure.

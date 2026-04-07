@@ -184,10 +184,16 @@ namespace Hecton8.EditorTools
                     return BuildKelpTallShapes();
                 case "KelpPatch":
                     return BuildKelpPatchShapes(family);
+                case "KelpCanopy":
+                    return BuildKelpCanopyShapes(family);
                 case "PlantGiant":
                     return BuildPlantShapes();
                 case "CoralLow":
                     return BuildCoralLowShapes(family);
+                case "CoralMassive":
+                    return BuildCoralMassiveShapes(family);
+                case "CoralPlate":
+                    return BuildCoralPlateShapes();
                 case "CoralBranching":
                     return BuildCoralBranchingShapes();
                 case "DebrisField":
@@ -277,17 +283,77 @@ namespace Hecton8.EditorTools
         {
             return new[]
             {
-                Shape(PrimitiveType.Capsule, "StalkA", new Vector3(-0.28f, 1.02f, 0f), new Vector3(0f, 0f, 7f), new Vector3(0.14f, 1.08f, 0.14f)),
-                Shape(PrimitiveType.Capsule, "StalkB", new Vector3(-0.08f, 1.18f, 0.02f), new Vector3(0f, 10f, -4f), new Vector3(0.14f, 1.22f, 0.14f)),
-                Shape(PrimitiveType.Capsule, "StalkC", new Vector3(0.14f, 1.24f, -0.02f), new Vector3(0f, -8f, 6f), new Vector3(0.14f, 1.26f, 0.14f)),
-                Shape(PrimitiveType.Cube, "FrondA", new Vector3(-0.08f, 1.46f, 0.08f), new Vector3(0f, 0f, 28f), new Vector3(0.1f, 0.62f, 0.32f)),
-                Shape(PrimitiveType.Cube, "FrondB", new Vector3(0.24f, 1.74f, -0.04f), new Vector3(0f, 0f, -22f), new Vector3(0.1f, 0.7f, 0.34f))
+                Shape(PrimitiveType.Sphere, "HoldfastCore", new Vector3(0f, 0.12f, 0f), Vector3.zero, new Vector3(0.28f, 0.12f, 0.28f)),
+                Shape(PrimitiveType.Capsule, "StipeA", new Vector3(-0.18f, 1.14f, -0.02f), new Vector3(0f, 8f, 8f), new Vector3(0.12f, 1.2f, 0.12f)),
+                Shape(PrimitiveType.Capsule, "StipeB", new Vector3(0.02f, 1.38f, 0.04f), new Vector3(0f, -6f, -4f), new Vector3(0.12f, 1.44f, 0.12f)),
+                Shape(PrimitiveType.Capsule, "StipeC", new Vector3(0.22f, 1.24f, -0.06f), new Vector3(0f, -12f, 10f), new Vector3(0.11f, 1.28f, 0.11f)),
+                Shape(PrimitiveType.Sphere, "FloatA", new Vector3(-0.08f, 2.04f, 0.02f), Vector3.zero, new Vector3(0.12f, 0.12f, 0.12f)),
+                Shape(PrimitiveType.Sphere, "FloatB", new Vector3(0.18f, 2.18f, -0.04f), Vector3.zero, new Vector3(0.1f, 0.1f, 0.1f)),
+                Shape(PrimitiveType.Cube, "BladeA", new Vector3(-0.22f, 1.58f, 0.08f), new Vector3(0f, 16f, 34f), new Vector3(0.08f, 1.1f, 0.34f)),
+                Shape(PrimitiveType.Cube, "BladeB", new Vector3(0.04f, 1.94f, -0.02f), new Vector3(0f, -12f, -28f), new Vector3(0.08f, 1.3f, 0.38f)),
+                Shape(PrimitiveType.Cube, "BladeC", new Vector3(0.28f, 1.7f, -0.08f), new Vector3(0f, 18f, 22f), new Vector3(0.08f, 1.02f, 0.3f)),
+                Shape(PrimitiveType.Cube, "BladeD", new Vector3(0.12f, 2.26f, 0.04f), new Vector3(0f, -18f, -18f), new Vector3(0.07f, 0.86f, 0.24f))
             };
         }
 
         private static ShapeDef[] BuildKelpPatchShapes(WorldPrefabFamilyProfile family)
         {
-            return BuildScatterShapes(family, 6, PrimitiveType.Capsule, new Vector3(0.12f, 0.92f, 0.12f), 0.55f, 0.1f);
+            List<ShapeDef> shapes = new List<ShapeDef>(14);
+            int stalkCount = 7;
+
+            for (int i = 0; i < stalkCount; i++)
+            {
+                Vector3 root = StableOffset(family.familyId, 100 + i, 0.72f, 0.1f);
+                float leanSign = i % 2 == 0 ? 1f : -1f;
+                float height = Mathf.Lerp(0.82f, 1.28f, Stable01(family.familyId, 200 + i));
+                float width = Mathf.Lerp(0.07f, 0.11f, Stable01(family.familyId, 300 + i));
+                float frondHeight = height * Mathf.Lerp(0.72f, 1.05f, Stable01(family.familyId, 400 + i));
+                float frondDepth = Mathf.Lerp(0.2f, 0.36f, Stable01(family.familyId, 500 + i));
+                float yaw = Stable01(family.familyId, 600 + i) * 360f;
+
+                shapes.Add(Shape(
+                    PrimitiveType.Capsule,
+                    $"Stipe_{i}",
+                    new Vector3(root.x, height, root.z),
+                    new Vector3(0f, yaw, leanSign * Mathf.Lerp(4f, 14f, Stable01(family.familyId, 700 + i))),
+                    new Vector3(width, height, width)));
+
+                shapes.Add(Shape(
+                    PrimitiveType.Cube,
+                    $"Blade_{i}",
+                    new Vector3(root.x + leanSign * 0.08f, height + frondHeight * 0.34f, root.z),
+                    new Vector3(0f, yaw + leanSign * 12f, leanSign * Mathf.Lerp(16f, 36f, Stable01(family.familyId, 800 + i))),
+                    new Vector3(width * 0.7f, frondHeight, frondDepth)));
+            }
+
+            return shapes.ToArray();
+        }
+
+        private static ShapeDef[] BuildKelpCanopyShapes(WorldPrefabFamilyProfile family)
+        {
+            List<ShapeDef> shapes = new List<ShapeDef>(9);
+            Vector3 core = StableOffset(family.familyId, 910, 0.08f, 0.1f);
+
+            shapes.Add(Shape(PrimitiveType.Capsule, "CanopyStipe", new Vector3(core.x, 1.58f, core.z), new Vector3(0f, 0f, 8f), new Vector3(0.14f, 1.62f, 0.14f)));
+            shapes.Add(Shape(PrimitiveType.Sphere, "CanopyFloat", new Vector3(core.x + 0.04f, 2.82f, core.z), Vector3.zero, new Vector3(0.16f, 0.12f, 0.16f)));
+
+            for (int i = 0; i < 4; i++)
+            {
+                float angle = i * 90f + 22f;
+                float radians = angle * Mathf.Deg2Rad;
+                Vector3 position = new Vector3(Mathf.Cos(radians) * 0.42f, 2.96f + (i % 2 == 0 ? 0.08f : -0.04f), Mathf.Sin(radians) * 0.42f);
+                shapes.Add(Shape(
+                    PrimitiveType.Cube,
+                    $"CanopyBlade_{i}",
+                    position,
+                    new Vector3(18f, angle, i % 2 == 0 ? 34f : -30f),
+                    new Vector3(0.08f, 1.18f, 0.42f)));
+            }
+
+            shapes.Add(Shape(PrimitiveType.Cube, "CanopyTrailA", new Vector3(-0.18f, 2.42f, 0.12f), new Vector3(0f, 12f, 18f), new Vector3(0.07f, 0.88f, 0.22f)));
+            shapes.Add(Shape(PrimitiveType.Cube, "CanopyTrailB", new Vector3(0.22f, 2.28f, -0.12f), new Vector3(0f, -18f, -22f), new Vector3(0.07f, 0.82f, 0.2f)));
+
+            return shapes.ToArray();
         }
 
         private static ShapeDef[] BuildPlantShapes()
@@ -304,18 +370,57 @@ namespace Hecton8.EditorTools
 
         private static ShapeDef[] BuildCoralLowShapes(WorldPrefabFamilyProfile family)
         {
-            return BuildScatterShapes(family, 5, PrimitiveType.Sphere, new Vector3(0.34f, 0.3f, 0.34f), 0.42f, 0.16f);
+            return new[]
+            {
+                Shape(PrimitiveType.Sphere, "MassCore", new Vector3(0f, 0.24f, 0f), Vector3.zero, new Vector3(0.58f, 0.34f, 0.58f)),
+                Shape(PrimitiveType.Sphere, "LobeA", StableOffset(family.familyId, 110, 0.28f, 0.18f), Vector3.zero, new Vector3(0.3f, 0.22f, 0.3f)),
+                Shape(PrimitiveType.Sphere, "LobeB", StableOffset(family.familyId, 120, 0.34f, 0.2f), Vector3.zero, new Vector3(0.26f, 0.18f, 0.26f)),
+                Shape(PrimitiveType.Sphere, "LobeC", StableOffset(family.familyId, 130, 0.36f, 0.16f), Vector3.zero, new Vector3(0.24f, 0.16f, 0.24f)),
+                Shape(PrimitiveType.Cylinder, "PorousSpineA", new Vector3(-0.18f, 0.34f, 0.08f), new Vector3(14f, 28f, 84f), new Vector3(0.08f, 0.22f, 0.08f)),
+                Shape(PrimitiveType.Cylinder, "PorousSpineB", new Vector3(0.14f, 0.32f, -0.1f), new Vector3(-18f, 126f, 78f), new Vector3(0.08f, 0.18f, 0.08f)),
+                Shape(PrimitiveType.Cylinder, "PorousSpineC", new Vector3(0.04f, 0.3f, 0.18f), new Vector3(12f, 214f, 72f), new Vector3(0.07f, 0.16f, 0.07f))
+            };
+        }
+
+        private static ShapeDef[] BuildCoralMassiveShapes(WorldPrefabFamilyProfile family)
+        {
+            return new[]
+            {
+                Shape(PrimitiveType.Sphere, "MassiveCore", new Vector3(0f, 0.34f, 0f), Vector3.zero, new Vector3(0.86f, 0.5f, 0.86f)),
+                Shape(PrimitiveType.Sphere, "MassiveLobeA", StableOffset(family.familyId, 210, 0.34f, 0.24f), Vector3.zero, new Vector3(0.38f, 0.24f, 0.38f)),
+                Shape(PrimitiveType.Sphere, "MassiveLobeB", StableOffset(family.familyId, 220, 0.42f, 0.2f), Vector3.zero, new Vector3(0.34f, 0.2f, 0.34f)),
+                Shape(PrimitiveType.Sphere, "MassiveLobeC", StableOffset(family.familyId, 230, 0.38f, 0.28f), Vector3.zero, new Vector3(0.28f, 0.18f, 0.28f)),
+                Shape(PrimitiveType.Cylinder, "MassiveRidgeA", new Vector3(-0.2f, 0.46f, 0.04f), new Vector3(28f, 14f, 78f), new Vector3(0.07f, 0.24f, 0.07f)),
+                Shape(PrimitiveType.Cylinder, "MassiveRidgeB", new Vector3(0.22f, 0.44f, -0.08f), new Vector3(-24f, 118f, 72f), new Vector3(0.07f, 0.22f, 0.07f)),
+                Shape(PrimitiveType.Cylinder, "MassiveRidgeC", new Vector3(0.02f, 0.48f, 0.22f), new Vector3(18f, 206f, 68f), new Vector3(0.06f, 0.2f, 0.06f))
+            };
+        }
+
+        private static ShapeDef[] BuildCoralPlateShapes()
+        {
+            return new[]
+            {
+                Shape(PrimitiveType.Cylinder, "PlateStem", new Vector3(0f, 0.26f, 0f), Vector3.zero, new Vector3(0.16f, 0.28f, 0.16f)),
+                Shape(PrimitiveType.Cube, "PlateA", new Vector3(0f, 0.58f, 0f), new Vector3(0f, 18f, 6f), new Vector3(0.82f, 0.08f, 0.54f)),
+                Shape(PrimitiveType.Cube, "PlateB", new Vector3(0.18f, 0.84f, -0.04f), new Vector3(0f, -26f, -12f), new Vector3(0.68f, 0.08f, 0.44f)),
+                Shape(PrimitiveType.Cube, "PlateC", new Vector3(-0.14f, 1.06f, 0.08f), new Vector3(0f, 38f, 10f), new Vector3(0.54f, 0.08f, 0.36f)),
+                Shape(PrimitiveType.Cylinder, "StemTwigA", new Vector3(0.22f, 0.72f, -0.1f), new Vector3(26f, 70f, 78f), new Vector3(0.06f, 0.18f, 0.06f)),
+                Shape(PrimitiveType.Cylinder, "StemTwigB", new Vector3(-0.18f, 0.94f, 0.12f), new Vector3(-18f, 214f, 74f), new Vector3(0.05f, 0.16f, 0.05f))
+            };
         }
 
         private static ShapeDef[] BuildCoralBranchingShapes()
         {
             return new[]
             {
-                Shape(PrimitiveType.Cylinder, "Trunk", new Vector3(0f, 0.4f, 0f), Vector3.zero, new Vector3(0.18f, 0.42f, 0.18f)),
-                Shape(PrimitiveType.Cylinder, "BranchA", new Vector3(0f, 0.84f, 0f), new Vector3(54f, 25f, 0f), new Vector3(0.1f, 0.56f, 0.1f)),
-                Shape(PrimitiveType.Cylinder, "BranchB", new Vector3(0f, 0.84f, 0f), new Vector3(56f, 115f, 0f), new Vector3(0.1f, 0.52f, 0.1f)),
-                Shape(PrimitiveType.Cylinder, "BranchC", new Vector3(0f, 0.84f, 0f), new Vector3(52f, 210f, 0f), new Vector3(0.1f, 0.54f, 0.1f)),
-                Shape(PrimitiveType.Cylinder, "BranchD", new Vector3(0f, 0.84f, 0f), new Vector3(55f, 300f, 0f), new Vector3(0.1f, 0.5f, 0.1f))
+                Shape(PrimitiveType.Cylinder, "Trunk", new Vector3(0f, 0.42f, 0f), Vector3.zero, new Vector3(0.2f, 0.44f, 0.2f)),
+                Shape(PrimitiveType.Cylinder, "BranchA", new Vector3(-0.06f, 0.88f, 0.02f), new Vector3(48f, 18f, -6f), new Vector3(0.1f, 0.62f, 0.1f)),
+                Shape(PrimitiveType.Cylinder, "BranchB", new Vector3(0.08f, 0.9f, 0f), new Vector3(56f, 98f, 4f), new Vector3(0.1f, 0.58f, 0.1f)),
+                Shape(PrimitiveType.Cylinder, "BranchC", new Vector3(-0.02f, 0.92f, -0.08f), new Vector3(52f, 192f, 0f), new Vector3(0.1f, 0.6f, 0.1f)),
+                Shape(PrimitiveType.Cylinder, "BranchD", new Vector3(0.02f, 0.9f, 0.06f), new Vector3(58f, 286f, 6f), new Vector3(0.1f, 0.56f, 0.1f)),
+                Shape(PrimitiveType.Cylinder, "TwigA", new Vector3(0.22f, 1.26f, 0.08f), new Vector3(42f, 72f, 0f), new Vector3(0.06f, 0.28f, 0.06f)),
+                Shape(PrimitiveType.Cylinder, "TwigB", new Vector3(-0.24f, 1.22f, 0.06f), new Vector3(38f, 342f, 0f), new Vector3(0.06f, 0.26f, 0.06f)),
+                Shape(PrimitiveType.Cylinder, "TwigC", new Vector3(-0.08f, 1.3f, -0.22f), new Vector3(34f, 228f, 0f), new Vector3(0.05f, 0.24f, 0.05f))
             };
         }
 
@@ -475,9 +580,9 @@ namespace Hecton8.EditorTools
                 WorldPrefabFamilyProfile.ProceduralDomain.RockShelf => "RockCluster",
                 WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance => "CaveEntrance",
                 WorldPrefabFamilyProfile.ProceduralDomain.Landmark => "LandmarkSpire",
-                WorldPrefabFamilyProfile.ProceduralDomain.Kelp => family.placementMode == WorldPrefabFamilyProfile.PlacementMode.Patch ? "KelpPatch" : "KelpTall",
+                WorldPrefabFamilyProfile.ProceduralDomain.Kelp => ResolveKelpRecipe(family),
                 WorldPrefabFamilyProfile.ProceduralDomain.Plant => "PlantGiant",
-                WorldPrefabFamilyProfile.ProceduralDomain.Coral => family.primaryPattern == WorldProceduralPattern.ReefNavigation ? "CoralBranching" : "CoralLow",
+                WorldPrefabFamilyProfile.ProceduralDomain.Coral => ResolveCoralRecipe(family),
                 WorldPrefabFamilyProfile.ProceduralDomain.Debris => family.clusterAccentRole == WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField ? "DebrisField" : "DebrisScatter",
                 WorldPrefabFamilyProfile.ProceduralDomain.RuinModule => family.placementMode == WorldPrefabFamilyProfile.PlacementMode.Landmark ? "RuinMegastructure" : family.placementMode == WorldPrefabFamilyProfile.PlacementMode.Cluster ? "RuinCluster" : "RuinModule",
                 WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute => "PowerRoute",
@@ -489,6 +594,65 @@ namespace Hecton8.EditorTools
                 WorldPrefabFamilyProfile.ProceduralDomain.CreatureSpawn => family.familyId.Contains("predator", StringComparison.OrdinalIgnoreCase) ? "SpawnAnchorPredator" : "SpawnAnchorPassive",
                 _ => family.ResolveStreamingLayer() == WorldStreamingLayer.Construction ? "RuinModule" : "RockSmall"
             };
+        }
+
+        private static string ResolveKelpRecipe(WorldPrefabFamilyProfile family)
+        {
+            if (family == null)
+                return "KelpPatch";
+
+            if (LooksLikeTallKelpFamily(family))
+                return "KelpTall";
+
+            if (ContainsIgnoreCase(family.familyId, "canopy")
+                || ContainsIgnoreCase(family.familyLabel, "canopy")
+                || ContainsIgnoreCase(family.gameplayRole, "canopy"))
+            {
+                return "KelpCanopy";
+            }
+
+            return family.placementMode == WorldPrefabFamilyProfile.PlacementMode.Patch ? "KelpPatch" : "KelpTall";
+        }
+
+        private static string ResolveCoralRecipe(WorldPrefabFamilyProfile family)
+        {
+            if (family == null)
+                return "CoralLow";
+
+            if (ContainsIgnoreCase(family.familyId, "branch")
+                || ContainsIgnoreCase(family.familyLabel, "branch"))
+            {
+                return "CoralBranching";
+            }
+
+            if (ContainsIgnoreCase(family.familyId, "massive")
+                || ContainsIgnoreCase(family.familyLabel, "massive"))
+            {
+                return "CoralMassive";
+            }
+
+            if (ContainsIgnoreCase(family.familyId, "plate")
+                || ContainsIgnoreCase(family.familyLabel, "plate")
+                || ContainsIgnoreCase(family.gameplayRole, "ledge"))
+            {
+                return "CoralPlate";
+            }
+
+            return family.primaryPattern == WorldProceduralPattern.ReefNavigation ? "CoralBranching" : "CoralLow";
+        }
+
+        private static bool LooksLikeTallKelpFamily(WorldPrefabFamilyProfile family)
+        {
+            return ContainsIgnoreCase(family.familyId, "tall")
+                || ContainsIgnoreCase(family.familyLabel, "tall")
+                || ContainsIgnoreCase(family.futurePrefabRoot, "kelp_tall")
+                || ContainsIgnoreCase(family.gameplayRole, "vertical habitat");
+        }
+
+        private static bool ContainsIgnoreCase(string value, string token)
+        {
+            return !string.IsNullOrWhiteSpace(value)
+                && value.Contains(token, StringComparison.OrdinalIgnoreCase);
         }
 
         private static int FindPlaceholderFinalVariantIndex(WorldPrefabFamilyProfile family)

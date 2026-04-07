@@ -60,9 +60,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 994c34e41419b1a45a3eb74a4e925628, type: 2}
   - {fileID: 11400000, guid: 955b39d9404026347907d5f43bc57220, type: 2}
   preferredClusterFamilies:
+  - {fileID: 11400000, guid: a95fcfd9bc5695a47ae5e0acc0ae5cc0, type: 2}
   - {fileID: 11400000, guid: e41ec1e82ad03624faf4a0a398c3ff6d, type: 2}
   - {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
   preferredStructureFamilies:
+  - {fileID: 11400000, guid: 77ab354ff4f9f9a4bbd31cdd3f8c5006, type: 2}
   - {fileID: 11400000, guid: 6cbd01b092811a34898cf4376bf66851, type: 2}
   - {fileID: 11400000, guid: 723bfa18be2651148ba5aec371fae323, type: 2}
   - {fileID: 11400000, guid: 7f55f400f559cd64fbfe53c760cbf67f, type: 2}

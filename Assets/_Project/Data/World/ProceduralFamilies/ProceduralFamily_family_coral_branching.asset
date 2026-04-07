@@ -64,5 +64,6 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.1}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Branching
   gameplayRole: Readable branching coral clusters for reef identity.

@@ -65,17 +65,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.1}
-  - variantId: family.landmark.spire.proxy.simple
-    prefab: {fileID: 5437656587229143600, guid: 7681d69dda57ed84797bc864a4e032b6, type: 3}
-    weight: 4
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 0.95, y: 1.08}
   - variantId: family.landmark.spire.final.placeholder
     prefab: {fileID: 112817935218986656, guid: 135d0b7bdce1dd748918820f1383167e, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.1}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Landmark/Landmark_Spire
   gameplayRole: Tall spires and strong route memory objects.

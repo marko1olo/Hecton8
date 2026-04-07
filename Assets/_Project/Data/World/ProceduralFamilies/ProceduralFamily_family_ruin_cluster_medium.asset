@@ -67,5 +67,6 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/RuinModule/Ruin_Cluster_Medium
   gameplayRole: 2-4 abandoned modules in one readable cluster.

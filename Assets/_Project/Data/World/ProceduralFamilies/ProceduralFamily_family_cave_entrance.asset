@@ -66,17 +66,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.cave.entrance.proxy.simple
-    prefab: {fileID: 5451323417678319129, guid: 7f1903bd57613504796d3593431ca4f1, type: 3}
-    weight: 4
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 0.95, y: 1.08}
   - variantId: family.cave.entrance.final.placeholder
     prefab: {fileID: 7491228651472479503, guid: a3e7231cd7360504cb63bbd783e607b9, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CaveEntrance/Cave_Entrance_Marker
   gameplayRole: Readable cave entry markers and lip formations.

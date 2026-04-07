@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_kelp_canopy
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.kelp.canopy
+  familyLabel: Kelp Canopy
+  defaultFidelity: 1
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 5
+  scatterLayer: 2
+  overrideStreamingLayer: 0
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
+  structureAccentRole: 4
+  clusterAccentRole: 0
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 8
+  clusterRadiusMeters: 18
+  clusterCountMin: 2
+  clusterCountMax: 4
+  heatmapChannel: kelp_density
+  proxyColor: {r: 0.22, g: 0.58, b: 0.26, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
+  - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 090000000100000002000000
+  biomeAffinityWeight: 0.3
+  zoneAffinityWeight: 0.18
+  primaryPattern: 1
+  secondaryPattern: 0
+  patternAffinityWeight: 0.33
+  variants:
+  - variantId: family.kelp.canopy.proxy.crown
+    prefab: {fileID: 559502334750480344, guid: 3506a205192fd944fb227016a739fc30, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.92, y: 1.12}
+  - variantId: family.kelp.canopy.proxy.frond
+    prefab: {fileID: 2085095241614533458, guid: b263cc3574d01fb44b853b339b342bf4, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.kelp.canopy.final.placeholder
+    prefab: {fileID: 6229660367688394344, guid: 21ee12b11ef56ef45a3f8547c4ab1eea, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.12}
+  generativeGeologyProfile: {fileID: 0}
+  futurePrefabRoot: World/Kelp/Kelp_Canopy
+  gameplayRole: Upper-canopy kelp crowns for route silhouettes, overhead shelter
+    and surface-near identity.

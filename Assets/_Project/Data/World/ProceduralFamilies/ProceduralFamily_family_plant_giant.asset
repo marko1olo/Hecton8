@@ -65,5 +65,6 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.12}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Plant/Plant_Giant
   gameplayRole: Huge underwater plants that act as biome-scale silhouettes.

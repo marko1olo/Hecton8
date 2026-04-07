@@ -47,23 +47,18 @@ MonoBehaviour:
   secondaryPattern: 1
   patternAffinityWeight: 0.3
   variants:
-  - variantId: family.creature.zone.reef_apex.proxy.nest
-    prefab: {fileID: 1058132232358462361, guid: 1b38ace470151c64fb8f81dff976b0e3, type: 3}
-    weight: 2
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 1.18, y: 1.35}
-  - variantId: family.creature.zone.reef_apex.proxy.clutch
-    prefab: {fileID: 4460012011655085840, guid: f3617b969c9c26243a44ce0efb3ab8a6, type: 3}
+  - variantId: family.creature.zone.reef_apex.proxy.a
+    prefab: {fileID: 997644093334790922, guid: 6b22d5d4f98656c41aa1f67025a8c876, type: 3}
     weight: 1
     proxyOnly: 1
     finalReady: 0
-    uniformScaleRange: {x: 1.18, y: 1.3}
+    uniformScaleRange: {x: 0.9, y: 1.1}
   - variantId: family.creature.zone.reef_apex.final.placeholder
     prefab: {fileID: 2358014779856524092, guid: 03bb80d0fbbca68419db654ee856a7d0, type: 3}
-    weight: 2
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 1.18, y: 1.35}
+    uniformScaleRange: {x: 0.9, y: 1.1}
+  generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/ReefApexZone
   gameplayRole: Large biological hunting territory in reef and dense-flora habitats.

@@ -657,29 +657,29 @@ namespace Hecton8.EditorTools
             {
                 case "biome.family.littoral_karst":
                     AddPreferredFamilies(ground, 3, "family.coral.low", "family.kelp.tall", "family.rock.small_floor");
-                    AddPreferredFamilies(cluster, 4, "family.coral.branching", "family.pocket.safe", "family.egg.cluster");
-                    AddPreferredFamilies(structure, 4, "family.landmark.spire", "family.cave.entrance", "family.rock.arch.large");
+                    AddPreferredFamilies(cluster, 4, "family.coral.branching", "family.coral.massive", "family.pocket.safe", "family.egg.cluster");
+                    AddPreferredFamilies(structure, 4, "family.kelp.canopy", "family.coral.plate", "family.landmark.spire", "family.cave.entrance");
                     AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
                     break;
 
                 case "biome.family.fossil_reef":
                     AddPreferredFamilies(ground, 3, "family.coral.low", "family.kelp.tall", "family.rock.small_floor");
-                    AddPreferredFamilies(cluster, 4, "family.egg.cluster", "family.coral.branching", "family.pocket.safe");
-                    AddPreferredFamilies(structure, 4, "family.landmark.spire", "family.plant.giant", "family.cave.entrance");
+                    AddPreferredFamilies(cluster, 4, "family.egg.cluster", "family.coral.massive", "family.coral.branching", "family.pocket.safe");
+                    AddPreferredFamilies(structure, 4, "family.coral.plate", "family.kelp.canopy", "family.landmark.spire", "family.cave.entrance");
                     AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
                     break;
 
                 case "biome.family.crystal_growth":
                     AddPreferredFamilies(ground, 3, "family.coral.low", "family.rock.small_floor", "family.kelp.tall");
-                    AddPreferredFamilies(cluster, 4, "family.pocket.resource", "family.egg.cluster", "family.coral.branching");
-                    AddPreferredFamilies(structure, 4, "family.plant.giant", "family.landmark.spire", "family.rock.arch.large");
+                    AddPreferredFamilies(cluster, 4, "family.pocket.resource", "family.egg.cluster", "family.coral.massive", "family.coral.branching");
+                    AddPreferredFamilies(structure, 4, "family.coral.plate", "family.plant.giant", "family.landmark.spire", "family.rock.arch.large");
                     AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
                     break;
 
                 case "biome.family.sediment_drift":
                     AddPreferredFamilies(ground, 3, "family.rock.small_floor", "family.coral.low");
-                    AddPreferredFamilies(cluster, 4, "family.pocket.resource", "family.pocket.safe");
-                    AddPreferredFamilies(structure, 4, "family.ruin.module.single", "family.rock.arch.large", "family.cave.entrance");
+                    AddPreferredFamilies(cluster, 4, "family.coral.massive", "family.pocket.resource", "family.pocket.safe");
+                    AddPreferredFamilies(structure, 4, "family.kelp.canopy", "family.ruin.module.single", "family.rock.arch.large", "family.cave.entrance");
                     AddPreferredFamilies(spawn, 2, "family.creature.spawn.passive");
                     break;
 
@@ -802,9 +802,14 @@ namespace Hecton8.EditorTools
 
             if (HasAnyToken(profile.shortDescription, profile.visitPurpose, "reef", "coral", "nest", "nursery"))
             {
+                PromotePreferredFamily(cluster, 4, "family.coral.massive");
                 PromotePreferredFamily(cluster, 4, "family.coral.branching");
+                PromotePreferredFamily(structure, 4, "family.coral.plate");
                 PromotePreferredFamily(cluster, 4, "family.egg.cluster");
             }
+
+            if (HasAnyToken(profile.shortDescription, profile.visitPurpose, profile.landmarkGuidance, "kelp", "canopy", "frond", "shelter"))
+                PromotePreferredFamily(structure, 4, "family.kelp.canopy");
 
             if (HasAnyToken(profile.extractionFocus, profile.shortDescription, "crystal", "ore", "mineral", "alabaster"))
             {
@@ -932,12 +937,13 @@ namespace Hecton8.EditorTools
             {
                 InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 0);
                 InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 1);
-                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.massive", 2);
                 InsertPreferredFamilyAt(cluster, 4, "family.egg.cluster", 3);
 
-                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 0);
-                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 1);
-                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.kelp.canopy", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.coral.plate", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 3);
 
                 InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
                 return;
@@ -947,12 +953,13 @@ namespace Hecton8.EditorTools
             {
                 InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 0);
                 InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 1);
-                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 2);
-                InsertPreferredFamilyAt(cluster, 4, "family.egg.cluster", 3);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.massive", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 3);
 
-                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 0);
-                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 1);
-                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.coral.plate", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 3);
 
                 InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
                 return;
@@ -962,11 +969,13 @@ namespace Hecton8.EditorTools
             {
                 InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 0);
                 InsertPreferredFamilyAt(cluster, 4, "family.pocket.safe", 1);
-                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.massive", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 3);
 
                 InsertPreferredFamilyAt(structure, 4, "family.plant.giant", 0);
-                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 1);
-                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.coral.plate", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 3);
 
                 InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
                 return;
@@ -976,12 +985,13 @@ namespace Hecton8.EditorTools
             {
                 InsertPreferredFamilyAt(cluster, 4, "family.egg.cluster", 0);
                 InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 1);
-                InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 2);
-                InsertPreferredFamilyAt(cluster, 4, "family.pocket.resource", 3);
+                InsertPreferredFamilyAt(cluster, 4, "family.coral.massive", 2);
+                InsertPreferredFamilyAt(cluster, 4, "family.pocket.hazard", 3);
 
-                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 0);
-                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 1);
-                InsertPreferredFamilyAt(structure, 4, "family.plant.giant", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.coral.plate", 0);
+                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.plant.giant", 3);
 
                 InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.predator", 0);
                 InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 1);
