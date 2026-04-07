@@ -1116,7 +1116,11 @@ namespace Hecton8.EditorTools
 
         private static GameObject BuildVariantPrefabRoot(string rootName, VariantRecipe recipe, Material material)
         {
+            if (WorldProceduralFloraProxyShapeBuilder.TryBuild(rootName, recipe.scale, material, out GameObject floraRoot))
+                return floraRoot;
+
             GameObject root = new GameObject($"PFB_{rootName}");
+
             switch (recipe.shape)
             {
                 case VariantShape.Single:

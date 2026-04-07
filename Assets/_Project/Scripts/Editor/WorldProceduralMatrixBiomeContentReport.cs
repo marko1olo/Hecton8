@@ -53,9 +53,9 @@ namespace Hecton8.EditorTools
             try
             {
                 SetBool(samplerObject, "forcePatternPreviewOverride", true);
-                SetBool(samplerObject, "limitPatternOverrideToFallback", true);
+                SetBool(samplerObject, "limitPatternOverrideToFallback", false);
                 SetBool(samplerObject, "forceMatrixBiomePreviewOverride", true);
-                SetBool(samplerObject, "limitMatrixBiomeOverrideToFallback", true);
+                SetBool(samplerObject, "limitMatrixBiomeOverrideToFallback", false);
 
                 WorldProceduralPattern[] patterns = (WorldProceduralPattern[])Enum.GetValues(typeof(WorldProceduralPattern));
                 HectonBiomeMatrixProfile[] profiles = biomeMatrixDirector.MatrixCatalog.Profiles;
@@ -118,8 +118,8 @@ namespace Hecton8.EditorTools
                 kindLabel = kindLabel,
                 biomeName = profile.biomeName,
                 familyLabel = profile.familyProfile != null ? profile.familyProfile.familyLabel : profile.familyId,
-                resolvedPattern = GetString(samplerObject, "_debugLastPattern"),
-                resolvedZone = GetString(samplerObject, "_debugLastZone"),
+                resolvedPattern = GetString(scatterObject, "_debugPattern"),
+                resolvedZone = GetString(scatterObject, "_debugZone"),
                 resolvedBiomeContext = GetString(scatterObject, "_debugResolvedBiomeContextProfile"),
                 preferredGroundCategories = JoinFamilyLabels(profile.preferredGroundFamilies),
                 preferredClusterCategories = JoinFamilyLabels(profile.preferredClusterFamilies),
@@ -436,7 +436,7 @@ namespace Hecton8.EditorTools
             builder.AppendLine();
             builder.AppendLine($"- Scene: `{scenePath}`");
             builder.AppendLine($"- Generated: `{DateTime.Now:yyyy-MM-dd HH:mm:ss}`");
-            builder.AppendLine($"- Mode: `Forced preview pattern + forced matrix biome override (fallback-compatible)`");
+            builder.AppendLine($"- Mode: `Forced preview pattern + forced matrix biome override (full override)`");
             builder.AppendLine();
 
             for (int i = 0; i < sections.Count; i++)

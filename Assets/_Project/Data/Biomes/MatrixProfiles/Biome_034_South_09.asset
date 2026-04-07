@@ -53,7 +53,7 @@ MonoBehaviour:
   progressionRole: slope_descent
   primaryClusterFocus: 2
   secondaryClusterFocus: 5
-  primaryStructureFocus: 3
+  primaryStructureFocus: 4
   secondaryStructureFocus: 1
   faunaMood: 3
   preferredGroundFamilies:

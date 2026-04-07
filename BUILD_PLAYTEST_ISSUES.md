@@ -107,9 +107,12 @@ Rules:
 
 - Did: traced the pause ownership conflict and added one shared pause truth in `PauseMenuController`, then switched `HectonPlayerMovement`, `PlayerInteraction`, and `PlayerFlashlight` to block gameplay/cursor reclaim while pause is open instead of only checking PDA/fabricator state.
 - Result: the direct code-level conflict is removed; pause now has an explicit fail-safe gameplay block even if UI action-map switching degrades, and Unity recompilation completed with no new errors from the patch.
+- Did Addendum: traced the remaining button-audit gap to deterministic focus, not only cursor visibility. `PauseMenuController` was opening sections with no explicit `EventSystem` selection target, so keyboard/gamepad audit could start from `null` selection and behave inconsistently by section. The controller now caches the default button for each pause section, selects it on `Open()` / section switch, and clears stale pause selection on close instead of leaving `EventSystem.currentSelectedGameObject` pointing into hidden pause UI.
+- Result Addendum: pause section navigation now has a concrete selection anchor for `Main`, `Saves`, `Help`, and `Settings` instead of relying on implicit `EventSystem` state. Unity recompilation after this pass completed with no new `CS` errors; console still reports only the pre-existing `Dynamic Decals` warnings.
 - Failed: live cursor-state proof is still incomplete on this machine because Unity MCP `execute_code` still fails with `mono.exe: filename or extension is too long`, and the existing `UIRuntimeSmokeTester` stalled after `PASS PDA open Inventory` before producing a pause result.
 - Broke: no new compile errors; console still shows only pre-existing `Dynamic Decals` warnings, plus transient MCP serializer warnings during the abandoned smoke attempt.
-- Remaining: real runtime check of `Cursor.visible`, `Cursor.lockState`, `Esc` open/close, and every pause button action in build; current status remains `PENDING VERIFICATION`.
+- Failed Addendum: attempted short MCP play-mode readback again after the focus patch, but `execute_code` still hard-fails on this machine with the same `mono.exe: filename or extension is too long`, so direct editor-side proof of the selected pause button is still blocked.
+- Remaining: real runtime check of `Cursor.visible`, `Cursor.lockState`, `Esc` open/close, initial pause-button focus, and every pause button action in build; current status remains `PENDING VERIFICATION`.
 
 ### [!] Gas Giant Does Not Read As Distant
 - Status: [!]

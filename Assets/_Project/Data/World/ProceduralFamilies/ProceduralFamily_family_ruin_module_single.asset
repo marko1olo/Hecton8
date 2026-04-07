@@ -61,12 +61,18 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.ruin.module.single.final.placeholder
-    prefab: {fileID: 5508560080793012382, guid: 00bc3e8245b28974386ed53bb884f1a5, type: 3}
+  - variantId: family.ruin.module.single.final.foundation
+    prefab: {fileID: 5760737024609812604, guid: 3fd47dbaa6552004b99e7b71e2a866d0, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.96, y: 1.04}
+  - variantId: family.ruin.module.single.final.corridor
+    prefab: {fileID: 289323947487979299, guid: 7693821d1cc09294fbd732cffd8a94ea, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/RuinModule/Ruin_Module_Single
   gameplayRole: Single abandoned module chunks.

@@ -399,8 +399,8 @@ namespace Hecton8.EditorTools
                 case "biome.family.littoral_karst":
                     primaryCluster = WorldProceduralClusterFocus.FertileGrowth;
                     secondaryCluster = WorldProceduralClusterFocus.ShelterPocket;
-                    primaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
-                    secondaryStructure = WorldProceduralStructureFocus.CaveRead;
+                    primaryStructure = WorldProceduralStructureFocus.BiologicalSilhouette;
+                    secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
                     faunaMood = profile.survivalPressure >= 3 ? WorldProceduralFaunaMood.Lively : WorldProceduralFaunaMood.Calm;
                     break;
 
@@ -630,7 +630,7 @@ namespace Hecton8.EditorTools
             {
                 primaryCluster = WorldProceduralClusterFocus.BiologicalNest;
                 secondaryCluster = WorldProceduralClusterFocus.HazardPocket;
-                primaryStructure = WorldProceduralStructureFocus.CaveRead;
+                primaryStructure = WorldProceduralStructureFocus.BiologicalSilhouette;
                 secondaryStructure = WorldProceduralStructureFocus.NaturalLandmark;
                 faunaMood = WorldProceduralFaunaMood.Mixed;
             }
@@ -957,9 +957,9 @@ namespace Hecton8.EditorTools
                 InsertPreferredFamilyAt(cluster, 4, "family.coral.branching", 3);
 
                 InsertPreferredFamilyAt(structure, 4, "family.coral.plate", 0);
-                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 1);
-                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 2);
-                InsertPreferredFamilyAt(structure, 4, "family.cave.entrance", 3);
+                InsertPreferredFamilyAt(structure, 4, "family.kelp.canopy", 1);
+                InsertPreferredFamilyAt(structure, 4, "family.rock.arch.large", 2);
+                InsertPreferredFamilyAt(structure, 4, "family.landmark.spire", 3);
 
                 InsertPreferredFamilyAt(spawn, 2, "family.creature.spawn.passive", 0);
                 return;

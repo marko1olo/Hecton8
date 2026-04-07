@@ -53,8 +53,8 @@ namespace Hecton8.World
         };
         private static readonly WorldPrefabFamilyProfile.StructureAccentRole[] _PatternAccentPriorityReefNavigation =
         {
-            WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark,
             WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette,
+            WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark,
             WorldPrefabFamilyProfile.StructureAccentRole.CaveRead,
             WorldPrefabFamilyProfile.StructureAccentRole.TechFragment
         };
@@ -305,6 +305,15 @@ namespace Hecton8.World
         [SerializeField] private int _debugMapMagicSamples;
         [SerializeField] private int _debugRaycastSamples;
         [SerializeField] private int _debugFallbackSamples;
+        [SerializeField] private int _debugMatchedScatterRules;
+        [SerializeField] private int _debugHeatPassedRules;
+        [SerializeField] private int _debugGatePassedRules;
+        [SerializeField] private int _debugResidencyPassedCandidates;
+        [SerializeField] private int _debugPostBuildGateRejectedCandidates;
+        [SerializeField] private int _debugQueuedCandidates;
+        [SerializeField] private string _debugRejectedResidencyFamily = "None";
+        [SerializeField] private float _debugRejectedResidencyDistance;
+        [SerializeField] private float _debugRejectedResidencyRadius;
         [SerializeField] private int _debugMaxCandidatesBeforePrunePerCell;
         [SerializeField] private int _debugMaxCandidatesAfterPrunePerCell;
         [SerializeField] private int _debugTrackedSpawnRescueCandidates;
@@ -529,22 +538,7 @@ namespace Hecton8.World
             SubscribeToBootstrap();
             RefreshRuntimeStreamingSettings();
 
-            // COLD ALLOC: Initialize candidate maps for zero-GC hot path
-            _groundRescueCandidates.Init(512, Allocator.Persistent);
-            _clusterRescueCandidates.Init(512, Allocator.Persistent);
-            _clusterFertileCandidates.Init(96, Allocator.Persistent);
-            _clusterNestCandidates.Init(64, Allocator.Persistent);
-            _clusterResourceCandidates.Init(96, Allocator.Persistent);
-            _clusterShelterCandidates.Init(96, Allocator.Persistent);
-            _clusterHazardCandidates.Init(64, Allocator.Persistent);
-            _clusterDebrisCandidates.Init(64, Allocator.Persistent);
-            _clusterRockCandidates.Init(64, Allocator.Persistent);
-            _structureNaturalCandidates.Init(64, Allocator.Persistent);
-            _structureTechCandidates.Init(64, Allocator.Persistent);
-            _structureCaveCandidates.Init(64, Allocator.Persistent);
-            _structureBioCandidates.Init(64, Allocator.Persistent);
-            _passiveSpawnCandidates.Init(64, Allocator.Persistent);
-            _predatorSpawnCandidates.Init(32, Allocator.Persistent);
+            EnsureCandidateMapsInitialized();
 
             if (!Application.isPlaying && !ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
@@ -728,6 +722,7 @@ namespace Hecton8.World
             }
 
             ResolveReferences();
+            EnsureCandidateMapsInitialized();
             RefreshRuntimeStreamingSettings();
 
             IReadOnlyList<WorldProceduralPlacementRule> rules = proceduralFillDirector != null ? proceduralFillDirector.Rules : null;
@@ -798,6 +793,15 @@ namespace Hecton8.World
             int mapMagicSamples = 0;
             int raycastSamples = 0;
             int fallbackSamples = 0;
+            int matchedScatterRules = 0;
+            int heatPassedRules = 0;
+            int gatePassedRules = 0;
+            int residencyPassedCandidates = 0;
+            int postBuildGateRejectedCandidates = 0;
+            int queuedCandidates = 0;
+            string rejectedResidencyFamily = "None";
+            float rejectedResidencyDistance = 0f;
+            float rejectedResidencyRadius = 0f;
             int maxCandidatesBeforePrunePerCell = 0;
             int maxCandidatesAfterPrunePerCell = 0;
             bool collectDetailedDiagnostics = enableScatterDetailedDiagnostics;
@@ -914,6 +918,8 @@ namespace Hecton8.World
                         WorldPrefabFamilyProfile family = runtimeRule.Family;
                         if (!MatchesScatter(runtimeRule, fieldSample.biomeFamily, fieldSample.zone, fieldSample.resolvedZoneKind, fieldSample.depthMeters, fieldSample.slopeDegrees))
                             continue;
+                        if (collectDetailedDiagnostics)
+                            matchedScatterRules++;
 
                         float heat = fieldSampler.EvaluateHeatmap(
                             runtimeRule.HeatmapChannelIndex,
@@ -928,6 +934,8 @@ namespace Hecton8.World
                         float effectiveDensityScale = ResolveEffectiveDensityScale(rule, family, fieldSample);
                         if (heat < effectiveMinHeat)
                             continue;
+                        if (collectDetailedDiagnostics)
+                            heatPassedRules++;
 
                         float normalizedHeat = Mathf.InverseLerp(effectiveMinHeat, 1f, heat);
                         float spawnProbability = Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
@@ -942,7 +950,9 @@ namespace Hecton8.World
                             + GetPatternContextBonus(fieldSample.resolvedPattern, runtimeRule)
                             + GetBiomeContextBonus(cellBiomeContext, runtimeRule)
                             + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family)
-                            + GetBiomeSignatureScoreBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family);
+                            + GetBiomeSignatureScoreBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family)
+                            + GetSoftWaterStructureFamilyBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family)
+                            + GetLandmarkSoftWaterStructureFamilyBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, family);
                         WorldPrefabFamilyProfile.ScatterLayer layer = runtimeRule.ScatterLayer;
                         int layerIndex = (int)layer;
                         if (!HasPatternLayerGlobalBudget(layer, layerPlacementCounts[layerIndex], _patternLayerTargetMaxBuffer))
@@ -994,6 +1004,8 @@ namespace Hecton8.World
                         float gate = StableRandom01(cellXIndex, cellZIndex, runtimeRule.RuleIdHash);
                         if (gate > spawnProbability && !needsRescueTracking)
                             continue;
+                        if (collectDetailedDiagnostics)
+                            gatePassedRules++;
 
                         ScatterCandidate candidate = BuildCandidate(
                             cellXIndex,
@@ -1004,11 +1016,27 @@ namespace Hecton8.World
                             heat,
                             score,
                             size);
+                        float residencyRadius = 0f;
+                        float residencyDistanceSqr = 0f;
+                        if (collectDetailedDiagnostics)
+                        {
+                            ResolveLayerRadii(candidate.Placement.StreamingLayer, out _, out _, out residencyRadius);
+                            residencyDistanceSqr = GetHorizontalDistanceSqr(candidate.Placement.Position, center);
+                        }
+
                         if (!IsPlacementWithinResidency(candidate.Placement, center))
                         {
+                            if (collectDetailedDiagnostics && rejectedResidencyFamily == "None")
+                            {
+                                rejectedResidencyFamily = candidate.Family != null ? candidate.Family.familyId : "None";
+                                rejectedResidencyDistance = residencyDistanceSqr > 0f ? Mathf.Sqrt(residencyDistanceSqr) : 0f;
+                                rejectedResidencyRadius = residencyRadius;
+                            }
                             ReleasePlacement(candidate.Placement);
                             continue;
                         }
+                        if (collectDetailedDiagnostics)
+                            residencyPassedCandidates++;
 
                         if (needsRescueTracking)
                         {
@@ -1038,12 +1066,16 @@ namespace Hecton8.World
 
                         if (gate > spawnProbability)
                         {
+                            if (collectDetailedDiagnostics)
+                                postBuildGateRejectedCandidates++;
                             ReleasePlacement(candidate.Placement);
                             continue;
                         }
 
                         RetainPlacement(candidate.Placement);
                         cellCandidatesBeforePrune++;
+                        if (collectDetailedDiagnostics)
+                            queuedCandidates++;
                         RetainTopCandidate(
                             _candidateBuffer,
                             candidate,
@@ -1215,6 +1247,15 @@ namespace Hecton8.World
             _debugMapMagicSamples = mapMagicSamples;
             _debugRaycastSamples = raycastSamples;
             _debugFallbackSamples = fallbackSamples;
+            _debugMatchedScatterRules = matchedScatterRules;
+            _debugHeatPassedRules = heatPassedRules;
+            _debugGatePassedRules = gatePassedRules;
+            _debugResidencyPassedCandidates = residencyPassedCandidates;
+            _debugPostBuildGateRejectedCandidates = postBuildGateRejectedCandidates;
+            _debugQueuedCandidates = queuedCandidates;
+            _debugRejectedResidencyFamily = rejectedResidencyFamily;
+            _debugRejectedResidencyDistance = rejectedResidencyDistance;
+            _debugRejectedResidencyRadius = rejectedResidencyRadius;
             _debugMaxCandidatesBeforePrunePerCell = maxCandidatesBeforePrunePerCell;
             _debugMaxCandidatesAfterPrunePerCell = maxCandidatesAfterPrunePerCell;
             _debugTrackedSpawnRescueCandidates = trackedSpawnRescueCandidates;
@@ -2033,6 +2074,34 @@ namespace Hecton8.World
             ResetDiagnostics();
         }
 
+        private void EnsureCandidateMapsInitialized()
+        {
+            // COLD ALLOC: editor domain reload can zero struct-backed caches before menu-driven preview calls.
+            EnsureCandidateMapInitialized(ref _groundRescueCandidates, 512);
+            EnsureCandidateMapInitialized(ref _clusterRescueCandidates, 512);
+            EnsureCandidateMapInitialized(ref _clusterFertileCandidates, 192);
+            EnsureCandidateMapInitialized(ref _clusterNestCandidates, 128);
+            EnsureCandidateMapInitialized(ref _clusterResourceCandidates, 192);
+            EnsureCandidateMapInitialized(ref _clusterShelterCandidates, 192);
+            EnsureCandidateMapInitialized(ref _clusterHazardCandidates, 128);
+            EnsureCandidateMapInitialized(ref _clusterDebrisCandidates, 192);
+            EnsureCandidateMapInitialized(ref _clusterRockCandidates, 128);
+            EnsureCandidateMapInitialized(ref _structureNaturalCandidates, 128);
+            EnsureCandidateMapInitialized(ref _structureTechCandidates, 128);
+            EnsureCandidateMapInitialized(ref _structureCaveCandidates, 192);
+            EnsureCandidateMapInitialized(ref _structureBioCandidates, 128);
+            EnsureCandidateMapInitialized(ref _passiveSpawnCandidates, 128);
+            EnsureCandidateMapInitialized(ref _predatorSpawnCandidates, 96);
+        }
+
+        private static void EnsureCandidateMapInitialized(ref CandidateMap map, int capacity)
+        {
+            if (map.values != null && map.keys != null)
+                return;
+
+            map.Init(capacity, Allocator.Persistent);
+        }
+
         private void ResetDiagnostics()
         {
             _debugReady = false;
@@ -2046,6 +2115,15 @@ namespace Hecton8.World
             _debugMapMagicSamples = 0;
             _debugRaycastSamples = 0;
             _debugFallbackSamples = 0;
+            _debugMatchedScatterRules = 0;
+            _debugHeatPassedRules = 0;
+            _debugGatePassedRules = 0;
+            _debugResidencyPassedCandidates = 0;
+            _debugPostBuildGateRejectedCandidates = 0;
+            _debugQueuedCandidates = 0;
+            _debugRejectedResidencyFamily = "None";
+            _debugRejectedResidencyDistance = 0f;
+            _debugRejectedResidencyRadius = 0f;
             _debugMaxCandidatesBeforePrunePerCell = 0;
             _debugMaxCandidatesAfterPrunePerCell = 0;
             _debugTrackedSpawnRescueCandidates = 0;
@@ -2784,7 +2862,7 @@ namespace Hecton8.World
 
             ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out float midRadius, out _);
             float allowedRadius = Mathf.Max(nearRadius, midRadius);
-            return (placement.Position - observerPosition).sqrMagnitude <= allowedRadius * allowedRadius;
+            return GetHorizontalDistanceSqr(placement.Position, observerPosition) <= allowedRadius * allowedRadius;
         }
 
         private bool TryRegisterDesiredPlacement(ScatterPlacement placement, float now)
@@ -2878,7 +2956,8 @@ namespace Hecton8.World
 
         private void ResetPlacementGrid()
         {
-            for (int i = 0; i < _gridPlacementBucketCount; i++)
+            int bucketCount = Mathf.Min(_gridPlacementBucketCount, _gridPlacementBuckets.Count);
+            for (int i = 0; i < bucketCount; i++)
                 _gridPlacementBuckets[i].Clear();
 
             _gridPlacementBucketCount = 0;
@@ -2947,7 +3026,7 @@ namespace Hecton8.World
             if (farRadius <= 0f)
                 return false;
 
-            return (placement.Position - observerPosition).sqrMagnitude <= farRadius * farRadius;
+            return GetHorizontalDistanceSqr(placement.Position, observerPosition) <= farRadius * farRadius;
         }
 
         private void ResolveLayerRadii(
@@ -2965,7 +3044,8 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_cachedLayerRadiiCellSize != cellSize || !ReferenceEquals(_cachedLayerRadiiProfile, chunkStreamingProfile))
+            bool radiiCacheMissing = _layerNearRadii[index] <= 0f || _layerMidRadii[index] <= 0f || _layerFarRadii[index] <= 0f;
+            if (_cachedLayerRadiiCellSize != cellSize || !ReferenceEquals(_cachedLayerRadiiProfile, chunkStreamingProfile) || radiiCacheMissing)
             {
                 _cachedLayerRadiiCellSize = cellSize;
                 _cachedLayerRadiiProfile = chunkStreamingProfile;
@@ -3407,7 +3487,14 @@ namespace Hecton8.World
 
             ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out _, out _);
             nearRadius *= ResolveFinalVariantRadiusScale(placement.Family);
-            return (placement.Position - observerPosition).sqrMagnitude <= nearRadius * nearRadius;
+            return GetHorizontalDistanceSqr(placement.Position, observerPosition) <= nearRadius * nearRadius;
+        }
+
+        private static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
+        {
+            float dx = a.x - b.x;
+            float dz = a.z - b.z;
+            return (dx * dx) + (dz * dz);
         }
 
         private float ResolveFinalVariantRadiusScale(WorldPrefabFamilyProfile family)
@@ -3421,10 +3508,10 @@ namespace Hecton8.World
             if (string.Equals(family.familyId, "family.rock.small_floor", StringComparison.Ordinal))
                 return Mathf.Clamp(rockSmallFloorFinalRadiusScale, 0.25f, 3f);
 
-            if (string.Equals(family.familyId, "family.rock.cluster_medium", StringComparison.Ordinal))
+            if (string.Equals(family.familyId, "family.rock.cluster.medium", StringComparison.Ordinal))
                 return Mathf.Clamp(rockClusterMediumFinalRadiusScale, 0.25f, 3f);
 
-            if (string.Equals(family.familyId, "family.rock.arch_large", StringComparison.Ordinal))
+            if (string.Equals(family.familyId, "family.rock.arch.large", StringComparison.Ordinal))
                 return Mathf.Clamp(rockArchLargeFinalRadiusScale, 0.25f, 3f);
 
             return 1f;
@@ -3453,10 +3540,10 @@ namespace Hecton8.World
             if (string.Equals(familyId, "family.rock.small_floor", StringComparison.Ordinal))
                 return 12;
 
-            if (string.Equals(familyId, "family.rock.cluster_medium", StringComparison.Ordinal))
+            if (string.Equals(familyId, "family.rock.cluster.medium", StringComparison.Ordinal))
                 return 8;
 
-            if (string.Equals(familyId, "family.rock.arch_large", StringComparison.Ordinal))
+            if (string.Equals(familyId, "family.rock.arch.large", StringComparison.Ordinal))
                 return 4;
 
             if (string.Equals(familyId, "family.coral.branching", StringComparison.Ordinal))
@@ -6099,7 +6186,13 @@ namespace Hecton8.World
         {
             WorldProceduralPatternProfile profile = ResolvePatternProfile(pattern, out _);
             int value = profile != null ? profile.GetStructureAccentMin(role) : 0;
-            return Mathf.Max(0, value + GetMatrixBiomeStructureAccentMinDelta(biomeProfile, role) + GetServiceWaterStructureRoleMinDelta(pattern, biomeProfile, role));
+            return Mathf.Max(
+                0,
+                value
+                + GetMatrixBiomeStructureAccentMinDelta(biomeProfile, role)
+                + GetSoftWaterStructureRoleMinDelta(pattern, biomeProfile, role)
+                + GetLandmarkSoftWaterStructureRoleMinDelta(pattern, biomeProfile, role)
+                + GetServiceWaterStructureRoleMinDelta(pattern, biomeProfile, role));
         }
 
         private int ResolvePatternAccentRoleMax(
@@ -6110,7 +6203,13 @@ namespace Hecton8.World
             WorldProceduralPatternProfile profile = ResolvePatternProfile(pattern, out _);
             int minValue = ResolvePatternAccentRoleMin(pattern, biomeProfile, role);
             int value = profile != null ? profile.GetStructureAccentMax(role) : 0;
-            return Mathf.Max(minValue, value + GetMatrixBiomeStructureAccentMaxDelta(biomeProfile, role) + GetServiceWaterStructureRoleMaxDelta(pattern, biomeProfile, role));
+            return Mathf.Max(
+                minValue,
+                value
+                + GetMatrixBiomeStructureAccentMaxDelta(biomeProfile, role)
+                + GetSoftWaterStructureRoleMaxDelta(pattern, biomeProfile, role)
+                + GetLandmarkSoftWaterStructureRoleMaxDelta(pattern, biomeProfile, role)
+                + GetServiceWaterStructureRoleMaxDelta(pattern, biomeProfile, role));
         }
 
         private static float ResolveEffectiveMinHeat(
@@ -6172,6 +6271,9 @@ namespace Hecton8.World
         {
             if (family == null)
                 return false;
+
+            if (sample.isPreviewOverride)
+                return true;
 
             if (sample.seafloorSource != WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic)
                 return false;
@@ -7276,6 +7378,81 @@ namespace Hecton8.World
             return 0f;
         }
 
+        private static float GetSoftWaterStructureFamilyBonus(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile family)
+        {
+            if (biomeProfile == null ||
+                family == null ||
+                family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
+                !IsSoftWaterPattern(pattern))
+            {
+                return 0f;
+            }
+
+            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
+            if (preferredRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                return 0f;
+
+            WorldPrefabFamilyProfile.StructureAccentRole role = GetStructureAccentRole(family);
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+            {
+                int preferredIndex = GetPreferredFamilyIndex(biomeProfile.preferredStructureFamilies, family);
+                return preferredIndex switch
+                {
+                    0 => pattern == WorldProceduralPattern.ReefNavigation ? 0.28f : 0.24f,
+                    1 => pattern == WorldProceduralPattern.ReefNavigation ? 0.20f : 0.16f,
+                    2 => 0.10f,
+                    _ => 0.06f
+                };
+            }
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+                return pattern == WorldProceduralPattern.ReefNavigation ? -0.16f : -0.12f;
+
+            return 0f;
+        }
+
+        private static float GetLandmarkSoftWaterStructureFamilyBonus(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile family)
+        {
+            if (pattern != WorldProceduralPattern.LandmarkCorridor ||
+                biomeProfile == null ||
+                family == null ||
+                family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure)
+            {
+                return 0f;
+            }
+
+            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
+            if (preferredRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                return 0f;
+
+            WorldPrefabFamilyProfile.StructureAccentRole role = GetStructureAccentRole(family);
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+            {
+                int preferredIndex = GetPreferredFamilyIndex(biomeProfile.preferredStructureFamilies, family);
+                return preferredIndex switch
+                {
+                    0 => 0.42f,
+                    1 => 0.30f,
+                    2 => 0.18f,
+                    _ => 0.10f
+                };
+            }
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+                return -0.28f;
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
+                return -0.12f;
+
+            return 0f;
+        }
+
         private static float GetPreferredFamilyScoreBonus(
             WorldPrefabFamilyProfile[] preferredFamilies,
             WorldPrefabFamilyProfile family,
@@ -7781,6 +7958,124 @@ namespace Hecton8.World
 
             if (role == preferredRole && preferredRole != WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
                 return 1;
+
+            return 0;
+        }
+
+        private static int GetSoftWaterStructureRoleMinDelta(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            if (biomeProfile == null ||
+                role == WorldPrefabFamilyProfile.StructureAccentRole.None ||
+                !IsSoftWaterPattern(pattern))
+            {
+                return 0;
+            }
+
+            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
+            if (preferredRole == WorldPrefabFamilyProfile.StructureAccentRole.None)
+                return 0;
+
+            if (preferredRole == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+            {
+                if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                    return pattern == WorldProceduralPattern.ReefNavigation ? 2 : 1;
+
+                if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+                    return -1;
+            }
+
+            if (role == preferredRole)
+                return 1;
+
+            return 0;
+        }
+
+        private static int GetLandmarkSoftWaterStructureRoleMinDelta(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            if (pattern != WorldProceduralPattern.LandmarkCorridor ||
+                biomeProfile == null ||
+                role == WorldPrefabFamilyProfile.StructureAccentRole.None)
+            {
+                return 0;
+            }
+
+            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
+            if (preferredRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                return 0;
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                return 2;
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+                return -1;
+
+            return 0;
+        }
+
+        private static int GetSoftWaterStructureRoleMaxDelta(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            if (biomeProfile == null ||
+                role == WorldPrefabFamilyProfile.StructureAccentRole.None ||
+                !IsSoftWaterPattern(pattern))
+            {
+                return 0;
+            }
+
+            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
+            if (preferredRole == WorldPrefabFamilyProfile.StructureAccentRole.None)
+                return 0;
+
+            if (preferredRole == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+            {
+                if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                    return pattern == WorldProceduralPattern.ReefNavigation ? 4 : 3;
+
+                if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+                    return -2;
+
+                if (role == WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
+                    return -2;
+            }
+
+            if (role == preferredRole)
+                return 1;
+
+            return 0;
+        }
+
+        private static int GetLandmarkSoftWaterStructureRoleMaxDelta(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            if (pattern != WorldProceduralPattern.LandmarkCorridor ||
+                biomeProfile == null ||
+                role == WorldPrefabFamilyProfile.StructureAccentRole.None)
+            {
+                return 0;
+            }
+
+            WorldPrefabFamilyProfile.StructureAccentRole preferredRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
+            if (preferredRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                return 0;
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
+                return 3;
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead)
+                return -2;
+
+            if (role == WorldPrefabFamilyProfile.StructureAccentRole.TechFragment)
+                return -1;
 
             return 0;
         }

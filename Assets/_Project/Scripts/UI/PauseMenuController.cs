@@ -5,6 +5,7 @@ using Hecton8.Input;
 using Hecton8.SaveSystem;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -67,6 +68,11 @@ namespace Hecton8.UI
         private CanvasGroup _settingsPanelCanvasGroup;
         private TextMeshProUGUI _saveStatus;
         private PauseControlsPanel _controlsPanel;
+        private Button _mainResumeButton;
+        private Button _savesFirstButton;
+        private Button _savesBackButton;
+        private Button _helpBackButton;
+        private Button _settingsBackButton;
 
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
@@ -234,6 +240,7 @@ namespace Hecton8.UI
                 InputManager.Instance.SwitchToPlayerInput();
             }
 
+            ClearPauseSelection();
             ApplyCursorState(restorePlayerInput);
 
         }
@@ -428,7 +435,10 @@ namespace Hecton8.UI
                     new Vector2(0f, -88f - i * 58f), new Vector2(420f, 42f), actions[i]);
 
                 if (i == 0)
+                {
+                    _mainResumeButton = btn.GetComponent<Button>();
                     GetText(btn, "Label")?.SetText("RESUME EXPEDITION");
+                }
             }
         }
 
@@ -446,6 +456,9 @@ namespace Hecton8.UI
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
                     () => SaveSlot(slotName));
 
+                if (i == 0)
+                    _savesFirstButton = btn.GetComponent<Button>();
+
                 TextMeshProUGUI label = GetText(btn, "Label");
                 if (label != null)
                     label.alignment = TextAlignmentOptions.Center;
@@ -456,7 +469,7 @@ namespace Hecton8.UI
             _saveStatus.color = Dim;
             _saveStatus.SetText("Awaiting save command.");
 
-            CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            _savesBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
         }
 
         private void BuildHelpPanel(RectTransform panel)
@@ -479,7 +492,7 @@ namespace Hecton8.UI
                 "3. Keep loadout aligned with cargo before committing to depth.\n" +
                 "4. Save before hazardous traversal, fauna contact, or base edits.");
 
-            CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            _helpBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
         }
 
         private void BuildSettingsPanel(RectTransform panel)
@@ -494,7 +507,7 @@ namespace Hecton8.UI
             controls.Configure(this, labelFont, labelFont);
             _controlsPanel = controls;
 
-            CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            _settingsBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
         }
 
         private void ShowSection(PauseSection section)
@@ -525,6 +538,8 @@ namespace Hecton8.UI
                     RefreshSettingsPanel();
                     break;
             }
+
+            SelectDefaultButtonForSection(section);
         }
 
         private async void SaveSlot(string slotName)
@@ -643,10 +658,11 @@ namespace Hecton8.UI
             return rect;
         }
 
-        private void CreateBackButton(Transform parent, Action onClick)
+        private Button CreateBackButton(Transform parent, Action onClick)
         {
-            CreateButton(parent, "BackButton", "BACK", new Vector2(1f, 0f), new Vector2(1f, 0f),
+            RectTransform buttonRoot = CreateButton(parent, "BackButton", "BACK", new Vector2(1f, 0f), new Vector2(1f, 0f),
                 new Vector2(-108f, 28f), new Vector2(180f, 34f), onClick);
+            return buttonRoot.GetComponent<Button>();
         }
 
         private TextMeshProUGUI CreateSectionTitle(Transform parent, string value)
@@ -752,6 +768,60 @@ namespace Hecton8.UI
             rect.anchorMax = new Vector2(1f, 1f);
             rect.offsetMin = new Vector2(left, bottom);
             rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private void SelectDefaultButtonForSection(PauseSection section)
+        {
+            if (!_isOpen)
+                return;
+
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+                return;
+
+            Button target = GetDefaultButtonForSection(section);
+            if (target == null)
+                return;
+
+            GameObject targetObject = target.gameObject;
+            if (targetObject == null || !targetObject.activeInHierarchy)
+                return;
+
+            if (eventSystem.currentSelectedGameObject == targetObject)
+                return;
+
+            eventSystem.SetSelectedGameObject(targetObject);
+        }
+
+        private Button GetDefaultButtonForSection(PauseSection section)
+        {
+            switch (section)
+            {
+                case PauseSection.Main:
+                    return _mainResumeButton;
+                case PauseSection.Saves:
+                    return _savesFirstButton != null ? _savesFirstButton : _savesBackButton;
+                case PauseSection.Help:
+                    return _helpBackButton;
+                case PauseSection.Settings:
+                    return _settingsBackButton;
+                default:
+                    return null;
+            }
+        }
+
+        private void ClearPauseSelection()
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+                return;
+
+            GameObject selected = eventSystem.currentSelectedGameObject;
+            if (selected == null || _root == null)
+                return;
+
+            if (selected.transform.IsChildOf(_root))
+                eventSystem.SetSelectedGameObject(null);
         }
 
         private static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)

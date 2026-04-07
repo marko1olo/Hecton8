@@ -60,12 +60,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.service.scar.final.placeholder
-    prefab: {fileID: 1336789700023128945, guid: 83723258d4c14ef45985192ea39f5262, type: 3}
+  - variantId: family.service.scar.final.service_pump
+    prefab: {fileID: 2293229834002279593, guid: 3df7ebb48b8d74e46801634595e1e864, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.96, y: 1.04}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/ServiceScar/Service_Scar
   gameplayRole: Maintenance traces, pumps, lines and scarred tech strips.

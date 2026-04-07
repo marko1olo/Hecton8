@@ -193,6 +193,7 @@ namespace Hecton8.World
             public int BiomeFamilyDataIndex;
             public int ResolvedZoneKind;
             public int ResolvedPattern;
+            public int PreviewOverrideActive;
             public int SeafloorSource;
             public int IsValid;
         }
@@ -218,6 +219,7 @@ namespace Hecton8.World
             public float zoneWeight;
             public WorldZoneAnchor.ZoneKind resolvedZoneKind;
             public WorldProceduralPattern resolvedPattern;
+            public bool isPreviewOverride;
             public SeafloorSource seafloorSource;
             public bool isValid;
         }
@@ -383,9 +385,13 @@ namespace Hecton8.World
             public float SlopeProbeMeters;
             public float FieldNoiseScale;
             public float DetailNoiseScale;
+            public int ForcePreviewPatternOverride;
+            public int LimitPreviewPatternOverrideToFallback;
+            public int PreviewPatternOverride;
             public int CurrentBiomeMatrixDataIndex;
             public int CurrentBiomeFamilyDataIndex;
             public int PreviewMatrixBiomeDataIndex;
+            public int PreviewMatrixBiomeFamilyDataIndex;
             public int CurrentZoneDataIndex;
             public int ZoneCount;
             public int BiomeMatrixCount;
@@ -421,9 +427,13 @@ namespace Hecton8.World
                     SlopeProbeMeters,
                     FieldNoiseScale,
                     DetailNoiseScale,
+                    ForcePreviewPatternOverride,
+                    LimitPreviewPatternOverrideToFallback,
+                    PreviewPatternOverride,
                     CurrentBiomeMatrixDataIndex,
                     CurrentBiomeFamilyDataIndex,
                     PreviewMatrixBiomeDataIndex,
+                    PreviewMatrixBiomeFamilyDataIndex,
                     CurrentZoneDataIndex,
                     ZoneCount,
                     BiomeMatrixCount,
@@ -463,6 +473,7 @@ namespace Hecton8.World
                 BiomeFamilyDataIndex = currentBiomeFamilyDataIndex,
                 ResolvedZoneKind = (int)WorldZoneAnchor.ZoneKind.Generic,
                 ResolvedPattern = (int)WorldProceduralPattern.SedimentResources,
+                PreviewOverrideActive = 0,
                 IsValid = 0
             };
         }
@@ -475,9 +486,13 @@ namespace Hecton8.World
             float slopeProbeMeters,
             float fieldNoiseScale,
             float detailNoiseScale,
+            int forcePreviewPatternOverride,
+            int limitPreviewPatternOverrideToFallback,
+            int previewPatternOverride,
             int currentBiomeMatrixDataIndex,
             int currentBiomeFamilyDataIndex,
             int previewMatrixBiomeDataIndex,
+            int previewMatrixBiomeFamilyDataIndex,
             int currentZoneDataIndex,
             int zoneCount,
             int biomeMatrixCount,
@@ -520,6 +535,7 @@ namespace Hecton8.World
                 BiomeFamilyDataIndex = currentBiomeFamilyDataIndex,
                 ResolvedZoneKind = (int)WorldZoneAnchor.ZoneKind.Generic,
                 ResolvedPattern = (int)WorldProceduralPattern.SedimentResources,
+                PreviewOverrideActive = 0,
                 IsValid = 1
             };
 
@@ -587,9 +603,46 @@ namespace Hecton8.World
                 output.CanyonSignal * 0.18f +
                 output.CaveProximity * 0.18f +
                 output.CompositionNoise * 0.10f);
-            output.ResolvedPattern = (int)ResolvePattern(output, zones, zoneCount, biomeMatrices, biomeMatrixCount, biomeFamilies, biomeFamilyCount);
+            bool applyPreviewPatternOverride = forcePreviewPatternOverride != 0
+                && (limitPreviewPatternOverrideToFallback == 0 || output.SeafloorSource == (int)SeafloorSource.FallbackSynthetic);
+
+            if (applyPreviewPatternOverride)
+            {
+                WorldProceduralPattern previewPattern = (WorldProceduralPattern)previewPatternOverride;
+                output.ResolvedPattern = previewPatternOverride;
+                output.ResolvedZoneKind = (int)ResolvePreviewPatternZoneKind(previewPattern);
+                output.PreviewOverrideActive = 1;
+                output.BiomeFamilyDataIndex = ResolvePreviewPatternBiomeFamilyIndex(
+                    previewPattern,
+                    output.DepthMeters,
+                    output.SlopeDegrees,
+                    output.BiomeFamilyDataIndex,
+                    sedimentDriftFamilyIndex,
+                    littoralKarstFamilyIndex,
+                    fossilReefFamilyIndex,
+                    abyssalSiltFamilyIndex,
+                    graniteEscarpmentFamilyIndex,
+                    tectonicSpineFamilyIndex,
+                    riftSpineFamilyIndex,
+                    riftVoidFamilyIndex,
+                    volcanicGlassFamilyIndex,
+                    volcanicHadalFamilyIndex,
+                    metallicHadalFamilyIndex,
+                    chemosyntheticBrineFamilyIndex,
+                    crystalGrowthFamilyIndex);
+            }
+            else
+            {
+                output.ResolvedPattern = (int)ResolvePattern(output, zones, zoneCount, biomeMatrices, biomeMatrixCount, biomeFamilies, biomeFamilyCount);
+            }
+
             if (previewMatrixBiomeDataIndex >= 0)
+            {
                 output.BiomeMatrixDataIndex = previewMatrixBiomeDataIndex;
+                output.PreviewOverrideActive = 1;
+                if (previewMatrixBiomeFamilyDataIndex >= 0)
+                    output.BiomeFamilyDataIndex = previewMatrixBiomeFamilyDataIndex;
+            }
 
             ComputeHeatChannels(ref output, biomeMatrices, biomeMatrixCount);
             return output;
@@ -1230,6 +1283,60 @@ namespace Hecton8.World
             };
         }
 
+        private static int ResolvePreviewPatternBiomeFamilyIndex(
+            WorldProceduralPattern pattern,
+            float depthMeters,
+            float slopeDegrees,
+            int currentBiomeFamilyIndex,
+            int sedimentDriftFamilyIndex,
+            int littoralKarstFamilyIndex,
+            int fossilReefFamilyIndex,
+            int abyssalSiltFamilyIndex,
+            int graniteEscarpmentFamilyIndex,
+            int tectonicSpineFamilyIndex,
+            int riftSpineFamilyIndex,
+            int riftVoidFamilyIndex,
+            int volcanicGlassFamilyIndex,
+            int volcanicHadalFamilyIndex,
+            int metallicHadalFamilyIndex,
+            int chemosyntheticBrineFamilyIndex,
+            int crystalGrowthFamilyIndex)
+        {
+            int fallback = currentBiomeFamilyIndex >= 0 ? currentBiomeFamilyIndex : sedimentDriftFamilyIndex;
+
+            return pattern switch
+            {
+                WorldProceduralPattern.FertileShallows => littoralKarstFamilyIndex >= 0
+                    ? littoralKarstFamilyIndex
+                    : crystalGrowthFamilyIndex >= 0 ? crystalGrowthFamilyIndex : fallback,
+                WorldProceduralPattern.ReefNavigation => fossilReefFamilyIndex >= 0
+                    ? fossilReefFamilyIndex
+                    : crystalGrowthFamilyIndex >= 0 ? crystalGrowthFamilyIndex : fallback,
+                WorldProceduralPattern.SedimentResources => depthMeters > 220f && graniteEscarpmentFamilyIndex >= 0
+                    ? graniteEscarpmentFamilyIndex
+                    : sedimentDriftFamilyIndex >= 0 ? sedimentDriftFamilyIndex : fallback,
+                WorldProceduralPattern.IndustrialService => tectonicSpineFamilyIndex >= 0
+                    ? tectonicSpineFamilyIndex
+                    : metallicHadalFamilyIndex >= 0 ? metallicHadalFamilyIndex : fallback,
+                WorldProceduralPattern.BrineToxic => chemosyntheticBrineFamilyIndex >= 0
+                    ? chemosyntheticBrineFamilyIndex
+                    : metallicHadalFamilyIndex >= 0 ? metallicHadalFamilyIndex : fallback,
+                WorldProceduralPattern.VolcanicPressure => depthMeters > 240f && volcanicHadalFamilyIndex >= 0
+                    ? volcanicHadalFamilyIndex
+                    : volcanicGlassFamilyIndex >= 0 ? volcanicGlassFamilyIndex : fallback,
+                WorldProceduralPattern.RiftHazard => depthMeters > 240f && riftVoidFamilyIndex >= 0
+                    ? riftVoidFamilyIndex
+                    : riftSpineFamilyIndex >= 0 ? riftSpineFamilyIndex : fallback,
+                WorldProceduralPattern.AbyssSparse => abyssalSiltFamilyIndex >= 0
+                    ? abyssalSiltFamilyIndex
+                    : metallicHadalFamilyIndex >= 0 ? metallicHadalFamilyIndex : fallback,
+                WorldProceduralPattern.LandmarkCorridor => slopeDegrees > 10f && graniteEscarpmentFamilyIndex >= 0
+                    ? graniteEscarpmentFamilyIndex
+                    : fossilReefFamilyIndex >= 0 ? fossilReefFamilyIndex : fallback,
+                _ => fallback
+            };
+        }
+
         private static float ResolvePatternFieldBlend(SeafloorSource source, bool hasZone)
         {
             return source switch
@@ -1382,9 +1489,13 @@ namespace Hecton8.World
                 SlopeProbeMeters = slopeProbeMeters,
                 FieldNoiseScale = fieldNoiseScale,
                 DetailNoiseScale = detailNoiseScale,
+                ForcePreviewPatternOverride = forcePatternPreviewOverride ? 1 : 0,
+                LimitPreviewPatternOverrideToFallback = limitPatternOverrideToFallback ? 1 : 0,
+                PreviewPatternOverride = (int)previewPatternOverride,
                 CurrentBiomeMatrixDataIndex = ResolveBiomeMatrixDataIndex(biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null),
                 CurrentBiomeFamilyDataIndex = ResolveBiomeFamilyDataIndex(biomeMatrixDirector != null ? biomeMatrixDirector.CurrentFamilyProfile : null),
-                PreviewMatrixBiomeDataIndex = -1,
+                PreviewMatrixBiomeDataIndex = ResolveBiomeMatrixDataIndex(ResolvePreviewMatrixBiomeOverride(SeafloorSource.FallbackSynthetic)),
+                PreviewMatrixBiomeFamilyDataIndex = ResolveBiomeFamilyDataIndex(previewMatrixBiomeOverride != null ? previewMatrixBiomeOverride.familyProfile : null),
                 CurrentZoneDataIndex = ResolveZoneDataIndex(worldZoneDirector != null ? worldZoneDirector.CurrentZone : null),
                 ZoneCount = _burstZoneDataCount,
                 BiomeMatrixCount = _burstBiomeMatrixDataCount,
@@ -1434,6 +1545,7 @@ namespace Hecton8.World
                 zoneWeight = output.ZoneWeight,
                 resolvedZoneKind = (WorldZoneAnchor.ZoneKind)output.ResolvedZoneKind,
                 resolvedPattern = (WorldProceduralPattern)output.ResolvedPattern,
+                isPreviewOverride = output.PreviewOverrideActive != 0,
                 seafloorSource = (SeafloorSource)output.SeafloorSource,
                 isValid = true
             };
@@ -1737,9 +1849,11 @@ namespace Hecton8.World
             }
 
             HectonBiomeMatrixProfile previewMatrixProfile = ResolvePreviewMatrixBiomeOverride(seafloorSource);
+            bool previewOverrideApplied = forcePatternPreviewOverride && (!limitPatternOverrideToFallback || seafloorSource == SeafloorSource.FallbackSynthetic);
             if (previewMatrixProfile != null)
             {
                 biomeProfile = previewMatrixProfile;
+                previewOverrideApplied = true;
                 if (previewMatrixProfile.familyProfile != null)
                     biomeFamily = previewMatrixProfile.familyProfile;
             }
@@ -1775,6 +1889,7 @@ namespace Hecton8.World
                 zoneWeight = zoneWeight,
                 resolvedZoneKind = resolvedZoneKind,
                 resolvedPattern = resolvedPattern,
+                isPreviewOverride = previewOverrideApplied,
                 seafloorSource = seafloorSource,
                 isValid = true
             };

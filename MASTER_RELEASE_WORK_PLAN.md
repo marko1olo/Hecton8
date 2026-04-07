@@ -148,8 +148,10 @@ Confirmed build-truth from `2026-04-05`:
   - `introContext`
   - `landingPreset`
   - Source of truth for `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`
-- [ ] Add unified `Surface Truth Contract`
+- [~] Add unified `Surface Truth Contract`
   - One source of truth for water level and surface state across `MapMagicBridge`, `HectonFluidEngine`, `HectonSurvivalSystem`, underwater visuals, atmosphere, camera, and audio transitions
+  - code truth now exists for surface hysteresis itself: `SurfaceStateUtility` is already used by `HectonSurvivalSystem`, `HectonAtmosphereManager`, and `HectonUnderwaterVisuals`
+  - remaining gap: there is still no single runtime authority object that drives `MapMagicBridge`, `HectonFluidEngine`, and audio transitions from the exact same source
 - [ ] Add unified `Build Playtest Entry`
   - Every build pass logs version, date, FPS-feel, main irritant, main visual flaw, main UX flaw, main content gap, blocker yes/no
 - [ ] Add `Biome Content Pack Contract`
@@ -300,9 +302,10 @@ P0 rules:
 - [ ] Bring live `ProximityColliderSystem` into production truth instead of "exists in code"
 - [ ] Bring `FloatingOrigin` in as a required large-world architecture pass
 - [ ] Check surface/island terrain layering separately from underwater floor
-- [ ] Check steep cliffs, terrain walls, island edges, shoreline seams, and surfacing near walls
+- [~] Check steep cliffs, terrain walls, island edges, shoreline seams, and surfacing near walls
   - shoreline locomotion must survive shallow-water ground flicker; no fake swim flip when climbing out
   - jump input at the waterline must be buffered across the shallow ground-transition window, not lost on one bad grounded frame
+  - current code truth: `HectonPlayerMovement` already has shoreline jump buffer / shore-ground grace pass applied; still waiting on live shoreline verification
 
 ## Water / Surface / Oxygen / Transition
 
@@ -316,11 +319,15 @@ P0 rules:
   - post process
   - oxygen logic
   - camera feel
-- [ ] Keep camera inertia honest:
+- [~] Keep camera inertia honest:
   - no reverse-direction tail after mouse stop
   - underwater mass can exist, but it must settle toward neutral without overshooting through center
   - verify separately near surface and in deeper swim because bob + sway stacking can hide the true offender
-- [ ] Bring one water-level truth across survival, fluid, visuals, and world bridge
+  - current code truth: `CameraJuiceProcessor` already clamps spring overshoot on release; still waiting on live swim verification
+- [~] Bring one water-level truth across survival, fluid, visuals, and world bridge
+  - current code truth: survival / atmosphere / underwater visuals already read one shared surface hysteresis contract from player depth instead of maintaining separate waterline thresholds
+  - current scene truth: `02_HECTON_WORLD` currently shows aligned serialized water levels on `HectonAtmosphereManager`, `HectonFluidEngine`, and `MapMagicBridge` (`4900`)
+  - remaining gap: audio is still outside this contract, and there is still no single runtime water-state publisher consumed by all listed systems
 - [c] Fix surface oxygen refill with hysteresis and fail-safe logic
 - [ ] Verify edge cases:
   - fast ascent
@@ -550,9 +557,11 @@ P0 rules:
   - ruin-adjacent cave mouth
   - pressure-scar cave
   - volcanic vent mouth
-- [ ] Connect `HectonVoxelEngine` and `CaveGraphGenerator` to MapMagic/world-fill/biome logic as a live pipeline
+- [c] Connect `HectonVoxelEngine` and `CaveGraphGenerator` to MapMagic/world-fill/biome logic as a live pipeline
   - note from `2026-04-05` compile hygiene pass:
     `WorldCaveDirector` had drifted onto a dead `MapMagicBridge.SampleHeight` call; restored live contract through `TryGetHeight` fail-safe, reconnected `caveSpawnProbability` as the intended biome-evaluation gate, and removed duplicate `using` noise from `HectonVoxelEngine`
+  - scene wiring truth from `02_HECTON_WORLD`: live scene already contains `MapMagicBridge`, `WorldCaveDirector`, `WorldGenerativeGeologyIntegrationDirector`, `WorldGenerativeGeologySeamExecutionDirector`, `WorldGenerativeGeologyVoxelBridgeDirector`, and a separate active `[VOXEL_ENGINE]` with `HectonVoxelEngine`
+  - remaining gap: perceptual seam/readability/world-check is still pending, so this is architecture-complete for current coding work, not final world proof
 - [ ] Verify seam logic:
   - terrain -> geology
   - geology -> voxel bridge
