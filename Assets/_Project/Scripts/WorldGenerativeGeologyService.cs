@@ -77,11 +77,13 @@ namespace Hecton8.World
         private const string CaveBlendCarvePortalLabel = "CarvePortal";
 
         private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(256);
+        private static readonly List<int> _staleBindingIndexBuffer = new List<int>(32);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _activeBindings.Clear();
+            _staleBindingIndexBuffer.Clear();
         }
 
         [SerializeField] private long runtimeKey;
@@ -105,6 +107,8 @@ namespace Hecton8.World
         [SerializeField] private float suggestedTerrainCut;
         [SerializeField] private int suggestedDebrisCount;
 
+        private WorldProceduralProxyInstance _cachedProxyInstance;
+
         public long RuntimeKey => runtimeKey;
         public string FamilyId => familyId;
         public string GeologyProfileId => geologyProfileId;
@@ -123,6 +127,8 @@ namespace Hecton8.World
         public float SuggestedTerrainRaise => suggestedTerrainRaise;
         public float SuggestedTerrainCut => suggestedTerrainCut;
         public int SuggestedDebrisCount => suggestedDebrisCount;
+        internal WorldProceduralProxyInstance CachedProxyInstance => _cachedProxyInstance;
+        internal long CachedProxyRuntimeKey => _cachedProxyInstance != null ? _cachedProxyInstance.RuntimeKey : 0L;
         public static int ActiveBindingCount => _activeBindings.Count;
 
         public WorldGenerativeGeologyProfile.ShapeArchetype Archetype
@@ -155,8 +161,14 @@ namespace Hecton8.World
             }
         }
 
+        private void Awake()
+        {
+            CacheReferences();
+        }
+
         private void OnEnable()
         {
+            CacheReferences();
             RegisterActiveBinding(this);
         }
 
@@ -170,20 +182,32 @@ namespace Hecton8.World
             UnregisterActiveBinding(this);
         }
 
+        private void CacheReferences()
+        {
+            if (!TryGetComponent(out _cachedProxyInstance))
+                _cachedProxyInstance = null;
+        }
+
         public static void CopyActiveBindingsTo(List<WorldGenerativeGeologyBinding> destination)
         {
             if (destination == null)
                 return;
 
             destination.Clear();
+            _staleBindingIndexBuffer.Clear();
             for (int i = 0; i < _activeBindings.Count; i++)
             {
                 WorldGenerativeGeologyBinding binding = _activeBindings[i];
-                if (binding == null)
+                if (binding == null || !binding.isActiveAndEnabled)
+                {
+                    _staleBindingIndexBuffer.Add(i);
                     continue;
+                }
 
                 destination.Add(binding);
             }
+
+            TrimStaleActiveBindings();
         }
 
         public static bool TryGetActiveBinding(long runtimeKey, out WorldGenerativeGeologyBinding binding)
@@ -192,16 +216,25 @@ namespace Hecton8.World
             if (runtimeKey == 0L)
                 return false;
 
+            _staleBindingIndexBuffer.Clear();
             for (int i = 0; i < _activeBindings.Count; i++)
             {
                 WorldGenerativeGeologyBinding candidate = _activeBindings[i];
-                if (candidate == null || candidate.runtimeKey != runtimeKey)
+                if (candidate == null || !candidate.isActiveAndEnabled)
+                {
+                    _staleBindingIndexBuffer.Add(i);
+                    continue;
+                }
+
+                if (candidate.runtimeKey != runtimeKey)
                     continue;
 
                 binding = candidate;
+                TrimStaleActiveBindings();
                 return true;
             }
 
+            TrimStaleActiveBindings();
             return false;
         }
 
@@ -219,6 +252,20 @@ namespace Hecton8.World
                 return;
 
             _activeBindings.Remove(binding);
+        }
+
+        private static void TrimStaleActiveBindings()
+        {
+            for (int i = _staleBindingIndexBuffer.Count - 1; i >= 0; i--)
+            {
+                int index = _staleBindingIndexBuffer[i];
+                if (index < 0 || index >= _activeBindings.Count)
+                    continue;
+
+                _activeBindings.RemoveAt(index);
+            }
+
+            _staleBindingIndexBuffer.Clear();
         }
 
         private static string ResolveGeneratorModeLabel(WorldGenerativeGeologyProfile profile)
@@ -288,6 +335,7 @@ namespace Hecton8.World
             int resolvedDebrisCount,
             int resolvedLodCount)
         {
+            CacheReferences();
             runtimeKey = request.RuntimeKey;
             familyId = request.Family != null ? request.Family.familyId : "world.family.generic";
             geologyProfileId = request.Profile != null ? request.Profile.profileId : "geology.generic";

@@ -58,12 +58,24 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.coral.branching.final.placeholder
-    prefab: {fileID: 6975658389890444387, guid: 8411c8ca3f7b5d244a1480b5f4880f61, type: 3}
-    weight: 2
+  - variantId: family.coral.branching.final.flora.gen_family_coral_branching__branch
+    prefab: {fileID: 603400267923953335, guid: e43089174308eaf4ea9fe6a84bf33121, type: 3}
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.branching.final.flora.gen_family_coral_branching__mass
+    prefab: {fileID: 6174891206894126396, guid: 47df0806b3c4e79468ba31a6bc493825, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.branching.final.flora.gen_family_coral_branching__fan
+    prefab: {fileID: 8664158145385660124, guid: 558e61bff0bf4634995d3dd5eac86ea6, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Branching
   gameplayRole: Readable branching coral clusters for reef identity.

@@ -11,13 +11,17 @@ namespace Hecton8.World
         private sealed class TerrainApplyState
         {
             public Terrain terrain;
+            public TerrainData terrainData;
             public float[,] baselineHeights;
+            public int heightmapResolution;
             public RectInt previousRect;
             public bool hasPreviousRect;
+            public float[,] patchBuffer;
         }
 
         [Header("References")]
         [SerializeField] private WorldGenerativeGeologyIntegrationDirector integrationDirector;
+        [SerializeField] private MapMagicBridge mapMagicBridge;
 
         [Header("Terrain Blend")]
         [SerializeField] private int maxAppliedPlans = 32;
@@ -32,11 +36,12 @@ namespace Hecton8.World
         [SerializeField] private int _debugAppliedTerrains;
         [SerializeField] private int _debugAppliedPlans;
         [SerializeField] private int _debugRestoredTerrains;
-        [SerializeField] private string _debugTopTerrain = "None";
+        [SerializeField] private int _debugTopTerrainId;
 
         private readonly Dictionary<int, TerrainApplyState> _terrainStates = new Dictionary<int, TerrainApplyState>(8);
         private readonly Dictionary<int, List<WorldGenerativeGeologySeamPlan>> _plansByTerrain = new Dictionary<int, List<WorldGenerativeGeologySeamPlan>>(8);
         private readonly HashSet<int> _touchedTerrainIds = new HashSet<int>();
+        private readonly List<int> _knownTerrainIds = new List<int>(8);
         private bool _registeredToTickManager;
 
         private void Awake()
@@ -91,12 +96,12 @@ namespace Hecton8.World
         {
             ResolveReferences();
 
-            _plansByTerrain.Clear();
+            ClearPlanBuckets();
             _touchedTerrainIds.Clear();
             _debugAppliedTerrains = 0;
             _debugAppliedPlans = 0;
             _debugRestoredTerrains = 0;
-            _debugTopTerrain = "None";
+            _debugTopTerrainId = 0;
             _debugReady = false;
 
             if (integrationDirector == null)
@@ -116,35 +121,39 @@ namespace Hecton8.World
                 if (!plan.RequiresTerrainBlend || !plan.hasTerrainSample || plan.planWeight < minPlanWeight)
                     continue;
 
-                Terrain terrain = FindTerrainAt(plan.worldPosition.x, plan.worldPosition.z);
+                Terrain terrain = ResolveTerrainAt(plan.worldPosition.x, plan.worldPosition.z);
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
                 #pragma warning disable CS0618
                 int terrainId = terrain.GetInstanceID();
                 #pragma warning restore CS0618
-                if (!_plansByTerrain.TryGetValue(terrainId, out List<WorldGenerativeGeologySeamPlan> terrainPlans))
-                {
-                    terrainPlans = new List<WorldGenerativeGeologySeamPlan>(8);
-                    _plansByTerrain.Add(terrainId, terrainPlans);
-                }
+                EnsureTerrainState(terrain, terrainId);
+                List<WorldGenerativeGeologySeamPlan> terrainPlans = _plansByTerrain[terrainId];
 
                 terrainPlans.Add(plan);
                 _touchedTerrainIds.Add(terrainId);
-                EnsureTerrainState(terrain);
                 acceptedPlans++;
             }
 
-            foreach (KeyValuePair<int, List<WorldGenerativeGeologySeamPlan>> pair in _plansByTerrain)
+            for (int i = 0; i < _knownTerrainIds.Count; i++)
             {
-                if (!_terrainStates.TryGetValue(pair.Key, out TerrainApplyState state) || state == null || state.terrain == null)
+                int terrainId = _knownTerrainIds[i];
+                if (!_plansByTerrain.TryGetValue(terrainId, out List<WorldGenerativeGeologySeamPlan> terrainPlans) ||
+                    terrainPlans == null ||
+                    terrainPlans.Count == 0)
+                {
+                    continue;
+                }
+
+                if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state) || state == null || state.terrain == null)
                     continue;
 
-                ApplyTerrainPlans(state, pair.Value);
+                ApplyTerrainPlans(state, terrainPlans);
                 _debugAppliedTerrains++;
-                _debugAppliedPlans += pair.Value.Count;
-                if (_debugTopTerrain == "None")
-                    _debugTopTerrain = state.terrain.name;
+                _debugAppliedPlans += terrainPlans.Count;
+                if (_debugTopTerrainId == 0)
+                    _debugTopTerrainId = terrainId;
             }
 
             RestoreUntouchedTerrains();
@@ -181,13 +190,13 @@ namespace Hecton8.World
             if (applyRect.width <= 0 || applyRect.height <= 0)
                 return;
 
-            float[,] patch = ExtractBaselinePatch(state.baselineHeights, applyRect);
+            float[,] patch = PreparePatchBuffer(state, applyRect);
             for (int i = 0; i < plans.Count; i++)
                 ApplyPlanToPatch(terrain, applyRect, patch, plans[i]);
 
             terrainData.SetHeightsDelayLOD(applyRect.x, applyRect.y, patch);
             terrainData.SyncHeightmap();
-            state.previousRect = currentRect;
+            state.previousRect = applyRect;
             state.hasPreviousRect = true;
         }
 
@@ -252,36 +261,55 @@ namespace Hecton8.World
 
         private void RestoreUntouchedTerrains()
         {
-            foreach (KeyValuePair<int, TerrainApplyState> pair in _terrainStates)
+            for (int i = 0; i < _knownTerrainIds.Count; i++)
             {
-                if (_touchedTerrainIds.Contains(pair.Key))
+                int terrainId = _knownTerrainIds[i];
+                if (_touchedTerrainIds.Contains(terrainId))
                     continue;
 
-                if (!pair.Value.hasPreviousRect)
+                if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state) || state == null || !state.hasPreviousRect)
                     continue;
 
-                RestoreTerrainState(pair.Value);
+                RestoreTerrainState(state);
                 _debugRestoredTerrains++;
             }
         }
 
         private void RestoreAllTerrains()
         {
-            foreach (KeyValuePair<int, TerrainApplyState> pair in _terrainStates)
+            for (int i = 0; i < _knownTerrainIds.Count; i++)
             {
-                if (!pair.Value.hasPreviousRect)
+                int terrainId = _knownTerrainIds[i];
+                if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state) || state == null || !state.hasPreviousRect)
                     continue;
 
-                RestoreTerrainState(pair.Value);
+                RestoreTerrainState(state);
             }
         }
 
         private void RestoreTerrainState(TerrainApplyState state)
         {
-            if (state == null || state.terrain == null || state.terrain.terrainData == null || !state.hasPreviousRect)
+            if (state == null || state.terrain == null || state.terrainData == null || !state.hasPreviousRect)
                 return;
 
-            RectInt rect = ClampRect(state.previousRect, state.terrain.terrainData.heightmapResolution - 1, state.terrain.terrainData.heightmapResolution - 1);
+            TerrainData currentTerrainData = state.terrain.terrainData;
+            if (currentTerrainData == null)
+            {
+                state.hasPreviousRect = false;
+                state.previousRect = default;
+                return;
+            }
+
+            int currentResolution = currentTerrainData.heightmapResolution;
+            if (currentTerrainData != state.terrainData ||
+                currentResolution != state.heightmapResolution ||
+                state.baselineHeights == null)
+            {
+                RefreshTerrainBaseline(state, state.terrain, currentTerrainData, currentResolution);
+                return;
+            }
+
+            RectInt rect = ClampRect(state.previousRect, state.heightmapResolution - 1, state.heightmapResolution - 1);
             if (rect.width <= 0 || rect.height <= 0)
             {
                 state.hasPreviousRect = false;
@@ -289,45 +317,98 @@ namespace Hecton8.World
                 return;
             }
 
-            float[,] patch = ExtractBaselinePatch(state.baselineHeights, rect);
-            state.terrain.terrainData.SetHeightsDelayLOD(rect.x, rect.y, patch);
-            state.terrain.terrainData.SyncHeightmap();
+            float[,] patch = PreparePatchBuffer(state, rect);
+            state.terrainData.SetHeightsDelayLOD(rect.x, rect.y, patch);
+            state.terrainData.SyncHeightmap();
             state.previousRect = default;
             state.hasPreviousRect = false;
         }
 
-        private void EnsureTerrainState(Terrain terrain)
+        private void EnsureTerrainState(Terrain terrain, int terrainId)
         {
             if (terrain == null || terrain.terrainData == null)
                 return;
 
-            #pragma warning disable CS0618
-            int terrainId = terrain.GetInstanceID();
-            #pragma warning restore CS0618
-            if (_terrainStates.ContainsKey(terrainId))
-                return;
-
             TerrainData terrainData = terrain.terrainData;
             int resolution = terrainData.heightmapResolution;
-            float[,] baseline = terrainData.GetHeights(0, 0, resolution, resolution);
-            _terrainStates.Add(terrainId, new TerrainApplyState
+            if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state))
             {
-                terrain = terrain,
-                baselineHeights = baseline
-            });
+                state = new TerrainApplyState();
+                RefreshTerrainBaseline(state, terrain, terrainData, resolution);
+                _terrainStates.Add(terrainId, state);
+                _knownTerrainIds.Add(terrainId);
+            }
+            else if (state.terrain != terrain ||
+                     state.terrainData != terrainData ||
+                     state.baselineHeights == null ||
+                     state.heightmapResolution != resolution)
+            {
+                RefreshTerrainBaseline(state, terrain, terrainData, resolution);
+            }
+
+            if (!_plansByTerrain.ContainsKey(terrainId))
+            {
+                // COLD ALLOC: one reusable plan bucket per touched terrain.
+                _plansByTerrain.Add(terrainId, new List<WorldGenerativeGeologySeamPlan>(8));
+            }
         }
 
-        private static float[,] ExtractBaselinePatch(float[,] baseline, RectInt rect)
+        private float[,] PreparePatchBuffer(TerrainApplyState state, RectInt rect)
         {
-            float[,] patch = new float[rect.height, rect.width];
+            if (state.patchBuffer == null ||
+                state.patchBuffer.GetLength(0) != rect.height ||
+                state.patchBuffer.GetLength(1) != rect.width)
+            {
+                // COLD ALLOC: resized only when seam footprint dimensions change.
+                state.patchBuffer = new float[rect.height, rect.width];
+            }
+
+            CopyBaselinePatch(state.baselineHeights, rect, state.patchBuffer);
+            return state.patchBuffer;
+        }
+
+        private static void RefreshTerrainBaseline(
+            TerrainApplyState state,
+            Terrain terrain,
+            TerrainData terrainData,
+            int resolution)
+        {
+            if (state == null || terrain == null || terrainData == null)
+                return;
+
+            // COLD ALLOC: full baseline snapshot is refreshed only when the
+            // bound Terrain/TerrainData owner changes or heightmap resolution changes.
+            state.terrain = terrain;
+            state.terrainData = terrainData;
+            state.heightmapResolution = resolution;
+            state.baselineHeights = terrainData.GetHeights(0, 0, resolution, resolution);
+            state.patchBuffer = null;
+            state.previousRect = default;
+            state.hasPreviousRect = false;
+        }
+
+        private static void CopyBaselinePatch(float[,] baseline, RectInt rect, float[,] destination)
+        {
             for (int z = 0; z < rect.height; z++)
             {
                 int sourceZ = rect.y + z;
                 for (int x = 0; x < rect.width; x++)
-                    patch[z, x] = baseline[sourceZ, rect.x + x];
+                    destination[z, x] = baseline[sourceZ, rect.x + x];
             }
+        }
 
-            return patch;
+        private void ClearPlanBuckets()
+        {
+            for (int i = 0; i < _knownTerrainIds.Count; i++)
+            {
+                int terrainId = _knownTerrainIds[i];
+                if (_plansByTerrain.TryGetValue(terrainId, out List<WorldGenerativeGeologySeamPlan> terrainPlans) &&
+                    terrainPlans != null &&
+                    terrainPlans.Count > 0)
+                {
+                    terrainPlans.Clear();
+                }
+            }
         }
 
         private static RectInt BuildPlanRect(Terrain terrain, in WorldGenerativeGeologySeamPlan plan)
@@ -367,7 +448,18 @@ namespace Hecton8.World
             return new RectInt(xMin, yMin, Mathf.Max(0, xMax - xMin), Mathf.Max(0, yMax - yMin));
         }
 
-        private static Terrain FindTerrainAt(float x, float z)
+        private Terrain ResolveTerrainAt(float x, float z)
+        {
+            if (mapMagicBridge != null &&
+                mapMagicBridge.TryResolveTerrainAt(x, z, out Terrain bridgeTerrain))
+            {
+                return bridgeTerrain;
+            }
+
+            return FindTerrainAtFallback(x, z);
+        }
+
+        private static Terrain FindTerrainAtFallback(float x, float z)
         {
             Terrain active = Terrain.activeTerrain;
             if (active != null && IsPointInTerrain(active, x, z))
@@ -401,6 +493,7 @@ namespace Hecton8.World
         private void ResolveReferences()
         {
             WorldRuntimeReferenceUtility.TryResolveSceneObject(ref integrationDirector);
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
         }
     }
 }

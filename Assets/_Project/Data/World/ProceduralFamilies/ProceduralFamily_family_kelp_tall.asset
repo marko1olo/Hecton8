@@ -58,12 +58,24 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.kelp.tall.final.placeholder
-    prefab: {fileID: 3270212733484542031, guid: 8385c79e80602d04096a6122d19fd567, type: 3}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__lean
+    prefab: {fileID: 4960164781819539376, guid: ecc4c4cb11273e54090802112618ee26, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.15}
+    uniformScaleRange: {x: 0.9, y: 1.08}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__stalk
+    prefab: {fileID: 9068265321113741935, guid: de2aafe8a5e783946aeab3308b5db00d, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.08}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__ribbon
+    prefab: {fileID: 943764535668542015, guid: 4a69bc8d1ee12d843a60a154a1d126f7, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Tall
   gameplayRole: Tall vertical kelp for readable vertical habitat.

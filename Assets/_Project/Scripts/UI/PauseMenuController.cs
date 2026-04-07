@@ -174,6 +174,7 @@ namespace Hecton8.UI
                 return;
 
             EnsureBuilt();
+            EnsureEventSystem();
 
             _isOpen = true;
             RegisterOpenMenu();
@@ -822,6 +823,15 @@ namespace Hecton8.UI
 
             if (selected.transform.IsChildOf(_root))
                 eventSystem.SetSelectedGameObject(null);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (EventSystem.current != null)
+                return;
+
+            GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            eventSystemRoot.hideFlags = HideFlags.DontSave;
         }
 
         private static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)

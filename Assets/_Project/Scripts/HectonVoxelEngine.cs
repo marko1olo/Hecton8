@@ -2582,6 +2582,10 @@ public class HectonVoxelEngine : MonoBehaviour
         if (go == null)
             return;
 
+        var volume = go.GetComponent<HectonVoxelVolume>();
+        if (volume != null)
+            volume.PrepareForReuse();
+
         var mr = go.GetComponent<MeshRenderer>();
         if (mr != null)
             mr.enabled = false;

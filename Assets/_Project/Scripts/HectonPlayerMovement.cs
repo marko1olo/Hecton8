@@ -32,6 +32,8 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class HectonPlayerMovement : MonoBehaviour, ITickable, IFixedTickable
     {
+        private const float GroundCheckSkin = 0.02f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
         // ══════════════════════════════════════════════════════════
@@ -105,11 +107,24 @@ namespace Hecton8.Gameplay
         [Header("── Ground Detection ─────────────────────────")]
         [SerializeField] private float groundCheckRadius = 0.3f;
         [SerializeField] private float groundCheckDistance = 0.4f;
+        [SerializeField, Range(5f, 89f)] private float maxGroundAngle = 60f;
         [SerializeField] private LayerMask groundLayers = ~0;
         [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
         [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
         [SerializeField, Range(0f, 0.3f)] private float jumpBufferTime = 0.12f;
+        [SerializeField, Range(0f, 0.3f)] private float dryGroundGraceTime = 0.12f;
         [SerializeField, Range(0f, 0.3f)] private float shoreGroundGraceTime = 0.14f;
+        [SerializeField, Range(0f, 0.6f)] private float stepAssistHeight = 0.3f;
+        [SerializeField, Range(0.05f, 0.8f)] private float stepAssistForwardDistance = 0.28f;
+        [SerializeField, Range(0f, 0.2f)] private float stepAssistClearance = 0.04f;
+        [SerializeField, Range(0f, 0.2f)] private float stepAssistCooldownTime = 0.06f;
+        [SerializeField, Range(0f, 0.6f)] private float jumpHeadClearanceDistance = 0.18f;
+        [SerializeField, Range(0.02f, 0.3f)] private float surfaceBreachDepthWindow = 0.12f;
+        [SerializeField, Range(0.3f, 0.95f)] private float surfaceBreachMinImmersion = 0.45f;
+        [SerializeField, Range(0.5f, 2f)] private float surfaceBreachImpulseMultiplier = 1f;
+        [SerializeField, Range(0f, 0.4f)] private float surfaceBreachSurfaceLockoutTime = 0.2f;
+        [SerializeField, Range(0.05f, 1f)] private float dryAirControlMultiplier = 0.4f;
+        [SerializeField, Range(0f, 1f)] private float dryAirDampingMultiplier = 0.18f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — FOV
@@ -153,6 +168,7 @@ namespace Hecton8.Gameplay
 
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
+        private CapsuleCollider _capsuleCollider;
         private Transform _cachedTransform;
         private Camera _cameraComponent;
         private InputManager _inputManager;
@@ -207,13 +223,16 @@ namespace Hecton8.Gameplay
         private bool _isWalking;
         private bool _isGrounded;
         private bool _wasGroundedLastFrame;
+        private float _dryGroundGraceTimer;
         private float _shoreGroundGraceTimer;
+        private float _stepAssistCooldownTimer;
         private float _waterImmersionRatio;
         private float _smoothedImmersionRatio;
         private float _currentLinearDamping;
         private float _gravityScale;
         private float _snapScale;
         private float _currentDepth;  // v7.0: meters below water surface
+        private float _surfaceBreachLockTimer;
 
         // ══════════════════════════════════════════════════════════
         //  AMBIENT CURRENT
@@ -248,6 +267,8 @@ namespace Hecton8.Gameplay
         private Vector3 _groundCheckOrigin;
         private Vector3 _cachedGravity;
         private Vector3 _smoothedGroundNormal;
+        private float _minGroundNormalY;
+        private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[8]; // COLD ALLOC: reused walkable-ground filter buffer for slope/wall separation
 
         // ══════════════════════════════════════════════════════════
         //  EVENTS
@@ -312,6 +333,7 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
 
             _rb = GetComponent<Rigidbody>();
+            TryGetComponent(out _capsuleCollider);
             TryGetComponent(out _buoyancy);
 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -343,6 +365,7 @@ namespace Hecton8.Gameplay
 
             _cachedGravity = UnityEngine.Physics.gravity;
             _smoothedGroundNormal = Vector3.up;
+            RefreshGroundSlopeCache();
 
             EnsureJuiceProcessor();
             _juiceProcessor.Initialize(leanIntoTurn);
@@ -543,8 +566,7 @@ namespace Hecton8.Gameplay
 
         private void HandleSprintStarted()
         {
-            if (_isWalking)
-                _isSprinting = true;
+            _isSprinting = true;
         }
 
         private void HandleSprintCanceled()
@@ -597,9 +619,7 @@ namespace Hecton8.Gameplay
                 _inputH = moveInput.x;
                 _inputV = moveInput.y;
                 _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
-
-                if (!_isWalking)
-                    _isSprinting = false;
+                _isSprinting = _inputManager.IsSprinting;
             }
             else
             {
@@ -613,11 +633,7 @@ namespace Hecton8.Gameplay
                 _inputH = moveInput.x;
                 _inputV = moveInput.y;
                 _inputVertical = _isWalking ? 0f : ReadVerticalFallbackKeys();
-
-                if (_isWalking)
-                    _isSprinting = KeyHeld(KeyCode.LeftShift) || KeyHeld(KeyCode.RightShift);
-                else
-                    _isSprinting = false;
+                _isSprinting = IsSprintFallbackHeld();
             }
 
             _velocity = _rb.linearVelocity;
@@ -700,7 +716,7 @@ namespace Hecton8.Gameplay
                 KeyHeld(controlScheme != null ? controlScheme.swimAscendAlternate : KeyCode.None);
 
             bool descend =
-                KeyHeld(controlScheme != null ? controlScheme.swimDescendPrimary : KeyCode.LeftControl) ||
+                KeyHeld(controlScheme != null ? controlScheme.swimDescendPrimary : KeyCode.C) ||
                 KeyHeld(controlScheme != null ? controlScheme.swimDescendAlternate : KeyCode.C) ||
                 KeyHeld(controlScheme != null ? controlScheme.swimDescendLegacy : KeyCode.Q);
 
@@ -733,6 +749,14 @@ namespace Hecton8.Gameplay
         private static Vector2 ReadLookFallback()
         {
             return Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
+        }
+
+        private static bool IsSprintFallbackHeld()
+        {
+            return KeyHeld(KeyCode.LeftControl) ||
+                   KeyHeld(KeyCode.RightControl) ||
+                   KeyHeld(KeyCode.LeftShift) ||
+                   KeyHeld(KeyCode.RightShift);
         }
 
         private static bool KeyHeld(KeyCode key)
@@ -851,6 +875,18 @@ namespace Hecton8.Gameplay
 
             float physicsImmersion = _smoothedImmersionRatio;
             bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold;
+            bool isDryLand = physicsImmersion <= 0.01f;
+            if (_isGrounded && isDryLand)
+            {
+                _dryGroundGraceTimer = dryGroundGraceTime;
+            }
+            else if (_dryGroundGraceTimer > 0f)
+            {
+                _dryGroundGraceTimer -= fixedDeltaTime;
+                if (_dryGroundGraceTimer < 0f)
+                    _dryGroundGraceTimer = 0f;
+            }
+
             if (_isGrounded && isShallowEnoughForShore)
             {
                 _shoreGroundGraceTimer = shoreGroundGraceTime;
@@ -872,8 +908,25 @@ namespace Hecton8.Gameplay
                 }
             }
 
+            if (_surfaceBreachLockTimer > 0f)
+            {
+                _surfaceBreachLockTimer -= fixedDeltaTime;
+                if (_surfaceBreachLockTimer < 0f)
+                    _surfaceBreachLockTimer = 0f;
+            }
+
+            if (_stepAssistCooldownTimer > 0f)
+            {
+                _stepAssistCooldownTimer -= fixedDeltaTime;
+                if (_stepAssistCooldownTimer < 0f)
+                    _stepAssistCooldownTimer = 0f;
+            }
+
+            bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
             bool hasShoreGroundSupport = _isGrounded || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+            bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
             bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+            bool canSurfaceBreach = CanTriggerSurfaceBreach(groundedOnShore);
 
             // ═══════════════════════════════════════════════
             //  7A. GRADUATED GRAVITY
@@ -911,22 +964,7 @@ namespace Hecton8.Gameplay
             // ═══════════════════════════════════════════════
             //  8. MODE DETECTION
             // ═══════════════════════════════════════════════
-            bool inWater = physicsImmersion > 0.01f;
-            bool deepEnough = physicsImmersion >= swimTransitionThreshold;
-
-            bool shouldWalk;
-            if (!inWater)
-            {
-                shouldWalk = _isGrounded || _shoreGroundGraceTimer > 0f;
-            }
-            else if (deepEnough)
-            {
-                shouldWalk = false;
-            }
-            else
-            {
-                shouldWalk = hasShoreGroundSupport;
-            }
+            bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport);
 
             if (shouldWalk != _isWalking)
             {
@@ -945,20 +983,23 @@ namespace Hecton8.Gameplay
             // ═══════════════════════════════════════════════
             if (_jumpRequested)
             {
-                if (_isWalking && groundedOnShore && _jumpBufferTimer > 0f)
+                if ((groundedOnDryLand || groundedOnShore) && _jumpBufferTimer > 0f)
                 {
-                    _jumpRequested = false;
-                    _jumpBufferTimer = 0f;
-                    _shoreGroundGraceTimer = 0f;
-
-                    _velocity = _rb.linearVelocity;
-                    if (_velocity.y < 0f)
+                    if (TryApplyJumpImpulse(suit.jumpImpulse))
                     {
-                        _velocity.y = 0f;
-                        _rb.linearVelocity = _velocity;
+                        ConsumeJumpRequest();
+                        _dryGroundGraceTimer = 0f;
+                        _shoreGroundGraceTimer = 0f;
+                        _surfaceBreachLockTimer = 0f;
                     }
-
-                    _rb.AddForce(Vector3.up * suit.jumpImpulse, ForceMode.Impulse);
+                }
+                else if (canSurfaceBreach && _jumpBufferTimer > 0f)
+                {
+                    if (TryApplyJumpImpulse(suit.jumpImpulse * surfaceBreachImpulseMultiplier))
+                    {
+                        ConsumeJumpRequest();
+                        _surfaceBreachLockTimer = surfaceBreachSurfaceLockoutTime;
+                    }
                 }
             }
 
@@ -967,7 +1008,11 @@ namespace Hecton8.Gameplay
             // ═══════════════════════════════════════════════
             if (_isWalking)
             {
+                bool hasLandInput = _inputH != 0f || _inputV != 0f;
                 WalkPhysics(suit, fixedDeltaTime);
+
+                if (hasLandInput)
+                    TryApplyStepAssist(groundedOnDryLand, groundedOnShore);
 
                 if (_isGrounded && _snapScale > 0.001f)
                     ApplyGroundStability(_snapScale);
@@ -997,8 +1042,8 @@ namespace Hecton8.Gameplay
         private float ComputeImmersionRatio()
         {
             float surfaceY = EffectiveWaterSurfaceY;
-            float feetY = _rb.position.y;
-            float headY = feetY + playerHeight;
+            float feetY = GetBodyBottomY();
+            float headY = GetBodyTopY();
 
             if (feetY >= surfaceY) return 0f;
             if (headY <= surfaceY) return 1f;
@@ -1013,8 +1058,8 @@ namespace Hecton8.Gameplay
         private float ComputeDepth()
         {
             float surfaceY = EffectiveWaterSurfaceY;
-            float headY = _rb.position.y + playerHeight * 0.85f;
-            float depth = surfaceY - headY;
+            float eyeY = GetBodyEyeY();
+            float depth = surfaceY - eyeY;
             return depth > 0f ? depth : 0f;
         }
 
@@ -1056,6 +1101,9 @@ namespace Hecton8.Gameplay
             {
                 float wadeFactor = 1f + _waterImmersionRatio * suit.wadeSlowdownFactor;
                 targetDamping = suit.walkDrag * wadeFactor;
+
+                if (IsDryLandAirborne())
+                    targetDamping *= dryAirDampingMultiplier;
             }
             else
             {
@@ -1082,15 +1130,46 @@ namespace Hecton8.Gameplay
         private void GroundCheck()
         {
             Vector3 rbPos = _rb.position;
+            float bodyBottomY = GetBodyBottomY();
             _groundCheckOrigin.x = rbPos.x;
-            _groundCheckOrigin.y = rbPos.y + groundCheckRadius;
+            _groundCheckOrigin.y = bodyBottomY + groundCheckRadius + GroundCheckSkin;
             _groundCheckOrigin.z = rbPos.z;
 
-            _isGrounded = UnityEngine.Physics.SphereCast(
-                _groundCheckOrigin, groundCheckRadius,
-                Vector3.down, out _groundHit,
-                groundCheckDistance + groundCheckRadius,
-                groundLayers, QueryTriggerInteraction.Ignore);
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                _groundCheckOrigin,
+                groundCheckRadius,
+                Vector3.down,
+                _groundHitBuffer,
+                groundCheckDistance + GroundCheckSkin,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            _isGrounded = false;
+            float bestDistance = float.MaxValue;
+            float bestNormalY = _minGroundNormalY;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _groundHitBuffer[i];
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                float normalY = hit.normal.y;
+                if (normalY < _minGroundNormalY)
+                    continue;
+
+                if (!_isGrounded || hit.distance < bestDistance || (math.abs(hit.distance - bestDistance) <= 0.001f && normalY > bestNormalY))
+                {
+                    _groundHit = hit;
+                    bestDistance = hit.distance;
+                    bestNormalY = normalY;
+                    _isGrounded = true;
+                }
+            }
 
             if (_isGrounded)
             {
@@ -1105,6 +1184,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
+                _groundHit = default;
                 float resetT = 1f - math.exp(-5f * Time.fixedDeltaTime);
                 _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, Vector3.up, resetT);
             }
@@ -1119,17 +1199,37 @@ namespace Hecton8.Gameplay
             if (scale <= 0.001f) return;
 
             float mass = _rb.mass;
+            float gravityAlongNormal = Vector3.Dot(_cachedGravity, _smoothedGroundNormal);
+            _forceVector.x = (_smoothedGroundNormal.x * gravityAlongNormal) - _cachedGravity.x;
+            _forceVector.y = (_smoothedGroundNormal.y * gravityAlongNormal) - _cachedGravity.y;
+            _forceVector.z = (_smoothedGroundNormal.z * gravityAlongNormal) - _cachedGravity.z;
 
-            _forceVector.x = -_cachedGravity.x * mass * slopeStabilityFactor * scale;
-            _forceVector.y = -_cachedGravity.y * mass * slopeStabilityFactor * scale;
-            _forceVector.z = -_cachedGravity.z * mass * slopeStabilityFactor * scale;
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            float tangentSqr = _forceVector.x * _forceVector.x + _forceVector.y * _forceVector.y + _forceVector.z * _forceVector.z;
+            if (tangentSqr > 0.000001f)
+            {
+                float slopeHoldForce = mass * _gravityScale * scale;
+                _forceVector.x *= slopeHoldForce;
+                _forceVector.y *= slopeHoldForce;
+                _forceVector.z *= slopeHoldForce;
+                _rb.AddForce(_forceVector, ForceMode.Force);
+            }
+
+            float gravityIntoGround = Vector3.Dot(-_cachedGravity, _smoothedGroundNormal);
+            if (gravityIntoGround > 0f)
+            {
+                float supportForce = gravityIntoGround * mass * slopeStabilityFactor * scale;
+                _forceVector.x = _smoothedGroundNormal.x * supportForce;
+                _forceVector.y = _smoothedGroundNormal.y * supportForce;
+                _forceVector.z = _smoothedGroundNormal.z * supportForce;
+                _rb.AddForce(_forceVector, ForceMode.Force);
+            }
 
             if (groundSnapForce > 0f)
             {
-                _forceVector.x = 0f;
-                _forceVector.y = -groundSnapForce * mass * scale;
-                _forceVector.z = 0f;
+                float snapForce = groundSnapForce * mass * scale;
+                _forceVector.x = -_smoothedGroundNormal.x * snapForce;
+                _forceVector.y = -_smoothedGroundNormal.y * snapForce;
+                _forceVector.z = -_smoothedGroundNormal.z * snapForce;
                 _rb.AddForce(_forceVector, ForceMode.Force);
             }
         }
@@ -1141,20 +1241,21 @@ namespace Hecton8.Gameplay
         private void ApplySurfaceLock(SuitData suit)
         {
             if (suit.surfaceLockStrength <= 0f) return;
+            if (_surfaceBreachLockTimer > 0f) return;
 
             bool isDiving = _inputV > 0.1f && _cameraPitch > 20f;
             bool isDescending = _inputVertical < -0.1f;
             if (isDiving || isDescending) return;
 
             if (_isGrounded) return;
-            if (_shoreGroundGraceTimer > 0f && _waterImmersionRatio < swimTransitionThreshold) return;
+            if (_shoreGroundGraceTimer > 0f && _smoothedImmersionRatio < swimTransitionThreshold) return;
 
             float surfaceY = EffectiveWaterSurfaceY;
-            float feetY = _rb.position.y;
+            float feetY = GetBodyBottomY();
 
             if (feetY >= surfaceY - 0.1f) return;
 
-            float eyeY = feetY + playerHeight * 0.85f;
+            float eyeY = GetBodyEyeY();
             float error = eyeY - surfaceY;
 
             if (math.abs(error) > suit.surfaceLockRange) return;
@@ -1169,6 +1270,318 @@ namespace Hecton8.Gameplay
             _forceVector.y = totalForce;
             _forceVector.z = 0f;
             _rb.AddForce(_forceVector, ForceMode.Force);
+        }
+
+        private float GetBodyBottomY()
+        {
+            if (_capsuleCollider != null)
+                return _capsuleCollider.bounds.min.y;
+
+            return _rb.position.y - playerHeight * 0.5f;
+        }
+
+        private float GetBodyTopY()
+        {
+            if (_capsuleCollider != null)
+                return _capsuleCollider.bounds.max.y;
+
+            return _rb.position.y + playerHeight * 0.5f;
+        }
+
+        private float GetBodyEyeY()
+        {
+            return math.lerp(GetBodyBottomY(), GetBodyTopY(), 0.85f);
+        }
+
+        private bool TryGetCapsuleCastGeometry(float inset, out Vector3 point1, out Vector3 point2, out float radius)
+        {
+            if (_capsuleCollider != null)
+            {
+                Bounds bounds = _capsuleCollider.bounds;
+                float extentsX = bounds.extents.x;
+                float extentsZ = bounds.extents.z;
+                radius = math.max(0.01f, math.min(extentsX, extentsZ) - inset);
+                float segmentHalf = math.max(0f, bounds.extents.y - radius - inset);
+                Vector3 center = bounds.center;
+                point1 = center + Vector3.up * segmentHalf;
+                point2 = center - Vector3.up * segmentHalf;
+                return true;
+            }
+
+            radius = math.max(groundCheckRadius - inset, 0.01f);
+            float halfHeight = math.max(playerHeight * 0.5f - radius - inset, 0f);
+            Vector3 centerFallback = _rb.position;
+            point1 = centerFallback + Vector3.up * halfHeight;
+            point2 = centerFallback - Vector3.up * halfHeight;
+            return true;
+        }
+
+        private void RefreshGroundSlopeCache()
+        {
+            _minGroundNormalY = math.cos(maxGroundAngle * DEG_TO_RAD);
+        }
+
+        private void ConsumeJumpRequest()
+        {
+            _jumpRequested = false;
+            _jumpBufferTimer = 0f;
+        }
+
+        private bool TryApplyJumpImpulse(float impulse)
+        {
+            if (impulse <= 0f)
+                return false;
+
+            if (!HasJumpHeadClearance())
+                return false;
+
+            _velocity = _rb.linearVelocity;
+            if (_velocity.y < 0f)
+            {
+                _velocity.y = 0f;
+                _rb.linearVelocity = _velocity;
+            }
+
+            _isGrounded = false;
+            _wasGroundedLastFrame = false;
+            _snapScale = 0f;
+            _dryGroundGraceTimer = 0f;
+            _shoreGroundGraceTimer = 0f;
+
+            if (_juiceProcessor != null)
+                _juiceProcessor.RegisterLandJumpLaunch();
+
+            _rb.AddForce(Vector3.up * impulse, ForceMode.VelocityChange);
+            return true;
+        }
+
+        private bool CanTriggerSurfaceBreach(bool groundedOnShore)
+        {
+            if (groundedOnShore) return false;
+            if (_isGrounded) return false;
+            if (_surfaceBreachLockTimer > 0f) return false;
+            if (_waterImmersionRatio < surfaceBreachMinImmersion || _waterImmersionRatio >= 0.98f) return false;
+
+            return _currentDepth <= surfaceBreachDepthWindow;
+        }
+
+        private bool HasJumpHeadClearance()
+        {
+            if (jumpHeadClearanceDistance <= 0f)
+                return true;
+
+            if (!TryGetCapsuleCastGeometry(0.02f, out Vector3 point1, out Vector3 point2, out float radius))
+                return true;
+
+            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
+                point1,
+                point2,
+                radius,
+                Vector3.up,
+                _groundHitBuffer,
+                jumpHeadClearanceDistance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = _groundHitBuffer[i].collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryApplyStepAssist(bool groundedOnDryLand, bool groundedOnShore)
+        {
+            if (stepAssistHeight <= 0f || stepAssistForwardDistance <= 0f)
+                return false;
+
+            if (_stepAssistCooldownTimer > 0f)
+                return false;
+
+            if (!(groundedOnDryLand || groundedOnShore || _isGrounded))
+                return false;
+
+            if (_rb.linearVelocity.y > 0.5f)
+                return false;
+
+            float dirX = _moveDirection.x;
+            float dirZ = _moveDirection.z;
+            float planarSqr = dirX * dirX + dirZ * dirZ;
+            if (planarSqr <= 0.0001f)
+                return false;
+
+            float invPlanarMag = 1f / math.sqrt(planarSqr);
+            dirX *= invPlanarMag;
+            dirZ *= invPlanarMag;
+
+            float probeRadius = math.max(groundCheckRadius * 0.85f, 0.05f);
+            float currentBottomY = GetBodyBottomY();
+
+            _groundCheckOrigin.x = _rb.position.x;
+            _groundCheckOrigin.y = currentBottomY + probeRadius + GroundCheckSkin;
+            _groundCheckOrigin.z = _rb.position.z;
+
+            if (!TryFindStepObstacle(_groundCheckOrigin, probeRadius, dirX, dirZ, out RaycastHit obstacleHit))
+                return false;
+
+            float forwardDistance = math.min(stepAssistForwardDistance, math.max(obstacleHit.distance + stepAssistClearance, probeRadius));
+
+            Vector3 raisedOrigin = _groundCheckOrigin;
+            raisedOrigin.y += stepAssistHeight;
+
+            if (HasForwardBlockAtHeight(raisedOrigin, probeRadius, dirX, dirZ, forwardDistance))
+                return false;
+
+            Vector3 landingOrigin;
+            landingOrigin.x = raisedOrigin.x + dirX * forwardDistance;
+            landingOrigin.y = raisedOrigin.y;
+            landingOrigin.z = raisedOrigin.z + dirZ * forwardDistance;
+
+            if (!TryFindStepLanding(landingOrigin, probeRadius, out RaycastHit landingHit))
+                return false;
+
+            float landedCenterY = landingOrigin.y - landingHit.distance;
+            float targetBottomY = landedCenterY - probeRadius;
+            float stepDeltaY = targetBottomY - currentBottomY;
+            if (stepDeltaY <= GroundCheckSkin || stepDeltaY > stepAssistHeight + GroundCheckSkin)
+                return false;
+
+            Vector3 newPosition = _rb.position;
+            newPosition.x += dirX * forwardDistance;
+            newPosition.y += stepDeltaY;
+            newPosition.z += dirZ * forwardDistance;
+            _rb.position = newPosition;
+
+            _velocity = _rb.linearVelocity;
+            if (_velocity.y < 0f)
+            {
+                _velocity.y = 0f;
+                _rb.linearVelocity = _velocity;
+            }
+
+            _stepAssistCooldownTimer = stepAssistCooldownTime;
+            _dryGroundGraceTimer = dryGroundGraceTime;
+            if (groundedOnShore)
+                _shoreGroundGraceTimer = shoreGroundGraceTime;
+
+            GroundCheck();
+            _waterImmersionRatio = ComputeImmersionRatio();
+            _currentDepth = ComputeDepth();
+            return true;
+        }
+
+        private bool TryFindStepObstacle(Vector3 origin, float radius, float dirX, float dirZ, out RaycastHit obstacleHit)
+        {
+            obstacleHit = default;
+            Vector3 direction = new Vector3(dirX, 0f, dirZ);
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                origin,
+                radius,
+                direction,
+                _groundHitBuffer,
+                stepAssistForwardDistance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _groundHitBuffer[i];
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                if (hit.distance <= 0.001f)
+                    continue;
+
+                if (hit.normal.y >= _minGroundNormalY)
+                    continue;
+
+                if (hit.distance < bestDistance)
+                {
+                    bestDistance = hit.distance;
+                    obstacleHit = hit;
+                }
+            }
+
+            return bestDistance < float.MaxValue;
+        }
+
+        private bool HasForwardBlockAtHeight(Vector3 origin, float radius, float dirX, float dirZ, float distance)
+        {
+            Vector3 direction = new Vector3(dirX, 0f, dirZ);
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                origin,
+                radius,
+                direction,
+                _groundHitBuffer,
+                distance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = _groundHitBuffer[i].collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryFindStepLanding(Vector3 origin, float radius, out RaycastHit landingHit)
+        {
+            landingHit = default;
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                origin,
+                radius,
+                Vector3.down,
+                _groundHitBuffer,
+                stepAssistHeight + radius + GroundCheckSkin,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            float bestNormalY = _minGroundNormalY;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _groundHitBuffer[i];
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                float normalY = hit.normal.y;
+                if (normalY < _minGroundNormalY)
+                    continue;
+
+                if (hit.distance < bestDistance || (math.abs(hit.distance - bestDistance) <= 0.001f && normalY > bestNormalY))
+                {
+                    bestDistance = hit.distance;
+                    bestNormalY = normalY;
+                    landingHit = hit;
+                }
+            }
+
+            return bestDistance < float.MaxValue;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1223,7 +1636,9 @@ namespace Hecton8.Gameplay
                 depthSlowdown = 1f - slowT * suit.depthSwimSlowdownMax;
             }
 
-            float effectiveSwimForce = suit.swimForce * depthSlowdown;
+            float sprintMult = _isSprinting ? suit.sprintMultiplier : 1f;
+            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult;
+            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult;
 
             float bodyYawRad = _bodyYaw * DEG_TO_RAD;
             float pitchRad = _cameraPitch * DEG_TO_RAD;
@@ -1254,7 +1669,7 @@ namespace Hecton8.Gameplay
             _forceVector.x = dirX * effectiveSwimForce;
             _forceVector.y = dirY * effectiveSwimForce;
             _forceVector.z = dirZ * effectiveSwimForce;
-            _forceVector.y += _inputVertical * suit.swimVerticalForce * depthSlowdown;
+            _forceVector.y += _inputVertical * effectiveVerticalForce;
 
             _rb.AddForce(_forceVector, ForceMode.Force);
         }
@@ -1298,13 +1713,55 @@ namespace Hecton8.Gameplay
 
             float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
             wadeMultiplier = math.max(wadeMultiplier, 0.2f);
-            float sprintMult = (_isSprinting && _isGrounded) ? suit.sprintMultiplier : 1f;
+            float sprintMult = CanUseLandSprint() ? suit.sprintMultiplier : 1f;
             float force = suit.walkForce * wadeMultiplier * sprintMult;
+
+            if (IsDryLandAirborne())
+                force *= dryAirControlMultiplier;
 
             _forceVector.x = _moveDirection.x * force;
             _forceVector.y = _moveDirection.y * force;
             _forceVector.z = _moveDirection.z * force;
             _rb.AddForce(_forceVector, ForceMode.Force);
+        }
+
+        private bool ShouldUseLandLocomotion(float physicsImmersion, bool hasShoreGroundSupport)
+        {
+            if (physicsImmersion <= 0.01f)
+                return true;
+
+            if (physicsImmersion >= swimTransitionThreshold)
+                return false;
+
+            return hasShoreGroundSupport;
+        }
+
+        private bool IsDryLandAirborne()
+        {
+            if (!_isWalking || _isGrounded)
+                return false;
+
+            if (_dryGroundGraceTimer > 0f)
+                return false;
+
+            if (_shoreGroundGraceTimer > 0f)
+                return false;
+
+            return _waterImmersionRatio <= 0.01f;
+        }
+
+        private bool CanUseLandSprint()
+        {
+            if (!_isSprinting || !_isWalking)
+                return false;
+
+            if (_isGrounded)
+                return true;
+
+            if (_dryGroundGraceTimer > 0f)
+                return true;
+
+            return _shoreGroundGraceTimer > 0f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1345,23 +1802,42 @@ namespace Hecton8.Gameplay
                 float maxSpd = suit.maxWalkSpeed;
                 float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
-                if (_isSprinting && _isGrounded) maxSpd *= suit.sprintMultiplier;
+                if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
 
                 if (maxSpd > 0f)
                 {
-                    float xzSqr = _velocity.x * _velocity.x + _velocity.z * _velocity.z;
-                    float maxSqr = maxSpd * maxSpd;
-                    if (xzSqr > maxSqr)
+                    if (_isGrounded)
                     {
-                        float scale = maxSpd / math.sqrt(xzSqr);
-                        _velocity.x *= scale; _velocity.z *= scale;
-                        _rb.linearVelocity = _velocity;
+                        Vector3 planarVelocity = Vector3.ProjectOnPlane(_velocity, _smoothedGroundNormal);
+                        float planarSqr = planarVelocity.sqrMagnitude;
+                        float maxSqr = maxSpd * maxSpd;
+                        if (planarSqr > maxSqr)
+                        {
+                            float scale = maxSpd / math.sqrt(planarSqr);
+                            Vector3 normalVelocity = _velocity - planarVelocity;
+                            planarVelocity.x *= scale;
+                            planarVelocity.y *= scale;
+                            planarVelocity.z *= scale;
+                            _rb.linearVelocity = planarVelocity + normalVelocity;
+                        }
+                    }
+                    else
+                    {
+                        float xzSqr = _velocity.x * _velocity.x + _velocity.z * _velocity.z;
+                        float maxSqr = maxSpd * maxSpd;
+                        if (xzSqr > maxSqr)
+                        {
+                            float scale = maxSpd / math.sqrt(xzSqr);
+                            _velocity.x *= scale; _velocity.z *= scale;
+                            _rb.linearVelocity = _velocity;
+                        }
                     }
                 }
             }
             else
             {
                 float maxSpd = suit.maxSwimSpeed;
+                if (_isSprinting) maxSpd *= suit.sprintMultiplier;
                 if (maxSpd > 0f)
                 {
                     float fullSqr = _velocity.x * _velocity.x + _velocity.y * _velocity.y + _velocity.z * _velocity.z;
@@ -1450,20 +1926,32 @@ namespace Hecton8.Gameplay
             if (mouseSensitivity < 0.01f) mouseSensitivity = 0.01f;
             if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
+            if (dryGroundGraceTime < 0f) dryGroundGraceTime = 0f;
+            if (dryGroundGraceTime > 0.3f) dryGroundGraceTime = 0.3f;
+            if (maxGroundAngle < 5f) maxGroundAngle = 5f;
+            if (maxGroundAngle > 89f) maxGroundAngle = 89f;
             if (pitchMin < -89.9f) pitchMin = -89.9f;
             if (pitchMax > 89.9f) pitchMax = 89.9f;
             if (pitchMin > pitchMax) pitchMin = pitchMax;
             if (playerHeight < 0.5f) playerHeight = 0.5f;
             if (baseFov < 30f) baseFov = 30f;
             if (baseFov > 120f) baseFov = 120f;
+            if (surfaceBreachDepthWindow < SurfaceStateUtility.ExitUnderwaterDepth)
+                surfaceBreachDepthWindow = SurfaceStateUtility.ExitUnderwaterDepth;
+            if (surfaceBreachMinImmersion >= 0.98f)
+                surfaceBreachMinImmersion = 0.97f;
+
+            RefreshGroundSlopeCache();
         }
 
         private void OnDrawGizmosSelected()
         {
             if (!Application.isPlaying) return;
 
-            Vector3 origin = transform.position + Vector3.up * groundCheckRadius;
-            Vector3 castEnd = origin + Vector3.down * (groundCheckDistance + groundCheckRadius);
+            Vector3 bodyPos = transform.position;
+            float bodyBottomY = GetBodyBottomY();
+            Vector3 origin = new Vector3(bodyPos.x, bodyBottomY + groundCheckRadius + GroundCheckSkin, bodyPos.z);
+            Vector3 castEnd = origin + Vector3.down * (groundCheckDistance + GroundCheckSkin);
 
             // Water level
             float effectiveY = EffectiveWaterSurfaceY;

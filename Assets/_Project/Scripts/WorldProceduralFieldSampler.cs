@@ -373,6 +373,16 @@ namespace Hecton8.World
             public SeafloorSource CenterSource;
         }
 
+        private struct CellHeightContext
+        {
+            public float CenterHeight;
+            public float NorthHeight;
+            public float SouthHeight;
+            public float EastHeight;
+            public float WestHeight;
+            public SeafloorSource CenterSource;
+        }
+
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
         private struct CellSamplingJob : IJobParallelFor
         {
@@ -1447,7 +1457,7 @@ namespace Hecton8.World
             if (!_samplingFramePrepared)
                 BeginScatterSamplingFrame();
 
-            if (!TryGetLocalTerrainContext(position, out LocalTerrainContext terrainContext))
+            if (!TryGetCellHeightContext(position, out CellHeightContext terrainContext))
                 return false;
 
             TryResolveBiomeIndex(position.x, position.z, out int biomeIndex);
@@ -2385,6 +2395,33 @@ namespace Hecton8.World
         private bool TryGetLocalTerrainContext(Vector3 position, out LocalTerrainContext terrainContext)
         {
             terrainContext = default;
+            if (!TryGetCellHeightContext(position, out CellHeightContext cellHeightContext))
+                return false;
+
+            float probe = Mathf.Max(1f, slopeProbeMeters);
+            float dx = (cellHeightContext.EastHeight - cellHeightContext.WestHeight) / (probe * 2f);
+            float dz = (cellHeightContext.NorthHeight - cellHeightContext.SouthHeight) / (probe * 2f);
+            float gradient = Mathf.Sqrt(dx * dx + dz * dz);
+            float slopeDegrees = Mathf.Atan(gradient) * Mathf.Rad2Deg;
+            float curvature = (cellHeightContext.WestHeight + cellHeightContext.EastHeight + cellHeightContext.NorthHeight + cellHeightContext.SouthHeight - (cellHeightContext.CenterHeight * 4f)) / Mathf.Max(0.0001f, probe * probe);
+
+            terrainContext = new LocalTerrainContext
+            {
+                CenterHeight = cellHeightContext.CenterHeight,
+                NorthHeight = cellHeightContext.NorthHeight,
+                SouthHeight = cellHeightContext.SouthHeight,
+                EastHeight = cellHeightContext.EastHeight,
+                WestHeight = cellHeightContext.WestHeight,
+                SlopeDegrees = slopeDegrees,
+                Curvature = Mathf.Clamp(curvature / 0.85f, -1f, 1f),
+                CenterSource = cellHeightContext.CenterSource
+            };
+            return true;
+        }
+
+        private bool TryGetCellHeightContext(Vector3 position, out CellHeightContext terrainContext)
+        {
+            terrainContext = default;
             if (!TryResolveSeafloorHeight(position, out float centerHeight, out SeafloorSource centerSource))
                 return false;
 
@@ -2397,21 +2434,13 @@ namespace Hecton8.World
                 return false;
             }
 
-            float dx = (eastHeight - westHeight) / (probe * 2f);
-            float dz = (northHeight - southHeight) / (probe * 2f);
-            float gradient = Mathf.Sqrt(dx * dx + dz * dz);
-            float slopeDegrees = Mathf.Atan(gradient) * Mathf.Rad2Deg;
-            float curvature = (westHeight + eastHeight + northHeight + southHeight - (centerHeight * 4f)) / Mathf.Max(0.0001f, probe * probe);
-
-            terrainContext = new LocalTerrainContext
+            terrainContext = new CellHeightContext
             {
                 CenterHeight = centerHeight,
                 NorthHeight = northHeight,
                 SouthHeight = southHeight,
                 EastHeight = eastHeight,
                 WestHeight = westHeight,
-                SlopeDegrees = slopeDegrees,
-                Curvature = Mathf.Clamp(curvature / 0.85f, -1f, 1f),
                 CenterSource = centerSource
             };
             return true;

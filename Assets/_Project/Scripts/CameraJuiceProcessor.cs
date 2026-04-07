@@ -214,6 +214,12 @@ namespace Hecton8.Gameplay
             _splashDipVelocity = -dip * 2f;
         }
 
+        internal void RegisterLandJumpLaunch()
+        {
+            _bobIntensity = 0f;
+            _wasInLowPhase = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  MAIN PROCESS
         // ══════════════════════════════════════════════════════════

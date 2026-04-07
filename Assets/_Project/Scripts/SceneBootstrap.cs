@@ -603,28 +603,56 @@ namespace Hecton8.Bootstrap
         {
             SaveManager save = SaveManager.Instance;
 
-            // ── Force New Game ──
+            // ── Читаем контекст игровой сессии ──
+            GameStartContext context = GameStartContextHolder.Current;
+
+            // ── Fallback на PlayerPrefs если контекст пуст (domain reload) ──
+            if (!context.IsValid)
+            {
+                string fallbackSlot = PlayerPrefs.GetString("TargetSaveSlot", string.Empty);
+                context = string.IsNullOrEmpty(fallbackSlot)
+                    ? GameStartContext.CreateNewGame()
+                    : GameStartContext.CreateLoadGame(fallbackSlot);
+
+                Log($"  GameStartContext was empty — restored from PlayerPrefs. " +
+                    $"Mode={context.StartMode}, Slot={context.TargetSaveSlot}");
+            }
+            else
+            {
+                Log($"  GameStartContext loaded: {context}");
+            }
+
+            // ── Force New Game из Inspector (legacy) ──
             if (forceNewGame)
             {
-                Log("  Force New Game enabled — skipping save load.");
+                Log("  Force New Game enabled (Inspector) — overriding context.");
+                context = GameStartContext.CreateNewGame();
+            }
+
+            // ── NewGame режим ──
+            if (context.StartMode == GameStartMode.NewGame)
+            {
+                Log("  Starting New Game.");
                 _isLoadingSave = false;
                 InitNewGame();
                 return;
             }
 
-            // ── Пустой слот ──
-            if (string.IsNullOrEmpty(saveSlot))
+            // ── LoadGame / Resume режим: ищем сейв ──
+            string targetSlot = context.TargetSaveSlot;
+
+            if (string.IsNullOrEmpty(targetSlot))
             {
-                Log("  No save slot specified — starting New Game.");
+                Log("  No save slot in context — starting New Game.");
                 _isLoadingSave = false;
                 InitNewGame();
                 return;
             }
 
             // ── Проверка существования ──
-            if (!save.SaveExists(saveSlot))
+            if (!save.SaveExists(targetSlot))
             {
-                Log($"  Save '{saveSlot}' not found — starting New Game.");
+                Log($"  Save '{targetSlot}' not found — starting New Game.");
                 _isLoadingSave = false;
                 InitNewGame();
                 return;
@@ -633,8 +661,8 @@ namespace Hecton8.Bootstrap
             // ── Async загрузка с обработкой исключений ──
             try
             {
-                Log($"  Loading save: '{saveSlot}'...");
-                await save.LoadGameAsync(saveSlot);
+                Log($"  Loading save: '{targetSlot}' (Mode={context.StartMode})...");
+                await save.LoadGameAsync(targetSlot);
 
                 if (!save.LastOperationSucceeded)
                 {

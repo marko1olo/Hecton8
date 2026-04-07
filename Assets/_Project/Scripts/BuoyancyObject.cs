@@ -173,6 +173,12 @@ namespace Hecton8.Physics
         public bool IsGrounded => _isGrounded;
 
         /// <summary>
+        /// True only when this object is inside one or more unflooded dry zones.
+        /// Does not include terrain grounding.
+        /// </summary>
+        public bool IsInDryZone => _dryZoneRefCount > 0;
+
+        /// <summary>
         /// Объект находится «в воздухе» — either inside an unflooded base module
         /// OR standing on solid ground (island/terrain).
         ///
@@ -183,6 +189,29 @@ namespace Hecton8.Physics
         /// </summary>
         public bool IsInAir => _dryZoneRefCount > 0 || _isGrounded;
         public BuoyancyProfile Profile => profile;
+
+        /// <summary>
+        /// True when fluid simulation should be fully suppressed for this object.
+        /// Dry interiors always suppress fluid. Ground contact suppresses fluid only
+        /// when the object is effectively above the waterline, so underwater bottom
+        /// contact can still receive buoyancy / drag / current.
+        /// </summary>
+        public bool ShouldSuppressFluid(float waterLevel)
+        {
+            if (_dryZoneRefCount > 0)
+                return true;
+
+            if (!_isGrounded)
+                return false;
+
+            float bottomY;
+            if (_collider != null)
+                bottomY = _collider.bounds.min.y;
+            else
+                bottomY = _cachedTransform.position.y - Mathf.Max(0.05f, height * 0.5f);
+
+            return bottomY >= waterLevel - 0.02f;
+        }
 
         /// <summary>
         /// Вызывается BaseModule при входе объекта в сухую зону.

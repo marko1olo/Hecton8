@@ -310,6 +310,23 @@ WITHOUT THIS BLOCK — CODE IS REJECTED.
 3. Identify dependencies: managers, interfaces, events
 4. Find reference code — use similar class as template
 5. Plan edge cases: pooled reuse, null manager, null deps, post-OnDisable
+
+### [RULE] ARCHITECTURE FIRST — OWNERSHIP BEFORE CODE
+
+Before writing or moving ANY logic, ask these questions explicitly:
+1. Does this logic belong in this layer, or am I stuffing it into the nearest large file?
+2. Is there already an owner system for this responsibility in HECTON-8?
+3. Am I mixing `runtime placement`, `editor authoring`, `proxy generation`, `final asset baking`, or `verification` into one class?
+4. Am I importing an external/Claude subsystem wholesale instead of mapping its concepts into the existing stack?
+5. If this file is already large or fragile, should this become a new focused helper/module instead?
+
+[FORBID] Growing god objects just because they are already central.
+[FORBID] Mixing ownership layers in one implementation path.
+[FORBID] Hiding architecture drift behind "just authoring" or "just one more rule."
+[REQ] If a concept needs a new subsystem, state that explicitly before coding and justify why the existing owner cannot hold it.
+[REQ] If the project already has an owner system, adapt the concept there instead of cloning an external architecture.
+[REQ] New files are allowed when they reduce ownership ambiguity and keep hot/runtime paths clean.
+
 ### [RULE] PREFAB / SCENE CONSISTENCY GUARD
 
 **Source of Truth**
@@ -401,6 +418,15 @@ Non-compiling code = rejected.
 If user/external reviewer provides code snippet — implement AS IS.
 Any deviation (rename, refactor, simplify) = CRITICAL ERROR.
 Improve only AFTER original works, as separate step.
+
+### [RULE] FLORA / WORLD TRANSFER BOUNDARIES
+[FORBID] Putting flora mesh generation, prefab anatomy construction, or bake logic into runtime world selection files such as scatter/fill directors.
+[FORBID] Treating proxy prefabs as final assets just to shortcut the pipeline.
+[FORBID] Copying Claude-style monolithic `renderer + placer + generator + bootstrap` systems into HECTON-8 when the project already owns placement through fill/scatter/biome/profile stack.
+[REQ] Runtime world files own selection, quotas, weighting, and validation-facing placement behavior.
+[REQ] Editor flora creation owns shape building, variant baking, and prefab generation.
+[REQ] Proxy, final, and runtime layers must stay separable and reviewable.
+[REQ] When in doubt, stop and ask: "Am I solving the problem in the correct owner layer?"
 
 ### [RULE] NO SECOND-GUESSING
 [FORBID] Guessing, assuming, inventing details

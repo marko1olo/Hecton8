@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Hecton.Localization;
 using Hecton8.SaveSystem;    // ← ВАШ СУЩЕСТВУЮЩИЙ SaveManager
+using Hecton8.Core;         // ← GameStartContext
 
 namespace Hecton.UI.MainMenu
 {
@@ -16,11 +17,13 @@ namespace Hecton.UI.MainMenu
     public sealed class MainMenuController : MonoBehaviour
     {
         // ──────────────────────────────────────────────
-        // GLOBAL STATE — target scene reads this on start
+        // DEPRECATED: Use GameStartContextHolder instead
+        // Legacy field kept for domain-reload safety only
         // ──────────────────────────────────────────────
         /// <summary>
-        /// Save slot to load. Empty string = new game.
-        /// Read by the target scene during initialization.
+        /// [DEPRECATED] Save slot to load. Empty string = new game.
+        /// Use GameStartContextHolder.Current instead.
+        /// Kept for PlayerPrefs domain-reload recovery only.
         /// </summary>
         public static string TargetSaveSlot = string.Empty;
 
@@ -335,14 +338,27 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Starts async loading of the game scene.
         /// Empty slotName = new game, otherwise = load save.
-        /// Writes to TargetSaveSlot (static) + PlayerPrefs (domain reload safety).
+        /// Writes to GameStartContextHolder.Current for inter-scene communication.
+        /// Also writes to PlayerPrefs for domain-reload recovery.
         /// </summary>
         public void StartGame(string slotName)
         {
-            TargetSaveSlot = slotName ?? string.Empty;
+            // Create GameStartContext
+            GameStartContext context = string.IsNullOrEmpty(slotName)
+                ? GameStartContext.CreateNewGame()
+                : GameStartContext.CreateLoadGame(slotName);
 
+            // Store in holder for SceneBootstrap to read
+            GameStartContextHolder.Current = context;
+
+            // Legacy: Also write to TargetSaveSlot + PlayerPrefs for domain-reload safety
+            TargetSaveSlot = slotName ?? string.Empty;
             PlayerPrefs.SetString("TargetSaveSlot", TargetSaveSlot);
             PlayerPrefs.Save();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            GameStartContextHolder.LogCurrent();
+#endif
 
             StartCoroutine(LoadSceneRoutine());
         }

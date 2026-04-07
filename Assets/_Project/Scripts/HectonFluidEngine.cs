@@ -501,8 +501,10 @@ namespace Hecton8.Physics
         ///
         /// Удаляет null/destroyed объекты на лету (swap-remove в обратном цикле).
         ///
-        /// ИЗМЕНЕНИЕ (Dry Zones):
-        ///   Копирует BuoyancyObject.IsInAir → BuoyancyParams.isInAir.
+        /// ИЗМЕНЕНИЕ (Dry Zones / Ground Contact):
+        ///   Копирует owner-side fluid suppression truth в BuoyancyParams.isInAir.
+        ///   Dry zones always suppress fluid. Grounded contact suppresses fluid
+        ///   only when the object is effectively above the waterline.
         ///   BuoyancyJob проверяет этот флаг и обнуляет силы, если true.
         /// </summary>
         private void GatherData()
@@ -607,7 +609,7 @@ namespace Hecton8.Physics
                     currentResponse = obj.CurrentResponse * currentWeight,
                     surfaceStability = obj.SurfaceStability * stabilityWeight,
                     localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
-                    isInAir = obj.IsInAir,
+                    isInAir = obj.ShouldSuppressFluid(waterLevel),
                     simulationMode = simulationMode,
                     simplifiedSubmersion = simplifiedSubmersion
                 };

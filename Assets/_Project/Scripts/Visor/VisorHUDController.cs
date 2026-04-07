@@ -364,33 +364,43 @@ namespace NASAPunk.Visor
 
         private void PrepareProjectionTexture()
         {
-            _ownsRuntimeTexture = false;
-            _hudRT = null;
-
             if (_projectionMode == ProjectionMode.Disabled)
+            {
+                ReleaseOwnedRuntimeTexture();
+                _hudRT = null;
+                _ownsRuntimeTexture = false;
+                _cachedRTWidth = -1;
+                _cachedRTHeight = -1;
                 return;
+            }
 
             if (_projectionMode == ProjectionMode.SharedRenderTexture && _sharedRenderTexture != null)
             {
+                ReleaseOwnedRuntimeTexture();
                 _hudRT = _sharedRenderTexture;
+                _ownsRuntimeTexture = false;
+                _cachedRTWidth = -1;
+                _cachedRTHeight = -1;
                 return;
             }
+
+            if (!_ownsRuntimeTexture)
+                _hudRT = null;
 
             // Reuse RT if size matches
             if (_hudRT != null && _hudRT.width == _rtWidth && _hudRT.height == _rtHeight && _hudRT.format == RenderTextureFormat.ARGB32)
             {
+                _hudRT.filterMode = _filterMode;
+                if (!_hudRT.IsCreated())
+                    _hudRT.Create();
                 _ownsRuntimeTexture = true;
+                _cachedRTWidth = _rtWidth;
+                _cachedRTHeight = _rtHeight;
                 return;
             }
 
             // Release old RT if size changed
-            if (_ownsRuntimeTexture && _hudRT != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(_hudRT);
-                else
-                    DestroyImmediate(_hudRT);
-            }
+            ReleaseOwnedRuntimeTexture();
 
             _hudRT = new RenderTexture(_rtWidth, _rtHeight, 0, RenderTextureFormat.ARGB32)
             {
@@ -407,7 +417,6 @@ namespace NASAPunk.Visor
         private void RebuildProjection()
         {
             InvalidatePoseCache();
-            ReleaseRT();
             PrepareProjectionTexture();
             SyncCameraRole();
             BindRT();
@@ -437,19 +446,24 @@ namespace NASAPunk.Visor
                 _hudCamera.enabled = true;
             }
 
-            if (_ownsRuntimeTexture && _hudRT != null)
-            {
-                _hudRT.Release();
-                if (Application.isPlaying)
-                    Destroy(_hudRT);
-                else
-                    DestroyImmediate(_hudRT);
-            }
+            ReleaseOwnedRuntimeTexture();
 
             _hudRT = null;
             _ownsRuntimeTexture = false;
             _cachedRTWidth = -1;
             _cachedRTHeight = -1;
+        }
+
+        private void ReleaseOwnedRuntimeTexture()
+        {
+            if (!_ownsRuntimeTexture || _hudRT == null)
+                return;
+
+            _hudRT.Release();
+            if (Application.isPlaying)
+                Destroy(_hudRT);
+            else
+                DestroyImmediate(_hudRT);
         }
 
         /// <summary>

@@ -35,7 +35,8 @@ namespace Hecton8.World
         [SerializeField] private int _debugTerrainBlendPlans;
         [SerializeField] private int _debugVoxelBlendPlans;
         [SerializeField] private int _debugDebrisPlans;
-        [SerializeField] private string _debugTopPlan = "None";
+        [SerializeField] private string _debugTopPlanFamilyId = string.Empty;
+        [SerializeField] private WorldGenerativeGeologyProfile.ShapeArchetype _debugTopPlanArchetype;
         [SerializeField] private float _debugTopPlanWeight;
 
         private readonly Dictionary<long, WorldGenerativeGeologySeamPlan> _plansByKey = new Dictionary<long, WorldGenerativeGeologySeamPlan>(256);
@@ -158,7 +159,8 @@ namespace Hecton8.World
             _debugTerrainBlendPlans = 0;
             _debugVoxelBlendPlans = 0;
             _debugDebrisPlans = 0;
-            _debugTopPlan = "None";
+            _debugTopPlanFamilyId = string.Empty;
+            _debugTopPlanArchetype = default;
             _debugTopPlanWeight = 0f;
             _debugReady = false;
             _debugBridgeReady = mapMagicBridge != null && mapMagicBridge.IsAvailable;
@@ -205,7 +207,8 @@ namespace Hecton8.World
             if (_orderedPlans.Count > 0)
             {
                 WorldGenerativeGeologySeamPlan topPlan = _orderedPlans[0];
-                _debugTopPlan = $"{topPlan.familyId} [{topPlan.archetype}]";
+                _debugTopPlanFamilyId = topPlan.familyId ?? string.Empty;
+                _debugTopPlanArchetype = topPlan.archetype;
                 _debugTopPlanWeight = topPlan.planWeight;
             }
 
@@ -367,20 +370,24 @@ namespace Hecton8.World
         private void TrimPlanDictionaries()
         {
             _dictionaryTrimBuffer.Clear();
-            foreach (KeyValuePair<long, WorldGenerativeGeologySeamPlan> pair in _plansByKey)
+            Dictionary<long, WorldGenerativeGeologySeamPlan>.Enumerator planEnumerator = _plansByKey.GetEnumerator();
+            while (planEnumerator.MoveNext())
             {
-                if (!_selectedRuntimeKeys.Contains(pair.Key))
-                    _dictionaryTrimBuffer.Add(pair.Key);
+                long runtimeKey = planEnumerator.Current.Key;
+                if (!_selectedRuntimeKeys.Contains(runtimeKey))
+                    _dictionaryTrimBuffer.Add(runtimeKey);
             }
 
             for (int i = 0; i < _dictionaryTrimBuffer.Count; i++)
                 _plansByKey.Remove(_dictionaryTrimBuffer[i]);
 
             _dictionaryTrimBuffer.Clear();
-            foreach (KeyValuePair<long, WorldGenerativeGeologyBinding> pair in _bindingsByKey)
+            Dictionary<long, WorldGenerativeGeologyBinding>.Enumerator bindingEnumerator = _bindingsByKey.GetEnumerator();
+            while (bindingEnumerator.MoveNext())
             {
-                if (!_selectedRuntimeKeys.Contains(pair.Key))
-                    _dictionaryTrimBuffer.Add(pair.Key);
+                long runtimeKey = bindingEnumerator.Current.Key;
+                if (!_selectedRuntimeKeys.Contains(runtimeKey))
+                    _dictionaryTrimBuffer.Add(runtimeKey);
             }
 
             for (int i = 0; i < _dictionaryTrimBuffer.Count; i++)
@@ -400,10 +407,10 @@ namespace Hecton8.World
             if (playerDistance > residencyRadius)
                 return false;
 
-            WorldProceduralProxyInstance metadata = binding.GetComponent<WorldProceduralProxyInstance>();
+            WorldProceduralProxyInstance metadata = binding.CachedProxyInstance;
             long runtimeKey = binding.RuntimeKey != 0L
                 ? binding.RuntimeKey
-                : (metadata != null ? metadata.RuntimeKey : targetTransform.position.GetHashCode());
+                : (binding.CachedProxyRuntimeKey != 0L ? binding.CachedProxyRuntimeKey : targetTransform.position.GetHashCode());
             if (runtimeKey == 0L)
                 return false;
 

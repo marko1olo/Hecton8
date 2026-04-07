@@ -442,6 +442,17 @@ namespace Hecton8.Core
             return h;
         }
 
+        internal bool TryResolveTerrainAt(float x, float z, out Terrain terrain)
+        {
+            terrain = null;
+
+            if (mapMagicObject == null)
+                return false;
+
+            terrain = FindTerrainAt(x, z);
+            return terrain != null && terrain.terrainData != null;
+        }
+
         /// <summary>
         /// Проверяет, находится ли точка под водой.
         /// </summary>

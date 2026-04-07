@@ -1,7 +1,7 @@
 ﻿# Procedural Matrix Biome Content Report
 
 - Scene: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
-- Generated: `2026-04-07 15:07:51`
+- Generated: `2026-04-07 21:48:19`
 - Mode: `Forced preview pattern + forced matrix biome override (full override)`
 
 ## FertileShallows
@@ -453,10 +453,10 @@
 - Preferred cluster categories: `Pocket Resource -> Egg Cluster -> Coral Branching -> Coral Massive`
 - Preferred structure categories: `Coral Plate -> Landmark Spire -> Kelp Canopy -> Cave Entrance Marker`
 - Preferred spawn categories: `Creature Spawn Passive`
-- Counts: ground `8` | cluster `2` | structure `10` | spawn `4`
-- Top categories now: ground `Kelp Tall` | cluster `Pocket Resource` | structure `Cave Entrance Marker` | spawn `Creature Spawn Passive`
-- Dominant categories now: ground `Coral Low` | cluster `Pocket Resource` | structure `Coral Plate` | spawn `Creature Spawn Passive`
-- Structure role mix: natural `0` | tech `0` | cave `3` | bio `7`
+- Counts: ground `12` | cluster `2` | structure `9` | spawn `4`
+- Top categories now: ground `Coral Low` | cluster `Pocket Resource` | structure `Coral Plate` | spawn `Creature Spawn Passive`
+- Dominant categories now: ground `Coral Low` | cluster `Coral Massive` | structure `Coral Plate` | spawn `Creature Spawn Passive`
+- Structure role mix: natural `0` | tech `0` | cave `2` | bio `7`
 - Spawn mix: passive `4` | predator `0`
 - What makes this place different: This biome leans into `Pocket Resource`, remembers itself through `Coral Plate`, and tends toward `Creature Spawn Passive`.
 
@@ -477,7 +477,7 @@
 
 ### Difference checks
 
-- Most resource-rich vs Most tech-marked: 3/4 different (different dominant structure category, different spawn mix, different preferred category list)
+- Most resource-rich vs Most tech-marked: 4/4 different (different dominant cluster category, different dominant structure category, different spawn mix, different preferred category list)
 - Most resource-rich vs Most dangerous: 3/4 different (different dominant cluster category, different dominant structure category, different preferred category list)
 - Most tech-marked vs Most dangerous: 4/4 different (different dominant cluster category, different dominant structure category, different spawn mix, different preferred category list)
 

@@ -8,6 +8,7 @@ namespace Hecton8.World
     public sealed class WorldGenerativeGeologySeamRuntime : MonoBehaviour
     {
         private static readonly List<WorldGenerativeGeologySeamRuntime> _activeRuntimes = new List<WorldGenerativeGeologySeamRuntime>(128);
+        private static readonly List<int> _staleRuntimeIndexBuffer = new List<int>(32);
 
         [SerializeField] private long runtimeKey;
         [SerializeField] private int buildSignature;
@@ -38,14 +39,20 @@ namespace Hecton8.World
                 return;
 
             destination.Clear();
+            _staleRuntimeIndexBuffer.Clear();
             for (int i = 0; i < _activeRuntimes.Count; i++)
             {
                 WorldGenerativeGeologySeamRuntime runtime = _activeRuntimes[i];
-                if (runtime == null)
+                if (runtime == null || !runtime.isActiveAndEnabled)
+                {
+                    _staleRuntimeIndexBuffer.Add(i);
                     continue;
+                }
 
                 destination.Add(runtime);
             }
+
+            TrimStaleActiveRuntimes();
         }
 
         public void Configure(long configuredRuntimeKey, int configuredBuildSignature, in WorldGenerativeGeologySeamPlan plan)
@@ -57,6 +64,20 @@ namespace Hecton8.World
             voxelBlendPrepared = plan.RequiresVoxelBlend;
             debrisApplied = plan.RequiresDebrisSeam;
         }
+
+        private static void TrimStaleActiveRuntimes()
+        {
+            for (int i = _staleRuntimeIndexBuffer.Count - 1; i >= 0; i--)
+            {
+                int index = _staleRuntimeIndexBuffer[i];
+                if (index < 0 || index >= _activeRuntimes.Count)
+                    continue;
+
+                _activeRuntimes.RemoveAt(index);
+            }
+
+            _staleRuntimeIndexBuffer.Clear();
+        }
     }
 
     [DisallowMultipleComponent]
@@ -64,6 +85,9 @@ namespace Hecton8.World
     public sealed class WorldGenerativeGeologySeamExecutionDirector : MonoBehaviour, ISlowTickable
     {
         private const string SeamRootName = "__GEOLOGY_SEAM";
+        private static readonly string[] _TerrainSkirtNames = CreateIndexedNames("TerrainSkirt_", 12);
+        private static readonly string[] _VoxelCollarNames = CreateIndexedNames("VoxelCollar_", 10);
+        private static readonly string[] _DebrisNames = CreateIndexedNames("Debris_", 14);
 
         [Header("References")]
         [SerializeField] private WorldGenerativeGeologyIntegrationDirector integrationDirector;
@@ -85,13 +109,16 @@ namespace Hecton8.World
         [SerializeField] private int _debugVoxelSeams;
         [SerializeField] private int _debugDebrisSeams;
         [SerializeField] private int _debugVoxelRequests;
-        [SerializeField] private string _debugTopExecuted = "None";
+        [SerializeField] private string _debugTopExecutedFamilyId = string.Empty;
+        [SerializeField] private WorldGenerativeGeologyProfile.ShapeArchetype _debugTopExecutedArchetype;
 
         private readonly List<long> _desiredRuntimeKeys = new List<long>(128);
         private readonly List<long> _retainedRuntimeKeys = new List<long>(128);
         private readonly List<WorldGenerativeGeologyVoxelBlendRequest> _voxelRequests = new List<WorldGenerativeGeologyVoxelBlendRequest>(64);
         private readonly List<WorldGenerativeGeologySeamRuntime> _runtimeCleanupBuffer = new List<WorldGenerativeGeologySeamRuntime>(128);
         private readonly List<Transform> _rendererTraversalBuffer = new List<Transform>(64);
+        private readonly List<long> _runtimeCacheTrimBuffer = new List<long>(128);
+        private readonly Dictionary<long, WorldGenerativeGeologySeamRuntime> _runtimeCacheByKey = new Dictionary<long, WorldGenerativeGeologySeamRuntime>(128);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
@@ -171,7 +198,8 @@ namespace Hecton8.World
             _debugVoxelSeams = 0;
             _debugDebrisSeams = 0;
             _debugVoxelRequests = 0;
-            _debugTopExecuted = "None";
+            _debugTopExecutedFamilyId = string.Empty;
+            _debugTopExecutedArchetype = default;
             _debugReady = false;
 
             if (integrationDirector == null)
@@ -211,8 +239,11 @@ namespace Hecton8.World
                 RegisterVoxelRequest(plan);
                 appliedCount++;
 
-                if (_debugTopExecuted == "None")
-                    _debugTopExecuted = $"{plan.familyId} [{plan.archetype}]";
+                if (string.IsNullOrEmpty(_debugTopExecutedFamilyId))
+                {
+                    _debugTopExecutedFamilyId = plan.familyId ?? string.Empty;
+                    _debugTopExecutedArchetype = plan.archetype;
+                }
             }
 
             CleanupStaleSeams();
@@ -248,18 +279,21 @@ namespace Hecton8.World
             RegisterVoxelRequest(plan);
             appliedCount++;
 
-            if (_debugTopExecuted == "None")
-                _debugTopExecuted = $"{plan.familyId} [{plan.archetype}]";
+            if (string.IsNullOrEmpty(_debugTopExecutedFamilyId))
+            {
+                _debugTopExecutedFamilyId = plan.familyId ?? string.Empty;
+                _debugTopExecutedArchetype = plan.archetype;
+            }
 
             return true;
         }
 
         private void ApplySeam(WorldGenerativeGeologyBinding binding, in WorldGenerativeGeologySeamPlan plan)
         {
-            Transform seamRoot = GetOrCreateSeamRoot(binding.transform);
+            WorldGenerativeGeologySeamRuntime runtime = GetOrCreateSeamRuntime(binding.transform, plan.runtimeKey);
+            Transform seamRoot = runtime.transform;
             int buildSignature = ComputeBuildSignature(plan);
-            WorldGenerativeGeologySeamRuntime runtime = seamRoot.GetComponent<WorldGenerativeGeologySeamRuntime>();
-            if (runtime != null && runtime.BuildSignature == buildSignature)
+            if (runtime.BuildSignature == buildSignature)
             {
                 CountPlan(plan);
                 return;
@@ -278,10 +312,6 @@ namespace Hecton8.World
                 BuildDebrisBand(seamRoot, seamMaterial, plan, ref primitiveIndex);
 
             DisableUnusedChildren(seamRoot, primitiveIndex);
-
-            if (runtime == null)
-                runtime = seamRoot.gameObject.AddComponent<WorldGenerativeGeologySeamRuntime>();
-
             runtime.Configure(plan.runtimeKey, buildSignature, plan);
             CountPlan(plan);
         }
@@ -324,7 +354,7 @@ namespace Hecton8.World
                 Vector3 localPosition = new Vector3(contact.x + offset.x, contact.y + height * 0.35f, contact.z + offset.z);
                 Vector3 localScale = new Vector3(Mathf.Max(0.5f, radius * 0.28f), height, Mathf.Max(0.45f, radius * 0.22f));
                 Quaternion localRotation = Quaternion.Euler(0f, angle, Mathf.Lerp(-14f, 14f, i / Mathf.Max(1f, segments - 1f)));
-                CreatePrimitive(root, seamMaterial, PrimitiveType.Cube, $"TerrainSkirt_{i}", localPosition, localRotation, localScale, ref primitiveIndex);
+                CreatePrimitive(root, seamMaterial, PrimitiveType.Cube, _TerrainSkirtNames[i], localPosition, localRotation, localScale, ref primitiveIndex);
             }
         }
 
@@ -341,7 +371,7 @@ namespace Hecton8.World
                 Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * radius;
                 Vector3 localPosition = new Vector3(center.x + offset.x, center.y - height * 0.15f, center.z + offset.z);
                 Vector3 localScale = new Vector3(Mathf.Max(0.42f, radius * 0.18f), height, Mathf.Max(0.42f, radius * 0.18f));
-                CreatePrimitive(root, seamMaterial, PrimitiveType.Cylinder, $"VoxelCollar_{i}", localPosition, Quaternion.identity, localScale, ref primitiveIndex);
+                CreatePrimitive(root, seamMaterial, PrimitiveType.Cylinder, _VoxelCollarNames[i], localPosition, Quaternion.identity, localScale, ref primitiveIndex);
             }
         }
 
@@ -367,7 +397,7 @@ namespace Hecton8.World
                     root,
                     seamMaterial,
                     i % 2 == 0 ? PrimitiveType.Sphere : PrimitiveType.Capsule,
-                    $"Debris_{i}",
+                    _DebrisNames[i],
                     new Vector3(contact.x + offset.x, contact.y + scale * 0.3f, contact.z + offset.z),
                     rotation,
                     Vector3.one * scale,
@@ -385,18 +415,33 @@ namespace Hecton8.World
             return (value & 0x00FFFFFFu) / 16777215f;
         }
 
-        private static Transform GetOrCreateSeamRoot(Transform host)
+        private WorldGenerativeGeologySeamRuntime GetOrCreateSeamRuntime(Transform host, long runtimeKey)
         {
-            Transform seamRoot = host.Find(SeamRootName);
-            if (seamRoot != null)
+            if (_runtimeCacheByKey.TryGetValue(runtimeKey, out WorldGenerativeGeologySeamRuntime cachedRuntime) &&
+                cachedRuntime != null &&
+                cachedRuntime.transform.parent == host &&
+                (cachedRuntime.RuntimeKey == 0L || cachedRuntime.RuntimeKey == runtimeKey))
             {
-                ActivateTransform(seamRoot);
-                return seamRoot;
+                ActivateTransform(cachedRuntime.transform);
+                return cachedRuntime;
             }
 
-            seamRoot = new GameObject(SeamRootName).transform;
-            seamRoot.SetParent(host, false);
-            return seamRoot;
+            Transform seamRoot = host.Find(SeamRootName);
+            if (seamRoot == null)
+            {
+                seamRoot = new GameObject(SeamRootName).transform;
+                seamRoot.SetParent(host, false);
+            }
+            else
+            {
+                ActivateTransform(seamRoot);
+            }
+
+            if (!seamRoot.TryGetComponent(out WorldGenerativeGeologySeamRuntime runtime))
+                runtime = seamRoot.gameObject.AddComponent<WorldGenerativeGeologySeamRuntime>();
+
+            _runtimeCacheByKey[runtimeKey] = runtime;
+            return runtime;
         }
 
         private static void CreatePrimitive(
@@ -504,6 +549,22 @@ namespace Hecton8.World
                 if (runtime.gameObject.activeSelf)
                     runtime.gameObject.SetActive(false);
             }
+
+            _runtimeCacheTrimBuffer.Clear();
+            Dictionary<long, WorldGenerativeGeologySeamRuntime>.Enumerator runtimeCacheEnumerator = _runtimeCacheByKey.GetEnumerator();
+            while (runtimeCacheEnumerator.MoveNext())
+            {
+                long runtimeKey = runtimeCacheEnumerator.Current.Key;
+                WorldGenerativeGeologySeamRuntime runtime = runtimeCacheEnumerator.Current.Value;
+                if (runtime != null &&
+                    (runtime.RuntimeKey == 0L || runtime.RuntimeKey == runtimeKey))
+                    continue;
+
+                _runtimeCacheTrimBuffer.Add(runtimeKey);
+            }
+
+            for (int i = 0; i < _runtimeCacheTrimBuffer.Count; i++)
+                _runtimeCacheByKey.Remove(_runtimeCacheTrimBuffer[i]);
         }
 
         private static void DisableUnusedChildren(Transform root, int activeChildCount)
@@ -524,6 +585,15 @@ namespace Hecton8.World
         {
             if (target != null && !target.gameObject.activeSelf)
                 target.gameObject.SetActive(true);
+        }
+
+        private static string[] CreateIndexedNames(string prefix, int count)
+        {
+            string[] result = new string[count];
+            for (int i = 0; i < count; i++)
+                result[i] = prefix + i;
+
+            return result;
         }
 
         private void ResolveReferences()

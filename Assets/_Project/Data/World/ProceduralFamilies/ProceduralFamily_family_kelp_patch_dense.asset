@@ -58,12 +58,24 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.kelp.patch.dense.final.placeholder
-    prefab: {fileID: 5619530732131599773, guid: 8436d4fc282a3f24f98d5ea1c54226ba, type: 3}
-    weight: 2
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch
+    prefab: {fileID: 3499354349611709861, guid: c6f3e906dfeb02d42b85cac573523896, type: 3}
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch_tall
+    prefab: {fileID: 7432059369170252389, guid: cd696b2a8fc52ab4da9ba7d45145f732, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__ring
+    prefab: {fileID: 4703074035381975815, guid: 0a2f208652a613e44988815fd1dd9202, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Patch_Dense
   gameplayRole: Dense kelp pockets for shelter, occlusion and fauna habitat.

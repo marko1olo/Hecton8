@@ -146,18 +146,89 @@ namespace Hecton8.Caves
     }
 
     /// <summary>
+    /// Configuration for emissive tissue pads attached to cave walls/ceilings.
+    /// Cheap mesh-based glow accents, not dynamic organisms.
+    /// </summary>
+    [System.Serializable]
+    public class GlowingTissueConfig
+    {
+        [Tooltip("Enable glowing tissue accents.")]
+        public bool enabled = true;
+
+        [Tooltip("Maximum number of tissue patches per cave.")]
+        [Range(0, 24)]
+        public int maxCount = 10;
+
+        [Tooltip("Density/intensity multiplier for tissue placement.")]
+        [Range(0f, 1f)]
+        public float density = 0.5f;
+
+        [Tooltip("Dark base color of the tissue body.")]
+        public Color baseColor = new Color(0.12f, 0.2f, 0.16f);
+
+        [Tooltip("Emission color of the tissue glow.")]
+        public Color glowColor = new Color(0.22f, 0.95f, 0.86f);
+
+        [Tooltip("Pulse bias for emissive intensity.")]
+        [Range(0f, 1f)]
+        public float pulseAmount = 0.3f;
+    }
+
+    /// <summary>
+    /// Configuration for cheap service-tech remnants inside caves.
+    /// Broken pipes, brackets, and panel fragments.
+    /// </summary>
+    [System.Serializable]
+    public class ServiceRemnantConfig
+    {
+        [Tooltip("Enable service remnant accents.")]
+        public bool enabled = true;
+
+        [Tooltip("Spawn only in ruin-linked cave presets.")]
+        public bool ruinLinkedOnly = true;
+
+        [Tooltip("Maximum number of remnant pieces per cave.")]
+        [Range(0, 12)]
+        public int maxCount = 3;
+
+        [Tooltip("Minimum remnant scale.")]
+        [Range(0.1f, 6f)]
+        public float minScale = 0.35f;
+
+        [Tooltip("Maximum remnant scale.")]
+        [Range(0.1f, 8f)]
+        public float maxScale = 1.4f;
+
+        [Tooltip("Primary weathered metal color.")]
+        public Color baseColor = new Color(0.26f, 0.3f, 0.34f);
+
+        [Tooltip("Accent strip/emission color for tech remnants.")]
+        public Color accentColor = new Color(0.16f, 0.72f, 0.9f);
+
+        [Tooltip("Emission strength for accent strips.")]
+        [Range(0f, 2f)]
+        public float accentEmission = 0.35f;
+    }
+
+    /// <summary>
     /// Complete cave dressing configuration (all layers).
     /// One instance per cave or shared across biome family.
     /// </summary>
     [System.Serializable]
     public class CaveDressingConfig
     {
+        private static readonly CaveDressingConfig _SharedShallowConfig = CreateShallowConfig(); // COLD ALLOC: one shared shallow dressing graph.
+        private static readonly CaveDressingConfig _SharedMidConfig = CreateMidConfig(); // COLD ALLOC: one shared mid-depth dressing graph.
+        private static readonly CaveDressingConfig _SharedDeepConfig = CreateDeepConfig(); // COLD ALLOC: one shared deep dressing graph.
+
         [Header("═══ Cave Dressing Layers ═══")]
         
         public MineralCrustConfig mineralCrust = new MineralCrustConfig();
         public SedimentShelfConfig sedimentShelves = new SedimentShelfConfig();
         public DeepFungiConfig deepFungi = new DeepFungiConfig();
         public WallGrowthConfig wallGrowth = new WallGrowthConfig();
+        public GlowingTissueConfig glowingTissue = new GlowingTissueConfig();
+        public ServiceRemnantConfig serviceRemnants = new ServiceRemnantConfig();
 
         [Tooltip("Overall dressing intensity multiplier (0-1).")]
         [Range(0f, 1f)]
@@ -195,6 +266,20 @@ namespace Hecton8.Caves
                 {
                     enabled = false // sparse in shallow caves
                 },
+                glowingTissue = new GlowingTissueConfig
+                {
+                    enabled = true,
+                    maxCount = 4,
+                    density = 0.22f,
+                    baseColor = new Color(0.18f, 0.16f, 0.1f),
+                    glowColor = new Color(1f, 0.72f, 0.25f),
+                    pulseAmount = 0.18f
+                },
+                serviceRemnants = new ServiceRemnantConfig
+                {
+                    enabled = false,
+                    maxCount = 0
+                },
                 globalIntensity = 0.7f
             };
         }
@@ -231,6 +316,24 @@ namespace Hecton8.Caves
                     enabled = true,
                     swayAmount = 0.2f,
                     pulseAmount = 0.15f
+                },
+                glowingTissue = new GlowingTissueConfig
+                {
+                    enabled = true,
+                    maxCount = 8,
+                    density = 0.45f,
+                    baseColor = new Color(0.16f, 0.22f, 0.2f),
+                    glowColor = new Color(0.48f, 0.95f, 0.84f),
+                    pulseAmount = 0.28f
+                },
+                serviceRemnants = new ServiceRemnantConfig
+                {
+                    enabled = true,
+                    ruinLinkedOnly = true,
+                    maxCount = 3,
+                    minScale = 0.4f,
+                    maxScale = 1.6f,
+                    accentEmission = 0.42f
                 },
                 globalIntensity = 1.0f
             };
@@ -272,21 +375,42 @@ namespace Hecton8.Caves
                     pulseAmount = 0.3f,
                     growthColor = new Color(0.2f, 1f, 0.8f)
                 },
+                glowingTissue = new GlowingTissueConfig
+                {
+                    enabled = true,
+                    maxCount = 14,
+                    density = 0.7f,
+                    baseColor = new Color(0.08f, 0.16f, 0.18f),
+                    glowColor = new Color(0.18f, 0.94f, 1f),
+                    pulseAmount = 0.45f
+                },
+                serviceRemnants = new ServiceRemnantConfig
+                {
+                    enabled = true,
+                    ruinLinkedOnly = true,
+                    maxCount = 2,
+                    minScale = 0.32f,
+                    maxScale = 1.2f,
+                    baseColor = new Color(0.18f, 0.22f, 0.28f),
+                    accentColor = new Color(0.12f, 0.82f, 1f),
+                    accentEmission = 0.55f
+                },
                 globalIntensity = 1.2f
             };
         }
 
         /// <summary>
-        /// Gets dressing config based on spawn context.
+        /// Gets shared dressing config based on spawn context.
+        /// Returned instances are treated as read-only runtime templates.
         /// </summary>
         public static CaveDressingConfig GetConfigForContext(SpawnContext context)
         {
             return context switch
             {
-                SpawnContext.CaveShallow => CreateShallowConfig(),
-                SpawnContext.CaveMid => CreateMidConfig(),
-                SpawnContext.CaveDeep => CreateDeepConfig(),
-                _ => CreateMidConfig()
+                SpawnContext.CaveShallow => _SharedShallowConfig,
+                SpawnContext.CaveMid => _SharedMidConfig,
+                SpawnContext.CaveDeep => _SharedDeepConfig,
+                _ => _SharedMidConfig
             };
         }
     }

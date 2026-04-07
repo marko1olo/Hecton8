@@ -45,9 +45,12 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using Hecton8.Audio;
+using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -58,6 +61,13 @@ namespace Hecton8.Audio
     [DefaultExecutionOrder(-4000)] // После FluidEngine (-5000), до большинства систем
     public sealed class AcousticZoneController : MonoBehaviour, ITickable
     {
+        private enum AcousticZoneState : byte
+        {
+            Surface = 0,
+            Underwater = 1,
+            Interior = 2
+        }
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -69,6 +79,17 @@ namespace Hecton8.Audio
         {
             _instance = null;
             OnAcousticZoneChanged = null;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureRuntimeInstance()
+        {
+            if (!Application.isPlaying || _instance != null || GameTickManager.Instance == null)
+                return;
+
+            // COLD ALLOC: one singleton root in gameplay scenes that already have GameTickManager.
+            GameObject runtimeRoot = new GameObject("AcousticZoneController_Root");
+            runtimeRoot.AddComponent<AcousticZoneController>();
         }
 
         public static AcousticZoneController Instance
@@ -114,6 +135,8 @@ namespace Hecton8.Audio
                  "чистые средние, лёгкий механический гул.")]
         [SerializeField] private AudioMixerSnapshot baseInteriorSnapshot;
 
+        [SerializeField] private AudioMixerSnapshot surfaceSnapshot;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — TRANSITION
         // ══════════════════════════════════════════════════════════
@@ -154,6 +177,10 @@ namespace Hecton8.Audio
                  "ищется автоматически по тегу 'Player' при старте.")]
         [SerializeField] private BuoyancyObject playerBuoyancy;
 
+        [Tooltip("Опциональная ссылка на loop AudioSource с подводным эмбиентом на игроке.\n" +
+                 "Если не задана — контроллер лениво ищет первый 2D loop/playOnAwake source под player root.")]
+        [SerializeField] private AudioSource playerUnderwaterAmbientSource;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -161,6 +188,7 @@ namespace Hecton8.Audio
         [Header("── Diagnostics ───────────────────────────────")]
 #pragma warning disable CS0414
         [SerializeField] private bool _debugIsInterior;
+        [SerializeField] private bool _debugIsUnderwater;
         [SerializeField] private bool _debugPlayerFound;
         [SerializeField] private int  _debugTransitionCount;
 #pragma warning restore CS0414
@@ -174,7 +202,7 @@ namespace Hecton8.Audio
         /// Используется для edge detection. -1-like: первый кадр
         /// определяет начальное состояние без запуска перехода.
         /// </summary>
-        private bool _lastIsInterior;
+        private AcousticZoneState _lastZone;
 
         /// <summary>
         /// Флаг: начальное состояние уже определено.
@@ -189,6 +217,10 @@ namespace Hecton8.Audio
         private bool _registeredToTickManager;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
+        private HectonAtmosphereManager _atmosphereManager;
+        private HectonPlayerMovement _playerMovement;
+        private bool _fallbackUnderwaterState;
+        private List<AudioSource> _playerAudioSources;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -198,7 +230,7 @@ namespace Hecton8.Audio
         /// true если игрок сейчас в сухой зоне (интерьер базы).
         /// false если в воде.
         /// </summary>
-        public bool IsInterior => _lastIsInterior;
+        public bool IsInterior => _lastZone == AcousticZoneState.Interior;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -218,6 +250,8 @@ namespace Hecton8.Audio
 
             _stateInitialized = false;
             _registeredToTickManager = false;
+            // COLD ALLOC: reused player audio scan buffer, bounded to player-local hierarchy.
+            _playerAudioSources = new List<AudioSource>(8);
         }
 
         private void OnEnable()
@@ -246,20 +280,7 @@ namespace Hecton8.Audio
                     "Acoustic transitions will NOT work.", this);
             }
 
-            // ── Валидация snapshot'ов ──
-            if (underwaterSnapshot == null)
-            {
-                Debug.LogWarning(
-                    "[AcousticZoneController] UnderwaterSnapshot not assigned! " +
-                    "No audio transition will occur.", this);
-            }
-
-            if (baseInteriorSnapshot == null)
-            {
-                Debug.LogWarning(
-                    "[AcousticZoneController] BaseInteriorSnapshot not assigned! " +
-                    "No audio transition will occur.", this);
-            }
+            ResolvePlayerAmbientSource();
 
             // ── Установка начального snapshot без перехода ──
             ApplyInitialSnapshot();
@@ -332,42 +353,30 @@ namespace Hecton8.Audio
             }
 
             // ── Текущее состояние ──
-            bool isInterior = playerBuoyancy.IsInAir;
+            AcousticZoneState currentZone = ResolveCurrentZone();
 
             // ── Первый кадр: установить начальное состояние без перехода ──
             if (!_stateInitialized)
             {
-                _lastIsInterior = isInterior;
-                _stateInitialized = true;
-                UpdateDiagnostics(isInterior);
+                ApplyInitialSnapshot(currentZone);
                 return;
             }
 
             // ── Edge detection: переход только при СМЕНЕ состояния ──
-            if (isInterior == _lastIsInterior)
+            if (currentZone == _lastZone)
                 return;
 
             // ══════════════════════════════════════════════
             //  TRANSITION DETECTED!
             // ══════════════════════════════════════════════
 
-            _lastIsInterior = isInterior;
-
-            if (isInterior)
-            {
-                // ── ВОДА → СУША (вход в базу / шлюз откачал воду) ──
-                TransitionToInterior();
-            }
-            else
-            {
-                // ── СУША → ВОДА (выход из базы / шлюз заполнился) ──
-                TransitionToUnderwater();
-            }
+            _lastZone = currentZone;
+            ApplyZoneTransition(currentZone);
 
             // ── Событие для внешних систем ──
-            OnAcousticZoneChanged?.Invoke(isInterior);
+            OnAcousticZoneChanged?.Invoke(currentZone == AcousticZoneState.Interior);
 
-            UpdateDiagnostics(isInterior);
+            UpdateDiagnostics(currentZone);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -390,6 +399,8 @@ namespace Hecton8.Audio
         /// </summary>
         private void TransitionToInterior()
         {
+            ApplyAmbientLoopState(AcousticZoneState.Interior);
+
             // ── Snapshot transition ──
             if (baseInteriorSnapshot != null)
             {
@@ -413,8 +424,28 @@ namespace Hecton8.Audio
         ///   Вход в базу: 2.0с (медленная откачка, шипение)
         ///   Выход в воду: 1.5с (быстрое заполнение, бульканье)
         /// </summary>
+        private void TransitionToSurface()
+        {
+            ApplyAmbientLoopState(AcousticZoneState.Surface);
+
+            AudioMixerSnapshot targetSnapshot = surfaceSnapshot != null
+                ? surfaceSnapshot
+                : baseInteriorSnapshot;
+
+            if (targetSnapshot != null)
+            {
+                targetSnapshot.TransitionTo(transitionDuration);
+            }
+
+            Debug.Log(
+                $"[AcousticZoneController] Surface/open air. " +
+                $"Transition: {transitionDuration}s");
+        }
+
         private void TransitionToUnderwater()
         {
+            ApplyAmbientLoopState(AcousticZoneState.Underwater);
+
             // ── Snapshot transition ──
             if (underwaterSnapshot != null)
             {
@@ -439,14 +470,28 @@ namespace Hecton8.Audio
         {
             if (playerBuoyancy == null) return;
 
-            bool isInterior = playerBuoyancy.IsInAir;
-            _lastIsInterior = isInterior;
-            _stateInitialized = true;
+            ApplyInitialSnapshot(ResolveCurrentZone());
+        }
 
-            if (isInterior)
+        private void ApplyInitialSnapshot(AcousticZoneState zone)
+        {
+            _lastZone = zone;
+            _stateInitialized = true;
+            ApplyAmbientLoopState(zone);
+
+            if (zone == AcousticZoneState.Interior)
             {
                 if (baseInteriorSnapshot != null)
                     baseInteriorSnapshot.TransitionTo(0f);
+            }
+            else if (zone == AcousticZoneState.Surface)
+            {
+                AudioMixerSnapshot targetSnapshot = surfaceSnapshot != null
+                    ? surfaceSnapshot
+                    : baseInteriorSnapshot;
+
+                if (targetSnapshot != null)
+                    targetSnapshot.TransitionTo(0f);
             }
             else
             {
@@ -454,11 +499,11 @@ namespace Hecton8.Audio
                     underwaterSnapshot.TransitionTo(0f);
             }
 
-            UpdateDiagnostics(isInterior);
+            UpdateDiagnostics(zone);
 
             Debug.Log(
                 $"[AcousticZoneController] Initial zone: " +
-                $"{(isInterior ? "Interior" : "Underwater")}");
+                $"{zone}");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -502,6 +547,8 @@ namespace Hecton8.Audio
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 playerTransform.TryGetComponent(out playerBuoyancy);
+                playerTransform.TryGetComponent(out _playerMovement);
+                ResolvePlayerAmbientSource(playerTransform);
             }
 
             UpdatePlayerFoundDiagnostic();
@@ -520,19 +567,20 @@ namespace Hecton8.Audio
         /// <param name="isInterior">true = интерьер, false = подводная.</param>
         public void ForceZone(bool isInterior)
         {
-            if (isInterior == _lastIsInterior && _stateInitialized)
+            AcousticZoneState forcedZone = isInterior
+                ? AcousticZoneState.Interior
+                : AcousticZoneState.Underwater;
+
+            if (forcedZone == _lastZone && _stateInitialized)
                 return; // Уже в нужной зоне
 
-            _lastIsInterior = isInterior;
+            _lastZone = forcedZone;
             _stateInitialized = true;
 
-            if (isInterior)
-                TransitionToInterior();
-            else
-                TransitionToUnderwater();
+            ApplyZoneTransition(forcedZone);
 
             OnAcousticZoneChanged?.Invoke(isInterior);
-            UpdateDiagnostics(isInterior);
+            UpdateDiagnostics(forcedZone);
         }
 
         /// <summary>
@@ -542,6 +590,13 @@ namespace Hecton8.Audio
         public void SetPlayerBuoyancy(BuoyancyObject buoyancy)
         {
             playerBuoyancy = buoyancy;
+            _playerMovement = null;
+            playerUnderwaterAmbientSource = null;
+            if (buoyancy != null)
+            {
+                buoyancy.TryGetComponent(out _playerMovement);
+                ResolvePlayerAmbientSource(buoyancy.transform);
+            }
             _stateInitialized = false; // Переинициализация при следующем Tick
             UpdatePlayerFoundDiagnostic();
         }
@@ -551,9 +606,10 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void UpdateDiagnostics(bool isInterior)
+        private void UpdateDiagnostics(AcousticZoneState zone)
         {
-            _debugIsInterior = isInterior;
+            _debugIsInterior = zone == AcousticZoneState.Interior;
+            _debugIsUnderwater = zone == AcousticZoneState.Underwater;
             _debugTransitionCount++;
         }
 
@@ -561,6 +617,127 @@ namespace Hecton8.Audio
         private void UpdatePlayerFoundDiagnostic()
         {
             _debugPlayerFound = playerBuoyancy != null;
+        }
+
+        private AcousticZoneState ResolveCurrentZone()
+        {
+            if (playerBuoyancy != null && playerBuoyancy.IsInDryZone)
+                return AcousticZoneState.Interior;
+
+            HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
+            if (atmosphere != null)
+            {
+                return atmosphere.CurrentState == EnvironmentState.UNDERWATER
+                    ? AcousticZoneState.Underwater
+                    : AcousticZoneState.Surface;
+            }
+
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            if (movement != null)
+            {
+                _fallbackUnderwaterState =
+                    SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                        movement.CurrentDepth,
+                        _fallbackUnderwaterState);
+
+                return _fallbackUnderwaterState
+                    ? AcousticZoneState.Underwater
+                    : AcousticZoneState.Surface;
+            }
+
+            return AcousticZoneState.Underwater;
+        }
+
+        private void ApplyZoneTransition(AcousticZoneState zone)
+        {
+            switch (zone)
+            {
+                case AcousticZoneState.Interior:
+                    TransitionToInterior();
+                    break;
+
+                case AcousticZoneState.Surface:
+                    TransitionToSurface();
+                    break;
+
+                default:
+                    TransitionToUnderwater();
+                    break;
+            }
+        }
+
+        private HectonAtmosphereManager ResolveAtmosphereManager()
+        {
+            if (_atmosphereManager == null)
+                _atmosphereManager = HectonAtmosphereManager.Instance;
+
+            return _atmosphereManager;
+        }
+
+        private HectonPlayerMovement ResolvePlayerMovement()
+        {
+            if (_playerMovement == null && playerBuoyancy != null)
+                playerBuoyancy.TryGetComponent(out _playerMovement);
+
+            return _playerMovement;
+        }
+
+        private AudioSource ResolvePlayerAmbientSource()
+        {
+            if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
+                return playerUnderwaterAmbientSource;
+
+            playerUnderwaterAmbientSource = null;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                ResolvePlayerAmbientSource(playerTransform);
+
+            return playerUnderwaterAmbientSource;
+        }
+
+        private void ResolvePlayerAmbientSource(Transform playerTransform)
+        {
+            if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
+                return;
+
+            if (playerTransform == null || _playerAudioSources == null)
+                return;
+
+            _playerAudioSources.Clear();
+            playerTransform.GetComponentsInChildren(true, _playerAudioSources);
+
+            int count = _playerAudioSources.Count;
+            for (int i = 0; i < count; i++)
+            {
+                AudioSource candidate = _playerAudioSources[i];
+                if (candidate == null || candidate.clip == null)
+                    continue;
+
+                if (!candidate.loop || candidate.spatialBlend > 0.01f)
+                    continue;
+
+                if (!candidate.playOnAwake && !candidate.isPlaying)
+                    continue;
+
+                playerUnderwaterAmbientSource = candidate;
+                return;
+            }
+        }
+
+        private void ApplyAmbientLoopState(AcousticZoneState zone)
+        {
+            AudioSource ambientSource = ResolvePlayerAmbientSource();
+            if (ambientSource == null)
+                return;
+
+            bool shouldBeAudible = zone == AcousticZoneState.Underwater;
+            bool shouldMute = !shouldBeAudible;
+
+            if (ambientSource.mute != shouldMute)
+                ambientSource.mute = shouldMute;
+
+            if (shouldBeAudible && !ambientSource.isPlaying && ambientSource.clip != null)
+                ambientSource.Play();
         }
 
         // ══════════════════════════════════════════════════════════

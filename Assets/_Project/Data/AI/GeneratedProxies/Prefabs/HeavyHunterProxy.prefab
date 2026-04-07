@@ -145,6 +145,12 @@ MonoBehaviour:
   feintBreakDistance: 6
   feintCooldown: 5
   maxHealth: 50
+  radAdapted: 0
+  thermalAdapted: 0
+  ambientDamageRate: 2
+  radiationThreshold: 40
+  minSafeTemp: 2
+  maxSafeTemp: 35
   sleepDistance: 200
   _debugCurrentState: 0
   _debugIsSleeping: 0

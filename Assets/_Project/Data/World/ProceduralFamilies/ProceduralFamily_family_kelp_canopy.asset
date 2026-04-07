@@ -58,12 +58,24 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.92, y: 1.08}
-  - variantId: family.kelp.canopy.final.placeholder
-    prefab: {fileID: 6229660367688394344, guid: 21ee12b11ef56ef45a3f8547c4ab1eea, type: 3}
-    weight: 2
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__crown
+    prefab: {fileID: 4045908697405222912, guid: 5a27dab0fd3a39145862fd9fdf3110fa, type: 3}
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.92, y: 1.12}
+    uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__frond
+    prefab: {fileID: 3908609421256634165, guid: f69118c0fcfe3324a95338903b31b70c, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__fan
+    prefab: {fileID: 1302863577762778687, guid: 98942eb95d0b13149b1611c60f96a0b1, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.06}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Canopy
   gameplayRole: Upper-canopy kelp crowns for route silhouettes, overhead shelter

@@ -179,6 +179,10 @@ namespace Hecton8.EditorTools
             ConfigurePopulationRules(populationDirector);
             ConfigureProceduralFill(proceduralFillDirector);
             WorldProceduralFinalVariantAuthoring.ApplyFirstWave();
+            WorldProceduralFloraTextureAuthoring.Apply();
+            WorldProceduralFloraMaterialAuthoring.Apply();
+            WorldProceduralFloraBakedStarterGenerator.Generate();
+            WorldProceduralFloraFinalVariantAuthoring.ApplyBakedFloraFinals();
             WorldProceduralPlaceholderAuthoring.RebuildPlaceholderFinalVariants();
 
             if (objectPoolManager != null)

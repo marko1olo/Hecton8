@@ -58,12 +58,24 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.92, y: 1.08}
-  - variantId: family.coral.plate.final.placeholder
-    prefab: {fileID: 1010151544191109893, guid: cfa5e8a3ca3ae10458db4ce8f98b7cc3, type: 3}
-    weight: 2
+  - variantId: family.coral.plate.final.flora.gen_family_coral_plate__ledge
+    prefab: {fileID: 1670628547940789094, guid: 5cf0a7fb0256afc48810cebee9a7e26a, type: 3}
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.92, y: 1.08}
+    uniformScaleRange: {x: 0.96, y: 1.04}
+  - variantId: family.coral.plate.final.flora.gen_family_coral_plate__shelf
+    prefab: {fileID: 5173967772101553297, guid: d17d28fb82f31e346b0d959920376ce6, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
+  - variantId: family.coral.plate.final.flora.gen_family_coral_plate__stack
+    prefab: {fileID: 5308723780815248229, guid: d5643ac598d22254d809ec77c90536ab, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Plate
   gameplayRole: Layered plate coral ledges for side-light read, route cover and mid-reef

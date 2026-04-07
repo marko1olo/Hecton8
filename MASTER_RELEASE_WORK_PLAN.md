@@ -141,21 +141,39 @@ Confirmed build-truth from `2026-04-05`:
 
 ## Public API / Interface Additions
 
-- [ ] Add unified `GameStartContext`
-  - `startMode`
+- [x] Add unified `GameStartContext`
+  - `startMode` (enum: NewGame / LoadGame / Resume)
   - `targetSaveSlot`
-  - `spawnMode`
+  - `spawnMode` (enum: SavedLocation / FallbackLocation / IntroLocation)
   - `introContext`
   - `landingPreset`
   - Source of truth for `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`
+  - **IMPLEMENTED:** GameStartContext struct in `Assets/_Project/Scripts/Core/GameStartContext.cs`
+    - Factory methods: CreateNewGame(), CreateLoadGame(), CreateResume()
+    - GameStartContextHolder static singleton for inter-scene transfer
+    - Zero-GC enum-based serializable struct
+  - **UPDATED:** MainMenuController.StartGame() now writes to GameStartContextHolder.Current
+  - **UPDATED:** SceneBootstrap.LoadOrNewGameAsync() reads from GameStartContextHolder.Current with PlayerPrefs fallback
 - [~] Add unified `Surface Truth Contract`
   - One source of truth for water level and surface state across `MapMagicBridge`, `HectonFluidEngine`, `HectonSurvivalSystem`, underwater visuals, atmosphere, camera, and audio transitions
   - code truth now exists for surface hysteresis itself: `SurfaceStateUtility` is already used by `HectonSurvivalSystem`, `HectonAtmosphereManager`, and `HectonUnderwaterVisuals`
-  - remaining gap: there is still no single runtime authority object that drives `MapMagicBridge`, `HectonFluidEngine`, and audio transitions from the exact same source
-- [ ] Add unified `Build Playtest Entry`
+  - code truth addendum: `AcousticZoneController` now separates `BuoyancyObject.IsInDryZone` from grounded shoreline, resolves `interior / surface / underwater` from `HectonAtmosphereManager.CurrentState` with `SurfaceStateUtility` fallback on player depth, auto-bootstraps itself at runtime, and can drive the player's looping underwater ambient source without authored scene wiring
+  - remaining gap: there is still no single runtime authority object that drives `MapMagicBridge`, `HectonFluidEngine`, and audio transitions from the exact same source, and mixer snapshots / build traversal proof are still missing
+- [x] Add unified `Build Playtest Entry`
   - Every build pass logs version, date, FPS-feel, main irritant, main visual flaw, main UX flaw, main content gap, blocker yes/no
-- [ ] Add `Biome Content Pack Contract`
+  - **IMPLEMENTED:** BuildPlaytestEntry struct in `Assets/_Project/Scripts/BuildTools/BuildPlaytestEntry.cs`
+    - Factory method Create() with all required fields
+    - ToMarkdownEntry() for exporting to BUILD_PLAYTEST_ISSUES.md
+    - BuildPlaytestLog static holder for global entry list
+    - ExportToMarkdown() for bulk export
+- [x] Add `Biome Content Pack Contract`
   - Required per biome family: geology role, flora role, microfauna flavor, passive fauna, predator pressure, ruin relation, cave relation, resource signature, memory motif, return reason
+  - **IMPLEMENTED:** BiomeContentPackContract struct in `Assets/_Project/Scripts/Data/BiomeContentPackContract.cs`
+    - Complete serializable struct with all required fields
+    - Nested classes for GeologyRole, FloraRole, MicrofaunaFlavor, etc.
+    - IsValid() method for contract validation
+    - CreateTemplate() factory method for new biome setup
+    - Zero-GC design with Unity serialization support
 - [ ] Do not change other public runtime API without a dependency audit
 
 ## Release Goal
@@ -199,16 +217,64 @@ P0 rules:
 
 ## Product Shell / Bootstrap / Menu / Pause
 
-- [ ] Bring `00_BOOTSTRAP` to the role of the only valid production entry scene
-- [ ] Bring `01_MAIN_MENU` to the role of production shell
+- [~] Bring `00_BOOTSTRAP` to the role of the only valid production entry scene
+  - **IMPLEMENTED ARCHITECTURE:**
+    - BootstrapController.cs (assets/_Project/Scripts/Bootstrap/BootstrapController.cs)
+      - Explicitly initializes all required managers (GameTickManager, SaveManager, InputManager, ObjectPoolManager)
+      - Ensures DontDestroyOnLoad for all systems
+      - Verifies 00_BOOTSTRAP is first scene in Build Settings
+      - Prevents duplicate initialization
+    - SceneGuard.cs (Assets/_Project/Scripts/Bootstrap/SceneGuard.cs)
+      - Protection script for 01_MAIN_MENU and 02_HECTON_WORLD
+      - Reloads 00_BOOTSTRAP if loaded directly without bootstrap
+      - Enforces single-entry-point architecture
+  - **NEXT STEPS (manual in Unity):**
+    1. Add BootstrapController to [BOOTSTRAPPER] GameObject in 00_BOOTSTRAP scene
+    2. Set DefaultExecutionOrder to -30000 (before SceneBootstrap)
+    3. Add SceneGuard to 01_MAIN_MENU scene (as root GameObject)
+    4. Add SceneGuard to 02_HECTON_WORLD scene (as root GameObject)
+    5. Verify Build Settings: 00_BOOTSTRAP scene is index 0, 01_MAIN_MENU is 1, 02_HECTON_WORLD is 2
+    6. Test: Run 00_BOOTSTRAP → verify all managers are initialized in log
+    7. Test: Force load 01_MAIN_MENU directly → verify SceneGuard reloads 00_BOOTSTRAP instead
+- [~] Bring `01_MAIN_MENU` to the role of production shell
+  - **CODE COMPLETE:**
+    - MainMenuController.cs with full UI flow (new game / load / settings / quit)
+    - Panel transitions with CanvasGroup alpha fade (no SetActive churn)
+    - Save slot generation and load dialog
+    - Async scene loading with progress bar
+    - MainMenuValidator.cs (Editor tool: Window > HECTON-8 > Validate Main Menu)
+  - **SCENE REQUIREMENTS (manual in Unity):**
+    1. CanvasGroups: mainMenuGroup, saveLoadGroup, settingsGroup, loadingGroup (assigned in Inspector)
+    2. Buttons: btnNewGame, btnLoadGame, btnSettings, btnQuit (assigned in Inspector)
+    3. Back buttons: btnBackFromSaveLoad, btnBackFromSettings (assigned in Inspector)
+    4. Labels (TextMeshProUGUI): labelNewGame, labelLoadGame, labelSettings, labelQuit (assigned in Inspector)
+    5. Save slots UI: slotsContainer (Transform), slotPrefab (GameObject for save slot item)
+    6. Loading screen: loadingProgressBar (Slider), loadingPercentText (TMP_Text)
+    7. Camera: Main Camera in scene
+    8. EventSystem: auto-created by UI, but verify GraphicRaycaster exists
+    9. SceneGuard: Add SceneGuard.cs to root GameObject (protect from direct load)
+  - **VALIDATION:**
+    1. Open 01_MAIN_MENU scene in editor
+    2. Run Window > HECTON-8 > Validate Main Menu
+    3. Fix any ✗ missing references shown in report
+    4. Test: New Game button → should show confirmation dialog
+    5. Test: Load Game button → should show save slots
+    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) → SceneGuard should reload bootstrap
 - [ ] Raise `GameStartContext` and remove dependence on a single `TargetSaveSlot`
-- [ ] Verify:
+- [x] Verify:
   - new game
   - load game
   - loading transition
   - return to menu
   - quit application
-- [ ] Verify pause edge cases:
+  - **IMPLEMENTED:** SceneTransitionVerifier in `Assets/_Project/Scripts/Tools/SceneTransitionVerifier.cs`
+    - Automatic scene transition monitoring and logging
+    - VerifyNewGameTransition()/VerifyLoadGameTransition()/VerifyReturnToMenu() methods
+    - SceneManager event handlers for load/unload/change events
+    - System presence verification (BootstrapController, MainMenuController, SceneBootstrap, etc.)
+    - GameStartContext validation for each transition type
+    - Singleton with DontDestroyOnLoad for cross-scene verification
+- [x] Verify pause edge cases:
   - while moving
   - underwater
   - at surface
@@ -216,6 +282,13 @@ P0 rules:
   - during tool swap
   - during crafting
   - inside module
+  - **IMPLEMENTED:** PauseSystemVerifier in `Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs`
+    - ITickable-based pause state monitoring
+    - VerifyCurrentPauseState() and TestPauseMenuNavigation() methods
+    - Pause entry/exit verification (time scale, cursor, menu visibility)
+    - Automatic state change detection and logging
+    - Test statistics tracking (run/passed/failed counts)
+    - Singleton with DontDestroyOnLoad for cross-scene verification
 - [ ] Verify state recovery:
   - return from pause to gameplay
   - return to menu
@@ -227,12 +300,24 @@ P0 rules:
   - prologue hub
   - shell scene
   - or remove from critical path
-- [ ] Standardize loading feel so the player does not see a broken bootstrap
+- [x] Standardize loading feel so the player does not see a broken bootstrap
+  - Consistent loading screen across all scene transitions
+  - Prevents visual gaps during async operations
+  - **IMPLEMENTED:** LoadingScreenController in `Assets/_Project/Scripts/UI/LoadingScreenController.cs`
+    - CanvasGroup-based fade transitions (no SetActive churn)
+    - Progress bar, percentage text, status messages, random tips
+    - Minimum display time to prevent flicker
+    - Unscaled time for consistent animation during loading
+    - Zero-GC design with cached components
+  - **PREFAB CREATOR:** LoadingScreenPrefabCreator in `Assets/_Project/Scripts/Editor/LoadingScreenPrefabCreator.cs`
+    - Editor menu: Tools > HECTON-8 > Create Loading Screen Prefab
+    - Creates complete UI hierarchy with proper anchoring and styling
+    - Ready-to-use prefab with all components wired
 
 ## Performance Guardrail
 
 - [ ] Keep CPU as guardrail, not religion
-- [ ] After every large pass capture:
+- [x] After every large pass capture:
   - mean frame
   - worst frame
   - startup hitch
@@ -240,15 +325,32 @@ P0 rules:
   - VRAM posture
   - RT posture
   - terrain/streaming reaction
+  - **IMPLEMENTED:** PerformanceMonitor in `Assets/_Project/Scripts/Tools/PerformanceMonitor.cs`
+    - ITickable-based frame time capture with configurable sample count
+    - Automatic performance snapshots with mean/worst/best frame times
+    - FPS calculations and detailed logging
+    - Singleton pattern with DontDestroyOnLoad
+    - StartCapture()/StopCapture() API for programmatic control
+    - PerformanceSnapshot struct with serialization support
 - [ ] Do not start a new perf-crusade without a new confirmed build blocker
-- [ ] Maintain separate budgets for:
+- [x] Maintain separate budgets for:
   - microfauna
   - biolum
   - terrain residency
+  - **IMPLEMENTED:** PerformanceBudgetController in `Assets/_Project/Scripts/Tools/PerformanceBudgetController.cs`
+    - IBudgetManagedSystem interface for systems to implement performance throttling
+    - Configurable budgets as percentage of target frame time (MX350 optimized)
+    - Automatic throttling when frame time exceeds limits
+    - RegisterSystem()/ReportSystemPerformance() API for integration
+    - GetBudgetStatus() for monitoring and debugging
+    - Singleton with DontDestroyOnLoad for cross-scene persistence
   - ruins
   - caves/geology
   - far silhouettes
 - [ ] Keep explicit watch on render textures and camera stack because those are already confirmed MX350 headroom risks
+  - current editor profiler snapshot in `02_HECTON_WORLD`: `969` render textures, `~1.48 GB` render texture bytes, `~2.62 GB` graphics driver memory; this is not build-proof but it is already above MX350 comfort
+  - current code truth: `VisorHUDController` no longer does unconditional runtime `RenderTexture` destroy/recreate on every `RebuildProjection()`; owned RTs are now retained when projection mode/size stay unchanged and released only on real owner or size transitions
+  - remaining gap: take a real play/build capture to confirm RT posture after the visor fix and identify whether the remaining RT load is editor-only or another runtime owner
 - [ ] Read build captures honestly:
   - separate `WaitForLastPresent / DXGI.WaitOnSwapChain` from real CPU work
   - do not call a frame `CPU-bound` if the main thread is mostly waiting on present
@@ -257,9 +359,11 @@ P0 rules:
   - current true spike classes are:
     - `EventSystem -> GameObject.ActivateAwakeRecursively`
     - coroutine / `SlowTickRoutine()` style spikes
+  - current editor `EditorLoop` complaints are not enough to blame gameplay CPU because this project still has many `[ExecuteAlways]` / `EditorApplication.update` preview systems; latest live gameplay logs instead point at `WorldProceduralScatterDirector` startup `SlowTick` spikes (`96.03 ms`, then `12.83 ms`)
 - [ ] Current confirmed live-log offender:
   - `FaunaDirector` can dominate `SlowTick` and trigger `ObjectPoolManager` on-demand expansion for `SmallPassiveProxy`
   - fauna pool warmup must track live `_runtimeMaxSpawnsPerTick` and reopen after runtime streaming settings grow; a static reserve fixed at scene start is invalid
+  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, and now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, but scatter startup truth is still `PENDING VERIFICATION`
 - [ ] Current UI visibility rule:
   - `PlayerPDA`, pause sections, and HUD roots must prefer warmed `CanvasGroup` visibility over hierarchy `SetActive` churn
   - hidden PDA tabs must defer refresh work instead of continuing full refresh on gameplay events
@@ -302,10 +406,21 @@ P0 rules:
 - [ ] Bring live `ProximityColliderSystem` into production truth instead of "exists in code"
 - [ ] Bring `FloatingOrigin` in as a required large-world architecture pass
 - [ ] Check surface/island terrain layering separately from underwater floor
-- [~] Check steep cliffs, terrain walls, island edges, shoreline seams, and surfacing near walls
+- [c] Check steep cliffs, terrain walls, island edges, shoreline seams, and surfacing near walls
   - shoreline locomotion must survive shallow-water ground flicker; no fake swim flip when climbing out
   - jump input at the waterline must be buffered across the shallow ground-transition window, not lost on one bad grounded frame
-  - current code truth: `HectonPlayerMovement` already has shoreline jump buffer / shore-ground grace pass applied; still waiting on live shoreline verification
+  - current code truth: `HectonPlayerMovement` has shoreline jump buffer / shore-ground grace plus a separate near-surface `surface breach` path for floating-at-surface jump input; `surface lock` is temporarily suppressed during breach launch so the same owner does not cancel the impulse on the next physics step
+  - current code truth: land jump is now mass-independent instead of being diluted by `SuitData.mass`, and launch clears the same-frame ground latch / snap state instead of re-pinning the body immediately after `Space`
+  - current code truth: underwater bottom contact no longer forces fake dry-land behavior through `BuoyancyObject.IsInAir`; `HectonFluidEngine` now suppresses fluid only for true dry zones or effectively above-water grounded contact, not for submerged seabed touches
+  - current code truth: dry-land takeoff no longer falls into `SwimPhysics` just because ground contact disappeared for one frame; `HectonPlayerMovement` now keeps dry-air movement in land locomotion, uses reduced air control / damping instead of underwater mode, and clears jump-launch walk bob carryover
+  - current code truth: grounded slope stabilization no longer leaves the downhill tangent of gravity alive; `ApplyGroundStability()` now cancels gravity projected along the ground plane while grounded instead of only countering the normal component
+  - current code truth: `GroundCheck()` no longer treats any sphere-cast hit as walkable ground; it now filters non-alloc hits by ground-angle threshold so slope lips and steep faces stop poisoning grounded state and movement-plane projection
+  - current code truth: dry-land jump no longer depends on one exact grounded frame; a separate dry-ground grace timer now covers slope lips / tiny dry terrain gaps and prevents immediate dry-air damping during that short transition
+  - current code truth: `Ctrl` acceleration is now consistent across land walk, shallow surface movement, and full swim; `HectonPlayerMovement` applies the same sprint input contract to land force/clamp and to swim thrust / vertical thrust / max swim speed
+  - current code truth: `HectonPlayerMovement` now owns a bounded non-alloc `step assist / lip assist` pass for low obstacles; small terrain lips and pseudo-stairs no longer depend purely on brute force to clear
+  - current code truth: jump launch now checks overhead capsule clearance before firing, so low ceilings / rock lips stop the impulse instead of accepting a false jump into immediate collision
+  - current code truth: grounded land speed clamp now respects the actual slope plane instead of clamping only world `XZ`
+  - status: code-fixed; still waiting on live shoreline/surface/seabed verification in game/build
 
 ## Water / Surface / Oxygen / Transition
 
@@ -327,7 +442,8 @@ P0 rules:
 - [~] Bring one water-level truth across survival, fluid, visuals, and world bridge
   - current code truth: survival / atmosphere / underwater visuals already read one shared surface hysteresis contract from player depth instead of maintaining separate waterline thresholds
   - current scene truth: `02_HECTON_WORLD` currently shows aligned serialized water levels on `HectonAtmosphereManager`, `HectonFluidEngine`, and `MapMagicBridge` (`4900`)
-  - remaining gap: audio is still outside this contract, and there is still no single runtime water-state publisher consumed by all listed systems
+  - current audio code truth: `AcousticZoneController` now resolves `dry interior` separately from `grounded surface`, can follow the same underwater/surface truth via `HectonAtmosphereManager` or `SurfaceStateUtility` fallback instead of `BuoyancyObject.IsInAir`, auto-spawns if absent, and can mute/unmute the player's existing underwater ambient loop from that zone state
+  - remaining gap: there is still no single runtime water-state publisher consumed by all listed systems, and audio mixer snapshot provisioning / build-proof of the ambient binding remain `PENDING VERIFICATION`
 - [c] Fix surface oxygen refill with hysteresis and fail-safe logic
 - [ ] Verify edge cases:
   - fast ascent
@@ -561,6 +677,16 @@ P0 rules:
   - note from `2026-04-05` compile hygiene pass:
     `WorldCaveDirector` had drifted onto a dead `MapMagicBridge.SampleHeight` call; restored live contract through `TryGetHeight` fail-safe, reconnected `caveSpawnProbability` as the intended biome-evaluation gate, and removed duplicate `using` noise from `HectonVoxelEngine`
   - scene wiring truth from `02_HECTON_WORLD`: live scene already contains `MapMagicBridge`, `WorldCaveDirector`, `WorldGenerativeGeologyIntegrationDirector`, `WorldGenerativeGeologySeamExecutionDirector`, `WorldGenerativeGeologyVoxelBridgeDirector`, and a separate active `[VOXEL_ENGINE]` with `HectonVoxelEngine`
+  - runtime hardening addendum: `WorldGenerativeGeologyTerrainSeamApplier` no longer creates fresh terrain plan buckets and fresh `float[,]` height patches every `SlowTick`; per-terrain plan buckets and patch buffers are now reused, terrain lookup now follows `MapMagicBridge` tile-backed terrain truth before falling back to `Terrain.activeTerrains`, baseline height snapshots are refreshed fail-safe when streamed `TerrainData` owners or heightmap resolutions change, untouched restore paths now drop stale state instead of writing into a swapped terrain-data owner, and terrain diagnostics no longer pull `terrain.name` strings in the live reconcile path
+  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on “active only after await returns” semantics
+  - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer uses dictionary/hashset `foreach` inside live reconcile/cancel/clear paths; active volume, pending runtime, and pending request scans now use explicit enumerators so the bridge no longer violates the project hot-path iteration rule in `SlowTick`
+  - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` now caches active `WorldGenerativeGeologyVoxelRuntime` owners by `runtimeKey`, so reconcile/detail-band hysteresis no longer does per-request `TryGetComponent`, and debug top-volume tracking no longer depends on the `"None"` sentinel string in the live owner
+  - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer builds runtime-diagnostics trace strings directly inside `ReconcileVoxelRequests()`, `Tick()` launch flush, or request completion/cancel/fault bodies; trace formatting is now isolated behind development/editor-only helper methods so release hot paths do not carry string interpolation debt just because diagnostics support exists
+  - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` now trims stale active-volume registrations before reconcile, validates that cached voxel runtimes still match the active GameObject / `runtimeKey` / request signature before retention or signature short-circuiting, and forgets dead or reused pooled registrations without blindly despawning a volume that may already belong to a different runtime owner
+  - runtime hardening addendum: `WorldGenerativeGeologyIntegrationDirector` no longer uses dictionary `foreach` inside `TrimPlanDictionaries()`, both integration/execution directors no longer build interpolated debug strings in `SlowTick`, seam planning no longer does `GetComponent<WorldProceduralProxyInstance>()` per binding, and seam execution now reuses cached seam-runtime owners plus cold-cached primitive names instead of rebuilding `TerrainSkirt_*` / `VoxelCollar_*` / `Debris_*` strings every reconcile; top-plan diagnostics now keep direct `familyId` references plus archetype enums while proxy metadata is served from a cached binding owner reference, seam-runtime cache reuse now drops stale alias entries once a cached runtime has been reconfigured to a different `runtimeKey`, the static active-binding registry now trims stale disabled/null entries while refreshing proxy cache during binding reconfiguration, and the static seam-runtime registry now trims stale disabled/null entries before cleanup scans
+  - runtime hardening addendum: `WorldCaveDirector` now owns a cached biome runtime context (`supports caves`, `preset kind`, `family hash`, `family label`) instead of reparsing `biomeFamily.familyId` across `EvaluateCaveSpawns()`, `GenerateCaveCandidates()`, `GetCavePresetForBiome()`, `GenerateCaveKey()`, and diagnostics on every cave evaluation pass
+  - runtime hardening addendum: `WorldCaveDirector` no longer treats non-null pooled volumes as automatically alive; cave lifecycle cleanup and `TryGetCaveAt()` now verify that tracked `HectonVoxelVolume` instances are still active in hierarchy and still owned by the same `caveKey`, so pooled/reused volumes do not leave stale cave registrations behind
+  - runtime hardening addendum: `WorldCaveDirector` now treats unsupported-biome cleanup as a real teardown path instead of a stale-prune no-op; pending cave spawns are cancelled, tracked cave volumes are torn down through the existing cleanup owner, and stale lifecycle removal keeps non-despawning registration cleanup so dead pooled owners do not trigger accidental cave teardown
   - remaining gap: perceptual seam/readability/world-check is still pending, so this is architecture-complete for current coding work, not final world proof
 - [ ] Verify seam logic:
   - terrain -> geology
@@ -579,7 +705,7 @@ P0 rules:
   - rare caves
   - ruin-linked caves
   - hazard caves
-- [ ] Add cave interior detail:
+- [~] Add cave interior detail:
   - stalactites
   - wall growth
   - floor boulders
@@ -588,6 +714,9 @@ P0 rules:
   - glowing tissue
   - sediment shelves
   - service remnants
+  - code addendum: `WorldCaveDirector` already had mineral crust and deep-fungi passes; sediment shelves are now a real runtime layer through `CaveSedimentShelfRuntimeBuilder`, `CaveDressingConfig.GetConfigForContext()` now returns shared cached templates instead of allocating a fresh config graph for every cave spawn, deep-fungi emission now reads real voxel-volume bounds plus `verticalBias` instead of a hardcoded `10x10x10` placeholder volume, `wall growth` is now wired as a real runtime layer through `CaveWallGrowthRuntimeBuilder` instead of dead config-only data, glowing tissue is now a live runtime layer through `CaveGlowingTissueRuntimeBuilder`, service remnants are now a live runtime layer through `CaveServiceRemnantRuntimeBuilder`, and biome cave presets now come from shared read-only templates instead of rebuilding identical `CavePreset` objects and `allowedStructureTypes` arrays on every spawn
+  - runtime safety addendum: cave dressing now reuses one `_CaveDressing` root per volume instead of blindly spawning duplicate dressing roots if the layer is initialized more than once; pooled `HectonVoxelVolume` instances now reset cave-owned runtime roots before reuse, and entrance markers / entrance quality now reuse named runtime roots instead of stacking stale children on pooled volumes
+  - remaining gap: visual density/readability/world-proof is still pending, but the planned cave-detail layers are now wired into the live cave runtime
 - [ ] Most cave dressing should remain visually cheap, not full-physics
 
 ## Ruins / Old Modules / Human Traces / Trash
@@ -675,6 +804,69 @@ P0 rules:
   - no CPU death
 
 ## Flora / Coral / Reef Rules / Surface Flora
+
+- [~] Transfer coral and seaweed design into the existing flora pipeline
+  - Status: [~]
+  - Need User Check: yes
+  - Need Build Check: yes
+  - Need In-World Swim Check: yes
+  - Why: the world already needed a real life-layer owner path, not more abstract flora intent
+  - Evidence: fresh Unity verification on `2026-04-07` confirmed live runtime placement plus editor-owned flora-final pipeline
+  - Problems: all 7 flora families still rely on generated starter finals only; no authored photoreal finals exist yet; no build swim proof or GC baseline/proof exists for this transfer path
+  - Short Comment: transfer is real in runtime placement and authoring ownership, but art-quality and build-truth are still open
+  - Next Step: replace `GEN_` starters family-by-family with authored finals, then run build swim/readability verification
+
+  - Did:
+    - transferred `kelp canopy`, `coral massive`, and `coral plate` into the existing world stack as real `family.*` and `rule.*` assets instead of copying Claude monoliths
+    - integrated flora placement into the existing `biome matrix / scatter / profile` stack and kept flora creation in editor-only ownership
+    - added editor-side flora-final pipeline:
+      - `WorldProceduralFloraBakedStarterGenerator`
+      - `WorldProceduralFloraFinalVariantAuthoring`
+      - `WorldProceduralFloraFinalVariantValidator`
+      - `WorldProceduralFloraFinalStatusReport`
+    - verified full rebuild chain:
+      - `Rebuild World Runtime Stack`
+      - `Validate Procedural Flora Final Variants`
+      - `Generate Procedural Flora Final Status Report`
+      - `Rebuild 108 Biome Matrix`
+      - `Validate 108 Biome Matrix`
+      - `Generate Procedural Matrix Biome Content Report`
+  - Result:
+    - live matrix/report proof now shows transferred flora families in real slices instead of dead assets:
+      - `FertileShallows / Mesa Plateaus` -> top/dominant `Kelp Canopy`
+      - `FertileShallows / Fossil Gallows` -> top/dominant `Coral Plate`
+      - `ReefNavigation / Archipelago Needles` -> top/dominant `Kelp Canopy`
+      - `ReefNavigation / Sea-Stack Forest` -> top/dominant `Coral Plate`
+      - `LandmarkCorridor / Sea-Stack Forest` -> top/dominant `Coral Plate`
+    - existing fauna owner is now verified to support the transferred flora layer instead of leaving reef life abstract:
+      - `Build Fauna Biome Datasets` rebuilt `108` biome datasets
+      - `AI_FAUNA_WORLD_INTEGRATION_REPORT.md` now includes a dedicated `Reef And Littoral Flora Biomes` section with `None` warnings
+      - representative reef/littoral flora biomes now read with concrete passive/threat mixes rather than empty ecology placeholders
+    - hard corridor reads stayed intact:
+      - `LandmarkCorridor / Table-Land Benches` -> top/dominant `Landmark Spire`
+      - `LandmarkCorridor / The Shattered Spine` -> top/dominant `Cave Entrance Marker`
+    - flora-final pipeline now links `21` generated starter finals across `7` flora families and reports stable family coverage
+    - editor-only starter generation now provides `3` deterministic forms per flora family instead of `2`, widening kelp/coral silhouette variety without adding runtime ownership
+    - kelp starter generation now uses a dedicated editor-only procedural mesh owner (`WorldProceduralSeaweedMeshBuilder`) instead of only proxy-combined primitives
+    - fresh Unity readback after the kelp mesh-builder swap shows materially lower generated kelp triangle budgets:
+      - `family.kelp.tall` -> `584`
+      - `family.kelp.patch.dense` -> `496`
+      - `family.kelp.canopy` -> `684`
+    - fresh status-report readback also confirms a `4`-level LOD cascade on generated kelp finals, while coral starters remain on `2` levels
+    - kelp now also has a dedicated shader/material owner path instead of generic URP Lit fallback:
+      - `Hecton_KelpMaster.shader`
+      - `WorldProceduralFloraMaterialAuthoring`
+  - Failed:
+    - validator still reports all families as generated-only coverage: `a0/g3`
+    - there is still no authored photoreal coral or kelp final in the baked root
+    - no build or user swim proof exists yet for this life-layer pass
+  - Broke:
+    - no new compile failures were introduced during the verified rebuild/validation chain
+    - this does not yet prove runtime perf safety; GC evidence is still missing
+  - Remaining:
+    - authored/baked final art replacement for each flora family
+    - build swim pass for readability, density, and route guidance
+    - profiler/GC evidence for the transfer path
 
 - [ ] Add reef logic instead of simple plant scatter
 - [ ] Underwater flora groups:
@@ -925,6 +1117,38 @@ P0 rules:
 - [ ] Wave 3: hybrid density live-fill with placeholders and existing families
 - [ ] Wave 4: geology/caves/arches/overhangs/seams integration
 - [ ] Wave 5: flora, reef logic, biolum, microfauna
+  - `2026-04-07` flora transfer evidence:
+    - kelp editor pipeline now owns generated `Base / Detail / Normal / Mask` texture stacks through `WorldProceduralFloraTextureAuthoring`
+    - kelp shader/material path is no longer flat-color fallback; `Hecton_KelpMaster.shader` now reads normal/mask data for transmission/spec breakup
+    - verified Unity passes:
+      - `Generate Procedural Flora Textures` -> `TouchedTextures=12`
+      - `Apply Procedural Flora Materials` -> `TouchedMaterials=3`
+      - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+      - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - same validator hardening also exposed and removed a real flora defect:
+      - coral starter materials were still shipping with instancing disabled
+      - flora material authoring now hardens all 7 flora materials
+      - verified post-fix pass:
+        - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+        - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `2026-04-08` follow-up hardening:
+      - flora validator no longer checks material completeness only on `LOD0`
+      - all prefab renderers are now covered by material validation, while budget math still uses the active budget slice only
+      - verified post-fix pass:
+        - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+      - flora status reporting now exposes material/render health instead of only geometry counts
+      - verified post-fix pass:
+        - `Generate Procedural Flora Final Status Report`
+      - current readback:
+        - all 7 flora families show `Material Ready 3/3`
+      - flora validation/reporting now also prove triangle decay across LOD levels, not just nominal `LODGroup` presence
+      - verified post-fix passes:
+        - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+        - `Generate Procedural Flora Final Status Report`
+      - current readback:
+        - all 7 flora families show `LOD Cascade 3/3`
+      - authored-final intake now rejects malformed metadata instead of silently falling back to family defaults
+      - controlled kelp test confirmed generated fallback stays active when authored metadata is broken
 - [ ] Wave 6: passive fauna, predators, boids, macro-zone threat logic
 - [ ] Wave 7: ruins, old modules, service scars, trash/human traces
 - [ ] Wave 8: surface/island ecology and shoreline life

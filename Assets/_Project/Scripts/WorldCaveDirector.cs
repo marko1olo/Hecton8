@@ -19,7 +19,9 @@
 // ║  - Provides cave entrance hints for scatter system                        ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Caves;
 using Hecton8.Environment;
@@ -34,6 +36,38 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4035)]
     public sealed class WorldCaveDirector : MonoBehaviour, ISlowTickable
     {
+        private enum CaveBiomePresetKind : byte
+        {
+            Generic = 0,
+            Cliff = 1,
+            Canyon = 2,
+            Abyss = 3
+        }
+
+        private sealed class PendingCaveSpawnState : IDisposable
+        {
+            public CancellationTokenSource Cancellation;
+
+            public void Dispose()
+            {
+                if (Cancellation == null)
+                    return;
+
+                Cancellation.Dispose();
+                Cancellation = null;
+            }
+        }
+
+        private struct CachedBiomeRuntimeContext
+        {
+            public HectonBiomeFamilyProfile Family;
+            public string FamilyId;
+            public string FamilyLabel;
+            public int FamilyHash;
+            public bool SupportsCaves;
+            public CaveBiomePresetKind PresetKind;
+        }
+
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
@@ -50,6 +84,7 @@ namespace Hecton8.World
 
         [Header("Diagnostics")]
         [SerializeField] private int _debugActiveCaves;
+        [SerializeField] private int _debugPendingCaves;
         [SerializeField] private string _debugCurrentBiome = "None";
         [SerializeField] private string _debugCurrentZone = "None";
         [SerializeField] private bool _debugReady;
@@ -57,8 +92,49 @@ namespace Hecton8.World
         private bool _registeredToTickManager;
         private readonly HashSet<long> _activeCaveKeys = new HashSet<long>();
         private readonly Dictionary<long, CaveInstance> _caveInstances = new Dictionary<long, CaveInstance>(32);
+        private readonly Dictionary<long, PendingCaveSpawnState> _pendingCaveSpawns = new Dictionary<long, PendingCaveSpawnState>(16);
         private readonly List<Vector3> _candidateBuffer = new List<Vector3>(8); // COLD ALLOC: buffered cave candidates, capped by maxCavesPerBiome.
+        private readonly List<long> _staleCaveKeyBuffer = new List<long>(16); // COLD ALLOC: stale cave cleanup buffer, capped by active cave count around player.
+        private readonly List<long> _pendingCaveKeyBuffer = new List<long>(16); // COLD ALLOC: buffered pending cave keys for deterministic cancel/cleanup without mutating dictionaries during enumeration.
+        private CachedBiomeRuntimeContext _cachedBiomeRuntimeContext;
         private float _lastEvaluationTime = float.NegativeInfinity;
+        private CancellationTokenSource _lifetimeCancellation;
+        private static readonly int _CrustIntensityId = Shader.PropertyToID("_CrustIntensity");
+        private static readonly int _CrustColorId = Shader.PropertyToID("_CrustColor");
+        private static readonly int _CrustRoughnessId = Shader.PropertyToID("_CrustRoughness");
+        private static MaterialPropertyBlock _CaveSurfacePropertyBlock;
+        private static readonly CaveStructureType[] _CliffStructureTypes =
+        {
+            CaveStructureType.Stalactite,
+            CaveStructureType.Column,
+            CaveStructureType.Stalagmite
+        };
+        private static readonly CaveStructureType[] _CanyonStructureTypes =
+        {
+            CaveStructureType.Boulder,
+            CaveStructureType.Arch,
+            CaveStructureType.Bridge,
+            CaveStructureType.Block,
+            CaveStructureType.Wall
+        };
+        private static readonly CaveStructureType[] _AbyssStructureTypes =
+        {
+            CaveStructureType.Column,
+            CaveStructureType.Arch,
+            CaveStructureType.Stalactite,
+            CaveStructureType.Stalagmite,
+            CaveStructureType.Wall
+        };
+        private static readonly CaveStructureType[] _GenericStructureTypes =
+        {
+            CaveStructureType.Stalactite,
+            CaveStructureType.Boulder,
+            CaveStructureType.Column
+        };
+        private static readonly CavePreset _CliffPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Cliff);
+        private static readonly CavePreset _CanyonPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Canyon);
+        private static readonly CavePreset _AbyssPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Abyss);
+        private static readonly CavePreset _GenericPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Generic);
 
         /// <summary>Represents an active cave instance in the world.</summary>
         public struct CaveInstance
@@ -72,12 +148,16 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            if (_CaveSurfacePropertyBlock == null)
+                _CaveSurfacePropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared cave-surface block for dressing overlays.
+
             ResolveReferences();
             UpdateDiagnostics();
         }
 
         private void OnEnable()
         {
+            EnsureLifetimeCancellation();
             if (GameTickManager.Instance != null && !_registeredToTickManager)
             {
                 GameTickManager.Instance.Register((ISlowTickable)this);
@@ -103,10 +183,14 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+
+            CancelLifetimeCancellation();
+            CancelAllPendingSpawns();
         }
 
         public void SlowTick()
         {
+            RefreshCaveLifecycleState();
             EvaluateCaveSpawns();
         }
 
@@ -127,10 +211,9 @@ namespace Hecton8.World
             if (biomeFamily == null)
                 return;
 
-            // Determine if this biome supports caves
-            bool biomeSupportsCaves = EvaluateBiomeCaveSupport(biomeFamily);
+            RefreshBiomeRuntimeContext(biomeFamily);
 
-            if (!biomeSupportsCaves)
+            if (!_cachedBiomeRuntimeContext.SupportsCaves)
             {
                 // Clean up caves from unsupported biomes
                 CleanupUnsupportedCaves();
@@ -138,26 +221,23 @@ namespace Hecton8.World
             }
 
             // Generate cave spawn candidates
-            List<Vector3> candidates = GenerateCaveCandidates(biomeFamily, currentZone);
+            List<Vector3> candidates = GenerateCaveCandidates(currentZone);
 
             // Spawn caves at candidates
             foreach (Vector3 candidate in candidates)
             {
-                TrySpawnCaveAt(candidate, biomeFamily);
+                TryQueueCaveSpawn(candidate, biomeFamily);
             }
 
             UpdateDiagnostics();
         }
 
-        private bool EvaluateBiomeCaveSupport(HectonBiomeFamilyProfile biomeFamily)
+        private static bool EvaluateBiomeCaveSupport(string biomeId)
         {
-            // TODO: Read from biome profile cave support flags
-            // For now, enable caves in certain biomes
-            string biomeId = biomeFamily.familyId;
             return biomeId.Contains("cliff") || biomeId.Contains("canyon") || biomeId.Contains("deep") || biomeId.Contains("abyss");
         }
 
-        private List<Vector3> GenerateCaveCandidates(HectonBiomeFamilyProfile biomeFamily, WorldZoneAnchor zone)
+        private List<Vector3> GenerateCaveCandidates(WorldZoneAnchor zone)
         {
             _candidateBuffer.Clear();
 
@@ -168,7 +248,7 @@ namespace Hecton8.World
 
             // Generate candidates around player within search radius
             // Use deterministic seeding based on biome and position
-            int biomeSeed = biomeFamily.familyId.GetHashCode();
+            int biomeSeed = _cachedBiomeRuntimeContext.FamilyHash;
             Unity.Mathematics.Random rng = new Unity.Mathematics.Random((uint)(biomeSeed + Mathf.FloorToInt(playerPos.x / 100f) + Mathf.FloorToInt(playerPos.z / 100f)));
             float spawnChance = math.saturate(caveSpawnProbability);
 
@@ -215,243 +295,244 @@ namespace Hecton8.World
             return _candidateBuffer;
         }
 
-        private async void TrySpawnCaveAt(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
+        private void TryQueueCaveSpawn(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
         {
-            // Generate unique key
             long caveKey = GenerateCaveKey(position, biomeFamily);
 
-            if (_activeCaveKeys.Contains(caveKey))
-                return; // Already exists
+            if (_activeCaveKeys.Contains(caveKey) || _pendingCaveSpawns.ContainsKey(caveKey))
+                return;
 
-            // Get cave preset from biome
+            if (voxelEngine == null)
+            {
+                LogMissingVoxelEngine();
+                return;
+            }
+
             CavePreset preset = GetCavePresetForBiome(biomeFamily);
             if (preset == null)
                 return;
 
-            // Generate cave volume using HectonVoxelEngine
-            if (voxelEngine != null)
+            PendingCaveSpawnState pendingState = CreatePendingSpawnState();
+            _pendingCaveSpawns[caveKey] = pendingState;
+            _debugPendingCaves = _pendingCaveSpawns.Count;
+
+            uint seed = unchecked((uint)caveKey);
+            _ = SpawnCaveAsync(caveKey, position, preset, seed, pendingState);
+        }
+
+        private async Awaitable SpawnCaveAsync(
+            long caveKey,
+            Vector3 position,
+            CavePreset preset,
+            uint seed,
+            PendingCaveSpawnState pendingState)
+        {
+            GameObject caveVolume = null;
+            CancellationToken token = pendingState != null && pendingState.Cancellation != null
+                ? pendingState.Cancellation.Token
+                : default;
+
+            try
             {
-                try
+                if (voxelEngine == null)
+                    return;
+
+                caveVolume = await voxelEngine.GenerateVolumeAsync(position, seed, preset, token);
+                if (caveVolume == null)
                 {
-                    // Generate deterministic seed from position and biome
-                    uint seed = (uint)(caveKey & 0xFFFFFFFF);
+                    LogNoGeometry(position);
+                    return;
+                }
 
-                    // Call async generation
-                    GameObject caveVolume = await voxelEngine.GenerateVolumeAsync(
-                        position, seed, preset, destroyCancellationToken);
+                if (!isActiveAndEnabled ||
+                    !_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState currentState) ||
+                    !ReferenceEquals(currentState, pendingState))
+                {
+                    CleanupSpawnedVolume(caveVolume);
+                    return;
+                }
 
-                    if (caveVolume != null)
-                    {
-                        // Register cave instance
                         CaveInstance instance = new CaveInstance
                         {
                             key = caveKey,
                             position = position,
                             preset = preset,
-                            volume = caveVolume.GetComponent<HectonVoxelVolume>(),
+                    volume = caveVolume.GetComponent<HectonVoxelVolume>(),
                             isActive = true
                         };
 
+                        if (instance.volume != null)
+                        {
+                            instance.volume.caveKey = caveKey;
+                            instance.volume.generationPosition = position;
+                            instance.volume.preset = preset;
+                        }
+
                         _caveInstances[caveKey] = instance;
                         _activeCaveKeys.Add(caveKey);
-
-                        // Add entrance visual cues for readability
-                        SpawnEntranceVisualCues(instance, preset, position, seed);
-
-                        // Apply entrance quality pass (smooth seams, debris skirts)
-                        ApplyEntranceQualityPass(instance, preset);
-
-                        // Initialize dressing layer (minerals, fungi, wall growth)
-                        InitializeCaveDressingLayer(instance, preset);
-
-                        Debug.Log($"[WorldCaveDirector] Successfully generated cave at {position}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[WorldCaveDirector] Cave generation produced no geometry at {position}");
-                    }
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"[WorldCaveDirector] Failed to generate cave at {position}: {e.Message}");
-                }
+                SpawnEntranceVisualCues(instance, preset, position, seed);
+                ApplyEntranceQualityPass(instance, preset);
+                InitializeCaveDressingLayer(instance, preset);
+                LogCaveGenerated(position);
             }
-            else
+            catch (OperationCanceledException)
             {
-                Debug.LogWarning("[WorldCaveDirector] No voxel engine available for cave generation");
+            }
+            catch (Exception exception)
+            {
+                if (caveVolume != null)
+                    CleanupSpawnedVolume(caveVolume);
+
+                LogCaveSpawnFailure(position, exception.Message);
+            }
+            finally
+            {
+                CompletePendingSpawn(caveKey, pendingState);
+                RefreshCaveLifecycleState();
+                UpdateDiagnostics();
             }
         }
 
         private CavePreset GetCavePresetForBiome(HectonBiomeFamilyProfile biomeFamily)
         {
-            // Create biome-specific cave presets
-            CavePreset preset = new CavePreset();
+            RefreshBiomeRuntimeContext(biomeFamily);
+            return ResolveBiomePresetTemplate(_cachedBiomeRuntimeContext.PresetKind);
+        }
 
-            string biomeId = biomeFamily.familyId;
+        private static CaveBiomePresetKind ResolveBiomePresetKind(string biomeId)
+        {
+            if (string.IsNullOrEmpty(biomeId))
+                return CaveBiomePresetKind.Generic;
 
             if (biomeId.Contains("cliff") || biomeId.Contains("escarpment"))
-            {
-                // Cliff caves: vertical, dramatic
-                preset.presetName = "Cliff Cave";
-                preset.presetType = CavePresetType.System;
-                preset.minRooms = 4;
-                preset.maxRooms = 10;
-                preset.minRoomRadius = 5f;
-                preset.maxRoomRadius = 12f;
-                preset.verticalShaftChance = 0.3f;
-                preset.maxDepth = 80f;
-                preset.verticalSpread = 0.6f;
-                preset.minTunnelRadius = 2.5f;
-                preset.maxTunnelRadius = 4f;
-                preset.entranceRadius = 4f;
-                preset.entranceFunnelLength = 15f;
-            }
-            else if (biomeId.Contains("canyon") || biomeId.Contains("rift"))
-            {
-                // Canyon caves: wide, horizontal
-                preset.presetName = "Canyon Cave";
-                preset.presetType = CavePresetType.Labyrinth;
-                preset.minRooms = 6;
-                preset.maxRooms = 15;
-                preset.minRoomRadius = 6f;
-                preset.maxRoomRadius = 18f;
-                preset.flatHallChance = 0.4f;
-                preset.maxDepth = 60f;
-                preset.verticalSpread = 0.4f;
-                preset.minTunnelRadius = 3f;
-                preset.maxTunnelRadius = 6f;
-                preset.wideTunnelChance = 0.3f;
-                preset.entranceRadius = 5f;
-                preset.entranceFunnelLength = 20f;
-            }
-            else if (biomeId.Contains("deep") || biomeId.Contains("abyss") || biomeId.Contains("hadal"))
-            {
-                // Deep caves: large, complex
-                preset.presetName = "Abyss Cave";
-                preset.presetType = CavePresetType.Abyss;
-                preset.minRooms = 8;
-                preset.maxRooms = 20;
-                preset.minRoomRadius = 8f;
-                preset.maxRoomRadius = 25f;
-                preset.verticalShaftChance = 0.4f;
-                preset.creviceChance = 0.2f;
-                preset.maxDepth = 150f;
-                preset.verticalSpread = 0.8f;
-                preset.minTunnelRadius = 3f;
-                preset.maxTunnelRadius = 7f;
-                preset.extraConnectionChance = 0.3f;
-                preset.entranceRadius = 3f;
-                preset.entranceFunnelLength = 25f;
-            }
-            else
-            {
-                // Default cave
-                preset.presetName = "Generic Cave";
-                preset.presetType = CavePresetType.System;
-                preset.minRooms = 3;
-                preset.maxRooms = 8;
-                preset.minRoomRadius = 4f;
-                preset.maxRoomRadius = 12f;
-                preset.maxDepth = 50f;
-                preset.verticalSpread = 0.3f;
-                preset.minTunnelRadius = 2f;
-                preset.maxTunnelRadius = 4f;
-                preset.entranceRadius = 3f;
-                preset.entranceFunnelLength = 12f;
-            }
+                return CaveBiomePresetKind.Cliff;
 
-            // Common settings
-            preset.gridDimension = 64;
-            preset.voxelSize = 1.5f;
-            preset.minEntrances = 1;
-            preset.maxEntrances = 2;
-            preset.tallTunnelChance = 0.15f;
-            preset.tunnelWarpAmount = 2f;
-            preset.extraConnectionChance = 0.2f;
+            if (biomeId.Contains("canyon") || biomeId.Contains("rift"))
+                return CaveBiomePresetKind.Canyon;
 
-            // Set spawn context based on biome and depth
-            if (biomeId.Contains("cliff") || biomeId.Contains("escarpment"))
-            {
-                preset.spawnContext = SpawnContext.CaveShallow;
-                preset.hazardLevel = 0.2f; // Low hazard, accessible
-                preset.moodLevel = 0.4f;   // Moderate life
-            }
-            else if (biomeId.Contains("canyon") || biomeId.Contains("rift"))
-            {
-                preset.spawnContext = SpawnContext.CaveMid;
-                preset.hazardLevel = 0.5f; // Medium hazard
-                preset.moodLevel = 0.6f;   // Active ecosystem
-            }
-            else if (biomeId.Contains("deep") || biomeId.Contains("abyss") || biomeId.Contains("hadal"))
-            {
-                preset.spawnContext = SpawnContext.CaveDeep;
-                preset.hazardLevel = 0.8f; // High hazard
-                preset.moodLevel = 0.2f;   // Sparse life, dangerous
-            }
-            else
-            {
-                preset.spawnContext = SpawnContext.CaveShallow;
-                preset.hazardLevel = 0.3f;
-                preset.moodLevel = 0.3f;
-            }
+            if (biomeId.Contains("deep") || biomeId.Contains("abyss") || biomeId.Contains("hadal"))
+                return CaveBiomePresetKind.Abyss;
 
-            // Interior structures based on biome
-            if (biomeId.Contains("cliff") || biomeId.Contains("escarpment"))
+            return CaveBiomePresetKind.Generic;
+        }
+
+        private static CavePreset ResolveBiomePresetTemplate(CaveBiomePresetKind presetKind)
+        {
+            return presetKind switch
             {
-                // Cliff caves: stalactites, columns
-                preset.enableStructures = true;
-                preset.maxStructures = 6;
-                preset.structureDensity = 1.2f;
-                preset.allowedStructureTypes = new CaveStructureType[]
-                {
-                    CaveStructureType.Stalactite,
-                    CaveStructureType.Column,
-                    CaveStructureType.Stalagmite
-                };
-            }
-            else if (biomeId.Contains("canyon") || biomeId.Contains("rift"))
+                CaveBiomePresetKind.Cliff => _CliffPresetTemplate,
+                CaveBiomePresetKind.Canyon => _CanyonPresetTemplate,
+                CaveBiomePresetKind.Abyss => _AbyssPresetTemplate,
+                _ => _GenericPresetTemplate
+            };
+        }
+
+        private static CavePreset CreateBiomePresetTemplate(CaveBiomePresetKind presetKind)
+        {
+            CavePreset preset = new CavePreset
             {
-                // Canyon caves: boulders, arches, bridges
-                preset.enableStructures = true;
-                preset.maxStructures = 8;
-                preset.structureDensity = 1.0f;
-                preset.isRuinLinked = true; // Canyon caves often have ruins
-                preset.allowedStructureTypes = new CaveStructureType[]
-                {
-                    CaveStructureType.Boulder,
-                    CaveStructureType.Arch,
-                    CaveStructureType.Bridge,
-                    CaveStructureType.Block,
-                    CaveStructureType.Wall
-                };
-            }
-            else if (biomeId.Contains("deep") || biomeId.Contains("abyss") || biomeId.Contains("hadal"))
+                gridDimension = 64,
+                voxelSize = 1.5f,
+                minEntrances = 1,
+                maxEntrances = 2,
+                tallTunnelChance = 0.15f,
+                tunnelWarpAmount = 2f,
+                extraConnectionChance = 0.2f,
+                enableStructures = true
+            };
+
+            switch (presetKind)
             {
-                // Deep caves: complex structures, crystals (simulated by columns/arches)
-                preset.enableStructures = true;
-                preset.maxStructures = 10;
-                preset.structureDensity = 0.8f;
-                preset.allowedStructureTypes = new CaveStructureType[]
-                {
-                    CaveStructureType.Column,
-                    CaveStructureType.Arch,
-                    CaveStructureType.Stalactite,
-                    CaveStructureType.Stalagmite,
-                    CaveStructureType.Wall
-                };
-            }
-            else
-            {
-                // Generic caves: basic structures
-                preset.enableStructures = true;
-                preset.maxStructures = 4;
-                preset.structureDensity = 0.7f;
-                preset.allowedStructureTypes = new CaveStructureType[]
-                {
-                    CaveStructureType.Stalactite,
-                    CaveStructureType.Boulder,
-                    CaveStructureType.Column
-                };
+                case CaveBiomePresetKind.Cliff:
+                    preset.presetName = "Cliff Cave";
+                    preset.presetType = CavePresetType.System;
+                    preset.minRooms = 4;
+                    preset.maxRooms = 10;
+                    preset.minRoomRadius = 5f;
+                    preset.maxRoomRadius = 12f;
+                    preset.verticalShaftChance = 0.3f;
+                    preset.maxDepth = 80f;
+                    preset.verticalSpread = 0.6f;
+                    preset.minTunnelRadius = 2.5f;
+                    preset.maxTunnelRadius = 4f;
+                    preset.entranceRadius = 4f;
+                    preset.entranceFunnelLength = 15f;
+                    preset.spawnContext = SpawnContext.CaveShallow;
+                    preset.hazardLevel = 0.2f;
+                    preset.moodLevel = 0.4f;
+                    preset.maxStructures = 6;
+                    preset.structureDensity = 1.2f;
+                    preset.allowedStructureTypes = _CliffStructureTypes;
+                    break;
+
+                case CaveBiomePresetKind.Canyon:
+                    preset.presetName = "Canyon Cave";
+                    preset.presetType = CavePresetType.Labyrinth;
+                    preset.minRooms = 6;
+                    preset.maxRooms = 15;
+                    preset.minRoomRadius = 6f;
+                    preset.maxRoomRadius = 18f;
+                    preset.flatHallChance = 0.4f;
+                    preset.maxDepth = 60f;
+                    preset.verticalSpread = 0.4f;
+                    preset.minTunnelRadius = 3f;
+                    preset.maxTunnelRadius = 6f;
+                    preset.wideTunnelChance = 0.3f;
+                    preset.entranceRadius = 5f;
+                    preset.entranceFunnelLength = 20f;
+                    preset.spawnContext = SpawnContext.CaveMid;
+                    preset.hazardLevel = 0.5f;
+                    preset.moodLevel = 0.6f;
+                    preset.maxStructures = 8;
+                    preset.structureDensity = 1.0f;
+                    preset.isRuinLinked = true;
+                    preset.allowedStructureTypes = _CanyonStructureTypes;
+                    break;
+
+                case CaveBiomePresetKind.Abyss:
+                    preset.presetName = "Abyss Cave";
+                    preset.presetType = CavePresetType.Abyss;
+                    preset.minRooms = 8;
+                    preset.maxRooms = 20;
+                    preset.minRoomRadius = 8f;
+                    preset.maxRoomRadius = 25f;
+                    preset.verticalShaftChance = 0.4f;
+                    preset.creviceChance = 0.2f;
+                    preset.maxDepth = 150f;
+                    preset.verticalSpread = 0.8f;
+                    preset.minTunnelRadius = 3f;
+                    preset.maxTunnelRadius = 7f;
+                    preset.extraConnectionChance = 0.3f;
+                    preset.entranceRadius = 3f;
+                    preset.entranceFunnelLength = 25f;
+                    preset.spawnContext = SpawnContext.CaveDeep;
+                    preset.hazardLevel = 0.8f;
+                    preset.moodLevel = 0.2f;
+                    preset.maxStructures = 10;
+                    preset.structureDensity = 0.8f;
+                    preset.allowedStructureTypes = _AbyssStructureTypes;
+                    break;
+
+                default:
+                    preset.presetName = "Generic Cave";
+                    preset.presetType = CavePresetType.System;
+                    preset.minRooms = 3;
+                    preset.maxRooms = 8;
+                    preset.minRoomRadius = 4f;
+                    preset.maxRoomRadius = 12f;
+                    preset.maxDepth = 50f;
+                    preset.verticalSpread = 0.3f;
+                    preset.minTunnelRadius = 2f;
+                    preset.maxTunnelRadius = 4f;
+                    preset.entranceRadius = 3f;
+                    preset.entranceFunnelLength = 12f;
+                    preset.spawnContext = SpawnContext.CaveShallow;
+                    preset.hazardLevel = 0.3f;
+                    preset.moodLevel = 0.3f;
+                    preset.maxStructures = 4;
+                    preset.structureDensity = 0.7f;
+                    preset.allowedStructureTypes = _GenericStructureTypes;
+                    break;
             }
 
             return preset;
@@ -459,18 +540,29 @@ namespace Hecton8.World
 
         private long GenerateCaveKey(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
         {
+            RefreshBiomeRuntimeContext(biomeFamily);
+
             // Deterministic key based on position and biome
             int x = Mathf.FloorToInt(position.x / 100f);
             int z = Mathf.FloorToInt(position.z / 100f);
-            int biomeHash = biomeFamily.familyId.GetHashCode();
+            int biomeHash = _cachedBiomeRuntimeContext.FamilyHash;
 
             return ((long)x << 32) | ((long)z << 16) | (uint)biomeHash;
         }
 
         private void CleanupUnsupportedCaves()
         {
-            // TODO: Remove caves that are no longer supported by current biome
-            // For now, keep all
+            CancelAllPendingSpawns();
+
+            _staleCaveKeyBuffer.Clear();
+            Dictionary<long, CaveInstance>.Enumerator caveEnumerator = _caveInstances.GetEnumerator();
+            while (caveEnumerator.MoveNext())
+                _staleCaveKeyBuffer.Add(caveEnumerator.Current.Key);
+
+            for (int i = 0; i < _staleCaveKeyBuffer.Count; i++)
+                RemoveTrackedCave(_staleCaveKeyBuffer[i], despawnOwnedVolume: true);
+
+            UpdateDiagnostics();
         }
 
         private bool ResolveReferences()
@@ -513,8 +605,17 @@ namespace Hecton8.World
         private void UpdateDiagnostics()
         {
             _debugActiveCaves = _activeCaveKeys.Count;
-            _debugCurrentBiome = biomeMatrixDirector != null && biomeMatrixDirector.CurrentFamilyProfile != null
-                ? biomeMatrixDirector.CurrentFamilyProfile.familyLabel : "None";
+            _debugPendingCaves = _pendingCaveSpawns.Count;
+            if (biomeMatrixDirector != null && biomeMatrixDirector.CurrentFamilyProfile != null)
+            {
+                RefreshBiomeRuntimeContext(biomeMatrixDirector.CurrentFamilyProfile);
+                _debugCurrentBiome = _cachedBiomeRuntimeContext.FamilyLabel;
+            }
+            else
+            {
+                _debugCurrentBiome = "None";
+            }
+
             _debugCurrentZone = worldZoneDirector != null && worldZoneDirector.CurrentZone != null
                 ? worldZoneDirector.CurrentZone.ZoneLabel : "None";
             _debugReady = ResolveReferences();
@@ -523,8 +624,20 @@ namespace Hecton8.World
         // Public API for other systems
         public bool TryGetCaveAt(Vector3 position, out CaveInstance cave)
         {
+            cave = default;
+            if (biomeMatrixDirector == null || biomeMatrixDirector.CurrentFamilyProfile == null)
+                return false;
+
             long key = GenerateCaveKey(position, biomeMatrixDirector.CurrentFamilyProfile);
-            return _caveInstances.TryGetValue(key, out cave);
+            if (!_caveInstances.TryGetValue(key, out cave))
+                return false;
+
+            if (IsTrackedVolumeAlive(key, cave.volume))
+                return true;
+
+            RemoveTrackedCave(key);
+            cave = default;
+            return false;
         }
 
         public IEnumerable<CaveInstance> GetActiveCaves()
@@ -534,6 +647,9 @@ namespace Hecton8.World
 
         private void SpawnEntranceVisualCues(CaveInstance instance, CavePreset preset, Vector3 position, uint seed)
         {
+            if (instance.volume == null)
+                return;
+
             // Generate cave graph to get entrance positions
             float volumeHalfExtent = preset.VolumeCoverage * 0.5f;
             float terrainHeight = position.y; // Approximate
@@ -545,12 +661,18 @@ namespace Hecton8.World
 
             try
             {
+                Transform markerRoot = instance.volume.GetOrCreateRuntimeRoot("_EntranceMarkers");
+                int usedMarkerCount = 0;
+
                 // Spawn visual cues at entrance positions
                 for (int i = 0; i < entrances.Length; i++)
                 {
                     CaveEntrance entrance = entrances[i];
-                    SpawnEntranceMarker(entrance.surfacePosition, entrance.inwardDirection, instance);
+                    SpawnEntranceMarker(markerRoot, usedMarkerCount, entrance.surfacePosition, entrance.inwardDirection, instance);
+                    usedMarkerCount++;
                 }
+
+                DisableUnusedChildren(markerRoot, usedMarkerCount);
             }
             finally
             {
@@ -562,11 +684,31 @@ namespace Hecton8.World
             }
         }
 
-        private void SpawnEntranceMarker(Vector3 position, Vector3 inwardDirection, CaveInstance instance)
+        private void SpawnEntranceMarker(Transform markerRoot, int markerIndex, Vector3 position, Vector3 inwardDirection, CaveInstance instance)
         {
+            if (markerRoot == null)
+                return;
+
             // Spawn a simple visual marker (light or particle system) at entrance
-            GameObject marker = new GameObject($"CaveEntranceMarker_{position.x:F0}_{position.z:F0}");
-            marker.transform.position = position + Vector3.up * 0.5f; // Slightly above ground
+            Transform markerTransform = markerIndex < markerRoot.childCount
+                ? markerRoot.GetChild(markerIndex)
+                : null;
+            GameObject marker = markerTransform != null
+                ? markerTransform.gameObject
+                : new GameObject($"Marker_{markerIndex}");
+            if (markerTransform == null)
+            {
+                markerTransform = marker.transform;
+                markerTransform.SetParent(markerRoot, false);
+            }
+
+            marker.name = $"Marker_{markerIndex}";
+            markerTransform.position = position + Vector3.up * 0.5f; // Slightly above ground
+            markerTransform.rotation = inwardDirection.sqrMagnitude > 0.001f
+                ? Quaternion.LookRotation(inwardDirection.normalized, Vector3.up)
+                : Quaternion.identity;
+            if (!marker.activeSelf)
+                marker.SetActive(true);
 
             // Adjust effects based on cave mood and hazard
             float mood = instance.preset.moodLevel;
@@ -588,14 +730,18 @@ namespace Hecton8.World
             }
 
             // Add a light for visibility
-            Light entranceLight = marker.AddComponent<Light>();
+            Light entranceLight = marker.GetComponent<Light>();
+            if (entranceLight == null)
+                entranceLight = marker.AddComponent<Light>();
             entranceLight.type = LightType.Point;
             entranceLight.color = lightColor;
             entranceLight.intensity = 1f + mood * 2f; // Brighter for active caves
             entranceLight.range = 4f + hazard * 2f; // Wider for dangerous caves
 
             // Add particle system for atmospheric effect
-            ParticleSystem ps = marker.AddComponent<ParticleSystem>();
+            ParticleSystem ps = marker.GetComponent<ParticleSystem>();
+            if (ps == null)
+                ps = marker.AddComponent<ParticleSystem>();
             var main = ps.main;
             main.startSize = 0.05f + mood * 0.15f;
             main.startSpeed = 0.2f + mood * 0.8f;
@@ -628,17 +774,6 @@ namespace Hecton8.World
                 );
             }
             colorOverLifetime.color = gradient;
-
-            // Parent to cave volume for cleanup
-            if (instance.volume != null)
-            {
-                marker.transform.SetParent(instance.volume.transform);
-            }
-            else
-            {
-                // Fallback: destroy after some time
-                Object.Destroy(marker, 300f); // 5 minutes
-            }
         }
 
         private void ApplyEntranceQualityPass(CaveInstance instance, CavePreset preset)
@@ -651,17 +786,26 @@ namespace Hecton8.World
             if (instance.volume == null) return;
 
             // Create an entrance quality marker for in-game logic
-            GameObject entranceQualityGO = new GameObject("_EntranceQualityZone");
-            entranceQualityGO.transform.SetParent(instance.volume.transform);
-            entranceQualityGO.transform.localPosition = Vector3.zero;
+            Transform entranceQualityRoot = instance.volume.GetOrCreateRuntimeRoot("_EntranceQualityZone");
+            if (entranceQualityRoot == null)
+                return;
+
+            GameObject entranceQualityGO = entranceQualityRoot.gameObject;
+            entranceQualityRoot.localPosition = Vector3.zero;
+            entranceQualityRoot.localRotation = Quaternion.identity;
+            entranceQualityRoot.localScale = Vector3.one;
 
             // Add collider as "quality zone" marker
-            var sphereCollider = entranceQualityGO.AddComponent<SphereCollider>();
+            var sphereCollider = entranceQualityGO.GetComponent<SphereCollider>();
+            if (sphereCollider == null)
+                sphereCollider = entranceQualityGO.AddComponent<SphereCollider>();
             sphereCollider.radius = preset.entranceRadius * 2f;
             sphereCollider.isTrigger = true;
 
             // Add light glow aura at entrance for safe zone feel
-            Light entranceGlow = entranceQualityGO.AddComponent<Light>();
+            Light entranceGlow = entranceQualityGO.GetComponent<Light>();
+            if (entranceGlow == null)
+                entranceGlow = entranceQualityGO.AddComponent<Light>();
             entranceGlow.type = LightType.Point;
             entranceGlow.color = new Color(0.8f, 0.7f, 0.5f); // warm safety glow
             entranceGlow.intensity = 0.5f;
@@ -683,9 +827,7 @@ namespace Hecton8.World
             CaveDressingConfig dressingConfig = CaveDressingConfig.GetConfigForContext(preset.spawnContext);
 
             // Create dressing layer parent
-            GameObject dressingRoot = new GameObject("_CaveDressing");
-            dressingRoot.transform.SetParent(instance.volume.transform);
-            dressingRoot.transform.localPosition = Vector3.zero;
+            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
 
             // Apply mineral crust if enabled
             if (dressingConfig.mineralCrust.enabled)
@@ -693,16 +835,31 @@ namespace Hecton8.World
                 ApplyMineralCrustToVolume(instance.volume, dressingConfig.mineralCrust);
             }
 
-            // Spawn sediment shelves if enabled
-            if (dressingConfig.sedimentShelves.enabled && dressingConfig.sedimentShelves.shelfPrefab != null)
+            if (dressingConfig.wallGrowth.enabled)
             {
-                SpawnSedimentShelves(dressingRoot, instance, dressingConfig.sedimentShelves);
+                ApplyWallGrowth(instance, dressingConfig);
+            }
+
+            if (dressingConfig.glowingTissue.enabled)
+            {
+                ApplyGlowingTissue(instance, dressingConfig);
+            }
+
+            // Spawn sediment shelves if enabled
+            if (dressingConfig.sedimentShelves.enabled)
+            {
+                SpawnSedimentShelves(dressingRoot.gameObject, instance, dressingConfig);
+            }
+
+            if (dressingConfig.serviceRemnants.enabled)
+            {
+                ApplyServiceRemnants(instance, dressingConfig);
             }
 
             // Spawn fungi particles if enabled
             if (dressingConfig.deepFungi.enabled)
             {
-                SpawnDeepFungiParticles(dressingRoot, instance, dressingConfig.deepFungi);
+                SpawnDeepFungiParticles(dressingRoot.gameObject, instance, dressingConfig.deepFungi);
             }
         }
 
@@ -712,44 +869,121 @@ namespace Hecton8.World
             var meshRenderer = volume.GetComponent<MeshRenderer>();
             if (meshRenderer == null) return;
 
-            var propertyBlock = new MaterialPropertyBlock();
-            meshRenderer.GetPropertyBlock(propertyBlock);
+            _CaveSurfacePropertyBlock.Clear();
+            meshRenderer.GetPropertyBlock(_CaveSurfacePropertyBlock);
 
             // Set crust parameters (assuming shader has these properties)
-            propertyBlock.SetFloat("_CrustIntensity", config.intensity * config.scale);
-            propertyBlock.SetColor("_CrustColor", config.tint);
-            propertyBlock.SetFloat("_CrustRoughness", config.roughnessBoost);
+            _CaveSurfacePropertyBlock.SetFloat(_CrustIntensityId, config.intensity * config.scale);
+            _CaveSurfacePropertyBlock.SetColor(_CrustColorId, config.tint);
+            _CaveSurfacePropertyBlock.SetFloat(_CrustRoughnessId, config.roughnessBoost);
 
-            meshRenderer.SetPropertyBlock(propertyBlock);
+            meshRenderer.SetPropertyBlock(_CaveSurfacePropertyBlock);
         }
 
-        private void SpawnSedimentShelves(GameObject parent, CaveInstance instance, SedimentShelfConfig config)
+        private void ApplyWallGrowth(CaveInstance instance, CaveDressingConfig dressingConfig)
         {
-            // Spawn simple shelf meshes on cave floor
-            // This is a placeholder — in production, shelves would be spawned
-            // at strategic cave floor positions based on cave topology
+            if (instance.volume == null || dressingConfig == null)
+                return;
+
+            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
+            CaveWallGrowthRuntimeBuilder.Build(
+                dressingRoot,
+                instance.volume,
+                instance.preset,
+                dressingConfig.wallGrowth,
+                dressingConfig.globalIntensity);
+        }
+
+        private void ApplyGlowingTissue(CaveInstance instance, CaveDressingConfig dressingConfig)
+        {
+            if (instance.volume == null || dressingConfig == null)
+                return;
+
+            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
+            CaveGlowingTissueRuntimeBuilder.Build(
+                dressingRoot,
+                instance.volume,
+                instance.preset,
+                dressingConfig.glowingTissue,
+                dressingConfig.globalIntensity);
+        }
+
+        private void ApplyServiceRemnants(CaveInstance instance, CaveDressingConfig dressingConfig)
+        {
+            if (instance.volume == null || dressingConfig == null)
+                return;
+
+            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
+            CaveServiceRemnantRuntimeBuilder.Build(
+                dressingRoot,
+                instance.volume,
+                instance.preset,
+                dressingConfig.serviceRemnants,
+                dressingConfig.globalIntensity);
+        }
+
+        private void SpawnSedimentShelves(GameObject parent, CaveInstance instance, CaveDressingConfig dressingConfig)
+        {
+            if (parent == null || instance.volume == null || dressingConfig == null)
+                return;
+
+            CaveSedimentShelfRuntimeBuilder.Build(
+                parent.transform,
+                instance.volume,
+                instance.preset,
+                dressingConfig.sedimentShelves,
+                dressingConfig.globalIntensity);
         }
 
         private void SpawnDeepFungiParticles(GameObject parent, CaveInstance instance, DeepFungiConfig config)
         {
-            // Spawn particles for deep fungi glow
-            GameObject fungiGO = new GameObject("_DeepFungi");
-            fungiGO.transform.SetParent(parent.transform);
-            fungiGO.transform.localPosition = Vector3.zero;
+            if (parent == null || instance.volume == null || config == null)
+                return;
 
-            ParticleSystem ps = fungiGO.AddComponent<ParticleSystem>();
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(instance.volume, instance.preset, out Bounds volumeBounds))
+                return;
+
+            Transform fungiTransform = parent.transform.Find("_DeepFungi");
+            GameObject fungiGO = fungiTransform != null ? fungiTransform.gameObject : new GameObject("_DeepFungi");
+            if (fungiTransform == null)
+            {
+                fungiTransform = fungiGO.transform;
+                fungiTransform.SetParent(parent.transform, false);
+            }
+
+            float verticalBias = Mathf.Clamp01(config.verticalBias);
+            float verticalMin = Mathf.Lerp(volumeBounds.min.y, volumeBounds.center.y, 0.2f);
+            float verticalMax = Mathf.Lerp(volumeBounds.center.y, volumeBounds.max.y, 0.85f);
+            Vector3 emissionCenter = new Vector3(
+                volumeBounds.center.x,
+                Mathf.Lerp(verticalMin, verticalMax, verticalBias),
+                volumeBounds.center.z);
+            Vector3 emissionSize = new Vector3(
+                Mathf.Max(2f, volumeBounds.size.x * 0.72f),
+                Mathf.Max(1.5f, volumeBounds.size.y * 0.28f),
+                Mathf.Max(2f, volumeBounds.size.z * 0.72f));
+            float volumeFactor = Mathf.Clamp01((volumeBounds.size.x * volumeBounds.size.y * volumeBounds.size.z) / 6000f);
+
+            fungiTransform.localPosition = emissionCenter;
+
+            ParticleSystem ps = fungiGO.GetComponent<ParticleSystem>();
+            if (ps == null)
+                ps = fungiGO.AddComponent<ParticleSystem>();
+
             var main = ps.main;
             main.startSize = new ParticleSystem.MinMaxCurve(config.particleSize * 0.5f, config.particleSize * 1.5f);
             main.startLifetime = config.lifetime;
-            main.maxParticles = (int)(50 * config.density);
+            main.maxParticles = Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(18f, 84f, volumeFactor) * Mathf.Clamp01(config.density)),
+                8,
+                96);
 
             var emission = ps.emission;
-            emission.rateOverTime = config.emissionRate;
+            emission.rateOverTime = config.emissionRate * Mathf.Lerp(0.7f, 1.2f, volumeFactor);
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.BoxShell;
-            // Shape size will be set based on cave volume size (placeholder)
-            shape.scale = new Vector3(10f, 10f, 10f);
+            shape.scale = emissionSize;
 
             var colorOverLifetime = ps.colorOverLifetime;
             colorOverLifetime.enabled = true;
@@ -765,6 +999,215 @@ namespace Hecton8.World
             {
                 renderer.renderMode = ParticleSystemRenderMode.Billboard;
             }
+        }
+
+        private static Transform GetOrCreateDressingRoot(Transform volumeRoot)
+        {
+            if (volumeRoot == null)
+                return null;
+
+            HectonVoxelVolume volume = volumeRoot.GetComponent<HectonVoxelVolume>();
+            if (volume != null)
+                return volume.GetOrCreateRuntimeRoot("_CaveDressing");
+
+            Transform dressingRoot = volumeRoot.Find("_CaveDressing");
+            if (dressingRoot == null)
+            {
+                GameObject dressingRootObject = new GameObject("_CaveDressing");
+                dressingRoot = dressingRootObject.transform;
+                dressingRoot.SetParent(volumeRoot, false);
+            }
+
+            if (!dressingRoot.gameObject.activeSelf)
+                dressingRoot.gameObject.SetActive(true);
+            return dressingRoot;
+        }
+
+        private static void DisableUnusedChildren(Transform root, int usedChildCount)
+        {
+            if (root == null)
+                return;
+
+            for (int i = usedChildCount; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child != null && child.gameObject.activeSelf)
+                    child.gameObject.SetActive(false);
+            }
+        }
+
+        private void RefreshCaveLifecycleState()
+        {
+            _staleCaveKeyBuffer.Clear();
+            Dictionary<long, CaveInstance>.Enumerator caveEnumerator = _caveInstances.GetEnumerator();
+            while (caveEnumerator.MoveNext())
+            {
+                KeyValuePair<long, CaveInstance> pair = caveEnumerator.Current;
+                CaveInstance instance = pair.Value;
+                if (IsTrackedVolumeAlive(pair.Key, instance.volume))
+                    continue;
+
+                _staleCaveKeyBuffer.Add(pair.Key);
+            }
+
+            for (int i = 0; i < _staleCaveKeyBuffer.Count; i++)
+                RemoveTrackedCave(_staleCaveKeyBuffer[i], despawnOwnedVolume: false);
+        }
+
+        private bool IsTrackedVolumeAlive(long caveKey, HectonVoxelVolume volume)
+        {
+            if (volume == null)
+                return false;
+
+            GameObject volumeObject = volume.gameObject;
+            if (volumeObject == null || !volumeObject.activeInHierarchy)
+                return false;
+
+            return volume.caveKey == caveKey;
+        }
+
+        private void RemoveTrackedCave(long caveKey)
+        {
+            RemoveTrackedCave(caveKey, despawnOwnedVolume: false);
+        }
+
+        private void RemoveTrackedCave(long caveKey, bool despawnOwnedVolume)
+        {
+            if (despawnOwnedVolume &&
+                _caveInstances.TryGetValue(caveKey, out CaveInstance instance) &&
+                IsTrackedVolumeAlive(caveKey, instance.volume))
+            {
+                CleanupSpawnedVolume(instance.volume.gameObject);
+            }
+
+            _caveInstances.Remove(caveKey);
+            _activeCaveKeys.Remove(caveKey);
+        }
+
+        private void RefreshBiomeRuntimeContext(HectonBiomeFamilyProfile biomeFamily)
+        {
+            if (biomeFamily == null)
+            {
+                _cachedBiomeRuntimeContext = default;
+                return;
+            }
+
+            string familyId = biomeFamily.familyId ?? string.Empty;
+            if (ReferenceEquals(_cachedBiomeRuntimeContext.Family, biomeFamily) &&
+                string.Equals(_cachedBiomeRuntimeContext.FamilyId, familyId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _cachedBiomeRuntimeContext.Family = biomeFamily;
+            _cachedBiomeRuntimeContext.FamilyId = familyId;
+            _cachedBiomeRuntimeContext.FamilyLabel = string.IsNullOrEmpty(biomeFamily.familyLabel) ? "None" : biomeFamily.familyLabel;
+            _cachedBiomeRuntimeContext.FamilyHash = familyId.GetHashCode();
+            _cachedBiomeRuntimeContext.SupportsCaves = EvaluateBiomeCaveSupport(familyId);
+            _cachedBiomeRuntimeContext.PresetKind = ResolveBiomePresetKind(familyId);
+        }
+
+        private PendingCaveSpawnState CreatePendingSpawnState()
+        {
+            CancellationTokenSource lifetime = EnsureLifetimeCancellation();
+            return new PendingCaveSpawnState
+            {
+                Cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token)
+            };
+        }
+
+        private CancellationTokenSource EnsureLifetimeCancellation()
+        {
+            if (_lifetimeCancellation == null)
+                _lifetimeCancellation = new CancellationTokenSource();
+
+            return _lifetimeCancellation;
+        }
+
+        private void CancelLifetimeCancellation()
+        {
+            if (_lifetimeCancellation == null)
+                return;
+
+            _lifetimeCancellation.Cancel();
+            _lifetimeCancellation.Dispose();
+            _lifetimeCancellation = null;
+        }
+
+        private void CancelAllPendingSpawns()
+        {
+            _pendingCaveKeyBuffer.Clear();
+            Dictionary<long, PendingCaveSpawnState>.Enumerator pendingEnumerator = _pendingCaveSpawns.GetEnumerator();
+            while (pendingEnumerator.MoveNext())
+                _pendingCaveKeyBuffer.Add(pendingEnumerator.Current.Key);
+
+            for (int i = 0; i < _pendingCaveKeyBuffer.Count; i++)
+            {
+                long caveKey = _pendingCaveKeyBuffer[i];
+                if (!_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState state))
+                    continue;
+
+                if (state != null && state.Cancellation != null)
+                    state.Cancellation.Cancel();
+
+                state?.Dispose();
+                _pendingCaveSpawns.Remove(caveKey);
+            }
+
+            _debugPendingCaves = 0;
+        }
+
+        private void CompletePendingSpawn(long caveKey, PendingCaveSpawnState pendingState)
+        {
+            if (_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState currentState) &&
+                ReferenceEquals(currentState, pendingState))
+            {
+                _pendingCaveSpawns.Remove(caveKey);
+            }
+
+            pendingState?.Dispose();
+        }
+
+        private void CleanupSpawnedVolume(GameObject caveVolume)
+        {
+            if (caveVolume == null)
+                return;
+
+            if (voxelEngine != null)
+            {
+                voxelEngine.DespawnVolume(caveVolume);
+                return;
+            }
+
+            Destroy(caveVolume);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCaveGenerated(Vector3 position)
+        {
+            Debug.Log($"[WorldCaveDirector] Successfully generated cave at {position}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogNoGeometry(Vector3 position)
+        {
+            Debug.LogWarning($"[WorldCaveDirector] Cave generation produced no geometry at {position}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCaveSpawnFailure(Vector3 position, string message)
+        {
+            Debug.LogError($"[WorldCaveDirector] Failed to generate cave at {position}: {message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingVoxelEngine()
+        {
+            Debug.LogWarning("[WorldCaveDirector] No voxel engine available for cave generation");
         }
     }
 }

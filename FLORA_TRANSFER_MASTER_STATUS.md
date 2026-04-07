@@ -29,6 +29,15 @@ Detailed ledgers:
 - New files are created only when the project needs a missing family/rule/placeholder/runtime data asset.
 - If the project already has an owner system, concepts are adapted there instead of creating a parallel Claude subsystem.
 
+## Architecture Guardrails
+
+- Architecture is primary. No transfer step is valid if it blurs ownership just to move faster.
+- Runtime world stack owns selection, density, weighting, matrix integration, and validation-facing placement behavior.
+- Editor flora pipeline owns shape construction, prefab anatomy, and any baked `N`-variant generation.
+- `Proxy`, `final`, `runtime selection`, and `editor bake` are separate layers. They must not be collapsed into one shortcut path.
+- Large existing files are not automatic extension points. If a concept does not belong there, create a focused helper/module instead.
+- Before each flora transfer step, ask: `Does this logic belong in this layer?`
+
 ## What Was Actually Created
 
 - New world families:
@@ -40,21 +49,80 @@ Detailed ledgers:
   - `rule.coral.massive`
   - `rule.coral.plate`
 - New placeholder/runtime assets generated from existing authoring flow for those families.
+- New editor-side flora final intake path:
+  - `Assets/_Project/Prefabs/Nature/Flora/Baked`
+  - `WorldProceduralFloraFinalVariantAuthoring`
+- New editor-side flora baked starter generator:
+  - `WorldProceduralFloraBakedStarterGenerator`
+  - generates owned `GEN_` combined-mesh starter finals into family folders under `Assets/_Project/Prefabs/Nature/Flora/Baked`
+- New editor-side flora final validator:
+  - `WorldProceduralFloraFinalVariantValidator`
 
 ## What Was Adapted Instead Of Copied
 
 - Coral/seaweed morphology -> family silhouettes and placeholder recipes
-- Seaweed anatomical detail -> kelp proxy prefab builders with stipe/base/frond composition
+- Seaweed anatomical detail -> editor-only kelp proxy shape builders with stipe/base/frond composition
+- Coral anatomical detail -> editor-only coral proxy shape builders with head/branch/plate composition
 - Reef ecology and depth logic -> biome matrix preferred families and scatter weighting
 - Route readability and shelter concepts -> structure/cluster role mapping
 - Shallow-water richness -> fertile/reef/corridor weighting in scatter selection
+
+## Claude System Analog Map
+
+- `SeaweedRenderer`
+  - HECTON-8 owner layers:
+    - `WorldProceduralScatterDirector`
+    - biome/matrix authoring
+    - `WorldProceduralFloraFinalVariantAuthoring`
+    - `WorldStreamingDirector`
+  - Coverage truth:
+    - placement, family selection, final-variant linkage, and streaming-facing ownership are covered
+    - no dedicated standalone algae renderer manager exists, by design
+- `SeaweedMeshGenerator`
+  - HECTON-8 owner layers:
+    - `WorldProceduralFloraProxyShapeBuilder`
+    - `WorldProceduralFloraBakedStarterGenerator`
+  - Coverage truth:
+    - editor-side flora shape construction and baked starter generation are covered
+    - runtime mesh generation is intentionally not present
+- `CoralBootstrap`
+  - HECTON-8 owner layers:
+    - `WorldRuntimeBootstrapAuthoring`
+    - flora authoring + baked-final intake pipeline
+    - world runtime stack rebuild
+  - Coverage truth:
+    - dependency order and content rebuild path are covered through the existing bootstrap/authoring stack
+    - no separate coral bootstrap manager exists, by design
+- `CoralPolyps`
+  - HECTON-8 owner layers:
+    - no full direct analog yet
+    - only adjacent systems exist:
+      - scanner/discovery stack
+      - fauna/ecology stack
+      - flora final authoring/bake stack
+  - Coverage truth:
+    - there is still no dedicated coral micro-polyp runtime or equivalent close-range micro-life simulation
+    - this remains an intentional `not yet transferred` area, not a hidden completed feature
+- Standalone coral/seaweed runtime ecosystem subsystem
+  - HECTON-8 owner layers:
+    - `FaunaBiomeBootstrapAuthoring`
+    - `FaunaDirector`
+    - `HectonBoidController`
+    - `FaunaWorldIntegrationReportGenerator`
+  - Coverage truth:
+    - reef/littoral ecology, ambient life, and threat pressure are covered through the existing fauna stack
+    - flora-specific micro-behaviour and per-object intelligence are not fully equivalent to Claude's standalone subsystem
 
 ## Current Stage
 
 - Stage 1 complete: new families/rules/assets exist and are in the live runtime stack.
 - Stage 2 complete: fertile and reef slices now use coral/kelp families in live reports, not only in data.
-- Stage 3 complete: kelp creation-side proxy anatomy moved beyond bare cylinder proxies.
-- Stage 4 in progress: corridor and edge-case biome tuning.
+- Stage 3 complete: kelp and coral creation-side proxy anatomy moved into editor-only flora shape builders instead of runtime selection files.
+- Stage 4 complete: baked flora final intake path now exists for future photorealistic editor-generated prefabs.
+- Stage 5 complete: baked flora final validator now exists for perf/authoring hygiene before real assets enter runtime.
+- Stage 6 complete: corridor and edge-case biome tuning for fossil-reef landmark corridors is now verified without destabilizing hard corridor slices.
+- Stage 7 complete: editor-side baked flora starter generator now creates optimized combined-mesh final prefabs and feeds them through the real flora intake path.
+- Stage 8 complete: generated flora starter finals now bake as `LODGroup`-based prefabs with dedicated `LOD0` / `LOD1` mesh assets, and validator budgets the highest visible LOD instead of double-counting all renderers.
 
 Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
 
@@ -62,22 +130,287 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
 - `FertileShallows / Mesa Plateaus`: top and dominant structure `Kelp Canopy`
 - `ReefNavigation / Fossil Reef Context`: top and dominant structure `Coral Plate`
 - `ReefNavigation / Littoral Karst Context`: top and dominant structure `Kelp Canopy`
-- `LandmarkCorridor / Fossil Reef Context`: dominant structure `Coral Plate`, structure role mix `bio 7 / cave 3`, but top structure still `Cave Entrance Marker`
+- `LandmarkCorridor / Fossil Reef Context`: top and dominant structure `Coral Plate`, structure role mix `bio 7 / cave 3`
 - Kelp proxy assets were regenerated with richer anatomy on `2026-04-07 15:17`:
   - `PFB_family_kelp_tall__stalk.prefab`
   - `PFB_family_kelp_patch_dense__grove.prefab`
   - `PFB_family_kelp_canopy__crown.prefab`
+- `Hecton/Authoring/Rebuild World Runtime Stack` now also runs the full flora final pipeline:
+  - `WorldProceduralFloraBakedStarterGenerator`
+  - `WorldProceduralFloraFinalVariantAuthoring`
+  - `Assets/_Project/Prefabs/Nature/Flora/Baked` remains the intake root for real flora finals
+  - verified rebuild log:
+    - `Baked flora starters generated. Prefabs=14, MeshesUpdated=28, RemovedAssets=0, Failures=0`
+    - `Baked flora final variants applied. FamiliesTouched=0, LinkedVariants=14, RemovedVariants=0, MissingFamilies=0`
+    - `World runtime stack rebuilt`
+- `Hecton/Validation/Validate Procedural Flora Final Variants` now exists and passes on the empty intake root:
+  - `PASS validatedPrefabs=0`
+- `Hecton/Authoring/Generate Procedural Flora Baked Starters` now generates owned starter finals:
+  - `Prefabs=14, MeshesUpdated=28, RemovedAssets=0, Failures=0`
+  - each generated flora final now bakes as:
+    - one root prefab with `LODGroup`
+    - one `__LOD0` child renderer with `*_LOD0_Mesh.asset`
+    - one `__LOD1` child renderer with `*_LOD1_Mesh.asset`
+  - verified YAML readback on `GEN_family_kelp_canopy__crown.prefab` confirms `LODGroup` + `__LOD0` / `__LOD1` child renderers
+- `Hecton/Validation/Validate Procedural Flora Final Variants` now passes on the generated starter set:
+  - `PASS validatedPrefabs=14, warningCount=7`
+  - validator is now LOD-aware for budget checks:
+    - triangle/material-slot/renderer budgets are measured from the highest visible LOD renderers
+    - full renderer scan still checks materials and forbidden runtime baggage across the prefab
+  - validator also now flags expensive renderer defaults on flora finals:
+    - `shadowCastingMode` must default to `Off`
+    - `receiveShadows` must default to `false`
+    - `lightProbeUsage` must default to `Off`
+    - `reflectionProbeUsage` must default to `Off`
+    - `motionVectorGenerationMode` must default to `ForceNoMotion`
+  - verification after this rule change remained stable:
+    - `PASS validatedPrefabs=14, warningCount=7`
+    - generated starters produced no extra renderer-default warnings
+- The validator now reports family-level quality coverage, not only technical prefab hygiene:
+  - current readback: `PASS validatedPrefabs=14, warningCount=7`
+  - current coverage summary:
+    - `family.kelp.tall=a0/g2`
+    - `family.kelp.patch.dense=a0/g2`
+    - `family.kelp.canopy=a0/g2`
+    - `family.coral.low=a0/g2`
+    - `family.coral.branching=a0/g2`
+    - `family.coral.massive=a0/g2`
+    - `family.coral.plate=a0/g2`
+  - meaning: technical final coverage exists for all flora families, but every family still lacks authored photoreal finals
+- `Hecton/Validation/Generate Procedural Flora Final Status Report` now exists and writes:
+  - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md`
+  - per-family coverage under baked root (`aX/gY`)
+  - expected linked real-final counts using the same authored-overrides-generated rule as intake
+  - actual linked `finalReady` real-final counts from `WorldPrefabFamilyProfile`
+  - placeholder vs real final split
+  - LOD presence and budget-triangle readback per prefab family
+- Linkage validation logic was corrected after the first pass:
+  - families with authored flora finals are expected to link authored prefabs only
+  - those families must not be forced to keep linking `GEN_` starters that intake intentionally suppresses
+  - the shared budget catalog now feeds both validator and status report from one editor-only source of truth
+- Current flora final status report confirms:
+  - all 7 flora families are linked as real generated finals, not placeholder fallback
+  - every current baked flora prefab has `LODGroup` coverage `2/2`
+  - current max budget-triangle hotspots:
+    - `family.kelp.patch.dense` -> `5712`
+    - `family.coral.branching` -> `3392`
+    - `family.coral.low` -> `2384`
+    - `family.coral.massive` -> `2328`
+    - `family.kelp.tall` -> `1928`
+    - `family.kelp.canopy` -> `1124`
+    - `family.coral.plate` -> `320`
+- `Hecton/Authoring/Apply Procedural Flora Final Variants` now links the generated starter finals into flora families:
+  - `FamiliesTouched=7, LinkedVariants=14, RemovedVariants=0, MissingFamilies=0`
+- Follow-up kelp dense cleanup pass removed the stale heavy starter and relinked the lighter replacement:
+  - `PASS validatedPrefabs=14`
+  - `FamiliesTouched=1, LinkedVariants=14, RemovedVariants=1, MissingFamilies=0`
+- Flora final intake is now quality-aware per family:
+  - if a family contains at least one non-`GEN_` baked flora prefab, `WorldProceduralFloraFinalVariantAuthoring` ignores `GEN_` starters for that family
+  - controlled verification on `family.coral.plate`:
+    - temporary authored prefab caused `FamiliesTouched=1, LinkedVariants=13, RemovedVariants=2, MissingFamilies=0`
+    - only authored `family.coral.plate.final.flora.pfb_family_coral_plate__hero_test` remained linked for that family
+    - after cleanup, clean rebuild restored the generated pair and validator still passed `validatedPrefabs=14`
 
-## Current Blocker
+## Current Blockers
 
-- Soft-water corridor tuning is partially fixed, not fully closed.
-- The fossil-reef corridor slice is no longer cave-dominant, but its single highest-scoring structure is still `Cave Entrance Marker`.
-- Hard corridor slices remain intentionally unchanged:
-  - `Granite Escarpment` stays landmark-heavy
-  - `Rift Spine` stays cave-heavy
+- Runtime corridor tuning for the fossil-reef landmark slice is now verified closed:
+  - `LandmarkCorridor / Fossil Reef Context` -> top and dominant structure `Coral Plate`
+  - `LandmarkCorridor / Granite Escarpment Context` remains top/dominant `Landmark Spire`
+  - `LandmarkCorridor / Rift Spine Context` remains top/dominant `Cave Entrance Marker`
+- The main remaining content blocker is no longer missing flora finals entirely; it is quality level. The baked root now has 14 generated combined-mesh starter finals, but it still lacks true photorealistic hand-authored/baked flora art.
+- The validator now proves the same blocker numerically: all 7 flora families are `generated-only`, authored count `a0`.
+- Perf remains `PENDING VERIFICATION`: no GC before/after measurements exist for this transfer path.
+- A persistent warning still exists during report generation:
+  - `Leak Detected : Persistent allocates 5 individual allocations`
+  - no stack trace captured yet
+- Editor compile blockers that were preventing flora-status verification are now cleared; the new flora status report menu executes successfully.
+- Current verification blocker moved from compile to tooling session:
+  - Unity MCP server currently reports `instance_count: 0`
+  - `mcpforunity://editor/state` returns `Unity session not available; please retry`
+  - last local `Editor.log` readback shows domain reload completed, then MCP ended an orphaned session
+  - direct HTTP check confirms the same split:
+    - `http://127.0.0.1:8088/health` -> `200 healthy`
+    - `http://127.0.0.1:8088/api/instances` -> `{"success":true,"instances":[]}`
+    - Unity Editor process is still running while server-side instance registry is empty
+  - result: the latest validator/report code pass after the budget-catalog/linkage-gate correction is still `PENDING VERIFICATION`
+- MCP verification path is now restored:
+  - live instance readback: `Hecton8@5898b2fd69afdd2d`
+  - fresh Unity verification on `2026-04-07`:
+    - `Rebuild World Runtime Stack`
+      - `First-wave final variants applied. FamiliesTouched=0, VariantsLinked=10, MissingPrefabs=0, MissingFamilies=0`
+      - `Baked flora starters generated. Prefabs=14, MeshesUpdated=28, RemovedAssets=0, Failures=0`
+      - `Baked flora final variants applied. FamiliesTouched=0, LinkedVariants=14, RemovedVariants=0, MissingFamilies=0`
+      - `Placeholder final variants rebuilt. PlaceholderFamilies=18, UpdatedFamilies=0, CleanedFamilies=0`
+      - `World runtime stack rebuilt`
+    - `Validate Procedural Flora Final Variants`
+      - `PASS validatedPrefabs=14, warningCount=7`
+      - coverage still `a0/g2` for all 7 flora families
+    - `Generate Procedural Flora Final Status Report`
+      - report regenerated successfully
+    - `Rebuild 108 Biome Matrix`
+    - `Validate 108 Biome Matrix`
+    - `Generate Procedural Matrix Biome Content Report`
+- Fresh live report confirms the transferred runtime placement layer:
+  - `FertileShallows / Mesa Plateaus` -> top/dominant structure `Kelp Canopy`
+  - `FertileShallows / Fossil Gallows` -> top/dominant structure `Coral Plate`
+  - `ReefNavigation / Archipelago Needles` -> top/dominant structure `Kelp Canopy`
+  - `ReefNavigation / Sea-Stack Forest` -> top/dominant structure `Coral Plate`
+  - `LandmarkCorridor / Sea-Stack Forest` -> top/dominant structure `Coral Plate`
+  - hard corridor slices remain intact:
+    - `LandmarkCorridor / Table-Land Benches` -> top/dominant `Landmark Spire`
+    - `LandmarkCorridor / The Shattered Spine` -> top/dominant `Cave Entrance Marker`
+- Flora intake/report determinism is now hardened in code, but still awaits live Unity confirmation:
+  - family iteration order is now fixed instead of depending on `HashSet` / `AssetDatabase.FindAssets` enumeration
+  - discovered baked flora specs are now sorted before family linking, reducing asset churn in `family.variants`
+  - flora status report family sections and prefab rows are now emitted in stable order
+  - non-ASCII family-header separator in the report builder was replaced with ASCII ` - ` to keep generated markdown clean and diffable
+- Flora final intake now supports name-driven metadata for manual art control, pending live Unity confirmation:
+  - `__wN` overrides variant weight during family linking
+  - `__sMIN-MAX` overrides `uniformScaleRange` in percent during family linking
+  - validator now warns when a prefab name contains malformed `w` / `s` metadata tokens
+  - status report now reads back linked intake-facing `weight` and `scale` per baked flora prefab
+- Flora final logical identity is now separated from intake metadata, pending live Unity confirmation:
+  - `variantId` is now built from the visual prefab name after stripping metadata tokens
+  - changing only `__wN` / `__sMIN-MAX` no longer churns `family.variants`
+  - validator now fails duplicate logical variants that differ only by intake metadata
+  - status report now shows the resolved logical `variantId` per baked flora prefab
+- Flora authoring now also guards duplicate logical variants before validation, pending live Unity confirmation:
+  - intake collapses duplicate `variantId` entries deterministically after sorting
+  - authoring keeps the first sorted winner and logs a warning for skipped duplicates
+  - this prevents silent overwrite-by-order when validator is skipped
+  - duplicate winner policy now prefers prefabs with explicit intake metadata over default-only copies
+- Flora metadata parsing is now stricter, pending live Unity confirmation:
+  - a prefab name may contain at most one `__wN` token and one `__sMIN-MAX` token
+  - duplicate weight or scale tokens now produce explicit metadata errors instead of ambiguous intake behavior
+- Fresh verified starter-set expansion on `2026-04-07`:
+  - editor-only flora starter generation was widened from `2` to `3` deterministic forms per family without touching runtime world owners
+  - verified Unity rebuild:
+    - `Baked flora starters generated. Prefabs=21, MeshesUpdated=42, RemovedAssets=0, Failures=0`
+    - `Baked flora final variants applied. FamiliesTouched=7, LinkedVariants=21, RemovedVariants=0, MissingFamilies=0`
+    - `World runtime stack rebuilt`
+  - verified validator/report state:
+    - `PASS validatedPrefabs=21, warningCount=7`
+    - family coverage is now `a0/g3` for all 7 flora families
+    - every flora family now reports `LODGroup` coverage `3/3`
+  - new deterministic generated forms now present in the baked root:
+    - kelp: `ribbon`, `ring`, `fan`
+    - coral: `knoll`, `fan`, `boulder`, `stack`
+  - current max budget-triangle hotspots after the expansion:
+    - `family.kelp.patch.dense` -> `9576`
+    - `family.coral.branching` -> `4320`
+    - `family.coral.low` -> `3840`
+    - `family.coral.massive` -> `3840`
+- Fresh verified kelp mesh-builder replacement on `2026-04-07`:
+  - added `WorldProceduralSeaweedMeshBuilder` as a focused editor-only owner for kelp mesh generation
+  - `WorldProceduralFloraBakedStarterGenerator` now routes kelp families through procedural mesh generation and leaves coral on the older proxy-combine path
+  - verified Unity passes:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=42, RemovedAssets=0, Failures=0`
+    - `Apply Procedural Flora Final Variants` -> `FamiliesTouched=0, LinkedVariants=21, RemovedVariants=0, MissingFamilies=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified kelp budget-triangle readback after the mesh-builder swap:
+    - `family.kelp.tall` -> `584` (down from `1952`)
+    - `family.kelp.patch.dense` -> `496` (down from `9576`)
+    - `family.kelp.canopy` -> `684` (down from `1160`)
+  - verified kelp LOD cascade after the same pass:
+    - all 3 kelp families now bake `LOD0/LOD1/LOD2/LOD3` instead of `LOD0/LOD1` only
+    - status report now reads kelp prefabs as `renderers=4`, `lodGroups=1`, `lodLevels=4`
+    - coral generated starters intentionally remain on `2` LOD levels for now
+  - verified shader/material owner path for kelp:
+    - added dedicated shader `Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader`
+    - added editor-only authoring owner `WorldProceduralFloraMaterialAuthoring`
+    - kelp materials now bind to the kelp shader instead of the shared URP Lit fallback
+    - verified authoring pass: `Applied flora materials. TouchedMaterials=3`
+    - validator still passes after the shader switch: `PASS validatedPrefabs=21, warningCount=7`
+  - verified procedural kelp texture stack on `2026-04-07`:
+    - added editor-only texture owner `WorldProceduralFloraTextureAuthoring`
+    - kelp authoring now generates `Base`, `Detail`, `Normal`, and `Mask` textures per kelp family under `Assets/_Project/Art/Textures/WorldProceduralFlora`
+    - shader now reads `_NormalMap` and `_MaskMap` in addition to `_BaseMap` / `_DetailMap`
+    - verified Unity passes:
+      - `Generate Procedural Flora Textures` -> `TouchedTextures=12`
+      - `Apply Procedural Flora Materials` -> `TouchedMaterials=3`
+      - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+      - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - verified material readback:
+      - `MAT_family_kelp_tall.mat` now binds `_BaseMap`, `_DetailMap`, `_NormalMap`, and `_MaskMap`
+      - kelp shader properties now include `_NormalStrength`, `_ThicknessStrength`, and `_SpecularNoiseStrength`
+  - verified flora material hardening on `2026-04-07`:
+    - validator now checks kelp material completeness instead of only renderer counts:
+      - correct shader `Hecton8/Flora/KelpMaster`
+      - required texture slots `_BaseMap`, `_DetailMap`, `_NormalMap`, `_MaskMap`
+      - instancing enabled
+    - this immediately exposed a real defect in coral materials: `MAT_family_coral_*` had instancing disabled
+    - `WorldProceduralFloraMaterialAuthoring` now hardens all 7 flora materials, not only kelp:
+      - `enableInstancing = true`
+      - `_ReceiveShadows = 0`
+      - `_EnvironmentReflections = 0`
+      - `_SpecularHighlights = 0`
+      - `_GlossyReflections = 0`
+    - verified Unity pass after the fix:
+      - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+      - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - verified readback:
+      - `MAT_family_coral_low.mat` now has `m_EnableInstancingVariants: 1`
+      - `MAT_family_coral_low.mat` now stores `_ReceiveShadows: 0` and `_EnvironmentReflections: 0`
+  - verified validator blind-spot removal on `2026-04-08`:
+    - `Validate Procedural Flora Final Variants` no longer checks material completeness only on budget/LOD0 renderers
+    - material validation now runs across all renderers in the prefab, including lower kelp LOD levels
+    - budget counts remain based on `budgetRenderers`, so perf thresholds were not distorted by the stricter coverage pass
+    - verified Unity pass after the fix:
+      - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - current warnings remain only the expected authored-final gap, not hidden LOD material defects
+  - verified status-report blind-spot removal on `2026-04-08`:
+    - `WorldProceduralFloraFinalStatusReport` now exposes prefab material/render state instead of only triangles/LOD counts
+    - summary table now includes `Material Ready`
+    - per-prefab rows now include:
+      - `material=ok|...`
+      - `renderState=ok|...`
+    - verified Unity pass:
+      - `Generate Procedural Flora Final Status Report` wrote the report successfully
+    - verified readback:
+      - all current 7 flora families report `Material Ready = 3/3`
+      - current generated kelp/coral prefabs read back as `material=ok | renderState=ok`
+  - verified LOD-cascade blind-spot removal on `2026-04-08`:
+    - flora validator now rejects non-descending LOD triangle cascades instead of only checking that an `LODGroup` exists
+    - status report now exposes per-prefab `lodTriangles=` plus family-level `LOD Cascade`
+    - verified Unity passes:
+      - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+      - `Generate Procedural Flora Final Status Report`
+    - verified readback:
+      - all current 7 flora families report `LOD Cascade = 3/3`
+      - current kelp generated cascade examples:
+      - `family.kelp.tall__stalk` -> `584/302/128/50`
+      - `family.kelp.patch.dense__patch` -> `414/184/78/24`
+      - `family.kelp.canopy__crown` -> `684/380/184/82`
+  - verified authored-intake fail-closed behavior on `2026-04-08`:
+    - `WorldProceduralFloraFinalVariantAuthoring` now skips prefabs with invalid `__w/__s` metadata instead of silently linking them with fallback defaults
+    - this keeps generated family fallback alive until the authored prefab name is corrected
+    - controlled Unity test:
+      - temporary authored-like kelp prefab `PFB_family_kelp_tall__hero_bad__s92-108__s80-120.prefab`
+      - authoring log: `Skipping flora prefab ... due to invalid intake metadata`
+      - apply result stayed stable: `FamiliesTouched=0, LinkedVariants=21, RemovedVariants=0, MissingFamilies=0`
+    - verified readback:
+      - `ProceduralFamily_family_kelp_tall.asset` kept the same 3 generated final variants
+  - compile-side defect removed during the same pass:
+    - generated kelp mesh object names now match mesh asset filenames, removing the earlier import-name mismatch warning path
+- Existing fauna owner is now verified as the ecological bridge for flora-heavy reef/littoral slices:
+  - `Build Fauna Biome Datasets` rebuilt `108` fauna biome datasets
+  - `Generate AI Fauna World Integration Report` now writes a dedicated `Reef And Littoral Flora Biomes` section in `AI_FAUNA_WORLD_INTEGRATION_REPORT.md`
+  - current live report shows no reef/littoral warnings and confirms concrete ambient/threat mixes for flora-heavy slices such as:
+    - `Archipelago Needles` -> passive `3`, threat `2`
+    - `Sea-Stack Forest` -> passive `3`, threat `3`, leviathan `1`
+    - `Fossil Gallows` -> passive `3`, threat `2`
+- Existing scanner/analyzer owner is now extended as the flora intel bridge:
+  - `ScannableCategoryUtility` centralizes authored scan category classification without lowercase-copy churn
+  - `ScannerTool` now recognizes `flora / coral / kelp / seaweed / botany` categories as flora contacts in expedition sweeps
+  - `EnvironmentalAnalyzerTool` now gives flora-specific recommendations instead of treating those contacts as generic databank entries
+  - result: shelter/fish/ecology concepts from the coral/seaweed docs are now explicitly mapped to the existing fauna stack instead of waiting for a separate coral/seaweed runtime manager
 
 ## Next Pass
 
-- Finish the remaining `LandmarkCorridor / Fossil Reef Context` top-structure shift without destabilizing granite/rift corridors.
-- After that, move from selection tuning into broader in-world beauty/readability verification.
-- Perf remains `PENDING VERIFICATION` until GC/build numbers exist.
+- Move from selection tuning into real flora asset population:
+  - replace generated `GEN_` starter finals with photorealistic coral finals where art is ready
+  - replace generated `GEN_` starter finals with photorealistic kelp finals where art is ready
+- Use `Assets/_Project/Prefabs/Nature/Flora/Baked/README.md` budget table as the authored-final intake contract before asking for any family budget expansion.
+- Run broader in-world beauty/readability verification now that real final-ready flora variants exist in the intake root.
+- Capture GC/build evidence and isolate the persistent leak warning with a stack trace before claiming perf safety.

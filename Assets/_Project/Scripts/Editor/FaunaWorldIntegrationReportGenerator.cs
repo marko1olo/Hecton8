@@ -50,6 +50,8 @@ namespace Hecton8.AI.Editor
             var reserveBiomesWithLeviathan = new List<string>();
             var surfaceBiomesWithLeviathan = new List<string>();
             var skewWarnings = new List<string>();
+            var reefBiomeSummaries = new List<string>();
+            var reefBiomeWarnings = new List<string>();
 
             if (catalog != null && catalog.Profiles != null)
             {
@@ -140,6 +142,27 @@ namespace Hecton8.AI.Editor
                         skewWarnings.Add($"{profile.biomeName}: leviathan exists but large threat zone is missing");
                     if (dataset.preferHeavyHunterInsteadOfLeviathan && leviathanCount > 0)
                         skewWarnings.Add($"{profile.biomeName}: heavy hunter and leviathan are both present");
+
+                    if (IsReefLifeBiome(profile))
+                    {
+                        string faunaFamilyLabel = profile.familyProfile != null && profile.familyProfile.faunaFamilyProfile != null
+                            ? profile.familyProfile.faunaFamilyProfile.familyLabel
+                            : "None";
+                        string faunaFamilyId = profile.familyProfile != null && profile.familyProfile.faunaFamilyProfile != null
+                            ? profile.familyProfile.faunaFamilyProfile.familyId
+                            : "none";
+                        string entrySummary = DescribeEntries(entries);
+
+                        reefBiomeSummaries.Add(
+                            $"{profile.biomeName} - family `{profile.familyId}` / fauna `{faunaFamilyLabel}` (`{faunaFamilyId}`) / passive `{passiveCount}` / threat `{threatCount}` / hunter `{hunterCount}` / leviathan `{leviathanCount}` / entries `{entrySummary}`");
+
+                        if (passiveCount < 2)
+                            reefBiomeWarnings.Add($"{profile.biomeName}: reef/littoral flora biome is too thin on passive life ({passiveCount}).");
+                        if (threatCount < 1)
+                            reefBiomeWarnings.Add($"{profile.biomeName}: reef/littoral flora biome has no threat pressure.");
+                        if (entries == null || entries.Count < 3)
+                            reefBiomeWarnings.Add($"{profile.biomeName}: reef/littoral flora biome has too few fauna entries ({(entries != null ? entries.Count : 0)}).");
+                    }
                 }
             }
 
@@ -165,6 +188,8 @@ namespace Hecton8.AI.Editor
             AppendList(sb, "Biomes Using Heavy Hunters Instead Of Leviathans", heavyHunterMacroZones);
             AppendList(sb, "Reserve Biomes With Leviathans", reserveBiomesWithLeviathan);
             AppendList(sb, "Shallow And Mid-Depth Biomes With Leviathans", surfaceBiomesWithLeviathan);
+            AppendList(sb, "Reef And Littoral Flora Biomes", reefBiomeSummaries);
+            AppendList(sb, "Reef And Littoral Flora Warnings", reefBiomeWarnings);
             AppendList(sb, "Skew Warnings", skewWarnings);
 
             File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8);
@@ -194,6 +219,50 @@ namespace Hecton8.AI.Editor
             return string.Equals(familyId, "biome.family.littoral_karst", System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(familyId, "biome.family.fossil_reef", System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(familyId, "biome.family.crystal_growth", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsReefLifeBiome(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return false;
+
+            if (IsCalmFamily(profile.familyId))
+                return true;
+
+            string biomeName = profile.biomeName != null ? profile.biomeName.ToLowerInvariant() : string.Empty;
+            return biomeName.Contains("reef") ||
+                   biomeName.Contains("coral") ||
+                   biomeName.Contains("sea-stack") ||
+                   biomeName.Contains("archipelago") ||
+                   biomeName.Contains("fossil");
+        }
+
+        private static string DescribeEntries(List<FaunaEntry> entries)
+        {
+            if (entries == null || entries.Count == 0)
+                return "none";
+
+            var sb = new StringBuilder(256);
+            int written = 0;
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                CreatureArchetypeData archetype = entries[i].archetype;
+                if (archetype == null)
+                    continue;
+
+                if (written > 0)
+                    sb.Append(" | ");
+
+                sb.Append(archetype.displayName)
+                    .Append(" [")
+                    .Append(archetype.roleType)
+                    .Append(']');
+
+                written++;
+            }
+
+            return written > 0 ? sb.ToString() : "none";
         }
 
         private static bool IsGenericReserveBiomeName(string biomeName)

@@ -59,12 +59,24 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.92, y: 1.08}
-  - variantId: family.coral.massive.final.placeholder
-    prefab: {fileID: 90234356084688861, guid: 3611a5401167541468f2217ca8b83caf, type: 3}
-    weight: 2
+  - variantId: family.coral.massive.final.flora.gen_family_coral_massive__head
+    prefab: {fileID: 7749640216425186548, guid: f325acd19dd94bd4a859d730d2ece276, type: 3}
+    weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.92, y: 1.08}
+    uniformScaleRange: {x: 0.95, y: 1.05}
+  - variantId: family.coral.massive.final.flora.gen_family_coral_massive__porous
+    prefab: {fileID: 8082805423186771928, guid: de7a9bd8d7bdca84eac24b905ef47d92, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.05}
+  - variantId: family.coral.massive.final.flora.gen_family_coral_massive__boulder
+    prefab: {fileID: 2907096142008002046, guid: 1fadd9d4e7ffaae4e90213a696f1ac95, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.05}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Massive
   gameplayRole: Massive coral heads for shelter pockets, porosity and believable

@@ -35,6 +35,7 @@ namespace Hecton8.Gameplay
             public int cargoContacts;
             public int routeContacts;
             public int bioformContacts;
+            public int floraContacts;
 
             public string BuildHudMessage(ScanMode mode)
             {
@@ -52,7 +53,9 @@ namespace Hecton8.Gameplay
                 {
                     ScanMode.Resource => $"SCANNER - RESOURCES {resourceContacts} // PICKUPS {pickupContacts} | {BuildRecommendation(mode)}",
                     ScanMode.Structure => $"SCANNER - STRUCTURES {structureContacts} // ROUTE {routeContacts} | {BuildRecommendation(mode)}",
-                    _ => $"SCANNER - CONTACTS {totalContacts} // BIO {bioformContacts} | {BuildRecommendation(mode)}"
+                    _ => floraContacts > 0
+                        ? $"SCANNER - CONTACTS {totalContacts} // BIO {bioformContacts} // FLORA {floraContacts} | {BuildRecommendation(mode)}"
+                        : $"SCANNER - CONTACTS {totalContacts} // BIO {bioformContacts} | {BuildRecommendation(mode)}"
                 };
             }
 
@@ -82,7 +85,9 @@ namespace Hecton8.Gameplay
                 {
                     ScanMode.Resource => $"{resourceContacts} resource signatures and {pickupContacts} cached pickups resolved inside {radius:0}m. Recommendation: {BuildRecommendation(mode)}",
                     ScanMode.Structure => $"{structureContacts} structural contacts, {routeContacts} route markers, and {scannableContacts} databank contacts resolved inside {radius:0}m. Recommendation: {BuildRecommendation(mode)}",
-                    _ => $"{totalContacts} contact signatures resolved inside {radius:0}m pulse envelope, including {bioformContacts} bioform-coded contacts. Recommendation: {BuildRecommendation(mode)}"
+                    _ => floraContacts > 0
+                        ? $"{totalContacts} contact signatures resolved inside {radius:0}m pulse envelope, including {bioformContacts} bioform-coded contacts and {floraContacts} flora signatures. Recommendation: {BuildRecommendation(mode)}"
+                        : $"{totalContacts} contact signatures resolved inside {radius:0}m pulse envelope, including {bioformContacts} bioform-coded contacts. Recommendation: {BuildRecommendation(mode)}"
                 };
             }
 
@@ -110,12 +115,14 @@ namespace Hecton8.Gameplay
                         : routeContacts > 0
                             ? "Route markers are live in this sector. Hold the lane readable and stage beacon relays."
                         : structurePoiContacts > 0
-                            ? "Structural waypoint resolved. Hold this route for navigation or service work."
-                            : structureContacts > 0
-                                ? "Hold this route for construction, salvage, or return navigation."
-                                : "Databank signal only. Sweep closer before committing tools.",
+                                ? "Structural waypoint resolved. Hold this route for navigation or service work."
+                                : structureContacts > 0
+                                    ? "Hold this route for construction, salvage, or return navigation."
+                                    : "Databank signal only. Sweep closer before committing tools.",
                     _ => totalContacts >= 4
                         ? "Sector is dense with contacts. Slow down and classify before pushing deeper."
+                        : floraContacts > 0
+                            ? "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on."
                         : bioformContacts > 0
                             ? "Bioform signatures are present. Confirm posture before closing distance."
                         : cargoContacts > 0
@@ -404,31 +411,24 @@ namespace Hecton8.Gameplay
             if (scannable == null)
                 return;
 
-            string category = scannable.EntryCategory;
-            if (string.IsNullOrWhiteSpace(category))
-                return;
-
-            string lowered = category.ToLowerInvariant();
-            if (lowered.Contains("hazard"))
+            switch (ScannableCategoryUtility.Classify(scannable.EntryCategory))
             {
-                result.hazardContacts++;
-                return;
+                case ScannableCategoryUtility.CategoryKind.Hazard:
+                    result.hazardContacts++;
+                    return;
+                case ScannableCategoryUtility.CategoryKind.Resource:
+                    result.resourcePoiContacts++;
+                    return;
+                case ScannableCategoryUtility.CategoryKind.Structure:
+                    result.structurePoiContacts++;
+                    return;
+                case ScannableCategoryUtility.CategoryKind.Flora:
+                    result.floraContacts++;
+                    return;
+                case ScannableCategoryUtility.CategoryKind.Expedition:
+                    result.expeditionContacts++;
+                    return;
             }
-
-            if (lowered.Contains("resource"))
-            {
-                result.resourcePoiContacts++;
-                return;
-            }
-
-            if (lowered.Contains("structure"))
-            {
-                result.structurePoiContacts++;
-                return;
-            }
-
-            if (lowered.Contains("expedition"))
-                result.expeditionContacts++;
         }
 
         private static void CategorizeDescriptor(

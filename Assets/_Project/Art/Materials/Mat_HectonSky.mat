@@ -154,7 +154,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 0.027315933
+    - _GameTime: 0.00158053
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -184,11 +184,11 @@ Material:
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
-    - _SunEdgeSoftness: 0.008178316
-    - _SunElevation: 0.2913499
+    - _SunEdgeSoftness: 0.001
+    - _SunElevation: 0.28905687
     - _SunScatterIntensity: 0.62
     - _SunScatterPower: 11.9
-    - _SunSize: 0.0041290396
+    - _SunSize: 0.002
     - _Surface: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
@@ -216,8 +216,8 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
-    - _SunDiscColor: {r: 18.873764, g: 16.986387, b: 11.324259, a: 1}
-    - _SunScatterColor: {r: 0.94368815, g: 0.6605817, b: 0.28310648, a: 1}
+    - _SunDiscColor: {r: 19.428722, g: 17.485851, b: 11.657234, a: 1}
+    - _SunScatterColor: {r: 0.97143614, g: 0.6800053, b: 0.29143086, a: 1}
     - _SunsetCloudColor: {r: 2, g: 0.7, b: 0.2, a: 1}
     - _SunsetHorizonColor: {r: 3.5, g: 0.6, b: 0.05, a: 1}
     - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}

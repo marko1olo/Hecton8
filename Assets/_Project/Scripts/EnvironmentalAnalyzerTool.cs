@@ -340,15 +340,19 @@ namespace Hecton8.Gameplay
             if (scannable == null)
                 return "Hold position and inspect manually.";
 
-            string category = scannable.EntryCategory?.ToLowerInvariant() ?? string.Empty;
-            if (category.Contains("hazard"))
-                return "Switch to focused observation and approach with caution.";
-            if (category.Contains("resource"))
-                return "Mark the pocket and prepare salvage or resource recovery.";
-            if (category.Contains("structure"))
-                return "Hold this route for scanner structure mode or return navigation.";
-            if (category.Contains("expedition"))
-                return "Use this as a route checkpoint before pushing deeper.";
+            switch (ScannableCategoryUtility.Classify(scannable.EntryCategory))
+            {
+                case ScannableCategoryUtility.CategoryKind.Hazard:
+                    return "Switch to focused observation and approach with caution.";
+                case ScannableCategoryUtility.CategoryKind.Resource:
+                    return "Mark the pocket and prepare salvage or resource recovery.";
+                case ScannableCategoryUtility.CategoryKind.Structure:
+                    return "Hold this route for scanner structure mode or return navigation.";
+                case ScannableCategoryUtility.CategoryKind.Flora:
+                    return "Treat this as a flora intel contact. Inspect shelter value, harvest utility, and silhouette readability before moving on.";
+                case ScannableCategoryUtility.CategoryKind.Expedition:
+                    return "Use this as a route checkpoint before pushing deeper.";
+            }
 
             return "Archive the contact and inspect before committing another tool.";
         }

@@ -1,0 +1,304 @@
+using UnityEditor;
+using UnityEngine;
+
+namespace Hecton8.EditorTools
+{
+    /// <summary>
+    /// Owns editor-only procedural texture generation for flora starter and baked-final materials.
+    /// </summary>
+    public static class WorldProceduralFloraTextureAuthoring
+    {
+        private const string TextureRoot = "Assets/_Project/Art/Textures/WorldProceduralFlora";
+
+        [MenuItem("Hecton/Authoring/Generate Procedural Flora Textures", priority = 175)]
+        public static void Apply()
+        {
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Textures");
+            EnsureFolder(TextureRoot);
+
+            int touchedTextures = 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpTall_Base.asset", new Color(0.18f, 0.44f, 0.21f), new Color(0.22f, 0.58f, 0.28f), new Color(0.36f, 0.72f, 0.42f), 0.18f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpPatch_Base.asset", new Color(0.12f, 0.34f, 0.18f), new Color(0.18f, 0.46f, 0.24f), new Color(0.28f, 0.60f, 0.32f), 0.14f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpCanopy_Base.asset", new Color(0.22f, 0.50f, 0.24f), new Color(0.28f, 0.66f, 0.32f), new Color(0.44f, 0.82f, 0.48f), 0.24f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpTall_Detail.asset", 11) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpPatch_Detail.asset", 23) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpCanopy_Detail.asset", 37) ? 1 : 0;
+            touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpTall_Normal.asset", 11, 0.72f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpPatch_Normal.asset", 23, 0.58f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpCanopy_Normal.asset", 37, 0.86f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpTall_Mask.asset", 11, 0.62f, 0.94f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpPatch_Mask.asset", 23, 0.54f, 0.88f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpCanopy_Mask.asset", 37, 0.68f, 0.98f) ? 1 : 0;
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Applied flora textures. TouchedTextures={touchedTextures}.");
+        }
+
+        public static Texture2D LoadKelpBaseTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveBaseTexturePath(familyId));
+        }
+
+        public static Texture2D LoadKelpDetailTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveDetailTexturePath(familyId));
+        }
+
+        public static Texture2D LoadKelpNormalTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveNormalTexturePath(familyId));
+        }
+
+        public static Texture2D LoadKelpMaskTexture(string familyId)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveMaskTexturePath(familyId));
+        }
+
+        private static bool CreateOrUpdateBaseTexture(string path, Color lowColor, Color midColor, Color highColor, float bandStrength)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+            {
+                texture = new Texture2D(64, 256, TextureFormat.RGBA32, false, true)
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                    anisoLevel = 1
+                };
+                AssetDatabase.CreateAsset(texture, path);
+            }
+
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = y / (float)(height - 1);
+                Color gradient = v < 0.55f
+                    ? Color.Lerp(lowColor, midColor, v / 0.55f)
+                    : Color.Lerp(midColor, highColor, (v - 0.55f) / 0.45f);
+
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (float)(width - 1);
+                    float stripe = Mathf.Sin((u * 8.0f + v * 5.5f) * Mathf.PI);
+                    float mottled = Mathf.Sin((u * 23.0f + v * 13.0f) * Mathf.PI) * 0.5f + 0.5f;
+                    float band = 1.0f + stripe * bandStrength + (mottled - 0.5f) * 0.08f;
+                    pixels[y * width + x] = gradient * band;
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            EditorUtility.SetDirty(texture);
+            return true;
+        }
+
+        private static bool CreateOrUpdateDetailTexture(string path, int seed)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+            {
+                texture = new Texture2D(128, 128, TextureFormat.RGBA32, false, true)
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                    anisoLevel = 1
+                };
+                AssetDatabase.CreateAsset(texture, path);
+            }
+
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = y / (float)(height - 1);
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (float)(width - 1);
+                    float a = Mathf.Sin((u * (9 + seed * 0.1f) + v * 5.1f) * Mathf.PI);
+                    float b = Mathf.Sin((u * 17.0f - v * (7 + seed * 0.05f)) * Mathf.PI);
+                    float c = Mathf.Sin(((u + v) * (11 + seed * 0.07f)) * Mathf.PI);
+                    float value = Mathf.Clamp01(0.5f + a * 0.24f + b * 0.18f + c * 0.12f);
+                    pixels[y * width + x] = new Color(value, value, value, 1f);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            EditorUtility.SetDirty(texture);
+            return true;
+        }
+
+        private static bool CreateOrUpdateNormalTexture(string path, int seed, float normalScale)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+            {
+                texture = new Texture2D(128, 128, TextureFormat.RGBA32, false, true)
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                    anisoLevel = 1
+                };
+                AssetDatabase.CreateAsset(texture, path);
+            }
+
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = y / (float)(height - 1);
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (float)(width - 1);
+                    float center = SampleLeafHeight(u, v, seed);
+                    float sampleX = SampleLeafHeight(Mathf.Repeat(u + 1.0f / width, 1.0f), v, seed);
+                    float sampleY = SampleLeafHeight(u, Mathf.Repeat(v + 1.0f / height, 1.0f), seed);
+                    Vector3 tangent = new Vector3(1f, 0f, (sampleX - center) * normalScale);
+                    Vector3 bitangent = new Vector3(0f, 1f, (sampleY - center) * normalScale);
+                    Vector3 normal = Vector3.Cross(tangent, bitangent).normalized;
+                    pixels[y * width + x] = new Color(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f, 1f);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            EditorUtility.SetDirty(texture);
+            return true;
+        }
+
+        private static bool CreateOrUpdateMaskTexture(string path, int seed, float thicknessBase, float thicknessTip)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+            {
+                texture = new Texture2D(128, 256, TextureFormat.RGBA32, false, true)
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    wrapMode = TextureWrapMode.Repeat,
+                    filterMode = FilterMode.Bilinear,
+                    anisoLevel = 1
+                };
+                AssetDatabase.CreateAsset(texture, path);
+            }
+
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = y / (float)(height - 1);
+                float thickness = Mathf.Lerp(thicknessBase, thicknessTip, Mathf.Pow(v, 0.72f));
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (float)(width - 1);
+                    float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
+                    float gloss = Mathf.Clamp01(0.52f + Mathf.Sin((u * (7.0f + seed * 0.08f) + v * 3.1f) * Mathf.PI) * 0.24f + centerRib * 0.18f);
+                    float ambientLift = Mathf.Clamp01(0.44f + centerRib * 0.36f + Mathf.Sin((u + v) * (5.0f + seed * 0.04f) * Mathf.PI) * 0.08f);
+                    float causticBias = Mathf.Clamp01(0.48f + Mathf.Sin((u * 13.0f - v * (9.0f + seed * 0.03f)) * Mathf.PI) * 0.22f);
+                    pixels[y * width + x] = new Color(thickness, gloss, ambientLift, causticBias);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            EditorUtility.SetDirty(texture);
+            return true;
+        }
+
+        private static string ResolveBaseTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case "family.kelp.tall":
+                    return TextureRoot + "/TX_KelpTall_Base.asset";
+                case "family.kelp.patch.dense":
+                    return TextureRoot + "/TX_KelpPatch_Base.asset";
+                case "family.kelp.canopy":
+                    return TextureRoot + "/TX_KelpCanopy_Base.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveDetailTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case "family.kelp.tall":
+                    return TextureRoot + "/TX_KelpTall_Detail.asset";
+                case "family.kelp.patch.dense":
+                    return TextureRoot + "/TX_KelpPatch_Detail.asset";
+                case "family.kelp.canopy":
+                    return TextureRoot + "/TX_KelpCanopy_Detail.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveNormalTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case "family.kelp.tall":
+                    return TextureRoot + "/TX_KelpTall_Normal.asset";
+                case "family.kelp.patch.dense":
+                    return TextureRoot + "/TX_KelpPatch_Normal.asset";
+                case "family.kelp.canopy":
+                    return TextureRoot + "/TX_KelpCanopy_Normal.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string ResolveMaskTexturePath(string familyId)
+        {
+            switch (familyId)
+            {
+                case "family.kelp.tall":
+                    return TextureRoot + "/TX_KelpTall_Mask.asset";
+                case "family.kelp.patch.dense":
+                    return TextureRoot + "/TX_KelpPatch_Mask.asset";
+                case "family.kelp.canopy":
+                    return TextureRoot + "/TX_KelpCanopy_Mask.asset";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static float SampleLeafHeight(float u, float v, int seed)
+        {
+            float stripeA = Mathf.Sin((u * (8.0f + seed * 0.05f) + v * 4.8f) * Mathf.PI);
+            float stripeB = Mathf.Sin((u * 21.0f - v * (6.0f + seed * 0.03f)) * Mathf.PI);
+            float curl = Mathf.Sin(((u * 0.75f + v) * (12.0f + seed * 0.02f)) * Mathf.PI);
+            float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
+            return stripeA * 0.18f + stripeB * 0.10f + curl * 0.08f + centerRib * 0.14f;
+        }
+
+        private static void EnsureFolder(string assetPath)
+        {
+            if (AssetDatabase.IsValidFolder(assetPath))
+                return;
+
+            int lastSeparator = assetPath.LastIndexOf('/');
+            if (lastSeparator <= 0)
+                return;
+
+            string parentPath = assetPath.Substring(0, lastSeparator);
+            string folderName = assetPath.Substring(lastSeparator + 1);
+            EnsureFolder(parentPath);
+
+            if (!AssetDatabase.IsValidFolder(assetPath))
+                AssetDatabase.CreateFolder(parentPath, folderName);
+        }
+    }
+}
