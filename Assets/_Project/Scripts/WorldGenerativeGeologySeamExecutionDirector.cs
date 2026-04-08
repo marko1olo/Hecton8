@@ -123,10 +123,13 @@ namespace Hecton8.World
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
+        internal static WorldGenerativeGeologySeamExecutionDirector ActiveRuntimeInstance { get; private set; }
+
         public IReadOnlyList<WorldGenerativeGeologyVoxelBlendRequest> ActiveVoxelRequests => _voxelRequests;
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             ReconcileExecutedSeams();
         }
@@ -159,6 +162,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -607,7 +616,7 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref integrationDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyIntegrationDirector(ref integrationDirector);
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
         }
     }

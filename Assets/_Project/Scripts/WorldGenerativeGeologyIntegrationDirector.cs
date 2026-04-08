@@ -56,10 +56,13 @@ namespace Hecton8.World
         private float _lastPlanRefreshTime = float.NegativeInfinity;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
+        internal static WorldGenerativeGeologyIntegrationDirector ActiveRuntimeInstance { get; private set; }
+
         public IReadOnlyList<WorldGenerativeGeologySeamPlan> ActivePlans => _orderedPlans;
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             RebuildIntegrationPlans();
         }
@@ -92,6 +95,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -581,7 +590,7 @@ namespace Hecton8.World
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref voxelEngine);
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
         }
 
         private static int CompareByWeightDescending(WorldGenerativeGeologySeamPlan left, WorldGenerativeGeologySeamPlan right)

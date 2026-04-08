@@ -171,14 +171,14 @@ namespace Hecton8.World
 
             if (gpuiManager == null)
             {
-                gpuiManager = FindAnyObjectByType<GPUInstancerPrefabManager>();
+                TryGetComponent(out gpuiManager);
                 if (gpuiManager == null)
                     Debug.LogError("[HectonRockManager] GPUInstancerPrefabManager not found!", this);
             }
 
             if (proximityColliderSystem == null)
             {
-                proximityColliderSystem = FindAnyObjectByType<ProximityColliderSystem>();
+                proximityColliderSystem = ProximityColliderSystem.ActiveRuntimeInstance;
                 if (proximityColliderSystem == null)
                     Debug.LogWarning("[HectonRockManager] ProximityColliderSystem not found. " +
                                      "Rocks will render but have no physics.", this);

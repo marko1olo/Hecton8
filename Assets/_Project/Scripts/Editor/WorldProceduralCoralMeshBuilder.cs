@@ -745,7 +745,7 @@ namespace Hecton8.EditorTools
 
         private static bool TryResolveSpec(string rootToken, out CoralSpec spec)
         {
-            switch (rootToken)
+            switch (NormalizeRootToken(rootToken))
             {
                 case "family_coral_low__bed": spec = new CoralSpec(CoralShape.Low, CoralVariant.Bed, 11, 18, 5, 0, 0.09f, 3.2f, 4.9f, new Color32(172, 168, 186, 255), 1800); return true;
                 case "family_coral_low__plate": spec = new CoralSpec(CoralShape.Low, CoralVariant.Plate, 10, 18, 5, 0, 0.09f, 3.4f, 5.2f, new Color32(178, 154, 174, 255), 1400); return true;
@@ -768,6 +768,36 @@ namespace Hecton8.EditorTools
                 case "family_coral_brittle__halo": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 8, 6, 0.05f, 4.4f, 6.6f, new Color32(144, 202, 206, 255), 2900); return true;
                 default: spec = default; return false;
             }
+        }
+
+        private static string NormalizeRootToken(string rootToken)
+        {
+            if (string.IsNullOrWhiteSpace(rootToken))
+                return string.Empty;
+
+            string[] tokens = rootToken.Split(new[] { "__" }, System.StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length == 0)
+                return rootToken;
+
+            string[] filtered = new string[tokens.Length];
+            int filteredCount = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string token = tokens[i];
+                if (token.Length > 1)
+                {
+                    char prefix = char.ToLowerInvariant(token[0]);
+                    if ((prefix == 's' || prefix == 'w') && char.IsDigit(token[1]))
+                        continue;
+                }
+
+                filtered[filteredCount++] = token;
+            }
+
+            if (filteredCount == 0)
+                return rootToken;
+
+            return string.Join("__", filtered, 0, filteredCount);
         }
 
         private static Vector3 EvaluateBezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)

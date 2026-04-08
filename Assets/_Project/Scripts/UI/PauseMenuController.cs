@@ -33,6 +33,7 @@ namespace Hecton8.UI
         private static readonly Color ButtonBg = new Color(0.08f, 0.16f, 0.18f, 0.84f);
         private static readonly Color ButtonHover = new Color(0.12f, 0.24f, 0.28f, 0.94f);
         private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
+        private static readonly Action<AsyncOperation> _onMainMenuCleanupCompleted = HandleMainMenuCleanupCompleted;
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -45,12 +46,18 @@ namespace Hecton8.UI
         [SerializeField] private bool pauseTimeScale = true;
 
         private static int _openMenuCount;
+        private static bool _pendingMainMenuCleanup;
+        private static bool _mainMenuCleanupHookRegistered;
+        private static string _pendingMainMenuSceneName = string.Empty;
 
         private bool _registered;
         private bool _built;
         private bool _isOpen;
+        private bool _exitToMainMenuInFlight;
+        private bool _sceneActivationRequested;
         private PauseSection _activeSection;
         private float _cachedTimeScale = 1f;
+        private AsyncOperation _mainMenuLoadOperation;
 
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
@@ -143,6 +150,12 @@ namespace Hecton8.UI
         {
             if (!Application.isPlaying)
                 return;
+
+            if (_exitToMainMenuInFlight)
+            {
+                UpdateMainMenuExitTransition();
+                return;
+            }
 
             bool escapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             bool startPressed = Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame;
@@ -583,11 +596,156 @@ namespace Hecton8.UI
 
         private void ExitToMainMenu()
         {
+            if (_exitToMainMenuInFlight)
+                return;
+
+            EnsureBuilt();
+
             if (pauseTimeScale)
                 Time.timeScale = 1f;
 
+            _exitToMainMenuInFlight = true;
+            _sceneActivationRequested = false;
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 1f;
+                _canvasGroup.interactable = false;
+                _canvasGroup.blocksRaycasts = true;
+            }
+
+            SetPanelVisible(_mainPanelCanvasGroup, false);
+            SetPanelVisible(_savesPanelCanvasGroup, false);
+            SetPanelVisible(_helpPanelCanvasGroup, false);
+            SetPanelVisible(_settingsPanelCanvasGroup, false);
+            ClearPauseSelection();
+
+            if (_headerTitle != null)
+                _headerTitle.SetText("RETURNING TO MAIN MENU");
+
+            if (_headerSub != null)
+                _headerSub.SetText("asynchronous scene handoff in progress");
+
+            if (_footerHint != null)
+                _footerHint.SetText("loading menu shell and releasing world memory");
+
+            if (_saveStatus != null)
+                _saveStatus.SetText("Preparing scene transition...");
+
             GameStartContextHolder.Reset();
-            SceneManager.LoadScene(mainMenuSceneName);
+            RegisterMainMenuCleanup(mainMenuSceneName);
+
+            _mainMenuLoadOperation = SceneManager.LoadSceneAsync(mainMenuSceneName);
+            if (_mainMenuLoadOperation == null)
+            {
+                FailMainMenuExitTransition("Failed to create async menu load operation.");
+                return;
+            }
+
+            _mainMenuLoadOperation.allowSceneActivation = false;
+        }
+
+        private void UpdateMainMenuExitTransition()
+        {
+            if (_mainMenuLoadOperation == null)
+                return;
+
+            if (_mainMenuLoadOperation.isDone)
+            {
+                _mainMenuLoadOperation = null;
+                return;
+            }
+
+            float progress = Mathf.Clamp01(_mainMenuLoadOperation.progress / 0.9f);
+            int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
+
+            if (_saveStatus != null)
+                _saveStatus.SetText($"Loading main menu... {percent}%");
+
+            if (_sceneActivationRequested || _mainMenuLoadOperation.progress < 0.9f)
+                return;
+
+            _sceneActivationRequested = true;
+            _mainMenuLoadOperation.allowSceneActivation = true;
+        }
+
+        private void FailMainMenuExitTransition(string message)
+        {
+            _exitToMainMenuInFlight = false;
+            _sceneActivationRequested = false;
+            _mainMenuLoadOperation = null;
+            UnregisterMainMenuCleanup();
+
+            if (pauseTimeScale)
+                Time.timeScale = 0f;
+
+            if (_headerTitle != null)
+                _headerTitle.SetText("MISSION PAUSE");
+
+            ShowSection(PauseSection.Main);
+
+            if (_footerHint != null)
+                _footerHint.SetText("ESC = back / resume  |  SETTINGS hosts controls and rebinds");
+
+            if (_saveStatus != null)
+                _saveStatus.SetText(message);
+
+#if UNITY_EDITOR
+            Debug.LogError($"[PauseMenuController] {message}");
+#endif
+        }
+
+        private static void RegisterMainMenuCleanup(string sceneName)
+        {
+            _pendingMainMenuCleanup = true;
+            _pendingMainMenuSceneName = sceneName ?? string.Empty;
+
+            if (_mainMenuCleanupHookRegistered)
+                return;
+
+            SceneManager.sceneLoaded += HandlePendingMainMenuSceneLoaded;
+            _mainMenuCleanupHookRegistered = true;
+        }
+
+        private static void UnregisterMainMenuCleanup()
+        {
+            _pendingMainMenuCleanup = false;
+            _pendingMainMenuSceneName = string.Empty;
+
+            if (!_mainMenuCleanupHookRegistered)
+                return;
+
+            SceneManager.sceneLoaded -= HandlePendingMainMenuSceneLoaded;
+            _mainMenuCleanupHookRegistered = false;
+        }
+
+        private static void HandlePendingMainMenuSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!_pendingMainMenuCleanup ||
+                !string.Equals(scene.name, _pendingMainMenuSceneName, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            UnregisterMainMenuCleanup();
+
+            AsyncOperation unloadOperation = Resources.UnloadUnusedAssets();
+            if (unloadOperation == null)
+            {
+                GC.Collect();
+                return;
+            }
+
+            unloadOperation.completed -= _onMainMenuCleanupCompleted;
+            unloadOperation.completed += _onMainMenuCleanupCompleted;
+        }
+
+        private static void HandleMainMenuCleanupCompleted(AsyncOperation unloadOperation)
+        {
+            if (unloadOperation != null)
+                unloadOperation.completed -= _onMainMenuCleanupCompleted;
+
+            GC.Collect();
         }
 
         private void QuitApplication()

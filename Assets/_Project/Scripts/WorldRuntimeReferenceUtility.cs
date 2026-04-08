@@ -1,7 +1,8 @@
 using Hecton8.Bootstrap;
+using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Environment;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -16,7 +17,6 @@ namespace Hecton8.World
         private static Transform _CachedPlayerTransform;
         private static MapMagicBridge _CachedMapMagicBridge;
         private static ScavengePopulator _CachedScavengePopulator;
-        private static readonly Dictionary<Type, UnityEngine.Object> _SceneObjectCache = new Dictionary<Type, UnityEngine.Object>(32);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -24,7 +24,6 @@ namespace Hecton8.World
             _CachedPlayerTransform = null;
             _CachedMapMagicBridge = null;
             _CachedScavengePopulator = null;
-            _SceneObjectCache.Clear();
         }
 
         public static bool TryResolvePlayerTransform(ref Transform target)
@@ -45,39 +44,150 @@ namespace Hecton8.World
                 return true;
             }
 
-            if (Application.isPlaying && SceneBootstrap.HasActiveInstance && !SceneBootstrap.IsGameReady)
-                return false;
-
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player == null)
-                player = GameObject.Find("Player");
-
-            if (player == null)
-                return false;
-
-            _CachedPlayerTransform = player.transform;
-            target = _CachedPlayerTransform;
-            return true;
+            return false;
         }
 
-        public static bool TryResolveSceneObject<T>(ref T target) where T : UnityEngine.Object
+        public static bool TryResolveBiomeSamplerCache(ref BiomeSamplerCache target)
         {
             if (target != null)
                 return true;
 
-            Type targetType = typeof(T);
-            if (_SceneObjectCache.TryGetValue(targetType, out UnityEngine.Object cachedObject) && cachedObject != null)
-            {
-                target = cachedObject as T;
-                if (target != null)
-                    return true;
+            target = BiomeSamplerCache.ActiveRuntimeInstance;
+            return target != null;
+        }
 
-                _SceneObjectCache.Remove(targetType);
-            }
-
-            target = UnityEngine.Object.FindAnyObjectByType<T>();
+        public static bool TryResolveScatterBudgetController(ref ScatterBudgetController target)
+        {
             if (target != null)
-                _SceneObjectCache[targetType] = target;
+                return true;
+
+            target = ScatterBudgetController.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldSliceDirector(ref WorldSliceDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldSliceDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldZoneDirector(ref WorldZoneDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldZoneDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldContentDirector(ref WorldContentDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldContentDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveProximityColliderSystem(ref ProximityColliderSystem target)
+        {
+            if (target != null)
+                return true;
+
+            target = ProximityColliderSystem.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveBiomeMatrixDirector(ref BiomeMatrixDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = BiomeMatrixDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldProceduralStateRegistry(ref WorldProceduralStateRegistry target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldProceduralStateRegistry.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldFaunaSpawnRegistry(ref WorldFaunaSpawnRegistry target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldProceduralFieldSampler(ref WorldProceduralFieldSampler target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldProceduralFieldSampler.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldProceduralFillDirector(ref WorldProceduralFillDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldProceduralFillDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveFaunaDirector(ref FaunaDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = FaunaDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldGenerativeGeologyService(ref WorldGenerativeGeologyService target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldGenerativeGeologyService.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldGenerativeGeologyIntegrationDirector(ref WorldGenerativeGeologyIntegrationDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldGenerativeGeologySeamExecutionDirector(ref WorldGenerativeGeologySeamExecutionDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveVoxelEngine(ref HectonVoxelEngine target)
+        {
+            if (target != null)
+                return true;
+
+            target = HectonVoxelEngine.ActiveRuntimeInstance;
             return target != null;
         }
 
@@ -92,7 +202,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            target = MapMagicBridge.Instance ?? UnityEngine.Object.FindAnyObjectByType<MapMagicBridge>();
+            target = MapMagicBridge.Instance;
             if (target != null)
                 _CachedMapMagicBridge = target;
             return target != null;
@@ -109,7 +219,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            target = ScavengePopulator.Instance ?? UnityEngine.Object.FindAnyObjectByType<ScavengePopulator>();
+            target = ScavengePopulator.Instance;
             if (target != null)
                 _CachedScavengePopulator = target;
             return target != null;

@@ -9,6 +9,7 @@ namespace Hecton8.Input
     /// Persists binding overrides in PlayerPrefs and exposes lifecycle events for UI.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-30990)] // Keep scene-owned instance ahead of regular runtime consumers.
     public sealed class RebindingManager : MonoBehaviour
     {
         private const string DefaultOverridesKey = "Hecton8.Input.BindingOverrides.v1";
@@ -39,9 +40,6 @@ namespace Hecton8.Input
                 if (_isShuttingDown || !Application.isPlaying)
                     return _instance;
 
-                if (_instance != null) return _instance;
-
-                _instance = FindAnyObjectByType<RebindingManager>();
                 if (_instance != null) return _instance;
 
                 var go = new GameObject("[RebindingManager]");

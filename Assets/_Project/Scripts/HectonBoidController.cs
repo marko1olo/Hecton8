@@ -873,12 +873,8 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private bool CheckFrustumVisibility()
         {
-            if (_mainCamera == null)
-            {
-                _mainCamera = Camera.main;
-                if (_mainCamera == null)
-                    return true; // No camera — assume visible
-            }
+            if (!TryResolveViewCamera())
+                return true; // No camera — assume visible
 
             GeometryUtility.CalculateFrustumPlanes(_mainCamera, _frustumPlanes);
 
@@ -941,6 +937,24 @@ namespace Hecton8.AI.GPU
         private void FindPlayer()
         {
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+        }
+
+        /// <summary>
+        /// Resolves the gameplay view camera from the current player hierarchy.
+        /// </summary>
+        private bool TryResolveViewCamera()
+        {
+            if (_mainCamera != null)
+                return true;
+
+            if (_playerTransform == null)
+                FindPlayer();
+
+            if (_playerTransform == null)
+                return false;
+
+            _mainCamera = _playerTransform.GetComponentInChildren<Camera>(true);
+            return _mainCamera != null;
         }
 
         // ══════════════════════════════════════════════════════════

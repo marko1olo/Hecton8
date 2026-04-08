@@ -19,6 +19,7 @@ namespace Hecton8.Input
     /// Singleton pattern with thread-safe initialization.
     /// Supports keyboard, mouse, and gamepad with full rebinding support.
     /// </summary>
+    [DefaultExecutionOrder(-31000)] // Must initialize before BootstrapController singleton access.
     public class InputManager : MonoBehaviour
     {
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -51,17 +52,12 @@ namespace Hecton8.Input
                     {
                         if (_instance == null)
                         {
-                            _instance = FindAnyObjectByType<InputManager>();
-                            
-                            if (_instance == null)
-                            {
-                                if (_isShuttingDown || !Application.isPlaying)
-                                    return null;
+                            if (_isShuttingDown || !Application.isPlaying)
+                                return null;
 
-                                GameObject go = new GameObject("[InputManager]");
-                                _instance = go.AddComponent<InputManager>();
-                                DontDestroyOnLoad(go);
-                            }
+                            GameObject go = new GameObject("[InputManager]");
+                            _instance = go.AddComponent<InputManager>();
+                            DontDestroyOnLoad(go);
                         }
                     }
                 }
@@ -185,13 +181,8 @@ namespace Hecton8.Input
         {
             _inputMapsInitialized = false;
 
-            // Prefer a real asset from inspector/resources, but always keep a generated
-            // fallback so the project never hard-fails on a missing asset reference.
-            if (_inputActionAsset == null)
-            {
-                _inputActionAsset = Resources.Load<InputActionAsset>("HectonRuntimeInputActions");
-            }
-
+            // Prefer an inspector-assigned asset, but keep a generated fallback so
+            // runtime bootstrap never depends on Resources.Load.
             if (_inputActionAsset == null)
             {
                 _generatedInputActions = new HectonInputActions();

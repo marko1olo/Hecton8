@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -7,6 +8,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4200)]
     public sealed class ScatterBudgetController : MonoBehaviour, ISlowTickable
     {
+        internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
+
         private enum BudgetBand
         {
             Surface,
@@ -86,6 +89,7 @@ namespace Hecton8.World
         private float _zoneColliderRadiusScale = 1f;
         private float _zoneColliderOpsScale = 1f;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
+        private HectonPlayerMovement _playerMovement;
 
         private void Reset()
         {
@@ -122,6 +126,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             ApplyChunkProfileDefaults();
             ClampProfiles();
@@ -155,6 +160,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -254,14 +265,13 @@ namespace Hecton8.World
             ApplyChunkProfileDefaults();
             ClampProfiles();
 
-            if (playerTransform == null || mapMagicBridge == null)
+            if (playerTransform == null || !TryResolveCurrentDepth(out float depth))
             {
                 _debugApplied = false;
                 UpdateDiagnostics();
                 return;
             }
 
-            float depth = Mathf.Max(0f, mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y);
             BudgetBand band = GetBandForDepth(depth);
 
             _debugCurrentDepth = depth;
@@ -338,10 +348,30 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            if (_playerMovement == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerMovement);
+
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proximityColliderSystem);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeSamplerCache);
+            WorldRuntimeReferenceUtility.TryResolveProximityColliderSystem(ref proximityColliderSystem);
+            WorldRuntimeReferenceUtility.TryResolveBiomeSamplerCache(ref biomeSamplerCache);
+        }
+
+        private bool TryResolveCurrentDepth(out float depth)
+        {
+            depth = 0f;
+
+            if (_playerMovement != null)
+            {
+                depth = Mathf.Max(0f, _playerMovement.CurrentDepth);
+                return true;
+            }
+
+            if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable)
+                return false;
+
+            depth = Mathf.Max(0f, mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y);
+            return true;
         }
 
         private void ApplyChunkProfileDefaults()

@@ -123,6 +123,7 @@ Detailed ledgers:
 - Stage 6 complete: corridor and edge-case biome tuning for fossil-reef landmark corridors is now verified without destabilizing hard corridor slices.
 - Stage 7 complete: editor-side baked flora starter generator now creates optimized combined-mesh final prefabs and feeds them through the real flora intake path.
 - Stage 8 complete: generated flora starter finals now bake as `LODGroup`-based prefabs with dedicated `LOD0` / `LOD1` mesh assets, and validator budgets the highest visible LOD instead of double-counting all renderers.
+- Stage 9 complete: kelp starter variety expanded into 4 structural lanes (`broadleaf`, `paddlespray`, `paddlefan`, `petal`) with size-band tokens preserved.
 
 Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
 
@@ -189,16 +190,17 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
   - those families must not be forced to keep linking `GEN_` starters that intake intentionally suppresses
   - the shared budget catalog now feeds both validator and status report from one editor-only source of truth
 - Current flora final status report confirms:
-  - all 7 flora families are linked as real generated finals, not placeholder fallback
-  - every current baked flora prefab has `LODGroup` coverage `2/2`
-  - current max budget-triangle hotspots:
-    - `family.kelp.patch.dense` -> `5712`
-    - `family.coral.branching` -> `3392`
-    - `family.coral.low` -> `2384`
-    - `family.coral.massive` -> `2328`
-    - `family.kelp.tall` -> `1928`
-    - `family.kelp.canopy` -> `1124`
-    - `family.coral.plate` -> `320`
+  - automation pass `flora-verify-paddle-20260409-1` completed and refreshed `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md`
+  - kelp totals now read as:
+    - `family.kelp.tall` -> `a0/g13`
+    - `family.kelp.patch.dense` -> `a0/g11`
+    - `family.kelp.canopy` -> `a0/g12`
+    - `family.kelp.abyssal` -> `a0/g13`
+  - new starters confirmed in report:
+    - `GEN_family_kelp_tall__broadleaf__s110-170`
+    - `GEN_family_kelp_patch_dense__paddlespray__s70-120`
+    - `GEN_family_kelp_canopy__paddlefan__s120-190`
+    - `GEN_family_kelp_abyssal__petal__s100-170`
 - `Hecton/Authoring/Apply Procedural Flora Final Variants` now links the generated starter finals into flora families:
   - `FamiliesTouched=7, LinkedVariants=14, RemovedVariants=0, MissingFamilies=0`
 - Follow-up kelp dense cleanup pass removed the stale heavy starter and relinked the lighter replacement:
@@ -1050,4 +1052,95 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
     - authored photoreal deep finals still do not exist
     - visible in-world deep glow is not proven because the current MCP play oracle freezes almost immediately
     - this is still enough to advance editor-owned content work, but not enough to sign off runtime biolum visuals
+  - status: `PENDING VERIFICATION`
+- 2026-04-09 - Flora library now carries explicit seaweed size bands instead of one narrow scale lane
+  - what changed:
+    - mesh-builder resolution now strips `__sMIN-MAX` / `__wN` metadata before spec lookup, so scale/weight metadata can live in prefab names without breaking generation
+    - `WorldProceduralFloraBakedStarterGenerator` now bakes additional seaweed variants across four kelp families:
+      - small band: `seedling`, `nest`, `reed`
+      - tall/giant band: `tower`, `colossus`, `sheetwall`, `cathedral`
+      - broad laminaria band: `laminaria`, `sheetwall`
+    - validator + report were regenerated on the new library breadth
+  - why it matters:
+    - the flora system is now moving toward the required `0.5m -> 50m` content ladder in the correct owner layer
+    - family variety is now richer without runtime mesh rebuild and without breaking continuity/budget enforcement
+  - verified facts:
+    - Unity logged:
+      - `Baked flora starters generated. Prefabs=56, MeshesUpdated=186, RemovedAssets=0, Failures=0`
+      - `PASS validatedPrefabs=56, warningCount=9`
+    - report confirms:
+      - `family.kelp.tall = a0/g10`
+      - `family.kelp.patch.dense = a0/g9`
+      - `family.kelp.canopy = a0/g9`
+      - `family.kelp.abyssal = a0/g9`
+    - new giant examples are live and still within budget caps:
+      - `tower = 7602 / 8000`
+      - `colossus = 6584 / 8000`
+      - `cathedral = 8112 / 9000`
+  - remaining truth:
+    - authored photoreal finals are still missing across all flora families
+    - giant/sheetwall visual beauty passes are still pending
+    - in-world profiler/build proof is still open
+  - status: `PENDING VERIFICATION`
+- 2026-04-09 - Giant laminar kelp morphology pass tightened broad single-stipe and canopy-sheet sequencing. `family.kelp.tall__tower/__colossus` and `family.kelp.canopy__laminaria/__sheetwall` now use narrower yaw lanes and laminar-only supplemental logic instead of bouquet-heavy sequencing. Verified by fresh flora bake/validator/report; remaining external console blocker is unrelated `PlayerBuilder.cs` compile noise. Visual oracle still says `sheetwall` needs more truth before any master-grade sign-off.
+- 2026-04-09 - Follow-up canopy broad-sheet pass reduced crown spread further: fewer companions, narrower canopy angle offsets, tighter crown attachments, and lower blade counts for `GEN_family_kelp_canopy__laminaria__s105-165` / `GEN_family_kelp_canopy__sheetwall__s150-230`. Fresh report now holds canopy max at `4648` triangles. Prefab-stage oracle still does not justify final beauty sign-off for `sheetwall`; current risk is oracle angle/truth, not family budget.
+- 2026-04-09 - Folded-lamina pass now improves both the oracle and the morphology in the correct owner layers
+  - what changed:
+    - `WorldProceduralFloraFinalStatusReport` preview capture now applies a presentation yaw search before rendering contact sheets
+    - automation preview lighting/background were tightened to make thin laminar silhouettes easier to read
+    - `WorldProceduralSeaweedMeshBuilder` now distinguishes folded canopy sheets and folded giant-frond sheets from generic lamina forms
+    - new folded wall/sail/cowl tuning:
+      - narrower folded yaw lanes
+      - broader folded widths/lengths
+      - more curtain-style overlap for `tapestry`
+      - denser folded support for `sail`, `cowl`, `veilwall`
+  - why it matters:
+    - the preview oracle is no longer blindly accepting edge-on presentation as the only truth for folded sheets
+    - folded variants now read more like curtains/sails/cowls and less like thin single ribbons
+  - verified facts:
+    - Unity logged:
+      - `Baked flora starters generated. Prefabs=60, MeshesUpdated=202, RemovedAssets=0, Failures=0`
+      - `PASS validatedPrefabs=60, warningCount=9`
+      - `Wrote report to C:\\hades\\Hecton8\\PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md`
+    - report now confirms updated folded budgets:
+      - `GEN_family_kelp_tall__sail__s115-175 = 4252/1772/1140/716`
+      - `GEN_family_kelp_canopy__tapestry__s160-240 = 4530/1874/1264/806`
+      - `GEN_family_kelp_abyssal__cowl__s110-180 = 3760/1534/1012/638`
+      - `GEN_family_kelp_abyssal__veilwall__s150-240 = 4236/1760/1132/716`
+      - `family.kelp.canopy` max budget is now `4530 / 10000`
+  - remaining truth:
+    - `sail` and especially `tapestry` are still too low-contrast in the current oracle for a master-grade beauty sign-off
+    - `cowl` / `veilwall` read better as folded sheet masses, but still remain generated starter finals, not authored photoreal kelp
+  - status: `PENDING VERIFICATION`
+- 2026-04-09 - Added a new seaweed blade language instead of only more laminar scale variants
+  - what changed:
+    - `WorldProceduralSeaweedMeshBuilder` now supports `BladeProfile.PaddleLobed`
+    - paddle/lobed forms preserve their own blade profile through clustered generation instead of being remixed back into generic strap/ribbon logic
+    - new generated variants were added across four kelp families:
+      - `family.kelp.tall__paddle__s90-150`
+      - `family.kelp.patch.dense__bladder__s80-135`
+      - `family.kelp.canopy__oar__s110-180`
+      - `family.kelp.abyssal__lantern__s100-180`
+  - why it matters:
+    - seaweed variety is now growing by genuinely different anatomy, not just by more sizes of the same lamina sheet
+    - the new class introduces broader paddle blades and bladder-like/lobed silhouettes while keeping continuous growth through the same stipe/socket logic
+  - verified facts:
+    - Unity bake/apply/validate/report chain completed on the new set:
+      - `Baked flora starters generated. Prefabs=64, MeshesUpdated=218, RemovedAssets=0, Failures=0`
+      - `Baked flora final variants applied. FamiliesTouched=4, LinkedVariants=64, RemovedVariants=0, MissingFamilies=0`
+      - `PASS validatedPrefabs=64, warningCount=9`
+    - updated report coverage:
+      - `family.kelp.tall = a0/g12`
+      - `family.kelp.patch.dense = a0/g10`
+      - `family.kelp.canopy = a0/g11`
+      - `family.kelp.abyssal = a0/g12`
+    - new confirmed budgets:
+      - `paddle = 5110/2128/1084/656`
+      - `bladder = 8696/4032/1324/776`
+      - `oar = 4272/2212/1056/656`
+      - `lantern = 5182/2094/1036/634`
+  - remaining truth:
+    - current Scene View oracle still tends to catch these long forms edge-on, so beauty truth is still incomplete
+    - `sheetwall/tapestry` remain weaker than the new paddle/oar family in visual confidence
+    - authored photoreal flora finals are still absent
   - status: `PENDING VERIFICATION`

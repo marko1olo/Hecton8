@@ -46,7 +46,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -187,6 +189,9 @@ namespace Hecton8.Atmosphere
         [SerializeField] private float _waterSurfaceY = 0f;
         [SerializeField] private bool _useAutoUnderwaterDetection = true;
 
+        [Header("═══ Vertical Runtime ═══")]
+        [SerializeField] private BiomeMatrixDirector _biomeMatrixDirector;
+
         [Header("═══ Biome Overrides ═══")]
         [SerializeField] private BiomeAtmosphereOverride[] _biomeOverrides;
 
@@ -214,6 +219,7 @@ namespace Hecton8.Atmosphere
         private bool _registeredToTickManager;
 
         private AtmosphereProfile _activeBiomeProfile;
+        private AtmosphereProfile _activeMatrixProfile;
         private int _currentBiomeID = -1;
         private bool _editorInitialized;
 
@@ -326,6 +332,9 @@ namespace Hecton8.Atmosphere
                 }
 
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
+                BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+                ResolveBiomeMatrixDirector();
+                ApplyCurrentMatrixAtmosphereOverride();
             }
 #if UNITY_EDITOR
             else
@@ -353,6 +362,11 @@ namespace Hecton8.Atmosphere
                     "[HectonAtmosphere] GameTickManager.Instance == null in Start(). " +
                     "Atmosphere will NOT update.", this);
             }
+
+            if (_biomeMatrixDirector == null)
+                ResolveBiomeMatrixDirector();
+
+            ApplyCurrentMatrixAtmosphereOverride();
         }
 
         private void OnDisable()
@@ -368,6 +382,7 @@ namespace Hecton8.Atmosphere
                 }
 
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
+                BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             }
 #if UNITY_EDITOR
             else
@@ -688,6 +703,9 @@ namespace Hecton8.Atmosphere
             if (state == EnvironmentState.UNDERWATER)
                 return _profileUnderwater != null ? _profileUnderwater : _profileDay;
 
+            if (_activeMatrixProfile != null)
+                return _activeMatrixProfile;
+
             if (_activeBiomeProfile != null)
                 return _activeBiomeProfile;
 
@@ -718,6 +736,23 @@ namespace Hecton8.Atmosphere
 
             _activeBiomeProfile = biomeProfile;
             _transitionOrigin   = _currentValues;
+            _transitionProgress = 0f;
+        }
+
+        private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            AtmosphereProfile nextProfile = profile != null && profile.familyProfile != null
+                ? profile.familyProfile.atmosphereProfile
+                : null;
+
+            if (_activeMatrixProfile == nextProfile)
+                return;
+
+            _activeMatrixProfile = nextProfile;
+            if (_currentState == EnvironmentState.UNDERWATER)
+                return;
+
+            _transitionOrigin = _currentValues;
             _transitionProgress = 0f;
         }
 
@@ -787,6 +822,25 @@ namespace Hecton8.Atmosphere
 
             if (_playerTransform != null)
                 _playerTransform.TryGetComponent(out _playerMovement);
+        }
+
+        private void ResolveBiomeMatrixDirector()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
+        }
+
+        private void ApplyCurrentMatrixAtmosphereOverride()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_biomeMatrixDirector == null)
+                return;
+
+            HandleMatrixBiomeChanged(_biomeMatrixDirector.CurrentProfile);
         }
 
         public void SetOrbitalInclination(float degrees)

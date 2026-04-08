@@ -8,6 +8,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4050)]
     public sealed class WorldContentDirector : MonoBehaviour, ISlowTickable
     {
+        internal static WorldContentDirector ActiveRuntimeInstance { get; private set; }
+
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldZoneDirector worldZoneDirector;
@@ -61,6 +63,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences(force: true);
             RefreshSockets();
             UpdateDiagnostics(null, 0);
@@ -93,6 +96,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -164,7 +173,7 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
         }
 
         private void UpdateDiagnostics(WorldContentSocket nearestSocket, int zoneSocketCount)

@@ -29,8 +29,21 @@ namespace Hecton8.World
         private readonly Dictionary<long, List<Anchor>> _largeThreatZonesByMacroZone = new Dictionary<long, List<Anchor>>(32);
         private readonly Stack<List<Anchor>> _anchorBucketPool = new Stack<List<Anchor>>(64);
 
+        internal static WorldFaunaSpawnRegistry ActiveRuntimeInstance { get; private set; }
+
         public int OrdinaryAnchorCount => _ordinaryAnchors.Count;
         public int LargeThreatZoneCount => _largeThreatZones.Count;
+
+        private void Awake()
+        {
+            ActiveRuntimeInstance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+        }
 
         public void SetProceduralStateRegistry(WorldProceduralStateRegistry registry)
         {
@@ -214,7 +227,7 @@ namespace Hecton8.World
 
         private void ResolveProceduralStateRegistry()
         {
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proceduralStateRegistry);
+            WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
         }
 
         private static long ComposeChunkKey(WorldChunkCoordinate chunkCoord)

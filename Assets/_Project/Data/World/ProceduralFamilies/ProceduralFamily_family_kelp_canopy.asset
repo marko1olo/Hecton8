@@ -100,6 +100,36 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__laminaria
+    prefab: {fileID: 817647484752394222, guid: fa91966ea7a5d82438c659222b97b017, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.05, y: 1.65}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__sheetwall
+    prefab: {fileID: 611040833174435234, guid: d81b8bb4c27fac346af61d223884e157, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.5, y: 2.3}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__tapestry
+    prefab: {fileID: 4153338824899112357, guid: 4a2cbf54360e20e4f82958bfb3833ec7, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.5999999, y: 2.3999999}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__oar
+    prefab: {fileID: 5468879681644119805, guid: 560b9f566ad25d3468c753704768096c, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1, y: 1.8}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__paddlefan
+    prefab: {fileID: 7152578667763258043, guid: c7e289db05cdc654982e8c1b431f1a00, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1999999, y: 1.9}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Canopy
   gameplayRole: Upper-canopy kelp crowns for route silhouettes, overhead shelter

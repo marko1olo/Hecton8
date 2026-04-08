@@ -46,11 +46,14 @@ namespace Hecton8.World
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
+        internal static WorldProceduralFillDirector ActiveRuntimeInstance { get; private set; }
+
         public IReadOnlyList<WorldProceduralPlacementRule> Rules => rules;
         public IReadOnlyList<WorldPrefabFamilyProfile> Families => families;
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences(force: true);
             UpdateDiagnostics(null, null, default, 0);
         }
@@ -82,6 +85,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -489,9 +498,9 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldContentDirector);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeMatrixDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldContentDirector(ref worldContentDirector);
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
         }
 
         private void UpdateDiagnostics(WorldZoneAnchor zone, WorldContentSocket socket, ProceduralSelection selection, int resolvedSocketCount)

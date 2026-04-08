@@ -335,6 +335,8 @@ namespace Hecton8.World
         private bool _samplingFramePrepared;
         private int _samplingFrameId;
 
+        internal static WorldProceduralFieldSampler ActiveRuntimeInstance { get; private set; }
+
         private struct CachedHeightSample
         {
             public CachedHeightSample(float height, SeafloorSource source, int samplingFrameId)
@@ -1401,6 +1403,11 @@ namespace Hecton8.World
             };
         }
 
+        private void Awake()
+        {
+            ActiveRuntimeInstance = this;
+        }
+
         private void OnEnable()
         {
             BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
@@ -1420,6 +1427,9 @@ namespace Hecton8.World
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             DisposeBurstData();
             _isDataDirty = true;
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void BeginScatterSamplingFrame()
@@ -3509,10 +3519,10 @@ namespace Hecton8.World
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
             if (worldZoneDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
 
             if (biomeMatrixDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeMatrixDirector);
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
 
             _debugBridgeReady = mapMagicBridge != null;
             _debugZoneDirectorReady = worldZoneDirector != null;

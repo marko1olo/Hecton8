@@ -4,10 +4,11 @@
 // Sibling к HUD_V4_CanvasRoot на Suit_HUD_Canvas.
 // ============================================================================
 
+using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Tools;
-using Hecton8.Bootstrap;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,7 +17,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Quick Bar")]
-    public sealed class HUDQuickBar : MonoBehaviour
+    public sealed class HUDQuickBar : MonoBehaviour, ITickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -75,6 +76,7 @@ namespace Hecton8.UI
         private string _lastDirectiveBase;
         private string _lastDirectiveAdvicePreset;
         private bool _lastDirectiveHasAdvice;
+        private bool _registeredToTickManager;
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
@@ -88,21 +90,23 @@ namespace Hecton8.UI
             EnsureBuilt();
             Subscribe();
             Refresh();
+            RegisterToTickManager();
         }
 
         private void OnDisable()
         {
+            UnregisterFromTickManager();
             Unsubscribe();
         }
 
-        private void LateUpdate()
+        public void Tick(float deltaTime)
         {
             // Dim when PDA is open
             if (_canvasGroup != null)
             {
                 float target = PlayerPDA.IsOpen ? 0.15f : 1f;
                 _canvasGroup.alpha = Mathf.Lerp(_canvasGroup.alpha, target,
-                    1f - Mathf.Exp(-8f * Time.deltaTime));
+                    1f - Mathf.Exp(-8f * deltaTime));
             }
 
             if (Time.unscaledTime >= _nextStatusRefreshAt)
@@ -110,6 +114,31 @@ namespace Hecton8.UI
                 _nextStatusRefreshAt = Time.unscaledTime + 0.15f;
                 Refresh();
             }
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registeredToTickManager = false;
         }
 
         // ══════════════════════════════════════════════════════════

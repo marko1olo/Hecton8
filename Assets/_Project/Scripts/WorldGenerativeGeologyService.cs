@@ -364,12 +364,14 @@ namespace Hecton8.World
     {
         private static int _activeGeneratedRootCount;
         private static int _activeGeneratedRendererCount;
+        internal static WorldGenerativeGeologyService ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _activeGeneratedRootCount = 0;
             _activeGeneratedRendererCount = 0;
+            ActiveRuntimeInstance = null;
         }
 
         [DisallowMultipleComponent]
@@ -472,6 +474,17 @@ namespace Hecton8.World
 
         public static int ActiveGeneratedRootCount => Mathf.Max(0, _activeGeneratedRootCount);
         public static int ActiveGeneratedRendererCount => Mathf.Max(0, _activeGeneratedRendererCount);
+
+        private void Awake()
+        {
+            ActiveRuntimeInstance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+        }
 
         public bool TryApplyGeneratedGeology(GameObject host, in WorldGenerativeGeologyRequest request)
         {

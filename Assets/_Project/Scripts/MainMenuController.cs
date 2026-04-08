@@ -1,11 +1,10 @@
-using System.Collections;
+using Hecton.Localization;
+using Hecton8.Core;
+using Hecton8.SaveSystem;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
-using Hecton.Localization;
-using Hecton8.SaveSystem;    // ← ВАШ СУЩЕСТВУЮЩИЙ SaveManager
-using Hecton8.Core;         // ← GameStartContext
 
 namespace Hecton.UI.MainMenu
 {
@@ -14,83 +13,71 @@ namespace Hecton.UI.MainMenu
     /// save slot generation, and async scene loading.
     /// All UI text is driven through LocalizationManager.
     /// </summary>
-    public sealed class MainMenuController : MonoBehaviour
+    public sealed class MainMenuController : MonoBehaviour, ITickable
     {
-        // ──────────────────────────────────────────────
-        // INSPECTOR — Panels (CanvasGroup)
-        // ──────────────────────────────────────────────
+        private enum PanelTransitionState
+        {
+            None,
+            FadingOut,
+            FadingIn
+        }
+
         [Header("=== PANELS (CanvasGroup) ===")]
         [SerializeField] private CanvasGroup mainMenuGroup;
         [SerializeField] private CanvasGroup saveLoadGroup;
         [SerializeField] private CanvasGroup settingsGroup;
         [SerializeField] private CanvasGroup loadingGroup;
 
-        // ──────────────────────────────────────────────
-        // INSPECTOR — Save Slots
-        // ──────────────────────────────────────────────
         [Header("=== SAVE SLOTS ===")]
         [SerializeField] private Transform slotsContainer;
         [SerializeField] private GameObject slotPrefab;
 
-        // ──────────────────────────────────────────────
-        // INSPECTOR — Main Menu Buttons
-        // ──────────────────────────────────────────────
         [Header("=== MAIN MENU BUTTONS ===")]
         [SerializeField] private Button btnNewGame;
         [SerializeField] private Button btnLoadGame;
         [SerializeField] private Button btnSettings;
         [SerializeField] private Button btnQuit;
 
-        // ──────────────────────────────────────────────
-        // INSPECTOR — Main Menu Button Labels (TMP)
-        // ──────────────────────────────────────────────
         [Header("=== BUTTON LABELS (auto-localized) ===")]
         [SerializeField] private TMP_Text labelNewGame;
         [SerializeField] private TMP_Text labelLoadGame;
         [SerializeField] private TMP_Text labelSettings;
         [SerializeField] private TMP_Text labelQuit;
 
-        // ──────────────────────────────────────────────
-        // INSPECTOR — Sub-panel Back Buttons
-        // ──────────────────────────────────────────────
         [Header("=== SAVE/LOAD PANEL ===")]
         [SerializeField] private Button btnBackFromSaveLoad;
 
         [Header("=== SETTINGS PANEL ===")]
         [SerializeField] private Button btnBackFromSettings;
 
-        // ──────────────────────────────────────────────
-        // INSPECTOR — Loading Screen
-        // ──────────────────────────────────────────────
         [Header("=== LOADING SCREEN ===")]
         [SerializeField] private Slider loadingProgressBar;
         [SerializeField] private TMP_Text loadingPercentText;
 
-        // ──────────────────────────────────────────────
-        // CONFIG
-        // ──────────────────────────────────────────────
         [Header("=== CONFIG ===")]
         [SerializeField] private float fadeDuration = 0.2f;
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
 
-        private const int SLOT_COUNT = 3;
-
-        // Double-click protection
-        private bool _isTransitioning;
-        private bool _isSceneLoadInFlight;
-
-        // Pre-allocated slot name array (zero-GC)
+        private const int SlotCount = 3;
         private static readonly string[] SlotNames = { "slot_1", "slot_2", "slot_3" };
 
-        // Cached reference to SaveManager (avoids repeated singleton access)
-        private SaveManager _saveManager;
-        private SaveSlotUI[] _slotUIs;
+        private bool _isTransitioning;
+        private bool _isSceneLoadInFlight;
+        private bool _registeredToTickManager;
+        private bool _sceneActivationRequested;
         private bool _slotPrefabValidated;
         private bool _slotPrefabHasSaveSlotUI = true;
-
-        // ══════════════════════════════════════════════
-        // LIFECYCLE
-        // ══════════════════════════════════════════════
+        private int _lastLoadingPercent = -1;
+        private float _lastUnscaledTickTime;
+        private float _transitionElapsed;
+        private float _transitionStartAlpha;
+        private string _loadingPercentTemplate = "{0}%";
+        private SaveManager _saveManager;
+        private SaveSlotUI[] _slotUIs;
+        private AsyncOperation _sceneLoadOperation;
+        private CanvasGroup _transitionFromPanel;
+        private CanvasGroup _transitionToPanel;
+        private PanelTransitionState _panelTransitionState;
 
         private void Awake()
         {
@@ -101,8 +88,8 @@ namespace Hecton.UI.MainMenu
 
         private void Start()
         {
-            // Cache SaveManager reference after all Awake() calls
             _saveManager = SaveManager.Instance;
+            TryRegisterToTickManager();
 
 #if UNITY_EDITOR
             if (_saveManager == null)
@@ -110,14 +97,15 @@ namespace Hecton.UI.MainMenu
                 Debug.LogWarning(
                     "[MainMenuController] SaveManager.Instance is null. " +
                     "Save/Load features will be unavailable. " +
-                    "Ensure SaveManager exists in scene or is DontDestroyOnLoad."
-                );
+                    "Ensure SaveManager exists in scene or is DontDestroyOnLoad.");
             }
 #endif
         }
 
         private void OnEnable()
         {
+            TryRegisterToTickManager();
+            _lastUnscaledTickTime = Time.unscaledTime;
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
             RefreshLocalizedTexts();
         }
@@ -125,11 +113,9 @@ namespace Hecton.UI.MainMenu
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            UnregisterFromTickManager();
+            _lastUnscaledTickTime = 0f;
         }
-
-        // ══════════════════════════════════════════════
-        // LOCALIZATION
-        // ══════════════════════════════════════════════
 
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
@@ -139,43 +125,42 @@ namespace Hecton.UI.MainMenu
         private void RefreshLocalizedTexts()
         {
             LocalizationManager loc = LocalizationManager.Instance;
-            if (loc == null) return;
+            if (loc == null)
+                return;
 
-            if (labelNewGame  != null) labelNewGame.SetText(loc.Get(LocalizationKeys.MENU_NEW_GAME));
+            if (labelNewGame != null) labelNewGame.SetText(loc.Get(LocalizationKeys.MENU_NEW_GAME));
             if (labelLoadGame != null) labelLoadGame.SetText(loc.Get(LocalizationKeys.MENU_LOAD_GAME));
             if (labelSettings != null) labelSettings.SetText(loc.Get(LocalizationKeys.MENU_SETTINGS));
-            if (labelQuit     != null) labelQuit.SetText(loc.Get(LocalizationKeys.MENU_QUIT));
+            if (labelQuit != null) labelQuit.SetText(loc.Get(LocalizationKeys.MENU_QUIT));
         }
-
-        // ══════════════════════════════════════════════
-        // INITIALIZATION
-        // ══════════════════════════════════════════════
 
         private void ValidateReferences()
         {
 #if UNITY_EDITOR
-            Debug.Assert(mainMenuGroup  != null, "[MainMenuController] mainMenuGroup is not assigned!");
-            Debug.Assert(saveLoadGroup  != null, "[MainMenuController] saveLoadGroup is not assigned!");
-            Debug.Assert(settingsGroup  != null, "[MainMenuController] settingsGroup is not assigned!");
-            Debug.Assert(loadingGroup   != null, "[MainMenuController] loadingGroup is not assigned!");
+            Debug.Assert(mainMenuGroup != null, "[MainMenuController] mainMenuGroup is not assigned!");
+            Debug.Assert(saveLoadGroup != null, "[MainMenuController] saveLoadGroup is not assigned!");
+            Debug.Assert(settingsGroup != null, "[MainMenuController] settingsGroup is not assigned!");
+            Debug.Assert(loadingGroup != null, "[MainMenuController] loadingGroup is not assigned!");
             Debug.Assert(slotsContainer != null, "[MainMenuController] slotsContainer is not assigned!");
-            Debug.Assert(slotPrefab     != null, "[MainMenuController] slotPrefab is not assigned!");
+            Debug.Assert(slotPrefab != null, "[MainMenuController] slotPrefab is not assigned!");
 #endif
         }
 
         private void BindButtons()
         {
-            BindButton(btnNewGame,          OnNewGameClicked);
-            BindButton(btnLoadGame,         OnLoadGameClicked);
-            BindButton(btnSettings,         OnSettingsClicked);
-            BindButton(btnQuit,             OnQuitClicked);
+            BindButton(btnNewGame, OnNewGameClicked);
+            BindButton(btnLoadGame, OnLoadGameClicked);
+            BindButton(btnSettings, OnSettingsClicked);
+            BindButton(btnQuit, OnQuitClicked);
             BindButton(btnBackFromSaveLoad, OnBackFromSaveLoadClicked);
             BindButton(btnBackFromSettings, OnBackFromSettingsClicked);
         }
 
         private static void BindButton(Button button, UnityEngine.Events.UnityAction callback)
         {
-            if (button == null) return;
+            if (button == null)
+                return;
+
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(callback);
         }
@@ -185,22 +170,16 @@ namespace Hecton.UI.MainMenu
             SetPanelImmediate(mainMenuGroup, true);
             SetPanelImmediate(saveLoadGroup, false);
             SetPanelImmediate(settingsGroup, false);
-            SetPanelImmediate(loadingGroup,  false);
+            SetPanelImmediate(loadingGroup, false);
         }
-
-        // ══════════════════════════════════════════════
-        // BUTTON CALLBACKS
-        // ══════════════════════════════════════════════
 
         private void OnNewGameClicked()
         {
             LocalizationManager loc = LocalizationManager.Instance;
-
             ModalWindow.Show(
-                loc != null ? loc.Get(LocalizationKeys.MODAL_NEW_GAME_TITLE)   : "New Game",
+                loc != null ? loc.Get(LocalizationKeys.MODAL_NEW_GAME_TITLE) : "New Game",
                 loc != null ? loc.Get(LocalizationKeys.MODAL_NEW_GAME_MESSAGE) : "Start a new game?",
-                () => StartGame(string.Empty)
-            );
+                () => StartGame(string.Empty));
         }
 
         private void OnLoadGameClicked()
@@ -216,9 +195,8 @@ namespace Hecton.UI.MainMenu
         private void OnQuitClicked()
         {
             LocalizationManager loc = LocalizationManager.Instance;
-
             ModalWindow.Show(
-                loc != null ? loc.Get(LocalizationKeys.MODAL_QUIT_TITLE)   : "Quit",
+                loc != null ? loc.Get(LocalizationKeys.MODAL_QUIT_TITLE) : "Quit",
                 loc != null ? loc.Get(LocalizationKeys.MODAL_QUIT_MESSAGE) : "Quit the game?",
                 () =>
                 {
@@ -227,8 +205,7 @@ namespace Hecton.UI.MainMenu
 #else
                     Application.Quit();
 #endif
-                }
-            );
+                });
         }
 
         private void OnBackFromSaveLoadClicked()
@@ -241,10 +218,6 @@ namespace Hecton.UI.MainMenu
             SwitchPanel(settingsGroup, mainMenuGroup);
         }
 
-        // ══════════════════════════════════════════════
-        // SAVE/LOAD — SLOT GENERATION
-        // ══════════════════════════════════════════════
-
         /// <summary>
         /// Opens the Save/Load panel, clears the container, generates slots.
         /// Uses Hecton8.SaveSystem.SaveManager for metadata queries.
@@ -255,27 +228,19 @@ namespace Hecton.UI.MainMenu
             if (_slotUIs == null)
                 return;
 
-            // Re-cache in case SaveManager appeared after Start()
             if (_saveManager == null)
                 _saveManager = SaveManager.Instance;
 
-            for (int i = 0; i < SLOT_COUNT; i++)
+            for (int i = 0; i < SlotCount; i++)
             {
                 string slotName = SlotNames[i];
                 SaveSlotUI slotUI = _slotUIs[i];
                 if (slotUI == null)
                     continue;
 
-                if (_saveManager != null)
+                if (_saveManager != null && _saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
                 {
-                    if (_saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
-                    {
-                        slotUI.Init(slotInfo, OnSlotClicked);
-                    }
-                    else
-                    {
-                        slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
-                    }
+                    slotUI.Init(slotInfo, OnSlotClicked);
                 }
                 else
                 {
@@ -299,42 +264,32 @@ namespace Hecton.UI.MainMenu
                 if (!_slotPrefabHasSaveSlotUI)
                 {
 #if UNITY_EDITOR
-                    Debug.LogError(
-                        "[MainMenuController] slotPrefab is missing SaveSlotUI component!"
-                    );
+                    Debug.LogError("[MainMenuController] slotPrefab is missing SaveSlotUI component!");
 #endif
                     return;
                 }
             }
 
-            _slotUIs = new SaveSlotUI[SLOT_COUNT]; // COLD ALLOC: fixed save-shell slot cache
+            _slotUIs = new SaveSlotUI[SlotCount]; // COLD ALLOC: fixed save-shell slot cache
 
-            for (int i = 0; i < SLOT_COUNT; i++)
+            for (int i = 0; i < SlotCount; i++)
             {
-                GameObject slotGO = Instantiate(slotPrefab, slotsContainer);
-                slotGO.name = SlotNames[i];
-                _slotUIs[i] = slotGO.GetComponent<SaveSlotUI>();
+                GameObject slotGameObject = Instantiate(slotPrefab, slotsContainer);
+                slotGameObject.name = SlotNames[i];
+                _slotUIs[i] = slotGameObject.GetComponent<SaveSlotUI>();
             }
         }
 
         private void OnSlotClicked(string slotName)
         {
             LocalizationManager loc = LocalizationManager.Instance;
-
-            string title = loc != null
-                ? loc.Get(LocalizationKeys.MODAL_LOAD_TITLE)
-                : "Load Game";
-
+            string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_TITLE) : "Load Game";
             string message = loc != null
                 ? loc.GetFormatted(LocalizationKeys.MODAL_LOAD_MESSAGE, slotName)
                 : string.Concat("Load save \"", slotName, "\"?");
 
             ModalWindow.Show(title, message, () => StartGame(slotName));
         }
-
-        // ══════════════════════════════════════════════
-        // ASYNC SCENE LOADING
-        // ══════════════════════════════════════════════
 
         /// <summary>
         /// Starts async loading of the game scene.
@@ -349,151 +304,198 @@ namespace Hecton.UI.MainMenu
 
             _isSceneLoadInFlight = true;
 
-            // Create GameStartContext
             GameStartContext context = string.IsNullOrEmpty(slotName)
                 ? GameStartContext.CreateNewGame()
                 : GameStartContext.CreateLoadGame(slotName);
 
-            // Store in holder for SceneBootstrap to read
             GameStartContextHolder.SetCurrent(context);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameStartContextHolder.LogCurrent();
 #endif
 
-            StartCoroutine(LoadSceneRoutine());
-        }
-
-        private IEnumerator LoadSceneRoutine()
-        {
+            TryRegisterToTickManager();
             SetPanelImmediate(mainMenuGroup, false);
             SetPanelImmediate(saveLoadGroup, false);
             SetPanelImmediate(settingsGroup, false);
-            SetPanelImmediate(loadingGroup,  true);
+            SetPanelImmediate(loadingGroup, true);
 
-            if (loadingProgressBar != null) loadingProgressBar.value = 0f;
-            if (loadingPercentText != null) loadingPercentText.SetText("0%");
+            _loadingPercentTemplate = ResolveLoadingPercentTemplate();
+            _sceneActivationRequested = false;
+            UpdateLoadingProgressVisual(0);
 
-            AsyncOperation operation = SceneManager.LoadSceneAsync(targetSceneName);
-
-            if (operation == null)
+            _sceneLoadOperation = SceneManager.LoadSceneAsync(targetSceneName);
+            if (_sceneLoadOperation == null)
             {
                 _isSceneLoadInFlight = false;
 
 #if UNITY_EDITOR
                 Debug.LogError(
                     $"[MainMenuController] Failed to load scene \"{targetSceneName}\". " +
-                    "Ensure it is added to Build Settings!"
-                );
+                    "Ensure it is added to Build Settings!");
 #endif
-                SetPanelImmediate(loadingGroup,  false);
+                SetPanelImmediate(loadingGroup, false);
                 SetPanelImmediate(mainMenuGroup, true);
-                yield break;
+                return;
             }
 
-            operation.allowSceneActivation = false;
-
-            LocalizationManager loc = LocalizationManager.Instance;
-            string percentTemplate = loc != null
-                ? loc.Get(LocalizationKeys.LOADING_PERCENT)
-                : "{0}%";
-
-            while (!operation.isDone)
-            {
-                float progress = Mathf.Clamp01(operation.progress / 0.9f);
-
-                if (loadingProgressBar != null)
-                    loadingProgressBar.value = progress;
-
-                if (loadingPercentText != null)
-                {
-                    int percent = Mathf.RoundToInt(progress * 100f);
-                    loadingPercentText.SetText(percentTemplate, percent);
-                }
-
-                if (operation.progress >= 0.9f)
-                {
-                    if (loadingProgressBar != null) loadingProgressBar.value = 1f;
-                    if (loadingPercentText != null)
-                    {
-                        loadingPercentText.SetText(percentTemplate, 100);
-                    }
-
-                    yield return null;
-                    operation.allowSceneActivation = true;
-                }
-
-                yield return null;
-            }
+            _sceneLoadOperation.allowSceneActivation = false;
         }
 
-        // ══════════════════════════════════════════════
-        // PANEL TRANSITION SYSTEM (FADE)
-        // ══════════════════════════════════════════════
-
         /// <summary>
-        /// Smoothly fades out 'from' panel and fades in 'to' panel.
+        /// Smoothly fades out one panel and fades in the next.
         /// Double-click protected via instant interactable/blocksRaycasts toggle.
         /// </summary>
         public void SwitchPanel(CanvasGroup from, CanvasGroup to)
         {
-            if (_isTransitioning) return;
-            if (from == null || to == null) return;
+            if (_isTransitioning || from == null || to == null)
+                return;
 
-            StartCoroutine(SwitchPanelRoutine(from, to));
+            TryRegisterToTickManager();
+            _isTransitioning = true;
+            _transitionFromPanel = from;
+            _transitionToPanel = to;
+            _transitionElapsed = 0f;
+            _transitionStartAlpha = from.alpha;
+            _panelTransitionState = PanelTransitionState.FadingOut;
+
+            from.interactable = false;
+            from.blocksRaycasts = false;
+            to.interactable = false;
+            to.blocksRaycasts = false;
         }
 
-        private IEnumerator SwitchPanelRoutine(CanvasGroup from, CanvasGroup to)
+        public void Tick(float dt)
         {
-            _isTransitioning = true;
+            float unscaledDeltaTime = GetUnscaledDeltaTime();
+            if (unscaledDeltaTime <= 0f)
+                return;
 
-            // Instantly block both panels
-            from.interactable   = false;
-            from.blocksRaycasts = false;
-            to.interactable     = false;
-            to.blocksRaycasts   = false;
+            UpdatePanelTransition(unscaledDeltaTime);
+            UpdateSceneLoad();
+        }
 
-            // FADE OUT
-            float elapsed = 0f;
-            float startAlpha = from.alpha;
-
-            while (elapsed < fadeDuration)
+        private void UpdatePanelTransition(float unscaledDeltaTime)
+        {
+            if (_panelTransitionState == PanelTransitionState.None ||
+                _transitionFromPanel == null ||
+                _transitionToPanel == null)
             {
-                elapsed += Time.unscaledDeltaTime;
-                from.alpha = Mathf.Lerp(startAlpha, 0f, elapsed / fadeDuration);
-                yield return null;
+                return;
             }
-            from.alpha = 0f;
 
-            // FADE IN
-            elapsed = 0f;
-            to.alpha = 0f;
+            float duration = Mathf.Max(0.0001f, fadeDuration);
+            _transitionElapsed += unscaledDeltaTime;
+            float t = Mathf.Clamp01(_transitionElapsed / duration);
 
-            while (elapsed < fadeDuration)
+            if (_panelTransitionState == PanelTransitionState.FadingOut)
             {
-                elapsed += Time.unscaledDeltaTime;
-                to.alpha = Mathf.Lerp(0f, 1f, elapsed / fadeDuration);
-                yield return null;
+                _transitionFromPanel.alpha = Mathf.Lerp(_transitionStartAlpha, 0f, t);
+                if (t < 1f)
+                    return;
+
+                _transitionFromPanel.alpha = 0f;
+                _transitionToPanel.alpha = 0f;
+                _transitionElapsed = 0f;
+                _panelTransitionState = PanelTransitionState.FadingIn;
+                return;
             }
-            to.alpha = 1f;
 
-            // Unblock target panel
-            to.interactable   = true;
-            to.blocksRaycasts = true;
+            _transitionToPanel.alpha = t;
+            if (t < 1f)
+                return;
 
+            _transitionToPanel.alpha = 1f;
+            _transitionToPanel.interactable = true;
+            _transitionToPanel.blocksRaycasts = true;
+            _panelTransitionState = PanelTransitionState.None;
+            _transitionFromPanel = null;
+            _transitionToPanel = null;
             _isTransitioning = false;
         }
 
-        // ══════════════════════════════════════════════
-        // UTILITIES
-        // ══════════════════════════════════════════════
+        private void UpdateSceneLoad()
+        {
+            if (_sceneLoadOperation == null)
+                return;
+
+            if (_sceneLoadOperation.isDone)
+            {
+                _sceneLoadOperation = null;
+                return;
+            }
+
+            float progress = Mathf.Clamp01(_sceneLoadOperation.progress / 0.9f);
+            int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
+            UpdateLoadingProgressVisual(percent);
+
+            if (_sceneActivationRequested || _sceneLoadOperation.progress < 0.9f)
+                return;
+
+            UpdateLoadingProgressVisual(100);
+            _sceneActivationRequested = true;
+            _sceneLoadOperation.allowSceneActivation = true;
+        }
+
+        private void UpdateLoadingProgressVisual(int percent)
+        {
+            percent = Mathf.Clamp(percent, 0, 100);
+
+            if (loadingProgressBar != null)
+                loadingProgressBar.value = percent / 100f;
+
+            if (loadingPercentText != null && _lastLoadingPercent != percent)
+            {
+                loadingPercentText.SetText(_loadingPercentTemplate, percent);
+                _lastLoadingPercent = percent;
+            }
+        }
+
+        private string ResolveLoadingPercentTemplate()
+        {
+            LocalizationManager loc = LocalizationManager.Instance;
+            return loc != null ? loc.Get(LocalizationKeys.LOADING_PERCENT) : "{0}%";
+        }
+
+        private float GetUnscaledDeltaTime()
+        {
+            float currentTime = Time.unscaledTime;
+            if (_lastUnscaledTickTime <= 0f)
+            {
+                _lastUnscaledTickTime = currentTime;
+                return 0f;
+            }
+
+            float delta = currentTime - _lastUnscaledTickTime;
+            _lastUnscaledTickTime = currentTime;
+            return delta > 0f ? delta : 0f;
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register(this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Unregister(this);
+            _registeredToTickManager = false;
+        }
 
         private static void SetPanelImmediate(CanvasGroup group, bool visible)
         {
-            if (group == null) return;
+            if (group == null)
+                return;
 
-            group.alpha          = visible ? 1f : 0f;
-            group.interactable   = visible;
+            group.alpha = visible ? 1f : 0f;
+            group.interactable = visible;
             group.blocksRaycasts = visible;
         }
     }

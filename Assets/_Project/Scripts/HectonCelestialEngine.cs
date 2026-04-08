@@ -58,6 +58,7 @@
 using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Environment;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -148,6 +149,10 @@ namespace Hecton8.Celestial
         [SerializeField] private Material nightSkybox;
         [SerializeField] private Material blendedSkyboxMaterial;
 
+        [Header("═══ DEEP VRAM GATE ═══")]
+        [Tooltip("Below this depth, celestial textures are detached from runtime materials to reduce deep-water VRAM residency. Asset imports are not modified.")]
+        [SerializeField, Min(0f)] private float deepTextureUnloadDepth = 1000f;
+
         [Header("═══ ORBITAL PARAMETERS ═══")]
         [SerializeField] private float orbitalPeriod = 3600f;
         [SerializeField] private Vector3 sunOrbitAxis = Vector3.right;
@@ -232,6 +237,23 @@ namespace Hecton8.Celestial
         private bool _sunDiscRendererCached;
 
         private float _cachedAegirRadius;
+        private Material _aegirSharedMaterial;
+        private bool _deepTextureResidencyReduced;
+
+        private Texture _skyHighCloudTexDefault;
+        private Texture _skyMainCloudAtlasDefault;
+        private Texture _skyMainCloudTexDefault;
+        private Texture _skyStarTexDefault;
+        private Texture _daySkyboxMainTexDefault;
+        private Texture _daySkyboxEmissionTexDefault;
+        private Texture _nightSkyboxMainTexDefault;
+        private Texture _nightSkyboxEmissionTexDefault;
+        private Texture _blendedDayCubemapDefault;
+        private Texture _blendedNightCubemapDefault;
+        private Texture _aegirMainTexDefault;
+        private Texture _aegirDetailTexDefault;
+        private Texture _aegirEmissionMapDefault;
+        private Texture _aegirCelestialOcclusionTexDefault;
 
         // ─────────────────────────────────────────────
         // SHADER PROPERTY IDs
@@ -259,6 +281,16 @@ namespace Hecton8.Celestial
         private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
         private static readonly int _ID_SunElevation       = Shader.PropertyToID("_SunElevation");
         private static readonly int _ID_EclipseOcclusion   = Shader.PropertyToID("_EclipseOcclusion");
+        private static readonly int _ID_HighCloudTex       = Shader.PropertyToID("_HighCloudTex");
+        private static readonly int _ID_MainCloudAtlas     = Shader.PropertyToID("_MainCloudAtlas");
+        private static readonly int _ID_MainCloudTex       = Shader.PropertyToID("_MainCloudTex");
+        private static readonly int _ID_StarTex            = Shader.PropertyToID("_StarTex");
+        private static readonly int _ID_MainTex            = Shader.PropertyToID("_MainTex");
+        private static readonly int _ID_EmissionMap        = Shader.PropertyToID("_EmissionMap");
+        private static readonly int _ID_DayCubemap         = Shader.PropertyToID("_DayCubemap");
+        private static readonly int _ID_NightCubemap       = Shader.PropertyToID("_NightCubemap");
+        private static readonly int _ID_DetailTex          = Shader.PropertyToID("_DetailTex");
+        private static readonly int _ID_CelestialOcclusionTex = Shader.PropertyToID("_CelestialOcclusionTex");
 
         // ─────────────────────────────────────────────
         // LIFECYCLE
@@ -269,6 +301,7 @@ namespace Hecton8.Celestial
             ValidateReferences();
             InitializeMaterialPropertyBlocks();
             InitializePlanetShineLight();
+            CacheCelestialTextureDefaults();
 
             _accumulatedOrbitalAngle = sunStartAngle;
             _currentBacklitFactor = 0f;
@@ -299,9 +332,17 @@ namespace Hecton8.Celestial
 
             if (Application.isPlaying)
             {
+                BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
+                BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
                 GameTickManager tickManager = GameTickManager.Instance;
                 if (tickManager != null)
                     tickManager.Register((ITickable)this);
+
+                BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
+                if (director != null)
+                    ApplyDeepTextureResidency(director.CurrentDepthMeters);
+                else
+                    RestoreCelestialTextureDefaults();
             }
 #if UNITY_EDITOR
             else
@@ -314,6 +355,10 @@ namespace Hecton8.Celestial
 
         private void OnDisable()
         {
+            if (Application.isPlaying)
+                BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
+
+            RestoreCelestialTextureDefaults();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
 
@@ -432,6 +477,29 @@ namespace Hecton8.Celestial
         {
             _aegirMPB = new MaterialPropertyBlock();
             _sunDiscMPB = new MaterialPropertyBlock();
+        }
+
+        private void CacheCelestialTextureDefaults()
+        {
+            _aegirSharedMaterial = aegirRenderer != null ? aegirRenderer.sharedMaterial : null;
+
+            _skyHighCloudTexDefault = GetMaterialTexture(_skyMaterial, _ID_HighCloudTex);
+            _skyMainCloudAtlasDefault = GetMaterialTexture(_skyMaterial, _ID_MainCloudAtlas);
+            _skyMainCloudTexDefault = GetMaterialTexture(_skyMaterial, _ID_MainCloudTex);
+            _skyStarTexDefault = GetMaterialTexture(_skyMaterial, _ID_StarTex);
+
+            _daySkyboxMainTexDefault = GetMaterialTexture(daySkybox, _ID_MainTex);
+            _daySkyboxEmissionTexDefault = GetMaterialTexture(daySkybox, _ID_EmissionMap);
+            _nightSkyboxMainTexDefault = GetMaterialTexture(nightSkybox, _ID_MainTex);
+            _nightSkyboxEmissionTexDefault = GetMaterialTexture(nightSkybox, _ID_EmissionMap);
+
+            _blendedDayCubemapDefault = GetMaterialTexture(blendedSkyboxMaterial, _ID_DayCubemap);
+            _blendedNightCubemapDefault = GetMaterialTexture(blendedSkyboxMaterial, _ID_NightCubemap);
+
+            _aegirMainTexDefault = GetMaterialTexture(_aegirSharedMaterial, _ID_MainTex);
+            _aegirDetailTexDefault = GetMaterialTexture(_aegirSharedMaterial, _ID_DetailTex);
+            _aegirEmissionMapDefault = GetMaterialTexture(_aegirSharedMaterial, _ID_EmissionMap);
+            _aegirCelestialOcclusionTexDefault = GetMaterialTexture(_aegirSharedMaterial, _ID_CelestialOcclusionTex);
         }
 
         private void InitializePlanetShineLight()
@@ -606,6 +674,85 @@ namespace Hecton8.Celestial
             float3 toSun = _resolvedSunDirection;
             float sinElevation = math.dot(toSun, new float3(0, 1, 0));
             return math.degrees(math.asin(math.clamp(sinElevation, -1f, 1f)));
+        }
+
+        private void HandleDepthTierChanged(int depthTier, float depthMeters)
+        {
+            ApplyDeepTextureResidency(depthMeters);
+        }
+
+        private void ApplyDeepTextureResidency(float depthMeters)
+        {
+            bool shouldReduceResidency = depthMeters >= deepTextureUnloadDepth;
+            if (shouldReduceResidency == _deepTextureResidencyReduced)
+                return;
+
+            if (shouldReduceResidency)
+                DetachDeepCelestialTextures();
+            else
+                RestoreCelestialTextureDefaults();
+        }
+
+        private void DetachDeepCelestialTextures()
+        {
+            SetMaterialTexture(_skyMaterial, _ID_HighCloudTex, null);
+            SetMaterialTexture(_skyMaterial, _ID_MainCloudAtlas, null);
+            SetMaterialTexture(_skyMaterial, _ID_MainCloudTex, null);
+            SetMaterialTexture(_skyMaterial, _ID_StarTex, null);
+
+            SetMaterialTexture(daySkybox, _ID_MainTex, null);
+            SetMaterialTexture(daySkybox, _ID_EmissionMap, null);
+            SetMaterialTexture(nightSkybox, _ID_MainTex, null);
+            SetMaterialTexture(nightSkybox, _ID_EmissionMap, null);
+
+            SetMaterialTexture(blendedSkyboxMaterial, _ID_DayCubemap, null);
+            SetMaterialTexture(blendedSkyboxMaterial, _ID_NightCubemap, null);
+
+            SetMaterialTexture(_aegirSharedMaterial, _ID_MainTex, null);
+            SetMaterialTexture(_aegirSharedMaterial, _ID_DetailTex, null);
+            SetMaterialTexture(_aegirSharedMaterial, _ID_EmissionMap, null);
+            SetMaterialTexture(_aegirSharedMaterial, _ID_CelestialOcclusionTex, null);
+
+            _deepTextureResidencyReduced = true;
+        }
+
+        private void RestoreCelestialTextureDefaults()
+        {
+            SetMaterialTexture(_skyMaterial, _ID_HighCloudTex, _skyHighCloudTexDefault);
+            SetMaterialTexture(_skyMaterial, _ID_MainCloudAtlas, _skyMainCloudAtlasDefault);
+            SetMaterialTexture(_skyMaterial, _ID_MainCloudTex, _skyMainCloudTexDefault);
+            SetMaterialTexture(_skyMaterial, _ID_StarTex, _skyStarTexDefault);
+
+            SetMaterialTexture(daySkybox, _ID_MainTex, _daySkyboxMainTexDefault);
+            SetMaterialTexture(daySkybox, _ID_EmissionMap, _daySkyboxEmissionTexDefault);
+            SetMaterialTexture(nightSkybox, _ID_MainTex, _nightSkyboxMainTexDefault);
+            SetMaterialTexture(nightSkybox, _ID_EmissionMap, _nightSkyboxEmissionTexDefault);
+
+            SetMaterialTexture(blendedSkyboxMaterial, _ID_DayCubemap, _blendedDayCubemapDefault);
+            SetMaterialTexture(blendedSkyboxMaterial, _ID_NightCubemap, _blendedNightCubemapDefault);
+
+            SetMaterialTexture(_aegirSharedMaterial, _ID_MainTex, _aegirMainTexDefault);
+            SetMaterialTexture(_aegirSharedMaterial, _ID_DetailTex, _aegirDetailTexDefault);
+            SetMaterialTexture(_aegirSharedMaterial, _ID_EmissionMap, _aegirEmissionMapDefault);
+            SetMaterialTexture(_aegirSharedMaterial, _ID_CelestialOcclusionTex, _aegirCelestialOcclusionTexDefault);
+
+            _deepTextureResidencyReduced = false;
+        }
+
+        private static Texture GetMaterialTexture(Material material, int propertyId)
+        {
+            if (material == null || !material.HasProperty(propertyId))
+                return null;
+
+            return material.GetTexture(propertyId);
+        }
+
+        private static void SetMaterialTexture(Material material, int propertyId, Texture texture)
+        {
+            if (material == null || !material.HasProperty(propertyId))
+                return;
+
+            material.SetTexture(propertyId, texture);
         }
 
         // ─────────────────────────────────────────────

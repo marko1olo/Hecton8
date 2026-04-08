@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
@@ -81,9 +82,11 @@ namespace Hecton8.Gameplay
             if (Instance != null)
                 return Instance;
 
-            BeaconNetworkSystem existing = FindAnyObjectByType<BeaconNetworkSystem>();
-            if (existing != null)
+            if (TryResolvePlayerOwnedInstance(out BeaconNetworkSystem existing))
+            {
+                Instance = existing;
                 return existing;
+            }
 
             GameObject root = new GameObject("BeaconNetworkSystem");
             return root.AddComponent<BeaconNetworkSystem>();
@@ -281,6 +284,28 @@ namespace Hecton8.Gameplay
 
             NetworkChanged?.Invoke();
             return true;
+        }
+
+        private static bool TryResolvePlayerOwnedInstance(out BeaconNetworkSystem beaconNetworkSystem)
+        {
+            beaconNetworkSystem = null;
+
+            GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+            if (playerObject == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                playerObject = playerTransform.gameObject;
+            }
+
+            if (playerObject == null)
+                return false;
+
+            if (playerObject.TryGetComponent(out beaconNetworkSystem))
+                return true;
+
+            beaconNetworkSystem = playerObject.GetComponentInChildren<BeaconNetworkSystem>(true);
+            return beaconNetworkSystem != null;
         }
 
         private bool TryRetractNearestInternal(Vector3 origin, out BeaconRuntime beacon, out float distance)

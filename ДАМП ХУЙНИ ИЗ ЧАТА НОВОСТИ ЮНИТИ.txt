@@ -1,0 +1,3282 @@
+Исходя из твоего проекта (процедурная генерация мира с `WorldProceduralScatterDirector`), вот **топ приоритетов для изучения**:
+
+## 🔥 **КРИТИЧНО (изучить сейчас)**
+
+### 1. **Path to CoreCLR (Unity 6.8)**
+- **Почему**: Mono исчезнет в 6.8, нужна подготовка
+- **Что**: [Руководство по миграции](https://discussions.unity.com/t/path-to-coreclr-2026-upgrade-guide/1714279)
+- **Влияние**: Совместимость кода, производительность
+
+### 2. **Оптимизация памяти для процедурных миров**
+- **Почему**: У тебя куча `NativeArray`, `CandidateMap`, пулов
+- **Статьи**:
+  - [Memory issues in real projects](https://medium.com/@bhavibhogayata/memory-issues-ive-seen-in-real-projects-and-how-i-fixed-them-6a927689f647)
+  - [MonoBehaviour vs C# class vs struct](https://darkounity.com/blog/monobehaviour-vs-c-class-vs-struct-memory-and-performance)
+
+### 3. **Уменьшение размера билда (Unity 6.3+)**
+- **Почему**: Можно удалить PhysX/Box2D если не используешь
+- **Статья**: [Adaptive Development - Shrink Your Build](https://medium.com/@lemapp09/adaptive-development-shrink-your-build-a5d85798e14c)
+- **Экономия**: До 10-15MB для WebGL/mobile
+
+---
+
+## ⚡ **ВАЖНО (в ближайшие 2 недели)**
+
+### 4. **ECS как пакет по умолчанию (Unity 6.4)**
+- **Почему**: Твоя система scatter — идеальный кандидат для ECS
+- **Ресурсы**:
+  - [Design decisions when building games using ECS II](https://arielcoppes.dev/2026/03/29/design-decisions-when-building-games-using-ecs2.html) (leoecs-lite)
+  - Unity 6.4 теперь включает ECS by default
+
+### 5. **Render Graph Viewer (Unity 6.4)**
+- **Почему**: У тебя URP + процедурная геометрия
+- **Гайд**: [Migrating to Render Graph Tutorial](https://discussions.unity.com/t/migrating-to-render-graph-tutorial-the-render-graph-viewer/1715694)
+- **Профит**: Оптимизация рендеринга scatter instances
+
+### 6. **Addressables для больших миров**
+- **Почему**: У тебя префабы пулятся, но нет адресной загрузки
+- **Статьи**: 
+  - [Addressables in Unity Part 1](https://medium.com/@abdullahabdelati_46671/addressables-in-unity-4cfb871c2222)
+  - [Part 2](https://medium.com/@abdullahabdelati_46671/addressables-in-unity-part-2-5d9488f1421f)
+  - [Can new AssetBundles keep using old Dependency Bundles?](https://discussions.unity.com/t/can-new-assetbundles-keep-using-old-dependency-bundles/1715544)
+
+---
+
+## 🎯 **ПОЛЕЗНО (когда будет время)**
+
+### 7. **Terrain erosion shader (Burst)**
+- **Почему**: У тебя процедурный ландшафт
+- **Ресурс**: [Advanced Terrain Erosion Shader](https://www.reddit.com/r/Unity3D/comments/1salvh2/i_ported_an_advanced_erosion_terrain_shader_to/)
+- **GitHub**: [github.com/lpmitchell/AdvancedTerrainErosion](https://github.com/lpmitchell/AdvancedTerrainErosion)
+
+### 8. **GPU physics engine**
+- **Почему**: Если захочешь симуляцию частиц/объектов на GPU
+- **Проект**: [Molecules - GPU Physics](https://www.reddit.com/r/Unity3D/comments/1seba1g/this_physics_engine_runs_entirely_on_your_gpu/)
+- **GitHub**: [github.com/JohannHotzel/Molecules](https://github.com/JohannHotzel/Molecules)
+
+### 9. **Float precision для больших миров**
+- **Почему**: У тебя мир может быть огромным
+- **Статья**: [Почему персонаж телепортируется при высоком FPS](https://habr.com/ru/articles/1020002/)
+
+### 10. **Dependency Injection**
+- **Почему**: Твой код станет чище
+- **Гайд**: [How to implement DI in Unity](https://medium.com/@haazikdawood/how-to-implement-dependency-injection-in-unity-step-by-step-b6f90c8e2edd)
+
+---
+
+## 📦 **ИНСТРУМЕНТЫ (попробовать)**
+
+### 11. **Unity Energy Saver Plugin**
+- **GitHub**: [github.com/wtfoliver/UnityEnergySaver](https://github.com/wtfoliver/UnityEnergySaver)
+- **Зачем**: Авто-переключение профилей производительности
+
+### 12. **Claude Code + Unity MCP**
+- **Видео**: [Claude Code with Unity Engine Tutorial](https://www.youtube.com/watch?v=Sknh2p12W8c)
+- **Зачем**: Ускорение разработки
+
+---
+
+## 🎮 **Unity 6.4 — что нового**
+
+**Ключевые фичи для тебя**:
+- ✅ ECS как default package
+- ✅ Project Auditor встроен
+- ✅ Улучшенная статистика рендеринга
+- ✅ LOD preview improvements
+- ✅ Grid & snapping enhancements
+
+**Видео**: [What's New in Unity 6.4](https://www.youtube.com/watch?v=HDgWPYd_e0U)
+
+---
+
+## 📅 **ПЛАН ДЕЙСТВИЙ**
+
+**Неделя 1**:
+1. Прочитать про CoreCLR migration
+2. Изучить memory optimization patterns
+3. Попробовать удалить неиспользуемые physics backends
+
+**Неделя 2**:
+4. Разобраться с Addressables
+5. Посмотреть Render Graph Viewer
+6. Протестировать ECS на маленьком примере
+
+**Неделя 3**:
+7. Terrain erosion shader
+8. Dependency Injection рефакторинг
+
+---
+
+**Что из этого наиболее актуально для твоего текущего спринта?**
+
+Skip to where you left off (post 4)Skip to last replySkip to top
+Skip to main content
+Unity Discussions
+Path to CoreCLR, 2026: Upgrade Guide
+Technical Articles
+Official
+
+Log In
+
+
+​
+
+​
+Path to CoreCLR, 2026: Upgrade Guide
+Technical Articles
+Official
+
+4.0k
+views
+
+73
+likes
+
+17
+links
+
+14
+users
+
+
+
+
+
+read
+9 min
+Mar 26
+3h
+post by jivalenzuela on Mar 26
+post by meredoth on Mar 27
+post by AndreaGalet on Mar 27
+
+AndreaGalet
+Mar 27
+Great work, I have one question though:
+
+Hidden references in container storage
+
+I’m probably missing something but how does it work right now? Container types DON’T hold references if we make an example like yours?
+
+
+post by meredoth on Mar 27
+
+meredoth
+Mar 27
+They do retain the references, there is no reason for them to lose them arbitrarily. The example appears to be more about poor coding practices rather than something specific to the move to CoreCLR. I was also confused when reading it, but there is no reason for any collection to drop references. The compiler has no awareness of what we are doing or what the _count variable represents.
+
+
+Visit my site for insights on C# and Unity: https://giannisakritidis.com
+
+Stat System with modifiers for Unity: https://github.com/meredoth/Stat-System
+
+post by r618 on Mar 27
+
+r618
+
+1
+Mar 27
+(this bad code practice results in potentially blocking the assemblies reload with new CoreCLR re/load assembly model - that’s why it was mentioned..
+
+and well ‘bad’ in quotes - it’s not helping when operating like this under Unity’s CoreCLR assembly re/load management - which could be fine for ‘’ normal .NET applications…)
+
+
+…–==:: store page - my assets to stream audio but not only ::==–…
+
+post by yasirkula on Mar 27
+
+yasirkula
+Legacy Contributor - Silver
+
+1
+Mar 27
+What happens when an assembly can’t be unloaded? What are the possible issues? Will there be two instances of types in that assembly: one from the newly loaded assembly and one from the one that couldn’t be unloaded? Will a newly instantiated object correctly use the new assembly?
+
+Will OverflowException be thrown when int i = int.MaxRange + 1? Are there other scenarios that you can think of that will now throw OverflowException?
+
+PS. Will Fast Enter Play mode’s “Scene Reload” option be forcefully disabled like “Domain Reload”? Because disabling “Scene Reload” requires refactoring the code in interesting ways that are not really relevant with domain reloading.
+
+
+Asset Store | GitHub | Discord | :hot_beverage:
+
+post by jivalenzuela on Mar 27
+
+jivalenzuela
+Staff
+Mar 27
+What happens when an assembly can’t be unloaded? What are the possible issues? Will there be two instances of types in that assembly: one from the newly loaded assembly and one from the one that couldn’t be unloaded? Will a newly instantiated object correctly use the new assembly?
+Yes. We’re planning to report to the user after a suitable time that an AssemblyLoadContext has leaked.
+
+PS. Will Fast Enter Play mode’s “Scene Reload” option be forcefully disabled like “Domain Reload”? Because disabling “Scene Reload” requires refactoring the code in interesting ways that are not really relevant with domain reloading.
+
+It’s very likely Scene Reload will remain an option.
+
+
+post by joncham on Mar 27
+post by Laicasaane on Mar 27
+post by JamesArndt on Mar 28
+post by John_Leorid on Mar 29
+post by spiney199 on Mar 29
+post by John_Leorid on Mar 29
+post by HaraldNielsen on Mar 30
+post by HaraldNielsen on Mar 30
+post by makaka-org on Mar 30
+9 days later
+post by nasos_333 4 hours ago
+post by jivalenzuela 3 hours ago
+post by JesOb 3 hours ago
+ This topic will close 2 years after the last reply.
+
+Reply
+
+Related topics
+Topic list, column headers with buttons are sortable.
+Topic	Replies	Views	Created	Activity
+List of Topics
+On each row, a topic title, optionally a category name, again optionally few popular tags, participating users, reply count, and an anchor to last activity on same topic are listed. The row content may change per category.
+
+CoreCLR, Scripting, and ECS Status Update - March 2026
+Unity Engine
+Entities
+,
+Mono
+,
+Official
+,
+Roadmap
+,
+Scripting
+,
+dotnet
+ 195	 9.2k	Mar 6	9h
+Blog post: Porting Unity to CoreCLR
+Unity Engine
+Official
+,
+Scripting
+ 91	 20.2k	Oct 2023	Mar 12
+CoreCLR and .NET Modernization - Unite 2024
+Unity Engine
+Official
+,
+Roadmap
+,
+Scripting
+,
+dotnet
+ 497	 58.5k	Sep 2024	Feb 2025
+.NET 10 was just released, what’s the status of CoreCLR in Unity?
+Unity Engine
+Advanced
+,
+Question
+,
+Unspecified version
+,
+dotnet
+ 25	 3.3k	Nov 2025	Nov 2025
+Resourcing concerns for .NET Modernisation
+Unity Engine
+Conversation
+,
+Unspecified version
+,
+dotnet
+ 86	 4.7k	Sep 2024	Nov 2025
+Copyright © 2026 Unity Technologies
+
+
+
+
+Search
+
+Get app
+Write
+Sign up
+
+Sign in
+
+
+
+Memory Issues I’ve Seen in Real Projects (And How I Fixed Them)
+Bhavisha Bhogayata
+Bhavisha Bhogayata
+4 min read
+·
+Mar 31, 2026
+--
+
+
+
+
+Press enter or click to view image in full size
+AI Generated Image to Showcase Memory Issues
+AI Generated Image to Showcase Memory Issues
+Memory issues are rarely obvious.
+
+In real-world projects, they don’t show up as clear “leaks” or errors. Instead, they surface indirectly as random crashes, gradual performance drops, or apps getting killed on specific devices.
+
+I ran into one such issue while working on a Unity-based mobile game that kept crashing only on a low-RAM device. Debugging that problem led me to look deeper into how memory was being used, and more importantly, how it wasn’t being released.
+
+What I found wasn’t a single complex bug, but a pattern.
+
+Most memory issues I’ve seen in production come from small, easy-to-miss mistakes that build up over time.
+
+In this post, I’ll share some of those patterns based on issues I’ve actually encountered and debugged.
+
+Memory Doesn’t Free Itself
+It’s easy to assume that once something is no longer used, it will eventually be cleaned up. That’s only partially true.
+
+Garbage collection handles managed memory, but not everything your app allocates.
+
+I ran into this while debugging the crashing issue I mentioned earlier. The game worked fine on most devices, but on a ~1GB RAM iPhone, it would consistently crash after a few minutes.
+
+Using Xcode’s Memory Profiler, I noticed that memory kept increasing during gameplay and never really dropped. That pointed to continuous allocation without proper release.
+
+After digging into the code, I found that textures and sprites were being generated at runtime but never explicitly destroyed.
+
+The Fix
+Manually destroy runtime assets after use:
+Destroy(texture);
+Destroy(sprite);
+2. Explicitly free unused memory:
+
+Resources.UnloadUnusedAssets();
+System.GC.Collect();
+After this, memory usage stabilized and the crashes stopped, even on low-RAM devices.
+
+Takeaway
+If your code allocates memory outside pure managed objects,
+you need to manage its lifecycle explicitly.
+
+Hidden Allocations Inside Update Loops
+This is one of those issues that’s easy to miss because nothing looks obviously wrong.
+
+You write some simple logic inside Update(), it works fine, and you move on.
+
+void Update()
+{
+    var tempList = new List<int>();
+    var message = "Score: " + score;
+}
+The problem is that this code runs every frame.
+
+At 60 FPS, even small allocations like this add up quickly. Over time, they create constant pressure on the garbage collector.
+
+In one of my projects, this showed up as random frame drops rather than crashes. Profiling revealed frequent GC spikes caused by these small, repeated allocations.
+
+The fix wasn’t complicated, just more intentional:
+
+Reuse objects instead of creating new ones every frame
+Avoid unnecessary string allocations
+Prefer string interpolation over concatenation when building strings:
+var message = $"Score: {score}";
+This reduces temporary allocations and keeps the code cleaner.
+Takeaway
+Small allocations don’t feel dangerous in isolation, but repeated every frame, they quietly become a performance problem.
+
+Event Listeners That Never Get Removed
+This is a classic issue that doesn’t look like a memory problem at first.
+
+You subscribe to an event, everything works as expected, and you move on.
+
+eventManager.OnUpdate += MyHandler;
+The problem starts when the object that subscribed gets destroyed, but the event still holds a reference to it. From the GC’s perspective, that object is still in use, so it never gets collected.
+
+As long as something holds a reference, the GC treats it as active, even if you don’t.
+
+I’ve seen this led to objects quietly piling up in memory, especially in systems where objects are frequently created and destroyed, like UI elements or gameplay objects.
+
+The fix is simple, but easy to forget:
+
+eventManager.OnUpdate -= MyHandler;
+Unsubscribing ensures the object can actually be cleaned up when it’s no longer needed.
+
+Takeaway
+If you subscribe to something, make sure you also unsubscribe.
+Otherwise, you’re holding onto memory longer than you think.
+
+Not Testing on Low-End Devices
+This is where most memory issues actually show up.
+
+On high-end devices, everything seems fine. Plenty of RAM, no crashes, smooth performance. It’s easy to assume your memory usage is under control.
+
+But low-end devices tell a different story.
+
+I’ve seen issues that never appeared during development suddenly become obvious on devices with limited memory. The 1GB iPhone case I mentioned earlier is a good example. The problem simply didn’t exist anywhere else.
+
+These devices don’t give you much room for inefficiency. If memory usage keeps growing, even slowly, it eventually hits a limit.
+
+High-end devices hide problems. Low-end devices expose them immediately.
+
+Takeaway
+If it only works well on high-end devices, it’s not truly optimized.
+
+Final Thoughts
+Most memory issues I’ve encountered weren’t caused by a single major mistake.
+
+They came from small decisions, things that looked harmless in isolation:
+
+Creating objects inside frequently called loops
+Forgetting to clean up resources
+Assuming memory would be freed automatically
+Individually, these don’t break your app. But over time, they add up.
+
+That’s the tricky part. Memory problems are usually about how things behave over time, not just what happens in a single moment. That’s why profiling, long-session testing, and understanding object lifecycles matter much more than they seem at first.
+
+Because in the end, everything works fine…
+until it suddenly doesn’t.
+
+These are just some of the patterns I’ve come across. There are definitely many other factors to consider when managing memory. If you’ve run into something similar or have other insights, I’d love to hear about it.
+
+Memory Management
+Unity
+Performance Management
+Programming
+Game Development
+--
+
+
+
+Bhavisha Bhogayata
+Written by Bhavisha Bhogayata
+1 follower
+·
+4 following
+Sr. Interactive Developer · XR Expert
+
+No responses yet
+Help
+
+Status
+
+About
+
+Careers
+
+Press
+
+Blog
+
+Privacy
+
+Rules
+
+Terms
+
+Text to speech
+
+
+Blog
+
+Learn
+About
+Contact
+Back to Blog
+Human-written article
+MonoBehaviour vs C# Class vs Struct: Memory and Performance
+MonoBehaviour vs C# Class vs Struct: Memory and Performance
+By Darko Tomic
+Published April 8, 2026
+405 
+monobehaviour
+struct
+csharp
+Unity Engine
+game development
+optimization
+memory
+stack
+heap
+runtime
+Most Unity tutorials teach you MonoBehaviour and stop there. Nobody explains what that script actually costs you in memory. A single Actor with a handful of fields takes up more RAM than a Nintendo NES. That is not because your data is heavy. It is because of what Unity attaches to every MonoBehaviour.
+
+In this article, I measure the memory footprint of a MonoBehaviour class, a plain C# class, and a struct. I also run a benchmark to compare how they perform in an update loop, and explain why the numbers look the way they do.
+
+This is an intermediate to advanced article. You should know what a class, a struct, and a reference type are before reading.
+
+MonoBehaviour: the standard Unity design
+I am going to create this object, a scene GameObject that will represent a character or an actor in the scene.
+
+public class Actor : MonoBehaviour
+{
+    [Header("Identity")]
+    public string actorName;
+    public string actorTag;
+    public string currentState = "Idle";
+
+    [Header("Status Effects")]
+    public bool isStunned;
+    public bool isOnFire;
+    public bool isFrozen;
+    public bool isPoisoned;
+    public bool isDead;
+
+    [Header("Metrics")]
+    public float currentHealth = 100f;
+    public float maxHealth = 100f;
+}
+After I create the Actor class, I will attach this script to a GameObject in the scene and populate the data. In order for us to create this GameObject from code, I will turn it into a prefab first.
+
+darko unity tutorial memory optimization actor
+
+Then I am going to instantiate it in the scene using an old input system. The reason I use the old input system for this is that it is just better for quick prototyping. If you are interested in a new input system, read this article Why You Should Switch to the New Unity Input System
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Actor actor = Instantiate(_actor);
+        }
+    }
+The thing I am doing right now looks too simple. This is how most beginners create new game objects, and it is totally fine. The goal of this tutorial is to showcase the memory layout in C# and Unity. This article is not for complete beginners. It is for intermediate or advanced programmers. But even if you are a beginner, the article is simple to read, so you are more than welcome.
+
+The GameObject Actor that we created is stored on the Heap, and in high-performance games, it can be an issue. And here is why. Let's investigate. I am going to measure the memory footprint of the object that we created on the heap. In the image we created, we can see what the game engine did. On the outside, it looks like a simple script, but under the hood, it is more than a script.
+
+darko tomic memory profiler actor size
+
+MonoBehaviour 1.1 KB
+Transform 1.0 KB
+GameObject 0.7 KB
+Total 2.8 KB in size.
+
+To be honest, it's not a lot, but that is also why in my articles I often say "you are taking memory for granted". Let's compare it to an 8-Bit Nintendo Console. We created a single GameObject (Actor) in our game, and it consumed more memory than the Nintendo NES. The total memory of the NES was 2 KB. Here are the specs The Nintendo Entertainment System (NES) Specifications.
+
+That is half the size of the Apollo Guidance Computer that helped astronauts land on the Moon in 1969. If you are interested in this space stuff, I made an article on Unity and NASA, and you can read more about it here NASA is using Unity Engine to render Artemis II mission. Once again, you are taking memory for granted. Neil Armstrong has been on the Moon, and he has taken fewer pictures than you and your buddies going to a nightclub.
+
+In the next step, I am going to create 1000 Actors, and let's compare the memory footprint.
+
+darko unity memory optimization 1000 actors
+
+MonoBehaviour 0.5 MB
+Transform 337.3 KB
+GameObject 313.6 KB
+Total size: 1.14 MB
+
+The Original Macintosh (1984) had 128 KB of RAM, but your 1000 GameObjects are over 1 MB. 9 times more. Yes, I know it is not a fair comparison but I just want to compare it to something for a reference. The Original Macintosh, at its release, was a complete revolution in computers. It was capable of running a full graphical interface, a word processor, a paint program, and doing it all within those 128 KB. While your GameObjects exist only to waste electricity for no reason.
+
+This happens because Unity is not creating just your data class. Each Actor becomes a full GameObject with a Transform and a MonoBehaviour component, plus the managed and native objects that keep everything in sync. Your few fields are only a small part of the total cost. Most of the memory comes from Unity’s object model itself.
+
+Unity's GameObject MonoBehaviour overhead
+What if we could improve the memory footprint, and how would we do it? There are many ways to do this, and we will try some options. The first one that comes to my mind is to remove Unity's overhead or MonoBehaviour dependency.
+
+So we just write it like this:
+
+public class Actor
+{
+    [Header("Identity")]
+    public string actorName;
+    public string actorTag;
+    public string currentState = "Idle";
+
+    [Header("Status Effects")]
+    public bool isStunned;
+    public bool isOnFire;
+    public bool isFrozen;
+    public bool isPoisoned;
+    public bool isDead;
+
+    [Header("Metrics")]
+    public float currentHealth = 100f;
+    public float maxHealth = 100f;
+}
+In the example above, I removed MonoBehaviour because it carries the overhead of Unity components. Of course, this removes the option to instantiate this object in the scene. And that is fine, because we are not building a real project here. In a real situation what you would do is inject this into a real MonoBehaviour GameObject. This is not going to solve our problem, but it will change the memory layout, and that is what we are going after.
+
+I will repeat myself just once more. The goal here is not to build a really useful project. The goal is to explain memory in the Unity game engine.
+
+Now I am going to do the same thing I did in previous examples and I am going to compare memory.
+
+if (Input.GetKeyDown(KeyCode.T))
+{
+    for (int i = 0; i < 1000; i++)
+    {
+         _actors[i] = new Actor
+         {
+            actorName = "Darko " + i,
+            actorTag = "NPC " + i,
+            currentState = "Idle " + i
+        };
+    }
+    Debug.Log("T Key called");
+}
+In this example, I had to use the new keyword, which is not something that Unity beginners learn or understand, and it is just how Unity is. But at some point, they just learn it. Some of you will disagree with me, but trust me, I work with students, and I know what I am talking about. Unity forces this MonoBehaviour component-based architecture, and some people just fail to learn Constructors and the new keyword. I am not even blaming Unity. It is just how it is. Nobody expected this to happen. There is just this generation of Unity developers who only have experience in Unity. They don't have a background in other programming languages and ecosystems like the early Unity generation.
+
+Let's analyze the new profiler run. They are slightly different, because when we use the new keyword, the memory is generated by and managed by C#. While the example before was managed natively in Unity. So, how we approach them in the memory profiler is different.
+
+darko unity managed memory 1000 units
+
+This time, I did not need to run 1 Actor object because I could just run 1000 and get the value of a single one. Here are the new results.
+
+Managed size: 56 B per Actor
+Managed impact: ~164 B per Actor
+Total managed size (objects only): ~55 KB
+Total managed memory (including data): ~85 KB
+There is no Transform or MonoBehaviour anymore in these results because we removed Unity's MonoBehaviour overhead. If you look closely, the memory footprint has improved. Now let's compare the final result between MonoBehaviour actors and Non-MonoBehaviour actors.
+
+MonoBehaviour class vs C# Class
+Metric	MonoBehaviour Actor	Plain Actor
+Type	Unity object	C# object
+Created with	Instantiate	new
+Memory location	Native + Managed	Managed only
+Per object	~2.8 KB	56 B
+Per object (with data)	~2.8 KB	~164 B
+1000 objects	~1.14 MB	~55 KB
+1000 objects (with data)	~1.14 MB	~85 KB
+I hope this comparison table is clean enough. Even though we made some improvements, we still can't fit our Actors into an NES console or an Apollo Computer. On the positive note, it does fit into the Apple computer. Apple, are you hiring? I am open to work.
+
+How about C# Structs, and do they improve performance?
+Now, let's do the same with Structs and let's see if there is a noticeable difference. This is the path where Unity is heading. They are trying to influence this data-oriented design approach to Unity programming. You've probably heard about DOTS and ECS. I have a tutorial on it. These are the most up to date Tutorials on DOTS, and they are really worth reading about. Check it here:
+
+What is Unity DOTS? Is Unity DOTS worth learning in 2026?.
+Getting started with Unity 6 DOTS and ECS in 2026.
+Though what we are going to do here is not DOTS, it can help you understand DOTS easier. Also, I am not going to explain what Structs are, because this is an intermediate+ tutorial and you should know it by now. In short, Structs are value types while classes are reference types. A local struct variable can live on the stack, but once you put structs into an array or a class field, they live on the managed heap, just like classes. The difference is layout. In an array, structs sit inline, one after another in a single contiguous block. Classes sit behind references, so the array holds pointers and each object is scattered somewhere else on the heap. That contiguous layout is where the real performance benefit comes from, not stack vs heap.
+
+The code below is a new data design for Actor. We just changed the class to a struct. And now, as said above, this becomes a value type. When stored in an array, the data sits inline in one contiguous allocation, which makes it faster to iterate.
+
+public struct Actor
+{
+    // Identity
+    public string actorName;
+    public string actorTag;
+    public string currentState;
+
+    // Status Effects
+    public bool isStunned;
+    public bool isOnFire;
+    public bool isFrozen;
+    public bool isPoisoned;
+    public bool isDead;
+
+    // Metrics
+    public float currentHealth;
+    public float maxHealth;
+}
+The code below is just gonna create 1000s of structs on a button press.
+
+       if (Input.GetKeyDown(KeyCode.R))
+        {
+            for (int i = 0; i < 1000; i++)
+            {
+                _actors[i] = new Actor
+                {
+                    actorName = "Darko " + i,
+                    actorTag = "NPC " + i,
+                    currentState = "Idle " + i,
+                    currentHealth = 100f,
+                    maxHealth = 100f,
+                    isStunned = false,
+                    isOnFire = false,
+                    isFrozen = false,
+                    isPoisoned = false,
+                    isDead = false
+                };
+            }
+
+            Debug.Log("R key called");
+        }
+Now, let's see the results of this.
+
+darko unity structs memory optimization
+
+Struct array size (1000 items): ~39 KB
+Total managed memory (including strings): ~144 KB
+Allocations: 1 (array only)
+MonoBehaviour vs Class vs Struct
+Metric	MonoBehaviour Actor	Plain Actor (class)	Actor (struct)
+Type	Unity object	C# object	Value type
+Created with	Instantiate	new	new
+Memory location	Native + Managed	Managed only	Managed (inline in array)
+Allocation count	1000 objects	1000 objects	1 array
+Per object	~2.8 KB	56 B	inline (no separate object)
+Per object (with data)	~2.8 KB	~164 B	inline (data in array)
+1000 objects	~1.14 MB	~55 KB	~39 KB
+1000 objects (with data)	~1.14 MB	~85 KB	~144 KB
+The struct version appeared to use more memory, but this was not due to the struct itself. In the test, each struct instance created unique strings ("Darko 1", "Darko 2", etc.), while the class version reused identical string values. This resulted in thousands of additional string allocations, which dominated memory usage.
+
+Memory is often dominated by data, not structure
+Structs don’t magically reduce memory
+Allocation patterns matter more than type
+Structs are not faster because they are smaller. They are faster because they keep data close together in memory.
+
+If we remove strings, the total memory drops significantly. Strings dominate the cost in this example. The same optimization can be applied to classes as well, so the difference is not in the data itself, but in how that data is stored. Classes still create many separate objects, while structs pack the same data into a single contiguous block.
+
+Class vs Struct vs Struct with ref
+At this point, memory is only part of the story. The next question is how these data types behave when we actually process them. All three tests below do the same amount of work. They allocate the same number of actors and run the same update loop. From an algorithm point of view, nothing changes. All three are still O(n).
+
+What changes is how the data is stored and passed around. Classes are reference types, structs are value types, and ref lets us pass a struct by reference instead of copying it during method calls. That makes this a good way to isolate what is really affecting performance.
+
+Benchmark Class
+using UnityEngine;
+using System.Diagnostics;
+
+public class BenchmarkClass : MonoBehaviour
+{
+    [SerializeField] private int count = 1_000_000;
+    [SerializeField] private int iterations = 50;
+
+    private ActorClass[] _actors;
+
+    private void Start()
+    {
+        _actors = new ActorClass[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            _actors[i] = new ActorClass
+            {
+                actorName = "Darko " + i,
+                actorTag = "NPC " + i,
+                currentState = "Idle " + i,
+                currentHealth = 100f,
+                maxHealth = 100f,
+                isStunned = false,
+                isOnFire = false,
+                isFrozen = false,
+                isPoisoned = false,
+                isDead = false
+            };
+        }
+
+        var sw = new Stopwatch();
+        sw.Start();
+
+        for (int j = 0; j < iterations; j++)
+        {
+            for (int i = 0; i < _actors.Length; i++)
+            {
+                UpdateActor(_actors[i]);
+            }
+        }
+
+        sw.Stop();
+        Debug.Log($"Class: {sw.ElapsedMilliseconds} ms");
+    }
+
+    private void UpdateActor(ActorClass actor)
+    {
+        actor.currentHealth += 1f;
+        actor.maxHealth -= 0.1f;
+    }
+
+    public class ActorClass
+    {
+        public string actorName;
+        public string actorTag;
+        public string currentState;
+        public bool isStunned;
+        public bool isOnFire;
+        public bool isFrozen;
+        public bool isPoisoned;
+        public bool isDead;
+        public float currentHealth;
+        public float maxHealth;
+    }
+}
+Benchmark struct
+using UnityEngine;
+using System.Diagnostics;
+
+public class BenchmarkStruct : MonoBehaviour
+{
+    [SerializeField] private int count = 1_000_000;
+    [SerializeField] private int iterations = 50;
+
+    private ActorStruct[] _actors;
+
+    private void Start()
+    {
+        _actors = new ActorStruct[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            _actors[i] = new ActorStruct
+            {
+                actorName = "Darko " + i,
+                actorTag = "NPC " + i,
+                currentState = "Idle " + i,
+                currentHealth = 100f,
+                maxHealth = 100f,
+                isStunned = false,
+                isOnFire = false,
+                isFrozen = false,
+                isPoisoned = false,
+                isDead = false
+            };
+        }
+
+        var sw = new Stopwatch();
+        sw.Start();
+
+        for (int j = 0; j < iterations; j++)
+        {
+            for (int i = 0; i < _actors.Length; i++)
+            {
+                UpdateActor(_actors[i]);
+            }
+        }
+
+        sw.Stop();
+        Debug.Log($"Struct: {sw.ElapsedMilliseconds} ms");
+    }
+
+    private void UpdateActor(ActorStruct actor)
+    {
+        actor.currentHealth += 1f;
+        actor.maxHealth -= 0.1f;
+    }
+
+    public struct ActorStruct
+    {
+        public string actorName;
+        public string actorTag;
+        public string currentState;
+        public bool isStunned;
+        public bool isOnFire;
+        public bool isFrozen;
+        public bool isPoisoned;
+        public bool isDead;
+        public float currentHealth;
+        public float maxHealth;
+    }
+}
+Before we look at the numbers, there is something important about this benchmark. In UpdateActor(ActorStruct actor), the struct is passed by value. That means the method receives a copy, modifies the copy, and the original entry in _actors is never written to. The class version passes a reference, so those writes land on the real heap object. The two loops are not doing exactly the same work. The struct version skips the write-back, which makes it faster for a reason that has nothing to do with cache locality.
+
+I left this version in on purpose because it is a mistake I see in real code. Passing a large struct by value is a common bug, and this is what it looks like in a profiler. But to get a fair comparison, you need to pass the struct by ref. I show that version below.
+
+Test	Class (ms)	Struct by value (ms)	Speedup
+Update Loop	376	216	1.74×
+The 1.74x number is real, but it is not an apples-to-apples comparison because the struct version does less work.
+
+Benchmark Struct with ref
+To make the comparison fair, pass the struct by reference so the method writes back to the array, same as the class version.
+
+for (int i = 0; i < _actors.Length; i++)
+{
+    UpdateActor(ref _actors[i]);
+}
+
+private void UpdateActor(ref ActorStruct actor)
+{
+    actor.currentHealth += 1f;
+    actor.maxHealth -= 0.1f;
+}
+Now both versions allocate the same data, iterate the same count, and write the same fields. The only difference is memory layout. The struct array keeps data contiguous, so the CPU cache can prefetch the next element while processing the current one. The class array holds references, so every iteration chases a pointer to a different heap location.
+
+That cache locality advantage is the real reason structs perform better in tight loops over large collections, not stack allocation, not skipping writes.
+
+Darko Tomic
+About the author
+Darko Tomic
+Software engineer & founder of darkounity.com. With 11 years in Unity, I provide human-led technical insights that cut through the noise and AI slop to focus on what actually works in production.
+
+Share this article
+
+Popular Articles
+The impact of AI on Game Dev Jobs. Open To Work Crisis 2026
+The impact of AI on Game Dev Jobs. Open To Work Crisis 2026
+2w ago
+10.1K
+
+C# in Unity 2026: Features Most Developers Still Don’t Use
+C# in Unity 2026: Features Most Developers Still Don’t Use
+2d ago
+2.3K
+
+What is Unity DOTS? Is Unity DOTS worth learning in 2026?
+What is Unity DOTS? Is Unity DOTS worth learning in 2026?
+2w ago
+1.8K
+
+Cities Skylines 2 failed because of Unity? Is this true?
+Cities Skylines 2 failed because of Unity? Is this true?
+2w ago
+1.8K
+
+Getting started with Unity 6 DOTS and ECS in 2026
+Getting started with Unity 6 DOTS and ECS in 2026
+1w ago
+1.2K
+
+Latest Articles
+C# in Unity 2026: Features Most Developers Still Don’t Use
+C# in Unity 2026: Features Most Developers Still Don’t Use
+2d ago
+
+NASA is using Unity Engine to render Artemis II mission
+NASA is using Unity Engine to render Artemis II mission
+4d ago
+
+How do I Use AI in Unity for Free? 2026 Tutorial
+How do I Use AI in Unity for Free? 2026 Tutorial
+6d ago
+
+What is Unity C# Job System? Do I need to learn it in 2026?
+What is Unity C# Job System? Do I need to learn it in 2026?
+1w ago
+
+Getting started with Unity 6 DOTS and ECS in 2026
+Getting started with Unity 6 DOTS and ECS in 2026
+1w ago
+
+Discover
+SteamPipeGUI for macOS: Build and Upload to Steam Directly from Unity
+SteamPipeGUI for macOS: Build and Upload to Steam Directly from Unity
+4w ago
+
+Unity Code Architecture and Dependency Injection
+Unity Code Architecture and Dependency Injection
+2w ago
+
+Smarter Games with AI: How Developers Can Use AI in Unity Game Development
+Smarter Games with AI: How Developers Can Use AI in Unity Game Development
+7mo ago
+
+Why Some Unreal Engine Developers Are Switching to Unity
+Why Some Unreal Engine Developers Are Switching to Unity
+1mo ago
+
+Here is why you don't understand C# interfaces
+Here is why you don't understand C# interfaces
+1mo ago
+
+Navigation
+Home
+Tutorials
+Tutoring
+Blog
+About
+Contact
+Sitemap
+Services
+Tutoring
+Newsletter
+Roadmap
+Tools
+Social Media
+Youtube
+Github
+Twitter
+Linkedin
+Discord
+Contact
+tomiczdarko@gmail.com
+Newsletter
+Email
+
+Privacy Policy
+Cookie Preferences
+Terms of Service
+Copyright © 2026 Tomicz Engineering LLC
+
+
+
+Search
+
+Get app
+Write
+Sign up
+
+Sign in
+
+
+
+Adaptive Development — Shrink Your Build
+Lem Apperson
+Lem Apperson
+3 min read
+·
+4 days ago
+--
+
+
+
+
+Disabling the Physics Backend in Unity 6
+Press enter or click to view image in full size
+
+Introduction
+Every byte counts. When you’re publishing to WebGL or mobile, the “Initial Load Time” is the biggest hurdle between a user playing your game or closing the tab. Traditionally, Unity included the full physics engine in every build, regardless of whether you were making a high-fidelity racing sim or a simple 2D Wordle clone.
+
+In Unity 6.3, that changes. You now have the power to disable and strip the physics backend entirely. By removing the PhysX or Box2D libraries from your final executable, you can significantly reduce your build size and memory footprint. It’s the ultimate “clean house” move for specialized projects.
+
+The Explanation: When and How to Strip Physics
+1. The “Why” Behind Stripping
+The physics engine isn’t just a collection of scripts; it’s a massive compiled library (SDK). Even if you don’t have a single Rigidbody in your scene, the engine traditionally keeps the physics simulation "warm" in the background. Stripping it:
+
+Reduces Build Size: Saves several megabytes (crucial for WebGL).
+Improves CPU Overhead: Stops the “FixedUpdate” internal physics loop from ticking.
+Decreases Memory Usage: The engine doesn’t allocate buffers for collision detection.
+Press enter or click to view image in full size
+
+2. How to Toggle the Engine
+Navigate to Project Settings > Player > Global Settings. Under the Optimization section, you will find the Physics Runtime dropdown. Setting this to None will trigger the stripping process during your next build.
+
+3. C# Snippet: Handling “Physics-Lite” Interactions
+If you disable the physics backend, you lose OnCollisionEnter and Raycast. However, you can still handle basic interactions using simple math. This is much faster for a 2D UI game or a card game.
+
+using UnityEngine;
+
+public class SimpleBoundsCheck : MonoBehaviour
+{
+    public Transform player;
+    public Transform goal;
+    public float interactionDistance = 1.0f;
+void Update()
+    {
+        // Without a physics engine, we use a simple distance check.
+        // This is significantly more performant for non-physics games.
+        float distance = Vector3.Distance(player.position, goal.position);
+        if (distance < interactionDistance)
+        {
+            Debug.Log("Goal Reached! (Calculated via Math, not Physics)");
+        }
+    }
+    
+    // Pro-Tip: Use (pos1 - pos2).sqrMagnitude < (dist * dist) 
+    // to avoid the expensive Square Root calculation!
+}
+Conclusion
+Disabling the physics backend is a bold move that signals a transition from “standard” development to “optimized” engineering. If your game relies on logic and UI rather than gravity and collisions, stripping the physics SDK is the easiest performance win you’ll find in Unity 6. It’s about being intentional with your resources — a hallmark of an intermediate developer moving toward senior-level optimization.
+
+Press enter or click to view image in full size
+
+Further Reading
+Unity Manual: Disable and Strip the Physics Integration
+https://docs.unity3d.com/6000.3/Documentation/Manual/Physics-Disable-and-Strip.html
+Unity Manual: Optimizing Build Size for WebGL
+https://docs.unity3d.com/6000.3/Documentation/Manual/webgl-building-and-running.html
+Unity Blog: Smallest Builds Ever with Unity 6
+https://blog.unity.com/engine-platform/how-to-optimize-your-unity-build-size
+Unity Scripting API: Physics.autoSimulation Property
+https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Physics-autoSimulation.html
+Video: Unity 6 Physics Stripping and WebGL Optimization
+https://www.youtube.com/watch?v=LqU6VvW_Z6s
+Unity
+Unity Game Development
+Unity3d
+--
+
+
+
+Lem Apperson
+Written by Lem Apperson
+448 followers
+·
+12 following
+Seeking employment using Uniy3D software solutions. Learning C++ and Unreal to expand my skills.
+
+No responses yet
+Help
+
+Status
+
+About
+
+Careers
+
+Press
+
+Blog
+
+Privacy
+
+Rules
+
+Terms
+
+Text to speech
+
+
+Ariel Coppes [Game Developer]
+BlogContactJamsGamesTools
+Design decisions when building games using ECS II
+Mar 29, 2026
+
+Reading time: 23 mins
+Even though the previous part covered a lot of aspects on how I am using ECS (entity component system) when making games, I have new examples and stories I want to share so I decided to write this new blogpost.
+
+For the ECS solution I decided to use leoecs-lite, with my own systems and tools over it. I am using it for game jams and for Ship Miner:
+
+
+You can add it to your wishlist and/or join the private playtest.
+Introduction
+When making games with ECS I believe one important feature to have is a scripting framework to support running specific logic in some entities. In my solution the scripts are named Controllers and they are stored in a ControllersComponent. Using a scripting framework is better for logic that can be added and removed dynamically (I suppose it also helps when adding mod support).
+
+For example, the Repair Drone Controller looks something like this:
+
+public class RepairDroneController : MonoBehaviour, IUpdate, IStateChanged, IInit, IDamagedEvent, IDestroyed
+{
+    public float healingPerSecond = 1;
+
+    public float totalHealing;
+    private float currentHealing;
+
+    [EntityDefinition]
+    public Object rayDefinition;
+
+    private Entity rayEntity;
+
+    public bool autodestroyOnComplete;
+    
+    // ... CODE ...
+
+    public void OnUpdate(World world, Entity entity, float dt)
+    {
+        ref var states = ref entity.Get<StatesComponent>();
+        ref var abilities = ref entity.Get<AbilitiesComponent>();
+        ref var animations = ref entity.Get<AnimationsComponent>();
+        
+        var healing = abilities.GetAbility("Healing");
+        var findHealingTarget = abilities.GetAbility("FindHealingTarget");
+        
+        // ... CODE ...
+
+        if (currentHealing >= totalHealing)
+        {
+            healing.Stop(Ability.StopType.Completed);
+            states.ExitState("Healing");
+            return;
+        }
+
+        // ... CODE ...
+    }
+
+    // ... CODE ...
+
+}
+Since it is a MonoBehaviour, it can be configured in the Unity inspector like this:
+
+
+NOTE: in the core API there is no need to inherit MonoBehaviours, but the only implementation I have right now is based on that right now to take advantage of the Unity Editor and its serialization system for customization. At some point in the past I tried with lua implementation using MoonSharp but it was too early for lua at that time.
+
+This is super specific to this unit, it checks for targets to repair inside some range, if it finds one, it locks on a target and decides to move there, once it is close it activates a ray to repair the target, and then disables the ray for some time. In the game looks like this:
+
+The role of the Controller is to be the unit’s brain manipulating the data stored in components to make the systems react to those changes.
+
+Controllers System
+Internally, the ControllersComponent has the list of Controllers. In the entity definition I reference the object where all the Controllers are declared. For example, the Repair Drone has the following prefab definition:
+
+
+This is how part of the entity definition (or entity prefab) looks.
+This one in particular uses two controllers, the BaseDroneController with some common logic for drones (could be moved to systems) and the RepairDroneController with the unit specific logic.
+
+Then, when a new entity with ControllersComponent is created, the ControllerSystem initializes it by getting all the Controllers declared in the prefab and registering them in the component. Later, the ControllerUpdateSystem iterates over the controllers in the component and call the Update method for Controllers implementing that callback. This is a simplified view of the system, for more information check the code at github.
+
+Prefer Stateless Controllers
+In my previous post I talked about my process when I didn’t know where to put new logic if it should be in a System or in a Controller. Now, after using that workflow multiple times, another thing that I learned is that, when I decide to go with a Controller, I prefer try to keep them as stateless as possible, and it is usually simple to do it.
+
+In the previous example, the repair drone has both configuration values like healingPerSecond or rayDefinition (that’s ok, could be better) and runtime values, like the currentHealing or the rayEntity. Runtime values in Controllers are an issue for the future, and here are some of the reasons :poop::
+
+Data is not easy accessible from other controllers nor systems if needed for other logic.
+For the same reason and also because data in controllers tends to not follow a common structure, it is harder to debug. When data is in Components it is easier because it normally follows a more consistent structure and it is easy to iterate over all the components.
+I can’t reuse the same Controller instance since different entities will share same runtime data. So, I need to have a Controller instance per entity in that case, while for stateless Controllers I can make all entities of the same definition reuse the same instance (this also simplifies pooling).
+It is harder to serialize in case I want save/load the state of an entity or send it over the network.
+What I try to do now is, first, try to see if I can store the data I want in an existing Component that make sense. For example, if I am creating some cooldowns to execute some action, maybe I can use other Components I already have like the AbilitiesComponent. If I can’t, I just create a new Component, could be a general use Component if it makes sense, or could be a specific Component. In the case of the Repair Drone, I could create a specific Component like this one:
+
+public class RepairDroneComponent : IEntityComponent {
+    public float currentHealing;
+    public Entity rayEntity;
+}
+And then either add that Component as part of that Entity Definition or add that Component dynamically in the Controller Init() and then use it by accessing the entity.Get<RepairDroneComponent>() in the rest of its logic.
+
+Moving data to Components here for Controllers also simplifies when deciding to move logic to systems at some point in the future.
+
+And what about the configuration values?
+Well, having configuration values it is a bit less troublesome since normally the values are kinda constant but still have some issues:
+
+If I want different configuration values, I need for sure different Controller prefabs for each config, so I can’t reuse the Controller instance. However, it is normal to have different list of controllers per entity definition so in that case coupling the constant data is not so wrong. For example, the Scout Drone entity definition also uses the BaseDroneController but with another Controller for the main logic, so the structure of controllers is already different to the one in the Repair Drone definition, and the configuration too.
+It makes less clear where the entity definition configuration is, sometimes is in Components, sometimes in the Controller, and that makes me lose time searching where the data is.
+It is also harder to make it visible, I have to go to each definition prefab to see the configuration values.
+I have to avoid modifying the configuration values in runtime, but it is easy to do it because they are there with the logic.
+If I decide to switch scripting solution or mix with different scripting solutions, I need to move out the configuration values.
+To improve this, I can either move those values to a new Component, for example the RepairDroneConfigurationComponent or could even be the same Component I use for the runtime data if I want to.
+
+Another option could be to move it to use a separated configuration concept, like we did in Iron Marines 2, and that’s the next story.
+
+How we did configurations in Iron Marines Invasion
+When we did our ECS during the development of Iron Marines Invasion (aka IM2), we knew that we wanted to have configurations like we had in IM1, using json files where game designers could easily modify values and/or customize units.
+
+The json files for configurations had a structure similar to this one:
+
+{
+    "army" : {
+        "units" : {
+            "unit_ranger" : { 
+                "health" : 100,
+                "abilities" : {
+                    "base_attack" : {
+                        "damage" : 100
+                    }
+                }
+            }
+        }
+    }
+}
+The solution worked like this, there was a ConfigurationComponent declaring the configuration key to use. For example, the ranger unit used the army.units.unit_ranger as the configuration key.
+
+The ConfigurationComponent stored the key and a cached dictionary for everything that was inside that key, for example, in the case of the previous key, the dictionary will only contain the values for unit_ranger entry.
+
+The ConfigurationSystem pre processes the json files and it created the cached dictionary of values and stored it in the ConfigurationComponent. After that, there were multiple subsystems that configured each component of the entity, for example:
+
+foreach (e in <ConfigurationComponent, HealthComponent>) {
+    if (e.configuration.contains("health")) {
+        e.health.total = e.configuration.asFloat("health")
+    }
+}
+
+// ...
+
+foreach (e in <ConfigurationComponent, AbilitiesComponent>) {
+    foreach (ability in e.abilities) {
+        if (e.configuration.contains($"abilities.{ability.name}")) {
+            ability.damage  = e.configuration.asFloat($"abilities.{ability.name}.damage")
+        }
+    }
+}
+NOTE: as always, I am oversimplifying the code but the configuration supported accessing the keys with a flattened version like the second subsystem example.
+
+This allowed us to expose to game designers only the things they needed to configure and balance the game. One great lesson was that by systemizing we needed to create a common structure to configure similar things and that improved a lot the trial and error compared to IM1 where we decided how to configure each unit each time and it was more difficult to use same criteria for everything and game designers were some times trying stuff that didn’t exist. For example, for one hero I might decide the health would be named life in the configuration and then another developer might decide it should be named hitpoints for another hero he is developing, and since we loaded the configuration in each unit logic, that inconsistency was more common.
+
+For IM2, we still supported special cases, if there was a configuration that made no sense to be a general one, the Controller of the unit could access the ConfigurationComponent and try to get the specific value. If at some point we decided that config should be more general, we could create a new component and then add a new configuration subsystem to read from the config to that component, and remove the specific code from the unit controller. That process is related to the to the “I don’t know where to put logic if controllers or systems”.
+
+In case of modifying the configuration, there was a way of asking the ConfigurationSystem to reload the values.
+
+I really like this system, when I started my own engine over ecs, I implemented the core parts but since I normally configure the controllers or components in the entity definition, I feel I don’t need it for now.
+
+One interesting point of this configuration was supporting overrides of entries in the main dictionary, so if we wanted to have special values for some unit either by development scenes or because there was an upgrade active, what we did was just override the main dictionary values and then the unit was already reading from that, which leads me to the UpgradesSystem story.
+
+How we did upgrades in Iron Marines 2
+I already spoiled this a bit but the main idea was to override values in the main configurations dictionary. What we did for that was to have jsons with specific values to override, for example:
+
+{
+    "upgrade_super_rangers" : {
+        "army.units.unit_ranger" : {
+            "health" : [200, 300, 400, 500]
+        }
+    }
+}
+We treated overrides as arrays and we considered the level of the upgrade to read from there when overriding. In that example, the first level for that upgrade will override the health with the number 200 so when the configuration system configures the health, it uses the new value.
+
+I remember :brain::fire: also adding some extra support to declare stuff as percentage or factors, so instead of doing the final number we could do something like this:
+
+{
+    "upgrade_super_rangers" : {
+        "army.units.unit_ranger" : {
+            "healthPercentage" : [120, 140, 160, 200]
+        }
+    }
+}
+In that example instead of overriding the health, the final health was the original value * the specified percentage, so for the last level of the upgrade the health would be 200, considering the value specified in the configuration.
+
+Reacting to events in Controllers
+In order to react to events in Controllers what I do is to have a way to implement different callbacks and then I have specific systems to call them if the event was triggered. As an example, there is a IHealthStateChanged interface to implement to be called when the unit either died or came back to life. After the HealthSystem is processed there is another system, the OnHealthStateChangedControllerSystem, that checks for the health state change and if that happened, it iterates over all the controllers implementing the callback and invoke them. It is optional but it helps me to react to events in the scripting system.
+
+
+In the systems declaration, I have the callback system after the health system like this.
+The reaction callback system code is something like this:
+
+public class OnHealthStateChangedControllerSystem: System {
+    public void Update() {
+        foreach (e in filter<HealthComponent, ControllersComponent>()) {
+            if (e.health.previousState != e.health.currentState) {
+                foreach (controller in e.controllers) {
+                    if (controller implements IHealthStateEvent) {
+                        controller.OnHealthStateChanged(e)
+                    }
+                }
+            }
+        }
+    }
+}
+Event Components
+One thing I use in some cases now is to add a temporary Event component to react to some important data change that happened in a system. It is kinda the opposite to the Command component I explained in the previous post which was also temporary component and it is used to trigger systems to do some data change.
+
+In the case of the HealthSystem what I normally do is to store two values in the HealthComponent, the previous and the current value, so I can check that in the other systems to decide to run or not. But in some cases, I prefer to not have that exposed, and to add a new temporary event Component, maybe with more information, and then remove it in the next iteration. This helps in not having to have all that extra information in the base component and even to not have to track the previous state.
+
+For example, if I wanted to store how the entity died and where it was when that happened, I could create a HealthStateEventComponent like this:
+
+public struct HealthStateEventComponent : IEventComponent {
+    public Vector3 position;
+    public Vector3 damagePosition;
+    public bool died;
+    public string extraInformation;
+}
+Then, the HealthSystem would change part of its code to something like this:
+
+public class HealthSystem: System{
+    public void Update() {
+        
+        foreach (e in filter<HealthStateEventComponent>()) {
+            world.Remove(e, HealthStateEventComponent);
+        }
+
+        foreach (e in filter<HealthComponent>()) {
+            var previousState = e.health.current;
+
+            // process damage logic here and store killDamage to use later 
+
+            if (previousState != e.health.current) {
+                world.add(e, new HealthStateEventComponent() {
+                    died = e.health.state == death
+                    damagePosition = killDamage.position
+                })
+            }
+        }
+
+        foreach (e in filter<HealthStateEventComponent, PositionComponent>()) {
+            e.healthStateEvent.position = e.position;
+        }
+    }
+}
+And the OnHealthStateChangedControllerSystem would change to iterate only on the entities with that Component and avoid the health changed state check internally. For example, that system could be changed to this:
+
+public class OnHealthStateChangedControllerSystem: System{
+    public void Update() {
+        foreach (e in filter<HealthStateEventComponent, ControllersComponent>()) {
+            foreach (controller in e.controllers) {
+                if (controller implements IHealthStateEvent) {
+                    controller.OnHealthStateChanged(e)
+                }
+            }
+        }
+    }
+}
+Suppose now I want to react to that new event in the RepairDrone to do some last blast when it dies, I could do something like this:
+
+public class RepairDroneController : ..., IHealthStateEvent
+{
+    // ... OTHER CODE ...
+
+    public void OnHealthStateChanged(Entity e) {
+        var eventData = e.Get<HealthStateEventComponent>()
+
+        if (eventData.died) {
+            var blastEntity = world.CreateEntity(blastDefinition);
+            blastEntity.Get<Position>().value = eventData.damagePosition;
+        }
+    }
+}
+This helped in keeping internal to the systems originating the event how the event happened, and keep clear to the ones reacting that they are reacting to the event not to the internal data change in some way. Also allows me to react in different systems without having to know the react logic (in the case of the health, check the previous and current state).
+
+Custom Editor Window for Entities
+LeoECS lite already has a way to see components data in the inspector but it does it with gameobjects and over time it became a bit limited and annoying for me so I decided to create my own editor window reusing part of the code.
+
+This is the window I normally use when checking for data:
+
+
+It allows me to do query filter like systems do, for example, I can check for entities containing some components but not others, and then I can also filter by component names, sort by name, etc.
+
+
+In this case I am filtering entities with GameObjectComponent and without ConfigurationComponent
+For entities with NameComponent, I also show the name together with the entity id to easily identify them (for example the player ship).
+
+By default, it supports all type of components with plain basic fields, but when components have more data like lists for example, it doesn’t show that. However it supports implementing custom inspectors in a generic way to show those cases as you want. For example, this is the custom inspector for MineralsCollectorComponent:
+
+sealed class MineralsCollectorInspector : EcsComponentInspectorTyped<MineralCollectorComponent>
+{
+    public override bool OnGuiTyped(string label, ref MineralCollectorComponent collector,
+        EcsEntityDebugView entityView)
+    {
+        EditorGUI.indentLevel++;
+
+        for (var i = 0; i < collector.minerals.Length; i++)
+        {
+            var mineral = collector.minerals[i];
+            var mineralName = MineralTypes.ValueToName(i);
+            
+            if (mineral > 0 && !string.IsNullOrEmpty(mineralName))
+            {
+                EditorGUI.BeginChangeCheck();
+                mineral = EditorGUILayout.FloatField(mineralName, mineral);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    collector.minerals[i] = mineral;
+                }
+            }
+        }
+
+        EditorGUI.indentLevel--;
+
+        return true;
+    }
+}
+
+That is pretty handy since it is autodetected by the ecs custom editor. In there I could also modify data and/or show it in a more interesting way.
+
+Conclusion
+Now that I am at the end of the article, I remembered a couple of extra cases to talk about but will leave that for a third part of the series, I hope to write that one soon not like this one that was two and a half years later :worried:. A couple of topics to leave in mind for me are the GameObjectComponent used to connect the entity with a GameObject and its EntityReference corresponding MonoBehaviour, and which data I should try to avoid in Components to make them easier to serialize.
+
+As always I hope it was useful and please ask me here (added disqus platform recently) or in social networks or join ship miner discord or whatever you want in case you want to interact for more information.
+
+Thanks for reading!!
+
+Remember to add Ship Miner to your Steam Wishlist!! and spread the word if you can.
+
+
+See you soon!
+
+
+
+presskit
+^~^
+contact
+Skip to main content
+Unity Discussions
+Products
+Solutions
+Resources
+Community
+Learn
+Support
+
+Sign Up
+
+Log In
+
+
+​
+
+​
+Migrating to Render Graph tutorial: The Render Graph viewer
+Technical Articles
+6 3
+,
+6 4
+,
+Graphics
+,
+Performance
+,
+Render Graph
+,
+Universal Render Pipeline
+Apr 7
+1d
+post by eduardooriz 1 day ago
+
+eduardooriz
+Staff
+
+1
+1d
+The Unity’s Render Graph viewer
+Hi. This is the first article based on the new upcoming series of video tutorials on understanding Render graph, the links can be found in the resources section at the bottom of this article.
+
+The Render Graph Window
+The Render Graph Window
+1600×862 254 KB
+In this article you’ll learn about a new feature in the Unity editor, the Render Graph Viewer window. This window first appeared with Unity 6. The Render Graph API gives a developer access to the render pipeline at any stage in rendering a frame. It automatically optimizes runtime rendering resulting in better performance. It also enables broader and safer access to the pipeline’s resources. Using the Render Graph API a developer can create many custom effects without sacrificing style for better performance or reliability.
+
+To help understand the different stages that take place to render a frame in URP we created this chart that can be used as reference.
+
+
+1920×1080 128 KB
+
+>> DOWNLOAD <<
+When using the API it is important that a developer understands the impact of their custom features on the render pipeline. This is where the Render Graph viewer plays an important role.
+
+Creating a New Project
+Creating a New Project
+1600×941 178 KB
+You will get the most from this article If you follow along using the Unity Editor. The content uses Unity 6.2. First create a new project using the Unity Hub and the Universal 3D template. To keep things simple we’ll create a very simple scene.
+
+Creating a new scene using the Basic (URP) template.
+Creating a new scene using the Basic (URP) template.
+1600×970 128 KB
+Create a new scene using the Basic (URP) template or simply use the existing SampleScene.
+Then add a Plane and a Cube.
+Set the y position of the Cube to 0.5.
+Create a new material. By default this will use the URP Lit Shader.
+Set the material colour to white.
+Apply the new material to the Cube.
+The Cube Scene
+The Cube Scene
+1402×906 69.7 KB
+Settings for the Main Camera Transform are shown below. But for the purposes of understanding the Render Graph Viewer, matching the Transform is unimportant. But you do need at least one object that is casting shadows.
+
+Main Camera Transform
+Main Camera Transform
+908×290 28.3 KB
+You can bring up the Render Graph Viewer from Window > Analysis > Render Graph Viewer. You may need to switch between Scene and Game views to refresh the graph and click the circular arrow at top left of the window.
+
+Render Graph is not a visual scripting system like Shader Graph or VFX Graph. In computer science, graphs are data structures with nodes and connections, and they allow us to understand and work with the system in a more intuitive way, like how we’re able to visualize the render pipeline here.
+
+The Render Graph Viewer layout
+The Render Graph Viewer layout
+1600×861 258 KB
+The top row of names contains the render passes in the order that URP executes them, and the left column lists the resources the render passes uses in the order that URP creates them. The grid with the colored blocks, these are access blocks that indicate how the render passes use the resources. Read horizontally, left to right, to follow the life of a resource and vertically, top to bottom, to view the resources used by a pass.
+
+The table below describes the meaning of the colors used for a block.
+
+
+1874×1518 189 KB
+Passes
+Passes
+358×370 11.9 KB
+
+Notice that some passes are grouped together. This is a feature of Render Graph wherever possible passes are grouped into a single draw call to improve performance. The blue lines and when a pass is selected the white blocks, indicate that URP has merged the passes above into a single, more efficient pass.
+The Pass List side bar
+The Pass List side bar
+1038×446 31.1 KB
+When a pass is selected in the top pass names row. The Pass List side bar on the right gives additional details. See the image above when Draw Main Light Shadowmap is selected. It explains which passes are merged and why the next pass to the right is not merged. Because the render target sizes do not match.
+
+The life of the _MainLightShadowmapTexture
+The life of the _MainLightShadowmapTexture
+1600×799 211 KB
+We’ll take a look at the life of the texture _MainLightShadowmapTexture. But first notice from the image above that the dropdown Pass Filter is set to Raster Passes, the default is Everything. This can help you focus on a specific issue. Also the Resource Filter is set to Textures, again a helpful option to simplify a complex graph.
+
+The first colored block in the row of blocks for _MainLightShadowmapTexture:
+
+It is in the Draw Main Light Shadowmap pass.
+The main red color means the pass requires write access.
+The top left corner is blue which means on load, the texture is cleared.
+Bottom right is dark red which means the texture is stored.
+The globe icon means the texture is a global resource.
+Now move along the row to the first green block. This is the Draw Opaque Objects pass and the green color means the pass requires read only access to the resource. As we move along the row the next pass that uses this resource is Fullscreen Mask. The green color again indicates read only access required. Same for Draw Transparent Objects and Draw UI. As you can see the viewer provides a lot of information. Let’s look at a custom renderer feature and how that is displayed in the viewer.
+
+A project using the Universal Render Pipeline (URP) uses two settings assets. If you look in the Assets/Settings folder you’ll see PC_Renderer and PC_RPAsset. Take a look at PC_Renderer in the Inspector.
+
+The settings for the Screen Space Ambient Occlusion Renderer Feature
+The settings for the Screen Space Ambient Occlusion Renderer Feature
+628×470 21.4 KB
+In the Renderer Features list you can see the Screen Space Ambient Occlusion, or SSAO, feature. This is active by default for the PC_Renderer asset using the Universal 3D template. If SSAO is new to you, ambient occlusion approximates the shadowing of ambient light we see in real life, anywhere objects or surfaces are close together. Let’s see where this feature sits in our render pipeline. Switch the Pass Filter from Raster Passes to Everything or just add Unsafe Passes to the options. You should now see the Blit SSAO pass in the passes list. Try turning the SSAO Renderer Feature off using the PC_Renderer Inspector. To see the updated Render Graph, we need to click the refresh icon. You might also need to switch to the Game view to capture our updated pipeline. The SSAO pass is no longer in the pipeline.
+
+The Blit SSAO pass
+The Blit SSAO pass
+1316×1140 122 KB
+Turn the SSAO Renderer Feature back on and update the Render Graph Viewer. The SSAO pass is called the Blit SSAO. The source textures are the green access blocks. This SSAO pass reads the textures: _CameraTargetAttachment, _CameraDepthTexture and the _CameraNormalsTexture. These resources are processed to determine where the SSAO shadowing should be placed. Then it reads and writes to the textures: _SSAO_OcclusionTexture0, _ScreenSpaceOcclusionTexture and _SSAO_OcclusionTexture1.
+
+The globe icon means that the render pass sets this texture as a global resource. Notice that the Draw DBuffer and Draw Opaque Objects passes have read only access to the _ScreenSpaceOcclusionTexture. Indicated by the green blocks. Then if we move on from there, we see that the Draw Decal Forward Emissive, Skybox and Copy Color passes ignore it. The Skybox is essentially infinitely far away, so shadowing doesn’t make sense. Shadowing is also not relevant for simple color transfers like the Draw Decal Forward Emissive and Copy Color passes. But after these, the texture is read again by the Draw Transparent Object pass. The reason for that is so transparent objects are blended correctly with the opaque objects behind. Suppose, in a game, you’re looking through a window. It would be wrong if the SSAO shadows disappeared on the objects behind the window. So the texture is used in this pass to maintain consistency in the scene.
+
+The Render Graph Viewer is an important tool in optimising the rendering of your scene. You can use the viewer to gain a clear understanding of:
+
+How URP manages and optimizes render resources.
+Where performance bottlenecks (like redundant buffers or fragmented passes) may exist.
+The flow of lighting, shadowing, and post-processing through clearly visualized pass-resource relationships.
+Hopefully this article helps your understanding of how to get the best from this useful new window.
+
+Resources
+If you want to learn more about Render Graph don’t miss the recent resources that we published:
+
+Youtube video series
+Youtube video series
+1920×1080 592 KB
+Discussions Article: Understanding the Render Graph Samples
+Stages of rendering a frame in URP infographic
+Migrating to Render Graph video tutorial (link to be added soon)
+Render graph samples - part 1 (link to be added soon)
+Render graph samples - part 2 (link to be added soon)
+Introduction to Render Graph in Unity 6
+Understanding URP and essentials
+E-book: Introduction to URP for advanced Unity creators (Unity 6 ed.)
+E-book: Create popular shaders and visual effects with the Universal Render Pipeline (Unity 6 ed.)
+
+
+72
+views
+
+5
+links
+read
+4 min
+ This topic will close 2 years after the last reply.
+Hello! Looks like you’re enjoying the discussion, but you haven’t signed up for an account yet.
+Tired of scrolling through the same posts? When you create an account you’ll always come back to where you left off. With an account you can also be notified of new replies, save bookmarks, and use likes to thank others. We can all work together to make this community great. heart
+
+
+Sign Up
+
+Maybe later
+
+no thanks
+
+Related topics
+Topic list, column headers with buttons are sortable.
+Topic	Replies	Views	Created	Activity
+List of Topics
+On each row, a topic title, optionally a category name, again optionally few popular tags, participating users, reply count, and an anchor to last activity on same topic are listed. The row content may change per category.
+
+How to Use RenderGraph in URP: Learning Resources and Tricks
+Unity Engine
+Official
+,
+Universal Render Pipeline
+ 0	 1.8k	Jun 2025	Jun 2025
+Render Graph Viewer - Nothing happens when clicking “Capture Graph” button.
+Unity Engine
+Question
+,
+URP
+,
+com_unity_render pipelines_universal
+ 3	 1.9k	Apr 2022	Apr 2022
+RenderGraph Viewer to explore render passes in HDRP
+Unity Engine
+Feedback
+,
+HDRP
+,
+Official
+,
+com_unity_render pipelines_high definition
+ 0	 597	Feb 2024	Feb 2024
+Render Graph Updates in Unity 6.3
+Unity Engine
+6 3
+,
+6 3 beta
+,
+High Definition Render Pipeline
+,
+Official
+,
+Render Graph
+,
+Universal Render Pipeline
+ 21	 8.9k	Jul 2025	Feb 14
+Render Graph Viewer not showing my Render Graph created in my custom SRP
+Unity Engine
+6 3
+,
+Intermediate
+,
+Question
+,
+Scriptable Render Pipeline
+ 2	 84	Dec 2025	Dec 2025
+Copyright © 2026 Unity Technologies
+Legal
+Privacy Policy
+Cookies
+Do Not Sell or Share My Personal Information
+Your Privacy Choices (Cookie Settings)
+"Unity", Unity logos, and other Unity trademarks are trademarks or registered trademarks of Unity Technologies or its affiliates in the U.S. and elsewhere (more info here). Other names or brands are trademarks of their respective owners.
+
+
+
+Search
+
+Get app
+Write
+Sign up
+
+Sign in
+
+
+
+Addressables in Unity (Part 1)
+Abdullah
+Abdullah
+3 min read
+·
+Mar 9, 2026
+--
+
+
+
+
+We use Addressables to manage memory, reduce initial app size, push live updates without app store approvals, and drastically speed up our build times.
+
+Memory Management: Addressables vs. Standard Unity
+Before we start setting up Addressables, you might be asking yourself: what is the difference between Addressables (Load and Unload) and standard Unity methods (Instantiate and Destroy)? 🤔
+
+The main difference is when the asset goes into your memory. With standard Unity, the “Blueprint” (your heavy prefab data) is forced into your main memory (RAM) the moment the scene starts, even before you use Instantiate.
+
+Addressables, however, keep that Blueprint sitting safely on your hard drive. It will NOT load into memory until you explicitly tell it to through your code. This saves a massive amount of RAM and makes your game load much faster!
+
+The same logic applies to cleaning up. Unity’s normal Destroy() method only deletes the lightweight "Clone" from your active scene, leaving the heavy Blueprint stuck in your RAM. Addressables' Unload method completely frees your memory, removing the Blueprint from RAM and leaving it on the hard drive until you need to load it again.
+
+Press enter or click to view image in full size
+Press enter or click to view image in full size
+How to Set Up Addressables
+Alright let’s setup the Addressables: First things first we need to install Addressables package.
+
+Press enter or click to view image in full size
+
+To make any asset Addressable, just select it and check the ‘Addressable’ box in the Inspector, like in the image below 👇
+
+Press enter or click to view image in full size
+
+Now, for example, if we want to load the Player on start and delete it when we press a key, we can use this script:
+
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations; 
+
+public class AddressbleManager : MonoBehaviour
+{
+    [SerializeField] private AssetReference _player;
+    
+    private AsyncOperationHandle<GameObject> _playerReceipt;
+
+    void Start()
+    {
+        _playerReceipt = _player.InstantiateAsync();
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.D) && _playerReceipt.IsValid())
+        {
+            Addressables.ReleaseInstance(_playerReceipt);
+        }
+    }
+}
+Think of AsyncOperationHandle as your "receipt" to manage asynchronous operations initiated through the Addressables API.
+
+Now, if we start the game, the Player will spawn. When we press ‘D’, the clone is destroyed and the blueprint is cleared from memory.
+
+Press enter or click to view image in full size
+
+Live Updates (Remote Content)
+We can push new content, tweak levels, or fix broken textures by updating assets on a server. Players download the new assets directly when they open the game, completely bypassing the need for a new Google Play Store review and update.
+
+Note: I will be diving much deeper into how to set up Remote Content in a future blog post, so stay tuned!
+
+Faster Build Times & CI/CD
+Because Addressables separate our assets from our code, we don’t have to rebuild the entire game every time we change a prefab. This makes daily iteration much faster and makes automating your builds through CI/CD pipelines much cleaner.
+
+And that’s it for today’s blog post. Thanks for reading!
+
+Unity Game Development
+Unity3d
+Csharp
+--
+
+
+
+Abdullah
+Written by Abdullah
+73 followers
+·
+79 following
+Unity Gameplay Programmer
+
+No responses yet
+Help
+
+Status
+
+About
+
+Careers
+
+Press
+
+Blog
+
+Privacy
+
+Rules
+
+Terms
+
+Text to speech
+
+
+Все потоки
+Чему научиться в этом году?Чему научиться в этом году?
+
+
+
+
+DyadichenkoGA
+6 апр в 18:46
+Почему ваш персонаж телепортируется при высоком FPS: float precision в играх
+Простой
+6 мин
+7.3K
+Unity
+*
+C#
+*
+Разработка игр
+*
+Математика
+*
+FAQ
+Всем привет! Меня зовут Григорий Дядиченко, и я разрабатываю разные проекты на заказ. Сталкивались ли вы с ситуацией, когда персонаж в вашей игре начинает немного дёргаться, если поиграть достаточно долго? Или пуля иногда пролетает сквозь тонкую стену, хотя коллайдер на месте? Если да — добро пожаловать в мир проблем float precision.
+
+Сегодня хочется поговорить о том, почему тип float — при всей его повсеместности — может создавать тонкие и неочевидные баги в играх. Разберём, как он устроен, где именно он начинает врать, и что с этим делать.
+
+Если вам интересна эта тема — добро пожаловать под кат!
+
+Generated Image
+Generated Image
+Как float хранит числа
+Прежде чем разбираться с багами, давайте посмотрим на то, что float вообще из себя представляет. Это стандарт IEEE 754 — 32 бита, которые делятся на три части:
+
+1 бит — знак (плюс или минус)
+
+8 бит — экспонента (порядок числа)
+
+23 бита — мантисса (значащие цифры)
+
+
+23 бита мантиссы — это примерно 7 значащих десятичных цифр. Важно понимать: не 7 цифр после запятой, а 7 цифр всего. То есть число 1234567.0f float хранит точно, а вот 1234567.5f — уже нет. Дробная часть просто не помещается в 23 бита.
+
+Давайте проверим:
+
+float a = 1000000f;
+float b = a + 0.1f;
+Debug.Log($"a = {a:F10}"); // 1000000.0000000000
+Debug.Log($"b = {b:F10}"); // 1000000.0000000000
+Объяснить с
+Математически миллион плюс одна десятая не помещается в 23 бита мантиссы — 0.1 находится за пределами точности float при таком порядке числа. По стандарту IEEE 754 результат должен быть неразличимым от миллиона. Но на практике конкретный результат сравнения может зависеть от платформы: некоторые компиляторы (Mono, .NET JIT на x86) выполняют промежуточные вычисления с повышенной точностью (80-бит x87 FPU), и тогда a == b вернёт false. На ARM (Apple Silicon, мобильные устройства) или при IL2CPP — поведение может отличаться. Это само по себе показательно: один и тот же код — разный результат на разных машинах.
+
+Откуда берётся телепортация
+Представьте типичную ситуацию. У вас 2D-платформер, персонаж бежит вправо. Каждый кадр вы прибавляете к позиции:
+
+transform.position += Vector3.right * speed * Time.deltaTime;
+Объяснить с
+При 60 FPS deltaTime примерно 0.016 секунды. Скорость допустим 5. За кадр прибавляется около 0.08 к позиции. Всё нормально — позиция растёт равномерно: 0, 0.08, 0.16, 0.24 и так далее.
+
+Но проходит 10 минут. Позиция уже 2400. Через час — 14400. Float всё ещё работает, но точность уже не та. Вместо шагов по 0.08 мы получаем шаги по 0.0625 или 0.09375 — float не может точно представить дробную часть при таких значениях целой.
+
+
+А теперь добавим нестабильный FPS. При 300 FPS deltaTime составляет примерно 0.003 секунды. Умножаем на скорость — получаем приращение 0.015. Но float при позиции 14400 уже не различает числа с разницей меньше примерно 0.001. В результате 0.015 где-то прибавляется корректно, а где-то округляется. Персонаж то движется, то стоит на месте, то прыгает на два шага вперёд.
+
+Это и есть та самая «телепортация».
+
+Числовой эксперимент
+Чтобы не быть голословным, давайте посчитаем. Простейший тест — складываем маленькое число много раз и сравниваем результат с умножением:
+
+float sum = 0f;
+float step = 0.001f;
+int iterations = 1000000;
+
+for (int i = 0; i < iterations; i++)
+    sum += step;
+
+float expected = step * iterations; // ожидаем 1000.0
+
+Debug.Log($"Сумма:    {sum}");
+Debug.Log($"Ожидали:  {expected}");
+Debug.Log($"Ошибка:   {sum - expected}");
+Объяснить с
+Запустите этот код у себя — результат может удивить. На одних платформах сумма будет 1000.0039, на других — 991.14. Ошибка варьируется от долей единицы до почти девяти, в зависимости от компилятора (Mono, IL2CPP), архитектуры процессора (x86 vs ARM) и того, как рантайм оптимизирует цепочку сложений. Это важный момент: один и тот же код — разный результат на разных машинах.
+
+В любом случае, ошибка есть, и она накопительная. Даже «оптимистичные» 4 миллиметра в игровых единицах — это разница между попаданием и пролётом пули сквозь стену. А если ваша платформа даёт ошибку в несколько единиц — это уже телепортация, которую заметит любой игрок.
+
+При 60 FPS миллион кадров — это примерно 4.5 часа игры. Достаточно оставить игру работать на ночь, и физика начнёт вести себя непредсказуемо.
+
+Почему double не решает проблему
+Логичный вопрос — а что если использовать double? Это 64 бита, 52 бита мантиссы, около 15-16 значащих цифр. Проблема действительно отодвигается далеко, но есть несколько причин, почему это не полноценное решение.
+
+Во-первых, Unity внутри работает на float. Transform.position — это Vector3, а Vector3 — это три float. Вы можете считать промежуточные результаты в double, но в момент присвоения позиции всё обрежется обратно до 32 бит.
+
+Во-вторых, GPU работает на float. Шейдеры, рендеринг, физический движок — всё 32 бита. Переход на double удвоил бы потребление памяти и существенно ударил по производительности.
+
+В-третьих, проблема не устраняется, а откладывается. При координатах порядка миллиарда double тоже начнёт терять точность.
+
+
+Как с этим бороться
+Существует несколько проверенных подходов, которые применяются в реальных проектах.
+
+Floating origin — сдвиг начала координат
+
+Идея простая: не позволять координатам расти бесконечно. Когда игрок уходит далеко от начала координат — сдвинуть весь мир обратно к нулю:
+
+void Update()
+{
+    if (player.position.magnitude > 1000f)
+    {
+        Vector3 offset = player.position;
+        foreach (var obj in allWorldObjects)
+            obj.position -= offset;
+        player.position = Vector3.zero;
+    }
+}
+Объяснить с
+Именно так работает Kerbal Space Program. Когда ваша ракета летит к далёкой планете, игра не хранит координаты в миллиардах. Она двигает всю вселенную, а ракета остаётся вблизи нуля, где float наиболее точен.
+
+Подход требует внимания к деталям — нужно сдвигать не только объекты, но и системы частиц, трейлы, точки навигации и всё остальное, что имеет мировые координаты.
+
+Epsilon-сравнение
+
+Никогда не сравнивайте float через оператор ==. Всегда используйте сравнение с допуском:
+
+// Так делать не стоит
+if (a == b) { ... }
+
+// Epsilon-сравнение
+if (Mathf.Abs(a - b) < 0.0001f) { ... }
+
+// Или встроенный метод Unity
+if (Mathf.Approximately(a, b)) { ... }
+Объяснить с
+Это кажется базовым правилом, но на практике == 0f в коде коллизий встречается регулярно. И именно из-за этого объект «иногда» проваливается сквозь пол — его позиция отличается от границы коллайдера на ничтожную дробь, которая для оператора == уже не равна нулю.
+
+Небольшая ремарка. Выбор значения epsilon — это отдельный вопрос. Mathf.Approximately использует Mathf.Epsilon, который для больших чисел может быть слишком маленьким. В некоторых случаях стоит использовать относительное сравнение:
+
+bool ApproximatelyEqual(float a, float b, float tolerance = 0.0001f)
+{
+    return Mathf.Abs(a - b) <= tolerance * Mathf.Max(1f, Mathf.Max(Mathf.Abs(a), Mathf.Abs(b)));
+}
+Объяснить с
+Фиксированный шаг для физики
+
+Для физических расчётов используйте FixedUpdate и Time.fixedDeltaTime вместо Update с Time.deltaTime. Фиксированный временной шаг убирает зависимость от FPS и делает накопление ошибки предсказуемым.
+
+// Зависит от FPS — deltaTime каждый кадр разный
+void Update()
+{
+    rb.velocity += gravity * Time.deltaTime;
+}
+
+// Фиксированный шаг — стабильный и предсказуемый
+void FixedUpdate()
+{
+    rb.velocity += gravity * Time.fixedDeltaTime;
+}
+Объяснить с
+В Godot аналогичный механизм: physicsprocess(delta) вместо _process(delta).
+
+
+Где ещё float создаёт проблемы
+Телепортация — это наиболее наглядный симптом, но float precision влияет и на другие области.
+
+Коллизии. Два объекта с почти одинаковой позицией могут оказаться в одной точке для float. Результат — объекты слипаются или проходят друг сквозь друга.
+
+Анимации. Lerp от 0 до 1 при очень маленьком шаге может никогда не достичь единицы. Анимация «почти» завершается, но последний кадр не наступает.
+
+Процедурная генерация. Noise-функции на больших координатах начинают давать артефакты — повторяющиеся паттерны, которых не должно быть.
+
+Сетевая синхронизация. Одна и та же формула на клиенте и сервере может давать разные результаты. Порядок операций с плавающей точкой влияет на округление, и детерминизм теряется.
+
+Заключение
+Я постарался рассказать про одну из тех тем, которые редко попадают в туториалы, но регулярно вызывают проблемы в реальных проектах. Float — не враг, это инструмент с конкретными ограничениями, которые нужно учитывать.
+
+По сути, всё сводится к трём правилам:
+
+Не позволяйте координатам расти бесконечно — используйте floating origin
+
+Не сравнивайте float через == — используйте epsilon-сравнение
+
+Используйте фиксированный шаг для физики — FixedUpdate вместо Update
+
+Многие разработчики сталкиваются с последствиями float precision, но не всегда знают, что проблема именно в этом. Надеюсь, что теперь, столкнувшись с дёргающимся персонажем или пулей, пролетевшей сквозь стену, вы будете знать куда смотреть.
+
+Если вам понравилось и было интересно — ставьте плюсы. Так я пойму, что подобные разборы математики для геймдева могут быть полезны, и стоит продолжать.
+
+Подписывайтесь на мой блог в телеграм. Там я разбираю подобные темы в коротком формате: одна задача, один разбор, с кодом и примерами.
+
+Источники
+IEEE 754 — Стандарт представления чисел с плавающей точкой
+
+What Every Computer Scientist Should Know About Floating-Point Arithmetic — David Goldberg
+
+Floating-point precision in Unity — Unity Documentation
+
+KSP — Floating Origin implementation — Kerbal Space Program Wiki
+
+Теги:floatIEEE 754floating pointUnityprecisiongamedevfloating originepsilon
+Хабы:UnityC#Разработка игрМатематика
+
++8
+
+
+18
+
+5
++5
+
+8K+
+Охват за 30 дней
+
+86
+
+Карма
+Григорий Дядиченко@DyadichenkoGA
+Master of Unity3D
+
+Подписаться
+
+FacebookВКонтактеGitHubTelegram
+Комментарии 5
++5
+Публикации
+Лучшие за сутки
+Похожие
+
+GlinkinIvan
+13 часов назад
+Хакинг бытовых устройств программно-определяемым радио: от теории радиоволн к первому взлому
+Простой
+13 мин
+10K
+Обзор
++39
+
+77
+17
++17
+
+Priiiiiinter
+14 часов назад
+TTF-DOOM: как я запустил 3D-рейкастер внутри TrueType-шрифта
+Средний
+4 мин
+7.9K
+Кейс
+Из песочницы
++29
+
+13
+4
++4
+
+net0pyr
+13 часов назад
+Как я уместил весь MLOps-пайплайн в 10 строк
+Средний
+12 мин
+6.4K
+Обзор
++27
+
+18
+0
+
+dio_eraclea
+8 часов назад
+Сделаем сами ретроавто в масштабе 1:5?
+Средний
+14 мин
+6.7K
+Ретроспектива
++26
+
+12
+11
++11
+
+TrexSelectel
+10 часов назад
+Четыре необычных смартфона (и одни умные часы) 2026 года
+6 мин
+7K
++26
+
+8
+1
++1
+
+gtosss
+2 часа назад
+Почему протоколы шифрования не спасут интернет: корень проблемы глубже, чем ТСПУ
+Простой
+15 мин
+3.6K
+Мнение
++23
+
+15
+7
++7
+
+TrexSelectel
+14 часов назад
+Собираем pod с учетом зависимостей в Podman
+5 мин
+6.9K
++23
+
+14
+1
++1
+
+andreyzaostrovnykh
+15 часов назад
+bladeRF 2.0 micro xA9: обзор реальных проектов, приложений и фреймворков
+Средний
+18 мин
+5.7K
+Обзор
++22
+
+11
+0
+
+OpenClaw_Lab
+10 часов назад
+OpenClaw и память без амнезии: что выбрать между Lossless Claw, OpenViking, ByteRover, MemPalace и LLM Wiki
+Средний
+14 мин
+5.3K
+Обзор
++20
+
+30
+10
++10
+
+IrkaTyman
+15 часов назад
+Как мы потеряли 3500 ключей и вновь нашли их: локализуем приложение без ручного труда
+9 мин
+4.8K
++19
+
+2
+0
+Результаты исследования: как айтишники относятся к ИИ
+Турбо
+Показать еще
+Минуточку внимания
+
+Промо
+Как сделать так, чтобы сотрудники говорили о компании хорошее
+
+Промо 
+Рассказываем в обновленном и расширенном курсе
+
+Событие
+Качаем к лету хард- и софт-скиллы на айтишных ивентах
+Вакансии
+Программист-математик
+до 250 000 ₽АО НПП «АМЭ»Санкт-Петербург
+Product Designer
+от 125 000 до 175 000 ₽AtlantisМожно удаленно
+Frontend Engineer
+от 125 000 до 200 000 ₽AtlantisМожно удаленно
+Фулстек Разработчик c# (forex, crypto разработка программ для трейдинга)
+от 150 000 до 180 000 ₽WesternpipsМожно удаленно
+PPC Manager (Yandex Direct)
+от 4 000 до 6 000 $FreudersМожно удаленно
+Больше вакансий на Хабр Карьере
+Читают сейчас
+Вышло RKNHardering — Android‑приложение для обнаружения VPN, согласно методичке по выявлению сетевых средств обхода
+36K
+87
++87
+Из-за критической уязвимости VLESS клиентов скоро все ваши VPN будут заблокированы
+251K
+725
++725
+Отчёт Cloudwards: Россия на предпоследнем месте по уровню свободы интернета в 2026 году
+263K
+349
++349
+Почему протоколы шифрования не спасут интернет: корень проблемы глубже, чем ТСПУ
+3.6K
+7
++7
+Как более 100 000 специалистов оказались на рынке труда всего за один месяц
+34K
+118
++118
+Результаты исследования: как айтишники относятся к ИИ
+Турбо
+Истории
+author-logo
+Лучшее из блогов компаний за неделю
+author-logo
+Самое время поспать
+author-logo
+Просто взять и пошутить
+
+Со статьями о Heavy Digital — на завод
+
+Ближайшие события
+
+2 марта – 10 августа
+PROBA Awards — международная коммуникационная премия, учрежденная в 2000 году
+Санкт-Петербург
+Больше событий в календаре
+Маркетинг
+
+3 марта – 9 июня
+Экспедиция «Рэйдикс»
+Екатеринбург • Новосибирск • Краснодар • Минск • Калининград • Ростов-на-Дону
+Больше событий в календаре
+Разработка
+Другое
+
+9 марта – 1 июня
+Всё, что нужно, чтобы стартовать продвижение бренда на Хабре
+Онлайн
+Больше событий в календаре
+Маркетинг
+
+19 марта – 28 апреля
+Серия вебинаров «Эволюция приложения в облаке»
+Онлайн
+Больше событий в календаре
+Разработка
+
+9 апреля
+Deckhouse Conf 2026 — конференция для тех, кто работает с ИТ-инфраструктурой
+Москва
+Больше событий в календаре
+Разработка
+
+9 апреля
+GoCloud 2026 — ежегодная IT-конференция про AI и облака
+Москва • Онлайн
+Больше событий в календаре
+Разработка
+Менеджмент
+Другое
+
+14 апреля
+K2 Cloud Conf 2026
+Москва • Онлайн
+Больше событий в календаре
+Разработка
+Администрирование
+Другое
+
+14 апреля
+ИИ-секция в собеседованиях X5 Tech (мобильная разработка)
+Онлайн
+Больше событий в календаре
+Разработка
+Менеджмент
+
+15 апреля
+Как сделать руководителей своими союзниками?
+Санкт-Петербург
+Больше событий в календаре
+Другое
+
+16 апреля
+Как сделать так, чтобы сотрудники сами говорили о компании хорошее каждый день?
+Онлайн
+Больше событий в календаре
+Другое
+
+17 – 18 апреля
+Профессиональная IT-конференция Merge Tatarstan 2026
+Иннополис
+Больше событий в календаре
+Разработка
+Маркетинг
+Другое
+
+20 апреля
+AiConf — прикладная конференция по data science
+Москва • Онлайн
+Больше событий в календаре
+Разработка
+Тестирование
+
+20 апреля
+GolangConf — профессиональная конференция для Go-разработчиков и их руководителе
+Москва • Онлайн
+Больше событий в календаре
+Разработка
+Менеджмент
+
+19 мая
+Первая в России конференция по HR Этике
+Москва
+Больше событий в календаре
+Менеджмент
+
+28 мая
+Firebird Conf 2026 — конференция сообщества профессионалов СУБД Firebird
+Москва
+Больше событий в календаре
+Разработка
+Другое
+
+3 – 5 июля
+Летняя антиконференция Summer Merge
+Село Успенское
+Больше событий в календаре
+Разработка
+Менеджмент
+Другое
+
+5 июля
+Фестиваль RUNIT by AGIMA
+Москва
+Больше событий в календаре
+Другое
+
+23 – 25 сентября
+Baltic Weekend – Крупнейший в России и Европе форум по коммуникациям
+Санкт-Петербург
+Больше событий в календаре
+Маркетинг
+
+Ваш аккаунт
+
+Профиль
+Трекер
+Диалоги
+Настройки
+ППА
+Разделы
+
+Статьи
+Новости
+Хабы
+Компании
+Авторы
+Песочница
+Информация
+
+Устройство сайта
+Для авторов
+Для компаний
+Документы
+Соглашение
+Конфиденциальность
+Услуги
+
+Корпоративный блог
+Медийная реклама
+Нативные проекты
+Образовательные программы
+Стартапам
+Настройка языка
+Техническая поддержка
+© 2006–2026, Habr
+
+Search
+
+Get app
+Write
+Sign up
+
+Sign in
+
+
+
+How to Implement Dependency Injection in Unity (Step-by-Step)
+Haazikdawood
+Haazikdawood
+4 min read
+·
+Mar 25, 2026
+--
+
+
+
+
+If you’ve been working in Unity for a while, you’ve probably run into this situation:
+
+Your project starts small and manageable, but as you keep adding features, things begin to feel messy. Scripts depend on other scripts in ways that are hard to track, testing becomes painful, and changing one system breaks another.
+
+I’ve been there too.
+
+That’s exactly where Dependency Injection (DI) starts to make sense. It’s not just a “fancy pattern” — it’s a practical way to keep your code clean, flexible, and easier to maintain as your game grows.
+
+In this article, I’ll walk you through DI in a simple, practical way — no unnecessary theory, just what you actually need to use it in Unity.
+
+So, What is Dependency Injection?
+In simple terms:
+
+Dependency Injection means giving a class what it needs from the outside instead of letting it create those things itself.
+
+Let’s look at a common Unity-style example.
+
+Without DI (What most of us do initially)
+public class PlayerController : MonoBehaviour
+{
+    private AudioManager audioManager;
+    void Start()
+    {
+        audioManager = new AudioManager();
+    }
+}
+This works… until it doesn’t.
+
+The problem here is that PlayerController is tightly connected to AudioManager. You can’t easily replace it, test it, or change how it works later.
+
+With DI (A better approach)
+public class PlayerController : MonoBehaviour
+{
+    private AudioManager audioManager;
+    public void Initialize(AudioManager audioManager)
+    {
+        this.audioManager = audioManager;
+    }
+}
+Now the PlayerController doesn’t create the dependency — it just uses it.
+
+That small change makes your code:
+
+Easier to modify
+Easier to test
+Much more flexible
+Why This Matters in Unity
+Unity makes it very easy to write code quickly — but it also makes it very easy to create hidden dependencies.
+
+Things like:
+
+FindObjectOfType
+Singletons everywhere
+Direct references between scripts
+These are convenient, but they don’t scale well.
+
+Dependency Injection helps you:
+
+Make dependencies explicit (no surprises)
+Reduce tight coupling
+Build systems that are easier to extend
+Step 1: Start with a Simple Service
+Let’s say you have an audio system:
+
+public class AudioManager
+{
+    public void PlaySound(string soundName)
+    {
+        Debug.Log("Playing: " + soundName);
+    }
+}
+Step 2: Use It in Another Class
+public class PlayerController : MonoBehaviour
+{
+    private AudioManager audioManager;
+    public void Initialize(AudioManager audioManager)
+    {
+        this.audioManager = audioManager;
+    }
+    public void Jump()
+    {
+        audioManager.PlaySound("jump");
+    }
+}
+Step 3: Wire Everything Together (Composition Root)
+This is the part most beginners miss.
+
+You need one place where all dependencies are created and connected.
+
+public class GameInitializer : MonoBehaviour
+{
+    [SerializeField] private PlayerController player;
+    void Awake()
+    {
+        AudioManager audioManager = new AudioManager();
+        player.Initialize(audioManager);
+    }
+}
+Think of this as your “setup point” — the place where your game is assembled.
+
+Step 4: Use Interfaces (This is where things get powerful)
+Instead of depending on a concrete class, depend on an interface.
+
+public interface IAudioManager
+{
+    void PlaySound(string soundName);
+}
+public class AudioManager : IAudioManager
+{
+    public void PlaySound(string soundName)
+    {
+        Debug.Log("Playing: " + soundName);
+    }
+}
+Now update your controller:
+
+public class PlayerController : MonoBehaviour
+{
+    private IAudioManager audioManager;
+    public void Initialize(IAudioManager audioManager)
+    {
+        this.audioManager = audioManager;
+    }
+}
+Why this matters:
+
+You can swap implementations easily
+You can mock it for testing
+Your systems stay independent
+Step 5: Multiple Dependencies (Real-world scenario)
+public class PlayerController : MonoBehaviour
+{
+    private IAudioManager audioManager;
+    private IInputService inputService;
+    public void Initialize(IAudioManager audioManager, IInputService inputService)
+    {
+        this.audioManager = audioManager;
+        this.inputService = inputService;
+    }
+}
+This is how real systems look — multiple services working together cleanly.
+
+Step 6: Things to Avoid (Very Important)
+These patterns are common in Unity, but they cause problems later:
+
+❌ Finding dependencies at runtime
+audioManager = FindObjectOfType<AudioManager>();
+❌ Overusing singletons
+AudioManager.Instance.PlaySound("jump");
+They seem convenient, but they:
+
+Hide dependencies
+Make testing harder
+Create tight coupling
+Step 7: Constructor Injection (For non-MonoBehaviour classes)
+public class EnemyAI
+{
+    private readonly IAudioManager audioManager;
+    public EnemyAI(IAudioManager audioManager)
+    {
+        this.audioManager = audioManager;
+    }
+}
+This is the cleanest form of DI — use it whenever you’re not dealing with MonoBehaviours.
+
+Step 8: Using a Framework (When your project grows)
+Manual DI is great to learn and even use in small projects.
+
+But in larger projects, managing everything manually becomes difficult.
+
+That’s where frameworks like Zenject (Extenject) come in.
+
+Example:
+
+public class GameInstaller : MonoInstaller
+{
+    public override void InstallBindings()
+    {
+        Container.Bind<IAudioManager>().To<AudioManager>().AsSingle();
+    }
+}
+And injection:
+
+public class PlayerController : MonoBehaviour
+{
+    private IAudioManager audioManager;
+    [Inject]
+    public void Construct(IAudioManager audioManager)
+    {
+        this.audioManager = audioManager;
+    }
+}
+When Should You Actually Use DI?
+Be practical about it.
+
+Use DI when:
+
+Your project is growing
+You have multiple systems interacting
+You care about maintainability
+Skip it (or keep it simple) when:
+
+You’re making a quick prototype
+It’s a small game or game jam
+Real Use Cases in Unity
+Where DI really shines:
+
+Backend services (APIs, ASP.NET Core)
+Ads (AdMob, Unity Ads)
+Input systems (mobile vs PC)
+Save/load systems
+Analytics
+Final Thoughts
+Dependency Injection isn’t about writing “fancy architecture.”
+
+It’s about reducing pain later.
+
+You’re basically making a small investment now so your future self doesn’t hate you when the project gets bigger.
+
+If you’re new to it:
+
+Start with manual DI
+Apply it to one system (like audio or input)
+Slowly expand
+You don’t need to rewrite your whole project overnight.
+
+If you want, I can help you next with:
+
+Applying DI to your current Unity project
+Setting up Zenject step-by-step
+Connecting DI with your backend systems
+Just tell me 👍
+
+Unity3d
+Game Development
+Software Architecture
+Dependency Injection
+Clean Code
+--
+
+
+
+Haazikdawood
+Written by Haazikdawood
+0 followers
+·
+1 following
+No responses yet
+Help
+
+Status
+
+About
+
+Careers
+
+Press
+
+Blog
+
+Privacy
+
+Rules
+
+Terms
+
+Text to speech
+
+Skip to main content
+This Physics Engine runs ENTIRELY on your GPU : r/Unity3D
+
+
+r/Unity3D
+Search in r/Unity3D
+Advertise on Reddit
+
+Open chat
+Create
+Create post
+Open inbox
+
+User Avatar
+Expand user menu
+Skip to NavigationSkip to Right Sidebar
+
+Back
+
+Go to Unity3D
+r/Unity3D
+•
+2d ago
+Personal_Nature1511
+
+This Physics Engine runs ENTIRELY on your GPU
+Show-Off
+Play
+Real-time GPU particle physics in Unity. XPBD constraint solving, spatial hash collisions, mesh voxelization, Coulomb friction, breakable constraints.
+
+Code: https://github.com/JohannHotzel/Molecules
+
+Discord: https://discord.gg/muqHyvRtCg
+
+
+Upvote
+17
+
+Downvote
+
+1
+Go to comments
+
+
+Share
+u/Meshyai avatar
+Meshyai
+•
+Promoted
+
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+I wrote off AI 3D generators last year. Just tried Meshy 6 and I owe it an apology.
+meshy.ai
+Sign Up
+Join the conversation
+Sort by:
+
+Best
+
+Search Comments
+Expand comment search
+Comments Section
+u/PhuntasyProductions avatar
+PhuntasyProductions
+•
+2d ago
+Does it support parenting of rigidbodies?
+
+Community Info Section
+r/Unity3D
+Join
+Unity 3D - News, Help, Resources, and Showcase
+A subreddit for News, Help, Resources, and Conversation regarding Unity, the game engine. Do NOT use your phone to take screenshots. Video and photos of computer screens taken by phones are NOT allowed. All screenshots must be grabbed from the computer itself.
+
+Show more
+Created Apr 12, 2009
+Public
+
+Community Guide
+198K
+Developers
+4.3K
+Debugging
+User flair
+u/Jealous_Definition65 avatar
+Jealous_Definition65
+Community Bookmarks
+Rules
+Their Website
+Unity Alternatives
+Tips For Sharing
+Nothing to see here
+r/Unity3D Rules
+1
+Only Unity related content is allowed
+2
+Posts should be more than just links to storefronts or download pages.
+3
+Users must be patient, supportive, and respectful to newbies
+4
+Memes must be of high effort, quality, AND promote Unity related discussion
+5
+Piracy is Forbidden
+6
+Do NOT use your phone to take screenshots
+なんてひどい死に方だろう。
+
+Filter
+Show-Off
+Solved
+Shader Magic
+Code Review 
+Noob Question 
+Resources/Tutorial
+Question
+Survey 
+Game
+Game Jam
+Meta
+Official
+AMA
+Spotlight Tutorials
+IheartGameDev
+
+Explores a variety of topics surrounding game development using Unity, Blender and Logic Pro X. Content ranges from understandable tutorials to dev logs on current projects.
+LlamAcademy
+
+Covers absolute beginner to advanced topics.
+Emphasizes accessibility, and all tutorials are released with full source code on GitHub.
+Topics include: AI and Navigation, Performance Optimizations, Visual Effects (VFX), Bullet Physics & Projectiles, and more.
+SpeedTutor
+
+Gives quick and snappy game dev tutorials for: Unity, Programming, C#, JavaScript, Game Design, Photoshop, 3D Modelling, Substance Painter and more.
+Topics include: game dev tips, free assets, and the MadeWithUnity series.
+5-15 minutes, Beginner to Intermediate complexity.
+Jason Weimann
+
+A Unity Veteran
+Covers Clean Code, Design Patterns, Unit Testing, Virtual Reality, Networked Games, MMORPG Development, and the occasional random story about AAA projects
+Info and Wiki
+Please refer to our Wiki before posting! And be sure to flair your post appropriately.
+
+Main Index
+Community Rules and Guidelines
+Flair Definitions
+FAQ
+Helpful Unity Links
+Unity Official Website
+Unity Tutorials
+Official Unity Discord
+This subreddit and the discord are operated by separate moderation teams. Do NOT bother us with things that happen outside of reddit.
+
+Unity Answers
+Unify Community Wiki
+Getting Started Guide
+50 Tips and Best Practices for Unity (2016 Edition)
+Unity's Execution Order of Event Functions
+Using Version Control with Unity3d (Mercurial)
+Related Communities
+
+r/godot
+329,658 members
+
+r/Unity2D
+183,608 members
+
+r/UnityAssets
+27,096 members
+
+r/unity_tutorials
+58,305 members
+
+r/gamedev
+1,998,787 members
+
+r/indiegames
+297,658 members
+
+r/playmygame
+123,721 members
+
+r/blender
+1,391,793 members
+r/learnprogramming
+4,343,284 members
+Misc. Resources
+Halisavakis Shaders Archive
+
+Infallible Code
+
+World of Zero
+
+Board to Bits
+
+Holistic3d
+
+Unity3d College
+
+Jabrils
+
+Polycount Wiki
+
+The Big List Of Game Design
+
+PS4 controller map for Unity3d
+
+Colin's Bear Animation
+
+¡DICE!
+
+Moderators
+Message Mods
+u/maxwood
+u/drakfyre avatar
+u/drakfyre 
+Expert
+u/prime31
+u/Boss_Taurus avatar
+u/Boss_Taurus 
+SPAM SLAYER (🔋0%)
+u/loolo78 avatar
+u/loolo78 
+@LouisGameDev
+LouisGameDev
+u/Quetzal-Labs avatar
+u/Quetzal-Labs 
+@QuetzalLabs
+u/AutoModerator avatar
+u/AutoModerator
+u/unitytechnologies avatar
+u/unitytechnologies 
+Unity Official
+u/Hotrian avatar
+u/Hotrian 
+Expert
+u/Rlaan 
+Professional • Architect
+View all moderators
+Reddit Rules
+Privacy Policy
+User Agreement
+Your Privacy Choices
+Accessibility
+Reddit, Inc. © 2026. All rights reserved.
+
+Collapse Navigation
+
+
+Search
+
+Get app
+Write
+Sign up
+
+Sign in
+
+
+
+Addressables in Unity (Part 2)
+Abdullah
+Abdullah
+6 min read
+·
+Mar 26, 2026
+--
+
+
+
+
+In the previous post, we talked about local Addressables and how to set them up (you can check that out here)
+
+Today, we will move on to remote Addressables using Unity Cloud Content Delivery (CCD). This means we will upload our game assets to the Unity Cloud and retrieve them through our code exactly when we need them.
+
+Here is what we will build today: A 3-story building where each floor has its own prefabs. We will upload these floors (prefabs) to the Unity Cloud. When the player presses a floor number, we will trigger the download. This means while the player is riding the elevator, we are secretly downloading and loading the exact assets we need so they are ready before the doors even open!
+
+Press enter or click to view image in full size
+
+Setting up remote Addressables:
+Press enter or click to view image in full size
+
+1. Enable the Remote Catalog:
+
+Click on the AddressableAssetSettings file (the one selected in the above image ☝️).
+In the Inspector window, scroll down to the Catalog section and check the box for Build Remote Catalog.
+Click the Build & Load Paths dropdown (which currently says <custom>) and change it to Remote.
+Press enter or click to view image in full size
+
+2. Configure Profile Paths:
+
+1. Go to the top Unity menu and click Window > Asset Management > Addressables > Profiles.
+
+2. Look for the Remote section. You will see two important paths:
+
+— Remote.BuildPath: Leave this as the default (usually ServerData/[BuildTarget]). This tells Unity where to put the files on your computer when it builds them.
+
+— Remote.LoadPath: This is where your game will look for the files on the internet. We will paste the Unity Cloud (CCD) link here.
+
+Press enter or click to view image in full size
+Press enter or click to view image in full size
+3. Set Your Asset Groups to Remote
+
+Open the Addressables Groups window (Window > Asset Management > Addressables > Groups).
+Select the specific group that contains your 3-floor prefabs.
+Look at the Inspector window and find the Content Packing & Loading section.
+Change the Build Path dropdown to <Remote.BuildPath>.
+Change the Load Path dropdown to <Remote.LoadPath>.
+6. Separate Your Downloads (Crucial Step)
+
+— By default, Unity packs all files in a group into one giant download. If a player goes to Floor 1, they would be forced to download Floor 2 and 3 at the same time!
+
+To fix this so they only download what they need:
+Still in the Inspector for your group, expand the Advanced Options section.
+Find Bundle Mode and change it from Pack Together to Pack Separately.
+Press enter or click to view image in full size
+
+Note: When you build your Addressables later, Unity will put these separate files inside a new yellow folder (remotefloors_assets_assets). When uploading to the Unity Cloud dashboard, make sure to drag and drop that entire folder into the browser, not just the files inside it!
+
+Just upload all that in the image below to the cloud
+
+Press enter or click to view image in full size
+
+4. Unity Cloud Content Delivery (CCD) Setup:
+
+1. Open the Unity Cloud Dashboard
+
+— Go to the Unity Cloud Dashboard in your web browser and sign in.
+
+— Select your current project from the list.
+
+2. Navigate to CCD
+
+— On the left-hand menu, find and click on Cloud Content Delivery.
+
+3. Create a Bucket
+
+Bucket is just a folder in the cloud where the game assets will live.
+
+— Click Create Bucket.
+
+— Name it something clear, like RemoteFloorsBucket, and create it.
+
+Press enter or click to view image in full size
+
+Finally, upload the files into that new bucket:
+1. Build the Addressables
+
+— Open the Addressables Groups window.
+
+— Click Build > New Build > Default Build Script.
+
+Press enter or click to view image in full size
+
+— Unity will create your remote files inside a folder called ServerData in your main project directory.
+
+2. Upload to Unity Cloud
+
+— Go back to your bucket on the Unity Cloud Dashboard.
+
+— Click the Upload button.
+
+— Drag and drop the files from your ServerData folder (usually inside a folder named StandaloneWindows64 or Android) right into the browser.
+
+3. Create a Release
+
+— Once uploaded, click Create Release in the dashboard. This officially publishes your 3-floor prefabs files to the cloud!
+
+— Back to Unity, open the Addressables Profiles window, and paste that link directly into the Remote.LoadPath box we looked at earlier.
+
+Press enter or click to view image in full size
+Press enter or click to view image in full size
+Now let’s fetch those floors while riding the elevator.
+
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+
+public class AddressbleManager : MonoBehaviour
+{
+    [SerializeField] private IntEventChannelSO onFloorSelected;
+    
+    [SerializeField] private AssetReference[] floorReferences;
+    
+    private AsyncOperationHandle<GameObject> _currentFloorReceipt;
+
+    private void OnEnable()
+    {
+        onFloorSelected.OnEventRaised += LoadFloor; 
+    }
+
+    private void OnDisable()
+    {
+        onFloorSelected.OnEventRaised -= LoadFloor;
+    }
+
+    private void LoadFloor(int floorIndex)
+    {
+        if (floorIndex < 0 || floorIndex >= floorReferences.Length) return;
+        
+        if (_currentFloorReceipt.IsValid())
+        {
+            Addressables.ReleaseInstance(_currentFloorReceipt);
+        }
+        _currentFloorReceipt = floorReferences[floorIndex].InstantiateAsync();
+    }
+}
+When the player presses (1), the ElevatorController script raises our integer event. The AddressableManager listens for this number and immediately starts downloading floor_1.
+
+The real magic happens when moving between floors. If we are currently on the third floor and the player presses the button to go down to the first floor, the script will completely release floor_3 from memory before it starts loading floor_1. This keeps our RAM usage perfectly clean!
+
+Hint: Once the assets are downloaded for the first time, Unity automatically caches them locally. The next time the player visits those floors, they will load almost instantly from the device’s hard drive instead of downloading from the internet!
+
+Testing the Results:
+To truly understand why that Pack Separately setting is so important, let’s look at what happens in the Unity Console when we ask the server to download our floors.
+
+Scenario A: “Pack Together” (The Default)
+
+Press enter or click to view image in full size
+
+If we leave the group set to the default Pack Together, requesting the first floor forces the game to download a larger file containing all three floors at once. Then if we move to Floor 2 or 3, notice how Floor 2 and Floor 3 say “already cached”? That is because they were secretly downloaded alongside Floor 1. This is fine for tiny prefabs, but it would be a nightmare if each floor was a massive 500 MB 3D environment!
+
+Scenario B: “Pack Separately” (Optimized)
+
+Press enter or click to view image in full size
+
+After changing the setting to Pack Separately and uploading our new folder to the Unity Cloud, look at the difference! Pressing Floor 1 only downloads the exact bytes needed for that specific floor. When the player eventually goes to Floor 2, it triggers a brand-new, separate download and so on.
+
+We have successfully optimized our network usage so the player only downloads exactly what they need, exactly when they need it.
+
+Note: If you are testing this inside the Unity Editor, make sure to change your Play Mode Script to Use Existing Build! By default, the Editor uses “Asset Database (fastest)”, which skips the internet and instantly loads your local project files (the floors prefabs). Switching to “Existing Build” forces the Editor to act like a real player’s phone and actually download the files from your Unity Cloud bucket.
+
+Press enter or click to view image in full size
+
+Wrapping Up
+And that’s it! We have successfully moved our 3D assets to the cloud.
+
+By combining Unity Addressables with Cloud Content Delivery (CCD), we can download levels on the fly and release them from memory when they are no longer needed. This keeps our game’s initial download size small and our RAM usage highly optimized.
+
+If you found this helpful, let me know in the comments, and don’t forget to check out Part 1 if you missed it. Thanks for reading!
+
+Unity Addressables
+Unity3d
+--
+
+
+
+Abdullah
+Written by Abdullah
+73 followers
+·
+79 following
+Unity Gameplay Programmer
+
+No responses yet
+Help
+
+Status
+
+About
+
+Careers
+
+Press
+
+Blog
+
+Privacy
+
+Rules
+
+Terms
+
+Text to speech
+
+Skip to content
+wtfoliver
+UnityEnergySaver
+Repository navigation
+Code
+Issues
+Pull requests
+Actions
+Projects
+Security and quality
+Insights
+Important update
+On April 24 we'll start using GitHub Copilot interaction data for AI model training unless you opt out. Review this update and manage your preferences in your GitHub account settings.
+Owner avatar
+UnityEnergySaver
+Public
+wtfoliver/UnityEnergySaver
+Go to file
+t
+Name		
+wtfoliver
+wtfoliver
+Added support for legacy input system
+a279dfb
+ · 
+last month
+EnergySaving
+Added support for legacy input system
+last month
+Samples~
+Added support for legacy input system
+last month
+.gitattributes
+Initial commit
+last month
+.gitignore
+Initial commit
+last month
+CHANGELOG.md
+Initial commit
+last month
+CHANGELOG.md.meta
+Initial commit
+last month
+EnergySaving.meta
+Initial commit
+last month
+LICENSE
+Initial commit
+last month
+LICENSE.meta
+Initial commit
+last month
+README.md
+Added support for legacy input system
+last month
+README.md.meta
+Initial commit
+last month
+package.json
+Initial commit
+last month
+package.json.meta
+Initial commit
+last month
+Repository files navigation
+README
+MIT license
+License
+This plugin for Unity allows for several power reducing actions to be performed in your game.
+
+What does the plugin do?
+The plugin listens to player input. If no input is registered, it switches between energy profiles. Energy profiles define which settings should be adjusted (for example frame rate, resolution or physics updates). You can create or modify energy profiles to fit the needs of your project.
+
+Why does that matter?
+Reducing power consumption can increase battery life, improving player experience. It can also reduce energy costs during development and gameplay while lowering carbon emissions.
+
+Installation
+In Unity's package manager -> Add package from Git URL: https://github.com/wtfoliver/UnityEnergySaver.git
+
+Quick start
+Drop the EnergySaver prefab in your scene. It should work out of the box. The default EnergyProfiles begin activating after 10 seconds of inactivity.
+
+How to use the plugin?
+The plugin has three central pieces.
+
+The EnergySaver is a singleton that listens for input and updates the currently active EnergyProfile.
+IEnergyActions are data bundles containing the settings used by the IEnergyActions.
+EnergyProfiles. apply the settings defined in the active EnergyProfile.
+When the EnergySaver updates all IEnergyActions with a new EnergyProfile, the IEnergyActions update i.e. FPS, render scale (URP), render intervals and more.
+
+While EnergySaver listens to input automatically, you can also lock profiles (for example to prevent FPS drops during cutscenes) or force a specific profiles.
+
+All IEnergyActions attached as components to the EnergySaver GameObject will be used to update the game. Adding or removing IEnergyActions changes how the energy saver behaves. This allows you to disable specific actions if they interfere with gameplay (for example physics updates).
+
+EnergyProfiles
+This is what the settings of an energy profile look like:
+
+float ActivateAfterIdle = 10f;
+PowerConstraints PowerConstraints;
+int Priority;
+int MaxFps = 60;
+int RenderInterval = 0;
+float RenderScaleMultiplier = 1f;
+SimulationMode PhysicsSimulationMode;
+The first three parameters determine which profile should become active. PowerConstraints check whether the device is plugged in and whether the game is in focus. If multiple profiles match, Priority acts as a tie-braker. Energy profiles are initially loaded from EnergyProfileDefinition ScriptableObjects, but the architecture allows player overrides to be loaded at runtime.
+
+IEnergyActions
+Currently the following actions are implemented:
+
+FrameRateAction: Reduces the game's FPS.
+RenderingIntervalAction: Changes how frequently new frames are rendered. This takes the FPS into account. If your game has 30 FPS and the rendering interval is 60, the game renders a new frame every 2 seconds.
+PhysicsSimulationAction: Changes how the physics engine updates.
+RenderScaleAction: Adjusts the render scale of the currently active URP asset. Works only with the Universal Render Pipeline.
+DynamicResolutionAction: Alters the dynamic scale of the currently active HDRP-asset. Works only with the High definition render pipeline.
+Sources and further reading
+The plugin is very much inspired by Hauke Thiessens Unreal Energy Saving Plugin, which itself references this paper from Fortnite's energy saving features.
+
+Some Unity-specific ideas very copied from Bronson Zgeb's blog post.
+
+Sustainable games alliance
+While Walk The Frog is currently not a member of the SGA, this plugin only exists largely thanks to the SGA's effort to make game development and consumption more energy-efficient. If sustainability in games interests you, they offer many useful resources on the topic.
+
+Version Requirements
+The plugin was tested in Unity 2022.3.62f2 and upwards. Older Unity versions may or may not be compatible with the plugin.
+
+Restrictions
+The plugin currently only works with Unity's Universal Render Pipeline (URP) or High definition render pipeline (HDRP).
+
+Further development
+This plugin is still in a very early stage, so use caution when integrating it into production projects. So far it has only been tested on PC.
+
+Feedback and bug reports are very welcome.
+
+Planned features
+Support the Built-in Render Pipeline
+Additional energy-saving features
+License
+This plugin is free to use in commercial and non-commercial products. This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software. Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely. Attribution is appreciated, but not required.
+
+About
+Small plugin to help reduce power consumption in your Unity project
+
+Resources
+ Readme
+License
+ MIT, Unknown licenses found
+ Activity
+Stars
+ 30 stars
+Watchers
+ 1 watching
+Forks
+ 2 forks
+Report repository
+Releases
+No releases published
+Packages
+No packages published
+Contributors
+1
+@wtfoliver
+wtfoliver Oliver
+Languages
+C#
+100.0%
+Footer
+© 2026 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Community
+Docs
+Contact
+Manage cookies
+Do not share my personal information

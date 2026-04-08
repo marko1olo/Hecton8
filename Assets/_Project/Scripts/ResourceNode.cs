@@ -119,6 +119,7 @@ namespace Hecton8.Scavenging
         private float _currentHealth;
         private bool  _isDepleted;
         private bool  _despawnRequested;
+        private bool  _lootSpawnBlockedLogged;
 
         /// <summary>
         /// Кэшированный MaterialPropertyBlock. Создаётся один раз в Awake.
@@ -350,14 +351,19 @@ namespace Hecton8.Scavenging
             if (_despawnRequested)  return;
             if (amount <= 0f)       return;
 
+            float previousHealth = _currentHealth;
             _currentHealth -= amount;
 
             if (_currentHealth <= 0f)
             {
+                if (!TrySpawnLoot())
+                {
+                    _currentHealth = previousHealth;
+                    return;
+                }
+
                 _currentHealth = 0f;
                 _isDepleted    = true;
-
-                SpawnLoot();
 
                 if (!string.IsNullOrEmpty(uniqueId))
                 {
@@ -376,16 +382,25 @@ namespace Hecton8.Scavenging
         //  LOOT SPAWNING
         // ══════════════════════════════════════════════════════════
 
-        private void SpawnLoot()
+        private bool TrySpawnLoot()
         {
-            if (lootPrefab == null) return;
+            if (lootPrefab == null || lootCount <= 0)
+                return true;
 
             ObjectPoolManager pool = ObjectPoolManager.Instance;
 
             if (pool == null)
             {
-                SpawnLootFallback();
-                return;
+                if (!_lootSpawnBlockedLogged)
+                {
+                    Debug.LogError(
+                        "[ResourceNode] ObjectPoolManager unavailable. " +
+                        "Depletion aborted to prevent loot loss.",
+                        this);
+                    _lootSpawnBlockedLogged = true;
+                }
+
+                return false;
             }
 
             Vector3 origin = _transform.position;
@@ -416,25 +431,8 @@ namespace Hecton8.Scavenging
                     pool.Despawn(loot, lootLifetime);
                 }
             }
-        }
 
-        private void SpawnLootFallback()
-        {
-            Vector3 origin = _transform.position;
-
-            for (int i = 0; i < lootCount; i++)
-            {
-                Vector3    offset   = Random.insideUnitSphere * scatterRadius;
-                Quaternion spawnRot = Random.rotation;
-                GameObject loot     = Instantiate(lootPrefab, origin + offset, spawnRot);
-
-                if (loot != null && loot.TryGetComponent(out Rigidbody rb))
-                {
-                    Vector3 force = Random.insideUnitSphere * scatterForce;
-                    force.y = Mathf.Abs(force.y) + upwardBias;
-                    rb.AddForce(force, ForceMode.Impulse);
-                }
-            }
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -491,6 +489,7 @@ namespace Hecton8.Scavenging
             _currentHealth    = maxHealth;
             _isDepleted       = false;
             _despawnRequested = false;
+            _lootSpawnBlockedLogged = false;
 
             // v5.0: Сброс мельт-эффекта
             ResetMeltProperties();

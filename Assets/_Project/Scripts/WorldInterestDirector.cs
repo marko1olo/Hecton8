@@ -162,8 +162,8 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref scatterBudgetController);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldSliceDirector);
+            WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
+            WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);
         }
     }
 }

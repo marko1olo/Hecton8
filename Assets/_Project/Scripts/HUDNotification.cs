@@ -15,7 +15,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
-    public sealed class HUDNotification : MonoBehaviour
+    public sealed class HUDNotification : MonoBehaviour, ITickable
     {
         private static HUDNotification _ActiveInstance;
 
@@ -73,6 +73,7 @@ namespace Hecton8.UI
         private string _lastEnqueuedMessage;
         private NotificationSeverity _lastEnqueuedSeverity;
         private float _lastEnqueueTime = -999f;
+        private bool _registeredToTickManager;
 
         public static bool TryGetActive(out HUDNotification notification)
         {
@@ -102,6 +103,7 @@ namespace Hecton8.UI
             NotificationEvents.OnPushNotification += OnPushNotification;
 
             EnsureBuilt();
+            RegisterToTickManager();
         }
 
         private void OnDisable()
@@ -109,24 +111,25 @@ namespace Hecton8.UI
             if (ReferenceEquals(_ActiveInstance, this))
                 _ActiveInstance = null;
 
+            UnregisterFromTickManager();
             InventoryEvents.OnInventoryFull -= OnInventoryFull;
             NotificationEvents.OnPushNotification -= OnPushNotification;
         }
 
-        private void LateUpdate()
+        public void Tick(float deltaTime)
         {
             if (_notifRoot == null) return;
 
             if (_timer > 0f)
             {
-                _timer -= Time.deltaTime;
+                _timer -= deltaTime;
                 _currentAlpha = Mathf.Lerp(_currentAlpha, 1f,
-                    1f - Mathf.Exp(-fadeSpeed * Time.deltaTime));
+                    1f - Mathf.Exp(-fadeSpeed * deltaTime));
             }
             else
             {
                 _currentAlpha = Mathf.Lerp(_currentAlpha, 0f,
-                    1f - Mathf.Exp(-fadeSpeed * Time.deltaTime));
+                    1f - Mathf.Exp(-fadeSpeed * deltaTime));
 
                 if (_currentAlpha < 0.01f)
                 {
@@ -144,6 +147,31 @@ namespace Hecton8.UI
 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = _currentAlpha;
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registeredToTickManager = false;
         }
 
         public void ShowWarning(string message)

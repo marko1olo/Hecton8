@@ -176,15 +176,15 @@ namespace Hecton8.Gameplay
             }
 
             // ── Кэш Main Camera Transform ──
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
+            Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+            if (playerCamera != null)
             {
-                _cameraTransform = mainCam.transform;
+                _cameraTransform = playerCamera.transform;
             }
             else
             {
                 Debug.LogWarning(
-                    "[BuilderTool] OnSpawn: Camera.main is null! Sway effect disabled.");
+                    "[BuilderTool] OnSpawn: Player camera not found in player hierarchy. Sway effect disabled.");
             }
 
             // ── LCD Screen: инициализация MaterialPropertyBlock ──

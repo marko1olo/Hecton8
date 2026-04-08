@@ -49,6 +49,8 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Profiling;
+using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Hecton8.Bootstrap
@@ -85,6 +87,7 @@ namespace Hecton8.Bootstrap
         /// bootstrap intentionally keeps the player inactive.
         /// </summary>
         public static bool HasActiveInstance { get; private set; }
+        internal static SceneBootstrap ActiveInstance { get; private set; }
 
         /// <summary>
         /// Last known player GameObject managed by bootstrap.
@@ -112,6 +115,7 @@ namespace Hecton8.Bootstrap
             OnBootstrapFailed = null;
             IsGameReady = false;
             HasActiveInstance = false;
+            ActiveInstance = null;
             CurrentPlayerObject = null;
         }
 
@@ -203,6 +207,10 @@ namespace Hecton8.Bootstrap
         [SerializeField] private string _debugCurrentStep = "Not started";
 #pragma warning disable CS0414 // Inspector-only diagnostic
         [SerializeField] private bool _debugCompleted;
+        [SerializeField] private float _debugStartupTextureMemoryMb;
+        [SerializeField] private float _debugStartupReservedMemoryMb;
+        [SerializeField] private string _debugStartupTextureMetric = "Unresolved";
+        [SerializeField] private string _debugStartupReservedMetric = "Unresolved";
 #pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
@@ -242,6 +250,18 @@ namespace Hecton8.Bootstrap
         /// Интервал диагностического лога при ожидании коллайдера (секунды).
         /// </summary>
         private const float GroundCheckLogIntervalSec = 5f;
+        private const float BytesPerMegabyte = 1024f * 1024f;
+        private static readonly string[] _TextureMemoryCandidates =
+        {
+            "Texture Memory",
+            "Texture Used Memory"
+        };
+        private static readonly string[] _TotalReservedMemoryCandidates =
+        {
+            "Total Reserved Memory",
+            "System Used Memory",
+            "Total Used Memory"
+        };
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -257,6 +277,7 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
+            ActiveInstance = this;
             HasActiveInstance = true;
             PublishPlayerRuntimeReference();
         }
@@ -340,6 +361,10 @@ namespace Hecton8.Bootstrap
                 await PrimeRuntimeWorldAsync(ct);
                 ct.ThrowIfCancellationRequested();
 
+                SetStep("Step 8.5: Cold Cleanup + Memory Snapshot");
+                await RunColdCleanupAndCaptureMemorySnapshotAsync(ct);
+                ct.ThrowIfCancellationRequested();
+
                 ActivatePlayer();
 
                 SetStep("Complete");
@@ -378,7 +403,11 @@ namespace Hecton8.Bootstrap
             if (CurrentPlayerObject == playerObject)
                 CurrentPlayerObject = null;
 
-            HasActiveInstance = false;
+            if (ActiveInstance == this)
+            {
+                ActiveInstance = null;
+                HasActiveInstance = false;
+            }
 
             if (Application.isPlaying)
                 IsGameReady = false;
@@ -884,6 +913,8 @@ namespace Hecton8.Bootstrap
                     "Falling through to fallback.");
             }
 
+            PublishPlayerRuntimeReference();
+
             // ── Fallback: прямое позиционирование ──
             if (playerObject != null)
             {
@@ -893,21 +924,9 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            // ── Поиск игрока в сцене по тегу ──
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-            {
-                Log($"  Found player by tag, " +
-                    $"placing at fallback: {fallbackSpawnPosition}");
-                playerObject = player;
-                player.transform.position = fallbackSpawnPosition;
-                PublishPlayerRuntimeReference();
-                return;
-            }
-
             Debug.LogWarning(
-                "[SceneBootstrap] No player spawner, no player object, " +
-                "no 'Player' tag found. Player spawn skipped!");
+                "[SceneBootstrap] No player spawner or owned player reference is available. " +
+                "Player spawn skipped!");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -928,7 +947,7 @@ namespace Hecton8.Bootstrap
             }
 
             _worldProceduralScatterDirector ??=
-                FindAnyObjectByType<WorldProceduralScatterDirector>(FindObjectsInactive.Include);
+                WorldProceduralScatterDirector.ActiveRuntimeInstance;
 
             if (_worldProceduralScatterDirector == null)
             {
@@ -960,6 +979,101 @@ namespace Hecton8.Bootstrap
             }
 
             Log("  Scatter prime reached pass limit. Remaining startup placements will finish after activation.");
+        }
+
+        private async Awaitable RunColdCleanupAndCaptureMemorySnapshotAsync(CancellationToken ct)
+        {
+            Log("  Running cold unload cleanup before gameplay activation...");
+
+            AsyncOperation unloadOperation = Resources.UnloadUnusedAssets();
+            while (unloadOperation != null && !unloadOperation.isDone)
+            {
+                ct.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+            }
+
+            GC.Collect();
+            await Awaitable.NextFrameAsync(cancellationToken: ct);
+
+            CaptureStartupMemorySnapshot();
+        }
+
+        private void CaptureStartupMemorySnapshot()
+        {
+            bool textureResolved = TryReadMemoryMetricMegabytes(
+                _TextureMemoryCandidates,
+                out _debugStartupTextureMemoryMb,
+                out _debugStartupTextureMetric);
+
+            bool reservedResolved = TryReadMemoryMetricMegabytes(
+                _TotalReservedMemoryCandidates,
+                out _debugStartupReservedMemoryMb,
+                out _debugStartupReservedMetric);
+
+            if (textureResolved && reservedResolved)
+            {
+                Log($"  Startup memory snapshot: texture={_debugStartupTextureMemoryMb:0.0} MB " +
+                    $"({_debugStartupTextureMetric}), reserved={_debugStartupReservedMemoryMb:0.0} MB " +
+                    $"({_debugStartupReservedMetric}).");
+                return;
+            }
+
+            Log($"  Startup memory snapshot incomplete: texture={_debugStartupTextureMetric} " +
+                $"{_debugStartupTextureMemoryMb:0.0} MB, reserved={_debugStartupReservedMetric} " +
+                $"{_debugStartupReservedMemoryMb:0.0} MB.");
+        }
+
+        private static bool TryReadMemoryMetricMegabytes(
+            string[] candidates,
+            out float megabytes,
+            out string resolvedMetric)
+        {
+            megabytes = 0f;
+            resolvedMetric = "Unresolved";
+
+            // COLD ALLOC: one-shot profiler handle scan during bootstrap before gameplay starts.
+            List<ProfilerRecorderHandle> handles = new List<ProfilerRecorderHandle>(256);
+            ProfilerRecorderHandle.GetAvailable(handles);
+
+            for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+            {
+                string candidate = candidates[candidateIndex];
+                for (int handleIndex = 0; handleIndex < handles.Count; handleIndex++)
+                {
+                    ProfilerRecorderDescription description =
+                        ProfilerRecorderHandle.GetDescription(handles[handleIndex]);
+
+                    if (!string.Equals(description.Name, candidate, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    ProfilerRecorder recorder = default;
+                    try
+                    {
+                        recorder = ProfilerRecorder.StartNew(
+                            description.Category,
+                            description.Name,
+                            1,
+                            ProfilerRecorderOptions.Default);
+
+                        if (!recorder.Valid)
+                            continue;
+
+                        megabytes = recorder.LastValue / BytesPerMegabyte;
+                        resolvedMetric = $"{description.Category.Name}:{description.Name}";
+                        return true;
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                    finally
+                    {
+                        if (recorder.Valid)
+                            recorder.Dispose();
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1041,13 +1155,6 @@ namespace Hecton8.Bootstrap
 
             if (playerObject == null && playerController != null)
                 playerObject = playerController.gameObject;
-
-            if (playerObject == null)
-            {
-                GameObject taggedPlayer = GameObject.FindWithTag("Player");
-                if (taggedPlayer != null)
-                    playerObject = taggedPlayer;
-            }
 
             CurrentPlayerObject = playerObject;
         }

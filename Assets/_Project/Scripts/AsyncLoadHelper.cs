@@ -1,82 +1,41 @@
 // ============================================================================
-// HECTON-8 — AsyncLoadHelper.cs  v1.0
-// Async batch asset loading with zero allocations in hot paths.
-//
-// PURPOSE:
-//   Handle Resources.LoadAsync and Addressables.LoadAssetAsync without
-//   coroutine allocation overhead. Manage concurrent load requests
-//   with automatic completion tracking and callback invocation.
-//
-// WHY THIS MATTERS:
-//   • Resources.LoadAsync returns IResourceRequest (heap allocation).
-//   • Each LoadAsync call allocates IEnumerator if used with yield return.
-//   • Hundreds of ResourceRequests pending = high GC pressure.
-//   • This batches requests and reuses completion callbacks.
-//
-// USAGE:
-//   // Load single prefab with callback (no coroutine)
-//   AsyncLoadHelper.LoadAssetAsync<GameObject>(
-//       "Gameplay/Prefabs/Robot",
-//       asset => Debug.Log($"Loaded {asset.name}")
-//   );
-//
-//   // Batch-load multiple assets (no coroutines)
-//   var requests = new[]
-//   {
-//       new LoadRequest { path = "Items/Sonar", priority = 1 },
-//       new LoadRequest { path = "Items/Battery", priority = 1 },
-//       new LoadRequest { path = "Tools/LaserCutter", priority = 2 }
-//   };
-//   AsyncLoadHelper.BatchLoadAsync(requests, onComplete: (results) =>
-//   {
-//       foreach (var result in results)
-//           Debug.Log($"{result.path}: {result.asset}");
-//   });
-//
-// ZERO-GC PATTERN:
-//   • All tracking via fixed-size arrays or pre-allocated lists.
-//   • Callbacks are Action<T>, no closure allocation if delegate cached.
-//   • No yield return WaitForSeconds/IEnumerator overhead.
-//   • Request completion via Resources.isDone check (no WaitForRequest).
-//
+// HECTON-8 - AsyncLoadHelper.cs
+// Legacy compatibility wrapper for the removed runtime Resources load path.
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.Core
 {
     /// <summary>
     /// Single async asset load request.
-    /// Struct-based, zero heap allocation for request definition.
+    /// Struct-based request definition kept for API compatibility.
     /// </summary>
     public struct LoadRequest
     {
         /// <summary>
-        /// Resource path or Addressable address.
+        /// Resource path or address identifier.
         /// </summary>
         public string path;
 
         /// <summary>
         /// Asset type to load.
         /// </summary>
-        public System.Type assetType;
+        public Type assetType;
 
         /// <summary>
-        /// Load priority (higher = load sooner).
-        /// Not used by Resources.LoadAsync, but tracked for user logic.
+        /// Load priority metadata.
         /// </summary>
         public int priority;
 
         /// <summary>
-        /// Callback when this specific request completes.
-        /// Optional - can be null for batch-only tracking.
+        /// Callback when this request completes.
         /// </summary>
         public Action<UnityEngine.Object> onComplete;
 
         /// <summary>
-        /// Unique ID for tracking (auto-assigned).
+        /// Unique request identifier.
         /// </summary>
         public int requestId;
     }
@@ -88,51 +47,35 @@ namespace Hecton8.Core
     public struct LoadResult
     {
         public string path;
-        public System.Type assetType;
+        public Type assetType;
         public UnityEngine.Object asset;
         public int requestId;
         public bool success;
     }
 
     /// <summary>
-    /// Single pending ResourceRequest with metadata.
-    /// </summary>
-    internal sealed class PendingLoad
-    {
-        public ResourceRequest request;
-        public int requestId;
-        public string path;
-        public Action<UnityEngine.Object> onComplete;
-        public System.Type assetType;
-    }
-
-    /// <summary>
-    /// Async batch asset loader with zero GC in hot paths.
-    /// Singleton pattern, auto-inits on first use.
+    /// Legacy async asset load helper.
+    /// Runtime Resources loading is intentionally disabled by project policy.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(7500)] // Run before most other systems
+    [DefaultExecutionOrder(7500)]
     public sealed class AsyncLoadHelper : MonoBehaviour, ITickable
     {
         private static AsyncLoadHelper _instance;
-        private static readonly List<PendingLoad> _pendingLoads = new List<PendingLoad>(64);
-        private static readonly Dictionary<string, UnityEngine.Object> _loadedAssets = new Dictionary<string, UnityEngine.Object>(128);
+        private static bool _unsupportedLoadErrorLogged;
+        private static int _nextRequestId = 1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _instance = null;
-            _pendingLoads.Clear();
-            _loadedAssets.Clear();
+            _unsupportedLoadErrorLogged = false;
+            _nextRequestId = 1;
         }
 
-        private int _nextRequestId = 1;
-        private bool _registered = false;
-
-        // ════════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ════════════════════════════════════════════════════════════
-
+        /// <summary>
+        /// Gets or creates the helper instance for legacy callers that still access the singleton.
+        /// </summary>
         public static AsyncLoadHelper Instance
         {
             get
@@ -144,13 +87,10 @@ namespace Hecton8.Core
                     go.hideFlags = HideFlags.HideInHierarchy;
                     DontDestroyOnLoad(go);
                 }
+
                 return _instance;
             }
         }
-
-        // ════════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ════════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -163,204 +103,108 @@ namespace Hecton8.Core
             _instance = this;
         }
 
-        private void OnEnable()
-        {
-            if (!_registered && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_registered && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  ITickable — Poll for request completion
-        // ════════════════════════════════════════════════════════════
-
+        /// <summary>
+        /// Legacy interface method retained for compatibility.
+        /// </summary>
         public void Tick(float deltaTime)
         {
-            UpdatePendingLoads();
+            // Intentionally empty. The old polling path depended on forbidden runtime asset loading.
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  PUBLIC API — Load Single Asset
-        // ════════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Load a single asset asynchronously.
-        /// Callback invoked when load completes.
+        /// Fails immediately because runtime Resources loading is disabled.
         /// </summary>
         public static int LoadAssetAsync<T>(string path, Action<T> onComplete) where T : UnityEngine.Object
         {
-            return Instance._LoadAssetAsync(path, typeof(T), asset => onComplete?.Invoke(asset as T));
+            return LoadAssetAsync(path, typeof(T), asset => onComplete?.Invoke(asset as T));
         }
 
         /// <summary>
-        /// Overload that takes untyped callback.
+        /// Fails immediately because runtime Resources loading is disabled.
         /// </summary>
-        public static int LoadAssetAsync(string path, System.Type assetType, Action<UnityEngine.Object> onComplete)
+        public static int LoadAssetAsync(string path, Type assetType, Action<UnityEngine.Object> onComplete)
         {
-            return Instance._LoadAssetAsync(path, assetType, onComplete);
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  PUBLIC API — Batch Load
-        // ════════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Load multiple assets in batch.
-        /// All callbacks are invoked, then batch callback is invoked.
-        /// </summary>
-        public static void BatchLoadAsync(LoadRequest[] requests, Action<LoadResult[]> onBatchComplete = null)
-        {
-            Instance._BatchLoadAsync(requests, onBatchComplete);
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  PRIVATE METHODS
-        // ════════════════════════════════════════════════════════════
-
-        private int _LoadAssetAsync(string path, System.Type assetType, Action<UnityEngine.Object> onComplete)
-        {
-            // Check cache first
-            if (_loadedAssets.TryGetValue(path, out var cached))
-            {
-                onComplete?.Invoke(cached);
-                return 0; // Cached load, no request ID
-            }
-
             int requestId = _nextRequestId++;
-            ResourceRequest resourceRequest = Resources.LoadAsync(path, assetType);
-
-            _pendingLoads.Add(new PendingLoad
-            {
-                request = resourceRequest,
-                requestId = requestId,
-                path = path,
-                onComplete = onComplete,
-                assetType = assetType
-            });
-
+            LogUnsupportedLoad(path, assetType, 1);
+            onComplete?.Invoke(null);
             return requestId;
         }
 
-        private void _BatchLoadAsync(LoadRequest[] requests, Action<LoadResult[]> onBatchComplete)
+        /// <summary>
+        /// Fails immediately for every request because runtime Resources loading is disabled.
+        /// </summary>
+        public static void BatchLoadAsync(LoadRequest[] requests, Action<LoadResult[]> onBatchComplete = null)
         {
-            // Create temporary tracking for batch
-            var results = new LoadResult[requests.Length];
-            int completedCount = 0;
+            if (requests == null || requests.Length == 0)
+            {
+                onBatchComplete?.Invoke(Array.Empty<LoadResult>());
+                return;
+            }
+
+            // COLD ALLOC: mirror caller request count for explicit failure reporting.
+            LoadResult[] results = new LoadResult[requests.Length];
+            LogUnsupportedLoad("batch", null, requests.Length);
 
             for (int i = 0; i < requests.Length; i++)
             {
-                LoadRequest req = requests[i];
-
-                // Assign request ID if not set
-                if (req.requestId == 0)
-                    req.requestId = _nextRequestId++;
-
-                // Wrap callback to track batch completion
-                Action<UnityEngine.Object> callback = (asset) =>
+                LoadRequest request = requests[i];
+                if (request.requestId == 0)
                 {
-                    if (req.onComplete != null)
-                        req.onComplete(asset);
+                    request.requestId = _nextRequestId++;
+                }
 
-                    completedCount++;
-                    if (completedCount >= requests.Length)
-                        onBatchComplete?.Invoke(results);
+                results[i] = new LoadResult
+                {
+                    path = request.path,
+                    assetType = request.assetType,
+                    asset = null,
+                    requestId = request.requestId,
+                    success = false
                 };
 
-                // Load asset (will use cache if available)
-                if (_loadedAssets.TryGetValue(req.path, out var cached))
-                {
-                    callback(cached);
-                    results[i] = new LoadResult
-                    {
-                        path = req.path,
-                        assetType = req.assetType,
-                        asset = cached,
-                        requestId = req.requestId,
-                        success = true
-                    };
-                }
-                else
-                {
-                    ResourceRequest resourceRequest = Resources.LoadAsync(req.path, req.assetType);
-
-                    _pendingLoads.Add(new PendingLoad
-                    {
-                        request = resourceRequest,
-                        requestId = req.requestId,
-                        path = req.path,
-                        onComplete = callback,
-                        assetType = req.assetType
-                    });
-                }
+                request.onComplete?.Invoke(null);
             }
+
+            onBatchComplete?.Invoke(results);
         }
-
-        private void UpdatePendingLoads()
-        {
-            // Back-iterate to safely remove completed requests
-            for (int i = _pendingLoads.Count - 1; i >= 0; --i)
-            {
-                PendingLoad pending = _pendingLoads[i];
-
-                if (pending.request.isDone)
-                {
-                    UnityEngine.Object asset = pending.request.asset;
-
-                    // Cache the loaded asset
-                    if (asset != null && !_loadedAssets.ContainsKey(pending.path))
-                        _loadedAssets[pending.path] = asset;
-
-                    // Invoke callback
-                    pending.onComplete?.Invoke(asset);
-
-                    // Remove completed request
-                    _pendingLoads.RemoveAt(i);
-                }
-            }
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  CACHE MANAGEMENT
-        // ════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Unload and forget a cached asset.
-        /// Next load will fetch from disk.
+        /// Legacy cache API retained for compatibility. No cache exists anymore.
         /// </summary>
         public static void UnloadAsset(string path)
         {
-            if (_loadedAssets.TryGetValue(path, out var asset))
-            {
-                Resources.UnloadAsset(asset);
-                _loadedAssets.Remove(path);
-            }
         }
 
         /// <summary>
-        /// Clear all cached assets.
+        /// Legacy cache API retained for compatibility. No cache exists anymore.
         /// </summary>
         public static void ClearCache()
         {
-            _loadedAssets.Clear();
-            Resources.UnloadUnusedAssets();
         }
 
         /// <summary>
-        /// Get cache hit rate for diagnostics.
+        /// Returns zero because the Resources-based cache was removed.
         /// </summary>
-        public static int GetCachedAssetCount() => _loadedAssets.Count;
+        public static int GetCachedAssetCount() => 0;
 
-        public static int GetPendingLoadCount() => _pendingLoads.Count;
+        /// <summary>
+        /// Returns zero because no async runtime load requests are tracked anymore.
+        /// </summary>
+        public static int GetPendingLoadCount() => 0;
+
+        private static void LogUnsupportedLoad(string path, Type assetType, int requestCount)
+        {
+            if (_unsupportedLoadErrorLogged)
+            {
+                return;
+            }
+
+            _unsupportedLoadErrorLogged = true;
+            string typeName = assetType != null ? assetType.Name : "Unknown";
+            Debug.LogError(
+                $"AsyncLoadHelper is disabled. Runtime Resources/Addressables loading is not available in this project. " +
+                $"Requests: {requestCount}. Path: {path}. Type: {typeName}. " +
+                "Use scene-owned references, ObjectPoolManager, or an approved async content pipeline.");
+        }
     }
 }

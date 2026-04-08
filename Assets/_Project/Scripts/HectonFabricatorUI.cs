@@ -157,7 +157,7 @@ namespace Hecton8.UI
 
         [Header("── Camera ────────────────────────────────────")]
         [Tooltip("HUD Camera для отрисовки интерфейса. " +
-                 "Если null — используется Camera.main.")]
+                 "Если null — ищется в current player hierarchy.")]
         [SerializeField] private Camera hudCamera;
 
         [Header("── Font ──────────────────────────────────────")]
@@ -275,25 +275,27 @@ namespace Hecton8.UI
             _ingredientStatusCache = new string[16];
             _ingredientSufficient  = new bool[16];
 
-            if (hudCamera == null)
-                hudCamera = Camera.main;
-
             if (font == null)
             {
                 font = TMP_Settings.defaultFontAsset;
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (font == null)
                 {
-                    TextMeshProUGUI sampleText = FindAnyObjectByType<TextMeshProUGUI>();
-                    if (sampleText != null)
-                        font = sampleText.font;
+                    Debug.LogWarning(
+                        "[HectonFabricatorUI] No TMP font assigned and TMP_Settings.defaultFontAsset is null. " +
+                        "Immediate-mode UI text may render with a fallback font.",
+                        this);
                 }
+#endif
             }
 
             if (playerInventory == null &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
+                if (hudCamera == null)
+                    hudCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
                 playerInventory = playerTransform.GetComponent<PlayerInventory>();
                 if (playerInventory == null)
                     playerInventory = playerTransform.GetComponentInChildren<PlayerInventory>(true);

@@ -8,6 +8,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4100)]
     public sealed class WorldSliceDirector : MonoBehaviour, ISlowTickable
     {
+        internal static WorldSliceDirector ActiveRuntimeInstance { get; private set; }
+
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
@@ -38,6 +40,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolvePlayer();
             RefreshChunkProfileScales();
             RefreshAnchors();
@@ -71,6 +74,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()

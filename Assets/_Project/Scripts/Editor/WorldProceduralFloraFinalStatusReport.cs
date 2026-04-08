@@ -321,7 +321,7 @@ namespace Hecton8.EditorTools
 
                 previewUtility = new PreviewRenderUtility();
                 previewUtility.cameraFieldOfView = 32f;
-                previewUtility.ambientColor = new Color(0.44f, 0.48f, 0.54f, 1f);
+                previewUtility.ambientColor = new Color(0.5f, 0.56f, 0.62f, 1f);
 
                 GameObject prefabRoot = previewUtility.InstantiatePrefabInScene(prefabAsset);
                 if (prefabRoot == null)
@@ -336,13 +336,12 @@ namespace Hecton8.EditorTools
                 if (renderers == null || renderers.Length == 0)
                     return null;
 
-                Bounds bounds = renderers[0].bounds;
-                for (int i = 1; i < renderers.Length; i++)
-                    bounds.Encapsulate(renderers[i].bounds);
+                ApplyAutomationPreviewPresentationYaw(prefabRoot, renderers);
+                Bounds bounds = CalculateAutomationPreviewBounds(renderers);
 
                 Camera camera = previewUtility.camera;
                 camera.clearFlags = CameraClearFlags.Color;
-                camera.backgroundColor = new Color(0.34f, 0.38f, 0.42f, 1f);
+                camera.backgroundColor = new Color(0.16f, 0.2f, 0.24f, 1f);
                 camera.fieldOfView = 32f;
                 camera.allowHDR = false;
                 camera.allowMSAA = false;
@@ -350,20 +349,20 @@ namespace Hecton8.EditorTools
                 camera.orthographic = true;
 
                 Light keyLight = previewUtility.lights[0];
-                keyLight.intensity = 1.35f;
-                keyLight.color = new Color(1f, 0.97f, 0.92f, 1f);
-                keyLight.transform.rotation = Quaternion.Euler(38f, -32f, 0f);
+                keyLight.intensity = 1.52f;
+                keyLight.color = new Color(1f, 0.98f, 0.94f, 1f);
+                keyLight.transform.rotation = Quaternion.Euler(36f, -26f, 0f);
 
                 Light fillLight = previewUtility.lights[1];
-                fillLight.intensity = 0.92f;
-                fillLight.color = new Color(0.78f, 0.9f, 1f, 1f);
-                fillLight.transform.rotation = Quaternion.Euler(324f, 132f, 0f);
+                fillLight.intensity = 1.08f;
+                fillLight.color = new Color(0.72f, 0.9f, 1f, 1f);
+                fillLight.transform.rotation = Quaternion.Euler(328f, 148f, 0f);
 
                 viewTextures = new Texture2D[4]; // COLD ALLOC: editor-only contact sheet generation, fixed 4-view payload
-                viewTextures[0] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(0f, 0.12f, -1f), 0.06f, 1.58f);
-                viewTextures[1] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.62f, 0.18f, -1f), 0.08f, 1.52f);
-                viewTextures[2] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-1f, 0.12f, 0f), 0.04f, 1.48f);
-                viewTextures[3] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.48f, 0.08f, -1f), -0.18f, 0.96f);
+                viewTextures[0] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(0f, 0.12f, -1f), 0.06f, 1.42f);
+                viewTextures[1] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.72f, 0.16f, -1f), 0.08f, 1.38f);
+                viewTextures[2] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(0.72f, 0.16f, -1f), 0.08f, 1.38f);
+                viewTextures[3] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.24f, 0.62f, -0.88f), -0.08f, 1.02f);
 
                 for (int i = 0; i < viewTextures.Length; i++)
                 {
@@ -446,6 +445,46 @@ namespace Hecton8.EditorTools
             previewUtility.BeginStaticPreview(new Rect(0f, 0f, AutomationPreviewWidth, AutomationPreviewHeight));
             previewUtility.Render(true, true);
             return previewUtility.EndStaticPreview();
+        }
+
+        private static void ApplyAutomationPreviewPresentationYaw(GameObject prefabRoot, Renderer[] renderers)
+        {
+            if (prefabRoot == null || renderers == null || renderers.Length == 0)
+                return;
+
+            Quaternion originalRotation = prefabRoot.transform.rotation;
+            float bestYaw = 0f;
+            float bestScore = float.MinValue;
+
+            for (int sampleIndex = 0; sampleIndex < 12; sampleIndex++)
+            {
+                float yaw = sampleIndex * 15f;
+                prefabRoot.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                Bounds bounds = CalculateAutomationPreviewBounds(renderers);
+                float width = Mathf.Max(bounds.size.x, bounds.size.z);
+                float depth = Mathf.Min(bounds.size.x, bounds.size.z);
+                float frontHeight = bounds.size.y;
+                float diagonalWidth = EvaluateProjectedBoundsHalfExtent(bounds, new Vector3(0.72f, 0f, 0.72f).normalized) * 2f;
+                float aspect = depth <= 0.0001f ? 0f : width / depth;
+                float thinPenalty = Mathf.Clamp01(Mathf.InverseLerp(5f, 1.5f, aspect));
+                float score = (width * 1.5f + depth * 1.1f + diagonalWidth * 0.9f + frontHeight * 0.1f) * Mathf.Lerp(0.6f, 1f, thinPenalty);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestYaw = yaw;
+                }
+            }
+
+            prefabRoot.transform.rotation = originalRotation * Quaternion.Euler(0f, bestYaw, 0f);
+        }
+
+        private static Bounds CalculateAutomationPreviewBounds(Renderer[] renderers)
+        {
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+
+            return bounds;
         }
 
         private static float EvaluateProjectedBoundsHalfExtent(Bounds bounds, Vector3 axis)

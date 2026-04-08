@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using MapMagic.Core;
 using UnityEngine;
 
@@ -87,6 +88,7 @@ namespace Hecton8.World
         private DepthZone _lastDepthZone = (DepthZone)(-1);
         private MotionMode _lastMotionMode = (MotionMode)(-1);
         private int _lastObjectsPerFrame = -1;
+        private HectonPlayerMovement _playerMovement;
 
         private void Reset()
         {
@@ -213,14 +215,13 @@ namespace Hecton8.World
             RefreshRuntimeProfilesFromChunkProfile();
             ClampSettings();
 
-            if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable || scatterBudgetController == null)
+            if (playerTransform == null || scatterBudgetController == null || !TryResolveCurrentDepth(out float depth))
             {
                 _debugApplied = false;
                 UpdateDiagnostics();
                 return;
             }
 
-            float depth = Mathf.Max(0f, mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y);
             float targetSpeed = GetCurrentSpeed();
             _smoothedSpeed = Mathf.Lerp(_smoothedSpeed, targetSpeed, speedSmoothing);
 
@@ -253,7 +254,9 @@ namespace Hecton8.World
             if (worldSliceDirector != null)
                 worldSliceDirector.SetDistanceScales(profile.nearSliceScale, profile.midSliceScale);
 
-            MapMagicObject mapMagicObject = mapMagicBridge.RuntimeMapMagicObject;
+            MapMagicObject mapMagicObject = mapMagicBridge != null && mapMagicBridge.IsAvailable
+                ? mapMagicBridge.RuntimeMapMagicObject
+                : null;
             if (mapMagicObject != null && mapMagicObject.globals != null)
             {
                 mapMagicObject.globals.objectsNumPerFrame = profile.mapMagicObjectsPerFrame;
@@ -328,6 +331,9 @@ namespace Hecton8.World
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
+            if (_playerMovement == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerMovement);
+
             if (playerRigidbody == null && playerTransform != null)
                 playerRigidbody = playerTransform.GetComponent<Rigidbody>();
 
@@ -335,13 +341,30 @@ namespace Hecton8.World
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
             if (biomeSamplerCache == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeSamplerCache);
+                WorldRuntimeReferenceUtility.TryResolveBiomeSamplerCache(ref biomeSamplerCache);
 
             if (scatterBudgetController == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref scatterBudgetController);
+                WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
 
             if (worldSliceDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldSliceDirector);
+                WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);
+        }
+
+        private bool TryResolveCurrentDepth(out float depth)
+        {
+            depth = 0f;
+
+            if (_playerMovement != null)
+            {
+                depth = Mathf.Max(0f, _playerMovement.CurrentDepth);
+                return true;
+            }
+
+            if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable)
+                return false;
+
+            depth = Mathf.Max(0f, mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y);
+            return true;
         }
 
         private void ClampSettings()

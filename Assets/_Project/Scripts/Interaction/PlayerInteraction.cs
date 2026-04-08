@@ -95,8 +95,8 @@ namespace Hecton8.Interaction
         [Header("References")]
 
         [SerializeField,
-         Tooltip("Assign the main camera. Auto-resolves " +
-                 "via Camera.main if null.")]
+         Tooltip("Assign the player camera. If null, resolves " +
+                 "from the local player hierarchy.")]
         private Camera playerCamera;
 
         [Header("Debug")]
@@ -157,15 +157,14 @@ namespace Hecton8.Interaction
             // ────────────────────────────────────────────────────
             if (playerCamera == null)
             {
-                playerCamera = Camera.main;
+                playerCamera = GetComponentInChildren<Camera>(true);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (playerCamera == null)
                 {
                     Debug.LogError(
-                        "[PlayerInteraction] No camera assigned and " +
-                        "Camera.main is null. Assign the player camera " +
-                        "in the Inspector.", this);
+                        "[PlayerInteraction] No player camera assigned or found in the local player hierarchy. " +
+                        "Assign the player camera in the Inspector.", this);
                     enabled = false;
                     return;
                 }

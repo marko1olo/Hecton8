@@ -1259,8 +1259,8 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref seamExecutionDirector);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref voxelEngine);
+            WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologySeamExecutionDirector(ref seamExecutionDirector);
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
         }
 
         private void EnsureVoxelPoolWarm(int requestCount)

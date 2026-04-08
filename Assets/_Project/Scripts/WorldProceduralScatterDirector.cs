@@ -8,6 +8,7 @@ using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.World
 {
@@ -15,6 +16,7 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4036)]
     public sealed class WorldProceduralScatterDirector : MonoBehaviour, ISlowTickable
     {
+        internal static WorldProceduralScatterDirector ActiveRuntimeInstance { get; private set; }
         private const string ScatterRootName = "__PROCEDURAL_SCATTER_WORLD";
         private const string GeneratedGeologyRootName = "__GENERATED_GEOLOGY";
         private const int ScatterLayerCount = 4;
@@ -37,6 +39,8 @@ namespace Hecton8.World
         private const string ScatterLayerLargeThreatsLabel = "LargeThreats";
         // Bump when the reconcile-signature field contract changes.
         private const int ScatterPlacementSyncSignatureVersion = 1;
+        private static bool _candidateMapCapacityExceededWarningLogged;
+        private static bool _candidateMapNearCapacityWarningLogged;
         private static readonly int _ClusterAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.ClusterAccentRole)).Length;
         private static readonly int _StructureAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.StructureAccentRole)).Length;
         private static readonly WorldPrefabFamilyProfile.StructureAccentRole[] _PatternAccentPriorityDefault =
@@ -206,13 +210,32 @@ namespace Hecton8.World
                 }
                 if (count >= values.Length)
                 {
-                    UnityEngine.Debug.LogWarning($"[CandidateMap] Capacity exceeded ({values.Length}), cannot add key {key}. Increase capacity or reduce candidates.");
+                    LogCandidateMapCapacityExceeded(values.Length, key);
                     return false;
                 }
                 if (count >= values.Length - 10)
                 {
-                    UnityEngine.Debug.LogWarning($"[CandidateMap] Approaching capacity ({count}/{values.Length}), consider increasing capacity.");
+                    LogCandidateMapNearCapacity(count, values.Length);
                 }
+                keys[count] = key;
+                values[count] = value;
+                count++;
+                return true;
+            }
+
+            public bool TryAppendKnownUnique(long key, ScatterCandidate value)
+            {
+                if (count >= values.Length)
+                {
+                    LogCandidateMapCapacityExceeded(values.Length, key);
+                    return false;
+                }
+
+                if (count >= values.Length - 10)
+                {
+                    LogCandidateMapNearCapacity(count, values.Length);
+                }
+
                 keys[count] = key;
                 values[count] = value;
                 count++;
@@ -528,6 +551,7 @@ namespace Hecton8.World
         private bool _bootstrapFailed;
         private bool _allowBootstrapPrimePass;
         private Transform _scatterRootTransform;
+        private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(32); // COLD ALLOC: scene root scan for scatter root resolve.
         private bool _hasScatterRefreshSample;
         private bool _lastScatterUsedFallbackOnly;
         private Vector3 _lastScatterRefreshPosition;
@@ -554,6 +578,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
@@ -627,6 +652,9 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
+
             // Safety dispose in case OnDisable not called
             _groundRescueCandidates.Dispose();
             _clusterRescueCandidates.Dispose();
@@ -828,7 +856,7 @@ namespace Hecton8.World
             float rejectedResidencyRadius = 0f;
             int maxCandidatesBeforePrunePerCell = 0;
             int maxCandidatesAfterPrunePerCell = 0;
-            bool collectDetailedDiagnostics = enableScatterDetailedDiagnostics;
+            bool collectDetailedDiagnostics = ShouldCollectScatterDetailedDiagnostics();
             WorldZoneAnchor debugZone = null;
             WorldZoneAnchor.ZoneKind debugResolvedZoneKind = default;
             WorldProceduralPattern debugPattern = WorldProceduralPattern.SedimentResources;
@@ -1539,7 +1567,7 @@ namespace Hecton8.World
             if (_sceneBootstrapPresenceResolved)
                 return _sceneBootstrapPresent;
 
-            SceneBootstrap bootstrap = FindAnyObjectByType<SceneBootstrap>(FindObjectsInactive.Include);
+            SceneBootstrap bootstrap = SceneBootstrap.ActiveInstance;
             _sceneBootstrapPresenceResolved = true;
             _sceneBootstrapPresent = bootstrap != null
                 && bootstrap.isActiveAndEnabled
@@ -1551,7 +1579,7 @@ namespace Hecton8.World
         {
             if (!_hasScatterRefreshSample || playerTransform == null)
             {
-                _debugLastScatterRefreshReason = enableScatterDetailedDiagnostics ? _debugLastScatterInvalidationReason : "dirty";
+                _debugLastScatterRefreshReason = ShouldCollectScatterDetailedDiagnostics() ? _debugLastScatterInvalidationReason : "dirty";
                 return false;
             }
 
@@ -1698,6 +1726,28 @@ namespace Hecton8.World
         private static void SortCandidateBufferByScore(List<ScatterCandidate> candidates)
         {
             candidates.Sort();
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCandidateMapCapacityExceeded(int capacity, long key)
+        {
+            if (_candidateMapCapacityExceededWarningLogged)
+                return;
+
+            _candidateMapCapacityExceededWarningLogged = true;
+            UnityEngine.Debug.LogWarning($"[CandidateMap] Capacity exceeded ({capacity}), cannot add key {key}. Increase capacity or reduce candidates.");
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCandidateMapNearCapacity(int count, int capacity)
+        {
+            if (_candidateMapNearCapacityWarningLogged)
+                return;
+
+            _candidateMapNearCapacityWarningLogged = true;
+            UnityEngine.Debug.LogWarning($"[CandidateMap] Approaching capacity ({count}/{capacity}), consider increasing capacity.");
         }
 
         private void ResolveCombinedBudgetScales(
@@ -2062,7 +2112,16 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             return spikeDetected;
 #else
-            return enableScatterDetailedDiagnostics && spikeDetected;
+            return false;
+#endif
+        }
+
+        private bool ShouldCollectScatterDetailedDiagnostics()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return enableScatterDetailedDiagnostics;
+#else
+            return false;
 #endif
         }
 
@@ -3513,7 +3572,7 @@ namespace Hecton8.World
             if (generativeGeologyService != null)
                 return generativeGeologyService;
 
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref generativeGeologyService);
+            WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
             if (generativeGeologyService != null || !createIfMissing)
                 return generativeGeologyService;
 
@@ -3914,13 +3973,15 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            int currentWindowCount = GetWindowPlacementCount(
-                candidate.Placement.CellX,
-                candidate.Placement.CellZ,
-                stride,
-                layer == WorldPrefabFamilyProfile.ScatterLayer.Structure ? _structureWindowCounts : _spawnWindowCounts);
-            if (currentWindowCount >= perWindowBudget)
-                return false;
+            Dictionary<long, int> windowCounts = null;
+            long windowKey = 0L;
+            if (layer == WorldPrefabFamilyProfile.ScatterLayer.Structure || layer == WorldPrefabFamilyProfile.ScatterLayer.Spawn)
+            {
+                windowCounts = layer == WorldPrefabFamilyProfile.ScatterLayer.Structure ? _structureWindowCounts : _spawnWindowCounts;
+                windowKey = ComposeWindowKey(candidate.Placement.CellX, candidate.Placement.CellZ, stride);
+                if (GetWindowPlacementCount(windowKey, windowCounts) >= perWindowBudget)
+                    return false;
+            }
 
             int currentLayerCount = layer == WorldPrefabFamilyProfile.ScatterLayer.Structure ? structureCount : spawnCount;
             if (!HasPatternLayerGlobalBudget(pattern, biomeProfile, layer, currentLayerCount))
@@ -3946,11 +4007,9 @@ namespace Hecton8.World
 
             if (!TryRegisterDesiredPlacement(candidate.Placement))
                 return false;
-            RegisterWindowPlacement(
-                candidate.Placement.CellX,
-                candidate.Placement.CellZ,
-                stride,
-                layer == WorldPrefabFamilyProfile.ScatterLayer.Structure ? _structureWindowCounts : _spawnWindowCounts);
+
+            if (windowCounts != null)
+                RegisterWindowPlacement(windowKey, windowCounts);
 
             int layerIndex = (int)layer;
             if (!layerTopValid[layerIndex] || candidate.Score > layerTopCandidates[layerIndex].Score)
@@ -4135,12 +4194,22 @@ namespace Hecton8.World
         private static int GetWindowPlacementCount(int cellX, int cellZ, int stride, Dictionary<long, int> counts)
         {
             long key = ComposeWindowKey(cellX, cellZ, stride);
+            return GetWindowPlacementCount(key, counts);
+        }
+
+        private static int GetWindowPlacementCount(long key, Dictionary<long, int> counts)
+        {
             return counts.TryGetValue(key, out int count) ? count : 0;
         }
 
         private static void RegisterWindowPlacement(int cellX, int cellZ, int stride, Dictionary<long, int> counts)
         {
             long key = ComposeWindowKey(cellX, cellZ, stride);
+            RegisterWindowPlacement(key, counts);
+        }
+
+        private static void RegisterWindowPlacement(long key, Dictionary<long, int> counts)
+        {
             counts[key] = counts.TryGetValue(key, out int count) ? count + 1 : 1;
         }
 
@@ -4703,8 +4772,10 @@ namespace Hecton8.World
                 return;
             }
 
-            windowCandidates.TryAdd(windowKey, candidate);
-            RetainPlacement(candidate.Placement);
+            if (windowCandidates.TryAppendKnownUnique(windowKey, candidate))
+            {
+                RetainPlacement(candidate.Placement);
+            }
         }
 
         private void InjectRescuePlacementsIfNeeded(
@@ -4761,11 +4832,14 @@ namespace Hecton8.World
             int clusterLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Cluster;
             if (biomeProfile != null && layerPlacementCounts[clusterLayerIndex] > 0)
             {
+                RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+
                 int added = InjectPreferredClusterFamilyCandidates(
                     pattern,
                     biomeProfile,
                     Mathf.Max(1, clusterBudget),
                     clusterCandidates,
+                    false,
                     layerPlacementCounts,
                     clusterAccentCounts,
                     structureAccentCounts,
@@ -4784,6 +4858,7 @@ namespace Hecton8.World
                     clusterCandidates,
                     clusterResourceCandidates,
                     clusterDebrisCandidates,
+                    false,
                     layerPlacementCounts,
                     clusterAccentCounts,
                     structureAccentCounts,
@@ -4801,6 +4876,7 @@ namespace Hecton8.World
                     Mathf.Max(1, clusterBudget),
                     clusterCandidates,
                     clusterResourceCandidates,
+                    false,
                     layerPlacementCounts,
                     clusterAccentCounts,
                     structureAccentCounts,
@@ -4861,12 +4937,15 @@ namespace Hecton8.World
             int structureLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Structure;
             if (biomeProfile != null)
             {
+                List<ScatterCandidate> orderedStructureCandidates = _windowOrderedCandidates;
+                FillOrderedCandidateBuffer(structureCandidates, orderedStructureCandidates);
+
                 int added = InjectPreferredStructureFamilyCandidates(
                     pattern,
                     biomeProfile,
                     structureStride,
                     Mathf.Max(1, structureBudget),
-                    structureCandidates,
+                    orderedStructureCandidates,
                     layerPlacementCounts,
                     structureAccentCounts,
                     layerTopCandidates,
@@ -4880,7 +4959,7 @@ namespace Hecton8.World
                     biomeProfile,
                     structureStride,
                     Mathf.Max(1, structureBudget),
-                    structureCandidates,
+                    orderedStructureCandidates,
                     layerPlacementCounts,
                     structureAccentCounts,
                     layerTopCandidates,
@@ -4894,7 +4973,7 @@ namespace Hecton8.World
                     biomeProfile,
                     structureStride,
                     Mathf.Max(1, structureBudget),
-                    structureCandidates,
+                    orderedStructureCandidates,
                     layerPlacementCounts,
                     structureAccentCounts,
                     layerTopCandidates,
@@ -4947,12 +5026,15 @@ namespace Hecton8.World
             int spawnLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Spawn;
             if (biomeProfile != null)
             {
+                List<ScatterCandidate> orderedSpawnCandidates = _windowOrderedCandidates;
+                FillOrderedCandidateBuffer(spawnCandidates, orderedSpawnCandidates);
+
                 int added = InjectPreferredSpawnFamilyCandidates(
                     pattern,
                     biomeProfile,
                     spawnStride,
                     Mathf.Max(1, spawnBudget),
-                    spawnCandidates,
+                    orderedSpawnCandidates,
                     layerPlacementCounts,
                     structureAccentCounts,
                     ref passiveSpawnCount,
@@ -5274,6 +5356,7 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biomeProfile,
             int perCellBudget,
             CandidateMap rescueCandidates,
+            bool rebuildOccupiedBuffer,
             int[] layerPlacementCounts,
             int[] clusterAccentCounts,
             int[] structureAccentCounts,
@@ -5289,7 +5372,8 @@ namespace Hecton8.World
 
             List<ScatterCandidate> ordered = _exactClusterOrderedCandidates;
             FillOrderedCandidateBuffer(rescueCandidates, ordered);
-            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            if (rebuildOccupiedBuffer)
+                RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
             Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
             BuildPreferredFamilyPlacementCounts(
                 biomeProfile.preferredClusterFamilies,
@@ -5515,7 +5599,7 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biomeProfile,
             int stride,
             int perWindowBudget,
-            Dictionary<long, ScatterCandidate> rescueCandidates,
+            List<ScatterCandidate> ordered,
             int[] layerPlacementCounts,
             int[] structureAccentCounts,
             ScatterCandidate[] layerTopCandidates,
@@ -5523,11 +5607,8 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            if (biomeProfile?.preferredStructureFamilies == null || rescueCandidates == null || rescueCandidates.Count == 0)
+            if (biomeProfile?.preferredStructureFamilies == null || ordered == null || ordered.Count == 0)
                 return 0;
-
-            List<ScatterCandidate> ordered = _windowOrderedCandidates;
-            FillOrderedCandidateBuffer(rescueCandidates, ordered);
             Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
             BuildPreferredFamilyPlacementCounts(
                 biomeProfile.preferredStructureFamilies,
@@ -5577,7 +5658,7 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biomeProfile,
             int stride,
             int perWindowBudget,
-            Dictionary<long, ScatterCandidate> rescueCandidates,
+            List<ScatterCandidate> ordered,
             int[] layerPlacementCounts,
             int[] structureAccentCounts,
             ScatterCandidate[] layerTopCandidates,
@@ -5585,11 +5666,8 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            if (!IsServiceLikePattern(pattern) || rescueCandidates == null || rescueCandidates.Count == 0)
+            if (!IsServiceLikePattern(pattern) || ordered == null || ordered.Count == 0)
                 return 0;
-
-            List<ScatterCandidate> ordered = _windowOrderedCandidates;
-            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
@@ -5666,7 +5744,7 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biomeProfile,
             int stride,
             int perWindowBudget,
-            Dictionary<long, ScatterCandidate> rescueCandidates,
+            List<ScatterCandidate> ordered,
             int[] layerPlacementCounts,
             int[] structureAccentCounts,
             ref int passiveSpawnCount,
@@ -5676,11 +5754,8 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            if (biomeProfile?.preferredSpawnFamilies == null || rescueCandidates == null || rescueCandidates.Count == 0)
+            if (biomeProfile?.preferredSpawnFamilies == null || ordered == null || ordered.Count == 0)
                 return 0;
-
-            List<ScatterCandidate> ordered = _windowOrderedCandidates;
-            FillOrderedCandidateBuffer(rescueCandidates, ordered);
             Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
             BuildPreferredFamilyPlacementCounts(
                 biomeProfile.preferredSpawnFamilies,
@@ -5730,6 +5805,7 @@ namespace Hecton8.World
             CandidateMap rescueCandidates,
             CandidateMap resourceCandidates,
             CandidateMap debrisCandidates,
+            bool rebuildOccupiedBuffer,
             int[] layerPlacementCounts,
             int[] clusterAccentCounts,
             int[] structureAccentCounts,
@@ -5747,7 +5823,8 @@ namespace Hecton8.World
             int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
-            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            if (rebuildOccupiedBuffer)
+                RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             added += InjectClusterAccentRoleCandidates(
                 pattern,
@@ -5798,6 +5875,7 @@ namespace Hecton8.World
             int perCellBudget,
             CandidateMap rescueCandidates,
             CandidateMap resourceCandidates,
+            bool rebuildOccupiedBuffer,
             int[] layerPlacementCounts,
             int[] clusterAccentCounts,
             int[] structureAccentCounts,
@@ -5814,7 +5892,8 @@ namespace Hecton8.World
             int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
-            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            if (rebuildOccupiedBuffer)
+                RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             return InjectClusterAccentRoleCandidates(
                 pattern,
@@ -5842,7 +5921,7 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biomeProfile,
             int stride,
             int perWindowBudget,
-            Dictionary<long, ScatterCandidate> rescueCandidates,
+            List<ScatterCandidate> ordered,
             int[] layerPlacementCounts,
             int[] structureAccentCounts,
             ScatterCandidate[] layerTopCandidates,
@@ -5850,11 +5929,8 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            if (!ShouldRescueRuinPlacementModes(pattern) || rescueCandidates == null || rescueCandidates.Count == 0)
+            if (!ShouldRescueRuinPlacementModes(pattern) || ordered == null || ordered.Count == 0)
                 return 0;
-
-            List<ScatterCandidate> ordered = _windowOrderedCandidates;
-            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
@@ -10629,7 +10705,7 @@ namespace Hecton8.World
             if (_scatterRootTransform != null)
                 return _scatterRootTransform.gameObject;
 
-            GameObject root = GameObject.Find(ScatterRootName);
+            GameObject root = FindExistingScatterRoot();
             if (root == null)
             {
                 if (!createIfMissing)
@@ -10641,6 +10717,30 @@ namespace Hecton8.World
             _scatterRootTransform = root.transform;
 
             return root;
+        }
+
+        private GameObject FindExistingScatterRoot()
+        {
+            int sceneCount = SceneManager.sceneCount;
+            for (int i = 0; i < sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded)
+                    continue;
+
+                _sceneRootScratch.Clear();
+                scene.GetRootGameObjects(_sceneRootScratch);
+
+                int rootCount = _sceneRootScratch.Count;
+                for (int rootIndex = 0; rootIndex < rootCount; rootIndex++)
+                {
+                    GameObject root = _sceneRootScratch[rootIndex];
+                    if (root != null && string.Equals(root.name, ScatterRootName, StringComparison.Ordinal))
+                        return root;
+                }
+            }
+
+            return null;
         }
 
         private static void ClearRootChildren(Transform root)
@@ -10756,11 +10856,11 @@ namespace Hecton8.World
         {
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref fieldSampler);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proceduralFillDirector);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref faunaSpawnRegistry);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proceduralStateRegistry);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref generativeGeologyService);
+            WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref fieldSampler);
+            WorldRuntimeReferenceUtility.TryResolveWorldProceduralFillDirector(ref proceduralFillDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldFaunaSpawnRegistry(ref faunaSpawnRegistry);
+            WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
+            WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
 
             if (faunaSpawnRegistry != null)
                 faunaSpawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);

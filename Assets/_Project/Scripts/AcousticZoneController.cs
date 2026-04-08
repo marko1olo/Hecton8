@@ -220,6 +220,8 @@ namespace Hecton8.Audio
         private HectonAtmosphereManager _atmosphereManager;
         private HectonPlayerMovement _playerMovement;
         private bool _fallbackUnderwaterState;
+        private bool _hasCachedExteriorZone;
+        private AcousticZoneState _cachedExteriorZone;
         private List<AudioSource> _playerAudioSources;
 
         // ══════════════════════════════════════════════════════════
@@ -257,6 +259,7 @@ namespace Hecton8.Audio
         private void OnEnable()
         {
             TryRegister();
+            HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
         }
 
         private void Start()
@@ -281,6 +284,7 @@ namespace Hecton8.Audio
             }
 
             ResolvePlayerAmbientSource();
+            RefreshAtmosphereZoneCache();
 
             // ── Установка начального snapshot без перехода ──
             ApplyInitialSnapshot();
@@ -288,6 +292,8 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
+            HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
+
             if (GameTickManager.Instance == null) return;
 
             if (_registeredToTickManager)
@@ -299,6 +305,8 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
+
             if (_instance == this)
             {
                 _instance = null;
@@ -624,12 +632,18 @@ namespace Hecton8.Audio
             if (playerBuoyancy != null && playerBuoyancy.IsInDryZone)
                 return AcousticZoneState.Interior;
 
+            if (_hasCachedExteriorZone)
+                return _cachedExteriorZone;
+
             HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
             if (atmosphere != null)
             {
-                return atmosphere.CurrentState == EnvironmentState.UNDERWATER
+                AcousticZoneState zone = atmosphere.CurrentState == EnvironmentState.UNDERWATER
                     ? AcousticZoneState.Underwater
                     : AcousticZoneState.Surface;
+                _cachedExteriorZone = zone;
+                _hasCachedExteriorZone = true;
+                return zone;
             }
 
             HectonPlayerMovement movement = ResolvePlayerMovement();
@@ -646,6 +660,14 @@ namespace Hecton8.Audio
             }
 
             return AcousticZoneState.Underwater;
+        }
+
+        private void HandleAtmosphereStateChanged(EnvironmentState state)
+        {
+            _cachedExteriorZone = state == EnvironmentState.UNDERWATER
+                ? AcousticZoneState.Underwater
+                : AcousticZoneState.Surface;
+            _hasCachedExteriorZone = true;
         }
 
         private void ApplyZoneTransition(AcousticZoneState zone)
@@ -672,6 +694,18 @@ namespace Hecton8.Audio
                 _atmosphereManager = HectonAtmosphereManager.Instance;
 
             return _atmosphereManager;
+        }
+
+        private void RefreshAtmosphereZoneCache()
+        {
+            HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
+            if (atmosphere == null)
+            {
+                _hasCachedExteriorZone = false;
+                return;
+            }
+
+            HandleAtmosphereStateChanged(atmosphere.CurrentState);
         }
 
         private HectonPlayerMovement ResolvePlayerMovement()

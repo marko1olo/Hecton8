@@ -40,6 +40,8 @@ namespace Hecton8.World
         private float _nextDiagnosticsRefreshPlayTime;
         private bool _diagnosticsDirty;
 
+        internal static WorldProceduralStateRegistry ActiveRuntimeInstance { get; private set; }
+
         public event Action PlacementStateChanged;
 
         public int SavePriority => 55;
@@ -49,6 +51,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             _suppressedPlacementKeys = new HashSet<long>(Mathf.Max(32, initialSuppressedPlacementCapacity));
             _faunaSpawnStates = new Dictionary<long, FaunaSpawnState>(Mathf.Max(16, initialFaunaStateCapacity));
             UpdateDiagnostics();
@@ -62,6 +65,12 @@ namespace Hecton8.World
         private void OnDisable()
         {
             SaveManager.Instance?.Unregister(this);
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public bool IsPlacementSuppressed(long runtimeKey)

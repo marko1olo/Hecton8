@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -10,7 +11,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD v4")]
-public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
+public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
 {
     private static readonly List<HectonSuitHUD_v4> s_activeHuds = new List<HectonSuitHUD_v4>(4);
     private const int MaxPercent = 100;
@@ -134,6 +135,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
     private float _safeCenterY;
     private float _safeWidth;
     private float _safeHeight;
+    private bool _registeredToTickManager;
 
     public static void CopyActiveHudsTo(List<HectonSuitHUD_v4> results)
     {
@@ -184,10 +186,16 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         Subscribe();
         ForceRefresh();
         _timeSinceEnable = 0f;
+
+        if (Application.isPlaying)
+            RegisterToTickManager();
     }
 
     public override void OnDisable()
     {
+        if (Application.isPlaying)
+            UnregisterFromTickManager();
+
         base.OnDisable();
         UnregisterActiveHud();
         Unsubscribe();
@@ -258,15 +266,54 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
         }
     }
 
+    public void Tick(float deltaTime)
+    {
+        UpdateHudRuntime(deltaTime);
+    }
+
+#if UNITY_EDITOR
     private void LateUpdate()
     {
-        float dt = Application.isPlaying ? Time.deltaTime : 0.016f;
+        if (Application.isPlaying)
+            return;
+
+        UpdateHudRuntime(0.016f);
+    }
+#endif
+
+    private void UpdateHudRuntime(float dt)
+    {
         _pulseTimer += dt;
         _timeSinceEnable += dt;
         PollRuntimeData();
         ResolveSuitVariant();
         UpdateTemperature(dt);
         UpdateDiagnostics();
+    }
+
+    private void RegisterToTickManager()
+    {
+        if (_registeredToTickManager)
+            return;
+
+        GameTickManager tickManager = GameTickManager.Instance;
+        if (tickManager == null)
+            return;
+
+        tickManager.Register(this);
+        _registeredToTickManager = true;
+    }
+
+    private void UnregisterFromTickManager()
+    {
+        if (!_registeredToTickManager)
+            return;
+
+        GameTickManager tickManager = GameTickManager.Instance;
+        if (tickManager != null)
+            tickManager.Unregister(this);
+
+        _registeredToTickManager = false;
     }
 
     private void RegisterActiveHud()
@@ -295,7 +342,12 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
             _pressureAtm = Mathf.Max(1f, survival.Pressure);
         }
         else
+        {
+            if (playerMovement != null)
+                _depthMeters = Mathf.Max(0f, playerMovement.CurrentDepth);
+
             _pressureAtm = 1f + (_depthMeters / 10f);
+        }
 
         if (playerMovement != null)
             _headingDegrees = Mathf.Repeat(playerMovement.CameraYaw, 360f);
@@ -315,8 +367,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer
 
     private void UpdateTemperature(float dt)
     {
-        float sourceDepth = underwaterVisuals != null ? underwaterVisuals.CurrentDepth : _depthMeters;
-        float depth01 = Mathf.Clamp01(sourceDepth / Mathf.Max(abyssReferenceDepth, 1f));
+        float depth01 = Mathf.Clamp01(_depthMeters / Mathf.Max(abyssReferenceDepth, 1f));
         depth01 = depth01 * depth01 * (3f - 2f * depth01);
 
         float estimated = Mathf.Lerp(coldSurfaceTemp, abyssTemp, depth01);

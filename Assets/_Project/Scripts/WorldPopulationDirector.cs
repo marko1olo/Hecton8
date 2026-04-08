@@ -258,8 +258,8 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldContentDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldContentDirector(ref worldContentDirector);
         }
 
         private PopulationSelection FindPrimaryRule(WorldZoneAnchor zone, WorldContentSocket socket, out int matchedCount, bool captureDiagnostics)

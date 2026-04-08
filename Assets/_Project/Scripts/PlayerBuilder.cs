@@ -235,13 +235,25 @@ namespace Hecton8.Building
                 return false;
             }
 
+            if (!TryGetObjectPool(out ObjectPoolManager pool))
+            {
+                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: ObjectPoolManager unavailable.");
+                return false;
+            }
+
+            GameObject spawned = SpawnPlacedModule(activeBuildable, position, rotation, pool);
+            if (spawned == null)
+            {
+                Debug.LogWarning($"[BuilderDebug] DebugDeploy aborted: failed to spawn {activeBuildable.moduleName}.");
+                return false;
+            }
+
             if (consumeCost)
             {
                 LogBuilderDebug($"DebugDeploy consuming cost for {activeBuildable.moduleName}.");
                 ConsumeResources(activeBuildable);
             }
 
-            GameObject spawned = SpawnPlacedModule(activeBuildable, position, rotation);
             LogBuilderDebug($"DebugDeploy spawnResult={(spawned != null ? spawned.name : "null")}");
             return spawned != null;
         }
@@ -568,17 +580,14 @@ namespace Hecton8.Building
                 spawnPos = transform.position + Vector3.forward * buildDistance;
             }
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
+            if (!TryGetObjectPool(out ObjectPoolManager pool))
             {
-                _currentGhostObj = pool.Spawn(
-                    activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
+                NotifyBuildBlocked("OBJECT POOL OFFLINE");
+                return;
             }
-            else
-            {
-                _currentGhostObj = Object.Instantiate(
-                    activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
-            }
+
+            _currentGhostObj = pool.Spawn(
+                activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
 
             if (_currentGhostObj != null)
             {
@@ -849,25 +858,33 @@ namespace Hecton8.Building
                 return;
             }
 
-            ConsumeResources(activeBuildable);
-
             Vector3    placePos = _currentGhostObj.transform.position;
             Quaternion placeRot = _currentGhostObj.transform.rotation;
 
+            if (!TryGetObjectPool(out ObjectPoolManager pool))
+            {
+                NotifyBuildBlocked("OBJECT POOL OFFLINE");
+                PlaySound(errorSound);
+                return;
+            }
+
             // ── v3.0: Пометить сокет как занятый ──
+
+            // ── Спавн финального модуля ──
+            GameObject placedModule = SpawnPlacedModule(activeBuildable, placePos, placeRot, pool);
+
+            if (placedModule == null)
+            {
+                NotifyBuildBlocked("MODULE SPAWN FAILED");
+                PlaySound(errorSound);
+                return;
+            }
+
+            ConsumeResources(activeBuildable);
+
             if (_isSnapped && _snappedSocket != null)
             {
                 _snappedSocket.SetOccupied(true);
-            }
-
-            // ── Спавн финального модуля ──
-            GameObject placedModule = SpawnPlacedModule(activeBuildable, placePos, placeRot);
-
-            if (placedModule != null)
-            {
-                ConstructionManager manager = ConstructionManager.Instance;
-                if (manager != null)
-                    manager.RegisterModule(placedModule, activeBuildable);
             }
 
             PlaySound(buildSound);
@@ -912,7 +929,7 @@ namespace Hecton8.Building
             LogBuilderDebug($"ResolveRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
 
             if (playerCamera == null)
-                playerCamera = GetComponentInChildren<Camera>(true) ?? Camera.main;
+                playerCamera = GetComponentInChildren<Camera>(true);
             LogBuilderDebug($"ResolveRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
 
             if (buildAnchor == null)
@@ -1063,24 +1080,20 @@ namespace Hecton8.Building
                 "INFO");
         }
 
-        private GameObject SpawnPlacedModule(BuildableData data, Vector3 placePos, Quaternion placeRot)
+        private bool TryGetObjectPool(out ObjectPoolManager pool)
         {
-            if (data == null || data.finalPrefab == null)
+            pool = ObjectPoolManager.Instance;
+            return pool != null;
+        }
+
+        private GameObject SpawnPlacedModule(BuildableData data, Vector3 placePos, Quaternion placeRot, ObjectPoolManager pool)
+        {
+            if (data == null || data.finalPrefab == null || pool == null)
                 return null;
 
             LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}");
-            GameObject placedModule;
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
-            {
-                LogBuilderDebug("SpawnPlacedModule using pool.");
-                placedModule = pool.Spawn(data.finalPrefab, placePos, placeRot);
-            }
-            else
-            {
-                LogBuilderDebug("SpawnPlacedModule using instantiate.");
-                placedModule = Object.Instantiate(data.finalPrefab, placePos, placeRot);
-            }
+            LogBuilderDebug("SpawnPlacedModule using pool.");
+            GameObject placedModule = pool.Spawn(data.finalPrefab, placePos, placeRot);
 
             if (placedModule != null)
             {

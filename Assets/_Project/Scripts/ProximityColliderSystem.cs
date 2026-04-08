@@ -41,6 +41,7 @@ namespace Hecton8.Core
     [DisallowMultipleComponent]
     public sealed class ProximityColliderSystem : MonoBehaviour, ITickable
     {
+        internal static ProximityColliderSystem ActiveRuntimeInstance { get; private set; }
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -302,6 +303,7 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             // ── Авто-resolve игрока через bootstrap, если ссылка не задана ──
             if (playerTransform == null)
             {
@@ -350,6 +352,8 @@ namespace Hecton8.Core
             CompleteCurrentJob();
             DespawnAllColliders();
             Cleanup();
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         // ══════════════════════════════════════════════════════════

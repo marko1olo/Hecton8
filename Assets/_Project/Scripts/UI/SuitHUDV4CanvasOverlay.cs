@@ -161,6 +161,7 @@ namespace Hecton8.UI
         private Color _cachedPaletteWarning;
         private float _displayTemperature = 8f;
         private float _lastDepth;
+        private float _depthMeters;
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
         private float _nextAutoResolveAt;
@@ -196,6 +197,7 @@ namespace Hecton8.UI
         private Color _appliedDim;
         private Color _appliedWarning;
         private CanvasScaler _cachedCanvasScaler;
+        private HectonSurvivalSystem _depthSignalSource;
 
         public Canvas TargetCanvas => ResolveTargetCanvas();
         public Camera ProjectionCamera => projectionCamera;
@@ -245,6 +247,7 @@ namespace Hecton8.UI
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RefreshAll(0.016f, forceResolve: true);
+            RefreshDepthSignalSubscription();
             TryRegisterRuntimeTick();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -261,6 +264,7 @@ namespace Hecton8.UI
         {
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
+            ClearDepthSignalSubscription();
 #if UNITY_EDITOR
             UnregisterEditorTick();
 #endif
@@ -374,6 +378,8 @@ namespace Hecton8.UI
                 if (hasPlayerRoot)
                     survival = playerRoot.GetComponent<HectonSurvivalSystem>();
             }
+
+            RefreshDepthSignalSubscription();
 
             if (playerMovement == null)
             {
@@ -685,6 +691,7 @@ namespace Hecton8.UI
             if (_root == null)
                 return;
 
+            RefreshDepthFromMovementFallback();
             ResolveProfile();
             ResolvePalette(out Color primary, out Color secondary, out Color dim, out Color warning);
 
@@ -692,7 +699,7 @@ namespace Hecton8.UI
             float oxygen = hasSurvivalStats ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
             float power = hasSurvivalStats ? Mathf.Clamp01(survival.EnergyNormalized) : 1f;
             float health = hasSurvivalStats ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
-            float depth = survival != null ? Mathf.Max(0f, survival.Depth) : (playerMovement != null ? playerMovement.CurrentDepth : 0f);
+            float depth = _depthMeters;
             float pressure = survival != null ? Mathf.Max(1f, survival.Pressure) : 1f + depth / 10f;
             float heading = playerMovement != null ? Mathf.Repeat(playerMovement.CameraYaw, 360f) : 0f;
             float safeDepth = hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f;
@@ -725,6 +732,44 @@ namespace Hecton8.UI
             UpdateGauge(ref _oxygenGauge, "OXYGEN", string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, dim, warning);
             UpdateGauge(ref _healthGauge, "HEALTH", string.Empty, health, healthCurrent, healthAccent, secondary, dim, warning);
             UpdateGauge(ref _powerGauge, "ENERGY", string.Empty, power, energyCurrent, energyAccent, secondary, dim, warning);
+        }
+
+        private void RefreshDepthSignalSubscription()
+        {
+            if (ReferenceEquals(_depthSignalSource, survival))
+                return;
+
+            if (_depthSignalSource != null)
+                _depthSignalSource.OnDepthChanged -= HandleDepthChanged;
+
+            _depthSignalSource = survival;
+            if (_depthSignalSource != null)
+            {
+                _depthSignalSource.OnDepthChanged += HandleDepthChanged;
+                HandleDepthChanged(_depthSignalSource.Depth);
+                return;
+            }
+
+            RefreshDepthFromMovementFallback();
+        }
+
+        private void ClearDepthSignalSubscription()
+        {
+            if (_depthSignalSource != null)
+                _depthSignalSource.OnDepthChanged -= HandleDepthChanged;
+
+            _depthSignalSource = null;
+        }
+
+        private void RefreshDepthFromMovementFallback()
+        {
+            if (_depthSignalSource == null && playerMovement != null)
+                _depthMeters = Mathf.Max(0f, playerMovement.CurrentDepth);
+        }
+
+        private void HandleDepthChanged(float depth)
+        {
+            _depthMeters = Mathf.Max(0f, depth);
         }
 
         private void ResolveProfile()

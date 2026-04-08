@@ -1,9 +1,9 @@
 using System;
-using System.Collections;
+using Hecton8.Audio;
+using Hecton8.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using Hecton8.Audio;
 
 namespace Hecton8.UI
 {
@@ -12,8 +12,32 @@ namespace Hecton8.UI
     /// Prevents broken bootstrap appearance by maintaining visual continuity during async operations.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class LoadingScreenController : MonoBehaviour
+    public sealed class LoadingScreenController : MonoBehaviour, ITickable
     {
+        private enum VisibilityState
+        {
+            Hidden,
+            FadingIn,
+            Visible,
+            DelayBeforeHide,
+            FadingOut
+        }
+
+        private static readonly string[] PercentStrings =
+        {
+            "0%", "1%", "2%", "3%", "4%", "5%", "6%", "7%", "8%", "9%",
+            "10%", "11%", "12%", "13%", "14%", "15%", "16%", "17%", "18%", "19%",
+            "20%", "21%", "22%", "23%", "24%", "25%", "26%", "27%", "28%", "29%",
+            "30%", "31%", "32%", "33%", "34%", "35%", "36%", "37%", "38%", "39%",
+            "40%", "41%", "42%", "43%", "44%", "45%", "46%", "47%", "48%", "49%",
+            "50%", "51%", "52%", "53%", "54%", "55%", "56%", "57%", "58%", "59%",
+            "60%", "61%", "62%", "63%", "64%", "65%", "66%", "67%", "68%", "69%",
+            "70%", "71%", "72%", "73%", "74%", "75%", "76%", "77%", "78%", "79%",
+            "80%", "81%", "82%", "83%", "84%", "85%", "86%", "87%", "88%", "89%",
+            "90%", "91%", "92%", "93%", "94%", "95%", "96%", "97%", "98%", "99%",
+            "100%"
+        };
+
         [Header("UI References")]
         [SerializeField, Tooltip("Main loading panel CanvasGroup")]
         private CanvasGroup _loadingPanel;
@@ -39,7 +63,7 @@ namespace Hecton8.UI
 
         [Header("Loading Tips")]
         [SerializeField, Tooltip("Random tips to show during loading")]
-        private string[] _loadingTips = new string[]
+        private string[] _loadingTips =
         {
             "Deep sea exploration requires patience...",
             "The ocean holds many secrets...",
@@ -51,12 +75,18 @@ namespace Hecton8.UI
             "Ancient technology powers the depths..."
         };
 
-        // State
         private bool _isShowing;
+        private bool _registeredToTickManager;
         private float _showStartTime;
-        private Coroutine _currentFadeCoroutine;
+        private float _transitionElapsed;
+        private float _fadeStartAlpha;
+        private float _delayRemaining;
+        private float _lastUnscaledTickTime;
+        private VisibilityState _visibilityState;
+        private string _currentProgressText = "0%";
+        private string _currentStatusText = "Loading...";
+        private string _currentTipText = "Loading...";
 
-        // Cached components
         private CanvasGroup _canvasGroup;
 
         private void Awake()
@@ -69,12 +99,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Start hidden
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;
             _isShowing = false;
+            _visibilityState = VisibilityState.Hidden;
 
-            // Validate references
             if (_loadingPanel == null)
             {
                 Debug.LogError("[LoadingScreenController] Loading panel not assigned!");
@@ -82,21 +111,32 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Set initial UI state
             if (_progressBar != null)
             {
                 _progressBar.value = 0f;
                 _progressBar.interactable = false;
             }
 
-            if (_progressText != null)
-                _progressText.text = "0%";
+            UpdateProgress(0f);
+            UpdateStatus("Loading...");
+            UpdateTip(GetRandomTip());
+        }
 
-            if (_statusText != null)
-                _statusText.text = "Loading...";
+        private void OnEnable()
+        {
+            TryRegisterToTickManager();
+            _lastUnscaledTickTime = Time.unscaledTime;
+        }
 
-            if (_tipText != null)
-                _tipText.text = GetRandomTip();
+        private void Start()
+        {
+            TryRegisterToTickManager();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterFromTickManager();
+            _lastUnscaledTickTime = 0f;
         }
 
         /// <summary>
@@ -104,20 +144,26 @@ namespace Hecton8.UI
         /// </summary>
         public void Show()
         {
-            if (_isShowing) return;
+            if (_isShowing &&
+                (_visibilityState == VisibilityState.FadingIn ||
+                 _visibilityState == VisibilityState.Visible ||
+                 _visibilityState == VisibilityState.DelayBeforeHide))
+            {
+                return;
+            }
 
             _isShowing = true;
             _showStartTime = Time.unscaledTime;
+            _delayRemaining = 0f;
+            _transitionElapsed = 0f;
+            _fadeStartAlpha = _canvasGroup.alpha;
+            _visibilityState = VisibilityState.FadingIn;
+            _canvasGroup.blocksRaycasts = true;
+            TryRegisterToTickManager();
 
-            if (_currentFadeCoroutine != null)
-                StopCoroutine(_currentFadeCoroutine);
-
-            _currentFadeCoroutine = StartCoroutine(FadeIn());
-
-            // Play loading audio if available
             if (SpatialAudioManager.Instance != null)
             {
-                // TODO: Add loading music/sting when audio system is ready
+                // Loading audio hook stays cold-path only.
             }
         }
 
@@ -126,20 +172,18 @@ namespace Hecton8.UI
         /// </summary>
         public void Hide()
         {
-            if (!_isShowing) return;
+            if (!_isShowing)
+                return;
 
-            // Enforce minimum display time
             float elapsed = Time.unscaledTime - _showStartTime;
             if (elapsed < _minimumDisplayTime)
             {
-                StartCoroutine(DelayedHide(_minimumDisplayTime - elapsed));
+                _delayRemaining = _minimumDisplayTime - elapsed;
+                _visibilityState = VisibilityState.DelayBeforeHide;
                 return;
             }
 
-            if (_currentFadeCoroutine != null)
-                StopCoroutine(_currentFadeCoroutine);
-
-            _currentFadeCoroutine = StartCoroutine(FadeOut());
+            BeginFadeOut();
         }
 
         /// <summary>
@@ -152,8 +196,16 @@ namespace Hecton8.UI
             if (_progressBar != null)
                 _progressBar.value = progress;
 
-            if (_progressText != null)
-                _progressText.text = $"{(int)(progress * 100)}%";
+            if (_progressText == null)
+                return;
+
+            int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
+            string nextText = PercentStrings[percent];
+            if (string.Equals(_currentProgressText, nextText, StringComparison.Ordinal))
+                return;
+
+            _currentProgressText = nextText;
+            _progressText.SetText(nextText);
         }
 
         /// <summary>
@@ -161,8 +213,11 @@ namespace Hecton8.UI
         /// </summary>
         public void UpdateStatus(string status)
         {
-            if (_statusText != null)
-                _statusText.text = status;
+            if (_statusText == null || string.Equals(_currentStatusText, status, StringComparison.Ordinal))
+                return;
+
+            _currentStatusText = status;
+            _statusText.SetText(status);
         }
 
         /// <summary>
@@ -170,8 +225,11 @@ namespace Hecton8.UI
         /// </summary>
         public void UpdateTip(string tip)
         {
-            if (_tipText != null)
-                _tipText.text = tip;
+            if (_tipText == null || string.Equals(_currentTipText, tip, StringComparison.Ordinal))
+                return;
+
+            _currentTipText = tip;
+            _tipText.SetText(tip);
         }
 
         /// <summary>
@@ -182,6 +240,30 @@ namespace Hecton8.UI
             UpdateTip(GetRandomTip());
         }
 
+        public void Tick(float deltaTime)
+        {
+            float unscaledDeltaTime = GetUnscaledDeltaTime();
+            if (unscaledDeltaTime <= 0f)
+                return;
+
+            switch (_visibilityState)
+            {
+                case VisibilityState.FadingIn:
+                    UpdateFadeIn(unscaledDeltaTime);
+                    break;
+
+                case VisibilityState.DelayBeforeHide:
+                    _delayRemaining -= unscaledDeltaTime;
+                    if (_delayRemaining <= 0f)
+                        BeginFadeOut();
+                    break;
+
+                case VisibilityState.FadingOut:
+                    UpdateFadeOut(unscaledDeltaTime);
+                    break;
+            }
+        }
+
         private string GetRandomTip()
         {
             if (_loadingTips == null || _loadingTips.Length == 0)
@@ -190,54 +272,78 @@ namespace Hecton8.UI
             return _loadingTips[UnityEngine.Random.Range(0, _loadingTips.Length)];
         }
 
-        private IEnumerator FadeIn()
+        private void UpdateFadeIn(float unscaledDeltaTime)
         {
-            _canvasGroup.blocksRaycasts = true;
+            float duration = Mathf.Max(0.0001f, _fadeDuration);
+            _transitionElapsed += unscaledDeltaTime;
+            float t = Mathf.Clamp01(_transitionElapsed / duration);
+            _canvasGroup.alpha = Mathf.Lerp(_fadeStartAlpha, 1f, t);
 
-            float elapsed = 0f;
-            while (elapsed < _fadeDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = elapsed / _fadeDuration;
-                _canvasGroup.alpha = Mathf.Lerp(0f, 1f, t);
-                yield return null;
-            }
-
-            _canvasGroup.alpha = 1f;
-            _currentFadeCoroutine = null;
+            if (t >= 1f)
+                _visibilityState = VisibilityState.Visible;
         }
 
-        private IEnumerator FadeOut()
+        private void BeginFadeOut()
         {
-            float startAlpha = _canvasGroup.alpha;
+            _transitionElapsed = 0f;
+            _fadeStartAlpha = _canvasGroup.alpha;
+            _visibilityState = VisibilityState.FadingOut;
+        }
 
-            float elapsed = 0f;
-            while (elapsed < _fadeDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = elapsed / _fadeDuration;
-                _canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, t);
-                yield return null;
-            }
+        private void UpdateFadeOut(float unscaledDeltaTime)
+        {
+            float duration = Mathf.Max(0.0001f, _fadeDuration);
+            _transitionElapsed += unscaledDeltaTime;
+            float t = Mathf.Clamp01(_transitionElapsed / duration);
+            _canvasGroup.alpha = Mathf.Lerp(_fadeStartAlpha, 0f, t);
+
+            if (t < 1f)
+                return;
 
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;
             _isShowing = false;
-            _currentFadeCoroutine = null;
+            _visibilityState = VisibilityState.Hidden;
         }
 
-        private IEnumerator DelayedHide(float delay)
+        private float GetUnscaledDeltaTime()
         {
-            yield return new WaitForSecondsRealtime(delay);
-            Hide();
+            float currentTime = Time.unscaledTime;
+            if (_lastUnscaledTickTime <= 0f)
+            {
+                _lastUnscaledTickTime = currentTime;
+                return 0f;
+            }
+
+            float delta = currentTime - _lastUnscaledTickTime;
+            _lastUnscaledTickTime = currentTime;
+            return delta > 0f ? delta : 0f;
         }
 
-        #if UNITY_EDITOR
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register(this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Unregister(this);
+            _registeredToTickManager = false;
+        }
+
+#if UNITY_EDITOR
         private void OnValidate()
         {
             if (_loadingPanel == null)
                 _loadingPanel = GetComponent<CanvasGroup>();
         }
-        #endif
+#endif
     }
 }

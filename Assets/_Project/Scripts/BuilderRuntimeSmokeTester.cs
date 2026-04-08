@@ -5,6 +5,7 @@
 // ============================================================================
 
 using System.Collections;
+using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Gameplay;
@@ -257,8 +258,25 @@ namespace Hecton8.Dev
             position = Vector3.zero;
             rotation = Quaternion.identity;
 
-            Camera cam = Camera.main;
-            Transform reference = cam != null ? cam.transform : (playerBuilder != null ? playerBuilder.transform : transform);
+            Transform reference = null;
+
+            if (playerBuilder != null)
+            {
+                Camera playerCamera = playerBuilder.GetComponentInChildren<Camera>(true);
+                reference = playerCamera != null ? playerCamera.transform : playerBuilder.transform;
+            }
+
+            if (reference == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                reference = playerCamera != null ? playerCamera.transform : playerTransform;
+            }
+
+            if (reference == null)
+                reference = transform;
+
             if (reference == null)
                 return false;
 

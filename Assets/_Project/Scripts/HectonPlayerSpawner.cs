@@ -41,6 +41,7 @@
 
 using System;
 using System.Threading;
+using Hecton8.Bootstrap;
 using UnityEngine;
 
 /// <summary>
@@ -193,32 +194,32 @@ public class HectonPlayerSpawner : MonoBehaviour
         {
             Debug.Log(
                 "[HectonPlayerSpawner] Rigidbody не назначен в Inspector. " +
-                "Ищу GameObject с тегом \"Player\" в сцене...");
+                "Пытаюсь получить current player через SceneBootstrap...");
 
-            GameObject playerGO = GameObject.FindWithTag("Player");
-
-            if (playerGO != null)
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot) &&
+                playerTransformRoot != null)
             {
-                playerRigidbody = playerGO.GetComponent<Rigidbody>();
+                playerRigidbody = playerTransformRoot.GetComponent<Rigidbody>();
+                if (playerRigidbody == null)
+                    playerRigidbody = playerTransformRoot.GetComponentInChildren<Rigidbody>(true);
 
                 if (playerRigidbody != null)
                 {
                     Debug.Log(
                         $"[HectonPlayerSpawner] Rigidbody найден автоматически " +
-                        $"на объекте \"{playerGO.name}\".");
+                        $"через SceneBootstrap на объекте \"{playerRigidbody.gameObject.name}\".");
                 }
                 else
                 {
                     Debug.LogWarning(
-                        $"[HectonPlayerSpawner] GameObject \"{playerGO.name}\" " +
-                        "найден по тегу \"Player\", но на нём нет компонента Rigidbody.");
+                        $"[HectonPlayerSpawner] Current player \"{playerTransformRoot.name}\" " +
+                        "найден через SceneBootstrap, но Rigidbody не обнаружен ни на root, ни в дочерних объектах.");
                 }
             }
             else
             {
                 Debug.LogWarning(
-                    "[HectonPlayerSpawner] GameObject с тегом \"Player\" " +
-                    "не найден в сцене.");
+                    "[HectonPlayerSpawner] SceneBootstrap не предоставил current player.");
             }
         }
 

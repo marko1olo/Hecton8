@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.Bootstrap;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -6,20 +7,16 @@ using UnityEditor;
 
 [ExecuteAlways]
 [DisallowMultipleComponent]
-[AddComponentMenu("Hecton8/Environment/Sky System Follow Camera")]
+    [AddComponentMenu("Hecton8/Environment/Sky System Follow Camera")]
 public sealed class SkySystemFollowCamera : MonoBehaviour
 {
     [SerializeField] private Camera runtimeCamera;
     [SerializeField] private bool followInEditMode = true;
     [SerializeField] private bool followInPlayMode = true;
     [SerializeField] private Vector3 positionOffset = Vector3.zero;
+    private const int RuntimeCameraBufferSize = 8;
+    private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize];
     private Camera _cachedResolvedCamera;
-    private Camera _cachedMainCamera;
-
-    private void Awake()
-    {
-        _cachedMainCamera = Camera.main;
-    }
 
     private void OnEnable()
     {
@@ -78,10 +75,16 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
             return _cachedResolvedCamera;
         }
 
-        if (_cachedMainCamera != null)
+        if (Application.isPlaying &&
+            SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+            playerTransform != null)
         {
-            _cachedResolvedCamera = _cachedMainCamera;
-            return _cachedResolvedCamera;
+            Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+            if (playerCamera != null)
+            {
+                _cachedResolvedCamera = playerCamera;
+                return _cachedResolvedCamera;
+            }
         }
 
 #if UNITY_EDITOR
@@ -93,10 +96,10 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         }
 #endif
 
-        Camera[] cameras = Camera.allCameras;
-        for (int i = 0; i < cameras.Length; i++)
+        int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
+        for (int i = 0; i < cameraCount; i++)
         {
-            Camera candidate = cameras[i];
+            Camera candidate = _runtimeCameraBuffer[i];
             if (candidate != null && candidate.enabled && candidate.gameObject.activeInHierarchy)
             {
                 _cachedResolvedCamera = candidate;

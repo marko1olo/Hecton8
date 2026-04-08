@@ -10,6 +10,7 @@ namespace Hecton8.Environment
     public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable
     {
         public static event Action<HectonBiomeMatrixProfile> OnMatrixBiomeChanged;
+        public static event Action<int, float> OnDepthTierChanged;
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -93,13 +94,20 @@ namespace Hecton8.Environment
 
         private bool _registeredToTickManager;
         private HectonBiomeMatrixProfile _currentProfile;
+        private int _currentDepthTier = 1;
+        private float _currentDepthMeters;
+
+        internal static BiomeMatrixDirector ActiveRuntimeInstance { get; private set; }
 
         public HectonBiomeMatrixProfile CurrentProfile => _currentProfile;
         public HectonBiomeFamilyProfile CurrentFamilyProfile => _currentProfile != null ? _currentProfile.familyProfile : null;
         public HectonBiomeMatrixCatalog MatrixCatalog => matrixCatalog;
+        public int CurrentDepthTier => _currentDepthTier;
+        public float CurrentDepthMeters => _currentDepthMeters;
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             EvaluateMatrix(forcePublish: true);
         }
@@ -133,6 +141,12 @@ namespace Hecton8.Environment
             }
         }
 
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+        }
+
         public void SlowTick()
         {
             EvaluateMatrix(forcePublish: false);
@@ -157,6 +171,13 @@ namespace Hecton8.Environment
             int tier = ResolveDepthTier(depth);
             HectonBiomeMatrixProfile.CardinalRegion region = ResolveRegion(playerTransform.position);
             HectonBiomeMatrixProfile next = matrixCatalog.Resolve(tier, region);
+            bool depthTierChanged = forcePublish || tier != _currentDepthTier;
+
+            _currentDepthMeters = depth;
+            _currentDepthTier = tier;
+
+            if (depthTierChanged)
+                OnDepthTierChanged?.Invoke(_currentDepthTier, _currentDepthMeters);
 
             if (forcePublish || next != _currentProfile)
             {

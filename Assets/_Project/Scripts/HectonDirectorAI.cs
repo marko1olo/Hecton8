@@ -871,7 +871,7 @@ namespace Hecton8.Systems.AI
             _resolvedDirectors = true;
 
             if (faunaDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref faunaDirector);
+                WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref faunaDirector);
 
             if (scavengePopulator == null)
                 WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);

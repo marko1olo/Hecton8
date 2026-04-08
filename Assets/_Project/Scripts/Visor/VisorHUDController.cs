@@ -87,6 +87,7 @@ namespace NASAPunk.Visor
         private float _glitchDuration;
         private float _glitchOriginalIntensity;
         private bool _runtimeTickRegistered;
+        private bool _editorPreviewSuspended;
 
         private uint _glitchRngState = 1u;
 
@@ -124,7 +125,12 @@ namespace NASAPunk.Visor
             TryRegisterRuntimeTick();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
+            {
+                if (!IsEditorPreviewActive())
+                    SuspendEditModeProjection();
+
                 EvaluateEditorTickRegistration();
+            }
 #endif
         }
 
@@ -154,6 +160,15 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EditorTick()
         {
+            if (!IsEditorPreviewActive())
+            {
+                SuspendEditModeProjection();
+                return;
+            }
+
+            if (_editorPreviewSuspended)
+                ResumeEditModeProjection();
+
             if (!ShouldTickInEditMode())
             {
                 UnregisterEditorTick();
@@ -470,6 +485,44 @@ namespace NASAPunk.Visor
                 DestroyImmediate(_hudRT);
         }
 
+        private void SuspendEditModeProjection()
+        {
+            if (Application.isPlaying || _editorPreviewSuspended)
+                return;
+
+            if (_hudCamera != null)
+            {
+                _hudCamera.targetTexture = null;
+                _hudCamera.enabled = false;
+            }
+
+            ReleaseOwnedRuntimeTexture();
+            _hudRT = null;
+            _ownsRuntimeTexture = false;
+            _cachedRTWidth = -1;
+            _cachedRTHeight = -1;
+
+            if (_visorRenderer != null)
+            {
+                EnsurePropertyBlock();
+                _visorRenderer.GetPropertyBlock(_mpb);
+                _mpb.SetTexture(ID_HUDTex, Texture2D.blackTexture);
+                _visorRenderer.SetPropertyBlock(_mpb);
+            }
+
+            _editorPreviewSuspended = true;
+        }
+
+        private void ResumeEditModeProjection()
+        {
+            if (Application.isPlaying || !_editorPreviewSuspended)
+                return;
+
+            _editorPreviewSuspended = false;
+            _materialPropertiesDirty = true;
+            RebuildProjection();
+        }
+
         /// <summary>
         /// Configures the HUD camera so projection rendering stays inside the URP pipeline.
         /// </summary>
@@ -666,6 +719,12 @@ namespace NASAPunk.Visor
         }
 
 #if UNITY_EDITOR
+        private static bool IsEditorPreviewActive()
+        {
+            return UnityEditorInternal.InternalEditorUtility.isApplicationActive &&
+                   EditorWindow.focusedWindow != null;
+        }
+
         private bool ShouldTickInEditMode()
         {
             if (Application.isPlaying || !isActiveAndEnabled || !_previewInEditMode)

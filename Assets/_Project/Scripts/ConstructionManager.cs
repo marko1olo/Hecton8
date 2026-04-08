@@ -392,17 +392,26 @@ namespace Hecton8.Construction
             ConstructionDTO dto = data.construction;
 
             // ── 1. Удаляем текущую базу ──
-            ClearAllModules();
 
             // ── Guard: пустые данные ──
             if (dto.modules == null || dto.moduleCount <= 0)
             {
+                ClearAllModules();
                 Debug.Log("[ConstructionManager] No construction data to load.");
                 return;
             }
 
             // ── 2. Респавн модулей из сейва ──
             ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+            {
+                Debug.LogError(
+                    "[ConstructionManager] ObjectPoolManager unavailable. " +
+                    "Construction load aborted before world teardown.");
+                return;
+            }
+
+            ClearAllModules();
             int count = Mathf.Min(dto.moduleCount, dto.modules.Length);
             int loadedCount   = 0;
             int skippedCount  = 0;
@@ -460,11 +469,7 @@ namespace Hecton8.Construction
                     rot.Normalize();
 
                 // ── Spawn ──
-                GameObject module;
-                if (pool != null)
-                    module = pool.Spawn(prefab, pos, rot);
-                else
-                    module = Instantiate(prefab, pos, rot);
+                GameObject module = pool.Spawn(prefab, pos, rot);
 
                 if (module == null)
                 {

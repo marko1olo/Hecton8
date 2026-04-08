@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -21,6 +22,7 @@ namespace Hecton8.SaveSystem
         // Pooled resources to avoid dynamic allocations during Save
         private static RenderTexture _pooledRenderTexture;
         private static Texture2D _pooledTexture2D;
+        private static Camera _cachedCaptureCamera;
         private static readonly Dictionary<string, Sprite> _spriteCache = new Dictionary<string, Sprite>(MaxCachedSprites, StringComparer.OrdinalIgnoreCase);
         private static readonly List<string> _spriteCacheOrder = new List<string>(MaxCachedSprites);
 
@@ -29,6 +31,7 @@ namespace Hecton8.SaveSystem
         {
             ReleasePooledResources();
             ClearCache();
+            _cachedCaptureCamera = null;
         }
 
         public static string GetThumbnailPath(string slotName)
@@ -47,8 +50,7 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static void CaptureThumbnail(string slotName)
         {
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null)
+            if (!TryResolveCaptureCamera(out Camera captureCamera))
                 return;
 
             if (_pooledRenderTexture == null)
@@ -67,14 +69,23 @@ namespace Hecton8.SaveSystem
                 _pooledTexture2D.hideFlags = HideFlags.HideAndDontSave;
             }
 
-            mainCamera.targetTexture = _pooledRenderTexture;
-            mainCamera.Render();
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture previousTarget = captureCamera.targetTexture;
 
-            RenderTexture.active = _pooledRenderTexture;
-            _pooledTexture2D.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
-            _pooledTexture2D.Apply(false, false);
-            mainCamera.targetTexture = null;
-            RenderTexture.active = null;
+            try
+            {
+                captureCamera.targetTexture = _pooledRenderTexture;
+                captureCamera.Render();
+
+                RenderTexture.active = _pooledRenderTexture;
+                _pooledTexture2D.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
+                _pooledTexture2D.Apply(false, false);
+            }
+            finally
+            {
+                captureCamera.targetTexture = previousTarget;
+                RenderTexture.active = previousActive;
+            }
 
             byte[] bytes = _pooledTexture2D.EncodeToJPG(Quality);
 
@@ -107,6 +118,26 @@ namespace Hecton8.SaveSystem
             
             // Invalidate the cache for this slot so UI triggers a reload if necessary
             ClearCacheEntry(slotName);
+        }
+
+        private static bool TryResolveCaptureCamera(out Camera captureCamera)
+        {
+            if (_cachedCaptureCamera != null &&
+                _cachedCaptureCamera.isActiveAndEnabled &&
+                _cachedCaptureCamera.gameObject.activeInHierarchy)
+            {
+                captureCamera = _cachedCaptureCamera;
+                return true;
+            }
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                _cachedCaptureCamera = playerTransform.GetComponentInChildren<Camera>(true);
+            }
+
+            captureCamera = _cachedCaptureCamera;
+            return captureCamera != null;
         }
 
         /// <summary>

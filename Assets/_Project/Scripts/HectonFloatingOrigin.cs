@@ -61,7 +61,7 @@ namespace Hecton8.Core
         [Tooltip("Distance from (0,0,0) that triggers a shift.")]
         [SerializeField] private float _threshold = 1000f;
 
-        [Tooltip("Object to follow (Player or Camera). If null, uses Camera.main.")]
+        [Tooltip("Object to follow (normally Player). If null, resolves via SceneBootstrap.")]
         [SerializeField] private Transform _anchor;
 
         // ══════════════════════════════════════════════════════════
@@ -198,14 +198,7 @@ namespace Hecton8.Core
             _anchorResolveTimer = AnchorResolveCooldown;
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-            {
                 _anchor = playerTransform;
-                return;
-            }
-
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null)
-                _anchor = mainCamera.transform;
         }
 
         private void RefreshThresholdCache()

@@ -7,6 +7,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4300)]
     public sealed class BiomeSamplerCache : MonoBehaviour, ISlowTickable
     {
+        internal static BiomeSamplerCache ActiveRuntimeInstance { get; private set; }
+
         public struct CachedSample
         {
             public Vector3 position;
@@ -44,6 +46,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
+
             if (mapMagicBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
@@ -81,6 +85,12 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()

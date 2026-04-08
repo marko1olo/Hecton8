@@ -1624,6 +1624,7 @@ public class HectonVoxelEngine : MonoBehaviour
     static int _liveEngineCount;
     static int _activeGenerationOperations;
     static int _shutdownRequested;
+    internal static HectonVoxelEngine ActiveRuntimeInstance { get; private set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStaticRuntimeState()
@@ -1631,6 +1632,7 @@ public class HectonVoxelEngine : MonoBehaviour
         _liveEngineCount = 0;
         _activeGenerationOperations = 0;
         _shutdownRequested = 0;
+        ActiveRuntimeInstance = null;
     }
     readonly List<GameObject> _activeVolumes = new List<GameObject>();
     bool _registeredLiveEngine;
@@ -1643,6 +1645,8 @@ public class HectonVoxelEngine : MonoBehaviour
     {
         if (!Application.isPlaying)
             return;
+
+        ActiveRuntimeInstance = this;
 
         if (!_registeredLiveEngine)
         {
@@ -1667,6 +1671,9 @@ public class HectonVoxelEngine : MonoBehaviour
             return;
 
         ClearAllVolumes();
+        if (ReferenceEquals(ActiveRuntimeInstance, this))
+            ActiveRuntimeInstance = null;
+
         if (_registeredLiveEngine)
         {
             _registeredLiveEngine = false;

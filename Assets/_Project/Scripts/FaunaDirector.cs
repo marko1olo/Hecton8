@@ -300,6 +300,7 @@ namespace Hecton8.AI
         private int _defaultCreaturePoolWarmupReserve;
         private int _smallPassiveCreaturePoolWarmupReserve;
         private readonly HashSet<GameObject> _warmupPrefabs = new HashSet<GameObject>(128); // COLD ALLOC: dedupe fauna pool warmup prefabs across biome datasets
+        internal static FaunaDirector ActiveRuntimeInstance { get; private set; }
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -307,6 +308,7 @@ namespace Hecton8.AI
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             EnsureRuntimeStateInitialized();
             ResolveSpawnRegistry();
             RefreshRuntimeStreamingSettings();
@@ -332,6 +334,12 @@ namespace Hecton8.AI
         private void OnDisable()
         {
             GameTickManager.Instance?.Unregister((ISlowTickable)this);
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1206,7 +1214,7 @@ namespace Hecton8.AI
         private void ResolveSpawnRegistry()
         {
             if (spawnRegistry == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref spawnRegistry);
+                WorldRuntimeReferenceUtility.TryResolveWorldFaunaSpawnRegistry(ref spawnRegistry);
 
             if (spawnRegistry != null && proceduralStateRegistry != null)
                 spawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
@@ -1215,7 +1223,7 @@ namespace Hecton8.AI
         private void ResolveProceduralStateRegistry()
         {
             if (proceduralStateRegistry == null)
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref proceduralStateRegistry);
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
 
             if (spawnRegistry != null && proceduralStateRegistry != null)
                 spawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);

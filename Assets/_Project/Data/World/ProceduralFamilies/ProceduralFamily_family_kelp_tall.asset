@@ -100,6 +100,42 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.08}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__colossus
+    prefab: {fileID: 5191632906961439022, guid: b84a62425629abb4b8ebd123683ec391, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.5999999, y: 2.3999999}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__seedling
+    prefab: {fileID: 5874770310597765572, guid: 16481a57a7a89f847ab22023800aae24, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.55, y: 0.9}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__tower
+    prefab: {fileID: 911833426755764229, guid: cd550ea5b6b21984f856d570e736b30b, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.3, y: 1.8499999}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__sail
+    prefab: {fileID: 1144290234857843010, guid: 612ecfc3d349c0841b12c7c3263abe40, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.15, y: 1.75}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__paddle
+    prefab: {fileID: 4086552252229417448, guid: b6e3a20671b9d734e8b36fad1447655a, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.5}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__broadleaf
+    prefab: {fileID: 1541011913624349959, guid: aa0760187c9b23f47b7c289c2fba64b7, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1, y: 1.6999999}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Tall
   gameplayRole: Tall vertical kelp for readable vertical habitat.

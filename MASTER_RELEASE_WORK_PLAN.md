@@ -1205,6 +1205,11 @@ P0 rules:
   - perf addendum: cluster rescue no longer rebuilds `_occupiedCellBuffer` for every accent-role sub-pass in the same window; `InjectPatternClusterAccentCandidates(...)` plus the service/landmark cluster rescue wrappers now rebuild occupancy once and reuse the live-updated buffer across their cluster sub-passes
   - hardening addendum: reconcile sync-signature is no longer seeded by an implicit magic number; `WorldProceduralScatterDirector` now uses an explicit `ScatterPlacementSyncSignatureVersion` seed so future placement-field contract changes have an obvious version bump point
   - perf addendum: `_structureWindowCounts` / `_spawnWindowCounts` no longer rely only on constructor capacity during rebuild; `WorldProceduralScatterDirector` now estimates current window cardinality from `radius + stride` and pre-sizes those dictionaries before the main scatter sampling loop
+  - diagnostics addendum: detailed scatter diagnostics are no longer available in release-player code paths; `WorldProceduralScatterDirector` now gates `enableScatterDetailedDiagnostics` behind `UNITY_EDITOR || DEVELOPMENT_BUILD`, and release spike logging no longer depends on that toggle
+  - perf addendum: `TryInjectCandidate(...)` no longer resolves the same structure/spawn window budget state twice per inject attempt; the target window-count dictionary and composed window key are now resolved once and reused for both the budget check and the successful registration path
+  - perf addendum: `CandidateMap` window tracking no longer pays two linear key scans on the `ref CandidateMap` path; after `TryGetIndex(...)` proves a miss, `WorldProceduralScatterDirector` now appends through a known-unique path and retains the placement only if that append succeeds, removing duplicate key scans and stopping over-retention on capacity failure
+  - perf addendum: structure/spawn rescue no longer re-sorts the same candidate pool across adjacent sub-passes in one window; `WorldProceduralScatterDirector` now builds one ordered structure candidate view and one ordered spawn candidate view at the wrapper level, then reuses those shared lists for preferred-family, service-domain, ruin-mode, and preferred-spawn injectors
+  - diagnostics addendum: `CandidateMap` capacity warnings no longer sit as unconditional runtime string/log work in the candidate path; they are now compile-stripped to editor/development builds and one-shot gated so release players do not pay repeated diagnostic churn if a candidate pool saturates
 - [ ] Wave 8: surface/island ecology and shoreline life
 - [ ] Wave 9: resources, return loops, base/support loop, persistence hardening
 - [ ] Wave 10: final visual density balance, perf guardrail, user review cycle
@@ -1993,3 +1998,170 @@ P0 rules:
     - next beauty passes should stay in editor-owned flora content until runtime oracle becomes trustworthy again
   - status:
     - `PENDING VERIFICATION`
+- 2026-04-09 - Seaweed size-band architecture is now explicit, and the first giant/small forms are live in the baked library
+  - what changed:
+    - size metadata is now first-class in the mesh-builder path:
+      - `__sMIN-MAX` and `__wN` suffixes no longer break `WorldProceduralSeaweedMeshBuilder` / `WorldProceduralCoralMeshBuilder`
+    - new kelp starter archetypes were added without creating a second runtime subsystem:
+      - `family.kelp.tall`: `seedling`, `tower`, `colossus`
+      - `family.kelp.patch.dense`: `nest`, `sheetwall`
+      - `family.kelp.canopy`: `laminaria`, `sheetwall`
+      - `family.kelp.abyssal`: `reed`, `cathedral`
+    - the new variants already encode runtime scale bands in prefab metadata, including:
+      - `55-90%` small seedling band
+      - `130-185%` tall tower band
+      - `160-240%` colossus band
+      - giant canopy / abyssal wall bands up to `230-240%`
+  - why it matters:
+    - the system is no longer locked to one narrow `~3-4m` kelp silhouette
+    - HECTON-8 now has an explicit path toward `0.5m -> 50m` flora via editor-baked libraries plus seeded runtime selection, not per-boot hero mesh rebuild
+    - this keeps continuity and performance in the correct owner layer
+  - verified facts:
+    - Unity generated `56` baked flora prefabs and relinked `56` final-ready variants
+    - validator returned `PASS validatedPrefabs=56, warningCount=9`
+    - report confirms:
+      - `family.kelp.tall = a0/g10`
+      - `family.kelp.patch.dense = a0/g9`
+      - `family.kelp.canopy = a0/g9`
+      - `family.kelp.abyssal = a0/g9`
+    - giant-scale examples now present in report:
+      - `GEN_family_kelp_tall__colossus__s160-240 = 6584/3572/1210/720`
+      - `GEN_family_kelp_tall__tower__s130-185 = 7602/3646/1484/942`
+      - `GEN_family_kelp_canopy__sheetwall__s150-230 = 4932/3330/1348/866`
+      - `GEN_family_kelp_abyssal__cathedral__s140-240 = 8112/4516/1608/1058`
+  - remaining truth:
+    - authored photoreal finals still do not exist
+    - current upper reach is now architecturally prepared and partially instantiated, but the full `50m` ecosystem is not yet content-complete
+    - visual beauty passes for the new giant forms are still pending
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-09 - Paddle-lobed kelp lane verified and petal build failure closed via automation pass
+  - what changed:
+    - `WorldProceduralSeaweedMeshBuilder.NormalizeRootToken()` now strips size/weight suffixes more defensively
+    - new paddle-lobed starters added across kelp families:
+      - `family.kelp.tall` -> `broadleaf`
+      - `family.kelp.patch.dense` -> `paddlespray`
+      - `family.kelp.canopy` -> `paddlefan`
+      - `family.kelp.abyssal` -> `petal`
+  - verified facts:
+    - automation request `flora-verify-paddle-20260409-1` completed and refreshed the report
+    - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` shows:
+      - `family.kelp.tall = a0/g13`
+      - `family.kelp.patch.dense = a0/g11`
+      - `family.kelp.canopy = a0/g12`
+      - `family.kelp.abyssal = a0/g13`
+    - report includes:
+      - `GEN_family_kelp_tall__broadleaf__s110-170`
+      - `GEN_family_kelp_patch_dense__paddlespray__s70-120`
+      - `GEN_family_kelp_canopy__paddlefan__s120-190`
+      - `GEN_family_kelp_abyssal__petal__s100-170`
+  - remaining truth:
+    - authored photoreal finals still missing
+    - in-world beauty proof still pending
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-09 - Continue giant seaweed quality pass through the existing editor-owned builder, not a new subsystem. Current milestone: laminar giant forms now have dedicated sequencing rules and narrower yaw lanes. Next seaweed target remains: `sheetwall` / other broad-wall variants must read as layered lamina masses, not fan bouquets; then expand library breadth toward more alien/deep archetypes and later authored photoreal replacements.
+- 2026-04-09 - Canopy wall variants were tightened again and are now safely below previous budgets, but visual oracle remains the next blocker. Before adding even more broad-sheet families, improve the truthfulness of giant-form readback or use alternative viewpoints so `sheetwall`-type morphology can be judged honestly.
+- 2026-04-09 - Folded-lamina milestone advanced in two linked steps instead of another blind content drop
+  - preview/oracle owner:
+    - automation contact sheets now apply presentation-yaw search before capture
+    - this is specifically to stop folded kelp walls from being judged only edge-on
+  - seaweed content owner:
+    - folded kelp variants now have their own rules instead of generic laminar reuse:
+      - `family_kelp_tall__sail`
+      - `family_kelp_canopy__tapestry`
+      - `family_kelp_abyssal__cowl`
+      - `family_kelp_abyssal__veilwall`
+    - tuned for:
+      - tighter yaw spread
+      - wider folded blades
+      - stronger overlap / curtain layering
+      - more consistent parent-child continuity
+  - confirmed report state after bake:
+    - `family.kelp.tall = a0/g11`, `sail = 4252`
+    - `family.kelp.canopy = a0/g10`, `tapestry = 4530`
+    - `family.kelp.abyssal = a0/g11`, `cowl = 3760`, `veilwall = 4236`
+  - next action remains unchanged in principle:
+    - do not explode architecture
+    - keep growing variety in editor-baked library
+    - use the improved oracle to identify which folded and wall forms still fail beauty truth
+    - only then move further toward authored photoreal finals
+- 2026-04-09 - Vertical runtime ownership was still partially implicit: `BiomeMatrixDirector` knew player depth tier, while `ScatterBudgetController` / `WorldStreamingDirector` each re-derived depth locally from the bridge. Current pass made depth-state first-class without waking scatter on Y movement:
+  - `BiomeMatrixDirector` now exposes `CurrentDepthTier`, `CurrentDepthMeters`, and publishes `OnDepthTierChanged`
+  - `ScatterBudgetController` and `WorldStreamingDirector` now prefer cached `HectonPlayerMovement.CurrentDepth`, with `MapMagicBridge` fallback only when the player depth owner is unavailable
+  - this keeps shallow horizontal scatter cadence untouched while giving deep runtime controllers a cheaper and cleaner vertical signal path
+  - measured proof absent; compile on these edited files is clean, but global compile truth is still blocked by unrelated `WorldProceduralSeaweedMeshBuilder` errors in the editor builder file
+- 2026-04-09 - Vertical runtime ownership now reaches a real consumer instead of stopping at depth state publication:
+  - `HectonUnderwaterVisuals` now listens to `BiomeMatrixDirector.OnMatrixBiomeChanged`
+  - matrix biomes can supply an explicit `runtimeVisualProfile` override for underwater visuals
+  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` → `HectonOceanPalette` path
+  - this keeps shallow-water behavior on the old cheap path while giving deep matrix-owned zones a first-class visual handoff
+  - measured proof absent; latest Unity console readback is still pending because the MCP Unity session did not return after domain reload
+- 2026-04-09 - Vertical runtime ownership now also reaches surface atmosphere without disturbing underwater contracts:
+  - `HectonAtmosphereManager` now listens to `BiomeMatrixDirector.OnMatrixBiomeChanged`
+  - `HectonBiomeFamilyProfile.atmosphereProfile` is no longer dead data for runtime surface atmosphere
+  - matrix family atmosphere overrides win only for surface states; underwater still uses `_profileUnderwater`, and old `MapMagicBridge` biome overrides remain the fallback when no family atmosphere is authored
+  - Unity compile/readback for this atmosphere pass returned `0` warning/error entries in the console, but measured perf proof is still absent
+- 2026-04-09 - Vertical runtime ownership now also reaches the audio transition consumer:
+  - `AcousticZoneController` no longer polls `HectonAtmosphereManager.CurrentState` every tick for the exterior branch
+  - it now caches surface vs underwater from `HectonAtmosphereManager.OnStateChanged`
+  - per-frame work remains only for dry-zone / interior detection, which still needs immediate edge handling
+  - fallback to direct player-depth evaluation remains when atmosphere state is unavailable
+  - Unity compile/readback for this acoustic pass returned `0` warning/error entries in the console; measured perf proof is still absent
+- 2026-04-09 - Vertical runtime ownership now also reaches the visor telemetry consumer:
+  - `HectonSuitHUD_v4` no longer reads depth back through `HectonUnderwaterVisuals.CurrentDepth` for temperature estimation
+  - the HUD now stays on its own cached `_depthMeters` owner path, which is already fed by survival depth and refreshed from `HectonPlayerMovement.CurrentDepth` when survival is absent
+  - this keeps depth/pressure/temperature telemetry on one cheap vertical signal instead of cross-polling another visual owner
+  - Unity compile/readback for this HUD pass returned `0` warning/error entries in the console; measured perf proof is still absent
+- 2026-04-09 - Vertical runtime ownership now also reaches the canvas-overlay HUD consumer:
+  - `SuitHUDV4CanvasOverlay` no longer resolves depth inline from `survival.Depth` on every runtime tick
+  - it now caches depth from `HectonSurvivalSystem.OnDepthChanged` and only falls back to `HectonPlayerMovement.CurrentDepth` when survival is unavailable
+  - this keeps the overlay depth/temperature/status path on the same cheap owner signal spine as the rest of the vertical runtime chain
+  - Unity compile/readback for this overlay pass returned `0` warning/error entries in the console; measured perf proof is still absent
+- 2026-04-09 - Scatter cluster rescue still had one more duplicate-work tail in the same window:
+  - preferred-cluster rescue, service-cluster rescue, and landmark-corridor cluster rescue each rebuilt `_occupiedCellBuffer` at wrapper entry even though they run back-to-back on the same live cluster state
+  - `WorldProceduralScatterDirector` now rebuilds cluster occupancy once before that early rescue chain and lets the three wrappers reuse the same live buffer while successful injects keep it current
+  - Unity compile/readback for this cluster-occupancy pass returned `0` warning/error entries in the console; measured perf proof is still absent
+- 2026-04-09 - Seaweed variety growth now has a second real structural lane beyond laminar sheets
+  - added `BladeProfile.PaddleLobed` to the editor-owned kelp generator
+  - used it to seed four new variants across the active kelp families:
+    - `tall__paddle`
+    - `patch_dense__bladder`
+    - `canopy__oar`
+    - `abyssal__lantern`
+  - verified library expansion after bake/apply/validate/report:
+    - `family.kelp.tall = a0/g12`
+    - `family.kelp.patch.dense = a0/g10`
+    - `family.kelp.canopy = a0/g11`
+    - `family.kelp.abyssal = a0/g12`
+  - verified new budgets:
+    - `paddle = 5110/2128/1084/656`
+    - `bladder = 8696/4032/1324/776`
+    - `oar = 4272/2212/1056/656`
+    - `lantern = 5182/2094/1036/634`
+  - remaining truth:
+    - current Scene View oracle still needs a better presentation path for long vertical forms
+    - this pass strengthens the procedural library, but it does not yet replace authored photoreal finals
+- 2026-04-09 - Deep-water vertical runtime now suppresses the always-on celestial layer render path after aphotic entry
+  - `HectonUnderwaterVisuals` now resolves the player stack's `SpaceCamera`, captures its original celestial culling mask, and zeroes that mask only while the player is underwater below `1000 m`
+  - the original `SpaceCamera` culling mask is restored on ascent and on owner shutdown, so shallow/twilight rendering and the existing base+overlay camera stack stay intact
+  - measured proof is still absent, but code truth now removes one real deep-only render owner without waking scatter on `Y`
+- 2026-04-09 - Deep-water celestial VRAM trimming now stays in runtime ownership instead of import-size hacks
+  - sky / gas-giant textures were intentionally not resized or reimported
+  - `HectonCelestialEngine` now listens to the existing depth-tier spine and detaches celestial texture references only below `1000 m`
+  - detached set includes:
+    - sky-sphere cloud/star textures on `Mat_HectonSky`
+    - day/night skybox textures
+    - blended skybox cubemap slots
+    - gas-giant `MainTex` / `DetailTex` / `EmissionMap` / `CelestialOcclusionTex`
+  - all references are restored on ascent and on owner shutdown, so shallow/twilight authored look stays intact
+  - measured proof is still absent; this is a runtime residency cut, not a texture-import downgrade
+- 2026-04-09 - Current RT RED snapshot is editor-side, not play-mode: the live probe was captured in idle unfocused editor
+  - `VisorHUDController` was still keeping edit-mode HUD projection preview alive whenever `_syncPoseInEditMode` was true
+  - on editor focus loss it now suspends preview projection instead of continuing to hold the preview camera + target texture chain hot:
+    - `HUD_Render_Camera.targetTexture = null`
+    - `HUD_Render_Camera.enabled = false`
+    - owned runtime RT is released if one exists
+    - visor material falls back to black texture
+  - on focus return it rebuilds the same projection path and restores the existing shared/runtime RT contract
+  - this is editor-only; play mode visor/runtime behavior is intentionally unchanged

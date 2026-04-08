@@ -50,6 +50,7 @@ using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -91,6 +92,9 @@ namespace Hecton8.Environment
         [Header("═══ BIOME PALETTE ═══")]
         [SerializeField] private HectonOceanPalette biomePalette;
 
+        [Header("═══ VERTICAL RUNTIME ═══")]
+        [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — GLOBAL DEPTH CURVE
         // ══════════════════════════════════════════════════════════
@@ -118,6 +122,10 @@ namespace Hecton8.Environment
 
         [Header("═══ WATER LEVEL ═══")]
         [SerializeField] private float waterLevelFallback = 4900f;
+
+        [Header("═══ DEEP CELESTIAL CULL ═══")]
+        [Tooltip("Suppresses SpaceCamera celestial rendering below this depth to cut deep-water render overhead without touching shallow water.")]
+        [SerializeField] private float deepCelestialCullDepth = 1000f;
 
         [Header("═══ SUN VISUAL ═══")]
         [Range(0.0001f, 0.05f)]
@@ -204,6 +212,7 @@ namespace Hecton8.Environment
         private HectonAtmosphereManager _cachedAtmoManager;
         private bool _atmoManagerCached;
         private HectonPlayerMovement _playerMovement;
+        private HectonBiomeProfile _matrixRuntimeVisualProfile;
 
         private int _targetBiomeIndex;
 
@@ -235,9 +244,13 @@ namespace Hecton8.Environment
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
         private bool _sunVisualWasDisabled;
+        private bool _spaceCameraSuppressed;
+        private bool _spaceCameraMaskCaptured;
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
+        private Camera _spaceCamera;
+        private int _spaceCameraOriginalCullingMask;
 
         private float _editorSlowTickAccum;
 
@@ -249,6 +262,7 @@ namespace Hecton8.Environment
         {
             ResolvePlayerCamera();
             ResolveMainCamera();
+            ResolveSpaceCamera();
             ValidateReferences();
             CachePhysicsEngine();
             CacheAtmosphereManager();
@@ -261,6 +275,9 @@ namespace Hecton8.Environment
             if (Application.isPlaying)
             {
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
+                BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+                ResolveBiomeMatrixDirector();
+                ApplyCurrentMatrixVisualOverride();
                 TryRegisterTickManagers();
             }
 #if UNITY_EDITOR
@@ -287,6 +304,11 @@ namespace Hecton8.Environment
 
             if (!_atmoManagerCached)
                 CacheAtmosphereManager();
+
+            if (biomeMatrixDirector == null)
+                ResolveBiomeMatrixDirector();
+
+            ApplyCurrentMatrixVisualOverride();
         }
 
         private void OnDisable()
@@ -296,6 +318,7 @@ namespace Hecton8.Environment
             if (Application.isPlaying)
             {
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
+                BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
 
                 GameTickManager tickManager = GameTickManager.Instance;
                 if (tickManager != null)
@@ -321,6 +344,7 @@ namespace Hecton8.Environment
 
             RestoreBaseValues();
             RestoreSunVisual();
+            RestoreSpaceCameraDefaults();
             RestoreCameraDefaults();
             RestoreSkyMaterialDefaults();
         }
@@ -410,6 +434,8 @@ namespace Hecton8.Environment
             float depth = ResolveCurrentDepth();
             bool isUnderwater =
                 SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, _wasUnderwater);
+
+            ApplySpaceCameraDepthState(depth, isUnderwater);
 
             UpdateDepthDiagnostics(depth, isUnderwater);
 
@@ -908,9 +934,37 @@ namespace Hecton8.Environment
 
         private void HandleBiomeChanged(int biomeIndex)
         {
-            if (biomePalette == null) return;
-
             _targetBiomeIndex = biomeIndex;
+            if (_matrixRuntimeVisualProfile != null)
+            {
+#if UNITY_EDITOR
+                _debugTargetBiome = _targetBiomeIndex;
+#endif
+                return;
+            }
+
+            ApplyBiomePaletteTarget(biomeIndex);
+        }
+
+        private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            HectonBiomeProfile nextOverride = profile != null ? profile.runtimeVisualProfile : null;
+            if (_matrixRuntimeVisualProfile == nextOverride)
+                return;
+
+            _matrixRuntimeVisualProfile = nextOverride;
+            if (_matrixRuntimeVisualProfile != null)
+            {
+                SetTargetFromProfile(_matrixRuntimeVisualProfile);
+                return;
+            }
+
+            ApplyBiomePaletteTarget(_targetBiomeIndex);
+        }
+
+        private void ApplyBiomePaletteTarget(int biomeIndex)
+        {
+            if (biomePalette == null) return;
 
             HectonBiomeProfile profile = biomePalette.GetProfile(biomeIndex);
             if (profile == null)
@@ -1032,6 +1086,29 @@ namespace Hecton8.Environment
 #endif
         }
 
+        private void ResolveSpaceCamera()
+        {
+            if (_spaceCamera != null)
+                return;
+
+            if (mainCamera == null)
+                return;
+
+            Transform spaceCameraTransform = mainCamera.transform.Find("SpaceCamera");
+            if (spaceCameraTransform == null && mainCamera.transform.parent != null)
+                spaceCameraTransform = mainCamera.transform.parent.Find("SpaceCamera");
+
+            if (spaceCameraTransform == null)
+                return;
+
+            _spaceCamera = spaceCameraTransform.GetComponent<Camera>();
+            if (_spaceCamera == null || _spaceCameraMaskCaptured)
+                return;
+
+            _spaceCameraOriginalCullingMask = _spaceCamera.cullingMask;
+            _spaceCameraMaskCaptured = true;
+        }
+
         private void ValidateReferences()
         {
             if (playerCamera == null && Application.isPlaying)
@@ -1048,6 +1125,25 @@ namespace Hecton8.Environment
                 Debug.LogWarning("[HectonUnderwaterVisuals] skyMaterial not assigned.", this);
             if (globalLightCurve == null || globalLightCurve.length == 0)
                 Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty!", this);
+        }
+
+        private void ResolveBiomeMatrixDirector()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+        }
+
+        private void ApplyCurrentMatrixVisualOverride()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (biomeMatrixDirector == null)
+                return;
+
+            HandleMatrixBiomeChanged(biomeMatrixDirector.CurrentProfile);
         }
 
         private void CaptureBaseValues()
@@ -1067,6 +1163,35 @@ namespace Hecton8.Environment
                 if (!sunFlare.enabled)
                     sunFlare.enabled = true;
             }
+        }
+
+        private void ApplySpaceCameraDepthState(float depth, bool isUnderwater)
+        {
+            ResolveSpaceCamera();
+            if (_spaceCamera == null)
+                return;
+
+            bool shouldSuppress = isUnderwater && depth >= deepCelestialCullDepth;
+            if (_spaceCameraSuppressed == shouldSuppress)
+                return;
+
+            if (!_spaceCameraMaskCaptured)
+            {
+                _spaceCameraOriginalCullingMask = _spaceCamera.cullingMask;
+                _spaceCameraMaskCaptured = true;
+            }
+
+            _spaceCamera.cullingMask = shouldSuppress ? 0 : _spaceCameraOriginalCullingMask;
+            _spaceCameraSuppressed = shouldSuppress;
+        }
+
+        private void RestoreSpaceCameraDefaults()
+        {
+            if (_spaceCamera == null || !_spaceCameraMaskCaptured)
+                return;
+
+            _spaceCamera.cullingMask = _spaceCameraOriginalCullingMask;
+            _spaceCameraSuppressed = false;
         }
 
         private float ResolveWaterLevel()

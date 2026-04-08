@@ -187,6 +187,7 @@ namespace Hecton8.UI
         private bool _gridDirty;
         private bool _detailsDirty;
         private bool _toolStripDirty;
+        private Transform _dropOrigin;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -228,6 +229,12 @@ namespace Hecton8.UI
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
+                if (_dropOrigin == null)
+                {
+                    Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    _dropOrigin = playerCamera != null ? playerCamera.transform : playerTransform;
+                }
+
                 if (playerInventory == null)
                     playerInventory = playerTransform.GetComponent<PlayerInventory>();
 
@@ -1370,19 +1377,24 @@ namespace Hecton8.UI
             // Спавн в мир
             if (dropped.worldPrefab != null)
             {
-                Camera cam = Camera.main;
-                if (cam != null)
+                Transform dropOrigin = ResolveDropOrigin();
+                if (dropOrigin == null)
                 {
-                    Vector3 spawnPos = cam.transform.position
-                        + cam.transform.forward * 2.5f
-                        + Vector3.down * 0.3f;
-
-                    ObjectPoolManager pool = ObjectPoolManager.Instance;
-                    if (pool != null)
-                        pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
-                    else
-                        Instantiate(dropped.worldPrefab, spawnPos, Quaternion.identity);
+                    NotifyWarning("DROP BLOCKED - NO PLAYER VIEW ORIGIN");
+                    return;
                 }
+
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool == null)
+                {
+                    NotifyWarning("DROP BLOCKED - OBJECT POOL UNAVAILABLE");
+                    return;
+                }
+                Vector3 spawnPos = dropOrigin.position
+                    + dropOrigin.forward * 2.5f
+                    + Vector3.down * 0.3f;
+
+                pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
             }
 
             // Проверяем остался ли предмет на этой позиции
@@ -1860,6 +1872,15 @@ namespace Hecton8.UI
                 HUDNotification.TryGetActive(out hudNotification);
 
             hudNotification?.ShowInfo(message);
+        }
+
+        private Transform ResolveDropOrigin()
+        {
+            if (_dropOrigin != null)
+                return _dropOrigin;
+
+            AutoResolve();
+            return _dropOrigin;
         }
 
         private void NotifyWarning(string message)

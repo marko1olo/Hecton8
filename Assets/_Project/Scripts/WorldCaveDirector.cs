@@ -571,31 +571,31 @@ namespace Hecton8.World
 
             if (playerTransform == null)
             {
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref playerTransform);
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
                 resolved &= playerTransform != null;
             }
 
             if (biomeMatrixDirector == null)
             {
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref biomeMatrixDirector);
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
                 resolved &= biomeMatrixDirector != null;
             }
 
             if (worldZoneDirector == null)
             {
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref worldZoneDirector);
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
                 resolved &= worldZoneDirector != null;
             }
 
             if (voxelEngine == null)
             {
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref voxelEngine);
+                WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
                 resolved &= voxelEngine != null;
             }
 
             if (mapMagicBridge == null)
             {
-                WorldRuntimeReferenceUtility.TryResolveSceneObject(ref mapMagicBridge);
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
                 resolved &= mapMagicBridge != null;
             }
 

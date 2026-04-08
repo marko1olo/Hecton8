@@ -492,7 +492,7 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            WorldRuntimeReferenceUtility.TryResolveSceneObject(ref integrationDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyIntegrationDirector(ref integrationDirector);
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
         }
     }

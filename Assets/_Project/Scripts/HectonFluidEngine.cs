@@ -731,14 +731,7 @@ namespace Hecton8.Physics
             _observerResolveRetryTimer = ObserverResolveRetryInterval;
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-            {
                 lodObserver = playerTransform;
-                return;
-            }
-
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
-                lodObserver = mainCam.transform;
         }
 
         /// <summary>
