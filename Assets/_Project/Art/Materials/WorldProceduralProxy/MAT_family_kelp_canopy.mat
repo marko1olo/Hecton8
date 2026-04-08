@@ -112,6 +112,11 @@ Material:
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _AmbientStrength: 0.48
+    - _BiolumCurrentResponse: 0.38
+    - _BiolumMaskStrength: 1.06
+    - _BiolumPulseAmplitude: 0.18
+    - _BiolumPulseFrequency: 0.72
+    - _BiolumStrength: 0
     - _BladeCurveNormalStrength: 0.24
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
@@ -165,6 +170,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.2, g: 0.52, b: 0.26, a: 1}
+    - _BiolumColor: {r: 0.22, g: 0.88, b: 0.82, a: 1}
     - _Color: {r: 0.21999997, g: 0.58, b: 0.25999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.2, g: 0.54, b: 0.34, a: 1}

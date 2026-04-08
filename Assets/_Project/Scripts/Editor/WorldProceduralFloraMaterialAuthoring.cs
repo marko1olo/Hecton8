@@ -14,10 +14,12 @@ namespace Hecton8.EditorTools
         private const string KelpTallMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat";
         private const string KelpPatchMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat";
         private const string KelpCanopyMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat";
+        private const string KelpAbyssalMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat";
         private const string CoralLowMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat";
         private const string CoralBranchingMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat";
         private const string CoralMassiveMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat";
         private const string CoralPlateMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat";
+        private const string CoralBrittleMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat";
 
         [MenuItem("Hecton/Authoring/Apply Procedural Flora Materials", priority = 176)]
         public static void Apply()
@@ -45,6 +47,8 @@ namespace Hecton8.EditorTools
 
             if (ApplyKelpMaterial(KelpCanopyMaterialPath, kelpShader, new Color(0.20f, 0.52f, 0.26f), new Color(0.42f, 0.80f, 0.46f), new Color(0.20f, 0.54f, 0.34f), new Color(0.32f, 0.82f, 0.42f), 0.09f, 2.0f))
                 touchedMaterials++;
+            if (ApplyKelpMaterial(KelpAbyssalMaterialPath, kelpShader, new Color(0.04f, 0.07f, 0.08f), new Color(0.12f, 0.20f, 0.22f), new Color(0.16f, 0.48f, 0.54f), new Color(0.18f, 0.82f, 0.88f), 0.05f, 1.1f, 0.52f, new Color(0.20f, 0.90f, 0.88f)))
+                touchedMaterials++;
 
             if (ApplyCoralMaterial(CoralLowMaterialPath, coralShader, new Color(0.50f, 0.30f, 0.28f), new Color(0.86f, 0.62f, 0.48f), new Color(0.22f, 0.62f, 0.68f), new Color(0.94f, 0.70f, 0.50f), 0.36f))
                 touchedMaterials++;
@@ -56,6 +60,8 @@ namespace Hecton8.EditorTools
                 touchedMaterials++;
 
             if (ApplyCoralMaterial(CoralPlateMaterialPath, coralShader, new Color(0.34f, 0.36f, 0.42f), new Color(0.84f, 0.78f, 0.60f), new Color(0.20f, 0.58f, 0.64f), new Color(0.88f, 0.72f, 0.56f), 0.46f))
+                touchedMaterials++;
+            if (ApplyCoralMaterial(CoralBrittleMaterialPath, coralShader, new Color(0.08f, 0.10f, 0.12f), new Color(0.44f, 0.56f, 0.58f), new Color(0.18f, 0.74f, 0.82f), new Color(0.26f, 0.88f, 0.84f), 0.58f, 0.64f, new Color(0.24f, 0.96f, 0.86f)))
                 touchedMaterials++;
 
             AssetDatabase.SaveAssets();
@@ -72,14 +78,13 @@ namespace Hecton8.EditorTools
             Color rimColor,
             Color transmissionColor,
             float swayAmplitude,
-            float swayFrequency)
+            float swayFrequency,
+            float biolumStrength = 0f,
+            Color? biolumColorOverride = null)
         {
-            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            Material material = LoadOrCreateMaterial(materialPath, shader);
             if (material == null)
-            {
-                Debug.LogWarning($"[WorldProceduralFloraMaterialAuthoring] Missing material '{materialPath}'.");
                 return false;
-            }
 
             material.shader = shader;
             material.enableInstancing = true;
@@ -127,6 +132,12 @@ namespace Hecton8.EditorTools
             material.SetFloat("_CausticStrength", 0.18f);
             material.SetFloat("_CausticScale", 1.65f);
             material.SetFloat("_CausticSpeed", 0.58f);
+            material.SetColor("_BiolumColor", biolumColorOverride ?? new Color(0.22f, 0.88f, 0.82f, 1f));
+            material.SetFloat("_BiolumStrength", biolumStrength);
+            material.SetFloat("_BiolumMaskStrength", 1.06f);
+            material.SetFloat("_BiolumPulseAmplitude", 0.18f);
+            material.SetFloat("_BiolumPulseFrequency", 0.72f);
+            material.SetFloat("_BiolumCurrentResponse", 0.38f);
             material.SetFloat("_SwayAmplitude", swayAmplitude);
             material.SetFloat("_SwayFrequency", swayFrequency);
             material.SetFloat("_SwaySpeed", 0.85f);
@@ -148,14 +159,13 @@ namespace Hecton8.EditorTools
             Color accentColor,
             Color rimColor,
             Color subsurfaceColor,
-            float cavityStrength)
+            float cavityStrength,
+            float biolumStrength = 0f,
+            Color? biolumColorOverride = null)
         {
-            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            Material material = LoadOrCreateMaterial(materialPath, shader);
             if (material == null)
-            {
-                Debug.LogWarning($"[WorldProceduralFloraMaterialAuthoring] Missing material '{materialPath}'.");
                 return false;
-            }
 
             material.shader = shader;
             material.enableInstancing = true;
@@ -198,6 +208,11 @@ namespace Hecton8.EditorTools
             material.SetFloat("_CausticStrength", 0.16f);
             material.SetFloat("_CausticScale", 1.4f);
             material.SetFloat("_CausticSpeed", 0.32f);
+            material.SetColor("_BiolumColor", biolumColorOverride ?? new Color(0.26f, 0.94f, 0.82f, 1f));
+            material.SetFloat("_BiolumStrength", biolumStrength);
+            material.SetFloat("_BiolumMaskStrength", 1.12f);
+            material.SetFloat("_BiolumPulseAmplitude", 0.24f);
+            material.SetFloat("_BiolumPulseFrequency", 0.56f);
             material.SetFloat("_Cull", 0f);
             material.SetFloat("_ReceiveShadows", 0f);
             material.SetFloat("_EnvironmentReflections", 0f);
@@ -218,6 +233,8 @@ namespace Hecton8.EditorTools
 
             if (materialPath == KelpCanopyMaterialPath)
                 return "family.kelp.canopy";
+            if (materialPath == KelpAbyssalMaterialPath)
+                return "family.kelp.abyssal";
 
             if (materialPath == CoralLowMaterialPath)
                 return "family.coral.low";
@@ -230,8 +247,50 @@ namespace Hecton8.EditorTools
 
             if (materialPath == CoralPlateMaterialPath)
                 return "family.coral.plate";
+            if (materialPath == CoralBrittleMaterialPath)
+                return "family.coral.brittle";
 
             return string.Empty;
+        }
+
+        private static Material LoadOrCreateMaterial(string materialPath, Shader shader)
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material != null)
+                return material;
+
+            int lastSeparator = materialPath.LastIndexOf('/');
+            if (lastSeparator <= 0)
+            {
+                Debug.LogWarning($"[WorldProceduralFloraMaterialAuthoring] Invalid material path '{materialPath}'.");
+                return null;
+            }
+
+            string folderPath = materialPath.Substring(0, lastSeparator);
+            EnsureFolder(folderPath);
+            material = new Material(shader)
+            {
+                name = System.IO.Path.GetFileNameWithoutExtension(materialPath)
+            };
+            AssetDatabase.CreateAsset(material, materialPath);
+            return material;
+        }
+
+        private static void EnsureFolder(string assetPath)
+        {
+            if (AssetDatabase.IsValidFolder(assetPath))
+                return;
+
+            int lastSeparator = assetPath.LastIndexOf('/');
+            if (lastSeparator <= 0)
+                return;
+
+            string parentPath = assetPath.Substring(0, lastSeparator);
+            string folderName = assetPath.Substring(lastSeparator + 1);
+            EnsureFolder(parentPath);
+
+            if (!AssetDatabase.IsValidFolder(assetPath))
+                AssetDatabase.CreateFolder(parentPath, folderName);
         }
     }
 }

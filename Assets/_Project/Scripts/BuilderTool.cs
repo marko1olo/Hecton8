@@ -118,6 +118,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         private BuildableData _lastDisplayedBuildable;
         private PlayerBuilder.BuildReadiness _lastReadinessState;
+        private int _cachedOperationalFrame = -1;
+        private string _cachedOperationalSummary;
+        private string _cachedOperationalDirective;
 
         /// <summary>Флаг успешной привязки к сцене.</summary>
         private bool _bound;
@@ -192,6 +195,7 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
+            InvalidateOperationalCache();
             _bound = true;
         }
 
@@ -209,6 +213,7 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
+            InvalidateOperationalCache();
 
             base.OnDespawn();
         }
@@ -242,6 +247,7 @@ namespace Hecton8.Gameplay
 
             // ── Обновить LCD экран с текущим модулем ──
             UpdateScreen();
+            InvalidateOperationalCache();
         }
 
         /// <summary>
@@ -257,6 +263,7 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
+            InvalidateOperationalCache();
 
             base.OnUnequip();
         }
@@ -270,6 +277,7 @@ namespace Hecton8.Gameplay
             if (!_bound) return;
 
             _playerBuilder.UsePrimary(deltaTime);
+            InvalidateOperationalCache();
         }
 
         /// <summary>
@@ -281,6 +289,7 @@ namespace Hecton8.Gameplay
             if (!_bound) return;
 
             _playerBuilder.UseSecondary(deltaTime);
+            InvalidateOperationalCache();
         }
 
         /// <summary>
@@ -337,8 +346,8 @@ namespace Hecton8.Gameplay
             if (!_bound || _playerBuilder == null)
                 return "BUILDER // OFFLINE";
 
-            return "BUILDER // " + _playerBuilder.GetActiveBuildOperationalSummary() +
-                   " // " + _playerBuilder.GetActiveBuildStatusLabel();
+            RefreshOperationalCache();
+            return _cachedOperationalSummary;
         }
 
         public override string GetOperationalDirective()
@@ -346,7 +355,28 @@ namespace Hecton8.Gameplay
             if (!_bound || _playerBuilder == null)
                 return "Restore builder link before field deployment.";
 
-            return _playerBuilder.GetActiveBuildAdvice();
+            RefreshOperationalCache();
+            return _cachedOperationalDirective;
+        }
+
+        private void RefreshOperationalCache()
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedOperationalFrame == currentFrame)
+                return;
+
+            _cachedOperationalFrame = currentFrame;
+            _cachedOperationalSummary =
+                "BUILDER // " + _playerBuilder.GetActiveBuildOperationalSummary() +
+                " // " + _playerBuilder.GetActiveBuildStatusLabel();
+            _cachedOperationalDirective = _playerBuilder.GetActiveBuildAdvice();
+        }
+
+        private void InvalidateOperationalCache()
+        {
+            _cachedOperationalFrame = -1;
+            _cachedOperationalSummary = null;
+            _cachedOperationalDirective = null;
         }
 
         private void ApplySway(float dt)

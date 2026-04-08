@@ -42,6 +42,9 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _nextFeedbackAt;
         private bool _secondaryLatched;
+        private int _cachedAssessmentFrame = -1;
+        private bool _cachedAssessmentValid;
+        private StunAssessment _cachedAssessment;
 
         private void Awake()
         {
@@ -127,6 +130,7 @@ namespace Hecton8.Gameplay
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
+            InvalidateAssessmentCache();
             _cooldown = shotCooldown;
         }
 
@@ -144,7 +148,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return $"STUN PISTOL // RECHARGING {_cooldown:0.0}S";
 
-            if (TryReadAssessment(out StunAssessment assessment))
+            if (TryGetAssessmentCached(out StunAssessment assessment))
                 return $"STUN PISTOL // {assessment.Headline}";
 
             return "STUN PISTOL // READY";
@@ -155,7 +159,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return "Capacitors are recharging for the next disruption shot.";
 
-            if (TryReadAssessment(out StunAssessment assessment))
+            if (TryGetAssessmentCached(out StunAssessment assessment))
                 return assessment.Recommendation;
 
             return "Primary disrupts. Secondary checks whether the target is worth stunning.";
@@ -179,6 +183,7 @@ namespace Hecton8.Gameplay
                 QueryTriggerInteraction.Ignore))
             {
                 WarnSecondary("STUN PISTOL - NO TARGET LOCK");
+                InvalidateAssessmentCache();
                 return;
             }
 
@@ -202,6 +207,7 @@ namespace Hecton8.Gameplay
                 {
                     WarnSecondary("STUN PISTOL - TARGET HAS NO BIO CIRCUIT");
                 }
+                InvalidateAssessmentCache();
                 return;
             }
 
@@ -215,6 +221,7 @@ namespace Hecton8.Gameplay
                 assessment.Severity);
 
             _nextFeedbackAt = Time.time + feedbackInterval;
+            InvalidateAssessmentCache();
         }
 
         private void WarnSecondary(string message)
@@ -266,6 +273,29 @@ namespace Hecton8.Gameplay
             StunTargetRuntime stunState = ai.GetComponent<StunTargetRuntime>();
             assessment = BuildAssessment(ai, stunState);
             return true;
+        }
+
+        private bool TryGetAssessmentCached(out StunAssessment assessment)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedAssessmentFrame == currentFrame)
+            {
+                assessment = _cachedAssessment;
+                return _cachedAssessmentValid;
+            }
+
+            bool valid = TryReadAssessment(out assessment);
+            _cachedAssessmentFrame = currentFrame;
+            _cachedAssessmentValid = valid;
+            _cachedAssessment = assessment;
+            return valid;
+        }
+
+        private void InvalidateAssessmentCache()
+        {
+            _cachedAssessmentFrame = -1;
+            _cachedAssessmentValid = false;
+            _cachedAssessment = default;
         }
 
         private static StunAssessment BuildAssessment(HectonBaseAI ai, StunTargetRuntime stunState)

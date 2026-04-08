@@ -214,6 +214,11 @@ namespace Hecton8.Gameplay
         private bool _inputSubscribed;
         private InputManager _subscribedInputManager;
         private BeamMode _beamMode;
+        private Camera _cachedMainCamera;
+        private Transform _cachedMainCameraTransform;
+        private float _nextCameraResolveTime;
+
+        private const float CameraResolveCooldown = 1f;
 
         // Battery
         private float _batteryDrainAccumulator;
@@ -294,6 +299,10 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            ResolveReferences();
+            if (flashlightLight != null)
+                ConfigureFlashlightLight();
+
             if (_registered) return;
             if (GameTickManager.Instance != null)
             {
@@ -511,6 +520,7 @@ namespace Hecton8.Gameplay
 
         private void ResolveReferences()
         {
+            ResolveMainCameraReference(true);
             ResolveFlashlightLight();
 
             if (survivalSystem == null && enableBatteryDrain)
@@ -530,18 +540,18 @@ namespace Hecton8.Gameplay
             if (flashlightLight != null)
                 return;
 
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null)
+            Transform mainCameraTransform = ResolveMainCameraReference(true);
+            if (mainCameraTransform == null || _cachedMainCamera == null)
                 return;
 
-            Transform namedChild = mainCamera.transform.Find("DiveLamp_Light");
+            Transform namedChild = mainCameraTransform.Find("DiveLamp_Light");
             if (namedChild != null && namedChild.TryGetComponent(out Light namedLight))
             {
                 flashlightLight = namedLight;
                 return;
             }
 
-            Light[] candidateLights = mainCamera.GetComponentsInChildren<Light>(true);
+            Light[] candidateLights = _cachedMainCamera.GetComponentsInChildren<Light>(true);
             for (int i = 0; i < candidateLights.Length; i++)
             {
                 Light candidate = candidateLights[i];
@@ -561,8 +571,8 @@ namespace Hecton8.Gameplay
             if (flashlightLight == null)
                 return;
 
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null && flashlightLight.transform.IsChildOf(mainCamera.transform))
+            Transform mainCameraTransform = ResolveMainCameraReference(false);
+            if (mainCameraTransform != null && flashlightLight.transform.IsChildOf(mainCameraTransform))
             {
                 flashlightLight.transform.localPosition = new Vector3(0f, 0f, 0.08f);
                 flashlightLight.transform.localRotation = Quaternion.identity;
@@ -596,6 +606,31 @@ namespace Hecton8.Gameplay
                 "[PlayerFlashlight] Battery drain enabled but no HectonSurvivalSystem found. " +
                 "Disabling battery drain.");
             enableBatteryDrain = false;
+        }
+
+        private Transform ResolveMainCameraReference(bool force)
+        {
+            if (_cachedMainCameraTransform != null)
+                return _cachedMainCameraTransform;
+
+            float currentTime = Time.unscaledTime;
+            if (!force && currentTime < _nextCameraResolveTime)
+                return null;
+
+            _nextCameraResolveTime = currentTime + CameraResolveCooldown;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            {
+                Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                if (playerCamera != null)
+                {
+                    _cachedMainCamera = playerCamera;
+                    _cachedMainCameraTransform = playerCamera.transform;
+                    return _cachedMainCameraTransform;
+                }
+            }
+
+            return null;
         }
 
         // ══════════════════════════════════════════════════════════

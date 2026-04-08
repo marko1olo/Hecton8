@@ -15,6 +15,7 @@ Rules:
 - Every item remains `PENDING VERIFICATION` until a new build or user check confirms the fix
 - Player build is the main arbiter, not editor feel
 - Use `[c]` for code-fixed issues that are closed for current coding work but still await build or user confirmation
+- Do not reopen `[c]` issues for new coding work unless new logs, build evidence, or user verification proves the fix is incomplete or regressed
 - Use `[x]` only after new proof from build, live run, or explicit user confirmation
 
 ## Entry Template
@@ -94,8 +95,8 @@ Rules:
 - Broke: no compile errors observed from the survival change.
 - Remaining: lower oxygen during live play, surface naturally, and confirm refill resumes immediately in build and during in-world swim. Closed for coding unless new evidence reopens it.
 
-### [!] Pause Cursor Missing / Pause Button Audit Needed
-- Status: [!]
+### [c] Pause Cursor Missing / Pause Button Audit Needed
+- Status: [c]
 - Need User Check: yes
 - Need Build Check: yes
 - Need In-World Swim Check: no
@@ -156,8 +157,8 @@ Rules:
 - Broke: no new break is known from static code audit; runtime/compile oracle is blocked until Unity session recovers.
 - Remaining: verify `New Game`, `Load Game`, and `Resume` still enter `02_HECTON_WORLD` with the correct `GameStartContext`, verify direct `01_MAIN_MENU` / `02_HECTON_WORLD` misuse still routes through bootstrap correctly, and confirm no hidden dependency still expects removed `MainMenuController.TargetSaveSlot`.
 
-### [~] Geology Terrain Seam Runtime GC Hardening Not Yet Proven
-- Status: [~]
+### [c] Geology Terrain Seam Runtime GC Hardening Not Yet Proven
+- Status: [c]
 - Need User Check: yes
 - Need Build Check: yes
 - Need Profiler Check: yes
@@ -172,8 +173,8 @@ Rules:
 - Broke: no compile errors were introduced by the seam hardening pass.
 - Remaining: profile active cave/geology traversal with live seam plans, verify whether seam footprint resizing still causes objectionable alloc spikes, and prove terrain -> geology -> voxel entrance continuity in build.
 
-### [~] Cave Spawn Lifecycle Hardening Not Yet Proven
-- Status: [~]
+### [c] Cave Spawn Lifecycle Hardening Not Yet Proven
+- Status: [c]
 - Need User Check: yes
 - Need Build Check: yes
 - Need In-World Swim Check: yes
@@ -190,8 +191,8 @@ Rules:
 
  - Addendum: `CleanupUnsupportedCaves()` now actually cancels pending cave spawns and tears down tracked cave volumes when the current biome no longer supports caves, stale-lifecycle cleanup uses non-despawning registration removal so dead pooled owners do not trigger accidental teardown, and pending-cave cancellation now runs through a buffered key list instead of mutating the dictionary during enumeration.
 
-### [~] Voxel Bridge Hot-Path Iteration Compliance Not Yet Proven
-- Status: [~]
+### [c] Voxel Bridge Hot-Path Iteration Compliance Not Yet Proven
+- Status: [c]
 - Need User Check: no
 - Need Build Check: yes
 - Need Profiler Check: yes
@@ -206,8 +207,8 @@ Rules:
 - Broke: after this pass and a separate compile-hygiene cleanup in stale verifier/editor helpers, Unity recompilation is back to warning-only state; console currently reports only the old `Dynamic Decals` obsolete editor warnings.
 - Remaining: capture profiler on live seam request churn, verify pending-request cancellation still clears correctly when requests fall out of range, and confirm no retention/removal regressions in build.
 
-### [~] Seam Planning / Execution Hot-Path Hygiene Not Yet Proven
-- Status: [~]
+### [c] Seam Planning / Execution Hot-Path Hygiene Not Yet Proven
+- Status: [c]
 - Need User Check: no
 - Need Build Check: yes
 - Need Profiler Check: yes
@@ -222,8 +223,8 @@ Rules:
 - Broke: after removing two unrelated compile blockers (`BootstrapArchitectureValidator` dead `UnityEditor.SceneHierarchy` import and `BootstrapController` missing `using Hecton8.Input;`), Unity recompilation now completes with no errors; console currently shows only one local `SceneBootstrap.saveSlot` unused-field warning and the old `Dynamic Decals` obsolete editor warnings.
 - Remaining: profile a live seam route, confirm no alloc spikes remain in integration/execution reconcile, and verify in build that retained seam execution still behaves correctly across entering/leaving geology zones.
 
-### [~] Cave Sediment Shelf Runtime Layer Not Yet Proven
-- Status: [~]
+### [c] Cave Sediment Shelf Runtime Layer Not Yet Proven
+- Status: [c]
 - Need User Check: yes
 - Need Build Check: yes
 - Need In-World Swim Check: yes
@@ -238,8 +239,8 @@ Rules:
 - Broke: Unity recompilation completed with no new compile errors; console still shows only the unrelated `Dynamic Decals` obsolete warnings.
 - Remaining: verify that shelves, wall growth, glowing tissue, fungi, and service remnants all read correctly in live cave geometry, confirm pooled cave volumes do not resurrect stale entrance/detail children on reuse, and prove that the full cave-detail stack still looks intentional rather than noisy in build.
 
-### [~] Cave Biome Runtime Classification Hygiene Not Yet Proven
-- Status: [~]
+### [c] Cave Biome Runtime Classification Hygiene Not Yet Proven
+- Status: [c]
 - Need User Check: no
 - Need Build Check: yes
 - Need Profiler Check: yes
@@ -254,8 +255,8 @@ Rules:
 - Broke: Unity recompilation completed with no new errors after the pass; console currently reports only the old `Dynamic Decals` obsolete warnings plus local non-blocking unused-field warnings in tool/bootstrap scripts.
 - Remaining: verify cave behavior when crossing between cliff/canyon/abyss family boundaries in build, confirm cave keys stay stable under biome transitions, and profile whether `WorldCaveDirector` still shows any meaningful managed churn on active exploration routes.
 
-### [~] Cave Runtime Ownership Cleanup Not Yet Proven
-- Status: [~]
+### [c] Cave Runtime Ownership Cleanup Not Yet Proven
+- Status: [c]
 - Need User Check: yes
 - Need Build Check: yes
 - Need In-World Swim Check: yes
@@ -474,9 +475,17 @@ Rules:
 - Did Addendum: the main `SlowTick` selector in `FaunaDirector` still ignored pool availability and could keep choosing prefabs that had already run dry, wasting spawn attempts on strict `allowExpand:false` paths. `TrySelectResolvedEntry(...)` now receives `ObjectPoolManager`, filters out entries with `GetAvailableCount(prefab) <= 0`, and falls back only among entries that are both under `maxAlive` and actually spawnable from the current pool state.
 - Did Addendum: the main `SlowTick` selector was still re-querying `ObjectPoolManager.GetAvailableCount(...)` across multiple passes inside one spawn burst. `FaunaDirector` now fills one reusable per-biome `availablePoolCounts` scratch array once per `TrySpawnCreatures(...)`, reuses it through selection, and decrements it only after successful spawns so the selector no longer keeps hammering pool lookups inside the same burst.
 - Did Addendum: `ForceSpawnHorde(...)` still bypassed the resolved-entry cache, bypassed pool-availability truth, and paid a separate prefab/type selection path that could target dry pools. Horde spawning now uses the same cached `ResolvedFaunaEntry[]`, current per-type counts, and reusable `availablePoolCounts` scratch array, and selects only non-large-threat entries that are both under `maxAlive` and actually available in the pool.
+- Did Addendum: `WorldFaunaSpawnRegistry` ordinary-anchor and large-threat-zone queries were still scanning the full anchor dictionaries on every spawn attempt. The registry now builds cold bucket caches keyed by `WorldChunkCoordinate` / `WorldMacroZoneCoordinate` and limits live lookup to the bounded observer neighborhood instead of rescanning all anchors each time `FaunaDirector` asks for a spawn point.
+- Did Addendum: `WorldProceduralStateRegistry.IsFaunaAnchorAvailable(...)` was still running a full expired-fauna-state cleanup on every anchor availability query. The registry now batch-cleans fauna cooldown state on a bounded play-time interval and handles queried-key expiry directly, so fauna anchor checks no longer pay a full dictionary sweep for every spawn-point candidate.
+- Did Addendum: successful anchor use was still expensive even after lookup cleanup because `WorldProceduralStateRegistry.MarkFaunaAnchorUsed(...)` called `UpdateDiagnostics()` after every spawn, and that diagnostics path rescanned the full fauna-state dictionary each time. Fauna-state diagnostics are now marked dirty and refreshed on a bounded interval instead of forcing a full dictionary sweep on every anchor consume/block/restore event.
+- Did Addendum: the remaining live fauna-state scans in `WorldProceduralStateRegistry` cleanup/diagnostics were still written as dictionary `foreach`. Those hot-ish scans now use explicit `Dictionary<long, FaunaSpawnState>.Enumerator` loops instead of forbidden dictionary `foreach` in the active fauna path.
 - Result: compile state remains clean of `CS` errors after the fauna/scatter pass. The runtime scatter blocker that previously aborted `WorldProceduralScatterDirector.Awake()` is code-fixed, and the fauna director no longer locks its warmup to a one-time static reserve disconnected from live activation limits.
 - Result Addendum: fauna is now fail-soft under pool pressure. If reserve is insufficient, the director skips that spawn attempt instead of injecting pool expansion and allocation spikes into gameplay.
 - Result Addendum: both regular fauna spawning and forced horde spawning now fail closed against live pool availability instead of spending work on prefabs that cannot spawn from the current reserve state.
+- Result Addendum: fauna anchor lookup is now proportional to nearby chunk / macro-zone buckets instead of total registered anchors, so `FaunaDirector` no longer pays full-registry scan cost during ordinary and large-threat spawn resolution.
+- Result Addendum: fauna availability truth now stays correct without forcing `WorldProceduralStateRegistry` to rescan the whole cooldown table on every anchor check; expired unblocked anchors reopen immediately, but full cleanup cost is now throttled instead of living inside each spawn query.
+- Result Addendum: anchor cooldown accounting no longer drags a full diagnostics rescan behind each successful spawn. Runtime state truth is unchanged, but inspector/debug fauna counts are now deferred to bounded refreshes instead of sitting directly on the spawn hot path.
+- Result Addendum: active fauna cooldown cleanup and diagnostics scans are now iteration-compliant as well; the remaining throttled scans no longer rely on banned dictionary `foreach` in runtime fauna state ownership.
 - Failed: no new in-world proof yet that `SmallPassiveProxy` warnings are gone, because the user has not supplied the next live swim/build log after this patch and `execute_code` remains unusable on this machine.
 - Broke: no new compile errors from `FaunaDirector` or `WorldProceduralScatterDirector`. The remaining console noise is editor selection null spam (`GameObjectInspector` / `SerializedObjectNotCreatableException`) plus unrelated warnings.
 - Remaining: re-run the same underwater route in live game/build, capture the next `TickProfiler` line, and confirm:
@@ -585,3 +594,447 @@ After each new build, ask one short question:
   - the remaining blockers are now content quality and missing in-world/build evidence, not compile truth
 - Short Comment: resolved as stale/parallel compile contamination; do not treat this as the current flora blocker unless it reproduces again on a fresh refresh
 - Next Step: reopen only if the same scatter compile failure reproduces on a clean compile
+
+### [x] Gas Giant Tick No Longer Resolves Renderer Resources In Hot Path
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `GasGiantRotationDriver.Tick()` was paying a per-tick `EnsureRendererResources()` guard that could still hit `GetComponent<Renderer>()` in runtime fallback paths
+- Evidence:
+  - `Assets/_Project/Scripts/GasGiantRotationDriver.cs`
+  - renderer/resource resolution now lives in `Awake`, `OnEnable`, and editor-only `OnValidate`
+  - `Tick()` now only early-outs on missing `_planetRenderer` and updates the MPB rotation value
+- Problems:
+  - no fresh Unity compile oracle yet
+- Short Comment: owner-local hot-path smell removed without changing rotation semantics
+- Next Step: verify on next live compile/readback
+
+### [x] Celestial Sky Colors Resolved Once Per Tick
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `HectonCelestialEngine` was resolving the same sky colors in both sky and Aegir material paths inside one tick
+- Evidence:
+  - `Assets/_Project/Scripts/HectonCelestialEngine.cs`
+  - `_resolvedSkyZenith/_resolvedSkyHorizon/_resolvedSkyNadir` now update once before `UpdateSkyMaterial()` and `UpdateAegirMaterial()`
+  - sky material blend gate remains intact; only the duplicate color solve was removed
+- Problems:
+  - no fresh Unity compile oracle yet
+- Short Comment: reduced duplicate per-tick color work without changing blend math or material write order
+- Next Step: verify on next live compile/readback
+
+### [x] Propulsion Lock Name Uppercase Cached At Lock Time
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `PropulsionTool` was rebuilding `_lockedName.ToUpperInvariant()` on the locked summary path and repeated lock-status emits
+- Evidence:
+  - `Assets/_Project/Scripts/PropulsionTool.cs`
+  - `_lockedNameUpper` now resolves once during `TryAcquireLock()`
+  - summary / hold / launch feedback reuse the cached uppercase string
+  - release path clears both `_lockedName` and `_lockedNameUpper`
+- Problems:
+  - no fresh Unity compile oracle yet
+- Short Comment: owner-local string work reduced on a frequently polled lock state without touching the shared `PlayerTool` contract
+- Next Step: verify on next live compile/readback
+
+### [x] Propulsion No-Lock Assessment Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `PropulsionTool` could raycast and build the same no-lock assessment twice in one frame when summary and directive were both requested
+- Evidence:
+  - `Assets/_Project/Scripts/PropulsionTool.cs`
+  - `TryGetAssessmentCached()` now shares one current-frame assessment result
+  - lock acquire/release paths explicitly invalidate the cached assessment
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if external world state changes between two UI reads in the same frame
+- Short Comment: duplicate same-frame propulsion assessment work removed without changing inter-frame tool behavior
+- Next Step: verify on next live compile/readback
+
+### [x] Harpoon Tether Name Uppercase Cached At Tether Registration
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `HarpoonLauncherTool` was re-running uppercase conversion for tether headline/summary feedback on a tether state that can be polled repeatedly
+- Evidence:
+  - `Assets/_Project/Scripts/HarpoonLauncherTool.cs`
+  - `_tetheredNameUpper` now resolves once during `TryRegisterTether()`
+  - tether lock summary and tether reel feedback reuse the cached uppercase string
+  - `ClearTether()` clears both tether name fields
+- Problems:
+  - no fresh Unity compile oracle yet
+  - dead local helper remains in file as non-runtime cleanup debt because the file tail has encoding noise; runtime call sites no longer use it
+- Short Comment: repeated tether-name string work removed from live harpoon state without changing tether cadence or reel behavior
+- Next Step: verify on next live compile/readback
+
+### [x] Harpoon No-Tether Assessment Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `HarpoonLauncherTool` could raycast and build the same no-tether assessment twice in one frame when summary and directive were both requested
+- Evidence:
+  - `Assets/_Project/Scripts/HarpoonLauncherTool.cs`
+  - `TryGetAssessmentCached()` now shares one current-frame no-tether assessment result
+  - tether register/clear paths invalidate the cached assessment explicitly
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if external world state changes between two UI reads in the same frame
+- Short Comment: duplicate same-frame harpoon assessment work removed without changing inter-frame tether behavior
+- Next Step: verify on next live compile/readback
+
+### [x] Scanner Mode Strings Cached As Finite Mode State
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `ScannerTool` was repeatedly rebuilding the same mode label / mode summary / mode feedback strings from three deterministic modes
+- Evidence:
+  - `Assets/_Project/Scripts/ScannerTool.cs`
+  - `_currentModeLabel/_currentModeSummary/_currentModeHudMessage/_currentModeOperationTitle` now refresh only on `Awake` and mode switch
+  - summary/directive/mode-change feedback reuse those cached strings
+- Problems:
+  - no fresh Unity compile oracle yet
+- Short Comment: finite scanner mode text moved to cached owner state without touching scan result semantics or pulse logic
+- Next Step: verify on next live compile/readback
+
+### [x] Analyzer Target Assessment Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `EnvironmentalAnalyzerTool` could raycast and rebuild the same target assessment twice in one frame when summary and directive were both requested
+- Evidence:
+  - `Assets/_Project/Scripts/EnvironmentalAnalyzerTool.cs`
+  - `TryGetTargetAssessmentCached()` now shares one current-frame target assessment result
+  - primary and secondary analyzer actions explicitly invalidate the cached assessment after their own emits
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if external world state changes between two UI reads in the same frame
+- Short Comment: duplicate same-frame analyzer assessment work removed with explicit post-use invalidation
+- Next Step: verify on next live compile/readback
+
+### [x] Beacon Nearest Assessment Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `BeaconDeployerTool` could resolve nearest beacon assessment twice in the same frame when HUD/PDA asked for both summary and directive
+- Evidence:
+  - `Assets/_Project/Scripts/BeaconDeployerTool.cs`
+  - `TryGetNearestAssessmentCached()` now shares one nearest-beacon read/assessment per frame
+  - deploy and retract paths explicitly invalidate the cached frame data
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates the beacon grid between two UI reads in the same frame
+- Short Comment: duplicate same-frame nearest-beacon work removed without changing inter-frame beacon behavior
+- Next Step: verify on next live compile/readback
+
+### [x] Beacon Operational Text Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: after nearest assessment sharing, `BeaconDeployerTool` could still format the same summary/directive strings multiple times in one frame
+- Evidence:
+  - `Assets/_Project/Scripts/BeaconDeployerTool.cs`
+  - `RefreshOperationalTextCache()` now builds summary/directive once per frame
+  - deploy/retract invalidation also clears the operational text cache
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local text cache shares the same external-mutation edge case as the nearest-assessment cache
+- Short Comment: duplicate same-frame beacon HUD text formatting removed without changing inter-frame semantics
+- Next Step: verify on next live compile/readback
+
+### [x] Stun Pistol Assessment Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `StunPistolTool` could resolve the same target assessment twice in one frame when HUD/PDA requested both summary and directive
+- Evidence:
+  - `Assets/_Project/Scripts/StunPistolTool.cs`
+  - `TryGetAssessmentCached()` now shares one target read/assessment per frame
+  - primary and secondary action paths explicitly invalidate the cached frame data after each probe outcome
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates target state between two UI reads in the same frame
+- Short Comment: duplicate same-frame stun target assessment work removed without changing inter-frame behavior
+- Next Step: verify on next live compile/readback
+
+### [x] Knife Contact Probe Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `KnifeTool` could run the same `SphereCastNonAlloc` contact probe twice in one frame when HUD/PDA requested both summary and directive
+- Evidence:
+  - `Assets/_Project/Scripts/KnifeTool.cs`
+  - `TryGetBestHitCached()` now shares one best-hit probe per frame for summary/directive reads
+  - primary swing and secondary tactical read still use their own direct probe path
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates contact state between two UI reads in the same frame
+- Short Comment: duplicate same-frame knife contact probing removed without changing blade action truth
+- Next Step: verify on next live compile/readback
+
+### [x] Repair Diagnosis Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `RepairTool` could resolve the same service diagnosis twice in one frame when HUD/PDA requested both summary and directive
+- Evidence:
+  - `Assets/_Project/Scripts/RepairTool.cs`
+  - `TryGetServiceDiagnosisCached()` now shares one service diagnosis read per frame
+  - primary and secondary service paths explicitly invalidate cached diagnosis data after each action outcome
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates module state between two UI reads in the same frame
+- Short Comment: duplicate same-frame repair diagnosis work removed without changing repair action semantics
+- Next Step: verify on next live compile/readback
+
+### [x] Flashlight Adapter Snapshot Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `FlashlightTool` could read `PlayerFlashlight` operational strings and forward context more than once in the same frame across summary/directive/assessment paths
+- Evidence:
+  - `Assets/_Project/Scripts/FlashlightTool.cs`
+  - `TryGetOperationalSnapshot()` now shares one summary/recommendation snapshot per frame
+  - `TryGetForwardContextDirectiveCached()` now shares one context directive result per frame
+  - toggle and beam-mode mutation paths explicitly invalidate both caches
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates flashlight/context state between two UI reads in the same frame
+- Short Comment: duplicate same-frame flashlight adapter reads removed without moving ownership out of `PlayerFlashlight`
+- Next Step: verify on next live compile/readback
+
+### [x] Builder Bridge Operational Text Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `BuilderTool` could rebuild the same bridge summary/directive strings multiple times in one frame when HUD/PDA requested both values
+- Evidence:
+  - `Assets/_Project/Scripts/BuilderTool.cs`
+  - `RefreshOperationalCache()` now builds one summary/directive pair per frame
+  - spawn/despawn/equip/unequip and builder action paths explicitly invalidate that cache
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates builder state between two UI reads in the same frame
+- Short Comment: duplicate same-frame builder bridge text assembly removed without moving logic into `PlayerBuilder`
+- Next Step: verify on next live compile/readback
+
+### [x] Sampler Diagnosis Shared Per Frame
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `SalvageSamplerTool` could resolve the same salvage diagnosis twice in one frame when HUD/PDA requested both summary and directive
+- Evidence:
+  - `Assets/_Project/Scripts/SalvageSamplerTool.cs`
+  - `TryGetDiagnosisCached()` now shares one sampler diagnosis read per frame
+  - primary and secondary sampler action paths explicitly invalidate cached diagnosis data after each outcome
+- Problems:
+  - no fresh Unity compile oracle yet
+  - frame-local cache can still be stale if some external system mutates target state between two UI reads in the same frame
+- Short Comment: duplicate same-frame sampler diagnosis work removed without changing sampling action semantics
+- Next Step: verify on next live compile/readback
+
+### [x] Player Tool Base Name Cached
+- Status: [x]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: base `PlayerTool.GetOperationalSummary()` recomputed uppercase tool name on every HUD read for tools that still use the base summary path
+- Evidence:
+  - `Assets/_Project/Scripts/PlayerTool.cs`
+  - uppercase operational tool name is now cached on spawn with a lazy fallback getter
+  - base summary path now reuses that cached name instead of calling `ToUpperInvariant()` every time
+- Problems:
+  - no fresh Unity compile oracle yet
+  - this is a base-layer change, so compile/runtime truth matters more than code review alone
+- Short Comment: removed repeated base summary name allocation without changing default naming fallback semantics
+- Next Step: verify on next live compile/readback
+
+### [x] Flora Automation Preview Work Staged Per Update
+- Status: [x]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `WorldProceduralFloraFinalStatusReport` could re-run heavy `PreviewRenderUtility` prefab capture for the same pending task on every editor update during automation preview generation
+- Evidence:
+  - `Assets/_Project/Scripts/Editor/WorldProceduralFloraFinalStatusReport.cs`
+  - preview queue now processes a bounded number of tasks per editor update
+  - direct prefab capture is attempted once per task, then fallback work uses `AssetPreview` polling instead of repeated full prefab preview rendering
+  - completed tasks clear cached prefab asset references immediately
+- Problems:
+  - no fresh Unity compile oracle yet
+  - if automation payload is extremely large, preview completion latency may increase because work is now intentionally staged
+- Short Comment: cut editor RAM churn during flora preview automation without removing report/preview output
+- Next Step: verify during a real flora automation session with RAM observation
+
+### [x] Scene View Sky Enforcer Throttled And Dirtied
+- Status: [x]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Swim Check: no
+- Why: `SceneViewSkyboxEnforcer` wrote scene-view defaults and re-resolved source sky objects on every editor update while Scene view stayed open
+- Evidence:
+  - `Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs`
+  - editor default enforcement now runs on a bounded interval instead of every update
+  - source sky sphere resolution is cached and invalidated on hierarchy changes
+  - preview pose refresh now happens on scene-view camera rendering instead of unconditional editor-update work
+- Problems:
+  - no fresh Unity compile oracle yet
+  - scene-view sky defaults may now restore with a short bounded delay instead of instantly on the same editor tick
+- Short Comment: reduced always-on editor churn without removing scene-view sky preview ownership
+- Next Step: verify long idle Scene-view session and watch RAM / responsiveness
+
+### [x] Visor HUD Edit-Mode Helpers Self-Unsubscribe When Settled
+- Status: [x]
+- Need User Check: yes
+- Need Build Check: no
+- Need In-World Swim Check: no
+- Why: the visor/HUD preview stack (`SuitHUDScreenCompositor`, `SuitHUDPresentationController`, `SuitHUDV4CanvasOverlay`, `HectonSuitHUDExtensions`) stayed subscribed to `EditorApplication.update` for the whole editor session even after their edit-mode preview work had settled
+- Evidence:
+  - `Assets/_Project/Scripts/Visor/SuitHUDScreenCompositor.cs`
+  - `Assets/_Project/Scripts/Visor/SuitHUDPresentationController.cs`
+  - `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
+  - `Assets/_Project/Scripts/HectonSuitHUDExtensions.cs`
+  - each owner now evaluates whether edit-mode preview work is still needed, self-unsubscribes when settled, and re-arms on `OnValidate` or explicit refresh requests
+- Problems:
+  - long-lived edit-mode preview ownership still remains when these systems are intentionally active
+  - preview re-arming now depends on owner invalidation paths staying complete
+- Short Comment: cut always-on visor/HUD editor churn without stripping preview functionality
+- Next Step: verify a long idle editor session with visor scene objects present and watch RAM slope
+
+### [x] Save Thumbnail Caches Bounded
+- Status: [x]
+- Need User Check: yes
+- Need Build Check: no
+- Need In-World Swim Check: no
+- Why: `SaveThumbnailSystem` and `SaveSlotManagerWindow` retained every loaded thumbnail sprite/texture until global cache clear or window close, which is direct RAM retention in long save-management/editor sessions
+- Evidence:
+  - `Assets/_Project/Scripts/SaveThumbnailSystem.cs`
+  - `Assets/_Project/Editor/SaveSlotManagerWindow.cs`
+  - runtime sprite cache is now bounded and evicts least-recently-used entries by destroying both sprite and texture
+  - editor thumbnail texture cache is now bounded and evicts least-recently-used textures immediately
+- Problems:
+  - first access to an evicted thumbnail now reloads from disk, so very large slot lists may trade some IO for bounded RAM
+  - compile truth is clean, but live memory slope still needs a real save-window session
+- Short Comment: removed unbounded thumbnail retention without changing thumbnail load/delete ownership
+- Next Step: open Save Slot Manager, scroll through many slots, then watch whether RAM plateaus instead of climbing
+
+### [x] Visor HUD Controller Edit Tick Gated To Real Preview Need
+- Status: [x]
+- Need User Check: yes
+- Need Build Check: no
+- Need In-World Swim Check: no
+- Why: `VisorHUDController` stayed on `EditorApplication.update` after `OnEnable()` even when edit-mode preview was already settled, keeping another `ExecuteAlways` owner hot for the full editor session
+- Evidence:
+  - `Assets/_Project/Scripts/Visor/VisorHUDController.cs`
+  - `ShouldTickInEditMode()` now keeps editor ticking only for dirty material state, unresolved refs, or explicit edit-mode pose sync
+  - `OnEnable()` / `OnValidate()` now evaluate whether edit tick should exist instead of subscribing unconditionally
+  - fresh Unity compile/readback after this pass returned `0` console errors/warnings from touched files
+- Problems:
+  - if some future edit-mode preview invalidation path forgets to re-arm, preview can look stale until the next explicit validate/change
+  - live memory improvement is still unproven without an hour-scale idle sample
+- Short Comment: removed another always-on visor preview owner from idle editor sessions without touching runtime projection ownership
+- Next Step: leave visor scene open in edit mode and observe whether RAM / editor activity plateaus
+
+### [x] Environment Preview Stops Burning Background Ticks
+- Status: [x]
+- Need User Check: yes
+- Need Build Check: no
+- Need In-World Swim Check: no
+- Why: `HectonAtmosphereManager`, `HectonUnderwaterVisuals`, and `HectonCelestialEngine` kept running full edit-mode preview ticks even when the Unity editor window was inactive; `HectonUnderwaterVisuals` also kept probing editor cameras too aggressively
+- Evidence:
+  - `Assets/_Project/Scripts/HectonAtmosphereManager.cs`
+  - `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+  - `Assets/_Project/Scripts/HectonCelestialEngine.cs`
+  - all three editor tick paths now early-out when `InternalEditorUtility.isApplicationActive` is false
+  - `HectonUnderwaterVisuals.ResolveEditorCamera()` now prefers cached SceneView/game cameras and retries `Camera.main` only on a bounded interval instead of every editor update
+  - fresh Unity compile/readback after this pass returned `0` console errors/warnings from touched files
+- Problems:
+  - when Unity is unfocused, edit-mode atmosphere/underwater/celestial preview intentionally pauses until focus returns
+  - live RAM slope improvement is still unproven without a long idle sample
+- Short Comment: background editor environment preview now backs off instead of burning full update work while the editor is idle in the background
+- Next Step: leave Unity unfocused for 20-60 minutes in the same scene and compare resident/texture memory slope against the old behavior
+
+### [c] Fauna Spawn Registry Stops Allocating In Anchor Selection
+- Status: [c]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: `WorldFaunaSpawnRegistry` is live runtime ownership for ordinary fauna anchors and large-threat macro-zone anchors, but both nearest-anchor queries were still iterating `Dictionary<long, Anchor>` through `foreach`
+- Evidence:
+  - `Assets/_Project/Scripts/WorldFaunaSpawnRegistry.cs`
+  - `TryGetLargeThreatZone(...)` now uses explicit `Dictionary<long, Anchor>.Enumerator`
+  - `TryGetNearestOrdinaryAnchor(...)` now uses explicit `Dictionary<long, Anchor>.Enumerator`
+  - selection semantics, distance checks, and procedural-state availability gates were not changed
+- Problems:
+  - compile/build truth still needs a fresh Unity pass
+  - this only removes hot-path iteration debt; it does not yet connect dormant GPU boid groundwork into the fauna runtime
+- Short Comment: passive-fauna and macro-zone anchor selection no longer pays forbidden dictionary-foreach churn in the live spawn registry
+- Next Step: recompile, then observe fauna spawn and large-threat zone behavior on a real swim route
+
+### [c] Relax Phase No Longer Reintroduces New Predator Pressure Through Normal Spawn
+- Status: [c]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: `SetPredatorPressure(false)` already pushed live creatures into `Wander`, but the ordinary fauna spawn loop could still pick new aggressive / hunter / leviathan entries because `TrySelectResolvedEntry(...)` ignored pressure state entirely
+- Evidence:
+  - `Assets/_Project/Scripts/FaunaDirector.cs`
+  - resolved fauna cache now precomputes `blockedWhenPressureDisabled`
+  - ordinary weighted selection now skips those entries while `_pressureEnabled == false`
+  - horde spawn semantics stay unchanged because `ForceSpawnHorde(...)` was already blocked by relax pressure truth
+- Problems:
+  - compile/build truth still needs a fresh Unity pass
+  - this still does not wire GPU boid schools into live ecology ownership; it only prevents relax-phase predator backfill through the normal pooled spawn loop
+- Short Comment: relax phase now suppresses new aggressive predator re-entry through normal fauna spawning instead of only calming creatures that already existed
+- Next Step: recompile, then verify on a relax-phase swim that passive fauna can still appear while new predator pressure stays suppressed
+
+### [c] Cave Detail Builders Stop Reformatting Child Names On Every Runtime Build
+- Status: [c]
+- Need User Check: no
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: live cave-detail builders for service remnants, wall growth, and glowing tissue were still formatting `"Name_{index}"` strings inside their runtime build loops
+- Evidence:
+  - `Assets/_Project/Scripts/CaveServiceRemnantRuntimeBuilder.cs`
+  - `Assets/_Project/Scripts/CaveWallGrowthRuntimeBuilder.cs`
+  - `Assets/_Project/Scripts/CaveGlowingTissueRuntimeBuilder.cs`
+  - all three builders now use bounded cold name caches sized to their own runtime count caps instead of interpolation inside the build loop
+- Problems:
+  - compile/build truth still needs a fresh Unity pass
+  - this is a zero-GC cleanup only; it does not yet solve the higher-level `ruins as memory places` content gap
+  - Wave 7 runtime mix was still too flat: `WorldProceduralScatterDirector` could satisfy service-water structure quotas with repeated generic tech families instead of preserving a readable mix of service scars, power routes, and ruin modules
+- Short Comment: active cave readability layers keep the same child naming semantics without paying repeated runtime string churn
+- Did Addendum: `WorldProceduralScatterDirector` now runs a bounded service-domain rescue pass during `IndustrialService` / `BrineToxic` structure injection. It uses the existing candidate pool and tries to keep at least one `ServiceScar`, one `PowerRoute`, and a supported `RuinModule` present when the structure budget allows, without changing public enums, asset contracts, or generic structure accent logic.
+- Did Addendum: `WorldProceduralScatterDirector` still let solitary ruin fragments compete too evenly with ruin clusters/landmarks in strong route memory patterns. The runtime score now gives `RuinModule` families a bounded placement-mode bonus in `LandmarkCorridor`, `IndustrialService`, and `BrineToxic`, so ruin clusters and landmark-scale ruins win more often when landmark/salvage signal is high, while solitary fragments lose priority in those strongest reads.
+- Did Addendum: `WorldProceduralScatterDirector` still allowed service-like water to satisfy trace readability without nearby payoff clusters. The runtime rescue path now also preserves at least one `DebrisField` and, when cluster budget allows, one `ResourcePocket` inside `IndustrialService` / `BrineToxic` windows by using the existing cluster rescue pool instead of new authoring data or new runtime systems.
+- Did Addendum: `WorldProceduralScatterDirector` still treated those support/payoff clusters mostly as rescue exceptions instead of first-class quota pressure. Service-water cluster min/ratio logic now also pushes `DebrisField` and `ResourcePocket` upward while pushing unrelated fertile/shelter accents down inside `IndustrialService` / `BrineToxic`, so the rescue path is backed by the base quota contract.
+- Did Addendum: `WorldProceduralScatterDirector` still left ruin state readability mostly to score drift. A bounded ruin-placement-mode rescue now preserves `RuinModule` `Cluster` variants and, when structure budget allows, `Landmark` variants inside `LandmarkCorridor`, `IndustrialService`, and `BrineToxic`, so those windows do not collapse into one generic ruin read.
+- Did Addendum: `LandmarkCorridor` still relied too much on score drift for nearby payoff after the ruin-state pass. `WorldProceduralScatterDirector` now runs a bounded `ResourcePocket` cluster rescue there as well, so ruin/cave corridors keep at least one resource-side cluster when budget and live candidates support it.
+- Perf Addendum: those recent service/ruin rescues were themselves doing unnecessary CPU work by re-sorting the same `rescueCandidates` buffer and re-scanning `_desiredPlacements` several times per window. `WorldProceduralScatterDirector` now computes the ordered rescue list and current ruin/service counts once per wrapper and reuses them across the sub-passes.
+- Perf Addendum: preferred family rescue wrappers were still re-running `CountPlacedFamily(...)` for every preferred family, which meant another `_desiredPlacements` scan per family even after the wrapper had already built its ordered candidate list. `WorldProceduralScatterDirector` now builds one reusable preferred-family count map per wrapper and updates it only after successful injects, so cluster/structure/spawn preferred-family rescue no longer keeps rescanning the full desired-placement table inside the same window.
+- Perf Addendum: service-domain rescue and ruin-placement-mode rescue were still doing three separate domain scans and two separate ruin-mode scans per window. `WorldProceduralScatterDirector` now counts service domains and ruin placement modes in single wrapper-local enumerator passes, so those rescue wrappers no longer pay multiple full `_desiredPlacements` walks for the same structure-layer state.
+- Perf Addendum: cluster rescue still rebuilt `_occupiedCellBuffer` multiple times inside the same window, especially through `InjectPatternClusterAccentCandidates(...)` and the service/landmark cluster rescue passes. `WorldProceduralScatterDirector` now rebuilds cluster occupancy once at the wrapper level and reuses that live buffer across the sub-passes, relying on successful injects to keep the buffer current instead of recomputing it again for each accent role.
+- Result Addendum: service-heavy water should read less like repeated anonymous tech fragments and more like layered human footprint built from the existing Wave 7 families.
+- Result Addendum: ruin-heavy routes should bias more toward readable remembered places and less toward random small-module clutter, without requiring new authoring data or public API changes.
+- Result Addendum: service traces should more often carry scavenging/support payoff nearby instead of resolving as readable traces with no cluster-layer follow-through.
+- Result Addendum: landmark ruin/cave corridors should more often carry a nearby resource-side reason to stop and inspect, instead of depending only on scoring luck.
+- Result Addendum: key ruin/service corridors should preserve a more legible mix of ruined states instead of relying on one placement mode winning by score accident.
+- Failed: no new swim/build proof yet that these domains now read correctly in-world; this is code truth only.
+- Next Step: recompile, then verify cave detail layers still build and recycle cleanly in a live cave route

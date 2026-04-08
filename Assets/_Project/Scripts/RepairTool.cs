@@ -83,6 +83,9 @@ namespace Hecton8.Gameplay
         private bool _healthyTargetReportedThisUse;
         private bool _activeRepairReportedThisUse;
         private bool _secondaryLatched;
+        private int _cachedDiagnosisFrame = -1;
+        private bool _cachedDiagnosisValid;
+        private ServiceDiagnosis _cachedDiagnosis;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -173,6 +176,7 @@ namespace Hecton8.Gameplay
                     _noTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
+                InvalidateDiagnosisCache();
                 return;
             }
 
@@ -194,6 +198,7 @@ namespace Hecton8.Gameplay
                     }
 
                     UpdateBeamHit(_hit.point, _hit.normal);
+                    InvalidateDiagnosisCache();
                     return;
                 }
 
@@ -233,6 +238,8 @@ namespace Hecton8.Gameplay
                 }
                 UpdateBeamMiss();
             }
+
+            InvalidateDiagnosisCache();
         }
 
         public override void UseSecondary(float deltaTime)
@@ -256,6 +263,7 @@ namespace Hecton8.Gameplay
             if (!didHit)
             {
                 ToolHitUtility.ShowWarning("REPAIR TOOL - NO MODULE IN RANGE");
+                InvalidateDiagnosisCache();
                 return;
             }
 
@@ -266,6 +274,7 @@ namespace Hecton8.Gameplay
             if (module == null)
             {
                 ToolHitUtility.ShowWarning("REPAIR TOOL - TARGET NOT SERVICEABLE");
+                InvalidateDiagnosisCache();
                 return;
             }
 
@@ -276,6 +285,7 @@ namespace Hecton8.Gameplay
                 GetServiceDiagnosisLogTitle(diagnosis.headline),
                 $"{diagnosis.summary} {diagnosis.recommendation}",
                 diagnosis.severity);
+            InvalidateDiagnosisCache();
         }
 
         public override void ToolTick(float deltaTime)
@@ -307,7 +317,7 @@ namespace Hecton8.Gameplay
             if (_isRepairing)
                 return "REPAIR TOOL // ACTIVE SERVICE";
 
-            if (TryReadServiceDiagnosis(out ServiceDiagnosis diagnosis))
+            if (TryGetServiceDiagnosisCached(out ServiceDiagnosis diagnosis))
                 return $"REPAIR TOOL // {diagnosis.priority}";
 
             return "REPAIR TOOL // STANDBY";
@@ -318,7 +328,7 @@ namespace Hecton8.Gameplay
             if (_isRepairing)
                 return "Hold the beam steady until the service window closes.";
 
-            if (TryReadServiceDiagnosis(out ServiceDiagnosis diagnosis))
+            if (TryGetServiceDiagnosisCached(out ServiceDiagnosis diagnosis))
                 return diagnosis.recommendation;
 
             return "Sweep a damaged module to diagnose or begin repair.";
@@ -430,6 +440,29 @@ namespace Hecton8.Gameplay
 
             diagnosis = BuildDiagnosis(module);
             return true;
+        }
+
+        private bool TryGetServiceDiagnosisCached(out ServiceDiagnosis diagnosis)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedDiagnosisFrame == currentFrame)
+            {
+                diagnosis = _cachedDiagnosis;
+                return _cachedDiagnosisValid;
+            }
+
+            bool valid = TryReadServiceDiagnosis(out diagnosis);
+            _cachedDiagnosisFrame = currentFrame;
+            _cachedDiagnosisValid = valid;
+            _cachedDiagnosis = diagnosis;
+            return valid;
+        }
+
+        private void InvalidateDiagnosisCache()
+        {
+            _cachedDiagnosisFrame = -1;
+            _cachedDiagnosisValid = false;
+            _cachedDiagnosis = default;
         }
 
         private static ServiceDiagnosis BuildDiagnosis(BaseModule module)

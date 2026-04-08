@@ -13,6 +13,8 @@ namespace Hecton8.Editor
     /// </summary>
     public class SaveSlotManagerWindow : EditorWindow
     {
+        private const int MaxCachedThumbnails = 12;
+
         private List<SaveSlotInfo> _slots = new List<SaveSlotInfo>();
         private List<SaveSlotAuditResult> _auditResults = new List<SaveSlotAuditResult>();
         private List<SaveSlotRepairResult> _repairResults = new List<SaveSlotRepairResult>();
@@ -22,7 +24,8 @@ namespace Hecton8.Editor
         private float _lastRefreshTime;
         private string _lastAuditSummary = string.Empty;
         private string _lastRepairSummary = string.Empty;
-        private Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>(MaxCachedThumbnails, StringComparer.OrdinalIgnoreCase);
+        private List<string> _thumbnailCacheOrder = new List<string>(MaxCachedThumbnails);
 
         [MenuItem("Tools/Hecton/Save Slot Manager", false, 1)]
         public static void ShowWindow()
@@ -365,12 +368,16 @@ namespace Hecton8.Editor
                 }
             }
             _thumbnailCache.Clear();
+            _thumbnailCacheOrder.Clear();
         }
 
         private Texture2D LoadThumbnail(string slotName)
         {
             if (_thumbnailCache.TryGetValue(slotName, out Texture2D cached) && cached != null)
+            {
+                MarkThumbnailAsMostRecent(slotName);
                 return cached;
+            }
 
             string path = SaveThumbnailSystem.GetThumbnailPath(slotName);
             if (!File.Exists(path)) return null;
@@ -379,7 +386,7 @@ namespace Hecton8.Editor
             Texture2D tex = new Texture2D(2, 2);
             tex.LoadImage(bytes);
             
-            _thumbnailCache[slotName] = tex;
+            AddThumbnailToCache(slotName, tex);
             return tex;
         }
 
@@ -408,8 +415,64 @@ namespace Hecton8.Editor
             if (_thumbnailCache != null && _thumbnailCache.TryGetValue(slotName, out Texture2D thumb))
             {
                 if (thumb != null) DestroyImmediate(thumb);
-                _thumbnailCache.Remove(slotName);
+                RemoveThumbnailFromCache(slotName);
             }
+        }
+
+        private void AddThumbnailToCache(string slotName, Texture2D texture)
+        {
+            if (_thumbnailCache.TryGetValue(slotName, out Texture2D existing) && existing != null && existing != texture)
+            {
+                DestroyImmediate(existing);
+            }
+
+            _thumbnailCache[slotName] = texture;
+            MarkThumbnailAsMostRecent(slotName);
+            TrimThumbnailCacheToLimit();
+        }
+
+        private void RemoveThumbnailFromCache(string slotName)
+        {
+            _thumbnailCache.Remove(slotName);
+
+            for (int i = 0; i < _thumbnailCacheOrder.Count; i++)
+            {
+                if (string.Equals(_thumbnailCacheOrder[i], slotName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _thumbnailCacheOrder.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+
+        private void TrimThumbnailCacheToLimit()
+        {
+            while (_thumbnailCacheOrder.Count > MaxCachedThumbnails)
+            {
+                string oldestSlotName = _thumbnailCacheOrder[0];
+                _thumbnailCacheOrder.RemoveAt(0);
+
+                if (!_thumbnailCache.TryGetValue(oldestSlotName, out Texture2D cached))
+                    continue;
+
+                _thumbnailCache.Remove(oldestSlotName);
+                if (cached != null)
+                    DestroyImmediate(cached);
+            }
+        }
+
+        private void MarkThumbnailAsMostRecent(string slotName)
+        {
+            for (int i = 0; i < _thumbnailCacheOrder.Count; i++)
+            {
+                if (!string.Equals(_thumbnailCacheOrder[i], slotName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                _thumbnailCacheOrder.RemoveAt(i);
+                break;
+            }
+
+            _thumbnailCacheOrder.Add(slotName);
         }
 
         private static string FormatTimestamp(long ticksUtc)

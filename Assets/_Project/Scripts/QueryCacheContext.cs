@@ -98,29 +98,18 @@ namespace Hecton8.Physics
         }
     }
 
-    [DisallowMultipleComponent]
-    [DefaultExecutionOrder(10000)] // Run AFTER all gameplay systems
-    public sealed class GlobalQueryCacheManager : MonoBehaviour
+    public static class GlobalQueryCacheManager
     {
-        private static GlobalQueryCacheManager _instance;
         private static readonly Dictionary<string, QueryCacheContext> _contexts = new Dictionary<string, QueryCacheContext>(8);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             _contexts.Clear();
         }
 
         public static QueryCacheContext GetContext(string name)
         {
-            if (_instance == null)
-            {
-                GameObject go = new GameObject("[GlobalQueryCache]");
-                _instance = go.AddComponent<GlobalQueryCacheManager>();
-                DontDestroyOnLoad(go);
-            }
-
             if (!_contexts.TryGetValue(name, out var ctx))
             {
                 ctx = new QueryCacheContext(name);
@@ -128,15 +117,6 @@ namespace Hecton8.Physics
             }
 
             return ctx;
-        }
-
-        private void LateUpdate()
-        {
-            // Per-frame invalidation via clearing internal state
-            foreach (var ctx in _contexts.Values) ctx.InvalidateIfStale();
-            
-            // Clean up old queries in RaycastBatchHelper if shared
-            if (RaycastBatchHelper.Instance != null) RaycastBatchHelper.Instance.ClearQueries();
         }
     }
 }

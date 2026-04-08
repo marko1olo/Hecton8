@@ -9,6 +9,9 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-5900)]
     public sealed class WorldProceduralStateRegistry : MonoBehaviour, ISaveable
     {
+        private const float FaunaStateCleanupInterval = 5f;
+        private const float DiagnosticsRefreshInterval = 1f;
+
         [Serializable]
         private struct FaunaSpawnState
         {
@@ -33,6 +36,9 @@ namespace Hecton8.World
         private readonly List<long> _faunaRemovalBuffer = new List<long>(128);
         private HashSet<long> _suppressedPlacementKeys;
         private Dictionary<long, FaunaSpawnState> _faunaSpawnStates;
+        private float _nextFaunaStateCleanupPlayTime;
+        private float _nextDiagnosticsRefreshPlayTime;
+        private bool _diagnosticsDirty;
 
         public event Action PlacementStateChanged;
 
@@ -90,7 +96,10 @@ namespace Hecton8.World
             if (runtimeKey == 0L || _faunaSpawnStates == null)
                 return true;
 
-            CleanupExpiredFaunaStates();
+            float currentPlayTime = GetCurrentPlayTimeSeconds();
+            if (currentPlayTime >= _nextFaunaStateCleanupPlayTime)
+                CleanupExpiredFaunaStates(currentPlayTime);
+
             if (!_faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState state))
                 return true;
 
@@ -100,7 +109,13 @@ namespace Hecton8.World
             if (state.blocked)
                 return false;
 
-            return state.cooldownUntilPlayTime <= GetCurrentPlayTimeSeconds();
+            if (state.cooldownUntilPlayTime > currentPlayTime)
+                return false;
+
+            _faunaSpawnStates.Remove(runtimeKey);
+            MarkDiagnosticsDirty();
+            RefreshDiagnosticsIfNeeded(currentPlayTime);
+            return true;
         }
 
         public void MarkFaunaAnchorUsed(long runtimeKey, bool isLargeThreatZone, float cooldownSeconds)
@@ -116,7 +131,8 @@ namespace Hecton8.World
             state.blocked = false;
             state.cooldownUntilPlayTime = currentPlayTime + Mathf.Max(0f, cooldownSeconds);
             _faunaSpawnStates[runtimeKey] = state;
-            UpdateDiagnostics();
+            MarkDiagnosticsDirty();
+            RefreshDiagnosticsIfNeeded(currentPlayTime);
         }
 
         public void BlockFaunaAnchor(long runtimeKey, bool isLargeThreatZone)
@@ -129,9 +145,11 @@ namespace Hecton8.World
                 : default;
             state.isLargeThreatZone = isLargeThreatZone;
             state.blocked = true;
-            state.cooldownUntilPlayTime = Mathf.Max(state.cooldownUntilPlayTime, GetCurrentPlayTimeSeconds());
+            float currentPlayTime = GetCurrentPlayTimeSeconds();
+            state.cooldownUntilPlayTime = Mathf.Max(state.cooldownUntilPlayTime, currentPlayTime);
             _faunaSpawnStates[runtimeKey] = state;
-            UpdateDiagnostics();
+            MarkDiagnosticsDirty();
+            RefreshDiagnosticsIfNeeded(currentPlayTime);
         }
 
         public bool RestoreFaunaAnchor(long runtimeKey)
@@ -141,7 +159,10 @@ namespace Hecton8.World
 
             bool removed = _faunaSpawnStates.Remove(runtimeKey);
             if (removed)
-                UpdateDiagnostics();
+            {
+                MarkDiagnosticsDirty();
+                RefreshDiagnosticsIfNeeded(GetCurrentPlayTimeSeconds());
+            }
 
             return removed;
         }
@@ -254,14 +275,24 @@ namespace Hecton8.World
 
         private void CleanupExpiredFaunaStates()
         {
-            if (_faunaSpawnStates == null || _faunaSpawnStates.Count == 0)
-                return;
+            CleanupExpiredFaunaStates(GetCurrentPlayTimeSeconds());
+        }
 
-            float currentPlayTime = GetCurrentPlayTimeSeconds();
+        private void CleanupExpiredFaunaStates(float currentPlayTime)
+        {
+            if (_faunaSpawnStates == null || _faunaSpawnStates.Count == 0)
+            {
+                _nextFaunaStateCleanupPlayTime = currentPlayTime + FaunaStateCleanupInterval;
+                return;
+            }
+
+            _nextFaunaStateCleanupPlayTime = currentPlayTime + FaunaStateCleanupInterval;
             _faunaRemovalBuffer.Clear();
 
-            foreach (KeyValuePair<long, FaunaSpawnState> pair in _faunaSpawnStates)
+            Dictionary<long, FaunaSpawnState>.Enumerator enumerator = _faunaSpawnStates.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<long, FaunaSpawnState> pair = enumerator.Current;
                 if (pair.Value.blocked)
                     continue;
 
@@ -270,12 +301,29 @@ namespace Hecton8.World
 
                 _faunaRemovalBuffer.Add(pair.Key);
             }
+            enumerator.Dispose();
 
             for (int i = 0; i < _faunaRemovalBuffer.Count; i++)
                 _faunaSpawnStates.Remove(_faunaRemovalBuffer[i]);
 
             if (_faunaRemovalBuffer.Count > 0)
-                UpdateDiagnostics();
+            {
+                MarkDiagnosticsDirty();
+                RefreshDiagnosticsIfNeeded(currentPlayTime);
+            }
+        }
+
+        private void MarkDiagnosticsDirty()
+        {
+            _diagnosticsDirty = true;
+        }
+
+        private void RefreshDiagnosticsIfNeeded(float currentPlayTime)
+        {
+            if (!_diagnosticsDirty || currentPlayTime < _nextDiagnosticsRefreshPlayTime)
+                return;
+
+            UpdateDiagnostics(currentPlayTime);
         }
 
         private float GetCurrentPlayTimeSeconds()
@@ -287,7 +335,12 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics()
         {
-            _debugCurrentPlayTime = GetCurrentPlayTimeSeconds();
+            UpdateDiagnostics(GetCurrentPlayTimeSeconds());
+        }
+
+        private void UpdateDiagnostics(float currentPlayTime)
+        {
+            _debugCurrentPlayTime = currentPlayTime;
             _debugSuppressedPlacementCount = _suppressedPlacementKeys != null ? _suppressedPlacementKeys.Count : 0;
             _debugFaunaStateCount = _faunaSpawnStates != null ? _faunaSpawnStates.Count : 0;
             _debugBlockedFaunaCount = 0;
@@ -296,13 +349,19 @@ namespace Hecton8.World
             if (_faunaSpawnStates == null)
                 return;
 
-            foreach (KeyValuePair<long, FaunaSpawnState> pair in _faunaSpawnStates)
+            Dictionary<long, FaunaSpawnState>.Enumerator enumerator = _faunaSpawnStates.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<long, FaunaSpawnState> pair = enumerator.Current;
                 if (pair.Value.blocked)
                     _debugBlockedFaunaCount++;
                 if (pair.Value.isLargeThreatZone)
                     _debugLargeThreatFaunaStateCount++;
             }
+            enumerator.Dispose();
+
+            _diagnosticsDirty = false;
+            _nextDiagnosticsRefreshPlayTime = currentPlayTime + DiagnosticsRefreshInterval;
         }
 
         private void RecordPlacementStateChange(string reason, long runtimeKey)

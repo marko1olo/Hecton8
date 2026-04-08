@@ -584,3 +584,303 @@ Verification: `PENDING VERIFICATION`
       - no dedicated seaweed GPU culling / seasonal / ECS stack in first-party runtime
   - status:
     - `PENDING VERIFICATION`
+- Flora Wave 5 Addendum - 2026-04-08 High-Resolution Preview Truth Pass
+  - target problem:
+    - tiny Unity `AssetPreview` icons were no longer enough to judge kelp morphology honestly
+  - implemented in the correct owner layer:
+    - `WorldProceduralFloraFinalStatusReport` automation capture now first tries an isolated prefab-scene camera/light render before falling back to `AssetPreview`
+  - verified facts:
+    - `flora-verify-20260408-10` produced a much larger `GEN_family_kelp_patch_dense__patch_tall` snapshot
+    - this larger snapshot confirms the patch family is at least visually denser and more cluster-like than the previous icon-sized preview suggested
+  - honest verdict:
+    - high-resolution preview truth is now better, but not finished
+    - `GEN_family_kelp_canopy__crown` still has a framing bug in the new capture path and cannot yet be used as a clean beauty oracle
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Dense kelp patch is back under budget without gutting the family
+  - what changed:
+    - `WorldProceduralSeaweedMeshBuilder` now trims only dense-cluster support geometry:
+      - support leaves use cheaper stems
+      - understory / companion / tertiary ribbons use fewer segments
+      - dense patch variants carry fewer discrete bulb nodes
+      - `family_kelp_patch_dense__patch` now reads less like another thin strap bundle and more like a broader laminaria-style patch
+  - verified facts:
+    - fresh report now shows:
+      - `family.kelp.patch.dense` max budget `12344 -> 9000`
+      - `GEN_family_kelp_patch_dense__patch` `7680 -> 6258`
+      - `GEN_family_kelp_patch_dense__patch_tall` `12344 -> 9000`
+      - `GEN_family_kelp_patch_dense__ring` `10912 -> 8744`
+    - fidelity floor, material-ready state, and strict LOD cascade remain `3/3`
+  - honest verdict:
+    - this is the correct kind of optimization: support geometry got cheaper, not the main silhouette owner
+    - visual sign-off is still blocked by blank-grey automation previews
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Dense kelp morphology pass added node variety without losing MX350 headroom
+  - what changed:
+    - dense patch variants now build more active blades per cluster instead of sparse repeated fronds
+    - clustered giant-frond blades now carry deterministic width/length/twist variation
+    - dense families now mix broad laminaria-like leaves with narrower ribbons in one generated patch
+    - blade sockets for clustered giant-frond kelp now stay closer to the stipe and bias lower/mid attachment instead of reading as floating straps
+  - verified facts:
+    - fresh report still keeps dense family inside cap:
+      - `family.kelp.patch.dense` max budget `8112`
+      - `GEN_family_kelp_patch_dense__patch` `5310/2256/688/312`
+      - `GEN_family_kelp_patch_dense__patch_tall` `7736/3972/1212/686`
+      - `GEN_family_kelp_patch_dense__ring` `8112/3500/1188/548`
+    - automation request `flora-verify-20260408-densepass-1` completed with `success=true`
+  - honest verdict:
+    - the generator is materially less uniform than before
+    - preview truth is still not good enough to claim visual sign-off
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Seaweed direction widened from one family to a depth-stratified library target
+  - hard requirements now recorded:
+    - seaweed anatomy must remain continuous: holdfast -> stipe -> sheath/petiole -> blade
+    - no floating leaves or detached pneumatocysts are acceptable
+    - smooth LOD / dithered transitions are required for visible seaweed swaps
+  - content target now recorded:
+    - grow toward at least `5-6` seaweed archetypes, each with `10+` generated/baked variants
+    - variety should come from prebuilt/generated variant libraries with seeded runtime selection, not full anatomy rebuild on every game boot
+  - depth direction now recorded:
+    - shallow to mid depth: kelp, laminaria-like broad fronds, strap fields, canopy fields
+    - deeper transition: darker leathery fronds, sparse ribbon fans, reduced photic coloration
+    - abyssal direction: alien black/grey biomass with controlled blue/red/cyan vein bioluminescence is allowed
+  - motion direction now recorded:
+    - bind wide-field sway to existing current/flow systems first
+    - richer local motion should stay camera-driven and cheap
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Seaweed archetype target list is now explicit
+  - target shallow / mid archetypes:
+    - giant kelp towers
+    - broad laminaria sheets
+    - dense ribbon fields
+    - canopy frond crowns
+    - brush / plume algae clusters
+    - leathery cold-water fans
+  - target deep / abyssal archetypes:
+    - black strap reed fields
+    - sparse bioluminescent vein fronds
+    - pale mineral-organic fan colonies
+    - chemosynthetic bulb-stem growths
+    - iron-stained rope algae
+    - ash-grey membrane sheets with cyan/red vein lighting
+  - implementation rule:
+    - each archetype should grow toward `10+` baked/generated variants before runtime duplication pressure is increased
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - `kelp_tall` continuity and preview oracle both moved forward
+  - what changed in seaweed form logic:
+    - solitary giant-frond kelp now gets extra bridging fronds across the mid-span so the stalk does not read like a bare cable between two distant growth nodes
+    - solitary giant-frond sockets now carry more lower/mid anchoring bias and less rigid spacing
+    - solitary kelp blades now receive controlled morphology variance too, instead of variation being concentrated only in clustered dense-patch variants
+  - what changed in verification:
+    - prefab automation preview now writes usable multi-view contact sheets instead of tiny or grey false previews
+    - oracle is now good enough to catch big continuity defects, but still not good enough for final master-grade beauty sign-off on tall slender kelp silhouettes
+  - verified facts:
+    - automation request `flora-verify-20260408-tallpass-5` completed with `success=true`
+    - fresh report now reads:
+      - `family.kelp.tall` max budget triangles `5544`
+      - `GEN_family_kelp_tall__stalk` `5376/2416/900/500`
+      - `GEN_family_kelp_tall__ribbon` `5544/2504/932/556`
+      - `family.kelp.patch.dense` still remains inside budget at `9600`
+  - remaining truth:
+    - kelp still reads as generated starter content, not authored photoreal finals
+    - preview framing for very tall kelp is improved but not solved perfectly
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Seaweed bake path is now cleaner at the LOD/bounds level
+  - what changed:
+    - generated kelp meshes are sanitized before being saved as baked LOD assets
+    - non-finite vertices are replaced during editor bake and bounds are rebuilt manually
+    - the flora bake path now applies manual `LODGroup` bounds instead of relying on `RecalculateBounds()`
+  - verified facts:
+    - post-fix automation passes no longer produce `Invalid worldAABB` / `Invalid AABB` asserts from the flora bake path
+    - preview-owner obsolete warning on `AssetPreview.IsLoadingAssetPreview(int)` was also removed in the same cleanup window
+  - why it matters:
+    - keeps kelp/coral prefab generation cleaner and lowers the risk of false visual oracle noise caused by invalid editor bounds
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Seaweed variety increased to `5` generated variants per kelp family
+  - new tall variants:
+    - `GEN_family_kelp_tall__lamina`
+    - `GEN_family_kelp_tall__rope`
+  - new dense-patch variants:
+    - `GEN_family_kelp_patch_dense__brush`
+    - `GEN_family_kelp_patch_dense__sheet`
+  - new canopy variants:
+    - `GEN_family_kelp_canopy__mantle`
+    - `GEN_family_kelp_canopy__splay`
+  - verified facts:
+    - automation request `flora-verify-20260408-variety-2` completed with `success=true`
+    - coverage now reads:
+      - `family.kelp.tall` -> `a0/g5`
+      - `family.kelp.patch.dense` -> `a0/g5`
+      - `family.kelp.canopy` -> `a0/g5`
+    - budgets remain inside caps:
+      - `GEN_family_kelp_tall__lamina` `5060`
+      - `GEN_family_kelp_patch_dense__brush` `8720`
+      - `GEN_family_kelp_patch_dense__sheet` `6930`
+      - `GEN_family_kelp_canopy__mantle` `4356`
+      - `GEN_family_kelp_canopy__splay` `3556`
+  - why it matters:
+    - this is the first real step toward the target of `10+` variants per seaweed archetype without inventing a second runtime vegetation system
+  - remaining truth:
+    - still generated starter flora, not authored photoreal finals
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Seaweed variety increased again to `7` generated variants per kelp family
+  - new tall variants:
+    - `GEN_family_kelp_tall__banner`
+    - `GEN_family_kelp_tall__lance`
+  - new dense variants:
+    - `GEN_family_kelp_patch_dense__tuft`
+    - `GEN_family_kelp_patch_dense__drape`
+  - new canopy variants:
+    - `GEN_family_kelp_canopy__veil`
+    - `GEN_family_kelp_canopy__rosette`
+  - verified facts:
+    - automation request `flora-verify-20260408-variety-3` completed with `success=true`
+    - coverage now reads:
+      - `family.kelp.tall` -> `a0/g7`
+      - `family.kelp.patch.dense` -> `a0/g7`
+      - `family.kelp.canopy` -> `a0/g7`
+    - budgets remain inside caps:
+      - `GEN_family_kelp_tall__banner` `5446`
+      - `GEN_family_kelp_tall__lance` `4578`
+      - `GEN_family_kelp_patch_dense__tuft` `9688`
+      - `GEN_family_kelp_patch_dense__drape` `7764`
+      - `GEN_family_kelp_canopy__veil` `4340`
+      - `GEN_family_kelp_canopy__rosette` `4334`
+  - remaining truth:
+    - `tuft` still falls back to a tiny preview image instead of the full multi-view contact sheet, so compact dense preview capture still needs another fix
+    - still generated starter flora, not authored photoreal finals
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Kelp shader stack is now deep-biolum-ready
+  - what changed:
+    - `Hecton_KelpMaster.shader` gained emissive/biolum controls for deep-water kelp:
+      - color
+      - strength
+      - mask strength
+      - pulse amplitude/frequency
+      - current-response modulation
+    - `WorldProceduralFloraMaterialAuthoring` now writes those properties onto kelp materials with default `_BiolumStrength = 0`
+  - why it matters:
+    - future abyssal / deep kelp families can glow through the existing flora material path instead of requiring a separate renderer stack
+    - coherent field-style modulation can later piggyback on shared current inputs cheaply
+  - verified facts:
+    - kelp materials now serialize `_BiolumColor`, `_BiolumStrength`, `_BiolumMaskStrength`, `_BiolumPulseAmplitude`, `_BiolumPulseFrequency`, `_BiolumCurrentResponse`
+    - menu run `Apply Procedural Flora Materials` completed with `TouchedMaterials=7`
+  - remaining truth:
+    - current kelp starter families remain non-glowing on purpose
+    - no deep kelp family assets are authored yet
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - First deep kelp family now exists in the real flora pipeline
+  - what changed:
+    - added `family.kelp.abyssal` to flora proxy foundations, final-variant authoring, budget catalog, material authoring, texture authoring, and baked starter generation
+    - created `3` generated abyssal kelp finals:
+      - `GEN_family_kelp_abyssal__strap`
+      - `GEN_family_kelp_abyssal__shroud`
+      - `GEN_family_kelp_abyssal__nodule`
+    - created dedicated deep kelp material:
+      - `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat`
+  - why it matters:
+    - the project now has a real deep kelp family instead of only shallow/mid photic-band kelp
+    - the new family uses the existing cheap biolum-capable kelp shader path instead of a special-case renderer
+  - verified facts:
+    - `Generate Procedural Flora Textures` completed with `TouchedTextures=36`
+    - `Apply Procedural Flora Materials` completed with `TouchedMaterials=9`
+    - `Generate Procedural Flora Baked Starters` completed with `Prefabs=39, MeshesUpdated=126, RemovedAssets=0, Failures=0`
+    - validator output includes `family.kelp.abyssal=a0/g3`
+    - report output shows:
+      - `family.kelp.abyssal` max budget triangles `4954`, headroom `4046`
+      - `GEN_family_kelp_abyssal__strap` `4262/1896/668/378`
+      - `GEN_family_kelp_abyssal__shroud` `4954/2280/838/500`
+      - `GEN_family_kelp_abyssal__nodule` `4546/1968/708/390`
+  - remaining truth:
+    - this is still generated starter kelp, not authored photoreal abyssal kelp
+    - deep kelp is not yet runtime-coupled to actual biolum zones/current envelopes
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Deep kelp can now react to real world biolum ownership
+  - what changed:
+    - `Hecton_KelpMaster.shader` now blends local deep-kelp glow with manager-driven global ocean/floor biolum influence
+    - `HectonBiolumManager` now publishes those global flora biolum inputs
+    - `WorldRuntimeBootstrapAuthoring` now wires `HectonBiolumManager` onto `[MANAGERS]`
+  - why it matters:
+    - abyssal kelp no longer depends only on fixed material emissive defaults
+    - the bridge is cheap and scalable because it does not add a per-kelp runtime script
+  - verified facts:
+    - Unity compile completed without new shader or biolum errors
+    - `Rebuild World Runtime Stack` completed successfully
+    - scene readback confirms `HectonBiolumManager` exists on `[MANAGERS]`
+  - remaining truth:
+    - current scene still has no `OceanBiolumZone` / `FloorBiolumZone`, so visible deep-kelp world-coupled glow is not proven yet
+    - deep kelp still remains generated starter content, not authored photoreal kelp
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Deep kelp now has real ocean/floor zone anchors in the active world scene
+  - what changed:
+    - `WorldRuntimeBootstrapAuthoring` now authors deep biolum scene anchors under `--- WORLD ---/Biolum_Deep`
+    - two ocean-side anchors now exist for abyssal kelp influence:
+      - `Ocean_DeepVeil`
+      - `Ocean_AbyssRibbon`
+    - one floor garden anchor now exists for mixed abyssal kelp spill:
+      - `Floor_BrineGarden`
+  - why it matters:
+    - `family.kelp.abyssal` finally has a real world-owned glow source path instead of only local emissive defaults
+  - verified facts:
+    - scene readback confirms all three relevant anchors exist with deep-water Y positions
+    - `Ocean_DeepVeil` serialized settings read back as:
+      - `_depthRatio = 0.62`
+      - `_lightCount = 5`
+      - `_scatterRadius = 16`
+      - `_maxLights = 7`
+  - remaining truth:
+    - runtime visible glow around abyssal kelp is not fully proven yet
+    - Unity-MCP `execute_code` runtime readback is blocked by `The filename or extension is too long`
+    - abyssal kelp still remains generated starter content, not authored photoreal kelp
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-09 - Abyssal kelp library expanded to five generated runtime-selectable starters
+  - what changed:
+    - added `family_kelp_abyssal__whip`
+    - added `family_kelp_abyssal__mantle`
+    - kept work in the editor-owned deep kelp builder and baked starter generator
+  - why it matters:
+    - abyssal kelp is no longer locked to only `strap / shroud / nodule`
+    - the family now has enough shape breadth for early seeded variety without runtime geometry rebuild
+  - verified facts:
+    - `family.kelp.abyssal` now reports `a0/g5`
+    - linked final-ready count is now `5`
+    - report budgets:
+      - `mantle` = `5724/2742/1012/638`
+      - `whip` = `3980/1848/672/396`
+      - family max budget = `5724 / 9000`
+  - remaining truth:
+    - these are still generated starters, not authored photoreal kelp finals
+    - visual beauty passes for the two new abyssal variants are still pending
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-09 - Abyssal kelp library expanded to seven generated deep variants
+  - what changed:
+    - added `family_kelp_abyssal__braid`
+    - added `family_kelp_abyssal__pennant`
+  - why it matters:
+    - abyssal kelp now has enough shape spread to start feeling like a real hadal library instead of a thin three-shape set
+    - this supports future seeded runtime selection without runtime hero-mesh rebuild
+  - verified facts:
+    - `family.kelp.abyssal` now reports `a0/g7`
+    - linked final-ready count is now `7`
+    - report budgets:
+      - `braid` = `5880/2796/1072/668`
+      - `pennant` = `6096/2894/1096/698`
+      - family max budget = `6096 / 9000`
+  - remaining truth:
+    - these are still generated starters, not authored photoreal kelp finals
+    - runtime deep-glow proof remains blocked by the current MCP play cadence freeze
+  - status:
+    - `PENDING VERIFICATION`

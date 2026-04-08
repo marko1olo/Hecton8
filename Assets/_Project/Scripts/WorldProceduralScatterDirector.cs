@@ -503,6 +503,7 @@ namespace Hecton8.World
         private readonly Dictionary<int, GameObject> _prefabWarmupPrefabs = new Dictionary<int, GameObject>(32);
         private readonly Dictionary<int, string> _prefabWarmupFamilyIds = new Dictionary<int, string>(32);
         private readonly Dictionary<int, int> _prefabCreateAllowances = new Dictionary<int, int>(32);
+        private readonly Dictionary<int, int> _preferredFamilyPlacementCounts = new Dictionary<int, int>(16);
         private static WorldProceduralPatternProfile _emergencyPatternProfile;
         private static WorldGenerativeGeologyProfile _emergencyArchGeologyProfile;
         private static WorldGenerativeGeologyProfile _emergencyCanopyGeologyProfile;
@@ -4756,6 +4757,41 @@ namespace Hecton8.World
                     layerFamilyCounts,
                     layerBiomeCounts);
                 layerPlacementCounts[clusterLayerIndex] += added;
+
+                added = InjectServiceClusterAccentCandidates(
+                    pattern,
+                    biomeProfile,
+                    Mathf.Max(1, clusterBudget),
+                    clusterCandidates,
+                    clusterResourceCandidates,
+                    clusterDebrisCandidates,
+                    layerPlacementCounts,
+                    clusterAccentCounts,
+                    structureAccentCounts,
+                    passiveSpawnCount,
+                    predatorSpawnCount,
+                    layerTopCandidates,
+                    layerTopValid,
+                    layerFamilyCounts,
+                    layerBiomeCounts);
+                layerPlacementCounts[clusterLayerIndex] += added;
+
+                added = InjectLandmarkCorridorClusterAccentCandidates(
+                    pattern,
+                    biomeProfile,
+                    Mathf.Max(1, clusterBudget),
+                    clusterCandidates,
+                    clusterResourceCandidates,
+                    layerPlacementCounts,
+                    clusterAccentCounts,
+                    structureAccentCounts,
+                    passiveSpawnCount,
+                    predatorSpawnCount,
+                    layerTopCandidates,
+                    layerTopValid,
+                    layerFamilyCounts,
+                    layerBiomeCounts);
+                layerPlacementCounts[clusterLayerIndex] += added;
             }
 
             int minimumClusterCount = ResolveMinimumClusterPlacements(pattern, biomeProfile);
@@ -4792,13 +4828,14 @@ namespace Hecton8.World
                         clusterCandidates,
                         clusterAccentCounts,
                         structureAccentCounts,
-                        layerPlacementCounts,
-                        passiveSpawnCount,
-                        predatorSpawnCount,
-                        layerTopCandidates,
-                        layerTopValid,
-                        layerFamilyCounts,
-                        layerBiomeCounts);
+                    layerPlacementCounts,
+                    passiveSpawnCount,
+                    predatorSpawnCount,
+                    true,
+                    layerTopCandidates,
+                    layerTopValid,
+                    layerFamilyCounts,
+                    layerBiomeCounts);
                 layerPlacementCounts[clusterLayerIndex] += added;
             }
 
@@ -4806,6 +4843,34 @@ namespace Hecton8.World
             if (biomeProfile != null)
             {
                 int added = InjectPreferredStructureFamilyCandidates(
+                    pattern,
+                    biomeProfile,
+                    structureStride,
+                    Mathf.Max(1, structureBudget),
+                    structureCandidates,
+                    layerPlacementCounts,
+                    structureAccentCounts,
+                    layerTopCandidates,
+                    layerTopValid,
+                    layerFamilyCounts,
+                    layerBiomeCounts);
+                layerPlacementCounts[structureLayerIndex] += added;
+
+                added = InjectServiceStructureDomainCandidates(
+                    pattern,
+                    biomeProfile,
+                    structureStride,
+                    Mathf.Max(1, structureBudget),
+                    structureCandidates,
+                    layerPlacementCounts,
+                    structureAccentCounts,
+                    layerTopCandidates,
+                    layerTopValid,
+                    layerFamilyCounts,
+                    layerBiomeCounts);
+                layerPlacementCounts[structureLayerIndex] += added;
+
+                added = InjectRuinPlacementModeCandidates(
                     pattern,
                     biomeProfile,
                     structureStride,
@@ -4953,6 +5018,7 @@ namespace Hecton8.World
             int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             foreach (WorldPrefabFamilyProfile.ClusterAccentRole accentRole in GetPatternClusterAccentPriority(pattern))
             {
@@ -4987,6 +5053,7 @@ namespace Hecton8.World
                     structureAccentCounts,
                     passiveSpawnCount,
                     predatorSpawnCount,
+                    false,
                     layerTopCandidates,
                     layerTopValid,
                     layerFamilyCounts,
@@ -5009,6 +5076,7 @@ namespace Hecton8.World
                     layerPlacementCounts,
                     passiveSpawnCount,
                     predatorSpawnCount,
+                    false,
                     layerTopCandidates,
                     layerTopValid,
                     layerFamilyCounts,
@@ -5033,6 +5101,7 @@ namespace Hecton8.World
             int[] structureAccentCounts,
             int passiveSpawnCount,
             int predatorSpawnCount,
+            bool rebuildOccupiedBuffer,
             ScatterCandidate[] layerTopCandidates,
             bool[] layerTopValid,
             Dictionary<string, int>[] layerFamilyCounts,
@@ -5050,7 +5119,8 @@ namespace Hecton8.World
                 return 0;
 
             int added = 0;
-            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            if (rebuildOccupiedBuffer)
+                RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             for (int i = 0; i < ordered.Count && needed > 0; i++)
             {
@@ -5113,6 +5183,7 @@ namespace Hecton8.World
             int[] layerPlacementCounts,
             int passiveSpawnCount,
             int predatorSpawnCount,
+            bool rebuildOccupiedBuffer,
             ScatterCandidate[] layerTopCandidates,
             bool[] layerTopValid,
             Dictionary<string, int>[] layerFamilyCounts,
@@ -5128,7 +5199,8 @@ namespace Hecton8.World
             int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
-            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            if (rebuildOccupiedBuffer)
+                RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             for (int i = 0; i < ordered.Count && added < targetCount; i++)
             {
@@ -5196,6 +5268,15 @@ namespace Hecton8.World
             if (biomeProfile?.preferredClusterFamilies == null || rescueCandidates.count == 0)
                 return 0;
 
+            List<ScatterCandidate> ordered = _exactClusterOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
+            BuildPreferredFamilyPlacementCounts(
+                biomeProfile.preferredClusterFamilies,
+                WorldPrefabFamilyProfile.ScatterLayer.Cluster,
+                familyCounts);
+
             int added = 0;
             int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
@@ -5207,12 +5288,13 @@ namespace Hecton8.World
                 if (preferredFamily == null || targetCount <= 0)
                     continue;
 
-                added += InjectExactClusterFamilyCandidates(
+                int familyAdded = InjectExactClusterFamilyCandidates(
                     pattern,
                     biomeProfile,
                     preferredFamily,
                     perCellBudget,
-                    rescueCandidates,
+                    ordered,
+                    GetPreferredFamilyPlacementCount(familyCounts, preferredFamily),
                     targetCount,
                     ref clusterCount,
                     structureCount,
@@ -5225,6 +5307,8 @@ namespace Hecton8.World
                     layerTopValid,
                     layerFamilyCounts,
                     layerBiomeCounts);
+                added += familyAdded;
+                IncrementPreferredFamilyPlacementCount(familyCounts, preferredFamily, familyAdded);
             }
 
             return added;
@@ -5235,7 +5319,8 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biomeProfile,
             WorldPrefabFamilyProfile preferredFamily,
             int perCellBudget,
-            CandidateMap rescueCandidates,
+            List<ScatterCandidate> ordered,
+            int currentFamilyCount,
             int targetCount,
             ref int clusterCount,
             int structureCount,
@@ -5249,19 +5334,14 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            if (preferredFamily == null || rescueCandidates.count == 0 || targetCount <= 0)
+            if (preferredFamily == null || ordered == null || ordered.Count == 0 || targetCount <= 0)
                 return 0;
 
-            int currentFamilyCount = CountPlacedFamily(preferredFamily, WorldPrefabFamilyProfile.ScatterLayer.Cluster);
             int needed = Mathf.Max(0, targetCount - currentFamilyCount);
             if (needed <= 0)
                 return 0;
 
-            List<ScatterCandidate> ordered = _exactClusterOrderedCandidates;
-            FillOrderedCandidateBuffer(rescueCandidates, ordered);
-
             int added = 0;
-            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
             for (int i = 0; i < ordered.Count && needed > 0; i++)
             {
@@ -5427,6 +5507,14 @@ namespace Hecton8.World
             if (biomeProfile?.preferredStructureFamilies == null || rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
+            List<ScatterCandidate> ordered = _windowOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
+            Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
+            BuildPreferredFamilyPlacementCounts(
+                biomeProfile.preferredStructureFamilies,
+                WorldPrefabFamilyProfile.ScatterLayer.Structure,
+                familyCounts);
+
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
@@ -5439,14 +5527,15 @@ namespace Hecton8.World
                 if (preferredFamily == null || targetCount <= 0)
                     continue;
 
-                added += InjectExactWindowFamilyCandidates(
+                int familyAdded = InjectExactWindowFamilyCandidates(
                     pattern,
                     biomeProfile,
                     preferredFamily,
                     stride,
                     perWindowBudget,
                     WorldPrefabFamilyProfile.ScatterLayer.Structure,
-                    rescueCandidates,
+                    ordered,
+                    GetPreferredFamilyPlacementCount(familyCounts, preferredFamily),
                     targetCount,
                     structureAccentCounts,
                     ref passiveUnused,
@@ -5457,7 +5546,98 @@ namespace Hecton8.World
                     layerTopValid,
                     layerFamilyCounts,
                     layerBiomeCounts);
+                added += familyAdded;
+                IncrementPreferredFamilyPlacementCount(familyCounts, preferredFamily, familyAdded);
             }
+
+            return added;
+        }
+
+        private int InjectServiceStructureDomainCandidates(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            int stride,
+            int perWindowBudget,
+            Dictionary<long, ScatterCandidate> rescueCandidates,
+            int[] layerPlacementCounts,
+            int[] structureAccentCounts,
+            ScatterCandidate[] layerTopCandidates,
+            bool[] layerTopValid,
+            Dictionary<string, int>[] layerFamilyCounts,
+            Dictionary<string, int>[] layerBiomeCounts)
+        {
+            if (!IsServiceLikePattern(pattern) || rescueCandidates == null || rescueCandidates.Count == 0)
+                return 0;
+
+            List<ScatterCandidate> ordered = _windowOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
+
+            int added = 0;
+            int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
+            int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
+            int passiveUnused = 0;
+            int predatorUnused = 0;
+            CountPlacedServiceStructureDomains(
+                out int serviceScarCount,
+                out int powerRouteCount,
+                out int ruinModuleCount);
+
+            added += InjectStructureDomainCandidates(
+                pattern,
+                biomeProfile,
+                WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar,
+                ResolveServiceStructureDomainTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar),
+                stride,
+                perWindowBudget,
+                ordered,
+                ref serviceScarCount,
+                structureAccentCounts,
+                ref passiveUnused,
+                ref predatorUnused,
+                ref structureCount,
+                ref spawnCount,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+
+            added += InjectStructureDomainCandidates(
+                pattern,
+                biomeProfile,
+                WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute,
+                ResolveServiceStructureDomainTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute),
+                stride,
+                perWindowBudget,
+                ordered,
+                ref powerRouteCount,
+                structureAccentCounts,
+                ref passiveUnused,
+                ref predatorUnused,
+                ref structureCount,
+                ref spawnCount,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+
+            added += InjectStructureDomainCandidates(
+                pattern,
+                biomeProfile,
+                WorldPrefabFamilyProfile.ProceduralDomain.RuinModule,
+                ResolveServiceStructureDomainTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.ProceduralDomain.RuinModule),
+                stride,
+                perWindowBudget,
+                ordered,
+                ref ruinModuleCount,
+                structureAccentCounts,
+                ref passiveUnused,
+                ref predatorUnused,
+                ref structureCount,
+                ref spawnCount,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
 
             return added;
         }
@@ -5480,6 +5660,14 @@ namespace Hecton8.World
             if (biomeProfile?.preferredSpawnFamilies == null || rescueCandidates == null || rescueCandidates.Count == 0)
                 return 0;
 
+            List<ScatterCandidate> ordered = _windowOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
+            Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
+            BuildPreferredFamilyPlacementCounts(
+                biomeProfile.preferredSpawnFamilies,
+                WorldPrefabFamilyProfile.ScatterLayer.Spawn,
+                familyCounts);
+
             int added = 0;
             int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
@@ -5490,14 +5678,15 @@ namespace Hecton8.World
                 if (preferredFamily == null || targetCount <= 0)
                     continue;
 
-                added += InjectExactWindowFamilyCandidates(
+                int familyAdded = InjectExactWindowFamilyCandidates(
                     pattern,
                     biomeProfile,
                     preferredFamily,
                     stride,
                     perWindowBudget,
                     WorldPrefabFamilyProfile.ScatterLayer.Spawn,
-                    rescueCandidates,
+                    ordered,
+                    GetPreferredFamilyPlacementCount(familyCounts, preferredFamily),
                     targetCount,
                     structureAccentCounts,
                     ref passiveSpawnCount,
@@ -5508,6 +5697,256 @@ namespace Hecton8.World
                     layerTopValid,
                     layerFamilyCounts,
                     layerBiomeCounts);
+                added += familyAdded;
+                IncrementPreferredFamilyPlacementCount(familyCounts, preferredFamily, familyAdded);
+            }
+
+            return added;
+        }
+
+        private int InjectServiceClusterAccentCandidates(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            int perCellBudget,
+            CandidateMap rescueCandidates,
+            CandidateMap resourceCandidates,
+            CandidateMap debrisCandidates,
+            int[] layerPlacementCounts,
+            int[] clusterAccentCounts,
+            int[] structureAccentCounts,
+            int passiveSpawnCount,
+            int predatorSpawnCount,
+            ScatterCandidate[] layerTopCandidates,
+            bool[] layerTopValid,
+            Dictionary<string, int>[] layerFamilyCounts,
+            Dictionary<string, int>[] layerBiomeCounts)
+        {
+            if (!IsServiceLikePattern(pattern) || rescueCandidates.count == 0)
+                return 0;
+
+            int added = 0;
+            int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
+            int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
+            int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+
+            added += InjectClusterAccentRoleCandidates(
+                pattern,
+                biomeProfile,
+                debrisCandidates.count > 0 ? debrisCandidates : rescueCandidates,
+                perCellBudget,
+                WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField,
+                ResolveServiceClusterAccentTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField),
+                ref clusterCount,
+                structureCount,
+                spawnCount,
+                clusterAccentCounts,
+                structureAccentCounts,
+                passiveSpawnCount,
+                predatorSpawnCount,
+                false,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+
+            added += InjectClusterAccentRoleCandidates(
+                pattern,
+                biomeProfile,
+                resourceCandidates.count > 0 ? resourceCandidates : rescueCandidates,
+                perCellBudget,
+                WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket,
+                ResolveServiceClusterAccentTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket),
+                ref clusterCount,
+                structureCount,
+                spawnCount,
+                clusterAccentCounts,
+                structureAccentCounts,
+                passiveSpawnCount,
+                predatorSpawnCount,
+                false,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+
+            return added;
+        }
+
+        private int InjectLandmarkCorridorClusterAccentCandidates(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            int perCellBudget,
+            CandidateMap rescueCandidates,
+            CandidateMap resourceCandidates,
+            int[] layerPlacementCounts,
+            int[] clusterAccentCounts,
+            int[] structureAccentCounts,
+            int passiveSpawnCount,
+            int predatorSpawnCount,
+            ScatterCandidate[] layerTopCandidates,
+            bool[] layerTopValid,
+            Dictionary<string, int>[] layerFamilyCounts,
+            Dictionary<string, int>[] layerBiomeCounts)
+        {
+            if (pattern != WorldProceduralPattern.LandmarkCorridor || rescueCandidates.count == 0)
+                return 0;
+
+            int clusterCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
+            int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
+            int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
+            RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+
+            return InjectClusterAccentRoleCandidates(
+                pattern,
+                biomeProfile,
+                resourceCandidates.count > 0 ? resourceCandidates : rescueCandidates,
+                perCellBudget,
+                WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket,
+                ResolveLandmarkCorridorClusterAccentTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket),
+                ref clusterCount,
+                structureCount,
+                spawnCount,
+                clusterAccentCounts,
+                structureAccentCounts,
+                passiveSpawnCount,
+                predatorSpawnCount,
+                false,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+        }
+
+        private int InjectRuinPlacementModeCandidates(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            int stride,
+            int perWindowBudget,
+            Dictionary<long, ScatterCandidate> rescueCandidates,
+            int[] layerPlacementCounts,
+            int[] structureAccentCounts,
+            ScatterCandidate[] layerTopCandidates,
+            bool[] layerTopValid,
+            Dictionary<string, int>[] layerFamilyCounts,
+            Dictionary<string, int>[] layerBiomeCounts)
+        {
+            if (!ShouldRescueRuinPlacementModes(pattern) || rescueCandidates == null || rescueCandidates.Count == 0)
+                return 0;
+
+            List<ScatterCandidate> ordered = _windowOrderedCandidates;
+            FillOrderedCandidateBuffer(rescueCandidates, ordered);
+
+            int added = 0;
+            int structureCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
+            int spawnCount = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
+            int passiveUnused = 0;
+            int predatorUnused = 0;
+            CountPlacedRuinStructurePlacementModes(
+                out int ruinClusterModeCount,
+                out int ruinLandmarkModeCount);
+
+            added += InjectRuinPlacementModeCandidates(
+                pattern,
+                biomeProfile,
+                WorldPrefabFamilyProfile.PlacementMode.Cluster,
+                ResolveRuinPlacementModeTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.PlacementMode.Cluster),
+                stride,
+                perWindowBudget,
+                ordered,
+                ref ruinClusterModeCount,
+                structureAccentCounts,
+                ref passiveUnused,
+                ref predatorUnused,
+                ref structureCount,
+                ref spawnCount,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+
+            added += InjectRuinPlacementModeCandidates(
+                pattern,
+                biomeProfile,
+                WorldPrefabFamilyProfile.PlacementMode.Landmark,
+                ResolveRuinPlacementModeTarget(pattern, biomeProfile, WorldPrefabFamilyProfile.PlacementMode.Landmark),
+                stride,
+                perWindowBudget,
+                ordered,
+                ref ruinLandmarkModeCount,
+                structureAccentCounts,
+                ref passiveUnused,
+                ref predatorUnused,
+                ref structureCount,
+                ref spawnCount,
+                layerTopCandidates,
+                layerTopValid,
+                layerFamilyCounts,
+                layerBiomeCounts);
+
+            return added;
+        }
+
+        private int InjectRuinPlacementModeCandidates(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.PlacementMode placementMode,
+            int targetCount,
+            int stride,
+            int perWindowBudget,
+            List<ScatterCandidate> ordered,
+            ref int currentCount,
+            int[] structureAccentCounts,
+            ref int passiveSpawnCount,
+            ref int predatorSpawnCount,
+            ref int structureCount,
+            ref int spawnCount,
+            ScatterCandidate[] layerTopCandidates,
+            bool[] layerTopValid,
+            Dictionary<string, int>[] layerFamilyCounts,
+            Dictionary<string, int>[] layerBiomeCounts)
+        {
+            if (ordered == null || ordered.Count == 0 || targetCount <= 0)
+                return 0;
+
+            int needed = Mathf.Max(0, targetCount - currentCount);
+            if (needed <= 0)
+                return 0;
+
+            int added = 0;
+            for (int i = 0; i < ordered.Count && needed > 0; i++)
+            {
+                ScatterCandidate candidate = ordered[i];
+                if (candidate.Family == null ||
+                    candidate.Family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.RuinModule ||
+                    candidate.Family.placementMode != placementMode)
+                {
+                    continue;
+                }
+
+                if (!TryInjectCandidate(
+                        pattern,
+                        biomeProfile,
+                        candidate,
+                        stride,
+                        perWindowBudget,
+                        WorldPrefabFamilyProfile.ScatterLayer.Structure,
+                        structureAccentCounts,
+                        ref passiveSpawnCount,
+                        ref predatorSpawnCount,
+                        ref structureCount,
+                        ref spawnCount,
+                        layerTopCandidates,
+                        layerTopValid,
+                        layerFamilyCounts,
+                        layerBiomeCounts))
+                {
+                    continue;
+                }
+
+                added++;
+                currentCount++;
+                needed--;
             }
 
             return added;
@@ -5520,7 +5959,8 @@ namespace Hecton8.World
             int stride,
             int perWindowBudget,
             WorldPrefabFamilyProfile.ScatterLayer layer,
-            Dictionary<long, ScatterCandidate> rescueCandidates,
+            List<ScatterCandidate> ordered,
+            int currentFamilyCount,
             int targetCount,
             int[] structureAccentCounts,
             ref int passiveSpawnCount,
@@ -5532,16 +5972,12 @@ namespace Hecton8.World
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts)
         {
-            if (preferredFamily == null || rescueCandidates == null || rescueCandidates.Count == 0 || targetCount <= 0)
+            if (preferredFamily == null || ordered == null || ordered.Count == 0 || targetCount <= 0)
                 return 0;
 
-            int currentFamilyCount = CountPlacedFamily(preferredFamily, layer);
             int needed = Mathf.Max(0, targetCount - currentFamilyCount);
             if (needed <= 0)
                 return 0;
-
-            List<ScatterCandidate> ordered = _windowOrderedCandidates;
-            FillOrderedCandidateBuffer(rescueCandidates, ordered);
 
             int added = 0;
             for (int i = 0; i < ordered.Count && needed > 0; i++)
@@ -5571,6 +6007,67 @@ namespace Hecton8.World
                 }
 
                 added++;
+                needed--;
+            }
+
+            return added;
+        }
+
+        private int InjectStructureDomainCandidates(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.ProceduralDomain domain,
+            int targetCount,
+            int stride,
+            int perWindowBudget,
+            List<ScatterCandidate> ordered,
+            ref int currentCount,
+            int[] structureAccentCounts,
+            ref int passiveSpawnCount,
+            ref int predatorSpawnCount,
+            ref int structureCount,
+            ref int spawnCount,
+            ScatterCandidate[] layerTopCandidates,
+            bool[] layerTopValid,
+            Dictionary<string, int>[] layerFamilyCounts,
+            Dictionary<string, int>[] layerBiomeCounts)
+        {
+            if (ordered == null || ordered.Count == 0 || targetCount <= 0)
+                return 0;
+
+            int needed = Mathf.Max(0, targetCount - currentCount);
+            if (needed <= 0)
+                return 0;
+
+            int added = 0;
+            for (int i = 0; i < ordered.Count && needed > 0; i++)
+            {
+                ScatterCandidate candidate = ordered[i];
+                if (candidate.Family == null || candidate.Family.proceduralDomain != domain)
+                    continue;
+
+                if (!TryInjectCandidate(
+                        pattern,
+                        biomeProfile,
+                        candidate,
+                        stride,
+                        perWindowBudget,
+                        WorldPrefabFamilyProfile.ScatterLayer.Structure,
+                        structureAccentCounts,
+                        ref passiveSpawnCount,
+                        ref predatorSpawnCount,
+                        ref structureCount,
+                        ref spawnCount,
+                        layerTopCandidates,
+                        layerTopValid,
+                        layerFamilyCounts,
+                        layerBiomeCounts))
+                {
+                    continue;
+                }
+
+                added++;
+                currentCount++;
                 needed--;
             }
 
@@ -6206,7 +6703,10 @@ namespace Hecton8.World
         {
             WorldProceduralPatternProfile profile = ResolvePatternProfile(pattern, out _);
             float baseValue = profile != null ? profile.GetClusterAccentMaxRatio(role) : 1f;
-            return Mathf.Clamp01(baseValue + GetMatrixBiomeClusterAccentRatioDelta(biomeProfile, role));
+            return Mathf.Clamp01(
+                baseValue
+                + GetMatrixBiomeClusterAccentRatioDelta(biomeProfile, role)
+                + GetServiceWaterClusterAccentRatioDelta(pattern, biomeProfile, role));
         }
 
         private int ResolvePatternClusterRatioStart(WorldProceduralPattern pattern)
@@ -6225,7 +6725,11 @@ namespace Hecton8.World
         {
             WorldProceduralPatternProfile profile = ResolvePatternProfile(pattern, out _);
             int value = profile != null ? profile.GetClusterAccentMin(role) : 0;
-            return Mathf.Max(0, value + GetMatrixBiomeClusterAccentMinDelta(biomeProfile, role));
+            return Mathf.Max(
+                0,
+                value
+                + GetMatrixBiomeClusterAccentMinDelta(biomeProfile, role)
+                + GetServiceWaterClusterAccentMinDelta(pattern, biomeProfile, role));
         }
 
         private int ResolvePatternStructureTargetMin(
@@ -7268,6 +7772,7 @@ namespace Hecton8.World
             bonus += GetMatrixFaunaMoodScoreBonus(biomeProfile, family);
             bonus += GetPreferredContentScoreBonus(biomeProfile, family);
             bonus += GetPatternSpecificPreferredCategoryScoreBonus(pattern, biomeProfile, family);
+            bonus += GetRuinMemoryPlaceBonus(pattern, family, salvage, landmark);
             return bonus;
         }
 
@@ -7309,6 +7814,13 @@ namespace Hecton8.World
             bonus += GetMatrixFaunaMoodScoreBonus(biomeProfile, runtimeRule);
             bonus += GetPreferredContentScoreBonus(runtimeRule, layerPreferredFamilyIndex);
             bonus += GetPatternSpecificPreferredCategoryScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext);
+            bonus += GetRuinMemoryPlaceBonus(
+                pattern,
+                runtimeRule.PlacementMode,
+                runtimeRule.ScatterLayer,
+                runtimeRule.ProceduralDomain,
+                biomeScoreContext.SalvageSignal,
+                biomeScoreContext.LandmarkSignal);
             return bonus;
         }
 
@@ -7336,7 +7848,74 @@ namespace Hecton8.World
 
             bonus += GetPreferredContentScoreBonus(runtimeRule, preferredFamilyIndex);
             bonus += GetPatternSpecificPreferredCategoryScoreBonus(runtimeRule, preferredFamilyIndex, patternScoreContext);
+            bonus += ResolveRuinMemoryPlaceScoreUpperBound(patternScoreContext.Pattern, runtimeRule.PlacementMode, runtimeRule.ScatterLayer, runtimeRule.ProceduralDomain);
             return bonus;
+        }
+
+        private static float GetRuinMemoryPlaceBonus(
+            WorldProceduralPattern pattern,
+            WorldPrefabFamilyProfile family,
+            float salvageSignal,
+            float landmarkSignal)
+        {
+            if (family == null)
+                return 0f;
+
+            return GetRuinMemoryPlaceBonus(
+                pattern,
+                family.placementMode,
+                family.scatterLayer,
+                family.proceduralDomain,
+                salvageSignal,
+                landmarkSignal);
+        }
+
+        private static float GetRuinMemoryPlaceBonus(
+            WorldProceduralPattern pattern,
+            WorldPrefabFamilyProfile.PlacementMode placementMode,
+            WorldPrefabFamilyProfile.ScatterLayer scatterLayer,
+            WorldPrefabFamilyProfile.ProceduralDomain domain,
+            float salvageSignal,
+            float landmarkSignal)
+        {
+            if (scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
+                domain != WorldPrefabFamilyProfile.ProceduralDomain.RuinModule)
+            {
+                return 0f;
+            }
+
+            if (pattern == WorldProceduralPattern.LandmarkCorridor)
+            {
+                return placementMode switch
+                {
+                    WorldPrefabFamilyProfile.PlacementMode.Landmark => 0.12f + (landmarkSignal * 0.12f) + (salvageSignal * 0.04f),
+                    WorldPrefabFamilyProfile.PlacementMode.Cluster => 0.06f + (landmarkSignal * 0.08f) + (salvageSignal * 0.04f),
+                    WorldPrefabFamilyProfile.PlacementMode.Solitary => landmarkSignal >= 0.6f ? -0.04f : 0f,
+                    _ => 0f
+                };
+            }
+
+            if (pattern == WorldProceduralPattern.IndustrialService || pattern == WorldProceduralPattern.BrineToxic)
+            {
+                return placementMode switch
+                {
+                    WorldPrefabFamilyProfile.PlacementMode.Landmark => 0.06f + (salvageSignal * 0.08f) + (landmarkSignal * 0.04f),
+                    WorldPrefabFamilyProfile.PlacementMode.Cluster => 0.04f + (salvageSignal * 0.06f) + (landmarkSignal * 0.04f),
+                    WorldPrefabFamilyProfile.PlacementMode.Solitary => salvageSignal >= 0.6f ? -0.02f : 0f,
+                    _ => 0f
+                };
+            }
+
+            return 0f;
+        }
+
+        private static float ResolveRuinMemoryPlaceScoreUpperBound(
+            WorldProceduralPattern pattern,
+            WorldPrefabFamilyProfile.PlacementMode placementMode,
+            WorldPrefabFamilyProfile.ScatterLayer scatterLayer,
+            WorldPrefabFamilyProfile.ProceduralDomain domain)
+        {
+            return GetRuinMemoryPlaceBonus(pattern, placementMode, scatterLayer, domain, 1f, 1f);
         }
 
         private static float ResolveBiomeMatrixBaseScoreUpperBound(in ScatterRuntimeRuleEntry runtimeRule)
@@ -8026,14 +8605,199 @@ namespace Hecton8.World
                 return 0;
 
             int count = 0;
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                ScatterPlacement placement = pair.Value;
+                ScatterPlacement placement = enumerator.Current.Value;
                 if (placement.Family == null || placement.Family.scatterLayer != layer)
                     continue;
 
                 if (IsSameFamily(placement.Family, family))
                     count++;
+            }
+
+            return count;
+        }
+
+        private void BuildPreferredFamilyPlacementCounts(
+            WorldPrefabFamilyProfile[] preferredFamilies,
+            WorldPrefabFamilyProfile.ScatterLayer layer,
+            Dictionary<int, int> counts)
+        {
+            counts.Clear();
+            if (preferredFamilies == null || preferredFamilies.Length == 0 || _desiredPlacements.Count == 0)
+                return;
+
+            for (int i = 0; i < preferredFamilies.Length; i++)
+            {
+                int familyId = GetPreferredFamilyInstanceId(preferredFamilies[i]);
+                if (familyId == 0 || counts.ContainsKey(familyId))
+                    continue;
+
+                counts.Add(familyId, 0);
+            }
+
+            if (counts.Count == 0)
+                return;
+
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                WorldPrefabFamilyProfile family = placement.Family;
+                if (family == null || family.scatterLayer != layer)
+                    continue;
+
+                int familyId = GetPreferredFamilyInstanceId(family);
+                if (!counts.TryGetValue(familyId, out int currentCount))
+                    continue;
+
+                counts[familyId] = currentCount + 1;
+            }
+        }
+
+        private static int GetPreferredFamilyPlacementCount(
+            Dictionary<int, int> counts,
+            WorldPrefabFamilyProfile family)
+        {
+            int familyId = GetPreferredFamilyInstanceId(family);
+            if (familyId == 0)
+                return 0;
+
+            return counts.TryGetValue(familyId, out int currentCount) ? currentCount : 0;
+        }
+
+        private static void IncrementPreferredFamilyPlacementCount(
+            Dictionary<int, int> counts,
+            WorldPrefabFamilyProfile family,
+            int delta)
+        {
+            if (delta <= 0)
+                return;
+
+            int familyId = GetPreferredFamilyInstanceId(family);
+            if (familyId == 0 || !counts.TryGetValue(familyId, out int currentCount))
+                return;
+
+            counts[familyId] = currentCount + delta;
+        }
+
+        private static int GetPreferredFamilyInstanceId(WorldPrefabFamilyProfile family)
+        {
+            if (family == null)
+                return 0;
+
+            #pragma warning disable CS0618
+            return family.GetInstanceID();
+            #pragma warning restore CS0618
+        }
+
+        private void CountPlacedServiceStructureDomains(
+            out int serviceScarCount,
+            out int powerRouteCount,
+            out int ruinModuleCount)
+        {
+            serviceScarCount = 0;
+            powerRouteCount = 0;
+            ruinModuleCount = 0;
+
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                WorldPrefabFamilyProfile family = placement.Family;
+                if (family == null || family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure)
+                    continue;
+
+                switch (family.proceduralDomain)
+                {
+                    case WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar:
+                        serviceScarCount++;
+                        break;
+                    case WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute:
+                        powerRouteCount++;
+                        break;
+                    case WorldPrefabFamilyProfile.ProceduralDomain.RuinModule:
+                        ruinModuleCount++;
+                        break;
+                }
+            }
+        }
+
+        private void CountPlacedRuinStructurePlacementModes(
+            out int ruinClusterModeCount,
+            out int ruinLandmarkModeCount)
+        {
+            ruinClusterModeCount = 0;
+            ruinLandmarkModeCount = 0;
+
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                WorldPrefabFamilyProfile family = placement.Family;
+                if (family == null ||
+                    family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
+                    family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.RuinModule)
+                {
+                    continue;
+                }
+
+                if (family.placementMode == WorldPrefabFamilyProfile.PlacementMode.Cluster)
+                {
+                    ruinClusterModeCount++;
+                }
+                else if (family.placementMode == WorldPrefabFamilyProfile.PlacementMode.Landmark)
+                {
+                    ruinLandmarkModeCount++;
+                }
+            }
+        }
+
+        private int CountPlacedStructureDomain(WorldPrefabFamilyProfile.ProceduralDomain domain)
+        {
+            if (domain == WorldPrefabFamilyProfile.ProceduralDomain.Generic)
+                return 0;
+
+            int count = 0;
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                if (placement.Family == null ||
+                    placement.Family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
+                    placement.Family.proceduralDomain != domain)
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private int CountPlacedStructureDomainPlacementMode(
+            WorldPrefabFamilyProfile.ProceduralDomain domain,
+            WorldPrefabFamilyProfile.PlacementMode placementMode)
+        {
+            if (domain == WorldPrefabFamilyProfile.ProceduralDomain.Generic)
+                return 0;
+
+            int count = 0;
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                if (placement.Family == null ||
+                    placement.Family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
+                    placement.Family.proceduralDomain != domain ||
+                    placement.Family.placementMode != placementMode)
+                {
+                    continue;
+                }
+
+                count++;
             }
 
             return count;
@@ -8128,6 +8892,38 @@ namespace Hecton8.World
             };
         }
 
+        private int ResolveServiceStructureDomainTarget(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.ProceduralDomain domain)
+        {
+            if (!IsServiceLikePattern(pattern))
+                return 0;
+
+            int total = ResolvePatternStructureTargetMin(pattern, biomeProfile);
+            if (total <= 0)
+                return 0;
+
+            return pattern switch
+            {
+                WorldProceduralPattern.IndustrialService => domain switch
+                {
+                    WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar => 1,
+                    WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute => 1,
+                    WorldPrefabFamilyProfile.ProceduralDomain.RuinModule => total >= 5 ? 1 : 0,
+                    _ => 0
+                },
+                WorldProceduralPattern.BrineToxic => domain switch
+                {
+                    WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar => 1,
+                    WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute => total >= 6 ? 1 : 0,
+                    WorldPrefabFamilyProfile.ProceduralDomain.RuinModule => total >= 4 ? 1 : 0,
+                    _ => 0
+                },
+                _ => 0
+            };
+        }
+
         private int ResolvePreferredSpawnFamilyTarget(
             WorldProceduralPattern pattern,
             HectonBiomeMatrixProfile biomeProfile,
@@ -8154,6 +8950,95 @@ namespace Hecton8.World
             {
                 0 => Mathf.Clamp(Mathf.RoundToInt(total * 0.35f), 2, 4),
                 1 => total >= 4 ? 1 : 0,
+                _ => 0
+            };
+        }
+
+        private int ResolveServiceClusterAccentTarget(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.ClusterAccentRole role)
+        {
+            if (!IsServiceLikePattern(pattern))
+                return 0;
+
+            int total = ResolveMinimumClusterPlacements(pattern, biomeProfile);
+            if (total <= 0)
+                return 0;
+
+            return pattern switch
+            {
+                WorldProceduralPattern.IndustrialService => role switch
+                {
+                    WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField => 1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => total >= 4 ? 1 : 0,
+                    _ => 0
+                },
+                WorldProceduralPattern.BrineToxic => role switch
+                {
+                    WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField => 1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => total >= 5 ? 1 : 0,
+                    _ => 0
+                },
+                _ => 0
+            };
+        }
+
+        private int ResolveLandmarkCorridorClusterAccentTarget(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.ClusterAccentRole role)
+        {
+            if (pattern != WorldProceduralPattern.LandmarkCorridor)
+                return 0;
+
+            int total = ResolveMinimumClusterPlacements(pattern, biomeProfile);
+            if (total <= 0)
+                return 0;
+
+            return role switch
+            {
+                WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => total >= 4 ? 1 : 0,
+                _ => 0
+            };
+        }
+
+        private static bool ShouldRescueRuinPlacementModes(WorldProceduralPattern pattern)
+        {
+            return pattern == WorldProceduralPattern.LandmarkCorridor
+                || pattern == WorldProceduralPattern.IndustrialService
+                || pattern == WorldProceduralPattern.BrineToxic;
+        }
+
+        private int ResolveRuinPlacementModeTarget(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.PlacementMode placementMode)
+        {
+            int total = ResolvePatternStructureTargetMin(pattern, biomeProfile);
+            if (total <= 0 || !ShouldRescueRuinPlacementModes(pattern))
+                return 0;
+
+            return pattern switch
+            {
+                WorldProceduralPattern.LandmarkCorridor => placementMode switch
+                {
+                    WorldPrefabFamilyProfile.PlacementMode.Cluster => total >= 4 ? 1 : 0,
+                    WorldPrefabFamilyProfile.PlacementMode.Landmark => total >= 6 ? 1 : 0,
+                    _ => 0
+                },
+                WorldProceduralPattern.IndustrialService => placementMode switch
+                {
+                    WorldPrefabFamilyProfile.PlacementMode.Cluster => total >= 5 ? 1 : 0,
+                    WorldPrefabFamilyProfile.PlacementMode.Landmark => total >= 8 ? 1 : 0,
+                    _ => 0
+                },
+                WorldProceduralPattern.BrineToxic => placementMode switch
+                {
+                    WorldPrefabFamilyProfile.PlacementMode.Cluster => total >= 4 ? 1 : 0,
+                    WorldPrefabFamilyProfile.PlacementMode.Landmark => total >= 7 ? 1 : 0,
+                    _ => 0
+                },
                 _ => 0
             };
         }
@@ -8441,6 +9326,74 @@ namespace Hecton8.World
                 0 => 2,
                 1 => 1,
                 _ => 0
+            };
+        }
+
+        private static int GetServiceWaterClusterAccentMinDelta(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.ClusterAccentRole role)
+        {
+            if (biomeProfile == null ||
+                role == WorldPrefabFamilyProfile.ClusterAccentRole.None ||
+                (pattern != WorldProceduralPattern.IndustrialService && pattern != WorldProceduralPattern.BrineToxic))
+            {
+                return 0;
+            }
+
+            return pattern switch
+            {
+                WorldProceduralPattern.IndustrialService => role switch
+                {
+                    WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField => 1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => 1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth => -1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.BiologicalNest => -1,
+                    _ => 0
+                },
+                WorldProceduralPattern.BrineToxic => role switch
+                {
+                    WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField => 1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => 1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ShelterPocket => -1,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth => -1,
+                    _ => 0
+                },
+                _ => 0
+            };
+        }
+
+        private static float GetServiceWaterClusterAccentRatioDelta(
+            WorldProceduralPattern pattern,
+            HectonBiomeMatrixProfile biomeProfile,
+            WorldPrefabFamilyProfile.ClusterAccentRole role)
+        {
+            if (biomeProfile == null ||
+                role == WorldPrefabFamilyProfile.ClusterAccentRole.None ||
+                (pattern != WorldProceduralPattern.IndustrialService && pattern != WorldProceduralPattern.BrineToxic))
+            {
+                return 0f;
+            }
+
+            return pattern switch
+            {
+                WorldProceduralPattern.IndustrialService => role switch
+                {
+                    WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField => 0.10f,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => 0.08f,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth => -0.10f,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.BiologicalNest => -0.08f,
+                    _ => 0f
+                },
+                WorldProceduralPattern.BrineToxic => role switch
+                {
+                    WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField => 0.10f,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket => 0.06f,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.ShelterPocket => -0.08f,
+                    WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth => -0.10f,
+                    _ => 0f
+                },
+                _ => 0f
             };
         }
 

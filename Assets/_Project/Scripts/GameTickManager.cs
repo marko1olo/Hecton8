@@ -34,7 +34,6 @@
 //   • Swap-remove вместо List.Remove (без сдвига массива).
 // ============================================================================
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -110,12 +109,10 @@ namespace Hecton8.Core
         private TickList<ISlowTickable>  _slowTickables;
 
         // ══════════════════════════════════════════════════════════
-        //  COROUTINE CACHE
+        //  SLOW TICK STATE
         // ══════════════════════════════════════════════════════════
 
-        private Coroutine      _slowTickHandle;
-        private WaitForSeconds _cachedWait;
-        private float _cachedWaitInterval = -1f;
+        private float _slowTickAccumulator;
         private const int SlowTickProfilerCapacity = 8;
         private readonly object[] _slowTickTopOwners = new object[SlowTickProfilerCapacity];
         private readonly double[] _slowTickTopDurationsMs = new double[SlowTickProfilerCapacity];
@@ -154,12 +151,12 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             EnsureInitialized();
-            StartSlowTick();
+            ResetSlowTickState();
         }
 
         private void OnDisable()
         {
-            StopSlowTick();
+            ResetSlowTickState();
         }
 
         private void OnDestroy()
@@ -204,6 +201,7 @@ namespace Hecton8.Core
             }
 
             _tickables.EndIteration();
+            ProcessSlowTickIfNeeded(dt);
 
 #if UNITY_EDITOR
             _debugTickCount = _tickables.Count;
@@ -253,47 +251,88 @@ namespace Hecton8.Core
         }
 
         // ══════════════════════════════════════════════════════════
-        //  SLOW TICK — корутина (2 раза в секунду по дефолту)
+        //  SLOW TICK — accumulator-driven loop (2 раза в секунду по дефолту)
         // ══════════════════════════════════════════════════════════
 
-        private void StartSlowTick()
+        private void ResetSlowTickState()
         {
-            EnsureInitialized();
-
-            if (_slowTickHandle != null)
-            {
-                return;
-            }
-
-            if (_cachedWait == null || !Mathf.Approximately(_cachedWaitInterval, slowTickInterval))
-            {
-                _cachedWait = new WaitForSeconds(slowTickInterval);
-                _cachedWaitInterval = slowTickInterval;
-            }
-
-            _slowTickHandle = StartCoroutine(SlowTickRoutine());
+            _slowTickAccumulator = 0f;
         }
 
-        private void StopSlowTick()
+        private void ProcessSlowTickIfNeeded(float deltaTime)
         {
-            if (_slowTickHandle != null)
+            float interval = slowTickInterval;
+            if (interval <= 0f)
+                interval = 0.5f;
+
+            _slowTickAccumulator += deltaTime;
+            if (_slowTickAccumulator < interval)
+                return;
+
+            _slowTickAccumulator = 0f;
+            ExecuteSlowTick();
+        }
+
+        private void ExecuteSlowTick()
+        {
+            _slowTickables.BeginIteration();
+
+            List<ISlowTickable> items = _slowTickables.Items;
+            int count = items.Count;
+            long loopStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
+            if (enableSlowTickProfiling)
+                ResetSlowTickProfilerFrame();
+
+            for (int i = 0; i < count; i++)
             {
-                StopCoroutine(_slowTickHandle);
-                _slowTickHandle = null;
+                var item = items[i];
+
+                if (item == null)
+                {
+                    _slowTickables.Remove(item);
+                    continue;
+                }
+
+                if (item is UnityEngine.Object obj && obj == null)
+                {
+                    _slowTickables.Remove(item);
+                    continue;
+                }
+
+                long itemStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
+                item.SlowTick();
+                if (enableSlowTickProfiling)
+                {
+                    long itemEndTimestamp = Stopwatch.GetTimestamp();
+                    RecordSlowTickSample(item, itemEndTimestamp - itemStartTimestamp);
+                }
             }
+
+            _slowTickables.EndIteration();
+
+            if (enableSlowTickProfiling)
+            {
+                long loopEndTimestamp = Stopwatch.GetTimestamp();
+                CommitSlowTickProfilerFrame(loopEndTimestamp - loopStartTimestamp, count);
+            }
+
+#if UNITY_EDITOR
+            _debugSlowCount = _slowTickables.Count;
+#endif
         }
 
         /// <summary>
         /// Вечная корутина. WaitForSeconds кэширован — zero GC per yield.
         /// </summary>
-        private IEnumerator SlowTickRoutine()
+        #if false
+        private System.Collections.IEnumerator SlowTickRoutine()
         {
             // Первый yield — чтобы все системы успели зарегистрироваться
             yield return null;
 
             while (true)
             {
-                yield return _cachedWait;
+                yield break;
 
                 _slowTickables.BeginIteration();
 
@@ -343,6 +382,7 @@ namespace Hecton8.Core
             }
         }
 
+        #endif
         private void ResetSlowTickProfilerFrame()
         {
             for (int i = 0; i < SlowTickProfilerCapacity; i++)

@@ -5,6 +5,7 @@ using System.Text;
 using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
+using UnityObject = UnityEngine.Object;
 
 namespace Hecton8.EditorTools
 {
@@ -20,6 +21,9 @@ namespace Hecton8.EditorTools
         private const string AutomationPreviewFolder = "Assets/Screenshots/Automation";
         private const double AutomationPollIntervalSeconds = 0.5d;
         private const double AutomationPreviewTimeoutSeconds = 20d;
+        private const int AutomationPreviewWidth = 512;
+        private const int AutomationPreviewHeight = 512;
+        private const int AutomationPreviewTasksPerUpdate = 2;
 
         private static readonly List<AutomationPreviewTask> _automationPreviewTasks = new List<AutomationPreviewTask>(8); // COLD ALLOC: editor automation queue, bounded by explicit request payload
 
@@ -55,7 +59,7 @@ namespace Hecton8.EditorTools
 
         private static void UpdateAutomationBridge()
         {
-            if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
             double now = EditorApplication.timeSinceStartup;
@@ -64,6 +68,9 @@ namespace Hecton8.EditorTools
                 UpdateAutomationPreviewQueue(now);
                 return;
             }
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return;
 
             if (now < _automationNextPollTime)
                 return;
@@ -163,6 +170,7 @@ namespace Hecton8.EditorTools
         private static void UpdateAutomationPreviewQueue(double now)
         {
             bool anyPending = false;
+            int processedTaskCount = 0;
 
             for (int i = 0; i < _automationPreviewTasks.Count; i++)
             {
@@ -171,23 +179,22 @@ namespace Hecton8.EditorTools
                     continue;
 
                 anyPending = true;
-                Texture2D preview = AssetPreview.GetAssetPreview(task.prefabAsset);
-                if (preview != null)
-                {
-                    task.previewPath = SaveAutomationPreview(task.prefabPath, preview);
-                    task.isDone = true;
-                    _automationPreviewTasks[i] = task;
+                if (processedTaskCount >= AutomationPreviewTasksPerUpdate)
                     continue;
+
+                processedTaskCount++;
+                try
+                {
+                    task = ProcessAutomationPreviewTask(task);
+                }
+                catch (Exception ex)
+                {
+                    task.previewPath = null;
+                    task.error = "preview_exception: " + ex.GetType().Name;
+                    task.isDone = true;
                 }
 
-                if (!AssetPreview.IsLoadingAssetPreview(task.prefabAsset.GetInstanceID()))
-                {
-                    Texture2D miniPreview = AssetPreview.GetMiniThumbnail(task.prefabAsset);
-                    task.previewPath = miniPreview != null ? SaveAutomationPreview(task.prefabPath, miniPreview) : null;
-                    task.error = miniPreview == null ? "preview_unavailable" : null;
-                    task.isDone = true;
-                    _automationPreviewTasks[i] = task;
-                }
+                _automationPreviewTasks[i] = task;
             }
 
             if (!anyPending || now >= _automationPreviewDeadline)
@@ -207,6 +214,56 @@ namespace Hecton8.EditorTools
 
                 CompleteAutomationRequest();
             }
+        }
+
+        private static AutomationPreviewTask ProcessAutomationPreviewTask(AutomationPreviewTask task)
+        {
+            if (task.prefabAsset == null)
+            {
+                task.error = string.IsNullOrWhiteSpace(task.error) ? "prefab_missing" : task.error;
+                task.isDone = true;
+                return task;
+            }
+
+            if (!task.directCaptureAttempted)
+            {
+                task.directCaptureAttempted = true;
+
+                string capturedPreviewPath = CaptureAutomationPrefabPreview(task.prefabAsset, task.prefabPath);
+                if (!string.IsNullOrWhiteSpace(capturedPreviewPath))
+                {
+                    task.previewPath = capturedPreviewPath;
+                    task.prefabAsset = null;
+                    task.isDone = true;
+                    return task;
+                }
+            }
+
+            if (!task.assetPreviewRequested)
+            {
+                task.assetPreviewRequested = true;
+                AssetPreview.GetAssetPreview(task.prefabAsset);
+            }
+
+            Texture2D preview = AssetPreview.GetAssetPreview(task.prefabAsset);
+            if (preview != null)
+            {
+                task.previewPath = SaveAutomationPreview(task.prefabPath, preview);
+                task.prefabAsset = null;
+                task.isDone = true;
+                return task;
+            }
+
+            if (!AssetPreview.IsLoadingAssetPreview(task.prefabAsset.GetEntityId()))
+            {
+                Texture2D miniPreview = AssetPreview.GetMiniThumbnail(task.prefabAsset);
+                task.previewPath = miniPreview != null ? SaveAutomationPreview(task.prefabPath, miniPreview) : null;
+                task.error = miniPreview == null ? "preview_unavailable" : null;
+                task.prefabAsset = null;
+                task.isDone = true;
+            }
+
+            return task;
         }
 
         private static void CompleteAutomationRequest()
@@ -251,15 +308,274 @@ namespace Hecton8.EditorTools
             return previewErrors.ToArray();
         }
 
+        private static string CaptureAutomationPrefabPreview(GameObject prefabAsset, string prefabPath)
+        {
+            PreviewRenderUtility previewUtility = null;
+            Texture2D contactSheet = null;
+            Texture2D[] viewTextures = null;
+
+            try
+            {
+                if (prefabAsset == null)
+                    return null;
+
+                previewUtility = new PreviewRenderUtility();
+                previewUtility.cameraFieldOfView = 32f;
+                previewUtility.ambientColor = new Color(0.44f, 0.48f, 0.54f, 1f);
+
+                GameObject prefabRoot = previewUtility.InstantiatePrefabInScene(prefabAsset);
+                if (prefabRoot == null)
+                    return null;
+
+                if (!prefabRoot.activeSelf)
+                    prefabRoot.SetActive(true);
+
+                PrepareAutomationPreviewHierarchy(prefabRoot);
+
+                Renderer[] renderers = prefabRoot.GetComponentsInChildren<Renderer>(true);
+                if (renderers == null || renderers.Length == 0)
+                    return null;
+
+                Bounds bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++)
+                    bounds.Encapsulate(renderers[i].bounds);
+
+                Camera camera = previewUtility.camera;
+                camera.clearFlags = CameraClearFlags.Color;
+                camera.backgroundColor = new Color(0.34f, 0.38f, 0.42f, 1f);
+                camera.fieldOfView = 32f;
+                camera.allowHDR = false;
+                camera.allowMSAA = false;
+                camera.enabled = false;
+                camera.orthographic = true;
+
+                Light keyLight = previewUtility.lights[0];
+                keyLight.intensity = 1.35f;
+                keyLight.color = new Color(1f, 0.97f, 0.92f, 1f);
+                keyLight.transform.rotation = Quaternion.Euler(38f, -32f, 0f);
+
+                Light fillLight = previewUtility.lights[1];
+                fillLight.intensity = 0.92f;
+                fillLight.color = new Color(0.78f, 0.9f, 1f, 1f);
+                fillLight.transform.rotation = Quaternion.Euler(324f, 132f, 0f);
+
+                viewTextures = new Texture2D[4]; // COLD ALLOC: editor-only contact sheet generation, fixed 4-view payload
+                viewTextures[0] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(0f, 0.12f, -1f), 0.06f, 1.58f);
+                viewTextures[1] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.62f, 0.18f, -1f), 0.08f, 1.52f);
+                viewTextures[2] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-1f, 0.12f, 0f), 0.04f, 1.48f);
+                viewTextures[3] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.48f, 0.08f, -1f), -0.18f, 0.96f);
+
+                for (int i = 0; i < viewTextures.Length; i++)
+                {
+                    if (viewTextures[i] == null)
+                        return null;
+                }
+
+                contactSheet = BuildAutomationPreviewContactSheet(viewTextures);
+                if (!IsAutomationPreviewMeaningful(contactSheet, camera.backgroundColor))
+                    return null;
+
+                return SaveAutomationPreview(prefabPath, contactSheet);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            finally
+            {
+                if (viewTextures != null)
+                {
+                    for (int i = 0; i < viewTextures.Length; i++)
+                    {
+                        if (viewTextures[i] != null)
+                            UnityObject.DestroyImmediate(viewTextures[i]);
+                    }
+                }
+
+                if (contactSheet != null)
+                    UnityObject.DestroyImmediate(contactSheet);
+
+                if (previewUtility != null)
+                    previewUtility.Cleanup();
+            }
+        }
+
+        private static Texture2D RenderAutomationPreviewView(PreviewRenderUtility previewUtility, Bounds bounds, Vector3 viewDirection, float focusYOffsetNormalized, float zoomScale)
+        {
+            if (previewUtility == null)
+                return null;
+
+            Camera camera = previewUtility.camera;
+            camera.cullingMask = ~0;
+            camera.nearClipPlane = 0.01f;
+
+            Vector3 normalizedViewDirection = viewDirection.sqrMagnitude > 0.0001f
+                ? viewDirection.normalized
+                : new Vector3(-0.42f, 0.24f, -1f).normalized;
+            Vector3 worldUp = Mathf.Abs(Vector3.Dot(normalizedViewDirection, Vector3.up)) > 0.96f
+                ? Vector3.forward
+                : Vector3.up;
+            Vector3 right = Vector3.Normalize(Vector3.Cross(worldUp, normalizedViewDirection));
+            Vector3 up = Vector3.Normalize(Vector3.Cross(normalizedViewDirection, right));
+
+            float focusYOffset = bounds.extents.y * focusYOffsetNormalized;
+            Vector3 focus = bounds.center + Vector3.up * focusYOffset;
+
+            float aspect = AutomationPreviewWidth / (float)AutomationPreviewHeight;
+            float projectedVertical = Mathf.Max(EvaluateProjectedBoundsHalfExtent(bounds, up), bounds.extents.y * 1.04f);
+            float projectedHorizontal = Mathf.Max(
+                EvaluateProjectedBoundsHalfExtent(bounds, right),
+                Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.08f);
+            float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
+            float slenderness = bounds.size.y / Mathf.Max(0.08f, maxHorizontalExtent * 2f);
+            float tallCompensation = Mathf.Lerp(1f, 1.12f, Mathf.Clamp01((slenderness - 2.2f) / 4.2f));
+            float effectiveZoomScale = zoomScale >= 1.2f
+                ? zoomScale * tallCompensation
+                : zoomScale * Mathf.Lerp(1f, tallCompensation, 0.32f);
+            float orthographicSize = Mathf.Max(
+                projectedVertical * Mathf.Max(1.1f, effectiveZoomScale),
+                (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(1.1f, effectiveZoomScale));
+            orthographicSize = Mathf.Max(orthographicSize, 0.24f);
+            float fitDistance = Mathf.Max(bounds.extents.magnitude * 3.2f, orthographicSize * 3.1f);
+
+            camera.transform.position = focus - normalizedViewDirection * fitDistance;
+            camera.transform.rotation = Quaternion.LookRotation(normalizedViewDirection, up);
+            camera.orthographicSize = orthographicSize;
+            camera.farClipPlane = fitDistance * 3.6f + bounds.extents.magnitude * 2.6f + 8f;
+
+            previewUtility.BeginStaticPreview(new Rect(0f, 0f, AutomationPreviewWidth, AutomationPreviewHeight));
+            previewUtility.Render(true, true);
+            return previewUtility.EndStaticPreview();
+        }
+
+        private static float EvaluateProjectedBoundsHalfExtent(Bounds bounds, Vector3 axis)
+        {
+            Vector3 extents = bounds.extents;
+            float ax = Mathf.Abs(Vector3.Dot(new Vector3(extents.x, 0f, 0f), axis));
+            float ay = Mathf.Abs(Vector3.Dot(new Vector3(0f, extents.y, 0f), axis));
+            float az = Mathf.Abs(Vector3.Dot(new Vector3(0f, 0f, extents.z), axis));
+            return ax + ay + az;
+        }
+
+        private static Texture2D BuildAutomationPreviewContactSheet(Texture2D[] viewTextures)
+        {
+            if (viewTextures == null || viewTextures.Length != 4)
+                return null;
+
+            int tileWidth = AutomationPreviewWidth;
+            int tileHeight = AutomationPreviewHeight;
+            int sheetWidth = tileWidth * 2;
+            int sheetHeight = tileHeight * 2;
+            Texture2D contactSheet = new Texture2D(sheetWidth, sheetHeight, TextureFormat.RGBA32, false, false);
+            Color32[] blankPixels = new Color32[sheetWidth * sheetHeight]; // COLD ALLOC: editor-only contact sheet assembly, bounded 1024x1024
+            Color32 background = new Color32(71, 71, 77, 255);
+            for (int i = 0; i < blankPixels.Length; i++)
+                blankPixels[i] = background;
+
+            contactSheet.SetPixels32(blankPixels);
+            CopyAutomationPreviewTile(contactSheet, viewTextures[0], 0, tileHeight);
+            CopyAutomationPreviewTile(contactSheet, viewTextures[1], tileWidth, tileHeight);
+            CopyAutomationPreviewTile(contactSheet, viewTextures[2], 0, 0);
+            CopyAutomationPreviewTile(contactSheet, viewTextures[3], tileWidth, 0);
+            contactSheet.Apply(false, false);
+            return contactSheet;
+        }
+
+        private static void CopyAutomationPreviewTile(Texture2D contactSheet, Texture2D source, int startX, int startY)
+        {
+            if (contactSheet == null || source == null)
+                return;
+
+            Color[] sourcePixels = source.GetPixels(0, 0, source.width, source.height); // COLD ALLOC: editor-only tile copy for bounded preview textures
+            contactSheet.SetPixels(startX, startY, source.width, source.height, sourcePixels);
+        }
+
         private static string SaveAutomationPreview(string prefabPath, Texture2D source)
         {
             string prefabName = Path.GetFileNameWithoutExtension(prefabPath);
             string safeName = prefabName.Replace('.', '_');
             string assetPath = AutomationPreviewFolder + "/auto_" + safeName + ".png";
             string absolutePath = Path.Combine(GetProjectRootPath(), assetPath.Replace('/', Path.DirectorySeparatorChar));
+            string directoryPath = Path.GetDirectoryName(absolutePath);
+            if (!string.IsNullOrWhiteSpace(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+
             File.WriteAllBytes(absolutePath, source.EncodeToPNG());
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
             return assetPath;
+        }
+
+        private static bool IsAutomationPreviewMeaningful(Texture2D texture, Color backgroundColor)
+        {
+            if (texture == null)
+                return false;
+
+            Color32[] pixels = texture.GetPixels32(); // COLD ALLOC: editor-only preview validation for bounded 512x512 capture
+            if (pixels == null || pixels.Length == 0)
+                return false;
+
+            Color32 background = backgroundColor;
+            int width = texture.width;
+            int height = texture.height;
+            int stepX = Mathf.Max(8, width / 12);
+            int stepY = Mathf.Max(8, height / 12);
+            int informativeSamples = 0;
+            int sampleCount = 0;
+
+            for (int y = stepY / 2; y < height; y += stepY)
+            {
+                int rowStart = y * width;
+                for (int x = stepX / 2; x < width; x += stepX)
+                {
+                    Color32 pixel = pixels[rowStart + x];
+                    if (pixel.a < 8)
+                    {
+                        sampleCount++;
+                        continue;
+                    }
+
+                    int diff = Mathf.Abs(pixel.r - background.r)
+                        + Mathf.Abs(pixel.g - background.g)
+                        + Mathf.Abs(pixel.b - background.b);
+                    if (diff > 18)
+                        informativeSamples++;
+
+                    sampleCount++;
+                }
+            }
+
+            if (sampleCount == 0)
+                return false;
+
+            return informativeSamples >= Mathf.Max(2, sampleCount / 20);
+        }
+
+        private static void PrepareAutomationPreviewHierarchy(GameObject prefabRoot)
+        {
+            if (prefabRoot == null)
+                return;
+
+            Renderer[] renderers = prefabRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                    renderers[i].enabled = true;
+            }
+
+            LODGroup[] lodGroups = prefabRoot.GetComponentsInChildren<LODGroup>(true);
+            for (int groupIndex = 0; groupIndex < lodGroups.Length; groupIndex++)
+            {
+                LOD[] lods = lodGroups[groupIndex].GetLODs();
+                for (int lodIndex = 1; lodIndex < lods.Length; lodIndex++)
+                {
+                    Renderer[] lodRenderers = lods[lodIndex].renderers;
+                    for (int rendererIndex = 0; rendererIndex < lodRenderers.Length; rendererIndex++)
+                    {
+                        Renderer lodRenderer = lodRenderers[rendererIndex];
+                        if (lodRenderer != null)
+                            lodRenderer.enabled = false;
+                    }
+                }
+            }
         }
 
         private static void FinishAutomationRequest()
@@ -1025,6 +1341,8 @@ namespace Hecton8.EditorTools
             public string previewPath;
             public string error;
             public bool isDone;
+            public bool directCaptureAttempted;
+            public bool assetPreviewRequested;
 
             public static AutomationPreviewTask Create(string prefabPath, GameObject prefabAsset)
             {
@@ -1034,7 +1352,9 @@ namespace Hecton8.EditorTools
                     prefabAsset = prefabAsset,
                     previewPath = null,
                     error = null,
-                    isDone = false
+                    isDone = false,
+                    directCaptureAttempted = false,
+                    assetPreviewRequested = false
                 };
             }
 
@@ -1046,7 +1366,9 @@ namespace Hecton8.EditorTools
                     prefabAsset = null,
                     previewPath = null,
                     error = "prefab_missing",
-                    isDone = true
+                    isDone = true,
+                    directCaptureAttempted = false,
+                    assetPreviewRequested = false
                 };
             }
         }

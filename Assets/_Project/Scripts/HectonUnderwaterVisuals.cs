@@ -66,6 +66,7 @@ namespace Hecton8.Environment
     public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, ISlowTickable
     {
         private const float RuntimeCameraResolveRetryInterval = 1f;
+        private const float EditorCameraResolveRetryInterval = 0.25f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
@@ -236,6 +237,7 @@ namespace Hecton8.Environment
         private bool _sunVisualWasDisabled;
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
+        private float _nextEditorCameraResolveTime = float.NegativeInfinity;
 
         private float _editorSlowTickAccum;
 
@@ -332,6 +334,7 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying) return;
             if (this == null) return;
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive) return;
 
             ResolveEditorCamera();
 
@@ -354,17 +357,36 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying) return;
 
-            Camera gameCamera = Camera.main;
-            if (gameCamera != null)
-                playerCamera = gameCamera.transform;
-
             var sv = SceneView.lastActiveSceneView;
             if (sv != null && sv.camera != null)
             {
-                mainCamera = sv.camera;
-                if (playerCamera == null)
-                    playerCamera = sv.camera.transform;
+                Camera sceneViewCamera = sv.camera;
+                if (mainCamera != sceneViewCamera)
+                    mainCamera = sceneViewCamera;
+                if (playerCamera == null || playerCamera == mainCamera.transform)
+                    playerCamera = sceneViewCamera.transform;
+                _nextEditorCameraResolveTime = float.NegativeInfinity;
+                return;
             }
+
+            if (Time.realtimeSinceStartup < _nextEditorCameraResolveTime)
+                return;
+
+            _nextEditorCameraResolveTime = Time.realtimeSinceStartup + EditorCameraResolveRetryInterval;
+
+            if (mainCamera != null)
+            {
+                if (playerCamera == null)
+                    playerCamera = mainCamera.transform;
+                return;
+            }
+
+            Camera gameCamera = Camera.main;
+            if (gameCamera == null)
+                return;
+
+            mainCamera = gameCamera;
+            playerCamera = gameCamera.transform;
         }
 #endif
 
@@ -975,8 +997,6 @@ namespace Hecton8.Environment
                     return;
                 }
 
-                Camera cam = Camera.main;
-                if (cam != null) playerCamera = cam.transform;
             }
 #if UNITY_EDITOR
             else
@@ -1002,7 +1022,6 @@ namespace Hecton8.Environment
                         return;
                 }
 
-                mainCamera = Camera.main;
             }
 #if UNITY_EDITOR
             else

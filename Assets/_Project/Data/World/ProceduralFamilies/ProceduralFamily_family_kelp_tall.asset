@@ -58,20 +58,44 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__banner
+    prefab: {fileID: 682122124304312042, guid: 4eace2a9f26ec3c4ab6a05da1797728c, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.08}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__lamina
+    prefab: {fileID: 346611493511768927, guid: 87ab02efdcede0243bdd81dc47a1d68e, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.08}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__lance
+    prefab: {fileID: 5388218626990383478, guid: 270cc9a62a150c04c8611aa089235ed9, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.08}
   - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__lean
     prefab: {fileID: 4960164781819539376, guid: ecc4c4cb11273e54090802112618ee26, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.08}
-  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__stalk
-    prefab: {fileID: 9068265321113741935, guid: de2aafe8a5e783946aeab3308b5db00d, type: 3}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__ribbon
+    prefab: {fileID: 943764535668542015, guid: 4a69bc8d1ee12d843a60a154a1d126f7, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.9, y: 1.08}
-  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__ribbon
-    prefab: {fileID: 943764535668542015, guid: 4a69bc8d1ee12d843a60a154a1d126f7, type: 3}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__rope
+    prefab: {fileID: 7265103543554835487, guid: 86f2f611e59fb5549bd3fb5ac41062db, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.9, y: 1.08}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__stalk
+    prefab: {fileID: 9068265321113741935, guid: de2aafe8a5e783946aeab3308b5db00d, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1

@@ -74,10 +74,7 @@ namespace NASAPunk.Visor
             EvaluateTickRegistration();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-            {
-                EditorApplication.update -= EditorTick;
-                EditorApplication.update += EditorTick;
-            }
+                EvaluateEditorTickRegistration();
 #endif
         }
 
@@ -90,7 +87,7 @@ namespace NASAPunk.Visor
         {
             UnregisterTick();
 #if UNITY_EDITOR
-            EditorApplication.update -= EditorTick;
+            UnregisterEditorTick();
 #endif
         }
 
@@ -98,17 +95,26 @@ namespace NASAPunk.Visor
         {
             AutoResolveReferences(true);
             _pendingApply = true;
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                EvaluateEditorTickRegistration();
+#endif
         }
 
 #if UNITY_EDITOR
         private void EditorTick()
         {
             if (Application.isPlaying || !isActiveAndEnabled)
+            {
+                UnregisterEditorTick();
                 return;
+            }
 
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
+            if (!ShouldTickInEditMode())
+                UnregisterEditorTick();
         }
 #endif
 
@@ -472,12 +478,26 @@ namespace NASAPunk.Visor
         private void MarkDirty()
         {
             _pendingApply = true;
-            EvaluateTickRegistration();
+            if (Application.isPlaying)
+            {
+                EvaluateTickRegistration();
+            }
+#if UNITY_EDITOR
+            else
+            {
+                EvaluateEditorTickRegistration();
+            }
+#endif
         }
 
         private bool ShouldTickInPlay()
         {
             return _pendingApply || NeedsAutoResolve();
+        }
+
+        private bool ShouldTickInEditMode()
+        {
+            return isActiveAndEnabled && (_pendingApply || NeedsAutoResolve());
         }
 
         private void EvaluateTickRegistration()
@@ -493,6 +513,33 @@ namespace NASAPunk.Visor
             else
                 UnregisterTick();
         }
+
+#if UNITY_EDITOR
+        private void EvaluateEditorTickRegistration()
+        {
+            if (Application.isPlaying)
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
+            if (ShouldTickInEditMode())
+                RegisterEditorTick();
+            else
+                UnregisterEditorTick();
+        }
+
+        private void RegisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+            EditorApplication.update += EditorTick;
+        }
+
+        private void UnregisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+        }
+#endif
 
         private void RegisterTick()
         {

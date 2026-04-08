@@ -10,6 +10,7 @@ Shader "Hecton8/Flora/CoralMaster"
         _AccentColor ("Accent Color", Color) = (0.82, 0.58, 0.42, 1)
         _RimColor ("Rim Color", Color) = (0.24, 0.68, 0.72, 1)
         _SubsurfaceColor ("Subsurface Color", Color) = (0.94, 0.62, 0.48, 1)
+        _BiolumColor ("Biolum Color", Color) = (0.26, 0.95, 0.84, 1)
         _Smoothness ("Smoothness", Range(0, 1)) = 0.34
         _AmbientStrength ("Ambient Strength", Range(0, 1)) = 0.46
         _RimPower ("Rim Power", Range(0.5, 8)) = 2.8
@@ -26,6 +27,10 @@ Shader "Hecton8/Flora/CoralMaster"
         _CausticStrength ("Caustic Strength", Range(0, 2)) = 0.18
         _CausticScale ("Caustic Scale", Range(0.1, 8)) = 1.6
         _CausticSpeed ("Caustic Speed", Range(0, 4)) = 0.42
+        _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0
+        _BiolumMaskStrength ("Biolum Mask Strength", Range(0, 2)) = 1
+        _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.28
+        _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.58
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
 
@@ -64,6 +69,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 half4 _AccentColor;
                 half4 _RimColor;
                 half4 _SubsurfaceColor;
+                half4 _BiolumColor;
                 half _Smoothness;
                 half _AmbientStrength;
                 half _RimPower;
@@ -80,6 +86,10 @@ Shader "Hecton8/Flora/CoralMaster"
                 half _CausticStrength;
                 half _CausticScale;
                 half _CausticSpeed;
+                half _BiolumStrength;
+                half _BiolumMaskStrength;
+                half _BiolumPulseAmplitude;
+                half _BiolumPulseFrequency;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -90,6 +100,11 @@ Shader "Hecton8/Flora/CoralMaster"
             SAMPLER(sampler_NormalMap);
             TEXTURE2D(_MaskMap);
             SAMPLER(sampler_MaskMap);
+
+            half4 _HectonOceanBiolumColor;
+            half _HectonOceanBiolumStrength;
+            half4 _HectonFloorBiolumColor;
+            half _HectonFloorBiolumStrength;
 
             struct Attributes
             {
@@ -166,6 +181,13 @@ Shader "Hecton8/Flora/CoralMaster"
                 half thickness = saturate(lerp(maskSample.b, maskSample.a, _ThicknessStrength));
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
                 half causticMask = saturate(0.68h + detailSample * _CausticStrength + maskSample.a * 0.18h);
+                half pulse = 1.0h + sin(_Time.y * _BiolumPulseFrequency + input.positionWS.x * 0.07h + input.positionWS.z * 0.05h + detailSample * 2.4h) * _BiolumPulseAmplitude;
+                half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
+                half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
+                half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength * 0.35h);
+                half zoneBiolumStrength = saturate(floorZoneInfluence + oceanZoneInfluence);
+                half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
 
                 half3 accent = lerp(_BaseColor.rgb, _AccentColor.rgb, saturate(maskSample.r + tintMask * 0.48h));
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _AccentColor.rgb, moisture * _MoistureBoost);
@@ -179,8 +201,9 @@ Shader "Hecton8/Flora/CoralMaster"
                 half3 subsurface = _SubsurfaceColor.rgb * (backLight * _SubsurfaceStrength * thickness * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 half specular = pow(NdotL, lerp(10.0h, 42.0h, _Smoothness)) * _Smoothness * 0.22h * glossNoise;
+                half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
 
-                half3 color = diffuse + subsurface + rimLighting + specular;
+                half3 color = diffuse + subsurface + rimLighting + specular + biolum;
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);
             }

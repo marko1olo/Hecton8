@@ -258,8 +258,21 @@ Same rule: OverlapSphereNonAlloc, SphereCastNonAlloc, BoxCastNonAlloc
 ### 28. DIRECT INSTANTIATE BYPASS
 [FORBID] Object.Instantiate() in gameplay code
 [REQ] ALL spawning through ObjectPoolManager.Instance.Spawn()
+[REQ] Organic assets must read as continuous growth: no floating blades, detached bulbs, branch tips, coral plates, or hard growth seams.
+[REQ] Variety should prefer editor-baked/generated libraries plus seeded runtime selection, not full organic mesh rebuild on every game start.
+[REQ] Flora/coral motion should bind to shared current/flow systems first; expensive local simulation is reserved for near-camera value only.
 [EXCEPT] One-time scene setup with // COLD ALLOC comment
 [EXCEPT] UI elements living entire scene lifetime
+
+### 29. MEMORY LIFETIME — NO LEAKS / NO UNBOUNDED RETENTION
+[REQ] Prevent memory leaks and memory retention in **edit mode, play mode, and shipped game mode**.
+[FORBID] Unbounded caches of `Texture2D`, `RenderTexture`, `Sprite`, `Material`, `Mesh`, `byte[]`, `NativeArray`, `List`, or `Dictionary` without explicit owner, cap, eviction rule, and destroy/dispose path.
+[FORBID] Creating `RenderTexture` / `Texture2D` / native containers without guaranteed `Release` / `Destroy` / `Dispose` on owner shutdown, despawn, scene unload, or domain reload.
+[FORBID] `ExecuteAlways` / editor tools / `EditorApplication.update` owners that stay subscribed after preview or maintenance work is settled.
+[REQ] Every cache must state: owner, max size, eviction strategy, and invalidation trigger.
+[REQ] Prefer reuse/pooling for temporary textures, meshes, buffers, and serialization scratch memory.
+[FORBID] "Memory optimization" that increases per-frame CPU cost, editor churn, or hot-path allocations without measured proof.
+[REQ] Memory fixes must preserve or improve frame time; if memory drops but CPU/frame spikes worsen, treat it as regression.
 ## CODE STYLE
 
 ### Naming
@@ -310,6 +323,23 @@ WITHOUT THIS BLOCK — CODE IS REJECTED.
 3. Identify dependencies: managers, interfaces, events
 4. Find reference code — use similar class as template
 5. Plan edge cases: pooled reuse, null manager, null deps, post-OnDisable
+
+### [RULE] ARCHITECTURE FIRST — OWNERSHIP BEFORE CODE
+
+Before writing or moving ANY logic, ask these questions explicitly:
+1. Does this logic belong in this layer, or am I stuffing it into the nearest large file?
+2. Is there already an owner system for this responsibility in HECTON-8?
+3. Am I mixing `runtime placement`, `editor authoring`, `proxy generation`, `final asset baking`, or `verification` into one class?
+4. Am I importing an external/Claude subsystem wholesale instead of mapping its concepts into the existing stack?
+5. If this file is already large or fragile, should this become a new focused helper/module instead?
+
+[FORBID] Growing god objects just because they are already central.
+[FORBID] Mixing ownership layers in one implementation path.
+[FORBID] Hiding architecture drift behind "just authoring" or "just one more rule."
+[REQ] If a concept needs a new subsystem, state that explicitly before coding and justify why the existing owner cannot hold it.
+[REQ] If the project already has an owner system, adapt the concept there instead of cloning an external architecture.
+[REQ] New files are allowed when they reduce ownership ambiguity and keep hot/runtime paths clean.
+
 ### [RULE] PREFAB / SCENE CONSISTENCY GUARD
 
 **Source of Truth**
@@ -402,6 +432,31 @@ If user/external reviewer provides code snippet — implement AS IS.
 Any deviation (rename, refactor, simplify) = CRITICAL ERROR.
 Improve only AFTER original works, as separate step.
 
+### [RULE] FLORA / WORLD TRANSFER BOUNDARIES
+[FORBID] Putting flora mesh generation, prefab anatomy construction, or bake logic into runtime world selection files such as scatter/fill directors.
+[FORBID] Treating proxy prefabs as final assets just to shortcut the pipeline.
+[FORBID] Copying Claude-style monolithic `renderer + placer + generator + bootstrap` systems into HECTON-8 when the project already owns placement through fill/scatter/biome/profile stack.
+[REQ] Runtime world files own selection, quotas, weighting, and validation-facing placement behavior.
+[REQ] Editor flora creation owns shape building, variant baking, and prefab generation.
+[REQ] Proxy, final, and runtime layers must stay separable and reviewable.
+[REQ] When in doubt, stop and ask: "Am I solving the problem in the correct owner layer?"
+
+### [RULE] ORGANIC ASSET CONTINUITY
+[REQ] Seaweed, coral, and other organic assemblies must read as continuous growth, not stacked parts.
+[FORBID] Floating blades, detached bulbs, branch tips, coral plates, or visible hard breaks between connected growth segments.
+[REQ] Attachments must show believable parent-child growth: holdfast -> stipe -> sheath/petiole -> blade, or base mass -> branch/plate -> tip.
+[REQ] If optimization is needed, cut support detail first. Do not collapse the primary silhouette into obvious low-poly junk.
+
+### [RULE] ORGANIC VARIETY WITHOUT RUNTIME REBUILD
+[REQ] For flora/coral variety, prefer editor-baked/generated variant libraries plus runtime seeded selection.
+[FORBID] Rebuilding all organic mesh geometry at every game start when the same result can be selected from prebuilt variants.
+[REQ] If run-seeded variation matters, persist the chosen variant set through existing save/world systems instead of regenerating hero geometry blindly on each boot.
+
+### [RULE] CHEAP BELIEVABLE MOTION
+[REQ] If global current / flow systems already exist, organic motion should bind to shared current parameters first.
+[FORBID] Defaulting to per-frond heavy simulation when shader-driven or cluster-driven motion can sell the effect cheaper.
+[REQ] Motion should read as coherent field response in the distance and only escalate to richer local deformation where the camera/player can actually notice it.
+
 ### [RULE] NO SECOND-GUESSING
 [FORBID] Guessing, assuming, inventing details
 [REQ] If unclear — ASK. Request files/screenshots as needed.
@@ -466,6 +521,20 @@ For Easy Save 3: add [ES3NonSerializable] where needed.
    STATUS: NO REGRESSION / REGRESSION DETECTED in [X]
 4. If any metric >10% worse → revert, report, propose different approach
 5. No baseline comparison = code rejected
+
+### [RULE] MEMORY RETENTION GUARD (EDIT MODE + PLAY MODE + GAME MODE)
+1. Record baseline memory in the same scenario before changes:
+   - Edit mode idle 10 min if the issue is editor-side
+   - Play/game mode idle 10 min if the issue is runtime-side
+2. Capture at minimum:
+   - `App Resident Memory`
+   - `Texture Memory`
+   - `GC Reserved Memory`
+   - `Total Reserved Memory`
+3. After changes, repeat the same duration and compare the **slope**, not just one snapshot.
+4. If memory still climbs without bound, status remains `PENDING VERIFICATION`.
+5. If memory is flatter but CPU/frame time is worse, treat it as `REGRESSION DETECTED`.
+6. Use Memory Profiler / Profiler / objective counters first; guesses about "probably leaked" are invalid.
 
 ### [RULE] AUTO-DIAGNOSIS (GC >50KB/frame)
 1. Stop game, snapshot Profiler
@@ -559,6 +628,11 @@ They contain: game design intent, feature priorities, tech constraints, context
 [REQ] URP-only — no Built-in legacy
 [REQ] Minimize texture samples, optimal instructions
 [REQ] LOD variants, quality settings toggle for expensive effects
+[REQ] Organic assets must use smooth LOD transitions where supported: cross-fade / dithered fades instead of visible hard pops.
+[REQ] Texture/mesh transition quality matters. Hide loading and LOD swaps with graceful blending before adding more geometry.
+[REQ] Optimization does NOT justify ugly low-poly silhouettes on hero or near-field flora/coral.
+[REQ] For flora shaders, prefer cheap believable coupling to global current / flow inputs before expensive local simulation.
+[REQ] Claude/outsource usage is allowed for shader-only work when accompanied by one exact master prompt, target shader file path, project constraints, and explicit performance limits.
 [REQ] Profile shaders via Frame Debugger + RenderDoc
 [REQ] Jobs + Burst for heavy computation where possible
 

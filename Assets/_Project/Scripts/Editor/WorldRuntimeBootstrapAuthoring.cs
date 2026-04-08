@@ -4,6 +4,7 @@ using Hecton8.AI;
 using Hecton8.World;
 using Hecton8.Dev;
 using Hecton8.Environment;
+using Hecton8.Biolum;
 using System;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -35,6 +36,8 @@ namespace Hecton8.EditorTools
         private const string NearHolderName = "__NearInteractive";
         private const string MidHolderName = "__MidVisual";
         private const string FarHolderName = "__FarSilhouette";
+        private const string WorldRootName = "--- WORLD ---";
+        private const string BiolumRootName = "Biolum_Deep";
 
         [MenuItem("Hecton/Authoring/Rebuild World Runtime Stack", priority = 177)]
         public static void RebuildWorldRuntimeStack()
@@ -105,6 +108,7 @@ namespace Hecton8.EditorTools
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
             WorldCaveDirector caveDirector = GetOrAddComponent<WorldCaveDirector>(managersRoot);
             ProximityColliderSystem proximityColliderSystem = GetOrAddComponent<ProximityColliderSystem>(managersRoot);
+            HectonBiolumManager biolumManager = GetOrAddComponent<HectonBiolumManager>(managersRoot);
             HectonBiomeMatrixCatalog biomeMatrixCatalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeMatrixCatalogPath);
             WorldChunkStreamingProfile chunkStreamingProfile = AssetDatabase.LoadAssetAtPath<WorldChunkStreamingProfile>(WorldChunkStreamingProfilePath);
 
@@ -172,10 +176,12 @@ namespace Hecton8.EditorTools
                 bridge,
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>(),
                 chunkStreamingProfile);
+            ConfigureBiolumManager(biolumManager);
             ConfigureSceneSlices();
             ConfigureSceneInterestAnchors();
             ConfigureSceneZones();
             ConfigureSceneContentSockets();
+            ConfigureSceneBiolumZones(playerTransform);
             ConfigurePopulationRules(populationDirector);
             ConfigureProceduralFill(proceduralFillDirector);
             WorldProceduralFinalVariantAuthoring.ApplyFirstWave();
@@ -266,6 +272,29 @@ namespace Hecton8.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
             scavengePopulator.SetChunkStreamingProfile(chunkStreamingProfile);
             EditorUtility.SetDirty(scavengePopulator);
+        }
+
+        private static void ConfigureBiolumManager(HectonBiolumManager biolumManager)
+        {
+            if (biolumManager == null)
+                return;
+
+            SerializedObject so = new SerializedObject(biolumManager);
+            SerializedProperty autoFindZones = so.FindProperty("_autoFindZones");
+            SerializedProperty globalIntensityScale = so.FindProperty("_globalIntensityScale");
+            SerializedProperty globalRangeScale = so.FindProperty("_globalRangeScale");
+
+            if (autoFindZones != null)
+                autoFindZones.boolValue = true;
+
+            if (globalIntensityScale != null)
+                globalIntensityScale.floatValue = 1f;
+
+            if (globalRangeScale != null)
+                globalRangeScale.floatValue = 1f;
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(biolumManager);
         }
 
         private static void ConfigureFaunaDirector(
@@ -754,6 +783,84 @@ namespace Hecton8.EditorTools
             ConfigureContentSocket("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_EndgameOps/Ops_Frontier", "socket.progression.frontier", "Ops Frontier", WorldContentSocket.ContentKind.Landmark, WorldSliceAnchor.SliceState.Mid, 10f, 6, "progression.ops.frontier", "Late-route frontier landmark.", EnsureContentProfile("ContentProfile_Landmark.asset", "content.profile.landmark", "Landmark", WorldContentSocket.ContentKind.Landmark, WorldZoneAnchor.ZoneKind.Progression, WorldSliceAnchor.SliceState.Mid, "landmark.point", "Readable distant landmark or late-route goal.", 5));
         }
 
+        private static void ConfigureSceneBiolumZones(Transform playerTransform)
+        {
+            GameObject worldRoot = GameObject.Find(WorldRootName);
+            if (worldRoot == null)
+                return;
+
+            GameObject biolumRoot = EnsureChild(worldRoot.transform, BiolumRootName);
+            Vector3 playerPosition = playerTransform != null
+                ? playerTransform.position
+                : new Vector3(1097.3f, 4937.8f, 1349.1f);
+            Vector3 center = new Vector3(playerPosition.x, 0f, playerPosition.z);
+
+            ConfigureOceanBiolumZone(
+                biolumRoot.transform,
+                "Ocean_DeepVeil",
+                center + new Vector3(140f, 4450f, -120f),
+                "biolum.ocean.deep_veil",
+                0.62f,
+                5,
+                16f,
+                0.58f,
+                0.22f,
+                1.22f,
+                15.5f,
+                6,
+                7,
+                0.82f);
+            ConfigureOceanBiolumZone(
+                biolumRoot.transform,
+                "Ocean_AbyssRibbon",
+                center + new Vector3(-180f, 3920f, 160f),
+                "biolum.ocean.abyss_ribbon",
+                0.84f,
+                4,
+                18f,
+                0.44f,
+                0.36f,
+                1.3f,
+                13.5f,
+                7,
+                6,
+                0.74f);
+            ConfigureFloorBiolumZone(
+                biolumRoot.transform,
+                "Floor_BrineGarden",
+                center + new Vector3(220f, 3840f, 140f),
+                "biolum.floor.brine_garden",
+                FloorClusterType.Garden,
+                4,
+                4.6f,
+                0.24f,
+                0.38f,
+                0.66f,
+                0.28f,
+                1.28f,
+                14.5f,
+                6,
+                8,
+                0.78f);
+            ConfigureFloorBiolumZone(
+                biolumRoot.transform,
+                "Floor_BrittleVents",
+                center + new Vector3(-260f, 3560f, -180f),
+                "biolum.floor.brittle_vents",
+                FloorClusterType.Vent,
+                3,
+                5.2f,
+                0.32f,
+                0.52f,
+                0.72f,
+                0.34f,
+                1.34f,
+                13.2f,
+                6,
+                9,
+                0.76f);
+        }
+
         private static void ConfigurePopulationRules(WorldPopulationDirector director)
         {
             List<WorldPopulationRule> rules = new List<WorldPopulationRule>
@@ -772,6 +879,87 @@ namespace Hecton8.EditorTools
 
             director.SetRules(rules);
             EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureOceanBiolumZone(
+            Transform parent,
+            string objectName,
+            Vector3 worldPosition,
+            string zoneKey,
+            float depthRatio,
+            int lightCount,
+            float scatterRadius,
+            float moodLevel,
+            float hazardLevel,
+            float intensityMultiplier,
+            float rangeMultiplier,
+            int updateInterval,
+            int maxLights,
+            float lodDistanceScale)
+        {
+            GameObject root = EnsureChild(parent, objectName);
+            root.transform.position = worldPosition;
+            root.transform.rotation = Quaternion.identity;
+            root.transform.localScale = Vector3.one;
+
+            OceanBiolumZone zone = GetOrAddComponent<OceanBiolumZone>(root);
+            SerializedObject so = new SerializedObject(zone);
+            so.FindProperty("_zoneKey").stringValue = zoneKey;
+            so.FindProperty("_moodLevel").floatValue = moodLevel;
+            so.FindProperty("_hazardLevel").floatValue = hazardLevel;
+            so.FindProperty("_intensityMultiplier").floatValue = intensityMultiplier;
+            so.FindProperty("_rangeMultiplier").floatValue = rangeMultiplier;
+            so.FindProperty("_updateInterval").intValue = updateInterval;
+            so.FindProperty("_maxLights").intValue = maxLights;
+            so.FindProperty("_lodDistanceScale").floatValue = lodDistanceScale;
+            so.FindProperty("_depthRatio").floatValue = depthRatio;
+            so.FindProperty("_lightCount").intValue = lightCount;
+            so.FindProperty("_scatterRadius").floatValue = scatterRadius;
+            so.FindProperty("_useNoiseVariation").boolValue = true;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(zone);
+        }
+
+        private static void ConfigureFloorBiolumZone(
+            Transform parent,
+            string objectName,
+            Vector3 worldPosition,
+            string zoneKey,
+            FloorClusterType clusterType,
+            int clusterCount,
+            float clusterSize,
+            float pulseIntensity,
+            float pulseFrequency,
+            float moodLevel,
+            float hazardLevel,
+            float intensityMultiplier,
+            float rangeMultiplier,
+            int updateInterval,
+            int maxLights,
+            float lodDistanceScale)
+        {
+            GameObject root = EnsureChild(parent, objectName);
+            root.transform.position = worldPosition;
+            root.transform.rotation = Quaternion.identity;
+            root.transform.localScale = Vector3.one;
+
+            FloorBiolumZone zone = GetOrAddComponent<FloorBiolumZone>(root);
+            SerializedObject so = new SerializedObject(zone);
+            so.FindProperty("_zoneKey").stringValue = zoneKey;
+            so.FindProperty("_moodLevel").floatValue = moodLevel;
+            so.FindProperty("_hazardLevel").floatValue = hazardLevel;
+            so.FindProperty("_intensityMultiplier").floatValue = intensityMultiplier;
+            so.FindProperty("_rangeMultiplier").floatValue = rangeMultiplier;
+            so.FindProperty("_updateInterval").intValue = updateInterval;
+            so.FindProperty("_maxLights").intValue = maxLights;
+            so.FindProperty("_lodDistanceScale").floatValue = lodDistanceScale;
+            so.FindProperty("_clusterType").enumValueIndex = (int)clusterType;
+            so.FindProperty("_clusterCount").intValue = clusterCount;
+            so.FindProperty("_clusterSize").floatValue = clusterSize;
+            so.FindProperty("_pulseIntensity").floatValue = pulseIntensity;
+            so.FindProperty("_pulseFrequency").floatValue = pulseFrequency;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(zone);
         }
 
         private static void ConfigureProceduralFill(WorldProceduralFillDirector director)

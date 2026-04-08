@@ -53,6 +53,7 @@ namespace Hecton8.Physics
         private Collider[] _excludeColliders;
         
         private int _queryCount;
+        private int _lastFramePrepared = -1;
         private bool _batchExecuted;
         private JobHandle _lastJobHandle;
 
@@ -86,6 +87,7 @@ namespace Hecton8.Physics
             _excludeColliders = new Collider[MaxQueries];
             
             _queryCount = 0;
+            _lastFramePrepared = -1;
             _batchExecuted = false;
         }
 
@@ -106,6 +108,8 @@ namespace Hecton8.Physics
                            QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Ignore,
                            Collider excludeCollider = null)
         {
+            EnsureFrameState();
+
             if (_queryCount >= MaxQueries)
             {
                 Debug.LogWarning("[RaycastBatchHelper] Query buffer overflow!");
@@ -142,6 +146,8 @@ namespace Hecton8.Physics
         /// </summary>
         public void ExecuteBatch()
         {
+            EnsureFrameState();
+
             if (_queryCount <= 0)
             {
                 _batchExecuted = true;
@@ -181,12 +187,39 @@ namespace Hecton8.Physics
 
         public QueryResult GetResult(int index)
         {
+            EnsureFrameState();
+
             if (index < 0 || index >= _queryCount) return default;
             return _results[index];
         }
 
-        public int QueryCount => _queryCount;
-        public bool WasExecuted => _batchExecuted;
+        public int QueryCount
+        {
+            get
+            {
+                EnsureFrameState();
+                return _queryCount;
+            }
+        }
+
+        public bool WasExecuted
+        {
+            get
+            {
+                EnsureFrameState();
+                return _batchExecuted;
+            }
+        }
+
+        private void EnsureFrameState()
+        {
+            int currentFrame = Time.frameCount;
+            if (_lastFramePrepared == currentFrame)
+                return;
+
+            _lastFramePrepared = currentFrame;
+            ClearQueries();
+        }
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()

@@ -36,6 +36,9 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _nextFeedbackAt;
         private bool _secondaryLatched;
+        private int _cachedDiagnosisFrame = -1;
+        private bool _cachedDiagnosisValid;
+        private SamplerDiagnosis _cachedDiagnosis;
 
         private void Awake()
         {
@@ -82,6 +85,7 @@ namespace Hecton8.Gameplay
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
+            InvalidateDiagnosisCache();
             _cooldown = sampleCooldown / Mathf.Max(0.25f, GetSpeed());
         }
 
@@ -139,6 +143,7 @@ namespace Hecton8.Gameplay
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
+            InvalidateDiagnosisCache();
             _cooldown = sampleCooldown / Mathf.Max(0.25f, GetSpeed());
         }
 
@@ -157,7 +162,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return $"SAMPLER // CYCLING {_cooldown:0.0}S";
 
-            if (TryReadDiagnosis(out SamplerDiagnosis diagnosis))
+            if (TryGetDiagnosisCached(out SamplerDiagnosis diagnosis))
                 return $"SAMPLER // {diagnosis.headline}";
 
             return "SAMPLER // READY";
@@ -168,7 +173,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return "Hold position while the sampling head resets.";
 
-            if (TryReadDiagnosis(out SamplerDiagnosis diagnosis))
+            if (TryGetDiagnosisCached(out SamplerDiagnosis diagnosis))
                 return diagnosis.summary;
 
             return "Primary extracts. Secondary checks or recovers salvage packages.";
@@ -203,6 +208,29 @@ namespace Hecton8.Gameplay
 
             diagnosis = BuildDiagnosis(hit.collider);
             return true;
+        }
+
+        private bool TryGetDiagnosisCached(out SamplerDiagnosis diagnosis)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedDiagnosisFrame == currentFrame)
+            {
+                diagnosis = _cachedDiagnosis;
+                return _cachedDiagnosisValid;
+            }
+
+            bool valid = TryReadDiagnosis(out diagnosis);
+            _cachedDiagnosisFrame = currentFrame;
+            _cachedDiagnosisValid = valid;
+            _cachedDiagnosis = diagnosis;
+            return valid;
+        }
+
+        private void InvalidateDiagnosisCache()
+        {
+            _cachedDiagnosisFrame = -1;
+            _cachedDiagnosisValid = false;
+            _cachedDiagnosis = default;
         }
 
         private static SamplerDiagnosis BuildDiagnosis(Collider hitCollider)

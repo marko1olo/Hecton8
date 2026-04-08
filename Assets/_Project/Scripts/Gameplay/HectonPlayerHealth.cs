@@ -14,7 +14,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
-    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable
+    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable
     {
         /// <summary>Maximum health points.</summary>
         [Header("Health Settings")]
@@ -56,6 +56,7 @@ namespace Hecton8.Gameplay
         // Private state
         private float _invulnerabilityTimer;
         private bool _isInitialized;
+        private bool _registeredToTickManager;
 
         /// <summary>Initializes the health system.</summary>
         private void Awake()
@@ -67,13 +68,42 @@ namespace Hecton8.Gameplay
             }
         }
 
-        /// <summary>Updates invulnerability timer.</summary>
-        private void Update()
+        private void OnEnable()
         {
-            if (_invulnerabilityTimer > 0)
+            if (GameTickManager.Instance != null && !_registeredToTickManager)
             {
-                _invulnerabilityTimer -= Time.deltaTime;
+                GameTickManager.Instance.Register((ITickable)this);
+                _registeredToTickManager = true;
             }
+        }
+
+        private void Start()
+        {
+            if (GameTickManager.Instance != null && !_registeredToTickManager)
+            {
+                GameTickManager.Instance.Register((ITickable)this);
+                _registeredToTickManager = true;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (GameTickManager.Instance != null && _registeredToTickManager)
+            {
+                GameTickManager.Instance.Unregister((ITickable)this);
+                _registeredToTickManager = false;
+            }
+        }
+
+        /// <summary>Updates invulnerability timer.</summary>
+        public void Tick(float deltaTime)
+        {
+            if (_invulnerabilityTimer <= 0f)
+                return;
+
+            _invulnerabilityTimer -= deltaTime;
+            if (_invulnerabilityTimer < 0f)
+                _invulnerabilityTimer = 0f;
         }
 
         /// <summary>Applies damage to the player.</summary>

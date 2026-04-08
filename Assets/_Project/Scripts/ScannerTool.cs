@@ -166,6 +166,10 @@ namespace Hecton8.Gameplay
         private ScanResultSummary _lastResult;
         private float _lastResultTime = -999f;
         private bool _hasLastResult;
+        private string _currentModeLabel;
+        private string _currentModeSummary;
+        private string _currentModeHudMessage;
+        private string _currentModeOperationTitle;
 
         internal bool PulseActive { get; private set; }
         internal Unity.Mathematics.float3 PulseOrigin { get; private set; }
@@ -179,6 +183,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+            RefreshModeStrings();
 
             if (GetComponent<ScannerPulseDrawer>() == null)
             {
@@ -256,13 +261,13 @@ namespace Hecton8.Gameplay
                 return;
 
             _scanMode = NextMode(_scanMode);
-            string modeLabel = DescribeMode(_scanMode);
+            RefreshModeStrings();
 
-            ToolHitUtility.ShowInfo($"SCANNER MODE - {modeLabel}");
+            ToolHitUtility.ShowInfo(_currentModeHudMessage);
             FieldOperationLogSystem.RecordOperation(
                 "SCAN",
-                $"SCAN MODE - {modeLabel}",
-                BuildModeSummary(_scanMode),
+                _currentModeOperationTitle,
+                _currentModeSummary,
                 "INFO");
 
             _nextModeFeedbackAt = now + modeFeedbackInterval;
@@ -281,15 +286,14 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
-            string modeLabel = DescribeMode(_scanMode);
 
             if (cooldownRemaining > 0.01f)
-                return $"SCANNER // {modeLabel} // RECHARGING {cooldownRemaining:0.0}S";
+                return $"SCANNER // {_currentModeLabel} // RECHARGING {cooldownRemaining:0.0}S";
 
             if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
-                return $"SCANNER // {modeLabel} // LAST {_lastResult.totalContacts} CONTACTS";
+                return $"SCANNER // {_currentModeLabel} // LAST {_lastResult.totalContacts} CONTACTS";
 
-            return $"SCANNER // {modeLabel} // READY {scanRadius:0}M";
+            return $"SCANNER // {_currentModeLabel} // READY {scanRadius:0}M";
         }
 
         public override string GetOperationalDirective()
@@ -301,7 +305,7 @@ namespace Hecton8.Gameplay
             if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
                 return _lastResult.BuildRecommendation(_scanMode);
 
-            return BuildModeSummary(_scanMode);
+            return _currentModeSummary;
         }
 
         private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode)
@@ -581,6 +585,34 @@ namespace Hecton8.Gameplay
                 ScanMode.Resource => "RESOURCE",
                 ScanMode.Structure => "STRUCTURE",
                 _ => "EXPEDITION"
+            };
+        }
+
+        private void RefreshModeStrings()
+        {
+            _currentModeLabel = DescribeMode(_scanMode);
+            _currentModeSummary = BuildModeSummary(_scanMode);
+            _currentModeHudMessage = BuildModeHudMessage(_scanMode);
+            _currentModeOperationTitle = BuildModeOperationTitle(_scanMode);
+        }
+
+        private static string BuildModeHudMessage(ScanMode mode)
+        {
+            return mode switch
+            {
+                ScanMode.Resource => "SCANNER MODE - RESOURCE",
+                ScanMode.Structure => "SCANNER MODE - STRUCTURE",
+                _ => "SCANNER MODE - EXPEDITION"
+            };
+        }
+
+        private static string BuildModeOperationTitle(ScanMode mode)
+        {
+            return mode switch
+            {
+                ScanMode.Resource => "SCAN MODE - RESOURCE",
+                ScanMode.Structure => "SCAN MODE - STRUCTURE",
+                _ => "SCAN MODE - EXPEDITION"
             };
         }
 

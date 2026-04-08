@@ -64,14 +64,38 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__fan
+    prefab: {fileID: 1302863577762778687, guid: 98942eb95d0b13149b1611c60f96a0b1, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.06}
   - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__frond
     prefab: {fileID: 3908609421256634165, guid: f69118c0fcfe3324a95338903b31b70c, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.94, y: 1.06}
-  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__fan
-    prefab: {fileID: 1302863577762778687, guid: 98942eb95d0b13149b1611c60f96a0b1, type: 3}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__mantle
+    prefab: {fileID: 4567651665433878157, guid: 32ca24fe404400145b5831cfae8c79c5, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__rosette
+    prefab: {fileID: 2934898087572560932, guid: 705f6936810b4aa4fa54c034cf7ce9f8, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__splay
+    prefab: {fileID: 743523207576096876, guid: 2332a275be21f11479f29dff250913b4, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.06}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__veil
+    prefab: {fileID: 1196597465967447414, guid: 97f330cee1972894cb50686cbd8cc0f5, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1

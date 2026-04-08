@@ -124,10 +124,7 @@ namespace NASAPunk.Visor
             TryRegisterRuntimeTick();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-            {
-                EditorApplication.update -= EditorTick;
-                EditorApplication.update += EditorTick;
-            }
+                EvaluateEditorTickRegistration();
 #endif
         }
 
@@ -157,8 +154,11 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EditorTick()
         {
-            if (Application.isPlaying || !isActiveAndEnabled || !_previewInEditMode)
+            if (!ShouldTickInEditMode())
+            {
+                UnregisterEditorTick();
                 return;
+            }
 
             RefreshRuntimeState(forceResolve: false);
         }
@@ -175,6 +175,10 @@ namespace NASAPunk.Visor
                 return;
 
             RebuildProjection();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                EvaluateEditorTickRegistration();
+#endif
         }
 
         public void Tick(float deltaTime)
@@ -660,5 +664,43 @@ namespace NASAPunk.Visor
             _glitchDuration = duration;
             _glitchRngState = (uint)(Time.unscaledTime * 1000f) | 1u;
         }
+
+#if UNITY_EDITOR
+        private bool ShouldTickInEditMode()
+        {
+            if (Application.isPlaying || !isActiveAndEnabled || !_previewInEditMode)
+                return false;
+
+            if (_materialPropertiesDirty)
+                return true;
+
+            if (_syncToReferenceCamera && _syncPoseInEditMode)
+                return true;
+
+            return NeedsAutoResolve();
+        }
+
+        private void EvaluateEditorTickRegistration()
+        {
+            if (ShouldTickInEditMode())
+            {
+                RegisterEditorTick();
+                return;
+            }
+
+            UnregisterEditorTick();
+        }
+
+        private void RegisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+            EditorApplication.update += EditorTick;
+        }
+
+        private void UnregisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+        }
+#endif
     }
 }

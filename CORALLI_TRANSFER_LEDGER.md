@@ -385,3 +385,153 @@ Verification: `PENDING VERIFICATION`
     - all coral finals are still `a0/g3`
     - generated starters are cleaner and safer, but still not authored photoreal coral finals
   - status: `PENDING VERIFICATION`
+- 2026-04-08 - Coral direction widened to depth-stratified world requirements
+  - hard requirements now recorded:
+    - coral assemblies must read as continuous mass growth, not stacked disconnected plates or branch tubes
+    - smooth LOD / dithered transitions are required where coral swaps visible mesh state
+    - optimization must preserve the core silhouette before support detail is reduced
+  - content target now recorded:
+    - shallow/mid world should grow toward multiple coral archetypes with `10+` variants per family over time
+    - deep-world coral direction can diverge from Earth reefs into alien mineral-organic, darker, and bioluminescent forms
+  - depth direction now recorded:
+    - photic reef bands: plate / branching / massive / low coral richness
+    - transition depth: cold-water fan, sparse leathery colonies, darker mineralized branching
+    - abyssal direction: black, pale, iron-stained, or bioluminescent vein corals and chemosynthetic growth analogs
+  - status: `PENDING VERIFICATION`
+- 2026-04-08 - Coral archetype target list is now explicit
+  - target shallow / mid archetypes:
+    - plate coral shelves
+    - branching fan coral
+    - massive brain-like coral
+    - low bed / encrusting coral
+    - porous mound coral
+    - sparse cold-water fans
+  - target deep / abyssal archetypes:
+    - brittle mineral branches
+    - black smoker-adjacent chemosynthetic colonies
+    - pale calcified towers
+    - dim cyan/red vein corals
+    - iron-stained crust colonies
+    - alien membrane / lobe coral analogs
+  - implementation rule:
+    - each archetype should grow toward `10+` baked/generated variants before runtime duplication pressure is increased
+  - status: `PENDING VERIFICATION`
+- 2026-04-08 - Coral shader stack is now deep-biolum-ready
+  - what changed:
+    - `Hecton_CoralMaster.shader` gained emissive/biolum controls for deep-water coral:
+      - color
+      - strength
+      - mask strength
+      - pulse amplitude/frequency
+    - `WorldProceduralFloraMaterialAuthoring` now writes those properties onto coral materials with default `_BiolumStrength = 0`
+  - why it matters:
+    - deep glowing coral can now be authored through the existing coral shader/material path instead of a second biolum subsystem
+    - the future bridge to `FloorBiolumZone` / `OceanBiolumZone` can stay lightweight
+  - verified facts:
+    - coral materials now serialize `_BiolumColor`, `_BiolumStrength`, `_BiolumMaskStrength`, `_BiolumPulseAmplitude`, `_BiolumPulseFrequency`
+    - menu run `Apply Procedural Flora Materials` completed with `TouchedMaterials=7`
+  - remaining truth:
+    - current shallow/mid coral starter families remain non-glowing on purpose
+    - deep coral authored families still remain future content work
+  - status: `PENDING VERIFICATION`
+- 2026-04-08 - First deep coral family now exists in the real flora pipeline
+  - what changed:
+    - added `family.coral.brittle` to flora proxy foundations, final-variant authoring, budget catalog, material authoring, texture authoring, and baked starter generation
+    - created `3` generated brittle coral finals:
+      - `GEN_family_coral_brittle__sprig`
+      - `GEN_family_coral_brittle__fan`
+      - `GEN_family_coral_brittle__spire`
+    - created dedicated deep coral material:
+      - `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat`
+  - why it matters:
+    - the project now has a real hadal/deep coral family instead of only shallow/mid reef analogs
+    - the new family stays inside the existing coral shader/material and baked-variant pipeline, which is the correct owner path
+  - verified facts:
+    - `Generate Procedural Flora Textures` completed with `TouchedTextures=36`
+    - `Apply Procedural Flora Materials` completed with `TouchedMaterials=9`
+    - `Generate Procedural Flora Baked Starters` completed with `Prefabs=39, MeshesUpdated=126, RemovedAssets=0, Failures=0`
+    - validator output includes `family.coral.brittle=a0/g3`
+    - report output shows:
+      - `family.coral.brittle` max budget triangles `1424`, headroom `8076`
+      - `GEN_family_coral_brittle__fan` `1246/364`
+      - `GEN_family_coral_brittle__spire` `1424/438`
+  - remaining truth:
+    - this is still generated starter coral, not authored photoreal deep coral
+    - deep coral is not yet runtime-coupled to actual biolum zones
+  - status: `PENDING VERIFICATION`
+- 2026-04-08 - Deep coral can now react to real world biolum ownership
+  - what changed:
+    - `Hecton_CoralMaster.shader` now blends local deep-coral glow with manager-driven global floor/ocean biolum influence
+    - `HectonBiolumManager` now publishes those global flora biolum inputs
+    - `WorldRuntimeBootstrapAuthoring` now wires `HectonBiolumManager` onto `[MANAGERS]`
+  - why it matters:
+    - brittle deep coral now has a correct runtime bridge target instead of fixed emissive-only behavior
+    - this stays cheap because it uses one world owner plus shader globals instead of per-coral responders
+  - verified facts:
+    - Unity compile completed without new shader or biolum errors
+    - `Rebuild World Runtime Stack` completed successfully
+    - scene readback confirms `HectonBiolumManager` exists on `[MANAGERS]`
+  - remaining truth:
+    - current scene still has no `FloorBiolumZone` / `OceanBiolumZone`, so visible deep-coral world-coupled glow is not proven yet
+    - deep coral still remains generated starter content, not authored photoreal coral
+  - status: `PENDING VERIFICATION`
+- 2026-04-08 - Deep coral now has real floor/ocean zone anchors in the active world scene
+  - what changed:
+    - `WorldRuntimeBootstrapAuthoring` now authors deep biolum scene anchors under `--- WORLD ---/Biolum_Deep`
+    - two floor-side anchors now exist for brittle/deep coral influence:
+      - `Floor_BrineGarden`
+      - `Floor_BrittleVents`
+    - two ocean anchors also exist and can spill secondary glow into brittle coral shading:
+      - `Ocean_DeepVeil`
+      - `Ocean_AbyssRibbon`
+  - why it matters:
+    - `family.coral.brittle` finally has a real scene-owned world glow source path instead of only local emissive defaults
+  - verified facts:
+    - scene readback confirms both floor anchors exist with deep-water Y positions
+    - `Floor_BrineGarden` serialized settings read back as:
+      - `_clusterType = Garden`
+      - `_clusterCount = 4`
+      - `_clusterSize = 4.6`
+      - `_maxLights = 8`
+  - remaining truth:
+    - runtime visible glow around brittle coral is not fully proven yet
+    - Unity-MCP `execute_code` runtime readback is blocked by `The filename or extension is too long`
+    - deep coral still remains generated starter content, not authored photoreal coral
+  - status: `PENDING VERIFICATION`
+- 2026-04-09 - Brittle deep coral library expanded to five generated starters
+  - what changed:
+    - added `family_coral_brittle__lace`
+    - added `family_coral_brittle__crown`
+    - kept the work inside the editor-owned coral builder and baked starter generator
+  - why it matters:
+    - deep brittle coral now has wider silhouette coverage for future seeded selection in hadal bands
+    - this broadens deep coral variety without inventing runtime coral generation
+  - verified facts:
+    - `family.coral.brittle` now reports `a0/g5`
+    - linked final-ready count is now `5`
+    - report budgets:
+      - `crown` = `1648/516`
+      - `lace` = `1486/448`
+      - family max budget = `1648 / 9500`
+  - remaining truth:
+    - these are still generated starters, not authored photoreal deep coral finals
+    - explicit visual passes for the new brittle variants are still pending
+  - status: `PENDING VERIFICATION`
+- 2026-04-09 - Brittle coral library expanded to seven generated deep variants
+  - what changed:
+    - added `family_coral_brittle__thicket`
+    - added `family_coral_brittle__halo`
+  - why it matters:
+    - brittle deep coral now has enough silhouette spread to support hadal variety without runtime coral synthesis
+    - this keeps the work in the editor-owned coral builder, not in world runtime code
+  - verified facts:
+    - `family.coral.brittle` now reports `a0/g7`
+    - linked final-ready count is now `7`
+    - report budgets:
+      - `thicket` = `1714/560`
+      - `halo` = `1544/486`
+      - family max budget = `1714 / 9500`
+  - remaining truth:
+    - these are still generated starters, not authored photoreal deep coral finals
+    - runtime visible glow proof remains blocked by the current MCP play cadence freeze
+  - status: `PENDING VERIFICATION`

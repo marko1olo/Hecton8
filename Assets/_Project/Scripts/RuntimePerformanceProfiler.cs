@@ -24,8 +24,6 @@ namespace Hecton8.Dev
     {
         private const int RecorderCapacity = 1;
         private const float BytesPerMegabyte = 1024f * 1024f;
-        private const float FallbackSlowTickInterval = 0.5f;
-
         private static readonly string[] _FrameTimeCandidates =
         {
             "CPU Total Frame Time",
@@ -114,7 +112,6 @@ namespace Hecton8.Dev
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private float _sampleElapsed;
-        private float _fallbackSlowTickElapsed;
         private float _peakFrameTimeMs;
         private float _peakMainThreadMs;
         private int _peakGcAllocBytes;
@@ -136,39 +133,21 @@ namespace Hecton8.Dev
                 StartProfiling();
         }
 
-        private void OnDisable()
-        {
-            StopProfiling();
-            UnregisterFromTickManager();
-        }
-
-        private void Update()
+        private void Start()
         {
             if (_registeredTick && _registeredSlowTick)
                 return;
 
             RegisterWithTickManager();
-            if (_registeredTick && _registeredSlowTick)
-                return;
 
-            if (!_debugProfilingActive)
-                return;
+            if ((!_registeredTick || !_registeredSlowTick) && _debugProfilingActive)
+                Debug.LogError("[RuntimeProfiler] GameTickManager registration failed.", this);
+        }
 
-            float deltaTime = Time.unscaledDeltaTime;
-            if (deltaTime <= 0f)
-                return;
-
-            _debugUsingFallbackUpdate = true;
-            _debugFallbackUpdateCount++;
-            _debugLastDeltaTime = deltaTime;
-            Tick(deltaTime);
-
-            _fallbackSlowTickElapsed += deltaTime;
-            if (_fallbackSlowTickElapsed >= FallbackSlowTickInterval)
-            {
-                _fallbackSlowTickElapsed = 0f;
-                SlowTick();
-            }
+        private void OnDisable()
+        {
+            StopProfiling();
+            UnregisterFromTickManager();
         }
 
 #if UNITY_EDITOR
@@ -289,7 +268,7 @@ namespace Hecton8.Dev
 
             _debugTickCount++;
             _debugLastDeltaTime = deltaTime;
-            _debugUsingFallbackUpdate = !_registeredTick || !_registeredSlowTick;
+            _debugUsingFallbackUpdate = false;
             _sampleElapsed += deltaTime;
             SampleRecorders();
 
@@ -318,7 +297,8 @@ namespace Hecton8.Dev
                 $"frame={_debugLastFrameTimeMs:0.00}ms main={_debugLastMainThreadMs:0.00}ms " +
                 $"gc={_debugLastGcAllocBytes}B mem={_debugLastSystemMemoryMb:0.0}MB " +
                 $"setPass={_debugLastSetPassCalls} batches={_debugLastBatches} " +
-                $"ticks={_debugTickCount} fallback={_debugFallbackUpdateCount} dt={_debugLastDeltaTime:0.000}";
+                $"ticks={_debugTickCount} fallback={_debugFallbackUpdateCount} " +
+                $"fallbackActive={_debugUsingFallbackUpdate} dt={_debugLastDeltaTime:0.000}";
         }
 
         [ContextMenu("Log Runtime Performance Profiling Status")]
@@ -485,7 +465,6 @@ namespace Hecton8.Dev
         private void ResetSampleWindow()
         {
             _sampleElapsed = 0f;
-            _fallbackSlowTickElapsed = 0f;
             _debugTickCount = 0;
             _debugFallbackUpdateCount = 0;
             _debugLastDeltaTime = 0f;

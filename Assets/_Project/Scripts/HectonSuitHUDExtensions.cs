@@ -159,10 +159,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         RegisterTick();
 #if UNITY_EDITOR
         if (!Application.isPlaying)
-        {
-            EditorApplication.update -= EditorTick;
-            EditorApplication.update += EditorTick;
-        }
+            EvaluateEditorTickRegistration();
 #endif
     }
 
@@ -178,9 +175,17 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         UnsubscribeToolManager();
         UnregisterTick();
 #if UNITY_EDITOR
-        EditorApplication.update -= EditorTick;
+        UnregisterEditorTick();
 #endif
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (!Application.isPlaying)
+            EvaluateEditorTickRegistration();
+    }
+#endif
 
     // ══════════════════════════════════════════════════════════
     //  URP ENTRY POINT
@@ -196,13 +201,18 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     private void EditorTick()
     {
         if (Application.isPlaying || !isActiveAndEnabled)
+        {
+            UnregisterEditorTick();
             return;
+        }
 
         AutoResolveReferences(force: false);
         PollHeatState();
         UpdateNotifications(0.016f);
         UpdateTransientFlags(0.016f);
         UpdateDiagnostics();
+        if (!ShouldTickInEditMode())
+            UnregisterEditorTick();
     }
 #endif
 
@@ -277,6 +287,15 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     private static float GetAutoResolveNow()
     {
         return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
+    }
+
+    private bool ShouldTickInEditMode()
+    {
+        return isActiveAndEnabled &&
+               (NeedsAutoResolve() ||
+                _notificationCount > 0 ||
+                _overheatFlagTimer > 0f ||
+                _flickerFlagTimer > 0f);
     }
 
     private static HectonSuitHUD_v4 FindHudForRoot(List<HectonSuitHUD_v4> huds, Transform preferredRoot)
@@ -801,4 +820,31 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
 
         _tickRegistered = false;
     }
+
+#if UNITY_EDITOR
+    private void EvaluateEditorTickRegistration()
+    {
+        if (Application.isPlaying)
+        {
+            UnregisterEditorTick();
+            return;
+        }
+
+        if (ShouldTickInEditMode())
+            RegisterEditorTick();
+        else
+            UnregisterEditorTick();
+    }
+
+    private void RegisterEditorTick()
+    {
+        EditorApplication.update -= EditorTick;
+        EditorApplication.update += EditorTick;
+    }
+
+    private void UnregisterEditorTick()
+    {
+        EditorApplication.update -= EditorTick;
+    }
+#endif
 }

@@ -17,7 +17,7 @@ public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
     private static readonly int _idGlobalRotation =
         Shader.PropertyToID("_GlobalRotation");
 
-    void Awake()
+    private void Awake()
     {
         EnsureRendererResources();
     }
@@ -44,7 +44,6 @@ public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
 
     public void Tick(float deltaTime)
     {
-        EnsureRendererResources();
         if (_planetRenderer == null)
             return;
 
@@ -64,4 +63,12 @@ public sealed class GasGiantRotationDriver : MonoBehaviour, ITickable
         if (_planetRenderer == null)
             _planetRenderer = GetComponent<Renderer>();
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (!Application.isPlaying)
+            EnsureRendererResources();
+    }
+#endif
 }

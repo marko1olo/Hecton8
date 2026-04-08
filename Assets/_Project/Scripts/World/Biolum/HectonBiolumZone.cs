@@ -99,6 +99,10 @@ namespace Hecton8.Biolum
 
         #if UNITY_EDITOR
         [SerializeField] protected bool _debugLogSpawn = false;
+        [SerializeField] private int _debugTickInvocations = 0;
+        [SerializeField] private int _debugEvaluateInvocations = 0;
+        [SerializeField] private bool _debugLastSkippedLod = false;
+        [SerializeField] private int _debugLastUpdatedFrame = -1;
         #endif
 
         // ───────────────────────────────────────────────────────────────────────────────
@@ -118,6 +122,18 @@ namespace Hecton8.Biolum
                 GameTickManager.Instance.Register(this as ITickable);
                 _isRegistered = true;
             }
+            if (HectonBiolumManager.Instance != null)
+                HectonBiolumManager.Instance.RegisterZone(this);
+        }
+
+        protected virtual void Start()
+        {
+            if (GameTickManager.Instance != null && !_isRegistered)
+            {
+                GameTickManager.Instance.Register(this as ITickable);
+                _isRegistered = true;
+            }
+
             if (HectonBiolumManager.Instance != null)
                 HectonBiolumManager.Instance.RegisterZone(this);
         }
@@ -144,13 +160,24 @@ namespace Hecton8.Biolum
         /// </summary>
         public void Tick(float deltaTime)
         {
+#if UNITY_EDITOR
+            _debugTickInvocations++;
+#endif
             int frame = Time.frameCount;
             if (frame - _lastUpdateFrame < _updateInterval) return;
             _lastUpdateFrame = frame;
 
-            if (ShouldSkipLOD()) return;
+            bool skippedLod = ShouldSkipLOD();
+#if UNITY_EDITOR
+            _debugLastSkippedLod = skippedLod;
+#endif
+            if (skippedLod) return;
 
             EvaluateBiolumState();
+#if UNITY_EDITOR
+            _debugEvaluateInvocations++;
+            _debugLastUpdatedFrame = frame;
+#endif
         }
 
         // ───────────────────────────────────────────────────────────────────────────────
@@ -161,6 +188,59 @@ namespace Hecton8.Biolum
         protected abstract Color GetBiolumColor();
         protected abstract float GetBiolumIntensity();
         protected abstract float GetBiolumRange();
+
+        /// <summary>
+        /// Expose the current sampled biolum color for lightweight runtime consumers.
+        /// </summary>
+        public Color SampleZoneColor()
+        {
+            return GetBiolumColor();
+        }
+
+        /// <summary>
+        /// Expose the current sampled biolum intensity for lightweight runtime consumers.
+        /// </summary>
+        public float SampleZoneIntensity()
+        {
+            return GetBiolumIntensity();
+        }
+
+        /// <summary>
+        /// Expose the current sampled biolum range for lightweight runtime consumers.
+        /// </summary>
+        public float SampleZoneRange()
+        {
+            return GetBiolumRange();
+        }
+
+        /// <summary>
+        /// Get cached world position for cheap proximity checks.
+        /// </summary>
+        public Vector3 GetZonePosition()
+        {
+            return _cachedTransform != null ? _cachedTransform.position : transform.position;
+        }
+
+        /// <summary>
+        /// Ensure the zone is registered into the central tick loop even if startup order was late.
+        /// Safe to call multiple times: GameTickManager ignores duplicate registrations.
+        /// </summary>
+        public void EnsureTickRegistration()
+        {
+            if (_isRegistered)
+            {
+                return;
+            }
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+            {
+                return;
+            }
+
+            tickManager.Register(this as ITickable);
+            _isRegistered = true;
+        }
 
         // ───────────────────────────────────────────────────────────────────────────────
         // PROTECTED HELPERS: Light Pooling
@@ -185,6 +265,10 @@ namespace Hecton8.Biolum
                 light.shadows = LightShadows.None;
                 light.renderingLayerMask = 1;
                 _activeLights[_activeLightCount] = light;
+            }
+            else if (!light.gameObject.activeSelf)
+            {
+                light.gameObject.SetActive(true);
             }
 
             light.transform.position = pos;

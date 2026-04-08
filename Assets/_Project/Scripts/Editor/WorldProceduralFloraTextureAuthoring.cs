@@ -12,10 +12,12 @@ namespace Hecton8.EditorTools
         private const string FamilyKelpTall = "family.kelp.tall";
         private const string FamilyKelpPatchDense = "family.kelp.patch.dense";
         private const string FamilyKelpCanopy = "family.kelp.canopy";
+        private const string FamilyKelpAbyssal = "family.kelp.abyssal";
         private const string FamilyCoralLow = "family.coral.low";
         private const string FamilyCoralBranching = "family.coral.branching";
         private const string FamilyCoralMassive = "family.coral.massive";
         private const string FamilyCoralPlate = "family.coral.plate";
+        private const string FamilyCoralBrittle = "family.coral.brittle";
 
         [MenuItem("Hecton/Authoring/Generate Procedural Flora Textures", priority = 175)]
         public static void Apply()
@@ -28,31 +30,39 @@ namespace Hecton8.EditorTools
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpTall_Base.asset", new Color(0.18f, 0.44f, 0.21f), new Color(0.22f, 0.58f, 0.28f), new Color(0.36f, 0.72f, 0.42f), 0.18f) ? 1 : 0;
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpPatch_Base.asset", new Color(0.12f, 0.34f, 0.18f), new Color(0.18f, 0.46f, 0.24f), new Color(0.28f, 0.60f, 0.32f), 0.14f) ? 1 : 0;
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpCanopy_Base.asset", new Color(0.22f, 0.50f, 0.24f), new Color(0.28f, 0.66f, 0.32f), new Color(0.44f, 0.82f, 0.48f), 0.24f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_KelpAbyssal_Base.asset", new Color(0.04f, 0.07f, 0.08f), new Color(0.07f, 0.12f, 0.14f), new Color(0.16f, 0.24f, 0.28f), 0.12f) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpTall_Detail.asset", 11) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpPatch_Detail.asset", 23) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpCanopy_Detail.asset", 37) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_KelpAbyssal_Detail.asset", 91) ? 1 : 0;
             touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpTall_Normal.asset", 11, 0.72f) ? 1 : 0;
             touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpPatch_Normal.asset", 23, 0.58f) ? 1 : 0;
             touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpCanopy_Normal.asset", 37, 0.86f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateNormalTexture(TextureRoot + "/TX_KelpAbyssal_Normal.asset", 91, 0.94f) ? 1 : 0;
             touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpTall_Mask.asset", 11, 0.62f, 0.94f) ? 1 : 0;
             touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpPatch_Mask.asset", 23, 0.54f, 0.88f) ? 1 : 0;
             touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpCanopy_Mask.asset", 37, 0.68f, 0.98f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateMaskTexture(TextureRoot + "/TX_KelpAbyssal_Mask.asset", 91, 0.72f, 0.98f) ? 1 : 0;
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralLow_Base.asset", new Color(0.48f, 0.28f, 0.26f), new Color(0.70f, 0.42f, 0.34f), new Color(0.88f, 0.64f, 0.48f), 0.12f) ? 1 : 0;
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralBranching_Base.asset", new Color(0.42f, 0.24f, 0.30f), new Color(0.68f, 0.40f, 0.48f), new Color(0.90f, 0.72f, 0.52f), 0.16f) ? 1 : 0;
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralMassive_Base.asset", new Color(0.54f, 0.30f, 0.22f), new Color(0.78f, 0.48f, 0.34f), new Color(0.94f, 0.72f, 0.56f), 0.10f) ? 1 : 0;
             touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralPlate_Base.asset", new Color(0.30f, 0.34f, 0.40f), new Color(0.50f, 0.54f, 0.62f), new Color(0.82f, 0.78f, 0.62f), 0.14f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateBaseTexture(TextureRoot + "/TX_CoralBrittle_Base.asset", new Color(0.08f, 0.10f, 0.12f), new Color(0.18f, 0.24f, 0.26f), new Color(0.46f, 0.58f, 0.60f), 0.14f) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralLow_Detail.asset", 41) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralBranching_Detail.asset", 53) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralMassive_Detail.asset", 67) ? 1 : 0;
             touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralPlate_Detail.asset", 79) ? 1 : 0;
+            touchedTextures += CreateOrUpdateDetailTexture(TextureRoot + "/TX_CoralBrittle_Detail.asset", 97) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralLow_Normal.asset", 41, 0.62f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralBranching_Normal.asset", 53, 0.84f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralMassive_Normal.asset", 67, 0.70f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralPlate_Normal.asset", 79, 0.58f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralNormalTexture(TextureRoot + "/TX_CoralBrittle_Normal.asset", 97, 0.92f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralLow_Mask.asset", 41, 0.44f, 0.78f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralBranching_Mask.asset", 53, 0.36f, 0.86f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralMassive_Mask.asset", 67, 0.52f, 0.74f) ? 1 : 0;
             touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralPlate_Mask.asset", 79, 0.34f, 0.92f) ? 1 : 0;
+            touchedTextures += CreateOrUpdateCoralMaskTexture(TextureRoot + "/TX_CoralBrittle_Mask.asset", 97, 0.68f, 0.96f) ? 1 : 0;
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -359,6 +369,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_KelpPatch_Base.asset";
                 case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Base.asset";
+                case FamilyKelpAbyssal:
+                    return TextureRoot + "/TX_KelpAbyssal_Base.asset";
                 default:
                     return string.Empty;
             }
@@ -374,6 +386,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_KelpPatch_Detail.asset";
                 case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Detail.asset";
+                case FamilyKelpAbyssal:
+                    return TextureRoot + "/TX_KelpAbyssal_Detail.asset";
                 default:
                     return string.Empty;
             }
@@ -389,6 +403,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_KelpPatch_Normal.asset";
                 case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Normal.asset";
+                case FamilyKelpAbyssal:
+                    return TextureRoot + "/TX_KelpAbyssal_Normal.asset";
                 default:
                     return string.Empty;
             }
@@ -404,6 +420,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_KelpPatch_Mask.asset";
                 case FamilyKelpCanopy:
                     return TextureRoot + "/TX_KelpCanopy_Mask.asset";
+                case FamilyKelpAbyssal:
+                    return TextureRoot + "/TX_KelpAbyssal_Mask.asset";
                 default:
                     return string.Empty;
             }
@@ -421,6 +439,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_CoralMassive_Base.asset";
                 case FamilyCoralPlate:
                     return TextureRoot + "/TX_CoralPlate_Base.asset";
+                case FamilyCoralBrittle:
+                    return TextureRoot + "/TX_CoralBrittle_Base.asset";
                 default:
                     return string.Empty;
             }
@@ -438,6 +458,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_CoralMassive_Detail.asset";
                 case FamilyCoralPlate:
                     return TextureRoot + "/TX_CoralPlate_Detail.asset";
+                case FamilyCoralBrittle:
+                    return TextureRoot + "/TX_CoralBrittle_Detail.asset";
                 default:
                     return string.Empty;
             }
@@ -455,6 +477,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_CoralMassive_Normal.asset";
                 case FamilyCoralPlate:
                     return TextureRoot + "/TX_CoralPlate_Normal.asset";
+                case FamilyCoralBrittle:
+                    return TextureRoot + "/TX_CoralBrittle_Normal.asset";
                 default:
                     return string.Empty;
             }
@@ -472,6 +496,8 @@ namespace Hecton8.EditorTools
                     return TextureRoot + "/TX_CoralMassive_Mask.asset";
                 case FamilyCoralPlate:
                     return TextureRoot + "/TX_CoralPlate_Mask.asset";
+                case FamilyCoralBrittle:
+                    return TextureRoot + "/TX_CoralBrittle_Mask.asset";
                 default:
                     return string.Empty;
             }

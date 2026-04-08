@@ -392,6 +392,9 @@ namespace Hecton8.Atmosphere
             if (Application.isPlaying || this == null)
                 return;
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
+
             if (!_editorInitialized)
             {
                 InitializeCycleTimer();

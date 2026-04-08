@@ -17,10 +17,12 @@ namespace Hecton8.EditorTools
             "family.kelp.tall",
             "family.kelp.patch.dense",
             "family.kelp.canopy",
+            "family.kelp.abyssal",
             "family.coral.low",
             "family.coral.branching",
             "family.coral.massive",
-            "family.coral.plate"
+            "family.coral.plate",
+            "family.coral.brittle"
         };
 
         private static readonly HashSet<string> FloraFamilies = new HashSet<string>(FloraFamilyOrder, StringComparer.Ordinal);
@@ -425,6 +427,8 @@ namespace Hecton8.EditorTools
                     return new Vector2(0.94f, 1.08f);
                 case "family.kelp.canopy":
                     return new Vector2(0.94f, 1.06f);
+                case "family.kelp.abyssal":
+                    return new Vector2(0.96f, 1.08f);
                 case "family.coral.low":
                     return new Vector2(0.92f, 1.06f);
                 case "family.coral.branching":
@@ -433,6 +437,8 @@ namespace Hecton8.EditorTools
                     return new Vector2(0.95f, 1.05f);
                 case "family.coral.plate":
                     return new Vector2(0.96f, 1.04f);
+                case "family.coral.brittle":
+                    return new Vector2(0.94f, 1.08f);
                 default:
                     return new Vector2(0.95f, 1.05f);
             }

@@ -56,6 +56,7 @@
 // ============================================================================
 
 using System;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -221,6 +222,9 @@ namespace Hecton8.Celestial
         private bool _baseFlareValuesCaptured;
 
         private float3 _resolvedSunDirection;
+        private Color _resolvedSkyZenith;
+        private Color _resolvedSkyHorizon;
+        private Color _resolvedSkyNadir;
 
         private bool _eclipseRadiusCalculated;
 
@@ -341,6 +345,9 @@ namespace Hecton8.Celestial
             if (Application.isPlaying || this == null)
                 return;
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
+
             float dt = Time.deltaTime > 0f ? Time.deltaTime : 0.016f;
             Tick(dt);
         }
@@ -382,6 +389,7 @@ namespace Hecton8.Celestial
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
             UpdateGlobalShaderData();
+            ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
 
             UpdateSkyMaterial();
 
@@ -409,11 +417,10 @@ namespace Hecton8.Celestial
 
             if (playerTransform == null)
             {
-                var cam = Camera.main;
-                if (cam != null)
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayer) && currentPlayer != null)
                 {
-                    playerTransform = cam.transform;
-                    Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using Main Camera.");
+                    playerTransform = currentPlayer;
+                    Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using SceneBootstrap player transform.");
                 }
             }
 
@@ -630,13 +637,11 @@ namespace Hecton8.Celestial
             {
                 _previousBlendForColors = _currentBlend;
 
-                ResolveSkyColors(out Color zenith, out Color horizon, out Color nadir);
-
                 if (_skyMaterial != null)
                 {
-                    _skyMaterial.SetColor(_ID_SkyColorZenith,  zenith);
-                    _skyMaterial.SetColor(_ID_SkyColorHorizon, horizon);
-                    _skyMaterial.SetColor(_ID_SkyColorNadir,   nadir);
+                    _skyMaterial.SetColor(_ID_SkyColorZenith,  _resolvedSkyZenith);
+                    _skyMaterial.SetColor(_ID_SkyColorHorizon, _resolvedSkyHorizon);
+                    _skyMaterial.SetColor(_ID_SkyColorNadir,   _resolvedSkyNadir);
                 }
 
             }
@@ -960,10 +965,9 @@ namespace Hecton8.Celestial
             _aegirMPB.SetFloat(_ID_GameTime, _gameTime);
             _aegirMPB.SetFloat(_ID_NightBlend, _currentBlend);
 
-            ResolveSkyColors(out Color zenith, out Color horizon, out Color nadir);
-            _aegirMPB.SetColor(_ID_SkyColorZenith, zenith);
-            _aegirMPB.SetColor(_ID_SkyColorHorizon, horizon);
-            _aegirMPB.SetColor(_ID_SkyColorNadir, nadir);
+            _aegirMPB.SetColor(_ID_SkyColorZenith, _resolvedSkyZenith);
+            _aegirMPB.SetColor(_ID_SkyColorHorizon, _resolvedSkyHorizon);
+            _aegirMPB.SetColor(_ID_SkyColorNadir, _resolvedSkyNadir);
 
             if (_skyMaterial != null && _skyMaterial.HasProperty(_ID_WindDirection))
                 _aegirMPB.SetVector(_ID_WindDirection, _skyMaterial.GetVector(_ID_WindDirection));

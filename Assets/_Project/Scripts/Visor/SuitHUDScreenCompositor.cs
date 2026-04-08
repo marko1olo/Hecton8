@@ -76,10 +76,7 @@ namespace NASAPunk.Visor
             TryRegisterRuntimeTick();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-            {
-                EditorApplication.update -= EditorTick;
-                EditorApplication.update += EditorTick;
-            }
+                EvaluateEditorTickRegistration();
 #endif
         }
 
@@ -107,16 +104,25 @@ namespace NASAPunk.Visor
         private void EditorTick()
         {
             if (Application.isPlaying || !isActiveAndEnabled || !manageCanvasInEditMode)
+            {
+                UnregisterEditorTick();
                 return;
+            }
 
             RefreshCompositor();
             _pendingRefresh = false;
+            if (!ShouldTickInEditMode())
+                UnregisterEditorTick();
         }
 #endif
 
         private void OnValidate()
         {
             _pendingRefresh = true;
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                EvaluateEditorTickRegistration();
+#endif
         }
 
         public void Tick(float deltaTime)
@@ -375,8 +381,51 @@ namespace NASAPunk.Visor
         private void MarkDirty()
         {
             _pendingRefresh = true;
-            TryRegisterRuntimeTick();
+            if (Application.isPlaying)
+            {
+                TryRegisterRuntimeTick();
+            }
+#if UNITY_EDITOR
+            else
+            {
+                EvaluateEditorTickRegistration();
+            }
+#endif
         }
+
+        private bool ShouldTickInEditMode()
+        {
+            return isActiveAndEnabled &&
+                   manageCanvasInEditMode &&
+                   (_pendingRefresh || NeedsAutoResolve());
+        }
+
+#if UNITY_EDITOR
+        private void EvaluateEditorTickRegistration()
+        {
+            if (Application.isPlaying)
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
+            if (ShouldTickInEditMode())
+                RegisterEditorTick();
+            else
+                UnregisterEditorTick();
+        }
+
+        private void RegisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+            EditorApplication.update += EditorTick;
+        }
+
+        private void UnregisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+        }
+#endif
 
         private void RegisterActiveCompositor()
         {

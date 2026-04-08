@@ -16,11 +16,13 @@ namespace Hecton8.SaveSystem
         private const int Height = 180;
         private const string Extension = ".jpg";
         private const int Quality = 75;
+        private const int MaxCachedSprites = 12;
 
         // Pooled resources to avoid dynamic allocations during Save
         private static RenderTexture _pooledRenderTexture;
         private static Texture2D _pooledTexture2D;
-        private static readonly Dictionary<string, Sprite> _spriteCache = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, Sprite> _spriteCache = new Dictionary<string, Sprite>(MaxCachedSprites, StringComparer.OrdinalIgnoreCase);
+        private static readonly List<string> _spriteCacheOrder = new List<string>(MaxCachedSprites);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -115,9 +117,12 @@ namespace Hecton8.SaveSystem
             if (_spriteCache.TryGetValue(slotName, out Sprite cached))
             {
                 if (cached != null && cached.texture != null)
+                {
+                    MarkCacheEntryAsMostRecent(_spriteCacheOrder, slotName);
                     return cached;
+                }
                     
-                _spriteCache.Remove(slotName);
+                RemoveCacheEntry(slotName);
             }
 
             string path = GetThumbnailPath(slotName);
@@ -130,7 +135,7 @@ namespace Hecton8.SaveSystem
             {
                 Sprite s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                 s.hideFlags = HideFlags.HideAndDontSave;
-                _spriteCache[slotName] = s;
+                AddCacheEntry(slotName, s);
                 return s;
             }
 
@@ -148,7 +153,7 @@ namespace Hecton8.SaveSystem
                         UnityEngine.Object.Destroy(cached.texture);
                     UnityEngine.Object.Destroy(cached);
                 }
-                _spriteCache.Remove(slotName);
+                RemoveCacheEntry(slotName);
             }
         }
 
@@ -168,6 +173,7 @@ namespace Hecton8.SaveSystem
                 }
             }
             _spriteCache.Clear();
+            _spriteCacheOrder.Clear();
         }
 
         private static void ReleasePooledResources()
@@ -197,6 +203,71 @@ namespace Hecton8.SaveSystem
             string tempPath = GetTempThumbnailPath(slotName);
             if (File.Exists(tempPath))
                 File.Delete(tempPath);
+        }
+
+        private static void AddCacheEntry(string slotName, Sprite sprite)
+        {
+            if (_spriteCache.TryGetValue(slotName, out Sprite existing))
+            {
+                if (existing != null && existing != sprite)
+                {
+                    if (existing.texture != null)
+                        UnityEngine.Object.Destroy(existing.texture);
+                    UnityEngine.Object.Destroy(existing);
+                }
+            }
+
+            _spriteCache[slotName] = sprite;
+            MarkCacheEntryAsMostRecent(_spriteCacheOrder, slotName);
+            TrimCacheToLimit();
+        }
+
+        private static void RemoveCacheEntry(string slotName)
+        {
+            _spriteCache.Remove(slotName);
+
+            for (int i = 0; i < _spriteCacheOrder.Count; i++)
+            {
+                if (string.Equals(_spriteCacheOrder[i], slotName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _spriteCacheOrder.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+
+        private static void TrimCacheToLimit()
+        {
+            while (_spriteCacheOrder.Count > MaxCachedSprites)
+            {
+                string oldestSlotName = _spriteCacheOrder[0];
+                _spriteCacheOrder.RemoveAt(0);
+
+                if (!_spriteCache.TryGetValue(oldestSlotName, out Sprite cached))
+                    continue;
+
+                _spriteCache.Remove(oldestSlotName);
+                if (cached == null)
+                    continue;
+
+                if (cached.texture != null)
+                    UnityEngine.Object.Destroy(cached.texture);
+                UnityEngine.Object.Destroy(cached);
+            }
+        }
+
+        private static void MarkCacheEntryAsMostRecent(List<string> cacheOrder, string slotName)
+        {
+            for (int i = 0; i < cacheOrder.Count; i++)
+            {
+                if (!string.Equals(cacheOrder[i], slotName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                cacheOrder.RemoveAt(i);
+                break;
+            }
+
+            cacheOrder.Add(slotName);
         }
     }
 }

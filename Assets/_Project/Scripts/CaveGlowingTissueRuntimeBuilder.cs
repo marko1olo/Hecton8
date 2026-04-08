@@ -7,6 +7,7 @@ namespace Hecton8.Caves
     internal static class CaveGlowingTissueRuntimeBuilder
     {
         private const string TissueRootName = "_GlowingTissue";
+        private static readonly string[] _TissueNames = CreateNameCache("Tissue_", 24); // COLD ALLOC: bounded glowing-tissue child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -55,7 +56,7 @@ namespace Hecton8.Caves
             GlowingTissueConfig config,
             float globalIntensity)
         {
-            string name = $"Tissue_{index}";
+            string name = GetCachedName(index);
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.35f;
             float side = HashSigned(runtimeSeed, index, 17);
             float wallInset = Mathf.Lerp(0.06f, 0.22f, Hash01(runtimeSeed, index, 23));
@@ -176,6 +177,23 @@ namespace Hecton8.Caves
         {
             if (target != null && !target.gameObject.activeSelf)
                 target.gameObject.SetActive(true);
+        }
+
+        private static string GetCachedName(int index)
+        {
+            if ((uint)index < (uint)_TissueNames.Length)
+                return _TissueNames[index];
+
+            return TissueRootName;
+        }
+
+        private static string[] CreateNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = prefix + i;
+
+            return names;
         }
 
         private static long ComputeFallbackSeed(Vector3 position, CavePreset preset)

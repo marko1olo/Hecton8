@@ -7,6 +7,7 @@ namespace Hecton8.Caves
     internal static class CaveWallGrowthRuntimeBuilder
     {
         private const string WallGrowthRootName = "_WallGrowth";
+        private static readonly string[] _GrowthNames = CreateNameCache("Growth_", 18); // COLD ALLOC: bounded wall-growth child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -54,7 +55,7 @@ namespace Hecton8.Caves
             float globalIntensity,
             long runtimeSeed)
         {
-            string name = $"Growth_{index}";
+            string name = GetCachedName(index);
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.55f;
             float side = HashSigned(runtimeSeed, index, 17);
             float wallInset = Mathf.Lerp(0.14f, 0.32f, Hash01(runtimeSeed, index, 23));
@@ -174,6 +175,23 @@ namespace Hecton8.Caves
         {
             if (target != null && !target.gameObject.activeSelf)
                 target.gameObject.SetActive(true);
+        }
+
+        private static string GetCachedName(int index)
+        {
+            if ((uint)index < (uint)_GrowthNames.Length)
+                return _GrowthNames[index];
+
+            return WallGrowthRootName;
+        }
+
+        private static string[] CreateNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = prefix + i;
+
+            return names;
         }
 
         private static long ComputeFallbackSeed(Vector3 position, CavePreset preset)

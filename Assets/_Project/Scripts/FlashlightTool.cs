@@ -50,6 +50,12 @@ namespace Hecton8.Gameplay
         private bool _primaryLatched;
         private bool _secondaryLatched;
         private bool _missingFlashlightWarned;
+        private int _cachedSnapshotFrame = -1;
+        private string _cachedOperationalSummary;
+        private string _cachedOperationalRecommendation;
+        private int _cachedContextDirectiveFrame = -1;
+        private bool _cachedHasContextDirective;
+        private string _cachedContextDirective;
 
         public override void OnEquip()
         {
@@ -59,6 +65,7 @@ namespace Hecton8.Gameplay
             _stateBeforeEquip = _flashlight != null && _flashlight.IsOn;
             _primaryLatched = false;
             _secondaryLatched = false;
+            InvalidateSnapshotCache();
         }
 
         public override void OnUnequip()
@@ -73,6 +80,7 @@ namespace Hecton8.Gameplay
 
             _primaryLatched = false;
             _secondaryLatched = false;
+            InvalidateSnapshotCache();
             base.OnUnequip();
         }
 
@@ -88,6 +96,7 @@ namespace Hecton8.Gameplay
 
             if (_flashlight.IsOverheated)
             {
+                InvalidateSnapshotCache();
                 LampAssessment cooling = BuildAssessment();
                 PublishAssessment(cooling);
                 FieldOperationLogSystem.RecordOperation(
@@ -106,6 +115,7 @@ namespace Hecton8.Gameplay
                     ? "Hand lamp is now contributing to the active field visibility stack."
                     : "Hand lamp returned to standby to preserve expedition power discipline.",
                 "INFO");
+            InvalidateSnapshotCache();
             PublishAssessment(BuildAssessment());
         }
 
@@ -122,6 +132,7 @@ namespace Hecton8.Gameplay
             if (secondaryCyclesBeamMode)
             {
                 _flashlight.CycleBeamMode();
+                InvalidateSnapshotCache();
                 string mode = _flashlight.BeamModeLabel;
                 LampAssessment assessment = BuildAssessment();
                 FieldOperationLogSystem.RecordOperation(
@@ -202,6 +213,9 @@ namespace Hecton8.Gameplay
             if (!TryResolveFlashlight())
                 return "DIVE LAMP // LINK OFFLINE";
 
+            if (TryGetOperationalSnapshot(out string summary, out _))
+                return summary;
+
             return _flashlight.BuildOperationalSummary();
         }
 
@@ -209,6 +223,14 @@ namespace Hecton8.Gameplay
         {
             if (!TryResolveFlashlight())
                 return "Restore the lamp link before field deployment.";
+
+            if (TryGetOperationalSnapshot(out _, out string recommendation))
+            {
+                if (TryGetForwardContextDirectiveCached(out string contextDirective))
+                    return contextDirective;
+
+                return recommendation;
+            }
 
             if (TryGetForwardContextDirective(out string directive))
                 return directive;
@@ -220,6 +242,9 @@ namespace Hecton8.Gameplay
         {
             if (_flashlight == null)
                 return "Lamp diagnostics unavailable.";
+
+            if (TryGetOperationalSnapshot(out string summary, out _))
+                return summary;
 
             return _flashlight.BuildOperationalSummary();
         }
@@ -235,12 +260,18 @@ namespace Hecton8.Gameplay
                     "WARN");
             }
 
+            if (!TryGetOperationalSnapshot(out string summary, out string recommendation))
+            {
+                summary = _flashlight.BuildOperationalSummary();
+                recommendation = _flashlight.BuildOperationalRecommendation();
+            }
+
             if (_flashlight.IsOverheated)
             {
                 return new LampAssessment(
                     $"DIVE LAMP - COOLING {Mathf.CeilToInt(_flashlight.CooldownRemaining)}S",
-                    _flashlight.BuildOperationalSummary(),
-                    _flashlight.BuildOperationalRecommendation(),
+                    summary,
+                    recommendation,
                     "WARN");
             }
 
@@ -248,8 +279,8 @@ namespace Hecton8.Gameplay
             {
                 return new LampAssessment(
                     $"DIVE LAMP - LOW ENERGY [{_flashlight.BeamModeLabel}]",
-                    _flashlight.BuildOperationalSummary(),
-                    _flashlight.BuildOperationalRecommendation(),
+                    summary,
+                    recommendation,
                     "WARN");
             }
 
@@ -257,22 +288,77 @@ namespace Hecton8.Gameplay
             {
                 return new LampAssessment(
                     $"DIVE LAMP - HEAT RISING [{_flashlight.BeamModeLabel}]",
-                    _flashlight.BuildOperationalSummary(),
-                    _flashlight.BuildOperationalRecommendation(),
+                    summary,
+                    recommendation,
                     "WARN");
             }
 
-            string contextualRecommendation = TryGetForwardContextDirective(out string directive)
-                ? directive
-                : _flashlight.BuildOperationalRecommendation();
+            string contextualRecommendation = TryGetForwardContextDirectiveCached(out string contextDirective)
+                ? contextDirective
+                : recommendation;
 
             return new LampAssessment(
                 _flashlight.IsOn
                     ? $"DIVE LAMP - ON [{_flashlight.BeamModeLabel}]"
                     : $"DIVE LAMP - STANDBY [{_flashlight.BeamModeLabel}]",
-                _flashlight.BuildOperationalSummary(),
+                summary,
                 contextualRecommendation,
                 "INFO");
+        }
+
+        private bool TryGetOperationalSnapshot(out string summary, out string recommendation)
+        {
+            summary = null;
+            recommendation = null;
+
+            if (_flashlight == null)
+                return false;
+
+            int currentFrame = Time.frameCount;
+            if (_cachedSnapshotFrame == currentFrame)
+            {
+                summary = _cachedOperationalSummary;
+                recommendation = _cachedOperationalRecommendation;
+                return true;
+            }
+
+            summary = _flashlight.BuildOperationalSummary();
+            recommendation = _flashlight.BuildOperationalRecommendation();
+            _cachedSnapshotFrame = currentFrame;
+            _cachedOperationalSummary = summary;
+            _cachedOperationalRecommendation = recommendation;
+            return true;
+        }
+
+        private bool TryGetForwardContextDirectiveCached(out string contextDirective)
+        {
+            contextDirective = null;
+
+            if (_flashlight == null)
+                return false;
+
+            int currentFrame = Time.frameCount;
+            if (_cachedContextDirectiveFrame == currentFrame)
+            {
+                contextDirective = _cachedContextDirective;
+                return _cachedHasContextDirective;
+            }
+
+            bool hasDirective = TryGetForwardContextDirective(out contextDirective);
+            _cachedContextDirectiveFrame = currentFrame;
+            _cachedHasContextDirective = hasDirective;
+            _cachedContextDirective = contextDirective;
+            return hasDirective;
+        }
+
+        private void InvalidateSnapshotCache()
+        {
+            _cachedSnapshotFrame = -1;
+            _cachedOperationalSummary = null;
+            _cachedOperationalRecommendation = null;
+            _cachedContextDirectiveFrame = -1;
+            _cachedHasContextDirective = false;
+            _cachedContextDirective = null;
         }
 
         private bool TryGetForwardContextDirective(out string directive)

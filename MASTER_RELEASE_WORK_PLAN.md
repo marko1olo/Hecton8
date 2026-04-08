@@ -202,8 +202,8 @@ Confirmed build-truth from `2026-04-05`:
 
 - [c] Fix hitch on underwater -> above-water transition with camera rotation
 - [c] Fix surface oxygen refill
-- [!] Bring pause menu to a stable product flow
-- [!] Audit all pause buttons
+- [c] Bring pause menu to a stable product flow
+- [c] Audit all pause buttons
 - [!] Separate gas giant and cloud/haze stack so the giant reads as distant
 - [!] Investigate terrain/rock close-up blur
 - [!] Run identical editor/build parity on the same spot, same FOV, same light, same distance
@@ -214,6 +214,7 @@ P0 rules:
 - use `[c]` when coding is complete and the task is closed for current implementation work
 - use `[x]` only after direct build or user evidence
 - do not promote `[c]` to `[x]` in editor only
+- do not reopen `[c]` for new coding work unless new logs, build evidence, or user verification proves the fix is incomplete or regressed
 
 ## Product Shell / Bootstrap / Menu / Pause
 
@@ -389,6 +390,7 @@ P0 rules:
   - repeated inventory-full warnings must reuse cached item-name message projections; `HUDNotification.OnInventoryFull(...)` must not rebuild the same uppercase warning string on each repeat overflow
   - `LaserCutter` deconstruct progress feedback must not format percentage strings at runtime; repeat progress pulses must reuse a cached progress-message table
   - `RepairTool` finite headline HUD/log titles must resolve through fixed message mapping instead of repeated interpolation; unknown future headlines must preserve legacy fallback text
+  - `SalvageSamplerTool` recovered-item HUD strings must reuse cached item-name projections, and finite diagnosis headline emits/log titles must resolve through fixed mapping without truncating dynamic node-percentage headlines
   - preset-only UI consumers must not request full `FieldLoadoutAdvisor.LoadoutAdvice` when they only need `PresetName`; avoid paying summary/distance string construction on `HUDQuickBar` and preset-name-only PDA paths
   - `PDALoadoutTab.RefreshSummary()` must not do duplicate forward-advice resolution in one refresh; if both preset name and summary are needed, they must come from one shared `LoadoutAdvice` query
 - [ ] Keep `GPU / present pacing` as a separate investigation track:
@@ -1183,7 +1185,24 @@ P0 rules:
           - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
           - `Generate Procedural Flora Final Status Report`
 - [ ] Wave 6: passive fauna, predators, boids, macro-zone threat logic
+  - code addendum: `WorldFaunaSpawnRegistry` no longer uses dictionary `foreach` in live nearest-anchor selection; both ordinary fauna anchor scans and large-threat macro-zone scans now use explicit struct enumerators, so the current ecology runtime pays less avoidable hot-path churn while the broader boid/ecology integration remains open
+  - code addendum: `FaunaDirector` ordinary spawn selection now respects relax-phase predator pressure truth; resolved fauna entries precompute whether they must be suppressed while `_pressureEnabled == false`, so the system no longer calms existing hunters/leviathans only to quietly respawn new aggressive pressure through the normal weighted spawn loop
+  - code addendum: `WorldFaunaSpawnRegistry` now buckets ordinary anchors by chunk and large-threat zones by macro-zone, so live spawn-point resolution scans only the bounded observer neighborhood instead of full anchor dictionaries every time `FaunaDirector` requests a spawn location
+  - code addendum: `WorldProceduralStateRegistry` no longer performs full expired-fauna-state cleanup on every anchor availability query; fauna cooldown cleanup is now throttled by play-time interval while directly queried expired anchors still reopen immediately
+  - code addendum: `WorldProceduralStateRegistry` fauna-state diagnostics are now deferred/throttled instead of rescanning the whole fauna cooldown dictionary on every `MarkFaunaAnchorUsed(...)` call after a successful spawn
+  - code addendum: the remaining throttled fauna-state cleanup/diagnostics scans in `WorldProceduralStateRegistry` now use explicit dictionary struct enumerators instead of live dictionary `foreach`
 - [ ] Wave 7: ruins, old modules, service scars, trash/human traces
+  - code addendum: cave-adjacent human-trace readability layers now avoid repeated runtime child-name formatting; `CaveServiceRemnantRuntimeBuilder`, `CaveWallGrowthRuntimeBuilder`, and `CaveGlowingTissueRuntimeBuilder` each use bounded cold name caches sized to their own runtime count caps instead of building `"Name_{index}"` strings inside live cave-detail loops
+  - code addendum: `WorldProceduralScatterDirector` now applies a bounded service-domain rescue pass for `IndustrialService` and `BrineToxic` structure placement; existing runtime candidates are used to keep `ServiceScar`, `PowerRoute`, and `RuinModule` present when the pattern budget supports them, instead of letting generic `TechFragment` quotas be satisfied by one repeated tech family
+  - code addendum: `WorldProceduralScatterDirector` now gives ruin `PlacementMode.Cluster` / `PlacementMode.Landmark` a stronger biome-aware score in `LandmarkCorridor`, `IndustrialService`, and `BrineToxic`, while solitary ruin fragments lose priority in the strongest landmark/salvage reads; runtime ruin placement should bias more toward remembered places and less toward anonymous small-module scatter
+  - code addendum: `WorldProceduralScatterDirector` now also applies a bounded service-cluster rescue pass for `IndustrialService` and `BrineToxic`, so existing runtime candidates try to preserve at least one `DebrisField` and, when cluster budget allows, one `ResourcePocket`; service traces should carry payoff/support clusters instead of reading as tech clutter only
+  - code addendum: service-water cluster quota logic is now aligned with that rescue path; `IndustrialService` / `BrineToxic` patterns add bounded min/ratio pressure toward `DebrisField` and `ResourcePocket`, while de-prioritizing unrelated fertile/shelter cluster accents in the same windows
+  - code addendum: ruin state readability no longer relies only on score bias; `WorldProceduralScatterDirector` now runs a bounded ruin-placement-mode rescue for `LandmarkCorridor`, `IndustrialService`, and `BrineToxic`, so `RuinModule` candidates preserve `Cluster` and, when budget supports it, `Landmark` variants instead of collapsing into one ruin read
+  - code addendum: `LandmarkCorridor` now also gets a bounded `ResourcePocket` cluster rescue, so ruin/cave corridors do not rely only on score drift to place a nearby resource-side payoff when cluster budget and runtime candidates support it
+  - perf addendum: those new service/ruin rescue passes no longer re-sort the same `rescueCandidates` buffer or re-scan `_desiredPlacements` multiple times per window; ordered candidates and current ruin/service counts are now computed once per wrapper and reused across the sub-passes
+  - perf addendum: preferred family rescue no longer calls `CountPlacedFamily(...)` once per preferred family inside the same window; `WorldProceduralScatterDirector` now builds one wrapper-local preferred-family count map for cluster/structure/spawn rescue and updates it only after successful injects, removing repeated full `_desiredPlacements` scans from those rescue wrappers
+  - perf addendum: service-domain rescue and ruin-placement-mode rescue no longer pay three separate domain scans and two separate ruin-mode scans per window; current service-domain and ruin-mode counts are now derived in single wrapper-local enumerator passes before the rescue injects run
+  - perf addendum: cluster rescue no longer rebuilds `_occupiedCellBuffer` for every accent-role sub-pass in the same window; `InjectPatternClusterAccentCandidates(...)` plus the service/landmark cluster rescue wrappers now rebuild occupancy once and reuse the live-updated buffer across their cluster sub-passes
 - [ ] Wave 8: surface/island ecology and shoreline life
 - [ ] Wave 9: resources, return loops, base/support loop, persistence hardening
 - [ ] Wave 10: final visual density balance, perf guardrail, user review cycle
@@ -1517,5 +1536,458 @@ P0 rules:
     - this materially improves the generated starter set
     - it still does not cross the authored-photoreal quality wall
     - it also still does not create Claude runtime seaweed parity; HECTON-8 continues to use the integrated editor-owned flora path instead of a separate monolithic seaweed renderer subsystem
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - High-resolution flora preview capture partially closes the visual truth gap
+  - what changed:
+    - flora automation previews no longer rely only on tiny `AssetPreview` icons
+    - the verification owner now attempts a larger isolated prefab-scene capture first
+  - verified facts:
+    - `GEN_family_kelp_patch_dense__patch_tall` now has a much larger preview that is actually usable for morphology review
+    - that preview suggests the dense patch family is moving in the correct direction
+  - blocker still open:
+    - `GEN_family_kelp_canopy__crown` is still framed incorrectly by the current capture camera
+    - visual truth for some tall/canopy families is therefore still partially blocked by the preview owner itself
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Gas giant driver no longer resolves renderer resources in `Tick()`
+  - what changed:
+    - `GasGiantRotationDriver` now resolves renderer/MPB resources only during `Awake`, `OnEnable`, and editor `OnValidate`
+    - hot-path `Tick()` keeps only the rotation accumulation and MPB write
+  - why it matters:
+    - removes the runtime fallback path that could still touch `GetComponent<Renderer>()` from a per-frame gameplay loop
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Celestial sky colors now resolve once per tick
+  - what changed:
+    - `HectonCelestialEngine` now computes sky zenith/horizon/nadir once and reuses them in both sky and Aegir material updates
+    - existing sky blend gate remains unchanged
+  - why it matters:
+    - removes duplicate color-resolution work from the same tick without changing visual formulas or update order
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Propulsion lock-name uppercase now caches at lock acquisition
+  - what changed:
+    - `PropulsionTool` stores `_lockedNameUpper` once when tractor lock is acquired
+    - locked summary and repeated hold/launch feedback now reuse the cached uppercase name
+    - release paths clear the cached uppercase together with the lock state
+  - why it matters:
+    - trims repeated string work on a state that can be polled often by HUD/PDA while preserving existing tool messaging
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Propulsion no-lock assessment now shares one read per frame
+  - what changed:
+    - `PropulsionTool` now caches the current-frame no-lock assessment result for summary/directive reads
+    - lock acquire/release paths invalidate that assessment cache explicitly
+  - why it matters:
+    - removes duplicate same-frame raycast/assessment work without changing inter-frame propulsion behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Harpoon tether-name uppercase now caches at tether registration
+  - what changed:
+    - `HarpoonLauncherTool` stores `_tetheredNameUpper` once when tether lock is registered
+    - tether lock summary and tether reel feedback reuse that cached uppercase string
+    - tether clear path resets the cached uppercase together with the tether state
+  - why it matters:
+    - trims repeated string work on a live tether state without altering tether/reel semantics
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Harpoon no-tether assessment now shares one read per frame
+  - what changed:
+    - `HarpoonLauncherTool` now caches the current-frame no-tether assessment result for summary/directive reads
+    - tether register/clear paths invalidate that assessment cache explicitly
+  - why it matters:
+    - removes duplicate same-frame raycast/assessment work without changing inter-frame harpoon behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Scanner mode text now caches as deterministic mode state
+  - what changed:
+    - `ScannerTool` now refreshes mode label/summary/HUD title strings only on startup and mode switch
+    - summary/directive/mode-switch feedback reuse the cached mode strings
+  - why it matters:
+    - removes repeated rebuilding of finite scanner mode text without touching scan logic or result categorization
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Analyzer target assessment now shares one read per frame
+  - what changed:
+    - `EnvironmentalAnalyzerTool` now caches the current-frame target assessment result for summary/directive reads
+    - primary and secondary analyzer actions invalidate that cache after their own emits
+  - why it matters:
+    - removes duplicate same-frame raycast/assessment work while keeping analyzer post-use state deterministic
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Beacon nearest assessment now shares one read per frame
+  - what changed:
+    - `BeaconDeployerTool` now caches nearest beacon label/distance/assessment for the current frame
+    - summary and directive reuse the same current-frame assessment instead of independently re-querying
+    - deploy/retract paths invalidate that cache explicitly
+  - why it matters:
+    - removes duplicate same-frame spatial/semantic work in beacon HUD/PDA reads while keeping inter-frame behavior intact
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Beacon operational text now shares one build per frame
+  - what changed:
+    - `BeaconDeployerTool` now builds operational summary/directive once per frame on top of the existing nearest-assessment cache
+    - deploy/retract invalidation clears both assessment and operational text caches
+  - why it matters:
+    - removes duplicate same-frame beacon HUD text formatting while preserving inter-frame behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Dense kelp patch optimization recovered budget without gutting the family
+  - verified facts:
+    - `family.kelp.patch.dense` is back under its triangle cap:
+      - max budget triangles `12344 -> 9000`
+      - headroom `-344 -> 3000`
+    - dense support geometry was where the cut happened:
+      - cheaper supplemental stems
+      - fewer segments on support ribbons
+      - fewer dense-patch bulb nodes
+    - automation request/response loop can again produce `flora_response.json`
+  - still blocked:
+    - automation preview PNGs are still blank grey captures, so beauty sign-off still needs a truthful prefab-stage visual oracle
+  - next correct step:
+    - fix preview-truth or switch to a different preview capture path
+    - only then judge whether dense kelp needs another morphology pass
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Stun pistol target assessment now shares one read per frame
+  - what changed:
+    - `StunPistolTool` now caches one frame-local `StunAssessment` result for HUD summary/directive reads
+    - primary and secondary action paths explicitly invalidate that cache after each shot or target probe outcome
+  - why it matters:
+    - removes duplicate same-frame raycast/assessment work in stun HUD reads without changing inter-frame targeting behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Knife contact probe now shares one read per frame
+  - what changed:
+    - `KnifeTool` now caches one frame-local best-hit result for summary/directive reads
+    - gameplay swing and tactical read paths still execute their own direct contact checks and were not moved onto the cache
+  - why it matters:
+    - removes duplicate same-frame melee contact probing in HUD reads without changing blade action truth
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Repair tool diagnosis now shares one read per frame
+  - what changed:
+    - `RepairTool` now caches one frame-local `ServiceDiagnosis` result for summary/directive reads
+    - primary and secondary action paths explicitly invalidate that cache after each service outcome
+  - why it matters:
+    - removes duplicate same-frame repair diagnosis reads without changing inter-frame repair behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Flashlight adapter now shares one operational snapshot per frame
+  - what changed:
+    - `FlashlightTool` now caches one frame-local operational summary/recommendation snapshot and one frame-local context directive result
+    - toggle and beam-mode action paths explicitly invalidate both caches after state changes
+  - why it matters:
+    - removes duplicate same-frame adapter reads against `PlayerFlashlight` and forward-context probing without changing owner responsibilities
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Builder bridge now shares one operational text build per frame
+  - what changed:
+    - `BuilderTool` now caches one frame-local summary/directive pair for HUD/PDA reads
+    - spawn/despawn/equip/unequip and builder action paths explicitly invalidate that cache
+  - why it matters:
+    - removes duplicate same-frame bridge string assembly without moving logic into `PlayerBuilder`
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Sampler diagnosis now shares one read per frame
+  - what changed:
+    - `SalvageSamplerTool` now caches one frame-local `SamplerDiagnosis` result for summary/directive reads
+    - primary and secondary sampler action paths explicitly invalidate that cache after each outcome
+  - why it matters:
+    - removes duplicate same-frame salvage diagnosis reads without changing inter-frame sampling behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Player tool base summary now reuses cached uppercase tool name
+  - what changed:
+    - `PlayerTool` now caches the uppercase operational tool name during pooled spawn with a lazy fallback rebuild
+    - base summary path no longer recomputes `ToUpperInvariant()` for every HUD read
+  - why it matters:
+    - removes repeated string creation from the shared base summary implementation without changing fallback naming semantics
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Editor flora automation preview path now stages heavy preview work
+  - what changed:
+    - `WorldProceduralFloraFinalStatusReport` now processes only a small batch of preview tasks per editor update
+    - direct `PreviewRenderUtility` capture is attempted once per task, then the task falls back to `AssetPreview` polling instead of repeating full prefab preview rendering every update
+    - completed tasks clear their prefab asset reference immediately
+  - why it matters:
+    - reduces editor preview churn and lowers peak RAM pressure during long flora automation sessions without removing automation output
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Dense kelp generator now trades uniformity for clustered biological variation
+  - what changed:
+    - dense kelp cluster builds now use more active blades per cluster
+    - clustered giant-frond logic now injects deterministic morphology variance instead of repeated identical straps
+    - clustered blade socket attachment now sits closer to the stipe and biases lower/mid growth bands
+    - dense kelp families now mix broad undulate leaves and narrower ribbons inside one patch
+  - verified facts:
+    - fresh report after automation request `flora-verify-20260408-densepass-1` shows:
+      - `family.kelp.patch.dense` max budget `8112`
+      - `GEN_family_kelp_patch_dense__patch` `5310/2256/688/312`
+      - `GEN_family_kelp_patch_dense__patch_tall` `7736/3972/1212/686`
+      - `GEN_family_kelp_patch_dense__ring` `8112/3500/1188/548`
+  - remaining truth:
+    - preview framing still blocks final beauty sign-off
+    - authored photoreal kelp finals are still absent
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Organic world direction hard requirements recorded
+  - visual requirements now treated as non-negotiable:
+    - smooth LOD / dithered transition behavior instead of visible organic popping
+    - flora/coral continuity: no floating blades, detached bulbs, hard-seam growth breaks
+    - optimization must cut support detail before collapsing the hero silhouette
+  - world-content direction now recorded:
+    - shallow-to-mid flora/coral set should grow toward at least `5-6` major organic archetypes
+    - each archetype should grow toward `10+` prebuilt/generated variants, not one hero mesh duplicated everywhere
+    - runtime should select from prebuilt/generated variant libraries with seeded persistence instead of rebuilding all mesh anatomy on each game start
+  - deep-world direction now recorded:
+    - `0-300m`: richer kelp, reef coral, photic-zone flora
+    - `300-800m`: sparse cold-water fans, leathery fronds, darker brown/red flora, transition biomes
+    - `800m-5000m`: alien deep-world flora/coral direction can shift toward black/grey biomass, pale mineral growth, and bioluminescent vein systems
+  - motion direction now recorded:
+    - bind flora motion to shared global current / flow systems first
+    - reserve richer local deformation for near-camera reads
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Scene view sky enforcer now runs on dirty/throttled editor cadence
+  - what changed:
+    - `SceneViewSkyboxEnforcer` now throttles scene-view default enforcement to a bounded interval instead of writing state every editor update
+    - source sky mesh resolution is cached and only re-resolved after hierarchy changes or retry interval expiry
+    - preview pose updates moved to scene-view camera rendering instead of unconditional editor-update writes
+  - why it matters:
+    - removes always-on editor churn in long scene sessions while preserving skybox preview behavior
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Visor HUD edit-mode helpers now self-unsubscribe when settled
+  - what changed:
+    - `SuitHUDScreenCompositor`, `SuitHUDPresentationController`, `SuitHUDV4CanvasOverlay`, and `HectonSuitHUDExtensions` now register `EditorApplication.update` only while they still need edit-mode preview work
+    - each owner re-arms its editor tick on `OnValidate` or explicit refresh requests and self-unsubscribes once auto-resolve / dirty preview work is settled
+  - why it matters:
+    - reduces always-on `ExecuteAlways` editor churn across the visor/HUD preview stack without removing preview ownership
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Save thumbnail caches are now bounded instead of unbounded retention
+  - what changed:
+    - `SaveThumbnailSystem` now keeps a bounded thumbnail sprite cache with recency tracking and destroys evicted sprite/texture pairs immediately
+    - `SaveSlotManagerWindow` now keeps a bounded editor thumbnail texture cache with recency tracking and destroys evicted textures immediately
+  - why it matters:
+    - prevents long editor/save-management sessions from retaining every loaded save thumbnail in RAM until full cache clear or window close
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Visor HUD controller edit-mode preview no longer stays subscribed forever
+  - what changed:
+    - `VisorHUDController` now registers `EditorApplication.update` only when edit-mode preview, unresolved refs, dirty material state, or edit-mode pose sync actually require work
+    - once settled, the controller unsubscribes its edit tick and re-arms on `OnValidate`
+  - why it matters:
+    - removes another always-on visor preview owner from long idle editor sessions without changing runtime `ITickable` ownership
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Underwater editor camera resolve and environment preview now back off in the background
+  - what changed:
+    - `HectonUnderwaterVisuals` editor camera resolve now prefers cached SceneView/game cameras and retries `Camera.main` only on a bounded interval instead of every editor update
+    - `HectonAtmosphereManager`, `HectonUnderwaterVisuals`, and `HectonCelestialEngine` now early-out their edit-mode preview ticks when the Unity editor application is not active
+  - why it matters:
+    - reduces background editor churn in the exact long-idle scenario that was inflating RAM/CPU suspicion, without changing runtime ownership or active preview behavior when the editor is focused
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Flora preview oracle is no longer blind, and `kelp_tall` got another continuity pass
+  - what changed:
+    - prefab automation preview now produces usable multi-view contact sheets for flora finals instead of relying on tiny or grey false previews
+    - `family_kelp_tall` solitary giant-frond variants now use more mid-span bridging fronds and less rigid attachment spacing
+    - hidden/local `AGENTS.md` files were synchronized so smooth LOD transitions, organic continuity, seeded runtime variety, and cheap current-coupled motion are enforced everywhere, not only in root docs
+  - why it matters:
+    - flora form work is no longer blind; contact-sheet previews are good enough to keep iterating on silhouette and continuity without pretending final beauty proof is done
+    - `kelp_tall` remains safely under its family cap while moving away from the old “few blades on a pole” read
+  - verified facts:
+    - automation request `flora-verify-20260408-tallpass-5` completed with `success=true`
+    - latest flora report:
+      - `family.kelp.tall` max budget `5544`
+      - `family.kelp.patch.dense` max budget `9600`
+      - `GEN_family_kelp_tall__stalk` `5376/2416/900/500`
+      - `GEN_family_kelp_tall__ribbon` `5544/2504/932/556`
+  - remaining truth:
+    - preview framing is usable, not final
+    - authored photoreal kelp/coral finals still remain to be built family-by-family
+    - in-world profiler/build proof is still open
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Kelp variety expansion started inside the existing flora pipeline
+  - what changed:
+    - kelp families were expanded from `3` to `5` generated variants each without introducing a new runtime vegetation subsystem
+    - new tall variants: `lamina`, `rope`
+    - new dense variants: `brush`, `sheet`
+    - new canopy variants: `mantle`, `splay`
+  - why it matters:
+    - moves the project toward the target `5-6` major seaweed archetypes and `10+` variants per archetype while keeping ownership in the editor bake pipeline
+    - gives seeded runtime variety more material to select from later, instead of overusing the first `3` kelp forms
+  - verified facts:
+    - automation request `flora-verify-20260408-variety-2` completed with `success=true`
+    - report now shows kelp families at `a0/g5`
+    - all new kelp variants remain inside current family budgets
+  - remaining truth:
+    - still generated starter flora, not authored photoreal finals
+    - depth-band-specific deep/abyssal flora families still remain future implementation work
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Kelp variety is now `7` generated variants per family
+  - what changed:
+    - second variety expansion landed for all three kelp families
+    - new tall variants: `banner`, `lance`
+    - new dense variants: `tuft`, `drape`
+    - new canopy variants: `veil`, `rosette`
+  - why it matters:
+    - pushes the project materially closer to the `10+` variants-per-archetype target without inventing a second runtime flora renderer
+    - gives seeded runtime variety a real library to choose from later instead of recycling the same first `3` forms
+  - verified facts:
+    - automation request `flora-verify-20260408-variety-3` completed with `success=true`
+    - report now shows all kelp families at `a0/g7`
+    - new kelp variants still remain within family budgets
+  - remaining truth:
+    - compact dense preview capture is still inconsistent; `tuft` can fall back to a mini preview instead of the full contact sheet
+    - authored photoreal kelp/coral finals still remain future work
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Existing flora shaders are now prepared for deep glowing seaweed/coral
+  - what changed:
+    - biolum controls were added to the existing kelp/coral shader stack, not to a new runtime subsystem
+    - material authoring now serializes deep-flora-ready emissive defaults across all current flora materials
+  - why it matters:
+    - this establishes the cheap rendering side of deep glowing flora first, which is the correct prerequisite before any zone-driven runtime coupling is added
+    - current shallow starter families remain visually stable because emissive strength stays at `0`
+  - verified facts:
+    - Unity material-apply pass completed successfully with `TouchedMaterials=7`
+    - proxy material assets now contain the new biolum properties
+  - remaining truth:
+    - this does not yet bind flora materials to `HectonBiolumZone` at runtime
+    - deep sea flora families still need to be authored into the current flora pipeline
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - First deep flora families now exist inside the real baked pipeline
+  - what changed:
+    - new deep seaweed family `family.kelp.abyssal` was authored into the existing flora stack with `strap`, `shroud`, and `nodule` generated finals
+    - new deep coral family `family.coral.brittle` was authored into the existing flora stack with `sprig`, `fan`, and `spire` generated finals
+    - proxy foundations, texture authoring, material authoring, baked starter generation, final variant linkage, validator, and status report all now recognize those families
+    - dedicated proxy materials were created:
+      - `MAT_family_kelp_abyssal.mat`
+      - `MAT_family_coral_brittle.mat`
+  - why it matters:
+    - deep glowing flora is no longer only a shader-ready idea; the first abyssal flora/coral families now exist as real linked prefabs in the current pipeline
+    - this is the correct owner-layer path for expanding depth bands without inventing a second flora runtime architecture
+  - verified facts:
+    - `Build Procedural Fill Foundations` completed successfully
+    - `Generate Procedural Flora Textures` completed with `TouchedTextures=36`
+    - `Apply Procedural Flora Materials` completed with `TouchedMaterials=9`
+    - `Generate Procedural Flora Baked Starters` completed with `Prefabs=39, MeshesUpdated=126, RemovedAssets=0, Failures=0`
+    - `Apply Procedural Flora Final Variants` completed with `FamiliesTouched=9, LinkedVariants=39, RemovedVariants=0, MissingFamilies=0`
+    - `Validate Procedural Flora Final Variants` completed with `PASS validatedPrefabs=39, warningCount=9`
+    - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` now shows:
+      - `family.kelp.abyssal` coverage `a0/g3`, max budget triangles `4954`, headroom `4046`
+      - `family.coral.brittle` coverage `a0/g3`, max budget triangles `1424`, headroom `8076`
+  - remaining truth:
+    - these are still generated starter finals, not authored photoreal finals
+    - there is still no runtime zone-coupled biolum bridge for flora
+    - in-world beauty proof and profiler/build proof remain open
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Deep flora biolum now has a real runtime bridge owner
+  - what changed:
+    - `HectonBiolumManager` now pushes cheap global deep-flora biolum shader inputs for ocean/floor influence instead of leaving deep kelp/coral glow fully disconnected from world biolum state
+    - `HectonBiolumZone` now exposes read-only sampled color/intensity/range/position for lightweight consumers
+    - `Hecton_KelpMaster.shader` and `Hecton_CoralMaster.shader` now blend local deep-flora biolum with global ocean/floor zone influence
+    - `WorldRuntimeBootstrapAuthoring` now ensures `HectonBiolumManager` is wired onto `[MANAGERS]` during world runtime rebuild
+  - why it matters:
+    - the project now has one coherent owner path for deep glowing flora: scene/world biolum -> global shader inputs -> existing deep kelp/coral materials
+    - this stays cheap for MX350 because it avoids per-instance responder scripts on every flora object
+  - verified facts:
+    - Unity compile completed without new flora/biolum compile errors
+    - `Rebuild World Runtime Stack` completed successfully
+    - scene readback confirms `HectonBiolumManager` now exists on `[MANAGERS]`
+  - remaining truth:
+    - the active world scene still has no `OceanBiolumZone` or `FloorBiolumZone` instances, so the new global bridge currently resolves to zero influence
+    - this is runtime owner wiring, not final visible deep-glow proof yet
+    - scene was dirtied by runtime bootstrap and not auto-saved
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Deep world biolum zones are now authored into the active world scene
+  - what changed:
+    - `WorldRuntimeBootstrapAuthoring` now creates a stable `--- WORLD ---/Biolum_Deep` scene root during runtime rebuild
+    - that root now owns `4` scene-authored deep biolum anchors:
+      - `Ocean_DeepVeil`
+      - `Ocean_AbyssRibbon`
+      - `Floor_BrineGarden`
+      - `Floor_BrittleVents`
+    - each anchor is configured through the existing `OceanBiolumZone` / `FloorBiolumZone` owner classes with serialized depth, cluster, pulse, LOD, and range settings
+  - why it matters:
+    - the deep kelp/coral biolum bridge no longer points at an empty scene
+    - deep glowing flora now has a real world-owned source of ocean/floor influence without inventing a second subsystem
+  - verified facts:
+    - Unity compile completed without new flora/biolum errors
+    - `Rebuild World Runtime Stack` completed successfully
+    - scene-instance readback confirms:
+      - `--- WORLD ---/Biolum_Deep`
+      - `Ocean_DeepVeil` at `1237.3 / 4450 / 1229.1`
+      - `Ocean_AbyssRibbon` at `917.3 / 3920 / 1509.1`
+      - `Floor_BrineGarden` at `1317.3 / 3840 / 1489.1`
+      - `Floor_BrittleVents` at `837.3 / 3560 / 1169.1`
+    - serialized component readback confirms expected zone settings on at least:
+      - `Ocean_DeepVeil`
+      - `Floor_BrineGarden`
+  - remaining truth:
+    - runtime visible glow near those zones is not fully proven yet
+    - `execute_code` runtime readback is currently blocked by a Unity-MCP launcher error: `The filename or extension is too long`
+    - scene is dirty and was not auto-saved
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-09 - Deep flora content library expanded in the correct owner layer
+  - what changed:
+    - abyssal kelp now has `5` generated variants instead of `3`
+    - brittle coral now has `5` generated variants instead of `3`
+    - `WorldProceduralFloraFinalVariantAuthoring` relinked deep families and logged `LinkedVariants=43`
+    - validator/report were regenerated on the expanded set
+  - why it matters:
+    - hadal/deep bands now have enough library breadth to support seeded runtime selection later without per-boot hero mesh regeneration
+    - this moves the flora roadmap forward while the runtime biolum visual proof remains blocked by unstable MCP play-mode cadence
+  - verified facts:
+    - validator logged `PASS validatedPrefabs=43, warningCount=9`
+    - report confirms:
+      - `family.kelp.abyssal = a0/g5`
+      - `family.coral.brittle = a0/g5`
+      - `family.kelp.abyssal` max budget `5724 / 9000`
+      - `family.coral.brittle` max budget `1648 / 9500`
+  - remaining truth:
+    - authored photoreal deep finals still do not exist
+    - visual oracle passes for the new deep variants are still pending
+    - runtime deep-glow proof is still blocked by unreliable MCP play-mode cadence / `execute_code` failure
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-09 - Runtime biolum blocker isolated; deep library expansion continued in parallel
+  - what changed:
+    - `HectonBiolumManager` received editor-only runtime counters:
+      - `_debugTickInvocations`
+      - `_debugZoneTickPasses`
+      - `_debugLastTickFrame`
+      - zone-count mirrors
+    - deep content work advanced anyway:
+      - `family.kelp.abyssal` from `g5 -> g7`
+      - `family.coral.brittle` from `g5 -> g7`
+  - why it matters:
+    - runtime truth is now objective instead of guessed: under the current MCP play session, manager and world time stall almost immediately
+    - editor-owned deep flora work can continue honestly while runtime visual proof remains blocked
+  - verified facts:
+    - play-mode readback shows:
+      - `HectonBiolumManager._debugTickInvocations = 2`
+      - `HectonBiolumManager._debugLastTickFrame = 2`
+      - `Ocean_DeepVeil._debugTickInvocations = 4`
+      - `Ocean_DeepVeil._debugEvaluateInvocations = 0`
+      - `WorldProceduralStateRegistry._debugCurrentPlayTime` stops advancing under the same session
+    - deep content readback shows:
+      - `family.kelp.abyssal = a0/g7`
+      - `family.coral.brittle = a0/g7`
+      - budgets remain inside limits
+  - remaining truth:
+    - current MCP play-mode cadence is not trustworthy enough for visible deep-glow sign-off
+    - authored photoreal deep finals still do not exist
+    - next beauty passes should stay in editor-owned flora content until runtime oracle becomes trustworthy again
   - status:
     - `PENDING VERIFICATION`

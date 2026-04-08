@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Hecton8.Core;
@@ -69,6 +70,9 @@ namespace Hecton8.Core
 
         private bool _isRegistered;
         private readonly List<GameObject> _cachedRootObjects = new List<GameObject>(256);
+        private float _thresholdSqr;
+        private float _anchorResolveTimer;
+        private const float AnchorResolveCooldown = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -82,12 +86,8 @@ namespace Hecton8.Core
                 return;
             }
             _instance = this;
-
-            // Ensure anchor is assigned
-            if (_anchor == null && Camera.main != null)
-            {
-                _anchor = Camera.main.transform;
-            }
+            RefreshThresholdCache();
+            TryResolveAnchor(force: true);
         }
 
         private void OnEnable()
@@ -126,13 +126,18 @@ namespace Hecton8.Core
             // Fail-safe anchor acquisition
             if (_anchor == null)
             {
-                if (Camera.main != null) _anchor = Camera.main.transform;
-                else return;
+                _anchorResolveTimer -= deltaTime;
+                if (_anchorResolveTimer > 0f)
+                    return;
+
+                TryResolveAnchor(force: false);
+                if (_anchor == null)
+                    return;
             }
 
             // Check distance from origin (Zero-GC)
             Vector3 pos = _anchor.position;
-            if (pos.magnitude > _threshold)
+            if (pos.sqrMagnitude > _thresholdSqr)
             {
                 ShiftWorld(pos);
             }
@@ -177,7 +182,45 @@ namespace Hecton8.Core
             // 5. Notify specialized systems (Voxel, VFX, Sound emitters)
             OnWorldShift?.Invoke(offset);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[FloatingOrigin] World shifted by {offset}. Anchor returned to approx (0,0,0).");
+#endif
         }
+
+        private void TryResolveAnchor(bool force)
+        {
+            if (_anchor != null)
+                return;
+
+            if (!force && _anchorResolveTimer > 0f)
+                return;
+
+            _anchorResolveTimer = AnchorResolveCooldown;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            {
+                _anchor = playerTransform;
+                return;
+            }
+
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+                _anchor = mainCamera.transform;
+        }
+
+        private void RefreshThresholdCache()
+        {
+            if (_threshold < 1f)
+                _threshold = 1f;
+
+            _thresholdSqr = _threshold * _threshold;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            RefreshThresholdCache();
+        }
+#endif
     }
 }

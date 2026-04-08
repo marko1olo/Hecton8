@@ -111,6 +111,11 @@ namespace Hecton8.EditorTools
                     return false;
                 }
 
+                SanitizeGeneratedMesh(generatedLod0Mesh);
+                SanitizeGeneratedMesh(generatedLod1Mesh);
+                SanitizeGeneratedMesh(generatedLod2Mesh);
+                SanitizeGeneratedMesh(generatedLod3Mesh);
+
                 generatedLod0Mesh.name = spec.Lod0MeshAssetName;
                 generatedLod1Mesh.name = spec.Lod1MeshAssetName;
                 if (generatedLod2Mesh != null)
@@ -164,7 +169,7 @@ namespace Hecton8.EditorTools
                     });
                 }
 
-                lodGroup.RecalculateBounds();
+                ApplyManualLodGroupBounds(lodGroup, bakedLod0Mesh, bakedLod1Mesh, bakedLod2Mesh, bakedLod3Mesh);
 
                 PrefabUtility.SaveAsPrefabAsset(bakedRoot, spec.PrefabPath);
                 generatedPrefabs++;
@@ -209,6 +214,118 @@ namespace Hecton8.EditorTools
             meshRenderer.allowOcclusionWhenDynamic = false;
             meshRenderer.sharedMaterial = material;
             return meshRenderer;
+        }
+
+        private static void SanitizeGeneratedMesh(Mesh mesh)
+        {
+            if (mesh == null)
+                return;
+
+            Vector3[] vertices = mesh.vertices;
+            if (vertices == null || vertices.Length == 0)
+            {
+                mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
+                return;
+            }
+
+            bool changedVertices = false;
+            int firstFiniteIndex = -1;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (IsFiniteVector3(vertices[i]))
+                {
+                    firstFiniteIndex = i;
+                    break;
+                }
+            }
+
+            Vector3 fallbackVertex = firstFiniteIndex >= 0 ? vertices[firstFiniteIndex] : Vector3.zero;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (IsFiniteVector3(vertices[i]))
+                    continue;
+
+                vertices[i] = fallbackVertex;
+                changedVertices = true;
+            }
+
+            if (changedVertices)
+                mesh.vertices = vertices;
+
+            Bounds bounds = new Bounds(fallbackVertex, Vector3.zero);
+            bool hasFiniteVertex = firstFiniteIndex >= 0;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 vertex = vertices[i];
+                if (!IsFiniteVector3(vertex))
+                    continue;
+
+                if (!hasFiniteVertex)
+                {
+                    bounds = new Bounds(vertex, Vector3.zero);
+                    hasFiniteVertex = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(vertex);
+                }
+            }
+
+            if (!hasFiniteVertex)
+                bounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
+
+            if (bounds.size.sqrMagnitude < 0.000001f)
+                bounds.Expand(0.01f);
+
+            mesh.bounds = bounds;
+        }
+
+        private static void ApplyManualLodGroupBounds(LODGroup lodGroup, Mesh lod0Mesh, Mesh lod1Mesh, Mesh lod2Mesh, Mesh lod3Mesh)
+        {
+            if (lodGroup == null)
+                return;
+
+            Mesh[] meshes = { lod0Mesh, lod1Mesh, lod2Mesh, lod3Mesh };
+            bool hasBounds = false;
+            Bounds combinedBounds = default;
+
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                Mesh mesh = meshes[i];
+                if (mesh == null)
+                    continue;
+
+                Bounds meshBounds = mesh.bounds;
+                if (!IsFiniteBounds(meshBounds))
+                    continue;
+
+                if (!hasBounds)
+                {
+                    combinedBounds = meshBounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    combinedBounds.Encapsulate(meshBounds.min);
+                    combinedBounds.Encapsulate(meshBounds.max);
+                }
+            }
+
+            if (!hasBounds)
+                return;
+
+            lodGroup.localReferencePoint = combinedBounds.center;
+            lodGroup.size = Mathf.Max(combinedBounds.size.x, combinedBounds.size.y, combinedBounds.size.z);
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            return IsFiniteVector3(bounds.center) && IsFiniteVector3(bounds.size);
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         private static Mesh BuildCombinedMesh(GameObject sourceRoot, string meshName, bool includeReduced)
@@ -334,12 +451,31 @@ namespace Hecton8.EditorTools
                 CreateSpec("family.kelp.tall", "family_kelp_tall__stalk", new Vector3(0.18f, 3.6f, 0.18f)),
                 CreateSpec("family.kelp.tall", "family_kelp_tall__lean", new Vector3(0.16f, 3.1f, 0.16f)),
                 CreateSpec("family.kelp.tall", "family_kelp_tall__ribbon", new Vector3(0.14f, 3.9f, 0.14f)),
+                CreateSpec("family.kelp.tall", "family_kelp_tall__lamina", new Vector3(0.2f, 3.45f, 0.2f)),
+                CreateSpec("family.kelp.tall", "family_kelp_tall__rope", new Vector3(0.14f, 3.35f, 0.14f)),
+                CreateSpec("family.kelp.tall", "family_kelp_tall__banner", new Vector3(0.19f, 3.7f, 0.19f)),
+                CreateSpec("family.kelp.tall", "family_kelp_tall__lance", new Vector3(0.13f, 3.5f, 0.13f)),
                 CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__patch", new Vector3(0.18f, 2.8f, 0.18f)),
                 CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__patch_tall", new Vector3(0.2f, 3.1f, 0.2f)),
                 CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__ring", new Vector3(0.17f, 2.7f, 0.17f)),
+                CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__brush", new Vector3(0.16f, 2.45f, 0.16f)),
+                CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__sheet", new Vector3(0.19f, 2.9f, 0.19f)),
+                CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__tuft", new Vector3(0.16f, 2.25f, 0.16f)),
+                CreateSpec("family.kelp.patch.dense", "family_kelp_patch_dense__drape", new Vector3(0.2f, 2.75f, 0.2f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__crown", new Vector3(0.22f, 4.2f, 0.22f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__frond", new Vector3(0.18f, 3.8f, 0.18f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__fan", new Vector3(0.2f, 4.05f, 0.2f)),
+                CreateSpec("family.kelp.canopy", "family_kelp_canopy__mantle", new Vector3(0.24f, 4.15f, 0.24f)),
+                CreateSpec("family.kelp.canopy", "family_kelp_canopy__splay", new Vector3(0.22f, 3.95f, 0.22f)),
+                CreateSpec("family.kelp.canopy", "family_kelp_canopy__veil", new Vector3(0.24f, 4.1f, 0.24f)),
+                CreateSpec("family.kelp.canopy", "family_kelp_canopy__rosette", new Vector3(0.21f, 3.65f, 0.21f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__strap", new Vector3(0.16f, 3.45f, 0.16f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__shroud", new Vector3(0.18f, 3.8f, 0.18f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__nodule", new Vector3(0.17f, 3.6f, 0.17f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__whip", new Vector3(0.14f, 3.95f, 0.14f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__mantle", new Vector3(0.2f, 4.05f, 0.2f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__braid", new Vector3(0.18f, 3.88f, 0.18f)),
+                CreateSpec("family.kelp.abyssal", "family_kelp_abyssal__pennant", new Vector3(0.22f, 4.18f, 0.22f)),
                 CreateSpec("family.coral.low", "family_coral_low__bed", new Vector3(1.22f, 0.8f, 1.12f)),
                 CreateSpec("family.coral.low", "family_coral_low__plate", new Vector3(1.06f, 0.74f, 1.02f)),
                 CreateSpec("family.coral.low", "family_coral_low__knoll", new Vector3(1.14f, 0.86f, 1.08f)),
@@ -351,7 +487,14 @@ namespace Hecton8.EditorTools
                 CreateSpec("family.coral.massive", "family_coral_massive__boulder", new Vector3(1.28f, 1.08f, 1.22f)),
                 CreateSpec("family.coral.plate", "family_coral_plate__ledge", new Vector3(1.24f, 0.98f, 1.18f)),
                 CreateSpec("family.coral.plate", "family_coral_plate__shelf", new Vector3(1.12f, 0.9f, 1.08f)),
-                CreateSpec("family.coral.plate", "family_coral_plate__stack", new Vector3(1.06f, 1.04f, 1f))
+                CreateSpec("family.coral.plate", "family_coral_plate__stack", new Vector3(1.06f, 1.04f, 1f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__sprig", new Vector3(0.92f, 1.26f, 0.92f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__fan", new Vector3(1.04f, 1.3f, 1f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__spire", new Vector3(0.88f, 1.42f, 0.88f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__lace", new Vector3(1.02f, 1.36f, 0.98f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__crown", new Vector3(0.94f, 1.5f, 0.94f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__thicket", new Vector3(0.98f, 1.48f, 0.96f)),
+                CreateSpec("family.coral.brittle", "family_coral_brittle__halo", new Vector3(1.08f, 1.34f, 1.02f))
             };
         }
 

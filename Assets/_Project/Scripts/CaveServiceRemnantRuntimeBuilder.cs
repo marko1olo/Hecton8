@@ -7,6 +7,7 @@ namespace Hecton8.Caves
     internal static class CaveServiceRemnantRuntimeBuilder
     {
         private const string RemnantRootName = "_ServiceRemnants";
+        private static readonly string[] _RemnantNames = CreateNameCache("Remnant_", 12); // COLD ALLOC: bounded remnant child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -61,7 +62,7 @@ namespace Hecton8.Caves
             ServiceRemnantConfig config,
             float globalIntensity)
         {
-            string name = $"Remnant_{index}";
+            string name = GetCachedName(index);
             bool cylindrical = Hash01(runtimeSeed, index, 11) > 0.45f;
             PrimitiveType primitiveType = cylindrical ? PrimitiveType.Cylinder : PrimitiveType.Cube;
             float x = volumeBounds.center.x + HashSigned(runtimeSeed, index, 17) * volumeBounds.extents.x * 0.62f;
@@ -195,6 +196,23 @@ namespace Hecton8.Caves
         {
             if (target != null && !target.gameObject.activeSelf)
                 target.gameObject.SetActive(true);
+        }
+
+        private static string GetCachedName(int index)
+        {
+            if ((uint)index < (uint)_RemnantNames.Length)
+                return _RemnantNames[index];
+
+            return RemnantRootName;
+        }
+
+        private static string[] CreateNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = prefix + i;
+
+            return names;
         }
 
         private static long ComputeFallbackSeed(Vector3 position, CavePreset preset)

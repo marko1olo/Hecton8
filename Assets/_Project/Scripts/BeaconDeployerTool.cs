@@ -44,6 +44,14 @@ namespace Hecton8.Gameplay
         private float _nextFeedbackAt;
         [SerializeField] private int _debugActiveBeaconCount;
         private readonly BeaconNetworkSystem.BeaconSnapshot[] _beaconBuffer = new BeaconNetworkSystem.BeaconSnapshot[32];
+        private int _cachedNearestAssessmentFrame = -1;
+        private bool _cachedNearestAssessmentValid;
+        private string _cachedNearestLabel;
+        private float _cachedNearestDistance;
+        private BeaconAssessment _cachedNearestAssessment;
+        private int _cachedOperationalTextFrame = -1;
+        private string _cachedOperationalSummary;
+        private string _cachedOperationalDirective;
 
         private void Awake()
         {
@@ -95,6 +103,7 @@ namespace Hecton8.Gameplay
                     "FIELD BEACON DEPLOYED",
                     $"{label} established at {spawnPosition.x:0.0}, {spawnPosition.y:0.0}, {spawnPosition.z:0.0}. {assessment.Summary} Recommendation: {assessment.Recommendation}. Active marker count: {BeaconNetworkSystem.Instance.ActiveCount}.",
                     "INFO");
+                InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
             }
         }
@@ -145,6 +154,7 @@ namespace Hecton8.Gameplay
                     "FIELD BEACON RETRACTED",
                     $"{label} was retracted from {position.x:0.0}, {position.y:0.0}, {position.z:0.0} at {distance:0.0} m. Active marker count: {BeaconNetworkSystem.Instance.ActiveCount}.",
                     "INFO");
+                InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
             }
         }
@@ -161,25 +171,14 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
-            int activeCount = BeaconNetworkSystem.Instance != null ? BeaconNetworkSystem.Instance.ActiveCount : 0;
-            if (_cooldown > 0f)
-                return $"BEACON TOOL // GRID {activeCount} // CYCLING {_cooldown:0.0}S";
-
-            if (TryReadNearestAssessment(out string label, out float distance, out BeaconAssessment assessment))
-                return $"BEACON TOOL // {assessment.Role} // {label} {distance:0.0}M";
-
-            return $"BEACON TOOL // GRID {activeCount} // READY";
+            RefreshOperationalTextCache();
+            return _cachedOperationalSummary;
         }
 
         public override string GetOperationalDirective()
         {
-            if (_cooldown > 0f)
-                return "Wait for deployment hardware to reset.";
-
-            if (TryReadNearestAssessment(out _, out _, out BeaconAssessment assessment))
-                return assessment.Recommendation;
-
-            return "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.";
+            RefreshOperationalTextCache();
+            return _cachedOperationalDirective;
         }
 
         private BeaconAssessment BuildDeploymentAssessment(Vector3 spawnPosition, string label)
@@ -321,6 +320,66 @@ namespace Hecton8.Gameplay
             label = nearest.Label;
             assessment = BuildExistingBeaconAssessment(nearest, distance);
             return true;
+        }
+
+        private bool TryGetNearestAssessmentCached(out string label, out float distance, out BeaconAssessment assessment)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedNearestAssessmentFrame == currentFrame)
+            {
+                label = _cachedNearestLabel;
+                distance = _cachedNearestDistance;
+                assessment = _cachedNearestAssessment;
+                return _cachedNearestAssessmentValid;
+            }
+
+            bool valid = TryReadNearestAssessment(out label, out distance, out assessment);
+            _cachedNearestAssessmentFrame = currentFrame;
+            _cachedNearestAssessmentValid = valid;
+            _cachedNearestLabel = label;
+            _cachedNearestDistance = distance;
+            _cachedNearestAssessment = assessment;
+            return valid;
+        }
+
+        private void InvalidateNearestAssessmentCache()
+        {
+            _cachedNearestAssessmentFrame = -1;
+            _cachedNearestAssessmentValid = false;
+            _cachedNearestLabel = null;
+            _cachedNearestDistance = 0f;
+            _cachedNearestAssessment = default;
+            _cachedOperationalTextFrame = -1;
+            _cachedOperationalSummary = null;
+            _cachedOperationalDirective = null;
+        }
+
+        private void RefreshOperationalTextCache()
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedOperationalTextFrame == currentFrame)
+                return;
+
+            int activeCount = BeaconNetworkSystem.Instance != null ? BeaconNetworkSystem.Instance.ActiveCount : 0;
+            if (_cooldown > 0f)
+            {
+                _cachedOperationalSummary = $"BEACON TOOL // GRID {activeCount} // CYCLING {_cooldown:0.0}S";
+                _cachedOperationalDirective = "Wait for deployment hardware to reset.";
+                _cachedOperationalTextFrame = currentFrame;
+                return;
+            }
+
+            if (TryGetNearestAssessmentCached(out string label, out float distance, out BeaconAssessment assessment))
+            {
+                _cachedOperationalSummary = $"BEACON TOOL // {assessment.Role} // {label} {distance:0.0}M";
+                _cachedOperationalDirective = assessment.Recommendation;
+                _cachedOperationalTextFrame = currentFrame;
+                return;
+            }
+
+            _cachedOperationalSummary = $"BEACON TOOL // GRID {activeCount} // READY";
+            _cachedOperationalDirective = "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.";
+            _cachedOperationalTextFrame = currentFrame;
         }
     }
 }

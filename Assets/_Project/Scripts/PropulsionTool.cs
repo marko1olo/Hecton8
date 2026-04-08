@@ -43,6 +43,10 @@ namespace Hecton8.Gameplay
         private float _nextFeedbackAt;
         private Rigidbody _lockedBody;
         private string _lockedName;
+        private string _lockedNameUpper;
+        private int _cachedAssessmentFrame = -1;
+        private bool _cachedAssessmentValid;
+        private PropulsionAssessment _cachedAssessment;
         private bool _primaryInvokedThisTick;
         private bool _secondaryInvokedThisTick;
         private bool _primaryHeldLastTick;
@@ -113,9 +117,9 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_lockedBody != null)
-                return $"PROPULSION // TRACTOR HOLD // {_lockedName?.ToUpperInvariant() ?? "CARGO"}";
+                return $"PROPULSION // TRACTOR HOLD // {_lockedNameUpper ?? "CARGO"}";
 
-            if (TryReadAssessment(out PropulsionAssessment assessment))
+            if (TryGetAssessmentCached(out PropulsionAssessment assessment))
                 return $"PROPULSION // {assessment.Headline}";
 
             return "PROPULSION // READY";
@@ -126,7 +130,7 @@ namespace Hecton8.Gameplay
             if (_lockedBody != null)
                 return "Secondary releases. Primary launches the locked cargo forward.";
 
-            if (TryReadAssessment(out PropulsionAssessment assessment))
+            if (TryGetAssessmentCached(out PropulsionAssessment assessment))
                 return assessment.Recommendation;
 
             return "Primary pushes mass. Secondary locks and reels mobile cargo.";
@@ -236,8 +240,12 @@ namespace Hecton8.Gameplay
 
             _lockedBody = body;
             _lockedName = body.gameObject.name;
+            _lockedNameUpper = string.IsNullOrWhiteSpace(_lockedName)
+                ? "CARGO"
+                : _lockedName.ToUpperInvariant();
+            InvalidateAssessmentCache();
             PublishAssessment(new PropulsionAssessment(
-                $"TRACTOR LOCK - {_lockedName.ToUpperInvariant()}",
+                $"TRACTOR LOCK - {_lockedNameUpper}",
                 $"Mass {body.mass:0.0} kg secured at {hit.distance:0.0} m.",
                 "Hold steady, then launch or reposition on demand.",
                 "INFO"));
@@ -277,7 +285,7 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextFeedbackAt)
             {
                 PublishAssessment(new PropulsionAssessment(
-                    $"TRACTOR HOLD - {_lockedName.ToUpperInvariant()}",
+                    $"TRACTOR HOLD - {_lockedNameUpper ?? "CARGO"}",
                     $"Cargo remains stabilized inside the handling envelope.",
                     "Release to drop or primary-fire to launch.",
                     "INFO"));
@@ -292,11 +300,14 @@ namespace Hecton8.Gameplay
 
             Rigidbody body = _lockedBody;
             string lockedName = string.IsNullOrWhiteSpace(_lockedName) ? body.gameObject.name : _lockedName;
+            string lockedNameUpper = _lockedNameUpper;
+            if (string.IsNullOrWhiteSpace(lockedNameUpper))
+                lockedNameUpper = string.IsNullOrWhiteSpace(lockedName) ? "CARGO" : lockedName.ToUpperInvariant();
             body.AddForce(_cachedTransform.forward * (launchImpulse * Mathf.Max(0.5f, GetEfficiency())), ForceMode.Impulse);
             ForceReleaseWithoutFeedback();
 
             PublishAssessment(new PropulsionAssessment(
-                $"PROPULSION LAUNCH - {lockedName.ToUpperInvariant()}",
+                $"PROPULSION LAUNCH - {lockedNameUpper}",
                 "Locked cargo was released as a forward kinetic projectile.",
                 "Confirm impact path and reacquire the next target.",
                 "INFO"));
@@ -331,6 +342,8 @@ namespace Hecton8.Gameplay
         {
             _lockedBody = null;
             _lockedName = null;
+            _lockedNameUpper = null;
+            InvalidateAssessmentCache();
         }
 
         private void Warn(string message)
@@ -374,6 +387,29 @@ namespace Hecton8.Gameplay
 
             assessment = BuildAssessment(body, hit.distance, _secondaryHeldLastTick || _secondaryInvokedThisTick);
             return true;
+        }
+
+        private bool TryGetAssessmentCached(out PropulsionAssessment assessment)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedAssessmentFrame == currentFrame)
+            {
+                assessment = _cachedAssessment;
+                return _cachedAssessmentValid;
+            }
+
+            bool valid = TryReadAssessment(out assessment);
+            _cachedAssessmentFrame = currentFrame;
+            _cachedAssessmentValid = valid;
+            _cachedAssessment = assessment;
+            return valid;
+        }
+
+        private void InvalidateAssessmentCache()
+        {
+            _cachedAssessmentFrame = -1;
+            _cachedAssessmentValid = false;
+            _cachedAssessment = default;
         }
 
         private PropulsionAssessment BuildAssessment(Rigidbody body, float distance, bool tractorIntent)

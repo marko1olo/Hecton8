@@ -293,6 +293,8 @@ namespace Hecton8.EditorTools
                 0.58f,
                 spec.Color);
 
+            AddMassiveRidges(buffers, spec, scale, lod);
+
             if (spec.Variant == CoralVariant.Boulder)
             {
                 AddWarpedBlob(
@@ -320,6 +322,41 @@ namespace Hecton8.EditorTools
                     spec.WarpFrequencyB + 1.6f,
                     0.64f,
                     spec.Color);
+            }
+        }
+
+        private static void AddMassiveRidges(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
+        {
+            int ridgeCount = lod == 0 ? 6 : 4;
+            int pathSegments = lod == 0 ? 6 : 4;
+            int radialSegments = lod == 0 ? 5 : 4;
+            float ridgeRadius = scale.x * (lod == 0 ? 0.052f : 0.04f);
+
+            for (int ridgeIndex = 0; ridgeIndex < ridgeCount; ridgeIndex++)
+            {
+                float t = ridgeCount <= 1 ? 0.5f : ridgeIndex / (float)(ridgeCount - 1);
+                float lateral = Mathf.Lerp(-0.62f, 0.62f, t) * scale.x;
+                float zWave = Mathf.Sin((t + 0.17f) * Mathf.PI * 2f) * scale.z * 0.12f;
+                float crestHeight = scale.y * Mathf.Lerp(0.44f, 0.7f, 1f - Mathf.Abs((t * 2f) - 1f));
+                float meander = Mathf.Sin((ridgeIndex + 1) * 1.37f) * scale.x * 0.08f;
+
+                Vector3 start = new Vector3(lateral, scale.y * 0.28f, -scale.z * 0.24f + zWave * 0.5f);
+                Vector3 end = new Vector3(lateral * 0.82f + meander, scale.y * 0.46f, scale.z * 0.28f + zWave);
+                Vector3 controlA = new Vector3(lateral + meander * 0.35f, crestHeight, -scale.z * 0.1f + zWave);
+                Vector3 controlB = new Vector3(lateral * 0.66f - meander * 0.28f, crestHeight + scale.y * 0.04f, scale.z * 0.1f + zWave * 0.65f);
+
+                AddBezierTube(
+                    buffers,
+                    start,
+                    controlA,
+                    controlB,
+                    end,
+                    ridgeRadius,
+                    ridgeRadius * 0.72f,
+                    pathSegments,
+                    radialSegments,
+                    spec.Color,
+                    spec.WarpAmplitude * 0.16f);
             }
         }
 
@@ -722,6 +759,13 @@ namespace Hecton8.EditorTools
                 case "family_coral_plate__ledge": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 20, 5, 0, 0.06f, 2.4f, 4.9f, new Color32(186, 168, 152, 255), 1500); return true;
                 case "family_coral_plate__shelf": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 18, 5, 0, 0.06f, 2.5f, 5.1f, new Color32(180, 162, 150, 255), 1300); return true;
                 case "family_coral_plate__stack": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 20, 5, 0, 0.065f, 2.7f, 5.4f, new Color32(182, 166, 154, 255), 1500); return true;
+                case "family_coral_brittle__sprig": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 7, 4, 0.045f, 3.4f, 5.2f, new Color32(108, 150, 158, 255), 2100); return true;
+                case "family_coral_brittle__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 7, 5, 0.05f, 3.8f, 5.8f, new Color32(118, 166, 170, 255), 2500); return true;
+                case "family_coral_brittle__spire": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 8, 6, 0.042f, 3.1f, 4.8f, new Color32(124, 176, 182, 255), 2400); return true;
+                case "family_coral_brittle__lace": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 7, 6, 0.048f, 4.2f, 6.2f, new Color32(134, 188, 192, 255), 2600); return true;
+                case "family_coral_brittle__crown": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 8, 7, 0.044f, 3.6f, 5.4f, new Color32(128, 182, 188, 255), 2700); return true;
+                case "family_coral_brittle__thicket": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 9, 7, 0.043f, 3.9f, 5.6f, new Color32(136, 196, 198, 255), 2800); return true;
+                case "family_coral_brittle__halo": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 8, 6, 0.05f, 4.4f, 6.6f, new Color32(144, 202, 206, 255), 2900); return true;
                 default: spec = default; return false;
             }
         }

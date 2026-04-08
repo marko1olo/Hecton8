@@ -58,6 +58,10 @@ namespace Hecton8.Gameplay
         private Rigidbody _tetheredBody;
         private Collider _tetheredCollider;
         private string _tetheredName;
+        private string _tetheredNameUpper;
+        private int _cachedAssessmentFrame = -1;
+        private bool _cachedAssessmentValid;
+        private HarpoonAssessment _cachedAssessment;
         private float _tetherRemaining;
 
         private void Awake()
@@ -99,7 +103,7 @@ namespace Hecton8.Gameplay
                     HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, _tetheredBody != null);
                     PublishAssessment(_tetheredBody != null
                         ? new HarpoonAssessment(
-                            $"HARPOON - TETHER LOCK [{CachedToUpperInvariant(_tetheredName)}]",
+                            $"HARPOON - TETHER LOCK [{_tetheredNameUpper ?? "TARGET"}]",
                             assessment.Summary,
                             assessment.Recommendation,
                             assessment.Severity)
@@ -224,9 +228,9 @@ namespace Hecton8.Gameplay
                 return $"HARPOON // RECHARGING {_cooldown:0.0}S";
 
             if (IsTetherValid())
-                return $"HARPOON // TETHER LOCK // {CachedToUpperInvariant(_tetheredName) ?? "TARGET"}";
+                return $"HARPOON // TETHER LOCK // {_tetheredNameUpper ?? "TARGET"}";
 
-            if (TryReadAssessment(out HarpoonAssessment assessment))
+            if (TryGetAssessmentCached(out HarpoonAssessment assessment))
                 return $"HARPOON // {assessment.Headline}";
 
             return "HARPOON // READY";
@@ -240,7 +244,7 @@ namespace Hecton8.Gameplay
             if (IsTetherValid())
                 return "Secondary reels the tethered target. Keep distance or break the line if needed.";
 
-            if (TryReadAssessment(out HarpoonAssessment assessment))
+            if (TryGetAssessmentCached(out HarpoonAssessment assessment))
                 return assessment.Recommendation;
 
             return "Primary fires and tags a lane. Secondary reels a light target or an active tether.";
@@ -348,6 +352,10 @@ namespace Hecton8.Gameplay
             _tetheredBody = body;
             _tetheredCollider = hit.collider;
             _tetheredName = body.gameObject.name;
+            _tetheredNameUpper = string.IsNullOrWhiteSpace(_tetheredName)
+                ? "TARGET"
+                : _tetheredName.ToUpperInvariant();
+            InvalidateAssessmentCache();
             _tetherRemaining = tetherDuration;
         }
 
@@ -363,7 +371,7 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextFeedbackAt)
             {
                 PublishAssessment(new HarpoonAssessment(
-                    $"HARPOON - TETHER REEL [{CachedToUpperInvariant(_tetheredName)}]",
+                    $"HARPOON - TETHER REEL [{_tetheredNameUpper ?? "TARGET"}]",
                     $"{_tetheredName} remains inside tether control range.",
                     "Keep reeling for control or release to reset the lane.",
                     "INFO"));
@@ -396,7 +404,32 @@ namespace Hecton8.Gameplay
             _tetheredBody = null;
             _tetheredCollider = null;
             _tetheredName = null;
+            _tetheredNameUpper = null;
+            InvalidateAssessmentCache();
             _tetherRemaining = 0f;
+        }
+
+        private bool TryGetAssessmentCached(out HarpoonAssessment assessment)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedAssessmentFrame == currentFrame)
+            {
+                assessment = _cachedAssessment;
+                return _cachedAssessmentValid;
+            }
+
+            bool valid = TryReadAssessment(out assessment);
+            _cachedAssessmentFrame = currentFrame;
+            _cachedAssessmentValid = valid;
+            _cachedAssessment = assessment;
+            return valid;
+        }
+
+        private void InvalidateAssessmentCache()
+        {
+            _cachedAssessmentFrame = -1;
+            _cachedAssessmentValid = false;
+            _cachedAssessment = default;
         }
 
         private HarpoonAssessment BuildAssessment(Collider target, float distance, bool tetherReady)

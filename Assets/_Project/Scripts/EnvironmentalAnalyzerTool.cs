@@ -50,6 +50,9 @@ namespace Hecton8.Gameplay
         private HUDNotification _notification;
         private float _cooldown;
         private float _nextFeedbackAt;
+        private int _cachedTargetAssessmentFrame = -1;
+        private bool _cachedTargetAssessmentValid;
+        private AnalyzerAssessment _cachedTargetAssessment;
 
         [SerializeField] private string _debugLastMessage;
 
@@ -121,6 +124,7 @@ namespace Hecton8.Gameplay
             }
 
             Publish(message);
+            InvalidateTargetAssessmentCache();
             _cooldown = analysisCooldown;
         }
 
@@ -161,6 +165,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
+            InvalidateTargetAssessmentCache();
             _cooldown = analysisCooldown;
         }
 
@@ -175,7 +180,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return $"ANALYZER // CYCLING {_cooldown:0.0}S";
 
-            if (TryReadTargetAssessment(out AnalyzerAssessment assessment))
+            if (TryGetTargetAssessmentCached(out AnalyzerAssessment assessment))
                 return $"ANALYZER // {assessment.Headline}";
 
             return "ANALYZER // READY";
@@ -186,7 +191,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return "Hold position while the analyzer finishes the last sweep.";
 
-            if (TryReadTargetAssessment(out AnalyzerAssessment assessment))
+            if (TryGetTargetAssessmentCached(out AnalyzerAssessment assessment))
                 return assessment.Recommendation;
 
             return "Primary reads the target. Secondary diagnoses suit risk and expedition state.";
@@ -374,6 +379,29 @@ namespace Hecton8.Gameplay
 
             assessment = BuildTargetAssessment(hit);
             return true;
+        }
+
+        private bool TryGetTargetAssessmentCached(out AnalyzerAssessment assessment)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedTargetAssessmentFrame == currentFrame)
+            {
+                assessment = _cachedTargetAssessment;
+                return _cachedTargetAssessmentValid;
+            }
+
+            bool valid = TryReadTargetAssessment(out assessment);
+            _cachedTargetAssessmentFrame = currentFrame;
+            _cachedTargetAssessmentValid = valid;
+            _cachedTargetAssessment = assessment;
+            return valid;
+        }
+
+        private void InvalidateTargetAssessmentCache()
+        {
+            _cachedTargetAssessmentFrame = -1;
+            _cachedTargetAssessmentValid = false;
+            _cachedTargetAssessment = default;
         }
 
         private void Publish(string message)

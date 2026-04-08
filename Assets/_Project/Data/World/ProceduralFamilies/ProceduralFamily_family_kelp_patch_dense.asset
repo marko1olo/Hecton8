@@ -58,6 +58,18 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__brush
+    prefab: {fileID: 3661951925619579947, guid: 9d6a340c88e4dc94d9d9e15dbf20be55, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__drape
+    prefab: {fileID: 3329443870312517209, guid: d5648e3fad936cb4c8938d775ada1eac, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
   - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch
     prefab: {fileID: 3499354349611709861, guid: c6f3e906dfeb02d42b85cac573523896, type: 3}
     weight: 1
@@ -72,6 +84,18 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.94, y: 1.08}
   - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__ring
     prefab: {fileID: 4703074035381975815, guid: 0a2f208652a613e44988815fd1dd9202, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__sheet
+    prefab: {fileID: 8068489485518946917, guid: 77fe78932615a4c4b875e3d59466e3ba, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__tuft
+    prefab: {fileID: 3933244376636861814, guid: 6c7ecb5f0a3618049ba7c53d630e8487, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1

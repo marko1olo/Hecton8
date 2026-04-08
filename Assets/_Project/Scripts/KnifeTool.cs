@@ -44,6 +44,11 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private float _cooldown;
         private float _nextFeedbackAt;
+        private int _cachedHitFrame = -1;
+        private bool _cachedHitValid;
+        private Collider _cachedHitCollider;
+        private Vector3 _cachedHitPoint;
+        private float _cachedHitDistance;
 
         private void Awake()
         {
@@ -129,7 +134,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return $"SURVIVAL BLADE // RECOVERING {_cooldown:0.0}S";
 
-            if (TryFindBestHit(out Collider target, out _, out float distance))
+            if (TryGetBestHitCached(out _, out _, out float distance))
                 return $"SURVIVAL BLADE // CONTACT {distance:0.0}M";
 
             return "SURVIVAL BLADE // READY";
@@ -140,7 +145,7 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 return "Reset your stance before the next strike.";
 
-            if (TryFindBestHit(out Collider target, out _, out float distance))
+            if (TryGetBestHitCached(out Collider target, out _, out float distance))
             {
                 if (TryBuildAssessment(target, distance, out KnifeAssessment assessment))
                     return assessment.Recommendation;
@@ -210,6 +215,26 @@ namespace Hecton8.Gameplay
                 HitBuffer[i] = default;
 
             return bestCollider != null;
+        }
+
+        private bool TryGetBestHitCached(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance)
+        {
+            int currentFrame = Time.frameCount;
+            if (_cachedHitFrame == currentFrame)
+            {
+                bestCollider = _cachedHitCollider;
+                bestPoint = _cachedHitPoint;
+                bestDistance = _cachedHitDistance;
+                return _cachedHitValid;
+            }
+
+            bool valid = TryFindBestHit(out bestCollider, out bestPoint, out bestDistance);
+            _cachedHitFrame = currentFrame;
+            _cachedHitValid = valid;
+            _cachedHitCollider = bestCollider;
+            _cachedHitPoint = bestPoint;
+            _cachedHitDistance = bestDistance;
+            return valid;
         }
 
         private bool TryPrecisionStrike(Collider target, Vector3 point, float distance)

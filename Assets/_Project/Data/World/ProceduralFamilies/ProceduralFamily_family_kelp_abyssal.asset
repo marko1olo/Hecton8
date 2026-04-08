@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_kelp_abyssal
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.kelp.abyssal
+  familyLabel: Kelp Abyssal
+  defaultFidelity: 1
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 5
+  scatterLayer: 1
+  overrideStreamingLayer: 0
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
+  structureAccentRole: 0
+  clusterAccentRole: 1
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 4
+  clusterRadiusMeters: 18
+  clusterCountMin: 4
+  clusterCountMax: 10
+  heatmapChannel: flora_density
+  proxyColor: {r: 0.1, g: 0.22, b: 0.24, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  - {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
+  preferredZoneKinds: 090000000100000007000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 7
+  secondaryPattern: 4
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.kelp.abyssal.proxy.strap
+    prefab: {fileID: 810622643284944645, guid: c4511930418c7fc41b60153f4b1c028d, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.abyssal.proxy.shroud
+    prefab: {fileID: 5391012632107456681, guid: e52dd588b31f67f45999e980bb10ed5c, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__nodule
+    prefab: {fileID: 3890645747521861453, guid: 9523a2401c62f9b429de35d1bf6e391f, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__shroud
+    prefab: {fileID: 3774044292933396264, guid: 516bd645c3f8efa4c8cb7b9379e546fc, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__strap
+    prefab: {fileID: 3493780052427091132, guid: 19bf3c53bf0431f489aeb2eeca082165, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__mantle
+    prefab: {fileID: 5819684354763356758, guid: 29a7f41599ff1c94496fe100319ecdd2, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__whip
+    prefab: {fileID: 7304483181323747057, guid: 318e23915115beb40bab4c16fe3186f3, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__braid
+    prefab: {fileID: 8915007685087999578, guid: 8cac7155b0e14864fb90bc5aaf830a99, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__pennant
+    prefab: {fileID: 3231351368205398563, guid: 44cf0747056808f43a4234f6202938e5, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
+  futurePrefabRoot: World/Kelp/Kelp_Abyssal
+  gameplayRole: Deep strap-like kelp with dim biolum veins for abyssal route read
+    and alien habitat.

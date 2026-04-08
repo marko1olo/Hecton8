@@ -10,6 +10,7 @@ Shader "Hecton8/Flora/KelpMaster"
         _TipColor ("Tip Color", Color) = (0.34, 0.74, 0.42, 1)
         _RimColor ("Rim Color", Color) = (0.18, 0.52, 0.34, 1)
         _TransmissionColor ("Transmission Color", Color) = (0.26, 0.68, 0.34, 1)
+        _BiolumColor ("Biolum Color", Color) = (0.20, 0.86, 0.92, 1)
         _Smoothness ("Smoothness", Range(0, 1)) = 0.42
         _AmbientStrength ("Ambient Strength", Range(0, 1)) = 0.42
         _RimPower ("Rim Power", Range(0.5, 8)) = 3.2
@@ -31,6 +32,11 @@ Shader "Hecton8/Flora/KelpMaster"
         _CausticStrength ("Caustic Strength", Range(0, 2)) = 0.22
         _CausticScale ("Caustic Scale", Range(0.1, 8)) = 1.8
         _CausticSpeed ("Caustic Speed", Range(0, 4)) = 0.6
+        _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0
+        _BiolumMaskStrength ("Biolum Mask Strength", Range(0, 2)) = 1
+        _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.22
+        _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.75
+        _BiolumCurrentResponse ("Biolum Current Response", Range(0, 2)) = 0.35
         _SwayAmplitude ("Sway Amplitude", Range(0, 0.5)) = 0.08
         _SwayFrequency ("Sway Frequency", Range(0, 8)) = 1.8
         _SwaySpeed ("Sway Speed", Range(0, 4)) = 0.9
@@ -73,6 +79,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 half4 _TipColor;
                 half4 _RimColor;
                 half4 _TransmissionColor;
+                half4 _BiolumColor;
                 half _Smoothness;
                 half _AmbientStrength;
                 half _RimPower;
@@ -94,6 +101,11 @@ Shader "Hecton8/Flora/KelpMaster"
                 half _CausticStrength;
                 half _CausticScale;
                 half _CausticSpeed;
+                half _BiolumStrength;
+                half _BiolumMaskStrength;
+                half _BiolumPulseAmplitude;
+                half _BiolumPulseFrequency;
+                half _BiolumCurrentResponse;
                 half _SwayAmplitude;
                 half _SwayFrequency;
                 half _SwaySpeed;
@@ -108,6 +120,11 @@ Shader "Hecton8/Flora/KelpMaster"
             SAMPLER(sampler_NormalMap);
             TEXTURE2D(_MaskMap);
             SAMPLER(sampler_MaskMap);
+
+            half4 _HectonOceanBiolumColor;
+            half _HectonOceanBiolumStrength;
+            half4 _HectonFloorBiolumColor;
+            half _HectonFloorBiolumStrength;
 
             struct Attributes
             {
@@ -198,6 +215,16 @@ Shader "Hecton8/Flora/KelpMaster"
                 half thicknessMask = saturate(lerp(heightMask, maskSample.r, _ThicknessStrength) + edgeMask * _EdgeTransmissionBoost * 0.18h);
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
                 half glossMask = saturate(glossNoise + midribMask * _MidribGlossBoost - edgeMask * (_EdgeWearDarkening * 0.22h));
+                half fieldPhase = _Time.y * _BiolumPulseFrequency + input.positionWS.x * 0.08h + input.positionWS.z * 0.05h + input.uv.y * 3.1h;
+                half pulse = 1.0h + sin(fieldPhase) * _BiolumPulseAmplitude;
+                half currentWave = 0.5h + 0.5h * sin(_Time.y * (_BiolumPulseFrequency * 0.72h) + input.positionWS.x * 0.04h - input.positionWS.z * 0.06h);
+                half biolumMask = saturate((edgeMask * 0.38h + thicknessMask * 0.34h + maskSample.b * 0.32h + detailSample * 0.18h) * _BiolumMaskStrength);
+                half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
+                half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength);
+                half floorZoneInfluence = saturate(_HectonFloorBiolumStrength * 0.45h);
+                half zoneBiolumStrength = saturate(oceanZoneInfluence + floorZoneInfluence);
+                half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
+                zoneBiolumColor = lerp(zoneBiolumColor, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
 
                 half3 gradient = lerp(_BaseColor.rgb, _TipColor.rgb, heightMask);
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _TipColor.rgb, moisture * _MoistureBoost);
@@ -212,8 +239,9 @@ Shader "Hecton8/Flora/KelpMaster"
                 half3 transmission = _TransmissionColor.rgb * (backLight * _TransmissionStrength * thicknessMask * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 half specular = pow(NdotL, lerp(12.0h, 48.0h, _Smoothness)) * _Smoothness * 0.18h * glossMask;
+                half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField);
 
-                half3 color = diffuse + transmission + rimLighting + specular;
+                half3 color = diffuse + transmission + rimLighting + specular + biolum;
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);
             }

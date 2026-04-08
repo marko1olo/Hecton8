@@ -141,6 +141,7 @@ namespace Hecton8.Gameplay
 
         private HectonSurvivalSystem _survivalSystem;
         private bool _lowDurabilityWarningFired;
+        private string _cachedOperationalToolName;
 
         // ══════════════════════════════════════════════════════════
         //  IPoolable — POOL LIFECYCLE
@@ -159,6 +160,7 @@ namespace Hecton8.Gameplay
                 $"meta={(_toolMetadata != null ? _toolMetadata.name : "null")}");
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
+            RefreshOperationalToolNameCache();
 
             // Auto-resolve SurvivalSystem
             if (_survivalSystem == null && enableEnergyConsumption)
@@ -185,6 +187,7 @@ namespace Hecton8.Gameplay
 
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
+            _cachedOperationalToolName = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -313,9 +316,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public virtual string GetOperationalSummary()
         {
-            string toolName = _toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName)
-                ? _toolData.itemName.ToUpperInvariant()
-                : GetType().Name.ToUpperInvariant();
+            string toolName = GetOperationalToolName();
 
             if (!IsEquipped)
                 return $"{toolName} // STANDBY";
@@ -341,6 +342,21 @@ namespace Hecton8.Gameplay
                 return "Durability is low. Finish the current action and service the tool.";
 
             return "Tool is ready for the current field role.";
+        }
+
+        private string GetOperationalToolName()
+        {
+            if (string.IsNullOrEmpty(_cachedOperationalToolName))
+                RefreshOperationalToolNameCache();
+
+            return _cachedOperationalToolName;
+        }
+
+        private void RefreshOperationalToolNameCache()
+        {
+            _cachedOperationalToolName = _toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName)
+                ? _toolData.itemName.ToUpperInvariant()
+                : GetType().Name.ToUpperInvariant();
         }
 
         // ══════════════════════════════════════════════════════════

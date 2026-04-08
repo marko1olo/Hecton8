@@ -107,6 +107,7 @@ namespace Hecton8.AI
             public int maxAlive;
             public int creatureTypeIndex;
             public bool isLargeThreat;
+            public bool blockedWhenPressureDisabled;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -594,7 +595,7 @@ namespace Hecton8.AI
                 if (biomeAlive >= biomeData.biomeMaxCreatures)
                     break;
 
-                if (!TrySelectResolvedEntry(resolvedEntries, creatureTypeCounts, availablePoolCounts, out ResolvedFaunaEntry selectedEntry))
+                if (!TrySelectResolvedEntry(resolvedEntries, creatureTypeCounts, availablePoolCounts, _pressureEnabled, out ResolvedFaunaEntry selectedEntry))
                 {
                     // Все типы на лимите — прекращаем
                     break;
@@ -900,6 +901,7 @@ namespace Hecton8.AI
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
             int[] availablePoolCounts,
+            bool pressureEnabled,
             out ResolvedFaunaEntry selectedEntry)
         {
             selectedEntry = default;
@@ -912,6 +914,8 @@ namespace Hecton8.AI
             {
                 ResolvedFaunaEntry entry = resolvedEntries[i];
                 if (entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+                if (!pressureEnabled && entry.blockedWhenPressureDisabled)
                     continue;
 
                 int typeIndex = entry.creatureTypeIndex;
@@ -938,6 +942,8 @@ namespace Hecton8.AI
             {
                 ResolvedFaunaEntry entry = resolvedEntries[i];
                 if (entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+                if (!pressureEnabled && entry.blockedWhenPressureDisabled)
                     continue;
 
                 int typeIndex = entry.creatureTypeIndex;
@@ -1093,7 +1099,8 @@ namespace Hecton8.AI
                                 spawnWeight = faunaEntry.GetResolvedSpawnWeight(),
                                 maxAlive = Mathf.Max(1, faunaEntry.GetResolvedMaxAlive()),
                                 creatureTypeIndex = creatureIndex,
-                                isLargeThreat = IsLargeThreatEntry(data, faunaEntry)
+                                isLargeThreat = IsLargeThreatEntry(data, faunaEntry),
+                                blockedWhenPressureDisabled = ShouldBlockEntryWhenPressureDisabled(faunaEntry.archetype)
                             };
 
                             if (resolvedPrefab == null || prefabLookup.ContainsKey(resolvedPrefab))
@@ -1810,6 +1817,18 @@ namespace Hecton8.AI
                 return true;
 
             return archetype.roleType == CreatureRoleType.Leviathan;
+        }
+
+        private static bool ShouldBlockEntryWhenPressureDisabled(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+                return false;
+
+            if (archetype.isAggressive)
+                return true;
+
+            return archetype.roleType == CreatureRoleType.Hunter ||
+                   archetype.roleType == CreatureRoleType.Leviathan;
         }
 
         private bool CanSpawnLargeThreatNearPlayer(WorldMacroZoneCoordinate spawnMacroZone, Vector3 playerPos)

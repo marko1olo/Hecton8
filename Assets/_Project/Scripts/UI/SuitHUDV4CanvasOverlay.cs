@@ -248,10 +248,7 @@ namespace Hecton8.UI
             TryRegisterRuntimeTick();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-            {
-                EditorApplication.update -= EditorTick;
-                EditorApplication.update += EditorTick;
-            }
+                EvaluateEditorTickRegistration();
 #endif
         }
 
@@ -265,19 +262,34 @@ namespace Hecton8.UI
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
 #if UNITY_EDITOR
-            EditorApplication.update -= EditorTick;
+            UnregisterEditorTick();
 #endif
 
             SetRootVisible(false);
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _layoutBuilt = false;
+            InvalidateVisualCaches();
+            if (!Application.isPlaying)
+                EvaluateEditorTickRegistration();
+        }
+#endif
+
+#if UNITY_EDITOR
         private void EditorTick()
         {
             if (Application.isPlaying || !isActiveAndEnabled || !keepVisibleInEditMode)
+            {
+                UnregisterEditorTick();
                 return;
+            }
 
             RefreshAll(0.016f, forceResolve: false);
+            if (!ShouldTickInEditMode())
+                UnregisterEditorTick();
         }
 #endif
 
@@ -396,6 +408,17 @@ namespace Hecton8.UI
         private static float GetAutoResolveNow()
         {
             return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
+        }
+
+        private bool ShouldTickInEditMode()
+        {
+            return isActiveAndEnabled &&
+                   keepVisibleInEditMode &&
+                   (NeedsAutoResolve() ||
+                    !_layoutBuilt ||
+                    !_styleApplied ||
+                    !_canvasStateApplied ||
+                    _root == null);
         }
 
         private void NormalizeCanvas()
@@ -1478,6 +1501,7 @@ namespace Hecton8.UI
             renderPath = nextPath;
             _layoutBuilt = false;
             InvalidateVisualCaches();
+            RequestRefresh();
         }
 
         public void SetProjectionCamera(Camera camera)
@@ -1488,6 +1512,7 @@ namespace Hecton8.UI
             projectionCamera = camera;
             _layoutBuilt = false;
             InvalidateVisualCaches();
+            RequestRefresh();
         }
 
         public void CopyConfigurationFrom(SuitHUDV4CanvasOverlay source)
@@ -1520,6 +1545,21 @@ namespace Hecton8.UI
             reticleOffset = source.reticleOffset;
             _layoutBuilt = false;
             InvalidateVisualCaches();
+            RequestRefresh();
+        }
+
+        private void RequestRefresh()
+        {
+            if (Application.isPlaying)
+            {
+                TryRegisterRuntimeTick();
+            }
+#if UNITY_EDITOR
+            else
+            {
+                EvaluateEditorTickRegistration();
+            }
+#endif
         }
 
         private void TryRegisterRuntimeTick()
@@ -1546,6 +1586,33 @@ namespace Hecton8.UI
 
             _tickRegistered = false;
         }
+
+#if UNITY_EDITOR
+        private void EvaluateEditorTickRegistration()
+        {
+            if (Application.isPlaying)
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
+            if (ShouldTickInEditMode())
+                RegisterEditorTick();
+            else
+                UnregisterEditorTick();
+        }
+
+        private void RegisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+            EditorApplication.update += EditorTick;
+        }
+
+        private void UnregisterEditorTick()
+        {
+            EditorApplication.update -= EditorTick;
+        }
+#endif
 
         private void RegisterActiveOverlay()
         {

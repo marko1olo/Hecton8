@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a38ef29cf1d984ebde4195e5cfd2e4, type: 3}
+  m_Name: ProceduralFamily_family_coral_brittle
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
+  familyId: family.coral.brittle
+  familyLabel: Coral Brittle
+  defaultFidelity: 1
+  budgetClass: 1
+  expectsCollision: 0
+  expectsInteraction: 0
+  proceduralDomain: 7
+  scatterLayer: 1
+  overrideStreamingLayer: 0
+  streamingLayerOverride: 1
+  contributesLargeThreatZone: 0
+  structureAccentRole: 0
+  clusterAccentRole: 1
+  placementMode: 1
+  allowMapMagicScatter: 1
+  allowRuntimeScatter: 1
+  allowProxyPrimitives: 1
+  minSpacingMeters: 4
+  clusterRadiusMeters: 12
+  clusterCountMin: 3
+  clusterCountMax: 8
+  heatmapChannel: flora_density
+  proxyColor: {r: 0.36, g: 0.62, b: 0.64, a: 1}
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
+  - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
+  - {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  - {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
+  preferredZoneKinds: 090000000100000007000000
+  biomeAffinityWeight: 0.24
+  zoneAffinityWeight: 0.12
+  primaryPattern: 7
+  secondaryPattern: 4
+  patternAffinityWeight: 0.25
+  variants:
+  - variantId: family.coral.brittle.proxy.sprig
+    prefab: {fileID: 1423866904130660987, guid: 83d7b6c4cba89e04fa7ea2811ebe41f2, type: 3}
+    weight: 2
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.proxy.fan
+    prefab: {fileID: 363326321341292699, guid: 2cbc402848d401e4996c6d169376b559, type: 3}
+    weight: 1
+    proxyOnly: 1
+    finalReady: 0
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__fan
+    prefab: {fileID: 7016201970270342537, guid: 5ae32aa206e938b4c9d0be9f08387982, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__spire
+    prefab: {fileID: 7337270876474281512, guid: 0c24200d10c9d364ba63cc56a8eb3143, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__sprig
+    prefab: {fileID: 4915435012159576899, guid: b05a5df2bc955104cb2a6380ad4db1fb, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__crown
+    prefab: {fileID: 4753879981191541459, guid: d59d6503fbac72544a8124f4ac00ef91, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__lace
+    prefab: {fileID: 4519750598657481017, guid: c3c962da73f5fec4bb976a7318c8fa4e, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__halo
+    prefab: {fileID: 3217530360747550890, guid: 9979b7b2ad36f85498748e536cacf237, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.brittle.final.flora.gen_family_coral_brittle__thicket
+    prefab: {fileID: 8815742131684948836, guid: f574226c2da8ee947843640ba0634fa2, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  generativeGeologyProfile: {fileID: 0}
+  futurePrefabRoot: World/Coral/Coral_Brittle
+  gameplayRole: Deep brittle fan coral with pale mineral growth and cavity glow for
+    hadal biomes.
