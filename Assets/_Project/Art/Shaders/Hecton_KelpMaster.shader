@@ -15,13 +15,19 @@ Shader "Hecton8/Flora/KelpMaster"
         _RimPower ("Rim Power", Range(0.5, 8)) = 3.2
         _RimStrength ("Rim Strength", Range(0, 2)) = 0.42
         _TransmissionStrength ("Transmission Strength", Range(0, 2)) = 0.55
+        _EdgeTransmissionBoost ("Edge Transmission Boost", Range(0, 2)) = 0.42
         _VertexTintStrength ("Vertex Tint Strength", Range(0, 2)) = 0.8
         _AgeDarkening ("Age Darkening", Range(0, 1)) = 0.28
         _MoistureBoost ("Moisture Boost", Range(0, 1)) = 0.22
         _DetailStrength ("Detail Strength", Range(0, 2)) = 0.34
         _NormalStrength ("Normal Strength", Range(0, 2)) = 0.85
+        _BladeCurveNormalStrength ("Blade Curve Normal Strength", Range(0, 1)) = 0.22
         _ThicknessStrength ("Thickness Strength", Range(0, 2)) = 0.65
         _SpecularNoiseStrength ("Specular Noise Strength", Range(0, 2)) = 0.45
+        _MidribDarkening ("Midrib Darkening", Range(0, 1)) = 0.22
+        _MidribGlossBoost ("Midrib Gloss Boost", Range(0, 1)) = 0.24
+        _EdgeWearDarkening ("Edge Wear Darkening", Range(0, 1)) = 0.14
+        _EdgeDetailBoost ("Edge Detail Boost", Range(0, 1)) = 0.18
         _CausticStrength ("Caustic Strength", Range(0, 2)) = 0.22
         _CausticScale ("Caustic Scale", Range(0.1, 8)) = 1.8
         _CausticSpeed ("Caustic Speed", Range(0, 4)) = 0.6
@@ -72,13 +78,19 @@ Shader "Hecton8/Flora/KelpMaster"
                 half _RimPower;
                 half _RimStrength;
                 half _TransmissionStrength;
+                half _EdgeTransmissionBoost;
                 half _VertexTintStrength;
                 half _AgeDarkening;
                 half _MoistureBoost;
                 half _DetailStrength;
                 half _NormalStrength;
+                half _BladeCurveNormalStrength;
                 half _ThicknessStrength;
                 half _SpecularNoiseStrength;
+                half _MidribDarkening;
+                half _MidribGlossBoost;
+                half _EdgeWearDarkening;
+                half _EdgeDetailBoost;
                 half _CausticStrength;
                 half _CausticScale;
                 half _CausticSpeed;
@@ -161,6 +173,10 @@ Shader "Hecton8/Flora/KelpMaster"
                 half moisture = saturate(input.color.g);
                 half age = saturate(input.color.b);
                 half heightMask = saturate(input.uv.y);
+                half widthMask = saturate(input.uv.x);
+                half centerDistance = abs(widthMask - 0.5h) * 2.0h;
+                half midribMask = saturate(1.0h - centerDistance * centerDistance * 6.0h);
+                half edgeMask = saturate((centerDistance - 0.24h) / 0.76h);
 
                 half3 baseTex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb;
                 float2 causticUv = input.uv * _CausticScale + input.positionWS.xz * 0.08 + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.73));
@@ -168,28 +184,34 @@ Shader "Hecton8/Flora/KelpMaster"
                 half4 maskSample = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
                 half3 normalSample = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv).xyz * 2.0h - 1.0h;
                 normalSample.xy *= _NormalStrength;
+                half curveSigned = (widthMask - 0.5h) * 2.0h;
+                normalSample.x += curveSigned * edgeMask * _BladeCurveNormalStrength;
+                normalSample.y += midribMask * (_BladeCurveNormalStrength * 0.18h);
                 normalSample.z = sqrt(saturate(1.0h - dot(normalSample.xy, normalSample.xy)));
                 half3 normalWS = normalize(tangentWS * normalSample.x + bitangentWS * normalSample.y + baseNormalWS * normalSample.z);
                 half3 lightDir = normalize(mainLight.direction);
                 half NdotL = saturate(dot(normalWS, lightDir));
                 half backLight = saturate(dot(-normalWS, lightDir));
                 half rim = pow(1.0h - saturate(dot(normalWS, normalize(input.viewDirWS))), _RimPower);
-                half detailMask = lerp(1.0h, detailSample, _DetailStrength);
-                half causticMask = saturate(0.65h + detailSample * _CausticStrength + maskSample.a * 0.2h);
-                half thicknessMask = saturate(lerp(heightMask, maskSample.r, _ThicknessStrength));
+                half detailMask = lerp(1.0h, detailSample, saturate(_DetailStrength + edgeMask * _EdgeDetailBoost));
+                half causticMask = saturate(0.65h + detailSample * _CausticStrength + maskSample.a * 0.2h + edgeMask * 0.08h);
+                half thicknessMask = saturate(lerp(heightMask, maskSample.r, _ThicknessStrength) + edgeMask * _EdgeTransmissionBoost * 0.18h);
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
+                half glossMask = saturate(glossNoise + midribMask * _MidribGlossBoost - edgeMask * (_EdgeWearDarkening * 0.22h));
 
                 half3 gradient = lerp(_BaseColor.rgb, _TipColor.rgb, heightMask);
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _TipColor.rgb, moisture * _MoistureBoost);
                 half3 ageTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h - _AgeDarkening, 1.0h - _AgeDarkening, 1.0h - _AgeDarkening), age);
                 half3 albedo = gradient * baseTex * moistureTint * ageTint * detailMask;
                 albedo = lerp(albedo, albedo * half3(1.12h, 1.08h, 0.92h), tintMask + maskSample.b * 0.08h);
+                albedo *= (1.0h - midribMask * _MidribDarkening);
+                albedo *= lerp(1.0h, 1.0h - _EdgeWearDarkening, edgeMask);
 
                 half3 ambient = SampleSH(normalWS) * (_AmbientStrength + maskSample.b * 0.06h);
                 half3 diffuse = albedo * (ambient + mainLight.color * NdotL);
                 half3 transmission = _TransmissionColor.rgb * (backLight * _TransmissionStrength * thicknessMask * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
-                half specular = pow(NdotL, lerp(12.0h, 48.0h, _Smoothness)) * _Smoothness * 0.18h * glossNoise;
+                half specular = pow(NdotL, lerp(12.0h, 48.0h, _Smoothness)) * _Smoothness * 0.18h * glossMask;
 
                 half3 color = diffuse + transmission + rimLighting + specular;
                 color = MixFog(color, input.fogFactor);

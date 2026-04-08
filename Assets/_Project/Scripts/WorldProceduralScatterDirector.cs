@@ -931,10 +931,7 @@ namespace Hecton8.World
                     int cellCandidatesBeforePrune = 0;
                     int worstCandidateIndex = -1;
                     float worstCandidateScore = float.MaxValue;
-                    WorldGenerativeGeologyProfile cachedGeologyProfileA = null;
-                    float cachedGeologyBonusA = 0f;
-                    WorldGenerativeGeologyProfile cachedGeologyProfileB = null;
-                    float cachedGeologyBonusB = 0f;
+                    GeologyBonusCache geologyBonusCache = default;
                     ReleaseCandidateListPlacements(_candidateBuffer);
                     for (int i = 0; i < _runtimeRuleBuffer.Count; i++)
                     {
@@ -1052,24 +1049,53 @@ namespace Hecton8.World
                             residencyPassedCandidates++;
 
                         int layerPreferredFamilyIndex = GetPreferredFamilyIndexForLayer(fieldSample.biomeProfile, family, layer);
-                        float score = spawnProbability
+                        float baseScore = spawnProbability
                             + heat
                             + runtimeRule.ScoreBaseBonus
-                            + runtimeRule.AcceptedFamilyAffinityBonus
+                            + runtimeRule.AcceptedFamilyAffinityBonus;
+                        float combinedPatternScore = GetCombinedPatternScoreBonus(fieldSample.resolvedPattern, runtimeRule);
+                        float biomeContextScore = GetBiomeContextBonus(cellBiomeContext, runtimeRule);
+                        float biomeSignatureScore = GetBiomeSignatureScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext);
+                        float softWaterStructureScore = GetSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
+                        float landmarkSoftWaterStructureScore = GetLandmarkSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
+                        float scoreBeforeBiomeMatrixAndGeology = baseScore
+                            + combinedPatternScore
+                            + biomeContextScore
+                            + biomeSignatureScore
+                            + softWaterStructureScore
+                            + landmarkSoftWaterStructureScore;
+                        bool canPruneByScore = !needsRescueTracking && cellCandidateBufferLimit > 0 && _candidateBuffer.Count >= cellCandidateBufferLimit;
+                        if (canPruneByScore)
+                        {
+                            if (worstCandidateIndex < 0 || worstCandidateIndex >= _candidateBuffer.Count)
+                                RefreshWorstCandidate(_candidateBuffer, out worstCandidateIndex, out worstCandidateScore);
+
+                            float scoreUpperBound = scoreBeforeBiomeMatrixAndGeology
+                                + ResolveBiomeMatrixScoreUpperBound(runtimeRule, fieldSample.biomeProfile != null, layerPreferredFamilyIndex, patternScoreContext)
+                                + runtimeRule.GeologyScoreScale;
+                            if (scoreUpperBound <= worstCandidateScore)
+                                continue;
+                        }
+
+                        float biomeMatrixScore = GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
+                        float scoreWithoutGeology = scoreBeforeBiomeMatrixAndGeology + biomeMatrixScore;
+
+                        if (canPruneByScore)
+                        {
+                            if (scoreWithoutGeology + runtimeRule.GeologyScoreScale <= worstCandidateScore)
+                                continue;
+                        }
+
+                        float score = scoreWithoutGeology
                             + GetCachedGenerativeGeologyContextBonus(
                                 fieldSample,
                                 runtimeRule,
-                                ref cachedGeologyProfileA,
-                                ref cachedGeologyBonusA,
-                                ref cachedGeologyProfileB,
-                                ref cachedGeologyBonusB)
-                            + GetCombinedPatternScoreBonus(fieldSample.resolvedPattern, runtimeRule)
-                            + GetBiomeContextBonus(cellBiomeContext, runtimeRule)
-                            + GetBiomeMatrixBonus(fieldSample.resolvedPattern, fieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
-                            + GetBiomeSignatureScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext)
-                            + GetSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext)
-                            + GetLandmarkSoftWaterStructureFamilyBonus(runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
+                                ref geologyBonusCache);
 
+                        if (canPruneByScore && score <= worstCandidateScore)
+                            continue;
+
+                        bool rejectedByGate = gate > spawnProbability;
                         ScatterCandidate candidate = BuildCandidate(
                             cellXIndex,
                             cellZIndex,
@@ -1107,7 +1133,7 @@ namespace Hecton8.World
                                 ref predatorSpawnCandidates);
                         }
 
-                        if (gate > spawnProbability)
+                        if (rejectedByGate)
                         {
                             if (collectDetailedDiagnostics)
                                 postBuildGateRejectedCandidates++;
@@ -2293,16 +2319,9 @@ namespace Hecton8.World
         {
             WorldPrefabFamilyProfile family = runtimeRule.Family;
             WorldProceduralPlacementRule rule = runtimeRule.Rule;
-            WorldPrefabFamilyProfile.VariantEntry variant = ResolveRuntimeVariant(family, preview.StableHash, preferFinalVariant: false);
-            float scale = ResolveScaleMultiplier(variant, preview.StableHash);
-            Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(preview.StableHash % 360), 0f);
             WorldStreamingLayer streamingLayer = runtimeRule.StreamingLayer;
             WorldGenerativeGeologyProfile geologyProfile = runtimeRule.GeologyProfile;
-            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(preview.Position, _runtimeChunkSize);
             bool hasMacroZone = runtimeRule.HasMacroZone;
-            WorldMacroZoneCoordinate macroZoneCoord = hasMacroZone
-                ? WorldMacroZoneCoordinate.FromWorldPosition(preview.Position, _runtimeMacroZoneSize)
-                : default;
             bool supportsFinalVariant = runtimeRule.SupportsFinalVariant;
 
             ScatterPlacement placement = GetPooledPlacement();
@@ -2318,7 +2337,7 @@ namespace Hecton8.World
                 biomeContextLabel,
                 streamingLayer,
                 geologyProfile,
-                variant,
+                null,
                 supportsFinalVariant,
                 runtimeRule.HeatmapChannel,
                 heat,
@@ -2333,12 +2352,13 @@ namespace Hecton8.World
                 fieldSample.compositionPotential,
                 cellXIndex,
                 cellZIndex,
-                chunkCoord,
+                default,
                 hasMacroZone,
-                macroZoneCoord,
+                default,
                 preview.Position,
-                rotation,
-                scale);
+                Quaternion.identity,
+                1f,
+                false);
 
             return new ScatterCandidate(placement, family, rule, runtimeRule.HeatmapChannel, heat, score);
         }
@@ -2938,6 +2958,8 @@ namespace Hecton8.World
             if (proceduralStateRegistry != null && proceduralStateRegistry.IsPlacementSuppressed(placement.Key))
                 return false;
 
+            EnsurePlacementRuntimeStateResolved(placement);
+
             bool alreadyRegistered = _desiredPlacements.TryGetValue(placement.Key, out ScatterPlacement existingDesired);
             if (alreadyRegistered)
             {
@@ -2975,6 +2997,24 @@ namespace Hecton8.World
             if (!alreadyRegistered)
                 RegisterPlacementInGrid(placement);
             return true;
+        }
+
+        private void EnsurePlacementRuntimeStateResolved(ScatterPlacement placement)
+        {
+            if (placement == null || placement.HasRuntimeStateResolved)
+                return;
+
+            WorldPrefabFamilyProfile.VariantEntry variant = ResolveRuntimeVariant(
+                placement.Family,
+                placement.StableHash,
+                preferFinalVariant: false);
+            float scale = ResolveScaleMultiplier(variant, placement.StableHash);
+            Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(placement.StableHash % 360), 0f);
+            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(placement.Position, _runtimeChunkSize);
+            WorldMacroZoneCoordinate macroZoneCoord = placement.HasMacroZone
+                ? WorldMacroZoneCoordinate.FromWorldPosition(placement.Position, _runtimeMacroZoneSize)
+                : default;
+            placement.ResolveDeferredRuntimeState(variant, rotation, scale, chunkCoord, macroZoneCoord);
         }
 
         private bool TryRegisterDesiredPlacement(ScatterPlacement placement)
@@ -3076,6 +3116,7 @@ namespace Hecton8.World
                 if (!IsPlacementWithinResidency(placement, observerPosition))
                     continue;
 
+                EnsurePlacementRuntimeStateResolved(placement);
                 RetainPlacement(placement);
                 _desiredPlacements[runtimeKey] = placement;
                 _faunaSnapshotDirty = true;
@@ -3304,26 +3345,17 @@ namespace Hecton8.World
         private static float GetCachedGenerativeGeologyContextBonus(
             in WorldProceduralFieldSampler.FieldSample sample,
             in ScatterRuntimeRuleEntry runtimeRule,
-            ref WorldGenerativeGeologyProfile cachedProfileA,
-            ref float cachedBonusA,
-            ref WorldGenerativeGeologyProfile cachedProfileB,
-            ref float cachedBonusB)
+            ref GeologyBonusCache cache)
         {
             WorldGenerativeGeologyProfile geologyProfile = runtimeRule.GeologyProfile;
             if (geologyProfile == null)
                 return 0f;
 
-            if (geologyProfile == cachedProfileA)
-                return cachedBonusA;
-
-            if (geologyProfile == cachedProfileB)
-                return cachedBonusB;
+            if (cache.TryGet(geologyProfile, out float cachedBonus))
+                return cachedBonus;
 
             float bonus = GetGenerativeGeologyContextBonus(sample, runtimeRule);
-            cachedProfileB = cachedProfileA;
-            cachedBonusB = cachedBonusA;
-            cachedProfileA = geologyProfile;
-            cachedBonusA = bonus;
+            cache.Store(geologyProfile, bonus);
             return bonus;
         }
 
@@ -7280,6 +7312,55 @@ namespace Hecton8.World
             return bonus;
         }
 
+        private static float ResolveBiomeMatrixScoreUpperBound(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            bool hasBiomeProfile,
+            int preferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
+        {
+            if (!hasBiomeProfile)
+                return 0f;
+
+            float bonus = ResolveBiomeMatrixBaseScoreUpperBound(runtimeRule);
+            if (runtimeRule.ClusterAccentRole != WorldPrefabFamilyProfile.ClusterAccentRole.None)
+                bonus += 0.22f;
+
+            if (runtimeRule.StructureAccentRole != WorldPrefabFamilyProfile.StructureAccentRole.None)
+                bonus += 0.28f;
+
+            if (runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn &&
+                (runtimeRule.PassiveSpawnFamily || runtimeRule.PredatorSpawnFamily))
+            {
+                bonus += 0.12f;
+            }
+
+            bonus += GetPreferredContentScoreBonus(runtimeRule, preferredFamilyIndex);
+            bonus += GetPatternSpecificPreferredCategoryScoreBonus(runtimeRule, preferredFamilyIndex, patternScoreContext);
+            return bonus;
+        }
+
+        private static float ResolveBiomeMatrixBaseScoreUpperBound(in ScatterRuntimeRuleEntry runtimeRule)
+        {
+            return runtimeRule.ProceduralDomain switch
+            {
+                WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket => 0.15f,
+                WorldPrefabFamilyProfile.ProceduralDomain.SafePocket => 0.13f,
+                WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket => 0.08f,
+                WorldPrefabFamilyProfile.ProceduralDomain.Debris => 0.10f,
+                WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar => 0.10f,
+                WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute => 0.10f,
+                WorldPrefabFamilyProfile.ProceduralDomain.RuinModule => 0.12f,
+                WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance => 0.11f,
+                WorldPrefabFamilyProfile.ProceduralDomain.Landmark => 0.12f,
+                WorldPrefabFamilyProfile.ProceduralDomain.Kelp => 0.06f,
+                WorldPrefabFamilyProfile.ProceduralDomain.Plant => 0.06f,
+                WorldPrefabFamilyProfile.ProceduralDomain.Coral => 0.06f,
+                WorldPrefabFamilyProfile.ProceduralDomain.Egg => 0.06f,
+                WorldPrefabFamilyProfile.ProceduralDomain.CreatureSpawn => 0.08f,
+                _ => 0f
+            };
+        }
+
         private static float GetMatrixResourceSignal(HectonBiomeMatrixProfile biomeProfile)
         {
             if (biomeProfile == null)
@@ -9785,7 +9866,8 @@ namespace Hecton8.World
                 WorldMacroZoneCoordinate macroZoneCoord,
                 Vector3 position,
                 Quaternion rotation,
-                float scale)
+                float scale,
+                bool hasRuntimeStateResolved)
             {
                 Key = key;
                 StableHash = stableHash;
@@ -9834,6 +9916,7 @@ namespace Hecton8.World
                 Position = position;
                 Rotation = rotation;
                 Scale = scale;
+                HasRuntimeStateResolved = hasRuntimeStateResolved;
             }
 
             public void Reset()
@@ -9877,6 +9960,7 @@ namespace Hecton8.World
                 Position = default;
                 Rotation = Quaternion.identity;
                 Scale = 0f;
+                HasRuntimeStateResolved = false;
                 CachedResolvedVariant = null;
                 CachedFinalVariantActive = false;
                 CachedSupportsFinalVariant = false;
@@ -9929,6 +10013,22 @@ namespace Hecton8.World
                 CachedReconcileShouldApplyGeneratedGeology = shouldApplyGeneratedGeology;
                 CachedReconcileSyncSignature = syncSignature;
                 CachedReconcileAllowInitialWarmupCreate = allowInitialWarmupCreate;
+            }
+
+            public void ResolveDeferredRuntimeState(
+                WorldPrefabFamilyProfile.VariantEntry variant,
+                Quaternion rotation,
+                float scale,
+                WorldChunkCoordinate chunkCoord,
+                WorldMacroZoneCoordinate macroZoneCoord)
+            {
+                Variant = variant;
+                Rotation = rotation;
+                Scale = scale;
+                ChunkCoord = chunkCoord;
+                MacroZoneCoord = macroZoneCoord;
+                HasRuntimeStateResolved = true;
+                InvalidateResolvedVariantState();
             }
 
             public bool TryGetCachedReconcilePlan(
@@ -10002,6 +10102,7 @@ namespace Hecton8.World
             public Vector3 Position { get; private set; }
             public Quaternion Rotation { get; private set; }
             public float Scale { get; private set; }
+            public bool HasRuntimeStateResolved { get; private set; }
             public WorldPrefabFamilyProfile.VariantEntry CachedResolvedVariant { get; private set; }
             public bool CachedFinalVariantActive { get; private set; }
             public bool CachedSupportsFinalVariant { get; private set; }
@@ -10074,6 +10175,60 @@ namespace Hecton8.World
             public bool IsLandmarkCorridor { get; }
             public bool IsIndustrialSignature { get; }
             public bool IsSedimentResources { get; }
+        }
+
+        private struct GeologyBonusCache
+        {
+            public bool TryGet(WorldGenerativeGeologyProfile profile, out float bonus)
+            {
+                if (profile == _profileA)
+                {
+                    bonus = _bonusA;
+                    return true;
+                }
+
+                if (profile == _profileB)
+                {
+                    bonus = _bonusB;
+                    return true;
+                }
+
+                if (profile == _profileC)
+                {
+                    bonus = _bonusC;
+                    return true;
+                }
+
+                if (profile == _profileD)
+                {
+                    bonus = _bonusD;
+                    return true;
+                }
+
+                bonus = 0f;
+                return false;
+            }
+
+            public void Store(WorldGenerativeGeologyProfile profile, float bonus)
+            {
+                _profileD = _profileC;
+                _bonusD = _bonusC;
+                _profileC = _profileB;
+                _bonusC = _bonusB;
+                _profileB = _profileA;
+                _bonusB = _bonusA;
+                _profileA = profile;
+                _bonusA = bonus;
+            }
+
+            private WorldGenerativeGeologyProfile _profileA;
+            private float _bonusA;
+            private WorldGenerativeGeologyProfile _profileB;
+            private float _bonusB;
+            private WorldGenerativeGeologyProfile _profileC;
+            private float _bonusC;
+            private WorldGenerativeGeologyProfile _profileD;
+            private float _bonusD;
         }
 
         private readonly struct ScatterRuntimeRuleEntry

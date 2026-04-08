@@ -12,6 +12,16 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
     public sealed class PDAShellChrome : MonoBehaviour, ITickable
     {
+        private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
+        private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
+        private const string ActiveTabLoadout = "ACTIVE TAB // LOADOUT";
+        private const string ActiveTabConstruction = "ACTIVE TAB // CONSTRUCTION";
+        private const string ActiveTabBarter = "ACTIVE TAB // BARTER";
+        private const string ActiveTabDataLog = "ACTIVE TAB // DATA LOG";
+        private const string ActiveTabUnknown = "ACTIVE TAB // UNKNOWN";
+        private const string RightFooterOnlineFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA ONLINE";
+        private const string RightFooterStandbyFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA STANDBY";
+
         private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
         private static readonly Color DimLow = new Color(0.56f, 0.74f, 0.71f, 0.72f);
@@ -19,6 +29,7 @@ namespace Hecton8.UI
         private static readonly Color Warning = new Color(0.3f, 0.2f, 0.06f, 0.82f);
         private static readonly Color Critical = new Color(0.34f, 0.12f, 0.12f, 0.84f);
         private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
+        private static readonly Color AlertText = new Color(1f, 0.88f, 0.72f, 0.96f);
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -34,6 +45,7 @@ namespace Hecton8.UI
         private bool _built;
         private float _nextRefreshTime;
         private RectTransform _chromeRoot;
+        private CanvasGroup _chromeCanvasGroup;
         private Image _headerBg;
         private Image _footerBg;
         private TextMeshProUGUI _titleText;
@@ -41,6 +53,15 @@ namespace Hecton8.UI
         private TextMeshProUGUI _leftFooterText;
         private TextMeshProUGUI _rightFooterText;
         private bool _tickRegistered;
+        private int _lastActiveTab = int.MinValue;
+        private int _lastCargoCells = -1;
+        private int _lastCargoTotal = -1;
+        private int _lastWeightDeci = int.MinValue;
+        private int _lastReadyTools = -1;
+        private int _lastAssignedTools = -1;
+        private int _lastOxygenPercent = int.MinValue;
+        private int _lastEnergyPercent = int.MinValue;
+        private bool _lastPdaOpen;
 
         private void Awake()
         {
@@ -180,6 +201,12 @@ namespace Hecton8.UI
             _chromeRoot = FindExistingChild(self, "ShellChrome") ?? CreateRect(self, "ShellChrome");
             Stretch(_chromeRoot, 0f, 0f, 0f, 0f);
             _chromeRoot.SetAsLastSibling();
+            _chromeCanvasGroup = _chromeRoot.GetComponent<CanvasGroup>();
+            if (_chromeCanvasGroup == null)
+                _chromeCanvasGroup = _chromeRoot.gameObject.AddComponent<CanvasGroup>();
+            _chromeCanvasGroup.interactable = false;
+            _chromeCanvasGroup.blocksRaycasts = false;
+            _chromeCanvasGroup.alpha = 0f;
 
             ClearChildren(_chromeRoot);
 
@@ -205,6 +232,7 @@ namespace Hecton8.UI
             _titleText = CreateText(header, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(_titleText.rectTransform, new Vector2(0f, 0f), new Vector2(0.6f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
             _titleText.color = Primary;
+            _titleText.SetText(TitleTextValue);
 
             _tabText = CreateText(header, "Tab", numericFont, 11f, FontStyles.Bold, TextAlignmentOptions.Right);
             Anchor(_tabText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
@@ -240,29 +268,55 @@ namespace Hecton8.UI
             float oxygen = survivalSystem != null ? survivalSystem.OxygenNormalized : 0f;
             int readyTools = CountReadyTools();
             int assignedTools = toolManager != null ? CountAssignedTools() : 0;
+            int activeTabIndex = playerPDA != null ? playerPDA.ActiveTab : -1;
+            int weightDeci = Mathf.RoundToInt(weight * 10f);
+            int oxygenPercent = Mathf.RoundToInt(oxygen * 100f);
+            int energyPercent = Mathf.RoundToInt(energy * 100f);
+            bool pdaOpen = PlayerPDA.IsOpen;
 
-            if (_titleText != null)
-                _titleText.SetText("HECTON-8 PERSONAL DATA ASSISTANT");
+            if (_tabText != null && _lastActiveTab != activeTabIndex)
+            {
+                _tabText.SetText(tabName);
+                _lastActiveTab = activeTabIndex;
+            }
 
-            if (_tabText != null)
-                _tabText.SetText($"ACTIVE TAB // {tabName}");
-
-            if (_leftFooterText != null)
+            if (_leftFooterText != null &&
+                (_lastCargoCells != cargoCells ||
+                 _lastCargoTotal != cargoTotal ||
+                 _lastWeightDeci != weightDeci ||
+                 _lastReadyTools != readyTools ||
+                 _lastAssignedTools != assignedTools))
+            {
                 _leftFooterText.SetText(
                     "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}",
                     cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
+                _lastCargoCells = cargoCells;
+                _lastCargoTotal = cargoTotal;
+                _lastWeightDeci = weightDeci;
+                _lastReadyTools = readyTools;
+                _lastAssignedTools = assignedTools;
+            }
 
-            if (_rightFooterText != null)
-                _rightFooterText.text =
-                    $"O2 {oxygen * 100f:0}%  |  PWR {energy * 100f:0}%  |  PDA {(PlayerPDA.IsOpen ? "ONLINE" : "STANDBY")}";
+            if (_rightFooterText != null &&
+                (_lastOxygenPercent != oxygenPercent ||
+                 _lastEnergyPercent != energyPercent ||
+                 _lastPdaOpen != pdaOpen))
+            {
+                _rightFooterText.SetText(
+                    pdaOpen ? RightFooterOnlineFormat : RightFooterStandbyFormat,
+                    oxygenPercent, energyPercent);
+                _lastOxygenPercent = oxygenPercent;
+                _lastEnergyPercent = energyPercent;
+                _lastPdaOpen = pdaOpen;
+            }
 
             Color severity = GetShellSeverityColor(energy, oxygen, weight, readyTools, assignedTools);
             if (_headerBg != null) _headerBg.color = severity;
             if (_footerBg != null) _footerBg.color = severity;
-            if (_tabText != null) _tabText.color = energy < 0.25f || oxygen < 0.3f ? new Color(1f, 0.88f, 0.72f, 0.96f) : Dim;
-            if (_rightFooterText != null) _rightFooterText.color = energy < 0.25f || oxygen < 0.3f ? new Color(1f, 0.88f, 0.72f, 0.96f) : DimLow;
-
-            _chromeRoot.gameObject.SetActive(PlayerPDA.IsOpen || immediate);
+            if (_tabText != null) _tabText.color = energy < 0.25f || oxygen < 0.3f ? AlertText : Dim;
+            if (_rightFooterText != null) _rightFooterText.color = energy < 0.25f || oxygen < 0.3f ? AlertText : DimLow;
+            if (_chromeCanvasGroup != null)
+                _chromeCanvasGroup.alpha = pdaOpen || immediate ? 1f : 0f;
         }
 
         private void EvaluateTickRegistration()
@@ -311,16 +365,16 @@ namespace Hecton8.UI
         private string GetActiveTabLabel()
         {
             if (playerPDA == null)
-                return "UNKNOWN";
+                return ActiveTabUnknown;
 
             switch (playerPDA.ActiveTab)
             {
-                case 0: return "INVENTORY";
-                case 1: return "LOADOUT";
-                case 2: return "CONSTRUCTION";
-                case 3: return "BARTER";
-                case 4: return "DATA LOG";
-                default: return "UNKNOWN";
+                case 0: return ActiveTabInventory;
+                case 1: return ActiveTabLoadout;
+                case 2: return ActiveTabConstruction;
+                case 3: return ActiveTabBarter;
+                case 4: return ActiveTabDataLog;
+                default: return ActiveTabUnknown;
             }
         }
 

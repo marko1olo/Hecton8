@@ -17,23 +17,6 @@ namespace Hecton.UI.MainMenu
     public sealed class MainMenuController : MonoBehaviour
     {
         // ──────────────────────────────────────────────
-        // DEPRECATED: Use GameStartContextHolder instead
-        // Legacy field kept for domain-reload safety only
-        // ──────────────────────────────────────────────
-        /// <summary>
-        /// [DEPRECATED] Save slot to load. Empty string = new game.
-        /// Use GameStartContextHolder.Current instead.
-        /// Kept for PlayerPrefs domain-reload recovery only.
-        /// </summary>
-        public static string TargetSaveSlot = string.Empty;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            TargetSaveSlot = string.Empty;
-        }
-
-        // ──────────────────────────────────────────────
         // INSPECTOR — Panels (CanvasGroup)
         // ──────────────────────────────────────────────
         [Header("=== PANELS (CanvasGroup) ===")]
@@ -94,12 +77,16 @@ namespace Hecton.UI.MainMenu
 
         // Double-click protection
         private bool _isTransitioning;
+        private bool _isSceneLoadInFlight;
 
         // Pre-allocated slot name array (zero-GC)
         private static readonly string[] SlotNames = { "slot_1", "slot_2", "slot_3" };
 
         // Cached reference to SaveManager (avoids repeated singleton access)
         private SaveManager _saveManager;
+        private SaveSlotUI[] _slotUIs;
+        private bool _slotPrefabValidated;
+        private bool _slotPrefabHasSaveSlotUI = true;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -264,7 +251,9 @@ namespace Hecton.UI.MainMenu
         /// </summary>
         public void OpenSaveLoadMenu()
         {
-            ClearSlotsContainer();
+            EnsureSlotInstances();
+            if (_slotUIs == null)
+                return;
 
             // Re-cache in case SaveManager appeared after Start()
             if (_saveManager == null)
@@ -273,20 +262,9 @@ namespace Hecton.UI.MainMenu
             for (int i = 0; i < SLOT_COUNT; i++)
             {
                 string slotName = SlotNames[i];
-
-                GameObject slotGO = Instantiate(slotPrefab, slotsContainer);
-                slotGO.name = slotName;
-
-                SaveSlotUI slotUI = slotGO.GetComponent<SaveSlotUI>();
+                SaveSlotUI slotUI = _slotUIs[i];
                 if (slotUI == null)
-                {
-#if UNITY_EDITOR
-                    Debug.LogError(
-                        "[MainMenuController] slotPrefab is missing SaveSlotUI component!"
-                    );
-#endif
                     continue;
-                }
 
                 if (_saveManager != null)
                 {
@@ -308,11 +286,34 @@ namespace Hecton.UI.MainMenu
             SwitchPanel(mainMenuGroup, saveLoadGroup);
         }
 
-        private void ClearSlotsContainer()
+        private void EnsureSlotInstances()
         {
-            for (int i = slotsContainer.childCount - 1; i >= 0; i--)
+            if (_slotUIs != null)
+                return;
+
+            if (!_slotPrefabValidated)
             {
-                Destroy(slotsContainer.GetChild(i).gameObject);
+                _slotPrefabValidated = true;
+                _slotPrefabHasSaveSlotUI = slotPrefab != null && slotPrefab.GetComponent<SaveSlotUI>() != null;
+
+                if (!_slotPrefabHasSaveSlotUI)
+                {
+#if UNITY_EDITOR
+                    Debug.LogError(
+                        "[MainMenuController] slotPrefab is missing SaveSlotUI component!"
+                    );
+#endif
+                    return;
+                }
+            }
+
+            _slotUIs = new SaveSlotUI[SLOT_COUNT]; // COLD ALLOC: fixed save-shell slot cache
+
+            for (int i = 0; i < SLOT_COUNT; i++)
+            {
+                GameObject slotGO = Instantiate(slotPrefab, slotsContainer);
+                slotGO.name = SlotNames[i];
+                _slotUIs[i] = slotGO.GetComponent<SaveSlotUI>();
             }
         }
 
@@ -338,23 +339,23 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Starts async loading of the game scene.
         /// Empty slotName = new game, otherwise = load save.
-        /// Writes to GameStartContextHolder.Current for inter-scene communication.
-        /// Also writes to PlayerPrefs for domain-reload recovery.
+        /// Writes to GameStartContextHolder for inter-scene communication.
+        /// Cold persistence is owned by the holder, not by MainMenuController.
         /// </summary>
         public void StartGame(string slotName)
         {
+            if (_isSceneLoadInFlight)
+                return;
+
+            _isSceneLoadInFlight = true;
+
             // Create GameStartContext
             GameStartContext context = string.IsNullOrEmpty(slotName)
                 ? GameStartContext.CreateNewGame()
                 : GameStartContext.CreateLoadGame(slotName);
 
             // Store in holder for SceneBootstrap to read
-            GameStartContextHolder.Current = context;
-
-            // Legacy: Also write to TargetSaveSlot + PlayerPrefs for domain-reload safety
-            TargetSaveSlot = slotName ?? string.Empty;
-            PlayerPrefs.SetString("TargetSaveSlot", TargetSaveSlot);
-            PlayerPrefs.Save();
+            GameStartContextHolder.SetCurrent(context);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameStartContextHolder.LogCurrent();
@@ -377,6 +378,8 @@ namespace Hecton.UI.MainMenu
 
             if (operation == null)
             {
+                _isSceneLoadInFlight = false;
+
 #if UNITY_EDITOR
                 Debug.LogError(
                     $"[MainMenuController] Failed to load scene \"{targetSceneName}\". " +

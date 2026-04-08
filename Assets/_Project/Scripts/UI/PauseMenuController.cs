@@ -586,6 +586,7 @@ namespace Hecton8.UI
             if (pauseTimeScale)
                 Time.timeScale = 1f;
 
+            GameStartContextHolder.Reset();
             SceneManager.LoadScene(mainMenuSceneName);
         }
 

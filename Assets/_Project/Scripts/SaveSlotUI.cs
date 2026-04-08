@@ -45,6 +45,12 @@ namespace Hecton.UI.MainMenu
         private void Awake()
         {
             _button = GetComponent<Button>();
+            if (_button != null)
+            {
+                _button.onClick.RemoveListener(OnButtonClicked);
+                _button.onClick.AddListener(OnButtonClicked);
+            }
+
             if (slotNameText != null)
                 _slotNameBaseColor = slotNameText.color;
             if (detailsText != null)
@@ -113,17 +119,7 @@ namespace Hecton.UI.MainMenu
             // Button setup
             if (_button != null)
             {
-                _button.onClick.RemoveAllListeners();
-
-                if (_exists && _onClickCallback != null)
-                {
-                    _button.interactable = true;
-                    _button.onClick.AddListener(OnButtonClicked);
-                }
-                else
-                {
-                    _button.interactable = false;
-                }
+                _button.interactable = _exists && _onClickCallback != null;
             }
         }
 

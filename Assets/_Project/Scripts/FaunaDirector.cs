@@ -250,8 +250,8 @@ namespace Hecton8.AI
         //  BIOME THROTTLING — снижение частоты GetAlphamaps
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Таймер обратного отсчёта для проверки биома.</summary>
-        private float _biomeCheckTimer;
+        /// <summary>Absolute time gate for the next biome probe.</summary>
+        private float _nextBiomeCheckTime = float.NegativeInfinity;
 
         /// <summary>Интервал проверки биома (секунды). Снижает GC от GetAlphamaps.</summary>
         private const float BiomeCheckInterval = 2.0f;
@@ -402,10 +402,9 @@ namespace Hecton8.AI
                 return;
             }
 
-            _biomeCheckTimer -= 1f; // SlowTick вызывается примерно раз в 1 сек
-            if (_biomeCheckTimer <= 0f)
+            if (Time.time >= _nextBiomeCheckTime)
             {
-                _biomeCheckTimer = BiomeCheckInterval;
+                _nextBiomeCheckTime = Time.time + BiomeCheckInterval;
                 if (bridge.TryGetBiomeIndex(playerPos.x, playerPos.z, out int biome))
                 {
                     _cachedBiomeIndex = biome;
@@ -900,11 +899,11 @@ namespace Hecton8.AI
         private static bool TrySelectResolvedEntry(
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
-            ObjectPoolManager pool,
+            int[] availablePoolCounts,
             out ResolvedFaunaEntry selectedEntry)
         {
             selectedEntry = default;
-            if (resolvedEntries == null || resolvedEntries.Length == 0 || pool == null)
+            if (resolvedEntries == null || resolvedEntries.Length == 0 || availablePoolCounts == null || availablePoolCounts.Length < resolvedEntries.Length)
                 return false;
 
             float availableWeight = 0f;
@@ -924,7 +923,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                if (pool.GetAvailableCount(entry.prefab) <= 0)
+                if (availablePoolCounts[i] <= 0)
                     continue;
 
                 availableWeight += entry.spawnWeight;
@@ -950,7 +949,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                if (pool.GetAvailableCount(entry.prefab) <= 0)
+                if (availablePoolCounts[i] <= 0)
                     continue;
 
                 roll -= entry.spawnWeight;
@@ -964,6 +963,46 @@ namespace Hecton8.AI
             if (fallbackIndex >= 0)
             {
                 selectedEntry = resolvedEntries[fallbackIndex];
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TrySelectResolvedHordeEntry(
+            ResolvedFaunaEntry[] resolvedEntries,
+            int[] currentCounts,
+            int[] availablePoolCounts,
+            out ResolvedFaunaEntry selectedEntry)
+        {
+            selectedEntry = default;
+            if (resolvedEntries == null || resolvedEntries.Length == 0 || availablePoolCounts == null || availablePoolCounts.Length < resolvedEntries.Length)
+                return false;
+
+            int startIndex = Random.Range(0, resolvedEntries.Length);
+            for (int search = 0; search < resolvedEntries.Length; search++)
+            {
+                int index = startIndex + search;
+                if (index >= resolvedEntries.Length)
+                    index -= resolvedEntries.Length;
+
+                ResolvedFaunaEntry entry = resolvedEntries[index];
+                if (entry.prefab == null || entry.isLargeThreat)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (currentCounts != null &&
+                    typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                if (availablePoolCounts[index] <= 0)
+                    continue;
+
+                selectedEntry = entry;
                 return true;
             }
 
@@ -1411,9 +1450,30 @@ namespace Hecton8.AI
                 return;
 
             // Проверяем наличие существ в биоме
-            List<FaunaEntry> possibleCreatures = biomeData.possibleCreatures;
-            if (possibleCreatures == null || possibleCreatures.Count == 0)
+            if (_resolvedEntriesPerBiome == null ||
+                !_resolvedEntriesPerBiome.TryGetValue(biomeData, out ResolvedFaunaEntry[] resolvedEntries) ||
+                resolvedEntries == null ||
+                resolvedEntries.Length == 0)
+            {
                 return;
+            }
+
+            if (!_countsPerTypePerBiome.TryGetValue(biomeData, out int[] creatureTypeCounts))
+                return;
+
+            if (_availablePoolCountsPerBiome == null ||
+                !_availablePoolCountsPerBiome.TryGetValue(biomeData, out int[] availablePoolCounts) ||
+                availablePoolCounts == null ||
+                availablePoolCounts.Length < resolvedEntries.Length)
+            {
+                return;
+            }
+
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                GameObject prefab = resolvedEntries[i].prefab;
+                availablePoolCounts[i] = prefab != null ? pool.GetAvailableCount(prefab) : 0;
+            }
 
             int biomeIdx = biomeData.biomeIndex;
 
@@ -1434,26 +1494,10 @@ namespace Hecton8.AI
                 // Для орды используем равномерный выбор из possibleCreatures
                 // (weighted random через TrySelectCreature не обязателен —
                 //  Директор хочет любую угрозу, а не balanced population).
-                FaunaEntry entry = default;
-                int creatureIdx = -1;
-                int startIndex = Random.Range(0, possibleCreatures.Count);
-
-                for (int search = 0; search < possibleCreatures.Count; search++)
-                {
-                    int index = (startIndex + search) % possibleCreatures.Count;
-                    FaunaEntry candidate = possibleCreatures[index];
-                    if (IsLargeThreatEntry(biomeData, candidate))
-                        continue;
-
-                    entry = candidate;
-                    creatureIdx = index;
-                    break;
-                }
-
-                if (creatureIdx < 0)
+                if (!TrySelectResolvedHordeEntry(resolvedEntries, creatureTypeCounts, availablePoolCounts, out ResolvedFaunaEntry selectedEntry))
                     break;
 
-                GameObject resolvedPrefab = entry.GetResolvedPrefab();
+                GameObject resolvedPrefab = selectedEntry.prefab;
                 if (resolvedPrefab == null)
                     continue;
 
@@ -1478,7 +1522,7 @@ namespace Hecton8.AI
                     continue;
 
                 // ── Определяем typeIndex ──
-                int typeIndex = FindCreatureTypeIndex(biomeData, resolvedPrefab);
+                int typeIndex = selectedEntry.creatureTypeIndex;
 
                 // ── Регистрация в трекере ──
                 ActiveCreature record = new ActiveCreature
@@ -1502,10 +1546,13 @@ namespace Hecton8.AI
                 // ── Настройка AI: спавн-поинт + принудительное Aggressive ──
                 if (instance.TryGetComponent(out HectonBaseAI ai))
                 {
-                    ai.ApplyArchetype(entry.archetype);
+                    ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
                     ai.ForceState(HectonBaseAI.AIState.Aggressive);
                 }
+
+                if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
+                    availablePoolCounts[typeIndex]--;
 
                 spawned++;
             }
@@ -1783,12 +1830,16 @@ namespace Hecton8.AI
                 return 0;
 
             int total = 0;
-            foreach (KeyValuePair<long, int> pair in _largeThreatCountsPerMacroZone)
+            // ZERO GC: Dictionary<long,int>.Enumerator is a struct — GetEnumerator() returns by value, no heap alloc.
+            // foreach on Dictionary<K,V> is FORBIDDEN (boxes to IEnumerator). Explicit struct enumerator is ALLOWED.
+            Dictionary<long, int>.Enumerator enumerator = _largeThreatCountsPerMacroZone.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                WorldMacroZoneCoordinate zone = DecomposeMacroZoneKey(pair.Key);
+                WorldMacroZoneCoordinate zone = DecomposeMacroZoneKey(enumerator.Current.Key);
                 if (zone.ChebyshevDistanceTo(playerMacroZone) <= 1)
-                    total += pair.Value;
+                    total += enumerator.Current.Value;
             }
+            enumerator.Dispose();
 
             return total;
         }
@@ -1885,4 +1936,3 @@ namespace Hecton8.AI
         }
     }
 }
-

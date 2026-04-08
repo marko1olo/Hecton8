@@ -39,8 +39,11 @@ namespace Hecton8.UI
         private static readonly Color SlotActive = new Color(0.46f, 0.98f, 0.94f, 0.25f);
         private static readonly Color KeyDim = new Color(0.5f, 0.7f, 0.68f, 0.45f);
         private static readonly Color KeyActive = new Color(0.46f, 0.98f, 0.94f, 0.85f);
+        private static readonly Color IconHidden = new Color(1f, 1f, 1f, 0f);
+        private static readonly Color IconUnavailable = new Color(1f, 1f, 1f, 0.2f);
         private static readonly Color DurGood    = new Color(0.3f, 0.9f, 0.85f, 0.7f);
         private static readonly Color DurWarning = new Color(1f, 0.74f, 0.22f, 0.7f);
+        private static readonly Color DurHidden = new Color(0.3f, 0.9f, 0.85f, 0f);
         private static readonly Color SummaryColor = new Color(0.9f, 0.98f, 1f, 0.94f);
         private static readonly Color DirectiveColor = new Color(0.64f, 0.83f, 0.88f, 0.92f);
         // ══════════════════════════════════════════════════════════
@@ -63,6 +66,15 @@ namespace Hecton8.UI
         private TextMeshProUGUI _toolSummary;
         private TextMeshProUGUI _toolDirective;
         private float _nextStatusRefreshAt;
+        private bool[] _slotIconVisible;
+        private bool[] _slotIconAvailable;
+        private Sprite[] _slotIconSprites;
+        private bool[] _slotDurVisible;
+        private float[] _slotDurWidths;
+        private string _lastSummaryText;
+        private string _lastDirectiveBase;
+        private string _lastDirectiveAdvicePreset;
+        private bool _lastDirectiveHasAdvice;
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
@@ -173,6 +185,11 @@ namespace Hecton8.UI
             _slotBgs = new Image[SlotCount];
             _slotIcons = new Image[SlotCount];
             _slotKeys = new TextMeshProUGUI[SlotCount];
+            _slotIconVisible = new bool[SlotCount];
+            _slotIconAvailable = new bool[SlotCount];
+            _slotIconSprites = new Sprite[SlotCount];
+            _slotDurVisible = new bool[SlotCount];
+            _slotDurWidths = new float[SlotCount];
 
             for (int i = 0; i < SlotCount; i++)
             {
@@ -197,8 +214,7 @@ namespace Hecton8.UI
                 Image icon = iconR.gameObject.AddComponent<Image>();
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
-                icon.color = Color.white;
-                icon.gameObject.SetActive(false);
+                icon.color = IconHidden;
                 _slotIcons[i] = icon;
 
                 // Key label
@@ -226,9 +242,9 @@ namespace Hecton8.UI
                 durR.anchoredPosition = new Vector2(3f, 2f);
                 durR.sizeDelta = new Vector2(slotSize - 6f, 2f);
                 Image durImg = durR.gameObject.AddComponent<Image>();
-                durImg.color = DurGood;
+                durImg.color = DurHidden;
                 durImg.raycastTarget = false;
-                durImg.gameObject.SetActive(false);
+                durImg.rectTransform.sizeDelta = new Vector2(0f, 2f);
                 _durBars[i] = durImg;
             }
 
@@ -285,22 +301,39 @@ namespace Hecton8.UI
                 if (prefab != null && prefab.TryGetComponent<PlayerTool>(out var tool)
                     && tool.ToolData != null && tool.ToolData.icon != null)
                 {
-                    _slotIcons[i].sprite = tool.ToolData.icon;
-                    _slotIcons[i].gameObject.SetActive(true);
-
                     bool available = toolManager.IsToolAvailableInSlot(i);
-                    _slotIcons[i].color = available
-                        ? Color.white
-                        : new Color(1f, 1f, 1f, 0.2f);
+                    Sprite desiredSprite = tool.ToolData.icon;
+                    if (!ReferenceEquals(_slotIconSprites[i], desiredSprite))
+                    {
+                        _slotIcons[i].sprite = desiredSprite;
+                        _slotIconSprites[i] = desiredSprite;
+                    }
+
+                    if (!_slotIconVisible[i] || _slotIconAvailable[i] != available)
+                    {
+                        _slotIcons[i].color = available ? Color.white : IconUnavailable;
+                        _slotIconVisible[i] = true;
+                        _slotIconAvailable[i] = available;
+                    }
                 }
                 else
                 {
-                    _slotIcons[i].gameObject.SetActive(false);
+                    if (_slotIconVisible[i] || _slotIconSprites[i] != null)
+                    {
+                        _slotIcons[i].sprite = null;
+                        _slotIcons[i].color = IconHidden;
+                        _slotIconSprites[i] = null;
+                        _slotIconVisible[i] = false;
+                        _slotIconAvailable[i] = false;
+                    }
                 }
+
                 // Durability bar
                 if (_durBars != null && i < _durBars.Length && _durBars[i] != null)
                 {
                     bool showDur = false;
+                    float desiredWidth = 0f;
+                    Color desiredDurColor = DurHidden;
 
                     if (prefab != null
                         && prefab.TryGetComponent<PlayerTool>(out var ptool)
@@ -316,31 +349,57 @@ namespace Hecton8.UI
                                     ptool.Metadata.toolID, maxD);
                                 float norm = Mathf.Clamp01(curD / maxD);
 
-                                float fullW = slotSize - 6f;
-                                _durBars[i].rectTransform.sizeDelta =
-                                    new Vector2(fullW * norm, 2f);
-                                _durBars[i].color =
-                                    Color.Lerp(DurWarning, DurGood, norm);
+                                desiredWidth = (slotSize - 6f) * norm;
+                                desiredDurColor = Color.Lerp(DurWarning, DurGood, norm);
                                 showDur = true;
                             }
                         }
                     }
 
-                    _durBars[i].gameObject.SetActive(showDur);
+                    if (_slotDurVisible[i] != showDur || !Mathf.Approximately(_slotDurWidths[i], desiredWidth))
+                    {
+                        _durBars[i].rectTransform.sizeDelta = new Vector2(desiredWidth, 2f);
+                        _slotDurWidths[i] = desiredWidth;
+                        _slotDurVisible[i] = showDur;
+                    }
+
+                    if (_slotDurVisible[i])
+                    {
+                        _durBars[i].color = desiredDurColor;
+                    }
+                    else if (_durBars[i].color.a > 0f)
+                    {
+                        _durBars[i].color = DurHidden;
+                    }
                 }
             }
 
             if (_toolSummary != null)
-                _toolSummary.text = toolManager.GetCurrentToolOperationalSummary();
+            {
+                string summary = toolManager.GetCurrentToolOperationalSummary();
+                if (_lastSummaryText != summary)
+                {
+                    _toolSummary.text = summary;
+                    _lastSummaryText = summary;
+                }
+            }
 
             if (_toolDirective != null)
             {
                 string directive = toolManager.GetCurrentToolOperationalDirective();
                 Transform origin = toolManager != null ? toolManager.transform : null;
-                if (FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
-                    _toolDirective.text = $"{directive}  KIT {advice.PresetName}";
-                else
-                    _toolDirective.text = directive;
+                bool hasAdvice = FieldLoadoutAdvisor.TryBuildForwardPresetName(origin, fieldAdviceRange, fieldAdviceMask, out string advicePreset);
+                if (_lastDirectiveBase != directive ||
+                    _lastDirectiveHasAdvice != hasAdvice ||
+                    _lastDirectiveAdvicePreset != advicePreset)
+                {
+                    _toolDirective.text = hasAdvice
+                        ? directive + "  KIT " + advicePreset
+                        : directive;
+                    _lastDirectiveBase = directive;
+                    _lastDirectiveHasAdvice = hasAdvice;
+                    _lastDirectiveAdvicePreset = advicePreset;
+                }
             }
         }
 

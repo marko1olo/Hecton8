@@ -4,6 +4,7 @@
 // Sibling к HUD_V4_CanvasRoot на Suit_HUD_Canvas.
 // ============================================================================
 
+using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using TMPro;
@@ -31,6 +32,10 @@ namespace Hecton8.UI
             Critical = 2
         }
 
+        private const int InventoryFullMessageCacheSize = 16;
+        private const string InventoryFullMessagePrefix = "INVENTORY FULL \u2014 CANNOT STORE ";
+        private const string FallbackInventoryItemName = "ITEM";
+
         private struct NotificationRequest
         {
             public string Message;
@@ -50,6 +55,8 @@ namespace Hecton8.UI
         private static readonly Color CriticalText = new Color(1f, 0.52f, 0.42f, 0.98f);
         private static readonly Color InfoBg = new Color(0.02f, 0.08f, 0.1f, 0.7f);
         private static readonly Color InfoText = new Color(0.46f, 0.98f, 0.94f, 0.9f);
+        private static readonly string[] _inventoryFullItemNameCache = new string[InventoryFullMessageCacheSize];
+        private static readonly string[] _inventoryFullMessageCache = new string[InventoryFullMessageCacheSize];
 
         private RectTransform _notifRoot;
         private Image _notifBg;
@@ -58,6 +65,7 @@ namespace Hecton8.UI
         private float _timer;
         private float _currentAlpha;
         private bool _built;
+        private bool _isShowing;
         private readonly System.Collections.Generic.List<NotificationRequest> _queue =
             new System.Collections.Generic.List<NotificationRequest>(8);
         private string _currentMessage;
@@ -123,7 +131,7 @@ namespace Hecton8.UI
                 if (_currentAlpha < 0.01f)
                 {
                     _currentAlpha = 0f;
-                    _notifRoot.gameObject.SetActive(false);
+                    _isShowing = false;
 
                     if (_queue.Count > 0)
                     {
@@ -180,7 +188,7 @@ namespace Hecton8.UI
             _lastEnqueuedSeverity = severity;
             _lastEnqueueTime = now;
 
-            if (_timer <= 0f && _queue.Count == 0 && !_notifRoot.gameObject.activeSelf)
+            if (_timer <= 0f && _queue.Count == 0 && !_isShowing && _currentAlpha <= 0.01f)
             {
                 ShowImmediate(normalized, severity);
                 return;
@@ -221,7 +229,7 @@ namespace Hecton8.UI
             ApplyVisuals(message, severity);
             _timer = displayDuration;
             _currentAlpha = 0f;
-            _notifRoot.gameObject.SetActive(true);
+            _isShowing = true;
         }
 
         private void ApplyVisuals(string message, NotificationSeverity severity)
@@ -255,8 +263,24 @@ namespace Hecton8.UI
 
         private void OnInventoryFull(ItemData item)
         {
-            string name = item != null ? item.itemName : "ITEM";
-            ShowWarning($"INVENTORY FULL — CANNOT STORE {name.ToUpperInvariant()}");
+            ShowWarning(GetInventoryFullMessage(item));
+        }
+
+        private static string GetInventoryFullMessage(ItemData item)
+        {
+            string itemName = item != null ? item.itemName : null;
+            if (string.IsNullOrWhiteSpace(itemName))
+                itemName = FallbackInventoryItemName;
+
+            int cacheIndex = (itemName.GetHashCode() & int.MaxValue) % InventoryFullMessageCacheSize;
+            string cachedItemName = _inventoryFullItemNameCache[cacheIndex];
+            if (!string.IsNullOrEmpty(cachedItemName) && string.Equals(cachedItemName, itemName, System.StringComparison.Ordinal))
+                return _inventoryFullMessageCache[cacheIndex];
+
+            string message = InventoryFullMessagePrefix + ZeroGCStringCache.CachedToUpperInvariant(itemName);
+            _inventoryFullItemNameCache[cacheIndex] = itemName;
+            _inventoryFullMessageCache[cacheIndex] = message;
+            return message;
         }
 
         private void EnsureBuilt()
@@ -279,6 +303,8 @@ namespace Hecton8.UI
             _canvasGroup.alpha = 0f;
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
+            _currentAlpha = 0f;
+            _isShowing = false;
 
             _notifBg = gameObject.GetComponent<Image>();
             if (_notifBg == null)
@@ -303,8 +329,6 @@ namespace Hecton8.UI
             _notifText.textWrappingMode = TextWrappingModes.NoWrap;
             _notifText.raycastTarget = false;
             _notifText.color = WarningText;
-
-            gameObject.SetActive(false);
             _built = true;
         }
 

@@ -326,6 +326,11 @@ namespace Hecton8.EditorTools
         private static void BuildPlate(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
             int radialSegments = Mathf.Max(12, spec.LongitudeSegments - (lod * 4));
+            if (spec.Variant == CoralVariant.Shelf && lod == 0)
+                radialSegments += 4;
+
+            float primaryThickness = spec.Variant == CoralVariant.Shelf ? scale.y * 0.052f : scale.y * 0.07f;
+            float secondaryThickness = spec.Variant == CoralVariant.Shelf ? scale.y * 0.038f : scale.y * 0.05f;
             AddBezierTube(
                 buffers,
                 new Vector3(0f, 0f, 0f),
@@ -342,23 +347,23 @@ namespace Hecton8.EditorTools
             AddWarpedPlate(
                 buffers,
                 new Vector3(0f, scale.y * 0.6f, 0f),
-                Quaternion.Euler(0f, 6f, 4f),
-                scale.x * 1.02f,
-                scale.z * 0.92f,
-                scale.y * 0.07f,
+                Quaternion.Euler(spec.Variant == CoralVariant.Shelf ? -4f : 0f, 6f, spec.Variant == CoralVariant.Shelf ? 11f : 4f),
+                scale.x * (spec.Variant == CoralVariant.Shelf ? 1.08f : 1.02f),
+                scale.z * (spec.Variant == CoralVariant.Shelf ? 0.96f : 0.92f),
+                primaryThickness,
                 radialSegments,
-                spec.WarpAmplitude * 0.38f,
+                spec.WarpAmplitude * (spec.Variant == CoralVariant.Shelf ? 0.46f : 0.38f),
                 spec.Color);
 
             AddWarpedPlate(
                 buffers,
                 new Vector3(-scale.x * 0.16f, scale.y * 0.9f, scale.z * 0.14f),
-                Quaternion.Euler(6f, 14f, -18f),
-                scale.x * 0.82f,
-                scale.z * 0.74f,
-                scale.y * 0.05f,
+                Quaternion.Euler(spec.Variant == CoralVariant.Shelf ? 2f : 6f, 14f, spec.Variant == CoralVariant.Shelf ? -28f : -18f),
+                scale.x * (spec.Variant == CoralVariant.Shelf ? 0.9f : 0.82f),
+                scale.z * (spec.Variant == CoralVariant.Shelf ? 0.78f : 0.74f),
+                secondaryThickness,
                 radialSegments - 2,
-                spec.WarpAmplitude * 0.34f,
+                spec.WarpAmplitude * (spec.Variant == CoralVariant.Shelf ? 0.42f : 0.34f),
                 spec.Color);
 
             if (spec.Variant == CoralVariant.Shelf || spec.Variant == CoralVariant.Stack)
@@ -375,7 +380,68 @@ namespace Hecton8.EditorTools
                     spec.Color);
             }
 
-            if (spec.Variant == CoralVariant.Ledge)
+            if (spec.Variant == CoralVariant.Shelf)
+            {
+                AddWarpedPlate(
+                    buffers,
+                    new Vector3(scale.x * 0.3f, scale.y * 0.82f, -scale.z * 0.08f),
+                    Quaternion.Euler(-14f, -22f, 28f),
+                    scale.x * 0.66f,
+                    scale.z * 0.56f,
+                    scale.y * 0.034f,
+                    radialSegments - 5,
+                    spec.WarpAmplitude * 0.32f,
+                    spec.Color);
+
+                AddWarpedPlate(
+                    buffers,
+                    new Vector3(-scale.x * 0.26f, scale.y * 0.74f, scale.z * 0.18f),
+                    Quaternion.Euler(10f, 34f, -36f),
+                    scale.x * 0.44f,
+                    scale.z * 0.34f,
+                    scale.y * 0.028f,
+                    radialSegments - 7,
+                    spec.WarpAmplitude * 0.26f,
+                    spec.Color);
+
+                AddBezierTube(
+                    buffers,
+                    new Vector3(scale.x * 0.22f, scale.y * 0.16f, -scale.z * 0.14f),
+                    new Vector3(scale.x * 0.24f, scale.y * 0.34f, -scale.z * 0.1f),
+                    new Vector3(scale.x * 0.28f, scale.y * 0.58f, -scale.z * 0.06f),
+                    new Vector3(scale.x * 0.26f, scale.y * 0.82f, -scale.z * 0.04f),
+                    scale.x * 0.08f,
+                    scale.x * 0.045f,
+                    Mathf.Max(3, spec.PathSegments - 1),
+                    Mathf.Max(4, spec.RadialSegments - 1),
+                    spec.Color,
+                    spec.WarpAmplitude * 0.12f);
+
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.08f, scale.y * 0.46f, scale.z * 0.04f),
+                    new Vector3(scale.x * 0.16f, scale.y * 0.18f, scale.z * 0.14f),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.3f,
+                    spec.WarpFrequencyA + 0.7f,
+                    spec.WarpFrequencyB + 0.5f,
+                    0.74f,
+                    spec.Color);
+
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(scale.x * 0.18f, scale.y * 0.68f, -scale.z * 0.1f),
+                    new Vector3(scale.x * 0.14f, scale.y * 0.11f, scale.z * 0.12f),
+                    4,
+                    6,
+                    spec.WarpAmplitude * 0.24f,
+                    spec.WarpFrequencyA + 1.1f,
+                    spec.WarpFrequencyB + 0.3f,
+                    0.8f,
+                    spec.Color);
+            }
+            else if (spec.Variant == CoralVariant.Ledge)
             {
                 AddWarpedPlate(
                     buffers,

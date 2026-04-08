@@ -241,7 +241,12 @@ P0 rules:
     - MainMenuController.cs with full UI flow (new game / load / settings / quit)
     - Panel transitions with CanvasGroup alpha fade (no SetActive churn)
     - Save slot generation and load dialog
+    - Save/load panel now reuses one cached `SaveSlotUI[]` shell instead of `Destroy/Instantiate` churn on every open
+    - `SaveSlotUI` now binds its button listener once in `Awake()`; slot refresh updates only data/interactable state instead of rebinding listeners every open
+    - Shell verification tools now honor their inspector gates (`_enableVerification` / `_verifyTransitions`) instead of carrying dead toggle fields
     - Async scene loading with progress bar
+    - Start path now fail-closes repeated `StartGame()` calls, so modal/button spam cannot launch multiple scene-load coroutines for the same menu -> world transition
+    - Removed deprecated `MainMenuController.TargetSaveSlot` legacy mirror; start-session source of truth is now only `GameStartContextHolder` on the menu side
     - MainMenuValidator.cs (Editor tool: Window > HECTON-8 > Validate Main Menu)
   - **SCENE REQUIREMENTS (manual in Unity):**
     1. CanvasGroups: mainMenuGroup, saveLoadGroup, settingsGroup, loadingGroup (assigned in Inspector)
@@ -260,7 +265,9 @@ P0 rules:
     4. Test: New Game button → should show confirmation dialog
     5. Test: Load Game button → should show save slots
     6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) → SceneGuard should reload bootstrap
-- [ ] Raise `GameStartContext` and remove dependence on a single `TargetSaveSlot`
+- [c] Raise `GameStartContext` and remove dependence on a single `TargetSaveSlot`
+  - code addendum: `GameStartContextHolder` now owns the cold scene-handoff persistence itself instead of scattering `TargetSaveSlot` writes/reads across menu and bootstrap. `MainMenuController.StartGame()` writes through `GameStartContextHolder.SetCurrent(...)`, `SceneBootstrap.LoadOrNewGameAsync()` restores through `TryGetCurrentOrRestore(...)`, and the persisted handoff is cleared immediately after bootstrap consumes it so stale slot state does not keep poisoning future world loads. Legacy `MainMenuController.TargetSaveSlot` remains only as a compatibility mirror, not as the runtime source of truth.
+  - code addendum: gameplay -> menu shell now clears session handoff ownership too. `PauseMenuController.ExitToMainMenu()` calls `GameStartContextHolder.Reset()` before loading `01_MAIN_MENU`, so stale `LoadGame/Resume` context does not leak back into the shell after leaving an active world session.
 - [x] Verify:
   - new game
   - load game
@@ -364,10 +371,26 @@ P0 rules:
   - `FaunaDirector` can dominate `SlowTick` and trigger `ObjectPoolManager` on-demand expansion for `SmallPassiveProxy`
   - fauna pool warmup must track live `_runtimeMaxSpawnsPerTick` and reopen after runtime streaming settings grow; a static reserve fixed at scene start is invalid
   - the main `SlowTick` fauna selector must also respect live pool availability, otherwise strict `allowExpand:false` still burns spawn attempts on prefabs that are already dry even after warmup hardening
-  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, now reuse one per-rule preferred-family index instead of rescanning the same preferred-family array across multiple score helpers, now reuse one per-cell pattern score context instead of repeating the same pattern-category guards through multiple runtime score helpers, now consolidate the four pattern-dependent score helper calls for one `pattern + runtimeRule` pair into a single combined helper, now consolidate the three heat-scale helper calls for one `pattern + runtimeRule + depth` tuple into one combined helper, now skip redundant preferred-biome / preferred-zone rescans for accepted rules by replacing post-gate `GetFamilyAffinityBonus(...)` with `GetAcceptedFamilyAffinityBonus(...)`, now defer full pooled `ScatterPlacement` construction until after residency pass via `ScatterCandidatePreview`, now defer full score math plus preview rotation until after candidates survive gate/residency rejection, now reuse cell-local geology score results for repeated `GeologyProfile` hits inside the same sampled cell, now resolve the spawn rescue minimum once per cell instead of once per spawn rule, now precompute accepted-family affinity plus geology score scale into `ScatterRuntimeRuleEntry` instead of recalculating those same per-rule constants inside the live score loop, now reject dead non-rescue candidates on `gate` before expensive budget checks, and now replace better rescue candidates in `CandidateMap` by index instead of rescanning the same map twice, but scatter startup truth is still `PENDING VERIFICATION`
+  - the main `SlowTick` selector should not keep re-querying pool availability inside one burst; reuse one per-biome availability scratch state and decrement it only after successful spawns
+  - `ForceSpawnHorde(...)` must not bypass the same resolved-entry and pool-availability rules, otherwise scripted horde pressure can still pay for dry-pool selection work outside the main fauna path
+  - `WorldProceduralScatterDirector` startup sampling still remains an active CPU track; latest code passes removed one duplicated main-thread slope/curvature calculation from `WorldProceduralFieldSampler.TryBuildCellInput()`, moved per-cell `clusterRatioStart / passiveSpawnMin / predatorSpawnMax` resolution onto the existing `pattern + biome` quota cache, stopped recomputing the same preview-rescue gate three times inside the inner scatter rule loop, stopped `TrackRescueCandidate(...)` from re-resolving rescue booleans the caller already knew, now reuse one per-cell biome score context instead of re-deriving the same biome-matrix signals/focus roles for every runtime rule, now reuse one per-rule preferred-family index instead of rescanning the same preferred-family array across multiple score helpers, now reuse one per-cell pattern score context instead of repeating the same pattern-category guards through multiple runtime score helpers, now consolidate the four pattern-dependent score helper calls for one `pattern + runtimeRule` pair into a single combined helper, now consolidate the three heat-scale helper calls for one `pattern + runtimeRule + depth` tuple into one combined helper, now skip redundant preferred-biome / preferred-zone rescans for accepted rules by replacing post-gate `GetFamilyAffinityBonus(...)` with `GetAcceptedFamilyAffinityBonus(...)`, now defer full pooled `ScatterPlacement` construction until after residency pass via `ScatterCandidatePreview`, now defer full score math plus preview rotation until after candidates survive gate/residency rejection, now reuse cell-local geology score results for repeated `GeologyProfile` hits inside the same sampled cell, now resolve the spawn rescue minimum once per cell instead of once per spawn rule, now precompute accepted-family affinity plus geology score scale into `ScatterRuntimeRuleEntry` instead of recalculating those same per-rule constants inside the live score loop, now reject dead non-rescue candidates on `gate` before expensive budget checks, now replace better rescue candidates in `CandidateMap` by index instead of rescanning the same map twice, now skip preview, residency, score math, and full `BuildCandidate(...)` for non-rescue candidates that are already known to fail the random gate, and now skip full `BuildCandidate(...)` for non-rescue candidates that cannot beat the already-full per-cell buffer floor; rescue-tracked candidates still keep the preview/scored/built path because rescue retention depends on it, but scatter startup truth is still `PENDING VERIFICATION`
+  - latest addendum: rescue-tracked candidates that are already known to fail random gate now keep only rescue-window eligibility while deferring heavy runtime state solve (`variant/scale/chunk/macro`) until actual desired-placement registration; dead rescue-gate branch no longer pays that full build cost
+  - latest addendum: per-cell geology bonus cache moved from 2-slot to 4-slot struct cache, reducing repeated `EvaluatePlacementFitness(...)` recompute when the same sampled cell touches multiple geology profiles
+  - latest addendum: deferred runtime-state solve is now applied to all sampled candidates; sampling keeps only key/position/field data, while `variant/scale/rotation/chunk/macro` are finalized only when placement survives to registration
+  - latest addendum: once a non-rescue cell buffer is already full, scatter now runs a two-stage score ceiling before finishing the remaining score path: an optimistic biome-matrix + geology ceiling rejects candidates that cannot beat `worstCandidateScore` before exact biome-matrix/geology work, and a second geology-only ceiling skips `EvaluatePlacementFitness(...)` even after exact biome-matrix score if the candidate still cannot overtake the current floor
+  - latest addendum: attempted frame-sliced `GameTickManager` slow-tick scheduling was explicitly rolled back after code review because it changed the temporal contract for every `ISlowTickable` owner (`FaunaDirector`, `BaseModule`, `HectonSurvivalSystem`, etc.) from one whole-wave cadence to cross-frame partial cadence; until those owners are refactored off fixed slow-tick assumptions, slow tick remains on the original cached-`WaitForSeconds` coroutine contract
+  - latest addendum: `FaunaDirector` biome throttling no longer decrements `_biomeCheckTimer -= 1f` per `SlowTick()` call; it now uses absolute `Time.time` gating for `BiomeCheckInterval`, so biome probe cadence stays stable even if the manager interval changes or future scheduler work is revisited
 - [ ] Current UI visibility rule:
   - `PlayerPDA`, pause sections, and HUD roots must prefer warmed `CanvasGroup` visibility over hierarchy `SetActive` churn
   - hidden PDA tabs must defer refresh work instead of continuing full refresh on gameplay events
+  - `PDAShellChrome` shell overlay must stay on warmed child hierarchy state and use dirty-gated text refresh; shell chrome must not toggle its child root active state or rebuild interpolated footer/tab strings every refresh tick
+  - `HUDQuickBar` icon and durability widgets must stay warm; quick bar refresh must not toggle child graphics active/inactive while slot state changes
+  - `HUDNotification` root must remain warm through fade/show cycles; notification visibility must not depend on activating/deactivating the HUD notification object itself
+  - repeated inventory-full warnings must reuse cached item-name message projections; `HUDNotification.OnInventoryFull(...)` must not rebuild the same uppercase warning string on each repeat overflow
+  - `LaserCutter` deconstruct progress feedback must not format percentage strings at runtime; repeat progress pulses must reuse a cached progress-message table
+  - `RepairTool` finite headline HUD/log titles must resolve through fixed message mapping instead of repeated interpolation; unknown future headlines must preserve legacy fallback text
+  - preset-only UI consumers must not request full `FieldLoadoutAdvisor.LoadoutAdvice` when they only need `PresetName`; avoid paying summary/distance string construction on `HUDQuickBar` and preset-name-only PDA paths
+  - `PDALoadoutTab.RefreshSummary()` must not do duplicate forward-advice resolution in one refresh; if both preset name and summary are needed, they must come from one shared `LoadoutAdvice` query
 - [ ] Keep `GPU / present pacing` as a separate investigation track:
   - do not blame scripts for frames dominated by `WaitForLastPresent / DXGI.WaitOnSwapChain`
   - do not cut broad render quality until real standalone `GPU ms` capture exists
@@ -1291,3 +1314,208 @@ P0 rules:
 - Status:
   - `PENDING VERIFICATION`
   - missing proof: in-world beauty pass, profiler/build evidence, authored coral finals
+
+## Flora Wave 5 Addendum â€” 2026-04-08 Kelp Blade Realism Pass
+
+- Verified target:
+  - kelp starter finals still had a plastic-strip failure mode, most obvious on `GEN_family_kelp_tall__ribbon`
+- Implemented only in the correct owner layer:
+  - `WorldProceduralSeaweedMeshBuilder.AddRibbon()` now adds a center rib, edge curl, asymmetrical taper, upper-tip split, and stronger droop/bow
+  - `WorldProceduralFloraTextureAuthoring` now generates stronger rib/edge/vein breakup for kelp textures
+  - `WorldProceduralFloraMaterialAuthoring` now pushes kelp materials further away from plastic read with lower smoothness and stronger transmission/normal/detail response
+- Verified Unity passes on `2026-04-08`:
+  - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
+  - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+  - `Generate Procedural Flora Final Status Report`
+- Verified outcomes:
+  - `family.kelp.tall` max budget triangles `584 -> 728`
+  - `family.kelp.patch.dense` max budget triangles `496 -> 696`
+  - `family.kelp.canopy` max budget triangles `684 -> 908`
+  - all three kelp families still remain comfortably under budget and keep `Fidelity Floor 3/3`
+- Verified readback:
+  - `GEN_family_kelp_tall__ribbon` -> `712/368/160/72`
+  - `GEN_family_kelp_tall__stalk` -> `728/380/160/60`
+  - `GEN_family_kelp_canopy__crown` -> `908/520/260/116`
+  - screenshot evidence:
+    - `Assets/Screenshots/kelp_ribbon_stage_before.png`
+    - `Assets/Screenshots/kelp_ribbon_stage_after.png`
+- Honest verdict:
+  - generated kelp leaves are less toy-like and less mono-green than before
+  - authored photoreal kelp finals are still missing and remain the next real quality wall
+
+## Flora Wave 5 Addendum â€” 2026-04-08 Kelp Anatomy Follow-Up
+
+- Verified target:
+  - after the leaf realism pass, kelp still had an anatomical cheap read:
+    - blades attached too abruptly to the stipe
+    - pneumatocysts still read too much like simple spheres
+- Implemented only in the correct owner layer:
+  - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds blade stems / petioles before the ribbon leaf
+  - `WorldProceduralSeaweedMeshBuilder.BuildBulb()` now adds bulb stems and offset bulb lobes
+  - shared `AddTube()` helper now owns those organic connectors
+- Verified Unity passes on `2026-04-08`:
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+  - `Generate Procedural Flora Final Status Report`
+- Verified outcomes:
+  - `family.kelp.tall` max budget triangles `728 -> 1018`
+  - `family.kelp.patch.dense` max budget triangles `696 -> 954`
+  - `family.kelp.canopy` max budget triangles `908 -> 1244`
+  - all three kelp families remain under their family triangle limits by a wide margin
+- Verified readback:
+  - `GEN_family_kelp_tall__ribbon` -> `1018/448/196/96`
+  - `GEN_family_kelp_tall__stalk` -> `1004/444/184/72`
+  - `GEN_family_kelp_canopy__crown` -> `1244/616/308/152`
+  - screenshot evidence:
+    - `Assets/Screenshots/kelp_ribbon_stage_after_stems.png`
+- Honest verdict:
+  - kelp now reads more like connected anatomy and less like leaves glued onto a rod
+  - authored photoreal kelp finals are still the next quality wall
+
+## Flora Wave 5 Addendum â€” 2026-04-08 Kelp Silhouette Fullness Pass
+
+- Verified target:
+  - after leaf/anatomy fixes, some kelp variants still read too sparse because each anchor only carried one dominant blade
+- Implemented only in the correct owner layer:
+  - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds secondary companion blades on near LODs for selected anchors
+- Verified Unity passes on `2026-04-08`:
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+  - `Generate Procedural Flora Final Status Report`
+- Verified outcomes:
+  - `family.kelp.tall` max budget triangles `1018 -> 1346`
+  - `family.kelp.patch.dense` max budget triangles `954 -> 1324`
+  - `family.kelp.canopy` max budget triangles `1244 -> 1654`
+  - all three kelp families remain well under their family limits
+- Verified readback:
+  - `GEN_family_kelp_tall__ribbon` -> `1346/616/196/96`
+  - `GEN_family_kelp_tall__stalk` -> `1226/540/184/72`
+  - `GEN_family_kelp_patch_dense__patch_tall` -> `1324/638/228/98`
+  - screenshot evidence:
+    - `Assets/Screenshots/kelp_stalk_stage_companion_blades.png`
+- Honest verdict:
+  - kelp reads fuller and less skeletal than before
+  - authored photoreal kelp finals remain the next quality wall
+## Flora Wave 5 Addendum - 2026-04-08 Kelp Leaf Shader Width-Read Pass
+
+- Verified target:
+  - after geometry, texture, and silhouette passes, kelp blades still read too broad and flat across width
+  - the material stack needed a clearer center-rib versus edge lighting split
+- Implemented only in the correct owner layer:
+  - `Hecton_KelpMaster.shader` now derives `midribMask` and `edgeMask` from `uv.x`
+  - kelp shader now exposes:
+    - `_EdgeTransmissionBoost`
+    - `_MidribDarkening`
+    - `_MidribGlossBoost`
+    - `_EdgeWearDarkening`
+    - `_EdgeDetailBoost`
+  - `WorldProceduralFloraMaterialAuthoring` now binds those controls on all three kelp family materials
+- Verified Unity passes on `2026-04-08`:
+  - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+  - `Generate Procedural Flora Final Status Report`
+- Verified outcomes:
+  - `MAT_family_kelp_tall.mat` now stores the new width-read shader controls and keeps instancing enabled
+  - kelp family report state remains:
+    - `Material Ready 3/3`
+    - `LOD Cascade 3/3`
+    - `Fidelity Floor 3/3`
+  - triangle budgets stay unchanged:
+    - `family.kelp.tall` -> `1346`
+    - `family.kelp.patch.dense` -> `1324`
+    - `family.kelp.canopy` -> `1654`
+- Verified visual readback:
+  - `Assets/Screenshots/kelp_stalk_stage_leaf_shader.png`
+- Honest verdict:
+  - width readability improved without pushing runtime or budget risk
+  - this is still not authored photoreal kelp art
+
+## Flora Wave 5 Addendum - 2026-04-08 Kelp Curved-Normal Shader Follow-Up
+
+- Verified target:
+  - after the width-read shader pass, kelp leaves still preserved a planar-lighting failure mode
+  - the next correct step was to improve blade normal response, not to add more geometry blindly
+- Implemented only in the correct owner layer:
+  - `Hecton_KelpMaster.shader` now exposes `_BladeCurveNormalStrength`
+  - kelp fragment shading now bends tangent-space normals across blade width using the existing width/edge masks
+  - a small midrib upward normal bias was added so the center rib does not light like a dead flat stripe
+  - `WorldProceduralFloraMaterialAuthoring` now binds `_BladeCurveNormalStrength` on kelp materials
+- Verified Unity passes on `2026-04-08`:
+  - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+  - `Generate Procedural Flora Final Status Report`
+- Verified outcomes:
+  - `MAT_family_kelp_tall.mat` now stores `_BladeCurveNormalStrength: 0.24`
+  - kelp triangle budgets remain unchanged:
+    - `family.kelp.tall` -> `1346`
+    - `family.kelp.patch.dense` -> `1324`
+    - `family.kelp.canopy` -> `1654`
+  - kelp families still remain:
+    - `Material Ready 3/3`
+    - `LOD Cascade 3/3`
+    - `Fidelity Floor 3/3`
+- Verified visual readback:
+  - `Assets/Screenshots/kelp_stalk_stage_curved_normals.png`
+- Honest verdict:
+  - this improves light volume on blades without touching budgets or runtime
+  - it is still an incremental pass, not authored photoreal kelp art
+- 2026-04-08 - Kelp morphology refactor queued for live bake verification
+  - what changed in code:
+    - `WorldProceduralSeaweedMeshBuilder` now treats giant-frond kelp less like a few broad paddles on a pole:
+      - blade anchors are biased upward along the stipe
+      - blade sockets retain stipe tangent for better petiole peel-off
+      - blade lamina generation now uses a dedicated `5`-column ribbon with a narrow sheath-like base
+      - kelp specs were rebalanced toward more numerous, narrower blades
+  - why this matters:
+    - the current failure mode is morphological, not material-only
+    - this pass targets the actual complaint: generated kelp still reads like a simplified toy rather than a believable underwater plant
+  - verification state:
+    - compile-safe: Unity performed a fresh compile/domain reload without new script errors
+    - bake/report/screenshot proof still missing
+    - direct batchmode verification attempt was blocked because the project is already open in another Unity instance
+  - next required checks when live editor control is available:
+    - `Hecton/Authoring/Generate Procedural Flora Baked Starters`
+    - `Hecton/Validation/Validate Procedural Flora Final Variants`
+    - `Hecton/Validation/Generate Procedural Flora Final Status Report`
+    - new prefab-stage screenshots for at least:
+      - `GEN_family_kelp_tall__stalk`
+      - `GEN_family_kelp_tall__ribbon`
+- 2026-04-08 - Kelp growth-stability follow-up implemented, verification blocked by missing live editor
+  - `WorldProceduralSeaweedMeshBuilder` follow-up targets the remaining structural defect:
+    - side stems reading detached from the stipe
+    - blade spacing still collapsing into sparse synthetic-stick rhythm
+  - code changes:
+    - upper-biased blade sequencing + stable alternating/helical angle sweep in `BuildBlade()`
+    - tighter sheath/contact zone in `EvaluateBladeSocket()`
+    - stipe-hugging petiole curve in `AddBladeStem()`
+    - dead uncompiled automation file removed; automation now lives only in `WorldProceduralFloraFinalStatusReport`
+  - blocker:
+    - local Unity Editor process disappeared
+    - local MCP endpoint stopped responding
+    - no fresh bake/report/screenshot proof exists yet
+  - status:
+    - `PENDING VERIFICATION`
+- 2026-04-08 - Giant-frond kelp distribution pass is now live-verified
+  - what changed:
+    - giant-frond kelp is no longer distributed with the same upper-compressed logic that made it read like a narrow synthetic broom
+    - bulb nodes are now attached closer to the blade/stipe contact instead of reading as floating berries
+    - giant-frond kelp specs gained denser bulb/node coverage
+  - verified facts:
+    - Unity automation request `flora-verify-20260408-6` completed successfully
+    - fresh report + PNG captures were produced
+    - fresh report deltas:
+      - `family.kelp.tall` max budget `3514 -> 4760`
+      - `family.kelp.patch.dense` max budget `3462 -> 4950`
+      - `GEN_family_kelp_tall__stalk` `3198/1832/692/356 -> 4356/2048/764/412`
+      - `GEN_family_kelp_tall__ribbon` `3514/2080/784/448 -> 4760/2272/892/532`
+      - `GEN_family_kelp_patch_dense__patch_tall` `3462/2106/744/386 -> 4950/2298/852/442`
+  - honest verdict:
+    - this materially improves the generated starter set
+    - it still does not cross the authored-photoreal quality wall
+    - it also still does not create Claude runtime seaweed parity; HECTON-8 continues to use the integrated editor-owned flora path instead of a separate monolithic seaweed renderer subsystem
+  - status:
+    - `PENDING VERIFICATION`

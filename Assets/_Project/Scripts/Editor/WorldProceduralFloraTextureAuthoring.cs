@@ -128,10 +128,18 @@ namespace Hecton8.EditorTools
                 for (int x = 0; x < width; x++)
                 {
                     float u = x / (float)(width - 1);
+                    float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
+                    float edgeMask = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.25f);
                     float stripe = Mathf.Sin((u * 8.0f + v * 5.5f) * Mathf.PI);
+                    float veinA = Mathf.Sin((u * 34.0f - v * 16.0f) * Mathf.PI);
+                    float veinB = Mathf.Sin((u * 18.0f + v * 24.0f) * Mathf.PI);
                     float mottled = Mathf.Sin((u * 23.0f + v * 13.0f) * Mathf.PI) * 0.5f + 0.5f;
                     float band = 1.0f + stripe * bandStrength + (mottled - 0.5f) * 0.08f;
-                    pixels[y * width + x] = gradient * band;
+                    Color baseTint = gradient * band;
+                    Color ribTint = Color.Lerp(baseTint, highColor * 1.08f, centerRib * 0.24f);
+                    Color edgeTint = Color.Lerp(ribTint, lowColor * 0.88f + new Color(0.08f, 0.06f, 0.02f), edgeMask * 0.22f);
+                    float veinMask = Mathf.Clamp01(0.5f + veinA * 0.16f + veinB * 0.08f);
+                    pixels[y * width + x] = Color.Lerp(edgeTint, edgeTint * (0.92f + veinMask * 0.16f), centerRib * 0.42f);
                 }
             }
 
@@ -168,7 +176,10 @@ namespace Hecton8.EditorTools
                     float a = Mathf.Sin((u * (9 + seed * 0.1f) + v * 5.1f) * Mathf.PI);
                     float b = Mathf.Sin((u * 17.0f - v * (7 + seed * 0.05f)) * Mathf.PI);
                     float c = Mathf.Sin(((u + v) * (11 + seed * 0.07f)) * Mathf.PI);
-                    float value = Mathf.Clamp01(0.5f + a * 0.24f + b * 0.18f + c * 0.12f);
+                    float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
+                    float longitudinal = Mathf.Sin((v * (26.0f + seed * 0.03f) + u * 3.5f) * Mathf.PI);
+                    float edgeWear = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.45f);
+                    float value = Mathf.Clamp01(0.5f + a * 0.24f + b * 0.18f + c * 0.12f + longitudinal * 0.08f + centerRib * 0.12f - edgeWear * 0.08f);
                     pixels[y * width + x] = new Color(value, value, value, 1f);
                 }
             }
@@ -245,10 +256,12 @@ namespace Hecton8.EditorTools
                 {
                     float u = x / (float)(width - 1);
                     float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
-                    float gloss = Mathf.Clamp01(0.52f + Mathf.Sin((u * (7.0f + seed * 0.08f) + v * 3.1f) * Mathf.PI) * 0.24f + centerRib * 0.18f);
-                    float ambientLift = Mathf.Clamp01(0.44f + centerRib * 0.36f + Mathf.Sin((u + v) * (5.0f + seed * 0.04f) * Mathf.PI) * 0.08f);
-                    float causticBias = Mathf.Clamp01(0.48f + Mathf.Sin((u * 13.0f - v * (9.0f + seed * 0.03f)) * Mathf.PI) * 0.22f);
-                    pixels[y * width + x] = new Color(thickness, gloss, ambientLift, causticBias);
+                    float edgeMask = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.28f);
+                    float gloss = Mathf.Clamp01(0.44f + Mathf.Sin((u * (7.0f + seed * 0.08f) + v * 3.1f) * Mathf.PI) * 0.20f + centerRib * 0.22f - edgeMask * 0.10f);
+                    float ambientLift = Mathf.Clamp01(0.40f + centerRib * 0.38f + Mathf.Sin((u + v) * (5.0f + seed * 0.04f) * Mathf.PI) * 0.08f);
+                    float causticBias = Mathf.Clamp01(0.46f + Mathf.Sin((u * 13.0f - v * (9.0f + seed * 0.03f)) * Mathf.PI) * 0.22f + edgeMask * 0.06f);
+                    float thicknessValue = Mathf.Clamp01(thickness + centerRib * 0.12f - edgeMask * 0.14f);
+                    pixels[y * width + x] = new Color(thicknessValue, gloss, ambientLift, causticBias);
                 }
             }
 
@@ -470,7 +483,9 @@ namespace Hecton8.EditorTools
             float stripeB = Mathf.Sin((u * 21.0f - v * (6.0f + seed * 0.03f)) * Mathf.PI);
             float curl = Mathf.Sin(((u * 0.75f + v) * (12.0f + seed * 0.02f)) * Mathf.PI);
             float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
-            return stripeA * 0.18f + stripeB * 0.10f + curl * 0.08f + centerRib * 0.14f;
+            float edgeWear = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.35f);
+            float microVein = Mathf.Sin((u * 31.0f + v * (17.0f + seed * 0.03f)) * Mathf.PI);
+            return stripeA * 0.18f + stripeB * 0.10f + curl * 0.08f + centerRib * 0.18f + microVein * 0.05f - edgeWear * 0.04f;
         }
 
         private static float SampleCoralHeight(float u, float v, int seed)

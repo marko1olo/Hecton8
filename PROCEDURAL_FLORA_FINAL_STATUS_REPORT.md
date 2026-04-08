@@ -9,13 +9,13 @@
 
 | Family | Coverage | Expected Linked | Actual Linked | Linked Placeholder | Max Budget Triangles | Triangle Headroom | Max Renderers | LOD Prefabs | Material Ready | LOD Cascade | Fidelity Floor |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| family.kelp.tall | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 584 | 7416 | 4 | 3/3 | 3/3 | 3/3 | 3/3 |
-| family.kelp.patch.dense | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 496 | 11504 | 4 | 3/3 | 3/3 | 3/3 | 3/3 |
-| family.kelp.canopy | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 684 | 9316 | 4 | 3/3 | 3/3 | 3/3 | 3/3 |
+| family.kelp.tall | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 4760 | 3240 | 4 | 3/3 | 3/3 | 3/3 | 3/3 |
+| family.kelp.patch.dense | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 4950 | 7050 | 4 | 3/3 | 3/3 | 3/3 | 3/3 |
+| family.kelp.canopy | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 4080 | 5920 | 4 | 3/3 | 3/3 | 3/3 | 3/3 |
 | family.coral.low | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 1658 | 5342 | 2 | 3/3 | 3/3 | 3/3 | 3/3 |
 | family.coral.branching | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 1486 | 10514 | 2 | 3/3 | 3/3 | 3/3 | 3/3 |
 | family.coral.massive | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 1668 | 7332 | 2 | 3/3 | 3/3 | 3/3 | 3/3 |
-| family.coral.plate | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 340 | 8160 | 2 | 3/3 | 3/3 | 3/3 | 3/3 |
+| family.coral.plate | a0/g3 | 3 | 3 (authored 0, gen 3) | 0 | 560 | 7940 | 2 | 3/3 | 3/3 | 3/3 | 3/3 |
 
 ## family.kelp.tall - Kelp Tall
 
@@ -24,9 +24,9 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `584`
+- Max budget triangles: `4760`
 - Triangle budget limit: `8000`
-- Triangle headroom: `7416`
+- Triangle headroom: `3240`
 - Minimum recommended triangles: `360`
 - Max renderer count: `4`
 - Renderer budget limit: `12`
@@ -34,9 +34,9 @@
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs meeting fidelity floor: `3/3`
 - Prefabs:
-  - `GEN_family_kelp_tall__lean` generated | variantId=`family.kelp.tall.final.flora.gen_family_kelp_tall__lean` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=424 | weight=2 | scale=90-108 | lodTriangles=424/192/84/26 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_tall/GEN_family_kelp_tall__lean.prefab`
-  - `GEN_family_kelp_tall__ribbon` generated | variantId=`family.kelp.tall.final.flora.gen_family_kelp_tall__ribbon` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=540 | weight=2 | scale=90-108 | lodTriangles=540/268/108/48 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_tall/GEN_family_kelp_tall__ribbon.prefab`
-  - `GEN_family_kelp_tall__stalk` generated | variantId=`family.kelp.tall.final.flora.gen_family_kelp_tall__stalk` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=584 | weight=2 | scale=90-108 | lodTriangles=584/302/128/50 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_tall/GEN_family_kelp_tall__stalk.prefab`
+  - `GEN_family_kelp_tall__lean` generated | variantId=`family.kelp.tall.final.flora.gen_family_kelp_tall__lean` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=3564 | weight=2 | scale=90-108 | lodTriangles=3564/1618/560/270 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_tall/GEN_family_kelp_tall__lean.prefab`
+  - `GEN_family_kelp_tall__ribbon` generated | variantId=`family.kelp.tall.final.flora.gen_family_kelp_tall__ribbon` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=4760 | weight=2 | scale=90-108 | lodTriangles=4760/2272/892/532 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_tall/GEN_family_kelp_tall__ribbon.prefab`
+  - `GEN_family_kelp_tall__stalk` generated | variantId=`family.kelp.tall.final.flora.gen_family_kelp_tall__stalk` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=4356 | weight=2 | scale=90-108 | lodTriangles=4356/2048/764/412 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_tall/GEN_family_kelp_tall__stalk.prefab`
 
 ## family.kelp.patch.dense - Kelp Patch Dense
 
@@ -45,9 +45,9 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `496`
+- Max budget triangles: `4950`
 - Triangle budget limit: `12000`
-- Triangle headroom: `11504`
+- Triangle headroom: `7050`
 - Minimum recommended triangles: `320`
 - Max renderer count: `4`
 - Renderer budget limit: `18`
@@ -55,9 +55,9 @@
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs meeting fidelity floor: `3/3`
 - Prefabs:
-  - `GEN_family_kelp_patch_dense__patch` generated | variantId=`family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=414 | weight=1 | scale=94-108 | lodTriangles=414/184/78/24 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_patch_dense/GEN_family_kelp_patch_dense__patch.prefab`
-  - `GEN_family_kelp_patch_dense__patch_tall` generated | variantId=`family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch_tall` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=496 | weight=1 | scale=94-108 | lodTriangles=496/246/120/40 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_patch_dense/GEN_family_kelp_patch_dense__patch_tall.prefab`
-  - `GEN_family_kelp_patch_dense__ring` generated | variantId=`family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__ring` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=386 | weight=1 | scale=94-108 | lodTriangles=386/222/102/32 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_patch_dense/GEN_family_kelp_patch_dense__ring.prefab`
+  - `GEN_family_kelp_patch_dense__patch` generated | variantId=`family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=4308 | weight=1 | scale=94-108 | lodTriangles=4308/1928/684/328 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_patch_dense/GEN_family_kelp_patch_dense__patch.prefab`
+  - `GEN_family_kelp_patch_dense__patch_tall` generated | variantId=`family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__patch_tall` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=4950 | weight=1 | scale=94-108 | lodTriangles=4950/2298/852/442 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_patch_dense/GEN_family_kelp_patch_dense__patch_tall.prefab`
+  - `GEN_family_kelp_patch_dense__ring` generated | variantId=`family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__ring` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=4724 | weight=1 | scale=94-108 | lodTriangles=4724/2180/760/356 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_patch_dense/GEN_family_kelp_patch_dense__ring.prefab`
 
 ## family.kelp.canopy - Kelp Canopy
 
@@ -66,9 +66,9 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `684`
+- Max budget triangles: `4080`
 - Triangle budget limit: `10000`
-- Triangle headroom: `9316`
+- Triangle headroom: `5920`
 - Minimum recommended triangles: `460`
 - Max renderer count: `4`
 - Renderer budget limit: `14`
@@ -76,9 +76,9 @@
 - Strict LOD cascade prefabs: `3/3`
 - Prefabs meeting fidelity floor: `3/3`
 - Prefabs:
-  - `GEN_family_kelp_canopy__crown` generated | variantId=`family.kelp.canopy.final.flora.gen_family_kelp_canopy__crown` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=684 | weight=1 | scale=94-106 | lodTriangles=684/380/184/82 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_canopy/GEN_family_kelp_canopy__crown.prefab`
-  - `GEN_family_kelp_canopy__fan` generated | variantId=`family.kelp.canopy.final.flora.gen_family_kelp_canopy__fan` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=590 | weight=1 | scale=94-106 | lodTriangles=590/320/174/76 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_canopy/GEN_family_kelp_canopy__fan.prefab`
-  - `GEN_family_kelp_canopy__frond` generated | variantId=`family.kelp.canopy.final.flora.gen_family_kelp_canopy__frond` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=474 | weight=1 | scale=94-106 | lodTriangles=474/230/110/40 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_canopy/GEN_family_kelp_canopy__frond.prefab`
+  - `GEN_family_kelp_canopy__crown` generated | variantId=`family.kelp.canopy.final.flora.gen_family_kelp_canopy__crown` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=4080 | weight=1 | scale=94-106 | lodTriangles=4080/2660/1104/628 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_canopy/GEN_family_kelp_canopy__crown.prefab`
+  - `GEN_family_kelp_canopy__fan` generated | variantId=`family.kelp.canopy.final.flora.gen_family_kelp_canopy__fan` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=3844 | weight=1 | scale=94-106 | lodTriangles=3844/2448/928/532 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_canopy/GEN_family_kelp_canopy__fan.prefab`
+  - `GEN_family_kelp_canopy__frond` generated | variantId=`family.kelp.canopy.final.flora.gen_family_kelp_canopy__frond` | renderers=4 | lodGroups=1 | lodLevels=4 | budgetTriangles=2724 | weight=1 | scale=94-106 | lodTriangles=2724/1624/558/284 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_canopy/GEN_family_kelp_canopy__frond.prefab`
 
 ## family.coral.low - Coral Low
 
@@ -150,9 +150,9 @@
 - Linked final-ready: `3`
 - Linked real finals: `3`
 - Linked placeholders: `0`
-- Max budget triangles: `340`
+- Max budget triangles: `560`
 - Triangle budget limit: `8500`
-- Triangle headroom: `8160`
+- Triangle headroom: `7940`
 - Minimum recommended triangles: `220`
 - Max renderer count: `2`
 - Renderer budget limit: `12`
@@ -161,5 +161,5 @@
 - Prefabs meeting fidelity floor: `3/3`
 - Prefabs:
   - `GEN_family_coral_plate__ledge` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__ledge` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=340 | weight=1 | scale=96-104 | lodTriangles=340/292 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__ledge.prefab`
-  - `GEN_family_coral_plate__shelf` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__shelf` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=232 | weight=1 | scale=96-104 | lodTriangles=232/184 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__shelf.prefab`
+  - `GEN_family_coral_plate__shelf` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__shelf` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=560 | weight=1 | scale=96-104 | lodTriangles=560/400 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__shelf.prefab`
   - `GEN_family_coral_plate__stack` generated | variantId=`family.coral.plate.final.flora.gen_family_coral_plate__stack` | renderers=2 | lodGroups=1 | lodLevels=2 | budgetTriangles=312 | weight=1 | scale=96-104 | lodTriangles=312/248 | material=ok | renderState=ok | fidelity=ok | path=`Assets/_Project/Prefabs/Nature/Flora/Baked/family_coral_plate/GEN_family_coral_plate__stack.prefab`

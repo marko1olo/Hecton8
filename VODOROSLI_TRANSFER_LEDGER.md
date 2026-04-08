@@ -333,3 +333,254 @@ Verification: `PENDING VERIFICATION`
   - `ScannerTool` now counts kelp/flora scan contacts in expedition sweeps
   - `EnvironmentalAnalyzerTool` now emits flora-specific recommendations instead of generic databank advice
   - result: fish/shelter ecology around kelp is now explicitly tied to `FaunaBiomeBootstrapAuthoring` / `FaunaWorldIntegrationReportGenerator`, not left as a future standalone algae-fauna subsystem
+- Kelp blade realism pass is now verified on a clean Unity domain:
+  - target problem:
+    - prefab-stage readback of `GEN_family_kelp_tall__ribbon` still read as thin plastic strips with weak leaf breakup and too-uniform green color
+    - screenshot evidence before pass: `Assets/Screenshots/kelp_ribbon_stage_before.png`
+  - owner-layer implementation:
+    - `WorldProceduralSeaweedMeshBuilder.AddRibbon()` now builds a richer blade silhouette with:
+      - center rib vertex column
+      - edge curl
+      - asymmetric taper
+      - tip split near the upper blade
+      - stronger droop / forward bow
+      - edge vs rib vertex color separation
+    - `WorldProceduralFloraTextureAuthoring` kelp textures now generate:
+      - stronger center-rib highlight
+      - darker/weathered leaf edges
+      - longitudinal vein breakup
+      - more varied thickness/gloss masks across the blade width
+    - `WorldProceduralFloraMaterialAuthoring` retuned kelp materials away from plastic read:
+      - lower smoothness
+      - higher transmission
+      - higher normal/detail/thickness response
+      - stronger vertex tint contribution
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
+    - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified triangle impact:
+    - `family.kelp.tall` -> `584 -> 728`
+    - `family.kelp.patch.dense` -> `496 -> 696`
+    - `family.kelp.canopy` -> `684 -> 908`
+    - result: geometry richness increased while all three kelp families remain well inside their family triangle budgets
+  - verified per-prefab readback:
+    - `GEN_family_kelp_tall__ribbon` -> `712/368/160/72`
+    - `GEN_family_kelp_tall__stalk` -> `728/380/160/60`
+    - `GEN_family_kelp_canopy__crown` -> `908/520/260/116`
+  - verified visual readback after pass:
+    - `Assets/Screenshots/kelp_ribbon_stage_after.png`
+  - honest verdict:
+    - kelp blades now read less like flat plastic ribbons and more like ribbed leaves
+    - they are still generated starter finals, not authored photoreal kelp art
+- Kelp anatomy follow-up is now verified on a clean Unity domain:
+  - target problem:
+    - even after the leaf pass, blade attachment and pneumatocysts still read too synthetic because leaves grew straight out of the stipe and bulbs had weak connector anatomy
+  - owner-layer implementation:
+    - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds explicit blade stems / petioles before each ribbon leaf
+    - `WorldProceduralSeaweedMeshBuilder.BuildBulb()` now uses a dedicated bulb stem plus offset bulb lobe instead of a bare sphere glued to the stalk
+    - new helper owners inside the same file:
+      - `AddBladeStem()`
+      - `AddBulbStem()`
+      - shared `AddTube()` bezier-tube helper for low-cost organic connectors
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified triangle impact:
+    - `family.kelp.tall` -> `728 -> 1018`
+    - `family.kelp.patch.dense` -> `696 -> 954`
+    - `family.kelp.canopy` -> `908 -> 1244`
+    - all three kelp families remain comfortably under hard limits:
+      - tall `1018 / 8000`
+      - patch `954 / 12000`
+      - canopy `1244 / 10000`
+  - verified readback:
+    - `GEN_family_kelp_tall__ribbon` -> `1018/448/196/96`
+    - `GEN_family_kelp_tall__stalk` -> `1004/444/184/72`
+    - `GEN_family_kelp_canopy__crown` -> `1244/616/308/152`
+  - screenshot evidence:
+    - `Assets/Screenshots/kelp_ribbon_stage_after_stems.png`
+  - honest verdict:
+    - kelp now reads more like connected anatomy and less like loose strips stuck onto a pole
+    - still generated starter quality, not authored photoreal kelp finals
+- Kelp silhouette fullness pass is now verified on a clean Unity domain:
+  - target problem:
+    - even after petiole/bulb fixes, several kelp variants still read too sparse because each anchor only carried one dominant blade
+  - owner-layer implementation:
+    - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds secondary companion blades on near LODs for selected anchors
+    - companion blades inherit the same family owner layer and stay inside the existing `4`-LOD baked-final pipeline
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified triangle impact:
+    - `family.kelp.tall` -> `1018 -> 1346`
+    - `family.kelp.patch.dense` -> `954 -> 1324`
+    - `family.kelp.canopy` -> `1244 -> 1654`
+    - all three families remain inside hard limits with large headroom:
+      - tall `1346 / 8000`
+      - patch `1324 / 12000`
+      - canopy `1654 / 10000`
+  - verified readback:
+    - `GEN_family_kelp_tall__ribbon` -> `1346/616/196/96`
+    - `GEN_family_kelp_tall__stalk` -> `1226/540/184/72`
+    - `GEN_family_kelp_patch_dense__patch_tall` -> `1324/638/228/98`
+  - screenshot evidence:
+    - `Assets/Screenshots/kelp_stalk_stage_companion_blades.png`
+  - honest verdict:
+    - kelp starters now read fuller and less skeletal
+    - they still remain generated starter finals, not authored photoreal kelp assets
+- Kelp leaf shader width-read pass is now verified on a clean Unity domain:
+  - target problem:
+    - kelp materials still read too flat across blade width even after geometry/texture uplift
+    - midrib and edge zones were not separated strongly enough by the shader, so leaves still collapsed into a broad mono-lit strip
+  - correct owner-layer implementation:
+    - `Hecton_KelpMaster.shader` now adds width-aware shading controls:
+      - `_EdgeTransmissionBoost`
+      - `_MidribDarkening`
+      - `_MidribGlossBoost`
+      - `_EdgeWearDarkening`
+      - `_EdgeDetailBoost`
+    - fragment shading now derives:
+      - `midribMask` from `uv.x` center distance
+      - `edgeMask` from blade edge falloff
+      - darker midrib, brighter/translucent edges, slightly rougher/darker worn edges
+    - `WorldProceduralFloraMaterialAuthoring` now binds the new kelp shader controls into all three kelp family materials
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified material readback:
+    - `MAT_family_kelp_tall.mat` now stores:
+      - `_EdgeTransmissionBoost: 0.34`
+      - `_MidribDarkening: 0.16`
+      - `_MidribGlossBoost: 0.22`
+      - `_EdgeWearDarkening: 0.10`
+      - `_EdgeDetailBoost: 0.18`
+    - instancing remains enabled: `m_EnableInstancingVariants: 1`
+  - verified report state:
+    - all three kelp families remain `Material Ready 3/3`
+    - all three kelp families remain `LOD Cascade 3/3`
+    - triangle budgets are unchanged by this pass:
+      - `family.kelp.tall` -> `1346`
+      - `family.kelp.patch.dense` -> `1324`
+      - `family.kelp.canopy` -> `1654`
+  - verified visual readback:
+    - `Assets/Screenshots/kelp_stalk_stage_leaf_shader.png`
+  - honest verdict:
+    - kelp blades now read with a clearer center rib and more translucent edges
+    - this is a meaningful material/shader improvement, not yet authored photoreal kelp final art
+- Kelp curved-normal shader follow-up is now verified on a clean Unity domain:
+  - target problem:
+    - after width-read shading, several kelp blades still lit too much like flat textured ribbons because the normal response stayed nearly planar
+  - correct owner-layer implementation:
+    - `Hecton_KelpMaster.shader` now adds `_BladeCurveNormalStrength`
+    - fragment shading now bends tangent-space normals across blade width using `curveSigned * edgeMask`
+    - a small center-rib upward normal bias is also added so the midrib does not collapse into a dead flat strip
+    - `WorldProceduralFloraMaterialAuthoring` now binds `_BladeCurveNormalStrength` on kelp materials
+  - fresh verified Unity passes on `2026-04-08`:
+    - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
+    - `Generate Procedural Flora Final Status Report`
+  - verified material readback:
+    - `MAT_family_kelp_tall.mat` now stores `_BladeCurveNormalStrength: 0.24`
+    - instancing remains enabled
+  - verified report state:
+    - triangle budgets remain unchanged:
+      - `family.kelp.tall` -> `1346`
+      - `family.kelp.patch.dense` -> `1324`
+      - `family.kelp.canopy` -> `1654`
+    - kelp families remain `Material Ready 3/3`, `LOD Cascade 3/3`, `Fidelity Floor 3/3`
+  - verified visual readback:
+    - `Assets/Screenshots/kelp_stalk_stage_curved_normals.png`
+  - honest verdict:
+    - this improves volume read under lighting, especially on side-facing blades
+    - the gain is real but incremental; authored photoreal kelp finals still remain the actual quality wall
+- Flora Wave 5 Addendum - 2026-04-08 Kelp Morphology Refactor Pass
+  - target problem:
+    - the current generated kelp still shows a toy-like failure mode:
+      - too few wide blades
+      - blades attach too low on the stipe
+      - petiole connectors can read like rigid stems bridging into air
+  - implemented only in the correct owner layer:
+    - `WorldProceduralSeaweedMeshBuilder.EvaluateBladeSocket()` now biases giant-frond blade anchors higher along the stipe and carries explicit stipe-tangent information into the blade socket
+    - `WorldProceduralSeaweedMeshBuilder.AddBladeStem()` now peels petioles along the stipe tangent before opening outward
+    - `WorldProceduralSeaweedMeshBuilder.AddBladeRibbon()` is a new blade-only lamina builder with:
+      - narrow sheath-like base
+      - `5` width samples instead of `3`
+      - clearer inner bands / midrib volume
+      - more believable widening away from the attachment point
+    - kelp family specs were rebalanced to push realism:
+      - higher blade anchor bands
+      - more blades
+      - narrower blade widths
+      - larger cold capacities for generated buffers
+  - verified facts:
+    - Unity editor did perform a fresh compile + domain reload after this pass with no new script compile errors in `Editor.log`
+    - direct batchmode bake verification was attempted with:
+      - `Unity.exe -batchmode -executeMethod Hecton8.EditorTools.WorldProceduralFloraBakedStarterGenerator.Generate`
+    - batchmode could not verify the pass because Unity rejected a second project instance:
+      - `It looks like another Unity instance is running with this project open.`
+  - honest verdict:
+    - this is the first pass that attacks the real structural kelp defect instead of only shading it
+    - fresh baked-prefab readback, updated triangle counts, validator output, and new viewport captures are still missing
+  - status:
+    - `PENDING VERIFICATION`
+- Flora Wave 5 Addendum - 2026-04-08 Kelp Growth-Stability Follow-Up
+  - target problem:
+    - even after the morphology refactor, the remaining kelp failure mode is attachment logic:
+      - side petioles can still read detached from the stipe
+      - blade spacing can still collapse into a sparse synthetic-stick rhythm
+  - implemented only in the correct owner layer:
+    - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now uses upper-biased blade sequencing plus a stable alternating/helical angle offset instead of plain linear spacing
+    - `WorldProceduralSeaweedMeshBuilder.EvaluateBladeSocket()` now builds a tighter sheath/contact zone on the stipe before the blade opens outward
+    - `WorldProceduralSeaweedMeshBuilder.AddBladeStem()` now follows the stipe surface first and only then arches outward, replacing the old too-upright lift that let stems visually drift into air
+    - dead uncompiled helper `WorldProceduralFloraAutomationRunner.cs` was removed; file-based verification automation now lives only in `WorldProceduralFloraFinalStatusReport.cs`
+  - verified facts:
+    - local Unity Editor process disappeared during this pass
+    - local MCP endpoint was unreachable, so live bake/report/screenshot verification was not possible
+    - code review confirms the change stays in editor-only mesh generation and does not touch runtime hot paths
+  - honest verdict:
+    - this pass attacks the actual remaining kelp form defect instead of adding another cosmetic shader trick
+    - fresh baked-prefab readback, updated triangle counts, validator output, and new viewport captures are still missing
+  - status:
+    - `PENDING VERIFICATION`
+- Flora Wave 5 Addendum - 2026-04-08 Giant-Frond Distribution + Bulb-Node Pass
+  - target problem:
+    - the current generated giant-frond kelp still diverges from real kelp in two obvious ways:
+      - too much canopy-like compression into the upper stipe
+      - pneumatocysts reading like detached floating dots instead of blade-base nodes
+  - comparison against Claude docs and real-growth intent:
+    - Claude's seaweed docs assume much richer node rhythm and blade/bulb identity than the current starter outputs
+    - current HECTON-8 owner-safe path still cannot copy `SeaweedRenderer + SeaweedMeshGenerator` wholesale, so the correct move was to improve the editor mesh owner itself
+  - implemented only in the correct owner layer:
+    - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now spreads `GrowthStyle.GiantFrond` blades along more of the stipe instead of clustering them near the top
+    - `WorldProceduralSeaweedMeshBuilder.EvaluateBladeSocket()` now uses a giant-frond-specific anchor distribution and sheath profile
+    - `WorldProceduralSeaweedMeshBuilder.BuildBulb()` now keeps giant-frond bulbs close to the stipe/blade node instead of floating them off to the side
+    - giant-frond kelp specs were widened toward more believable node density:
+      - more bulb nodes
+      - taller anchor bands
+      - larger cold capacities
+  - verified facts:
+    - live Unity automation succeeded through request `flora-verify-20260408-6`
+    - fresh report and preview captures were generated
+    - report deltas:
+      - `family.kelp.tall` max budget triangles `3514 -> 4760`
+      - `family.kelp.patch.dense` max budget triangles `3462 -> 4950`
+      - `GEN_family_kelp_tall__stalk` `3198/1832/692/356 -> 4356/2048/764/412`
+      - `GEN_family_kelp_tall__ribbon` `3514/2080/784/448 -> 4760/2272/892/532`
+      - `GEN_family_kelp_patch_dense__patch_tall` `3462/2106/744/386 -> 4950/2298/852/442`
+  - honest verdict:
+    - this is a real structural improvement, not a color-only or shader-only trick
+    - visually it still remains generated starter quality; the next real wall is authored photoreal kelp finals
+    - Claude parity is still absent on the runtime side:
+      - no `SeaweedRenderer`
+      - no `DrawMeshInstancedIndirect` seaweed renderer
+      - no dedicated seaweed GPU culling / seasonal / ECS stack in first-party runtime
+  - status:
+    - `PENDING VERIFICATION`

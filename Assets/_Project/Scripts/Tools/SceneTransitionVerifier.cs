@@ -66,6 +66,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyNewGameTransition()
         {
+            if (!_verifyTransitions) return;
             StartCoroutine(VerifyTransition("New Game",
                 () => SceneManager.GetActiveScene().name == "02_HECTON_WORLD",
                 () =>
@@ -81,6 +82,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyLoadGameTransition(string expectedSlot)
         {
+            if (!_verifyTransitions) return;
             StartCoroutine(VerifyTransition($"Load Game (Slot {expectedSlot})",
                 () => SceneManager.GetActiveScene().name == "02_HECTON_WORLD",
                 () =>
@@ -98,6 +100,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyReturnToMenu()
         {
+            if (!_verifyTransitions) return;
             StartCoroutine(VerifyTransition("Return to Menu",
                 () => SceneManager.GetActiveScene().name == "01_MAIN_MENU",
                 () => true, // No specific context check for menu return

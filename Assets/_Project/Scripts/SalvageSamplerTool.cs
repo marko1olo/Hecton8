@@ -6,12 +6,23 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class SalvageSamplerTool : PlayerTool
     {
+        private const int RecoveredItemMessageCacheSize = 16;
+        private const string RecoveredItemMessagePrefix = "SAMPLER - RECOVERED ";
+        private const string SamplerNoTargetHeadline = "NO TARGET";
+        private const string SamplerRecoveryReadyHeadline = "RECOVERY READY";
+        private const string SamplerNodeDepletedHeadline = "NODE DEPLETED";
+        private const string SamplerProcessTargetHeadline = "PROCESS TARGET";
+        private const string SamplerInvalidTargetHeadline = "INVALID TARGET";
+
         private struct SamplerDiagnosis
         {
             public string headline;
             public string summary;
             public string severity;
         }
+
+        private static readonly string[] _recoveredItemNameCache = new string[RecoveredItemMessageCacheSize];
+        private static readonly string[] _recoveredItemMessageCache = new string[RecoveredItemMessageCacheSize];
 
         [Header("Sampling")]
         [SerializeField] private float samplingRange = 3.2f;
@@ -107,7 +118,7 @@ namespace Hecton8.Gameplay
                         "INFO");
                     ToolHitUtility.ShowInfo(
                         recoveredItem != null
-                            ? $"SAMPLER - RECOVERED {CachedToUpperInvariant(recoveredItem.itemName)}"
+                            ? GetRecoveredItemMessage(recoveredItem.itemName)
                             : "SAMPLER - SALVAGE RECOVERED");
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
@@ -117,7 +128,7 @@ namespace Hecton8.Gameplay
                     PublishDiagnosis(diagnosis);
                     FieldOperationLogSystem.RecordOperation(
                         "SALVAGE",
-                        $"SAMPLER DIAG - {diagnosis.headline}",
+                        GetDiagnosisLogTitle(diagnosis.headline),
                         diagnosis.summary,
                         diagnosis.severity);
                 }
@@ -260,9 +271,9 @@ namespace Hecton8.Gameplay
         private static void PublishDiagnosis(SamplerDiagnosis diagnosis)
         {
             if (diagnosis.severity == "WARN" || diagnosis.severity == "CRITICAL")
-                ToolHitUtility.ShowWarning($"SAMPLER DIAG - {diagnosis.headline}");
+                ToolHitUtility.ShowWarning(GetDiagnosisHudMessage(diagnosis.headline));
             else
-                ToolHitUtility.ShowInfo($"SAMPLER DIAG - {diagnosis.headline}");
+                ToolHitUtility.ShowInfo(GetDiagnosisHudMessage(diagnosis.headline));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -275,6 +286,60 @@ namespace Hecton8.Gameplay
         /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
         /// Хранит до 16 последних преобразований для повторного использования.
         /// </summary>
+        private static string GetRecoveredItemMessage(string itemName)
+        {
+            if (string.IsNullOrWhiteSpace(itemName))
+                return "SAMPLER - SALVAGE RECOVERED";
+
+            int cacheIndex = (itemName.GetHashCode() & int.MaxValue) % RecoveredItemMessageCacheSize;
+            string cachedItemName = _recoveredItemNameCache[cacheIndex];
+            if (!string.IsNullOrEmpty(cachedItemName) && string.Equals(cachedItemName, itemName, System.StringComparison.Ordinal))
+                return _recoveredItemMessageCache[cacheIndex];
+
+            string message = RecoveredItemMessagePrefix + CachedToUpperInvariant(itemName);
+            _recoveredItemNameCache[cacheIndex] = itemName;
+            _recoveredItemMessageCache[cacheIndex] = message;
+            return message;
+        }
+
+        private static string GetDiagnosisHudMessage(string headline)
+        {
+            switch (headline)
+            {
+                case SamplerNoTargetHeadline:
+                    return "SAMPLER DIAG - NO TARGET";
+                case SamplerRecoveryReadyHeadline:
+                    return "SAMPLER DIAG - RECOVERY READY";
+                case SamplerNodeDepletedHeadline:
+                    return "SAMPLER DIAG - NODE DEPLETED";
+                case SamplerProcessTargetHeadline:
+                    return "SAMPLER DIAG - PROCESS TARGET";
+                case SamplerInvalidTargetHeadline:
+                    return "SAMPLER DIAG - INVALID TARGET";
+                default:
+                    return "SAMPLER DIAG - " + headline;
+            }
+        }
+
+        private static string GetDiagnosisLogTitle(string headline)
+        {
+            switch (headline)
+            {
+                case SamplerNoTargetHeadline:
+                    return "SAMPLER DIAG - NO TARGET";
+                case SamplerRecoveryReadyHeadline:
+                    return "SAMPLER DIAG - RECOVERY READY";
+                case SamplerNodeDepletedHeadline:
+                    return "SAMPLER DIAG - NODE DEPLETED";
+                case SamplerProcessTargetHeadline:
+                    return "SAMPLER DIAG - PROCESS TARGET";
+                case SamplerInvalidTargetHeadline:
+                    return "SAMPLER DIAG - INVALID TARGET";
+                default:
+                    return "SAMPLER DIAG - " + headline;
+            }
+        }
+
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input))

@@ -32,6 +32,14 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class RepairTool : PlayerTool
     {
+        private const string RepairToolNoPowerHeadline = "NO POWER";
+        private const string RepairToolDrainingHeadline = "DRAINING";
+        private const string RepairToolFloodedHeadline = "FLOODED";
+        private const string RepairToolSealedHeadline = "SEALED";
+        private const string RepairToolCriticalDamageHeadline = "CRITICAL DAMAGE";
+        private const string RepairToolHeavyDamageHeadline = "HEAVY DAMAGE";
+        private const string RepairToolPatchingHeadline = "PATCHING";
+
         private struct ServiceDiagnosis
         {
             public string status;
@@ -195,7 +203,7 @@ namespace Hecton8.Gameplay
                 if (!_activeRepairReportedThisUse)
                 {
                     ServiceDiagnosis diagnosis = BuildDiagnosis(module);
-                    ToolHitUtility.ShowInfo($"REPAIR TOOL - {diagnosis.headline}");
+                    ToolHitUtility.ShowInfo(GetActiveRepairHudMessage(diagnosis.headline));
                     FieldOperationLogSystem.RecordOperation(
                         "REPAIR",
                         "MODULE REPAIR STARTED",
@@ -265,7 +273,7 @@ namespace Hecton8.Gameplay
             PublishDiagnosis(diagnosis);
             FieldOperationLogSystem.RecordOperation(
                 "REPAIR",
-                $"SERVICE DIAG - {diagnosis.headline}",
+                GetServiceDiagnosisLogTitle(diagnosis.headline),
                 $"{diagnosis.summary} {diagnosis.recommendation}",
                 diagnosis.severity);
         }
@@ -528,6 +536,52 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowWarning(message);
             else
                 ToolHitUtility.ShowInfo(message);
+        }
+
+        private static string GetActiveRepairHudMessage(string headline)
+        {
+            switch (headline)
+            {
+                case RepairToolNoPowerHeadline:
+                    return "REPAIR TOOL - NO POWER";
+                case RepairToolDrainingHeadline:
+                    return "REPAIR TOOL - DRAINING";
+                case RepairToolFloodedHeadline:
+                    return "REPAIR TOOL - FLOODED";
+                case RepairToolSealedHeadline:
+                    return "REPAIR TOOL - SEALED";
+                case RepairToolCriticalDamageHeadline:
+                    return "REPAIR TOOL - CRITICAL DAMAGE";
+                case RepairToolHeavyDamageHeadline:
+                    return "REPAIR TOOL - HEAVY DAMAGE";
+                case RepairToolPatchingHeadline:
+                    return "REPAIR TOOL - PATCHING";
+                default:
+                    return "REPAIR TOOL - " + headline;
+            }
+        }
+
+        private static string GetServiceDiagnosisLogTitle(string headline)
+        {
+            switch (headline)
+            {
+                case RepairToolNoPowerHeadline:
+                    return "SERVICE DIAG - NO POWER";
+                case RepairToolDrainingHeadline:
+                    return "SERVICE DIAG - DRAINING";
+                case RepairToolFloodedHeadline:
+                    return "SERVICE DIAG - FLOODED";
+                case RepairToolSealedHeadline:
+                    return "SERVICE DIAG - SEALED";
+                case RepairToolCriticalDamageHeadline:
+                    return "SERVICE DIAG - CRITICAL DAMAGE";
+                case RepairToolHeavyDamageHeadline:
+                    return "SERVICE DIAG - HEAVY DAMAGE";
+                case RepairToolPatchingHeadline:
+                    return "SERVICE DIAG - PATCHING";
+                default:
+                    return "SERVICE DIAG - " + headline;
+            }
         }
     }
 }

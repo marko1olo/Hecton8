@@ -14,6 +14,28 @@ namespace Hecton8.EditorTools
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
         private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
+        private const string AutomationFolderName = "CodexFloraAutomation";
+        private const string AutomationRequestFileName = "flora_request.json";
+        private const string AutomationResponseFileName = "flora_response.json";
+        private const string AutomationPreviewFolder = "Assets/Screenshots/Automation";
+        private const double AutomationPollIntervalSeconds = 0.5d;
+        private const double AutomationPreviewTimeoutSeconds = 20d;
+
+        private static readonly List<AutomationPreviewTask> _automationPreviewTasks = new List<AutomationPreviewTask>(8); // COLD ALLOC: editor automation queue, bounded by explicit request payload
+
+        private static double _automationNextPollTime;
+        private static bool _automationRequestActive;
+        private static AutomationResponse _activeAutomationResponse;
+        private static double _automationPreviewDeadline;
+
+        [InitializeOnLoadMethod]
+        private static void RegisterAutomationBridge()
+        {
+            EditorApplication.update -= UpdateAutomationBridge;
+            EditorApplication.update += UpdateAutomationBridge;
+            _automationNextPollTime = EditorApplication.timeSinceStartup + AutomationPollIntervalSeconds;
+            Debug.Log("[WorldProceduralFloraFinalStatusReport] Automation bridge registered. RequestPath=" + GetAutomationRequestFilePath().Replace('\\', '/'));
+        }
 
         [MenuItem("Hecton/Validation/Generate Procedural Flora Final Status Report", priority = 241)]
         public static void GenerateReport()
@@ -29,6 +51,296 @@ namespace Hecton8.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log($"[WorldProceduralFloraFinalStatusReport] Wrote report to {reportPath}");
+        }
+
+        private static void UpdateAutomationBridge()
+        {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (_automationRequestActive)
+            {
+                UpdateAutomationPreviewQueue(now);
+                return;
+            }
+
+            if (now < _automationNextPollTime)
+                return;
+
+            _automationNextPollTime = now + AutomationPollIntervalSeconds;
+            TryBeginAutomationRequest();
+        }
+
+        private static void TryBeginAutomationRequest()
+        {
+            string requestFilePath = GetAutomationRequestFilePath();
+            if (!File.Exists(requestFilePath))
+                return;
+
+            Debug.Log("[WorldProceduralFloraFinalStatusReport] Automation request detected.");
+            EnsureAutomationFolderExists();
+
+            AutomationRequest request;
+            try
+            {
+                request = JsonUtility.FromJson<AutomationRequest>(File.ReadAllText(requestFilePath));
+            }
+            catch (Exception ex)
+            {
+                WriteAutomationFailureResponse("request_read_failed", ex.Message);
+                SafeDeleteFile(requestFilePath);
+                return;
+            }
+
+            if (request == null || string.IsNullOrWhiteSpace(request.requestId))
+            {
+                WriteAutomationFailureResponse("request_invalid", "Automation request is empty or missing requestId.");
+                SafeDeleteFile(requestFilePath);
+                return;
+            }
+
+            _activeAutomationResponse = new AutomationResponse
+            {
+                requestId = request.requestId,
+                success = false,
+                stage = "started",
+                generatedAtUtc = DateTime.UtcNow.ToString("O")
+            };
+            _automationPreviewTasks.Clear();
+            _automationRequestActive = true;
+
+            SafeDeleteFile(GetAutomationResponseFilePath());
+            SafeDeleteFile(requestFilePath);
+
+            try
+            {
+                EnsureAssetFolder("Assets/Screenshots");
+                EnsureAssetFolder(AutomationPreviewFolder);
+
+                WorldProceduralFloraBakedStarterGenerator.Generate();
+                WorldProceduralFloraFinalVariantAuthoring.ApplyBakedFloraFinals();
+                WorldProceduralFloraFinalVariantValidator.Validate();
+                GenerateReport();
+
+                BuildAutomationPreviewQueue(request);
+                _activeAutomationResponse.stage = _automationPreviewTasks.Count > 0 ? "capturing_previews" : "completed";
+                _automationPreviewDeadline = EditorApplication.timeSinceStartup + AutomationPreviewTimeoutSeconds;
+
+                if (_automationPreviewTasks.Count == 0)
+                    CompleteAutomationRequest();
+            }
+            catch (Exception ex)
+            {
+                _activeAutomationResponse.stage = "failed";
+                _activeAutomationResponse.error = ex.ToString();
+                FinishAutomationRequest();
+            }
+        }
+
+        private static void BuildAutomationPreviewQueue(AutomationRequest request)
+        {
+            if (request.capturePrefabPaths == null || request.capturePrefabPaths.Length == 0)
+                return;
+
+            for (int i = 0; i < request.capturePrefabPaths.Length; i++)
+            {
+                string prefabPath = request.capturePrefabPaths[i];
+                if (string.IsNullOrWhiteSpace(prefabPath))
+                    continue;
+
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null)
+                {
+                    _automationPreviewTasks.Add(AutomationPreviewTask.CreateMissing(prefabPath));
+                    continue;
+                }
+
+                _automationPreviewTasks.Add(AutomationPreviewTask.Create(prefabPath, prefab));
+            }
+        }
+
+        private static void UpdateAutomationPreviewQueue(double now)
+        {
+            bool anyPending = false;
+
+            for (int i = 0; i < _automationPreviewTasks.Count; i++)
+            {
+                AutomationPreviewTask task = _automationPreviewTasks[i];
+                if (task.isDone)
+                    continue;
+
+                anyPending = true;
+                Texture2D preview = AssetPreview.GetAssetPreview(task.prefabAsset);
+                if (preview != null)
+                {
+                    task.previewPath = SaveAutomationPreview(task.prefabPath, preview);
+                    task.isDone = true;
+                    _automationPreviewTasks[i] = task;
+                    continue;
+                }
+
+                if (!AssetPreview.IsLoadingAssetPreview(task.prefabAsset.GetInstanceID()))
+                {
+                    Texture2D miniPreview = AssetPreview.GetMiniThumbnail(task.prefabAsset);
+                    task.previewPath = miniPreview != null ? SaveAutomationPreview(task.prefabPath, miniPreview) : null;
+                    task.error = miniPreview == null ? "preview_unavailable" : null;
+                    task.isDone = true;
+                    _automationPreviewTasks[i] = task;
+                }
+            }
+
+            if (!anyPending || now >= _automationPreviewDeadline)
+            {
+                for (int i = 0; i < _automationPreviewTasks.Count; i++)
+                {
+                    AutomationPreviewTask task = _automationPreviewTasks[i];
+                    if (task.isDone)
+                        continue;
+
+                    task.isDone = true;
+                    if (string.IsNullOrWhiteSpace(task.error))
+                        task.error = "preview_timeout";
+
+                    _automationPreviewTasks[i] = task;
+                }
+
+                CompleteAutomationRequest();
+            }
+        }
+
+        private static void CompleteAutomationRequest()
+        {
+            _activeAutomationResponse.stage = "completed";
+            _activeAutomationResponse.success = true;
+            _activeAutomationResponse.reportPath = Path.Combine(GetProjectRootPath(), ReportFileName).Replace('\\', '/');
+            _activeAutomationResponse.previewPaths = CollectAutomationPreviewPaths();
+            _activeAutomationResponse.previewErrors = CollectAutomationPreviewErrors();
+            FinishAutomationRequest();
+        }
+
+        private static string[] CollectAutomationPreviewPaths()
+        {
+            if (_automationPreviewTasks.Count == 0)
+                return Array.Empty<string>();
+
+            List<string> previewPaths = new List<string>(_automationPreviewTasks.Count); // COLD ALLOC: editor automation response payload, bounded by request count
+            for (int i = 0; i < _automationPreviewTasks.Count; i++)
+            {
+                string previewPath = _automationPreviewTasks[i].previewPath;
+                if (!string.IsNullOrWhiteSpace(previewPath))
+                    previewPaths.Add(previewPath);
+            }
+
+            return previewPaths.ToArray();
+        }
+
+        private static string[] CollectAutomationPreviewErrors()
+        {
+            if (_automationPreviewTasks.Count == 0)
+                return Array.Empty<string>();
+
+            List<string> previewErrors = new List<string>(_automationPreviewTasks.Count); // COLD ALLOC: editor automation response payload, bounded by request count
+            for (int i = 0; i < _automationPreviewTasks.Count; i++)
+            {
+                AutomationPreviewTask task = _automationPreviewTasks[i];
+                if (!string.IsNullOrWhiteSpace(task.error))
+                    previewErrors.Add(task.prefabPath + ": " + task.error);
+            }
+
+            return previewErrors.ToArray();
+        }
+
+        private static string SaveAutomationPreview(string prefabPath, Texture2D source)
+        {
+            string prefabName = Path.GetFileNameWithoutExtension(prefabPath);
+            string safeName = prefabName.Replace('.', '_');
+            string assetPath = AutomationPreviewFolder + "/auto_" + safeName + ".png";
+            string absolutePath = Path.Combine(GetProjectRootPath(), assetPath.Replace('/', Path.DirectorySeparatorChar));
+            File.WriteAllBytes(absolutePath, source.EncodeToPNG());
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            return assetPath;
+        }
+
+        private static void FinishAutomationRequest()
+        {
+            try
+            {
+                EnsureAutomationFolderExists();
+                File.WriteAllText(GetAutomationResponseFilePath(), JsonUtility.ToJson(_activeAutomationResponse, true));
+                Debug.Log("[WorldProceduralFloraFinalStatusReport] Automation response written to " + GetAutomationResponseFilePath().Replace('\\', '/'));
+            }
+            finally
+            {
+                _automationPreviewTasks.Clear();
+                _automationRequestActive = false;
+                _activeAutomationResponse = null;
+                _automationNextPollTime = EditorApplication.timeSinceStartup + AutomationPollIntervalSeconds;
+            }
+        }
+
+        private static void WriteAutomationFailureResponse(string stage, string error)
+        {
+            EnsureAutomationFolderExists();
+            AutomationResponse response = new AutomationResponse
+            {
+                requestId = "unknown",
+                success = false,
+                stage = stage,
+                error = error,
+                generatedAtUtc = DateTime.UtcNow.ToString("O")
+            };
+            File.WriteAllText(GetAutomationResponseFilePath(), JsonUtility.ToJson(response, true));
+        }
+
+        private static string GetProjectRootPath()
+        {
+            return Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+        }
+
+        private static string GetAutomationFolderPath()
+        {
+            return Path.Combine(GetProjectRootPath(), "Temp", AutomationFolderName);
+        }
+
+        private static string GetAutomationRequestFilePath()
+        {
+            return Path.Combine(GetAutomationFolderPath(), AutomationRequestFileName);
+        }
+
+        private static string GetAutomationResponseFilePath()
+        {
+            return Path.Combine(GetAutomationFolderPath(), AutomationResponseFileName);
+        }
+
+        private static void EnsureAutomationFolderExists()
+        {
+            string automationFolderPath = GetAutomationFolderPath();
+            if (!Directory.Exists(automationFolderPath))
+                Directory.CreateDirectory(automationFolderPath);
+        }
+
+        private static void EnsureAssetFolder(string assetPath)
+        {
+            if (AssetDatabase.IsValidFolder(assetPath))
+                return;
+
+            string[] segments = assetPath.Split('/');
+            string current = segments[0];
+            for (int i = 1; i < segments.Length; i++)
+            {
+                string next = current + "/" + segments[i];
+                if (!AssetDatabase.IsValidFolder(next))
+                    AssetDatabase.CreateFolder(current, segments[i]);
+
+                current = next;
+            }
+        }
+
+        private static void SafeDeleteFile(string path)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
         }
 
         private static Dictionary<string, FamilyStatus> InitializeStatuses()
@@ -608,6 +920,26 @@ namespace Hecton8.EditorTools
             public List<PrefabStatus> Prefabs { get; }
         }
 
+        [Serializable]
+        private sealed class AutomationRequest
+        {
+            public string requestId;
+            public string[] capturePrefabPaths;
+        }
+
+        [Serializable]
+        private sealed class AutomationResponse
+        {
+            public string requestId;
+            public bool success;
+            public string stage;
+            public string error;
+            public string generatedAtUtc;
+            public string reportPath;
+            public string[] previewPaths;
+            public string[] previewErrors;
+        }
+
         private readonly struct PrefabStatus
         {
             public PrefabStatus(
@@ -684,6 +1016,39 @@ namespace Hecton8.EditorTools
             public string FidelityLabel { get; }
             public bool HasMetadataError { get; }
             public string MetadataError { get; }
+        }
+
+        private struct AutomationPreviewTask
+        {
+            public string prefabPath;
+            public GameObject prefabAsset;
+            public string previewPath;
+            public string error;
+            public bool isDone;
+
+            public static AutomationPreviewTask Create(string prefabPath, GameObject prefabAsset)
+            {
+                return new AutomationPreviewTask
+                {
+                    prefabPath = prefabPath,
+                    prefabAsset = prefabAsset,
+                    previewPath = null,
+                    error = null,
+                    isDone = false
+                };
+            }
+
+            public static AutomationPreviewTask CreateMissing(string prefabPath)
+            {
+                return new AutomationPreviewTask
+                {
+                    prefabPath = prefabPath,
+                    prefabAsset = null,
+                    previewPath = null,
+                    error = "prefab_missing",
+                    isDone = true
+                };
+            }
         }
 
         private readonly struct MaterialState

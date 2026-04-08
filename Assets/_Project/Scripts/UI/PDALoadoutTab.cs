@@ -630,6 +630,8 @@ namespace Hecton8.UI
             int missing = 0;
             int broken = 0;
             float totalWeight = 0f;
+            string recommendedPresetName = "GENERAL";
+            string recommendedPresetDirective = "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
 
             ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
 
@@ -652,6 +654,13 @@ namespace Hecton8.UI
                     missing++;
             }
 
+            Transform origin = toolManager.transform;
+            if (FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
+            {
+                recommendedPresetName = advice.PresetName;
+                recommendedPresetDirective = advice.Summary;
+            }
+
             // Используем кэшированный StringBuilder для сборки summary текста (zero-GC)
             _summaryBuilder.Clear();
             _summaryBuilder.Append("LOADOUT: ").Append(assigned).Append("/4 assigned | READY ").Append(ready);
@@ -659,7 +668,7 @@ namespace Hecton8.UI
             _summaryBuilder.Append(" | ACTIVE SLOT ").Append(toolManager.CurrentSlotIndex >= 0 ? (toolManager.CurrentSlotIndex + 1).ToString() : "--");
             _summaryBuilder.Append(" | KIT MASS ").Append(totalWeight.ToString("0.0")).Append(" kg");
             _summaryBuilder.Append(" | PRESET ").Append(GetMatchedPresetName());
-            _summaryBuilder.Append(" | SUGGESTED ").Append(GetRecommendedPresetName());
+            _summaryBuilder.Append(" | SUGGESTED ").Append(recommendedPresetName);
             _summaryBuilder.Append('\n');
             _summaryBuilder.Append("ACTIVE TOOL: ").Append(toolManager.GetCurrentToolOperationalSummary());
 
@@ -671,7 +680,7 @@ namespace Hecton8.UI
                 var sb = scope.Value;
                 sb.Append(GetLoadoutDirective(assigned, ready, missing, broken));
                 sb.Append("  LIVE: ").Append(toolManager.GetCurrentToolOperationalDirective());
-                sb.Append("  FIELD: ").Append(GetRecommendedPresetDirective());
+                sb.Append("  FIELD: ").Append(recommendedPresetDirective);
 
                 if (_hintText != null)
                     _hintText.SetText(sb);
@@ -706,8 +715,8 @@ namespace Hecton8.UI
                 return "UNKNOWN";
 
             Transform origin = toolManager.transform;
-            return FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice)
-                ? advice.PresetName
+            return FieldLoadoutAdvisor.TryBuildForwardPresetName(origin, fieldAdviceRange, fieldAdviceMask, out string presetName)
+                ? presetName
                 : "GENERAL";
         }
 

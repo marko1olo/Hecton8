@@ -63,12 +63,16 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class LaserCutter : PlayerTool
     {
+        private const int RecoveryProgressMessageCount = 101;
+
         private struct CutterDiagnosis
         {
             public string headline;
             public string summary;
             public string severity;
         }
+
+        private static readonly string[] _recoveryProgressMessages = BuildRecoveryProgressMessages();
 
         // ══════════════════════════════════════════════════════════
         //  EVENTS
@@ -643,7 +647,7 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextProgressFeedbackAt)
             {
                 float progress01 = math.saturate(_deconstructProgress / math.max(deconstructThreshold, 0.01f));
-                ToolHitUtility.ShowInfo($"RECOVERY PROGRESS - {(progress01 * 100f):0}%");
+                ToolHitUtility.ShowInfo(GetRecoveryProgressMessage(progress01));
                 _nextProgressFeedbackAt = Time.time + 0.6f;
             }
 
@@ -671,6 +675,22 @@ namespace Hecton8.Gameplay
             _deconstructStartReported = false;
             _deconstructBlockedReported = false;
             _nextProgressFeedbackAt = 0f;
+        }
+
+        private static string GetRecoveryProgressMessage(float progress01)
+        {
+            int percent = (int)(math.saturate(progress01) * 100f + 0.5f);
+            percent = math.clamp(percent, 0, RecoveryProgressMessageCount - 1);
+            return _recoveryProgressMessages[percent];
+        }
+
+        private static string[] BuildRecoveryProgressMessages()
+        {
+            string[] messages = new string[RecoveryProgressMessageCount];
+            for (int i = 0; i < RecoveryProgressMessageCount; i++)
+                messages[i] = "RECOVERY PROGRESS - " + i + "%";
+
+            return messages;
         }
 
         private void EnsurePlayerInventory()

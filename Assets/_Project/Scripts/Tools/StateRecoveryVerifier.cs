@@ -48,6 +48,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyPauseToGameplayRecovery()
         {
+            if (!_enableVerification) return;
             StartCoroutine(TestStateRecovery("Pause to Gameplay",
                 () => SimulatePauseAndReturn(),
                 () => VerifyGameplayStateRestored()));
@@ -58,6 +59,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyReturnToMenuRecovery()
         {
+            if (!_enableVerification) return;
             StartCoroutine(TestStateRecovery("Return to Menu",
                 () => SimulateReturnToMenu(),
                 () => VerifyMenuStateRestored()));
@@ -68,6 +70,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyNewGameAfterSaveRecovery()
         {
+            if (!_enableVerification) return;
             StartCoroutine(TestStateRecovery("New Game After Save",
                 () => SimulateNewGameAfterSave(),
                 () => VerifyNewGameState()));
@@ -78,6 +81,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyLoadSlotFromShellRecovery()
         {
+            if (!_enableVerification) return;
             StartCoroutine(TestStateRecovery("Load Slot From Shell",
                 () => SimulateLoadSlotFromShell(),
                 () => VerifyLoadedGameState()));
@@ -88,6 +92,7 @@ namespace Hecton8.Tools
         /// </summary>
         public void VerifyInputRestoration()
         {
+            if (!_enableVerification) return;
             StartCoroutine(TestInputRestoration());
         }
 

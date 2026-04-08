@@ -119,11 +119,8 @@ namespace Hecton8.Bootstrap
         //  INSPECTOR — SAVE
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Save Slot ─────────────────────────────────")]
-        [Tooltip("Имя слота для загрузки. Пустой = New Game.")]
-        [SerializeField] private string saveSlot = "slot_1";
-
-        [Tooltip("Если true — всегда начинать новую игру (игнорировать сейв)")]
+        [Header("Start Overrides")]
+        [Tooltip("If true, always start a new game and ignore the handoff context.")]
         [SerializeField] private bool forceNewGame;
 
         [Header("Runtime World Prime")]
@@ -592,7 +589,8 @@ namespace Hecton8.Bootstrap
         /// Загружает сохранение из указанного слота через
         /// <c>SaveManager.LoadGameAsync</c>.
         ///
-        /// Если сейв не найден, пуст или forceNewGame — New Game.
+        /// Если handoff context отсутствует, слот пуст, сейв не найден
+        /// или forceNewGame включён — New Game.
         /// При исключении в LoadGameAsync — принудительный fallback
         /// на <see cref="InitNewGame"/>.
         ///
@@ -604,23 +602,22 @@ namespace Hecton8.Bootstrap
             SaveManager save = SaveManager.Instance;
 
             // ── Читаем контекст игровой сессии ──
-            GameStartContext context = GameStartContextHolder.Current;
+            GameStartContext context;
 
             // ── Fallback на PlayerPrefs если контекст пуст (domain reload) ──
-            if (!context.IsValid)
+            if (!GameStartContextHolder.TryGetCurrentOrRestore(out context))
             {
-                string fallbackSlot = PlayerPrefs.GetString("TargetSaveSlot", string.Empty);
-                context = string.IsNullOrEmpty(fallbackSlot)
-                    ? GameStartContext.CreateNewGame()
-                    : GameStartContext.CreateLoadGame(fallbackSlot);
+                context = GameStartContext.CreateNewGame();
 
                 Log($"  GameStartContext was empty — restored from PlayerPrefs. " +
-                    $"Mode={context.StartMode}, Slot={context.TargetSaveSlot}");
+                    string.Empty);
             }
             else
             {
                 Log($"  GameStartContext loaded: {context}");
             }
+
+            GameStartContextHolder.ClearPersistedHandoff();
 
             // ── Force New Game из Inspector (legacy) ──
             if (forceNewGame)
@@ -628,6 +625,8 @@ namespace Hecton8.Bootstrap
                 Log("  Force New Game enabled (Inspector) — overriding context.");
                 context = GameStartContext.CreateNewGame();
             }
+
+            GameStartContextHolder.Current = context;
 
             // ── NewGame режим ──
             if (context.StartMode == GameStartMode.NewGame)

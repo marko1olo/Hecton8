@@ -154,8 +154,53 @@ namespace Hecton8.Core
     /// </summary>
     public static class GameStartContextHolder
     {
+        private const string PersistKeyValid = "GameStartContext.Valid";
+        private const string PersistKeyStartMode = "GameStartContext.StartMode";
+        private const string PersistKeyTargetSaveSlot = "GameStartContext.TargetSaveSlot";
+        private const string PersistKeySpawnMode = "GameStartContext.SpawnMode";
+        private const string PersistKeyIntroSceneName = "GameStartContext.IntroSceneName";
+        private const string PersistKeyLandingPresetName = "GameStartContext.LandingPresetName";
+
         /// <summary>Текущий контекст игровой сессии.</summary>
         public static GameStartContext Current { get; set; }
+
+        /// <summary>
+        /// Stores the active handoff context in memory and in a cold persistence
+        /// slot so bootstrap can recover from domain reload during scene transit.
+        /// </summary>
+        public static void SetCurrent(GameStartContext context)
+        {
+            Current = context;
+            PersistCurrentContext();
+        }
+
+        /// <summary>
+        /// Returns the current in-memory context or restores one cold persisted
+        /// handoff snapshot if the static holder was wiped during scene transit.
+        /// </summary>
+        public static bool TryGetCurrentOrRestore(out GameStartContext context)
+        {
+            context = Current;
+            if (context.IsValid)
+                return true;
+
+            return TryRestorePersistedContext(out context);
+        }
+
+        /// <summary>
+        /// Clears only the cold persisted handoff snapshot after bootstrap has
+        /// consumed it, leaving the in-memory runtime context intact.
+        /// </summary>
+        public static void ClearPersistedHandoff()
+        {
+            PlayerPrefs.DeleteKey(PersistKeyValid);
+            PlayerPrefs.DeleteKey(PersistKeyStartMode);
+            PlayerPrefs.DeleteKey(PersistKeyTargetSaveSlot);
+            PlayerPrefs.DeleteKey(PersistKeySpawnMode);
+            PlayerPrefs.DeleteKey(PersistKeyIntroSceneName);
+            PlayerPrefs.DeleteKey(PersistKeyLandingPresetName);
+            PlayerPrefs.Save();
+        }
 
         /// <summary>
         /// Сбрасывает контекст (используется при выходе в главное меню).
@@ -163,6 +208,7 @@ namespace Hecton8.Core
         public static void Reset()
         {
             Current = default;
+            ClearPersistedHandoff();
         }
 
         /// <summary>
@@ -173,6 +219,60 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[GameStartContextHolder] {Current}");
 #endif
+        }
+
+        private static void PersistCurrentContext()
+        {
+            if (!Current.IsValid)
+            {
+                ClearPersistedHandoff();
+                return;
+            }
+
+            PlayerPrefs.SetInt(PersistKeyValid, 1);
+            PlayerPrefs.SetInt(PersistKeyStartMode, (int)Current.StartMode);
+            PlayerPrefs.SetString(PersistKeyTargetSaveSlot, Current.TargetSaveSlot ?? string.Empty);
+            PlayerPrefs.SetInt(PersistKeySpawnMode, (int)Current.SpawnMode);
+            PlayerPrefs.SetString(PersistKeyIntroSceneName, Current.IntroSceneName ?? string.Empty);
+            PlayerPrefs.SetString(PersistKeyLandingPresetName, Current.LandingPresetName ?? string.Empty);
+            PlayerPrefs.Save();
+        }
+
+        private static bool TryRestorePersistedContext(out GameStartContext context)
+        {
+            context = default;
+
+            if (PlayerPrefs.GetInt(PersistKeyValid, 0) == 0)
+                return false;
+
+            int startModeValue = PlayerPrefs.GetInt(PersistKeyStartMode, -1);
+            int spawnModeValue = PlayerPrefs.GetInt(PersistKeySpawnMode, -1);
+
+            if ((uint)startModeValue > (uint)GameStartMode.Resume ||
+                (uint)spawnModeValue > (uint)GameSpawnMode.IntroLocation)
+            {
+                ClearPersistedHandoff();
+                return false;
+            }
+
+            context = new GameStartContext
+            {
+                StartMode = (GameStartMode)startModeValue,
+                TargetSaveSlot = PlayerPrefs.GetString(PersistKeyTargetSaveSlot, string.Empty),
+                SpawnMode = (GameSpawnMode)spawnModeValue,
+                IntroSceneName = PlayerPrefs.GetString(PersistKeyIntroSceneName, string.Empty),
+                LandingPresetName = PlayerPrefs.GetString(PersistKeyLandingPresetName, string.Empty),
+            };
+
+            if (!context.IsValid)
+            {
+                ClearPersistedHandoff();
+                context = default;
+                return false;
+            }
+
+            Current = context;
+            return true;
         }
     }
 }
