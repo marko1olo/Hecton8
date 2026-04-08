@@ -35,6 +35,8 @@ namespace Hecton8.World
         private const string ScatterLayerFaunaLabel = "Fauna";
         private const string ScatterLayerConstructionLabel = "Construction";
         private const string ScatterLayerLargeThreatsLabel = "LargeThreats";
+        // Bump when the reconcile-signature field contract changes.
+        private const int ScatterPlacementSyncSignatureVersion = 1;
         private static readonly int _ClusterAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.ClusterAccentRole)).Length;
         private static readonly int _StructureAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.StructureAccentRole)).Length;
         private static readonly WorldPrefabFamilyProfile.StructureAccentRole[] _PatternAccentPriorityDefault =
@@ -774,6 +776,9 @@ namespace Hecton8.World
             Vector3 center = playerTransform.position;
             int centerX = WorldToScatterCellIndex(center.x, size);
             int centerZ = WorldToScatterCellIndex(center.z, size);
+            int cellDiameter = (radius * 2) + 1;
+            EnsureScatterWindowBudgetCapacity(_structureWindowCounts, EstimateScatterWindowCapacity(cellDiameter, structureStride));
+            EnsureScatterWindowBudgetCapacity(_spawnWindowCounts, EstimateScatterWindowCapacity(cellDiameter, spawnStride));
             long rebuildStartTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
             int evaluatedCells = 0;
             ScatterCandidate topCandidate = default;
@@ -834,7 +839,6 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile debugBiomeProfile = null;
             Hecton8.Environment.HectonBiomeFamilyProfile debugBiomeFamily = null;
             fieldSampler.BeginScatterSamplingFrame();
-            int cellDiameter = (radius * 2) + 1;
             int totalCells = cellDiameter * cellDiameter;
             EnsureCellSamplingArrayCapacity(totalCells);
             int cellCursor = 0;
@@ -3468,7 +3472,7 @@ namespace Hecton8.World
             unchecked
             {
                 bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
-                int signature = 17;
+                int signature = ScatterPlacementSyncSignatureVersion;
                 signature = signature * 31 + placement.Key.GetHashCode();
                 signature = signature * 31 + placement.StreamingLayer.GetHashCode();
                 signature = signature * 31 + (supportsFinalVariant ? 1 : 0);
@@ -4138,6 +4142,21 @@ namespace Hecton8.World
         {
             long key = ComposeWindowKey(cellX, cellZ, stride);
             counts[key] = counts.TryGetValue(key, out int count) ? count + 1 : 1;
+        }
+
+        private static int EstimateScatterWindowCapacity(int cellDiameter, int stride)
+        {
+            int safeStride = Mathf.Max(1, stride);
+            int windowsPerAxis = Mathf.CeilToInt(cellDiameter / (float)safeStride) + 2;
+            return Mathf.Max(16, windowsPerAxis * windowsPerAxis);
+        }
+
+        private static void EnsureScatterWindowBudgetCapacity(Dictionary<long, int> counts, int requiredCapacity)
+        {
+            if (counts == null || requiredCapacity <= 0)
+                return;
+
+            counts.EnsureCapacity(requiredCapacity);
         }
 
         private static long ComposeWindowKey(int cellX, int cellZ, int stride)

@@ -30,6 +30,7 @@
 //   Frame offset based on instance ID prevents all objects checking same frame.
 // ============================================================================
 
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -37,7 +38,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
-    public sealed class BuoyancyObject : MonoBehaviour
+    public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable
     {
         [Header("Profile")]
         [SerializeField] private BuoyancyProfile profile;
@@ -137,6 +138,8 @@ namespace Hecton8.Physics
         /// Cached raycast hit. Avoids stack allocation in hot path.
         /// </summary>
         private RaycastHit _groundHit;
+        private bool _registeredToFixedTick;
+        private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit ground probe buffer.
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -286,6 +289,13 @@ namespace Hecton8.Physics
             HectonFluidEngine engine = HectonFluidEngine.Instance;
             if (engine != null)
                 engine.Register(this);
+
+            TryRegisterToFixedTick();
+        }
+
+        private void Start()
+        {
+            TryRegisterToFixedTick();
         }
 
         private void OnDisable()
@@ -297,24 +307,31 @@ namespace Hecton8.Physics
             HectonFluidEngine engine = HectonFluidEngine.Instance;
             if (engine != null)
                 engine.Unregister(this);
+
+            if (GameTickManager.Instance != null && _registeredToFixedTick)
+            {
+                GameTickManager.Instance.Unregister((IFixedTickable)this);
+                _registeredToFixedTick = false;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
-        //  FIXED UPDATE — Ground Check Only (staggered)
+        //  FIXED TICK — Ground Check Only (staggered)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Lightweight FixedUpdate: only increments a counter and performs
+        /// Lightweight fixed tick: only increments a counter and performs
         /// a raycast every N frames. No other logic.
         ///
-        /// We use FixedUpdate instead of IFixedTickable to keep this
-        /// component self-contained and independent of GameTickManager.
-        /// The cost is one integer increment per object per fixed frame,
-        /// plus one raycast every groundCheckInterval frames (amortized).
+        /// Driven by GameTickManager via IFixedTickable so the component
+        /// stays inside the centralized physics cadence contract.
+        /// Cost: one integer increment per fixed step plus one raycast
+        /// every groundCheckInterval frames (amortized).
         ///
-        /// Zero-GC: no allocations. Cached RaycastHit on the instance.
+        /// Zero-GC: no allocations. Uses cached hit state and a preallocated
+        /// RaycastNonAlloc buffer on the instance.
         /// </summary>
-        private void FixedUpdate()
+        public void FixedTick(float fixedDeltaTime)
         {
             _frameCounter++;
 
@@ -323,6 +340,15 @@ namespace Hecton8.Physics
                 return;
 
             PerformGroundCheck();
+        }
+
+        private void TryRegisterToFixedTick()
+        {
+            if (_registeredToFixedTick || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register((IFixedTickable)this);
+            _registeredToFixedTick = true;
         }
 
         /// <summary>
@@ -351,14 +377,17 @@ namespace Hecton8.Physics
                 origin = _cachedTransform.position;
             }
 
-            _isGrounded = UnityEngine.Physics.Raycast(
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
                 origin,
                 Vector3.down,
-                out _groundHit,
+                _groundHitBuffer,
                 groundCheckDistance,
                 groundLayers,
                 QueryTriggerInteraction.Ignore
             );
+
+            _isGrounded = hitCount > 0;
+            _groundHit = _isGrounded ? _groundHitBuffer[0] : default;
         }
 
         // ══════════════════════════════════════════════════════════

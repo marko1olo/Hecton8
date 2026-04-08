@@ -3,8 +3,8 @@
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
 // v1.1 OPTIMIZATIONS:
-//   [FIX] TryResolveObserver: добавлен _observerResolveCooldown — не ищем
-//         Camera.main/Player каждый кадр если не нашли. Пробуем раз в 2 сек.
+//   [FIX] TryResolveObserver: добавлен _observerResolveCooldown — не дёргаем
+//         SceneBootstrap/player resolve каждый кадр если observer ещё не готов.
 //   [FIX] Register: замена Contains (O(n)) на HashSet для O(1) дедупликации.
 //   [FIX] ApplyMotion: кэшируем worldPos из CachedTransform.position один раз,
 //         передаём в ShouldUpdate чтобы не читать position дважды через bridge.
@@ -66,8 +66,7 @@ namespace Hecton8.Physics
         private float _cullDistanceSqr;
 
         // ── Observer resolve cooldown ────────────────────────────────────────
-        // Если observer не назначен и не найден — не ищем каждый кадр.
-        // Camera.main внутри — это FindObjectWithTag, дорого.
+        // Если observer не назначен и не найден — не дёргаем bootstrap каждый кадр.
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
 
@@ -308,13 +307,6 @@ namespace Hecton8.Physics
             // Сбрасываем таймер независимо от результата поиска
             // Не нашли сейчас — подождём ещё ObserverResolveCooldown секунд
             _observerResolveTimer = ObserverResolveCooldown;
-
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
-            {
-                lodObserver = mainCam.transform;
-                return;
-            }
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 lodObserver = playerTransform;
