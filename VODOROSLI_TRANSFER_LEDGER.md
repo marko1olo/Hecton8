@@ -180,6 +180,10 @@ Verification: `PENDING VERIFICATION`
     - Unity Editor process is still alive, so this is registration/session loss, not “editor closed”
   - latest budget-catalog/report enhancements on the kelp side remain `PENDING VERIFICATION` until the Unity session reconnects
 - Authored kelp finals must now follow the explicit baked-root budget policy in `Assets/_Project/Prefabs/Nature/Flora/Baked/README.md`.
+- The earlier unrelated compile blocker in `HectonNarrativeDirector` was cleared during this pass:
+  - removed broken inspector-only `ReadOnly` usage
+  - remapped narrative persistence from nonexistent `SaveData.customData` into real `SaveData` DTO fields + migration
+  - current remaining warning is non-blocking: `slowTickRate` assigned but unused
 - Kelp-side intake/report determinism is now hardened in code, pending live Unity confirmation:
   - supported kelp family order is explicit, not `HashSet`-driven
   - discovered baked kelp prefabs are sorted before `family.variants` linking
@@ -252,6 +256,18 @@ Verification: `PENDING VERIFICATION`
     - `Assets/Screenshots/Automation/auto_GEN_family_kelp_patch_dense__paddlespray__s70-120.png`
     - `Assets/Screenshots/Automation/auto_GEN_family_kelp_canopy__paddlefan__s120-190.png`
     - `Assets/Screenshots/Automation/auto_GEN_family_kelp_abyssal__petal__s100-170.png`
+- Fresh verified paddle-lobed readability follow-up on `2026-04-09` (automation request `flora-verify-paddle-20260409-5`):
+  - paddle-lobed geometry was thickened inside the existing editor-owned kelp builder instead of adding a parallel subsystem
+  - automation preview oracle was also tightened for tall/slender flora:
+    - preview timeout raised from `20s -> 75s`
+    - per-update preview throughput raised from `2 -> 4`
+    - tall/slender framing now shifts focus upward and crops less dead stem space
+  - fresh report readback after this pass:
+    - `GEN_family_kelp_tall__broadleaf__s110-170` -> `5708`
+    - `GEN_family_kelp_patch_dense__paddlespray__s70-120` -> `11032`
+    - `GEN_family_kelp_canopy__paddlefan__s120-190` -> `5164`
+    - `GEN_family_kelp_abyssal__petal__s100-170` -> `5684`
+  - automation response returned all four preview paths with `previewErrors=[]`
     - `Apply Procedural Flora Final Variants` -> `FamiliesTouched=0, LinkedVariants=21, RemovedVariants=0, MissingFamilies=0`
     - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
     - `Generate Procedural Flora Final Status Report`
@@ -272,6 +288,66 @@ Verification: `PENDING VERIFICATION`
     - kelp materials were re-authored onto the kelp shader with instancing enabled
     - verified authoring pass: `Applied flora materials. TouchedMaterials=3`
     - flora validator still passes after the shader switch
+- Latest kelp anatomy extension is now staged in code, still `PENDING VERIFICATION`:
+  - selected large leaves can receive a deterministic thin shell on `LOD0` only instead of all algae staying card-flat
+  - shell probability rises with blade width/length and is biased toward `FoldedLamina`, `PaddleLobed`, and `FrilledRibbon`
+  - distant LODs remain single-sided to protect MX350 triangle budget
+  - new frilled structural lane is staged for the next live bake pass:
+    - `GEN_family_kelp_tall__frondcrest__s105-165`
+    - `GEN_family_kelp_patch_dense__frilltuft__s75-125`
+    - `GEN_family_kelp_canopy__featherfan__s120-200`
+    - `GEN_family_kelp_abyssal__tatterveil__s110-185`
+- Fresh live bake/report pass after the thickness + frilled-lane code integration on `2026-04-09`:
+   - `Baked flora starters generated. Prefabs=72, MeshesUpdated=250, RemovedAssets=0, Failures=0`
+   - `Baked flora final variants applied. FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+   - validator/readback now confirms the new kelp totals:
+     - `family.kelp.tall=a0/g14`
+     - `family.kelp.patch.dense=a0/g12`
+     - `family.kelp.canopy=a0/g13`
+     - `family.kelp.abyssal=a0/g14`
+   - new staged frilled forms are now real generated baked prefabs, not just code paths:
+     - `GEN_family_kelp_tall__frondcrest__s105-165`
+     - `GEN_family_kelp_patch_dense__frilltuft__s75-125`
+     - `GEN_family_kelp_canopy__featherfan__s120-200`
+     - `GEN_family_kelp_abyssal__tatterveil__s110-185`
+   - new hard blocker exposed by validator:
+     - `frondcrest=11034` vs tall budget `8000`
+     - `frilltuft=16256` vs patch.dense budget `12000`
+     - `featherfan=10924` vs canopy budget `10000`
+     - `tatterveil=10620` vs abyssal budget `9000`
+     - older heavy forms also remain over budget:
+       - `broadleaf=9380`
+       - `paddlespray=16224`
+       - `paddlefan=10200`
+       - `petal=9580`
+- Fresh budget-convergence pass on `2026-04-09` after targeted supplemental-geometry cuts:
+  - unrelated project compile blocker was removed first:
+    - `HectonDirectorAI.cs(119,62)` stray `15f` token deleted so flora verification could run
+  - heavy paddle/frilled variants were not flattened; instead the builder now:
+    - suppresses some understory/companion/tertiary/fan/veil add-ons on the most expensive profiles
+    - keeps selective `LOD0` shell-thickness for large leaves, but lowers shell usage on dense/heavy variants
+    - trims only the most overbuilt per-variant specs
+  - fresh `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` readback now shows all kelp families under budget:
+    - `family.kelp.tall = 7716 / 8000`
+    - `family.kelp.patch.dense = 9016 / 12000`
+    - `family.kelp.canopy = 9402 / 10000`
+    - `family.kelp.abyssal = 8660 / 9000`
+  - previously over-budget variants now read:
+    - `broadleaf=5332`
+    - `frondcrest=4622`
+    - `bladder=6232`
+    - `paddlespray=6432`
+    - `frilltuft=8648`
+    - `sheetwall=8808`
+    - `paddlefan=6330`
+    - `featherfan=6462`
+    - `cathedral=8536`
+    - `petal=5400`
+    - `tatterveil=4912`
+  - hard proof still missing:
+    - preview framing/readability on the converged geometry
+    - in-world scene beauty proof
+    - runtime profiler/build proof
   - verified procedural kelp texture stack on `2026-04-07`:
     - added editor-only texture owner `WorldProceduralFloraTextureAuthoring`
     - kelp now gets generated `Base`, `Detail`, `Normal`, and `Mask` textures per family in `Assets/_Project/Art/Textures/WorldProceduralFlora`

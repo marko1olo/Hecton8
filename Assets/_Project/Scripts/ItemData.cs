@@ -75,6 +75,13 @@ namespace Hecton8.Items
         [Tooltip("Если true — это базовый добываемый ресурс мира, а не собранный компонент")]
         public bool isRawResource = false;
 
+        [Header("Vertical Economy")]
+        [Tooltip("Минимальная глубина (м), на которой встречается предмет")]
+        public float minDepth = 0f;
+        [Tooltip("Максимальная глубина (м), на которой встречается предмет (0 = нет лимита)")]
+        public float maxDepth = 0f;
+
+
         // ─────────────────────── Grid ────────────────────────────
         // ◆ NEW — габариты для тетрис-инвентаря
         [Header("Grid")]

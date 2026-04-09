@@ -130,6 +130,12 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 1.1999999, y: 1.9}
+  - variantId: family.kelp.canopy.final.flora.gen_family_kelp_canopy__featherfan
+    prefab: {fileID: 3635398373973688326, guid: 28daadd6809539c4a9d6837b31306ce5, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1999999, y: 2}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Canopy
   gameplayRole: Upper-canopy kelp crowns for route silhouettes, overhead shelter

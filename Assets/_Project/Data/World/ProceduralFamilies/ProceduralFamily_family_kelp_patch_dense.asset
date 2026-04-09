@@ -124,6 +124,12 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.7, y: 1.1999999}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__frilltuft
+    prefab: {fileID: 12876709050151065, guid: da1520a493d8d3643bfed9f0b2039c0f, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.75, y: 1.25}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Patch_Dense
   gameplayRole: Dense kelp pockets for shelter, occlusion and fauna habitat.

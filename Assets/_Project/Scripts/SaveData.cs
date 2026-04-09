@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 9; // Increment for discovery latest biome persistence
+        public const int CurrentVersion = 10; // Increment for narrative discovery persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -69,6 +69,15 @@ namespace Hecton8.SaveSystem
         /// <summary>Последний подтвержденный открытый биом для PDA и HUD.</summary>
         public int lastDiscoveredBiomeId = -1;
 
+        /// <summary>Количество narrative-discovery записей, сохраненных в narrativeDiscoveryIds.</summary>
+        public int narrativeDiscoveryCount;
+
+        /// <summary>Стабильные narrative-discovery ID для поздних триггеров и повторного входа в сцену.</summary>
+        public string[] narrativeDiscoveryIds;
+
+        /// <summary>Максимальный достигнутый narrative depth-tier.</summary>
+        public int narrativeDepthTier;
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════
@@ -90,9 +99,14 @@ namespace Hecton8.SaveSystem
                 fieldOperations = new FieldOperationLogDTO(),
                 beaconNetwork = new BeaconNetworkDTO(),
                 discoveredBiomeIds = new HashSet<int>(),
-                lastDiscoveredBiomeId = -1
+                lastDiscoveredBiomeId = -1,
+                narrativeDiscoveryCount = 0,
+                narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],
+                narrativeDepthTier = 0
             };
         }
+
+        public const int MaxNarrativeDiscoveries = 128;
     }
 
     // ══════════════════════════════════════════════════════════════════

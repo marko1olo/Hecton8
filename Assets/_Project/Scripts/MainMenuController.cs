@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using TMPro;
@@ -30,7 +31,6 @@ namespace Hecton.UI.MainMenu
 
         [Header("=== SAVE SLOTS ===")]
         [SerializeField] private Transform slotsContainer;
-        [SerializeField] private GameObject slotPrefab;
 
         [Header("=== MAIN MENU BUTTONS ===")]
         [SerializeField] private Button btnNewGame;
@@ -64,9 +64,8 @@ namespace Hecton.UI.MainMenu
         private bool _isTransitioning;
         private bool _isSceneLoadInFlight;
         private bool _registeredToTickManager;
+        private bool _settingsAvailable;
         private bool _sceneActivationRequested;
-        private bool _slotPrefabValidated;
-        private bool _slotPrefabHasSaveSlotUI = true;
         private int _lastLoadingPercent = -1;
         private float _lastUnscaledTickTime;
         private float _transitionElapsed;
@@ -81,6 +80,15 @@ namespace Hecton.UI.MainMenu
 
         private void Awake()
         {
+            if (!BootstrapRouteEnforcer.EnsureBootstrapRuntimeRoute(
+                    gameObject.scene.name,
+                    nameof(MainMenuController)))
+            {
+                enabled = false;
+                return;
+            }
+
+            AutoWireSceneReferences();
             ValidateReferences();
             BindButtons();
             InitializePanelStates();
@@ -139,10 +147,11 @@ namespace Hecton.UI.MainMenu
 #if UNITY_EDITOR
             Debug.Assert(mainMenuGroup != null, "[MainMenuController] mainMenuGroup is not assigned!");
             Debug.Assert(saveLoadGroup != null, "[MainMenuController] saveLoadGroup is not assigned!");
-            Debug.Assert(settingsGroup != null, "[MainMenuController] settingsGroup is not assigned!");
             Debug.Assert(loadingGroup != null, "[MainMenuController] loadingGroup is not assigned!");
             Debug.Assert(slotsContainer != null, "[MainMenuController] slotsContainer is not assigned!");
-            Debug.Assert(slotPrefab != null, "[MainMenuController] slotPrefab is not assigned!");
+            Debug.Assert(
+                HasExistingSlotInstances(),
+                "[MainMenuController] Save shell requires three scene-owned SaveSlotUI entries.");
 #endif
         }
 
@@ -154,6 +163,9 @@ namespace Hecton.UI.MainMenu
             BindButton(btnQuit, OnQuitClicked);
             BindButton(btnBackFromSaveLoad, OnBackFromSaveLoadClicked);
             BindButton(btnBackFromSettings, OnBackFromSettingsClicked);
+
+            if (btnSettings != null)
+                btnSettings.interactable = _settingsAvailable;
         }
 
         private static void BindButton(Button button, UnityEngine.Events.UnityAction callback)
@@ -189,6 +201,9 @@ namespace Hecton.UI.MainMenu
 
         private void OnSettingsClicked()
         {
+            if (!_settingsAvailable)
+                return;
+
             SwitchPanel(mainMenuGroup, settingsGroup);
         }
 
@@ -215,7 +230,156 @@ namespace Hecton.UI.MainMenu
 
         private void OnBackFromSettingsClicked()
         {
+            if (!_settingsAvailable)
+                return;
+
             SwitchPanel(settingsGroup, mainMenuGroup);
+        }
+
+        private void AutoWireSceneReferences()
+        {
+            Transform root = transform;
+
+            mainMenuGroup = ResolveCanvasGroup(mainMenuGroup, root, "Panel_MainMenu");
+            saveLoadGroup = ResolveCanvasGroup(saveLoadGroup, root, "Panel_Sideload Popup");
+            settingsGroup = ResolveCanvasGroup(settingsGroup, root, "Panel_Settings");
+            loadingGroup = ResolveCanvasGroup(loadingGroup, root, "Panel_LoadingScreen");
+
+            btnNewGame = ResolveButton(btnNewGame, root, "BTN_Start");
+            btnLoadGame = ResolveButton(btnLoadGame, root, "BTN_ResumeLog");
+            btnSettings = ResolveButton(btnSettings, root, "BTN_Settings");
+            btnQuit = ResolveButton(btnQuit, root, "BTN_Abort");
+            btnBackFromSaveLoad = ResolveButton(btnBackFromSaveLoad, root, "BTN_Back (\"RETURN\")");
+
+            labelNewGame = ResolveButtonLabel(labelNewGame, btnNewGame);
+            labelLoadGame = ResolveButtonLabel(labelLoadGame, btnLoadGame);
+            labelSettings = ResolveButtonLabel(labelSettings, btnSettings);
+            labelQuit = ResolveButtonLabel(labelQuit, btnQuit);
+
+            slotsContainer = ResolveSlotsContainer(slotsContainer, root);
+            loadingPercentText = ResolveLoadingPercentText(loadingPercentText, loadingGroup);
+            _settingsAvailable = DetermineSettingsAvailability();
+            if (!_settingsAvailable)
+                btnBackFromSettings = null;
+        }
+
+        private bool DetermineSettingsAvailability()
+        {
+            if (settingsGroup == null)
+                return false;
+
+            if (settingsGroup.transform.childCount == 0)
+                return false;
+
+            if (btnBackFromSettings == null)
+                return false;
+
+            return true;
+        }
+
+        private Transform ResolveSlotsContainer(Transform current, Transform root)
+        {
+            if (current != null)
+                return current;
+
+            Transform panel = FindDeepChild(root, "Panel_Sideload Popup");
+            if (panel == null)
+                return null;
+
+            Transform container = FindDeepChild(panel, "ScrollView_Slots");
+            if (container == null)
+                return null;
+
+            return container.childCount > 0 ? container : null;
+        }
+
+        private TMP_Text ResolveLoadingPercentText(TMP_Text current, CanvasGroup group)
+        {
+            if (current != null)
+                return current;
+
+            if (group == null)
+                return null;
+
+            return group.GetComponentInChildren<TMP_Text>(true);
+        }
+
+        private static CanvasGroup ResolveCanvasGroup(CanvasGroup current, Transform root, string objectName)
+        {
+            if (current != null)
+                return current;
+
+            Transform target = FindDeepChild(root, objectName);
+            if (target == null)
+                return null;
+
+            if (target.TryGetComponent(out CanvasGroup group))
+                return group;
+
+#if UNITY_EDITOR
+            Debug.LogError(
+                $"[MainMenuController] Required CanvasGroup missing on '{objectName}'. " +
+                "Author the component in 01_MAIN_MENU instead of patching it at runtime.");
+#endif
+            return null;
+        }
+
+        private static Button ResolveButton(Button current, Transform root, string objectName)
+        {
+            if (current != null)
+                return current;
+
+            Transform target = FindDeepChild(root, objectName);
+            if (target == null)
+                return null;
+
+            target.TryGetComponent(out Button button);
+            return button;
+        }
+
+        private static TMP_Text ResolveButtonLabel(TMP_Text current, Button button)
+        {
+            if (current != null)
+                return current;
+
+            if (button == null)
+                return null;
+
+            return button.GetComponentInChildren<TMP_Text>(true);
+        }
+
+        private static Transform FindDeepChild(Transform parent, string childName)
+        {
+            if (parent == null)
+                return null;
+
+            if (parent.name == childName)
+                return parent;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform result = FindDeepChild(parent.GetChild(i), childName);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
+        }
+
+        private bool HasExistingSlotInstances()
+        {
+            if (slotsContainer == null)
+                return false;
+
+            int found = 0;
+            for (int i = 0; i < slotsContainer.childCount; i++)
+            {
+                Transform child = slotsContainer.GetChild(i);
+                if (child != null && child.TryGetComponent(out SaveSlotUI _))
+                    found++;
+            }
+
+            return found >= SlotCount;
         }
 
         /// <summary>
@@ -256,28 +420,42 @@ namespace Hecton.UI.MainMenu
             if (_slotUIs != null)
                 return;
 
-            if (!_slotPrefabValidated)
-            {
-                _slotPrefabValidated = true;
-                _slotPrefabHasSaveSlotUI = slotPrefab != null && slotPrefab.GetComponent<SaveSlotUI>() != null;
+            if (TryBindExistingSlotInstances())
+                return;
 
-                if (!_slotPrefabHasSaveSlotUI)
-                {
 #if UNITY_EDITOR
-                    Debug.LogError("[MainMenuController] slotPrefab is missing SaveSlotUI component!");
+            Debug.LogError("[MainMenuController] Save shell requires three scene-owned SaveSlotUI entries.");
 #endif
-                    return;
-                }
-            }
+        }
 
-            _slotUIs = new SaveSlotUI[SlotCount]; // COLD ALLOC: fixed save-shell slot cache
+        private bool TryBindExistingSlotInstances()
+        {
+            if (slotsContainer == null)
+                return false;
 
-            for (int i = 0; i < SlotCount; i++)
+            SaveSlotUI[] slotUis = new SaveSlotUI[SlotCount]; // COLD ALLOC: fixed save-shell slot cache
+            int found = 0;
+
+            for (int i = 0; i < slotsContainer.childCount && found < SlotCount; i++)
             {
-                GameObject slotGameObject = Instantiate(slotPrefab, slotsContainer);
-                slotGameObject.name = SlotNames[i];
-                _slotUIs[i] = slotGameObject.GetComponent<SaveSlotUI>();
+                Transform child = slotsContainer.GetChild(i);
+                if (child == null)
+                    continue;
+
+                SaveSlotUI slotUi = child.GetComponent<SaveSlotUI>();
+                if (slotUi == null)
+                    continue;
+
+                child.gameObject.name = SlotNames[found];
+                slotUis[found] = slotUi;
+                found++;
             }
+
+            if (found < SlotCount)
+                return false;
+
+            _slotUIs = slotUis;
+            return true;
         }
 
         private void OnSlotClicked(string slotName)

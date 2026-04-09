@@ -49,6 +49,7 @@ namespace Hecton8.Bootstrap
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
+        private const string MainMenuSceneName = "01_MAIN_MENU";
         private static BootstrapController _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -128,6 +129,18 @@ namespace Hecton8.Bootstrap
         /// <summary>
         /// Инициализирует все требуемые глобальные системы в правильном порядке.
         /// </summary>
+        private void Start()
+        {
+            if (!_initializationComplete || !Application.isPlaying)
+                return;
+
+            Scene currentScene = gameObject.scene;
+            if (!currentScene.name.Contains("00_BOOTSTRAP"))
+                return;
+
+            SceneManager.LoadScene(MainMenuSceneName);
+        }
+
         private void InitializeGlobalSystems()
         {
             // ── Проверка Build Settings ──

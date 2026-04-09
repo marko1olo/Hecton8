@@ -545,6 +545,7 @@ After writing any system:
 [REQ] Profile: Frame Debugger + RenderDoc. Jobs + Burst for heavy compute.
 [REQ] Flora shaders: cheap global flow first, local simulation only if needed.
 [REQ] LOD transitions: cross-fade/dithered. No hard pops, no low-poly silhouette collapse.
+[REQ] Build baseline geometry for the broad player hardware target first; upscale strong GPUs with longer LOD residency, richer shader detail, and denser near-field dressing, not with permanently bloated base meshes.
 [REQ] Outsource shader work OK with: exact prompt · target file path · constraints · perf limits.
 [REQ] Static geometry: Contribute GI = On. Cast Shadows = On only if in shadow frustum.
 [REQ] < 0.5 m objects: Cast Shadows = Off (justify if enabled). Flora: Two-Sided only for hero near-field.

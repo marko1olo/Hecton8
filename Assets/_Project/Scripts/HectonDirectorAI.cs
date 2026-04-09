@@ -32,6 +32,8 @@ using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
+using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using UnityEngine;
@@ -110,10 +112,13 @@ namespace Hecton8.Systems.AI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Tension Weights ───────────────────────────")]
-        [SerializeField] private float predatorsWeight = 40f;
-        [SerializeField] private float oxygenWeight    = 25f;
-        [SerializeField] private float energyWeight    = 20f;
-        [SerializeField] private float calmWeight      = 15f;
+        [SerializeField] private float predatorsWeight = 25f;
+        [SerializeField] private float oxygenWeight    = 20f;
+        [SerializeField] private float energyWeight    = 15f;
+        [SerializeField] private float calmWeight      = 10f;
+        [SerializeField] private float depthWeight     = 15f;
+        [SerializeField] private float speedWeight     = 10f;
+        [SerializeField] private float lootWeight      = 5f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PREDATOR SCAN
@@ -213,6 +218,9 @@ namespace Hecton8.Systems.AI
         private DirectorEventType _lastEventType  = DirectorEventType.None;
 
         private float _tensionScore;
+        private float   _narrativeBonus;
+        private float   _timeSinceLastLoot;
+        private Vector3 _lastFramePos;
         private float _calmTimer;
         private float _phaseTimer;
         private float _peakCooldownTimer;
@@ -230,6 +238,9 @@ namespace Hecton8.Systems.AI
         private float _oxygenFactor;
         private float _energyFactor;
         private float _calmFactor;
+        private float _debugDepthFactor;
+        private float _debugSpeedFactor;
+        private float _debugLootFactor;
 
         // Autosave cooldown
         private float _lastAutoSaveTime = float.NegativeInfinity;
@@ -292,6 +303,7 @@ namespace Hecton8.Systems.AI
         [SerializeField] private float  _debugPhaseTimer;
         [SerializeField] private float  _debugPeakCooldown;
         [SerializeField] private float  _debugDeltaTime;
+
         [SerializeField] private string _debugPhase;
         [SerializeField] private string _debugLastEvent;
         [SerializeField] private bool   _debugPredatorPressureEnabled;
@@ -318,12 +330,18 @@ namespace Hecton8.Systems.AI
 
             GameTickManager.Instance?.Register((ISlowTickable)this);
 
+            InteractionEvents.OnItemCollected += HandleItemCollected;
+            NarrativeEvents.OnDiscoveryMade   += HandleNarrativeDiscovery;
+
             PublishPredatorPressure(true);
         }
 
         private void OnDisable()
         {
             GameTickManager.Instance?.Unregister((ISlowTickable)this);
+
+            InteractionEvents.OnItemCollected -= HandleItemCollected;
+            NarrativeEvents.OnDiscoveryMade   -= HandleNarrativeDiscovery;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -347,6 +365,10 @@ namespace Hecton8.Systems.AI
             }
 
             _lastTickTime = now;
+
+            // ── Track Loot & Speed ──
+            _timeSinceLastLoot += dt;
+            _lastFramePos = playerTransform.position;
 
             // Clamp delta to sane range
             if (dt < 0.001f) dt = 0.001f;
@@ -374,6 +396,13 @@ namespace Hecton8.Systems.AI
 
             // ── Core logic ──
             UpdateTimers(dt);
+            // Decaying narrative relief
+            if (_narrativeBonus > 0f)
+            {
+                _narrativeBonus -= dt * 0.5f;
+                if (_narrativeBonus < 0f) _narrativeBonus = 0f;
+            }
+
             _tensionScore = ComputeTensionScore();
             UpdateCalmTimer(dt);
             UpdatePhaseMachine();
@@ -404,16 +433,25 @@ namespace Hecton8.Systems.AI
 
         private float ComputeTensionScore()
         {
-            _predatorFactor = ComputePredatorFactor();
-            _oxygenFactor   = ComputeLowOxygenFactor();
-            _energyFactor   = ComputeLowEnergyFactor();
-            _calmFactor     = ComputeCalmFactor();
+            _predatorFactor   = ComputePredatorFactor();
+            _oxygenFactor     = ComputeLowOxygenFactor();
+            _energyFactor     = ComputeLowEnergyFactor();
+            _calmFactor       = ComputeCalmFactor();
+            _debugDepthFactor = ComputeDepthFactor();
+            _debugSpeedFactor = ComputeSpeedFactor();
+            _debugLootFactor  = ComputeLootFactor();
 
             float tension =
-                _predatorFactor * predatorsWeight +
-                _oxygenFactor   * oxygenWeight    +
-                _energyFactor   * energyWeight    +
-                _calmFactor     * calmWeight;
+                _predatorFactor   * predatorsWeight +
+                _oxygenFactor     * oxygenWeight    +
+                _energyFactor     * energyWeight    +
+                _calmFactor       * calmWeight      +
+                _debugDepthFactor * depthWeight     +
+                _debugSpeedFactor * speedWeight     +
+                _debugLootFactor  * lootWeight;
+
+            // Narrative Relief
+            tension -= _narrativeBonus;;
 
             // Manual clamp — no Mathf call overhead
             if (tension < 0f)   tension = 0f;
@@ -996,6 +1034,52 @@ namespace Hecton8.Systems.AI
             if (missionTriggerWeight  < 0) missionTriggerWeight  = 0;
         }
 
+#endif
+
+        private float ComputeDepthFactor()
+        {
+            if (playerTransform == null) return 0f;
+            float depth = -playerTransform.position.y;
+            if (depth < 0) return 0f;
+            // Normalize: 0 to 1 over 800m depth
+            float factor = depth / 800f;
+            return factor > 1f ? 1f : factor;
+        }
+
+        private float ComputeSpeedFactor()
+        {
+            if (playerTransform == null) return 0f;
+            float dist = Vector3.Distance(playerTransform.position, _lastFramePos);
+            // Quick movement increases visibility/tension. 
+            // 8m per SlowTick (~16m/s) = 1.0 factor
+            float factor = dist / 8f; 
+            return factor > 1f ? 1f : factor;
+        }
+
+        private float ComputeLootFactor()
+        {
+            // Max tension relief thirst at 8 minutes without loot
+            float factor = _timeSinceLastLoot / 480f;
+            return factor > 1f ? 1f : factor;
+        }
+
+        private void HandleItemCollected(ItemData itemData, int quantity, Transform interactor)
+        {
+            _timeSinceLastLoot = 0f;
+        }
+
+        private void HandleNarrativeDiscovery(string id)
+        {
+            // Significant tension relief upon discovery
+            _narrativeBonus += 25f;
+            if (_narrativeBonus > 40f) _narrativeBonus = 40f; // Cap relief
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[DirectorAI] Narrative Relief Active: +25 tension drop. (ID: {id})");
+#endif
+        }
+
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             Transform t = playerTransform != null ? playerTransform : transform;

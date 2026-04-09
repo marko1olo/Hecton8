@@ -1,31 +1,24 @@
 using System;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using Hecton.Localization;
 using Hecton8.SaveSystem;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace Hecton.UI.MainMenu
 {
     /// <summary>
-    /// UI component for a save slot button prefab.
-    /// Displays slot name, metadata (date, playtime), handles click.
-    /// All visible text is localized.
+    /// UI component for a save slot button.
+    /// Supports both authored two-text layouts and compact single-text slots.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
     public sealed class SaveSlotUI : MonoBehaviour
     {
-        // ──────────────────────────────────────────────
-        // INSPECTOR
-        // ──────────────────────────────────────────────
-        [Header("=== TEXT FIELDS ===")]
+        [Header("=== Text Fields ===")]
         [SerializeField] private TMP_Text slotNameText;
         [SerializeField] private TMP_Text detailsText;
 
-        // ──────────────────────────────────────────────
-        // RUNTIME
-        // ──────────────────────────────────────────────
         private Button _button;
         private string _slotId;
         private bool _exists;
@@ -37,22 +30,18 @@ namespace Hecton.UI.MainMenu
         private Action<string> _onClickCallback;
         private Color _slotNameBaseColor;
         private Color _detailsBaseColor;
-
-        // ══════════════════════════════════════════════
-        // LIFECYCLE
-        // ══════════════════════════════════════════════
+        private bool _useCompactSingleTextLayout;
 
         private void Awake()
         {
+            AutoWireTextReferences();
             _button = GetComponent<Button>();
-            if (_button != null)
-            {
-                _button.onClick.RemoveListener(OnButtonClicked);
-                _button.onClick.AddListener(OnButtonClicked);
-            }
+            _button.onClick.RemoveListener(OnButtonClicked);
+            _button.onClick.AddListener(OnButtonClicked);
 
             if (slotNameText != null)
                 _slotNameBaseColor = slotNameText.color;
+
             if (detailsText != null)
                 _detailsBaseColor = detailsText.color;
         }
@@ -67,37 +56,15 @@ namespace Hecton.UI.MainMenu
             LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
         }
 
-        // ══════════════════════════════════════════════
-        // LOCALIZATION
-        // ══════════════════════════════════════════════
-
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
-            // Re-apply texts with new language
             if (!string.IsNullOrEmpty(_slotId))
-            {
-                ApplyTexts();
-            }
+                ApplyPresentation();
         }
 
-        // ══════════════════════════════════════════════
-        // PUBLIC API
-        // ══════════════════════════════════════════════
-
         /// <summary>
-        /// Initializes the slot with save data.
+        /// Initializes the slot with raw metadata.
         /// </summary>
-        /// <param name="slotId">Slot identifier (e.g., "slot_1").</param>
-        /// <param name="exists">Whether a save exists in this slot.</param>
-        /// <param name="timestamp">
-        /// Save date/time string (ignored if exists == false).
-        /// </param>
-        /// <param name="playtime">
-        /// Play time in seconds (ignored if exists == false).
-        /// </param>
-        /// <param name="onClickCallback">
-        /// Click callback receiving slotId. Null = button will be non-interactable.
-        /// </param>
         public void Init(
             string slotId,
             bool exists,
@@ -105,24 +72,24 @@ namespace Hecton.UI.MainMenu
             float playtime,
             Action<string> onClickCallback)
         {
-            _slotId          = slotId;
-            _exists          = exists;
-            _timestamp       = timestamp;
-            _playtime        = playtime;
-            _sceneName       = string.Empty;
-            _statusLabel     = string.Empty;
-            _integrityState  = exists ? SaveSlotIntegrityState.Healthy : SaveSlotIntegrityState.Empty;
+            _slotId = slotId;
+            _exists = exists;
+            _timestamp = timestamp;
+            _playtime = playtime;
+            _sceneName = string.Empty;
+            _statusLabel = string.Empty;
+            _integrityState = exists ? SaveSlotIntegrityState.Healthy : SaveSlotIntegrityState.Empty;
             _onClickCallback = onClickCallback;
 
-            ApplyTexts();
+            ApplyPresentation();
 
-            // Button setup
             if (_button != null)
-            {
                 _button.interactable = _exists && _onClickCallback != null;
-            }
         }
 
+        /// <summary>
+        /// Initializes the slot from validated slot info.
+        /// </summary>
         public void Init(SaveSlotInfo slotInfo, Action<string> onClickCallback)
         {
             if (slotInfo == null)
@@ -142,52 +109,185 @@ namespace Hecton.UI.MainMenu
             _sceneName = metadata != null ? metadata.sceneName : string.Empty;
             _statusLabel = slotInfo.GetStatusLabel();
             _integrityState = slotInfo.IntegrityState;
-            ApplyTexts();
+            ApplyPresentation();
         }
 
-        // ══════════════════════════════════════════════
-        // TEXT APPLICATION
-        // ══════════════════════════════════════════════
+        private void AutoWireTextReferences()
+        {
+            if (slotNameText != null && detailsText != null)
+                return;
 
-        private void ApplyTexts()
+            TMP_Text firstText = null;
+            TMP_Text secondText = null;
+            FindTextReferences(transform, ref firstText, ref secondText);
+
+            if (slotNameText == null)
+                slotNameText = firstText;
+
+            if (detailsText == null)
+                detailsText = secondText;
+
+            _useCompactSingleTextLayout = slotNameText != null && detailsText == null;
+            if (_useCompactSingleTextLayout)
+                ConfigureCompactSingleTextLayout(slotNameText);
+        }
+
+        private static void FindTextReferences(Transform parent, ref TMP_Text firstText, ref TMP_Text secondText)
+        {
+            if (parent == null || secondText != null)
+                return;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child == null)
+                    continue;
+
+                if (child.TryGetComponent(out TMP_Text text))
+                {
+                    if (firstText == null)
+                        firstText = text;
+                    else if (secondText == null)
+                    {
+                        secondText = text;
+                        return;
+                    }
+                }
+
+                FindTextReferences(child, ref firstText, ref secondText);
+                if (secondText != null)
+                    return;
+            }
+        }
+
+        private static void ConfigureCompactSingleTextLayout(TMP_Text text)
+        {
+            if (text == null)
+                return;
+
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.alignment = TextAlignmentOptions.Left;
+            text.fontSize = Mathf.Min(text.fontSize, 52f);
+            text.lineSpacing = -10f;
+            text.maxVisibleLines = 2;
+        }
+
+        private void ApplyPresentation()
         {
             LocalizationManager loc = LocalizationManager.Instance;
+            string prefix = loc != null
+                ? loc.Get(LocalizationKeys.SLOT_PREFIX)
+                : "SLOT";
+            string number = ExtractSlotNumber(_slotId);
+            string slotLine = string.Concat(prefix, " ", number);
+            string detailsLine = BuildDetailsLine(loc);
 
-            // ── Slot name ──
-            if (slotNameText != null)
+            if (_useCompactSingleTextLayout && slotNameText != null)
             {
-                string prefix = loc != null
-                    ? loc.Get(LocalizationKeys.SLOT_PREFIX)
-                    : "SLOT";
-
-                string number = ExtractSlotNumber(_slotId);
-                slotNameText.SetText(string.Concat(prefix, " ", number));
+                slotNameText.SetText(string.Concat(slotLine, "\n", detailsLine));
+                slotNameText.color = _exists
+                    ? GetStatusColor(_integrityState, _slotNameBaseColor)
+                    : _slotNameBaseColor;
+                return;
             }
 
-            // ── Details ──
+            if (slotNameText != null)
+            {
+                slotNameText.SetText(slotLine);
+                slotNameText.color = _exists
+                    ? GetStatusColor(_integrityState, _slotNameBaseColor)
+                    : _slotNameBaseColor;
+            }
+
             if (detailsText != null)
             {
-                if (_exists)
-                {
-                    string formattedPlaytime = FormatPlaytime(_playtime);
-                    string sceneChunk = string.IsNullOrEmpty(_sceneName) ? string.Empty : string.Concat(" | ", _sceneName);
-                    string statusChunk = string.IsNullOrEmpty(_statusLabel) ? string.Empty : string.Concat("\n", _statusLabel);
-                    detailsText.SetText(string.Concat(_timestamp, " | ", formattedPlaytime, sceneChunk, statusChunk));
-                    detailsText.color = GetStatusColor(_integrityState, _detailsBaseColor);
-                    if (slotNameText != null)
-                        slotNameText.color = GetStatusColor(_integrityState, _slotNameBaseColor);
-                }
-                else
-                {
-                    string noData = loc != null
-                        ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
-                        : "NO DATA";
+                detailsText.SetText(detailsLine);
+                detailsText.color = _exists
+                    ? GetStatusColor(_integrityState, _detailsBaseColor)
+                    : _detailsBaseColor;
+            }
+        }
 
-                    detailsText.SetText(noData);
-                    detailsText.color = _detailsBaseColor;
-                    if (slotNameText != null)
-                        slotNameText.color = _slotNameBaseColor;
-                }
+        private string BuildDetailsLine(LocalizationManager loc)
+        {
+            if (_useCompactSingleTextLayout)
+                return BuildCompactDetailsLine(loc);
+
+            if (_exists)
+            {
+                string formattedPlaytime = FormatPlaytime(_playtime);
+                string sceneChunk = string.IsNullOrEmpty(_sceneName) ? string.Empty : string.Concat(" | ", _sceneName);
+                string statusChunk = string.IsNullOrEmpty(_statusLabel) ? string.Empty : string.Concat("\n", _statusLabel);
+                return string.Concat(_timestamp, " | ", formattedPlaytime, sceneChunk, statusChunk);
+            }
+
+            return loc != null
+                ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
+                : "NO DATA";
+        }
+
+        private string BuildCompactDetailsLine(LocalizationManager loc)
+        {
+            if (!_exists)
+            {
+                string noData = loc != null
+                    ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
+                    : "NO DATA";
+                return string.Concat("<size=58%>", noData, "</size>");
+            }
+
+            string formattedPlaytime = FormatPlaytime(_playtime);
+            string compactSceneName = GetCompactSceneName(_sceneName);
+            string compactStatus = GetCompactStatusLabel(_integrityState, _statusLabel);
+
+            string details = string.IsNullOrEmpty(compactSceneName)
+                ? formattedPlaytime
+                : string.Concat(formattedPlaytime, " | ", compactSceneName);
+
+            if (!string.IsNullOrEmpty(compactStatus))
+                details = string.Concat(details, " | ", compactStatus);
+
+            return string.Concat("<size=52%>", details, "</size>");
+        }
+
+        private static string GetCompactSceneName(string sceneName)
+        {
+            if (string.IsNullOrEmpty(sceneName))
+                return string.Empty;
+
+            if (string.Equals(sceneName, "02_HECTON_WORLD", StringComparison.Ordinal))
+                return "WORLD";
+
+            const int CompactSceneNameLimit = 16;
+            if (sceneName.Length <= CompactSceneNameLimit)
+                return sceneName;
+
+            return string.Concat(sceneName.Substring(0, CompactSceneNameLimit - 1), "...");
+        }
+
+        private static string GetCompactStatusLabel(
+            SaveSlotIntegrityState integrityState,
+            string fallbackStatusLabel)
+        {
+            switch (integrityState)
+            {
+                case SaveSlotIntegrityState.Healthy:
+                    return string.Empty;
+                case SaveSlotIntegrityState.HealthyWithBackup:
+                    return "BACKUP";
+                case SaveSlotIntegrityState.BackupOnly:
+                    return "BACKUP ONLY";
+                case SaveSlotIntegrityState.MissingMetadata:
+                    return "NO META";
+                case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
+                    return "META RESTORED";
+                case SaveSlotIntegrityState.MetadataSynthesized:
+                    return "META SYNTH";
+                case SaveSlotIntegrityState.CorruptedMetadata:
+                    return "CORRUPT";
+                default:
+                    return string.IsNullOrEmpty(fallbackStatusLabel) ? string.Empty : fallbackStatusLabel;
             }
         }
 
@@ -211,37 +311,23 @@ namespace Hecton.UI.MainMenu
             }
         }
 
-        // ══════════════════════════════════════════════
-        // BUTTON HANDLER
-        // ══════════════════════════════════════════════
-
         private void OnButtonClicked()
         {
             _onClickCallback?.Invoke(_slotId);
         }
 
-        // ══════════════════════════════════════════════
-        // FORMATTING UTILITIES
-        // ══════════════════════════════════════════════
-
-        /// <summary>
-        /// Converts playtime from seconds to "HH:MM" format.
-        /// </summary>
         private static string FormatPlaytime(float totalSeconds)
         {
-            if (totalSeconds < 0f) totalSeconds = 0f;
+            if (totalSeconds < 0f)
+                totalSeconds = 0f;
 
             int totalMinutes = Mathf.FloorToInt(totalSeconds / 60f);
-            int hours   = totalMinutes / 60;
+            int hours = totalMinutes / 60;
             int minutes = totalMinutes % 60;
 
             return string.Format("{0:D2}:{1:D2}", hours, minutes);
         }
 
-        /// <summary>
-        /// Extracts numeric suffix from slot ID.
-        /// "slot_1" → "1", "slot_12" → "12"
-        /// </summary>
         private static string ExtractSlotNumber(string slotId)
         {
             if (string.IsNullOrEmpty(slotId))
@@ -249,9 +335,7 @@ namespace Hecton.UI.MainMenu
 
             int underscoreIndex = slotId.LastIndexOf('_');
             if (underscoreIndex >= 0 && underscoreIndex < slotId.Length - 1)
-            {
                 return slotId.Substring(underscoreIndex + 1);
-            }
 
             return slotId;
         }

@@ -69,6 +69,8 @@ namespace Hecton8.SaveSystem
                 steps.Add("last discovered biome repaired");
             }
 
+            changed |= EnsureNarrative(ref data, steps);
+
             changed |= EnsureInventory(ref data.inventory, steps);
             changed |= EnsureWorldState(ref data.worldState, steps);
             changed |= EnsureProceduralWorldState(ref data.proceduralWorldState, steps);
@@ -154,6 +156,35 @@ namespace Hecton8.SaveSystem
                 dto.depletedCount = clamped;
                 changed = true;
                 steps.Add("world state count clamped");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureNarrative(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
+
+            if (data.narrativeDiscoveryIds == null || data.narrativeDiscoveryIds.Length < SaveData.MaxNarrativeDiscoveries)
+            {
+                data.narrativeDiscoveryIds = new string[SaveData.MaxNarrativeDiscoveries];
+                changed = true;
+                steps.Add("narrative discovery capacity repaired");
+            }
+
+            int clampedCount = Mathf.Clamp(data.narrativeDiscoveryCount, 0, data.narrativeDiscoveryIds.Length);
+            if (clampedCount != data.narrativeDiscoveryCount)
+            {
+                data.narrativeDiscoveryCount = clampedCount;
+                changed = true;
+                steps.Add("narrative discovery count clamped");
+            }
+
+            if (data.narrativeDepthTier < 0)
+            {
+                data.narrativeDepthTier = 0;
+                changed = true;
+                steps.Add("narrative depth tier repaired");
             }
 
             return changed;

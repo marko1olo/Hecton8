@@ -20,10 +20,17 @@ namespace Hecton8.EditorTools
         private const string AutomationResponseFileName = "flora_response.json";
         private const string AutomationPreviewFolder = "Assets/Screenshots/Automation";
         private const double AutomationPollIntervalSeconds = 0.5d;
-        private const double AutomationPreviewTimeoutSeconds = 20d;
+        private const double AutomationPreviewTimeoutSeconds = 75d;
         private const int AutomationPreviewWidth = 512;
         private const int AutomationPreviewHeight = 512;
-        private const int AutomationPreviewTasksPerUpdate = 2;
+        private const int AutomationPreviewTasksPerUpdate = 4;
+        private static readonly Vector3[] AutomationPreviewDirections =
+        {
+            new Vector3(0f, 0.12f, -1f),
+            new Vector3(-0.72f, 0.16f, -1f),
+            new Vector3(0.72f, 0.16f, -1f),
+            new Vector3(-0.24f, 0.62f, -0.88f)
+        };
 
         private static readonly List<AutomationPreviewTask> _automationPreviewTasks = new List<AutomationPreviewTask>(8); // COLD ALLOC: editor automation queue, bounded by explicit request payload
 
@@ -359,10 +366,10 @@ namespace Hecton8.EditorTools
                 fillLight.transform.rotation = Quaternion.Euler(328f, 148f, 0f);
 
                 viewTextures = new Texture2D[4]; // COLD ALLOC: editor-only contact sheet generation, fixed 4-view payload
-                viewTextures[0] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(0f, 0.12f, -1f), 0.06f, 1.42f);
-                viewTextures[1] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.72f, 0.16f, -1f), 0.08f, 1.38f);
-                viewTextures[2] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(0.72f, 0.16f, -1f), 0.08f, 1.38f);
-                viewTextures[3] = RenderAutomationPreviewView(previewUtility, bounds, new Vector3(-0.24f, 0.62f, -0.88f), -0.08f, 1.02f);
+                viewTextures[0] = RenderAutomationPreviewView(previewUtility, bounds, AutomationPreviewDirections[0], 0.06f, 1.42f);
+                viewTextures[1] = RenderAutomationPreviewView(previewUtility, bounds, AutomationPreviewDirections[1], 0.08f, 1.38f);
+                viewTextures[2] = RenderAutomationPreviewView(previewUtility, bounds, AutomationPreviewDirections[2], 0.08f, 1.38f);
+                viewTextures[3] = RenderAutomationPreviewView(previewUtility, bounds, AutomationPreviewDirections[3], -0.08f, 1.02f);
 
                 for (int i = 0; i < viewTextures.Length; i++)
                 {
@@ -371,7 +378,8 @@ namespace Hecton8.EditorTools
                 }
 
                 contactSheet = BuildAutomationPreviewContactSheet(viewTextures);
-                if (!IsAutomationPreviewMeaningful(contactSheet, camera.backgroundColor))
+                if (!IsAutomationPreviewMeaningful(contactSheet, camera.backgroundColor)
+                    && !HasMeaningfulAutomationView(viewTextures, camera.backgroundColor))
                     return null;
 
                 return SaveAutomationPreview(prefabPath, contactSheet);
@@ -427,10 +435,15 @@ namespace Hecton8.EditorTools
                 Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.08f);
             float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
             float slenderness = bounds.size.y / Mathf.Max(0.08f, maxHorizontalExtent * 2f);
+            float crownBias = Mathf.Clamp01((slenderness - 2.8f) / 4.6f);
+            focus += Vector3.up * (bounds.extents.y * crownBias * Mathf.Lerp(0.1f, 0.24f, Mathf.Clamp01(zoomScale - 1f)));
+            float preferredVerticalFit = Mathf.Max(bounds.extents.y * 0.72f, projectedVertical * 0.78f);
+            projectedVertical = Mathf.Lerp(projectedVertical, preferredVerticalFit, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
             float tallCompensation = Mathf.Lerp(1f, 1.12f, Mathf.Clamp01((slenderness - 2.2f) / 4.2f));
+            float crownZoomTightening = Mathf.Lerp(1f, 0.84f, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
             float effectiveZoomScale = zoomScale >= 1.2f
-                ? zoomScale * tallCompensation
-                : zoomScale * Mathf.Lerp(1f, tallCompensation, 0.32f);
+                ? zoomScale * tallCompensation * crownZoomTightening
+                : zoomScale * Mathf.Lerp(1f, tallCompensation, 0.32f) * crownZoomTightening;
             float orthographicSize = Mathf.Max(
                 projectedVertical * Mathf.Max(1.1f, effectiveZoomScale),
                 (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(1.1f, effectiveZoomScale));
@@ -456,7 +469,7 @@ namespace Hecton8.EditorTools
             float bestYaw = 0f;
             float bestScore = float.MinValue;
 
-            for (int sampleIndex = 0; sampleIndex < 12; sampleIndex++)
+            for (int sampleIndex = 0; sampleIndex < 24; sampleIndex++)
             {
                 float yaw = sampleIndex * 15f;
                 prefabRoot.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
@@ -464,10 +477,17 @@ namespace Hecton8.EditorTools
                 float width = Mathf.Max(bounds.size.x, bounds.size.z);
                 float depth = Mathf.Min(bounds.size.x, bounds.size.z);
                 float frontHeight = bounds.size.y;
-                float diagonalWidth = EvaluateProjectedBoundsHalfExtent(bounds, new Vector3(0.72f, 0f, 0.72f).normalized) * 2f;
+                float frontCoverage = EvaluateAutomationPreviewCoverage(bounds, AutomationPreviewDirections[0], false);
+                float leftCoverage = EvaluateAutomationPreviewCoverage(bounds, AutomationPreviewDirections[1], false);
+                float rightCoverage = EvaluateAutomationPreviewCoverage(bounds, AutomationPreviewDirections[2], false);
+                float heroCoverage = EvaluateAutomationPreviewCoverage(bounds, AutomationPreviewDirections[3], true);
+                float minimumReadableCoverage = Mathf.Min(frontCoverage, Mathf.Min(leftCoverage, rightCoverage));
+                float verticalPreference = Mathf.Clamp01(width / Mathf.Max(0.08f, frontHeight));
                 float aspect = depth <= 0.0001f ? 0f : width / depth;
                 float thinPenalty = Mathf.Clamp01(Mathf.InverseLerp(5f, 1.5f, aspect));
-                float score = (width * 1.5f + depth * 1.1f + diagonalWidth * 0.9f + frontHeight * 0.1f) * Mathf.Lerp(0.6f, 1f, thinPenalty);
+                float score = (width * 0.92f + depth * 0.58f + frontCoverage * 2.4f + leftCoverage * 1.68f + rightCoverage * 1.68f + heroCoverage * 1.2f + minimumReadableCoverage * 2.1f + frontHeight * 0.06f)
+                    * Mathf.Lerp(0.58f, 1f, thinPenalty)
+                    * Mathf.Lerp(0.86f, 1f, verticalPreference);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -494,6 +514,43 @@ namespace Hecton8.EditorTools
             float ay = Mathf.Abs(Vector3.Dot(new Vector3(0f, extents.y, 0f), axis));
             float az = Mathf.Abs(Vector3.Dot(new Vector3(0f, 0f, extents.z), axis));
             return ax + ay + az;
+        }
+
+        private static float EvaluateAutomationPreviewCoverage(Bounds bounds, Vector3 viewDirection, bool heroView)
+        {
+            Vector3 normalizedViewDirection = viewDirection.sqrMagnitude > 0.0001f
+                ? viewDirection.normalized
+                : new Vector3(0f, 0.12f, -1f).normalized;
+            Vector3 worldUp = Mathf.Abs(Vector3.Dot(normalizedViewDirection, Vector3.up)) > 0.96f
+                ? Vector3.forward
+                : Vector3.up;
+            Vector3 right = Vector3.Normalize(Vector3.Cross(worldUp, normalizedViewDirection));
+            Vector3 up = Vector3.Normalize(Vector3.Cross(normalizedViewDirection, right));
+            float projectedVertical = Mathf.Max(EvaluateProjectedBoundsHalfExtent(bounds, up), bounds.extents.y * 1.04f);
+            float projectedHorizontal = Mathf.Max(
+                EvaluateProjectedBoundsHalfExtent(bounds, right),
+                Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.08f);
+
+            float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
+            float slenderness = bounds.size.y / Mathf.Max(0.08f, maxHorizontalExtent * 2f);
+            float crownBias = Mathf.Clamp01((slenderness - 2.8f) / 4.6f);
+            float zoomScale = heroView ? 1.02f : 1.38f;
+            float preferredVerticalFit = Mathf.Max(bounds.extents.y * 0.72f, projectedVertical * 0.78f);
+            projectedVertical = Mathf.Lerp(projectedVertical, preferredVerticalFit, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
+            float tallCompensation = Mathf.Lerp(1f, 1.12f, Mathf.Clamp01((slenderness - 2.2f) / 4.2f));
+            float crownZoomTightening = Mathf.Lerp(1f, 0.84f, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
+            float effectiveZoomScale = zoomScale >= 1.2f
+                ? zoomScale * tallCompensation * crownZoomTightening
+                : zoomScale * Mathf.Lerp(1f, tallCompensation, 0.32f) * crownZoomTightening;
+            float aspect = AutomationPreviewWidth / (float)AutomationPreviewHeight;
+            float orthographicSize = Mathf.Max(
+                projectedVertical * Mathf.Max(1.1f, effectiveZoomScale),
+                (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(1.1f, effectiveZoomScale));
+            orthographicSize = Mathf.Max(orthographicSize, 0.24f);
+
+            float normalizedHorizontal = projectedHorizontal / Mathf.Max(0.001f, orthographicSize * aspect);
+            float normalizedVertical = projectedVertical / Mathf.Max(0.001f, orthographicSize);
+            return normalizedHorizontal * normalizedVertical;
         }
 
         private static Texture2D BuildAutomationPreviewContactSheet(Texture2D[] viewTextures)
@@ -586,6 +643,20 @@ namespace Hecton8.EditorTools
                 return false;
 
             return informativeSamples >= Mathf.Max(2, sampleCount / 20);
+        }
+
+        private static bool HasMeaningfulAutomationView(Texture2D[] viewTextures, Color backgroundColor)
+        {
+            if (viewTextures == null)
+                return false;
+
+            for (int i = 0; i < viewTextures.Length; i++)
+            {
+                if (IsAutomationPreviewMeaningful(viewTextures[i], backgroundColor))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void PrepareAutomationPreviewHierarchy(GameObject prefabRoot)

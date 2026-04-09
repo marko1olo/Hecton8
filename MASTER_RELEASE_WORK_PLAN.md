@@ -42,6 +42,31 @@ Main working truth:
 - Nothing is done because code exists.
 - Nothing is done because it looked good in editor.
 - Everything remains `PENDING VERIFICATION` until confirmed by build, world-check, and user check where applicable.
+- Strong GPUs must upscale from the same artistic truth, not from permanently bloated baseline meshes; near-field richness may rise with better hardware, but baseline geometry still has to respect the MX350 guardrail.
+
+## Latest Flora Pass Log
+
+- 2026-04-09 - Kelp budget convergence after thick-leaf/frilled expansion
+  - Did:
+    - cut redundant supplemental kelp geometry in `WorldProceduralSeaweedMeshBuilder` instead of flattening the main blades
+    - reduced shell-thickness usage on dense/heavy variants while keeping large-leaf near-field volume
+    - trimmed only the most expensive per-variant specs
+    - removed blocking compile typo in `HectonDirectorAI.cs`
+    - reran flora starters/apply/validate/report
+  - Result:
+    - `family.kelp.tall` max `7716 / 8000`
+    - `family.kelp.patch.dense` max `9016 / 12000`
+    - `family.kelp.canopy` max `9402 / 10000`
+    - `family.kelp.abyssal` max `8660 / 9000`
+  - Failed:
+    - no fresh preview-oracle capture pass yet on the converged geometry
+    - no in-world beauty/profiler/build proof yet
+  - Broke:
+    - none in flora pipeline after the compile blocker was removed
+  - Remaining:
+    - preview readability pass
+    - in-world swim check
+    - runtime build/profiler proof
 
 ## File Governance
 
@@ -198,6 +223,45 @@ Confirmed build-truth from `2026-04-05`:
   - save/load
 - [ ] The world sells false depth and false richness without killing CPU/GPU
 
+## Flora Authoring Track
+
+### [~] Upgrade large kelp from flat-card read toward selective thin-shell volume
+- Status: [~]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: large algae cannot read as single flat cards at near range; thickness should appear only where silhouette and scale justify it
+- Evidence:
+- editor kelp builder now contains `LOD0`-only blade shell logic gated by blade width/length/profile
+- shell probability is higher on `FoldedLamina`, `PaddleLobed`, and `FrilledRibbon`
+- far LODs remain single-sided for MX350 budget safety
+- Problems:
+- current project compile is blocked by unrelated `HectonNarrativeDirector` `ReadOnlyAttribute` errors
+- no trusted live bake/report pass yet for the shell-volume change
+- Short Comment:
+- this is the correct cheap lie: add volume only to some big leaves nearby, not to every leaf everywhere
+- Next Step:
+- clear global compile blocker, rebake target kelp families, inspect previews and in-world readback
+
+### [~] Expand kelp variety with a frilled structural lane
+- Status: [~]
+- Need User Check: yes
+- Need Build Check: yes
+- Need In-World Swim Check: yes
+- Why: current kelp set still leans too hard on laminar/paddle sheets; it needs more structurally distinct silhouettes
+- Evidence:
+- staged variants:
+- `family_kelp_tall__frondcrest__s105-165`
+- `family_kelp_patch_dense__frilltuft__s75-125`
+- `family_kelp_canopy__featherfan__s120-200`
+- `family_kelp_abyssal__tatterveil__s110-185`
+- Problems:
+- live proof blocked by the same unrelated compile error
+- Short Comment:
+- this adds a different family language, not just another broad leaf reskin
+- Next Step:
+- regenerate baked starters and compare preview/readability against the paddle lane
+
 ## P0 Build Truth Track
 
 - [c] Fix hitch on underwater -> above-water transition with camera rotation
@@ -229,6 +293,11 @@ P0 rules:
       - Protection script for 01_MAIN_MENU and 02_HECTON_WORLD
       - Reloads 00_BOOTSTRAP if loaded directly without bootstrap
       - Enforces single-entry-point architecture
+    - BootstrapRouteEnforcer.cs (`Assets/_Project/Scripts/Bootstrap/BootstrapRouteEnforcer.cs`)
+      - Owner-level fail-safe for `01_MAIN_MENU` and `02_HECTON_WORLD`
+      - Reloads `00_BOOTSTRAP` even if scene content forgot to include `SceneGuard`
+    - Build Settings truth addendum
+      - disk + Unity MCP readback both confirm the production order is already `00_BOOTSTRAP` -> `01_MAIN_MENU` -> `02_HECTON_WORLD`
   - **NEXT STEPS (manual in Unity):**
     1. Add BootstrapController to [BOOTSTRAPPER] GameObject in 00_BOOTSTRAP scene
     2. Set DefaultExecutionOrder to -30000 (before SceneBootstrap)
@@ -247,6 +316,7 @@ P0 rules:
     - Shell verification tools now honor their inspector gates (`_enableVerification` / `_verifyTransitions`) instead of carrying dead toggle fields
     - Async scene loading with progress bar
     - Start path now fail-closes repeated `StartGame()` calls, so modal/button spam cannot launch multiple scene-load coroutines for the same menu -> world transition
+    - Start path now also fail-closes direct runtime entry without bootstrap through `BootstrapRouteEnforcer`, so `01_MAIN_MENU` no longer depends only on authored `SceneGuard`
     - Removed deprecated `MainMenuController.TargetSaveSlot` legacy mirror; start-session source of truth is now only `GameStartContextHolder` on the menu side
     - MainMenuValidator.cs (Editor tool: Window > HECTON-8 > Validate Main Menu)
   - **SCENE REQUIREMENTS (manual in Unity):**
@@ -2060,6 +2130,25 @@ P0 rules:
     - in-world beauty proof still pending
   - status:
     - `PENDING VERIFICATION`
+- 2026-04-09 - Paddle-lobed readability follow-up closed the preview-oracle timeout trap
+  - what changed:
+    - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds an extra fill/fan lamina for paddle-lobed variants on near LODs
+    - crown-canopy paddle variants were widened slightly before ribbon build
+    - `WorldProceduralFloraFinalStatusReport` preview framing now biases upward on tall/slender prefabs and uses a longer preview deadline
+  - verified facts:
+    - automation request `flora-verify-paddle-20260409-5` completed with:
+      - `previewPaths=4`
+      - `previewErrors=[]`
+    - fresh budget readback:
+      - `broadleaf = 5708`
+      - `paddlespray = 11032`
+      - `paddlefan = 5164`
+      - `petal = 5684`
+  - remaining truth:
+    - `broadleaf` is still structurally narrower than the target hero look and needs another silhouette pass
+    - authored photoreal finals and in-world profiler/build proof still remain open
+  - status:
+    - `PENDING VERIFICATION`
 - 2026-04-09 - Continue giant seaweed quality pass through the existing editor-owned builder, not a new subsystem. Current milestone: laminar giant forms now have dedicated sequencing rules and narrower yaw lanes. Next seaweed target remains: `sheetwall` / other broad-wall variants must read as layered lamina masses, not fan bouquets; then expand library breadth toward more alien/deep archetypes and later authored photoreal replacements.
 - 2026-04-09 - Canopy wall variants were tightened again and are now safely below previous budgets, but visual oracle remains the next blocker. Before adding even more broad-sheet families, improve the truthfulness of giant-form readback or use alternative viewpoints so `sheetwall`-type morphology can be judged honestly.
 - 2026-04-09 - Folded-lamina milestone advanced in two linked steps instead of another blind content drop
@@ -2162,6 +2251,18 @@ P0 rules:
     - `HUD_Render_Camera.targetTexture = null`
     - `HUD_Render_Camera.enabled = false`
     - owned runtime RT is released if one exists
+- 2026-04-09 - Empty-decals cameras no longer pay URP `DBuffer` passes
+  - live scene/project search found `0` `DecalProjector` objects and no active `DynamicDecals` components, while `PC_Renderer.asset` still kept `DecalRendererFeature` active in `DBuffer` mode
+  - `DecalRendererFeature` now fail-closes when `m_DecalEntityManager.chunkCount == 0`, so cameras with no registered decal entities stop enqueuing `CopyDepth`, `DBufferRenderPass`, and `ForwardEmissivePass`
+  - this is a render-owner cut, not a renderer-asset settings change and not a texture-quality downgrade
+- 2026-04-09 - Unfocused editor non-game cameras no longer keep first-party and URP feature paths alive by default
+  - `ScreenSpaceAmbientOcclusion`, `ScreenSpaceShadows`, `ShapesRenderFeature`, and `DecalRendererFeature` now all fail-close for non-`Game` cameras while `EditorWindow.focusedWindow == null`
+  - scope is intentionally editor-only and non-game only: runtime gameplay cameras, shallow-water visuals, and build settings remain untouched
+  - this targets the proven editor-side RT RED context (`draw_calls = 0`, `batches = 0`, `Game` window offscreen, `Scene` / `Inspector` still open)
+  - first live post-reload effect is only partial, not a fix:
+    - pre-pass high-water snapshot: `981` render textures, `~2051 MB` graphics driver memory
+    - repeated post-pass unfocused snapshot: `978` render textures, `~1687-1714 MB` graphics driver memory
+  - verdict: partial editor-side pressure reduction confirmed; full retained RT owner set is still unresolved and `RT RED` stays open
     - visor material falls back to black texture
   - on focus return it rebuilds the same projection path and restores the existing shared/runtime RT contract
   - this is editor-only; play mode visor/runtime behavior is intentionally unchanged

@@ -535,7 +535,9 @@ namespace NASAPunk.Visor
             if (hudCameraData == null)
                 return;
 
-            UniversalAdditionalCameraData baseCameraData = GetCachedBaseCameraData();
+            UniversalAdditionalCameraData baseCameraData = EnsureValidBaseStackCamera()
+                ? GetCachedBaseCameraData()
+                : null;
 
             bool projected = _projectionMode != ProjectionMode.Disabled;
             if (projected)
@@ -560,6 +562,81 @@ namespace NASAPunk.Visor
 
             _hudCamera.clearFlags = CameraClearFlags.Depth;
             _hudCamera.enabled = true;
+        }
+
+        private bool EnsureValidBaseStackCamera()
+        {
+            if (HasValidBaseStackCamera())
+                return true;
+
+            Camera resolvedCamera = TryResolveBaseStackCameraFromHierarchy();
+            if (resolvedCamera == null)
+                return false;
+
+            if (_baseStackCamera != resolvedCamera)
+            {
+                _baseStackCamera = resolvedCamera;
+                _cachedBaseCameraData = null;
+            }
+
+            return HasValidBaseStackCamera();
+        }
+
+        private bool HasValidBaseStackCamera()
+        {
+            if (_baseStackCamera == null)
+                return false;
+
+            UniversalAdditionalCameraData baseCameraData = GetCachedBaseCameraData();
+            return baseCameraData != null && baseCameraData.renderType == CameraRenderType.Base;
+        }
+
+        private Camera TryResolveBaseStackCameraFromHierarchy()
+        {
+            Camera resolvedCamera = TryResolveBaseStackCameraFromTransform(
+                _referenceCamera != null ? _referenceCamera.transform : null);
+            if (resolvedCamera != null)
+                return resolvedCamera;
+
+            resolvedCamera = TryResolveBaseStackCameraFromTransform(
+                _baseStackCamera != null ? _baseStackCamera.transform : null);
+            if (resolvedCamera != null)
+                return resolvedCamera;
+
+            Transform parent = transform.parent;
+            if (parent == null)
+                return null;
+
+            Transform mainCameraTransform = parent.Find("Main Camera");
+            if (mainCameraTransform == null)
+                return null;
+
+            Transform spaceCameraTransform = mainCameraTransform.Find("SpaceCamera");
+            return spaceCameraTransform != null ? spaceCameraTransform.GetComponent<Camera>() : null;
+        }
+
+        private static Camera TryResolveBaseStackCameraFromTransform(Transform sourceTransform)
+        {
+            if (sourceTransform == null)
+                return null;
+
+            Transform spaceCameraTransform = sourceTransform.Find("SpaceCamera");
+            if (spaceCameraTransform != null)
+            {
+                Camera directCamera = spaceCameraTransform.GetComponent<Camera>();
+                if (directCamera != null)
+                    return directCamera;
+            }
+
+            Transform parent = sourceTransform.parent;
+            if (parent == null)
+                return null;
+
+            Transform siblingSpaceCameraTransform = parent.Find("SpaceCamera");
+            if (siblingSpaceCameraTransform == null)
+                return null;
+
+            return siblingSpaceCameraTransform.GetComponent<Camera>();
         }
 
         private void SyncProjectionPose()

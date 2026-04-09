@@ -136,6 +136,12 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 1.1, y: 1.6999999}
+  - variantId: family.kelp.tall.final.flora.gen_family_kelp_tall__frondcrest
+    prefab: {fileID: 7181791389240675386, guid: 243c0ed75d53bfb48beac5d12b6a3a8c, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.05, y: 1.65}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Tall
   gameplayRole: Tall vertical kelp for readable vertical habitat.

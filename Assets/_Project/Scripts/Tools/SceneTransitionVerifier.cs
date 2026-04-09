@@ -1,17 +1,16 @@
-using System;
 using System.Collections;
+using Hecton.UI.MainMenu;
+using Hecton8.Bootstrap;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Hecton8.Core;
-using Hecton8.UI;
 
 namespace Hecton8.Tools
 {
     /// <summary>
-    /// Verifies critical scene transitions and game state changes.
-    /// Ensures new game, load game, menu navigation, and quit functionality work correctly.
+    /// Verifies scene transitions and start-flow ownership using live scene and context truth.
     /// </summary>
-    [DefaultExecutionOrder(1000)] // Run after most systems
+    [DefaultExecutionOrder(1000)]
     public sealed class SceneTransitionVerifier : MonoBehaviour
     {
         [Header("Verification Settings")]
@@ -21,12 +20,13 @@ namespace Hecton8.Tools
         [SerializeField, Tooltip("Verify scene transitions automatically")]
         private bool _verifyTransitions = true;
 
-        // State tracking
+        [SerializeField, Tooltip("Transition verification timeout in seconds")]
+        private float _transitionTimeout = 10f;
+
         private string _lastSceneName;
         private float _sceneLoadStartTime;
         private bool _isTransitioning;
 
-        // Singleton
         public static SceneTransitionVerifier Instance { get; private set; }
 
         private void Awake()
@@ -61,58 +61,47 @@ namespace Hecton8.Tools
             LogVerification($"Initial scene: {_lastSceneName}");
         }
 
-        /// <summary>
-        /// Verifies a new game transition.
-        /// </summary>
         public void VerifyNewGameTransition()
         {
-            if (!_verifyTransitions) return;
-            StartCoroutine(VerifyTransition("New Game",
-                () => SceneManager.GetActiveScene().name == "02_HECTON_WORLD",
-                () =>
-                {
-                    GameStartContext context = GameStartContextHolder.Current;
-                    return context.IsValid && context.StartMode == GameStartMode.NewGame;
-                },
-                "GameStartContext.StartMode should be NewGame"));
+            if (!_verifyTransitions)
+                return;
+
+            StartCoroutine(VerifyTransition(
+                "New Game",
+                () => string.Equals(SceneManager.GetActiveScene().name, "02_HECTON_WORLD", System.StringComparison.Ordinal),
+                VerifyNewGameContext,
+                "GameStartContext.StartMode should be NewGame and bootstrap should be alive"));
         }
 
-        /// <summary>
-        /// Verifies a load game transition.
-        /// </summary>
         public void VerifyLoadGameTransition(string expectedSlot)
         {
-            if (!_verifyTransitions) return;
-            StartCoroutine(VerifyTransition($"Load Game (Slot {expectedSlot})",
-                () => SceneManager.GetActiveScene().name == "02_HECTON_WORLD",
-                () =>
-                {
-                    GameStartContext context = GameStartContextHolder.Current;
-                    return context.IsValid &&
-                           context.StartMode == GameStartMode.LoadGame &&
-                           context.TargetSaveSlot == expectedSlot;
-                },
+            if (!_verifyTransitions)
+                return;
+
+            StartCoroutine(VerifyTransition(
+                $"Load Game (Slot {expectedSlot})",
+                () => string.Equals(SceneManager.GetActiveScene().name, "02_HECTON_WORLD", System.StringComparison.Ordinal),
+                () => VerifyLoadGameContext(expectedSlot),
                 $"GameStartContext should have LoadGame start mode and slot '{expectedSlot}'"));
         }
 
-        /// <summary>
-        /// Verifies return to main menu.
-        /// </summary>
         public void VerifyReturnToMenu()
         {
-            if (!_verifyTransitions) return;
-            StartCoroutine(VerifyTransition("Return to Menu",
-                () => SceneManager.GetActiveScene().name == "01_MAIN_MENU",
-                () => true, // No specific context check for menu return
-                "Should reach main menu scene"));
+            if (!_verifyTransitions)
+                return;
+
+            StartCoroutine(VerifyTransition(
+                "Return to Menu",
+                () => string.Equals(SceneManager.GetActiveScene().name, "01_MAIN_MENU", System.StringComparison.Ordinal),
+                VerifyMenuReturnContext,
+                "Menu should be active, bootstrap should be alive, and stale game-start context should be cleared"));
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             float loadTime = Time.unscaledTime - _sceneLoadStartTime;
             _isTransitioning = false;
-
-            LogVerification($"Scene loaded: {scene.name} (mode: {mode}, time: {loadTime:F2}s)");
+            LogVerification($"Scene loaded: {scene.name} (mode: {mode}, time: {loadTime:0.00}s)");
         }
 
         private void OnSceneUnloaded(Scene scene)
@@ -124,53 +113,68 @@ namespace Hecton8.Tools
         {
             _sceneLoadStartTime = Time.unscaledTime;
             _isTransitioning = true;
-
-            LogVerification($"Active scene changed: {previous.name} -> {current.name}");
             _lastSceneName = current.name;
+            LogVerification($"Active scene changed: {previous.name} -> {current.name}");
         }
 
-        private IEnumerator VerifyTransition(string transitionName, Func<bool> sceneCheck, Func<bool> contextCheck, string contextDescription)
+        private IEnumerator VerifyTransition(string transitionName, System.Func<bool> sceneCheck, System.Func<bool> contextCheck, string contextDescription)
         {
             LogVerification($"Starting verification: {transitionName}");
 
-            // Wait for transition to complete
-            float timeout = 10f;
-            float startTime = Time.unscaledTime;
-
-            while (_isTransitioning && (Time.unscaledTime - startTime) < timeout)
-            {
+            float deadline = Time.unscaledTime + Mathf.Max(0.1f, _transitionTimeout);
+            while (_isTransitioning && Time.unscaledTime < deadline)
                 yield return null;
-            }
 
             if (_isTransitioning)
             {
-                LogVerification($"❌ {transitionName} - Transition timeout after {timeout}s");
+                LogVerification($"FAIL {transitionName} - transition timeout after {_transitionTimeout:0.00}s");
                 yield break;
             }
 
-            // Verify scene
             if (!sceneCheck())
             {
-                LogVerification($"❌ {transitionName} - Scene check failed (current: {SceneManager.GetActiveScene().name})");
+                LogVerification($"FAIL {transitionName} - scene check failed (current: {SceneManager.GetActiveScene().name})");
                 yield break;
             }
 
-            // Verify context
             if (!contextCheck())
             {
-                LogVerification($"❌ {transitionName} - Context check failed: {contextDescription}");
+                LogVerification($"FAIL {transitionName} - context check failed: {contextDescription}");
                 yield break;
             }
 
-            LogVerification($"✅ {transitionName} - Verification passed");
+            LogVerification($"PASS {transitionName} - verification passed");
+        }
+
+        private static bool VerifyNewGameContext()
+        {
+            GameStartContext context = GameStartContextHolder.Current;
+            return context.IsValid &&
+                   context.StartMode == GameStartMode.NewGame &&
+                   BootstrapController.AreAllSystemsReady();
+        }
+
+        private static bool VerifyLoadGameContext(string expectedSlot)
+        {
+            GameStartContext context = GameStartContextHolder.Current;
+            return context.IsValid &&
+                   context.StartMode == GameStartMode.LoadGame &&
+                   string.Equals(context.TargetSaveSlot, expectedSlot, System.StringComparison.Ordinal) &&
+                   BootstrapController.AreAllSystemsReady();
+        }
+
+        private static bool VerifyMenuReturnContext()
+        {
+            MainMenuController menuController = VerificationRuntimeProbe.ResolveMainMenuController();
+            return menuController != null &&
+                   BootstrapController.AreAllSystemsReady() &&
+                   !GameStartContextHolder.Current.IsValid;
         }
 
         private void LogVerification(string message)
         {
             if (_enableLogging)
-            {
                 Debug.Log($"[SceneTransitionVerifier] {message}");
-            }
         }
     }
 }

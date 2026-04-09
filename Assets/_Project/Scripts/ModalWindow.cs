@@ -61,6 +61,7 @@ namespace Hecton.UI.MainMenu
             }
 
             _instance = this;
+            AutoWireSceneReferences();
 
             if (btnConfirm != null)
             {
@@ -75,6 +76,89 @@ namespace Hecton.UI.MainMenu
             }
 
             Hide();
+        }
+
+        private void AutoWireSceneReferences()
+        {
+            Transform root = transform;
+
+            modalGroup = ResolveCanvasGroup(modalGroup, root, "Panel_ModalConfirm");
+            titleText = ResolveText(titleText, root, "TXT_Title");
+            messageText = ResolveText(messageText, root, "TXT_Message");
+            btnConfirm = ResolveButton(btnConfirm, root, "yes");
+            btnCancel = ResolveButton(btnCancel, root, "no");
+            confirmButtonLabel = ResolveButtonLabel(confirmButtonLabel, btnConfirm);
+            cancelButtonLabel = ResolveButtonLabel(cancelButtonLabel, btnCancel);
+        }
+
+        private static CanvasGroup ResolveCanvasGroup(CanvasGroup current, Transform root, string objectName)
+        {
+            if (current != null)
+                return current;
+
+            Transform target = FindDeepChild(root, objectName);
+            if (target == null)
+                return null;
+
+            if (target.TryGetComponent(out CanvasGroup group))
+                return group;
+
+            return target.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        private static TMP_Text ResolveText(TMP_Text current, Transform root, string objectName)
+        {
+            if (current != null)
+                return current;
+
+            Transform target = FindDeepChild(root, objectName);
+            if (target == null)
+                return null;
+
+            target.TryGetComponent(out TMP_Text text);
+            return text;
+        }
+
+        private static Button ResolveButton(Button current, Transform root, string objectName)
+        {
+            if (current != null)
+                return current;
+
+            Transform target = FindDeepChild(root, objectName);
+            if (target == null)
+                return null;
+
+            target.TryGetComponent(out Button button);
+            return button;
+        }
+
+        private static TMP_Text ResolveButtonLabel(TMP_Text current, Button button)
+        {
+            if (current != null)
+                return current;
+
+            if (button == null)
+                return null;
+
+            return button.GetComponentInChildren<TMP_Text>(true);
+        }
+
+        private static Transform FindDeepChild(Transform parent, string childName)
+        {
+            if (parent == null)
+                return null;
+
+            if (parent.name == childName)
+                return parent;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform result = FindDeepChild(parent.GetChild(i), childName);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
 
         private void OnEnable()

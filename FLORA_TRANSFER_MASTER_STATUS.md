@@ -124,6 +124,29 @@ Detailed ledgers:
 - Stage 7 complete: editor-side baked flora starter generator now creates optimized combined-mesh final prefabs and feeds them through the real flora intake path.
 - Stage 8 complete: generated flora starter finals now bake as `LODGroup`-based prefabs with dedicated `LOD0` / `LOD1` mesh assets, and validator budgets the highest visible LOD instead of double-counting all renderers.
 - Stage 9 complete: kelp starter variety expanded into 4 structural lanes (`broadleaf`, `paddlespray`, `paddlefan`, `petal`) with size-band tokens preserved.
+- Stage 10 in progress: large kelp leaves are being upgraded from pure cards toward selective thin-shell volume on near LODs, and a new frilled lane is staged for live bake verification.
+- Latest budget convergence pass on `2026-04-09`:
+  - blocking compile typo in `HectonDirectorAI.cs` was removed so flora verification could run again
+  - `WorldProceduralSeaweedMeshBuilder` now reduces redundant companion/tertiary/fan/veil geometry on heavy paddle/frilled families instead of flattening the primary silhouette
+  - selective leaf thickness remains for large near-field leaves, but dense/heavy variants no longer overuse shell geometry
+  - fresh report readback confirms every kelp family is back inside its family triangle budget:
+    - `family.kelp.tall` max `7716` vs budget `8000`
+    - `family.kelp.patch.dense` max `9016` vs budget `12000`
+    - `family.kelp.canopy` max `9402` vs budget `10000`
+    - `family.kelp.abyssal` max `8660` vs budget `9000`
+  - newly converged heavy variants:
+    - `broadleaf=5332`
+    - `frondcrest=4622`
+    - `paddlespray=6432`
+    - `frilltuft=8648`
+    - `paddlefan=6330`
+    - `featherfan=6462`
+    - `cathedral=8536`
+    - `petal=5400`
+    - `tatterveil=4912`
+  - remaining truth:
+    - preview readability oracle still needs another visual pass on the new converged geometry
+    - in-world beauty proof and runtime profiler/build proof are still pending
 
 Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
 
@@ -201,6 +224,35 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
     - `GEN_family_kelp_patch_dense__paddlespray__s70-120`
     - `GEN_family_kelp_canopy__paddlefan__s120-190`
     - `GEN_family_kelp_abyssal__petal__s100-170`
+  - follow-up automation pass `flora-verify-paddle-20260409-5` now also confirms preview-oracle stability after the framing/timeout fix:
+    - `previewPaths=4`
+    - `previewErrors=[]`
+    - updated budget readback:
+      - `broadleaf=5708`
+      - `paddlespray=11032`
+      - `paddlefan=5164`
+      - `petal=5684`
+- Current code-side, not yet live-verified flora extension:
+  - selected large kelp leaves can now receive thin-shell volume on `LOD0` only, driven by blade size/profile instead of blanket thickness on every leaf
+  - new frilled variants are staged for the next verified bake pass:
+    - `frondcrest`
+    - `frilltuft`
+    - `featherfan`
+    - `tatterveil`
+- Fresh live verification after the thickness + frilled pass on `2026-04-09`:
+  - `Generate Procedural Flora Baked Starters` -> `Prefabs=72, MeshesUpdated=250, RemovedAssets=0, Failures=0`
+  - `Apply Procedural Flora Final Variants` -> `FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+  - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=72, warningCount=20`
+  - report/coverage now reads:
+    - `family.kelp.tall` -> `a0/g14`
+    - `family.kelp.patch.dense` -> `a0/g12`
+    - `family.kelp.canopy` -> `a0/g13`
+    - `family.kelp.abyssal` -> `a0/g14`
+  - frilled variants are now present under baked root:
+    - `GEN_family_kelp_tall__frondcrest__s105-165`
+    - `GEN_family_kelp_patch_dense__frilltuft__s75-125`
+    - `GEN_family_kelp_canopy__featherfan__s120-200`
+    - `GEN_family_kelp_abyssal__tatterveil__s110-185`
 - `Hecton/Authoring/Apply Procedural Flora Final Variants` now links the generated starter finals into flora families:
   - `FamiliesTouched=7, LinkedVariants=14, RemovedVariants=0, MissingFamilies=0`
 - Follow-up kelp dense cleanup pass removed the stale heavy starter and relinked the lighter replacement:
@@ -222,6 +274,12 @@ Current verified readback from `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md`:
 - The main remaining content blocker is no longer missing flora finals entirely; it is quality level. The baked root now has 14 generated combined-mesh starter finals, but it still lacks true photorealistic hand-authored/baked flora art.
 - The validator now proves the same blocker numerically: all 7 flora families are `generated-only`, authored count `a0`.
 - Perf remains `PENDING VERIFICATION`: no GC before/after measurements exist for this transfer path.
+- The earlier global compile blocker is no longer the main issue.
+- New main blocker after the live thickness/frilled pass is budget overshoot on several large kelp starters:
+  - tall over budget: `frondcrest=11034`, `broadleaf=9380`, `paddle=8934` vs budget `8000`
+  - patch.dense over budget: `frilltuft=16256`, `paddlespray=16224`, `bladder=13924`, `sheetwall=12940` vs budget `12000`
+  - canopy over budget: `featherfan=10924`, `paddlefan=10200` vs budget `10000`
+  - abyssal over budget: `cathedral=11768`, `tatterveil=10620`, `petal=9580` vs budget `9000`
 - A persistent warning still exists during report generation:
   - `Leak Detected : Persistent allocates 5 individual allocations`
   - no stack trace captured yet

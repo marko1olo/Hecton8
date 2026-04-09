@@ -47,6 +47,54 @@ namespace Hecton8.World
             return false;
         }
 
+        public static bool TryResolveSceneObject(ref Transform target, string relativePath)
+        {
+            if (target != null)
+                return true;
+
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return false;
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer) ||
+                bootstrapPlayer == null)
+            {
+                return false;
+            }
+
+            Transform root = bootstrapPlayer.root;
+            if (root == null)
+                return false;
+
+            target = root.Find(relativePath);
+            return target != null;
+        }
+
+        public static bool TryResolveSceneObject<T>(ref T target, string relativePath) where T : Component
+        {
+            if (target != null)
+                return true;
+
+            Transform transform = null;
+            if (!TryResolveSceneObject(ref transform, relativePath) || transform == null)
+                return false;
+
+            target = transform.GetComponent<T>();
+            return target != null;
+        }
+
+        public static bool TryResolveSceneObject(ref GameObject target, string relativePath)
+        {
+            if (target != null)
+                return true;
+
+            Transform transform = null;
+            if (!TryResolveSceneObject(ref transform, relativePath) || transform == null)
+                return false;
+
+            target = transform.gameObject;
+            return target != null;
+        }
+
         public static bool TryResolveBiomeSamplerCache(ref BiomeSamplerCache target)
         {
             if (target != null)

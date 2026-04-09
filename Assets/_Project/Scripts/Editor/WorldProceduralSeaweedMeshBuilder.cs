@@ -153,6 +153,7 @@ namespace Hecton8.EditorTools
             bool foldedSheet = IsFoldedSheetVariant(spec);
             bool foldedGiant = IsFoldedGiantVariant(spec);
             bool paddleLobed = IsPaddleLobedVariant(spec);
+            bool frilledRibbon = IsFrilledRibbonVariant(spec);
             float sequence = bladeCount <= 1 ? 0f : bladeIndex / (float)(bladeCount - 1);
             float normalized;
             if (bladeCount <= 1)
@@ -241,11 +242,34 @@ namespace Hecton8.EditorTools
             if (paddleLobed)
             {
                 float lobeMass = Mathf.SmoothStep(0.1f, 0.92f, normalized);
-                width *= Mathf.Lerp(1.06f, spec.ClusterCount > 1 ? 1.3f : 1.22f, lobeMass);
-                length *= Mathf.Lerp(0.92f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 1.12f : 1.04f, lobeMass);
+                width *= Mathf.Lerp(1.04f, spec.ClusterCount > 1 ? 1.18f : 1.14f, lobeMass);
+                length *= Mathf.Lerp(0.92f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 1.08f : 1.01f, lobeMass);
                 sideCurve *= Mathf.Lerp(0.34f, 0.62f, lobeMass);
                 twist *= Mathf.Lerp(0.28f, 0.52f, lobeMass);
-                serration *= Mathf.Lerp(1.08f, 1.22f, lobeMass);
+                serration *= Mathf.Lerp(1.02f, 1.14f, lobeMass);
+
+                if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
+                {
+                    width *= Mathf.Lerp(1.04f, 1.12f, lobeMass);
+                    length *= Mathf.Lerp(1f, 1.08f, lobeMass);
+                    sideCurve *= Mathf.Lerp(0.82f, 0.9f, lobeMass);
+                    twist *= Mathf.Lerp(0.78f, 0.88f, lobeMass);
+                }
+                else if (spec.ClusterCount <= 1)
+                {
+                    width *= Mathf.Lerp(1.02f, 1.08f, lobeMass);
+                    length *= Mathf.Lerp(0.98f, 1.04f, lobeMass);
+                }
+            }
+
+            if (frilledRibbon)
+            {
+                float frillMass = Mathf.SmoothStep(0.08f, 0.94f, normalized);
+                width *= Mathf.Lerp(0.96f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 1.08f : 1.01f, frillMass);
+                length *= Mathf.Lerp(1f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 1.11f : 1.05f, frillMass);
+                sideCurve *= Mathf.Lerp(0.52f, 0.84f, frillMass);
+                twist *= Mathf.Lerp(0.88f, 1.22f, frillMass);
+                serration *= Mathf.Lerp(1.22f, 1.44f, frillMass);
             }
 
             BladeProfile primaryProfile = ResolveBladeProfile(spec, bladeIndex, normalized, false);
@@ -259,9 +283,15 @@ namespace Hecton8.EditorTools
                 scale.x * Mathf.Lerp(0.015f, 0.009f, normalized),
                 lod,
                 new Color32(spec.TintByte, 184, 52, 255));
-            AddBladeRibbon(buffers, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward);
+            AddBladeRibbon(buffers, spec, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward, lod);
 
-            if (spec.ClusterCount > 1 && lod == 0 && (bladeIndex % 2 == 0) && normalized > 0.24f && normalized < 0.7f)
+            if (spec.ClusterCount > 1
+                && !paddleLobed
+                && !frilledRibbon
+                && lod == 0
+                && (bladeIndex % 2 == 0)
+                && normalized > 0.24f
+                && normalized < 0.7f)
             {
                 int understoryStemLod = ResolveSupplementalStemLod(spec, lod);
                 int understoryBladeSegments = ResolveUnderstoryBladeSegments(spec, bladeSegments);
@@ -289,6 +319,7 @@ namespace Hecton8.EditorTools
                     new Color32(spec.TintByte, 176, 54, 255));
                 AddBladeRibbon(
                     buffers,
+                    spec,
                     understoryAnchor,
                     understoryLateral,
                     understoryUp,
@@ -300,7 +331,8 @@ namespace Hecton8.EditorTools
                     serration * 0.62f,
                     new Color32((byte)Mathf.Clamp(spec.TintByte + 4, 0, 255), 204, (byte)Mathf.Lerp(54f, 168f, understoryNormalized), 255),
                     understoryProfile,
-                    understoryForward);
+                    understoryForward,
+                    lod);
             }
 
             if (ShouldAddCompanionBlade(spec, lod, bladeIndex, normalized))
@@ -333,6 +365,7 @@ namespace Hecton8.EditorTools
                     new Color32(spec.TintByte, 172, 58, 255));
                 AddBladeRibbon(
                     buffers,
+                    spec,
                     companionAnchor,
                     companionLateral,
                     companionUp,
@@ -344,7 +377,8 @@ namespace Hecton8.EditorTools
                     companionSerration,
                     new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(56f, 196f, normalized), 255),
                     companionProfile,
-                    companionForward);
+                    companionForward,
+                    lod);
             }
 
             if (ShouldAddTertiaryBlade(spec, lod, bladeIndex, normalized))
@@ -377,6 +411,7 @@ namespace Hecton8.EditorTools
                     new Color32(spec.TintByte, 166, 62, 255));
                 AddBladeRibbon(
                     buffers,
+                    spec,
                     tertiaryAnchor,
                     tertiaryLateral,
                     tertiaryUp,
@@ -388,15 +423,16 @@ namespace Hecton8.EditorTools
                     tertiarySerration,
                     new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 220, (byte)Mathf.Lerp(64f, 188f, normalized), 255),
                     tertiaryProfile,
-                    tertiaryForward);
+                    tertiaryForward,
+                    lod);
             }
 
             if (spec.GrowthStyle == GrowthStyle.GiantFrond
                 && spec.ClusterCount <= 1
                 && lod == 0
-                && normalized > 0.24f
-                && normalized < 0.82f
-                && (bladeIndex % 2 == 1))
+                && normalized > (paddleLobed || frilledRibbon ? 0.36f : 0.24f)
+                && normalized < (paddleLobed || frilledRibbon ? 0.74f : 0.82f)
+                && (bladeIndex % (paddleLobed || frilledRibbon ? 4 : 2) == 1))
             {
                 float bridgingNormalized = Mathf.Clamp01(normalized - 0.08f + (((bladeIndex / 2) & 1) == 0 ? 0.03f : -0.015f));
                 float bridgingSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 16f, bridgingNormalized);
@@ -425,6 +461,7 @@ namespace Hecton8.EditorTools
                     new Color32(spec.TintByte, 170, 60, 255));
                 AddBladeRibbon(
                     buffers,
+                    spec,
                     bridgingAnchor,
                     bridgingLateral,
                     bridgingUp,
@@ -436,7 +473,8 @@ namespace Hecton8.EditorTools
                     bridgingSerration,
                     new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(62f, 188f, bridgingNormalized), 255),
                     bridgingProfile,
-                    bridgingForward);
+                    bridgingForward,
+                    lod);
             }
 
             if (foldedSheet
@@ -470,6 +508,7 @@ namespace Hecton8.EditorTools
                     new Color32(spec.TintByte, 178, 60, 255));
                 AddBladeRibbon(
                     buffers,
+                    spec,
                     curtainAnchor,
                     curtainLateral,
                     curtainUp,
@@ -481,7 +520,102 @@ namespace Hecton8.EditorTools
                     serration * 0.66f,
                     new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
                     BladeProfile.FoldedLamina,
-                    curtainForward);
+                    curtainForward,
+                    lod);
+            }
+
+            if (paddleLobed
+                && lod == 0
+                && normalized > (spec.ClusterCount > 1 ? 0.42f : 0.38f)
+                && normalized < (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.8f)
+                && (bladeIndex % (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 0))
+            {
+                float fanNormalized = Mathf.Clamp01(normalized - 0.05f);
+                float fanSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(4f, 11f, fanNormalized);
+                BladeSocket fanSocket = EvaluateBladeSocket(spec, scale, fanNormalized, fanSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 fanLateral = fanSocket.WidthAxis;
+                Vector3 fanForward = fanSocket.ForwardAxis;
+                Vector3 fanUp = fanSocket.GrowthAxis;
+                Vector3 fanStemBase = fanSocket.StemBase;
+                Vector3 fanAnchor = fanSocket.Anchor;
+                float fanWidth = width * Mathf.Lerp(0.46f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.68f : 0.6f, 1f - fanNormalized * 0.18f);
+                float fanLength = length * Mathf.Lerp(0.46f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.72f : 0.62f, 1f - fanNormalized * 0.12f);
+                float fanTwist = twist * 0.62f + Mathf.Lerp(-3f, 6f, fanNormalized);
+                float fanCurve = sideCurve * 0.3f + Mathf.Lerp(-5f, 5f, fanNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    fanStemBase,
+                    fanAnchor + fanUp * (scale.y * 0.023f) + fanForward * (fanLength * 0.028f),
+                    fanSocket.StipeTangentAxis,
+                    fanForward,
+                    Mathf.Max(scale.x * 0.0068f, (fanAnchor - fanStemBase).magnitude * 0.15f),
+                    scale.x * 0.0061f,
+                    1,
+                    new Color32(spec.TintByte, 178, 62, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    fanAnchor,
+                    fanLateral,
+                    fanUp,
+                    fanWidth,
+                    fanLength,
+                    fanTwist,
+                    Mathf.Max(2, bladeSegments - (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4)),
+                    fanCurve,
+                    serration * 0.74f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
+                    BladeProfile.PaddleLobed,
+                    fanForward,
+                    lod);
+            }
+
+            if (frilledRibbon
+                && lod == 0
+                && normalized > (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.28f : 0.38f)
+                && normalized < (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.78f)
+                && (bladeIndex % (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 1))
+            {
+                float veilNormalized = Mathf.Clamp01(normalized - 0.06f);
+                float veilSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(10f, 18f, veilNormalized);
+                BladeSocket veilSocket = EvaluateBladeSocket(spec, scale, veilNormalized, veilSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 veilLateral = veilSocket.WidthAxis;
+                Vector3 veilForward = veilSocket.ForwardAxis;
+                Vector3 veilUp = veilSocket.GrowthAxis;
+                Vector3 veilStemBase = veilSocket.StemBase;
+                Vector3 veilAnchor = veilSocket.Anchor;
+                float veilWidth = width * Mathf.Lerp(0.26f, 0.42f, 1f - veilNormalized * 0.26f);
+                float veilLength = length * Mathf.Lerp(0.46f, 0.68f, 1f - veilNormalized * 0.14f);
+                float veilTwist = twist * 1.08f + Mathf.Lerp(-12f, 18f, veilNormalized);
+                float veilCurve = sideCurve * 0.42f + Mathf.Lerp(-8f, 8f, veilNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    veilStemBase,
+                    veilAnchor + veilUp * (scale.y * 0.02f) + veilForward * (veilLength * 0.028f),
+                    veilSocket.StipeTangentAxis,
+                    veilForward,
+                    Mathf.Max(scale.x * 0.0062f, (veilAnchor - veilStemBase).magnitude * 0.14f),
+                    scale.x * 0.0054f,
+                    1,
+                    new Color32(spec.TintByte, 174, 62, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    veilAnchor,
+                    veilLateral,
+                    veilUp,
+                    veilWidth,
+                    veilLength,
+                    veilTwist,
+                    Mathf.Max(2, bladeSegments - 3),
+                    veilCurve,
+                    serration * 1.12f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
+                    BladeProfile.FrilledRibbon,
+                    veilForward,
+                    lod);
             }
         }
 
@@ -623,6 +757,15 @@ namespace Hecton8.EditorTools
                 return paddleArc + alternatingPaddle * Mathf.Lerp(2f, 8f, sequence) + stepped + paddleNoise;
             }
 
+            if (IsFrilledRibbonVariant(spec))
+            {
+                float alternatingFrill = (bladeIndex & 1) == 0 ? -1f : 1f;
+                float frillArc = Mathf.Lerp(-24f, 24f, sequence);
+                float stepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(2f, 9f, sequence);
+                float frillNoise = Mathf.Sin((bladeIndex + 1) * 1.41f) * Mathf.Lerp(2.4f, 6.2f, sequence);
+                return frillArc + alternatingFrill * Mathf.Lerp(4f, 11f, sequence) + stepped + frillNoise;
+            }
+
             if (IsCanopySheetVariant(spec))
             {
                 float alternatingSheet = (bladeIndex & 1) == 0 ? -1f : 1f;
@@ -660,7 +803,26 @@ namespace Hecton8.EditorTools
                 return lod == 0 && normalized > 0.22f && (bladeIndex % 2 == 1);
 
             if (IsPaddleLobedVariant(spec))
-                return normalized > 0.24f && (lod == 0 || bladeIndex % 2 == 0);
+            {
+                if (spec.ClusterCount > 1)
+                    return lod == 0 && normalized > 0.42f && (bladeIndex % 3 == 0);
+
+                if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
+                    return lod == 0 && normalized > 0.34f && (bladeIndex % 2 == 0);
+
+                return lod == 0 && normalized > 0.36f && (bladeIndex % 3 != 1);
+            }
+
+            if (IsFrilledRibbonVariant(spec))
+            {
+                if (spec.ClusterCount > 1)
+                    return lod == 0 && normalized > 0.48f && (bladeIndex % 4 == 1);
+
+                if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
+                    return lod == 0 && normalized > 0.32f && (bladeIndex % 3 != 2);
+
+                return lod == 0 && normalized > 0.38f && (bladeIndex % 3 == 1);
+            }
 
             if (IsTowerLaminarVariant(spec))
                 return lod == 0 && normalized > 0.38f && (bladeIndex % 3 == 1);
@@ -688,13 +850,26 @@ namespace Hecton8.EditorTools
                 return normalized > 0.4f && (bladeIndex % 3 == 0);
 
             if (IsPaddleLobedVariant(spec))
-                return normalized > 0.32f && (bladeIndex % 3 != 1);
+            {
+                if (spec.ClusterCount > 1)
+                    return false;
+
+                return normalized > 0.52f && (bladeIndex % 4 == 0);
+            }
+
+            if (IsFrilledRibbonVariant(spec))
+            {
+                if (spec.ClusterCount > 1)
+                    return false;
+
+                return normalized > 0.56f && (bladeIndex % 5 == 0);
+            }
 
             if (IsTowerLaminarVariant(spec))
                 return normalized > 0.54f && (bladeIndex % 4 == 0);
 
             return spec.ClusterCount > 1
-                ? normalized > 0.28f && (bladeIndex % 3 != 1)
+                ? normalized > 0.46f && (bladeIndex % 4 == 0)
                 : normalized > 0.18f && (bladeIndex % 4 != 2);
         }
 
@@ -731,7 +906,8 @@ namespace Hecton8.EditorTools
             if (IsTowerLaminarVariant(spec)
                 || IsCanopySheetVariant(spec)
                 || spec.BladeProfile == BladeProfile.FoldedLamina
-                || spec.BladeProfile == BladeProfile.PaddleLobed)
+                || spec.BladeProfile == BladeProfile.PaddleLobed
+                || spec.BladeProfile == BladeProfile.FrilledRibbon)
                 return spec.BladeProfile;
 
             if (spec.GrowthStyle != GrowthStyle.GiantFrond || spec.ClusterCount <= 1)
@@ -867,6 +1043,12 @@ namespace Hecton8.EditorTools
         {
             return spec.BladeProfile == BladeProfile.PaddleLobed
                 && spec.BladeWidthMax >= 0.2f;
+        }
+
+        private static bool IsFrilledRibbonVariant(VariantSpec spec)
+        {
+            return spec.BladeProfile == BladeProfile.FrilledRibbon
+                && spec.BladeLengthMax >= 0.7f;
         }
 
         private static bool IsLaminarSheetProfile(BladeProfile bladeProfile)
@@ -1139,7 +1321,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void AddBladeRibbon(MeshBuffers buffers, Vector3 anchor, Vector3 widthAxis, Vector3 upAxis, float width, float length, float twistDegrees, int segments, float sideCurveDegrees, float serration, Color32 color, BladeProfile bladeProfile, Vector3? forwardHint = null)
+        private static void AddBladeRibbon(MeshBuffers buffers, VariantSpec spec, Vector3 anchor, Vector3 widthAxis, Vector3 upAxis, float width, float length, float twistDegrees, int segments, float sideCurveDegrees, float serration, Color32 color, BladeProfile bladeProfile, Vector3? forwardHint = null, int lodLevel = 0)
         {
             Vector3 widthDir = widthAxis.sqrMagnitude > 0f ? widthAxis.normalized : Vector3.right;
             Vector3 upDir = upAxis.sqrMagnitude > 0f ? upAxis.normalized : Vector3.up;
@@ -1205,6 +1387,17 @@ namespace Hecton8.EditorTools
                     profileCenterFoldScale = 0.08f;
                     profileInnerFoldScale = 0.04f;
                     break;
+                case BladeProfile.FrilledRibbon:
+                    profileMidWidthBoost = 1.1f;
+                    profileWaveBoost = 2.14f;
+                    profileTipSplitBoost = 1.36f;
+                    profileBowBoost = 1.14f;
+                    profileDroopBoost = 1.08f;
+                    profileCurlBoost = 1.02f;
+                    profileBaseWrapScale = 0.68f;
+                    profileCenterFoldScale = 0.05f;
+                    profileInnerFoldScale = 0.03f;
+                    break;
                 default:
                     profileMidWidthBoost = 1f;
                     profileWaveBoost = 1f;
@@ -1226,6 +1419,7 @@ namespace Hecton8.EditorTools
             {
                 float t = i / (float)segments;
                 bool paddleLobed = bladeProfile == BladeProfile.PaddleLobed;
+                bool frilledRibbon = bladeProfile == BladeProfile.FrilledRibbon;
                 float baseMask = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.04f) / 0.18f));
                 float tipMask = Mathf.Clamp01((t - 0.78f) / 0.22f);
                 float twist = Mathf.Lerp(0f, twistDegrees, t);
@@ -1234,17 +1428,18 @@ namespace Hecton8.EditorTools
                 float midLamina = Mathf.Sin(t * Mathf.PI);
                 float taperPower = bladeProfile == BladeProfile.BroadUndulate
                     ? 0.82f
-                    : paddleLobed ? 0.96f : 0.72f;
+                    : paddleLobed ? 0.96f : frilledRibbon ? 0.78f : 0.72f;
                 float widthBoostPower = bladeProfile == BladeProfile.BroadUndulate
                     ? 0.72f
-                    : paddleLobed ? 0.42f : 1.2f;
-                float widthTaper = Mathf.Lerp(1.02f, paddleLobed ? 0.18f : 0.06f, Mathf.Pow(t, taperPower));
+                    : paddleLobed ? 0.42f : frilledRibbon ? 0.94f : 1.2f;
+                float widthTaper = Mathf.Lerp(1.02f, paddleLobed ? 0.18f : frilledRibbon ? 0.12f : 0.06f, Mathf.Pow(t, taperPower));
                 widthTaper *= Mathf.Lerp(1f, profileMidWidthBoost, Mathf.Pow(midLamina, widthBoostPower));
                 float baseNarrow = Mathf.Lerp(0.16f, 1f, baseMask);
                 float halfWidth = width * widthTaper * baseNarrow;
                 float innerWidth = halfWidth * Mathf.Lerp(0.38f, 0.46f, 1f - tipMask);
                 float edgeWave = serration * profileWaveBoost * Mathf.Sin(t * Mathf.PI * 8.2f + anchorNoise * 2.6f) * baseMask;
                 float edgeWaveSecondary = serration * 0.55f * profileWaveBoost * Mathf.Sin(t * Mathf.PI * 12.5f + anchorNoise * 1.9f) * baseMask;
+                float frillSlice = frilledRibbon ? Mathf.Sin(t * Mathf.PI * 13.4f + anchorNoise * 2.1f) * halfWidth * 0.08f * baseMask : 0f;
                 float laminaLobes = bladeProfile == BladeProfile.BroadUndulate
                     ? Mathf.Sin(t * Mathf.PI * 3.2f + anchorNoise * 1.35f) * halfWidth * 0.12f * baseMask
                     : 0f;
@@ -1274,8 +1469,8 @@ namespace Hecton8.EditorTools
                     + normal * lobePuff;
 
                 Vector3 leftOuter = center
-                    - rotatedWidth * (halfWidth + edgeWave + tipSplit + lateralAsymmetry + lobeWidth - lobeInset)
-                    - normal * (curl + edgeWaveSecondary - innerFold * 0.18f);
+                    - rotatedWidth * (halfWidth + edgeWave + tipSplit + lateralAsymmetry + lobeWidth - lobeInset + frillSlice)
+                    - normal * (curl + edgeWaveSecondary - innerFold * 0.18f + frillSlice * 0.2f);
                 Vector3 leftInner = center
                     - rotatedWidth * (innerWidth + lateralAsymmetry * 0.28f)
                     - normal * (curl * 0.22f + innerFold);
@@ -1284,8 +1479,8 @@ namespace Hecton8.EditorTools
                     + rotatedWidth * (innerWidth - lateralAsymmetry * 0.22f)
                     + normal * (curl * 0.38f + innerFold * 0.72f);
                 Vector3 rightOuter = center
-                    + rotatedWidth * (halfWidth - edgeWave + tipSplit - lateralAsymmetry + laminaLobes + lobeWidth + lobeInset * 0.72f)
-                    + normal * (curl * 0.92f + edgeWaveSecondary - innerFold * 0.14f);
+                    + rotatedWidth * (halfWidth - edgeWave + tipSplit - lateralAsymmetry + laminaLobes + lobeWidth + lobeInset * 0.72f - frillSlice)
+                    + normal * (curl * 0.92f + edgeWaveSecondary - innerFold * 0.14f - frillSlice * 0.2f);
 
                 Vector4 tangent = new Vector4(rotatedWidth.x, rotatedWidth.y, rotatedWidth.z, 1f);
                 byte outerGreen = (byte)Mathf.Clamp(Mathf.RoundToInt(color.g * Mathf.Lerp(0.86f, 0.74f, t)), 0, 255);
@@ -1314,6 +1509,116 @@ namespace Hecton8.EditorTools
                 buffers.AddQuad(row + 2, nextRow + 2, nextRow + 3, row + 3);
                 buffers.AddQuad(row + 3, nextRow + 3, nextRow + 4, row + 4);
             }
+
+            // Large near-field leaves occasionally get a thin back shell so big kelp
+            // reads as organic mass instead of a flat card. Distant LODs stay single-sided.
+            float thicknessLikelihood = ResolveBladeThicknessLikelihood(spec, bladeProfile, width, length);
+            if (lodLevel > 0 || thicknessLikelihood <= 0f)
+                return;
+
+            float thicknessSelector = 0.5f + 0.5f * Mathf.Sin((anchor.x * 1.91f + anchor.y * 0.67f + anchor.z * 1.37f + length * 0.11f) * 5.2f);
+            if (thicknessSelector > thicknessLikelihood)
+                return;
+
+            float shellThickness = ResolveBladeShellThickness(width, length, bladeProfile);
+            AddBladeThicknessShell(buffers, startIndex, segments, shellThickness);
+        }
+
+        private static float ResolveBladeThicknessLikelihood(VariantSpec spec, BladeProfile bladeProfile, float width, float length)
+        {
+            float sizeWeight = Mathf.Clamp01(Mathf.InverseLerp(1.9f, 6.2f, length)) * 0.72f
+                + Mathf.Clamp01(Mathf.InverseLerp(0.16f, 0.36f, width)) * 0.42f;
+
+            if (spec.ClusterCount > 1)
+                sizeWeight -= 0.22f;
+
+            if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
+                sizeWeight -= 0.05f;
+
+            switch (bladeProfile)
+            {
+                case BladeProfile.FoldedLamina:
+                    return Mathf.Clamp01(sizeWeight + 0.28f);
+                case BladeProfile.PaddleLobed:
+                    return Mathf.Clamp01(sizeWeight + (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.14f : 0.08f));
+                case BladeProfile.FrilledRibbon:
+                    return Mathf.Clamp01(sizeWeight + (spec.ClusterCount > 1 ? -0.04f : 0.08f));
+                case BladeProfile.BroadUndulate:
+                    return Mathf.Clamp01(sizeWeight - 0.06f);
+                default:
+                    return Mathf.Clamp01(sizeWeight - 0.18f);
+            }
+        }
+
+        private static float ResolveBladeShellThickness(float width, float length, BladeProfile bladeProfile)
+        {
+            float baseThickness = width * 0.026f + length * 0.0018f;
+            switch (bladeProfile)
+            {
+                case BladeProfile.FoldedLamina:
+                    baseThickness *= 1.28f;
+                    break;
+                case BladeProfile.PaddleLobed:
+                    baseThickness *= 1.18f;
+                    break;
+                case BladeProfile.FrilledRibbon:
+                    baseThickness *= 0.94f;
+                    break;
+            }
+
+            return Mathf.Clamp(baseThickness, 0.004f, 0.04f);
+        }
+
+        private static void AddBladeThicknessShell(MeshBuffers buffers, int frontStartIndex, int segments, float shellThickness)
+        {
+            const int RowWidth = 5;
+            int backStartIndex = buffers.Vertices.Count;
+
+            for (int rowIndex = 0; rowIndex <= segments; rowIndex++)
+            {
+                int frontRow = frontStartIndex + rowIndex * RowWidth;
+                for (int columnIndex = 0; columnIndex < RowWidth; columnIndex++)
+                {
+                    int frontIndex = frontRow + columnIndex;
+                    Vector3 frontPosition = buffers.Vertices[frontIndex];
+                    Vector3 frontNormal = buffers.Normals[frontIndex];
+                    Vector4 frontTangent = buffers.Tangents[frontIndex];
+                    Vector2 frontUv = buffers.UVs[frontIndex];
+                    Color32 frontColor = buffers.Colors[frontIndex];
+
+                    Vector3 backPosition = frontPosition - frontNormal * shellThickness;
+                    Vector4 backTangent = new Vector4(frontTangent.x, frontTangent.y, frontTangent.z, -1f);
+                    Color32 backColor = new Color32(
+                        (byte)Mathf.Clamp(frontColor.r - 8, 0, 255),
+                        (byte)Mathf.Clamp(frontColor.g - 10, 0, 255),
+                        (byte)Mathf.Clamp(frontColor.b - 10, 0, 255),
+                        frontColor.a);
+                    buffers.AddVertex(backPosition, -frontNormal, backTangent, frontUv, backColor);
+                }
+            }
+
+            for (int rowIndex = 0; rowIndex < segments; rowIndex++)
+            {
+                int backRow = backStartIndex + rowIndex * RowWidth;
+                int nextBackRow = backRow + RowWidth;
+
+                buffers.AddQuad(backRow + 1, nextBackRow + 1, nextBackRow, backRow);
+                buffers.AddQuad(backRow + 2, nextBackRow + 2, nextBackRow + 1, backRow + 1);
+                buffers.AddQuad(backRow + 3, nextBackRow + 3, nextBackRow + 2, backRow + 2);
+                buffers.AddQuad(backRow + 4, nextBackRow + 4, nextBackRow + 3, backRow + 3);
+
+                int frontRow = frontStartIndex + rowIndex * RowWidth;
+                int nextFrontRow = frontRow + RowWidth;
+                buffers.AddQuad(frontRow, nextFrontRow, nextBackRow, backRow);
+                buffers.AddQuad(frontRow + 4, backRow + 4, nextBackRow + 4, nextFrontRow + 4);
+            }
+
+            int frontTipRow = frontStartIndex + segments * RowWidth;
+            int backTipRow = backStartIndex + segments * RowWidth;
+            buffers.AddQuad(frontTipRow, backTipRow, backTipRow + 1, frontTipRow + 1);
+            buffers.AddQuad(frontTipRow + 1, backTipRow + 1, backTipRow + 2, frontTipRow + 2);
+            buffers.AddQuad(frontTipRow + 2, backTipRow + 2, backTipRow + 3, frontTipRow + 3);
+            buffers.AddQuad(frontTipRow + 3, backTipRow + 3, backTipRow + 4, frontTipRow + 4);
         }
 
         private static void AddSphere(MeshBuffers buffers, Vector3 center, Vector3 radii, int latSegments, int lonSegments, Color32 color)
@@ -1400,7 +1705,8 @@ namespace Hecton8.EditorTools
                 case "family_kelp_tall__colossus": spec = new VariantSpec(11, 15, 14, 16, 4, 1.12f, 0.24f, 0.1f, 5f, 0.08f, 14f, 0.14f, 0.08f, 0.98f, 0.22f, 0.56f, 0.24f, 0.98f, 0.06f, 0.52f, 0.1f, 16f, -8f, 54f, 16f, 7, 0.036f, 170, 5600, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 1, 0f); return true;
                 case "family_kelp_tall__sail": spec = new VariantSpec(10, 15, 15, 14, 2, 1.04f, 0.22f, 0.08f, 4f, 0.06f, 10f, 0.12f, 0.12f, 0.94f, 0.3f, 0.82f, 0.32f, 1.08f, 0.05f, 0.56f, 0.08f, 8f, -8f, 26f, 8f, 7, 0.034f, 176, 5600, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_tall__paddle": spec = new VariantSpec(10, 15, 15, 13, 3, 1.02f, 0.2f, 0.08f, 4f, 0.06f, 8f, 0.08f, 0.14f, 0.9f, 0.28f, 0.78f, 0.26f, 0.96f, 0.06f, 0.54f, 0.08f, 10f, -22f, 86f, 16f, 6, 0.032f, 170, 5400, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
-                case "family_kelp_tall__broadleaf": spec = new VariantSpec(10, 15, 15, 14, 2, 1.06f, 0.22f, 0.09f, 4f, 0.06f, 6f, 0.08f, 0.16f, 0.92f, 0.3f, 0.86f, 0.3f, 1.02f, 0.06f, 0.56f, 0.08f, 12f, -18f, 92f, 18f, 6, 0.032f, 172, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_tall__broadleaf": spec = new VariantSpec(10, 15, 14, 11, 2, 1.06f, 0.22f, 0.09f, 4f, 0.06f, 6f, 0.08f, 0.22f, 0.94f, 0.36f, 1.02f, 0.32f, 1.08f, 0.05f, 0.62f, 0.08f, 10f, -10f, 40f, 10f, 6, 0.032f, 172, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_tall__frondcrest": spec = new VariantSpec(9, 14, 14, 13, 1, 1.02f, 0.18f, 0.07f, 4f, 0.05f, 12f, 0.12f, 0.16f, 0.9f, 0.18f, 0.48f, 0.24f, 0.88f, 0.08f, 0.5f, 0.1f, 20f, -28f, 104f, 24f, 6, 0.03f, 164, 5000, GrowthStyle.GiantFrond, BladeProfile.FrilledRibbon); return true;
                 case "family_kelp_patch_dense__patch": spec = new VariantSpec(8, 11, 11, 12, 2, 0.84f, 0.2f, 0.09f, 4f, 0.06f, 8f, 0.12f, 0.16f, 0.84f, 0.18f, 0.42f, 0.18f, 0.68f, 0.14f, 0.48f, 0.10f, 18f, -72f, 156f, 34f, 6, 0.035f, 144, 5200, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 3, 0.18f); return true;
                 case "family_kelp_patch_dense__patch_tall": spec = new VariantSpec(9, 12, 12, 13, 2, 0.92f, 0.18f, 0.08f, 4f, 0.05f, 12f, 0.14f, 0.18f, 0.9f, 0.18f, 0.46f, 0.16f, 0.78f, 0.14f, 0.5f, 0.10f, 22f, -64f, 164f, 38f, 7, 0.034f, 150, 5600, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 4, 0.22f); return true;
                 case "family_kelp_patch_dense__ring": spec = new VariantSpec(8, 11, 11, 14, 1, 0.8f, 0.19f, 0.08f, 4f, 0.06f, 10f, 0.1f, 0.14f, 0.82f, 0.16f, 0.4f, 0.18f, 0.64f, 0.12f, 0.5f, 0.10f, 20f, 0f, 360f, 36f, 7, 0.036f, 146, 6000, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap, 4, 0.24f); return true;
@@ -1409,9 +1715,10 @@ namespace Hecton8.EditorTools
                 case "family_kelp_patch_dense__tuft": spec = new VariantSpec(7, 10, 10, 16, 0, 0.68f, 0.18f, 0.08f, 3f, 0.04f, 2f, 0.04f, 0.08f, 0.66f, 0.1f, 0.22f, 0.1f, 0.38f, 0.1f, 0.38f, 0.06f, 12f, -96f, 184f, 20f, 8, 0.03f, 138, 4500, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap, 4, 0.22f); return true;
                 case "family_kelp_patch_dense__drape": spec = new VariantSpec(8, 11, 12, 14, 1, 0.82f, 0.19f, 0.08f, 4f, 0.05f, 10f, 0.12f, 0.16f, 0.8f, 0.22f, 0.56f, 0.18f, 0.8f, 0.08f, 0.5f, 0.1f, 18f, -86f, 178f, 34f, 6, 0.034f, 148, 5600, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 3, 0.2f); return true;
                 case "family_kelp_patch_dense__nest": spec = new VariantSpec(7, 9, 9, 13, 0, 0.62f, 0.16f, 0.07f, 3f, 0.03f, 4f, 0.04f, 0.08f, 0.58f, 0.1f, 0.2f, 0.1f, 0.34f, 0.08f, 0.34f, 0.05f, 10f, -128f, 236f, 18f, 8, 0.028f, 136, 4300, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap, 5, 0.2f); return true;
-                case "family_kelp_patch_dense__sheetwall": spec = new VariantSpec(9, 12, 13, 15, 2, 0.94f, 0.2f, 0.09f, 4f, 0.05f, 8f, 0.1f, 0.14f, 0.88f, 0.2f, 0.52f, 0.2f, 0.82f, 0.08f, 0.5f, 0.1f, 14f, -92f, 188f, 30f, 7, 0.032f, 152, 5900, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 4, 0.24f); return true;
-                case "family_kelp_patch_dense__bladder": spec = new VariantSpec(8, 11, 12, 12, 4, 0.82f, 0.19f, 0.08f, 4f, 0.05f, 6f, 0.08f, 0.12f, 0.76f, 0.2f, 0.56f, 0.18f, 0.74f, 0.08f, 0.48f, 0.08f, 14f, -96f, 196f, 24f, 6, 0.032f, 150, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed, 4, 0.22f); return true;
-                case "family_kelp_patch_dense__paddlespray": spec = new VariantSpec(9, 12, 12, 15, 3, 0.82f, 0.19f, 0.08f, 4f, 0.05f, 8f, 0.1f, 0.12f, 0.76f, 0.2f, 0.6f, 0.2f, 0.8f, 0.08f, 0.52f, 0.08f, 18f, -110f, 220f, 28f, 7, 0.032f, 150, 6000, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed, 4, 0.26f); return true;
+                case "family_kelp_patch_dense__sheetwall": spec = new VariantSpec(9, 12, 12, 13, 2, 0.92f, 0.2f, 0.09f, 4f, 0.05f, 8f, 0.1f, 0.14f, 0.86f, 0.18f, 0.48f, 0.18f, 0.74f, 0.08f, 0.48f, 0.08f, 14f, -92f, 188f, 30f, 7, 0.032f, 152, 5200, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 4, 0.22f); return true;
+                case "family_kelp_patch_dense__bladder": spec = new VariantSpec(8, 11, 11, 11, 4, 0.8f, 0.19f, 0.08f, 4f, 0.05f, 6f, 0.08f, 0.12f, 0.72f, 0.18f, 0.5f, 0.16f, 0.68f, 0.08f, 0.46f, 0.08f, 14f, -96f, 196f, 24f, 6, 0.032f, 150, 5000, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed, 4, 0.2f); return true;
+                case "family_kelp_patch_dense__paddlespray": spec = new VariantSpec(8, 11, 11, 13, 3, 0.8f, 0.19f, 0.08f, 4f, 0.05f, 8f, 0.1f, 0.12f, 0.72f, 0.18f, 0.54f, 0.18f, 0.72f, 0.08f, 0.48f, 0.08f, 18f, -110f, 220f, 28f, 7, 0.032f, 150, 5200, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed, 4, 0.22f); return true;
+                case "family_kelp_patch_dense__frilltuft": spec = new VariantSpec(8, 11, 12, 13, 1, 0.76f, 0.18f, 0.08f, 4f, 0.05f, 10f, 0.12f, 0.1f, 0.7f, 0.15f, 0.38f, 0.16f, 0.62f, 0.1f, 0.44f, 0.08f, 24f, -118f, 228f, 30f, 7, 0.03f, 148, 5200, GrowthStyle.GiantFrond, BladeProfile.FrilledRibbon, 4, 0.22f); return true;
                 case "family_kelp_canopy__crown": spec = new VariantSpec(10, 15, 14, 14, 3, 1f, 0.2f, 0.08f, 5f, 0.08f, 12f, 0.1f, 0.42f, 0.84f, 0.24f, 0.62f, 0.26f, 0.98f, 0.12f, 0.56f, 0.12f, 26f, -76f, 180f, 34f, 7, 0.038f, 170, 4600, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__frond": spec = new VariantSpec(9, 13, 12, 10, 2, 0.92f, 0.18f, 0.07f, 4f, 0.06f, 6f, 0.08f, 0.34f, 0.76f, 0.22f, 0.56f, 0.24f, 0.9f, 0.12f, 0.52f, 0.10f, 18f, -54f, 118f, 32f, 5, 0.03f, 162, 3400, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__fan": spec = new VariantSpec(10, 14, 13, 14, 2, 0.96f, 0.18f, 0.07f, 5f, 0.08f, 10f, 0.09f, 0.38f, 0.82f, 0.24f, 0.58f, 0.24f, 0.94f, 0.12f, 0.54f, 0.10f, 28f, -92f, 188f, 38f, 6, 0.034f, 174, 4400, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
@@ -1423,7 +1730,8 @@ namespace Hecton8.EditorTools
                 case "family_kelp_canopy__sheetwall": spec = new VariantSpec(11, 16, 15, 14, 2, 1.06f, 0.22f, 0.08f, 5f, 0.07f, 6f, 0.05f, 0.46f, 0.96f, 0.42f, 0.96f, 0.36f, 1.16f, 0.05f, 0.62f, 0.08f, 10f, -12f, 24f, 6f, 8, 0.036f, 180, 5200, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__tapestry": spec = new VariantSpec(11, 16, 15, 15, 1, 1.08f, 0.22f, 0.08f, 5f, 0.06f, 6f, 0.05f, 0.46f, 0.98f, 0.52f, 1.12f, 0.44f, 1.28f, 0.03f, 0.66f, 0.08f, 6f, -6f, 14f, 3f, 8, 0.036f, 188, 6000, GrowthStyle.CrownCanopy, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_canopy__oar": spec = new VariantSpec(10, 15, 15, 13, 2, 1f, 0.2f, 0.08f, 5f, 0.07f, 8f, 0.08f, 0.42f, 0.9f, 0.3f, 0.86f, 0.3f, 1.02f, 0.06f, 0.58f, 0.08f, 16f, -42f, 108f, 20f, 7, 0.034f, 180, 5200, GrowthStyle.CrownCanopy, BladeProfile.PaddleLobed); return true;
-                case "family_kelp_canopy__paddlefan": spec = new VariantSpec(10, 15, 15, 14, 2, 1.02f, 0.2f, 0.08f, 5f, 0.07f, 10f, 0.1f, 0.44f, 0.92f, 0.32f, 0.9f, 0.32f, 1.06f, 0.06f, 0.6f, 0.08f, 18f, -58f, 128f, 22f, 7, 0.034f, 182, 5400, GrowthStyle.CrownCanopy, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_canopy__paddlefan": spec = new VariantSpec(10, 15, 14, 13, 2, 1.02f, 0.2f, 0.08f, 5f, 0.07f, 10f, 0.1f, 0.44f, 0.92f, 0.28f, 0.82f, 0.3f, 0.96f, 0.06f, 0.58f, 0.08f, 18f, -58f, 128f, 22f, 7, 0.034f, 182, 5000, GrowthStyle.CrownCanopy, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_canopy__featherfan": spec = new VariantSpec(10, 15, 15, 13, 1, 1.02f, 0.2f, 0.08f, 5f, 0.07f, 12f, 0.1f, 0.42f, 0.92f, 0.18f, 0.5f, 0.28f, 0.96f, 0.06f, 0.56f, 0.08f, 26f, -74f, 164f, 28f, 7, 0.032f, 178, 5200, GrowthStyle.CrownCanopy, BladeProfile.FrilledRibbon); return true;
                 case "family_kelp_abyssal__strap": spec = new VariantSpec(8, 12, 13, 11, 1, 0.92f, 0.15f, 0.05f, 4f, 0.07f, 8f, 0.12f, 0.18f, 0.88f, 0.12f, 0.28f, 0.22f, 0.82f, 0.08f, 0.42f, 0.08f, 18f, -22f, 102f, 18f, 5, 0.026f, 76, 3900, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
                 case "family_kelp_abyssal__shroud": spec = new VariantSpec(9, 13, 14, 12, 1, 0.98f, 0.16f, 0.05f, 5f, 0.08f, 14f, 0.14f, 0.22f, 0.94f, 0.18f, 0.46f, 0.24f, 0.98f, 0.06f, 0.46f, 0.1f, 16f, -36f, 148f, 24f, 5, 0.03f, 82, 4700, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_abyssal__nodule": spec = new VariantSpec(8, 12, 13, 10, 5, 0.94f, 0.15f, 0.05f, 5f, 0.09f, 10f, 0.14f, 0.18f, 0.86f, 0.11f, 0.24f, 0.2f, 0.74f, 0.1f, 0.4f, 0.08f, 14f, -28f, 116f, 20f, 5, 0.028f, 88, 4400, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon); return true;
@@ -1432,11 +1740,12 @@ namespace Hecton8.EditorTools
                 case "family_kelp_abyssal__braid": spec = new VariantSpec(10, 15, 16, 12, 3, 0.96f, 0.145f, 0.045f, 6f, 0.09f, 16f, 0.2f, 0.18f, 0.98f, 0.16f, 0.38f, 0.2f, 0.86f, 0.08f, 0.46f, 0.08f, 18f, -26f, 126f, 26f, 5, 0.028f, 84, 5000, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon); return true;
                 case "family_kelp_abyssal__pennant": spec = new VariantSpec(9, 14, 15, 14, 1, 1.02f, 0.18f, 0.05f, 5f, 0.08f, 22f, 0.2f, 0.26f, 1.02f, 0.24f, 0.6f, 0.24f, 1.04f, 0.06f, 0.52f, 0.1f, 12f, -46f, 172f, 20f, 5, 0.031f, 92, 5600, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_abyssal__reed": spec = new VariantSpec(7, 11, 11, 9, 0, 0.78f, 0.11f, 0.035f, 4f, 0.05f, 20f, 0.2f, 0.16f, 0.9f, 0.06f, 0.16f, 0.16f, 0.58f, 0.1f, 0.42f, 0.06f, 22f, -24f, 88f, 24f, 4, 0.022f, 70, 3600, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
-                case "family_kelp_abyssal__cathedral": spec = new VariantSpec(11, 16, 16, 17, 4, 1.08f, 0.18f, 0.05f, 6f, 0.08f, 26f, 0.24f, 0.2f, 1f, 0.2f, 0.5f, 0.24f, 1.06f, 0.08f, 0.56f, 0.1f, 18f, -52f, 176f, 22f, 6, 0.03f, 90, 6100, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 2, 0.14f); return true;
+                case "family_kelp_abyssal__cathedral": spec = new VariantSpec(10, 15, 15, 15, 4, 1.04f, 0.18f, 0.05f, 6f, 0.08f, 26f, 0.24f, 0.2f, 0.96f, 0.18f, 0.44f, 0.22f, 0.94f, 0.08f, 0.54f, 0.1f, 18f, -52f, 176f, 22f, 6, 0.03f, 90, 5200, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 2, 0.12f); return true;
                 case "family_kelp_abyssal__cowl": spec = new VariantSpec(9, 14, 15, 13, 1, 1f, 0.17f, 0.05f, 5f, 0.07f, 18f, 0.18f, 0.22f, 0.98f, 0.34f, 0.86f, 0.32f, 1.12f, 0.04f, 0.5f, 0.08f, 8f, -12f, 24f, 8f, 5, 0.03f, 92, 5400, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_abyssal__veilwall": spec = new VariantSpec(10, 15, 15, 14, 2, 1.06f, 0.18f, 0.05f, 5f, 0.07f, 20f, 0.2f, 0.24f, 1f, 0.38f, 0.98f, 0.36f, 1.2f, 0.04f, 0.54f, 0.08f, 8f, -8f, 18f, 6f, 6, 0.032f, 98, 6200, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_abyssal__lantern": spec = new VariantSpec(9, 14, 15, 12, 5, 0.98f, 0.16f, 0.05f, 5f, 0.08f, 16f, 0.18f, 0.2f, 0.92f, 0.24f, 0.68f, 0.22f, 0.92f, 0.06f, 0.48f, 0.08f, 12f, -30f, 124f, 18f, 5, 0.03f, 94, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
-                case "family_kelp_abyssal__petal": spec = new VariantSpec(9, 14, 15, 13, 4, 0.96f, 0.16f, 0.05f, 5f, 0.08f, 18f, 0.18f, 0.18f, 0.9f, 0.24f, 0.72f, 0.22f, 0.96f, 0.06f, 0.5f, 0.08f, 14f, -24f, 116f, 18f, 5, 0.03f, 92, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_abyssal__petal": spec = new VariantSpec(9, 14, 14, 12, 4, 0.94f, 0.16f, 0.05f, 5f, 0.08f, 18f, 0.18f, 0.18f, 0.88f, 0.22f, 0.64f, 0.2f, 0.88f, 0.06f, 0.48f, 0.08f, 14f, -24f, 116f, 18f, 5, 0.03f, 92, 5000, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_abyssal__tatterveil": spec = new VariantSpec(9, 14, 15, 13, 2, 0.98f, 0.15f, 0.05f, 5f, 0.08f, 22f, 0.22f, 0.18f, 0.88f, 0.15f, 0.38f, 0.2f, 0.82f, 0.08f, 0.46f, 0.08f, 24f, -38f, 156f, 24f, 5, 0.03f, 90, 5200, GrowthStyle.GiantFrond, BladeProfile.FrilledRibbon); return true;
                 default: spec = default; return false;
             }
         }
@@ -1638,7 +1947,8 @@ namespace Hecton8.EditorTools
             BroadUndulate = 1,
             SplitRibbon = 2,
             FoldedLamina = 3,
-            PaddleLobed = 4
+            PaddleLobed = 4,
+            FrilledRibbon = 5
         }
 
         private sealed class MeshBuffers

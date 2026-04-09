@@ -277,6 +277,14 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
+            if (!BootstrapRouteEnforcer.EnsureBootstrapRuntimeRoute(
+                    gameObject.scene.name,
+                    nameof(SceneBootstrap)))
+            {
+                enabled = false;
+                return;
+            }
+
             ActiveInstance = this;
             HasActiveInstance = true;
             PublishPlayerRuntimeReference();
@@ -993,8 +1001,6 @@ namespace Hecton8.Bootstrap
             }
 
             GC.Collect();
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-
             CaptureStartupMemorySnapshot();
         }
 

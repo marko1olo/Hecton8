@@ -1,0 +1,107 @@
+// ============================================================================
+// HECTON-8 — NarrativeDiscovery.cs
+// Компонент для лорных объектов (черные ящики, КПК, обломки).
+// Позволяет "открывать" лор через механику взаимодействия.
+// ============================================================================
+
+using Hecton8.Core;
+using Hecton8.Interaction;
+using Hecton8.Gameplay;
+using UnityEngine;
+
+namespace Hecton8.Interaction
+{
+    [DisallowMultipleComponent]
+    public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable
+    {
+        [Header("── Discovery ─────────────────────────────────")]
+        [Tooltip("Уникальный ID открытия (для сохранения и триггеров)")]
+        [SerializeField] private string discoveryId;
+        
+        [Tooltip("Текст подсказки: 'Забрать КПК', 'Изучить бортовой самописец'")]
+        [SerializeField] private string interactVerb = "Изучить";
+        
+        [Tooltip("Название объекта (для лога)")]
+        [SerializeField] private string displayName = "Объект";
+
+        [Header("── Settings ──────────────────────────────────")]
+        [SerializeField] private bool disableAfterDiscovery = true;
+        [SerializeField] private GameObject highlightObject;
+
+        private string _cachedInteractText;
+
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
+
+        private void OnEnable()
+        {
+            RebuildCache();
+            
+            // Если уже открыто — отключаем (если настройка активна)
+            if (disableAfterDiscovery && HectonNarrativeDirector.Instance != null)
+            {
+                if (HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
+                {
+                    gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private void RebuildCache()
+        {
+            _cachedInteractText = $"{interactVerb} {displayName}";
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  IINTERACTABLE
+        // ══════════════════════════════════════════════════════════
+
+        public void OnHoverStart()
+        {
+            if (highlightObject != null) highlightObject.SetActive(true);
+        }
+
+        public void OnHoverEnd()
+        {
+            if (highlightObject != null) highlightObject.SetActive(false);
+        }
+
+        public void Interact(Transform interactor)
+        {
+            if (HectonNarrativeDirector.Instance != null && HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
+            {
+                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[Narrative] '{discoveryId}' already discovered.");
+                #endif
+                return;
+            }
+
+            // Оповещаем систему
+            NarrativeEvents.RaiseDiscoveryMade(discoveryId);
+
+            #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Narrative] Discovery made: {discoveryId} ({displayName})");
+            #endif
+
+            if (disableAfterDiscovery)
+            {
+                // Для пула лучше просто деактивировать или менять материал
+                gameObject.SetActive(false);
+            }
+        }
+
+        public string GetInteractText() => _cachedInteractText;
+
+        #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (string.IsNullOrEmpty(discoveryId))
+            {
+                discoveryId = gameObject.name.ToLower().Replace(" ", "_");
+            }
+            RebuildCache();
+        }
+        #endif
+    }
+}

@@ -56,7 +56,7 @@ using UnityEngine.Rendering;
 using Unity.Mathematics;
 
 #if UNITY_EDITOR
-using CrestUnderwaterRenderer = Crest.UnderwaterRenderer;
+using CrestUnderwaterRenderer = global::Crest.UnderwaterRenderer;
 using UnityEditor;
 #endif
 
@@ -111,10 +111,10 @@ namespace Hecton8.Environment
         );
 
         [Header("═══ FOG DENSITY RANGE ═══")]
-        [Range(0.0001f, 0.05f)]
+        [UnityEngine.Range(0.0001f, 0.05f)]
         [SerializeField] private float minFogDensity = 0.002f;
 
-        [Range(0.01f, 0.5f)]
+        [UnityEngine.Range(0.01f, 0.5f)]
         [SerializeField] private float maxFogDensity = 0.08f;
 
         // ══════════════════════════════════════════════════════════
@@ -129,7 +129,7 @@ namespace Hecton8.Environment
         [SerializeField] private float deepCelestialCullDepth = 1000f;
 
         [Header("═══ SUN VISUAL ═══")]
-        [Range(0.0001f, 0.05f)]
+        [UnityEngine.Range(0.0001f, 0.05f)]
         [SerializeField] private float sunVisualDisableThreshold = 0.005f;
 
         [Header("═══ SUN SCATTERING ═══")]
@@ -139,7 +139,7 @@ namespace Hecton8.Environment
         [SerializeField] private float underwaterSunSoftnessMax = 0.5f;
 
         [Header("═══ TRANSITION ═══")]
-        [Range(0.05f, 2.0f)]
+        [UnityEngine.Range(0.05f, 2.0f)]
         [SerializeField] private float biomeTransitionSpeed = 0.2f;
         [SerializeField] private float slowTickInterval = 0.5f;
 
@@ -244,6 +244,8 @@ namespace Hecton8.Environment
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
+        private bool _editorGameplayMainCameraSuppressed;
+        private bool _editorGameplaySpaceCameraSuppressed;
         private bool _sunVisualWasDisabled;
         private bool _editorCrestSuppressed;
         private bool _spaceCameraSuppressed;
@@ -257,6 +259,9 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
         private CrestUnderwaterRenderer _editorCrestUnderwaterRenderer;
         private bool _editorCrestUnderwaterRendererWasEnabled;
+        private Camera _editorGameplaySpaceCamera;
+        private bool _editorGameplayMainCameraWasEnabled;
+        private bool _editorGameplaySpaceCameraWasEnabled;
 #endif
 
         private float _editorSlowTickAccum;
@@ -450,18 +455,59 @@ namespace Hecton8.Environment
             if (!_gameplayMainCamera.TryGetComponent(out _editorCrestUnderwaterRenderer) ||
                 _editorCrestUnderwaterRenderer == null)
             {
-                return;
+                _editorCrestUnderwaterRenderer = null;
             }
 
-            _editorCrestUnderwaterRendererWasEnabled = _editorCrestUnderwaterRenderer.enabled;
-            if (_editorCrestUnderwaterRendererWasEnabled)
-                _editorCrestUnderwaterRenderer.enabled = false;
+            if (_editorCrestUnderwaterRenderer != null)
+            {
+                _editorCrestUnderwaterRendererWasEnabled = _editorCrestUnderwaterRenderer.enabled;
+                if (_editorCrestUnderwaterRendererWasEnabled)
+                    _editorCrestUnderwaterRenderer.enabled = false;
 
-            _editorCrestSuppressed = _editorCrestUnderwaterRendererWasEnabled;
+                _editorCrestSuppressed = _editorCrestUnderwaterRendererWasEnabled;
+            }
+
+            _editorGameplayMainCameraWasEnabled = _gameplayMainCamera.enabled;
+            if (_editorGameplayMainCameraWasEnabled)
+                _gameplayMainCamera.enabled = false;
+
+            _editorGameplayMainCameraSuppressed = _editorGameplayMainCameraWasEnabled;
+
+            ResolveGameplaySpaceCameraForEditor();
+            if (_editorGameplaySpaceCamera == null)
+                return;
+
+            _editorGameplaySpaceCameraWasEnabled = _editorGameplaySpaceCamera.enabled;
+            if (_editorGameplaySpaceCameraWasEnabled)
+                _editorGameplaySpaceCamera.enabled = false;
+
+            _editorGameplaySpaceCameraSuppressed = _editorGameplaySpaceCameraWasEnabled;
         }
 
         private void ResumeEditorWaterRendering()
         {
+            if (_editorGameplaySpaceCameraSuppressed &&
+                _editorGameplaySpaceCamera != null &&
+                _editorGameplaySpaceCameraWasEnabled &&
+                !_editorGameplaySpaceCamera.enabled)
+            {
+                _editorGameplaySpaceCamera.enabled = true;
+            }
+
+            _editorGameplaySpaceCameraSuppressed = false;
+            _editorGameplaySpaceCameraWasEnabled = false;
+
+            if (_editorGameplayMainCameraSuppressed &&
+                _gameplayMainCamera != null &&
+                _editorGameplayMainCameraWasEnabled &&
+                !_gameplayMainCamera.enabled)
+            {
+                _gameplayMainCamera.enabled = true;
+            }
+
+            _editorGameplayMainCameraSuppressed = false;
+            _editorGameplayMainCameraWasEnabled = false;
+
             if (!_editorCrestSuppressed)
                 return;
 
@@ -1183,6 +1229,25 @@ namespace Hecton8.Environment
 
             if (mainCameraTransform != null)
                 _gameplayMainCamera = mainCameraTransform.GetComponent<Camera>();
+        }
+
+        private void ResolveGameplaySpaceCameraForEditor()
+        {
+            if (Application.isPlaying)
+                return;
+
+            if (_editorGameplaySpaceCamera != null)
+                return;
+
+            ResolveGameplayMainCameraForEditor();
+            if (_gameplayMainCamera == null)
+                return;
+
+            Transform spaceCameraTransform = _gameplayMainCamera.transform.Find("SpaceCamera");
+            if (spaceCameraTransform == null)
+                return;
+
+            _editorGameplaySpaceCamera = spaceCameraTransform.GetComponent<Camera>();
         }
 
         private void ResolveSpaceCamera()
