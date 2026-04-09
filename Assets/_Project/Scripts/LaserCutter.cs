@@ -3,7 +3,7 @@
 // Лазерный резак — PlayerTool с термическим менеджментом.
 //
 // v2.1 CHANGES (OPTIMIZATION PASS):
-//   [OPT] FindWithTag("Player") moved from hot loop (EnsurePlayerInventory)
+//   [OPT] Player inventory resolve moved out of hot loop (EnsurePlayerInventory)
 //     to ONE-TIME initialization in Awake().
 //     • Impact: eliminates O(N) scene search on every deconstruct operation
 //     • Safe: PlayerInventory must exist at scene start, unlikely to change

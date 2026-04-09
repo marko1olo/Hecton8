@@ -13,7 +13,7 @@
 // ОПТИМИЗАЦИИ v2:
 //   • Instance-level predator buffer вместо static (safe multi-scene).
 //   • HashSet<Collider> registration — TryGetComponent убран из горячего цикла.
-//   • Ленивый resolve зависимостей — FindAnyObjectByType один раз.
+//   • Ленивый resolve зависимостей через runtime reference helpers.
 //   • SafeInvoke для event protection при scene transitions.
 //   • Единый WeightedRoll метод без копипасты.
 //   • Новые event types: WeatherShift, MissionTrigger.

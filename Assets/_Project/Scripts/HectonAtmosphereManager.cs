@@ -124,14 +124,7 @@ namespace Hecton8.Atmosphere
 
         public static HectonAtmosphereManager Instance
         {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null)
-                    _instance = FindAnyObjectByType<HectonAtmosphereManager>();
-#endif
-                return _instance;
-            }
+            get { return _instance; }
         }
 
         #endregion

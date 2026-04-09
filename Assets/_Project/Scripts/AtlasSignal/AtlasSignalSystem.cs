@@ -237,9 +237,7 @@ namespace Hecton8.AtlasSignal
 
         private void ResolvePlayer()
         {
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-                _playerTransform = player.transform;
+            SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
         // ══════════════════════════════════════════════════════════

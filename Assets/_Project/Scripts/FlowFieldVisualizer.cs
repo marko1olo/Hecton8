@@ -64,16 +64,7 @@ namespace Hecton8.Physics
 
         public static FlowFieldVisualizer Instance
         {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null)
-                {
-                    _instance = FindAnyObjectByType<FlowFieldVisualizer>();
-                }
-#endif
-                return _instance;
-            }
+            get { return _instance; }
         }
 
         [Header("── Profile ───────────────────────────────────")]
@@ -261,7 +252,7 @@ namespace Hecton8.Physics
         /// <summary>Кэшированный GUIStyle для лейблов (меньше GC в OnDrawGizmos).</summary>
         private GUIStyle _cachedLabelStyle;
 
-        /// <summary>Кэш для Camera.main, чтобы избежать многократного поиска.</summary>
+        /// <summary>Кэш активной камеры сцены для избежания повторного resolve.</summary>
         private Camera _cachedMainCamera;
 
         private JobHandle _calculationJobHandle;

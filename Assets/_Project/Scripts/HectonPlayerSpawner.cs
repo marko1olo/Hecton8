@@ -53,7 +53,7 @@ using UnityEngine;
 /// <para>
 /// <b>Использование из SceneBootstrap:</b>
 /// <code>
-/// var spawner = FindObjectOfType&lt;HectonPlayerSpawner&gt;();
+/// var spawner = sceneBootstrap.PlayerSpawner;
 /// await spawner.SpawnPlayerAsync(ct);
 /// </code>
 /// </para>

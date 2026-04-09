@@ -14,7 +14,7 @@
 //     • Impact: -5-10% вычисления в GatherData() при 200+ объектах
 //
 //   [OPT] TryResolveObserver() → TryResolveObserverOnce() в Awake
-//     • Убрана FindWithTag("Player") из FixedTick
+//     • Убран scene-search observer-а из FixedTick
 //     • ONE-TIME инициализация вместо проверки каждый кадр
 //     • Impact: одна O(N) операция при загрузке, не каждый фрейм
 //
