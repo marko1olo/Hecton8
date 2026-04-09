@@ -205,6 +205,13 @@ namespace Crest
                     return false;
                 }
 
+#if UNITY_EDITOR
+                if (!Application.isPlaying && EditorWindow.focusedWindow == null)
+                {
+                    return false;
+                }
+#endif
+
                 return true;
             }
         }

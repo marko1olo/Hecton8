@@ -56,6 +56,7 @@ using UnityEngine.Rendering;
 using Unity.Mathematics;
 
 #if UNITY_EDITOR
+using CrestUnderwaterRenderer = Crest.UnderwaterRenderer;
 using UnityEditor;
 #endif
 
@@ -244,13 +245,19 @@ namespace Hecton8.Environment
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
         private bool _sunVisualWasDisabled;
+        private bool _editorCrestSuppressed;
         private bool _spaceCameraSuppressed;
         private bool _spaceCameraMaskCaptured;
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
+        private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
         private int _spaceCameraOriginalCullingMask;
+#if UNITY_EDITOR
+        private CrestUnderwaterRenderer _editorCrestUnderwaterRenderer;
+        private bool _editorCrestUnderwaterRendererWasEnabled;
+#endif
 
         private float _editorSlowTickAccum;
 
@@ -342,6 +349,9 @@ namespace Hecton8.Environment
             }
 #endif
 
+#if UNITY_EDITOR
+            ResumeEditorWaterRendering();
+#endif
             RestoreBaseValues();
             RestoreSunVisual();
             RestoreSpaceCameraDefaults();
@@ -358,7 +368,14 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying) return;
             if (this == null) return;
-            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive) return;
+
+            if (!IsEditorPreviewActive())
+            {
+                SuspendEditorWaterRendering();
+                return;
+            }
+
+            ResumeEditorWaterRendering();
 
             ResolveEditorCamera();
 
@@ -375,6 +392,12 @@ namespace Hecton8.Environment
             }
 
             _debugEditorDriven = true;
+        }
+
+        private static bool IsEditorPreviewActive()
+        {
+            return UnityEditorInternal.InternalEditorUtility.isApplicationActive &&
+                   EditorWindow.focusedWindow != null;
         }
 
         private void ResolveEditorCamera()
@@ -411,6 +434,46 @@ namespace Hecton8.Environment
 
             mainCamera = gameCamera;
             playerCamera = gameCamera.transform;
+        }
+
+        private void SuspendEditorWaterRendering()
+        {
+            _debugEditorDriven = false;
+
+            if (_editorCrestSuppressed)
+                return;
+
+            ResolveGameplayMainCameraForEditor();
+            if (_gameplayMainCamera == null)
+                return;
+
+            if (!_gameplayMainCamera.TryGetComponent(out _editorCrestUnderwaterRenderer) ||
+                _editorCrestUnderwaterRenderer == null)
+            {
+                return;
+            }
+
+            _editorCrestUnderwaterRendererWasEnabled = _editorCrestUnderwaterRenderer.enabled;
+            if (_editorCrestUnderwaterRendererWasEnabled)
+                _editorCrestUnderwaterRenderer.enabled = false;
+
+            _editorCrestSuppressed = _editorCrestUnderwaterRendererWasEnabled;
+        }
+
+        private void ResumeEditorWaterRendering()
+        {
+            if (!_editorCrestSuppressed)
+                return;
+
+            if (_editorCrestUnderwaterRenderer != null &&
+                _editorCrestUnderwaterRendererWasEnabled &&
+                !_editorCrestUnderwaterRenderer.enabled)
+            {
+                _editorCrestUnderwaterRenderer.enabled = true;
+            }
+
+            _editorCrestSuppressed = false;
+            _editorCrestUnderwaterRendererWasEnabled = false;
         }
 #endif
 
@@ -1084,6 +1147,42 @@ namespace Hecton8.Environment
                 if (sv != null) mainCamera = sv.camera;
             }
 #endif
+        }
+
+        private void ResolveGameplayMainCameraForEditor()
+        {
+            if (Application.isPlaying)
+                return;
+
+            if (_gameplayMainCamera != null)
+                return;
+
+            if (playerCamera != null)
+            {
+                Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                if (playerOwnedCamera != null && playerOwnedCamera.GetComponent<CrestUnderwaterRenderer>() != null)
+                {
+                    _gameplayMainCamera = playerOwnedCamera;
+                    return;
+                }
+            }
+
+            if (mainCamera != null && mainCamera.GetComponent<CrestUnderwaterRenderer>() != null)
+            {
+                _gameplayMainCamera = mainCamera;
+                return;
+            }
+
+            Transform root = transform.root;
+            if (root == null)
+                return;
+
+            Transform mainCameraTransform = root.Find("Main Camera");
+            if (mainCameraTransform == null && root.parent != null)
+                mainCameraTransform = root.parent.Find("Main Camera");
+
+            if (mainCameraTransform != null)
+                _gameplayMainCamera = mainCameraTransform.GetComponent<Camera>();
         }
 
         private void ResolveSpaceCamera()
