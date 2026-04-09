@@ -246,7 +246,6 @@ MonoBehaviour:
   settingsGroup: {fileID: 0}
   loadingGroup: {fileID: 0}
   slotsContainer: {fileID: 0}
-  slotPrefab: {fileID: 0}
   btnNewGame: {fileID: 0}
   btnLoadGame: {fileID: 0}
   btnSettings: {fileID: 0}

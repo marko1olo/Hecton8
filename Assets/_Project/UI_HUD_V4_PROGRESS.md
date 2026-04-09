@@ -34,7 +34,7 @@
 
 ## Design Goal
 
-Reference target is a cinematic, minimal, Subnautica-like cockpit/helmet composition:
+Reference target is a cinematic, minimal cockpit/helmet composition with a restrained NASA-punk dive-tech tone:
 
 - Bottom-left: 3 circular gauges with strong hierarchy and calm spacing.
 - Right side: large `DEPTH` and smaller `TEMPERATURE`.

@@ -1,0 +1,165 @@
+// ============================================================================
+// HECTON-8 — EndingTerminalInteractable.cs
+// Интерактивный терминал ядра Атлас-6 — точка выбора концовки.
+//
+// ЛОР: Терминал рядом с ядром на -5000м.
+// На терминале: полные данные программы Посева, причина "поломки" Атлас-6,
+// и — главное — что он строил 847 дней.
+//
+// АРХИТЕКТУРА:
+//   • IInteractable — взаимодействие открывает UI выбора концовки.
+//   • Активен только если EndingSystem.IsConditionMet.
+//   • Показывает три варианта через NotificationEvents (временно).
+//   • В финальной версии — отдельный UI экран.
+// ============================================================================
+
+using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton8.Core;
+using Hecton8.Interaction;
+using UnityEngine;
+
+namespace Hecton8.Gameplay
+{
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(Collider))]
+    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable
+    {
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Visual ───────────────────────────────────")]
+        [SerializeField] private GameObject highlightObject;
+        [SerializeField] private GameObject activeIndicator;
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE STATE
+        // ══════════════════════════════════════════════════════════
+
+        private bool _choiceOpen;
+
+        // Pre-cached interact texts — zero GC
+        private static readonly string TextInactive = "ТЕРМИНАЛ АТЛАС-6 — НЕДОСТУПЕН";
+        private static readonly string TextActive   = "ВЗАИМОДЕЙСТВОВАТЬ С ЯДРОМ АТЛАС-6";
+        private static readonly string TextComplete = "РЕШЕНИЕ ПРИНЯТО";
+
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
+
+        private void OnEnable()
+        {
+            EndingEvents.OnEndingConditionMet += HandleConditionMet;
+            EndingEvents.OnEndingChosen       += HandleEndingChosen;
+            UpdateActiveIndicator();
+        }
+
+        private void OnDisable()
+        {
+            EndingEvents.OnEndingConditionMet -= HandleConditionMet;
+            EndingEvents.OnEndingChosen       -= HandleEndingChosen;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  IInteractable
+        // ══════════════════════════════════════════════════════════
+
+        public void OnHoverStart()
+        {
+            if (highlightObject != null)
+                highlightObject.SetActive(true);
+        }
+
+        public void OnHoverEnd()
+        {
+            if (highlightObject != null)
+                highlightObject.SetActive(false);
+        }
+
+        public void Interact(Transform interactor)
+        {
+            EndingSystem ending = EndingSystem.Instance;
+            if (ending == null) return;
+
+            if (ending.IsEndingComplete)
+            {
+                LogEndingAlreadyComplete();
+                return;
+            }
+
+            if (!ending.IsConditionMet)
+            {
+                NarrativeEvents.RaiseDiscoveryMade("atlas6_terminal_inactive");
+                return;
+            }
+
+            if (_choiceOpen) return;
+
+            OpenChoiceUI();
+        }
+
+        public string GetInteractText()
+        {
+            EndingSystem ending = EndingSystem.Instance;
+            if (ending == null) return TextInactive;
+            if (ending.IsEndingComplete) return TextComplete;
+            if (!ending.IsConditionMet)  return TextInactive;
+            return TextActive;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE
+        // ══════════════════════════════════════════════════════════
+
+        private void OpenChoiceUI()
+        {
+            _choiceOpen = true;
+
+            // Показываем данные Атлас-6 через нарратив
+            NarrativeEvents.RaiseDiscoveryMade("atlas6_core_data_accessed");
+
+            // Публикуем три варианта через HUD
+            // В финальной версии — отдельный UI экран с тремя кнопками
+            // Сейчас — уведомления с инструкцией
+            Hecton8.UI.NotificationEvents.PushWarning(
+                "АТЛАС-6: ДАННЫЕ ПРОГРАММЫ ПОСЕВА ЗАГРУЖЕНЫ. " +
+                "ЖИЗНЬ НА ГЕКТОНЕ-8 СУЩЕСТВОВАЛА ДО ПРИХОДА ЛЮДЕЙ. " +
+                "АТЛАС-6 СТРОИЛ СИГНАЛ ЗАЩИТЫ — 847 ДНЕЙ.");
+
+            LogChoiceUiOpened();
+        }
+
+        private void HandleConditionMet()
+        {
+            UpdateActiveIndicator();
+        }
+
+        private void HandleEndingChosen(EndingChoice choice)
+        {
+            _choiceOpen = false;
+            UpdateActiveIndicator();
+        }
+
+        private void UpdateActiveIndicator()
+        {
+            if (activeIndicator == null) return;
+
+            EndingSystem ending = EndingSystem.Instance;
+            bool active = ending != null && ending.IsConditionMet && !ending.IsEndingComplete;
+            activeIndicator.SetActive(active);
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogEndingAlreadyComplete()
+        {
+            Debug.Log("[EndingTerminal] Ending already complete.");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogChoiceUiOpened()
+        {
+            Debug.Log("[EndingTerminal] Choice UI opened. " +
+                      "Use EndingSystem.Instance.ChooseEnding(EndingChoice.X) to select.");
+        }
+    }
+}

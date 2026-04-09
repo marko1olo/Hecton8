@@ -116,6 +116,13 @@ namespace Hecton8.Gameplay
         [Tooltip("Скорость пассивного восстановления целостности (единиц/сек). 0 = отключено.")]
         [SerializeField] private float passiveRecoveryRate = 0f;
 
+        [Tooltip("Скорость пассивной деградации целостности (единиц/сек). " +
+                 "Лор: ~0.1% в игровой день. При глубине > 500м — умножается на depthDegradationMultiplier.")]
+        [SerializeField] private float passiveDegradationRate = 0.001f;
+
+        [Tooltip("Множитель деградации на глубине > 500м (давление на корпус).")]
+        [SerializeField, UnityEngine.Range(1f, 5f)] private float depthDegradationMultiplier = 2f;
+
         [Header("── Interior Zone (Dry Zone) ──────────────────")]
         [Tooltip("BoxCollider (Trigger), охватывающий внутреннее пространство модуля. " +
                  "Объекты с BuoyancyObject внутри этого триггера не испытывают водных сил, " +
@@ -365,6 +372,18 @@ namespace Hecton8.Gameplay
                 currentIntegrity < maxIntegrity)
             {
                 Repair(passiveRecoveryRate * SLOW_TICK_DT);
+            }
+
+            // Пассивная деградация — лор: давление, время, глубина
+            if (passiveDegradationRate > 0f && currentIntegrity > 0f)
+            {
+                float degradation = passiveDegradationRate * SLOW_TICK_DT;
+
+                // Глубина > 500м — усиленная деградация от давления
+                if (_trackedPlayerSurvival != null && _trackedPlayerSurvival.Depth > 500f)
+                    degradation *= depthDegradationMultiplier;
+
+                ApplyDamage(degradation);
             }
 
             if (!_isDraining)

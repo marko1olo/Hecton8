@@ -401,8 +401,8 @@ namespace Hecton8.Environment
 
         private static bool IsEditorPreviewActive()
         {
-            return UnityEditorInternal.InternalEditorUtility.isApplicationActive &&
-                   EditorWindow.focusedWindow != null;
+            return !EditorApplication.isCompiling &&
+                   !EditorApplication.isUpdating;
         }
 
         private void ResolveEditorCamera()
@@ -433,12 +433,12 @@ namespace Hecton8.Environment
                 return;
             }
 
-            Camera gameCamera = Camera.main;
-            if (gameCamera == null)
+            ResolveGameplayMainCameraForEditor();
+            if (_gameplayMainCamera == null)
                 return;
 
-            mainCamera = gameCamera;
-            playerCamera = gameCamera.transform;
+            mainCamera = _gameplayMainCamera;
+            playerCamera = _gameplayMainCamera.transform;
         }
 
         private void SuspendEditorWaterRendering()
@@ -467,11 +467,11 @@ namespace Hecton8.Environment
                 _editorCrestSuppressed = _editorCrestUnderwaterRendererWasEnabled;
             }
 
-            _editorGameplayMainCameraWasEnabled = _gameplayMainCamera.enabled;
-            if (_editorGameplayMainCameraWasEnabled)
-                _gameplayMainCamera.enabled = false;
-
-            _editorGameplayMainCameraSuppressed = _editorGameplayMainCameraWasEnabled;
+            // Never suppress the only gameplay base camera in edit mode. Losing
+            // editor focus or running automation must not leave the scene with
+            // "No cameras rendering" in Game view.
+            _editorGameplayMainCameraWasEnabled = false;
+            _editorGameplayMainCameraSuppressed = false;
 
             ResolveGameplaySpaceCameraForEditor();
             if (_editorGameplaySpaceCamera == null)
@@ -679,14 +679,7 @@ namespace Hecton8.Environment
             _cachedAtmoManager = atmosphereManager;
 
             if (_cachedAtmoManager == null)
-            {
-                if (Application.isPlaying)
-                    _cachedAtmoManager = HectonAtmosphereManager.Instance;
-#if UNITY_EDITOR
-                else
-                    _cachedAtmoManager = FindAnyObjectByType<HectonAtmosphereManager>();
-#endif
-            }
+                _cachedAtmoManager = HectonAtmosphereManager.Instance;
 
             _atmoManagerCached = _cachedAtmoManager != null;
 

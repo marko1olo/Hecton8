@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.BuildTools;
 using UnityEngine;
 using Unity.Profiling;
 using Hecton8.Core;
@@ -23,6 +24,31 @@ namespace Hecton8.Tools
         [SerializeField, Tooltip("Log interval in seconds")]
         private float _logInterval = 10f;
 
+        [Header("Playtest Entry")]
+        [SerializeField, Tooltip("Optional version label written into BuildPlaytestLog on capture completion.")]
+        private string _buildVersionLabel = "dev-local";
+
+        [SerializeField, Tooltip("Main irritant captured for this profiling pass.")]
+        private string _mainIrritant = string.Empty;
+
+        [SerializeField, Tooltip("Main visual flaw captured for this profiling pass.")]
+        private string _mainVisualFlaw = string.Empty;
+
+        [SerializeField, Tooltip("Main UX flaw captured for this profiling pass.")]
+        private string _mainUxFlaw = string.Empty;
+
+        [SerializeField, Tooltip("Main content gap captured for this profiling pass.")]
+        private string _mainContentGap = string.Empty;
+
+        [SerializeField, Tooltip("Mark this profiling pass as blocker when performance is not shippable.")]
+        private bool _isBlocker;
+
+        [SerializeField, Tooltip("Optional notes appended to the recorded playtest entry.")]
+        private string _playtestNotes = string.Empty;
+
+        [SerializeField, Tooltip("Record BuildPlaytestEntry automatically when a capture completes.")]
+        private bool _recordBuildPlaytestEntry = true;
+
         // Performance counters
         private static readonly ProfilerCounterValue<float> _frameTimeCounter =
             new ProfilerCounterValue<float>(ProfilerCategory.Internal, "Frame Time", ProfilerMarkerDataUnit.TimeNanoseconds);
@@ -39,7 +65,7 @@ namespace Hecton8.Tools
         // State
         private bool _isCapturing;
         private float _captureStartTime;
-        private readonly List<float> _frameTimes = new List<float>();
+        private List<float> _frameTimes;
         private float _lastLogTime;
 
         // Singleton access
@@ -55,6 +81,7 @@ namespace Hecton8.Tools
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            EnsureFrameBufferCapacity();
         }
 
         private void OnEnable()
@@ -74,7 +101,8 @@ namespace Hecton8.Tools
             if (!_isCapturing) return;
 
             // Capture current frame data
-            _frameTimes.Add(Time.deltaTime * 1000f); // Convert to milliseconds
+            float currentFrameTimeMs = dt * 1000f;
+            _frameTimes.Add(currentFrameTimeMs);
 
             // Check if capture is complete
             if (_frameTimes.Count >= _captureFrameCount)
@@ -85,7 +113,7 @@ namespace Hecton8.Tools
             // Periodic logging
             if (_autoLogToConsole && Time.unscaledTime - _lastLogTime >= _logInterval)
             {
-                LogCurrentPerformance();
+                LogCurrentPerformance(currentFrameTimeMs);
                 _lastLogTime = Time.unscaledTime;
             }
         }
@@ -99,9 +127,10 @@ namespace Hecton8.Tools
 
             _isCapturing = true;
             _captureStartTime = Time.unscaledTime;
+            EnsureFrameBufferCapacity();
             _frameTimes.Clear();
 
-            Debug.Log("[PerformanceMonitor] Started performance capture");
+            LogCaptureStarted();
         }
 
         /// <summary>
@@ -128,11 +157,10 @@ namespace Hecton8.Tools
             _isCapturing = false;
             var snapshot = CreateSnapshot();
 
-            Debug.Log($"[PerformanceMonitor] Capture complete:\n{snapshot.ToDetailedString()}");
+            LogCaptureCompleted(snapshot);
 
-            // Auto-save to build playtest entry if available
 #if UNITY_EDITOR
-            // TODO: Integrate with BuildPlaytestEntry system
+            RecordBuildPlaytestEntry(snapshot);
 #endif
         }
 
@@ -155,11 +183,42 @@ namespace Hecton8.Tools
             };
         }
 
-        private void LogCurrentPerformance()
+        private void LogCurrentPerformance(float currentFrameTimeMs)
         {
-            float currentFrameTime = Time.deltaTime * 1000f;
-            Debug.Log($"[PerformanceMonitor] Current: {currentFrameTime:F2}ms");
+            LogCurrentFrameTime(currentFrameTimeMs);
         }
+
+#if UNITY_EDITOR
+        private void RecordBuildPlaytestEntry(PerformanceSnapshot snapshot)
+        {
+            if (!_recordBuildPlaytestEntry || snapshot.SampleCount <= 0)
+                return;
+
+            BuildPlaytestEntry entry = BuildPlaytestEntry.Create(
+                version: string.IsNullOrWhiteSpace(_buildVersionLabel) ? "dev-local" : _buildVersionLabel.Trim(),
+                fpsMean: snapshot.MeanFPS,
+                fpsWorst: snapshot.WorstFPS,
+                mainIrritant: _mainIrritant,
+                mainVisualFlaw: _mainVisualFlaw,
+                mainUXFlaw: _mainUxFlaw,
+                mainContentGap: _mainContentGap,
+                isBlocker: _isBlocker,
+                notes: ComposePlaytestNotes(snapshot));
+
+            BuildPlaytestLog.RecordEntry(entry);
+        }
+
+        private string ComposePlaytestNotes(PerformanceSnapshot snapshot)
+        {
+            string baseNotes = string.IsNullOrWhiteSpace(_playtestNotes) ? string.Empty : _playtestNotes.Trim();
+            string metricsNote = snapshot.ToCompactString();
+
+            if (string.IsNullOrEmpty(baseNotes))
+                return metricsNote;
+
+            return baseNotes + " | " + metricsNote;
+        }
+#endif
 
         private static float CalculateMean(List<float> values)
         {
@@ -203,6 +262,45 @@ namespace Hecton8.Tools
                 sum += value;
 
             return sum / values.Count;
+        }
+
+        private void EnsureFrameBufferCapacity()
+        {
+            int requiredCapacity = Mathf.Max(1, _captureFrameCount);
+            if (_frameTimes != null && _frameTimes.Capacity >= requiredCapacity)
+                return;
+
+            _frameTimes = new List<float>(requiredCapacity); // COLD ALLOC: bounded capture buffer sized to the configured sample window
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void LogCaptureStarted()
+        {
+            Debug.Log("[PerformanceMonitor] Started performance capture");
+        }
+
+        private static void LogCaptureCompleted(PerformanceSnapshot snapshot)
+        {
+            Debug.Log($"[PerformanceMonitor] Capture complete:\n{snapshot.ToDetailedString()}");
+        }
+
+        private static void LogCurrentFrameTime(float currentFrameTimeMs)
+        {
+            Debug.Log($"[PerformanceMonitor] Current: {currentFrameTimeMs:F2}ms");
+        }
+#else
+        private static void LogCaptureStarted() { }
+        private static void LogCaptureCompleted(PerformanceSnapshot snapshot) { }
+        private static void LogCurrentFrameTime(float currentFrameTimeMs) { }
+#endif
+
+        private void OnValidate()
+        {
+            if (_captureFrameCount < 1)
+                _captureFrameCount = 1;
+
+            if (_logInterval < 0.1f)
+                _logInterval = 0.1f;
         }
     }
 

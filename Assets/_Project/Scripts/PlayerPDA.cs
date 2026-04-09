@@ -327,14 +327,20 @@ namespace Hecton8.UI
             if (barter == null)
                 barter = EnsureRuntimeTab(root, "Tab_Barter", typeof(PDABarterTab));
 
-            if (tabs == null || tabs.Length != 5)
-                tabs = new GameObject[5];
+            // Spectrum tab — auto-create if missing
+            GameObject spectrum = root.Find("Tab_Spectrum")?.gameObject;
+            if (spectrum == null)
+                spectrum = EnsureRuntimeTab(root, "Tab_Spectrum", typeof(Hecton8.UI.PDASpectrumTab));
 
-            if (inventory != null) tabs[0] = inventory;
-            if (loadout != null) tabs[1] = loadout;
+            if (tabs == null || tabs.Length != 6)
+                tabs = new GameObject[6];
+
+            if (inventory != null)   tabs[0] = inventory;
+            if (loadout != null)     tabs[1] = loadout;
             if (construction != null) tabs[2] = construction;
-            if (barter != null) tabs[3] = barter;
-            if (dataLog != null) tabs[4] = dataLog;
+            if (barter != null)      tabs[3] = barter;
+            if (dataLog != null)     tabs[4] = dataLog;
+            if (spectrum != null)    tabs[5] = spectrum;
         }
 
         private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)

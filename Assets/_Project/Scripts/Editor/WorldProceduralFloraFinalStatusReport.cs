@@ -24,6 +24,10 @@ namespace Hecton8.EditorTools
         private const int AutomationPreviewWidth = 512;
         private const int AutomationPreviewHeight = 512;
         private const int AutomationPreviewTasksPerUpdate = 4;
+        private const float LodThresholdTolerance = 0.0005f;
+        private const float RequiredLod0Threshold = 0.6f;
+        private const float RequiredLod1Threshold = 0.15f;
+        private const float RequiredLod2Threshold = 0.04f;
         private static readonly Vector3[] AutomationPreviewDirections =
         {
             new Vector3(0f, 0.12f, -1f),
@@ -45,7 +49,6 @@ namespace Hecton8.EditorTools
             EditorApplication.update -= UpdateAutomationBridge;
             EditorApplication.update += UpdateAutomationBridge;
             _automationNextPollTime = EditorApplication.timeSinceStartup + AutomationPollIntervalSeconds;
-            Debug.Log("[WorldProceduralFloraFinalStatusReport] Automation bridge registered. RequestPath=" + GetAutomationRequestFilePath().Replace('\\', '/'));
         }
 
         [MenuItem("Hecton/Validation/Generate Procedural Flora Final Status Report", priority = 241)]
@@ -154,12 +157,15 @@ namespace Hecton8.EditorTools
 
         private static void BuildAutomationPreviewQueue(AutomationRequest request)
         {
-            if (request.capturePrefabPaths == null || request.capturePrefabPaths.Length == 0)
+            string[] capturePaths = request.capturePrefabPaths != null && request.capturePrefabPaths.Length > 0
+                ? request.capturePrefabPaths
+                : request.prefabPaths;
+            if (capturePaths == null || capturePaths.Length == 0)
                 return;
 
-            for (int i = 0; i < request.capturePrefabPaths.Length; i++)
+            for (int i = 0; i < capturePaths.Length; i++)
             {
-                string prefabPath = request.capturePrefabPaths[i];
+                string prefabPath = capturePaths[i];
                 if (string.IsNullOrWhiteSpace(prefabPath))
                     continue;
 
@@ -253,7 +259,9 @@ namespace Hecton8.EditorTools
             }
 
             Texture2D preview = AssetPreview.GetAssetPreview(task.prefabAsset);
-            if (preview != null)
+            if (preview != null
+                && preview.width >= AutomationPreviewWidth
+                && preview.height >= AutomationPreviewHeight)
             {
                 task.previewPath = SaveAutomationPreview(task.prefabPath, preview);
                 task.prefabAsset = null;
@@ -264,8 +272,8 @@ namespace Hecton8.EditorTools
             if (!AssetPreview.IsLoadingAssetPreview(task.prefabAsset.GetEntityId()))
             {
                 Texture2D miniPreview = AssetPreview.GetMiniThumbnail(task.prefabAsset);
-                task.previewPath = miniPreview != null ? SaveAutomationPreview(task.prefabPath, miniPreview) : null;
-                task.error = miniPreview == null ? "preview_unavailable" : null;
+                task.previewPath = null;
+                task.error = miniPreview == null ? "preview_unavailable" : "preview_fallback_too_small";
                 task.prefabAsset = null;
                 task.isDone = true;
             }
@@ -378,11 +386,7 @@ namespace Hecton8.EditorTools
                 }
 
                 contactSheet = BuildAutomationPreviewContactSheet(viewTextures);
-                if (!IsAutomationPreviewMeaningful(contactSheet, camera.backgroundColor)
-                    && !HasMeaningfulAutomationView(viewTextures, camera.backgroundColor))
-                    return null;
-
-                return SaveAutomationPreview(prefabPath, contactSheet);
+                return contactSheet != null ? SaveAutomationPreview(prefabPath, contactSheet) : null;
             }
             catch (Exception)
             {
@@ -429,25 +433,32 @@ namespace Hecton8.EditorTools
             Vector3 focus = bounds.center + Vector3.up * focusYOffset;
 
             float aspect = AutomationPreviewWidth / (float)AutomationPreviewHeight;
+            float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
+            float slenderness = bounds.size.y / Mathf.Max(0.08f, maxHorizontalExtent * 2f);
+            float tallBias = Mathf.Clamp01((slenderness - 1.35f) / 3.1f);
+            float crownBias = Mathf.Clamp01((slenderness - 2.05f) / 3.2f);
             float projectedVertical = Mathf.Max(EvaluateProjectedBoundsHalfExtent(bounds, up), bounds.extents.y * 1.04f);
             float projectedHorizontal = Mathf.Max(
                 EvaluateProjectedBoundsHalfExtent(bounds, right),
-                Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.08f);
-            float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
-            float slenderness = bounds.size.y / Mathf.Max(0.08f, maxHorizontalExtent * 2f);
-            float crownBias = Mathf.Clamp01((slenderness - 2.8f) / 4.6f);
-            focus += Vector3.up * (bounds.extents.y * crownBias * Mathf.Lerp(0.1f, 0.24f, Mathf.Clamp01(zoomScale - 1f)));
-            float preferredVerticalFit = Mathf.Max(bounds.extents.y * 0.72f, projectedVertical * 0.78f);
-            projectedVertical = Mathf.Lerp(projectedVertical, preferredVerticalFit, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
-            float tallCompensation = Mathf.Lerp(1f, 1.12f, Mathf.Clamp01((slenderness - 2.2f) / 4.2f));
-            float crownZoomTightening = Mathf.Lerp(1f, 0.84f, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
+                Mathf.Max(bounds.extents.x, bounds.extents.z) * Mathf.Lerp(1.08f, 1.01f, tallBias));
+            focus += Vector3.up * (bounds.extents.y * Mathf.Lerp(0.06f, 0.34f, crownBias) * Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(zoomScale - 0.82f)));
+            float preferredVerticalFit = Mathf.Max(
+                bounds.extents.y * Mathf.Lerp(0.76f, 0.6f, tallBias),
+                projectedVertical * Mathf.Lerp(0.8f, 0.66f, crownBias));
+            projectedVertical = Mathf.Lerp(projectedVertical, preferredVerticalFit, Mathf.Lerp(0.18f, 0.94f, tallBias));
+            float tallCompensation = Mathf.Lerp(1f, 1.09f, tallBias);
+            float crownZoomTightening = Mathf.Lerp(1f, 0.76f, crownBias * Mathf.Clamp01(zoomScale - 0.82f));
             float effectiveZoomScale = zoomScale >= 1.2f
                 ? zoomScale * tallCompensation * crownZoomTightening
                 : zoomScale * Mathf.Lerp(1f, tallCompensation, 0.32f) * crownZoomTightening;
+            float framingPadding = Mathf.Lerp(1.08f, 0.94f, tallBias);
             float orthographicSize = Mathf.Max(
-                projectedVertical * Mathf.Max(1.1f, effectiveZoomScale),
-                (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(1.1f, effectiveZoomScale));
+                projectedVertical * Mathf.Max(framingPadding, effectiveZoomScale * framingPadding),
+                (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(framingPadding, effectiveZoomScale * framingPadding));
             orthographicSize = Mathf.Max(orthographicSize, 0.24f);
+            float tallZoomTightening = Mathf.Lerp(1f, 0.7f, tallBias);
+            float crownFramingTightening = Mathf.Lerp(1f, 0.84f, crownBias);
+            orthographicSize = Mathf.Max(0.18f, orthographicSize * tallZoomTightening * crownFramingTightening);
             float fitDistance = Mathf.Max(bounds.extents.magnitude * 3.2f, orthographicSize * 3.1f);
 
             camera.transform.position = focus - normalizedViewDirection * fitDistance;
@@ -527,26 +538,33 @@ namespace Hecton8.EditorTools
             Vector3 right = Vector3.Normalize(Vector3.Cross(worldUp, normalizedViewDirection));
             Vector3 up = Vector3.Normalize(Vector3.Cross(normalizedViewDirection, right));
             float projectedVertical = Mathf.Max(EvaluateProjectedBoundsHalfExtent(bounds, up), bounds.extents.y * 1.04f);
-            float projectedHorizontal = Mathf.Max(
-                EvaluateProjectedBoundsHalfExtent(bounds, right),
-                Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.08f);
 
             float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
             float slenderness = bounds.size.y / Mathf.Max(0.08f, maxHorizontalExtent * 2f);
-            float crownBias = Mathf.Clamp01((slenderness - 2.8f) / 4.6f);
+            float tallBias = Mathf.Clamp01((slenderness - 1.35f) / 3.1f);
+            float crownBias = Mathf.Clamp01((slenderness - 2.05f) / 3.2f);
+            float projectedHorizontal = Mathf.Max(
+                EvaluateProjectedBoundsHalfExtent(bounds, right),
+                Mathf.Max(bounds.extents.x, bounds.extents.z) * Mathf.Lerp(1.08f, 1.01f, tallBias));
             float zoomScale = heroView ? 1.02f : 1.38f;
-            float preferredVerticalFit = Mathf.Max(bounds.extents.y * 0.72f, projectedVertical * 0.78f);
-            projectedVertical = Mathf.Lerp(projectedVertical, preferredVerticalFit, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
-            float tallCompensation = Mathf.Lerp(1f, 1.12f, Mathf.Clamp01((slenderness - 2.2f) / 4.2f));
-            float crownZoomTightening = Mathf.Lerp(1f, 0.84f, crownBias * Mathf.Clamp01(zoomScale - 0.9f));
+            float preferredVerticalFit = Mathf.Max(
+                bounds.extents.y * Mathf.Lerp(0.76f, 0.6f, tallBias),
+                projectedVertical * Mathf.Lerp(0.8f, 0.66f, crownBias));
+            projectedVertical = Mathf.Lerp(projectedVertical, preferredVerticalFit, Mathf.Lerp(0.18f, 0.94f, tallBias));
+            float tallCompensation = Mathf.Lerp(1f, 1.09f, tallBias);
+            float crownZoomTightening = Mathf.Lerp(1f, 0.76f, crownBias * Mathf.Clamp01(zoomScale - 0.82f));
             float effectiveZoomScale = zoomScale >= 1.2f
                 ? zoomScale * tallCompensation * crownZoomTightening
                 : zoomScale * Mathf.Lerp(1f, tallCompensation, 0.32f) * crownZoomTightening;
             float aspect = AutomationPreviewWidth / (float)AutomationPreviewHeight;
+            float framingPadding = Mathf.Lerp(1.08f, 0.94f, tallBias);
             float orthographicSize = Mathf.Max(
-                projectedVertical * Mathf.Max(1.1f, effectiveZoomScale),
-                (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(1.1f, effectiveZoomScale));
+                projectedVertical * Mathf.Max(framingPadding, effectiveZoomScale * framingPadding),
+                (projectedHorizontal / Mathf.Max(0.1f, aspect)) * Mathf.Max(framingPadding, effectiveZoomScale * framingPadding));
             orthographicSize = Mathf.Max(orthographicSize, 0.24f);
+            float tallZoomTightening = Mathf.Lerp(1f, 0.7f, tallBias);
+            float crownFramingTightening = Mathf.Lerp(1f, 0.84f, crownBias);
+            orthographicSize = Mathf.Max(0.18f, orthographicSize * tallZoomTightening * crownFramingTightening);
 
             float normalizedHorizontal = projectedHorizontal / Mathf.Max(0.001f, orthographicSize * aspect);
             float normalizedVertical = projectedVertical / Mathf.Max(0.001f, orthographicSize);
@@ -922,7 +940,8 @@ namespace Hecton8.EditorTools
                     BuildLodTriangleCascade(lodGroups),
                     WorldProceduralFloraFinalBudgetCatalog.Resolve(familyId).MaxTriangles,
                     WorldProceduralFloraFinalBudgetCatalog.Resolve(familyId).MinRecommendedTriangles,
-                    EvaluateMaterialState(familyId, renderers),
+                    EvaluateMaterialState(familyId, renderers, isGenerated),
+                    EvaluateLodState(lodGroups),
                     EvaluateRendererState(renderers),
                     metadata.HasError,
                     metadata.Error);
@@ -1092,13 +1111,22 @@ namespace Hecton8.EditorTools
             return builder.ToString();
         }
 
-        private static MaterialState EvaluateMaterialState(string familyId, Renderer[] renderers)
+        private static MaterialState EvaluateMaterialState(string familyId, Renderer[] renderers, bool isGenerated)
         {
             string expectedShaderName = ResolveExpectedShaderName(familyId);
             bool instancingOk = true;
             bool shaderOk = true;
+            bool shaderContractOk = true;
             bool textureStackOk = true;
+            bool importedTextureContractOk = true;
+            bool textureSourceOk = true;
+            bool textureStackSourceOk = true;
+            bool generatedTextureSourceUsed = false;
             bool anyMaterial = false;
+            string shaderContractFailure = string.Empty;
+            string importedTextureContractFailure = string.Empty;
+            string textureSourceFailure = string.Empty;
+            string textureStackSourceFailure = string.Empty;
 
             if (renderers != null)
             {
@@ -1113,6 +1141,7 @@ namespace Hecton8.EditorTools
                     {
                         instancingOk = false;
                         shaderOk = false;
+                        shaderContractOk = false;
                         textureStackOk = false;
                         continue;
                     }
@@ -1124,6 +1153,7 @@ namespace Hecton8.EditorTools
                         {
                             instancingOk = false;
                             shaderOk = false;
+                            shaderContractOk = false;
                             textureStackOk = false;
                             continue;
                         }
@@ -1136,7 +1166,19 @@ namespace Hecton8.EditorTools
                             continue;
 
                         if (material.shader == null || material.shader.name != expectedShaderName)
+                        {
                             shaderOk = false;
+                        }
+                        else
+                        {
+                            string currentFailure;
+                            if (WorldProceduralFloraMaterialAuthoring.TryGetShaderContractFailure(material, out currentFailure))
+                            {
+                                shaderContractOk = false;
+                                if (string.IsNullOrEmpty(shaderContractFailure))
+                                    shaderContractFailure = currentFailure;
+                            }
+                        }
 
                         if (material.GetTexture("_BaseMap") == null
                             || material.GetTexture("_DetailMap") == null
@@ -1145,26 +1187,119 @@ namespace Hecton8.EditorTools
                         {
                             textureStackOk = false;
                         }
+
+                        generatedTextureSourceUsed |=
+                            WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(material.GetTexture("_BaseMap"))
+                            || WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(material.GetTexture("_DetailMap"))
+                            || WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(material.GetTexture("_NormalMap"))
+                            || WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(material.GetTexture("_MaskMap"));
+
+                        string currentTextureSourceFailure;
+                        if (WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(material.GetTexture("_BaseMap"), familyId, "albedo", out currentTextureSourceFailure)
+                            || WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(material.GetTexture("_DetailMap"), familyId, "detail", out currentTextureSourceFailure)
+                            || WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(material.GetTexture("_NormalMap"), familyId, "normal", out currentTextureSourceFailure)
+                            || WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(material.GetTexture("_MaskMap"), familyId, "mask", out currentTextureSourceFailure))
+                        {
+                            textureSourceOk = false;
+                            if (string.IsNullOrEmpty(textureSourceFailure))
+                                textureSourceFailure = currentTextureSourceFailure;
+                        }
+
+                        string currentTextureStackFailure;
+                        if (WorldProceduralFloraTextureAuthoring.TryGetTextureStackSourceFailure(
+                                material.GetTexture("_BaseMap"),
+                                material.GetTexture("_DetailMap"),
+                                material.GetTexture("_NormalMap"),
+                                material.GetTexture("_MaskMap"),
+                                out currentTextureStackFailure))
+                        {
+                            textureStackSourceOk = false;
+                            if (string.IsNullOrEmpty(textureStackSourceFailure))
+                                textureStackSourceFailure = currentTextureStackFailure;
+                        }
+
+                        string currentImportedTextureFailure;
+                        if (TryGetImportedTextureContractFailure(material, familyId, out currentImportedTextureFailure))
+                        {
+                            importedTextureContractOk = false;
+                            if (string.IsNullOrEmpty(importedTextureContractFailure))
+                                importedTextureContractFailure = currentImportedTextureFailure;
+                        }
                     }
                 }
             }
 
             if (!anyMaterial)
-                return new MaterialState(false, false, false, "missing-materials");
+                return new MaterialState(false, false, false, false, false, "missing-materials");
 
             if (string.IsNullOrEmpty(expectedShaderName))
-                return new MaterialState(instancingOk, true, true, instancingOk ? "ok" : "instancing-off");
+                return new MaterialState(instancingOk, true, true, true, !generatedTextureSourceUsed, instancingOk ? "ok" : "instancing-off");
 
-            if (instancingOk && shaderOk && textureStackOk)
-                return new MaterialState(true, true, true, "ok");
+            if (instancingOk && shaderOk && shaderContractOk && textureStackOk && importedTextureContractOk && !generatedTextureSourceUsed)
+                return new MaterialState(true, true, true, true, true, "ok");
 
             if (!shaderOk)
-                return new MaterialState(instancingOk, false, textureStackOk, "shader-mismatch");
+                return new MaterialState(instancingOk, false, true, textureStackOk, !generatedTextureSourceUsed, "shader-mismatch");
+
+            if (!shaderContractOk)
+                return new MaterialState(instancingOk, true, false, textureStackOk, !generatedTextureSourceUsed, "shader-contract-stale:" + shaderContractFailure);
 
             if (!textureStackOk)
-                return new MaterialState(instancingOk, true, false, "texture-stack-missing");
+                return new MaterialState(instancingOk, true, true, false, !generatedTextureSourceUsed, "texture-stack-missing");
 
-            return new MaterialState(false, true, true, "instancing-off");
+            if (!textureSourceOk)
+                return new MaterialState(instancingOk, true, true, false, !generatedTextureSourceUsed, "texture-source-unmanaged:" + textureSourceFailure);
+
+            if (!textureStackSourceOk)
+                return new MaterialState(instancingOk, true, true, false, !generatedTextureSourceUsed, "texture-stack-source-mixed:" + textureStackSourceFailure);
+
+            if (!importedTextureContractOk)
+                return new MaterialState(instancingOk, true, true, false, !generatedTextureSourceUsed, "imported-texture-contract-stale:" + importedTextureContractFailure);
+
+            if (generatedTextureSourceUsed)
+                return new MaterialState(instancingOk, true, true, true, false, isGenerated ? "starter-generated-textures" : "authored-generated-textures");
+
+            return new MaterialState(false, true, true, true, true, "instancing-off");
+        }
+
+        private static bool TryGetImportedTextureContractFailure(Material material, string familyId, out string failureLabel)
+        {
+            failureLabel = string.Empty;
+            if (material == null || string.IsNullOrEmpty(familyId))
+                return false;
+
+            if (TryGetImportedTextureFailure(material.GetTexture("_BaseMap"), familyId, "albedo", out failureLabel))
+                return true;
+
+            if (TryGetImportedTextureFailure(material.GetTexture("_DetailMap"), familyId, "detail", out failureLabel))
+                return true;
+
+            if (TryGetImportedTextureFailure(material.GetTexture("_NormalMap"), familyId, "normal", out failureLabel))
+                return true;
+
+            if (TryGetImportedTextureFailure(material.GetTexture("_MaskMap"), familyId, "mask", out failureLabel))
+                return true;
+
+            return false;
+        }
+
+        private static bool TryGetImportedTextureFailure(Texture texture, string familyId, string mapToken, out string failureLabel)
+        {
+            if (texture == null)
+            {
+                failureLabel = string.Empty;
+                return false;
+            }
+
+            string contractFailure;
+            if (WorldProceduralFloraTextureAuthoring.TryGetImportedTextureContractFailure(texture, familyId, mapToken, out contractFailure))
+            {
+                failureLabel = mapToken + ":" + contractFailure;
+                return true;
+            }
+
+            failureLabel = string.Empty;
+            return false;
         }
 
         private static string ResolveExpectedShaderName(string familyId)
@@ -1204,6 +1339,43 @@ namespace Hecton8.EditorTools
             return new RendererState(defaultsOk, defaultsOk ? "ok" : "renderer-defaults-dirty");
         }
 
+        private static LODState EvaluateLodState(LODGroup[] lodGroups)
+        {
+            if (lodGroups == null || lodGroups.Length == 0)
+                return new LODState(false, "missing-lodgroup");
+
+            for (int i = 0; i < lodGroups.Length; i++)
+            {
+                LODGroup lodGroup = lodGroups[i];
+                if (lodGroup == null)
+                    continue;
+
+                if (lodGroup.fadeMode != LODFadeMode.CrossFade)
+                    return new LODState(false, "fade-not-crossfade");
+
+                if (!lodGroup.animateCrossFading)
+                    return new LODState(false, "crossfade-disabled");
+
+                LOD[] lods = lodGroup.GetLODs();
+                if (lods == null || lods.Length != 3)
+                    return new LODState(false, "lod-count-mismatch");
+
+                if (!MatchesLodTransition(lods[0].screenRelativeTransitionHeight, RequiredLod0Threshold)
+                    || !MatchesLodTransition(lods[1].screenRelativeTransitionHeight, RequiredLod1Threshold)
+                    || !MatchesLodTransition(lods[2].screenRelativeTransitionHeight, RequiredLod2Threshold))
+                {
+                    return new LODState(false, "threshold-mismatch");
+                }
+            }
+
+            return new LODState(true, "ok");
+        }
+
+        private static bool MatchesLodTransition(float actual, float expected)
+        {
+            return Mathf.Abs(actual - expected) <= LodThresholdTolerance;
+        }
+
         private static string BuildMarkdown(string rootFolder, IReadOnlyDictionary<string, FamilyStatus> statusByFamily)
         {
             StringBuilder builder = new StringBuilder(4096);
@@ -1211,12 +1383,14 @@ namespace Hecton8.EditorTools
             builder.AppendLine();
             builder.Append("- Root: `").Append(rootFolder).AppendLine("`");
             builder.Append("- Generated: `GEN_` prefabs are starter finals only.").AppendLine();
+            builder.Append("- Texture proof: procedural editor-generated `.asset` textures do not count as authored photoreal final proof.").AppendLine();
+            builder.Append("- Shader proof: material contract requires `_QUALITY_MX350`, no `_QUALITY_HIGH`, and positive triplanar/normal/fresnel/parallax properties.").AppendLine();
             builder.Append("- Coverage metric: `aX/gY` = authored prefab count / generated prefab count under baked root.").AppendLine();
             builder.Append("- Linked metric: counts from `WorldPrefabFamilyProfile.variants` with `finalReady=true` and `proxyOnly=false`.").AppendLine();
             builder.AppendLine();
             builder.AppendLine("## Summary");
             builder.AppendLine();
-            builder.AppendLine("| Family | Coverage | Expected Linked | Actual Linked | Linked Placeholder | Max Budget Triangles | Triangle Headroom | Max Renderers | LOD Prefabs | Material Ready | LOD Cascade | Fidelity Floor |");
+            builder.AppendLine("| Family | Coverage | Expected Linked | Actual Linked | Linked Placeholder | Max Budget Triangles | Triangle Headroom | Max Renderers | LOD Prefabs | Material Contract | LOD Contract | Fidelity Floor |");
             builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
 
             IReadOnlyList<string> supportedFamilies = WorldProceduralFloraFinalVariantAuthoring.GetSupportedFloraFamiliesInOrder();
@@ -1268,8 +1442,8 @@ namespace Hecton8.EditorTools
                 builder.Append("- Minimum recommended triangles: `").Append(status.TriangleFidelityFloor).Append("`").AppendLine();
                 builder.Append("- Max renderer count: `").Append(status.MaxRendererCount).Append("`").AppendLine();
                 builder.Append("- Renderer budget limit: `").Append(status.RendererBudgetLimit).Append("`").AppendLine();
-                builder.Append("- Material-ready prefabs: `").Append(status.MaterialReadyPrefabCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
-                builder.Append("- Strict LOD cascade prefabs: `").Append(status.PrefabsWithValidLodCascadeCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
+                builder.Append("- Material-contract prefabs: `").Append(status.MaterialReadyPrefabCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
+                builder.Append("- Exact LOD contract prefabs: `").Append(status.PrefabsWithValidLodCascadeCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
                 builder.Append("- Prefabs meeting fidelity floor: `").Append(status.PrefabsMeetingFidelityFloorCount).Append('/').Append(status.Prefabs.Count).Append("`").AppendLine();
 
                 if (status.Prefabs.Count == 0)
@@ -1297,6 +1471,7 @@ namespace Hecton8.EditorTools
                         builder.Append('*');
                     builder.Append(" | lodTriangles=").Append(FormatLodTriangleCascade(prefab.LodTriangleCascade));
                     builder.Append(" | material=").Append(prefab.MaterialStateLabel);
+                    builder.Append(" | lodContract=").Append(prefab.LodContractLabel);
                     builder.Append(" | renderState=").Append(prefab.RendererStateLabel);
                     builder.Append(" | fidelity=").Append(prefab.FidelityLabel);
                     builder.Append(" | path=`").Append(prefab.Path).AppendLine("`");
@@ -1351,6 +1526,7 @@ namespace Hecton8.EditorTools
         {
             public string requestId;
             public string[] capturePrefabPaths;
+            public string[] prefabPaths;
         }
 
         [Serializable]
@@ -1386,6 +1562,7 @@ namespace Hecton8.EditorTools
                 int triangleBudgetLimit,
                 int triangleFidelityFloor,
                 MaterialState materialState,
+                LODState lodState,
                 RendererState rendererState,
                 bool hasMetadataError,
                 string metadataError)
@@ -1407,7 +1584,8 @@ namespace Hecton8.EditorTools
                 TriangleBudgetLimit = triangleBudgetLimit;
                 TriangleFidelityFloor = triangleFidelityFloor;
                 MeetsFidelityFloor = budgetTriangleCount >= triangleFidelityFloor;
-                HasValidLodCascade = HasStrictLodCascade(LodTriangleCascade);
+                HasValidLodCascade = lodState.IsOk;
+                LodContractLabel = lodState.Label ?? string.Empty;
                 MaterialStateOk = materialState.IsOk;
                 MaterialStateLabel = materialState.Label ?? string.Empty;
                 RendererStateOk = rendererState.IsOk;
@@ -1435,6 +1613,7 @@ namespace Hecton8.EditorTools
             public int TriangleFidelityFloor { get; }
             public bool MeetsFidelityFloor { get; }
             public bool HasValidLodCascade { get; }
+            public string LodContractLabel { get; }
             public bool MaterialStateOk { get; }
             public string MaterialStateLabel { get; }
             public bool RendererStateOk { get; }
@@ -1485,19 +1664,35 @@ namespace Hecton8.EditorTools
 
         private readonly struct MaterialState
         {
-            public MaterialState(bool instancingOk, bool shaderOk, bool textureStackOk, string label)
+            public MaterialState(bool instancingOk, bool shaderOk, bool shaderContractOk, bool textureStackOk, bool finalTextureSourceOk, string label)
             {
                 InstancingOk = instancingOk;
                 ShaderOk = shaderOk;
+                ShaderContractOk = shaderContractOk;
                 TextureStackOk = textureStackOk;
+                FinalTextureSourceOk = finalTextureSourceOk;
                 Label = label ?? string.Empty;
             }
 
             public bool InstancingOk { get; }
             public bool ShaderOk { get; }
+            public bool ShaderContractOk { get; }
             public bool TextureStackOk { get; }
+            public bool FinalTextureSourceOk { get; }
             public string Label { get; }
-            public bool IsOk => InstancingOk && ShaderOk && TextureStackOk;
+            public bool IsOk => InstancingOk && ShaderOk && ShaderContractOk && TextureStackOk && FinalTextureSourceOk;
+        }
+
+        private readonly struct LODState
+        {
+            public LODState(bool isOk, string label)
+            {
+                IsOk = isOk;
+                Label = label ?? string.Empty;
+            }
+
+            public bool IsOk { get; }
+            public string Label { get; }
         }
 
         private readonly struct RendererState

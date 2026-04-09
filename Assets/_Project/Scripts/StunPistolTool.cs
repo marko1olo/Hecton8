@@ -42,6 +42,7 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _nextFeedbackAt;
         private bool _secondaryLatched;
+        private readonly RaycastHit[] _targetHits = new RaycastHit[1]; // COLD ALLOC: stun checks only the nearest target per shot.
         private int _cachedAssessmentFrame = -1;
         private bool _cachedAssessmentValid;
         private StunAssessment _cachedAssessment;
@@ -58,13 +59,7 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore))
+            if (TryGetTargetHit(out RaycastHit hit))
             {
                 ToolHitUtility.ApplyDamage(
                     hit.collider,
@@ -174,13 +169,7 @@ namespace Hecton8.Gameplay
 
             _secondaryLatched = true;
 
-            if (!UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore))
+            if (!TryGetTargetHit(out RaycastHit hit))
             {
                 WarnSecondary("STUN PISTOL - NO TARGET LOCK");
                 InvalidateAssessmentCache();
@@ -242,13 +231,7 @@ namespace Hecton8.Gameplay
         {
             assessment = default;
 
-            if (!UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore))
+            if (!TryGetTargetHit(out RaycastHit hit))
             {
                 return false;
             }
@@ -296,6 +279,26 @@ namespace Hecton8.Gameplay
             _cachedAssessmentFrame = -1;
             _cachedAssessmentValid = false;
             _cachedAssessment = default;
+        }
+
+        private bool TryGetTargetHit(out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _targetHits,
+                range,
+                targetMask,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+            {
+                hit = _targetHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
         }
 
         private static StunAssessment BuildAssessment(HectonBaseAI ai, StunTargetRuntime stunState)

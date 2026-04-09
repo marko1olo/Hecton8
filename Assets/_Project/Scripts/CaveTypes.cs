@@ -1093,7 +1093,7 @@ namespace Hecton8.Caves
         /// <summary>
         /// Massive underground realm. 20-50 rooms, 500m+ coverage.
         /// Coarse voxels (4m) compensated by domain warping and noise.
-        /// Equivalent to Subnautica's Lost River / Inactive Lava Zone.
+        /// Comparable to a massive mineral trench transitioning into a thermal abyss.
         /// Volume: 128³ × 4m = 512m cube.
         /// </summary>
         public static CavePreset Mega()

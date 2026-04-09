@@ -13,6 +13,7 @@ namespace Hecton8.Gameplay
         private const string PresetFieldRecovery = "FIELD RECOVERY";
         private const string PresetDefense = "DEFENSE";
         private const string PresetExploration = "EXPLORATION";
+        private static readonly RaycastHit[] _forwardHits = new RaycastHit[1]; // COLD ALLOC: advisor resolves one forward contact at a time on main thread.
 
         public readonly struct LoadoutAdvice
         {
@@ -32,7 +33,7 @@ namespace Hecton8.Gameplay
             if (origin == null)
                 return false;
 
-            if (!UnityEngine.Physics.Raycast(origin.position, origin.forward, out RaycastHit hit, range, mask, QueryTriggerInteraction.Collide))
+            if (!TryGetForwardHit(origin, range, mask, out RaycastHit hit))
                 return false;
 
             return TryBuildAdvice(hit.collider, hit.distance, out advice);
@@ -44,7 +45,7 @@ namespace Hecton8.Gameplay
             if (origin == null)
                 return false;
 
-            if (!UnityEngine.Physics.Raycast(origin.position, origin.forward, out RaycastHit hit, range, mask, QueryTriggerInteraction.Collide))
+            if (!TryGetForwardHit(origin, range, mask, out RaycastHit hit))
                 return false;
 
             return TryBuildPresetName(hit.collider, out presetName);
@@ -216,6 +217,26 @@ namespace Hecton8.Gameplay
                     return true;
             }
 
+            return false;
+        }
+
+        private static bool TryGetForwardHit(Transform origin, float range, LayerMask mask, out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin.position,
+                origin.forward,
+                _forwardHits,
+                range,
+                mask,
+                QueryTriggerInteraction.Collide);
+
+            if (hitCount > 0)
+            {
+                hit = _forwardHits[0];
+                return true;
+            }
+
+            hit = default;
             return false;
         }
 

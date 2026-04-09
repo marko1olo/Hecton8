@@ -3,10 +3,11 @@
 // Player health system with damage, healing, and hazard effects.
 // ============================================================================
 
-using UnityEngine;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Sirenix.OdinInspector;
+using Conditional = System.Diagnostics.ConditionalAttribute;
+using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
@@ -175,6 +176,12 @@ namespace Hecton8.Gameplay
         {
             OnDeath?.Invoke();
             // TODO: Trigger death sequence, respawn, etc.
+            LogPlayerDied();
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPlayerDied()
+        {
             Debug.Log("Player died");
         }
 

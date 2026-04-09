@@ -18,6 +18,7 @@ namespace Hecton8.UI
         private const string ActiveTabConstruction = "ACTIVE TAB // CONSTRUCTION";
         private const string ActiveTabBarter = "ACTIVE TAB // BARTER";
         private const string ActiveTabDataLog = "ACTIVE TAB // DATA LOG";
+        private const string ActiveTabSpectrum = "ACTIVE TAB // SPECTRUM";
         private const string ActiveTabUnknown = "ACTIVE TAB // UNKNOWN";
         private const string RightFooterOnlineFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA ONLINE";
         private const string RightFooterStandbyFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA STANDBY";
@@ -374,6 +375,7 @@ namespace Hecton8.UI
                 case 2: return ActiveTabConstruction;
                 case 3: return ActiveTabBarter;
                 case 4: return ActiveTabDataLog;
+                case 5: return ActiveTabSpectrum;
                 default: return ActiveTabUnknown;
             }
         }

@@ -1,3 +1,5 @@
+using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,6 +11,7 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralFloraTextureAuthoring
     {
         private const string TextureRoot = "Assets/_Project/Art/Textures/WorldProceduralFlora";
+        private const string ImportedTextureRoot = TextureRoot + "/Imported";
         private const string FamilyKelpTall = "family.kelp.tall";
         private const string FamilyKelpPatchDense = "family.kelp.patch.dense";
         private const string FamilyKelpCanopy = "family.kelp.canopy";
@@ -18,6 +21,20 @@ namespace Hecton8.EditorTools
         private const string FamilyCoralMassive = "family.coral.massive";
         private const string FamilyCoralPlate = "family.coral.plate";
         private const string FamilyCoralBrittle = "family.coral.brittle";
+        private static readonly string[] SupportedFamilyIds =
+        {
+            FamilyKelpTall,
+            FamilyKelpPatchDense,
+            FamilyKelpCanopy,
+            FamilyKelpAbyssal,
+            FamilyCoralLow,
+            FamilyCoralBranching,
+            FamilyCoralMassive,
+            FamilyCoralPlate,
+            FamilyCoralBrittle
+        };
+        private static readonly string[] RequiredMapTokens = { "albedo", "detail", "normal", "mask" };
+        private const double TextureMemoryRedThresholdMb = 900.0;
 
         [MenuItem("Hecton/Authoring/Generate Procedural Flora Textures", priority = 175)]
         public static void Apply()
@@ -70,6 +87,181 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Applied flora textures. TouchedTextures={touchedTextures}.");
         }
 
+        [MenuItem("Hecton/Validation/Fix Imported Flora Texture Import Settings", priority = 272)]
+        public static void FixImportedTextureImportSettings()
+        {
+            int updated = 0;
+            int skipped = 0;
+            string[] textureGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { ImportedTextureRoot });
+
+            for (int i = 0; i < textureGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(textureGuids[i]);
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
+                int separatorIndex = fileName.IndexOf("___", System.StringComparison.Ordinal);
+                if (separatorIndex <= 0)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                string mapToken = fileName.Substring(0, separatorIndex);
+                if (!IsSupportedMapToken(mapToken))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (importer == null)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.mipmapEnabled = true;
+                importer.isReadable = false;
+
+                switch (mapToken)
+                {
+                    case "albedo":
+                        importer.textureType = TextureImporterType.Default;
+                        importer.sRGBTexture = true;
+                        importer.maxTextureSize = 2048;
+                        break;
+                    case "detail":
+                        importer.textureType = TextureImporterType.Default;
+                        importer.sRGBTexture = false;
+                        importer.maxTextureSize = 1024;
+                        break;
+                    case "normal":
+                        importer.textureType = TextureImporterType.NormalMap;
+                        importer.sRGBTexture = false;
+                        importer.maxTextureSize = 2048;
+                        break;
+                    case "mask":
+                        importer.textureType = TextureImporterType.Default;
+                        importer.sRGBTexture = false;
+                        importer.maxTextureSize = 2048;
+                        break;
+                }
+
+                importer.SaveAndReimport();
+                updated++;
+            }
+
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Fixed imported texture import settings. Updated={updated}, Skipped={skipped}.");
+        }
+
+        [MenuItem("Hecton/Validation/Report Imported Flora Texture Library", priority = 271)]
+        public static void ReportImportedTextureLibrary()
+        {
+            StringBuilder markdown = new StringBuilder(4096);
+            markdown.AppendLine("# Procedural Flora Texture Library Report");
+            markdown.AppendLine();
+            markdown.AppendLine($"Generated: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            markdown.AppendLine();
+            markdown.AppendLine("| Family | Coverage | Contract | Est. GPU MB | Notes |");
+            markdown.AppendLine("| --- | --- | --- | --- | --- |");
+
+            int completeFamilies = 0;
+            int contractCleanFamilies = 0;
+            double totalEstimatedGpuMb = 0.0;
+            double cleanEstimatedGpuMb = 0.0;
+
+            for (int familyIndex = 0; familyIndex < SupportedFamilyIds.Length; familyIndex++)
+            {
+                string familyId = SupportedFamilyIds[familyIndex];
+                int presentMapCount = 0;
+                bool contractOk = true;
+                string firstNote = "ok";
+                double familyEstimatedGpuMb = 0.0;
+                string latestRevisionFolderName;
+                bool hasRevisionCandidate = TryGetLatestImportedRevisionFolderName(familyId, out latestRevisionFolderName);
+
+                for (int mapIndex = 0; mapIndex < RequiredMapTokens.Length; mapIndex++)
+                {
+                    string mapToken = RequiredMapTokens[mapIndex];
+                    string importedPath = GetImportedTexturePath(familyId, mapToken);
+                    Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(importedPath);
+                    if (texture == null)
+                    {
+                        if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
+                            firstNote = "missing-" + mapToken;
+
+                        continue;
+                    }
+
+                    presentMapCount++;
+                    familyEstimatedGpuMb += EstimateImportedTextureGpuMb(mapToken);
+                    string failureLabel;
+                    if (TryGetImportedTextureContractFailure(texture, familyId, mapToken, out failureLabel))
+                    {
+                        contractOk = false;
+                        if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
+                            firstNote = mapToken + ":" + failureLabel;
+                    }
+                }
+
+                if (hasRevisionCandidate)
+                {
+                    if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
+                        firstNote = "alt-revision:" + latestRevisionFolderName;
+                    else
+                        firstNote += " | alt-revision:" + latestRevisionFolderName;
+                }
+
+                bool coverageOk = presentMapCount == RequiredMapTokens.Length;
+                if (coverageOk)
+                    completeFamilies++;
+
+                if (coverageOk && contractOk)
+                {
+                    contractCleanFamilies++;
+                    cleanEstimatedGpuMb += familyEstimatedGpuMb;
+                }
+
+                totalEstimatedGpuMb += familyEstimatedGpuMb;
+
+                markdown.Append("| ");
+                markdown.Append(familyId);
+                markdown.Append(" | ");
+                markdown.Append(presentMapCount);
+                markdown.Append("/");
+                markdown.Append(RequiredMapTokens.Length);
+                markdown.Append(" | ");
+                markdown.Append(contractOk ? "ok" : "stale");
+                markdown.Append(" | ");
+                markdown.Append(familyEstimatedGpuMb.ToString("0.0"));
+                markdown.Append(" | ");
+                markdown.Append(firstNote);
+                markdown.AppendLine(" |");
+            }
+
+            markdown.AppendLine();
+            markdown.AppendLine("## Summary");
+            markdown.AppendLine();
+            markdown.AppendLine($"- Family coverage complete: `{completeFamilies}/{SupportedFamilyIds.Length}`");
+            markdown.AppendLine($"- Family contract clean: `{contractCleanFamilies}/{SupportedFamilyIds.Length}`");
+            markdown.AppendLine($"- Estimated imported flora GPU memory: `{totalEstimatedGpuMb:0.0} MB`");
+            markdown.AppendLine($"- Estimated clean-contract flora GPU memory: `{cleanEstimatedGpuMb:0.0} MB`");
+            markdown.AppendLine($"- Texture red threshold reference: `{TextureMemoryRedThresholdMb:0} MB`");
+            markdown.AppendLine($"- Imported root: `{ImportedTextureRoot}`");
+            markdown.AppendLine($"- Atlas note: `defer atlas merge until at least one full clean texture set exists for every target family; current family-level tiling workflow is cheaper to iterate and safer for MX350.`");
+
+            string reportPath = Path.Combine(Directory.GetCurrentDirectory(), "PROCEDURAL_FLORA_TEXTURE_LIBRARY_REPORT.md");
+            File.WriteAllText(reportPath, markdown.ToString(), Encoding.UTF8);
+            AssetDatabase.Refresh();
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Wrote imported flora texture report to '{reportPath}'.");
+        }
+
         public static Texture2D LoadKelpBaseTexture(string familyId)
         {
             return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveBaseTexturePath(familyId));
@@ -108,6 +300,249 @@ namespace Hecton8.EditorTools
         public static Texture2D LoadCoralMaskTexture(string familyId)
         {
             return AssetDatabase.LoadAssetAtPath<Texture2D>(ResolveCoralMaskTexturePath(familyId));
+        }
+
+        internal static bool IsGeneratedProceduralTexture(Texture texture)
+        {
+            if (texture == null)
+                return false;
+
+            string assetPath = AssetDatabase.GetAssetPath(texture);
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return false;
+
+            string normalizedAssetPath = assetPath.Replace('\\', '/');
+            string normalizedTextureRoot = TextureRoot.Replace('\\', '/');
+            return normalizedAssetPath.StartsWith(normalizedTextureRoot + "/", System.StringComparison.OrdinalIgnoreCase)
+                && normalizedAssetPath.EndsWith(".asset", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsImportedFloraTexture(Texture texture)
+        {
+            if (texture == null)
+                return false;
+
+            string assetPath = AssetDatabase.GetAssetPath(texture);
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return false;
+
+            string normalizedAssetPath = assetPath.Replace('\\', '/');
+            string normalizedImportedRoot = ImportedTextureRoot.Replace('\\', '/');
+            return normalizedAssetPath.StartsWith(normalizedImportedRoot + "/", System.StringComparison.OrdinalIgnoreCase)
+                && normalizedAssetPath.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsManagedFloraTexture(Texture texture)
+        {
+            return IsImportedFloraTexture(texture) || IsGeneratedProceduralTexture(texture);
+        }
+
+        internal static bool TryGetImportedTextureContractFailure(Texture texture, string familyId, string mapToken, out string failureLabel)
+        {
+            failureLabel = string.Empty;
+            if (!IsImportedFloraTexture(texture))
+                return false;
+
+            string assetPath = AssetDatabase.GetAssetPath(texture);
+            string normalizedAssetPath = assetPath.Replace('\\', '/');
+            string expectedSuffix = "/" + familyId + "/" + mapToken + "___" + familyId + ".png";
+            if (!normalizedAssetPath.EndsWith(expectedSuffix, System.StringComparison.OrdinalIgnoreCase))
+            {
+                failureLabel = "path-naming-mismatch";
+                return true;
+            }
+
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                failureLabel = "missing-texture-importer";
+                return true;
+            }
+
+            if (importer.wrapMode != TextureWrapMode.Repeat)
+            {
+                failureLabel = "wrap-not-repeat";
+                return true;
+            }
+
+            if (!importer.mipmapEnabled)
+            {
+                failureLabel = "mipmaps-off";
+                return true;
+            }
+
+            if (importer.isReadable)
+            {
+                failureLabel = "readwrite-on";
+                return true;
+            }
+
+            switch (mapToken)
+            {
+                case "albedo":
+                    if (importer.textureType != TextureImporterType.Default)
+                    {
+                        failureLabel = "albedo-type-not-default";
+                        return true;
+                    }
+
+                    if (!importer.sRGBTexture)
+                    {
+                        failureLabel = "albedo-srgb-off";
+                        return true;
+                    }
+
+                    if (importer.maxTextureSize > 2048)
+                    {
+                        failureLabel = "albedo-maxsize-too-high";
+                        return true;
+                    }
+
+                    return false;
+
+                case "detail":
+                    if (importer.textureType != TextureImporterType.Default)
+                    {
+                        failureLabel = "detail-type-not-default";
+                        return true;
+                    }
+
+                    if (importer.sRGBTexture)
+                    {
+                        failureLabel = "detail-srgb-on";
+                        return true;
+                    }
+
+                    if (importer.maxTextureSize > 1024)
+                    {
+                        failureLabel = "detail-maxsize-too-high";
+                        return true;
+                    }
+
+                    return false;
+
+                case "normal":
+                    if (importer.textureType != TextureImporterType.NormalMap)
+                    {
+                        failureLabel = "normal-type-not-normalmap";
+                        return true;
+                    }
+
+                    if (importer.sRGBTexture)
+                    {
+                        failureLabel = "normal-srgb-on";
+                        return true;
+                    }
+
+                    if (importer.maxTextureSize > 2048)
+                    {
+                        failureLabel = "normal-maxsize-too-high";
+                        return true;
+                    }
+
+                    return false;
+
+                case "mask":
+                    if (importer.textureType != TextureImporterType.Default)
+                    {
+                        failureLabel = "mask-type-not-default";
+                        return true;
+                    }
+
+                    if (importer.sRGBTexture)
+                    {
+                        failureLabel = "mask-srgb-on";
+                        return true;
+                    }
+
+                    if (importer.maxTextureSize > 2048)
+                    {
+                        failureLabel = "mask-maxsize-too-high";
+                        return true;
+                    }
+
+                    return false;
+            }
+
+            failureLabel = "unknown-map-token";
+            return true;
+        }
+
+        internal static bool TryGetUnexpectedTextureSourceFailure(Texture texture, string familyId, string mapToken, out string failureLabel)
+        {
+            failureLabel = string.Empty;
+            if (texture == null)
+                return false;
+
+            if (IsManagedFloraTexture(texture))
+                return false;
+
+            string assetPath = AssetDatabase.GetAssetPath(texture);
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                failureLabel = mapToken + ":non-asset-texture";
+                return true;
+            }
+
+            string normalizedAssetPath = assetPath.Replace('\\', '/');
+            failureLabel = mapToken + ":outside-imported-root:" + normalizedAssetPath;
+            return true;
+        }
+
+        internal static bool TryGetTextureStackSourceFailure(Texture baseTexture, Texture detailTexture, Texture normalTexture, Texture maskTexture, out string failureLabel)
+        {
+            int importedCount = 0;
+            int generatedCount = 0;
+            int managedCount = 0;
+            int assignedCount = 0;
+
+            CountTextureSource(baseTexture, ref importedCount, ref generatedCount, ref managedCount, ref assignedCount);
+            CountTextureSource(detailTexture, ref importedCount, ref generatedCount, ref managedCount, ref assignedCount);
+            CountTextureSource(normalTexture, ref importedCount, ref generatedCount, ref managedCount, ref assignedCount);
+            CountTextureSource(maskTexture, ref importedCount, ref generatedCount, ref managedCount, ref assignedCount);
+
+            if (importedCount > 0 && generatedCount > 0)
+            {
+                failureLabel = $"mixed-imported-generated-stack:{importedCount}i/{generatedCount}g";
+                return true;
+            }
+
+            if (importedCount > 0 && managedCount != assignedCount)
+            {
+                failureLabel = $"mixed-imported-external-stack:{importedCount}i/{assignedCount - managedCount}x";
+                return true;
+            }
+
+            failureLabel = string.Empty;
+            return false;
+        }
+
+        private static bool IsSupportedMapToken(string mapToken)
+        {
+            return string.Equals(mapToken, "albedo", System.StringComparison.Ordinal)
+                || string.Equals(mapToken, "detail", System.StringComparison.Ordinal)
+                || string.Equals(mapToken, "normal", System.StringComparison.Ordinal)
+                || string.Equals(mapToken, "mask", System.StringComparison.Ordinal);
+        }
+
+        private static void CountTextureSource(Texture texture, ref int importedCount, ref int generatedCount, ref int managedCount, ref int assignedCount)
+        {
+            if (texture == null)
+                return;
+
+            assignedCount++;
+            if (IsImportedFloraTexture(texture))
+            {
+                importedCount++;
+                managedCount++;
+                return;
+            }
+
+            if (IsGeneratedProceduralTexture(texture))
+            {
+                generatedCount++;
+                managedCount++;
+            }
         }
 
         private static bool CreateOrUpdateBaseTexture(string path, Color lowColor, Color midColor, Color highColor, float bandStrength)
@@ -364,13 +799,13 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyKelpTall:
-                    return TextureRoot + "/TX_KelpTall_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_KelpTall_Base.asset");
                 case FamilyKelpPatchDense:
-                    return TextureRoot + "/TX_KelpPatch_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_KelpPatch_Base.asset");
                 case FamilyKelpCanopy:
-                    return TextureRoot + "/TX_KelpCanopy_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_KelpCanopy_Base.asset");
                 case FamilyKelpAbyssal:
-                    return TextureRoot + "/TX_KelpAbyssal_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_KelpAbyssal_Base.asset");
                 default:
                     return string.Empty;
             }
@@ -381,13 +816,13 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyKelpTall:
-                    return TextureRoot + "/TX_KelpTall_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_KelpTall_Detail.asset");
                 case FamilyKelpPatchDense:
-                    return TextureRoot + "/TX_KelpPatch_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_KelpPatch_Detail.asset");
                 case FamilyKelpCanopy:
-                    return TextureRoot + "/TX_KelpCanopy_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_KelpCanopy_Detail.asset");
                 case FamilyKelpAbyssal:
-                    return TextureRoot + "/TX_KelpAbyssal_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_KelpAbyssal_Detail.asset");
                 default:
                     return string.Empty;
             }
@@ -398,13 +833,13 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyKelpTall:
-                    return TextureRoot + "/TX_KelpTall_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_KelpTall_Normal.asset");
                 case FamilyKelpPatchDense:
-                    return TextureRoot + "/TX_KelpPatch_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_KelpPatch_Normal.asset");
                 case FamilyKelpCanopy:
-                    return TextureRoot + "/TX_KelpCanopy_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_KelpCanopy_Normal.asset");
                 case FamilyKelpAbyssal:
-                    return TextureRoot + "/TX_KelpAbyssal_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_KelpAbyssal_Normal.asset");
                 default:
                     return string.Empty;
             }
@@ -415,13 +850,13 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyKelpTall:
-                    return TextureRoot + "/TX_KelpTall_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_KelpTall_Mask.asset");
                 case FamilyKelpPatchDense:
-                    return TextureRoot + "/TX_KelpPatch_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_KelpPatch_Mask.asset");
                 case FamilyKelpCanopy:
-                    return TextureRoot + "/TX_KelpCanopy_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_KelpCanopy_Mask.asset");
                 case FamilyKelpAbyssal:
-                    return TextureRoot + "/TX_KelpAbyssal_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_KelpAbyssal_Mask.asset");
                 default:
                     return string.Empty;
             }
@@ -432,15 +867,15 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyCoralLow:
-                    return TextureRoot + "/TX_CoralLow_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_CoralLow_Base.asset");
                 case FamilyCoralBranching:
-                    return TextureRoot + "/TX_CoralBranching_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_CoralBranching_Base.asset");
                 case FamilyCoralMassive:
-                    return TextureRoot + "/TX_CoralMassive_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_CoralMassive_Base.asset");
                 case FamilyCoralPlate:
-                    return TextureRoot + "/TX_CoralPlate_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_CoralPlate_Base.asset");
                 case FamilyCoralBrittle:
-                    return TextureRoot + "/TX_CoralBrittle_Base.asset";
+                    return ResolvePreferredTexturePath(familyId, "albedo", TextureRoot + "/TX_CoralBrittle_Base.asset");
                 default:
                     return string.Empty;
             }
@@ -451,15 +886,15 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyCoralLow:
-                    return TextureRoot + "/TX_CoralLow_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_CoralLow_Detail.asset");
                 case FamilyCoralBranching:
-                    return TextureRoot + "/TX_CoralBranching_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_CoralBranching_Detail.asset");
                 case FamilyCoralMassive:
-                    return TextureRoot + "/TX_CoralMassive_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_CoralMassive_Detail.asset");
                 case FamilyCoralPlate:
-                    return TextureRoot + "/TX_CoralPlate_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_CoralPlate_Detail.asset");
                 case FamilyCoralBrittle:
-                    return TextureRoot + "/TX_CoralBrittle_Detail.asset";
+                    return ResolvePreferredTexturePath(familyId, "detail", TextureRoot + "/TX_CoralBrittle_Detail.asset");
                 default:
                     return string.Empty;
             }
@@ -470,15 +905,15 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyCoralLow:
-                    return TextureRoot + "/TX_CoralLow_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_CoralLow_Normal.asset");
                 case FamilyCoralBranching:
-                    return TextureRoot + "/TX_CoralBranching_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_CoralBranching_Normal.asset");
                 case FamilyCoralMassive:
-                    return TextureRoot + "/TX_CoralMassive_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_CoralMassive_Normal.asset");
                 case FamilyCoralPlate:
-                    return TextureRoot + "/TX_CoralPlate_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_CoralPlate_Normal.asset");
                 case FamilyCoralBrittle:
-                    return TextureRoot + "/TX_CoralBrittle_Normal.asset";
+                    return ResolvePreferredTexturePath(familyId, "normal", TextureRoot + "/TX_CoralBrittle_Normal.asset");
                 default:
                     return string.Empty;
             }
@@ -489,17 +924,86 @@ namespace Hecton8.EditorTools
             switch (familyId)
             {
                 case FamilyCoralLow:
-                    return TextureRoot + "/TX_CoralLow_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_CoralLow_Mask.asset");
                 case FamilyCoralBranching:
-                    return TextureRoot + "/TX_CoralBranching_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_CoralBranching_Mask.asset");
                 case FamilyCoralMassive:
-                    return TextureRoot + "/TX_CoralMassive_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_CoralMassive_Mask.asset");
                 case FamilyCoralPlate:
-                    return TextureRoot + "/TX_CoralPlate_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_CoralPlate_Mask.asset");
                 case FamilyCoralBrittle:
-                    return TextureRoot + "/TX_CoralBrittle_Mask.asset";
+                    return ResolvePreferredTexturePath(familyId, "mask", TextureRoot + "/TX_CoralBrittle_Mask.asset");
                 default:
                     return string.Empty;
+            }
+        }
+
+        private static string ResolvePreferredTexturePath(string familyId, string mapToken, string fallbackPath)
+        {
+            string importedPath = GetImportedTexturePath(familyId, mapToken);
+            Texture2D importedTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(importedPath);
+            return importedTexture != null ? importedPath : fallbackPath;
+        }
+
+        private static string GetImportedTexturePath(string familyId, string mapToken)
+        {
+            return $"{ImportedTextureRoot}/{familyId}/{mapToken}___{familyId}.png";
+        }
+
+        private static bool TryGetLatestImportedRevisionFolderName(string familyId, out string folderName)
+        {
+            folderName = string.Empty;
+            if (string.IsNullOrWhiteSpace(familyId))
+                return false;
+
+            string importedRootPath = Path.Combine(Directory.GetCurrentDirectory(), ImportedTextureRoot.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(importedRootPath))
+                return false;
+
+            string[] candidateDirectories = Directory.GetDirectories(importedRootPath, familyId + ".v*");
+            int bestRevision = -1;
+            for (int i = 0; i < candidateDirectories.Length; i++)
+            {
+                string candidateFolderName = Path.GetFileName(candidateDirectories[i]);
+                if (!TryParseImportedRevisionFolderName(candidateFolderName, familyId, out int revision))
+                    continue;
+
+                if (revision <= bestRevision)
+                    continue;
+
+                bestRevision = revision;
+                folderName = candidateFolderName;
+            }
+
+            return bestRevision > 0;
+        }
+
+        private static bool TryParseImportedRevisionFolderName(string folderName, string familyId, out int revision)
+        {
+            revision = 0;
+            if (string.IsNullOrWhiteSpace(folderName) || string.IsNullOrWhiteSpace(familyId))
+                return false;
+
+            string prefix = familyId + ".v";
+            if (!folderName.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            string revisionToken = folderName.Substring(prefix.Length);
+            return int.TryParse(revisionToken, out revision) && revision > 0;
+        }
+
+        private static double EstimateImportedTextureGpuMb(string mapToken)
+        {
+            switch (mapToken)
+            {
+                case "albedo":
+                case "mask":
+                case "normal":
+                    return 5.3;
+                case "detail":
+                    return 1.3;
+                default:
+                    return 0.0;
             }
         }
 

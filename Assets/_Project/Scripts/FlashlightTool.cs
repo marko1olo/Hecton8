@@ -56,6 +56,7 @@ namespace Hecton8.Gameplay
         private int _cachedContextDirectiveFrame = -1;
         private bool _cachedHasContextDirective;
         private string _cachedContextDirective;
+        private readonly RaycastHit[] _contextRaycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit flashlight context probe buffer.
 
         public override void OnEquip()
         {
@@ -374,16 +375,19 @@ namespace Hecton8.Gameplay
             
             if (!cache.TryGet(ray, contextProbeRange, contextMask, out Hecton8.Physics.QueryResult qResult))
             {
-                if (!Physics.Raycast(
-                        ray.origin,
-                        ray.direction,
-                        out RaycastHit hit,
-                        contextProbeRange,
-                        contextMask,
-                        QueryTriggerInteraction.Collide))
+                int hitCount = Physics.RaycastNonAlloc(
+                    ray,
+                    _contextRaycastHits,
+                    contextProbeRange,
+                    contextMask,
+                    QueryTriggerInteraction.Collide);
+
+                if (hitCount <= 0)
                 {
                     return false;
                 }
+
+                RaycastHit hit = _contextRaycastHits[0];
                 qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
                 cache.Set(ray, contextProbeRange, contextMask, qResult);
             }

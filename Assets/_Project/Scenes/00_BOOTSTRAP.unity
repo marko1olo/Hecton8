@@ -119,6 +119,61 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &163915831
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 163915833}
+  - component: {fileID: 163915832}
+  m_Layer: 0
+  m_Name: ShellVerificationSmokeTester_SCENE_TEMP
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &163915832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163915831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4be802b6ffe150647ac599638e2a1f75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.ShellVerificationRuntimeSmokeTester
+  runOnStart: 1
+  startupDelay: 0.75
+  actionTimeout: 20
+  settleDelay: 0.25
+  runLoadSlotIfAvailable: 1
+  verboseLogging: 1
+  _debugRunCount: 0
+  _debugLastPhase: Idle
+  _debugLastPass: 0
+  _debugLastIssue: 
+  _debugLastSaveSlot: 
+--- !u!4 &163915833
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163915831}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &265351790
 GameObject:
   m_ObjectHideFlags: 0
@@ -264,3 +319,4 @@ SceneRoots:
   - {fileID: 1574116709}
   - {fileID: 265351791}
   - {fileID: 1040846251}
+  - {fileID: 163915833}

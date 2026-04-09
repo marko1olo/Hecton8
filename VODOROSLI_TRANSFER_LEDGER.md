@@ -83,6 +83,25 @@ Verification: `PENDING VERIFICATION`
 
 ## Current Evidence
 
+- Fresh 2026-04-09 folded-lamina recovery pass:
+  - compile-breaking `VariantSpec(...)` arity regression in `WorldProceduralSeaweedMeshBuilder` was removed and the reduced folded-lamina specs were allowed to bake for real
+  - fresh pipeline truth:
+    - `Baked flora starters generated. Prefabs=72, MeshesUpdated=250, RemovedAssets=0, Failures=0`
+    - `Baked flora final variants applied. FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+    - `PASS validatedPrefabs=72, warningCount=9`
+    - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` updated at `16:52`
+  - fresh kelp budget readback:
+    - `family.kelp.tall` max `7250`
+    - `family.kelp.abyssal` max `8536`
+    - `GEN_family_kelp_tall__sail__s115-175 = 5076`
+    - `GEN_family_kelp_abyssal__veilwall__s150-240 = 5084`
+    - `GEN_family_kelp_tall__broadleaf__s110-170 = 6828`
+    - `GEN_family_kelp_canopy__paddlefan__s120-190 = 8130`
+    - `GEN_family_kelp_abyssal__petal__s100-170 = 6202`
+  - blocker truth:
+    - folded-lamina budget blocker is no longer active
+    - current remaining blockers moved back to preview readability, in-world beauty proof, and authored-final quality
+
 - `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md` now shows `Kelp Canopy` in preferred structure categories for reef/littoral representative biomes.
 - `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md` now also shows non-zero live preview counts for algae-friendly patterns instead of dead-zero preview output:
   - `FertileShallows`: ground `68`, cluster `11-17`, spawn `9`
@@ -140,6 +159,30 @@ Verification: `PENDING VERIFICATION`
   - `lightProbeUsage=Off`
   - `reflectionProbeUsage=Off`
   - `motionVectorGenerationMode=ForceNoMotion`
+- Fresh 2026-04-09 broadleaf corrective pass:
+  - `GEN_family_kelp_tall__broadleaf__s110-170.prefab` updated at `06:18`
+  - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` updated at `06:21`
+  - automation preview `auto_GEN_family_kelp_tall__broadleaf__s110-170.png` updated at `06:22`
+  - validator still reports `family.kelp.tall=a0/g14`
+  - broadleaf stayed inside tall-family budget at `5736` triangles
+  - visual read improved from a single compressed strip bundle to a more layered laminaria-like mass, but it still remains below authored-final quality
+- Fresh pipeline log truth after the same pass:
+  - `Baked flora starters generated. Prefabs=72, MeshesUpdated=250, RemovedAssets=0, Failures=0`
+  - `Baked flora final variants applied. FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+  - `PASS validatedPrefabs=72, warningCount=9`
+- Fresh unresolved pipeline ugliness:
+  - earlier in the 2026-04-09 broadleaf pass, `WorldProceduralFloraFinalVariantAuthoring` emitted repeated `The referenced script on this Behaviour (Game Object '<null>') is missing!` errors during family asset load
+  - this was dirty pipeline state and triggered the cleanup follow-up below
+- Fresh 2026-04-09 authoring cleanup follow-up:
+  - `LoadFloraFamilies()` now uses `AssetDatabase.LoadMainAssetAtPath(assetPath) as WorldPrefabFamilyProfile`
+  - direct `Apply Procedural Flora Final Variants` readback now completes with:
+    - `Baked flora final variants applied. FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+  - in that direct apply pass, the old repeated `missing script` errors did not reappear
+  - fresh status report after the same follow-up now records:
+    - `GEN_family_kelp_tall__broadleaf__s110-170 = 4508` triangles
+    - `lodTriangles=4508/1808/732/420`
+  - caveat:
+    - MCP bridge stalled after report generation, so post-report console capture is still absent
 - Verification after this rule pass stayed clean:
   - `PASS validatedPrefabs=14, warningCount=7`
   - generated kelp starters emitted no extra renderer-default warnings
@@ -167,6 +210,9 @@ Verification: `PENDING VERIFICATION`
 
 ## Open Blockers
 
+- Folded-lamina budget blocker is closed on the latest verified pass:
+  - `sail` and `veilwall` are no longer validator failures
+  - their remaining problem is visual truth, not triangle count
 - `Kelp Canopy` is verified in the key littoral reef/fertile slices, and the fossil-reef landmark corridor is now biologically led by `Coral Plate`. Kelp now has real generated baked finals in the intake root, but they are starter-quality combined-mesh assets, not photorealistic final art.
 - The validator now proves that gap directly: every kelp family currently has authored count `0` and generated count `2`.
 - No profiler GC before/after numbers were captured for this flora integration path.

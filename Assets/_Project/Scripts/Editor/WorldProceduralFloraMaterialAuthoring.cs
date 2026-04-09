@@ -11,6 +11,15 @@ namespace Hecton8.EditorTools
     {
         private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
         private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
+        internal const string QualityMx350Keyword = "_QUALITY_MX350";
+        internal const string QualityHighKeyword = "_QUALITY_HIGH";
+        internal const string NormalScaleProperty = "_NormalScale";
+        internal const string TriplanarScaleProperty = "_TriplanarScale";
+        internal const string TriplanarSharpnessProperty = "_TriplanarSharpness";
+        internal const string CurvatureWetnessStrengthProperty = "_CurvatureWetnessStrength";
+        internal const string FresnelStrengthProperty = "_FresnelStrength";
+        internal const string FresnelPowerProperty = "_FresnelPower";
+        internal const string HeightScaleProperty = "_HeightScale";
         private const string KelpTallMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat";
         private const string KelpPatchMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat";
         private const string KelpCanopyMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat";
@@ -107,31 +116,91 @@ namespace Hecton8.EditorTools
             if (maskTexture != null)
                 material.SetTexture("_MaskMap", maskTexture);
 
-            material.SetColor("_BaseColor", baseColor);
-            material.SetColor("_TipColor", tipColor);
-            material.SetColor("_RimColor", rimColor);
-            material.SetColor("_TransmissionColor", transmissionColor);
-            material.SetFloat("_Smoothness", 0.24f);
+            bool hasImportedBaseTexture = IsImportedTexture(baseTexture);
+            bool hasImportedDetailTexture = IsImportedTexture(detailTexture);
+            bool hasImportedNormalTexture = IsImportedTexture(normalTexture);
+            bool hasImportedMaskTexture = IsImportedTexture(maskTexture);
+            bool hasAnyImportedTexture = hasImportedBaseTexture || hasImportedDetailTexture || hasImportedNormalTexture || hasImportedMaskTexture;
+            bool hasCompleteImportedTextureSet = hasImportedBaseTexture && hasImportedDetailTexture && hasImportedNormalTexture && hasImportedMaskTexture;
+
+            if (hasCompleteImportedTextureSet)
+            {
+                ApplySharedFloraShaderContract(material, 0.75f, 0.32f, 4.0f, 0.34f, 0.18f, 3.6f, 0.012f);
+                material.SetColor("_BaseColor", Color.white);
+                material.SetColor("_TipColor", Color.Lerp(Color.white, tipColor, 0.12f));
+                material.SetColor("_RimColor", Color.Lerp(Color.white, rimColor, 0.10f));
+                material.SetColor("_TransmissionColor", Color.Lerp(Color.white, transmissionColor, 0.18f));
+                material.SetFloat("_Smoothness", 0.20f);
+                material.SetFloat("_VertexTintStrength", 0.42f);
+                material.SetFloat("_AgeDarkening", 0.10f);
+                material.SetFloat("_MoistureBoost", 0.14f);
+                material.SetFloat("_DetailStrength", hasImportedDetailTexture ? 0.22f : 0.38f);
+                material.SetFloat("_NormalStrength", hasImportedNormalTexture ? 0.82f : 0.96f);
+                material.SetFloat("_BladeCurveNormalStrength", 0.18f);
+                material.SetFloat("_ThicknessStrength", 0.68f);
+                material.SetFloat("_SpecularNoiseStrength", 0.34f);
+                material.SetFloat("_MidribDarkening", 0.06f);
+                material.SetFloat("_MidribGlossBoost", 0.14f);
+                material.SetFloat("_EdgeWearDarkening", 0.05f);
+                material.SetFloat("_EdgeDetailBoost", 0.08f);
+                material.SetFloat("_CausticStrength", 0.12f);
+                material.SetFloat("_CausticScale", 1.5f);
+                material.SetFloat("_CausticSpeed", 0.52f);
+            }
+            else if (hasAnyImportedTexture)
+            {
+                ApplySharedFloraShaderContract(material, 0.76f, 0.34f, 4.1f, 0.38f, 0.20f, 3.8f, 0.014f);
+                material.SetColor("_BaseColor", Color.Lerp(baseColor, Color.white, 0.42f));
+                material.SetColor("_TipColor", Color.Lerp(tipColor, Color.white, 0.18f));
+                material.SetColor("_RimColor", Color.Lerp(rimColor, Color.white, 0.14f));
+                material.SetColor("_TransmissionColor", Color.Lerp(transmissionColor, Color.white, 0.20f));
+                material.SetFloat("_Smoothness", 0.22f);
+                material.SetFloat("_VertexTintStrength", 0.58f);
+                material.SetFloat("_AgeDarkening", 0.16f);
+                material.SetFloat("_MoistureBoost", 0.18f);
+                material.SetFloat("_DetailStrength", hasImportedDetailTexture ? 0.28f : 0.42f);
+                material.SetFloat("_NormalStrength", hasImportedNormalTexture ? 0.88f : 1.00f);
+                material.SetFloat("_BladeCurveNormalStrength", 0.20f);
+                material.SetFloat("_ThicknessStrength", 0.72f);
+                material.SetFloat("_SpecularNoiseStrength", 0.42f);
+                material.SetFloat("_MidribDarkening", 0.10f);
+                material.SetFloat("_MidribGlossBoost", 0.16f);
+                material.SetFloat("_EdgeWearDarkening", 0.06f);
+                material.SetFloat("_EdgeDetailBoost", 0.10f);
+                material.SetFloat("_CausticStrength", 0.14f);
+                material.SetFloat("_CausticScale", 1.56f);
+                material.SetFloat("_CausticSpeed", 0.54f);
+            }
+            else
+            {
+                ApplySharedFloraShaderContract(material, 0.78f, 0.36f, 4.2f, 0.42f, 0.26f, 4.1f, 0.018f);
+                material.SetColor("_BaseColor", baseColor);
+                material.SetColor("_TipColor", tipColor);
+                material.SetColor("_RimColor", rimColor);
+                material.SetColor("_TransmissionColor", transmissionColor);
+                material.SetFloat("_Smoothness", 0.24f);
+                material.SetFloat("_VertexTintStrength", 0.96f);
+                material.SetFloat("_AgeDarkening", 0.26f);
+                material.SetFloat("_MoistureBoost", 0.24f);
+                material.SetFloat("_DetailStrength", 0.52f);
+                material.SetFloat("_NormalStrength", 1.08f);
+                material.SetFloat("_BladeCurveNormalStrength", 0.24f);
+                material.SetFloat("_ThicknessStrength", 0.82f);
+                material.SetFloat("_SpecularNoiseStrength", 0.58f);
+                material.SetFloat("_MidribDarkening", 0.16f);
+                material.SetFloat("_MidribGlossBoost", 0.22f);
+                material.SetFloat("_EdgeWearDarkening", 0.10f);
+                material.SetFloat("_EdgeDetailBoost", 0.18f);
+                material.SetFloat("_CausticStrength", 0.18f);
+                material.SetFloat("_CausticScale", 1.65f);
+                material.SetFloat("_CausticSpeed", 0.58f);
+            }
+
             material.SetFloat("_AmbientStrength", 0.48f);
             material.SetFloat("_RimPower", 2.7f);
             material.SetFloat("_RimStrength", 0.28f);
             material.SetFloat("_TransmissionStrength", 0.68f);
             material.SetFloat("_EdgeTransmissionBoost", 0.34f);
-            material.SetFloat("_VertexTintStrength", 0.96f);
-            material.SetFloat("_AgeDarkening", 0.26f);
-            material.SetFloat("_MoistureBoost", 0.24f);
-            material.SetFloat("_DetailStrength", 0.52f);
-            material.SetFloat("_NormalStrength", 1.08f);
-            material.SetFloat("_BladeCurveNormalStrength", 0.24f);
-            material.SetFloat("_ThicknessStrength", 0.82f);
-            material.SetFloat("_SpecularNoiseStrength", 0.58f);
-            material.SetFloat("_MidribDarkening", 0.16f);
-            material.SetFloat("_MidribGlossBoost", 0.22f);
-            material.SetFloat("_EdgeWearDarkening", 0.10f);
-            material.SetFloat("_EdgeDetailBoost", 0.18f);
-            material.SetFloat("_CausticStrength", 0.18f);
-            material.SetFloat("_CausticScale", 1.65f);
-            material.SetFloat("_CausticSpeed", 0.58f);
             material.SetColor("_BiolumColor", biolumColorOverride ?? new Color(0.22f, 0.88f, 0.82f, 1f));
             material.SetFloat("_BiolumStrength", biolumStrength);
             material.SetFloat("_BiolumMaskStrength", 1.06f);
@@ -150,6 +219,19 @@ namespace Hecton8.EditorTools
             material.SetFloat("_BumpScale", 1f);
             EditorUtility.SetDirty(material);
             return true;
+        }
+
+        private static bool IsImportedTexture(Texture texture)
+        {
+            if (texture == null)
+                return false;
+
+            string assetPath = AssetDatabase.GetAssetPath(texture);
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return false;
+
+            string normalizedPath = assetPath.Replace('\\', '/');
+            return normalizedPath.Contains("/WorldProceduralFlora/Imported/");
         }
 
         private static bool ApplyCoralMaterial(
@@ -188,26 +270,78 @@ namespace Hecton8.EditorTools
             if (maskTexture != null)
                 material.SetTexture("_MaskMap", maskTexture);
 
-            material.SetColor("_BaseColor", baseColor);
-            material.SetColor("_AccentColor", accentColor);
-            material.SetColor("_RimColor", rimColor);
-            material.SetColor("_SubsurfaceColor", subsurfaceColor);
-            material.SetFloat("_Smoothness", 0.28f);
+            bool hasImportedBaseTexture = IsImportedTexture(baseTexture);
+            bool hasImportedDetailTexture = IsImportedTexture(detailTexture);
+            bool hasImportedNormalTexture = IsImportedTexture(normalTexture);
+            bool hasImportedMaskTexture = IsImportedTexture(maskTexture);
+            bool hasAnyImportedTexture = hasImportedBaseTexture || hasImportedDetailTexture || hasImportedNormalTexture || hasImportedMaskTexture;
+            bool hasCompleteImportedTextureSet = hasImportedBaseTexture && hasImportedDetailTexture && hasImportedNormalTexture && hasImportedMaskTexture;
+
+            if (hasCompleteImportedTextureSet)
+            {
+                ApplySharedFloraShaderContract(material, 0.72f, 0.40f, 4.6f, 0.46f, 0.18f, 4.2f, 0.022f);
+                material.SetColor("_BaseColor", Color.white);
+                material.SetColor("_AccentColor", Color.Lerp(Color.white, accentColor, 0.18f));
+                material.SetColor("_RimColor", Color.Lerp(Color.white, rimColor, 0.12f));
+                material.SetColor("_SubsurfaceColor", Color.Lerp(Color.white, subsurfaceColor, 0.22f));
+                material.SetFloat("_Smoothness", 0.24f);
+                material.SetFloat("_VertexTintStrength", 0.42f);
+                material.SetFloat("_AgeDarkening", 0.10f);
+                material.SetFloat("_MoistureBoost", 0.08f);
+                material.SetFloat("_DetailStrength", hasImportedDetailTexture ? 0.26f : 0.36f);
+                material.SetFloat("_NormalStrength", hasImportedNormalTexture ? 0.68f : 0.76f);
+                material.SetFloat("_ThicknessStrength", 0.44f);
+                material.SetFloat("_SpecularNoiseStrength", 0.26f);
+                material.SetFloat("_CavityStrength", Mathf.Clamp01(cavityStrength * 0.72f));
+                material.SetFloat("_CausticStrength", 0.12f);
+                material.SetFloat("_CausticScale", 1.2f);
+                material.SetFloat("_CausticSpeed", 0.28f);
+            }
+            else if (hasAnyImportedTexture)
+            {
+                ApplySharedFloraShaderContract(material, 0.74f, 0.42f, 4.7f, 0.52f, 0.20f, 4.4f, 0.024f);
+                material.SetColor("_BaseColor", Color.Lerp(baseColor, Color.white, 0.34f));
+                material.SetColor("_AccentColor", Color.Lerp(accentColor, Color.white, 0.22f));
+                material.SetColor("_RimColor", Color.Lerp(rimColor, Color.white, 0.16f));
+                material.SetColor("_SubsurfaceColor", Color.Lerp(subsurfaceColor, Color.white, 0.26f));
+                material.SetFloat("_Smoothness", 0.25f);
+                material.SetFloat("_VertexTintStrength", 0.52f);
+                material.SetFloat("_AgeDarkening", 0.12f);
+                material.SetFloat("_MoistureBoost", 0.10f);
+                material.SetFloat("_DetailStrength", hasImportedDetailTexture ? 0.28f : 0.38f);
+                material.SetFloat("_NormalStrength", hasImportedNormalTexture ? 0.70f : 0.80f);
+                material.SetFloat("_ThicknessStrength", 0.46f);
+                material.SetFloat("_SpecularNoiseStrength", 0.28f);
+                material.SetFloat("_CavityStrength", Mathf.Clamp01(cavityStrength * 0.82f));
+                material.SetFloat("_CausticStrength", 0.13f);
+                material.SetFloat("_CausticScale", 1.26f);
+                material.SetFloat("_CausticSpeed", 0.30f);
+            }
+            else
+            {
+                ApplySharedFloraShaderContract(material, 0.75f, 0.44f, 4.8f, 0.64f, 0.22f, 4.8f, 0.03f);
+                material.SetColor("_BaseColor", baseColor);
+                material.SetColor("_AccentColor", accentColor);
+                material.SetColor("_RimColor", rimColor);
+                material.SetColor("_SubsurfaceColor", subsurfaceColor);
+                material.SetFloat("_Smoothness", 0.28f);
+                material.SetFloat("_VertexTintStrength", 0.68f);
+                material.SetFloat("_AgeDarkening", 0.18f);
+                material.SetFloat("_MoistureBoost", 0.12f);
+                material.SetFloat("_DetailStrength", 0.40f);
+                material.SetFloat("_NormalStrength", 0.76f);
+                material.SetFloat("_ThicknessStrength", 0.48f);
+                material.SetFloat("_SpecularNoiseStrength", 0.34f);
+                material.SetFloat("_CavityStrength", cavityStrength);
+                material.SetFloat("_CausticStrength", 0.16f);
+                material.SetFloat("_CausticScale", 1.4f);
+                material.SetFloat("_CausticSpeed", 0.32f);
+            }
+
             material.SetFloat("_AmbientStrength", 0.52f);
             material.SetFloat("_RimPower", 2.6f);
             material.SetFloat("_RimStrength", 0.22f);
             material.SetFloat("_SubsurfaceStrength", 0.34f);
-            material.SetFloat("_VertexTintStrength", 0.68f);
-            material.SetFloat("_AgeDarkening", 0.18f);
-            material.SetFloat("_MoistureBoost", 0.12f);
-            material.SetFloat("_DetailStrength", 0.40f);
-            material.SetFloat("_NormalStrength", 0.76f);
-            material.SetFloat("_ThicknessStrength", 0.48f);
-            material.SetFloat("_SpecularNoiseStrength", 0.34f);
-            material.SetFloat("_CavityStrength", cavityStrength);
-            material.SetFloat("_CausticStrength", 0.16f);
-            material.SetFloat("_CausticScale", 1.4f);
-            material.SetFloat("_CausticSpeed", 0.32f);
             material.SetColor("_BiolumColor", biolumColorOverride ?? new Color(0.26f, 0.94f, 0.82f, 1f));
             material.SetFloat("_BiolumStrength", biolumStrength);
             material.SetFloat("_BiolumMaskStrength", 1.12f);
@@ -221,6 +355,68 @@ namespace Hecton8.EditorTools
             material.SetFloat("_BumpScale", 1f);
             EditorUtility.SetDirty(material);
             return true;
+        }
+
+        internal static bool TryGetShaderContractFailure(Material material, out string failureLabel)
+        {
+            if (material == null)
+            {
+                failureLabel = "missing-material";
+                return true;
+            }
+
+            bool mx350Enabled = material.IsKeywordEnabled(QualityMx350Keyword);
+            bool highEnabled = material.IsKeywordEnabled(QualityHighKeyword);
+            if (!mx350Enabled || highEnabled)
+            {
+                failureLabel = "quality-keyword-mismatch";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, NormalScaleProperty))
+            {
+                failureLabel = "missing-_NormalScale";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, TriplanarScaleProperty))
+            {
+                failureLabel = "missing-_TriplanarScale";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, TriplanarSharpnessProperty))
+            {
+                failureLabel = "missing-_TriplanarSharpness";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, CurvatureWetnessStrengthProperty))
+            {
+                failureLabel = "missing-_CurvatureWetnessStrength";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, FresnelStrengthProperty))
+            {
+                failureLabel = "missing-_FresnelStrength";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, FresnelPowerProperty))
+            {
+                failureLabel = "missing-_FresnelPower";
+                return true;
+            }
+
+            if (!HasPositiveFloatProperty(material, HeightScaleProperty))
+            {
+                failureLabel = "missing-_HeightScale";
+                return true;
+            }
+
+            failureLabel = string.Empty;
+            return false;
         }
 
         private static string ResolveFamilyIdFromMaterialPath(string materialPath)
@@ -274,6 +470,32 @@ namespace Hecton8.EditorTools
             };
             AssetDatabase.CreateAsset(material, materialPath);
             return material;
+        }
+
+        private static void ApplySharedFloraShaderContract(
+            Material material,
+            float normalScale,
+            float triplanarScale,
+            float triplanarSharpness,
+            float curvatureWetnessStrength,
+            float fresnelStrength,
+            float fresnelPower,
+            float heightScale)
+        {
+            material.DisableKeyword(QualityHighKeyword);
+            material.EnableKeyword(QualityMx350Keyword);
+            material.SetFloat(NormalScaleProperty, normalScale);
+            material.SetFloat(TriplanarScaleProperty, triplanarScale);
+            material.SetFloat(TriplanarSharpnessProperty, triplanarSharpness);
+            material.SetFloat(CurvatureWetnessStrengthProperty, curvatureWetnessStrength);
+            material.SetFloat(FresnelStrengthProperty, fresnelStrength);
+            material.SetFloat(FresnelPowerProperty, fresnelPower);
+            material.SetFloat(HeightScaleProperty, heightScale);
+        }
+
+        private static bool HasPositiveFloatProperty(Material material, string propertyName)
+        {
+            return material.HasProperty(propertyName) && material.GetFloat(propertyName) > 0.0001f;
         }
 
         private static void EnsureFolder(string assetPath)

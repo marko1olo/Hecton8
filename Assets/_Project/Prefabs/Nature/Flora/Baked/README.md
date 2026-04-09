@@ -1,5 +1,7 @@
 # Flora Final Bake Intake
 
+> Legacy note: use [Docs/AI_FLORA_EXECUTION_BRIEF.md](/c:/hades/Hecton8/Docs/AI_FLORA_EXECUTION_BRIEF.md) as the short agent entry point. This README stays as the baked-finals intake contract and folder-local source of truth.
+
 Source of truth for real flora final prefabs.
 
 ## Purpose
@@ -13,10 +15,12 @@ Source of truth for real flora final prefabs.
 - `family.kelp.tall`
 - `family.kelp.patch.dense`
 - `family.kelp.canopy`
+- `family.kelp.abyssal`
 - `family.coral.low`
 - `family.coral.branching`
 - `family.coral.massive`
 - `family.coral.plate`
+- `family.coral.brittle`
 
 ## Intake Rules
 
@@ -25,10 +29,12 @@ Source of truth for real flora final prefabs.
   - `family_kelp_tall`
   - `family_kelp_patch_dense`
   - `family_kelp_canopy`
+  - `family_kelp_abyssal`
   - `family_coral_low`
   - `family_coral_branching`
   - `family_coral_massive`
   - `family_coral_plate`
+  - `family_coral_brittle`
 - Alternative layout: prefab file names may also start with the safe family token, for example:
   - `PFB_family_kelp_tall__hero_a.prefab`
   - `PFB_family_coral_plate__ledge_b.prefab`
@@ -59,14 +65,25 @@ Source of truth for real flora final prefabs.
 
 - Run `Hecton/Authoring/Generate Procedural Flora Baked Starters` to create optimized `LODGroup`-based starter finals in the family folders.
 - Generated starter assets use the `GEN_` prefix and are owned by the generator.
-- Current starter target is `3` deterministic variants per supported flora family.
+- Current starter target is deterministic multi-variant coverage per supported flora family, not a fixed `3`-variant cap.
 - Each generated starter prefab currently contains:
   - root `LODGroup`
-  - `__LOD0` child renderer with `*_LOD0_Mesh.asset`
-  - `__LOD1` child renderer with `*_LOD1_Mesh.asset`
+  - `__LOD0`, `__LOD1`, `__LOD2`
+  - exact thresholds: `0.6 / 0.15 / 0.04 / 0`
+  - near-field transition mode: `LODFadeMode.CrossFade` with animated crossfading enabled
+  - cull is handled by the final `LODGroup` cull step plus runtime visibility rules
 - Current generated family forms:
-  - kelp: `stalk / lean / ribbon`, `patch / patch_tall / ring`, `crown / frond / fan`
-  - coral: `bed / plate / knoll`, `branch / mass / fan`, `head / porous / boulder`, `ledge / shelf / stack`
+  - kelp:
+    - tall: `banner / broadleaf / colossus / frondcrest / lamina / lance / lean / paddle / ribbon / rope / sail / seedling / stalk / tower`
+    - patch dense: `bladder / brush / drape / frilltuft / nest / paddlespray / patch / patch_tall / ring / sheet / sheetwall / tuft`
+    - canopy: `crown / fan / featherfan / frond / laminaria / mantle / oar / paddlefan / rosette / sheetwall / splay / tapestry / veil`
+    - abyssal: `braid / cathedral / cowl / lantern / mantle / nodule / pennant / petal / reed / shroud / strap / tatterveil / veilwall / whip`
+  - coral:
+    - low: `bed / knoll / plate`
+    - branching: `branch / fan / mass`
+    - massive: `boulder / head / porous`
+    - plate: `ledge / shelf / stack`
+    - brittle: `crown / fan / halo / lace / spire / sprig / thicket`
 - These starter assets are production-safe placeholders for the baked-final pipeline, not a substitute for later photorealistic hand-authored or baked flora art.
 
 ## Validation Path
@@ -87,6 +104,30 @@ Source of truth for real flora final prefabs.
     - `motionVectorGenerationMode` should be `ForceNoMotion`
   - LOD recommendation threshold
   - family-level authored (`a`) vs generated (`g`) coverage summary
+  - texture-source sanity:
+    - imported texture assets are expected for real photoreal finals
+    - procedural editor-generated texture assets are not treated as final photoreal proof
+  - shader contract:
+    - `_QUALITY_MX350` / `_QUALITY_HIGH`
+    - `_NormalScale`
+    - world-space triplanar flora material contract
+    - exact flora LOD thresholds and crossfade settings
+  - generated texture-source guard:
+    - procedural editor-generated `.asset` textures are starter-only fallback proof
+    - authored finals using those generated textures fail closed
+  - imported texture contract:
+    - imported flora textures are expected under `Assets/_Project/Art/Textures/WorldProceduralFlora/Imported/<familyId>/`
+    - exact naming:
+      - `albedo___<familyId>.png`
+      - `detail___<familyId>.png`
+      - `normal___<familyId>.png`
+      - `mask___<familyId>.png`
+    - exact manual importer contract:
+      - `albedo`: `Default`, `sRGB On`, `Wrap Repeat`, `Mip Maps On`, `Read/Write Off`, `Max Size <= 2048`
+      - `detail`: `Default`, `sRGB Off`, `Wrap Repeat`, `Mip Maps On`, `Read/Write Off`, `Max Size <= 1024`
+      - `normal`: `Normal Map`, `sRGB Off`, `Wrap Repeat`, `Mip Maps On`, `Read/Write Off`, `Max Size <= 2048`
+      - `mask`: `Default`, `sRGB Off`, `Wrap Repeat`, `Mip Maps On`, `Read/Write Off`, `Max Size <= 2048`
+    - validator fails closed when imported flora maps break this contract
 
 ## Family Budgets
 
@@ -97,16 +138,23 @@ Use these as the hard authored-final intake limits. `GEN_` starters already sit 
 | `family.kelp.tall` | `12` | `6` | `8000` | `4500` |
 | `family.kelp.patch.dense` | `18` | `8` | `12000` | `6500` |
 | `family.kelp.canopy` | `14` | `6` | `10000` | `5500` |
+| `family.kelp.abyssal` | `14` | `6` | `9000` | `5200` |
 | `family.coral.low` | `10` | `4` | `7000` | `3500` |
 | `family.coral.branching` | `16` | `6` | `12000` | `6500` |
 | `family.coral.massive` | `12` | `5` | `9000` | `5000` |
 | `family.coral.plate` | `12` | `5` | `8500` | `4500` |
+| `family.coral.brittle` | `14` | `6` | `9500` | `5200` |
 
 ## Authoring Policy
 
 - Replace `GEN_` starters family-by-family, not all at once.
 - Keep authored finals inside the table above before asking for budget expansion.
 - Prefer one `LODGroup` root with cheap `LOD1`, not high-detail single-LOD hero meshes.
+- Exact flora target thresholds are `0.6 / 0.15 / 0.04 / 0`.
+- Atlas planning rule:
+  - do not merge flora maps into atlases while family texture coverage is incomplete or importer contracts are still failing
+  - current target is one tiling set per family
+  - atlas consolidation becomes worth evaluating only after all target families have one clean imported set each and validator/report stay green
 - If one authored prefab enters a family, that family's `GEN_` starters are intentionally ignored by intake.
 - Use metadata tokens only for intake-facing controls:
   - `__wN` for spawn frequency weight

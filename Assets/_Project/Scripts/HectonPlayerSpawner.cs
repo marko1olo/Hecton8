@@ -151,6 +151,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// Unity перезаписывает поля при каждом вызове Physics.Raycast.
     /// </summary>
     private RaycastHit _hitInfo;
+    private readonly RaycastHit[] _groundHits = new RaycastHit[1]; // COLD ALLOC: spawner needs only the nearest terrain hit per probe.
 
     /// <summary>
     /// Время начала операции SpawnPlayerAsync (realtimeSinceStartup).
@@ -284,9 +285,7 @@ public class HectonPlayerSpawner : MonoBehaviour
                 return;
             }
 
-            if (Physics.Raycast(
-                    _rayOrigin, Vector3.down, out _hitInfo,
-                    raycastOriginHeight * 2f, terrainLayerMask))
+            if (TryRaycastGround(out _hitInfo))
             {
                 terrainReady = true;
                 Debug.Log(
@@ -381,9 +380,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
             _rayOrigin.Set(testX, raycastOriginHeight, testZ);
 
-            if (Physics.Raycast(
-                    _rayOrigin, Vector3.down, out _hitInfo,
-                    raycastOriginHeight * 2f, terrainLayerMask))
+            if (TryRaycastGround(out _hitInfo))
             {
                 // ── Raycast успешен — сбрасываем счётчик попыток ──
                 retryCount = 0;
@@ -487,9 +484,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
             _rayOrigin.Set(testX, raycastOriginHeight, testZ);
 
-            if (Physics.Raycast(
-                    _rayOrigin, Vector3.down, out _hitInfo,
-                    raycastOriginHeight * 2f, terrainLayerMask))
+            if (TryRaycastGround(out _hitInfo))
             {
                 float groundY = _hitInfo.point.y;
 
@@ -564,13 +559,30 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// При нахождении валидного мелководья заполняет _spawnPosition.
     /// Zero-GC: предаллоцированные _rayOrigin и _hitInfo.
     /// </summary>
+    private bool TryRaycastGround(out RaycastHit hit)
+    {
+        int hitCount = Physics.RaycastNonAlloc(
+            _rayOrigin,
+            Vector3.down,
+            _groundHits,
+            raycastOriginHeight * 2f,
+            terrainLayerMask);
+
+        if (hitCount > 0)
+        {
+            hit = _groundHits[0];
+            return true;
+        }
+
+        hit = default;
+        return false;
+    }
+
     private SpawnSearchResult EvaluatePoint(float x, float z)
     {
         _rayOrigin.Set(x, raycastOriginHeight, z);
 
-        if (!Physics.Raycast(
-                _rayOrigin, Vector3.down, out _hitInfo,
-                raycastOriginHeight * 2f, terrainLayerMask))
+        if (!TryRaycastGround(out _hitInfo))
         {
             return SpawnSearchResult.NoTerrain;
         }

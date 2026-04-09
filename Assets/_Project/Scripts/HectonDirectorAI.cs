@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.AI;
+using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -248,6 +249,10 @@ namespace Hecton8.Systems.AI
         // Lazy resolve flag
         private bool _resolvedDirectors;
 
+        // Eclipse tension bonus — лор: ночные хищники поднимаются во время затмения
+        private float _eclipseTensionBonus;
+        private bool  _eclipseActive;
+
         // ══════════════════════════════════════════════════════════
         //  PREDATOR REGISTRATION — REPLACES TryGetComponent
         // ══════════════════════════════════════════════════════════
@@ -311,6 +316,7 @@ namespace Hecton8.Systems.AI
         [SerializeField] private bool   _debugHasScavengePopulator;
         [SerializeField] private float  _debugTimeSinceLastAutoSave;
         [SerializeField] private int    _debugRegisteredPredatorCount;
+        [SerializeField] private bool   _debugEclipseActive;
 #endif
 
         // ══════════════════════════════════════════════════════════
@@ -332,6 +338,8 @@ namespace Hecton8.Systems.AI
 
             InteractionEvents.OnItemCollected += HandleItemCollected;
             NarrativeEvents.OnDiscoveryMade   += HandleNarrativeDiscovery;
+            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
+            HectonCelestialEngine.OnEclipseEnd   += HandleEclipseEnd;
 
             PublishPredatorPressure(true);
         }
@@ -342,6 +350,8 @@ namespace Hecton8.Systems.AI
 
             InteractionEvents.OnItemCollected -= HandleItemCollected;
             NarrativeEvents.OnDiscoveryMade   -= HandleNarrativeDiscovery;
+            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
+            HectonCelestialEngine.OnEclipseEnd   -= HandleEclipseEnd;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -452,6 +462,9 @@ namespace Hecton8.Systems.AI
 
             // Narrative Relief
             tension -= _narrativeBonus;;
+
+            // Eclipse bonus — ночные хищники поднимаются, tension растёт
+            tension += _eclipseTensionBonus;
 
             // Manual clamp — no Mathf call overhead
             if (tension < 0f)   tension = 0f;
@@ -901,8 +914,7 @@ namespace Hecton8.Systems.AI
 
         /// <summary>
         /// Lazy resolve of FaunaDirector and ScavengePopulator.
-        /// Called once per enable cycle. FindAnyObjectByType is expensive
-        /// but only runs once.
+        /// Called once per enable cycle through runtime reference helpers.
         /// </summary>
         private void ResolveDirectors()
         {
@@ -949,6 +961,7 @@ namespace Hecton8.Systems.AI
             _debugHasScavengePopulator    = scavengePopulator != null;
             _debugTimeSinceLastAutoSave   = now - _lastAutoSaveTime;
             _debugRegisteredPredatorCount = _registeredPredators.Count;
+            _debugEclipseActive           = _eclipseActive;
         }
 #endif
 
@@ -1076,6 +1089,31 @@ namespace Hecton8.Systems.AI
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[DirectorAI] Narrative Relief Active: +25 tension drop. (ID: {id})");
+#endif
+        }
+
+        /// <summary>
+        /// Лор: Великое Затмение — ночные хищники поднимаются.
+        /// Director получает +20 tension bonus на время затмения.
+        /// Это форсирует переход в Peak фазу — хищное давление усиливается.
+        /// </summary>
+        private void HandleEclipseStart()
+        {
+            _eclipseActive = true;
+            _eclipseTensionBonus = 20f;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[DirectorAI] Eclipse started — tension +20 (night predators rising).");
+#endif
+        }
+
+        private void HandleEclipseEnd()
+        {
+            _eclipseActive = false;
+            _eclipseTensionBonus = 0f;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[DirectorAI] Eclipse ended — tension bonus cleared.");
 #endif
         }
 

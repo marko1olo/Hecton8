@@ -161,6 +161,7 @@ namespace Hecton8.Audio
         private Rigidbody _playerRb;
         private float _lastStepTime;
         private RaycastHit _surfaceHit;
+        private readonly RaycastHit[] _surfaceHits = new RaycastHit[1]; // COLD ALLOC: footsteps read only the nearest surface under the player.
         private bool _surfaceHitValid;
         private int _lastClipIndex = -1;
 
@@ -311,10 +312,7 @@ namespace Hecton8.Audio
             Vector3 origin = transform.position + Vector3.up * 0.1f;
 
             // ── Raycast down ──
-            if (!UnityEngine.Physics.Raycast(
-                    origin, Vector3.down, out _surfaceHit,
-                    surfaceRayDistance, surfaceLayers,
-                    QueryTriggerInteraction.Ignore))
+            if (!TryGetSurfaceHit(origin, out _surfaceHit))
             {
                 UpdateSurfaceDiagnostics("raycast miss", -1, false);
                 return;
@@ -422,6 +420,26 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
+
+        private bool TryGetSurfaceHit(Vector3 origin, out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                _surfaceHits,
+                surfaceRayDistance,
+                surfaceLayers,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+            {
+                hit = _surfaceHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
+        }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateSurfaceDiagnostics(

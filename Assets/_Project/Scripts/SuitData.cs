@@ -92,7 +92,7 @@ namespace Hecton8.Gameplay
         //  SURFACE SWIMMING
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Surface Swimming (Subnautica-style) ───────")]
+        [Header("── Surface Swimming ─────────────────")]
         [Tooltip("Spring strength keeping player at water surface. " +
                  "0 = no lock (free bobbing). 8-15 = gentle. 20+ = strong.")]
         [Range(0f, 50f)]
@@ -149,7 +149,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Camera Roll (Swimming) ────────────────────")]
-        [Tooltip("Max roll from strafe (degrees). Subnautica-like: 2-4.")]
+        [Tooltip("Max roll from strafe (degrees). Recommended subtle range: 2-4.")]
         [Range(0f, 10f)]
         public float strafeRollAngle = 3f;
 

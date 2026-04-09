@@ -14,6 +14,9 @@ namespace Hecton8.EditorTools
     {
         private const string GeneratedPrefix = "GEN_";
         private const string MaterialFolder = "Assets/_Project/Art/Materials/WorldProceduralProxy";
+        private const float Lod0Threshold = 0.6f;
+        private const float Lod1Threshold = 0.15f;
+        private const float Lod2Threshold = 0.04f;
 
         [MenuItem("Hecton/Authoring/Generate Procedural Flora Baked Starters", priority = 178)]
         public static void Generate()
@@ -36,11 +39,7 @@ namespace Hecton8.EditorTools
                 expectedAssetPaths.Add(spec.PrefabPath);
                 expectedAssetPaths.Add(spec.Lod0MeshPath);
                 expectedAssetPaths.Add(spec.Lod1MeshPath);
-                if (spec.HasExtendedLods)
-                {
-                    expectedAssetPaths.Add(spec.Lod2MeshPath);
-                    expectedAssetPaths.Add(spec.Lod3MeshPath);
-                }
+                expectedAssetPaths.Add(spec.Lod2MeshPath);
 
                 if (!TryGenerateStarter(spec, ref generatedPrefabs, ref updatedMeshes))
                     failures++;
@@ -69,7 +68,6 @@ namespace Hecton8.EditorTools
             Mesh generatedLod0Mesh = null;
             Mesh generatedLod1Mesh = null;
             Mesh generatedLod2Mesh = null;
-            Mesh generatedLod3Mesh = null;
 
             try
             {
@@ -77,8 +75,7 @@ namespace Hecton8.EditorTools
                 {
                     if (!WorldProceduralSeaweedMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 0, out generatedLod0Mesh)
                         || !WorldProceduralSeaweedMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 1, out generatedLod1Mesh)
-                        || !WorldProceduralSeaweedMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 2, out generatedLod2Mesh)
-                        || !WorldProceduralSeaweedMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 3, out generatedLod3Mesh))
+                        || !WorldProceduralSeaweedMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 2, out generatedLod2Mesh))
                     {
                         Debug.LogWarning($"[WorldProceduralFloraBakedStarterGenerator] Could not generate kelp mesh starter for '{spec.RootToken}'.");
                         return false;
@@ -87,7 +84,8 @@ namespace Hecton8.EditorTools
                 else if (WorldProceduralCoralMeshBuilder.CanBuild(spec.RootToken))
                 {
                     if (!WorldProceduralCoralMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 0, out generatedLod0Mesh)
-                        || !WorldProceduralCoralMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 1, out generatedLod1Mesh))
+                        || !WorldProceduralCoralMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 1, out generatedLod1Mesh)
+                        || !WorldProceduralCoralMeshBuilder.TryBuild(spec.RootToken, spec.ShapeScale, lodLevel: 2, out generatedLod2Mesh))
                     {
                         Debug.LogWarning($"[WorldProceduralFloraBakedStarterGenerator] Could not generate coral mesh starter for '{spec.RootToken}'.");
                         return false;
@@ -105,71 +103,41 @@ namespace Hecton8.EditorTools
                     generatedLod1Mesh = BuildCombinedMesh(sourceRoot, spec.Lod1MeshAssetName, includeReduced:true);
                 }
 
-                if (generatedLod0Mesh == null || generatedLod1Mesh == null)
+                if (generatedLod0Mesh == null || generatedLod1Mesh == null || generatedLod2Mesh == null)
                 {
-                    Debug.LogWarning($"[WorldProceduralFloraBakedStarterGenerator] Could not combine mesh for '{spec.RootToken}'.");
+                    Debug.LogWarning($"[WorldProceduralFloraBakedStarterGenerator] Starter '{spec.RootToken}' is missing the required 3-visible-LOD mesh set.");
                     return false;
                 }
 
                 SanitizeGeneratedMesh(generatedLod0Mesh);
                 SanitizeGeneratedMesh(generatedLod1Mesh);
                 SanitizeGeneratedMesh(generatedLod2Mesh);
-                SanitizeGeneratedMesh(generatedLod3Mesh);
 
                 generatedLod0Mesh.name = spec.Lod0MeshAssetName;
                 generatedLod1Mesh.name = spec.Lod1MeshAssetName;
-                if (generatedLod2Mesh != null)
-                    generatedLod2Mesh.name = spec.Lod2MeshAssetName;
-
-                if (generatedLod3Mesh != null)
-                    generatedLod3Mesh.name = spec.Lod3MeshAssetName;
+                generatedLod2Mesh.name = spec.Lod2MeshAssetName;
 
                 Mesh bakedLod0Mesh = CreateOrUpdateMeshAsset(spec.Lod0MeshPath, generatedLod0Mesh);
                 Mesh bakedLod1Mesh = CreateOrUpdateMeshAsset(spec.Lod1MeshPath, generatedLod1Mesh);
-                updatedMeshes += 2;
-                Mesh bakedLod2Mesh = null;
-                Mesh bakedLod3Mesh = null;
-                if (generatedLod2Mesh != null && !string.IsNullOrWhiteSpace(spec.Lod2MeshPath))
-                {
-                    bakedLod2Mesh = CreateOrUpdateMeshAsset(spec.Lod2MeshPath, generatedLod2Mesh);
-                    updatedMeshes++;
-                }
-
-                if (generatedLod3Mesh != null && !string.IsNullOrWhiteSpace(spec.Lod3MeshPath))
-                {
-                    bakedLod3Mesh = CreateOrUpdateMeshAsset(spec.Lod3MeshPath, generatedLod3Mesh);
-                    updatedMeshes++;
-                }
+                Mesh bakedLod2Mesh = CreateOrUpdateMeshAsset(spec.Lod2MeshPath, generatedLod2Mesh);
+                updatedMeshes += 3;
 
                 bakedRoot = new GameObject(spec.PrefabName);
                 LODGroup lodGroup = bakedRoot.AddComponent<LODGroup>();
-                lodGroup.animateCrossFading = false;
-                lodGroup.fadeMode = LODFadeMode.None;
+                lodGroup.animateCrossFading = true;
+                lodGroup.fadeMode = LODFadeMode.CrossFade;
 
                 Renderer lod0Renderer = CreateLodRenderer(bakedRoot.transform, "__LOD0", bakedLod0Mesh, material);
                 Renderer lod1Renderer = CreateLodRenderer(bakedRoot.transform, "__LOD1", bakedLod1Mesh, material);
-                if (bakedLod2Mesh != null && bakedLod3Mesh != null)
+                Renderer lod2Renderer = CreateLodRenderer(bakedRoot.transform, "__LOD2", bakedLod2Mesh, material);
+                lodGroup.SetLODs(new[]
                 {
-                    Renderer lod2Renderer = CreateLodRenderer(bakedRoot.transform, "__LOD2", bakedLod2Mesh, material);
-                    Renderer lod3Renderer = CreateLodRenderer(bakedRoot.transform, "__LOD3", bakedLod3Mesh, material);
-                    lodGroup.SetLODs(new[]
-                    {
-                        new LOD(0.62f, new[] { lod0Renderer }),
-                        new LOD(0.32f, new[] { lod1Renderer }),
-                        new LOD(0.14f, new[] { lod2Renderer }),
-                        new LOD(0.05f, new[] { lod3Renderer })
-                    });
-                }
-                else
-                {
-                    lodGroup.SetLODs(new[]
-                    {
-                        new LOD(0.52f, new[] { lod0Renderer }),
-                        new LOD(0.22f, new[] { lod1Renderer })
-                    });
-                }
+                    new LOD(Lod0Threshold, new[] { lod0Renderer }),
+                    new LOD(Lod1Threshold, new[] { lod1Renderer }),
+                    new LOD(Lod2Threshold, new[] { lod2Renderer })
+                });
 
-                ApplyManualLodGroupBounds(lodGroup, bakedLod0Mesh, bakedLod1Mesh, bakedLod2Mesh, bakedLod3Mesh);
+                ApplyManualLodGroupBounds(lodGroup, bakedLod0Mesh, bakedLod1Mesh, bakedLod2Mesh);
 
                 PrefabUtility.SaveAsPrefabAsset(bakedRoot, spec.PrefabPath);
                 generatedPrefabs++;
@@ -185,9 +153,6 @@ namespace Hecton8.EditorTools
 
                 if (generatedLod2Mesh != null)
                     UnityEngine.Object.DestroyImmediate(generatedLod2Mesh);
-
-                if (generatedLod3Mesh != null)
-                    UnityEngine.Object.DestroyImmediate(generatedLod3Mesh);
 
                 if (bakedRoot != null)
                     UnityEngine.Object.DestroyImmediate(bakedRoot);
@@ -280,12 +245,12 @@ namespace Hecton8.EditorTools
             mesh.bounds = bounds;
         }
 
-        private static void ApplyManualLodGroupBounds(LODGroup lodGroup, Mesh lod0Mesh, Mesh lod1Mesh, Mesh lod2Mesh, Mesh lod3Mesh)
+        private static void ApplyManualLodGroupBounds(LODGroup lodGroup, Mesh lod0Mesh, Mesh lod1Mesh, Mesh lod2Mesh)
         {
             if (lodGroup == null)
                 return;
 
-            Mesh[] meshes = { lod0Mesh, lod1Mesh, lod2Mesh, lod3Mesh };
+            Mesh[] meshes = { lod0Mesh, lod1Mesh, lod2Mesh };
             bool hasBounds = false;
             Bounds combinedBounds = default;
 
@@ -530,9 +495,7 @@ namespace Hecton8.EditorTools
             string familyFolderPath = $"{WorldProceduralFloraFinalVariantAuthoring.FloraFinalRootFolder}/{safeFamilyToken}";
             string lod0MeshAssetName = prefabName + "_LOD0_Mesh";
             string lod1MeshAssetName = prefabName + "_LOD1_Mesh";
-            bool hasExtendedLods = WorldProceduralSeaweedMeshBuilder.CanBuild(rootToken);
             string lod2MeshAssetName = prefabName + "_LOD2_Mesh";
-            string lod3MeshAssetName = prefabName + "_LOD3_Mesh";
 
             return new StarterSpec(
                 rootToken,
@@ -544,11 +507,8 @@ namespace Hecton8.EditorTools
                 $"{familyFolderPath}/{lod0MeshAssetName}.asset",
                 lod1MeshAssetName,
                 $"{familyFolderPath}/{lod1MeshAssetName}.asset",
-                hasExtendedLods,
-                hasExtendedLods ? lod2MeshAssetName : string.Empty,
-                hasExtendedLods ? $"{familyFolderPath}/{lod2MeshAssetName}.asset" : string.Empty,
-                hasExtendedLods ? lod3MeshAssetName : string.Empty,
-                hasExtendedLods ? $"{familyFolderPath}/{lod3MeshAssetName}.asset" : string.Empty);
+                lod2MeshAssetName,
+                $"{familyFolderPath}/{lod2MeshAssetName}.asset");
         }
 
         private static void EnsureFolder(string assetPath)
@@ -580,11 +540,8 @@ namespace Hecton8.EditorTools
                 string lod0MeshPath,
                 string lod1MeshAssetName,
                 string lod1MeshPath,
-                bool hasExtendedLods,
                 string lod2MeshAssetName,
-                string lod2MeshPath,
-                string lod3MeshAssetName,
-                string lod3MeshPath)
+                string lod2MeshPath)
             {
                 RootToken = rootToken;
                 ShapeScale = shapeScale;
@@ -596,11 +553,8 @@ namespace Hecton8.EditorTools
                 Lod0MeshPath = lod0MeshPath;
                 Lod1MeshAssetName = lod1MeshAssetName;
                 Lod1MeshPath = lod1MeshPath;
-                HasExtendedLods = hasExtendedLods;
                 Lod2MeshAssetName = lod2MeshAssetName;
                 Lod2MeshPath = lod2MeshPath;
-                Lod3MeshAssetName = lod3MeshAssetName;
-                Lod3MeshPath = lod3MeshPath;
             }
 
             public string RootToken { get; }
@@ -613,11 +567,8 @@ namespace Hecton8.EditorTools
             public string Lod0MeshPath { get; }
             public string Lod1MeshAssetName { get; }
             public string Lod1MeshPath { get; }
-            public bool HasExtendedLods { get; }
             public string Lod2MeshAssetName { get; }
             public string Lod2MeshPath { get; }
-            public string Lod3MeshAssetName { get; }
-            public string Lod3MeshPath { get; }
         }
 
         private readonly struct SourceMeshPart

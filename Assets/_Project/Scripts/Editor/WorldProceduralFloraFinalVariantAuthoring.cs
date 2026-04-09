@@ -153,7 +153,7 @@ namespace Hecton8.EditorTools
             for (int i = 0; i < familyGuids.Length; i++)
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(familyGuids[i]);
-                WorldPrefabFamilyProfile family = AssetDatabase.LoadAssetAtPath<WorldPrefabFamilyProfile>(assetPath);
+                WorldPrefabFamilyProfile family = AssetDatabase.LoadMainAssetAtPath(assetPath) as WorldPrefabFamilyProfile;
                 if (family == null || string.IsNullOrWhiteSpace(family.familyId) || !FloraFamilies.Contains(family.familyId))
                     continue;
 

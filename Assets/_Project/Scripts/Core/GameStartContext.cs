@@ -59,6 +59,8 @@ namespace Hecton8.Core
     [Serializable]
     public struct GameStartContext
     {
+        [SerializeField] private bool _isInitialized;
+
         /// <summary>Режим инициализации (новая игра / загрузка / возобновление)</summary>
         public GameStartMode StartMode;
 
@@ -77,7 +79,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Возвращает значимый контекст (true если это реальная сессия, а не пустой struct).
         /// </summary>
-        public readonly bool IsValid => !string.IsNullOrEmpty(TargetSaveSlot) || StartMode == GameStartMode.NewGame;
+        public readonly bool IsValid => _isInitialized && (!string.IsNullOrEmpty(TargetSaveSlot) || StartMode == GameStartMode.NewGame);
 
         /// <summary>
         /// Создает новую игровую сессию (NewGame).
@@ -86,6 +88,7 @@ namespace Hecton8.Core
         {
             return new GameStartContext
             {
+                _isInitialized = true,
                 StartMode = GameStartMode.NewGame,
                 TargetSaveSlot = string.Empty,
                 SpawnMode = GameSpawnMode.SavedLocation,
@@ -103,6 +106,7 @@ namespace Hecton8.Core
         {
             return new GameStartContext
             {
+                _isInitialized = true,
                 StartMode = GameStartMode.LoadGame,
                 TargetSaveSlot = saveSlot ?? string.Empty,
                 SpawnMode = spawnMode,
@@ -118,11 +122,30 @@ namespace Hecton8.Core
         {
             return new GameStartContext
             {
+                _isInitialized = true,
                 StartMode = GameStartMode.Resume,
                 TargetSaveSlot = saveSlot ?? string.Empty,
                 SpawnMode = GameSpawnMode.SavedLocation,
                 IntroSceneName = string.Empty,
                 LandingPresetName = string.Empty,
+            };
+        }
+
+        internal static GameStartContext CreateRestored(
+            GameStartMode startMode,
+            string targetSaveSlot,
+            GameSpawnMode spawnMode,
+            string introSceneName,
+            string landingPresetName)
+        {
+            return new GameStartContext
+            {
+                _isInitialized = true,
+                StartMode = startMode,
+                TargetSaveSlot = targetSaveSlot ?? string.Empty,
+                SpawnMode = spawnMode,
+                IntroSceneName = introSceneName ?? string.Empty,
+                LandingPresetName = landingPresetName ?? string.Empty,
             };
         }
 
@@ -133,6 +156,7 @@ namespace Hecton8.Core
         {
             return new GameStartContext
             {
+                _isInitialized = this._isInitialized,
                 StartMode = this.StartMode,
                 TargetSaveSlot = this.TargetSaveSlot,
                 SpawnMode = newSpawnMode,
@@ -255,14 +279,12 @@ namespace Hecton8.Core
                 return false;
             }
 
-            context = new GameStartContext
-            {
-                StartMode = (GameStartMode)startModeValue,
-                TargetSaveSlot = PlayerPrefs.GetString(PersistKeyTargetSaveSlot, string.Empty),
-                SpawnMode = (GameSpawnMode)spawnModeValue,
-                IntroSceneName = PlayerPrefs.GetString(PersistKeyIntroSceneName, string.Empty),
-                LandingPresetName = PlayerPrefs.GetString(PersistKeyLandingPresetName, string.Empty),
-            };
+            context = GameStartContext.CreateRestored(
+                (GameStartMode)startModeValue,
+                PlayerPrefs.GetString(PersistKeyTargetSaveSlot, string.Empty),
+                (GameSpawnMode)spawnModeValue,
+                PlayerPrefs.GetString(PersistKeyIntroSceneName, string.Empty),
+                PlayerPrefs.GetString(PersistKeyLandingPresetName, string.Empty));
 
             if (!context.IsValid)
             {

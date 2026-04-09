@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
             if (!TryResolveSpec(rootToken, out CoralSpec spec))
                 return false;
 
-            int lod = Mathf.Clamp(lodLevel, 0, 1);
+            int lod = Mathf.Clamp(lodLevel, 0, 2);
             MeshBuffers buffers = new MeshBuffers(spec.EstimatedVertexCount);
 
             switch (spec.Shape)
@@ -49,8 +49,8 @@ namespace Hecton8.EditorTools
 
         private static void BuildLow(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
-            int latSegments = Mathf.Max(6, spec.LatitudeSegments - (lod * 2));
-            int lonSegments = Mathf.Max(8, spec.LongitudeSegments - (lod * 4));
+            int latSegments = Mathf.Max(lod == 0 ? 9 : 7, spec.LatitudeSegments + (lod == 0 ? 2 : 0) - (lod * 2));
+            int lonSegments = Mathf.Max(lod == 0 ? 14 : 10, spec.LongitudeSegments + (lod == 0 ? 4 : 0) - (lod * 4));
 
             AddWarpedBlob(
                 buffers,
@@ -87,6 +87,21 @@ namespace Hecton8.EditorTools
                 spec.WarpFrequencyB + 1.1f,
                 0.7f,
                 spec.Color);
+
+            if (lod <= 1)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(scale.x * 0.06f, scale.y * 0.38f, -scale.z * 0.04f),
+                    new Vector3(scale.x * 0.26f, scale.y * 0.16f, scale.z * 0.24f),
+                    Mathf.Max(6, latSegments - 2),
+                    Mathf.Max(10, lonSegments - 4),
+                    spec.WarpAmplitude * 0.64f,
+                    spec.WarpFrequencyA + 1.3f,
+                    spec.WarpFrequencyB + 0.9f,
+                    0.62f,
+                    spec.Color);
+            }
 
             if (spec.Variant == CoralVariant.Bed)
             {
@@ -137,6 +152,20 @@ namespace Hecton8.EditorTools
                     Mathf.Max(10, lonSegments),
                     spec.WarpAmplitude * 0.4f,
                     spec.Color);
+
+                if (lod <= 1)
+                {
+                    AddWarpedPlate(
+                        buffers,
+                        new Vector3(-scale.x * 0.18f, scale.y * 0.56f, scale.z * 0.14f),
+                        Quaternion.Euler(6f, -18f, -22f),
+                        scale.x * 0.58f,
+                        scale.z * 0.5f,
+                        scale.y * 0.042f,
+                        Mathf.Max(12, lonSegments - 2),
+                        spec.WarpAmplitude * 0.28f,
+                        spec.Color);
+                }
             }
             else if (spec.Variant == CoralVariant.Knoll)
             {
@@ -151,15 +180,30 @@ namespace Hecton8.EditorTools
                     spec.WarpFrequencyB + 0.7f,
                     0.48f,
                     spec.Color);
+
+                if (lod == 0)
+                {
+                    AddWarpedBlob(
+                        buffers,
+                        new Vector3(-scale.x * 0.18f, scale.y * 0.56f, -scale.z * 0.12f),
+                        new Vector3(scale.x * 0.24f, scale.y * 0.14f, scale.z * 0.22f),
+                        Mathf.Max(6, latSegments - 2),
+                        Mathf.Max(10, lonSegments - 4),
+                        spec.WarpAmplitude * 0.58f,
+                        spec.WarpFrequencyA + 1.6f,
+                        spec.WarpFrequencyB + 0.9f,
+                        0.58f,
+                        spec.Color);
+                }
             }
         }
 
         private static void BuildBranching(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
-            int trunkSides = Mathf.Max(5, spec.RadialSegments - (lod * 2));
-            int trunkSegments = Mathf.Max(4, spec.PathSegments - (lod * 2));
-            int branchCount = Mathf.Max(2, spec.BranchCount - lod);
-            Vector3[] branchTips = new Vector3[8];
+            int trunkSides = Mathf.Max(6, spec.RadialSegments + (lod == 0 ? 2 : 0) - (lod * 2));
+            int trunkSegments = Mathf.Max(5, spec.PathSegments + (lod == 0 ? 2 : 0) - lod);
+            int branchCount = Mathf.Max(2, spec.BranchCount + (lod == 0 ? 2 : 0) - lod);
+            Vector3[] branchTips = new Vector3[16];
             int branchTipCount = 0;
 
             AddBezierTube(
@@ -187,6 +231,20 @@ namespace Hecton8.EditorTools
                     spec.WarpFrequencyA,
                     spec.WarpFrequencyB,
                     0.54f,
+                    spec.Color);
+            }
+            else if (lod <= 1)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(0f, scale.y * 0.3f, 0f),
+                    new Vector3(scale.x * 0.22f, scale.y * 0.16f, scale.z * 0.2f),
+                    lod == 0 ? 6 : 5,
+                    lod == 0 ? 10 : 8,
+                    spec.WarpAmplitude * 0.28f,
+                    spec.WarpFrequencyA + 0.9f,
+                    spec.WarpFrequencyB + 0.7f,
+                    0.74f,
                     spec.Color);
             }
 
@@ -225,13 +283,13 @@ namespace Hecton8.EditorTools
                 if (branchTipCount < branchTips.Length)
                     branchTips[branchTipCount++] = end;
 
-                if (lod == 0 && spec.Variant != CoralVariant.Mass)
+                if (lod <= 1 && spec.Variant != CoralVariant.Mass)
                 {
                     Vector3 subYawAxis = Quaternion.Euler(0f, yaw + Mathf.Lerp(-24f, 24f, t), 0f) * Vector3.right;
                     Vector3 subStart = Vector3.Lerp(start, end, 0.58f);
-                    Vector3 subEnd = subStart + (branchRotation * Quaternion.Euler(-12f, 0f, Mathf.Lerp(-26f, 26f, t)) * Vector3.up) * (scale.y * 0.26f);
-                    float subRadiusStart = scale.x * 0.042f;
-                    float subRadiusEnd = scale.x * 0.014f;
+                    Vector3 subEnd = subStart + (branchRotation * Quaternion.Euler(-12f, 0f, Mathf.Lerp(-26f, 26f, t)) * Vector3.up) * (scale.y * (lod == 0 ? 0.3f : 0.22f));
+                    float subRadiusStart = scale.x * (lod == 0 ? 0.048f : 0.038f);
+                    float subRadiusEnd = scale.x * (lod == 0 ? 0.017f : 0.013f);
                     AddBezierTube(
                         buffers,
                         subStart,
@@ -240,11 +298,30 @@ namespace Hecton8.EditorTools
                         subEnd,
                         subRadiusStart,
                         subRadiusEnd,
-                        3,
-                        4,
+                        lod == 0 ? 4 : 3,
+                        lod == 0 ? 5 : 4,
                         spec.Color,
                         spec.WarpAmplitude * 0.18f);
                     AddBranchTipCluster(buffers, subEnd, subRadiusEnd, spec.WarpAmplitude * 0.8f, spec.Color, lod);
+
+                    if (lod == 0 && (i % 2 == 0 || spec.Variant == CoralVariant.Fan))
+                    {
+                        Vector3 twigStart = Vector3.Lerp(subStart, subEnd, 0.62f);
+                        Vector3 twigEnd = twigStart + (branchRotation * Quaternion.Euler(-18f, 0f, 26f) * Vector3.up) * (scale.y * 0.16f);
+                        AddBezierTube(
+                            buffers,
+                            twigStart,
+                            Vector3.Lerp(twigStart, twigEnd, 0.35f) + subYawAxis * (scale.x * 0.04f),
+                            Vector3.Lerp(twigStart, twigEnd, 0.7f) + subYawAxis * (scale.x * 0.06f),
+                            twigEnd,
+                            scale.x * 0.022f,
+                            scale.x * 0.009f,
+                            3,
+                            4,
+                            spec.Color,
+                            spec.WarpAmplitude * 0.12f);
+                        AddBranchTipCluster(buffers, twigEnd, scale.x * 0.009f, spec.WarpAmplitude * 0.56f, spec.Color, lod);
+                    }
                 }
             }
 
@@ -254,8 +331,8 @@ namespace Hecton8.EditorTools
 
         private static void BuildMassive(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
-            int latSegments = Mathf.Max(7, spec.LatitudeSegments - (lod * 2));
-            int lonSegments = Mathf.Max(10, spec.LongitudeSegments - (lod * 4));
+            int latSegments = Mathf.Max(lod == 0 ? 9 : 7, spec.LatitudeSegments + (lod == 0 ? 2 : 0) - (lod * 2));
+            int lonSegments = Mathf.Max(lod == 0 ? 14 : 10, spec.LongitudeSegments + (lod == 0 ? 4 : 0) - (lod * 4));
 
             AddWarpedBlob(
                 buffers,
@@ -295,6 +372,21 @@ namespace Hecton8.EditorTools
 
             AddMassiveRidges(buffers, spec, scale, lod);
 
+            if (lod <= 1)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.06f, scale.y * 0.84f, scale.z * 0.04f),
+                    new Vector3(scale.x * 0.34f, scale.y * 0.18f, scale.z * 0.32f),
+                    Mathf.Max(6, latSegments - 2),
+                    Mathf.Max(10, lonSegments - 4),
+                    spec.WarpAmplitude * 0.46f,
+                    spec.WarpFrequencyA + 1.4f,
+                    spec.WarpFrequencyB + 0.8f,
+                    0.52f,
+                    spec.Color);
+            }
+
             if (spec.Variant == CoralVariant.Boulder)
             {
                 AddWarpedBlob(
@@ -322,15 +414,30 @@ namespace Hecton8.EditorTools
                     spec.WarpFrequencyB + 1.6f,
                     0.64f,
                     spec.Color);
+
+                if (lod <= 1)
+                {
+                    AddWarpedBlob(
+                        buffers,
+                        new Vector3(-scale.x * 0.18f, scale.y * 0.62f, -scale.z * 0.16f),
+                        new Vector3(scale.x * 0.22f, scale.y * 0.1f, scale.z * 0.2f),
+                        5,
+                        8,
+                        spec.WarpAmplitude * 1.18f,
+                        spec.WarpFrequencyA + 2.4f,
+                        spec.WarpFrequencyB + 1.2f,
+                        0.7f,
+                        spec.Color);
+                }
             }
         }
 
         private static void AddMassiveRidges(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
-            int ridgeCount = lod == 0 ? 6 : 4;
-            int pathSegments = lod == 0 ? 6 : 4;
-            int radialSegments = lod == 0 ? 5 : 4;
-            float ridgeRadius = scale.x * (lod == 0 ? 0.052f : 0.04f);
+            int ridgeCount = lod == 0 ? 8 : (lod == 1 ? 6 : 4);
+            int pathSegments = lod == 0 ? 8 : (lod == 1 ? 6 : 4);
+            int radialSegments = lod == 0 ? 6 : (lod == 1 ? 5 : 4);
+            float ridgeRadius = scale.x * (lod == 0 ? 0.058f : (lod == 1 ? 0.047f : 0.04f));
 
             for (int ridgeIndex = 0; ridgeIndex < ridgeCount; ridgeIndex++)
             {
@@ -358,11 +465,31 @@ namespace Hecton8.EditorTools
                     spec.Color,
                     spec.WarpAmplitude * 0.16f);
             }
+
+            if (lod == 0)
+            {
+                for (int diagonalIndex = 0; diagonalIndex < 2; diagonalIndex++)
+                {
+                    float direction = diagonalIndex == 0 ? -1f : 1f;
+                    AddBezierTube(
+                        buffers,
+                        new Vector3(-scale.x * 0.44f, scale.y * 0.34f, direction * scale.z * 0.2f),
+                        new Vector3(-scale.x * 0.18f, scale.y * 0.74f, direction * scale.z * 0.08f),
+                        new Vector3(scale.x * 0.14f, scale.y * 0.8f, -direction * scale.z * 0.04f),
+                        new Vector3(scale.x * 0.42f, scale.y * 0.46f, -direction * scale.z * 0.18f),
+                        scale.x * 0.034f,
+                        scale.x * 0.022f,
+                        5,
+                        4,
+                        spec.Color,
+                        spec.WarpAmplitude * 0.12f);
+                }
+            }
         }
 
         private static void BuildPlate(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
-            int radialSegments = Mathf.Max(12, spec.LongitudeSegments - (lod * 4));
+            int radialSegments = Mathf.Max(lod == 0 ? 16 : 12, spec.LongitudeSegments + (lod == 0 ? 4 : 0) - (lod * 4));
             if (spec.Variant == CoralVariant.Shelf && lod == 0)
                 radialSegments += 4;
 
@@ -402,6 +529,20 @@ namespace Hecton8.EditorTools
                 radialSegments - 2,
                 spec.WarpAmplitude * (spec.Variant == CoralVariant.Shelf ? 0.42f : 0.34f),
                 spec.Color);
+
+            if (lod <= 1)
+            {
+                AddWarpedPlate(
+                    buffers,
+                    new Vector3(scale.x * 0.08f, scale.y * 0.78f, -scale.z * 0.12f),
+                    Quaternion.Euler(-6f, -12f, 18f),
+                    scale.x * 0.7f,
+                    scale.z * 0.58f,
+                    scale.y * 0.038f,
+                    Mathf.Max(12, radialSegments - 3),
+                    spec.WarpAmplitude * 0.26f,
+                    spec.Color);
+            }
 
             if (spec.Variant == CoralVariant.Shelf || spec.Variant == CoralVariant.Stack)
             {
@@ -515,6 +656,20 @@ namespace Hecton8.EditorTools
                     radialSegments - 6,
                     spec.WarpAmplitude * 0.22f,
                     spec.Color);
+
+                if (lod == 0)
+                {
+                    AddWarpedPlate(
+                        buffers,
+                        new Vector3(scale.x * 0.14f, scale.y * 1.52f, -scale.z * 0.1f),
+                        Quaternion.Euler(-4f, -16f, 18f),
+                        scale.x * 0.42f,
+                        scale.z * 0.36f,
+                        scale.y * 0.028f,
+                        radialSegments - 8,
+                        spec.WarpAmplitude * 0.18f,
+                        spec.Color);
+                }
             }
         }
 
@@ -646,9 +801,9 @@ namespace Hecton8.EditorTools
             if (tipRadius <= 0f)
                 return;
 
-            int latSegments = lod == 0 ? 4 : 3;
-            int lonSegments = lod == 0 ? 6 : 4;
-            float clusterRadius = tipRadius * (lod == 0 ? 2.2f : 1.7f);
+            int latSegments = lod == 0 ? 5 : (lod == 1 ? 4 : 3);
+            int lonSegments = lod == 0 ? 8 : (lod == 1 ? 6 : 4);
+            float clusterRadius = tipRadius * (lod == 0 ? 2.5f : (lod == 1 ? 2f : 1.7f));
             AddWarpedBlob(
                 buffers,
                 center,
@@ -664,8 +819,8 @@ namespace Hecton8.EditorTools
 
         private static void AddBranchKnuckle(MeshBuffers buffers, Vector3 center, float radius, float warpAmplitude, Color32 color, int lod)
         {
-            int latSegments = lod == 0 ? 4 : 3;
-            int lonSegments = lod == 0 ? 6 : 4;
+            int latSegments = lod == 0 ? 5 : (lod == 1 ? 4 : 3);
+            int lonSegments = lod == 0 ? 8 : (lod == 1 ? 6 : 4);
             AddWarpedBlob(
                 buffers,
                 center,
@@ -681,9 +836,9 @@ namespace Hecton8.EditorTools
 
         private static void AddFanCrossLinks(MeshBuffers buffers, Vector3[] branchTips, int branchTipCount, Vector3 scale, CoralSpec spec, int lod)
         {
-            int linkSegments = lod == 0 ? 3 : 2;
-            int radialSegments = lod == 0 ? 4 : 3;
-            float linkRadius = scale.x * (lod == 0 ? 0.018f : 0.013f);
+            int linkSegments = lod == 0 ? 4 : 2;
+            int radialSegments = lod == 0 ? 5 : 3;
+            float linkRadius = scale.x * (lod == 0 ? 0.022f : 0.013f);
 
             for (int i = 0; i < branchTipCount - 1; i++)
             {
@@ -703,6 +858,28 @@ namespace Hecton8.EditorTools
                     radialSegments,
                     spec.Color,
                     spec.WarpAmplitude * 0.12f);
+            }
+
+            if (lod == 0)
+            {
+                for (int i = 0; i < branchTipCount - 2; i++)
+                {
+                    Vector3 start = branchTips[i];
+                    Vector3 end = branchTips[i + 2];
+                    Vector3 mid = (start + end) * 0.5f + Vector3.down * (scale.y * 0.1f);
+                    AddBezierTube(
+                        buffers,
+                        start,
+                        Vector3.Lerp(start, mid, 0.45f),
+                        Vector3.Lerp(mid, end, 0.55f),
+                        end,
+                        scale.x * 0.014f,
+                        scale.x * 0.01f,
+                        3,
+                        4,
+                        spec.Color,
+                        spec.WarpAmplitude * 0.08f);
+                }
             }
         }
 
@@ -747,25 +924,25 @@ namespace Hecton8.EditorTools
         {
             switch (NormalizeRootToken(rootToken))
             {
-                case "family_coral_low__bed": spec = new CoralSpec(CoralShape.Low, CoralVariant.Bed, 11, 18, 5, 0, 0.09f, 3.2f, 4.9f, new Color32(172, 168, 186, 255), 1800); return true;
-                case "family_coral_low__plate": spec = new CoralSpec(CoralShape.Low, CoralVariant.Plate, 10, 18, 5, 0, 0.09f, 3.4f, 5.2f, new Color32(178, 154, 174, 255), 1400); return true;
-                case "family_coral_low__knoll": spec = new CoralSpec(CoralShape.Low, CoralVariant.Knoll, 12, 18, 5, 0, 0.1f, 3.6f, 5.4f, new Color32(186, 162, 178, 255), 1600); return true;
-                case "family_coral_branching__branch": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 7, 5, 0.06f, 2.4f, 4.1f, new Color32(166, 144, 172, 255), 2400); return true;
-                case "family_coral_branching__mass": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Mass, 8, 0, 7, 5, 0.05f, 2.1f, 3.8f, new Color32(176, 152, 168, 255), 2300); return true;
-                case "family_coral_branching__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 7, 6, 0.055f, 2.6f, 4.4f, new Color32(164, 150, 176, 255), 2800); return true;
-                case "family_coral_massive__head": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Head, 12, 18, 0, 0, 0.085f, 2.8f, 4.2f, new Color32(180, 158, 154, 255), 1600); return true;
-                case "family_coral_massive__porous": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Porous, 12, 20, 0, 0, 0.11f, 3.8f, 5.6f, new Color32(170, 150, 160, 255), 1900); return true;
-                case "family_coral_massive__boulder": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Boulder, 12, 20, 0, 0, 0.092f, 3.2f, 4.8f, new Color32(176, 164, 150, 255), 1800); return true;
-                case "family_coral_plate__ledge": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 20, 5, 0, 0.06f, 2.4f, 4.9f, new Color32(186, 168, 152, 255), 1500); return true;
-                case "family_coral_plate__shelf": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 18, 5, 0, 0.06f, 2.5f, 5.1f, new Color32(180, 162, 150, 255), 1300); return true;
-                case "family_coral_plate__stack": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 20, 5, 0, 0.065f, 2.7f, 5.4f, new Color32(182, 166, 154, 255), 1500); return true;
-                case "family_coral_brittle__sprig": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 7, 4, 0.045f, 3.4f, 5.2f, new Color32(108, 150, 158, 255), 2100); return true;
-                case "family_coral_brittle__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 7, 5, 0.05f, 3.8f, 5.8f, new Color32(118, 166, 170, 255), 2500); return true;
-                case "family_coral_brittle__spire": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 8, 6, 0.042f, 3.1f, 4.8f, new Color32(124, 176, 182, 255), 2400); return true;
-                case "family_coral_brittle__lace": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 7, 6, 0.048f, 4.2f, 6.2f, new Color32(134, 188, 192, 255), 2600); return true;
-                case "family_coral_brittle__crown": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 8, 7, 0.044f, 3.6f, 5.4f, new Color32(128, 182, 188, 255), 2700); return true;
-                case "family_coral_brittle__thicket": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 9, 7, 0.043f, 3.9f, 5.6f, new Color32(136, 196, 198, 255), 2800); return true;
-                case "family_coral_brittle__halo": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 8, 6, 0.05f, 4.4f, 6.6f, new Color32(144, 202, 206, 255), 2900); return true;
+                case "family_coral_low__bed": spec = new CoralSpec(CoralShape.Low, CoralVariant.Bed, 14, 24, 5, 0, 0.09f, 3.2f, 4.9f, new Color32(172, 168, 186, 255), 3600); return true;
+                case "family_coral_low__plate": spec = new CoralSpec(CoralShape.Low, CoralVariant.Plate, 13, 24, 5, 0, 0.09f, 3.4f, 5.2f, new Color32(178, 154, 174, 255), 3200); return true;
+                case "family_coral_low__knoll": spec = new CoralSpec(CoralShape.Low, CoralVariant.Knoll, 15, 24, 5, 0, 0.1f, 3.6f, 5.4f, new Color32(186, 162, 178, 255), 3400); return true;
+                case "family_coral_branching__branch": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 9, 7, 0.06f, 2.4f, 4.1f, new Color32(166, 144, 172, 255), 5200); return true;
+                case "family_coral_branching__mass": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Mass, 8, 0, 9, 7, 0.05f, 2.1f, 3.8f, new Color32(176, 152, 168, 255), 5000); return true;
+                case "family_coral_branching__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 9, 8, 0.055f, 2.6f, 4.4f, new Color32(164, 150, 176, 255), 6200); return true;
+                case "family_coral_massive__head": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Head, 15, 24, 0, 0, 0.085f, 2.8f, 4.2f, new Color32(180, 158, 154, 255), 4600); return true;
+                case "family_coral_massive__porous": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Porous, 15, 26, 0, 0, 0.11f, 3.8f, 5.6f, new Color32(170, 150, 160, 255), 5200); return true;
+                case "family_coral_massive__boulder": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Boulder, 15, 26, 0, 0, 0.092f, 3.2f, 4.8f, new Color32(176, 164, 150, 255), 5000); return true;
+                case "family_coral_plate__ledge": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 26, 6, 0, 0.06f, 2.4f, 4.9f, new Color32(186, 168, 152, 255), 3600); return true;
+                case "family_coral_plate__shelf": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 24, 6, 0, 0.06f, 2.5f, 5.1f, new Color32(180, 162, 150, 255), 4200); return true;
+                case "family_coral_plate__stack": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 26, 6, 0, 0.065f, 2.7f, 5.4f, new Color32(182, 166, 154, 255), 3800); return true;
+                case "family_coral_brittle__sprig": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 9, 6, 0.045f, 3.4f, 5.2f, new Color32(108, 150, 158, 255), 4400); return true;
+                case "family_coral_brittle__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 9, 7, 0.05f, 3.8f, 5.8f, new Color32(118, 166, 170, 255), 5200); return true;
+                case "family_coral_brittle__spire": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 10, 8, 0.042f, 3.1f, 4.8f, new Color32(124, 176, 182, 255), 5200); return true;
+                case "family_coral_brittle__lace": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 9, 8, 0.048f, 4.2f, 6.2f, new Color32(134, 188, 192, 255), 5800); return true;
+                case "family_coral_brittle__crown": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 10, 9, 0.044f, 3.6f, 5.4f, new Color32(128, 182, 188, 255), 6000); return true;
+                case "family_coral_brittle__thicket": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 10, 9, 0.043f, 3.9f, 5.6f, new Color32(136, 196, 198, 255), 6200); return true;
+                case "family_coral_brittle__halo": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 10, 8, 0.05f, 4.4f, 6.6f, new Color32(144, 202, 206, 255), 6000); return true;
                 default: spec = default; return false;
             }
         }

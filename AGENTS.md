@@ -60,7 +60,7 @@ Low:    HDR · MSAA×2 · scale 0.85 · addLights 2 · shadowDist 50.
 ### Folder Structure
 Assets/_Project/  ← ALL first-party
 ├── Scripts/  (Gameplay/ Interaction/ Items/ Tools/ UI/ Input/ Visor/ Editor/)
-├── Data/     (ScriptableObjects)
+├── Data/ (ScriptableObjects)
 ├── Prefabs/ Audio/ Art/ Scenes/
 Assets/_ThirdParty/  ← don't touch without reason
 
@@ -81,15 +81,15 @@ NASAPunk.Visor
 GameTickManager · ObjectPoolManager · InputManager · SaveManager · WorldStateManager · SpatialAudioManager · HectonAtmosphereManager · PowerGridManager · ConstructionManager · HectonFluidEngine · MapMagicBridge · LocalizationManager
 
 ### Key Interfaces
-ITickable       { Tick(float dt) }
-IFixedTickable  { FixedTick(float fdt) }
-ISlowTickable   { SlowTick() }  // ~0.5 s
-IPoolable       { OnSpawn(); OnDespawn() }
-IInteractable   { OnHoverStart(); OnHoverEnd(); Interact(Transform); GetInteractText() }
-ICuttable       { ApplyCutDamage(float damage, Vector3 hitPoint) }
-ISaveable       { SavePriority; LoadPriority; PopulateSaveData(); LoadFromSaveData() }
+ITickable     { Tick(float dt) }
+IFixedTickable { FixedTick(float fdt) }
+ISlowTickable { SlowTick() }  // ~0.5 s
+IPoolable   { OnSpawn(); OnDespawn() }
+IInteractable  { OnHoverStart(); OnHoverEnd(); Interact(Transform); GetInteractText() }
+ICuttable    { ApplyCutDamage(float damage, Vector3 hitPoint) }
+ISaveable    { SavePriority; LoadPriority; PopulateSaveData(); LoadFromSaveData() }
 IPowerComponent { PowerRating; PowerPriority; HasPower; OnPowerStatusChanged(bool) }
-IFabricator     { AvailableRecipes; IsCrafting; StartCraft(RecipeData); CancelCraft() }
+IFabricator   { AvailableRecipes; IsCrafting; StartCraft(RecipeData); CancelCraft() }
 
 ### GameTickManager — API Contract
 Overloads: Register/Unregister(ITickable·IFixedTickable·ISlowTickable). Observable: TickableCount · FixedTickableCount · SlowTickableCount.
@@ -116,12 +116,12 @@ Migration: SaveDataMigration exists. Autosave — do not assume without code/log
 [REQ] LoadFromSaveData: check key presence; missing = default, not exception.
 ### Event Buses (static, zero-alloc)
 InteractionEvents  : OnItemCollected, OnInteractionStarted, OnHoverChanged
-CraftingEvents     : OnCraftStarted, OnCraftCompleted, OnCraftCancelled
-SaveEvents         : OnSaveStarted, OnSaveCompleted, OnSaveFailed, OnLoadStarted, OnLoadCompleted, OnLoadFailed
-FlashlightEvents   : OnToggled, OnBatteryDepleted, OnOverheat
-PDAEvents          : OnOpened, OnClosed, OnTabChanged
+CraftingEvents   : OnCraftStarted, OnCraftCompleted, OnCraftCancelled
+SaveEvents      : OnSaveStarted, OnSaveCompleted, OnSaveFailed, OnLoadStarted, OnLoadCompleted, OnLoadFailed
+FlashlightEvents : OnToggled, OnBatteryDepleted, OnOverheat
+PDAEvents       : OnOpened, OnClosed, OnTabChanged
 ModuleStatusEvents : OnModuleEnter, OnModuleExit
-ScanEvents         : OnScanTriggered, OnNodeFound, OnEntryDiscovered
+ScanEvents      : OnScanTriggered, OnNodeFound, OnEntryDiscovered
 [REQ] All static Event Bus calls: main thread only.
 [FORBID] Invoke static events from Job/Task/Thread/async without main-thread routing.
 [REQ] Job result → NativeArray → read next Tick (main thread) → invoke.
@@ -579,11 +579,10 @@ After writing any system:
 
 ## DESIGN DOCS & ASSETS
 
-[REQ] Read /Docs/ /Design/ /Backlog/ and root .md files before starting.
+[REQ] Read /Docs/ and root .md files before starting.
 [REQ] Use existing quality assets — don't rewrite what's available (water, terrain, save systems).
 [REQ] Handle version upgrades for older Unity assets. Clean assets (remove demos, junk scripts, unused textures).
-[REQ] Only free or appropriately licensed assets.
-
+[REQ] 'PROCEDURAL_ASSET_PIPELINE.md' for creating procedural objects.
 ---
 
 ## COMMUNICATION
@@ -595,7 +594,7 @@ Response: What was wrong → What I did → In-game result → What was verified
 
 ## ABSOLUTELY FORBIDDEN
 
-[FORBID] Optimism/pleasantries: "should work now" / "problem solved" / "hope this helps" / "covered without literal impl."
+[FORBID] Optimism/pleasantries: "should work now" / "problem solved" / "covered without literal impl."
 [FORBID] Refactor architecture without instruction. Add packages without permission.
 [FORBID] Change project settings (Quality/URP Asset/Physics/Tags/Layers).
 [FORBID] Change public API without permission — list deps first, confirm.
@@ -611,5 +610,5 @@ Response: What was wrong → What I did → In-game result → What was verified
 ## FINAL DIRECTIVE
 
 Zero GC. Production-ready. Enterprise quality. Now.
-No "fix later". No "temporary". No "good enough for testing". Last commit before gold master. Any change without 0 B or −30% confirmed GC improvement is harmful.
+No "fix later". No "temporary". No "good enough for testing". Any change without improvement is harmful.
 FACTS ONLY. NO OPTIMISM. OBEY DOCUMENTS, LOGS, OBJECTIVE DATA.

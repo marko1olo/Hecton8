@@ -141,6 +141,7 @@ namespace Hecton8.Building
         private GameObject _currentGhostObj;
         private PlacementGhost _currentGhost;
         private RaycastHit _hit;
+        private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
         private float _ghostYawOffset;
 
         private static readonly Vector3 ViewportCenter = new Vector3(0.5f, 0.5f, 0f);
@@ -648,9 +649,7 @@ namespace Hecton8.Building
             Vector3    targetPos;
             Quaternion targetRot;
 
-            bool rayHit = UnityEngine.Physics.Raycast(
-                ray, out _hit, buildDistance, surfaceMask,
-                QueryTriggerInteraction.Ignore);
+            bool rayHit = TryGetBuildHit(ray, surfaceMask, out _hit);
 
             // ── Точка луча (для поиска сокетов и fallback) ──
             Vector3 hitPoint = rayHit
@@ -1276,10 +1275,29 @@ namespace Hecton8.Building
                 return null;
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
-            if (!UnityEngine.Physics.Raycast(ray, out RaycastHit hit, buildDistance, ~0, QueryTriggerInteraction.Ignore))
+            if (!TryGetBuildHit(ray, ~0, out RaycastHit hit))
                 return null;
 
             return hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;
+        }
+
+        private bool TryGetBuildHit(Ray ray, LayerMask mask, out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                ray,
+                _buildHits,
+                buildDistance,
+                mask,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+            {
+                hit = _buildHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
         }
 
         private void ConsumeResources(BuildableData data)

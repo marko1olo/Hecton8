@@ -525,8 +525,8 @@ namespace Hecton8.Input
             if (_instance == this)
                 _isShuttingDown = true;
 
-            SafeDisableActionMap(_playerActionMap);
-            SafeDisableActionMap(_uiActionMap);
+            SafeDisableActionMapForTeardown(_playerActionMap);
+            SafeDisableActionMapForTeardown(_uiActionMap);
 
             _inputMapsInitialized = false;
 
@@ -591,6 +591,29 @@ namespace Hecton8.Input
         private void SafeDisableActionMap(InputActionMap actionMap)
         {
             if (!IsActionMapUsable(actionMap))
+                return;
+
+            try
+            {
+                actionMap.Disable();
+            }
+            catch (InvalidOperationException)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+            catch (Exception)
+            {
+                HandleStaleActionMap(actionMap);
+            }
+        }
+
+        private void SafeDisableActionMapForTeardown(InputActionMap actionMap)
+        {
+            if (actionMap == null)
                 return;
 
             try

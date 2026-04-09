@@ -31,6 +31,7 @@ namespace Hecton8.Building
     [DisallowMultipleComponent]
     public sealed class HectonSocketHelper : MonoBehaviour
     {
+        private readonly RaycastHit[] _snapHits = new RaycastHit[1]; // COLD ALLOC: single editor snap probe.
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -102,14 +103,17 @@ namespace Hecton8.Building
             Vector3 origin = transform.position;
             Vector3 direction = -transform.forward;
 
-            if (UnityEngine.Physics.Raycast(
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
                 origin,
                 direction,
-                out RaycastHit hit,
+                _snapHits,
                 snapRayDistance,
                 snapLayerMask,
-                QueryTriggerInteraction.Ignore))
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
             {
+                RaycastHit hit = _snapHits[0];
                 transform.position = hit.point;
                 transform.rotation = Quaternion.LookRotation(hit.normal);
 

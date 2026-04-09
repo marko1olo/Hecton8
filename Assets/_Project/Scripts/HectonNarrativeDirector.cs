@@ -4,6 +4,8 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.AtlasSignal;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Sirenix.OdinInspector;
@@ -19,7 +21,9 @@ namespace Hecton8.Gameplay
         private static HectonNarrativeDirector _instance;
 
         [Header("Settings")]
+#pragma warning disable CS0414 // slowTickRate reserved for future SlowTick throttling
         [SerializeField, UnityEngine.Range(1, 10)] private int slowTickRate = 2;
+#pragma warning restore CS0414
 
         [Header("State")]
         [SerializeField, ReadOnly] private List<string> discoveredIds = new List<string>();
@@ -27,7 +31,12 @@ namespace Hecton8.Gameplay
 
         private Transform _playerTransform;
         private bool _registered;
+
+        // Флаг: Director запросил редкую находку в текущем тике
+        // Читается в диагностике и будущей системе спавна
+#pragma warning disable CS0414
         private bool _rareDiscoveryRequested;
+#pragma warning restore CS0414
 
         public static HectonNarrativeDirector Instance => _instance;
 
@@ -82,10 +91,6 @@ namespace Hecton8.Gameplay
             }
 
             _instance = this;
-
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-                _playerTransform = player.transform;
         }
 
         private void OnEnable()
@@ -101,6 +106,8 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
             HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequest;
+
+            ResolvePlayerTransform();
         }
 
         private void OnDisable()
@@ -113,14 +120,14 @@ namespace Hecton8.Gameplay
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
+
             NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequest;
-            NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
         }
 
         public void SlowTick()
         {
-            if (_playerTransform == null)
+            if (_playerTransform == null && !ResolvePlayerTransform())
                 return;
 
             float depth = -_playerTransform.position.y;
@@ -175,12 +182,35 @@ namespace Hecton8.Gameplay
         {
             _rareDiscoveryRequested = true;
 
+            // Публикуем сигнал Атлас-6 как "редкую находку" рядом с позицией
+            // AtlasSignalSystem реагирует на близость к ядру — Director усиливает сигнал
+            if (AtlasSignalSystem.Instance != null)
+            {
+                float strength = AtlasSignalSystem.Instance.CurrentStrength;
+                if (strength > 0f)
+                    AtlasSignalEvents.RaisePulse(strength);
+            }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Narrative] Director requested Rare Discovery near {hintPosition}. " +
-                      $"Signal received by Atlas-6 Narrative Bridge.");
+            Debug.Log($"[Narrative] Rare Discovery requested near {hintPosition}. " +
+                      $"Atlas-6 signal pulse triggered (strength: " +
+                      $"{(AtlasSignalSystem.Instance != null ? AtlasSignalSystem.Instance.CurrentStrength : 0f):F2}).");
 #endif
-            // FUTURE IMPLEMENTATION: Select a discovery from a pool or signal the spawning system
-            // to place a procedural narrative objective near 'hintPosition'.
+        }
+
+        private bool ResolvePlayerTransform()
+        {
+            if (_playerTransform != null)
+                return true;
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+                playerTransform == null)
+            {
+                return false;
+            }
+
+            _playerTransform = playerTransform;
+            return true;
         }
     }
 }

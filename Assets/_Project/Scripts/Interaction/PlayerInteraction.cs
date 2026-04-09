@@ -7,7 +7,7 @@
 //   - Raycasts throttled to 0.05s (20 checks/sec) — smooth hover, low CPU.
 //   - LayerMask MUST be set to 'Interactable' layer — no full-scene sweeps.
 //   - Zero GC allocations in Tick loop.
-//   - Uses Physics.Raycast (single, non-alloc) with QueryTriggerInteraction.Ignore.
+//   - Uses Physics.RaycastNonAlloc with QueryTriggerInteraction.Ignore.
 //   - Component caching via TryGetComponent (no GetComponent alloc on hit).
 //   - ReferenceEquals for hover comparison — no boxing, no vtable dispatch.
 //
@@ -118,6 +118,7 @@ namespace Hecton8.Interaction
         private Transform     _cameraTransform;
         private Ray           _ray;
         private RaycastHit    _hitInfo;
+        private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe buffer.
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -292,7 +293,7 @@ namespace Hecton8.Interaction
         /// Phase 2: Input poll (every tick) — action execution.
         ///          Blocked by UI state (HectonFabricatorUI.IsMenuOpen).
         ///
-        /// Zero GC: Physics.Raycast (non-alloc), TryGetComponent,
+        /// Zero GC: Physics.RaycastNonAlloc, TryGetComponent,
         ///          ReferenceEquals, Input.GetKeyDown — all allocation-free.
         /// </summary>
         public void Tick(float deltaTime)
@@ -346,7 +347,15 @@ namespace Hecton8.Interaction
             var cache = GlobalQueryCacheManager.GetContext("PlayerLook");
             if (!cache.TryGet(_ray, effectiveReach, (int)interactableMask, out QueryResult qResult))
             {
-                bool hit = Physics.Raycast(_ray, out _hitInfo, effectiveReach, interactableMask, QueryTriggerInteraction.Ignore);
+                int hitCount = Physics.RaycastNonAlloc(
+                    _ray,
+                    _raycastHits,
+                    effectiveReach,
+                    interactableMask,
+                    QueryTriggerInteraction.Ignore);
+
+                bool hit = hitCount > 0;
+                _hitInfo = hit ? _raycastHits[0] : default;
                 qResult = new QueryResult { hasHit = hit, hit = hit ? _hitInfo : default };
                 cache.Set(_ray, effectiveReach, (int)interactableMask, qResult);
             }

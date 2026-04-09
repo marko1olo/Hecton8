@@ -11,6 +11,10 @@ namespace Hecton8.EditorTools
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
         private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
+        private const float LodThresholdTolerance = 0.0005f;
+        private const float RequiredLod0Threshold = 0.6f;
+        private const float RequiredLod1Threshold = 0.15f;
+        private const float RequiredLod2Threshold = 0.04f;
 
         [MenuItem("Hecton/Validation/Validate Procedural Flora Final Variants", priority = 240)]
         public static void Validate()
@@ -245,6 +249,8 @@ namespace Hecton8.EditorTools
             if (metadata.HasError)
                 warnings.Add($"{prefabPath}: {metadata.Error}");
 
+            bool isGeneratedStarter = WorldProceduralFloraFinalVariantAuthoring.IsGeneratedStarterPrefabName(
+                System.IO.Path.GetFileNameWithoutExtension(prefabPath));
             WorldProceduralFloraFinalBudgetCatalog.Budget budget = WorldProceduralFloraFinalBudgetCatalog.Resolve(familyId);
             Renderer[] renderers = prefabRoot.GetComponentsInChildren<Renderer>(true);
             MeshFilter[] meshFilters = prefabRoot.GetComponentsInChildren<MeshFilter>(true);
@@ -256,6 +262,7 @@ namespace Hecton8.EditorTools
             AudioSource[] audioSources = prefabRoot.GetComponentsInChildren<AudioSource>(true);
             LODGroup[] lodGroups = prefabRoot.GetComponentsInChildren<LODGroup>(true);
             Renderer[] budgetRenderers = ResolveBudgetRenderers(renderers, lodGroups);
+            HashSet<Material> inspectedMaterials = new HashSet<Material>();
 
             if (renderers.Length == 0)
                 issues.Add($"{prefabPath}: has no Renderer components.");
@@ -302,7 +309,10 @@ namespace Hecton8.EditorTools
                         continue;
                     }
 
-                    AppendMaterialValidationFindings(prefabPath, familyId, renderer, material, warnings, issues);
+                    if (!inspectedMaterials.Add(material))
+                        continue;
+
+                    AppendMaterialValidationFindings(prefabPath, familyId, renderer, material, isGeneratedStarter, warnings, issues);
                 }
             }
 
@@ -334,6 +344,8 @@ namespace Hecton8.EditorTools
             int[] lodTriangleCascade = BuildLodTriangleCascade(lodGroups);
             if (lodTriangleCascade.Length > 1 && !IsStrictlyDescending(lodTriangleCascade))
                 issues.Add($"{prefabPath}: LOD triangle cascade is not strictly descending ({FormatLodTriangleCascade(lodTriangleCascade)}).");
+
+            AppendLodContractFindings(prefabPath, lodGroups, issues);
         }
 
         private static void AppendRendererOptimizationWarnings(
@@ -372,6 +384,7 @@ namespace Hecton8.EditorTools
             string familyId,
             Renderer renderer,
             Material material,
+            bool isGeneratedStarter,
             ICollection<string> warnings,
             ICollection<string> issues)
         {
@@ -380,37 +393,97 @@ namespace Hecton8.EditorTools
 
             if (familyId.StartsWith("family.kelp.", System.StringComparison.Ordinal))
             {
-                AppendFloraStackFindings(prefabPath, renderer, material, KelpShaderName, "kelp", warnings, issues);
+                AppendFloraStackFindings(prefabPath, familyId, renderer, material, KelpShaderName, "kelp", isGeneratedStarter, warnings, issues);
                 return;
             }
 
             if (familyId.StartsWith("family.coral.", System.StringComparison.Ordinal))
-                AppendFloraStackFindings(prefabPath, renderer, material, CoralShaderName, "coral", warnings, issues);
+                AppendFloraStackFindings(prefabPath, familyId, renderer, material, CoralShaderName, "coral", isGeneratedStarter, warnings, issues);
         }
 
         private static void AppendFloraStackFindings(
             string prefabPath,
+            string familyId,
             Renderer renderer,
             Material material,
             string expectedShaderName,
             string floraLabel,
+            bool isGeneratedStarter,
             ICollection<string> warnings,
             ICollection<string> issues)
         {
             if (material.shader == null || material.shader.name != expectedShaderName)
                 issues.Add($"{prefabPath}: {floraLabel} renderer '{renderer.name}' must use shader '{expectedShaderName}', found '{(material.shader != null ? material.shader.name : "<null>")}'.");
+            else
+            {
+                string shaderContractFailure;
+                if (WorldProceduralFloraMaterialAuthoring.TryGetShaderContractFailure(material, out shaderContractFailure))
+                {
+                    issues.Add(
+                        $"{prefabPath}: {floraLabel} material '{material.name}' uses stale shader contract ({shaderContractFailure}). Required contract: `_QUALITY_MX350` enabled, `_QUALITY_HIGH` disabled, and positive `{WorldProceduralFloraMaterialAuthoring.NormalScaleProperty}`, `{WorldProceduralFloraMaterialAuthoring.TriplanarScaleProperty}`, `{WorldProceduralFloraMaterialAuthoring.TriplanarSharpnessProperty}`, `{WorldProceduralFloraMaterialAuthoring.CurvatureWetnessStrengthProperty}`, `{WorldProceduralFloraMaterialAuthoring.FresnelStrengthProperty}`, `{WorldProceduralFloraMaterialAuthoring.FresnelPowerProperty}`, `{WorldProceduralFloraMaterialAuthoring.HeightScaleProperty}`.");
+                }
+            }
 
-            if (material.GetTexture("_BaseMap") == null)
+            Texture baseTexture = material.GetTexture("_BaseMap");
+            Texture detailTexture = material.GetTexture("_DetailMap");
+            Texture normalTexture = material.GetTexture("_NormalMap");
+            Texture maskTexture = material.GetTexture("_MaskMap");
+            if (baseTexture == null)
                 issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _BaseMap.");
 
-            if (material.GetTexture("_DetailMap") == null)
+            if (detailTexture == null)
                 issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _DetailMap.");
 
-            if (material.GetTexture("_NormalMap") == null)
+            if (normalTexture == null)
                 issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _NormalMap.");
 
-            if (material.GetTexture("_MaskMap") == null)
+            if (maskTexture == null)
                 issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' is missing _MaskMap.");
+
+            bool usesGeneratedTextureSource =
+                WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(baseTexture)
+                || WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(detailTexture)
+                || WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(normalTexture)
+                || WorldProceduralFloraTextureAuthoring.IsGeneratedProceduralTexture(maskTexture);
+            if (usesGeneratedTextureSource)
+            {
+                if (isGeneratedStarter)
+                {
+                    warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' still uses procedural editor-generated texture assets. Starter coverage only; not photoreal final proof.");
+                }
+                else
+                {
+                    issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' uses procedural editor-generated texture assets. Authored finals must use imported real texture sets.");
+                }
+            }
+
+            string unexpectedTextureSourceFailure;
+            if (WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(baseTexture, familyId, "albedo", out unexpectedTextureSourceFailure)
+                || WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(detailTexture, familyId, "detail", out unexpectedTextureSourceFailure)
+                || WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(normalTexture, familyId, "normal", out unexpectedTextureSourceFailure)
+                || WorldProceduralFloraTextureAuthoring.TryGetUnexpectedTextureSourceFailure(maskTexture, familyId, "mask", out unexpectedTextureSourceFailure))
+            {
+                issues.Add(
+                    $"{prefabPath}: {floraLabel} material '{material.name}' uses unmanaged texture source ({unexpectedTextureSourceFailure}). Flora finals must use either imported family maps under the managed Imported root or owned generated starter `.asset` textures.");
+            }
+
+            string textureStackSourceFailure;
+            if (WorldProceduralFloraTextureAuthoring.TryGetTextureStackSourceFailure(baseTexture, detailTexture, normalTexture, maskTexture, out textureStackSourceFailure))
+            {
+                if (isGeneratedStarter)
+                {
+                    warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' mixes texture sources ({textureStackSourceFailure}). Generated starter stacks should stay internally consistent.");
+                }
+                else
+                {
+                    issues.Add($"{prefabPath}: {floraLabel} material '{material.name}' mixes texture sources ({textureStackSourceFailure}). Authored finals must not combine imported and generated/external maps in one stack.");
+                }
+            }
+
+            AppendImportedTextureContractFinding(prefabPath, floraLabel, material, familyId, "_BaseMap", "albedo", baseTexture, issues);
+            AppendImportedTextureContractFinding(prefabPath, floraLabel, material, familyId, "_DetailMap", "detail", detailTexture, issues);
+            AppendImportedTextureContractFinding(prefabPath, floraLabel, material, familyId, "_NormalMap", "normal", normalTexture, issues);
+            AppendImportedTextureContractFinding(prefabPath, floraLabel, material, familyId, "_MaskMap", "mask", maskTexture, issues);
 
             if (material.HasFloat("_ReceiveShadows") && material.GetFloat("_ReceiveShadows") > 0.001f)
                 warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' keeps _ReceiveShadows enabled.");
@@ -423,6 +496,72 @@ namespace Hecton8.EditorTools
 
             if (material.HasFloat("_GlossyReflections") && material.GetFloat("_GlossyReflections") > 0.001f)
                 warnings.Add($"{prefabPath}: {floraLabel} material '{material.name}' keeps _GlossyReflections enabled.");
+        }
+
+        private static void AppendLodContractFindings(
+            string prefabPath,
+            LODGroup[] lodGroups,
+            ICollection<string> issues)
+        {
+            if (lodGroups == null || lodGroups.Length == 0)
+            {
+                issues.Add($"{prefabPath}: flora finals must use a 3-visible-LOD `LODGroup` with thresholds {RequiredLod0Threshold:0.##}/{RequiredLod1Threshold:0.##}/{RequiredLod2Threshold:0.##}/0.");
+                return;
+            }
+
+            for (int groupIndex = 0; groupIndex < lodGroups.Length; groupIndex++)
+            {
+                LODGroup lodGroup = lodGroups[groupIndex];
+                if (lodGroup == null)
+                    continue;
+
+                if (lodGroup.fadeMode != LODFadeMode.CrossFade)
+                    issues.Add($"{prefabPath}: LODGroup '{lodGroup.name}' must use LODFadeMode.CrossFade.");
+
+                if (!lodGroup.animateCrossFading)
+                    issues.Add($"{prefabPath}: LODGroup '{lodGroup.name}' must enable animateCrossFading for dithered near-field crossfade.");
+
+                LOD[] lods = lodGroup.GetLODs();
+                if (lods == null || lods.Length != 3)
+                {
+                    issues.Add($"{prefabPath}: LODGroup '{lodGroup.name}' must contain exactly 3 visible LOD levels before cull. Found {((lods != null) ? lods.Length : 0)}.");
+                    continue;
+                }
+
+                if (!MatchesLodTransition(lods[0].screenRelativeTransitionHeight, RequiredLod0Threshold)
+                    || !MatchesLodTransition(lods[1].screenRelativeTransitionHeight, RequiredLod1Threshold)
+                    || !MatchesLodTransition(lods[2].screenRelativeTransitionHeight, RequiredLod2Threshold))
+                {
+                    issues.Add(
+                        $"{prefabPath}: LODGroup '{lodGroup.name}' uses stale thresholds ({lods[0].screenRelativeTransitionHeight:0.###}/{lods[1].screenRelativeTransitionHeight:0.###}/{lods[2].screenRelativeTransitionHeight:0.###}). Required contract is {RequiredLod0Threshold:0.##}/{RequiredLod1Threshold:0.##}/{RequiredLod2Threshold:0.##}/0.");
+                }
+            }
+        }
+
+        private static bool MatchesLodTransition(float actual, float expected)
+        {
+            return Mathf.Abs(actual - expected) <= LodThresholdTolerance;
+        }
+
+        private static void AppendImportedTextureContractFinding(
+            string prefabPath,
+            string floraLabel,
+            Material material,
+            string familyId,
+            string propertyName,
+            string mapToken,
+            Texture texture,
+            ICollection<string> issues)
+        {
+            if (texture == null || string.IsNullOrEmpty(familyId))
+                return;
+
+            string failureLabel;
+            if (WorldProceduralFloraTextureAuthoring.TryGetImportedTextureContractFailure(texture, familyId, mapToken, out failureLabel))
+            {
+                issues.Add(
+                    $"{prefabPath}: {floraLabel} material '{material.name}' has imported {propertyName} texture '{texture.name}' with invalid import contract ({failureLabel}). Required: `{mapToken}___{familyId}.png`, Wrap=Repeat, MipMaps=On, Read/Write=Off, and correct type/sRGB/max-size for {mapToken}.");
+            }
         }
 
         private static Renderer[] ResolveBudgetRenderers(Renderer[] allRenderers, LODGroup[] lodGroups)

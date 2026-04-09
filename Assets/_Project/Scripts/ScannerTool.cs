@@ -1,3 +1,4 @@
+using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Building;
@@ -287,6 +288,17 @@ namespace Hecton8.Gameplay
         {
             float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
 
+            // Сигнал Атлас-6 — показываем силу если обнаружен
+            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            if (signal != null && signal.IsDetected)
+            {
+                float strength = signal.CurrentStrength;
+                string strengthBar = strength > 0.66f ? "███" : strength > 0.33f ? "██░" : "█░░";
+                if (cooldownRemaining > 0.01f)
+                    return $"SCANNER // SIGNAL [{strengthBar}] {strength * 100f:0}% // RECHARGING";
+                return $"SCANNER // SIGNAL [{strengthBar}] {strength * 100f:0}% // READY";
+            }
+
             if (cooldownRemaining > 0.01f)
                 return $"SCANNER // {_currentModeLabel} // RECHARGING {cooldownRemaining:0.0}S";
 
@@ -298,6 +310,16 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalDirective()
         {
+            // Сигнал Атлас-6 — показываем направление
+            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            if (signal != null && signal.IsDetected && _cachedTransform != null)
+            {
+                Vector3 dir = signal.DirectionToCore;
+                float angle = Vector3.SignedAngle(_cachedTransform.forward, dir, Vector3.up);
+                string bearing = angle > 10f ? "→ ПРАВЕЕ" : angle < -10f ? "← ЛЕВЕЕ" : "↓ ПРЯМО ВНИЗ";
+                return $"СИГНАЛ АТЛАС-6 ОБНАРУЖЕН. ПЕЛЕНГ: {bearing} ({Mathf.Abs(angle):0}°). ИСТОЧНИК НА ГЛУБИНЕ.";
+            }
+
             float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
             if (cooldownRemaining > 0.01f)
                 return $"Hold for recharge. Next pulse in {cooldownRemaining:0.0} seconds.";

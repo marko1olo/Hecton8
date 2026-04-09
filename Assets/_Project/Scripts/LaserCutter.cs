@@ -157,6 +157,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Raycast result (reused, zero GC).</summary>
         private RaycastHit _hitInfo;
+        private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: laser cutter consumes only the nearest contact per pass.
 
         /// <summary>Cached diagnosis result (reused, zero GC).</summary>
         private CutterDiagnosis _cachedDiagnosis;
@@ -343,12 +344,7 @@ namespace Hecton8.Gameplay
             }
 
             // ── Raycast ──
-            Vector3 origin = _cachedTransform.position;
-            Vector3 direction = _cachedTransform.forward;
-
-            bool didHit = Physics.Raycast(
-                origin, direction, out _hitInfo, maxRange,
-                cuttableLayer, QueryTriggerInteraction.Ignore);
+            bool didHit = TryGetCutHit(out _hitInfo);
 
             // ── Visuals ──
             UpdateLaserLine(didHit);
@@ -389,14 +385,8 @@ namespace Hecton8.Gameplay
 
             _secondaryLatched = true;
 
-            // Use local raycast (don't clobber _hitInfo from UsePrimary)
-            Vector3 origin = _cachedTransform.position;
-            Vector3 direction = _cachedTransform.forward;
-            
             RaycastHit diagHit;
-            bool didHit = UnityEngine.Physics.Raycast(
-                origin, direction, out diagHit, maxRange,
-                cuttableLayer, QueryTriggerInteraction.Ignore);
+            bool didHit = TryGetCutHit(out diagHit);
 
             // Build diagnosis from local hit, not cached _hitInfo
             _cachedDiagnosis = didHit && diagHit.collider != null
@@ -1023,13 +1013,29 @@ namespace Hecton8.Gameplay
         /// </summary>
         private CutterDiagnosis ReadDiagnosisNow()
         {
-            Vector3 origin = _cachedTransform.position;
-            Vector3 direction = _cachedTransform.forward;
-            bool didHit = UnityEngine.Physics.Raycast(
-                origin, direction, out RaycastHit hit, maxRange,
-                cuttableLayer, QueryTriggerInteraction.Ignore);
+            bool didHit = TryGetCutHit(out RaycastHit hit);
 
             return BuildDiagnosisFromHit(hit, didHit);
+        }
+
+        private bool TryGetCutHit(out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _raycastHits,
+                maxRange,
+                cuttableLayer,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+            {
+                hit = _raycastHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
         }
 
         private static void PublishDiagnosis(CutterDiagnosis diagnosis)

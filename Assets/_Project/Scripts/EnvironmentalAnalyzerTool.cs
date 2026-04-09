@@ -50,6 +50,7 @@ namespace Hecton8.Gameplay
         private HUDNotification _notification;
         private float _cooldown;
         private float _nextFeedbackAt;
+        private readonly RaycastHit[] _analysisHits = new RaycastHit[1]; // COLD ALLOC: analyzer samples only the nearest target per sweep.
         private int _cachedTargetAssessmentFrame = -1;
         private bool _cachedTargetAssessmentValid;
         private AnalyzerAssessment _cachedTargetAssessment;
@@ -87,13 +88,7 @@ namespace Hecton8.Gameplay
 
             string message;
 
-            if (UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                analysisMask,
-                QueryTriggerInteraction.Collide))
+            if (TryGetAnalysisHit(out RaycastHit hit))
             {
                 AnalyzerAssessment assessment = BuildTargetAssessment(hit);
                 message = assessment.BuildHudMessage();
@@ -366,13 +361,7 @@ namespace Hecton8.Gameplay
         {
             assessment = default;
 
-            if (!UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                analysisMask,
-                QueryTriggerInteraction.Collide))
+            if (!TryGetAnalysisHit(out RaycastHit hit))
             {
                 return false;
             }
@@ -415,6 +404,26 @@ namespace Hecton8.Gameplay
                 PublishBySeverity(_notification, _debugLastMessage);
             else
                 Debug.Log($"[EnvironmentalAnalyzer] {message}");
+        }
+
+        private bool TryGetAnalysisHit(out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _analysisHits,
+                range,
+                analysisMask,
+                QueryTriggerInteraction.Collide);
+
+            if (hitCount > 0)
+            {
+                hit = _analysisHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
         }
 
         private void ArchiveTargetIntel(RaycastHit hit, AnalyzerAssessment assessment)

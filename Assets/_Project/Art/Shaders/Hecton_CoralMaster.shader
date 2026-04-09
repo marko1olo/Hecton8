@@ -21,6 +21,13 @@ Shader "Hecton8/Flora/CoralMaster"
         _MoistureBoost ("Moisture Boost", Range(0, 1)) = 0.14
         _DetailStrength ("Detail Strength", Range(0, 2)) = 0.42
         _NormalStrength ("Normal Strength", Range(0, 2)) = 0.78
+        _NormalScale ("Normal Scale", Range(0, 2)) = 0.75
+        _TriplanarScale ("Triplanar Scale", Range(0.05, 4)) = 0.44
+        _TriplanarSharpness ("Triplanar Sharpness", Range(1, 8)) = 4.8
+        _CurvatureWetnessStrength ("Curvature Wetness Strength", Range(0, 2)) = 0.64
+        _FresnelStrength ("Fresnel Strength", Range(0, 1)) = 0.22
+        _FresnelPower ("Fresnel Power", Range(0.5, 8)) = 4.8
+        _HeightScale ("Height Scale", Range(0, 0.05)) = 0.03
         _ThicknessStrength ("Thickness Strength", Range(0, 2)) = 0.52
         _SpecularNoiseStrength ("Specular Noise Strength", Range(0, 2)) = 0.38
         _CavityStrength ("Cavity Strength", Range(0, 2)) = 0.58
@@ -60,6 +67,7 @@ Shader "Hecton8/Flora/CoralMaster"
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -80,6 +88,13 @@ Shader "Hecton8/Flora/CoralMaster"
                 half _MoistureBoost;
                 half _DetailStrength;
                 half _NormalStrength;
+                half _NormalScale;
+                half _TriplanarScale;
+                half _TriplanarSharpness;
+                half _CurvatureWetnessStrength;
+                half _FresnelStrength;
+                half _FresnelPower;
+                half _HeightScale;
                 half _ThicknessStrength;
                 half _SpecularNoiseStrength;
                 half _CavityStrength;
@@ -125,11 +140,49 @@ Shader "Hecton8/Flora/CoralMaster"
                 half2 uv : TEXCOORD3;
                 half3 viewDirWS : TEXCOORD4;
                 half fogFactor : TEXCOORD5;
-                half4 tangentWS : TEXCOORD6;
-                half3 bitangentWS : TEXCOORD7;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
+
+            half3 ComputeTriplanarWeights(half3 normalWS)
+            {
+                half sharpness = max(_TriplanarSharpness, 1.0h);
+                half3 weights = pow(saturate(abs(normalWS)), sharpness);
+                half weightSum = max(weights.x + weights.y + weights.z, 0.0001h);
+                return weights / weightSum;
+            }
+
+            half4 SampleFloraTriplanar(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights)
+            {
+                half4 ySample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * _TriplanarScale);
+                if (weights.y >= 0.999h)
+                    return ySample;
+
+                half4 xSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * _TriplanarScale);
+                half4 zSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * _TriplanarScale);
+                return xSample * weights.x + ySample * weights.y + zSample * weights.z;
+            }
+
+            half3 SampleFloraTriplanarNormal(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights, half strength)
+            {
+                half3 normalY = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * _TriplanarScale), strength);
+                normalY = half3(normalY.x, 0.0h, normalY.y);
+                if (weights.y >= 0.999h)
+                    return normalize(normalY);
+
+                half3 normalX = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * _TriplanarScale), strength);
+                normalX = half3(0.0h, normalX.y, normalX.x);
+                half3 normalZ = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * _TriplanarScale), strength);
+                normalZ = half3(normalZ.x, normalZ.y, 0.0h);
+                return normalize(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
+            }
+
+            half ComputeCurvatureWetness(half3 normalWS)
+            {
+                half3 dx = ddx(normalWS);
+                half3 dy = ddy(normalWS);
+                return saturate((length(dx) + length(dy)) * _CurvatureWetnessStrength);
+            }
 
             Varyings Vert(Attributes input)
             {
@@ -143,8 +196,6 @@ Shader "Hecton8/Flora/CoralMaster"
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalize(normalInputs.normalWS);
-                output.tangentWS = half4(normalize(normalInputs.tangentWS), input.tangentOS.w);
-                output.bitangentWS = normalize(normalInputs.bitangentWS);
                 output.color = input.color;
                 output.uv = input.uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionInputs.positionWS));
@@ -157,31 +208,45 @@ Shader "Hecton8/Flora/CoralMaster"
                 UNITY_SETUP_INSTANCE_ID(input);
 
                 half3 baseNormalWS = normalize(input.normalWS);
-                half3 tangentWS = normalize(input.tangentWS.xyz);
-                half3 bitangentWS = normalize(input.bitangentWS);
-                Light mainLight = GetMainLight();
+                half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half tintMask = saturate(input.color.r) * _VertexTintStrength;
                 half moisture = saturate(input.color.g);
                 half age = saturate(input.color.b);
+                half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
 
-                half3 baseTex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb;
-                float2 detailUv = input.uv * (_CausticScale * 0.82h) + input.positionWS.xz * 0.06 + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.61h));
+                float3 samplePositionWS = input.positionWS;
+                half4 maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarWeights);
+                #if defined(_QUALITY_HIGH)
+                samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale);
+                maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarWeights);
+                #endif
+
+                half3 baseTex = SampleFloraTriplanar(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, triplanarWeights).rgb;
+                half3 normalWS = normalize(
+                    baseNormalWS
+                    + SampleFloraTriplanarNormal(
+                        TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap),
+                        samplePositionWS,
+                        triplanarWeights,
+                        _NormalStrength * _NormalScale));
+                float2 detailUv = samplePositionWS.xz * (_CausticScale * 0.06h)
+                    + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.61h));
                 half detailSample = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, detailUv).r;
-                half4 maskSample = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
-                half3 normalSample = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv).xyz * 2.0h - 1.0h;
-                normalSample.xy *= _NormalStrength;
-                normalSample.z = sqrt(saturate(1.0h - dot(normalSample.xy, normalSample.xy)));
-                half3 normalWS = normalize(tangentWS * normalSample.x + bitangentWS * normalSample.y + baseNormalWS * normalSample.z);
+
+                Light mainLight = GetMainLight();
                 half3 lightDir = normalize(mainLight.direction);
                 half NdotL = saturate(dot(normalWS, lightDir));
+                half wrapDiffuse = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
                 half backLight = saturate(dot(-normalWS, lightDir));
-                half rim = pow(1.0h - saturate(dot(normalWS, normalize(input.viewDirWS))), _RimPower);
-
+                half rim = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
+                half curvatureWetness = ComputeCurvatureWetness(normalWS);
                 half cavity = saturate(1.0h - maskSample.r * _CavityStrength);
+                half wetness = saturate(maskSample.g + moisture * _MoistureBoost + curvatureWetness + cavity * 0.18h);
                 half thickness = saturate(lerp(maskSample.b, maskSample.a, _ThicknessStrength));
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
+                half roughness = saturate(lerp(0.7h, 0.2h, wetness));
                 half causticMask = saturate(0.68h + detailSample * _CausticStrength + maskSample.a * 0.18h);
-                half pulse = 1.0h + sin(_Time.y * _BiolumPulseFrequency + input.positionWS.x * 0.07h + input.positionWS.z * 0.05h + detailSample * 2.4h) * _BiolumPulseAmplitude;
+                half pulse = 1.0h + sin(_Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.07h + samplePositionWS.z * 0.05h + detailSample * 2.4h) * _BiolumPulseAmplitude;
                 half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
                 half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
                 half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength * 0.35h);
@@ -190,20 +255,22 @@ Shader "Hecton8/Flora/CoralMaster"
                 zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
 
                 half3 accent = lerp(_BaseColor.rgb, _AccentColor.rgb, saturate(maskSample.r + tintMask * 0.48h));
-                half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _AccentColor.rgb, moisture * _MoistureBoost);
+                half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _AccentColor.rgb, wetness * 0.48h);
                 half3 ageTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h - _AgeDarkening, 1.0h - _AgeDarkening, 1.0h - _AgeDarkening), age);
                 half3 albedo = accent * baseTex * moistureTint * ageTint;
                 albedo *= lerp(1.0h, detailSample, _DetailStrength);
                 albedo = lerp(albedo, albedo * 0.78h, cavity * 0.22h);
 
-                half3 ambient = SampleSH(normalWS) * (_AmbientStrength + maskSample.b * 0.08h);
-                half3 diffuse = albedo * (ambient + mainLight.color * NdotL);
+                half3 ambient = SampleSH(normalWS) * (_AmbientStrength + wetness * 0.1h);
+                half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
                 half3 subsurface = _SubsurfaceColor.rgb * (backLight * _SubsurfaceStrength * thickness * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
-                half specular = pow(NdotL, lerp(10.0h, 42.0h, _Smoothness)) * _Smoothness * 0.22h * glossNoise;
+                half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(10.0h, 42.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.22h * glossNoise;
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
+                half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + subsurface + rimLighting + specular + biolum;
+                color = lerp(color, unity_FogColor.rgb * 0.88h, saturate(fresnel * (0.5h + wetness * 0.5h)));
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);
             }

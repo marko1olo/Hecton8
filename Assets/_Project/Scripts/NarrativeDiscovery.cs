@@ -2,11 +2,13 @@
 // HECTON-8 — NarrativeDiscovery.cs
 // Компонент для лорных объектов (черные ящики, КПК, обломки).
 // Позволяет "открывать" лор через механику взаимодействия.
+// Опционально воспроизводит AudioLog при взаимодействии.
 // ============================================================================
 
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Gameplay;
+using Hecton8.Narrative;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -23,6 +25,10 @@ namespace Hecton8.Interaction
         
         [Tooltip("Название объекта (для лога)")]
         [SerializeField] private string displayName = "Объект";
+
+        [Header("── Audio Log (опционально) ───────────────────")]
+        [Tooltip("Если назначен — воспроизводит аудиодневник при взаимодействии.")]
+        [SerializeField] private AudioLogData linkedAudioLog;
 
         [Header("── Settings ──────────────────────────────────")]
         [SerializeField] private bool disableAfterDiscovery = true;
@@ -71,6 +77,10 @@ namespace Hecton8.Interaction
         {
             if (HectonNarrativeDirector.Instance != null && HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
             {
+                // Уже открыто — но аудиолог можно переслушать
+                if (linkedAudioLog != null && AudioLogSystem.Instance != null)
+                    AudioLogSystem.Instance.PlayLog(linkedAudioLog);
+
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[Narrative] '{discoveryId}' already discovered.");
                 #endif
@@ -80,13 +90,16 @@ namespace Hecton8.Interaction
             // Оповещаем систему
             NarrativeEvents.RaiseDiscoveryMade(discoveryId);
 
+            // Воспроизводим аудиолог если назначен
+            if (linkedAudioLog != null && AudioLogSystem.Instance != null)
+                AudioLogSystem.Instance.PlayLog(linkedAudioLog);
+
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Narrative] Discovery made: {discoveryId} ({displayName})");
             #endif
 
             if (disableAfterDiscovery)
             {
-                // Для пула лучше просто деактивировать или менять материал
                 gameObject.SetActive(false);
             }
         }

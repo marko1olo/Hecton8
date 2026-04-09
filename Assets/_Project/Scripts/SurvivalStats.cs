@@ -13,7 +13,7 @@ using UnityEngine;
     fileName = "NewSurvivalStats",
     menuName = "Hecton/Survival Stats",
     order    = 0)]
-public sealed class SurvivalStats : ScriptableObject
+public class SurvivalStats : ScriptableObject
 {
     // ─── Oxygen ──────────────────────────────────────────────
 
@@ -90,22 +90,22 @@ public sealed class SurvivalStats : ScriptableObject
     [SerializeField] private float radiationDamageRate = 5f;
     // ─── Public read-only accessors (inlined by JIT) ─────────
 
-    public float MaxOxygen              => maxOxygen;
-    public float OxygenConsumptionRate  => oxygenConsumptionRate;
-    public float MaxEnergy              => maxEnergy;
-    public float EnergyConsumptionRate  => energyConsumptionRate;
-    public float MaxIntegrity           => maxIntegrity;
-    public float SafeDepth              => safeDepth;
-    public float PressureDamageRate     => pressureDamageRate;
-    public float PressureScalePerMeter  => pressureScalePerMeter;
+    public virtual float MaxOxygen              => maxOxygen;
+    public virtual float OxygenConsumptionRate  => oxygenConsumptionRate;
+    public virtual float MaxEnergy              => maxEnergy;
+    public virtual float EnergyConsumptionRate  => energyConsumptionRate;
+    public virtual float MaxIntegrity           => maxIntegrity;
+    public virtual float SafeDepth              => safeDepth;
+    public virtual float PressureDamageRate     => pressureDamageRate;
+    public virtual float PressureScalePerMeter  => pressureScalePerMeter;
 
-    public float MinSafeTemp            => minSafeTemp;
-    public float MaxSafeTemp            => maxSafeTemp;
-    public float TempDamageRate         => tempDamageRate;
-    public float TempEnergyScale        => tempEnergyScale;
+    public virtual float MinSafeTemp            => minSafeTemp;
+    public virtual float MaxSafeTemp            => maxSafeTemp;
+    public virtual float TempDamageRate         => tempDamageRate;
+    public virtual float TempEnergyScale        => tempEnergyScale;
 
-    public float RadiationThreshold     => radiationThreshold;
-    public float RadiationDamageRate    => radiationDamageRate;
+    public virtual float RadiationThreshold     => radiationThreshold;
+    public virtual float RadiationDamageRate    => radiationDamageRate;
 
     // ─── Editor-only validation ──────────────────────────────
 

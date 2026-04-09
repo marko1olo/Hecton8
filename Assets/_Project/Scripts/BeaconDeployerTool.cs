@@ -44,6 +44,7 @@ namespace Hecton8.Gameplay
         private float _nextFeedbackAt;
         [SerializeField] private int _debugActiveBeaconCount;
         private readonly BeaconNetworkSystem.BeaconSnapshot[] _beaconBuffer = new BeaconNetworkSystem.BeaconSnapshot[32];
+        private readonly RaycastHit[] _deploymentHits = new RaycastHit[1]; // COLD ALLOC: beacon placement resolves a single hit per use.
         private int _cachedNearestAssessmentFrame = -1;
         private bool _cachedNearestAssessmentValid;
         private string _cachedNearestLabel;
@@ -68,13 +69,7 @@ namespace Hecton8.Gameplay
             Vector3 spawnPosition;
             Quaternion spawnRotation;
 
-            if (UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                deployRange,
-                deploymentMask,
-                QueryTriggerInteraction.Ignore))
+            if (TryGetDeploymentHit(out RaycastHit hit))
             {
                 spawnPosition = hit.point + hit.normal * 0.08f;
                 spawnRotation = Quaternion.LookRotation(hit.normal);
@@ -216,6 +211,26 @@ namespace Hecton8.Gameplay
                 _ => "Use it as a frontier marker for deep progression or retreat routing."
             };
             return new BeaconAssessment(role, summary, recommendation);
+        }
+
+        private bool TryGetDeploymentHit(out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _deploymentHits,
+                deployRange,
+                deploymentMask,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+            {
+                hit = _deploymentHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
         }
 
         private BeaconAssessment BuildExistingBeaconAssessment(BeaconNetworkSystem.BeaconSnapshot snapshot, float distance)

@@ -251,6 +251,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private const float GroundCheckLogIntervalSec = 5f;
         private const float BytesPerMegabyte = 1024f * 1024f;
+        private readonly RaycastHit[] _groundCheckHits = new RaycastHit[1]; // COLD ALLOC: bootstrap ground-ready probe only needs the nearest collider.
         private static readonly string[] _TextureMemoryCandidates =
         {
             "Texture Memory",
@@ -816,7 +817,7 @@ namespace Hecton8.Bootstrap
         ///   Warning и активация anyway (лучше провалиться чем зависнуть).
         ///
         /// ZERO GC:
-        ///   Physics.Raycast(Ray, float) без out RaycastHit — zero allocation.
+        ///   Physics.RaycastNonAlloc с preallocated буфером — zero allocation.
         ///   Нет строковых операций в цикле ожидания.
         /// </summary>
         private async Awaitable WaitForGroundReadyAsync(CancellationToken ct)
@@ -852,7 +853,7 @@ namespace Hecton8.Bootstrap
                 Vector3 rayOrigin = playerPos + Vector3.up * GroundCheckRayOffset;
                 Ray ray = new Ray(rayOrigin, Vector3.down);
 
-                if (UnityEngine.Physics.Raycast(ray, GroundCheckRayLength))
+                if (UnityEngine.Physics.RaycastNonAlloc(ray, _groundCheckHits, GroundCheckRayLength) > 0)
                 {
                     Log($"  Ground found after {elapsed:F1}s. Safe to activate.");
                     return;

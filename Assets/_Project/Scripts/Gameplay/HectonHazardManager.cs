@@ -5,6 +5,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -39,14 +40,18 @@ namespace Hecton8.Gameplay
         public static HectonHazardManager Instance { get; private set; }
 
         private const int MAX_SOURCES = 128;
+        private const float MinHazardRadius = 0.01f;
+        private const float OverflowLogIntervalSeconds = 5f;
         private static readonly RegisteredSource[] _sources = new RegisteredSource[MAX_SOURCES];
         private static int _sourceCount;
+        private static float _nextOverflowLogTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             Instance = null;
             _sourceCount = 0;
+            _nextOverflowLogTime = 0f;
             System.Array.Clear(_sources, 0, _sources.Length);
         }
 
@@ -79,6 +84,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Register(int id, Vector3 pos, float intensity, float radius, HazardType type)
         {
+            float safeRadius = radius > MinHazardRadius ? radius : MinHazardRadius;
+
             // Ищем свободный слот или уже существующий ID (на случай двойного вызова)
             int firstFree = -1;
             for (int i = 0; i < MAX_SOURCES; i++)
@@ -87,7 +94,7 @@ namespace Hecton8.Gameplay
                 {
                     if (_sources[i].InstanceID == id)
                     {
-                        UpdateSource(i, pos, intensity, radius);
+                        UpdateSource(i, pos, intensity, safeRadius);
                         return;
                     }
                 }
@@ -102,15 +109,15 @@ namespace Hecton8.Gameplay
                 _sources[firstFree].InstanceID = id;
                 _sources[firstFree].Position = pos;
                 _sources[firstFree].Intensity = intensity;
-                _sources[firstFree].Radius = radius;
-                _sources[firstFree].InvRadiusSqr = 1f / (radius * radius);
+                _sources[firstFree].Radius = safeRadius;
+                _sources[firstFree].InvRadiusSqr = 1f / (safeRadius * safeRadius);
                 _sources[firstFree].Type = type;
                 _sources[firstFree].IsActive = true;
                 _sourceCount++;
             }
             else
             {
-                Debug.LogWarning("[HectonHazardManager] Реестр источников переполнен (MAX_SOURCES=128)!");
+                LogRegistryOverflow();
             }
         }
 
@@ -136,10 +143,11 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void UpdateSource(int index, Vector3 pos, float intensity, float radius)
         {
+            float safeRadius = radius > MinHazardRadius ? radius : MinHazardRadius;
             _sources[index].Position = pos;
             _sources[index].Intensity = intensity;
-            _sources[index].Radius = radius;
-            _sources[index].InvRadiusSqr = 1f / (radius * radius);
+            _sources[index].Radius = safeRadius;
+            _sources[index].InvRadiusSqr = 1f / (safeRadius * safeRadius);
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -181,6 +189,16 @@ namespace Hecton8.Gameplay
             }
 
             return totalIntensity;
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogRegistryOverflow()
+        {
+            if (Time.unscaledTime < _nextOverflowLogTime)
+                return;
+
+            _nextOverflowLogTime = Time.unscaledTime + OverflowLogIntervalSeconds;
+            UnityEngine.Debug.LogWarning("[HectonHazardManager] Реестр источников переполнен (MAX_SOURCES=128)!");
         }
     }
 

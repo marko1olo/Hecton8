@@ -46,6 +46,62 @@ Main working truth:
 
 ## Latest Flora Pass Log
 
+- 2026-04-09 - Folded-lamina budget blocker closed
+  - Did:
+    - repaired the broken `VariantSpec(...)` sail/veilwall pass so Unity could compile and bake the reduced folded-lamina geometry for real
+    - reran flora starters, final linkage, validator, and status report on the live baked root
+  - Result:
+    - validator is back to `PASS validatedPrefabs=72, warningCount=9`
+    - `family.kelp.tall` max now reads `7250 / 8000`
+    - `family.kelp.abyssal` max now reads `8536 / 9000`
+    - `sail = 5076`
+    - `veilwall = 5084`
+  - Failed:
+    - no fresh trustworthy in-world beauty proof yet
+    - preview readability is still the next truth blocker for some tall/slender forms
+  - Broke:
+    - no new flora pipeline break confirmed
+  - Remaining:
+    - refresh truthful previews on the converged geometry
+    - in-world swim/beauty proof
+    - runtime build/profiler proof
+
+- 2026-04-09 - Broadleaf depth/readability corrective pass
+  - Did:
+    - pushed `family_kelp_tall__broadleaf` away from the flat single-bundle read
+    - added stronger broadleaf-specific layering/spread logic and reran flora starters/apply/validate/report
+    - triggered a direct automation preview refresh for the rebuilt broadleaf prefab
+  - Result:
+    - broadleaf preview now shows visible rear-layer separation instead of the earlier near-parallel strip bundle
+    - broadleaf remained within `family.kelp.tall` budget at `5736` triangles
+    - validator still passes at `validatedPrefabs=72`
+  - Failed:
+    - broadleaf is improved but still not yet at authored photoreal hero-final quality
+    - authoring pipeline still emits repeated `missing script` errors during family asset load
+  - Broke:
+    - none confirmed in runtime stack
+  - Remaining:
+    - clean the family-asset missing-script noise out of the authoring pass
+    - in-world swim/beauty proof
+    - runtime build/profiler proof
+
+- 2026-04-09 - Flora authoring missing-script cleanup follow-up
+  - Did:
+    - changed flora family loading in `WorldProceduralFloraFinalVariantAuthoring` to use main-asset loading instead of typed asset loading
+    - reran direct flora apply and regenerated the flora status report
+  - Result:
+    - direct apply pass completed cleanly with `FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+    - the old repeated `missing script` spam did not appear in that apply readback
+    - `broadleaf` now reports `4508` triangles in the fresh status report
+  - Failed:
+    - MCP bridge stalled after report generation, so full post-report console readback is absent
+  - Broke:
+    - no new break confirmed
+  - Remaining:
+    - fresh preview/oracle pass on the lighter `broadleaf`
+    - in-world swim/beauty proof
+    - runtime build/profiler proof
+
 - 2026-04-09 - Kelp budget convergence after thick-leaf/frilled expansion
   - Did:
     - cut redundant supplemental kelp geometry in `WorldProceduralSeaweedMeshBuilder` instead of flattening the main blades

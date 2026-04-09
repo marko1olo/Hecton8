@@ -36,6 +36,7 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _nextFeedbackAt;
         private bool _secondaryLatched;
+        private readonly RaycastHit[] _samplingHits = new RaycastHit[1]; // COLD ALLOC: sampler only needs the closest contact per action.
         private int _cachedDiagnosisFrame = -1;
         private bool _cachedDiagnosisValid;
         private SamplerDiagnosis _cachedDiagnosis;
@@ -52,13 +53,7 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                samplingRange,
-                samplingMask,
-                QueryTriggerInteraction.Collide))
+            if (TryGetSamplingHit(out RaycastHit hit))
             {
                 float effectiveDamage = sampleDamage * GetEfficiency();
                 bool applied = ToolHitUtility.ApplyDamage(
@@ -101,13 +96,7 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                samplingRange,
-                samplingMask,
-                QueryTriggerInteraction.Collide))
+            if (TryGetSamplingHit(out RaycastHit hit))
             {
                 bool collected = ToolHitUtility.TryCollectItem(hit.collider, _cachedTransform.root, out ItemData recoveredItem);
                 if (collected)
@@ -195,13 +184,7 @@ namespace Hecton8.Gameplay
         {
             diagnosis = default;
 
-            if (!UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                samplingRange,
-                samplingMask,
-                QueryTriggerInteraction.Collide))
+            if (!TryGetSamplingHit(out RaycastHit hit))
             {
                 return false;
             }
@@ -307,6 +290,26 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
+
+        private bool TryGetSamplingHit(out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _samplingHits,
+                samplingRange,
+                samplingMask,
+                QueryTriggerInteraction.Collide);
+
+            if (hitCount > 0)
+            {
+                hit = _samplingHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
+        }
 
         private static readonly string[] _cachedUpperStrings = new string[16];
 

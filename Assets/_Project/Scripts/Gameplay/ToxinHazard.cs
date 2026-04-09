@@ -30,27 +30,17 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Called when entering toxin zone.</summary>
-        /// <param name="other">The collider that entered.</param>
-        protected override void OnEnterHazard(Collider other)
+        /// <param name="health">The player health component.</param>
+        protected override void OnEnterHazard(HectonPlayerHealth health)
         {
-            var health = other.GetComponentInParent<HectonPlayerHealth>();
-            if (health != null)
-            {
-                // TODO: Show toxin warning on HUD
-                Debug.Log("Entered toxin zone");
-            }
+            HazardExposureNotifier.Enter(HazardType.Toxicity);
         }
 
         /// <summary>Called when exiting toxin zone.</summary>
-        /// <param name="other">The collider that exited.</param>
-        protected override void OnExitHazard(Collider other)
+        /// <param name="health">The player health component.</param>
+        protected override void OnExitHazard(HectonPlayerHealth health)
         {
-            var health = other.GetComponentInParent<HectonPlayerHealth>();
-            if (health != null)
-            {
-                // TODO: Clear toxin warning
-                Debug.Log("Exited toxin zone");
-            }
+            HazardExposureNotifier.Exit(HazardType.Toxicity);
         }
     }
     #pragma warning restore CS0414

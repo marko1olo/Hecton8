@@ -50,6 +50,9 @@ namespace Hecton8.Bootstrap
         // ══════════════════════════════════════════════════════════
 
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string GameTickManagerRuntimeName = "[GameTickManager]";
+        private const string SaveManagerRuntimeName = "[SaveManager]";
+        private const string ObjectPoolManagerRuntimeName = "[ObjectPoolManager]";
         private static BootstrapController _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -134,10 +137,6 @@ namespace Hecton8.Bootstrap
             if (!_initializationComplete || !Application.isPlaying)
                 return;
 
-            Scene currentScene = gameObject.scene;
-            if (!currentScene.name.Contains("00_BOOTSTRAP"))
-                return;
-
             SceneManager.LoadScene(MainMenuSceneName);
         }
 
@@ -148,22 +147,24 @@ namespace Hecton8.Bootstrap
 
             // ── Game Tick Manager (должен быть первым) ──
             Log("[1/4] Initializing GameTickManager...");
-            if (GameTickManager.Instance == null)
+            GameTickManager gameTickManager = EnsureGameTickManager();
+            if (gameTickManager == null)
             {
                 LogError("GameTickManager.Instance is null after access!");
                 return;
             }
-            EnsureDontDestroyOnLoad(GameTickManager.Instance.gameObject);
+            EnsureDontDestroyOnLoad(gameTickManager.gameObject);
             Log("  ✓ GameTickManager initialized");
 
             // ── Save Manager ──
             Log("[2/4] Initializing SaveManager...");
-            if (SaveManager.Instance == null)
+            SaveManager saveManager = EnsureSaveManager();
+            if (saveManager == null)
             {
                 LogError("SaveManager.Instance is null after access!");
                 return;
             }
-            EnsureDontDestroyOnLoad(SaveManager.Instance.gameObject);
+            EnsureDontDestroyOnLoad(saveManager.gameObject);
             Log("  ✓ SaveManager initialized");
 
             // ── Input Manager ──
@@ -180,12 +181,13 @@ namespace Hecton8.Bootstrap
 
             // ── Object Pool Manager ──
             Log("[4/4] Initializing ObjectPoolManager...");
-            if (ObjectPoolManager.Instance == null)
+            ObjectPoolManager objectPoolManager = EnsureObjectPoolManager();
+            if (objectPoolManager == null)
             {
                 LogError("ObjectPoolManager.Instance is null after access!");
                 return;
             }
-            EnsureDontDestroyOnLoad(ObjectPoolManager.Instance.gameObject);
+            EnsureDontDestroyOnLoad(objectPoolManager.gameObject);
             Log("  ✓ ObjectPoolManager initialized");
 
             Log("All systems initialized successfully.");
@@ -235,6 +237,39 @@ namespace Hecton8.Bootstrap
                 return; // Уже там
 
             DontDestroyOnLoad(obj);
+        }
+
+        private static GameTickManager EnsureGameTickManager()
+        {
+            GameTickManager manager = GameTickManager.Instance;
+            if (manager != null)
+                return manager;
+
+            // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
+            GameObject go = new GameObject(GameTickManagerRuntimeName);
+            return go.AddComponent<GameTickManager>();
+        }
+
+        private static SaveManager EnsureSaveManager()
+        {
+            SaveManager manager = SaveManager.Instance;
+            if (manager != null)
+                return manager;
+
+            // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
+            GameObject go = new GameObject(SaveManagerRuntimeName);
+            return go.AddComponent<SaveManager>();
+        }
+
+        private static ObjectPoolManager EnsureObjectPoolManager()
+        {
+            ObjectPoolManager manager = ObjectPoolManager.Instance;
+            if (manager != null)
+                return manager;
+
+            // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
+            GameObject go = new GameObject(ObjectPoolManagerRuntimeName);
+            return go.AddComponent<ObjectPoolManager>();
         }
 
         // ══════════════════════════════════════════════════════════

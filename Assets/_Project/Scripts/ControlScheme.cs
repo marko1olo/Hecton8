@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Interaction ──────────────────────────────")]
-        [Tooltip("Взаимодействие с объектами (E как в Subnautica).")]
+        [Tooltip("Взаимодействие с объектами. Стандартная клавиша: E.")]
         public KeyCode interactKey = KeyCode.E;
 
         // ══════════════════════════════════════════════════════════
@@ -25,16 +25,16 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Swim Vertical ─────────────────────────────")]
-        [Tooltip("Вверх в воде (Space как в Subnautica).")]
+        [Tooltip("Вверх в воде. Стандартная клавиша: Space.")]
         public KeyCode swimAscendPrimary   = KeyCode.Space;
 
         [Tooltip("Доп. клавиша вверх. None = отключено.")]
         public KeyCode swimAscendAlternate = KeyCode.None;
 
-        [Tooltip("Вниз: Ctrl (Subnautica).")]
+        [Tooltip("Вниз в воде. Основная клавиша: Left Ctrl.")]
         public KeyCode swimDescendPrimary  = KeyCode.LeftControl;
 
-        [Tooltip("Вниз: C (Subnautica).")]
+        [Tooltip("Вниз в воде. Альтернативная клавиша: C.")]
         public KeyCode swimDescendAlternate = KeyCode.C;
 
         [Tooltip("Запасной вниз (исторический Q).")]

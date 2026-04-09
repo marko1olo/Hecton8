@@ -87,7 +87,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float pitchMax = 85f;
 
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — SWIM VERTICAL (Subnautica-style defaults)
+        //  INSPECTOR — SWIM VERTICAL DEFAULTS
         // ══════════════════════════════════════════════════════════
 
         [Header("── Control Scheme ───────────────────────────")]

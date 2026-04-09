@@ -157,7 +157,7 @@
 
 ### HectonPlayerMovement
 - Вертикаль в воде вынесена в 5 `KeyCode`-полей в инспекторе
-- Дефолты: вверх = `Space`, вниз = `LeftCtrl` + `C` + `Q` (Subnautica-стиль)
+- Дефолты: вверх = `Space`, вниз = `LeftCtrl` + `C` + `Q` (текущая HECTON-8 схема)
 - `swimAscendAlternate` = `None` по умолчанию (раньше был `E` — конфликтовал с Interact)
 - Хелпер `KeyHeld(KeyCode)` — пропускает `KeyCode.None` без аллокаций
 

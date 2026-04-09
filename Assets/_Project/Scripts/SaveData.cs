@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 10; // Increment for narrative discovery persistence
+        public const int CurrentVersion = 16; // v16: EndingSystem
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -78,6 +78,66 @@ namespace Hecton8.SaveSystem
         /// <summary>Максимальный достигнутый narrative depth-tier.</summary>
         public int narrativeDepthTier;
 
+        /// <summary>Список ID обнаруженных аудиодневников. v4.0 LORE</summary>
+        public List<string> audioLogDiscoveredIds = new List<string>();
+
+        /// <summary>Активные квесты. v4.0 QUEST</summary>
+        public List<string> questActiveIds = new List<string>();
+
+        /// <summary>Завершённые квесты. v4.0 QUEST</summary>
+        public List<string> questCompletedIds = new List<string>();
+
+        /// <summary>Сигнал Атлас-6 когда-либо обнаружен. v4.0 ATLAS</summary>
+        public bool atlasSignalDetected;
+
+        /// <summary>Таймер пульса сигнала (для сохранения ритма). v4.0 ATLAS</summary>
+        public float atlasSignalPulseTimer;
+
+        /// <summary>Установленные апгрейды скафандра. v4.1 UPGRADES</summary>
+        public List<string> suitInstalledUpgradeIds = new List<string>();
+
+        /// <summary>Разблокированные чертежи апгрейдов. v4.1 UPGRADES</summary>
+        public List<string> suitUnlockedBlueprintIds = new List<string>();
+
+        /// <summary>Статус игрока с точки зрения Атлас-6. v4.2 ATLAS6</summary>
+        public int atlas6PlayerStatus;
+
+        /// <summary>Количество бартер-транзакций с Атлас-6. v4.2 ATLAS6</summary>
+        public int atlas6BarterCount;
+
+        /// <summary>Конфликт директив был активирован. v4.2 ATLAS6</summary>
+        public bool atlas6DirectiveConflictTriggered;
+
+        /// <summary>Полученные корпоративные приказы. v4.3 CORP</summary>
+        public List<string> corporateReceivedOrderIds = new List<string>();
+
+        /// <summary>Ожидающие приказы (ID). v4.3 CORP</summary>
+        public List<string> corporatePendingOrderIds = new List<string>();
+
+        /// <summary>Таймеры ожидающих приказов (секунды). v4.3 CORP</summary>
+        public List<float> corporatePendingOrderTimers = new List<float>();
+
+        /// <summary>Время сессии первого часа (секунды). v4.4 FIRSTHOUR</summary>
+        public float firstHourSessionTime;
+
+        /// <summary>Битовая маска выполненных milestone первого часа. v4.4 FIRSTHOUR</summary>
+        public int firstHourMilestones;
+
+        /// <summary>Выбранная концовка. v4.5 ENDING</summary>
+        public int endingChoice;
+
+        /// <summary>Концовка завершена. v4.5 ENDING</summary>
+        public bool endingComplete;
+
+        /// <summary>Условие концовки выполнено (игрок у ядра). v4.5 ENDING</summary>
+        public bool endingConditionMet;
+
+        /// <summary>Активные миссии (MissionManager). v4.6 MISSIONS</summary>
+        public List<string> missionActiveIds = new List<string>();
+
+        /// <summary>Завершённые миссии (MissionManager). v4.6 MISSIONS</summary>
+        public List<string> missionCompletedIds = new List<string>();
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════
@@ -102,7 +162,27 @@ namespace Hecton8.SaveSystem
                 lastDiscoveredBiomeId = -1,
                 narrativeDiscoveryCount = 0,
                 narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],
-                narrativeDepthTier = 0
+                narrativeDepthTier = 0,
+                audioLogDiscoveredIds = new List<string>(),
+                questActiveIds = new List<string>(),
+                questCompletedIds = new List<string>(),
+                atlasSignalDetected = false,
+                atlasSignalPulseTimer = 0f,
+                suitInstalledUpgradeIds = new List<string>(),
+                suitUnlockedBlueprintIds = new List<string>(),
+                atlas6PlayerStatus = 0,
+                atlas6BarterCount = 0,
+                atlas6DirectiveConflictTriggered = false,
+                corporateReceivedOrderIds = new List<string>(),
+                corporatePendingOrderIds = new List<string>(),
+                corporatePendingOrderTimers = new List<float>(),
+                firstHourSessionTime = 0f,
+                firstHourMilestones = 0,
+                endingChoice = 0,
+                endingComplete = false,
+                endingConditionMet = false,
+                missionActiveIds = new List<string>(),
+                missionCompletedIds = new List<string>()
             };
         }
 

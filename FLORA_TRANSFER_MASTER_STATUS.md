@@ -115,6 +115,55 @@ Detailed ledgers:
 
 ## Current Stage
 
+- 2026-04-09 folded-lamina recovery pass:
+  - `WorldProceduralSeaweedMeshBuilder` folded-lamina specs for `family_kelp_tall__sail` and `family_kelp_abyssal__veilwall` were rebuilt after the broken constructor arity was fixed and the reduced geometry pass was allowed to compile.
+  - Verified outputs:
+    - `Generate Procedural Flora Baked Starters` -> `Prefabs=72, MeshesUpdated=250, RemovedAssets=0, Failures=0`
+    - `Apply Procedural Flora Final Variants` -> `FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+    - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=72, warningCount=9`
+    - `Generate Procedural Flora Final Status Report` -> report updated at `2026-04-09 16:52`
+  - Fresh budget truth from the report:
+    - `family.kelp.tall` max `7250` with headroom `750`
+    - `family.kelp.abyssal` max `8536` with headroom `464`
+    - `GEN_family_kelp_tall__sail__s115-175 = 5076`
+    - `GEN_family_kelp_abyssal__veilwall__s150-240 = 5084`
+    - `GEN_family_kelp_tall__broadleaf__s110-170 = 6828`
+    - `GEN_family_kelp_canopy__paddlefan__s120-190 = 8130`
+    - `GEN_family_kelp_abyssal__petal__s100-170 = 6202`
+  - Remaining truth:
+    - folded-lamina over-budget validator blocker is closed
+    - generated starter finals still need better preview/readability proof and later authored photoreal replacements
+    - in-world beauty proof and runtime profiler/build proof are still pending
+
+- 2026-04-09 broadleaf corrective pass:
+  - `family_kelp_tall__broadleaf__s110-170` was rebuilt and revalidated after a deeper multi-layer pass.
+  - Verified outputs:
+    - prefab updated at `2026-04-09 06:18`
+    - report updated at `2026-04-09 06:21`
+    - automation preview updated at `2026-04-09 06:22`
+  - Coverage/budget truth stayed valid:
+    - `family.kelp.tall = a0/g14`
+    - `GEN_family_kelp_tall__broadleaf__s110-170 = 5736` triangles
+  - Visual truth:
+    - broadleaf preview is no longer the earlier flat parallel bundle
+    - there is now visible rear-layer separation and better volume read
+    - it is still a generated starter final, not an authored photoreal hero final
+  - Pipeline truth:
+    - authoring/validation/report all completed
+    - at that moment authoring still emitted `missing script` errors while loading some family assets; validator still ended in `PASS`
+
+- 2026-04-09 flora authoring cleanup follow-up:
+  - `WorldProceduralFloraFinalVariantAuthoring.LoadFloraFamilies()` was switched from typed `LoadAssetAtPath<T>` to `LoadMainAssetAtPath(...) as WorldPrefabFamilyProfile`.
+  - Verified result:
+    - direct `Apply Procedural Flora Final Variants` pass now logs clean completion with no repeated `The referenced script on this Behaviour (Game Object '<null>') is missing!` noise
+    - fresh apply log: `FamiliesTouched=0, LinkedVariants=72, RemovedVariants=0, MissingFamilies=0`
+  - Fresh report truth after the same follow-up:
+    - `GEN_family_kelp_tall__broadleaf__s110-170 = 4508` triangles
+    - report updated at `2026-04-09 06:38`
+  - Remaining truth:
+    - post-report console readback was not captured because the MCP bridge stalled after report generation
+    - authored photoreal flora finals are still missing
+
 - Stage 1 complete: new families/rules/assets exist and are in the live runtime stack.
 - Stage 2 complete: fertile and reef slices now use coral/kelp families in live reports, not only in data.
 - Stage 3 complete: kelp and coral creation-side proxy anatomy moved into editor-only flora shape builders instead of runtime selection files.

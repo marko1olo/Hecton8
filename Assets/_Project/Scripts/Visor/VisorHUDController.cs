@@ -798,8 +798,8 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private static bool IsEditorPreviewActive()
         {
-            return UnityEditorInternal.InternalEditorUtility.isApplicationActive &&
-                   EditorWindow.focusedWindow != null;
+            return !EditorApplication.isCompiling &&
+                   !EditorApplication.isUpdating;
         }
 
         private bool ShouldTickInEditMode()

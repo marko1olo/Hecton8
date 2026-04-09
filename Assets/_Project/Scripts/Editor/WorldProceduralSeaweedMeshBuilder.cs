@@ -147,13 +147,17 @@ namespace Hecton8.EditorTools
 
         private static void BuildBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, int bladeCount, Vector3 baseOffset, float clusterYawOffsetDegrees)
         {
-            int bladeSegments = Mathf.Max(2, spec.BladeSegments - (lod * 3));
             bool towerLaminar = IsTowerLaminarVariant(spec);
             bool canopySheet = IsCanopySheetVariant(spec);
             bool foldedSheet = IsFoldedSheetVariant(spec);
             bool foldedGiant = IsFoldedGiantVariant(spec);
             bool paddleLobed = IsPaddleLobedVariant(spec);
+            bool broadleafKelp = IsBroadleafKelpVariant(spec);
+            bool sailKelp = IsSailKelpVariant(spec);
+            bool paddlefanKelp = IsPaddlefanVariant(spec);
             bool frilledRibbon = IsFrilledRibbonVariant(spec);
+            bool deepPetal = IsDeepPetalVariant(spec);
+            int bladeSegments = ResolveBladeSegments(spec, lod, foldedSheet, foldedGiant, paddleLobed, canopySheet, towerLaminar, broadleafKelp, paddlefanKelp, sailKelp, deepPetal);
             float sequence = bladeCount <= 1 ? 0f : bladeIndex / (float)(bladeCount - 1);
             float normalized;
             if (bladeCount <= 1)
@@ -227,6 +231,14 @@ namespace Hecton8.EditorTools
                 sideCurve *= Mathf.Lerp(0.46f, 0.66f, foldedMass);
                 twist *= Mathf.Lerp(0.42f, 0.64f, foldedMass);
                 serration *= Mathf.Lerp(0.72f, 0.86f, foldedMass);
+
+                if (sailKelp)
+                {
+                    width *= Mathf.Lerp(1.1f, 1.24f, foldedMass);
+                    length *= Mathf.Lerp(1.04f, 1.16f, foldedMass);
+                    sideCurve += Mathf.Lerp(-8f, 10f, foldedMass);
+                    twist += Mathf.Lerp(-5f, 8f, 1f - foldedMass);
+                }
             }
 
             if (foldedSheet)
@@ -260,6 +272,30 @@ namespace Hecton8.EditorTools
                     width *= Mathf.Lerp(1.02f, 1.08f, lobeMass);
                     length *= Mathf.Lerp(0.98f, 1.04f, lobeMass);
                 }
+
+                if (broadleafKelp)
+                {
+                    width *= Mathf.Lerp(1.08f, 1.22f, lobeMass);
+                    length *= Mathf.Lerp(1.02f, 1.12f, lobeMass);
+                    sideCurve += Mathf.Lerp(-8f, 12f, lobeMass);
+                    twist += Mathf.Lerp(-4f, 10f, 1f - lobeMass);
+                }
+
+                if (paddlefanKelp)
+                {
+                    width *= Mathf.Lerp(1.08f, 1.2f, lobeMass);
+                    length *= Mathf.Lerp(1.04f, 1.12f, lobeMass);
+                    sideCurve += Mathf.Lerp(-10f, 14f, lobeMass);
+                    twist += Mathf.Lerp(-6f, 10f, 1f - lobeMass);
+                }
+
+                if (deepPetal)
+                {
+                    width *= Mathf.Lerp(1.04f, 1.16f, lobeMass);
+                    length *= Mathf.Lerp(1.02f, 1.1f, lobeMass);
+                    sideCurve += Mathf.Lerp(-12f, 16f, lobeMass);
+                    twist += Mathf.Lerp(-8f, 12f, 1f - lobeMass);
+                }
             }
 
             if (frilledRibbon)
@@ -287,6 +323,7 @@ namespace Hecton8.EditorTools
 
             if (spec.ClusterCount > 1
                 && !paddleLobed
+                && !foldedGiant
                 && !frilledRibbon
                 && lod == 0
                 && (bladeIndex % 2 == 0)
@@ -432,21 +469,21 @@ namespace Hecton8.EditorTools
                 && lod == 0
                 && normalized > (paddleLobed || frilledRibbon ? 0.36f : 0.24f)
                 && normalized < (paddleLobed || frilledRibbon ? 0.74f : 0.82f)
-                && (bladeIndex % (paddleLobed || frilledRibbon ? 4 : 2) == 1))
+                && (bladeIndex % (broadleafKelp ? 3 : paddleLobed || frilledRibbon ? 4 : 2) == 1))
             {
                 float bridgingNormalized = Mathf.Clamp01(normalized - 0.08f + (((bladeIndex / 2) & 1) == 0 ? 0.03f : -0.015f));
-                float bridgingSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 16f, bridgingNormalized);
+                float bridgingSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(broadleafKelp ? 14f : 8f, broadleafKelp ? 28f : 16f, bridgingNormalized);
                 BladeSocket bridgingSocket = EvaluateBladeSocket(spec, scale, bridgingNormalized, bridgingSweep, baseOffset, clusterYawOffsetDegrees);
                 Vector3 bridgingLateral = bridgingSocket.WidthAxis;
                 Vector3 bridgingForward = bridgingSocket.ForwardAxis;
                 Vector3 bridgingUp = bridgingSocket.GrowthAxis;
                 Vector3 bridgingStemBase = bridgingSocket.StemBase;
                 Vector3 bridgingAnchor = bridgingSocket.Anchor;
-                float bridgingWidth = width * Mathf.Lerp(0.34f, 0.48f, 1f - bridgingNormalized);
-                float bridgingLength = length * Mathf.Lerp(0.38f, 0.56f, 1f - bridgingNormalized * 0.34f);
-                float bridgingTwist = twist + Mathf.Lerp(-8f, 12f, bridgingNormalized);
-                float bridgingCurve = sideCurve * 0.42f + Mathf.Lerp(-6f, 6f, bridgingNormalized);
-                float bridgingSerration = serration * 0.54f;
+                float bridgingWidth = width * Mathf.Lerp(broadleafKelp ? 0.42f : 0.34f, broadleafKelp ? 0.58f : 0.48f, 1f - bridgingNormalized);
+                float bridgingLength = length * Mathf.Lerp(broadleafKelp ? 0.46f : 0.38f, broadleafKelp ? 0.68f : 0.56f, 1f - bridgingNormalized * 0.34f);
+                float bridgingTwist = twist + Mathf.Lerp(broadleafKelp ? -14f : -8f, broadleafKelp ? 18f : 12f, bridgingNormalized);
+                float bridgingCurve = sideCurve * (broadleafKelp ? 0.58f : 0.42f) + Mathf.Lerp(broadleafKelp ? -10f : -6f, broadleafKelp ? 10f : 6f, bridgingNormalized);
+                float bridgingSerration = serration * (broadleafKelp ? 0.66f : 0.54f);
                 BladeProfile bridgingProfile = ResolveBladeProfile(spec, bladeIndex + 29, bridgingNormalized, true);
 
                 AddBladeStem(
@@ -524,24 +561,73 @@ namespace Hecton8.EditorTools
                     lod);
             }
 
+            if (foldedGiant
+                && !sailKelp
+                && !IsVeilwallVariant(spec)
+                && lod == 0
+                && normalized > 0.22f
+                && normalized < 0.88f
+                && (bladeIndex % 2 == 0))
+            {
+                float sailNormalized = Mathf.Clamp01(normalized - 0.04f);
+                float sailSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(2f, 8f, sailNormalized);
+                BladeSocket sailSocket = EvaluateBladeSocket(spec, scale, sailNormalized, sailSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 sailLateral = sailSocket.WidthAxis;
+                Vector3 sailForward = sailSocket.ForwardAxis;
+                Vector3 sailUp = sailSocket.GrowthAxis;
+                Vector3 sailStemBase = sailSocket.StemBase;
+                Vector3 sailAnchor = sailSocket.Anchor;
+                float sailWidth = width * Mathf.Lerp(0.52f, 0.74f, 1f - sailNormalized * 0.2f);
+                float sailLength = length * Mathf.Lerp(0.66f, 0.9f, 1f - sailNormalized * 0.14f);
+                float sailTwist = twist * 0.62f + Mathf.Lerp(-4f, 6f, sailNormalized);
+                float sailCurve = sideCurve * 0.32f + Mathf.Lerp(-5f, 5f, sailNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    sailStemBase,
+                    sailAnchor + sailUp * (scale.y * 0.024f) + sailForward * (sailLength * 0.026f),
+                    sailSocket.StipeTangentAxis,
+                    sailForward,
+                    Mathf.Max(scale.x * 0.0072f, (sailAnchor - sailStemBase).magnitude * 0.16f),
+                    scale.x * 0.0064f,
+                    1,
+                    new Color32(spec.TintByte, 180, 60, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    sailAnchor,
+                    sailLateral,
+                    sailUp,
+                    sailWidth,
+                    sailLength,
+                    sailTwist,
+                    Mathf.Max(2, bladeSegments - 2),
+                    sailCurve,
+                    serration * 0.62f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
+                    BladeProfile.FoldedLamina,
+                    sailForward,
+                    lod);
+            }
+
             if (paddleLobed
                 && lod == 0
-                && normalized > (spec.ClusterCount > 1 ? 0.42f : 0.38f)
+                && normalized > (broadleafKelp ? 0.24f : spec.ClusterCount > 1 ? 0.42f : 0.38f)
                 && normalized < (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.8f)
-                && (bladeIndex % (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 0))
+                && (bladeIndex % (broadleafKelp ? 2 : paddlefanKelp ? 2 : spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 0))
             {
                 float fanNormalized = Mathf.Clamp01(normalized - 0.05f);
-                float fanSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(4f, 11f, fanNormalized);
+                float fanSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(broadleafKelp ? 10f : paddlefanKelp ? 8f : 4f, broadleafKelp ? 26f : paddlefanKelp ? 22f : 11f, fanNormalized);
                 BladeSocket fanSocket = EvaluateBladeSocket(spec, scale, fanNormalized, fanSweep, baseOffset, clusterYawOffsetDegrees);
                 Vector3 fanLateral = fanSocket.WidthAxis;
                 Vector3 fanForward = fanSocket.ForwardAxis;
                 Vector3 fanUp = fanSocket.GrowthAxis;
                 Vector3 fanStemBase = fanSocket.StemBase;
                 Vector3 fanAnchor = fanSocket.Anchor;
-                float fanWidth = width * Mathf.Lerp(0.46f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.68f : 0.6f, 1f - fanNormalized * 0.18f);
-                float fanLength = length * Mathf.Lerp(0.46f, spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.72f : 0.62f, 1f - fanNormalized * 0.12f);
-                float fanTwist = twist * 0.62f + Mathf.Lerp(-3f, 6f, fanNormalized);
-                float fanCurve = sideCurve * 0.3f + Mathf.Lerp(-5f, 5f, fanNormalized);
+                float fanWidth = width * Mathf.Lerp(broadleafKelp ? 0.58f : paddlefanKelp ? 0.54f : 0.46f, broadleafKelp ? 0.78f : paddlefanKelp ? 0.82f : spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.68f : 0.6f, 1f - fanNormalized * 0.18f);
+                float fanLength = length * Mathf.Lerp(broadleafKelp ? 0.56f : paddlefanKelp ? 0.52f : 0.46f, broadleafKelp ? 0.82f : paddlefanKelp ? 0.8f : spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.72f : 0.62f, 1f - fanNormalized * 0.12f);
+                float fanTwist = twist * (broadleafKelp ? 0.74f : paddlefanKelp ? 0.7f : 0.62f) + Mathf.Lerp(broadleafKelp ? -8f : paddlefanKelp ? -6f : -3f, broadleafKelp ? 10f : paddlefanKelp ? 12f : 6f, fanNormalized);
+                float fanCurve = sideCurve * (broadleafKelp ? 0.46f : paddlefanKelp ? 0.4f : 0.3f) + Mathf.Lerp(broadleafKelp ? -10f : paddlefanKelp ? -12f : -5f, broadleafKelp ? 10f : paddlefanKelp ? 12f : 5f, fanNormalized);
 
                 AddBladeStem(
                     buffers,
@@ -568,6 +654,242 @@ namespace Hecton8.EditorTools
                     new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
                     BladeProfile.PaddleLobed,
                     fanForward,
+                    lod);
+            }
+
+            if (spec.GrowthStyle == GrowthStyle.CrownCanopy
+                && paddleLobed
+                && lod == 0
+                && normalized > 0.24f
+                && normalized < 0.9f
+                && (bladeIndex % 2 == 1))
+            {
+                float mantleNormalized = Mathf.Clamp01(normalized - 0.04f);
+                float mantleSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 18f, mantleNormalized);
+                BladeSocket mantleSocket = EvaluateBladeSocket(spec, scale, mantleNormalized, mantleSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 mantleLateral = mantleSocket.WidthAxis;
+                Vector3 mantleForward = mantleSocket.ForwardAxis;
+                Vector3 mantleUp = mantleSocket.GrowthAxis;
+                Vector3 mantleStemBase = mantleSocket.StemBase;
+                Vector3 mantleAnchor = mantleSocket.Anchor;
+                float mantleWidth = width * Mathf.Lerp(0.42f, 0.62f, 1f - mantleNormalized * 0.18f);
+                float mantleLength = length * Mathf.Lerp(0.5f, 0.7f, 1f - mantleNormalized * 0.12f);
+                float mantleTwist = twist * 0.58f + Mathf.Lerp(-6f, 8f, mantleNormalized);
+                float mantleCurve = sideCurve * 0.34f + Mathf.Lerp(-7f, 7f, mantleNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    mantleStemBase,
+                    mantleAnchor + mantleUp * (scale.y * 0.022f) + mantleForward * (mantleLength * 0.026f),
+                    mantleSocket.StipeTangentAxis,
+                    mantleForward,
+                    Mathf.Max(scale.x * 0.0068f, (mantleAnchor - mantleStemBase).magnitude * 0.15f),
+                    scale.x * 0.0059f,
+                    1,
+                    new Color32(spec.TintByte, 178, 62, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    mantleAnchor,
+                    mantleLateral,
+                    mantleUp,
+                    mantleWidth,
+                    mantleLength,
+                    mantleTwist,
+                    Mathf.Max(2, bladeSegments - 3),
+                    mantleCurve,
+                    serration * 0.62f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
+                    BladeProfile.BroadUndulate,
+                    mantleForward,
+                    lod);
+            }
+
+            if (sailKelp
+                && lod == 0
+                && normalized > 0.46f
+                && normalized < 0.78f
+                && (bladeIndex % 5 == 2))
+            {
+                float backingNormalized = Mathf.Clamp01(normalized - 0.03f);
+                float backingSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 20f, backingNormalized);
+                BladeSocket backingSocket = EvaluateBladeSocket(spec, scale, backingNormalized, backingSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 backingLateral = backingSocket.WidthAxis;
+                Vector3 backingForward = backingSocket.ForwardAxis;
+                Vector3 backingUp = backingSocket.GrowthAxis;
+                Vector3 backingStemBase = backingSocket.StemBase;
+                Vector3 backingAnchor = backingSocket.Anchor;
+                float backingWidth = width * Mathf.Lerp(0.3f, 0.46f, 1f - backingNormalized * 0.18f);
+                float backingLength = length * Mathf.Lerp(0.42f, 0.62f, 1f - backingNormalized * 0.12f);
+                float backingTwist = twist * 0.56f + Mathf.Lerp(-8f, 10f, backingNormalized);
+                float backingCurve = sideCurve * 0.34f + Mathf.Lerp(-10f, 10f, backingNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    backingStemBase,
+                    backingAnchor + backingUp * (scale.y * 0.022f) + backingForward * (backingLength * 0.028f),
+                    backingSocket.StipeTangentAxis,
+                    backingForward,
+                    Mathf.Max(scale.x * 0.0068f, (backingAnchor - backingStemBase).magnitude * 0.15f),
+                    scale.x * 0.006f,
+                    1,
+                    new Color32(spec.TintByte, 178, 60, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    backingAnchor,
+                    backingLateral,
+                    backingUp,
+                    backingWidth,
+                    backingLength,
+                    backingTwist,
+                    Mathf.Max(2, bladeSegments - 5),
+                    backingCurve,
+                    serration * 0.58f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
+                    BladeProfile.FoldedLamina,
+                    backingForward,
+                    lod);
+            }
+
+            if (paddlefanKelp
+                && lod == 0
+                && normalized > 0.2f
+                && normalized < 0.82f
+                && (bladeIndex % 3 == 0))
+            {
+                float lowerMantleNormalized = Mathf.Clamp01(normalized - 0.08f);
+                float lowerMantleSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(14f, 30f, lowerMantleNormalized);
+                BladeSocket lowerMantleSocket = EvaluateBladeSocket(spec, scale, lowerMantleNormalized, lowerMantleSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 lowerMantleLateral = lowerMantleSocket.WidthAxis;
+                Vector3 lowerMantleForward = lowerMantleSocket.ForwardAxis;
+                Vector3 lowerMantleUp = lowerMantleSocket.GrowthAxis;
+                Vector3 lowerMantleStemBase = lowerMantleSocket.StemBase;
+                Vector3 lowerMantleAnchor = lowerMantleSocket.Anchor;
+                float lowerMantleWidth = width * Mathf.Lerp(0.36f, 0.54f, 1f - lowerMantleNormalized * 0.16f);
+                float lowerMantleLength = length * Mathf.Lerp(0.42f, 0.66f, 1f - lowerMantleNormalized * 0.08f);
+                float lowerMantleTwist = twist * 0.54f + Mathf.Lerp(-8f, 10f, lowerMantleNormalized);
+                float lowerMantleCurve = sideCurve * 0.3f + Mathf.Lerp(-10f, 10f, lowerMantleNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    lowerMantleStemBase,
+                    lowerMantleAnchor + lowerMantleUp * (scale.y * 0.02f) + lowerMantleForward * (lowerMantleLength * 0.024f),
+                    lowerMantleSocket.StipeTangentAxis,
+                    lowerMantleForward,
+                    Mathf.Max(scale.x * 0.0062f, (lowerMantleAnchor - lowerMantleStemBase).magnitude * 0.14f),
+                    scale.x * 0.0054f,
+                    1,
+                    new Color32(spec.TintByte, 176, 62, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    lowerMantleAnchor,
+                    lowerMantleLateral,
+                    lowerMantleUp,
+                    lowerMantleWidth,
+                    lowerMantleLength,
+                    lowerMantleTwist,
+                    Mathf.Max(2, bladeSegments - 4),
+                    lowerMantleCurve,
+                    serration * 0.56f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 4, 0, 255), 208, (byte)Mathf.Lerp(70f, 184f, lowerMantleNormalized), 255),
+                    BladeProfile.BroadUndulate,
+                    lowerMantleForward,
+                    lod);
+            }
+
+            if (broadleafKelp
+                && lod == 0
+                && normalized > 0.18f
+                && normalized < 0.82f
+                && (bladeIndex % 2 == 1))
+            {
+                float innerNormalized = Mathf.Clamp01(normalized - 0.06f);
+                float innerSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(6f, 18f, innerNormalized);
+                BladeSocket innerSocket = EvaluateBladeSocket(spec, scale, innerNormalized, innerSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 innerLateral = innerSocket.WidthAxis;
+                Vector3 innerForward = innerSocket.ForwardAxis;
+                Vector3 innerUp = innerSocket.GrowthAxis;
+                Vector3 innerStemBase = innerSocket.StemBase;
+                Vector3 innerAnchor = innerSocket.Anchor;
+                float innerWidth = width * Mathf.Lerp(0.34f, 0.48f, 1f - innerNormalized * 0.2f);
+                float innerLength = length * Mathf.Lerp(0.52f, 0.72f, 1f - innerNormalized * 0.16f);
+                float innerTwist = twist * 0.66f + Mathf.Lerp(-6f, 8f, innerNormalized);
+                float innerCurve = sideCurve * 0.38f + Mathf.Lerp(-8f, 8f, innerNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    innerStemBase,
+                    innerAnchor + innerUp * (scale.y * 0.022f) + innerForward * (innerLength * 0.026f),
+                    innerSocket.StipeTangentAxis,
+                    innerForward,
+                    Mathf.Max(scale.x * 0.0064f, (innerAnchor - innerStemBase).magnitude * 0.14f),
+                    scale.x * 0.0058f,
+                    1,
+                    new Color32(spec.TintByte, 176, 60, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    innerAnchor,
+                    innerLateral,
+                    innerUp,
+                    innerWidth,
+                    innerLength,
+                    innerTwist,
+                    Mathf.Max(2, bladeSegments - 4),
+                    innerCurve,
+                    serration * 0.54f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 210, (byte)Mathf.Lerp(62f, 182f, innerNormalized), 255),
+                    BladeProfile.BroadUndulate,
+                    innerForward,
+                    lod);
+            }
+
+            if (IsDeepPetalVariant(spec)
+                && lod == 0
+                && normalized > 0.22f
+                && normalized < 0.84f
+                && (bladeIndex % 2 == 1))
+            {
+                float shroudNormalized = Mathf.Clamp01(normalized - 0.05f);
+                float shroudSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(10f, 24f, shroudNormalized);
+                BladeSocket shroudSocket = EvaluateBladeSocket(spec, scale, shroudNormalized, shroudSweep, baseOffset, clusterYawOffsetDegrees);
+                Vector3 shroudLateral = shroudSocket.WidthAxis;
+                Vector3 shroudForward = shroudSocket.ForwardAxis;
+                Vector3 shroudUp = shroudSocket.GrowthAxis;
+                Vector3 shroudStemBase = shroudSocket.StemBase;
+                Vector3 shroudAnchor = shroudSocket.Anchor;
+                float shroudWidth = width * Mathf.Lerp(0.32f, 0.44f, 1f - shroudNormalized * 0.18f);
+                float shroudLength = length * Mathf.Lerp(0.5f, 0.68f, 1f - shroudNormalized * 0.12f);
+                float shroudTwist = twist * 0.7f + Mathf.Lerp(-10f, 12f, shroudNormalized);
+                float shroudCurve = sideCurve * 0.36f + Mathf.Lerp(-10f, 10f, shroudNormalized);
+
+                AddBladeStem(
+                    buffers,
+                    shroudStemBase,
+                    shroudAnchor + shroudUp * (scale.y * 0.022f) + shroudForward * (shroudLength * 0.026f),
+                    shroudSocket.StipeTangentAxis,
+                    shroudForward,
+                    Mathf.Max(scale.x * 0.0062f, (shroudAnchor - shroudStemBase).magnitude * 0.14f),
+                    scale.x * 0.0056f,
+                    1,
+                    new Color32(spec.TintByte, 170, 60, 255));
+                AddBladeRibbon(
+                    buffers,
+                    spec,
+                    shroudAnchor,
+                    shroudLateral,
+                    shroudUp,
+                    shroudWidth,
+                    shroudLength,
+                    shroudTwist,
+                    Mathf.Max(2, bladeSegments - 4),
+                    shroudCurve,
+                    serration * 0.56f,
+                    new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 206, (byte)Mathf.Lerp(72f, 176f, shroudNormalized), 255),
+                    BladeProfile.BroadUndulate,
+                    shroudForward,
                     lod);
             }
 
@@ -750,6 +1072,34 @@ namespace Hecton8.EditorTools
 
             if (IsPaddleLobedVariant(spec))
             {
+                if (IsBroadleafKelpVariant(spec))
+                {
+                    float alternatingBroadleaf = (bladeIndex & 1) == 0 ? -1f : 1f;
+                    float broadleafArc = Mathf.Lerp(-44f, 44f, sequence);
+                    float broadleafStepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(4f, 14f, sequence);
+                    float broadleafNoise = Mathf.Sin((bladeIndex + 1) * 1.22f) * Mathf.Lerp(1.4f, 5.2f, sequence);
+                    float broadleafBias = Mathf.Sin(sequence * Mathf.PI) * ((((bladeIndex / 3) & 1) == 0) ? 1f : -1f) * 4.8f;
+                    return broadleafArc + alternatingBroadleaf * Mathf.Lerp(8f, 20f, sequence) + broadleafStepped + broadleafNoise + broadleafBias;
+                }
+
+                if (IsPaddlefanVariant(spec))
+                {
+                    float alternatingPaddlefan = (bladeIndex & 1) == 0 ? -1f : 1f;
+                    float paddlefanArc = Mathf.Lerp(-40f, 40f, sequence);
+                    float paddlefanStepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(3f, 12f, sequence);
+                    float paddlefanNoise = Mathf.Sin((bladeIndex + 1) * 1.33f) * Mathf.Lerp(1.8f, 5.8f, sequence);
+                    return paddlefanArc + alternatingPaddlefan * Mathf.Lerp(8f, 22f, sequence) + paddlefanStepped + paddlefanNoise;
+                }
+
+                if (IsDeepPetalVariant(spec))
+                {
+                    float alternatingPetal = (bladeIndex & 1) == 0 ? -1f : 1f;
+                    float petalArc = Mathf.Lerp(-34f, 34f, sequence);
+                    float petalStepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(2f, 10f, sequence);
+                    float petalNoise = Mathf.Sin((bladeIndex + 1) * 1.26f) * Mathf.Lerp(1.8f, 5f, sequence);
+                    return petalArc + alternatingPetal * Mathf.Lerp(6f, 18f, sequence) + petalStepped + petalNoise;
+                }
+
                 float alternatingPaddle = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float paddleArc = Mathf.Lerp(-18f, 18f, sequence);
                 float stepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(1f, 6.5f, sequence);
@@ -797,18 +1147,65 @@ namespace Hecton8.EditorTools
                 return false;
 
             if (IsFoldedSheetVariant(spec))
-                return lod == 0 && normalized > 0.28f && (bladeIndex % 2 == 0);
+            {
+                if (lod == 1)
+                    return normalized > 0.58f && (bladeIndex % 4 == 0);
+
+                return normalized > 0.28f && (bladeIndex % 2 == 0);
+            }
 
             if (IsFoldedGiantVariant(spec))
-                return lod == 0 && normalized > 0.22f && (bladeIndex % 2 == 1);
+            {
+                if (IsVeilwallVariant(spec))
+                    return false;
+
+                if (IsSailKelpVariant(spec))
+                    return lod == 0
+                        ? normalized > 0.54f && normalized < 0.74f && (bladeIndex % 5 == 0)
+                        : normalized > 0.62f && normalized < 0.78f && (bladeIndex % 6 == 0);
+
+                if (lod == 1)
+                    return normalized > 0.46f && normalized < 0.86f && (bladeIndex % 4 == 1);
+
+                return normalized > 0.22f && (bladeIndex % 2 == 1);
+            }
 
             if (IsPaddleLobedVariant(spec))
             {
+                if (IsBroadleafKelpVariant(spec))
+                {
+                    if (lod == 1)
+                        return normalized > 0.42f && normalized < 0.9f && (bladeIndex % 5 == 0);
+
+                    return normalized > 0.14f && normalized < 0.94f && (bladeIndex % 3 != 1);
+                }
+
+                if (IsPaddlefanVariant(spec))
+                {
+                    if (lod == 1)
+                        return normalized > 0.48f && normalized < 0.88f && (bladeIndex % 4 == 0);
+
+                    return normalized > 0.24f && normalized < 0.9f && (bladeIndex % 2 == 0);
+                }
+
+                if (IsDeepPetalVariant(spec))
+                {
+                    if (lod == 1)
+                        return normalized > 0.46f && normalized < 0.84f && (bladeIndex % 4 == 0);
+
+                    return normalized > 0.24f && normalized < 0.88f && (bladeIndex % 2 == 0);
+                }
+
                 if (spec.ClusterCount > 1)
                     return lod == 0 && normalized > 0.42f && (bladeIndex % 3 == 0);
 
                 if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
-                    return lod == 0 && normalized > 0.34f && (bladeIndex % 2 == 0);
+                {
+                    if (lod == 1)
+                        return normalized > 0.56f && (bladeIndex % 4 == 0);
+
+                    return normalized > 0.34f && (bladeIndex % 2 == 0);
+                }
 
                 return lod == 0 && normalized > 0.36f && (bladeIndex % 3 != 1);
             }
@@ -828,7 +1225,12 @@ namespace Hecton8.EditorTools
                 return lod == 0 && normalized > 0.38f && (bladeIndex % 3 == 1);
 
             if (IsCanopySheetVariant(spec))
-                return lod == 0 && normalized > 0.56f && (bladeIndex % 3 == 1);
+            {
+                if (lod == 1)
+                    return normalized > 0.66f && (bladeIndex % 5 == 1);
+
+                return normalized > 0.56f && (bladeIndex % 3 == 1);
+            }
 
             if (spec.GrowthStyle == GrowthStyle.GiantFrond)
             {
@@ -847,10 +1249,23 @@ namespace Hecton8.EditorTools
                 return false;
 
             if (IsFoldedGiantVariant(spec))
-                return normalized > 0.4f && (bladeIndex % 3 == 0);
+                return IsSailKelpVariant(spec)
+                    ? false
+                    : IsVeilwallVariant(spec)
+                    ? false
+                    : normalized > 0.4f && (bladeIndex % 3 == 0);
 
             if (IsPaddleLobedVariant(spec))
             {
+                if (IsBroadleafKelpVariant(spec))
+                    return normalized > 0.34f && (bladeIndex % 3 == 0);
+
+                if (IsPaddlefanVariant(spec))
+                    return normalized > 0.4f && (bladeIndex % 3 == 1);
+
+                if (IsDeepPetalVariant(spec))
+                    return normalized > 0.38f && (bladeIndex % 3 == 0);
+
                 if (spec.ClusterCount > 1)
                     return false;
 
@@ -930,6 +1345,10 @@ namespace Hecton8.EditorTools
         {
             bool towerLaminar = IsTowerLaminarVariant(spec);
             bool canopySheet = IsCanopySheetVariant(spec);
+            bool broadleafKelp = IsBroadleafKelpVariant(spec);
+            bool sailKelp = IsSailKelpVariant(spec);
+            bool paddlefanKelp = IsPaddlefanVariant(spec);
+            bool deepPetal = IsDeepPetalVariant(spec);
             float angle = spec.BladeStartYaw + normalized * spec.BladeYawArc + Mathf.Sin((normalized + 0.13f) * Mathf.PI * 3.1f) * 7f + angleOffsetDegrees;
 
             if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
@@ -941,23 +1360,36 @@ namespace Hecton8.EditorTools
                 Vector3 growthAxis = canopySheet
                     ? Vector3.Normalize(widthAxis * 0.52f + crownFrame.Tangent * 0.2f + Vector3.up * 0.28f)
                     : Vector3.Normalize(widthAxis * 0.46f + crownFrame.Tangent * 0.34f + Vector3.up * 0.2f);
+                if (paddlefanKelp)
+                    growthAxis = Vector3.Normalize(widthAxis * 0.58f + crownFrame.Tangent * 0.24f + Vector3.up * 0.18f);
                 Vector3 forwardAxis = Vector3.Cross(widthAxis, growthAxis).normalized;
                 Vector3 stemBase = crownCenter - widthAxis * (scale.x * (canopySheet ? 0.032f : 0.06f)) - growthAxis * (scale.y * (canopySheet ? 0.016f : 0.03f));
                 Vector3 anchor = crownCenter + widthAxis * (scale.x * (canopySheet ? 0.038f : 0.08f));
+                if (paddlefanKelp)
+                {
+                    stemBase = crownCenter - widthAxis * (scale.x * 0.072f) - growthAxis * (scale.y * 0.034f);
+                    anchor = crownCenter + widthAxis * (scale.x * 0.094f) - forwardAxis * (scale.x * 0.012f);
+                }
                 return new BladeSocket(stemBase, anchor, widthAxis, growthAxis, forwardAxis, crownFrame.Tangent);
             }
 
             float anchorDistribution;
             if (spec.GrowthStyle == GrowthStyle.GiantFrond)
             {
-                float lowerSpread = spec.ClusterCount > 1
+                float lowerSpread = broadleafKelp
+                    ? Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.78f), 0.42f)
+                    : spec.ClusterCount > 1
                     ? Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.82f), 0.34f)
                     : Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.84f), 0.28f);
                 float nodeRhythm = Mathf.Sin((normalized * 3.7f + spec.BendDegrees * 0.015f) * Mathf.PI) * 0.032f;
-                float midMassBias = spec.ClusterCount > 1
+                float midMassBias = broadleafKelp
+                    ? Mathf.Sin(normalized * Mathf.PI) * 0.072f
+                    : spec.ClusterCount > 1
                     ? Mathf.Sin(normalized * Mathf.PI) * 0.06f
                     : Mathf.Sin(normalized * Mathf.PI) * 0.035f;
-                anchorDistribution = spec.ClusterCount > 1
+                anchorDistribution = broadleafKelp
+                    ? Mathf.Clamp01(Mathf.Lerp(0.05f, 0.84f, lowerSpread) + midMassBias + nodeRhythm * 0.32f)
+                    : spec.ClusterCount > 1
                     ? Mathf.Clamp01(Mathf.Lerp(0.04f, 0.76f, lowerSpread) + midMassBias + nodeRhythm * 0.35f)
                     : Mathf.Clamp01(Mathf.Lerp(0.06f, 0.9f, lowerSpread) + midMassBias + nodeRhythm * 0.18f);
             }
@@ -974,6 +1406,12 @@ namespace Hecton8.EditorTools
             Vector3 growth = spec.GrowthStyle == GrowthStyle.GiantFrond
                 ? towerLaminar
                     ? Vector3.Normalize(frame.Tangent * 0.76f + Vector3.up * 0.18f + width * 0.08f)
+                    : broadleafKelp
+                    ? Vector3.Normalize(frame.Tangent * 0.34f + Vector3.up * 0.14f + width * 0.52f)
+                    : sailKelp
+                    ? Vector3.Normalize(frame.Tangent * 0.46f + Vector3.up * 0.12f + width * 0.42f)
+                    : deepPetal
+                    ? Vector3.Normalize(frame.Tangent * 0.4f + Vector3.up * 0.12f + width * 0.48f)
                     : spec.ClusterCount > 1
                     ? Vector3.Normalize(frame.Tangent * 0.62f + Vector3.up * 0.26f + width * 0.18f)
                     : Vector3.Normalize(frame.Tangent * 0.58f + Vector3.up * 0.18f + width * 0.24f)
@@ -998,14 +1436,26 @@ namespace Hecton8.EditorTools
                 + width * (frame.Radius * (spec.GrowthStyle == GrowthStyle.GiantFrond
                     ? towerLaminar
                         ? 0.8f
+                        : broadleafKelp
+                        ? 1.08f
+                        : sailKelp
+                        ? 1.02f
+                        : deepPetal
+                        ? 1f
                         : (spec.ClusterCount > 1 ? 0.72f : 0.88f)
                     : 0.94f))
                 + frame.Tangent * (scale.y * (spec.GrowthStyle == GrowthStyle.GiantFrond
                     ? towerLaminar
                         ? 0.008f
+                        : broadleafKelp
+                        ? 0.006f
+                        : sailKelp
+                        ? 0.01f
+                        : deepPetal
+                        ? 0.008f
                         : (spec.ClusterCount > 1 ? 0.003f : 0.006f)
                     : 0.012f))
-                + forward * (scale.x * (spec.ClusterCount > 1 ? 0.008f : 0.014f));
+                + forward * (scale.x * (spec.ClusterCount > 1 ? 0.008f : broadleafKelp ? 0.048f : sailKelp ? 0.03f : deepPetal ? 0.028f : 0.014f));
             return new BladeSocket(stemBaseAlongStipe, anchorAlongStipe, width, growth, forward, frame.Tangent);
         }
 
@@ -1045,10 +1495,56 @@ namespace Hecton8.EditorTools
                 && spec.BladeWidthMax >= 0.2f;
         }
 
+        private static bool IsBroadleafKelpVariant(VariantSpec spec)
+        {
+            return spec.GrowthStyle == GrowthStyle.GiantFrond
+                && spec.BladeProfile == BladeProfile.PaddleLobed
+                && spec.ClusterCount <= 2
+                && spec.BladeWidthMax >= 1f
+                && spec.BladeYawArc <= 110f;
+        }
+
+        private static bool IsSailKelpVariant(VariantSpec spec)
+        {
+            return spec.GrowthStyle == GrowthStyle.GiantFrond
+                && spec.BladeProfile == BladeProfile.FoldedLamina
+                && spec.ClusterCount == 2
+                && spec.BladeWidthMax >= 1f
+                && spec.BladeYawArc >= 40f
+                && spec.BladeYawArc <= 80f;
+        }
+
+        private static bool IsPaddlefanVariant(VariantSpec spec)
+        {
+            return spec.GrowthStyle == GrowthStyle.CrownCanopy
+                && spec.BladeProfile == BladeProfile.PaddleLobed
+                && spec.BladeWidthMax >= 0.9f
+                && spec.BladeYawArc >= 140f;
+        }
+
+        private static bool IsVeilwallVariant(VariantSpec spec)
+        {
+            return spec.GrowthStyle == GrowthStyle.GiantFrond
+                && spec.BladeProfile == BladeProfile.FoldedLamina
+                && spec.ClusterCount == 2
+                && spec.BladeWidthMax >= 0.95f
+                && spec.BladeLengthMax >= 1.15f
+                && spec.BladeYawArc <= 24f;
+        }
+
         private static bool IsFrilledRibbonVariant(VariantSpec spec)
         {
             return spec.BladeProfile == BladeProfile.FrilledRibbon
                 && spec.BladeLengthMax >= 0.7f;
+        }
+
+        private static bool IsDeepPetalVariant(VariantSpec spec)
+        {
+            return spec.GrowthStyle == GrowthStyle.GiantFrond
+                && spec.BladeProfile == BladeProfile.PaddleLobed
+                && !IsBroadleafKelpVariant(spec)
+                && spec.BladeYawArc >= 110f
+                && spec.BladeWidthMax >= 0.6f;
         }
 
         private static bool IsLaminarSheetProfile(BladeProfile bladeProfile)
@@ -1538,13 +2034,13 @@ namespace Hecton8.EditorTools
             switch (bladeProfile)
             {
                 case BladeProfile.FoldedLamina:
-                    return Mathf.Clamp01(sizeWeight + 0.28f);
+                    return Mathf.Clamp01(sizeWeight + 0.36f);
                 case BladeProfile.PaddleLobed:
-                    return Mathf.Clamp01(sizeWeight + (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.14f : 0.08f));
+                    return Mathf.Clamp01(sizeWeight + (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.18f : 0.14f));
                 case BladeProfile.FrilledRibbon:
                     return Mathf.Clamp01(sizeWeight + (spec.ClusterCount > 1 ? -0.04f : 0.08f));
                 case BladeProfile.BroadUndulate:
-                    return Mathf.Clamp01(sizeWeight - 0.06f);
+                    return Mathf.Clamp01(sizeWeight + (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.08f : 0.02f));
                 default:
                     return Mathf.Clamp01(sizeWeight - 0.18f);
             }
@@ -1556,10 +2052,13 @@ namespace Hecton8.EditorTools
             switch (bladeProfile)
             {
                 case BladeProfile.FoldedLamina:
-                    baseThickness *= 1.28f;
+                    baseThickness *= 1.34f;
                     break;
                 case BladeProfile.PaddleLobed:
-                    baseThickness *= 1.18f;
+                    baseThickness *= 1.24f;
+                    break;
+                case BladeProfile.BroadUndulate:
+                    baseThickness *= 1.08f;
                     break;
                 case BladeProfile.FrilledRibbon:
                     baseThickness *= 0.94f;
@@ -1693,7 +2192,7 @@ namespace Hecton8.EditorTools
         {
             switch (NormalizeRootToken(rootToken))
             {
-                case "family_kelp_tall__stalk": spec = new VariantSpec(10, 14, 13, 12, 5, 0.94f, 0.18f, 0.08f, 4f, 0.05f, 0f, 0f, 0.14f, 0.94f, 0.18f, 0.46f, 0.18f, 0.72f, 0.1f, 0.5f, 0.09f, 12f, -18f, 92f, 18f, 6, 0.03f, 156, 3900, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
+                case "family_kelp_tall__stalk": spec = new VariantSpec(10, 14, 13, 12, 5, 0.94f, 0.18f, 0.08f, 4f, 0.05f, 0f, 0f, 0.14f, 0.94f, 0.18f, 0.46f, 0.18f, 0.72f, 0.1f, 0.5f, 0.09f, 12f, -18f, 92f, 18f, 6, 0.03f, 156, 4600, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
                 case "family_kelp_tall__lean": spec = new VariantSpec(9, 12, 12, 10, 4, 0.88f, 0.18f, 0.08f, 5f, 0.08f, 18f, 0.18f, 0.16f, 0.92f, 0.18f, 0.5f, 0.18f, 0.76f, 0.1f, 0.52f, 0.11f, 18f, -26f, 98f, 22f, 5, 0.035f, 148, 3600, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
                 case "family_kelp_tall__ribbon": spec = new VariantSpec(8, 13, 14, 12, 5, 0.98f, 0.16f, 0.06f, 5f, 0.1f, 24f, 0.22f, 0.18f, 0.98f, 0.2f, 0.58f, 0.22f, 0.94f, 0.1f, 0.54f, 0.13f, 26f, -34f, 112f, 28f, 4, 0.04f, 164, 4900, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon); return true;
                 case "family_kelp_tall__lamina": spec = new VariantSpec(9, 14, 14, 11, 4, 0.9f, 0.19f, 0.08f, 4f, 0.06f, 6f, 0.04f, 0.12f, 0.9f, 0.24f, 0.62f, 0.2f, 0.78f, 0.08f, 0.48f, 0.08f, 10f, -18f, 88f, 16f, 6, 0.032f, 160, 4300, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
@@ -1701,11 +2200,11 @@ namespace Hecton8.EditorTools
                 case "family_kelp_tall__banner": spec = new VariantSpec(9, 14, 14, 12, 4, 0.96f, 0.18f, 0.07f, 4f, 0.07f, 16f, 0.18f, 0.16f, 0.98f, 0.24f, 0.66f, 0.22f, 0.98f, 0.08f, 0.52f, 0.12f, 22f, -28f, 104f, 24f, 5, 0.036f, 162, 4700, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_tall__lance": spec = new VariantSpec(8, 13, 13, 11, 3, 0.92f, 0.15f, 0.05f, 5f, 0.08f, 10f, 0.16f, 0.14f, 0.94f, 0.12f, 0.3f, 0.18f, 0.74f, 0.12f, 0.5f, 0.1f, 18f, -14f, 78f, 22f, 4, 0.038f, 152, 4000, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
                 case "family_kelp_tall__seedling": spec = new VariantSpec(6, 8, 9, 6, 0, 0.56f, 0.11f, 0.05f, 2f, 0.02f, 3f, 0.03f, 0.12f, 0.58f, 0.08f, 0.18f, 0.12f, 0.28f, 0.06f, 0.34f, 0.04f, 8f, -22f, 62f, 12f, 5, 0.024f, 134, 2200, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
-                case "family_kelp_tall__tower": spec = new VariantSpec(11, 16, 15, 16, 6, 1.08f, 0.22f, 0.09f, 5f, 0.08f, 12f, 0.16f, 0.12f, 0.98f, 0.22f, 0.58f, 0.24f, 0.94f, 0.1f, 0.56f, 0.12f, 18f, -12f, 66f, 20f, 7, 0.034f, 168, 5600, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
-                case "family_kelp_tall__colossus": spec = new VariantSpec(11, 15, 14, 16, 4, 1.12f, 0.24f, 0.1f, 5f, 0.08f, 14f, 0.14f, 0.08f, 0.98f, 0.22f, 0.56f, 0.24f, 0.98f, 0.06f, 0.52f, 0.1f, 16f, -8f, 54f, 16f, 7, 0.036f, 170, 5600, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 1, 0f); return true;
-                case "family_kelp_tall__sail": spec = new VariantSpec(10, 15, 15, 14, 2, 1.04f, 0.22f, 0.08f, 4f, 0.06f, 10f, 0.12f, 0.12f, 0.94f, 0.3f, 0.82f, 0.32f, 1.08f, 0.05f, 0.56f, 0.08f, 8f, -8f, 26f, 8f, 7, 0.034f, 176, 5600, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
+                case "family_kelp_tall__tower": spec = new VariantSpec(11, 16, 15, 16, 6, 1.08f, 0.22f, 0.09f, 5f, 0.08f, 12f, 0.16f, 0.12f, 0.98f, 0.22f, 0.58f, 0.24f, 0.94f, 0.1f, 0.56f, 0.12f, 18f, -12f, 66f, 20f, 7, 0.034f, 168, 6600, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
+                case "family_kelp_tall__colossus": spec = new VariantSpec(11, 15, 14, 16, 4, 1.12f, 0.24f, 0.1f, 5f, 0.08f, 14f, 0.14f, 0.08f, 0.98f, 0.22f, 0.56f, 0.24f, 0.98f, 0.06f, 0.52f, 0.1f, 16f, -8f, 54f, 16f, 7, 0.036f, 170, 6800, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 1, 0f); return true;
+                case "family_kelp_tall__sail": spec = new VariantSpec(9, 13, 11, 10, 1, 1.04f, 0.2f, 0.07f, 4f, 0.05f, 10f, 0.1f, 0.12f, 0.92f, 0.34f, 0.9f, 0.34f, 1.08f, 0.04f, 0.54f, 0.08f, 8f, -18f, 46f, 10f, 6, 0.03f, 148, 5400, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_tall__paddle": spec = new VariantSpec(10, 15, 15, 13, 3, 1.02f, 0.2f, 0.08f, 4f, 0.06f, 8f, 0.08f, 0.14f, 0.9f, 0.28f, 0.78f, 0.26f, 0.96f, 0.06f, 0.54f, 0.08f, 10f, -22f, 86f, 16f, 6, 0.032f, 170, 5400, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
-                case "family_kelp_tall__broadleaf": spec = new VariantSpec(10, 15, 14, 11, 2, 1.06f, 0.22f, 0.09f, 4f, 0.06f, 6f, 0.08f, 0.22f, 0.94f, 0.36f, 1.02f, 0.32f, 1.08f, 0.05f, 0.62f, 0.08f, 10f, -10f, 40f, 10f, 6, 0.032f, 172, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_tall__broadleaf": spec = new VariantSpec(10, 15, 14, 10, 2, 1.06f, 0.22f, 0.09f, 4f, 0.06f, 8f, 0.08f, 0.18f, 0.94f, 0.48f, 1.24f, 0.38f, 1.22f, 0.04f, 0.68f, 0.08f, 18f, -44f, 96f, 22f, 6, 0.032f, 190, 8600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed, 2, 0.14f); return true;
                 case "family_kelp_tall__frondcrest": spec = new VariantSpec(9, 14, 14, 13, 1, 1.02f, 0.18f, 0.07f, 4f, 0.05f, 12f, 0.12f, 0.16f, 0.9f, 0.18f, 0.48f, 0.24f, 0.88f, 0.08f, 0.5f, 0.1f, 20f, -28f, 104f, 24f, 6, 0.03f, 164, 5000, GrowthStyle.GiantFrond, BladeProfile.FrilledRibbon); return true;
                 case "family_kelp_patch_dense__patch": spec = new VariantSpec(8, 11, 11, 12, 2, 0.84f, 0.2f, 0.09f, 4f, 0.06f, 8f, 0.12f, 0.16f, 0.84f, 0.18f, 0.42f, 0.18f, 0.68f, 0.14f, 0.48f, 0.10f, 18f, -72f, 156f, 34f, 6, 0.035f, 144, 5200, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate, 3, 0.18f); return true;
                 case "family_kelp_patch_dense__patch_tall": spec = new VariantSpec(9, 12, 12, 13, 2, 0.92f, 0.18f, 0.08f, 4f, 0.05f, 12f, 0.14f, 0.18f, 0.9f, 0.18f, 0.46f, 0.16f, 0.78f, 0.14f, 0.5f, 0.10f, 22f, -64f, 164f, 38f, 7, 0.034f, 150, 5600, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 4, 0.22f); return true;
@@ -1722,15 +2221,15 @@ namespace Hecton8.EditorTools
                 case "family_kelp_canopy__crown": spec = new VariantSpec(10, 15, 14, 14, 3, 1f, 0.2f, 0.08f, 5f, 0.08f, 12f, 0.1f, 0.42f, 0.84f, 0.24f, 0.62f, 0.26f, 0.98f, 0.12f, 0.56f, 0.12f, 26f, -76f, 180f, 34f, 7, 0.038f, 170, 4600, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__frond": spec = new VariantSpec(9, 13, 12, 10, 2, 0.92f, 0.18f, 0.07f, 4f, 0.06f, 6f, 0.08f, 0.34f, 0.76f, 0.22f, 0.56f, 0.24f, 0.9f, 0.12f, 0.52f, 0.10f, 18f, -54f, 118f, 32f, 5, 0.03f, 162, 3400, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__fan": spec = new VariantSpec(10, 14, 13, 14, 2, 0.96f, 0.18f, 0.07f, 5f, 0.08f, 10f, 0.09f, 0.38f, 0.82f, 0.24f, 0.58f, 0.24f, 0.94f, 0.12f, 0.54f, 0.10f, 28f, -92f, 188f, 38f, 6, 0.034f, 174, 4400, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
-                case "family_kelp_canopy__mantle": spec = new VariantSpec(10, 15, 14, 15, 1, 0.98f, 0.2f, 0.08f, 5f, 0.08f, 8f, 0.08f, 0.4f, 0.86f, 0.28f, 0.68f, 0.26f, 1f, 0.1f, 0.56f, 0.12f, 22f, -84f, 196f, 30f, 7, 0.036f, 176, 5000, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
+                case "family_kelp_canopy__mantle": spec = new VariantSpec(10, 15, 14, 15, 1, 0.98f, 0.2f, 0.08f, 5f, 0.08f, 8f, 0.08f, 0.4f, 0.86f, 0.28f, 0.68f, 0.26f, 1f, 0.1f, 0.56f, 0.12f, 22f, -84f, 196f, 30f, 7, 0.036f, 176, 6200, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__splay": spec = new VariantSpec(9, 14, 13, 13, 2, 0.94f, 0.18f, 0.07f, 5f, 0.07f, 14f, 0.1f, 0.36f, 0.8f, 0.22f, 0.56f, 0.22f, 0.92f, 0.1f, 0.54f, 0.1f, 30f, -104f, 210f, 40f, 6, 0.034f, 168, 4500, GrowthStyle.CrownCanopy, BladeProfile.SplitRibbon); return true;
                 case "family_kelp_canopy__veil": spec = new VariantSpec(10, 15, 14, 15, 1, 0.98f, 0.18f, 0.07f, 5f, 0.08f, 6f, 0.08f, 0.42f, 0.88f, 0.26f, 0.7f, 0.24f, 1f, 0.08f, 0.58f, 0.1f, 18f, -88f, 208f, 28f, 6, 0.034f, 172, 4900, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_canopy__rosette": spec = new VariantSpec(9, 13, 13, 16, 1, 0.8f, 0.18f, 0.08f, 4f, 0.06f, 4f, 0.04f, 0.22f, 0.6f, 0.18f, 0.42f, 0.16f, 0.62f, 0.08f, 0.48f, 0.08f, 24f, -118f, 236f, 34f, 7, 0.032f, 166, 4300, GrowthStyle.CrownCanopy, BladeProfile.SplitRibbon); return true;
-                case "family_kelp_canopy__laminaria": spec = new VariantSpec(10, 15, 15, 12, 1, 1.02f, 0.22f, 0.09f, 5f, 0.06f, 4f, 0.05f, 0.44f, 0.92f, 0.38f, 0.88f, 0.34f, 1.1f, 0.05f, 0.6f, 0.08f, 10f, -10f, 34f, 8f, 7, 0.034f, 178, 5000, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
-                case "family_kelp_canopy__sheetwall": spec = new VariantSpec(11, 16, 15, 14, 2, 1.06f, 0.22f, 0.08f, 5f, 0.07f, 6f, 0.05f, 0.46f, 0.96f, 0.42f, 0.96f, 0.36f, 1.16f, 0.05f, 0.62f, 0.08f, 10f, -12f, 24f, 6f, 8, 0.036f, 180, 5200, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
-                case "family_kelp_canopy__tapestry": spec = new VariantSpec(11, 16, 15, 15, 1, 1.08f, 0.22f, 0.08f, 5f, 0.06f, 6f, 0.05f, 0.46f, 0.98f, 0.52f, 1.12f, 0.44f, 1.28f, 0.03f, 0.66f, 0.08f, 6f, -6f, 14f, 3f, 8, 0.036f, 188, 6000, GrowthStyle.CrownCanopy, BladeProfile.FoldedLamina); return true;
+                case "family_kelp_canopy__laminaria": spec = new VariantSpec(10, 15, 15, 12, 1, 1.02f, 0.22f, 0.09f, 5f, 0.06f, 4f, 0.05f, 0.44f, 0.92f, 0.38f, 0.88f, 0.34f, 1.1f, 0.05f, 0.6f, 0.08f, 10f, -10f, 34f, 8f, 7, 0.034f, 178, 6200, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
+                case "family_kelp_canopy__sheetwall": spec = new VariantSpec(11, 16, 15, 14, 2, 1.06f, 0.22f, 0.08f, 5f, 0.07f, 6f, 0.05f, 0.46f, 0.96f, 0.42f, 0.96f, 0.36f, 1.16f, 0.05f, 0.62f, 0.08f, 10f, -12f, 24f, 6f, 8, 0.036f, 180, 6800, GrowthStyle.CrownCanopy, BladeProfile.BroadUndulate); return true;
+                case "family_kelp_canopy__tapestry": spec = new VariantSpec(11, 16, 15, 15, 1, 1.08f, 0.22f, 0.08f, 5f, 0.06f, 6f, 0.05f, 0.46f, 0.98f, 0.52f, 1.12f, 0.44f, 1.28f, 0.03f, 0.66f, 0.08f, 6f, -6f, 14f, 3f, 8, 0.036f, 188, 7600, GrowthStyle.CrownCanopy, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_canopy__oar": spec = new VariantSpec(10, 15, 15, 13, 2, 1f, 0.2f, 0.08f, 5f, 0.07f, 8f, 0.08f, 0.42f, 0.9f, 0.3f, 0.86f, 0.3f, 1.02f, 0.06f, 0.58f, 0.08f, 16f, -42f, 108f, 20f, 7, 0.034f, 180, 5200, GrowthStyle.CrownCanopy, BladeProfile.PaddleLobed); return true;
-                case "family_kelp_canopy__paddlefan": spec = new VariantSpec(10, 15, 14, 13, 2, 1.02f, 0.2f, 0.08f, 5f, 0.07f, 10f, 0.1f, 0.44f, 0.92f, 0.28f, 0.82f, 0.3f, 0.96f, 0.06f, 0.58f, 0.08f, 18f, -58f, 128f, 22f, 7, 0.034f, 182, 5000, GrowthStyle.CrownCanopy, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_canopy__paddlefan": spec = new VariantSpec(10, 15, 14, 13, 2, 1.02f, 0.2f, 0.08f, 5f, 0.07f, 10f, 0.1f, 0.44f, 0.92f, 0.38f, 1.06f, 0.36f, 1.08f, 0.05f, 0.62f, 0.08f, 20f, -84f, 172f, 34f, 7, 0.034f, 194, 7600, GrowthStyle.CrownCanopy, BladeProfile.PaddleLobed); return true;
                 case "family_kelp_canopy__featherfan": spec = new VariantSpec(10, 15, 15, 13, 1, 1.02f, 0.2f, 0.08f, 5f, 0.07f, 12f, 0.1f, 0.42f, 0.92f, 0.18f, 0.5f, 0.28f, 0.96f, 0.06f, 0.56f, 0.08f, 26f, -74f, 164f, 28f, 7, 0.032f, 178, 5200, GrowthStyle.CrownCanopy, BladeProfile.FrilledRibbon); return true;
                 case "family_kelp_abyssal__strap": spec = new VariantSpec(8, 12, 13, 11, 1, 0.92f, 0.15f, 0.05f, 4f, 0.07f, 8f, 0.12f, 0.18f, 0.88f, 0.12f, 0.28f, 0.22f, 0.82f, 0.08f, 0.42f, 0.08f, 18f, -22f, 102f, 18f, 5, 0.026f, 76, 3900, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
                 case "family_kelp_abyssal__shroud": spec = new VariantSpec(9, 13, 14, 12, 1, 0.98f, 0.16f, 0.05f, 5f, 0.08f, 14f, 0.14f, 0.22f, 0.94f, 0.18f, 0.46f, 0.24f, 0.98f, 0.06f, 0.46f, 0.1f, 16f, -36f, 148f, 24f, 5, 0.03f, 82, 4700, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
@@ -1740,14 +2239,46 @@ namespace Hecton8.EditorTools
                 case "family_kelp_abyssal__braid": spec = new VariantSpec(10, 15, 16, 12, 3, 0.96f, 0.145f, 0.045f, 6f, 0.09f, 16f, 0.2f, 0.18f, 0.98f, 0.16f, 0.38f, 0.2f, 0.86f, 0.08f, 0.46f, 0.08f, 18f, -26f, 126f, 26f, 5, 0.028f, 84, 5000, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon); return true;
                 case "family_kelp_abyssal__pennant": spec = new VariantSpec(9, 14, 15, 14, 1, 1.02f, 0.18f, 0.05f, 5f, 0.08f, 22f, 0.2f, 0.26f, 1.02f, 0.24f, 0.6f, 0.24f, 1.04f, 0.06f, 0.52f, 0.1f, 12f, -46f, 172f, 20f, 5, 0.031f, 92, 5600, GrowthStyle.GiantFrond, BladeProfile.BroadUndulate); return true;
                 case "family_kelp_abyssal__reed": spec = new VariantSpec(7, 11, 11, 9, 0, 0.78f, 0.11f, 0.035f, 4f, 0.05f, 20f, 0.2f, 0.16f, 0.9f, 0.06f, 0.16f, 0.16f, 0.58f, 0.1f, 0.42f, 0.06f, 22f, -24f, 88f, 24f, 4, 0.022f, 70, 3600, GrowthStyle.GiantFrond, BladeProfile.NarrowStrap); return true;
-                case "family_kelp_abyssal__cathedral": spec = new VariantSpec(10, 15, 15, 15, 4, 1.04f, 0.18f, 0.05f, 6f, 0.08f, 26f, 0.24f, 0.2f, 0.96f, 0.18f, 0.44f, 0.22f, 0.94f, 0.08f, 0.54f, 0.1f, 18f, -52f, 176f, 22f, 6, 0.03f, 90, 5200, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 2, 0.12f); return true;
-                case "family_kelp_abyssal__cowl": spec = new VariantSpec(9, 14, 15, 13, 1, 1f, 0.17f, 0.05f, 5f, 0.07f, 18f, 0.18f, 0.22f, 0.98f, 0.34f, 0.86f, 0.32f, 1.12f, 0.04f, 0.5f, 0.08f, 8f, -12f, 24f, 8f, 5, 0.03f, 92, 5400, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
-                case "family_kelp_abyssal__veilwall": spec = new VariantSpec(10, 15, 15, 14, 2, 1.06f, 0.18f, 0.05f, 5f, 0.07f, 20f, 0.2f, 0.24f, 1f, 0.38f, 0.98f, 0.36f, 1.2f, 0.04f, 0.54f, 0.08f, 8f, -8f, 18f, 6f, 6, 0.032f, 98, 6200, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
+                case "family_kelp_abyssal__cathedral": spec = new VariantSpec(10, 15, 15, 15, 4, 1.04f, 0.18f, 0.05f, 6f, 0.08f, 26f, 0.24f, 0.2f, 0.96f, 0.18f, 0.44f, 0.22f, 0.94f, 0.08f, 0.54f, 0.1f, 18f, -52f, 176f, 22f, 6, 0.03f, 90, 6600, GrowthStyle.GiantFrond, BladeProfile.SplitRibbon, 2, 0.12f); return true;
+                case "family_kelp_abyssal__cowl": spec = new VariantSpec(9, 14, 15, 13, 1, 1f, 0.17f, 0.05f, 5f, 0.07f, 18f, 0.18f, 0.22f, 0.98f, 0.34f, 0.86f, 0.32f, 1.12f, 0.04f, 0.5f, 0.08f, 8f, -12f, 24f, 8f, 5, 0.03f, 92, 7000, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
+                case "family_kelp_abyssal__veilwall": spec = new VariantSpec(9, 13, 11, 10, 1, 0.98f, 0.16f, 0.05f, 4f, 0.05f, 14f, 0.14f, 0.24f, 0.94f, 0.3f, 0.76f, 0.3f, 0.94f, 0.04f, 0.48f, 0.08f, 5f, -8f, 12f, 4f, 5, 0.028f, 80, 3600, GrowthStyle.GiantFrond, BladeProfile.FoldedLamina); return true;
                 case "family_kelp_abyssal__lantern": spec = new VariantSpec(9, 14, 15, 12, 5, 0.98f, 0.16f, 0.05f, 5f, 0.08f, 16f, 0.18f, 0.2f, 0.92f, 0.24f, 0.68f, 0.22f, 0.92f, 0.06f, 0.48f, 0.08f, 12f, -30f, 124f, 18f, 5, 0.03f, 94, 5600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
-                case "family_kelp_abyssal__petal": spec = new VariantSpec(9, 14, 14, 12, 4, 0.94f, 0.16f, 0.05f, 5f, 0.08f, 18f, 0.18f, 0.18f, 0.88f, 0.22f, 0.64f, 0.2f, 0.88f, 0.06f, 0.48f, 0.08f, 14f, -24f, 116f, 18f, 5, 0.03f, 92, 5000, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
+                case "family_kelp_abyssal__petal": spec = new VariantSpec(9, 14, 14, 12, 4, 0.94f, 0.16f, 0.05f, 5f, 0.08f, 18f, 0.18f, 0.18f, 0.88f, 0.32f, 0.86f, 0.24f, 1f, 0.05f, 0.52f, 0.08f, 18f, -48f, 164f, 30f, 5, 0.03f, 102, 7600, GrowthStyle.GiantFrond, BladeProfile.PaddleLobed); return true;
                 case "family_kelp_abyssal__tatterveil": spec = new VariantSpec(9, 14, 15, 13, 2, 0.98f, 0.15f, 0.05f, 5f, 0.08f, 22f, 0.22f, 0.18f, 0.88f, 0.15f, 0.38f, 0.2f, 0.82f, 0.08f, 0.46f, 0.08f, 24f, -38f, 156f, 24f, 5, 0.03f, 90, 5200, GrowthStyle.GiantFrond, BladeProfile.FrilledRibbon); return true;
                 default: spec = default; return false;
             }
+        }
+
+        private static int ResolveBladeSegments(VariantSpec spec, int lod, bool foldedSheet, bool foldedGiant, bool paddleLobed, bool canopySheet, bool towerLaminar, bool broadleafKelp, bool paddlefanKelp, bool sailKelp, bool deepPetal)
+        {
+            int bladeSegments = Mathf.Max(2, spec.BladeSegments - (lod * 3));
+            if (lod > 1)
+                return bladeSegments;
+
+            if (lod == 0)
+            {
+                if (foldedSheet || broadleafKelp || paddlefanKelp || deepPetal)
+                    return Mathf.Max(bladeSegments, spec.BladeSegments + 2);
+
+                if (foldedGiant || paddleLobed || canopySheet || towerLaminar)
+                    return Mathf.Max(bladeSegments, spec.BladeSegments + 1);
+
+                if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
+                    return Mathf.Max(bladeSegments, spec.BladeSegments);
+
+                return bladeSegments;
+            }
+
+            if (foldedSheet || broadleafKelp || paddlefanKelp || deepPetal)
+                return Mathf.Max(bladeSegments, spec.BladeSegments - 1);
+
+            if ((foldedGiant && !sailKelp) || paddleLobed || canopySheet)
+                return Mathf.Max(bladeSegments, spec.BladeSegments - 2);
+
+            if (towerLaminar)
+                return Mathf.Max(bladeSegments, spec.BladeSegments - 2);
+
+            return bladeSegments;
         }
 
         private static string NormalizeRootToken(string rootToken)

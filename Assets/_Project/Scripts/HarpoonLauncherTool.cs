@@ -55,6 +55,7 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _tracerTimer;
         private float _nextFeedbackAt;
+        private readonly RaycastHit[] _targetHits = new RaycastHit[1]; // COLD ALLOC: harpoon resolves only the nearest target per shot.
         private Rigidbody _tetheredBody;
         private Collider _tetheredCollider;
         private string _tetheredName;
@@ -80,13 +81,7 @@ namespace Hecton8.Gameplay
 
             Vector3 endPoint = _cachedTransform.position + _cachedTransform.forward * range;
 
-            if (UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore))
+            if (TryGetTargetHit(out RaycastHit hit))
             {
                 endPoint = hit.point;
                 ToolHitUtility.ApplyDamage(
@@ -146,13 +141,7 @@ namespace Hecton8.Gameplay
             if (TryReelTetheredTarget())
                 return;
 
-            if (!UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore))
+            if (!TryGetTargetHit(out RaycastHit hit))
             {
                 WarnReel("HARPOON - NO REEL LOCK");
                 return;
@@ -320,13 +309,7 @@ namespace Hecton8.Gameplay
         {
             assessment = default;
 
-            if (!UnityEngine.Physics.Raycast(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                out RaycastHit hit,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore))
+            if (!TryGetTargetHit(out RaycastHit hit))
             {
                 return false;
             }
@@ -407,6 +390,26 @@ namespace Hecton8.Gameplay
             _tetheredNameUpper = null;
             InvalidateAssessmentCache();
             _tetherRemaining = 0f;
+        }
+
+        private bool TryGetTargetHit(out RaycastHit hit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _targetHits,
+                range,
+                targetMask,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+            {
+                hit = _targetHits[0];
+                return true;
+            }
+
+            hit = default;
+            return false;
         }
 
         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)

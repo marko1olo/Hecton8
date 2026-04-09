@@ -30,27 +30,17 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Called when entering radiation zone.</summary>
-        /// <param name="other">The collider that entered.</param>
-        protected override void OnEnterHazard(Collider other)
+        /// <param name="health">The player health component.</param>
+        protected override void OnEnterHazard(HectonPlayerHealth health)
         {
-            var health = other.GetComponentInParent<HectonPlayerHealth>();
-            if (health != null)
-            {
-                // TODO: Show radiation warning on HUD
-                Debug.Log("Entered radiation zone");
-            }
+            HazardExposureNotifier.Enter(HazardType.Radiation);
         }
 
         /// <summary>Called when exiting radiation zone.</summary>
-        /// <param name="other">The collider that exited.</param>
-        protected override void OnExitHazard(Collider other)
+        /// <param name="health">The player health component.</param>
+        protected override void OnExitHazard(HectonPlayerHealth health)
         {
-            var health = other.GetComponentInParent<HectonPlayerHealth>();
-            if (health != null)
-            {
-                // TODO: Clear radiation warning
-                Debug.Log("Exited radiation zone");
-            }
+            HazardExposureNotifier.Exit(HazardType.Radiation);
         }
     }
     #pragma warning restore CS0414
