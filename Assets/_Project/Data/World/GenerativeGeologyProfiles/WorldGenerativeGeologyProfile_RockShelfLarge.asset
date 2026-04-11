@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0236fea028490468b21abcedde9cf9, type: 3}
+  m_Name: WorldGenerativeGeologyProfile_RockShelfLarge
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyProfile
+  profileId: geology.rock.shelf.large
+  profileLabel: Rock Shelf Large
+  generatorMode: 2
+  shapeArchetype: 1
+  compositionMode: 1
+  idealSlopeRange: {x: 8, y: 52}
+  idealCurvatureRange: {x: -0.46, y: 0.18}
+  idealCaveProximityRange: {x: 0, y: 0.55}
+  idealRidgeSignalRange: {x: 0.12, y: 0.86}
+  idealCanyonSignalRange: {x: 0.08, y: 0.78}
+  placementWeight: 1.04
+  compositionWeight: 1.1
+  contextPackThreshold: 0.58
+  terrainSeamMode: 2
+  caveBlendMode: 1
+  seamBlendRadius: 15
+  terrainRaiseMeters: 2.2
+  terrainCutMeters: 0.8
+  debrisCountMin: 2
+  debrisCountMax: 6
+  lodCount: 3
+  lodScreenHeights: {x: 0.6, y: 0.15, z: 0.04}
+  futureModelId: geology.rock.shelf.large.generated.v1
+  neuralPromptHint: Generate broad cliff shelves with heavy side mass, layered ledges,
+    overhangs, and readable route-support silhouette.

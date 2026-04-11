@@ -54,12 +54,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.creature.zone.abyss_apex.final.placeholder
-    prefab: {fileID: 2933961506252232577, guid: a8b6447214e586a4096cd6e216f5e7b4, type: 3}
+  - variantId: family.creature.zone.abyss_apex.final.ownership_zone
+    prefab: {fileID: 4991959637165440165, guid: c633c5ba07761444481bc9f0fa5fc796, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.98, y: 1.03}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/AbyssApexZone
   gameplayRole: Massive abyssal predator territory for deep hazard belts and void

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using GPUInstancer;
 using Hecton8.Dev;
 using Hecton8.Core;
 using Hecton8.Bootstrap;
@@ -14,8 +15,10 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4036)]
-    public sealed class WorldProceduralScatterDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable
     {
+        private const float StartupScatterStabilizationDelaySeconds = 2f;
+
         internal static WorldProceduralScatterDirector ActiveRuntimeInstance { get; private set; }
         private const string ScatterRootName = "__PROCEDURAL_SCATTER_WORLD";
         private const string GeneratedGeologyRootName = "__GENERATED_GEOLOGY";
@@ -287,6 +290,7 @@ namespace Hecton8.World
         [SerializeField] private WorldFaunaSpawnRegistry faunaSpawnRegistry;
         [SerializeField] private WorldProceduralStateRegistry proceduralStateRegistry;
         [SerializeField] private WorldGenerativeGeologyService generativeGeologyService;
+        [SerializeField] private GPUInstancerPrefabManager floraGpuiManager;
 
         [Header("Scatter Grid")]
         [SerializeField] private float cellSize = 22f;
@@ -431,6 +435,9 @@ namespace Hecton8.World
         [SerializeField] private int _debugGeneratedGeologyCount;
         [SerializeField] private int _debugPublishedFaunaAnchors;
         [SerializeField] private int _debugPublishedLargeThreatZones;
+        [SerializeField] private int _debugActiveGpuiFloraPlacements;
+        [SerializeField] private int _debugFloraGpuiPrototypeCount;
+        [SerializeField] private bool _debugFloraGpuiReady;
         [SerializeField] private float _debugLastScatterRebuildMs;
         [SerializeField] private float _debugSamplingStageMs;
         [SerializeField] private float _debugRescueStageMs;
@@ -449,6 +456,11 @@ namespace Hecton8.World
 #pragma warning restore CS0414
 
         private readonly Dictionary<long, WorldProceduralProxyInstance> _activeInstances = new Dictionary<long, WorldProceduralProxyInstance>(1024);
+        private readonly List<GPUInstancerPrefabPrototype> _floraGpuiKnownPrototypes = new List<GPUInstancerPrefabPrototype>(96);
+        private readonly Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> _floraGpuiMatrices = new Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]>(96);
+        private readonly Dictionary<GPUInstancerPrefabPrototype, int> _floraGpuiCounts = new Dictionary<GPUInstancerPrefabPrototype, int>(96);
+        private readonly Dictionary<GPUInstancerPrefabPrototype, int> _floraGpuiBufferCapacities = new Dictionary<GPUInstancerPrefabPrototype, int>(96);
+        private readonly HashSet<GPUInstancerPrefabPrototype> _floraGpuiInitializedPrototypes = new HashSet<GPUInstancerPrefabPrototype>();
         private readonly Dictionary<long, ScatterPlacement> _desiredPlacements = new Dictionary<long, ScatterPlacement>(2048);
         private readonly Dictionary<long, ScatterPlacement> _retainedPlacements = new Dictionary<long, ScatterPlacement>(4096);
         private readonly Dictionary<long, float> _placementLastSeenTimes = new Dictionary<long, float>(4096);
@@ -564,17 +576,39 @@ namespace Hecton8.World
         private float _runtimeMacroZoneSize = 768f;
         private bool _hasPendingStartupPlacements;
         private bool _hasPendingRuntimePlacements;
+        private bool _startupScatterStabilizationPending;
+        private float _startupScatterStartTime = float.NegativeInfinity;
         private bool _faunaSnapshotDirty = true;
+        private int _activeGpuiFloraPlacements;
         private int _reconcilePlanVersion;
         private bool _hasReconcileObserverSample;
         private Vector3 _lastReconcileObserverPosition;
+        private bool _loggedRuntimeStartState;
+        private bool _loggedFirstSlowTick;
+        private float _nextTickDrivenScatterAttemptTime;
         private int _gridPlacementBucketCount;
         private float _maxRegisteredPlacementSpacingMeters;
         private NativeArray<WorldProceduralFieldSampler.CellInputData> _cellSamplingInputs;
         private NativeArray<WorldProceduralFieldSampler.CellOutputData> _cellSamplingOutputs;
 
-        public int ActivePlacementCount => _activeInstances.Count;
+        public int ActivePlacementCount => _activeInstances.Count + _activeGpuiFloraPlacements;
         public bool HasPendingStartupPlacements => _hasPendingStartupPlacements;
+
+        public void Tick(float dt)
+        {
+            if (!Application.isPlaying || ShouldDeferUntilBootstrapReady())
+                return;
+
+            if (_hasScatterRefreshSample && !_startupScatterStabilizationPending)
+                return;
+
+            if (Time.unscaledTime < _nextTickDrivenScatterAttemptTime)
+                return;
+
+            _nextTickDrivenScatterAttemptTime = Time.unscaledTime + 0.25f;
+            RefreshRuntimeStreamingSettings();
+            RebuildScatterPreview();
+        }
 
         private void Awake()
         {
@@ -582,6 +616,7 @@ namespace Hecton8.World
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
+            TryEnsureTickRegistration();
             RefreshRuntimeStreamingSettings();
 
             EnsureCandidateMapsInitialized();
@@ -595,23 +630,26 @@ namespace Hecton8.World
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
+            TryEnsureTickRegistration();
         }
 
         private void Start()
         {
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
+            TryEnsureTickRegistration();
 
             if (Application.isPlaying)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_loggedRuntimeStartState && enableScatterRebuildProfiling)
+                {
+                    _loggedRuntimeStartState = true;
+                    UnityEngine.Debug.Log(
+                        $"[WorldScatterRuntime] start tickManagerReady={(GameTickManager.Instance != null)} registered={_registeredToTickManager} bootstrapReady={SceneBootstrap.IsGameReady} waitForBootstrap={waitForSceneBootstrap}",
+                        this);
+                }
+#endif
+                _startupScatterStabilizationPending = true;
+                _startupScatterStartTime = Time.unscaledTime;
                 InvalidateScatterRefreshSample("startup");
                 return;
             }
@@ -625,6 +663,7 @@ namespace Hecton8.World
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
             DisposeCellSamplingArrays();
+            ClearFloraGpuiVisibility();
 
             // Dispose candidate maps
             _groundRescueCandidates.Dispose();
@@ -645,6 +684,7 @@ namespace Hecton8.World
 
             if (_registeredToTickManager && GameTickManager.Instance != null)
             {
+                GameTickManager.Instance.Unregister((ITickable)this);
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registeredToTickManager = false;
             }
@@ -654,6 +694,7 @@ namespace Hecton8.World
         {
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
+            ClearFloraGpuiVisibility();
 
             // Safety dispose in case OnDisable not called
             _groundRescueCandidates.Dispose();
@@ -705,6 +746,15 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Application.isPlaying && !_loggedFirstSlowTick && enableScatterRebuildProfiling)
+            {
+                _loggedFirstSlowTick = true;
+                UnityEngine.Debug.Log(
+                    $"[WorldScatterRuntime] first-slow-tick bootstrapReady={SceneBootstrap.IsGameReady} defer={ShouldDeferUntilBootstrapReady()} invalidation={_debugLastScatterInvalidationReason}",
+                    this);
+            }
+#endif
             if (ShouldDeferUntilBootstrapReady())
                 return;
 
@@ -771,6 +821,7 @@ namespace Hecton8.World
             }
 
             ResolveReferences();
+            ForceRefreshProceduralContext();
             EnsureCandidateMapsInitialized();
             RefreshRuntimeStreamingSettings();
 
@@ -1341,7 +1392,10 @@ namespace Hecton8.World
             _debugReady = true;
             _debugEvaluatedCells = evaluatedCells;
             _debugDesiredPlacements = _desiredPlacements.Count;
-            _debugActivePlacements = _activeInstances.Count;
+            _debugActivePlacements = _activeInstances.Count + _activeGpuiFloraPlacements;
+            _debugActiveGpuiFloraPlacements = _activeGpuiFloraPlacements;
+            _debugFloraGpuiPrototypeCount = _floraGpuiKnownPrototypes.Count;
+            _debugFloraGpuiReady = floraGpuiManager != null;
             _debugGroundPlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Ground];
             _debugClusterPlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Cluster];
             _debugStructurePlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
@@ -1485,6 +1539,24 @@ namespace Hecton8.World
             }
         }
 
+        private void ForceRefreshProceduralContext()
+        {
+            WorldZoneDirector zoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+            if (zoneDirector != null)
+                zoneDirector.ForceRefresh();
+
+            BiomeMatrixDirector matrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            if (matrixDirector != null)
+                matrixDirector.ForceRefresh();
+
+            WorldContentDirector contentDirector = WorldContentDirector.ActiveRuntimeInstance;
+            if (contentDirector != null)
+                contentDirector.ForceRefresh();
+
+            if (proceduralFillDirector != null)
+                proceduralFillDirector.ForceRefresh();
+        }
+
         public bool TryPrimeBootstrapScatterPass()
         {
             if (!Application.isPlaying)
@@ -1534,8 +1606,19 @@ namespace Hecton8.World
             _sceneBootstrapPresenceResolved = true;
             _sceneBootstrapPresent = true;
             _bootstrapFailed = false;
+            TryEnsureTickRegistration();
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Application.isPlaying && enableScatterRebuildProfiling)
+            {
+                UnityEngine.Debug.Log(
+                    $"[WorldScatterRuntime] bootstrap-ready registered={_registeredToTickManager} timeScale={Time.timeScale:0.###}",
+                    this);
+            }
+#endif
+            if (Application.isPlaying && !ShouldDeferUntilBootstrapReady())
+                RebuildScatterPreview();
         }
 
         private void HandleSceneBootstrapFailed(string reason)
@@ -1543,6 +1626,7 @@ namespace Hecton8.World
             _sceneBootstrapPresenceResolved = true;
             _sceneBootstrapPresent = true;
             _bootstrapFailed = true;
+            TryEnsureTickRegistration();
 
             if (!string.IsNullOrWhiteSpace(reason))
             {
@@ -1553,6 +1637,16 @@ namespace Hecton8.World
 
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap-failed");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Application.isPlaying && enableScatterRebuildProfiling)
+            {
+                UnityEngine.Debug.Log(
+                    $"[WorldScatterRuntime] bootstrap-failed registered={_registeredToTickManager} timeScale={Time.timeScale:0.###}",
+                    this);
+            }
+#endif
+            if (Application.isPlaying && !ShouldDeferUntilBootstrapReady())
+                RebuildScatterPreview();
         }
 
         private bool ResolveSceneBootstrapPresence()
@@ -1589,6 +1683,15 @@ namespace Hecton8.World
                 upgradedSource == WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight)
             {
                 _debugLastScatterRefreshReason = "terrain-source-upgraded";
+                return false;
+            }
+
+            if (_startupScatterStabilizationPending &&
+                Application.isPlaying &&
+                Time.unscaledTime - _startupScatterStartTime >= StartupScatterStabilizationDelaySeconds)
+            {
+                _startupScatterStabilizationPending = false;
+                _debugLastScatterRefreshReason = "startup-settle";
                 return false;
             }
 
@@ -1811,6 +1914,7 @@ namespace Hecton8.World
         private void RequestScatterRefresh(string reason)
         {
             InvalidateScatterRefreshSample(reason);
+            TryEnsureTickRegistration();
 
             if (Application.isPlaying)
                 return;
@@ -1818,6 +1922,20 @@ namespace Hecton8.World
             RefreshRuntimeStreamingSettings();
             if (!ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
+        }
+
+        private void TryEnsureTickRegistration()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            tickManager.Register((ISlowTickable)this);
+            _registeredToTickManager = true;
         }
 
         private bool TryGetScatterCenterCell(out int centerCellX, out int centerCellZ)
@@ -2095,7 +2213,10 @@ namespace Hecton8.World
                 $"spawn={reconcileSpawnMs:0.00}ms fauna={reconcileFaunaMs:0.00}ms diag={diagnosticsMs:0.00}ms " +
                 $"removed={reconcileMetrics.RemovedCount} rebuilt={reconcileMetrics.RebuiltCount} created={reconcileMetrics.CreatedCount} " +
                 $"reused={reconcileMetrics.ReusedCount} cells={evaluatedCells} desired={_desiredPlacements.Count} " +
-                $"active={_activeInstances.Count} reason={_debugLastScatterRefreshReason}";
+                $"active={_activeInstances.Count} floraGpuiActive={_activeGpuiFloraPlacements} " +
+                $"floraGpuiPrototypes={_floraGpuiKnownPrototypes.Count} floraGpuiReady={(floraGpuiManager != null)} " +
+                $"zone={_debugZone} biome={_debugBiomeFamily} pattern={_debugPattern} topFamily={_debugTopFamily} " +
+                $"reason={_debugLastScatterRefreshReason}";
 
             if (traceActive)
                 RuntimeDiagnosticsTrace.WriteEvent("scatter", report);
@@ -2110,7 +2231,11 @@ namespace Hecton8.World
                 return true;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            return spikeDetected;
+            return spikeDetected ||
+                   _activeGpuiFloraPlacements > 0 ||
+                   _debugLastScatterRefreshReason == "startup" ||
+                   _debugLastScatterRefreshReason == "scene-bootstrap" ||
+                   _debugLastScatterRefreshReason == "scene-bootstrap-failed";
 #else
             return false;
 #endif
@@ -2202,6 +2327,7 @@ namespace Hecton8.World
             }
 
             _activeInstances.Clear();
+            ClearFloraGpuiVisibility();
             _removalBuffer.Clear();
             ReleaseCandidateListPlacements(_candidateBuffer);
             ReleaseRescueCandidateBuffers();
@@ -2518,6 +2644,7 @@ namespace Hecton8.World
                 : int.MaxValue;
             _hasPendingStartupPlacements = false;
             _hasPendingRuntimePlacements = false;
+            ResetFloraGpuiAggregation();
 
             foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
             {
@@ -2566,6 +2693,22 @@ namespace Hecton8.World
                     out bool shouldApplyGeneratedGeology,
                     out int syncSignature,
                     out bool allowInitialWarmupCreate);
+
+                if (TryRegisterFloraGpuiPlacement(placement, runtimeVariant, out GPUInstancerPrefabPrototype floraPrototype))
+                {
+                    if (instance != null)
+                    {
+                        DestroyProxyInstance(instance.gameObject);
+                        _activeInstances.Remove(pair.Key);
+                        rebuiltCount++;
+                    }
+                    else
+                    {
+                        createdCount++;
+                    }
+
+                    continue;
+                }
 
                 if (instance != null)
                 {
@@ -2676,6 +2819,8 @@ namespace Hecton8.World
                 if (initialWarmupPass)
                     remainingInitialCreateBudget--;
             }
+
+            FlushFloraGpuiBuffers();
 
             long spawnEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : cleanupEndTimestamp;
             PublishFaunaRegistrySnapshot();
@@ -2799,6 +2944,9 @@ namespace Hecton8.World
                     out bool allowInitialWarmupCreate);
 
                 if (initialWarmupPass && !allowInitialWarmupCreate)
+                    continue;
+
+                if (ShouldUseFloraGpuiPath(placement, runtimeVariant, out _))
                     continue;
 
                 GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
@@ -10861,9 +11009,160 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldFaunaSpawnRegistry(ref faunaSpawnRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
+            if (floraGpuiManager == null)
+                floraGpuiManager = UnityEngine.Object.FindAnyObjectByType<GPUInstancerPrefabManager>();
 
             if (faunaSpawnRegistry != null)
                 faunaSpawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
+        }
+
+        private void ResetFloraGpuiAggregation()
+        {
+            _activeGpuiFloraPlacements = 0;
+
+            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
+            {
+                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
+                if (prototype == null)
+                    continue;
+
+                _floraGpuiCounts[prototype] = 0;
+            }
+        }
+
+        private bool TryRegisterFloraGpuiPlacement(
+            ScatterPlacement placement,
+            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
+            out GPUInstancerPrefabPrototype prototype)
+        {
+            if (!ShouldUseFloraGpuiPath(placement, runtimeVariant, out prototype))
+                return false;
+
+            if (!_floraGpuiMatrices.TryGetValue(prototype, out Matrix4x4[] matrices))
+            {
+                matrices = new Matrix4x4[64]; // COLD ALLOC: first-time GPUI flora prototype buffer.
+                _floraGpuiMatrices.Add(prototype, matrices);
+                _floraGpuiCounts.Add(prototype, 0);
+                _floraGpuiBufferCapacities.Add(prototype, 0);
+                _floraGpuiKnownPrototypes.Add(prototype);
+            }
+
+            int count = _floraGpuiCounts[prototype];
+            if (count >= matrices.Length)
+            {
+                int newCapacity = Mathf.NextPowerOfTwo(count + 1);
+                Matrix4x4[] expanded = new Matrix4x4[newCapacity]; // COLD ALLOC: growth only when a prototype exceeds current flora GPUI capacity.
+                Array.Copy(matrices, 0, expanded, 0, matrices.Length);
+                matrices = expanded;
+                _floraGpuiMatrices[prototype] = matrices;
+            }
+
+            matrices[count] = Matrix4x4.TRS(placement.Position, placement.Rotation, Vector3.one * placement.Scale);
+            _floraGpuiCounts[prototype] = count + 1;
+            _activeGpuiFloraPlacements++;
+            return true;
+        }
+
+        private void FlushFloraGpuiBuffers()
+        {
+            if (floraGpuiManager == null || !Application.isPlaying)
+                return;
+
+            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
+            {
+                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
+                if (prototype == null)
+                    continue;
+
+                _floraGpuiCounts.TryGetValue(prototype, out int count);
+                Matrix4x4[] matrices = _floraGpuiMatrices[prototype];
+                int requiredCapacity = matrices != null ? matrices.Length : 0;
+
+                bool needsInitialize = !_floraGpuiInitializedPrototypes.Contains(prototype);
+                if (!needsInitialize &&
+                    _floraGpuiBufferCapacities.TryGetValue(prototype, out int currentCapacity) &&
+                    currentCapacity < requiredCapacity)
+                {
+                    needsInitialize = true;
+                }
+
+                if (needsInitialize)
+                {
+                    GPUInstancerAPI.InitializePrototype(
+                        floraGpuiManager,
+                        prototype,
+                        requiredCapacity,
+                        count);
+                    _floraGpuiInitializedPrototypes.Add(prototype);
+                    _floraGpuiBufferCapacities[prototype] = requiredCapacity;
+                }
+
+                if (count <= 0)
+                {
+                    GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+                        floraGpuiManager,
+                        prototype,
+                        Array.Empty<Matrix4x4>());
+                    continue;
+                }
+
+                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+                    floraGpuiManager,
+                    prototype,
+                    matrices,
+                    0,
+                    0,
+                    count);
+            }
+        }
+
+        private void ClearFloraGpuiVisibility()
+        {
+            _activeGpuiFloraPlacements = 0;
+
+            if (floraGpuiManager == null || !Application.isPlaying)
+                return;
+
+            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
+            {
+                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
+                if (prototype == null || !_floraGpuiInitializedPrototypes.Contains(prototype))
+                    continue;
+
+                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+                    floraGpuiManager,
+                    prototype,
+                    Array.Empty<Matrix4x4>());
+            }
+        }
+
+        private bool ShouldUseFloraGpuiPath(
+            ScatterPlacement placement,
+            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
+            out GPUInstancerPrefabPrototype prototype)
+        {
+            prototype = null;
+
+            if (!Application.isPlaying || floraGpuiManager == null || placement == null)
+                return false;
+
+            WorldPrefabFamilyProfile family = placement.Family;
+            if (family == null ||
+                (family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
+                 family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Coral))
+            {
+                return false;
+            }
+
+            if (family.expectsCollision || family.expectsInteraction)
+                return false;
+
+            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
+            if (prefab == null || !prefab.TryGetComponent(out GPUInstancerPrefab gpuiPrefab))
+                return false;
+
+            prototype = gpuiPrefab.prefabPrototype;
+            return prototype != null;
         }
 
         private void RegisterProceduralStateRegistryCallbacks()

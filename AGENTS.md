@@ -23,7 +23,7 @@ AA commercial product — Master Grade, enterprise-level, visually premium.
 
 | System | Status |
 |---|---|
-| Scene bootstrap | Architecturally required; BuildSettings stale (only 02_HECTON_WORLD in EditorBuildSettings) |
+| Scene bootstrap | Architecturally required; BuildSettings aligned (00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD) |
 | Save shell | Live — manual 3-slot (slot_1/2/3) |
 | Scatter | Live — main CPU offender |
 | VRAM / RT | RED — PENDING VERIFICATION (live probe: ~966 MB tex + ~531 MB RT) |
@@ -39,7 +39,7 @@ Normative: 00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD.
 Single-scene load via SceneManager.LoadScene/LoadSceneAsync.
 01_ORBIT exists as scene asset but is not in the main handoff.
 sandbox/ and _Recovery are not production.
-BuildSettings currently stale — contains only 02_HECTON_WORLD.
+BuildSettings currently aligned — contains 00_BOOTSTRAP, 01_MAIN_MENU, 02_HECTON_WORLD.
 
 [REQ] Heavy assets (terrain, ocean, caves) — Addressables async only.
 [FORBID] LoadSceneAsync(activateOnLoad:true) without loading screen — main thread freeze.

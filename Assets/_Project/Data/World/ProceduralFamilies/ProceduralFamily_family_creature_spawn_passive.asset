@@ -67,12 +67,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.05}
-  - variantId: family.creature.spawn.passive.final.placeholder
-    prefab: {fileID: 8252174472087487585, guid: e2bbc07724ca3e54b9d5ac768db7153f, type: 3}
+  - variantId: family.creature.spawn.passive.final.school_anchor
+    prefab: {fileID: 8333928915608168899, guid: 87fe94813ab80c24e8807228de73e0e0, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.05}
+    uniformScaleRange: {x: 0.96, y: 1.06}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/Creature_Spawn_Passive
   gameplayRole: Passive fauna and schooling spawn anchors.

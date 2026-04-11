@@ -54,12 +54,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.creature.zone.ruin_apex.final.placeholder
-    prefab: {fileID: 5302304629803847867, guid: 0b8337169cd432541b65f2a8ddf5323a, type: 3}
+  - variantId: family.creature.zone.ruin_apex.final.ownership_zone
+    prefab: {fileID: 2040532378975898657, guid: afba756f9f0c9e3489068d5be5a8f15f, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.98, y: 1.03}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/RuinApexZone
   gameplayRole: Large predator ownership zone around abandoned ruins and megastructure

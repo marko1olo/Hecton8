@@ -147,6 +147,106 @@ namespace Hecton8.EditorTools
                 false,
                 Vector3.zero,
                 null);
+            CreateCompositeFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Debris_ScrapCluster.prefab",
+                new Vector3(2.6f, 1.2f, 1.8f),
+                new[]
+                {
+                    new CompositeLodSpec(
+                        1f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("ScrapBeam", PrimitiveType.Cube, new Vector3(1.6f, 0.18f, 0.35f), new Vector3(-0.2f, 0.18f, 0.1f), new Vector3(0f, 18f, -12f), pylonMat),
+                            new VisualPrimitiveSpec("CargoFrame", PrimitiveType.Cube, new Vector3(0.9f, 0.55f, 0.75f), new Vector3(0.55f, 0.32f, -0.4f), new Vector3(8f, -24f, 4f), pumpMat),
+                            new VisualPrimitiveSpec("BrokenPipe", PrimitiveType.Cylinder, new Vector3(0.28f, 0.75f, 0.28f), new Vector3(-0.65f, 0.28f, -0.35f), new Vector3(90f, 0f, 28f), corridorMat),
+                            new VisualPrimitiveSpec("Plate", PrimitiveType.Cube, new Vector3(0.95f, 0.08f, 0.6f), new Vector3(0.15f, 0.08f, 0.45f), new Vector3(0f, -32f, 7f), foundationMat),
+                        })
+                });
+            CreateCompositeFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Debris_WreckField.prefab",
+                new Vector3(4.8f, 2.4f, 3.4f),
+                new[]
+                {
+                    new CompositeLodSpec(
+                        1f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("FieldSpine", PrimitiveType.Cube, new Vector3(3.8f, 0.24f, 0.6f), new Vector3(0f, 0.22f, 0f), new Vector3(0f, 12f, -4f), foundationMat),
+                            new VisualPrimitiveSpec("HullChunk", PrimitiveType.Cube, new Vector3(1.6f, 1.1f, 1.2f), new Vector3(-1.2f, 0.55f, 0.45f), new Vector3(0f, 20f, 9f), corridorMat),
+                            new VisualPrimitiveSpec("CargoShell", PrimitiveType.Cube, new Vector3(1.2f, 0.85f, 1.1f), new Vector3(1.3f, 0.42f, -0.65f), new Vector3(10f, -25f, -6f), pumpMat),
+                            new VisualPrimitiveSpec("PipeRun", PrimitiveType.Cylinder, new Vector3(0.32f, 1.4f, 0.32f), new Vector3(0.7f, 0.35f, 0.9f), new Vector3(90f, 0f, -16f), pylonMat),
+                            new VisualPrimitiveSpec("MastStub", PrimitiveType.Cylinder, new Vector3(0.28f, 1.8f, 0.28f), new Vector3(-0.35f, 0.85f, -0.95f), new Vector3(6f, 0f, 12f), pylonMat),
+                            new VisualPrimitiveSpec("ServicePlate", PrimitiveType.Cube, new Vector3(2.2f, 0.1f, 0.9f), new Vector3(0.2f, 0.12f, -1.15f), new Vector3(0f, -18f, 0f), foundationMat),
+                        })
+                });
+            CreateCompositeFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Ruin_ClusterMedium.prefab",
+                new Vector3(8.5f, 3.2f, 7f),
+                new[]
+                {
+                    new CompositeLodSpec(
+                        0.6f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("ModuleA", PrimitiveType.Cube, new Vector3(4.2f, 2.0f, 4.2f), new Vector3(-2.8f, 1.0f, 0.3f), new Vector3(0f, -12f, 0f), foundationMat),
+                            new VisualPrimitiveSpec("ModuleB", PrimitiveType.Cube, new Vector3(2.4f, 2.2f, 6.2f), new Vector3(1.8f, 1.1f, -1.2f), new Vector3(0f, 20f, 0f), corridorMat),
+                            new VisualPrimitiveSpec("Bridge", PrimitiveType.Cube, new Vector3(1.2f, 0.6f, 2.2f), new Vector3(-0.2f, 1.4f, -0.55f), new Vector3(0f, 8f, 10f), corridorMat),
+                            new VisualPrimitiveSpec("Brace", PrimitiveType.Cylinder, new Vector3(0.45f, 2.6f, 0.45f), new Vector3(3.6f, 1.3f, 1.7f), new Vector3(0f, 0f, 8f), pylonMat),
+                            new VisualPrimitiveSpec("BaseSlab", PrimitiveType.Cube, new Vector3(7.2f, 0.35f, 5.8f), new Vector3(0f, 0.17f, 0f), new Vector3(0f, 6f, 0f), foundationMat),
+                        }),
+                    new CompositeLodSpec(
+                        0.15f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("MassA", PrimitiveType.Cube, new Vector3(5.6f, 1.8f, 4.6f), new Vector3(-1.6f, 0.95f, 0.15f), new Vector3(0f, -6f, 0f), foundationMat),
+                            new VisualPrimitiveSpec("MassB", PrimitiveType.Cube, new Vector3(2.0f, 2.0f, 4.4f), new Vector3(2.25f, 1.0f, -0.9f), new Vector3(0f, 16f, 0f), corridorMat),
+                            new VisualPrimitiveSpec("Brace", PrimitiveType.Cylinder, new Vector3(0.38f, 2.0f, 0.38f), new Vector3(3.2f, 1.0f, 1.3f), new Vector3(0f, 0f, 8f), pylonMat),
+                            new VisualPrimitiveSpec("BaseSlab", PrimitiveType.Cube, new Vector3(6.6f, 0.3f, 5.0f), new Vector3(0f, 0.15f, 0f), new Vector3(0f, 4f, 0f), foundationMat),
+                        }),
+                    new CompositeLodSpec(
+                        0.04f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("Mass", PrimitiveType.Cube, new Vector3(6.6f, 2.2f, 4.8f), new Vector3(-0.3f, 1.1f, -0.2f), new Vector3(0f, 8f, 0f), foundationMat),
+                            new VisualPrimitiveSpec("Spur", PrimitiveType.Cube, new Vector3(1.4f, 1.8f, 3.8f), new Vector3(2.7f, 0.9f, 0.8f), new Vector3(0f, 18f, 0f), corridorMat),
+                        }),
+                });
+            CreateCompositeFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Ruin_Megastructure.prefab",
+                new Vector3(10.8f, 8.8f, 11f),
+                new[]
+                {
+                    new CompositeLodSpec(
+                        0.6f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("TowerCore", PrimitiveType.Cube, new Vector3(4.2f, 8.4f, 4.2f), new Vector3(0f, 4.2f, 0f), Vector3.zero, foundationMat),
+                            new VisualPrimitiveSpec("UpperRing", PrimitiveType.Cube, new Vector3(7.4f, 0.55f, 7.4f), new Vector3(0f, 6.6f, 0f), Vector3.zero, corridorMat),
+                            new VisualPrimitiveSpec("LowerRing", PrimitiveType.Cube, new Vector3(8.2f, 0.7f, 8.2f), new Vector3(0f, 2.1f, 0f), Vector3.zero, corridorMat),
+                            new VisualPrimitiveSpec("SideFrameA", PrimitiveType.Cube, new Vector3(1.1f, 6.8f, 1.1f), new Vector3(-3.4f, 3.6f, 2.9f), new Vector3(0f, 12f, 4f), pylonMat),
+                            new VisualPrimitiveSpec("SideFrameB", PrimitiveType.Cube, new Vector3(1.1f, 5.8f, 1.1f), new Vector3(3.1f, 3.0f, -2.7f), new Vector3(0f, -18f, -6f), pylonMat),
+                            new VisualPrimitiveSpec("Bridge", PrimitiveType.Cube, new Vector3(2.4f, 1.0f, 6.8f), new Vector3(0f, 1.2f, 4.6f), new Vector3(0f, 18f, 0f), foundationMat),
+                            new VisualPrimitiveSpec("BasePlate", PrimitiveType.Cube, new Vector3(10.2f, 0.45f, 10.2f), new Vector3(0f, 0.22f, 0f), Vector3.zero, foundationMat),
+                        }),
+                    new CompositeLodSpec(
+                        0.15f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("Core", PrimitiveType.Cube, new Vector3(4.8f, 7.2f, 4.8f), new Vector3(0f, 3.8f, 0f), Vector3.zero, foundationMat),
+                            new VisualPrimitiveSpec("Ring", PrimitiveType.Cube, new Vector3(7.6f, 0.6f, 7.6f), new Vector3(0f, 4.8f, 0f), Vector3.zero, corridorMat),
+                            new VisualPrimitiveSpec("StrutA", PrimitiveType.Cube, new Vector3(1.0f, 5.8f, 1.0f), new Vector3(-3.0f, 3.0f, 2.5f), new Vector3(0f, 8f, 4f), pylonMat),
+                            new VisualPrimitiveSpec("StrutB", PrimitiveType.Cube, new Vector3(1.0f, 5.0f, 1.0f), new Vector3(2.8f, 2.6f, -2.3f), new Vector3(0f, -12f, -4f), pylonMat),
+                            new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(9.4f, 0.35f, 9.4f), new Vector3(0f, 0.18f, 0f), Vector3.zero, foundationMat),
+                        }),
+                    new CompositeLodSpec(
+                        0.04f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("Mass", PrimitiveType.Cube, new Vector3(6.2f, 7.8f, 6.2f), new Vector3(0f, 4.0f, 0f), Vector3.zero, foundationMat),
+                            new VisualPrimitiveSpec("Spur", PrimitiveType.Cube, new Vector3(2.4f, 2.2f, 6.0f), new Vector3(0.6f, 1.2f, 3.6f), new Vector3(0f, 16f, 0f), corridorMat),
+                            new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(8.6f, 0.3f, 8.6f), new Vector3(0f, 0.15f, 0f), Vector3.zero, foundationMat),
+                        }),
+                });
 
             BuildableData foundation = CreateOrUpdateBuildable(
                 $"{DataFolder}/Build_Foundation_Platform.asset",
@@ -485,6 +585,9 @@ namespace Hecton8.EditorTools
             }
 
             material.shader = shader;
+            material.enableInstancing = true;
+            material.doubleSidedGI = false;
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             material.SetColor("_BaseColor", color);
             ConfigureUrpLitSurface(material, transparent);
             EditorUtility.SetDirty(material);
@@ -1119,6 +1222,7 @@ namespace Hecton8.EditorTools
                 material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
                 material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
                 material.SetFloat("_ZWrite", 0f);
+                material.SetFloat("_Cull", (float)CullMode.Back);
                 material.DisableKeyword("_ALPHATEST_ON");
                 material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
                 material.renderQueue = (int)RenderQueue.Transparent;
@@ -1130,6 +1234,7 @@ namespace Hecton8.EditorTools
                 material.SetFloat("_SrcBlend", (float)BlendMode.One);
                 material.SetFloat("_DstBlend", (float)BlendMode.Zero);
                 material.SetFloat("_ZWrite", 1f);
+                material.SetFloat("_Cull", (float)CullMode.Back);
                 material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
                 material.renderQueue = -1;
             }
@@ -1176,14 +1281,11 @@ namespace Hecton8.EditorTools
             Vector3 interiorSize,
             SocketSpec[] sockets)
         {
-            GameObject root = GameObject.CreatePrimitive(primitiveType);
-            root.name = System.IO.Path.GetFileNameWithoutExtension(prefabPath);
-            root.transform.localScale = scale;
-
-            if (root.TryGetComponent(out Renderer renderer))
-                renderer.sharedMaterial = material;
+            GameObject root = new GameObject(System.IO.Path.GetFileNameWithoutExtension(prefabPath));
 
             root.AddComponent<ModuleMarker>();
+            AddStructuralCollider(root, primitiveType, scale);
+            BuildFinalVisuals(root.transform, primitiveType, scale, material, addBaseModule);
 
             if (addBaseModule)
             {
@@ -1223,6 +1325,222 @@ namespace Hecton8.EditorTools
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             Object.DestroyImmediate(root);
             return prefab;
+        }
+
+        private static void BuildFinalVisuals(Transform parent, PrimitiveType primitiveType, Vector3 scale, Material material, bool buildLodChain)
+        {
+            if (!buildLodChain)
+            {
+                CreateVisualPrimitive(parent, "__Visual", primitiveType, scale, material);
+                return;
+            }
+
+            GameObject lod0 = new GameObject("LOD0");
+            lod0.transform.SetParent(parent, false);
+            List<Renderer> lod0Renderers = new List<Renderer>(4);
+            lod0Renderers.Add(CreateVisualPrimitive(lod0.transform, "Body", primitiveType, scale, material));
+            AddModuleTrimSet(lod0.transform, scale, material, true, lod0Renderers);
+
+            GameObject lod1 = new GameObject("LOD1");
+            lod1.transform.SetParent(parent, false);
+            List<Renderer> lod1Renderers = new List<Renderer>(2);
+            lod1Renderers.Add(CreateVisualPrimitive(lod1.transform, "Body", primitiveType, new Vector3(scale.x * 0.98f, scale.y, scale.z * 0.98f), material));
+            AddModuleTrimSet(lod1.transform, scale, material, false, lod1Renderers);
+
+            GameObject lod2 = new GameObject("LOD2");
+            lod2.transform.SetParent(parent, false);
+            List<Renderer> lod2Renderers = new List<Renderer>(1)
+            {
+                CreateVisualPrimitive(lod2.transform, "Body", primitiveType, new Vector3(scale.x * 0.94f, scale.y * 0.96f, scale.z * 0.94f), material)
+            };
+
+            LODGroup lodGroup = parent.gameObject.AddComponent<LODGroup>();
+            lodGroup.fadeMode = LODFadeMode.CrossFade;
+            lodGroup.animateCrossFading = true;
+            lodGroup.SetLODs(new[]
+            {
+                new LOD(0.6f, lod0Renderers.ToArray()),
+                new LOD(0.15f, lod1Renderers.ToArray()),
+                new LOD(0.04f, lod2Renderers.ToArray())
+            });
+            lodGroup.RecalculateBounds();
+        }
+
+        private static void AddModuleTrimSet(Transform parent, Vector3 scale, Material material, bool includeCrossMembers, List<Renderer> renderers)
+        {
+            float shellThickness = Mathf.Max(0.08f, Mathf.Min(scale.x, scale.y, scale.z) * 0.08f);
+            float frameWidth = Mathf.Max(0.18f, Mathf.Min(scale.x, scale.z) * 0.18f);
+            float ceilingBandHeight = Mathf.Max(0.12f, scale.y * 0.12f);
+
+            renderers.Add(CreateVisualPrimitive(
+                parent,
+                "TopBand",
+                PrimitiveType.Cube,
+                new Vector3(scale.x, ceilingBandHeight, frameWidth),
+                material,
+                new Vector3(0f, (scale.y * 0.5f) - (ceilingBandHeight * 0.5f), 0f)));
+
+            renderers.Add(CreateVisualPrimitive(
+                parent,
+                "BottomBand",
+                PrimitiveType.Cube,
+                new Vector3(scale.x, ceilingBandHeight, frameWidth),
+                material,
+                new Vector3(0f, (-scale.y * 0.5f) + (ceilingBandHeight * 0.5f), 0f)));
+
+            if (!includeCrossMembers)
+                return;
+
+            renderers.Add(CreateVisualPrimitive(
+                parent,
+                "LeftRib",
+                PrimitiveType.Cube,
+                new Vector3(shellThickness, scale.y, scale.z),
+                material,
+                new Vector3((-scale.x * 0.5f) + (shellThickness * 0.5f), 0f, 0f)));
+
+            renderers.Add(CreateVisualPrimitive(
+                parent,
+                "RightRib",
+                PrimitiveType.Cube,
+                new Vector3(shellThickness, scale.y, scale.z),
+                material,
+                new Vector3((scale.x * 0.5f) - (shellThickness * 0.5f), 0f, 0f)));
+        }
+
+        private static Renderer CreateVisualPrimitive(
+            Transform parent,
+            string name,
+            PrimitiveType primitiveType,
+            Vector3 scale,
+            Material material)
+        {
+            return CreateVisualPrimitive(parent, name, primitiveType, scale, material, Vector3.zero);
+        }
+
+        private static Renderer CreateVisualPrimitive(
+            Transform parent,
+            string name,
+            PrimitiveType primitiveType,
+            Vector3 scale,
+            Material material,
+            Vector3 localPosition)
+        {
+            return CreateVisualPrimitive(parent, name, primitiveType, scale, material, localPosition, Vector3.zero);
+        }
+
+        private static Renderer CreateVisualPrimitive(
+            Transform parent,
+            string name,
+            PrimitiveType primitiveType,
+            Vector3 scale,
+            Material material,
+            Vector3 localPosition,
+            Vector3 localEulerAngles)
+        {
+            GameObject visual = GameObject.CreatePrimitive(primitiveType);
+            visual.name = name;
+            visual.transform.SetParent(parent, false);
+            visual.transform.localPosition = localPosition;
+            visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
+            visual.transform.localScale = scale;
+
+            Collider visualCollider = visual.GetComponent<Collider>();
+            if (visualCollider != null)
+                Object.DestroyImmediate(visualCollider);
+
+            Renderer renderer = visual.GetComponent<Renderer>();
+            if (renderer != null)
+                renderer.sharedMaterial = material;
+
+            return renderer;
+        }
+
+        private static void AddStructuralCollider(GameObject root, PrimitiveType primitiveType, Vector3 scale)
+        {
+            switch (primitiveType)
+            {
+                case PrimitiveType.Cylinder:
+                    CapsuleCollider capsule = root.AddComponent<CapsuleCollider>();
+                    capsule.direction = 1;
+                    capsule.height = Mathf.Max(scale.y, Mathf.Max(scale.x, scale.z));
+                    capsule.radius = Mathf.Max(scale.x, scale.z) * 0.5f;
+                    capsule.center = Vector3.zero;
+                    break;
+
+                default:
+                    BoxCollider box = root.AddComponent<BoxCollider>();
+                    box.size = scale;
+                    box.center = Vector3.zero;
+                    break;
+            }
+        }
+
+        private static GameObject CreateCompositeFinalPrefab(string prefabPath, Vector3 colliderSize, CompositeLodSpec[] lodSpecs)
+        {
+            GameObject root = new GameObject(System.IO.Path.GetFileNameWithoutExtension(prefabPath));
+            root.AddComponent<ModuleMarker>();
+
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.size = colliderSize;
+            collider.center = new Vector3(0f, colliderSize.y * 0.5f, 0f);
+
+            BuildCompositeVisuals(root.transform, lodSpecs);
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static void BuildCompositeVisuals(Transform parent, CompositeLodSpec[] lodSpecs)
+        {
+            if (lodSpecs == null || lodSpecs.Length <= 0)
+                return;
+
+            if (lodSpecs.Length == 1)
+            {
+                BuildCompositeVisualGroup(parent, lodSpecs[0].Visuals, null);
+                return;
+            }
+
+            LOD[] lods = new LOD[lodSpecs.Length];
+            for (int i = 0; i < lodSpecs.Length; i++)
+            {
+                GameObject lodRoot = new GameObject($"LOD{i}");
+                lodRoot.transform.SetParent(parent, false);
+
+                VisualPrimitiveSpec[] visuals = lodSpecs[i].Visuals;
+                List<Renderer> renderers = new List<Renderer>(visuals != null ? visuals.Length : 0);
+                BuildCompositeVisualGroup(lodRoot.transform, visuals, renderers);
+                lods[i] = new LOD(lodSpecs[i].ScreenRelativeTransitionHeight, renderers.ToArray());
+            }
+
+            LODGroup lodGroup = parent.gameObject.AddComponent<LODGroup>();
+            lodGroup.fadeMode = LODFadeMode.CrossFade;
+            lodGroup.animateCrossFading = true;
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+        }
+
+        private static void BuildCompositeVisualGroup(Transform parent, VisualPrimitiveSpec[] visuals, List<Renderer> renderers)
+        {
+            if (visuals == null || visuals.Length <= 0)
+                return;
+
+            for (int i = 0; i < visuals.Length; i++)
+            {
+                Renderer renderer = CreateVisualPrimitive(
+                    parent,
+                    visuals[i].Name,
+                    visuals[i].PrimitiveType,
+                    visuals[i].Scale,
+                    visuals[i].Material,
+                    visuals[i].LocalPosition,
+                    visuals[i].LocalEulerAngles);
+
+                if (renderer != null && renderers != null)
+                    renderers.Add(renderer);
+            }
         }
 
         private static BuildableData CreateOrUpdateBuildable(
@@ -1401,6 +1719,38 @@ namespace Hecton8.EditorTools
             public string Name { get; }
             public Vector3 LocalPosition { get; }
             public Quaternion LocalRotation { get; }
+        }
+
+        private readonly struct CompositeLodSpec
+        {
+            public CompositeLodSpec(float screenRelativeTransitionHeight, VisualPrimitiveSpec[] visuals)
+            {
+                ScreenRelativeTransitionHeight = screenRelativeTransitionHeight;
+                Visuals = visuals;
+            }
+
+            public float ScreenRelativeTransitionHeight { get; }
+            public VisualPrimitiveSpec[] Visuals { get; }
+        }
+
+        private readonly struct VisualPrimitiveSpec
+        {
+            public VisualPrimitiveSpec(string name, PrimitiveType primitiveType, Vector3 scale, Vector3 localPosition, Vector3 localEulerAngles, Material material)
+            {
+                Name = name;
+                PrimitiveType = primitiveType;
+                Scale = scale;
+                LocalPosition = localPosition;
+                LocalEulerAngles = localEulerAngles;
+                Material = material;
+            }
+
+            public string Name { get; }
+            public PrimitiveType PrimitiveType { get; }
+            public Vector3 Scale { get; }
+            public Vector3 LocalPosition { get; }
+            public Vector3 LocalEulerAngles { get; }
+            public Material Material { get; }
         }
     }
 }

@@ -152,6 +152,15 @@ namespace Hecton8.Environment
             EvaluateMatrix(forcePublish: false);
         }
 
+        /// <summary>
+        /// Forces immediate biome matrix evaluation for the current player position.
+        /// </summary>
+        public void ForceRefresh()
+        {
+            ResolveReferences();
+            EvaluateMatrix(forcePublish: true);
+        }
+
         public void SetMatrixCatalog(HectonBiomeMatrixCatalog catalog)
         {
             matrixCatalog = catalog;

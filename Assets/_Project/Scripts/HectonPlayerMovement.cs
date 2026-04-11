@@ -226,6 +226,7 @@ namespace Hecton8.Gameplay
         private float _dryGroundGraceTimer;
         private float _shoreGroundGraceTimer;
         private float _stepAssistCooldownTimer;
+        private float _currentFixedDeltaTime = 0.02f;
         private float _waterImmersionRatio;
         private float _smoothedImmersionRatio;
         private float _currentLinearDamping;
@@ -821,6 +822,7 @@ namespace Hecton8.Gameplay
             if (suit == null) return;
 
             EnsureJuiceProcessor();
+            _currentFixedDeltaTime = fixedDeltaTime;
 
             // ═══════════════════════════════════════════════
             //  1. FORCE-OVERRIDE: BuoyancyObject-proof
@@ -1129,6 +1131,11 @@ namespace Hecton8.Gameplay
 
         private void GroundCheck()
         {
+            GroundCheck(_currentFixedDeltaTime);
+        }
+
+        private void GroundCheck(float fixedDeltaTime)
+        {
             Vector3 rbPos = _rb.position;
             float bodyBottomY = GetBodyBottomY();
             _groundCheckOrigin.x = rbPos.x;
@@ -1173,7 +1180,7 @@ namespace Hecton8.Gameplay
 
             if (_isGrounded)
             {
-                float normalT = 1f - math.exp(-15f * Time.fixedDeltaTime);
+                float normalT = 1f - math.exp(-15f * fixedDeltaTime);
                 _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, _groundHit.normal, normalT);
 
                 float sqrMag = _smoothedGroundNormal.sqrMagnitude;
@@ -1185,7 +1192,7 @@ namespace Hecton8.Gameplay
             else
             {
                 _groundHit = default;
-                float resetT = 1f - math.exp(-5f * Time.fixedDeltaTime);
+                float resetT = 1f - math.exp(-5f * fixedDeltaTime);
                 _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, Vector3.up, resetT);
             }
         }

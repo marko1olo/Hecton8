@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2785922254570599564}
   - component: {fileID: 2155133556604341510}
+  - component: {fileID: 8569187985918366897}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__featherfan__s120-200
   m_TagString: Untagged
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 7255454010943717251}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8569187985918366897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3635398373973688326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 5335dd54081b42442a0d8893a7d8f07d, type: 2}
 --- !u!1 &5621233067379507625
 GameObject:
   m_ObjectHideFlags: 0

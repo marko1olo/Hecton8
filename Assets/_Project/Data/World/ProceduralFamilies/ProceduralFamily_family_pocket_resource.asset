@@ -60,12 +60,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.pocket.resource.final.placeholder
-    prefab: {fileID: 5335441627370629033, guid: ed4bd01b0725e0f4688d4b728ee18c06, type: 3}
+  - variantId: family.pocket.resource.final.cache
+    prefab: {fileID: 1289634458518991741, guid: f1d6d3c4507040242a4ae11263fa0e0d, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/ResourcePocket/Pocket_Resource
   gameplayRole: Loose resources and small reward pockets.

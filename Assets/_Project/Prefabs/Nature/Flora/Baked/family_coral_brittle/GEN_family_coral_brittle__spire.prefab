@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3639776755234283968}
   - component: {fileID: 5845241627880705167}
+  - component: {fileID: 1818621592277794670}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__spire
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7337270876474281512}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.0415428, y: 0.96456957, z: -0.28169852}
-  m_Size: 1.9291391
+  m_LocalReferencePoint: {x: 0.022961557, y: 0.9674208, z: -0.2993782}
+  m_Size: 1.9348416
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 6733237070532265197}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &1818621592277794670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7337270876474281512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 4ad8ca4c59538ef419f50b33971975dc, type: 2}

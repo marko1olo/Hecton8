@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 375675114383485825}
   - component: {fileID: 2263730113930009210}
+  - component: {fileID: 8669991437581884642}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__paddlespray__s70-120
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 947909578400734537}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.01360935, y: 1.4399512, z: 0.031529874}
-  m_Size: 2.8799024
+  m_LocalReferencePoint: {x: -0.01360935, y: 1.4499457, z: 0.029517233}
+  m_Size: 2.8998914
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 1723014648405728267}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8669991437581884642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 947909578400734537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 7196489ac2906bb49b9fd1576b95632c, type: 2}
 --- !u!1 &4565626427383313517
 GameObject:
   m_ObjectHideFlags: 0

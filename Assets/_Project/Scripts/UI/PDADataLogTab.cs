@@ -41,6 +41,10 @@ namespace Hecton8.UI
         [Tooltip("Все AudioLogData в игре. Назначить в инспекторе.")]
         [SerializeField] private AudioLogData[] allLogs = new AudioLogData[0];
 
+        [Header("── Font ─────────────────────────────────────")]
+        [Tooltip("Шрифт с кириллицей. Если null — используется TMP default.")]
+        [SerializeField] private TMPro.TMP_FontAsset _labelFont;
+
         [Header("── Colors ───────────────────────────────────")]
         [SerializeField] private Color colorBackground  = new Color(0.04f, 0.06f, 0.10f, 0.95f);
         [SerializeField] private Color colorAccent      = new Color(0.20f, 0.80f, 0.60f, 1f);
@@ -78,7 +82,7 @@ namespace Hecton8.UI
 
         // Playback timer display
         private float _playbackRemaining;
-        private string _prevTimerText;
+        private int _prevTimerSeconds = -1;
         private string _prevSubtitleText;
 
         private const float TICK_DT = 1f / 60f;
@@ -211,6 +215,7 @@ namespace Hecton8.UI
         private void HandlePlaybackStopped(string logId)
         {
             _playbackRemaining = 0f;
+            ResetPlaybackTimerDisplay();
             RefreshPlayButton(false);
             if (_subtitleLabel != null)
             {
@@ -222,6 +227,7 @@ namespace Hecton8.UI
         private void HandlePlaybackCompleted(string logId)
         {
             _playbackRemaining = 0f;
+            ResetPlaybackTimerDisplay();
             RefreshPlayButton(false);
         }
 
@@ -233,6 +239,15 @@ namespace Hecton8.UI
         {
             if (_built) return;
             _built = true;
+
+            // Auto-resolve font with Cyrillic support
+            if (_labelFont == null)
+            {
+                // Try to load текст SDF which has Cyrillic
+                _labelFont = UnityEngine.Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/текст SDF");
+                if (_labelFont == null)
+                    _labelFont = TMPro.TMP_Settings.defaultFontAsset;
+            }
 
             // Background
             Image bg = gameObject.GetComponent<Image>();
@@ -499,15 +514,20 @@ namespace Hecton8.UI
             if (_playbackTimerLabel == null) return;
 
             int secs = Mathf.CeilToInt(_playbackRemaining);
+            if (secs == _prevTimerSeconds)
+                return;
+
+            _prevTimerSeconds = secs;
             int m = secs / 60;
             int s = secs % 60;
-            string text = $"{m:D2}:{s:D2}";
+            _playbackTimerLabel.SetText("{0:00}:{1:00}", m, s);
+        }
 
-            if (text != _prevTimerText)
-            {
-                _playbackTimerLabel.text = text;
-                _prevTimerText = text;
-            }
+        private void ResetPlaybackTimerDisplay()
+        {
+            _prevTimerSeconds = -1;
+            if (_playbackTimerLabel != null)
+                _playbackTimerLabel.SetText("{0:00}:{1:00}", 0, 0);
         }
 
         private void SetDetailVisible(bool visible)
@@ -536,6 +556,7 @@ namespace Hecton8.UI
         {
             RectTransform rt = CreateRect(name, parent);
             var tmp = rt.gameObject.AddComponent<TextMeshProUGUI>();
+            if (_labelFont != null) tmp.font = _labelFont;
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = alignment;

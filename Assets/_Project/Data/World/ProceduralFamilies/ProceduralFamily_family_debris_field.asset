@@ -59,12 +59,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.debris.field.final.placeholder
-    prefab: {fileID: 9118640878264825962, guid: 00de02e24d49731418a4a24e622ae987, type: 3}
+  - variantId: family.debris.field.final.wreck_field
+    prefab: {fileID: 8365438976427868984, guid: c055ab313b8da864f821536c0c9e19aa, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.1}
+    uniformScaleRange: {x: 0.96, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Debris/Debris_Field
   gameplayRole: Dense salvageable debris fields.

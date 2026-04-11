@@ -21,6 +21,8 @@
 //   • Shader.SetGlobalFloat для визуального отклика биолюминесценции.
 // ============================================================================
 
+using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
@@ -187,9 +189,7 @@ namespace Hecton8.AtlasSignal
                     AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
                     NotificationEvents.PushWarning("НЕИЗВЕСТНЫЙ СИГНАЛ ОБНАРУЖЕН — ИСТОЧНИК: НЕИЗВЕСТЕН");
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[AtlasSignal] Signal first detected! Strength: {newStrength:F2}");
-#endif
+                    LogSignalFirstDetected(newStrength);
                 }
 
                 // Шейдер
@@ -205,14 +205,8 @@ namespace Hecton8.AtlasSignal
             float pulseIntensity = _currentStrength;
             AtlasSignalEvents.RaisePulse(pulseIntensity);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Time.time >= _nextSignalLogTime)
-            {
-                _nextSignalLogTime = Time.time + 5f;
-                Debug.Log($"[AtlasSignal] PULSE — intensity: {pulseIntensity:F2} " +
-                          $"(dist to core: {Vector3.Distance(_playerTransform.position, atlasCorePosWorld):F0}m)");
-            }
-#endif
+            LogSignalPulse(pulseIntensity,
+                Vector3.Distance(_playerTransform.position, atlasCorePosWorld));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -226,9 +220,7 @@ namespace Hecton8.AtlasSignal
         {
             AtlasSignalEvents.RaiseDecoded(messageId);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AtlasSignal] Signal decoded: {messageId}");
-#endif
+            LogSignalDecoded(messageId);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -238,6 +230,28 @@ namespace Hecton8.AtlasSignal
         private void ResolvePlayer()
         {
             SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSignalFirstDetected(float strength)
+        {
+            Debug.Log($"[AtlasSignal] Signal first detected. Strength: {strength:F2}");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSignalPulse(float pulseIntensity, float distanceToCore)
+        {
+            if (Time.time < _nextSignalLogTime)
+                return;
+
+            _nextSignalLogTime = Time.time + 5f;
+            Debug.Log($"[AtlasSignal] Pulse intensity: {pulseIntensity:F2} (dist to core: {distanceToCore:F0}m)");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSignalDecoded(string messageId)
+        {
+            Debug.Log($"[AtlasSignal] Signal decoded: {messageId}");
         }
 
         // ══════════════════════════════════════════════════════════

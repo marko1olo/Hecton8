@@ -21,6 +21,7 @@ namespace Hecton8.EditorTools
         {
             new FamilyDefinition("family.rock.small_floor", "Rock Small Floor", WorldPrefabFamilyProfile.ProceduralDomain.Rock, WorldPrefabFamilyProfile.ScatterLayer.Ground, WorldPrefabFamilyProfile.PlacementMode.Scatter, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Light, 4f, 6f, 1, 3, "rock_density", new Color(0.56f, 0.6f, 0.66f, 1f), "Base floor stones for seafloor readability."),
             new FamilyDefinition("family.rock.cluster.medium", "Rock Cluster Medium", WorldPrefabFamilyProfile.ProceduralDomain.RockCluster, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Cluster, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Medium, 8f, 14f, 3, 6, "rock_density", new Color(0.48f, 0.56f, 0.62f, 1f), "Grouped floor rocks that create silhouette and cover."),
+            new FamilyDefinition("family.rock.shelf.large", "Rock Shelf Large", WorldPrefabFamilyProfile.ProceduralDomain.RockShelf, WorldPrefabFamilyProfile.ScatterLayer.Structure, WorldPrefabFamilyProfile.PlacementMode.Landmark, WorldSliceAnchor.SliceState.Far, WorldPrefabFamilyProfile.BudgetClass.Heavy, 18f, 22f, 1, 2, "landmark_strength", new Color(0.42f, 0.48f, 0.56f, 1f), "Large cliff shelves and overhangs for route readability and escarpment identity."),
             new FamilyDefinition("family.rock.arch.large", "Rock Arch Large", WorldPrefabFamilyProfile.ProceduralDomain.RockArch, WorldPrefabFamilyProfile.ScatterLayer.Structure, WorldPrefabFamilyProfile.PlacementMode.Landmark, WorldSliceAnchor.SliceState.Far, WorldPrefabFamilyProfile.BudgetClass.Heavy, 28f, 32f, 1, 1, "landmark_strength", new Color(0.44f, 0.5f, 0.58f, 1f), "Big arches for strong biome memory and route readability."),
             new FamilyDefinition("family.kelp.tall", "Kelp Tall", WorldPrefabFamilyProfile.ProceduralDomain.Kelp, WorldPrefabFamilyProfile.ScatterLayer.Ground, WorldPrefabFamilyProfile.PlacementMode.Patch, WorldSliceAnchor.SliceState.Mid, WorldPrefabFamilyProfile.BudgetClass.Light, 3f, 12f, 5, 12, "kelp_density", new Color(0.24f, 0.72f, 0.34f, 1f), "Tall vertical kelp for readable vertical habitat."),
             new FamilyDefinition("family.kelp.patch.dense", "Kelp Patch Dense", WorldPrefabFamilyProfile.ProceduralDomain.Kelp, WorldPrefabFamilyProfile.ScatterLayer.Cluster, WorldPrefabFamilyProfile.PlacementMode.Patch, WorldSliceAnchor.SliceState.Near, WorldPrefabFamilyProfile.BudgetClass.Medium, 2f, 16f, 10, 24, "kelp_density", new Color(0.18f, 0.64f, 0.28f, 1f), "Dense kelp pockets for shelter, occlusion and fauna habitat."),
@@ -57,6 +58,7 @@ namespace Hecton8.EditorTools
             new RuleDefinition("rule.kelp.abyssal", "Abyssal Kelp Veins", "Dark strap kelp with dim biolum veins for deep-water route read.", "family.kelp.abyssal", WorldContentSocket.ContentKind.Generic, 700f, 3200f, 0f, 26f, "flora_density", 0.28f, 1.06f, 3, 8, new[] { "biome.family.chemosynthetic_brine", "biome.family.metallic_hadal", "biome.family.abyssal_silt", "biome.family.rift_void" }, new[] { WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Progression }),
             new RuleDefinition("rule.rocks.floor", "Seafloor Rock Scatter", "Base rock language for most seafloor biomes.", "family.rock.small_floor", WorldContentSocket.ContentKind.Generic, 0f, 5000f, 0f, 35f, "rock_density", 0.25f, 1f, 4, 12, Array.Empty<string>(), Array.Empty<WorldZoneAnchor.ZoneKind>()),
             new RuleDefinition("rule.rocks.cluster", "Clustered Rock Cover", "Medium rock groupings that create silhouette and cover.", "family.rock.cluster.medium", WorldContentSocket.ContentKind.Generic, 0f, 5000f, 0f, 42f, "rock_density", 0.45f, 0.9f, 2, 6, Array.Empty<string>(), Array.Empty<WorldZoneAnchor.ZoneKind>()),
+            new RuleDefinition("rule.rocks.shelf", "Rock Shelf Escarpments", "Large cliff shelves, ledges and overhangs that make biome walls readable.", "family.rock.shelf.large", WorldContentSocket.ContentKind.Landmark, 20f, 5000f, 8f, 58f, "landmark_strength", 0.32f, 0.96f, 1, 2, new[] { "biome.family.granite_escarpment", "biome.family.tectonic_spine", "biome.family.rift_spine", "biome.family.volcanic_glass", "biome.family.abyssal_silt", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Combat }),
             new RuleDefinition("rule.rocks.arch", "Rock Arch Landmarks", "Large natural stone arches that hold route memory.", "family.rock.arch.large", WorldContentSocket.ContentKind.Landmark, 40f, 5000f, 4f, 55f, "landmark_strength", 0.38f, 1.02f, 1, 1, new[] { "biome.family.granite_escarpment", "biome.family.tectonic_spine", "biome.family.rift_spine", "biome.family.volcanic_glass", "biome.family.chemosynthetic_brine", "biome.family.abyssal_silt", "biome.family.sediment_drift" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneKind.Combat }),
             new RuleDefinition("rule.coral.low", "Low Coral Beds", "Low colorful coral that makes the floor feel alive.", "family.coral.low", WorldContentSocket.ContentKind.Generic, 0f, 550f, 0f, 34f, "coral_density", 0.28f, 1.05f, 5, 12, new[] { "biome.family.littoral_karst", "biome.family.fossil_reef", "biome.family.crystal_growth" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation, WorldZoneAnchor.ZoneKind.Fabrication }),
             new RuleDefinition("rule.coral.branching", "Coral Reef Growth", "Branching reef masses for readable coral structure.", "family.coral.branching", WorldContentSocket.ContentKind.Generic, 0f, 600f, 0f, 40f, "coral_density", 0.4f, 1f, 3, 8, new[] { "biome.family.fossil_reef", "biome.family.littoral_karst", "biome.family.crystal_growth" }, new[] { WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneKind.Navigation }),
@@ -965,6 +967,12 @@ namespace Hecton8.EditorTools
                         new VariantRecipe("ridge", VariantShape.Line, PrimitiveType.Cube, new Vector3(1.6f, 1.2f, 1.4f), 1, new Vector2(0.9f, 1.15f)),
                         new VariantRecipe("stack", VariantShape.Tower, PrimitiveType.Cube, new Vector3(1.4f, 1.4f, 1.4f), 1, new Vector2(0.85f, 1.1f))
                     };
+                case "family.rock.shelf.large":
+                    return new[]
+                    {
+                        new VariantRecipe("ledge", VariantShape.Canopy, PrimitiveType.Cube, new Vector3(5.5f, 2.4f, 3.2f), 2, new Vector2(0.95f, 1.08f)),
+                        new VariantRecipe("wall", VariantShape.Frame, PrimitiveType.Cube, new Vector3(4.8f, 4.4f, 2.8f), 1, new Vector2(0.95f, 1.08f))
+                    };
                 case "family.rock.arch.large":
                     return new[]
                     {
@@ -1410,6 +1418,7 @@ namespace Hecton8.EditorTools
                 case "family.creature.spawn.predator":
                 case "family.rock.cluster.medium":
                     return WorldProceduralPattern.RiftHazard;
+                case "family.rock.shelf.large":
                 case "family.rock.arch.large":
                 case "family.landmark.spire":
                 case "family.cave.entrance":
@@ -1457,6 +1466,7 @@ namespace Hecton8.EditorTools
                 case "family.creature.spawn.predator":
                 case "family.rock.cluster.medium":
                     return WorldProceduralPattern.VolcanicPressure;
+                case "family.rock.shelf.large":
                 case "family.rock.arch.large":
                 case "family.landmark.spire":
                 case "family.cave.entrance":
@@ -1489,6 +1499,7 @@ namespace Hecton8.EditorTools
         {
             switch (familyId)
             {
+                case "family.rock.shelf.large":
                 case "family.rock.arch.large":
                 case "family.landmark.spire":
                     return WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark;

@@ -79,6 +79,7 @@ namespace Hecton8.SaveSystem
             changed |= EnsureBarter(ref data.barter, steps);
             changed |= EnsureFieldOperations(ref data.fieldOperations, steps);
             changed |= EnsureBeaconNetwork(ref data.beaconNetwork, steps);
+            changed |= EnsureLoreSystems(ref data, steps);
 
             if (data.version != SaveData.CurrentVersion)
             {
@@ -387,6 +388,85 @@ namespace Hecton8.SaveSystem
                 dto.nextSequence = Mathf.Max(1, dto.activeCount + 1);
                 changed = true;
                 steps.Add("beacon sequence repaired");
+            }
+
+            return changed;
+        }
+
+        // ── v11-16: Lore Systems ──────────────────────────────────
+
+        private static bool EnsureLoreSystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
+
+            if (data.audioLogDiscoveredIds == null)
+            {
+                data.audioLogDiscoveredIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("audioLog list created");
+            }
+
+            if (data.questActiveIds == null)
+            {
+                data.questActiveIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("quest active list created");
+            }
+
+            if (data.questCompletedIds == null)
+            {
+                data.questCompletedIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("quest completed list created");
+            }
+
+            if (data.suitInstalledUpgradeIds == null)
+            {
+                data.suitInstalledUpgradeIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("suit upgrades list created");
+            }
+
+            if (data.suitUnlockedBlueprintIds == null)
+            {
+                data.suitUnlockedBlueprintIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("suit blueprints list created");
+            }
+
+            if (data.corporateReceivedOrderIds == null)
+            {
+                data.corporateReceivedOrderIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("corporate orders list created");
+            }
+
+            if (data.corporatePendingOrderIds == null)
+            {
+                data.corporatePendingOrderIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("corporate pending orders list created");
+            }
+
+            if (data.corporatePendingOrderTimers == null)
+            {
+                data.corporatePendingOrderTimers = new System.Collections.Generic.List<float>();
+                changed = true;
+                steps.Add("corporate order timers list created");
+            }
+
+            if (data.missionActiveIds == null)
+            {
+                data.missionActiveIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("mission active list created");
+            }
+
+            if (data.missionCompletedIds == null)
+            {
+                data.missionCompletedIds = new System.Collections.Generic.List<string>();
+                changed = true;
+                steps.Add("mission completed list created");
             }
 
             return changed;

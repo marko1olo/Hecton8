@@ -36,14 +36,22 @@ namespace Hecton8.Interaction
 
         private string _cachedInteractText;
 
+        public string DiscoveryId => discoveryId;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
+
+        private bool _registeredLifecycle;
 
         private void OnEnable()
         {
             RebuildCache();
             
+            // Register for AI Director guidance
+            NarrativeEvents.RaiseNarrativePOIRegistered(this);
+            _registeredLifecycle = true;
+
             // Если уже открыто — отключаем (если настройка активна)
             if (disableAfterDiscovery && HectonNarrativeDirector.Instance != null)
             {
@@ -51,6 +59,15 @@ namespace Hecton8.Interaction
                 {
                     gameObject.SetActive(false);
                 }
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_registeredLifecycle)
+            {
+                NarrativeEvents.RaiseNarrativePOIDisposed(this);
+                _registeredLifecycle = false;
             }
         }
 

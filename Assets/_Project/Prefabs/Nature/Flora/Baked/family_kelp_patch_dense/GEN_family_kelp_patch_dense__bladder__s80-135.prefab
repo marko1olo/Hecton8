@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2583425415231570981}
   - component: {fileID: 2638148735670374022}
+  - component: {fileID: 339537682391873995}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__bladder__s80-135
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7322967628790611396}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.00043299794, y: 1.5229582, z: 0.03020516}
-  m_Size: 3.0459163
+  m_LocalReferencePoint: {x: -0.0051169097, y: 1.5311322, z: 0.030988216}
+  m_Size: 3.0622644
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 2026175355480188671}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &339537682391873995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7322967628790611396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: f43bc23dc9b85634b8fcc685ee003943, type: 2}

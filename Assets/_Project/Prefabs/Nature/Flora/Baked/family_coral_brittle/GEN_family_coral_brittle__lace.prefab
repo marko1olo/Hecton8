@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 631307978991635211}
   - component: {fileID: 7129075538828608091}
+  - component: {fileID: 5395769359957373521}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__lace
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4519750598657481017}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.057155102, y: 0.9279946, z: -0.25008202}
-  m_Size: 1.8559892
+  m_LocalReferencePoint: {x: 0.037269086, y: 0.9313055, z: -0.2652531}
+  m_Size: 1.862611
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 4123777543131688527}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &5395769359957373521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4519750598657481017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 0b0486cdb07ef10419e7aaf3ca1d0007, type: 2}
 --- !u!1 &4776228219172531155
 GameObject:
   m_ObjectHideFlags: 0

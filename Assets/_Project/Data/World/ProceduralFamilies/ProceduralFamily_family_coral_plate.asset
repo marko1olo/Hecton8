@@ -58,6 +58,18 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.coral.plate.final.flora.gen_family_coral_plate__bastion
+    prefab: {fileID: 6324192862862685710, guid: c22f87e90d7ae6349a42262a8afb59cc, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
+  - variantId: family.coral.plate.final.flora.gen_family_coral_plate__canopy
+    prefab: {fileID: 4806858721466108184, guid: 8974217e753c7df40a78e2f268b99d52, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
   - variantId: family.coral.plate.final.flora.gen_family_coral_plate__ledge
     prefab: {fileID: 1670628547940789094, guid: 5cf0a7fb0256afc48810cebee9a7e26a, type: 3}
     weight: 1
@@ -72,6 +84,12 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.96, y: 1.04}
   - variantId: family.coral.plate.final.flora.gen_family_coral_plate__stack
     prefab: {fileID: 5308723780815248229, guid: d5643ac598d22254d809ec77c90536ab, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.04}
+  - variantId: family.coral.plate.final.flora.gen_family_coral_plate__terrace
+    prefab: {fileID: 3983068948178984092, guid: bdc2b0a216b0bc444bb126ec2fd25b79, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1

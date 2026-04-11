@@ -60,18 +60,78 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.cave.entrance.proxy.shaft
-    prefab: {fileID: 2227597266455592581, guid: 28ccf1cd56e12fa43be6fe503dba6016, type: 3}
-    weight: 1
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.cave.entrance.final.placeholder
-    prefab: {fileID: 7491228651472479503, guid: a3e7231cd7360504cb63bbd783e607b9, type: 3}
+  - variantId: variant.cave.entrance.gen.00
+    prefab: {fileID: 3399816728973944304, guid: ff896b98ff619734bb655c24b2d5fb7f, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.08}
-  generativeGeologyProfile: {fileID: 0}
+  - variantId: variant.cave.entrance.gen.01
+    prefab: {fileID: 7247670648703786552, guid: 78f872e4e96f7f841b5fc33ad59062a8, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: variant.cave.entrance.gen.02
+    prefab: {fileID: 1138078971367674946, guid: d995b3ca6a664ea4db614ca29805e383, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: variant.cave.entrance.gen.03
+    prefab: {fileID: 5549525917527183902, guid: fe0e90b20e1cce342a6588ec50cea996, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: variant.cave.entrance.gen.04
+    prefab: {fileID: 4570643641569989956, guid: 734693d6a7b13a74c99e820031ccceb7, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance_03
+    prefab: {fileID: 5549525917527183902, guid: fe0e90b20e1cce342a6588ec50cea996, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance_04
+    prefab: {fileID: 4570643641569989956, guid: 734693d6a7b13a74c99e820031ccceb7, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance_05
+    prefab: {fileID: 9160004790414140197, guid: 61747b12f737301419b50e1a83ee2e35, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance
+    prefab: {fileID: 3971322512128122940, guid: d58926f95f1fccb4290c0c8909be1331, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance_00
+    prefab: {fileID: 3399816728973944304, guid: ff896b98ff619734bb655c24b2d5fb7f, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance_01
+    prefab: {fileID: 7247670648703786552, guid: 78f872e4e96f7f841b5fc33ad59062a8, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  - variantId: family.cave.entrance.final.cave_entrance_02
+    prefab: {fileID: 1138078971367674946, guid: d995b3ca6a664ea4db614ca29805e383, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.06}
+  generativeGeologyProfile: {fileID: 11400000, guid: 94400fcd3c389fc4a9dc4a3688f1788f, type: 2}
   futurePrefabRoot: World/CaveEntrance/Cave_Entrance_Marker
   gameplayRole: Readable cave entry markers and lip formations.

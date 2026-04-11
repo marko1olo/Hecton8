@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7817332739450010732}
   - component: {fileID: 3217218035786901851}
+  - component: {fileID: 6842815487668167953}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__cathedral__s140-240
   m_TagString: Untagged
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 8266611728937803151}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &6842815487668167953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3791802875314060720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: d3051442bcd8c314d8438366bc01e4fa, type: 2}

@@ -58,8 +58,20 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.coral.branching.final.flora.gen_family_coral_branching__bouquet
+    prefab: {fileID: 4603684706225177590, guid: a2b15ed07804aa3438e9251c2d2fceca, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
   - variantId: family.coral.branching.final.flora.gen_family_coral_branching__branch
     prefab: {fileID: 603400267923953335, guid: e43089174308eaf4ea9fe6a84bf33121, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.branching.final.flora.gen_family_coral_branching__crest
+    prefab: {fileID: 8022673175021355246, guid: 94b83dbd90c456744af51b81484df4a9, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
@@ -72,6 +84,12 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.94, y: 1.08}
   - variantId: family.coral.branching.final.flora.gen_family_coral_branching__mass
     prefab: {fileID: 6174891206894126396, guid: 47df0806b3c4e79468ba31a6bc493825, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.coral.branching.final.flora.gen_family_coral_branching__thicket
+    prefab: {fileID: 2878728777871458324, guid: 2e21bdff33fdee34c8dab2d572e86413, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1

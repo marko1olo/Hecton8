@@ -927,15 +927,27 @@ namespace Hecton8.EditorTools
                 case "family_coral_low__bed": spec = new CoralSpec(CoralShape.Low, CoralVariant.Bed, 14, 24, 5, 0, 0.09f, 3.2f, 4.9f, new Color32(172, 168, 186, 255), 3600); return true;
                 case "family_coral_low__plate": spec = new CoralSpec(CoralShape.Low, CoralVariant.Plate, 13, 24, 5, 0, 0.09f, 3.4f, 5.2f, new Color32(178, 154, 174, 255), 3200); return true;
                 case "family_coral_low__knoll": spec = new CoralSpec(CoralShape.Low, CoralVariant.Knoll, 15, 24, 5, 0, 0.1f, 3.6f, 5.4f, new Color32(186, 162, 178, 255), 3400); return true;
+                case "family_coral_low__spread": spec = new CoralSpec(CoralShape.Low, CoralVariant.Bed, 16, 28, 5, 0, 0.115f, 4.2f, 5.9f, new Color32(176, 166, 182, 255), 4200); return true;
+                case "family_coral_low__mound": spec = new CoralSpec(CoralShape.Low, CoralVariant.Knoll, 17, 26, 5, 0, 0.108f, 4.1f, 6.0f, new Color32(188, 170, 180, 255), 4000); return true;
+                case "family_coral_low__saucer": spec = new CoralSpec(CoralShape.Low, CoralVariant.Plate, 14, 28, 5, 0, 0.1f, 4.6f, 6.4f, new Color32(182, 160, 176, 255), 3900); return true;
                 case "family_coral_branching__branch": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 9, 7, 0.06f, 2.4f, 4.1f, new Color32(166, 144, 172, 255), 5200); return true;
                 case "family_coral_branching__mass": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Mass, 8, 0, 9, 7, 0.05f, 2.1f, 3.8f, new Color32(176, 152, 168, 255), 5000); return true;
                 case "family_coral_branching__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 9, 8, 0.055f, 2.6f, 4.4f, new Color32(164, 150, 176, 255), 6200); return true;
+                case "family_coral_branching__crest": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 10, 9, 0.058f, 3.4f, 5.2f, new Color32(172, 154, 180, 255), 6600); return true;
+                case "family_coral_branching__bouquet": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 10, 10, 0.052f, 3.1f, 4.9f, new Color32(184, 160, 176, 255), 6400); return true;
+                case "family_coral_branching__thicket": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Mass, 9, 0, 10, 9, 0.057f, 3.6f, 5.5f, new Color32(170, 148, 170, 255), 6300); return true;
                 case "family_coral_massive__head": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Head, 15, 24, 0, 0, 0.085f, 2.8f, 4.2f, new Color32(180, 158, 154, 255), 4600); return true;
                 case "family_coral_massive__porous": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Porous, 15, 26, 0, 0, 0.11f, 3.8f, 5.6f, new Color32(170, 150, 160, 255), 5200); return true;
                 case "family_coral_massive__boulder": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Boulder, 15, 26, 0, 0, 0.092f, 3.2f, 4.8f, new Color32(176, 164, 150, 255), 5000); return true;
+                case "family_coral_massive__dome": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Head, 16, 28, 0, 0, 0.094f, 3.4f, 5.1f, new Color32(182, 162, 150, 255), 5400); return true;
+                case "family_coral_massive__lobed": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Porous, 16, 28, 0, 0, 0.118f, 4.6f, 6.2f, new Color32(174, 152, 156, 255), 5800); return true;
+                case "family_coral_massive__buttress": spec = new CoralSpec(CoralShape.Massive, CoralVariant.Boulder, 16, 30, 0, 0, 0.102f, 3.9f, 5.7f, new Color32(184, 168, 150, 255), 5600); return true;
                 case "family_coral_plate__ledge": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 26, 6, 0, 0.06f, 2.4f, 4.9f, new Color32(186, 168, 152, 255), 3600); return true;
                 case "family_coral_plate__shelf": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 24, 6, 0, 0.06f, 2.5f, 5.1f, new Color32(180, 162, 150, 255), 4200); return true;
                 case "family_coral_plate__stack": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 26, 6, 0, 0.065f, 2.7f, 5.4f, new Color32(182, 166, 154, 255), 3800); return true;
+                case "family_coral_plate__terrace": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 30, 6, 0, 0.072f, 3.5f, 6.0f, new Color32(188, 172, 156, 255), 4600); return true;
+                case "family_coral_plate__canopy": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 28, 6, 0, 0.07f, 3.1f, 5.8f, new Color32(184, 166, 154, 255), 4500); return true;
+                case "family_coral_plate__bastion": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 30, 6, 0, 0.074f, 3.8f, 6.3f, new Color32(190, 174, 160, 255), 4400); return true;
                 case "family_coral_brittle__sprig": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 9, 6, 0.045f, 3.4f, 5.2f, new Color32(108, 150, 158, 255), 4400); return true;
                 case "family_coral_brittle__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 9, 7, 0.05f, 3.8f, 5.8f, new Color32(118, 166, 170, 255), 5200); return true;
                 case "family_coral_brittle__spire": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 10, 8, 0.042f, 3.1f, 4.8f, new Color32(124, 176, 182, 255), 5200); return true;
@@ -943,6 +955,9 @@ namespace Hecton8.EditorTools
                 case "family_coral_brittle__crown": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 10, 9, 0.044f, 3.6f, 5.4f, new Color32(128, 182, 188, 255), 6000); return true;
                 case "family_coral_brittle__thicket": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 10, 9, 0.043f, 3.9f, 5.6f, new Color32(136, 196, 198, 255), 6200); return true;
                 case "family_coral_brittle__halo": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 10, 8, 0.05f, 4.4f, 6.6f, new Color32(144, 202, 206, 255), 6000); return true;
+                case "family_coral_brittle__candelabra": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 11, 11, 0.046f, 4.1f, 5.9f, new Color32(146, 206, 208, 255), 6800); return true;
+                case "family_coral_brittle__wreath": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 9, 0, 10, 10, 0.052f, 4.8f, 6.9f, new Color32(150, 212, 214, 255), 6600); return true;
+                case "family_coral_brittle__cathedral": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 9, 0, 11, 12, 0.045f, 4.4f, 6.3f, new Color32(154, 216, 218, 255), 7200); return true;
                 default: spec = default; return false;
             }
         }

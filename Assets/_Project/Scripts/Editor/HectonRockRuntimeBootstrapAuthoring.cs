@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GPUInstancer;
 using Hecton8.Core;
@@ -13,6 +14,7 @@ namespace Hecton8.EditorTools
     {
         private const string ManagersRootName = "[MANAGERS]";
         private const string RockRuntimeRootName = "Rock_Runtime";
+        private const string FloraFinalRootFolder = WorldProceduralFloraFinalVariantAuthoring.FloraFinalRootFolder;
 
         private static readonly string[] RockPrefabPaths =
         {
@@ -49,26 +51,31 @@ namespace Hecton8.EditorTools
 
             GPUInstancerPrefabManager gpuiManager = GetOrAddComponent<GPUInstancerPrefabManager>(runtimeRoot);
             HectonRockManager rockManager = GetOrAddComponent<HectonRockManager>(runtimeRoot);
-            ProximityColliderSystem proximityColliderSystem = Object.FindAnyObjectByType<ProximityColliderSystem>();
+            ProximityColliderSystem proximityColliderSystem = UnityEngine.Object.FindAnyObjectByType<ProximityColliderSystem>();
 
-            List<GameObject> prefabAssets = EnsureRockPrefabsPrepared();
-            if (prefabAssets.Count <= 0)
+            List<GameObject> rockPrefabs = EnsureRockPrefabsPrepared();
+            List<GameObject> floraPrefabs = EnsureFloraPrefabsPrepared();
+            List<GameObject> registeredPrefabs = CollectRegisteredPrefabs(rockPrefabs, floraPrefabs);
+            if (registeredPrefabs.Count <= 0)
             {
                 runtimeRoot.SetActive(false);
-                Debug.LogWarning("[HectonRockRuntimeBootstrap] Rock runtime stack was created but disabled. Current rock shaders are not GPUI-ready yet.");
+                rockManager.enabled = false;
+                Debug.LogWarning("[HectonRockRuntimeBootstrap] GPUI runtime stack was created but disabled. No GPUI-ready rock or flora prefabs were found.");
                 EditorSceneManager.MarkSceneDirty(activeScene);
                 return;
             }
 
             runtimeRoot.SetActive(true);
-            ConfigureGPUInstancerManager(gpuiManager, prefabAssets);
-            ConfigureRockManager(rockManager, gpuiManager, proximityColliderSystem, prefabAssets);
+            ConfigureGPUInstancerManager(gpuiManager, registeredPrefabs);
+            ConfigureRockManager(rockManager, gpuiManager, proximityColliderSystem, rockPrefabs);
+            rockManager.enabled = rockPrefabs.Count > 0;
+            EditorUtility.SetDirty(rockManager);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             EditorSceneManager.MarkSceneDirty(activeScene);
 
-            Debug.Log($"[HectonRockRuntimeBootstrap] Rebuilt rock runtime stack with {prefabAssets.Count} prefabs.");
+            Debug.Log($"[HectonRockRuntimeBootstrap] Rebuilt GPUI runtime stack. Rocks={rockPrefabs.Count}, Flora={floraPrefabs.Count}, Registered={registeredPrefabs.Count}, RockRuntimeEnabled={rockManager.enabled}.");
         }
 
         private static List<GameObject> EnsureRockPrefabsPrepared()
@@ -99,6 +106,73 @@ namespace Hecton8.EditorTools
             }
 
             return prefabs;
+        }
+
+        private static List<GameObject> CollectRegisteredPrefabs(
+            List<GameObject> rockPrefabs,
+            List<GameObject> floraPrefabs)
+        {
+            int initialCapacity = rockPrefabs != null ? rockPrefabs.Count + 32 : 32; // COLD ALLOC: editor-only bootstrap list for combined rock/flora GPUI registration.
+            List<GameObject> prefabs = new List<GameObject>(initialCapacity);
+            HashSet<string> registeredPaths = new HashSet<string>(StringComparer.Ordinal);
+
+            AddUniquePrefabs(prefabs, registeredPaths, rockPrefabs);
+            AddUniquePrefabs(prefabs, registeredPaths, floraPrefabs);
+
+            return prefabs;
+        }
+
+        private static List<GameObject> EnsureFloraPrefabsPrepared()
+        {
+            string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { FloraFinalRootFolder });
+            List<GameObject> prefabs = new List<GameObject>(prefabGuids.Length); // COLD ALLOC: one editor bootstrap pass over baked flora prefabs.
+
+            for (int i = 0; i < prefabGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+                GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefabAsset == null)
+                    continue;
+
+                if (prefabAsset.GetComponentInChildren<MeshRenderer>(true) == null)
+                    continue;
+
+                GPUInstancerPrefab prefabComponent = prefabAsset.GetComponent<GPUInstancerPrefab>();
+                if (prefabComponent == null)
+                {
+                    GPUInstancerUtility.GeneratePrefabPrototype(prefabAsset, false, true);
+                    prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                }
+
+                if (!PrepareRockMaterialsForGPUI(prefabAsset))
+                    continue;
+
+                prefabs.Add(prefabAsset);
+            }
+
+            return prefabs;
+        }
+
+        private static void AddUniquePrefabs(
+            List<GameObject> destination,
+            HashSet<string> registeredPaths,
+            List<GameObject> source)
+        {
+            if (source == null)
+                return;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                GameObject prefab = source[i];
+                if (prefab == null)
+                    continue;
+
+                string assetPath = AssetDatabase.GetAssetPath(prefab);
+                if (string.IsNullOrWhiteSpace(assetPath) || !registeredPaths.Add(assetPath))
+                    continue;
+
+                destination.Add(prefab);
+            }
         }
 
         private static bool PrepareRockMaterialsForGPUI(GameObject prefabAsset)
@@ -146,6 +220,10 @@ namespace Hecton8.EditorTools
             List<GameObject> prefabAssets)
         {
             SerializedObject so = new SerializedObject(gpuiManager);
+            SerializedProperty occlusionCulling = so.FindProperty("isOcclusionCulling");
+            if (occlusionCulling != null)
+                occlusionCulling.boolValue = false;
+
             SerializedProperty prefabList = so.FindProperty("prefabList");
             if (prefabList != null)
             {
@@ -156,7 +234,42 @@ namespace Hecton8.EditorTools
 
             so.ApplyModifiedPropertiesWithoutUndo();
             gpuiManager.GeneratePrototypes(false);
+            DisablePrototypeOcclusion(gpuiManager);
+            RemoveHiZOcclusionGeneratorsFromSceneCameras();
             EditorUtility.SetDirty(gpuiManager);
+        }
+
+        private static void DisablePrototypeOcclusion(GPUInstancerPrefabManager gpuiManager)
+        {
+            if (gpuiManager == null || gpuiManager.prototypeList == null)
+                return;
+
+            for (int i = 0; i < gpuiManager.prototypeList.Count; i++)
+            {
+                GPUInstancerPrefabPrototype prototype = gpuiManager.prototypeList[i] as GPUInstancerPrefabPrototype;
+                if (prototype == null)
+                    continue;
+
+                prototype.isOcclusionCulling = false;
+                EditorUtility.SetDirty(prototype);
+            }
+        }
+
+        private static void RemoveHiZOcclusionGeneratorsFromSceneCameras()
+        {
+            Camera[] sceneCameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < sceneCameras.Length; i++)
+            {
+                GPUInstancerHiZOcclusionGenerator hiZ = sceneCameras[i] != null
+                    ? sceneCameras[i].GetComponent<GPUInstancerHiZOcclusionGenerator>()
+                    : null;
+
+                if (hiZ == null)
+                    continue;
+
+                UnityEngine.Object.DestroyImmediate(hiZ);
+                EditorUtility.SetDirty(sceneCameras[i]);
+            }
         }
 
         private static void ConfigureRockManager(

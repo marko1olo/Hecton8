@@ -13,8 +13,9 @@ Use this order only:
 2. `Docs/PROCEDURAL_ASSET_PIPELINE.md`
 3. `Docs/AI_FLORA_EXECUTION_BRIEF.md`
 4. `Docs/FLORA_SYSTEM_PLAN.md`
-5. `Docs/FLORA_NEXT_DIALOG_PROMPT.md`
-6. `Assets/_Project/Prefabs/Nature/Flora/Baked/README.md`
+5. `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
+6. `Docs/FLORA_NEXT_DIALOG_PROMPT.md`
+7. `Assets/_Project/Prefabs/Nature/Flora/Baked/README.md`
 
 Legacy files in repo root are reference-only and must not be treated as the primary execution contract.
 
@@ -36,6 +37,7 @@ Build one beautiful, universal, optimized flora system for kelp and coral that:
 - Generated starter flora finals already exist.
 - Authored photoreal flora finals are still absent.
 - Current shader/material/texture contract is behind the new procedural pipeline document.
+- Missing imported coral texture families now have an owned request-packet path in `WorldProceduralFloraTextureAuthoring`.
 - Existing root flora docs are large, inconsistent, and partially stale.
 - Any claim of completion remains `PENDING VERIFICATION` until validator, logs, or profiler confirm it.
 
@@ -146,6 +148,8 @@ Follow this order. Do not merge steps.
 - `WorldProceduralFloraTextureAuthoring` stops acting as a final production texture generator
 - it becomes imported-texture lookup + request-layer support
 - if textures are missing, system must fail closed
+- current request-layer output is `Hecton/Validation/Generate Missing Flora Texture Request Packet`
+- imported coverage reconcile entry is `Hecton/Validation/Reconcile Imported Flora Coverage`
 
 ### Phase 3: Shader And Material Alignment
 
@@ -214,9 +218,17 @@ Each vertical must:
 - keep MX350 budgets and culling distances per category
 - fail closed until validator/report proof exists
 
+Shared architecture rule:
+
+- future verticals must inherit the same family/profile/rule/variant model defined in `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
+- flora remains the reference implementation for strict texture/material validation
+- geology remains the reference implementation for runtime bootstrap and large-form fallback generation
+- structural/interior/colony work must extend existing owners instead of creating a second scatter/runtime stack
+
 ## Evidence Files
 
 - `Docs/AI_FLORA_EXECUTION_BRIEF.md`
+- `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
 - `FLORA_TRANSFER_MASTER_STATUS.md`
 - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md`
 - `Assets/_Project/Prefabs/Nature/Flora/Baked/README.md`

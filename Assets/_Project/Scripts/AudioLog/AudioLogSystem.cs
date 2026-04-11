@@ -19,6 +19,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -146,9 +147,7 @@ namespace Hecton8.Narrative
 
             AudioLogEvents.RaisePlaybackCompleted(completedId);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Playback completed: {completedId}");
-#endif
+            LogPlaybackCompleted(completedId);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -173,9 +172,7 @@ namespace Hecton8.Narrative
             // Также регистрируем в NarrativeDirector
             NarrativeEvents.RaiseDiscoveryMade(data.logId);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Discovered: {data.logId} ({data.displayTitle})");
-#endif
+            LogDiscovered(data.logId, data.displayTitle);
         }
 
         /// <summary>
@@ -208,9 +205,7 @@ namespace Hecton8.Narrative
 
             AudioLogEvents.RaisePlaybackStarted(data);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Playing: {data.logId} ({data.Duration:F1}s)");
-#endif
+            LogPlaying(data.logId, data.Duration);
         }
 
         /// <summary>
@@ -255,6 +250,30 @@ namespace Hecton8.Narrative
             // NarrativeDirector уже обработал — ничего дополнительного не нужно
         }
 
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPlaybackCompleted(string completedId)
+        {
+            Debug.Log($"[AudioLog] Playback completed: {completedId}");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDiscovered(string logId, string displayTitle)
+        {
+            Debug.Log($"[AudioLog] Discovered: {logId} ({displayTitle})");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPlaying(string logId, float duration)
+        {
+            Debug.Log($"[AudioLog] Playing: {logId} ({duration:F1}s)");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogLoadedCount(int discoveredCount)
+        {
+            Debug.Log($"[AudioLog] Loaded {discoveredCount} discovered logs.");
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ISaveable
         // ══════════════════════════════════════════════════════════
@@ -287,9 +306,7 @@ namespace Hecton8.Narrative
                     _discoveredLogs.Add(logId);
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Loaded {_discoveredLogs.Count} discovered logs.");
-#endif
+            LogLoadedCount(_discoveredLogs.Count);
         }
     }
 }

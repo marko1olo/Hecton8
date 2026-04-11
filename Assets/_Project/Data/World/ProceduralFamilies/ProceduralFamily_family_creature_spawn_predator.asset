@@ -61,12 +61,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.creature.spawn.predator.final.placeholder
-    prefab: {fileID: 6351538607177501678, guid: d8c83568c9af706468a1b89f63de26af, type: 3}
+  - variantId: family.creature.spawn.predator.final.predator_lair
+    prefab: {fileID: 7782825761496156077, guid: f35c2b4deda3c3441aab498d4a61be88, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.96, y: 1.06}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/Creature_Spawn_Predator
   gameplayRole: Predator spawn anchors for pressure pockets.

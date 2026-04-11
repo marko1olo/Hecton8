@@ -58,6 +58,36 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__bladder
+    prefab: {fileID: 7322967628790611396, guid: ca521df9b32001f4585a3a5b337d377e, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.79999995, y: 1.35}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__frilltuft
+    prefab: {fileID: 12876709050151065, guid: da1520a493d8d3643bfed9f0b2039c0f, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.75, y: 1.25}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__nest
+    prefab: {fileID: 4975654968312765327, guid: 0c8cbf683b59a40458c1c6403186d3f7, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.65, y: 1.05}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__paddlespray
+    prefab: {fileID: 947909578400734537, guid: 5c0ae8227c70ec84c8558cd5242399ce, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.7, y: 1.1999999}
+  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__sheetwall
+    prefab: {fileID: 6817839976122860604, guid: a41a7742256b06c4796a978d9566ad06, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1999999, y: 1.8499999}
   - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__brush
     prefab: {fileID: 3661951925619579947, guid: 9d6a340c88e4dc94d9d9e15dbf20be55, type: 3}
     weight: 1
@@ -100,36 +130,6 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.94, y: 1.08}
-  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__nest
-    prefab: {fileID: 4975654968312765327, guid: 0c8cbf683b59a40458c1c6403186d3f7, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.65, y: 1.05}
-  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__sheetwall
-    prefab: {fileID: 6817839976122860604, guid: a41a7742256b06c4796a978d9566ad06, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1.1999999, y: 1.8499999}
-  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__bladder
-    prefab: {fileID: 7322967628790611396, guid: ca521df9b32001f4585a3a5b337d377e, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.79999995, y: 1.35}
-  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__paddlespray
-    prefab: {fileID: 947909578400734537, guid: 5c0ae8227c70ec84c8558cd5242399ce, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.7, y: 1.1999999}
-  - variantId: family.kelp.patch.dense.final.flora.gen_family_kelp_patch_dense__frilltuft
-    prefab: {fileID: 12876709050151065, guid: da1520a493d8d3643bfed9f0b2039c0f, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.75, y: 1.25}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Patch_Dense
   gameplayRole: Dense kelp pockets for shelter, occlusion and fauna habitat.

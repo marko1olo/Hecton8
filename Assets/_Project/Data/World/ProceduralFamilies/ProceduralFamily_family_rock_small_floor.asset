@@ -63,7 +63,7 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.9, y: 1.15}
   - variantId: family.rock.small_floor.final.nordic_beach
     prefab: {fileID: 6331842899389126255, guid: 7febead2072f1424385131aa2d530a00, type: 3}
-    weight: 2
+    weight: 1
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.8, y: 1.08}
@@ -73,6 +73,66 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.78, y: 1.02}
-  generativeGeologyProfile: {fileID: 0}
+  - variantId: family.rock.small_floor.final.rock_floor_00
+    prefab: {fileID: 1461225677363081090, guid: d43e1ec441da329469f915f179a34777, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_01
+    prefab: {fileID: 3971857367822549707, guid: f83f24a18876b874f98b40e97b7ffcd1, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_02
+    prefab: {fileID: 331703313337881611, guid: 56a5e801b3165914c98e7e2462dad891, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_03
+    prefab: {fileID: 1867060341449321864, guid: 860e708333d19894f9941b423b10528a, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_04
+    prefab: {fileID: 238251202087439445, guid: ecdeb3f444579604bbcdf8b62b822ffe, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_05
+    prefab: {fileID: 1025101827057977275, guid: 816714bea737321488c4ac0a1487de27, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_06
+    prefab: {fileID: 5107113637092903074, guid: 12818f252a2fd024dad7157f7e4ffe0e, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_07
+    prefab: {fileID: 8917691945154208695, guid: af47bfaa15482da4980e8cad04bde47c, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_08
+    prefab: {fileID: 1500614383227859725, guid: 757f66daefd38ac4fa0d627a03baa606, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  - variantId: family.rock.small_floor.final.rock_floor_09
+    prefab: {fileID: 2633777654985078783, guid: e4ad3189ac160d04d981667ded644bb3, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.08}
+  generativeGeologyProfile: {fileID: 11400000, guid: 63bb268109e7c7041a7a8c79d4061cd9, type: 2}
   futurePrefabRoot: World/Rock/Rock_Small_Floor
   gameplayRole: Base floor stones for seafloor readability.

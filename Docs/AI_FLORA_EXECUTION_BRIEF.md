@@ -71,6 +71,11 @@ Owner rule:
 
 - Generated starter flora finals exist.
 - Authored photoreal flora finals are still absent.
+- Missing imported texture families now have an owned request-layer output via `WorldProceduralFloraTextureAuthoring`.
+- Current imported texture gap remains:
+  - `family.coral.massive`
+  - `family.coral.plate`
+  - `family.coral.brittle`
 - Current status for beauty/perf/runtime proof remains `PENDING VERIFICATION`.
 - Existing runtime owner stack is real and must be reused.
 - Existing large flora docs contain useful concepts, but they are not the primary execution contract anymore.
@@ -101,6 +106,7 @@ When real textures are needed:
 - Output only the required master prompts and import settings defined by `Docs/PROCEDURAL_ASSET_PIPELINE.md`.
 - Do not generate placeholder production textures in code.
 - Do not silently accept procedural editor-generated texture assets as final photoreal deliverables.
+- Use `Hecton/Validation/Generate Missing Flora Texture Request Packet` to emit the current missing-family prompt packet.
 
 ## Evidence Locations
 

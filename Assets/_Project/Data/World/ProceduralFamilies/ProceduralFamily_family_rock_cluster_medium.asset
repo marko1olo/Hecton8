@@ -63,7 +63,7 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.85, y: 1.1}
   - variantId: family.rock.cluster.medium.final.beach_formation
     prefab: {fileID: 1537715959788787414, guid: 6b2c0cd7b85119243b9947ad4e7a1a1a, type: 3}
-    weight: 2
+    weight: 1
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.82, y: 1.12}
@@ -79,6 +79,66 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.78, y: 0.98}
-  generativeGeologyProfile: {fileID: 0}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_00
+    prefab: {fileID: 1960049801443556410, guid: 8e7c21616ee6582408d01676caf06303, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_01
+    prefab: {fileID: 6105478997427773350, guid: 7aceb9b8962b32a41b0c185ce4a7d2dd, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_02
+    prefab: {fileID: 7130791235647687438, guid: 99e5b8d44362d2a4a9395031e4c3ae31, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_03
+    prefab: {fileID: 2314978099966178637, guid: 90a6f8ec53fc96a4ead198f0f526af7c, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_04
+    prefab: {fileID: 7499588614949549135, guid: ffec42844aff53049a3a4ec8dcdce9b4, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_05
+    prefab: {fileID: 9035370041804389310, guid: 68b91fcf8e886394bbc5f3727479a75a, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_06
+    prefab: {fileID: 1569902467465915496, guid: 20faa274fce1b8d41adb962df4296954, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_07
+    prefab: {fileID: 215940362531859948, guid: 252241d85e0dbfd4b900bc8eee92dee0, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_08
+    prefab: {fileID: 8992258982362787679, guid: a1d76a734a98caa4b9e4f318dfabab8d, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  - variantId: family.rock.cluster.medium.final.rock_cluster_09
+    prefab: {fileID: 3347175306138753447, guid: d6c16dd17e59b864195614429e9323f5, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.08}
+  generativeGeologyProfile: {fileID: 11400000, guid: 7145546d6fa1cb24bba6990e2d81a58e, type: 2}
   futurePrefabRoot: World/RockCluster/Rock_Cluster_Medium
   gameplayRole: Grouped floor rocks that create silhouette and cover.

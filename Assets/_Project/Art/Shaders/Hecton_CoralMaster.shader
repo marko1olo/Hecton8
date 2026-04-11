@@ -3,14 +3,23 @@ Shader "Hecton8/Flora/CoralMaster"
     Properties
     {
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {}
-        _DetailMap ("Detail Map", 2D) = "gray" {}
         [Normal] _NormalMap ("Normal Map", 2D) = "bump" {}
         _MaskMap ("Mask Map", 2D) = "white" {}
+
+        [Header(Master Grade PBR)]
+        [Normal] _DetailNormalMap ("Detail Normal (Micro-Porosity)", 2D) = "bump" {}
+        _DetailNormalStrength ("Detail Normal Strength", Range(0, 2)) = 0.55
+        _MicroPorosityScale ("Micro-Porosity Scale", Range(0.1, 8)) = 3.2
+        _DetailMap ("Detail Map (Overlay)", 2D) = "gray" {}
+
+        [Header(Colors)]
         [MainColor] _BaseColor ("Base Color", Color) = (0.54, 0.32, 0.28, 1)
         _AccentColor ("Accent Color", Color) = (0.82, 0.58, 0.42, 1)
         _RimColor ("Rim Color", Color) = (0.24, 0.68, 0.72, 1)
         _SubsurfaceColor ("Subsurface Color", Color) = (0.94, 0.62, 0.48, 1)
         _BiolumColor ("Biolum Color", Color) = (0.26, 0.95, 0.84, 1)
+
+        [Header(PBR & Lighting)]
         _Smoothness ("Smoothness", Range(0, 1)) = 0.34
         _AmbientStrength ("Ambient Strength", Range(0, 1)) = 0.46
         _RimPower ("Rim Power", Range(0.5, 8)) = 2.8
@@ -38,6 +47,7 @@ Shader "Hecton8/Flora/CoralMaster"
         _BiolumMaskStrength ("Biolum Mask Strength", Range(0, 2)) = 1
         _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.28
         _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.58
+
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
 
@@ -67,10 +77,12 @@ Shader "Hecton8/Flora/CoralMaster"
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -89,6 +101,8 @@ Shader "Hecton8/Flora/CoralMaster"
                 half _DetailStrength;
                 half _NormalStrength;
                 half _NormalScale;
+                half _DetailNormalStrength;
+                half _MicroPorosityScale;
                 half _TriplanarScale;
                 half _TriplanarSharpness;
                 half _CurvatureWetnessStrength;
@@ -113,6 +127,8 @@ Shader "Hecton8/Flora/CoralMaster"
             SAMPLER(sampler_DetailMap);
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_DetailNormalMap);
+            SAMPLER(sampler_DetailNormalMap);
             TEXTURE2D(_MaskMap);
             SAMPLER(sampler_MaskMap);
 
@@ -206,6 +222,9 @@ Shader "Hecton8/Flora/CoralMaster"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(LOD_FADE_CROSSFADE)
+                LODFadeCrossFade(input.positionCS);
+                #endif
 
                 half3 baseNormalWS = normalize(input.normalWS);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
@@ -222,13 +241,21 @@ Shader "Hecton8/Flora/CoralMaster"
                 #endif
 
                 half3 baseTex = SampleFloraTriplanar(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, triplanarWeights).rgb;
-                half3 normalWS = normalize(
-                    baseNormalWS
-                    + SampleFloraTriplanarNormal(
+                half3 baseNormalWS = normalize(input.normalWS);
+                half3 triplanarNormalWS = SampleFloraTriplanarNormal(
                         TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap),
                         samplePositionWS,
                         triplanarWeights,
-                        _NormalStrength * _NormalScale));
+                        _NormalStrength * _NormalScale);
+                
+                // Micro-Porosity Detail Normal
+                half3 detailNormalWS = SampleFloraTriplanarNormal(
+                        TEXTURE2D_ARGS(_DetailNormalMap, sampler_DetailNormalMap),
+                        samplePositionWS * _MicroPorosityScale,
+                        triplanarWeights,
+                        _DetailNormalStrength);
+
+                half3 normalWS = normalize(baseNormalWS + triplanarNormalWS + detailNormalWS);
                 float2 detailUv = samplePositionWS.xz * (_CausticScale * 0.06h)
                     + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.61h));
                 half detailSample = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, detailUv).r;
@@ -239,20 +266,22 @@ Shader "Hecton8/Flora/CoralMaster"
                 half wrapDiffuse = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
                 half backLight = saturate(dot(-normalWS, lightDir));
                 half rim = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
+
+                half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
+                half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength * 0.35h);
+                half zoneBiolumStrength = saturate(floorZoneInfluence + oceanZoneInfluence);
+                half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
+
                 half curvatureWetness = ComputeCurvatureWetness(normalWS);
                 half cavity = saturate(1.0h - maskSample.r * _CavityStrength);
-                half wetness = saturate(maskSample.g + moisture * _MoistureBoost + curvatureWetness + cavity * 0.18h);
+                half wetness = saturate(maskSample.g + moisture * _MoistureBoost + curvatureWetness + cavity * 0.18h + zoneBiolumStrength * 0.45h);
                 half thickness = saturate(lerp(maskSample.b, maskSample.a, _ThicknessStrength));
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
                 half roughness = saturate(lerp(0.7h, 0.2h, wetness));
                 half causticMask = saturate(0.68h + detailSample * _CausticStrength + maskSample.a * 0.18h);
                 half pulse = 1.0h + sin(_Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.07h + samplePositionWS.z * 0.05h + detailSample * 2.4h) * _BiolumPulseAmplitude;
                 half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
-                half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
-                half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength * 0.35h);
-                half zoneBiolumStrength = saturate(floorZoneInfluence + oceanZoneInfluence);
-                half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
-                zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
 
                 half3 accent = lerp(_BaseColor.rgb, _AccentColor.rgb, saturate(maskSample.r + tintMask * 0.48h));
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _AccentColor.rgb, wetness * 0.48h);
@@ -263,13 +292,26 @@ Shader "Hecton8/Flora/CoralMaster"
 
                 half3 ambient = SampleSH(normalWS) * (_AmbientStrength + wetness * 0.1h);
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
+                diffuse *= (1.0h - cavity * _CavityStrength * 0.5h);
+
                 half3 subsurface = _SubsurfaceColor.rgb * (backLight * _SubsurfaceStrength * thickness * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
-                half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(10.0h, 42.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.22h * glossNoise;
+                
+                // PBR Specular
+                half3 halfDir = normalize(lightDir + viewDirWS);
+                half NdotH = saturate(dot(normalWS, halfDir));
+                half specularBase = pow(NdotH, lerp(8.0h, 60.0h, 1.0h - roughness)) * (1.0h - roughness);
+                half3 specular = specularBase * 0.22h * glossNoise * mainLight.color;
+
+                // Secondary "Slime" Specular (Master Grade Polish)
+                half slimeRoughness = saturate(roughness * 0.4h);
+                half slimeNdotH = pow(NdotH, lerp(128.0h, 256.0h, 1.0h - slimeRoughness));
+                half3 slimeSpecular = slimeNdotH * wetness * 0.45h * mainLight.color;
+
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
                 half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
-                half3 color = diffuse + subsurface + rimLighting + specular + biolum;
+                half3 color = diffuse + subsurface + rimLighting + specular + slimeSpecular + biolum;
                 color = lerp(color, unity_FogColor.rgb * 0.88h, saturate(fresnel * (0.5h + wetness * 0.5h)));
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);

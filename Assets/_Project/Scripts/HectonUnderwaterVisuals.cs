@@ -1178,6 +1178,11 @@ namespace Hecton8.Environment
                         return;
                 }
 
+
+                // Fallback: Camera.main (cold retry path — not hot path)
+                if (Camera.main != null)
+                    mainCamera = Camera.main;
+
             }
 #if UNITY_EDITOR
             else

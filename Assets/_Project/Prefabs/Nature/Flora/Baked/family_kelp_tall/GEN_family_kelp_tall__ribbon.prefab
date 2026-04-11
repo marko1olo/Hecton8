@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4558654464640802618}
   - component: {fileID: 8655227559400084949}
+  - component: {fileID: 1089570968498962484}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__ribbon
   m_TagString: Untagged
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 9209636424904469681}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &1089570968498962484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 943764535668542015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 82a234c26be9fd94f93d02113f4b602d, type: 2}
 --- !u!1 &4093481844171606454
 GameObject:
   m_ObjectHideFlags: 0

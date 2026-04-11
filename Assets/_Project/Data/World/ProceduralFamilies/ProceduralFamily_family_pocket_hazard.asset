@@ -61,12 +61,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.pocket.hazard.final.placeholder
-    prefab: {fileID: 8451184076872599852, guid: fee085d8f7ea9494ba1ca0a060a06d83, type: 3}
+  - variantId: family.pocket.hazard.final.vent_cluster
+    prefab: {fileID: 3327486444771519820, guid: 0966c0b0f4550f743b969b8dbcf16f79, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/HazardPocket/Pocket_Hazard
   gameplayRole: Danger pockets, ambush zones and sharp risk spikes.

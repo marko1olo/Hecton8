@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0236fea028490468b21abcedde9cf9, type: 3}
+  m_Name: WorldGenerativeGeologyProfile_RockArchLarge
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyProfile
+  profileId: geology.rock.arch.large
+  profileLabel: Rock Arch Large
+  generatorMode: 2
+  shapeArchetype: 0
+  compositionMode: 1
+  idealSlopeRange: {x: 16, y: 48}
+  idealCurvatureRange: {x: -0.42, y: 0.24}
+  idealCaveProximityRange: {x: 0.1, y: 0.72}
+  idealRidgeSignalRange: {x: 0.42, y: 1}
+  idealCanyonSignalRange: {x: 0, y: 0.52}
+  placementWeight: 1.05
+  compositionWeight: 1.12
+  contextPackThreshold: 0.6
+  terrainSeamMode: 2
+  caveBlendMode: 1
+  seamBlendRadius: 14
+  terrainRaiseMeters: 2.5
+  terrainCutMeters: 2
+  debrisCountMin: 3
+  debrisCountMax: 8
+  lodCount: 3
+  lodScreenHeights: {x: 0.6, y: 0.15, z: 0.04}
+  futureModelId: geology.rock.arch.large.generated.v1
+  neuralPromptHint: Generate an underwater eroded rock arch with layered strata,
+    underside fracture detail, broad silhouette continuity, and seamless seabed integration.

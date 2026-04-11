@@ -19,6 +19,7 @@
 // ============================================================================
 
 using System;
+using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;

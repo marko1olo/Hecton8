@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6d57b2fd1b2e1c45a746eada4a7f9ad, type: 3}
+  m_Name: ProceduralRule_rule_rocks_shelf
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
+  ruleId: rule.rocks.shelf
+  ruleLabel: Rock Shelf Escarpments
+  familyProfile: {fileID: 11400000, guid: d6cf44ed564ce2f44871a6f69a40d808, type: 2}
+  gameplayIntent: Large cliff shelves, ledges and overhangs that make biome walls
+    readable.
+  preferredBiomeFamilies:
+  - {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
+  - {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
+  - {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}
+  - {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
+  - {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
+  - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
+  preferredZoneKinds: 090000000700000008000000
+  preferredSocketKinds: 0a000000
+  preferredFidelity: 0
+  minDepthMeters: 20
+  maxDepthMeters: 5000
+  minSlopeDegrees: 8
+  maxSlopeDegrees: 58
+  requiredHeatmapChannel: landmark_strength
+  minHeatmapValue: 0.32
+  densityScale: 0.96
+  minSpacingOverrideMeters: 0
+  clusterRadiusOverrideMeters: 0
+  minInstances: 1
+  maxInstances: 2
+  preferNearCaves: 0
+  preferOpenWater: 0
+  preferSeafloor: 0
+  suppressInTightRoutes: 0
+  runtimeOnly: 0

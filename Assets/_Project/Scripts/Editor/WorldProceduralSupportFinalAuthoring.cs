@@ -1,0 +1,518 @@
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Hecton8.EditorTools
+{
+    /// <summary>
+    /// Authors real procedural support finals for pockets, creature spawns, and large-threat ownership zones.
+    /// </summary>
+    public static class WorldProceduralSupportFinalAuthoring
+    {
+        private const string MaterialFolder = "Assets/_Project/Art/Materials/WorldSupport";
+        private const string FinalPrefabFolder = "Assets/_Project/Prefabs/WorldSupport/Final";
+
+        [MenuItem("Hecton/Authoring/Rebuild Procedural World Support Finals", priority = 179)]
+        public static void RebuildWorldSupportFinals()
+        {
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Materials");
+            EnsureFolder(MaterialFolder);
+            EnsureFolder("Assets/_Project/Prefabs");
+            EnsureFolder("Assets/_Project/Prefabs/WorldSupport");
+            EnsureFolder(FinalPrefabFolder);
+
+            Material resourceMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_ResourcePocket.mat", new Color(0.88f, 0.70f, 0.26f, 1f));
+            Material hazardMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_HazardPocket.mat", new Color(0.86f, 0.34f, 0.16f, 1f));
+            Material safeMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_SafePocket.mat", new Color(0.24f, 0.78f, 0.82f, 1f));
+            Material passiveMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_CreaturePassive.mat", new Color(0.42f, 0.82f, 0.54f, 1f));
+            Material predatorMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_CreaturePredator.mat", new Color(0.84f, 0.28f, 0.20f, 1f));
+            Material abyssMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_AbyssApex.mat", new Color(0.42f, 0.48f, 0.62f, 1f));
+            Material reefMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_ReefApex.mat", new Color(0.92f, 0.82f, 0.46f, 1f));
+            Material ruinMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_RuinApex.mat", new Color(0.34f, 0.66f, 0.82f, 1f));
+
+            int createdCount = 0;
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Resource.prefab", new Vector3(3.2f, 1.8f, 3.0f), BuildResourcePocketLods(resourceMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Hazard.prefab", new Vector3(3.8f, 2.8f, 3.8f), BuildHazardPocketLods(hazardMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Safe.prefab", new Vector3(4.2f, 2.6f, 4.2f), BuildSafePocketLods(safeMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_CreatureSpawn_Passive.prefab", new Vector3(3.6f, 2.4f, 3.6f), BuildPassiveSpawnLods(passiveMat, safeMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_CreatureSpawn_Predator.prefab", new Vector3(4.2f, 2.8f, 4.0f), BuildPredatorSpawnLods(predatorMat, hazardMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_LargeThreat.prefab", new Vector3(14f, 10f, 14f), BuildLargeThreatZoneLods(predatorMat, abyssMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_AbyssApex.prefab", new Vector3(18f, 16f, 18f), BuildAbyssApexZoneLods(abyssMat, predatorMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_ReefApex.prefab", new Vector3(15f, 10f, 15f), BuildReefApexZoneLods(reefMat, passiveMat)) != null)
+                createdCount++;
+
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_RuinApex.prefab", new Vector3(17f, 14f, 17f), BuildRuinApexZoneLods(ruinMat, predatorMat)) != null)
+                createdCount++;
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[WorldProceduralSupportFinalAuthoring] Rebuilt world-support final prefabs. Created={createdCount}.");
+        }
+
+        private static CompositeLodSpec[] BuildResourcePocketLods(Material resourceMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("CoreShard", PrimitiveType.Cube, new Vector3(0.9f, 1.1f, 0.8f), new Vector3(0f, 0.56f, 0f), new Vector3(0f, 18f, -8f), resourceMat),
+                        new VisualPrimitiveSpec("ShardA", PrimitiveType.Cylinder, new Vector3(0.34f, 1.4f, 0.34f), new Vector3(-0.74f, 0.68f, 0.54f), new Vector3(10f, 0f, 18f), resourceMat),
+                        new VisualPrimitiveSpec("ShardB", PrimitiveType.Cylinder, new Vector3(0.28f, 1.2f, 0.28f), new Vector3(0.82f, 0.58f, -0.42f), new Vector3(-8f, 0f, -16f), resourceMat),
+                        new VisualPrimitiveSpec("BaseChunkA", PrimitiveType.Sphere, new Vector3(0.82f, 0.46f, 0.76f), new Vector3(-0.58f, 0.18f, -0.22f), Vector3.zero, resourceMat),
+                        new VisualPrimitiveSpec("BaseChunkB", PrimitiveType.Sphere, new Vector3(0.68f, 0.36f, 0.62f), new Vector3(0.52f, 0.16f, 0.34f), Vector3.zero, resourceMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("MassA", PrimitiveType.Cube, new Vector3(1.2f, 0.92f, 1.0f), new Vector3(0f, 0.46f, 0f), new Vector3(0f, 12f, 0f), resourceMat),
+                        new VisualPrimitiveSpec("MassB", PrimitiveType.Cylinder, new Vector3(0.30f, 1.1f, 0.30f), new Vector3(-0.42f, 0.54f, 0.24f), new Vector3(0f, 0f, 14f), resourceMat),
+                        new VisualPrimitiveSpec("MassC", PrimitiveType.Cylinder, new Vector3(0.24f, 0.92f, 0.24f), new Vector3(0.46f, 0.44f, -0.18f), new Vector3(0f, 0f, -14f), resourceMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Silhouette", PrimitiveType.Capsule, new Vector3(0.96f, 1.28f, 0.96f), new Vector3(0f, 0.62f, 0f), Vector3.zero, resourceMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildHazardPocketLods(Material hazardMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("VentCore", PrimitiveType.Cylinder, new Vector3(1.2f, 1.3f, 1.2f), new Vector3(0f, 0.62f, 0f), Vector3.zero, hazardMat),
+                        new VisualPrimitiveSpec("SpineA", PrimitiveType.Cylinder, new Vector3(0.18f, 1.8f, 0.18f), new Vector3(-1.1f, 0.82f, 0.62f), new Vector3(18f, 0f, 28f), hazardMat),
+                        new VisualPrimitiveSpec("SpineB", PrimitiveType.Cylinder, new Vector3(0.18f, 2.0f, 0.18f), new Vector3(1.0f, 0.92f, -0.54f), new Vector3(-18f, 0f, -26f), hazardMat),
+                        new VisualPrimitiveSpec("SpineC", PrimitiveType.Cylinder, new Vector3(0.16f, 1.6f, 0.16f), new Vector3(-0.32f, 0.72f, -1.0f), new Vector3(12f, 0f, 14f), hazardMat),
+                        new VisualPrimitiveSpec("SpineD", PrimitiveType.Cylinder, new Vector3(0.16f, 1.5f, 0.16f), new Vector3(0.44f, 0.70f, 1.02f), new Vector3(-10f, 0f, -18f), hazardMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("VentMass", PrimitiveType.Cylinder, new Vector3(1.3f, 1.1f, 1.3f), new Vector3(0f, 0.54f, 0f), Vector3.zero, hazardMat),
+                        new VisualPrimitiveSpec("SpineA", PrimitiveType.Cylinder, new Vector3(0.16f, 1.4f, 0.16f), new Vector3(-0.72f, 0.72f, 0.38f), new Vector3(10f, 0f, 18f), hazardMat),
+                        new VisualPrimitiveSpec("SpineB", PrimitiveType.Cylinder, new Vector3(0.16f, 1.5f, 0.16f), new Vector3(0.68f, 0.76f, -0.34f), new Vector3(-10f, 0f, -18f), hazardMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("HazardSilhouette", PrimitiveType.Capsule, new Vector3(1.42f, 1.6f, 1.42f), new Vector3(0f, 0.8f, 0f), Vector3.zero, hazardMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildSafePocketLods(Material safeMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("ShelterArch", PrimitiveType.Capsule, new Vector3(1.0f, 1.9f, 1.0f), new Vector3(-0.92f, 0.92f, 0f), new Vector3(0f, 0f, 42f), safeMat),
+                        new VisualPrimitiveSpec("ShelterArchB", PrimitiveType.Capsule, new Vector3(1.0f, 1.9f, 1.0f), new Vector3(0.92f, 0.92f, 0f), new Vector3(0f, 0f, -42f), safeMat),
+                        new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(2.4f, 1.1f, 2.4f), new Vector3(0f, 1.32f, 0f), Vector3.zero, safeMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(1.8f, 0.2f, 1.8f), new Vector3(0f, 0.1f, 0f), Vector3.zero, safeMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(2.2f, 1.0f, 2.2f), new Vector3(0f, 1.2f, 0f), Vector3.zero, safeMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(1.6f, 0.18f, 1.6f), new Vector3(0f, 0.09f, 0f), Vector3.zero, safeMat),
+                        new VisualPrimitiveSpec("Support", PrimitiveType.Capsule, new Vector3(0.82f, 1.5f, 0.82f), new Vector3(0f, 0.78f, 0f), Vector3.zero, safeMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("SafeSilhouette", PrimitiveType.Sphere, new Vector3(2.2f, 1.4f, 2.2f), new Vector3(0f, 0.78f, 0f), Vector3.zero, safeMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildPassiveSpawnLods(Material passiveMat, Material safeMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("SpawnRing", PrimitiveType.Cylinder, new Vector3(1.8f, 0.12f, 1.8f), new Vector3(0f, 0.08f, 0f), new Vector3(90f, 0f, 0f), passiveMat),
+                        new VisualPrimitiveSpec("BeaconA", PrimitiveType.Capsule, new Vector3(0.42f, 1.6f, 0.42f), new Vector3(-0.92f, 0.78f, 0.54f), new Vector3(8f, 0f, 12f), passiveMat),
+                        new VisualPrimitiveSpec("BeaconB", PrimitiveType.Capsule, new Vector3(0.38f, 1.4f, 0.38f), new Vector3(0.86f, 0.68f, -0.48f), new Vector3(-8f, 0f, -10f), passiveMat),
+                        new VisualPrimitiveSpec("BeaconC", PrimitiveType.Capsule, new Vector3(0.32f, 1.2f, 0.32f), new Vector3(0.24f, 0.60f, 0.96f), new Vector3(10f, 0f, -6f), safeMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("SpawnMass", PrimitiveType.Cylinder, new Vector3(1.4f, 0.18f, 1.4f), new Vector3(0f, 0.09f, 0f), Vector3.zero, passiveMat),
+                        new VisualPrimitiveSpec("BeaconA", PrimitiveType.Capsule, new Vector3(0.34f, 1.28f, 0.34f), new Vector3(-0.52f, 0.62f, 0.22f), Vector3.zero, passiveMat),
+                        new VisualPrimitiveSpec("BeaconB", PrimitiveType.Capsule, new Vector3(0.30f, 1.08f, 0.30f), new Vector3(0.58f, 0.54f, -0.26f), Vector3.zero, safeMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("SpawnSilhouette", PrimitiveType.Capsule, new Vector3(1.0f, 1.28f, 1.0f), new Vector3(0f, 0.62f, 0f), Vector3.zero, passiveMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildPredatorSpawnLods(Material predatorMat, Material hazardMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("NestCore", PrimitiveType.Sphere, new Vector3(1.6f, 0.72f, 1.6f), new Vector3(0f, 0.28f, 0f), Vector3.zero, hazardMat),
+                        new VisualPrimitiveSpec("ToothA", PrimitiveType.Cylinder, new Vector3(0.16f, 1.8f, 0.16f), new Vector3(-0.84f, 0.86f, 0.62f), new Vector3(0f, 0f, 32f), predatorMat),
+                        new VisualPrimitiveSpec("ToothB", PrimitiveType.Cylinder, new Vector3(0.16f, 2.0f, 0.16f), new Vector3(0.92f, 0.92f, -0.46f), new Vector3(0f, 0f, -34f), predatorMat),
+                        new VisualPrimitiveSpec("ToothC", PrimitiveType.Cylinder, new Vector3(0.14f, 1.6f, 0.14f), new Vector3(-0.28f, 0.74f, -1.02f), new Vector3(0f, 0f, 20f), predatorMat),
+                        new VisualPrimitiveSpec("ToothD", PrimitiveType.Cylinder, new Vector3(0.14f, 1.5f, 0.14f), new Vector3(0.42f, 0.70f, 1.0f), new Vector3(0f, 0f, -18f), predatorMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("NestMass", PrimitiveType.Sphere, new Vector3(1.8f, 0.66f, 1.8f), new Vector3(0f, 0.24f, 0f), Vector3.zero, hazardMat),
+                        new VisualPrimitiveSpec("ToothA", PrimitiveType.Cylinder, new Vector3(0.14f, 1.4f, 0.14f), new Vector3(-0.48f, 0.68f, 0.28f), new Vector3(0f, 0f, 18f), predatorMat),
+                        new VisualPrimitiveSpec("ToothB", PrimitiveType.Cylinder, new Vector3(0.14f, 1.5f, 0.14f), new Vector3(0.52f, 0.72f, -0.24f), new Vector3(0f, 0f, -18f), predatorMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("PredatorSilhouette", PrimitiveType.Capsule, new Vector3(1.4f, 1.4f, 1.4f), new Vector3(0f, 0.66f, 0f), Vector3.zero, predatorMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildLargeThreatZoneLods(Material predatorMat, Material abyssMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("ZoneSpine", PrimitiveType.Cylinder, new Vector3(0.82f, 8.0f, 0.82f), new Vector3(0f, 4.0f, 0f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("ArchA", PrimitiveType.Capsule, new Vector3(1.2f, 9.2f, 1.2f), new Vector3(-3.8f, 4.6f, 0f), new Vector3(0f, 0f, 28f), abyssMat),
+                        new VisualPrimitiveSpec("ArchB", PrimitiveType.Capsule, new Vector3(1.2f, 9.2f, 1.2f), new Vector3(3.8f, 4.6f, 0f), new Vector3(0f, 0f, -28f), abyssMat),
+                        new VisualPrimitiveSpec("Ring", PrimitiveType.Cylinder, new Vector3(4.6f, 0.22f, 4.6f), new Vector3(0f, 2.2f, 0f), new Vector3(90f, 0f, 0f), predatorMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(5.4f, 0.28f, 5.4f), new Vector3(0f, 0.14f, 0f), Vector3.zero, abyssMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Spine", PrimitiveType.Cylinder, new Vector3(0.68f, 7.0f, 0.68f), new Vector3(0f, 3.5f, 0f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("ArchMass", PrimitiveType.Capsule, new Vector3(1.0f, 7.8f, 1.0f), new Vector3(0f, 3.8f, 0f), new Vector3(0f, 0f, 90f), abyssMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(4.8f, 0.22f, 4.8f), new Vector3(0f, 0.11f, 0f), Vector3.zero, abyssMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("ZoneSilhouette", PrimitiveType.Capsule, new Vector3(3.8f, 8.0f, 3.8f), new Vector3(0f, 4.0f, 0f), Vector3.zero, predatorMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildAbyssApexZoneLods(Material abyssMat, Material predatorMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Monolith", PrimitiveType.Cube, new Vector3(4.6f, 11.8f, 4.6f), new Vector3(0f, 5.9f, 0f), new Vector3(0f, 8f, 0f), abyssMat),
+                        new VisualPrimitiveSpec("FinA", PrimitiveType.Cube, new Vector3(1.2f, 9.4f, 8.6f), new Vector3(-3.8f, 4.8f, 0f), new Vector3(0f, 18f, 14f), predatorMat),
+                        new VisualPrimitiveSpec("FinB", PrimitiveType.Cube, new Vector3(1.2f, 9.4f, 8.6f), new Vector3(3.8f, 4.8f, 0f), new Vector3(0f, -18f, -14f), predatorMat),
+                        new VisualPrimitiveSpec("Halo", PrimitiveType.Cylinder, new Vector3(6.2f, 0.28f, 6.2f), new Vector3(0f, 7.2f, 0f), new Vector3(90f, 0f, 0f), predatorMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(10.4f, 0.5f, 10.4f), new Vector3(0f, 0.24f, 0f), Vector3.zero, abyssMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Mass", PrimitiveType.Cube, new Vector3(5.0f, 10.4f, 5.0f), new Vector3(0f, 5.2f, 0f), Vector3.zero, abyssMat),
+                        new VisualPrimitiveSpec("CrossFin", PrimitiveType.Cube, new Vector3(1.0f, 8.0f, 7.0f), new Vector3(0f, 4.0f, 0f), new Vector3(0f, 0f, 90f), predatorMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(9.2f, 0.4f, 9.2f), new Vector3(0f, 0.2f, 0f), Vector3.zero, abyssMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("AbyssSilhouette", PrimitiveType.Capsule, new Vector3(5.4f, 10.8f, 5.4f), new Vector3(0f, 5.4f, 0f), Vector3.zero, abyssMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildReefApexZoneLods(Material reefMat, Material passiveMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(7.2f, 3.4f, 7.2f), new Vector3(0f, 4.6f, 0f), Vector3.zero, reefMat),
+                        new VisualPrimitiveSpec("StemA", PrimitiveType.Capsule, new Vector3(1.0f, 7.4f, 1.0f), new Vector3(-2.4f, 3.6f, 2.0f), new Vector3(0f, 0f, 16f), passiveMat),
+                        new VisualPrimitiveSpec("StemB", PrimitiveType.Capsule, new Vector3(0.92f, 6.8f, 0.92f), new Vector3(2.6f, 3.3f, -1.8f), new Vector3(0f, 0f, -14f), passiveMat),
+                        new VisualPrimitiveSpec("StemC", PrimitiveType.Capsule, new Vector3(0.86f, 6.2f, 0.86f), new Vector3(0.6f, 3.0f, 2.8f), new Vector3(0f, 0f, 8f), passiveMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(5.6f, 0.32f, 5.6f), new Vector3(0f, 0.16f, 0f), Vector3.zero, reefMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(6.4f, 3.0f, 6.4f), new Vector3(0f, 4.1f, 0f), Vector3.zero, reefMat),
+                        new VisualPrimitiveSpec("StemMass", PrimitiveType.Capsule, new Vector3(1.1f, 6.0f, 1.1f), new Vector3(0f, 3.0f, 0f), Vector3.zero, passiveMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(5.0f, 0.28f, 5.0f), new Vector3(0f, 0.14f, 0f), Vector3.zero, reefMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("ReefSilhouette", PrimitiveType.Capsule, new Vector3(6.0f, 7.0f, 6.0f), new Vector3(0f, 3.5f, 0f), Vector3.zero, reefMat),
+                    }),
+            };
+        }
+
+        private static CompositeLodSpec[] BuildRuinApexZoneLods(Material ruinMat, Material predatorMat)
+        {
+            return new[]
+            {
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod0Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("FrameA", PrimitiveType.Cube, new Vector3(1.4f, 10.4f, 1.4f), new Vector3(-3.8f, 5.2f, 2.8f), new Vector3(0f, 8f, 4f), ruinMat),
+                        new VisualPrimitiveSpec("FrameB", PrimitiveType.Cube, new Vector3(1.4f, 9.8f, 1.4f), new Vector3(3.6f, 4.9f, -2.6f), new Vector3(0f, -10f, -4f), ruinMat),
+                        new VisualPrimitiveSpec("CrossSpan", PrimitiveType.Cube, new Vector3(8.8f, 0.52f, 2.2f), new Vector3(0f, 7.8f, 0f), new Vector3(0f, 16f, 0f), ruinMat),
+                        new VisualPrimitiveSpec("ThreatNest", PrimitiveType.Sphere, new Vector3(3.8f, 2.2f, 3.8f), new Vector3(0f, 1.1f, 0f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("Anchor", PrimitiveType.Cylinder, new Vector3(4.4f, 0.3f, 4.4f), new Vector3(0f, 0.15f, 0f), Vector3.zero, ruinMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod1Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("FrameMass", PrimitiveType.Cube, new Vector3(7.6f, 7.8f, 2.4f), new Vector3(0f, 4.0f, 0f), new Vector3(0f, 12f, 0f), ruinMat),
+                        new VisualPrimitiveSpec("Nest", PrimitiveType.Sphere, new Vector3(3.4f, 2.0f, 3.4f), new Vector3(0f, 1.0f, 0f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(4.0f, 0.24f, 4.0f), new Vector3(0f, 0.12f, 0f), Vector3.zero, ruinMat),
+                    }),
+                new CompositeLodSpec(
+                    WorldProceduralSupportContract.RequiredLod2Threshold,
+                    new[]
+                    {
+                        new VisualPrimitiveSpec("RuinSilhouette", PrimitiveType.Capsule, new Vector3(5.6f, 8.4f, 5.6f), new Vector3(0f, 4.2f, 0f), Vector3.zero, ruinMat),
+                    }),
+            };
+        }
+
+        private static GameObject CreateCompositeFinalPrefab(string prefabPath, Vector3 colliderSize, CompositeLodSpec[] lodSpecs)
+        {
+            if (lodSpecs == null || lodSpecs.Length <= 0)
+                return null;
+
+            GameObject root = new GameObject(System.IO.Path.GetFileNameWithoutExtension(prefabPath));
+            try
+            {
+                BoxCollider collider = root.AddComponent<BoxCollider>();
+                collider.size = colliderSize;
+                collider.center = new Vector3(0f, colliderSize.y * 0.5f, 0f);
+
+                BuildCompositeVisuals(root.transform, lodSpecs);
+                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                return savedPrefab != null ? savedPrefab : AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void BuildCompositeVisuals(Transform parent, CompositeLodSpec[] lodSpecs)
+        {
+            LOD[] lods = new LOD[lodSpecs.Length];
+            for (int i = 0; i < lodSpecs.Length; i++)
+            {
+                GameObject lodRoot = new GameObject($"LOD{i}");
+                lodRoot.transform.SetParent(parent, false);
+
+                VisualPrimitiveSpec[] visuals = lodSpecs[i].Visuals;
+                List<Renderer> renderers = new List<Renderer>(visuals != null ? visuals.Length : 0);
+                BuildCompositeVisualGroup(lodRoot.transform, visuals, renderers);
+                lods[i] = new LOD(lodSpecs[i].ScreenRelativeTransitionHeight, renderers.ToArray());
+            }
+
+            LODGroup lodGroup = parent.gameObject.AddComponent<LODGroup>();
+            lodGroup.fadeMode = LODFadeMode.CrossFade;
+            lodGroup.animateCrossFading = true;
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+        }
+
+        private static void BuildCompositeVisualGroup(Transform parent, VisualPrimitiveSpec[] visuals, List<Renderer> renderers)
+        {
+            if (visuals == null || visuals.Length <= 0)
+                return;
+
+            for (int i = 0; i < visuals.Length; i++)
+            {
+                Renderer renderer = CreateVisualPrimitive(
+                    parent,
+                    visuals[i].Name,
+                    visuals[i].PrimitiveType,
+                    visuals[i].Scale,
+                    visuals[i].Material,
+                    visuals[i].LocalPosition,
+                    visuals[i].LocalEulerAngles);
+
+                if (renderer != null)
+                    renderers.Add(renderer);
+            }
+        }
+
+        private static Renderer CreateVisualPrimitive(
+            Transform parent,
+            string name,
+            PrimitiveType primitiveType,
+            Vector3 scale,
+            Material material,
+            Vector3 localPosition,
+            Vector3 localEulerAngles)
+        {
+            GameObject visual = GameObject.CreatePrimitive(primitiveType);
+            visual.name = name;
+            visual.transform.SetParent(parent, false);
+            visual.transform.localPosition = localPosition;
+            visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
+            visual.transform.localScale = scale;
+
+            Collider visualCollider = visual.GetComponent<Collider>();
+            if (visualCollider != null)
+                Object.DestroyImmediate(visualCollider);
+
+            Renderer renderer = visual.GetComponent<Renderer>();
+            if (renderer != null)
+                renderer.sharedMaterial = material;
+
+            return renderer;
+        }
+
+        private static Material CreateOrUpdateMaterial(string path, Color baseColor)
+        {
+            Shader shader = Shader.Find(WorldProceduralSupportContract.UrpLitShaderName);
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader != null ? shader : Shader.Find(WorldProceduralSupportContract.StandardShaderName));
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.name = System.IO.Path.GetFileNameWithoutExtension(path);
+            material.enableInstancing = true;
+            material.color = baseColor;
+
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", baseColor);
+
+            if (material.HasProperty("_BaseMap"))
+                material.SetTexture("_BaseMap", null);
+
+            if (material.HasProperty("_Surface"))
+                material.SetFloat("_Surface", 0f);
+
+            if (material.HasProperty("_ZWrite"))
+                material.SetFloat("_ZWrite", 1f);
+
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path))
+                return;
+
+            int separatorIndex = path.LastIndexOf('/');
+            string parentFolder = separatorIndex > 0 ? path.Substring(0, separatorIndex) : string.Empty;
+            string newFolderName = separatorIndex > 0 ? path.Substring(separatorIndex + 1) : path;
+            if (!string.IsNullOrEmpty(parentFolder) && !AssetDatabase.IsValidFolder(parentFolder))
+                EnsureFolder(parentFolder);
+
+            AssetDatabase.CreateFolder(parentFolder, newFolderName);
+        }
+
+        private readonly struct CompositeLodSpec
+        {
+            public CompositeLodSpec(float screenRelativeTransitionHeight, VisualPrimitiveSpec[] visuals)
+            {
+                ScreenRelativeTransitionHeight = screenRelativeTransitionHeight;
+                Visuals = visuals;
+            }
+
+            public float ScreenRelativeTransitionHeight { get; }
+            public VisualPrimitiveSpec[] Visuals { get; }
+        }
+
+        private readonly struct VisualPrimitiveSpec
+        {
+            public VisualPrimitiveSpec(
+                string name,
+                PrimitiveType primitiveType,
+                Vector3 scale,
+                Vector3 localPosition,
+                Vector3 localEulerAngles,
+                Material material)
+            {
+                Name = name;
+                PrimitiveType = primitiveType;
+                Scale = scale;
+                LocalPosition = localPosition;
+                LocalEulerAngles = localEulerAngles;
+                Material = material;
+            }
+
+            public string Name { get; }
+            public PrimitiveType PrimitiveType { get; }
+            public Vector3 Scale { get; }
+            public Vector3 LocalPosition { get; }
+            public Vector3 LocalEulerAngles { get; }
+            public Material Material { get; }
+        }
+    }
+}

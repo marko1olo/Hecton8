@@ -11,6 +11,14 @@ Shader "Hecton8/Flora/KelpMaster"
         _RimColor ("Rim Color", Color) = (0.18, 0.52, 0.34, 1)
         _TransmissionColor ("Transmission Color", Color) = (0.26, 0.68, 0.34, 1)
         _BiolumColor ("Biolum Color", Color) = (0.20, 0.86, 0.92, 1)
+
+        [Header(Master Grade SSS)]
+        _SSSColor ("SSS Color", Color) = (0.45, 0.82, 0.38, 1)
+        _SSSStrength ("SSS Strength", Range(0, 4)) = 1.2
+        _SSSPower ("SSS Power", Range(1, 16)) = 4.0
+        _SSSAmbient ("SSS Ambient", Range(0, 1)) = 0.15
+
+        [Header(Interior Params)]
         _Smoothness ("Smoothness", Range(0, 1)) = 0.42
         _AmbientStrength ("Ambient Strength", Range(0, 1)) = 0.42
         _RimPower ("Rim Power", Range(0.5, 8)) = 3.2
@@ -48,6 +56,10 @@ Shader "Hecton8/Flora/KelpMaster"
         _SwayFrequency ("Sway Frequency", Range(0, 8)) = 1.8
         _SwaySpeed ("Sway Speed", Range(0, 4)) = 0.9
         _SwayPhaseScale ("Sway Phase Scale", Range(0, 4)) = 0.75
+
+        [Header(Interaction)]
+        _PropWashDisplacement ("Prop Wash Displacement", Range(0, 2)) = 0.85
+
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
 
@@ -77,10 +89,12 @@ Shader "Hecton8/Flora/KelpMaster"
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -88,6 +102,10 @@ Shader "Hecton8/Flora/KelpMaster"
                 half4 _RimColor;
                 half4 _TransmissionColor;
                 half4 _BiolumColor;
+                half4 _SSSColor;
+                half _SSSStrength;
+                half _SSSPower;
+                half _SSSAmbient;
                 half _Smoothness;
                 half _AmbientStrength;
                 half _RimPower;
@@ -125,6 +143,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 half _SwayFrequency;
                 half _SwaySpeed;
                 half _SwayPhaseScale;
+                half _PropWashDisplacement;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -140,6 +159,9 @@ Shader "Hecton8/Flora/KelpMaster"
             half _HectonOceanBiolumStrength;
             half4 _HectonFloorBiolumColor;
             half _HectonFloorBiolumStrength;
+
+            float4 _HectonPropWashPosition; // xyz: position, w: radius
+            half _HectonPropWashForce;
 
             struct Attributes
             {
@@ -215,12 +237,21 @@ Shader "Hecton8/Flora/KelpMaster"
 
                 float3 positionOS = input.positionOS.xyz;
                 half heightMask = saturate(input.uv.y);
+                half driftWave = sin(_Time.y * (_SwaySpeed * 0.3h) + positionOS.y * 0.1h) * 0.15h * _BiolumCurrentResponse;
                 half swayPhase = (positionOS.x + positionOS.z) * _SwayPhaseScale + input.color.r * 2.1h;
-                half swayWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency);
+                half primaryWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
+                half secondaryWave = sin(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
+                half swayWave = primaryWave + secondaryWave + driftWave;
                 half swayAmplitude = _SwayAmplitude;
                 #if defined(_QUALITY_MX350)
                 swayAmplitude *= 0.72h;
                 #endif
+                float3 positionWS_Interact = GetVertexPositionInputs(positionOS).positionWS;
+                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
+                float washDist = length(washDir);
+                float washStrength = saturate(1.0 - washDist / _HectonPropWashPosition.w);
+                positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+
                 positionOS.xz += input.normalOS.xz * (swayWave * swayAmplitude * heightMask);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(positionOS);
@@ -240,6 +271,9 @@ Shader "Hecton8/Flora/KelpMaster"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(LOD_FADE_CROSSFADE)
+                LODFadeCrossFade(input.positionCS);
+                #endif
 
                 half3 baseNormalWS = normalize(input.normalWS);
                 half3 tangentWS = normalize(input.tangentWS.xyz);
@@ -313,13 +347,21 @@ Shader "Hecton8/Flora/KelpMaster"
 
                 half3 ambient = SampleSH(normalWS) * (_AmbientStrength + wetness * 0.12h);
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
+
+                // Master Grade SSS (Biological Translucency)
+                half sssForward = pow(saturate(dot(lightDir, viewDirWS)), _SSSPower);
+                half sssBack = pow(saturate(dot(-lightDir, viewDirWS)), _SSSPower * 0.5h);
+                half sssMask = thicknessMask * causticMask;
+                half3 sssLighting = _SSSColor.rgb * ((sssForward + sssBack * 0.4h) * _SSSStrength * sssMask);
+                sssLighting += _SSSColor.rgb * (_SSSAmbient * ambient * thicknessMask);
+
                 half3 transmission = _TransmissionColor.rgb * (backLight * _TransmissionStrength * thicknessMask * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField);
                 half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
-                half3 color = diffuse + transmission + rimLighting + specular + biolum;
+                half3 color = diffuse + transmission + rimLighting + specular + biolum + sssLighting;
                 color = lerp(color, unity_FogColor.rgb * 0.85h, saturate(fresnel * (0.55h + wetness * 0.45h)));
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);

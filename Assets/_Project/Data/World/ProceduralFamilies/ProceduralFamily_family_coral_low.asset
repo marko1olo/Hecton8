@@ -70,8 +70,26 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.92, y: 1.06}
+  - variantId: family.coral.low.final.flora.gen_family_coral_low__mound
+    prefab: {fileID: 2441131005212694413, guid: dfcea83e441b2464c971f4aed113c8ea, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.06}
   - variantId: family.coral.low.final.flora.gen_family_coral_low__plate
     prefab: {fileID: 415459277437792198, guid: 7079a3254ff1f3540a6b6ec0368511fb, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.06}
+  - variantId: family.coral.low.final.flora.gen_family_coral_low__saucer
+    prefab: {fileID: 4724318967710426444, guid: 329554b853f06d6418246ef192f5f4a6, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.92, y: 1.06}
+  - variantId: family.coral.low.final.flora.gen_family_coral_low__spread
+    prefab: {fileID: 6888786279405320980, guid: bfd664f308ebaa6428d8a5fed7ac4f6a, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1

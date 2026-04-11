@@ -59,12 +59,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.plant.giant.final.placeholder
-    prefab: {fileID: 4660554031983498438, guid: 4f7741c3f83213148868c6820b97cfba, type: 3}
+  - variantId: family.plant.giant.final.silhouette
+    prefab: {fileID: 1275001572355187287, guid: dd7b28339c769af499c834e77907a132, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.12}
+    uniformScaleRange: {x: 0.96, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Plant/Plant_Giant
   gameplayRole: Huge underwater plants that act as biome-scale silhouettes.

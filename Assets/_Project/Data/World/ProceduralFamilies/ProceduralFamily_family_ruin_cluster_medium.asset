@@ -61,12 +61,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.ruin.cluster.medium.final.placeholder
-    prefab: {fileID: 4246805987037082820, guid: 78297cb1d67ade945b09e0b58d5614a5, type: 3}
+  - variantId: family.ruin.cluster.medium.final.cluster_medium
+    prefab: {fileID: 3197335251932653891, guid: a3b972452d2966445922e5132dad05a6, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.98, y: 1.04}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/RuinModule/Ruin_Cluster_Medium
   gameplayRole: 2-4 abandoned modules in one readable cluster.

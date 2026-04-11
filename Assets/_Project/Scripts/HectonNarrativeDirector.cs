@@ -11,6 +11,7 @@ using Hecton8.SaveSystem;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Hecton8.Systems.AI;
+using Hecton8.Interaction;
 
 namespace Hecton8.Gameplay
 {
@@ -28,6 +29,10 @@ namespace Hecton8.Gameplay
         [Header("State")]
         [SerializeField, ReadOnly] private List<string> discoveredIds = new List<string>();
         [SerializeField, ReadOnly] private int currentDepthTier;
+
+        // Runtime-only collection for active POIs in the world.
+        // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
+        private readonly List<NarrativeDiscovery> _activePOIs = new List<NarrativeDiscovery>(64);
 
         private Transform _playerTransform;
         private bool _registered;
@@ -105,6 +110,8 @@ namespace Hecton8.Gameplay
                 SaveManager.Instance.Register(this);
 
             NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
+            NarrativeEvents.OnNarrativePOIRegistered += HandlePOIRegistered;
+            NarrativeEvents.OnNarrativePOIDisposed += HandlePOIDisposed;
             HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequest;
 
             ResolvePlayerTransform();
@@ -122,7 +129,33 @@ namespace Hecton8.Gameplay
                 SaveManager.Instance.Unregister(this);
 
             NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
+            NarrativeEvents.OnNarrativePOIRegistered -= HandlePOIRegistered;
+            NarrativeEvents.OnNarrativePOIDisposed -= HandlePOIDisposed;
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequest;
+        }
+
+        public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)
+        {
+            NarrativeDiscovery nearest = null;
+            float minSqrDist = maxDistance * maxDistance;
+
+            for (int i = 0; i < _activePOIs.Count; i++)
+            {
+                var poi = _activePOIs[i];
+                if (poi == null) continue;
+
+                // Check if already discovered
+                if (HasDiscovery(poi.DiscoveryId)) continue;
+
+                float sqrDist = (poi.transform.position - center).sqrMagnitude;
+                if (sqrDist < minSqrDist)
+                {
+                    minSqrDist = sqrDist;
+                    nearest = poi;
+                }
+            }
+
+            return nearest;
         }
 
         public void SlowTick()
@@ -211,6 +244,21 @@ namespace Hecton8.Gameplay
 
             _playerTransform = playerTransform;
             return true;
+        }
+
+        private void HandlePOIRegistered(NarrativeDiscovery poi)
+        {
+            if (poi == null) return;
+            if (!_activePOIs.Contains(poi))
+            {
+                _activePOIs.Add(poi);
+            }
+        }
+
+        private void HandlePOIDisposed(NarrativeDiscovery poi)
+        {
+            if (poi == null) return;
+            _activePOIs.Remove(poi);
         }
     }
 }

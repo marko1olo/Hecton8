@@ -36,6 +36,10 @@ namespace Hecton8.UI
         [SerializeField] private Color colorText     = new Color(0.85f, 0.90f, 0.85f, 1f);
         [SerializeField] private Color colorDim      = new Color(0.45f, 0.50f, 0.45f, 1f);
 
+        [Header("── Font ─────────────────────────────────────")]
+        [Tooltip("Шрифт с кириллицей. Если null — используется TMP default.")]
+        [SerializeField] private TMPro.TMP_FontAsset _labelFont;
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -138,6 +142,14 @@ namespace Hecton8.UI
         {
             if (_built) return;
             _built = true;
+
+            // Auto-resolve Cyrillic font — same pattern as PDADataLogTab
+            if (_labelFont == null)
+            {
+                _labelFont = UnityEngine.Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/текст SDF");
+                if (_labelFont == null)
+                    _labelFont = TMPro.TMP_Settings.defaultFontAsset;
+            }
 
             RectTransform root = GetComponent<RectTransform>();
 
@@ -357,6 +369,7 @@ namespace Hecton8.UI
         {
             RectTransform rt = CreateRect(name, parent);
             var tmp = rt.gameObject.AddComponent<TextMeshProUGUI>();
+            if (_labelFont != null) tmp.font = _labelFont;
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = alignment;

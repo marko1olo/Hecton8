@@ -66,12 +66,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.98, y: 1.08}
-  - variantId: family.ruin.megastructure.final.placeholder
-    prefab: {fileID: 3802134307551496790, guid: 77b6d623efb1c844ba7543d43b038cfb, type: 3}
+  - variantId: family.ruin.megastructure.final.megastructure
+    prefab: {fileID: 3492440976998856508, guid: 5131cdef1e737ca499c7e6470ee8d0ab, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.98, y: 1.08}
+    uniformScaleRange: {x: 0.98, y: 1.03}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/RuinModule/Ruin_Megastructure
   gameplayRole: Huge abandoned structure silhouettes, up to multi-storey scale.

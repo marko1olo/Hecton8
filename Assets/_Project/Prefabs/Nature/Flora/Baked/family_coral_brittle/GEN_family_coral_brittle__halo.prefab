@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 913800672413137018}
   - component: {fileID: 2430195070035936303}
+  - component: {fileID: 7867387272789237792}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__halo
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3217530360747550890}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.05999309, y: 0.9161176, z: -0.24161658}
-  m_Size: 1.8322352
+  m_LocalReferencePoint: {x: 0.04133883, y: 0.91962546, z: -0.255}
+  m_Size: 1.8392509
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 3966372546660218267}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &7867387272789237792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3217530360747550890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 5bd02a60c6ae0ad4c95a973755c96fd9, type: 2}
 --- !u!1 &5884504972995566406
 GameObject:
   m_ObjectHideFlags: 0

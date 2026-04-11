@@ -40,7 +40,7 @@
 //   [ADD] Heat accumulation system, thermal lockout
 //   [ADD] Risk/Reward damage scaling (+15% at max heat)
 //   [ADD] Visual feedback (beam jitter, spark rate, audio pitch)
-//   [ADD] Overheat lockout via Awaitable (Unity 6 pooled)
+//   [ADD] Overheat lockout via tick-driven timer state
 //   [PRESERVED] Dual mode, ICuttable, BaseModule.Deconstruct, zero GC
 //
 // v1.0 (INITIAL):
@@ -185,6 +185,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Is tool currently in overheat lockout.</summary>
         private bool _isLockedOut;
+
+        /// <summary>Remaining lockout time in seconds.</summary>
+        private float _lockoutTimer;
 
         /// <summary>Last published heat value (for event throttling).</summary>
         private float _lastPublishedHeat;
@@ -413,6 +416,18 @@ namespace Hecton8.Gameplay
         /// </summary>
         public override void ToolTick(float deltaTime)
         {
+            if (_isLockedOut)
+            {
+                _lockoutTimer = math.max(0f, _lockoutTimer - deltaTime);
+                if (_lockoutTimer <= 0f)
+                {
+                    _isLockedOut = false;
+                    _lockoutSoundPlayed = false;
+                    _heatLevel = math.min(_heatLevel, 0.8f);
+                    PublishHeat();
+                    ToolHitUtility.ShowInfo("LASER CUTTER - CORE STABLE");
+                }
+            }
             // ── Heat decay when not firing ──
             if (!_isFiring && !_isLockedOut)
             {
@@ -491,11 +506,12 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Triggers overheat lockout. Tool cannot fire for overheatLockoutTime.
-        /// Uses Unity 6 Awaitable — pooled, zero GC, auto-cancelled on despawn.
+        /// Lockout recovery is serviced by ToolTick via _lockoutTimer.
         /// </summary>
         private void TriggerOverheatLockout()
         {
             _isLockedOut = true;
+            _lockoutTimer = math.max(0f, overheatLockoutTime);
             _lockoutSoundPlayed = false;
             _isFiring = false;
             SetVisualsActive(false);
@@ -506,36 +522,6 @@ namespace Hecton8.Gameplay
                 "LASER CORE OVERHEATED",
                 "Cutter entered forced thermal lockout. Reduce sustained beam exposure before the next recovery pass.",
                 "CRITICAL");
-
-            // Fire and forget — auto-cancelled if despawned
-            _ = OverheatLockoutAsync();
-        }
-
-        /// <summary>
-        /// Async lockout timer. Awaitable is pooled by Unity 6 runtime.
-        /// destroyCancellationToken auto-cancels if GameObject is destroyed.
-        /// During lockout: heat decays naturally via ToolTick (but tool can't fire).
-        /// </summary>
-        private async Awaitable OverheatLockoutAsync()
-        {
-            try
-            {
-                await Awaitable.WaitForSecondsAsync(
-                    overheatLockoutTime, destroyCancellationToken);
-            }
-            catch (System.OperationCanceledException)
-            {
-                // Despawned during lockout — normal
-                return;
-            }
-
-            _isLockedOut = false;
-            _lockoutSoundPlayed = false;
-
-            // Force heat down to 80% so player has a small buffer
-            _heatLevel = math.min(_heatLevel, 0.8f);
-            PublishHeat();
-            ToolHitUtility.ShowInfo("LASER CUTTER - CORE STABLE");
         }
 
         /// <summary>
@@ -865,6 +851,7 @@ namespace Hecton8.Gameplay
             _wasFiringLastFrame = false;
             _heatLevel = 0f;
             _isLockedOut = false;
+            _lockoutTimer = 0f;
             _lockoutSoundPlayed = false;
             _lastPublishedHeat = -1f;
             _secondaryLatched = false;

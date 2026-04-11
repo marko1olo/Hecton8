@@ -37,6 +37,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Dev;
 using UnityEngine;
@@ -118,6 +119,8 @@ namespace Hecton8.Core
         private readonly double[] _slowTickTopDurationsMs = new double[SlowTickProfilerCapacity];
         private readonly StringBuilder _slowTickReportBuilder = new StringBuilder(512);
         private float _nextSlowTickReportTime;
+        private bool _loggedFirstUpdateExecution;
+        private bool _loggedFirstSlowTickExecution;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -156,11 +159,27 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (enableSlowTickProfiling)
+            {
+                UnityEngine.Debug.Log(
+                    $"[GameTickManager] disabled tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
+                    this);
+            }
+#endif
             ResetSlowTickState();
         }
 
         private void OnDestroy()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (enableSlowTickProfiling)
+            {
+                UnityEngine.Debug.Log(
+                    $"[GameTickManager] destroyed isInstance={(_instance == this)} tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
+                    this);
+            }
+#endif
             if (_instance == this)
                 _instance = null;
         }
@@ -174,6 +193,23 @@ namespace Hecton8.Core
             EnsureInitialized();
 
             float dt = Time.deltaTime;
+            float slowTickDt = dt;
+            if (Application.isPlaying &&
+                SceneBootstrap.HasActiveInstance &&
+                !SceneBootstrap.IsGameReady &&
+                slowTickDt <= 0f)
+            {
+                slowTickDt = Time.unscaledDeltaTime;
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_loggedFirstUpdateExecution && enableSlowTickProfiling)
+            {
+                _loggedFirstUpdateExecution = true;
+                UnityEngine.Debug.Log(
+                    $"[GameTickManager] first-update timeScale={Time.timeScale:0.###} deltaTime={dt:0.###} slowTickDelta={slowTickDt:0.###} unscaledDeltaTime={Time.unscaledDeltaTime:0.###} bootstrapActive={SceneBootstrap.HasActiveInstance} bootstrapReady={SceneBootstrap.IsGameReady}",
+                    this);
+            }
+#endif
 
             _tickables.BeginIteration();
 
@@ -201,7 +237,7 @@ namespace Hecton8.Core
             }
 
             _tickables.EndIteration();
-            ProcessSlowTickIfNeeded(dt);
+            ProcessSlowTickIfNeeded(slowTickDt);
 
 #if UNITY_EDITOR
             _debugTickCount = _tickables.Count;
@@ -279,6 +315,15 @@ namespace Hecton8.Core
 
             List<ISlowTickable> items = _slowTickables.Items;
             int count = items.Count;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_loggedFirstSlowTickExecution && enableSlowTickProfiling)
+            {
+                _loggedFirstSlowTickExecution = true;
+                UnityEngine.Debug.Log(
+                    $"[GameTickManager] first-slow-tick registered={count} timeScale={Time.timeScale:0.###} deltaTime={Time.deltaTime:0.###} unscaledDeltaTime={Time.unscaledDeltaTime:0.###}",
+                    this);
+            }
+#endif
             long loopStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
             if (enableSlowTickProfiling)
                 ResetSlowTickProfilerFrame();

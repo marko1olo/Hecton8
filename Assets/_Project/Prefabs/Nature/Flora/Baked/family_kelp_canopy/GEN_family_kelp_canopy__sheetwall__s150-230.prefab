@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3409874711913996277}
   - component: {fileID: 3084898666511008224}
+  - component: {fileID: 1367024956389297185}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__sheetwall__s150-230
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 611040833174435234}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -4.205474, y: 9.421772, z: -0.62525225}
-  m_Size: 18.843544
+  m_LocalReferencePoint: {x: -4.2206793, y: 9.438043, z: -0.6104007}
+  m_Size: 18.876085
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 4295528051651438073}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &1367024956389297185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 611040833174435234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 273f05744fec80045b4b8112eccf46e4, type: 2}
 --- !u!1 &705881347012351596
 GameObject:
   m_ObjectHideFlags: 0

@@ -59,12 +59,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.05}
-  - variantId: family.egg.cluster.final.placeholder
-    prefab: {fileID: 8667903796957094335, guid: da8b87554abd77e40b83bb0dbe6117ab, type: 3}
+  - variantId: family.egg.cluster.final.nest_cluster
+    prefab: {fileID: 3441264187667169195, guid: 008ee5331a7a1cd4e8a882a029168c14, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.05}
+    uniformScaleRange: {x: 0.94, y: 1.06}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Egg/Egg_Cluster
   gameplayRole: Biological nests and egg groups for creature storytelling.

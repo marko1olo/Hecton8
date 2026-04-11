@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7893021220989113813}
   - component: {fileID: 7787635831617109865}
+  - component: {fileID: 8575695289219320804}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__nest__s65-105
   m_TagString: Untagged
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 5218874425188668736}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8575695289219320804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4975654968312765327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: a3fb344fb139da7449b7bf052bee0c61, type: 2}
 --- !u!1 &7745616175124019887
 GameObject:
   m_ObjectHideFlags: 0

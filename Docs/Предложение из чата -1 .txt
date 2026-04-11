@@ -1,0 +1,1335 @@
+[4/11/2026 04:39] Николай Романов: Главная задача — сделать так, чтобы игрок не чувствовал, что сюжет и врагов сгенерировала нейросеть, а не прописал человек. Это называется избежать "нейросетевого налета" (AI slop) — того самого ощущения, что всё слишком гладко, правильно и предсказуемо до зевоты.
+
+В этом ответе — конкретные техники, как этого добиться.
+
+---
+
+🔬 Почему нейросеть всегда будет писать "правильно, но скучно"?
+
+Нейросети тренированы на средних текстах со всего интернета и предсказывают наиболее вероятное следующее слово. А хороший сюжет — это то, что маловероятно, но логично. Именно этот разрыв рождает скучные клише и ощущение фальши. Ты не один такой, все с этим сталкиваются.
+
+---
+
+🧠 Как делать сюжет, который не "воняет нейросетью" (конкретные техники)
+
+1. "Конструктор" из старых фрагментов (Техника Frankentext): Заставь ИИ собирать рассказ как "Франкенштейна" — из кусочков, которые ты сам написал. Выдай нейросети задание: взять твои "мясо", "исследование" и "сюжетный поворот" и сшить их в одну историю. Исследования показывают, что такой метод делает текст более живым и его сложнее распознать как ИИ-генерацию, так как модель выступает не автором, а композитором.
+
+2. Режиссура от ИИ: не пиши, а управляй (Многоагентная система): Вместо одного сценариста используй целую команду агентов. Один придумывает глобальный план, второй с командой ИИ-актеров разыгрывает сцены, третий всё это переписывает в связный текст. Это создает более глубоких персонажей и логичный сюжет.
+
+3. "Буря мозгов" с десятикратным запасом (Техника NarrativeLoom): Этот метод копирует природу — сначала генерируй много вариантов, потом отбирай лучшие. Одновременно запускай 10 разных ИИ-личностей: "пост-апокалипсис", "нуар", "хоррор" и т.д. Ты получаешь 10 совершенно разных идей, выбираешь лучшую и дорабатываешь. Так ты борешься с главной проблемой нейросетей — "вероятностной ловушкой", которая толкает их к банальностям.
+
+4. Песочница для сюжета (Фреймворк WhatELSE): Это инструмент, который позволяет загрузить в ИИ несколько примеров хороших историй, и на их основе ИИ строит "карту возможных сюжетов". Ты видишь, куда могут привести разные выборы игрока, и можешь вручную подрезать или расширить границы. Это даёт тебе контроль над пространством сценария, не убивая его динамику.
+
+5. Подрезание крыльев генерации (Анти-Слоп Техники): Нейросети обожают слова-паразиты вроде "Delve", "Certainly", "a profound sense". Фреймворк "Antislop" может отлавливать и вырезать их на лету прямо во время генерации.
+
+6. Микроуправление: сцена "за" и "против": Вместо "напиши сцену разговора" попроси: "Напиши 3 версии: 1) персонаж говорит правду 2) он врет 3) он верит в то, что говорит, но это неправда". Ты получишь живые, многогранные диалоги, а не картонных персонажей.
+
+7. Имплантация "живых" артефактов: Напиши 5-10 странных, необъяснимых деталей о мире, которые тебе нравятся (например, "каждый 7-й камень на дне издает низкий гул"). Пропиши их в контекст нейросети как "необъяснимые факты мира" — и они будут всплывать в тексте, создавая глубину и загадку.
+
+---
+
+🎮 Как делать мобов, которые охотятся как люди, а не скрипты
+
+1. Сборник лора для ИИ-директора: Собери свою личную коллекцию ссылок на статьи о реальном поведении глубоководных хищников. Используй их как "сырой материал" для ИИ — пусть он строит поведение на основе реальных прототипов.
+
+2. Логические схемы (Behavior Trees) от ИИ: Поведение мобов не должно быть статичным. Заставь ИИ генерировать схемы поведения (те самые деревья), которые будут заставлять монстра постоянно переоценивать ситуацию в реальном времени в зависимости от действий игрока. Именно так поступили разработчики левиафана в Subnautica 2, чтобы создать по-настоящему умного хищника.
+
+3. "Сломанный телефон" через промежуточные форматы: Генерируя поведение, иди окольным путём: «опиши эмоциональную реакцию монстра на звук взрыва» → «опиши его инстинкты и цели» → «опиши патрульный маршрут». Чем больше шагов, тем меньше шансов, что результат будет шаблонным.
+[4/11/2026 04:39] Николай Романов: 4. Невидимый муравейник: Вместо одного мега-мозга для монстра, сделай так, чтобы его логика управлялась десятками мелких ИИ-агентов: "сенсорный" (слышу-вижу), "моторный" (двигаюсь), "эмоциональный" (боюсь-голоден). Их хаотичное взаимодействие создаст сложное и неожиданное поведение.
+
+5. Обратный инжиниринг топ-игр: Найди разборы поведения врагов из лучших игр жанра (например, подробные гайды по ИИ левиафанов из Subnautica). Скорми эти разборы нейросети и скажи: «Сделай не копию, а ремикс под нашу вселенную».
+
+---
+
+✅ Чек-лист: Как проверить, что результат не "воняет нейросетью"
+
+Прочитай результат и ответь на эти вопросы:
+
+1. Есть ли там словесный мусор? Ищи "delve", "vibrant", "a profound sense", "tapestry of", "whisper of". Всё это — маркеры нейросети.
+2. Слишком ли он красивый? Идеальные абзацы без шероховатостей, корявых фраз и тавтологии? Нейросеть слишком хороша. Реальный человек иногда пишет хуже, но живее.
+3. Есть ли неожиданный поворот? Если после прочтения блока текста ты ни разу не удивился и всё было предсказуемо — это плохой признак.
+4. Не повторяет ли он одну структуру? Текст нанизан на схему "Тема -> Развитие -> Итог"? У реальных людей стиль и ритм текста постоянно меняются.
+
+---
+
+💎 Главный принцип: Ты — главный редактор и садовник
+
+Без твоей живой руки нейросеть выдаст среднюю температуру по больнице. Твоя задача — выступать в роли "креативного фильтра" и дирижера:
+
+· Отбрасывай 9 из 10 вариантов. Оставляй только самое сочное и неожиданное.
+· Добивай руками. Добавь пару своих штрихов — сломанную грамматику, нелогичный поступок, странную деталь. Это "окропит" текст человеческим присутствием.
+· Требуй маловероятного. В своих запросах используй конструкции вроде: «придумай сюжетный поворот, который встречается только в 1% игр». Это толкает нейросеть искать нетривиальные решения.
+________________________
+# 📋 ПОЛНЫЙ РАЗБОР ЗНАЧИМЫХ МОМЕНТОВ ИЗ МАТЕРИАЛОВ ПО UNITY
+
+Разбиваю на логические блоки для удобства. Пишу максимально подробно, как просили.
+
+---
+
+## 🔥 БЛОК 1: PATH TO CORECLR (Unity 6.8) — КРИТИЧНО
+
+### Суть изменения
+- **Mono будет полностью удалён** в Unity 6.8 (планируется к 2026 году)
+- Переход на **CoreCLR** (.NET modern runtime) — это фундаментальное изменение архитектуры скриптинга
+- Требуется подготовка кодовой базы заранее
+
+### Ключевые технические детали из обсуждения:
+1. **Проблема с удержанием ссылок в коллекциях**:
+   - Контейнеры (List, Dictionary и т.д.) **удерживают ссылки** на объекты
+   - При плохой практике кодирования (например, ручное управление `_count` без очистки ссылок) сборщик мусора не может освободить память
+   - В новой модели AssemblyLoadContext это может **блокировать перезагрузку ассембли**
+
+2. **Что происходит при утечке Assembly**:
+   - Unity планирует **отчитываться пользователю** о случаях, когда AssemblyLoadContext "утёк"
+   - Возможен сценарий, когда в памяти будут **две версии типов** из одной ассембли — старая (не выгруженная) и новая
+   - Новые инстансы будут использовать новую ассемблю, но старые объекты останутся со старой логикой
+
+3. **Fast Enter Play Mode**:
+   - Опция "Domain Reload" будет принудительно отключена при переходе на CoreCLR
+   - **"Scene Reload" скорее всего останется**, но потребует рефакторинга кода, не зависящего от доменной перезагрузки
+
+4. **OverflowException**:
+   - В CoreCLR поведение арифметических переполнений может измениться
+   - Пример: `int i = int.MaxValue + 1` теперь может выбрасывать `OverflowException` в проверяемом контексте
+   - Нужно аудитировать критичную арифметику
+
+### Что делать сейчас:
+- Прочитать официальное руководство: [Path to CoreCLR, 2026: Upgrade Guide](https://discussions.unity.com/t/path-to-coreclr-2026-upgrade-guide/1714279)
+- Проверить код на:
+  - Ручное управление памятью через `_count` и подобные паттерны
+  - Статические коллекции, которые никогда не очищаются
+  - События, на которые подписываются, но не отписываются
+- Протестировать проект с включённой опцией "Domain Reload = false" в Editor
+
+---
+
+## 🧠 БЛОК 2: ОПТИМИЗАЦИЯ ПАМЯТИ ДЛЯ ПРОЦЕДУРНЫХ МИРОВ
+
+### Основные паттерны проблем (из статьи Bhavisha Bhogayata):
+
+#### 1. "Память не освобождается сама"
+- **Проблема**: Генерация текстур/спрайтов в runtime без явного уничтожения
+- **Симптом**: Постепенный рост потребления памяти → краши на устройствах с 1 ГБ ОЗУ
+- **Решение**:
+```csharp
+Destroy(texture);
+Destroy(sprite);
+Resources.UnloadUnusedAssets();
+System.GC.Collect();
+```
+- **Вывод**: Если аллоцируете вне чистого managed-кода — управляйте жизненным циклом вручную
+
+#### 2. Скрытые аллокации в Update-циклах
+- **Проблема**: Создание объектов каждый кадр
+```csharp
+void Update()
+{
+    var tempList = new List<int>(); // аллокация каждый кадр!
+    var message = "Score: " + score; // строковая конкатенация = новая строка
+}
+```
+- **Последствие**: При 60 FPS даже мелкие аллокации создают постоянное давление на GC → фрейм-дропы
+- **Решение**:
+  - Переиспользовать объекты (пулинг)
+  - Избегать конкатенации строк в Update
+  - Использовать интерполяцию: `$"Score: {score}"` вместо `"Score: " + score`
+
+#### 3. Event listeners, которые никогда не отписываются
+- **Проблема**: Объект уничтожен, но событие всё ещё держит на него ссылку
+```csharp
+// Подписка
+eventManager.OnUpdate += MyHandler;
+// Забыли отписаться при уничтожении → утечка
+```
+- **Решение**: Всегда отписываться в `OnDestroy()` или `OnDisable()`
+```csharp
+eventManager.OnUpdate -= MyHandler;
+```
+
+#### 4. Тестирование только на высокопроизводительных устройствах
+- **Проблема**: На ПК с 32 ГБ ОЗУ проблемы не видны, но на мобильном устройстве с 1 ГБ — краши
+- **Решение**: Обязательно тестировать на минимально поддерживаемых устройствах
+
+---
+
+## ⚙️ БЛОК 3: MonoBehaviour vs C# Class vs Struct — Детальное сравнение памяти и производительности
+
+### Тестовый объект "Actor" с полями:
+```csharp
+public string actorName;
+public string actorTag;
+public string currentState;
+public bool isStunned, isOnFire, isFrozen, isPoisoned, isDead;
+public float currentHealth, maxHealth;
+```
+
+### Результаты замеров памяти (1000 экземпляров):
+
+| Метрика | MonoBehaviour Actor | Plain C# Class | C# Struct |
+|---------|-------------------|----------------|-----------|
+| Тип | Unity object | C# reference type | C# value type |
+| Создание | `Instantiate()` | `new` | `new` в массиве |
+| Расположение | Native + Managed heap | Managed heap | Inline в массиве (heap) |
+| Память на объект | ~2.8 KB | ~56 B (данные) / ~164 B (с данными) | Inline, нет отдельных объектов |
+| 1000 объектов | ~1.14 MB | ~55 KB / ~85 KB | ~39 KB (без строк) / ~144 KB (со строками) |
+| Количество аллокаций | 1000 отдельных объектов | 1000 отдельных объектов | 1 аллокация массива |
+
+### Ключевые выводы:
+1. **MonoBehaviour — самый тяжёлый**: каждый экземпляр — это GameObject + Transform + MonoBehaviour + синхронизация native/managed
+2. **Plain C# class в 20× легче** MonoBehaviour, но всё ещё создаёт 1000 отдельных объектов на heap
+3. **Struct не экономит память сам по себе**, но:
+   - Данные хранятся **непрерывным блоком** в памяти → лучше кэш-локальность
+   - Одна аллокация массива вместо 1000 → меньше фрагментации heap
+   - Быстрее итерация в циклах (CPU prefetch)
+
+### Важное предостережение про struct:
+```csharp
+// ОШИБКА: передача struct по значению в метод
+private void UpdateActor(ActorStruct actor) // копирует весь struct!
+{
+    actor.currentHealth += 1f; // меняет копию, оригинал не затрагивается
+}
+
+// ПРАВИЛЬНО: передача по ссылке
+private void UpdateActor(ref ActorStruct actor)
+{
+    actor.currentHealth += 1f; // меняет оригинал
+}
+```
+
+### Когда что использовать:
+- **MonoBehaviour**: только когда нужен GameObject в сцене, сериализация в Inspector, Unity-события
+- **C# class**: бизнес-логика, данные, которые не требуют Unity-компонентов
+- **struct**: массивы данных для частой итерации, ECS-стиль, когда важна кэш-локальность
+
+---
+
+## 🗜️ БЛОК 4: УМЕНЬШЕНИЕ РАЗМЕРА БИЛДА (Unity 6.3+)
+
+### Отключение физического движка
+- **Зачем**: Если игра не использует физику (2D пазл, визуальная новелла, UI-приложение)
+- **Экономия**: 10-15 МБ для WebGL / mobile билдов
+- **Как**: Project Settings → Player → Global Settings → Optimization → Physics Runtime → **None**
+
+### Что это даёт:
+1. **Уменьшение размера билда**: удаляются PhysX (3D) или Box2D (2D) нативные библиотеки
+2. **Снижение нагрузки на CPU**: не выполняется внутренний цикл FixedUpdate физики
+3. **Экономия памяти**: не аллоцируются буферы для коллизий, broad-phase, solver
+
+### Альтернатива для простой логики:
+```csharp
+// Вместо OnCollisionEnter и Raycast:
+void Update()
+{
+    // Простая проверка расстояния
+    float distance = Vector3.Distance(player.position, goal.position);
+    if (distance < interactionDistance)
+    {
+        // Логика взаимодействия
+    }
+    
+    // Оптимизация: избегать sqrt
+    // if ((pos1 - pos2).sqrMagnitude < dist * dist)
+}
+```
+
+### Дополнительные источники:
+- [Unity Manual: Disable and Strip Physics](https://docs.unity3d.com/6000.3/Documentation/Manual/Physics-Disable-and-Strip.html)
+- [Unity Blog: Smallest Builds Ever](https://blog.unity.com/engine-platform/how-to-optimize-your-unity-build-size)
+
+---
+
+## 🧩 БЛОК 5: ECS КАК ПАКЕТ ПО УМОЛЧАНИЮ (Unity 6.4)
+
+### Контекст:
+- С Unity 6.4 ECS (Entity Component System) включён в стандартную поставку
+- Процедурная генерация с `WorldProceduralScatterDirector` — идеальный кандидат для ECS
+
+### Практический опыт использования leoecs-lite (из блога Ariel Coppes):
+
+#### Архитектура "Controllers" как скриптовый слой:
+```csharp
+public class RepairDroneController : MonoBehaviour, IUpdate, IStateChanged, IInit
+{
+    public float healingPerSecond = 1;
+    public float totalHealing;
+    private float currentHealing; // ← RUNTIME данные — проблема!
+    
+    public void OnUpdate(World world, Entity entity, float dt)
+    {
+        // Доступ к компонентам через entity.Get<>()
+        ref var states = ref entity.Get<StatesComponent>();
+        // Логика...
+    }
+}
+```
+
+#### Критически важный принцип: **Stateless Controllers**
+- **Проблема**: Хранение runtime-данных (`currentHealing`, `rayEntity`) прямо в Controller
+- **Последствия**:
+  - Данные не доступны другим системам
+  - Сложнее отлаживать (нет единой структуры)
+  - Нельзя переиспользовать инстанс Controller'а для нескольких сущностей
+  - Сложнее сериализовать для save/load или сети
+
+- **Решение**: Выносить runtime-данные в отдельные компоненты:
+```csharp
+public class RepairDroneComponent : IEntityComponent 
+{
+    public float currentHealing;
+    public Entity rayEntity;
+}
+// Использовать: entity.Get<RepairDroneComponent>()
+```
+
+#### Система конфигураций (опыт Iron Marines Invasion):
+- JSON-файлы с иерархической структурой:
+```json
+{
+  "army.units.unit_ranger": {
+    "health": 100,
+    "abilities.base_attack.damage": 100
+  }
+}
+```
+- `ConfigurationComponent` хранит ключ и кэшированный Dictionary
+- `ConfigurationSystem` парсит JSON и заполняет компоненты
+- **Преимущество**: дизайнеры могут балансировать без перекомпиляции кода
+
+#### Система апгрейдов через overrides:
+```json
+{
+  "upgrade_super_rangers": {
+    "army.units.unit_ranger": {
+      "healthPercentage": [120, 140, 160, 200]
+    }
+  }
+}
+```
+- Апгрейды переопределяют значения в основном словаре конфигураций
+- Поддержка процентов и множителей
+
+#### Реакция на события через Event-компоненты:
+```csharp
+// Вместо хранения previousState в HealthComponent:
+public struct HealthStateEventComponent : IEventComponent 
+{
+    public Vector3 position;
+    public Vector3 damagePosition;
+    public bool died;
+}
+
+// HealthSystem добавляет событие при изменении:
+if (previousState != e.health.current) 
+{
+    world.Add(e, new HealthStateEventComponent { died = true });
+}
+
+// Controller реагирует на событие:
+public class RepairDroneController : IHealthStateEvent
+{
+    public void OnHealthStateChanged(Entity e) 
+    {
+        var eventData = e.Get<HealthStateEventComponent>();
+        if (eventData.died) { /* логика */ }
+    }
+}
+```
+
+#### Кастомный Editor Window для ECS:
+- Позволяет фильтровать сущности по компонентам
+- Поддержка кастомных инспекторов для сложных компонентов
+- Упрощает отладку ECS-логики
+
+---
+
+## 🎨 БЛОК 6: RENDER GRAPH VIEWER (Unity 6.4)
+
+### Что такое Render Graph:
+- API для доступа к рендер-пайплайну на любом этапе кадра
+- Автоматическая оптимизация: слияние пассов, управление ресурсами
+- Безопасный доступ к ресурсам рендеринга
+
+### Render Graph Viewer: окно анализа
+- **Расположение**: Window → Analysis → Render Graph Viewer
+- **Структура**:
+  - Верхняя строка: рендер-пассы в порядке выполнения
+  - Левый столбец: ресурсы в порядке создания
+  - Сетка: цветные блоки доступа (Read/Write/Load/Store)
+
+### Цветовая кодировка блоков:
+| Цвет | Значение |
+|------|----------|
+| 🔴 Красный | Запись (Write) |
+| 🟢 Зелёный | Чтение (Read) |
+| 🔵 Синий угол | Очистка при загрузке (Clear on Load) |
+| 🟤 Тёмно-красный угол | Сохранение (Store) |
+| 🌐 Глобус | Глобальный ресурс |
+
+### Практическое применение:
+1. **Анализ жизни ресурса**: проследить, какие пассы читают/пишут `_MainLightShadowmapTexture`
+2. **Оптимизация слияния пассов**: синие линии показывают, какие пассы объединены в один draw call
+3. **Диагностика кастомных фич**: добавить SSAO через Renderer Feature → увидеть новый пасс "Blit SSAO" в графе
+4. **Понимание зависимостей**: почему прозрачные объекты читают `_ScreenSpaceOcclusionTexture` (для корректного блендинга)
+
+### Фильтры для упрощения:
+- **Pass Filter**: Raster Passes / Unsafe Passes / Everything
+- **Resource Filter**: Textures / Buffers / All
+
+### Ресурсы:
+- [Migrating to Render Graph Tutorial](https://discussions.unity.com/t/migrating-to-render-graph-tutorial-the-render-graph-viewer/1715694)
+- YouTube-серия по Render Graph (ссылки в статье)
+
+---
+
+## 📦 БЛОК 7: ADDRESSABLES ДЛЯ БОЛЬШИХ МИРОВ
+
+### Часть 1: Основы и локальные адресаблы
+
+#### Ключевое отличие от стандартного подхода:
+| Стандарт Unity | Addressables |
+|---------------|--------------|
+| `Instantiate()` загружает префаб в память при старте сцены | `Addressables.LoadAsync()` загружает по требованию |
+| `Destroy()` удаляет инстанс, но "чертёж" остаётся в ОЗУ | `Addressables.ReleaseInstance()` полностью выгружает ресурс |
+| Все ассеты в памяти с начала | Только нужные ассеты в памяти в нужный момент |
+
+#### Базовая настройка:
+1. Установить пакет Addressables через Package Manager
+2. Отметить ассет как "Addressable" в Inspector
+3. Использовать `AssetReference` и `AsyncOperationHandle`:
+```csharp
+[SerializeField] private AssetReference _player;
+private AsyncOperationHandle<GameObject> _playerReceipt;
+
+void Start()
+{
+    _playerReceipt = _player.InstantiateAsync();
+}
+
+void Cleanup()
+{
+    if (_playerReceipt.IsValid())
+        Addressables.ReleaseInstance(_playerReceipt);
+}
+```
+
+#### Преимущества:
+- **Управление памятью**: явный контроль загрузки/выгрузки
+- **Живые обновления**: возможность загружать контент с сервера без обновления приложения
+- **Ускорение билдов**: разделение кода и контента → быстрее итерации в CI/CD
+
+---
+
+### Часть 2: Удалённые адресаблы + Unity Cloud Content Delivery (CCD)
+
+#### Сценарий: 3-этажное здание, загрузка этажей "на лету"
+
+#### Настройка Remote Addressables:
+1. **В AddressableAssetSettings**:
+   - Включить "Build Remote Catalog"
+   - Установить "Build & Load Paths" → "Remote"
+
+2. **Настройка профилей** (Window → Asset Management → Addressables → Profiles):
+   - `Remote.BuildPath`: оставить по умолчанию (`ServerData/[BuildTarget]`)
+   - `Remote.LoadPath`: вставить URL из Unity Cloud Dashboard
+
+3. **Настройка групп ассетов**:
+   - Выбрать группу с префабами этажей
+   - Установить:
+     - Build Path → `<Remote.BuildPath>`
+     - Load Path → `<Remote.LoadPath>`
+   - **Критично**: Advanced Options → Bundle Mode → **"Pack Separately"**
+     - Без этого все этажи упакуется в один файл → игрок скачает всё сразу
+
+#### Настройка Unity Cloud Content Delivery:
+1. В [Unity Cloud Dashboard](https://cloud.unity.com) → Cloud Content Delivery
+2. Создать Bucket (например, `RemoteFloorsBucket`)
+3. Сбилдить адресаблы: Addressables Groups → Build → New Build → Default Build Script
+4. Загрузить содержимое папки `ServerData/[Platform]` в Bucket через веб-интерфейс
+5. Создать Release в Dashboard
+6. Скопировать полученный URL в `Remote.LoadPath` в Unity
+
+#### Логика загрузки в runtime:
+```csharp
+public class AddressableManager : MonoBehaviour
+{
+    [SerializeField] private IntEventChannelSO onFloorSelected;
+    [SerializeField] private AssetReference[] floorReferences;
+    private AsyncOperationHandle<GameObject> _currentFloorReceipt;
+    
+    private void LoadFloor(int floorIndex)
+    {
+        // Выгрузить текущий этаж из памяти
+        if (_currentFloorReceipt.IsValid())
+            Addressables.ReleaseInstance(_currentFloorReceipt);
+        
+        // Загрузить новый
+        _currentFloorReceipt = floorReferences[floorIndex].InstantiateAsync();
+    }
+}
+```
+
+#### Кэширование:
+- После первой загрузки ассеты **автоматически кэшируются локально**
+- Последующие загрузки берутся с диска, а не из сети
+
+#### Тестирование в Editor:
+- По умолчанию Play Mode использует "Asset Database (fastest)" → пропускает сеть
+- Для тестирования реального поведения: изменить на **"Use Existing Build"**
+
+#### Сравнение Pack Together vs Pack Separately:
+| Режим | Поведение | Когда использовать |
+|-------|-----------|-------------------|
+| Pack Together | Все ассеты группы в одном файле | Маленькие ассеты, всегда нужны вместе |
+| **Pack Separately** | Каждый ассет — отдельный файл | Большие уровни, загрузка по требованию |
+
+---
+
+Продолжение в следующем сообщении — блоки 8-12 (Float precision, GPU physics, DI, Energy Saver, Claude Code, план действий).
+
+
+## 🎮 БЛОК 8: ФИЗИКА НА ГПУ — ПРОЕКТ «MOLECULES»
+
+### Суть проекта
+Репозиторий: [github.com/JohannHotzel/Molecules](https://github.com/JohannHotzel/Molecules)
+
+Это **полностью вычислительная физическая система**, работающая на видеокарте через Compute Shaders. Не использует встроенный PhysX/Box2D Unity.
+
+### Ключевые возможности:
+1. **XPBD (Extended Position Based Dynamics)** — современный метод решения ограничений, стабильнее классического PBD
+2. **Spatial Hash Collisions** — хэш-пространство для быстрого поиска коллизий без перебора всех пар
+3. **Mesh Voxelization** — вокселизация мешей для точных коллизий сложных форм
+4. **Coulomb Friction** — модель сухого трения Кулона для реалистичного скольжения
+5. **Breakable Constraints** — возможность «разрыва» связей между частицами при превышении нагрузки
+
+### Для чего это может быть полезно в процедурном мире:
+- Симуляция тысяч/миллионов частиц (песок, снег, пепел, магические эффекты)
+- Динамическое разрушение ландшафта без дорогих вычислений на CPU
+- Взаимодействие игрока с «живой» средой (например, следы на снегу, которые реально деформируются)
+
+### Технические ограничения:
+- Требует поддержки Compute Shaders (не все мобильные устройства)
+- Нет встроенной интеграции с Unity Physics — нужно писать свой слой взаимодействия
+- Отладка сложнее: данные живут на GPU, нужно выгружать их для инспекции
+
+### Пример архитектуры взаимодействия:
+```csharp
+// 1. Инициализация симуляции на GPU
+public class GPUPhysicsSimulator : MonoBehaviour
+{
+    public ComputeShader simulationShader;
+    public int maxParticles = 100000;
+    
+    private ComputeBuffer particleBuffer;
+    private ComputeBuffer collisionBuffer;
+    
+    void Start()
+    {
+        particleBuffer = new ComputeBuffer(maxParticles, ParticleStruct.Size);
+        // ... инициализация данных
+        simulationShader.SetBuffer(0, "Particles", particleBuffer);
+    }
+    
+    void Update()
+    {
+        // Запуск ядра симуляции
+        simulationShader.Dispatch(0, 
+            Mathf.CeilToInt(maxParticles / 256f), 1, 1);
+    }
+}
+
+// 2. Структура частицы (упакованная для эффективности)
+public struct ParticleStruct
+{
+    public Vector3 position;      // 12 байт
+    public Vector3 velocity;      // 12 байт
+    public float mass;            // 4 байта
+    public int type;              // 4 байта
+    // Итого: 32 байта на частицу → 3.2 МБ для 100к частиц
+    
+    public static int Size => 
+        sizeof(float) * 7 + sizeof(int); // 32
+}
+```
+
+### Когда стоит рассмотреть:
+✅ Процедурные эффекты с тысячами взаимодействующих объектов
+✅ Динамическая деформация среды (разрушаемый ландшафт)
+✅ Исследовательские проекты, прототипы
+
+### Когда лучше остаться на стандартной физике:
+❌ Обычные игры с десятками-сотнями Rigidbody
+❌ Проекты, где важна точная детерминированная физика (сетевые игры)
+❌ Мобильные проекты с широким охватом устройств
+
+---
+
+## 🧭 БЛОК 9: FLOAT PRECISION ДЛЯ ОГРОМНЫХ МИРОВ
+
+### Проблема в двух словах:
+Тип `float` в C#/Unity — это **32-битное число с плавающей точкой** (стандарт IEEE 754). Он даёт примерно **7 значащих десятичных цифр точности**.
+
+### Что это значит на практике:
+```csharp
+float a = 1000000f;
+float b = a + 0.1f;
+Debug.Log(a == b); // Может вернуть TRUE!
+```
+При координатах порядка миллиона, разница в 0.1 уже **не помещается в мантиссу** float и отбрасывается.
+
+### Симптомы в игре:
+- Персонаж «дёргается» или «телепортируется» при долгой игре
+- Пули пролетают сквозь стены при определённых координатах
+- Коллизии работают нестабильно на больших расстояниях от (0,0,0)
+- Процедурная генерация даёт артефакты (повторяющиеся паттерны)
+
+### Почему double не спасает:
+1. **Unity внутри использует float**: `Transform.position` — это `Vector3` из трёх float. Даже если вы считаете в double, при присвоении позиции данные обрежутся.
+2. **GPU работает на float**: шейдеры, рендеринг, физика — всё 32 бита.
+3. **Производительность**: double занимает в 2 раза больше памяти и медленнее в вычислениях.
+
+### Решение №1: Floating Origin (плавающее начало координат)
+
+**Идея**: не позволять игроку уходить далеко от (0,0,0). Когда он достигает порога — сдвигаем **весь мир** обратно к нулю, а игрока — в центр.
+
+```csharp
+public class FloatingOrigin : MonoBehaviour
+{
+    public Transform player;
+    public float resetThreshold = 1000f;
+    public float resetOffset = 500f;
+    
+    void LateUpdate()
+    {
+        if (player.position.magnitude > resetThreshold)
+        {
+            Vector3 offset = player.position - resetOffset * player.position.normalized;
+            
+            // Сдвигаем ВСЕ объекты мира
+            foreach (var obj in FindObjectsOfType<MovableObject>())
+            {
+                obj.transform.position -= offset;
+            }
+            
+            // Возвращаем игрока в «безопасную зону»
+            player.position = resetOffset * player.position.normalized;
+        }
+    }
+}
+```
+
+**Что нужно сдвигать**:
+- Все Transform с мировыми координатами
+- Системы частиц (Particle System.main.startPosition)
+- Навигационные сетки (NavMesh)
+- Точки спавна, триггеры, зоны
+- Данные процедурной генерации (если они кэшируются в мировых координатах)
+
+### Решение №2: Локальные координаты + глобальный «сектор»
+
+**Идея**: разбить мир на «чанки» или «сектора». Внутри каждого сектора координаты локальные (близко к 0), а глобальное положение хранится отдельно.
+
+```csharp
+public struct GlobalPosition
+{
+    public int sectorX, sectorY, sectorZ; // Глобальный «адрес» сектора
+    public Vector3 localPosition;         // Локальные координаты внутри сектора (точность высокая)
+    
+    public Vector3 ToWorldVector3()
+    {
+        return new Vector3(
+            sectorX * SECTOR_SIZE + localPosition.x,
+            sectorY * SECTOR_SIZE + localPosition.y,
+            sectorZ * SECTOR_SIZE + localPosition.z
+        );
+    }
+}
+```
+
+**Преимущества**:
+- Высокая точность внутри сектора
+- Удобно для процедурной генерации по чанкам
+- Легко сериализовать для сохранения/сети
+
+**Сложности**:
+- Нужно конвертировать координаты при переходе между секторами
+- Физика и рендеринг всё равно требуют «глобальных» float-координат → нужен слой преобразования
+
+### Решение №3: Относительные вычисления
+
+**Идея**: не сравнивать абсолютные позиции, а работать с **относительными векторами**.
+
+```csharp
+// ❌ Плохо: сравнение абсолютных позиций
+if (player.position == targetPosition) { ... }
+
+// ✅ Хорошо: сравнение относительного расстояния
+Vector3 toTarget = targetPosition - player.position;
+if (toTarget.sqrMagnitude < threshold * threshold) { ... }
+```
+
+**Почему это работает**: разница двух больших чисел может быть маленькой, и при вычитании теряется меньше точности, чем при работе с каждым числом по отдельности.
+
+### Дополнительные техники:
+
+#### ✅ Epsilon-сравнение вместо ==
+```csharp
+// Никогда не делайте так:
+if (a == b) { ... }
+
+// Делайте так:
+if (Mathf.Abs(a - b) < 0.0001f) { ... }
+// Или встроенный метод:
+if (Mathf.Approximately(a, b)) { ... }
+```
+
+#### ✅ Относительное сравнение для больших чисел
+```csharp
+public static bool ApproximatelyRelative(float a, float b, float tolerance = 0.0001f)
+{
+    float diff = Mathf.Abs(a - b);
+    float maxVal = Mathf.Max(1f, Mathf.Max(Mathf.Abs(a), Mathf.Abs(b)));
+    return diff <= tolerance * maxVal;
+}
+```
+
+#### ✅ Фиксированный шаг для физики
+```csharp
+// ❌ Зависит от FPS — накопление ошибки непредсказуемо
+void Update()
+{
+    rb.velocity += gravity * Time.deltaTime;
+}
+
+// ✅ Фиксированный шаг — ошибка накапливается предсказуемо
+void FixedUpdate()
+{
+    rb.velocity += gravity * Time.fixedDeltaTime;
+}
+```
+
+---
+
+## 🔗 БЛОК 10: DEPENDENCY INJECTION В UNITY — ПРАКТИЧЕСКИЙ ГАЙД
+
+### Зачем это нужно:
+- Убрать `FindObjectOfType`, `GameObject.Find`, глобальные синглтоны
+- Сделать зависимости явными и тестируемыми
+- Упростить рефакторинг: заменил реализацию интерфейса — всё работает
+
+### Базовый пример без фреймворков:
+
+#### Шаг 1: Определяем интерфейс
+```csharp
+public interface IAudioService
+{
+    void PlaySound(string clipName);
+    void StopAll();
+}
+```
+
+#### Шаг 2: Реализация
+```csharp
+public class AudioManager : MonoBehaviour, IAudioService
+{
+    [SerializeField] private AudioSource[] sources;
+    
+    public void PlaySound(string clipName)
+    {
+        // Логика воспроизведения
+    }
+    
+    public void StopAll()
+    {
+        foreach (var src in sources) src.Stop();
+    }
+}
+```
+
+#### Шаг 3: Потребитель (не создаёт зависимость сам!)
+```csharp
+public class PlayerController : MonoBehaviour
+{
+    private IAudioService _audio;
+    
+    // Явная инъекция — не ищем, не создаём, просто принимаем
+    public void Initialize(IAudioService audio)
+    {
+        _audio = audio;
+    }
+    
+    public void Jump()
+    {
+        _audio.PlaySound("jump");
+    }
+}
+```
+
+#### Шаг 4: Композиционный корень (Composition Root)
+Одно место, где собираем все зависимости:
+```csharp
+public class GameRoot : MonoBehaviour
+{
+    [SerializeField] private PlayerController player;
+    [SerializeField] private AudioManager audioManager;
+    
+    void Awake()
+    {
+        // Собираем граф зависимостей вручную
+        player.Initialize(audioManager);
+        
+        // Если есть ещё зависимости — передаём их дальше
+        // Это единственное место в проекте, где «знаем» конкретные классы
+    }
+}
+```
+
+### Продвинутый уровень: интерфейсы + множественные зависимости
+
+```csharp
+public class PlayerController : MonoBehaviour
+{
+    private IAudioService _audio;
+    private IInputService _input;
+    private ISaveSystem _save;
+    
+    public void Initialize(
+        IAudioService audio,
+        IInputService input,
+        ISaveSystem save)
+    {
+        _audio = audio;
+        _input = input;
+        _save = save;
+    }
+}
+```
+
+### Когда использовать конструктор (для не-MonoBehaviour классов):
+```csharp
+public class EnemyAI
+{
+    private readonly IAudioService _audio;
+    
+    // Чистая DI — зависимость передаётся при создании
+    public EnemyAI(IAudioService audio)
+    {
+        _audio = audio;
+    }
+}
+
+// Где-то в корне:
+var audio = new AudioManager();
+var enemyAI = new EnemyAI(audio);
+```
+
+### Чего избегать:
+```csharp
+// ❌ Поиск в рантайме — скрытая зависимость
+_audio = FindObjectOfType<AudioManager>();
+
+// ❌ Глобальный синглтон — сложно тестировать, менять
+AudioManager.Instance.PlaySound("jump");
+
+// ❌ Прямая ссылка в Inspector без интерфейса — жёсткая связка
+[SerializeField] private AudioManager _audio; // Нельзя подменить реализацию
+```
+
+### Фреймворки для больших проектов:
+
+#### ✅ Zenject (Extenject)
+```csharp
+// Установка в контейнер
+public class GameInstaller : MonoInstaller
+{
+    public override void InstallBindings()
+    {
+        Container.Bind<IAudioService>()
+                .To<AudioManager>()
+                .AsSingle()
+                .NonLazy(); // Создать сразу, не откладывать
+    }
+}
+
+// Инъекция в MonoBehaviour
+public class PlayerController : MonoBehaviour
+{
+    private IAudioService _audio;
+    
+    [Inject]
+    public void Construct(IAudioService audio)
+    {
+        _audio = audio;
+    }
+}
+```
+
+#### ✅ VContainer (современный, async-friendly)
+```csharp
+public class PlayerInstaller : Installer
+{
+    public override void Install()
+    {
+        ContainerBuilder.Register<PlayerController>(Lifetime.Scoped);
+        ContainerBuilder.RegisterComponentInHierarchy<AudioManager>();
+        ContainerBuilder.Register<IAudioService>(ctx => 
+            ctx.Resolve<AudioManager>()).AsImplementedInterfaces();
+    }
+}
+```
+
+### Когда DI оправдан:
+✅ Проект растёт, появляются перекрёстные зависимости
+✅ Нужно тестировать системы изолированно (mock-реализации)
+✅ Планируется поддержка модов / плагинов / замены подсистем
+
+### Когда можно обойтись без DI:
+❌ Прототип, гейм-джем, маленький проект
+❌ Одна команда, быстрый итерационный процесс
+❌ Нет планов на масштабирование кодовой базы
+
+---
+
+Продолжение в следующем сообщении: блоки 11-12 (Energy Saver, Claude Code + MCP), сводка по Unity 6.4, финальный план действий и чек-лист.
+
+## 🔋 БЛОК 11: UNITY ENERGY SAVER PLUGIN — АВТОМАТИЗАЦИЯ ЭНЕРГОЭФФЕКТИВНОСТИ
+
+### Репозиторий: [github.com/wtfoliver/UnityEnergySaver](https://github.com/wtfoliver/UnityEnergySaver)
+
+### Суть плагина
+Плагин **автоматически переключает профили производительности** игры в зависимости от активности игрока. Если игрок не взаимодействует с игрой определённое время — система снижает потребление ресурсов, экономя заряд батареи и уменьшая тепловыделение.
+
+### Зачем это нужно в процедурном мире:
+- Процедурная генерация + динамическая загрузка ассетов = высокое энергопотребление
+- Игрок может долго стоять на месте, рассматривая ландшафт → нет смысла рендерить 60 FPS
+- На мобильных устройствах и ноутбуках это напрямую влияет на время автономной работы
+
+### Архитектура плагина: три ключевых компонента
+
+#### 1. EnergySaver (Singleton-менеджер)
+```csharp
+// Основной компонент, который:
+// - Слушает ввод (новый Input System или Legacy)
+// - Отслеживает время бездействия
+// - Переключает активный EnergyProfile
+// - Применяет изменения через IEnergyActions
+
+public class EnergySaver : MonoBehaviour
+{
+    [SerializeField] private float idleThreshold = 10f;
+    [SerializeField] private List<EnergyProfile> profiles;
+    
+    // Автоматически определяет отсутствие ввода
+    // и понижает профиль при превышении порога
+}
+```
+
+#### 2. EnergyProfile (Настройки профиля)
+Каждый профиль описывает, какие параметры изменить при активации:
+
+| Параметр | Описание | Пример значения |
+|----------|----------|----------------|
+| `ActivateAfterIdle` | Время бездействия до активации | 10 секунд |
+| `MaxFps` | Ограничение кадров в секунду | 30 / 60 / 120 |
+| `RenderInterval` | Интервал рендеринга (каждый N-й кадр) | 1 = каждый кадр, 2 = каждый второй |
+| `RenderScaleMultiplier` | Множитель разрешения рендера (для URP) | 0.5 = половина разрешения |
+| `PhysicsSimulationMode` | Режим обновления физики | Fixed / Variable / Disabled |
+| `Priority` | Приоритет при выборе профиля | Чем выше, тем важнее |
+| `PowerConstraints` | Ограничения по питанию | Только от батареи / Только в фокусе |
+
+#### 3. IEnergyActions (Интерфейсы действий)
+Конкретные реализации, которые применяют настройки:
+
+```csharp
+// 1. FrameRateAction — ограничение FPS
+public class FrameRateAction : MonoBehaviour, IEnergyAction
+{
+    public void ApplyProfile(EnergyProfile profile)
+    {
+        Application.targetFrameRate = profile.MaxFps;
+    }
+}
+
+// 2. RenderingIntervalAction — рендеринг через кадр
+// Полезно, когда игра не требует плавной анимации (меню, пауза, кат-сцены)
+public class RenderingIntervalAction : MonoBehaviour, IEnergyAction
+{
+    public void ApplyProfile(EnergyProfile profile)
+    {
+        // Устанавливает, что новый кадр рендерится только каждый N-й тик
+        // FPS при этом может оставаться высоким для логики
+    }
+}
+
+// 3. PhysicsSimulationAction — управление физикой
+public class PhysicsSimulationAction : MonoBehaviour, IEnergyAction
+{
+    public void ApplyProfile(EnergyProfile profile)
+    {
+        // Переключает между:
+        // - Fixed Update (стандарт)
+        // - Variable Update (адаптивный шаг)
+        // - Disabled (полное отключение, если физика не нужна)
+        Physics.autoSimulation = profile.PhysicsSimulationMode != SimulationMode.Disabled;
+    }
+}
+
+// 4. RenderScaleAction (URP) — динамическое разрешение
+public class RenderScaleAction : MonoBehaviour, IEnergyAction
+{
+    public void ApplyProfile(EnergyProfile profile)
+    {
+        var urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+        if (urpAsset != null)
+        {
+            urpAsset.renderScale = profile.RenderScaleMultiplier;
+        }
+    }
+}
+```
+
+### Практический сценарий для процедурного мира:
+
+```csharp
+// Профиль "Активная игра" — игрок двигается, генерируется мир
+var activeProfile = new EnergyProfile
+{
+    MaxFps = 60,
+    RenderScaleMultiplier = 1.0f,
+    PhysicsSimulationMode = SimulationMode.Fixed,
+    Priority = 100
+};
+
+// Профиль "Наблюдение" — игрок стоит, крутит камерой
+var idleProfile = new EnergyProfile
+{
+    MaxFps = 30,
+    RenderScaleMultiplier = 0.75f, // экономия 44% пикселей
+    PhysicsSimulationMode = SimulationMode.Variable,
+    Priority = 50,
+    ActivateAfterIdle = 15f
+};
+
+// Профиль "Пауза / Меню" — минимальное потребление
+var pauseProfile = new EnergyProfile
+{
+    MaxFps = 15,
+    RenderInterval = 2, // рендерить каждый второй кадр
+    PhysicsSimulationMode = SimulationMode.Disabled,
+    Priority = 10
+};
+```
+
+### Важные нюансы интеграции:
+
+✅ **Поддержка обоих систем ввода**: плагин работает и с новым Input System, и с Legacy `Input.GetKeyDown`
+
+✅ **Гибкая архитектура**: можно добавлять свои `IEnergyAction` для кастомной логики (например, отключение процедурной генерации в фоне)
+
+✅ **Ручное управление**: можно заблокировать переключение профилей во время важных событий:
+```csharp
+EnergySaver.Instance.LockProfile("cutscene"); // не понижать качество во время кат-сцены
+EnergySaver.Instance.ForceProfile(activeProfile); // принудительно включить профиль
+```
+
+⚠️ **Ограничения**:
+- Работает **только с URP и HDRP** (Built-in Render Pipeline не поддерживается)
+- Тестировался на **PC**, мобильная совместимость требует дополнительной проверки
+- Ранняя стадия разработки — использовать с осторожностью в продакшене
+
+### Установка:
+```bash
+# Через Package Manager → Add package from git URL:
+https://github.com/wtfoliver/UnityEnergySaver.git
+```
+
+### Источники и вдохновение:
+- [Unreal Energy Saving Plugin (Hauke Thiessen)](https://github.com/4rt3m1s/UnrealEnergySaving)
+- [Fortnite Energy Saving Paper](https://www.gdcvault.com/play/1025830/Fortnite-s-Performance-and-Energy)
+- [Bronson Zgeb's Unity optimization blog](https://bronsonzgeb.com/)
+- [Sustainable Games Alliance](https://sustainablegamesalliance.org/) — ресурсы по эко-геймдеву
+
+---
+
+## 🤖 БЛОК 12: CLAUDE CODE + UNITY MCP — ИИ-УСКОРЕНИЕ РАЗРАБОТКИ
+
+### Видео-туториал: [Claude Code with Unity Engine Tutorial](https://www.youtube.com/watch?v=Sknh2p12W8c)
+
+### Что такое Claude Code + MCP?
+- **Claude Code** — режим Claude от Anthropic, способный **читать, писать и исполнять код** в реальном времени
+- **MCP (Model Context Protocol)** — открытый стандарт, позволяющий ИИ-моделям **безопасно взаимодействовать с внешними инструментами**, включая редакторы, API, файловые системы
+
+### Как это применяется в Unity:
+
+#### 1. Генерация кода по описанию
+```text
+Пользователь: "Создай систему пулинга для префабов врагов с поддержкой Addressables"
+
+Claude Code:
+- Генерирует класс EnemyPoolManager с методами Spawn(), Release()
+- Добавляет поддержку AsyncOperationHandle для Addressables
+- Пишет тестовый сценарий для проверки утечек памяти
+- Предлагает оптимизации под ECS-архитектуру
+```
+
+#### 2. Рефакторинг существующего кода
+```text
+Пользователь: "Переделай этот MonoBehaviour на чистый C# class с DI"
+
+Claude Code:
+- Анализирует зависимости класса
+- Предлагает интерфейс для каждой внешней службы
+- Генерирует Composition Root для сборки графа
+- Сохраняет поведение, но улучшает тестируемость
+```
+
+#### 3. Отладка и анализ ошибок
+```text
+Пользователь: "Почему Addressables.ReleaseInstance не выгружает память?"
+
+Claude Code:
+- Проверяет, не удерживается ли ссылка в статической коллекции
+- Анализирует жизненный цикл AsyncOperationHandle
+- Предлагает добавить Resources.UnloadUnusedAssets() после ReleaseInstance
+- Рекомендует использовать Memory Profiler для подтверждения
+```
+
+#### 4. Документация и комментарии
+```text
+Пользователь: "Добавь XML-комментарии ко всем публичным методам в WorldProceduralScatterDirector"
+
+Claude Code:
+- Генерирует <summary>, <param>, <returns> для каждого метода
+- Учитывает специфику процедурной генерации в описаниях
+- Предлагает примеры использования в комментариях
+```
+
+### Практическая настройка MCP для Unity:
+
+#### Шаг 1: Установка MCP-сервера
+```bash
+# Пример конфигурации для Unity-проекта
+{
+  "mcpServers": {
+    "unity": {
+      "command": "node",
+      "args": ["/path/to/unity-mcp-server.js"],
+      "env": {
+        "UNITY_PROJECT_PATH": "C:/MyUnityProject",
+        "UNITY_EDITOR_PATH": "C:/Program Files/Unity/Hub/Editor/6000.3.0f1/Editor/Unity.exe"
+      }
+    }
+  }
+}
+```
+
+#### Шаг 2: Разрешённые действия (безопасность)
+```json
+{
+  "allowedTools": [
+    "read_file",           // чтение скриптов, ассет-метаданных
+    "write_file",          // генерация нового кода
+    "run_unity_command",   // ограниченный набор: Build, Refresh, Play
+    "query_unity_api"      // поиск по документации Unity API
+  ],
+  "blockedTools": [
+    "delete_file",         // запрет на удаление без подтверждения
+    "execute_arbitrary"    // запрет на произвольный shell-код
+  ]
+}
+```
+
+#### Шаг 3: Интеграция с редактором
+- Через **Unity Package Manager** устанавливается вспомогательный пакет `com.unity.mcp-bridge`
+- Пакет создаёт локальный WebSocket-сервер, через который Claude получает доступ к:
+  - `AssetDatabase` — метаданные ассетов
+  - `EditorApplication` — управление состоянием редактора
+  - `PlayerSettings` — настройки билда
+  - `Console` — логи и ошибки компиляции
+
+### Преимущества для процедурной генерации:
+
+✅ **Быстрое прототипирование**: «Сгенерируй шум Перлина с октавами для высоты и влажности» → готовый Burst-совместимый код
+
+✅ **Оптимизация под платформу**: «Оптимизируй этот код под WebGL» → автоматическая замена `System.IO` на `UnityWebRequest`, удаление рефлексии
+
+✅ **Документирование сложных систем**: «Объясни, как работает CandidateMap в моём проекте» → ИИ анализирует код и генерирует диаграмму потока данных
+
+✅ **Поиск утечек**: «Найди все места, где создаются текстуры в runtime, но не уничтожаются» → список с ссылками на строки и рекомендациями по фиксу
+
+### Ограничения и риски:
+
+⚠️ **ИИ не понимает контекст проекта на 100%** — всегда проверяй сгенерированный код, особенно в критичных местах (физика, сеть, сохранение)
+
+⚠️ **Безопасность**: не давай ИИ доступ к продакшен-серверам, ключам API, пользовательским данным
+
+⚠️ **Зависимость от провайдера**: Claude — проприетарная модель, возможны изменения в API, тарифах, доступности
+
+### Альтернативы и дополнения:
+- **GitHub Copilot** — интеграция прямо в IDE, но менее «агентный» подход
+- **Tabnine** — локальная модель, лучше для приватных проектов
+- **Unity Muse** — официальный ИИ-инструмент от Unity, но пока ограничен генерацией ассетов и анимаций
+
+---
+
+## 🎮 UNITY 6.4 — СВОДКА НОВОВВЕДЕНИЙ ДЛЯ ПРОЦЕДУРНЫХ МИРОВ
+
+### ✅ Что включено по умолчанию:
+| Фича | Польза для процедурной генерации |
+|------|----------------------------------|
+| **ECS как default package** | Готовая архитектура для обработки тысяч сущностей (деревья, камни, враги) без написания бойлерплейта |
+| **Project Auditor встроен** | Автоматический анализ производительности: находит аллокации в Update, тяжёлые корритуны, неоптимизированные шейдеры |
+| **Улучшенная статистика рендеринга** | Видно, сколько времени тратится на отрисовку процедурной геометрии, инстансинг, LOD-переключения |
+| **LOD preview improvements** | Визуальная отладка переключения уровней детализации прямо в Scene View — критично для оптимизации рассеивания объектов |
+| **Grid & snapping enhancements** | Упрощает расстановку «якорных» точек для процедурных систем (спавн-зоны, чанки, триггеры) |
+
+### 🔧 Новые инструменты:
+- **Render Graph Viewer** (уже разобрали) — визуализация пайплайна, поиск узких мест в рендеринге
+- **Addressables Remote Catalog** — загрузка контента с сервера без обновления приложения
+- **Physics Runtime stripping** — удаление PhysX/Box2D из билда, если физика не используется (экономия 10-15 МБ)
+
+### 📈 Производительность:
+- **До 30% ускорение сборки** за счёт кэширования метаданных ассетов
+- **Снижение памяти Editor'а** при работе с большими проектами (оптимизация AssetDatabase)
+- **Более предсказуемый GC** в CoreCLR-совместимом коде (подготовка к Unity 6.8)
+
+### 🎥 Видео-обзор:
+[What's New in Unity 6.4](https://www.youtube.com/watch?v=HDgWPYd_e0U) — 25 минут, с акцентом на оптимизацию и новые пакеты.
+
+---
+
+## 📅 ФИНАЛЬНЫЙ ПЛАН ДЕЙСТВИЙ — ПОШАГОВЫЙ ЧЕК-ЛИСТ
+
+### 🔴 НЕДЕЛЯ 1: КРИТИЧНАЯ ПОДГОТОВКА
+
+#### ✅ День 1-2: Path to CoreCLR
+- [ ] Прочитать [официальный гайд по миграции](https://discussions.unity.com/t/path-to-coreclr-2026-upgrade-guide/1714279)
+- [ ] Запустить проект в режиме **Domain Reload = false** (Edit → Preferences → General)
+- [ ] Проверить код на:
+  - [ ] Статические коллекции, которые никогда не очищаются
+  - [ ] События без отписки в `OnDestroy()`
+  - [ ] Ручное управление `_count` без синхронизации ссылок
+- [ ] Запустить **Project Auditor** (Window → Analysis → Project Auditor) и исправить предупреждения уровня "High"
+
+#### ✅ День 3-4: Оптимизация памяти
+- [ ] Пройтись по коду процедурной генерации и найти:
+  - [ ] `new List<>()` / `new Dictionary<>()` в `Update()` → вынести в пул или переиспользовать
+  - [ ] Конкатенацию строк в циклах → заменить на `StringBuilder` или интерполяцию
+  - [ ] `Instantiate()` без последующего `Addressables.ReleaseInstance()` → добавить корректную выгрузку
+- [ ] Протестировать на устройстве с 1 ГБ ОЗУ (или эмуляторе с ограничением памяти)
+- [ ] Добавить вызовы `Resources.UnloadUnusedAssets()` после загрузки новых чанков
+
+#### ✅ День 5: Уменьшение билда
+- [ ] Открыть **Project Settings → Player → Global Settings → Optimization → Physics Runtime**
+- [ ] Если физика не используется — установить **None**
+- [ ] Сбилдить тестовый WebGL-билд и сравнить размер с предыдущим
+- [ ] Если экономия < 5 МБ — проверить, не подключены ли другие тяжёлые модули (Video, AI Navigation и т.д.)
+
+---
+
+### 🟡 НЕДЕЛЯ 2: ИНФРАСТРУКТУРА И ЗАГРУЗКА
+
+#### ✅ День 6-7: Addressables
+- [ ] Установить пакет **Addressables** через Package Manager
+- [ ] Отметить префабы процедурных объектов как Addressable
+- [ ] Переписать систему пулинга с `Instantiate()` на `AssetReference.InstantiateAsync()`
+- [ ] Протестировать выгрузку: после `ReleaseInstance()` память должна освобождаться (проверить в Profiler)
+
+#### ✅ День 8: Remote Content (опционально, если есть сервер)
+- [ ] Настроить **Build Remote Catalog** в AddressableAssetSettings
+- [ ] Создать бакет в **Unity Cloud Content Delivery**
+- [ ] Сбилдить адресаблы и загрузить `ServerData/[Platform]` в облако
+- [ ] Встроить логику загрузки по требованию (например, при приближении к новому чанку)
+
+#### ✅ День 9-10: Render Graph Viewer
+- [ ] Открыть **Window → Analysis → Render Graph Viewer**
+- [ ] Запустить сцену с процедурной геометрией и проанализировать:
+  - [ ] Какие пассы используют `_MainLightShadowmapTexture`
+  - [ ] Есть ли дублирующие пассы, которые можно объединить
+  - [ ] Не загружаются ли ресурсы, которые не используются
+- [ ] Добавить кастомный рендер-фич (например, пост-эффект) и проверить, как он встраивается в граф
+
+---
+
+### 🟢 НЕДЕЛЯ 3: ПРОДВИНУТЫЕ ОПТИМИЗАЦИИ
+
+#### ✅ День 11-12: Прототип ECS
+- [ ] Создать простую сущность «процедурный камень» с компонентами:
+  ```csharp
+  public struct Position : IComponentData { public float3 Value; }
+  public struct MeshData : IComponentData { public int MeshID; }
+  public struct ScatterRule : IComponentData { public float MinDistance; }
+  ```
+- [ ] Написать систему, которая фильтрует кандидатов по правилам рассеивания
+- [ ] Сравнить производительность с текущей реализацией на `MonoBehaviour`
+
+#### ✅ День 13: Float Precision
+- [ ] Добавить **Floating Origin** в менеджер мира:
+  ```csharp
+  if (player.position.magnitude > 1000f)
+      WorldShifter.Shift(-player.position);
+  ```
+- [ ] Заменить все `==` на `Mathf.Approximately()` в коллизиях и триггерах
+- [ ] Перевести физику на `FixedUpdate` с фиксированным `Time.fixedDeltaTime`
+
+#### ✅ День 14: Энергоэффективность и ИИ-помощь
+- [ ] Установить **UnityEnergySaver** и настроить 3 профиля (Active / Idle / Pause)
+- [ ] Протестировать переключение: замерить потребление через Task Manager / Activity Monitor
+- [ ] Попробовать **Claude Code** для:
+  - Генерации шаблонного кода (пул, DI, Addressables)
+  - Рефакторинга устаревших участков
+  - Документирования сложных модулей
+
+---
+
+## 🧰 БОНУС: ШПАРГАЛКА ПО БЫСТРОЙ ДИАГНОСТИКЕ
+
+### 🔍 «Игра тормозит при генерации мира»
+```text
+1. Открой Profiler → CPU Usage
+2. Найди самый тяжёлый метод в иерархии
+3. Если это твой код:
+   - Проверь, нет ли аллокаций в цикле
+   - Добавь [BurstCompile] и NativeArray, если возможно
+4. Если это Unity internal:
+   - Проверь, не генерируешь ли ты меш каждый кадр
+   - Используй Mesh.CombineMeshes() заранее
+```
+
+### 🔍 «Память растёт и не падает»
+```text
+1. Открой Memory Profiler → Take Snapshot
+2. Сравни два снимка: до и после генерации чанка
+3. Ищи:
+   - Текстуры/меши, которые не выгружаются
+   - События, на которые подписались, но не отписались
+   - Статические списки, куда добавляются, но не удаляются объекты
+4. Добавь Resources.UnloadUnusedAssets() после выгрузки чанка
+```
+
+### 🔍 «Билд слишком большой»
+```text
+1. Открой Build Report (после сборки)
+2. Сортируй по размеру
+3. Ищи:
+   - Неиспользуемые ассеты в Resources/
+   - Дубликаты текстур (разные настройки компрессии)
+   - Включённые, но не используемые модули (Physics, Video, AI)
+4. Используй Addressables для выноса контента в отдельный пак
+```
+
+---
+
+## ❓ ВОПРОСЫ К ТЕБЕ ДЛЯ УТОЧНЕНИЯ ПРИОРИТЕТОВ:
+
+1. **На какой платформе ты целишься в первую очередь?** (PC / WebGL / Mobile) — от этого зависит, на что делать упор: размер билда, память или CPU.
+
+2. **Используешь ли ты уже Addressables или только планируешь?** — если нет, можно начать с минимальной интеграции, не переписывая всё сразу.
+
+3. **Есть ли у тебя доступ к Unity Cloud или свой сервер для удалённого контента?** — если нет, можно отложить Remote Addressables и сосредоточиться на локальной оптимизации.
+
+4. **Насколько критична для тебя поддержка старых версий Unity?** — если ты привязан к 2022.3, некоторые фичи 6.4 придётся эмулировать вручную.
+
+5. **Работаешь в команде или соло?** — если в команде, стоит сразу внедрять DI и интерфейсы, чтобы код был тестируемым и расширяемым.
+
+Напиши, что из этого наиболее актуально прямо сейчас — и я помогу составить более детальный план под твои задачи 🎯

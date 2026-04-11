@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0236fea028490468b21abcedde9cf9, type: 3}
+  m_Name: WorldGenerativeGeologyProfile_RockSmallFloor
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyProfile
+  profileId: geology.rock.small_floor
+  profileLabel: Rock Small Floor
+  generatorMode: 2
+  shapeArchetype: 2
+  compositionMode: 0
+  idealSlopeRange: {x: 0, y: 32}
+  idealCurvatureRange: {x: -0.22, y: 0.28}
+  idealCaveProximityRange: {x: 0, y: 0.35}
+  idealRidgeSignalRange: {x: 0, y: 0.52}
+  idealCanyonSignalRange: {x: 0, y: 0.46}
+  placementWeight: 0.92
+  compositionWeight: 0.98
+  contextPackThreshold: 0.5
+  terrainSeamMode: 1
+  caveBlendMode: 0
+  seamBlendRadius: 5
+  terrainRaiseMeters: 0.3
+  terrainCutMeters: 0
+  debrisCountMin: 0
+  debrisCountMax: 2
+  lodCount: 3
+  lodScreenHeights: {x: 0.6, y: 0.15, z: 0.04}
+  futureModelId: geology.rock.small_floor.generated.v1
+  neuralPromptHint: Generate low heavy floor stones with chipped silhouette, layered
+    erosion, and seafloor-read shape without noisy micro-detail.

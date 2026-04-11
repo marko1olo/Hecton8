@@ -53,12 +53,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.creature.zone.reef_apex.final.placeholder
-    prefab: {fileID: 2358014779856524092, guid: 03bb80d0fbbca68419db654ee856a7d0, type: 3}
+  - variantId: family.creature.zone.reef_apex.final.ownership_zone
+    prefab: {fileID: 6693925732988240856, guid: 678443c3c4a4bcc408afddb02c3d7c41, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.98, y: 1.03}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/ReefApexZone
   gameplayRole: Large biological hunting territory in reef and dense-flora habitats.

@@ -65,8 +65,26 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.05}
+  - variantId: family.coral.massive.final.flora.gen_family_coral_massive__buttress
+    prefab: {fileID: 7098468589754430588, guid: 270a5831bd73f634d94533b48f0adf2b, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.05}
+  - variantId: family.coral.massive.final.flora.gen_family_coral_massive__dome
+    prefab: {fileID: 3579978456539832865, guid: 52c12f0aed482e34785f6a96b6d0dbbb, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.05}
   - variantId: family.coral.massive.final.flora.gen_family_coral_massive__head
     prefab: {fileID: 7749640216425186548, guid: f325acd19dd94bd4a859d730d2ece276, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.95, y: 1.05}
+  - variantId: family.coral.massive.final.flora.gen_family_coral_massive__lobed
+    prefab: {fileID: 1374049776912160532, guid: c2c601e5393dd3f439ae2bdfb0286692, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1

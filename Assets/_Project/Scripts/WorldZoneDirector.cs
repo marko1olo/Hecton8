@@ -180,6 +180,16 @@ namespace Hecton8.World
             EvaluateZones(forceRefresh: false);
         }
 
+        /// <summary>
+        /// Forces immediate runtime zone resolution for the current player position.
+        /// </summary>
+        public void ForceRefresh()
+        {
+            ResolvePlayer(force: true);
+            RefreshAnchors();
+            EvaluateZones(forceRefresh: true);
+        }
+
         public void RefreshAnchors()
         {
             WorldZoneAnchor.CopyActiveAnchorsTo(_anchors);

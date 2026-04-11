@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0236fea028490468b21abcedde9cf9, type: 3}
+  m_Name: WorldGenerativeGeologyProfile_CaveEntrance
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyProfile
+  profileId: geology.cave.entrance
+  profileLabel: Cave Entrance
+  generatorMode: 2
+  shapeArchetype: 5
+  compositionMode: 0
+  idealSlopeRange: {x: 14, y: 54}
+  idealCurvatureRange: {x: -0.5, y: 0.18}
+  idealCaveProximityRange: {x: 0.45, y: 1}
+  idealRidgeSignalRange: {x: 0.28, y: 0.92}
+  idealCanyonSignalRange: {x: 0, y: 0.66}
+  placementWeight: 1.08
+  compositionWeight: 1.08
+  contextPackThreshold: 0.58
+  terrainSeamMode: 4
+  caveBlendMode: 3
+  seamBlendRadius: 16
+  terrainRaiseMeters: 2
+  terrainCutMeters: 3
+  debrisCountMin: 4
+  debrisCountMax: 10
+  lodCount: 3
+  lodScreenHeights: {x: 0.6, y: 0.15, z: 0.04}
+  futureModelId: geology.cave.entrance.generated.v1
+  neuralPromptHint: Generate an underwater cave entrance with readable lip geology,
+    sidewall anchoring, portal depth cues, fracture continuity, and natural debris
+    seam breakup.

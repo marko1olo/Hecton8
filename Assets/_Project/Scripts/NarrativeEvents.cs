@@ -4,11 +4,15 @@
 // ============================================================================
 
 using System;
+using Hecton8.Interaction;
 
 namespace Hecton8.Core
 {
     public static class NarrativeEvents
     {
+        public static event Action<NarrativeDiscovery> OnNarrativePOIRegistered;
+        public static event Action<NarrativeDiscovery> OnNarrativePOIDisposed;
+
         /// <summary>
         /// Вызывается при нахождении нового лорного объекта (DataPad, Wreckage).
         /// string: ID открытия.
@@ -20,6 +24,18 @@ namespace Hecton8.Core
         /// int: Уровень тира (1-4).
         /// </summary>
         public static event Action<int> OnDepthTierReached;
+
+        public static void RaiseNarrativePOIRegistered(NarrativeDiscovery poi)
+        {
+            if (poi == null) return;
+            OnNarrativePOIRegistered?.Invoke(poi);
+        }
+
+        public static void RaiseNarrativePOIDisposed(NarrativeDiscovery poi)
+        {
+            if (poi == null) return;
+            OnNarrativePOIDisposed?.Invoke(poi);
+        }
 
         public static void RaiseDiscoveryMade(string discoveryId)
         {

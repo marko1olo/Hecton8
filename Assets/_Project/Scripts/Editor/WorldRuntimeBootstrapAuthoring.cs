@@ -38,6 +38,8 @@ namespace Hecton8.EditorTools
         private const string FarHolderName = "__FarSilhouette";
         private const string WorldRootName = "--- WORLD ---";
         private const string BiolumRootName = "Biolum_Deep";
+        private const string StarterReefFieldName = "Starter_ReefField";
+        private const string StarterReefFieldPath = "--- WORLD ---/" + StarterReefFieldName;
 
         [MenuItem("Hecton/Authoring/Rebuild World Runtime Stack", priority = 177)]
         public static void RebuildWorldRuntimeStack()
@@ -177,6 +179,7 @@ namespace Hecton8.EditorTools
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>(),
                 chunkStreamingProfile);
             ConfigureBiolumManager(biolumManager);
+            EnsureStarterReefFieldRoot(playerTransform);
             ConfigureSceneSlices();
             ConfigureSceneInterestAnchors();
             ConfigureSceneZones();
@@ -184,11 +187,25 @@ namespace Hecton8.EditorTools
             ConfigureSceneBiolumZones(playerTransform);
             ConfigurePopulationRules(populationDirector);
             ConfigureProceduralFill(proceduralFillDirector);
+            ConstructionBootstrapAuthoring.RebuildStarterConstructionKit();
+            WorldProceduralSupportFinalAuthoring.RebuildWorldSupportFinals();
+            WorldProceduralOrganicMiscFinalAuthoring.RebuildOrganicMiscFinals();
+            WorldProceduralGeologyProfileAuthoring.EnsureProfiles();
+            WorldProceduralGeologyFinalAuthoring.RebuildGeologyFinals();
             WorldProceduralFinalVariantAuthoring.ApplyFirstWave();
             WorldProceduralFloraTextureAuthoring.Apply();
             WorldProceduralFloraMaterialAuthoring.Apply();
             WorldProceduralFloraBakedStarterGenerator.Generate();
             WorldProceduralFloraFinalVariantAuthoring.ApplyBakedFloraFinals();
+            HectonRockRuntimeBootstrapAuthoring.RebuildRockRuntimeStack();
+            ConfigureWorldProceduralScatterDirector(
+                proceduralScatterDirector,
+                playerTransform,
+                proceduralFieldSampler,
+                proceduralFillDirector,
+                chunkStreamingProfile,
+                faunaSpawnRegistry,
+                proceduralStateRegistry);
             WorldProceduralPlaceholderAuthoring.RebuildPlaceholderFinalVariants();
 
             if (objectPoolManager != null)
@@ -567,12 +584,16 @@ namespace Hecton8.EditorTools
         {
             WorldProceduralPatternCatalog patternCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralPatternCatalog>(WorldProceduralPatternCatalogPath);
             WorldProceduralBiomeFamilyContextCatalog biomeContextCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralBiomeFamilyContextCatalog>(WorldProceduralBiomeContextCatalogPath);
+            GPUInstancer.GPUInstancerPrefabManager floraGpuiManager = FindSceneObjectIncludingInactive<GPUInstancer.GPUInstancerPrefabManager>();
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
             so.FindProperty("fieldSampler").objectReferenceValue = fieldSampler;
             so.FindProperty("proceduralFillDirector").objectReferenceValue = fillDirector;
             so.FindProperty("patternCatalog").objectReferenceValue = patternCatalog;
             so.FindProperty("biomeContextCatalog").objectReferenceValue = biomeContextCatalog;
+            SerializedProperty floraGpuiProperty = so.FindProperty("floraGpuiManager");
+            if (floraGpuiProperty != null)
+                floraGpuiProperty.objectReferenceValue = floraGpuiManager;
             SerializedProperty profileProperty = so.FindProperty("chunkStreamingProfile");
             if (profileProperty != null)
                 profileProperty.objectReferenceValue = chunkStreamingProfile;
@@ -663,6 +684,7 @@ namespace Hecton8.EditorTools
             ConfigureResourceFieldSlice();
             ConfigureFabricationOutpostSlice();
             ConfigureFabricationTrialSlice();
+            ConfigureStarterReefFieldSlice();
             ConfigureToolStagingSlice();
             ConfigureToolTrialLaneSlice("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ServiceModules", 72f, 132f, 18f);
             ConfigureToolTrialLaneSlice("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps", 68f, 128f, 18f);
@@ -750,11 +772,23 @@ namespace Hecton8.EditorTools
                 1.12f,
                 1.06f,
                 1.2f);
+            ConfigureInterestAnchor(
+                StarterReefFieldPath,
+                WorldInterestAnchor.InterestKind.ResourceField,
+                92f,
+                228f,
+                1.28f,
+                1.36f,
+                1.08f,
+                1.06f,
+                1.22f,
+                1.26f);
         }
 
         private static void ConfigureSceneZones()
         {
             ConfigureZone("--- WORLD ---/Resource_FieldSources", "zone.resources.field", "Resource Field", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, 0, 105f, 160f, "Starter raw-resource pocket for scrap, ore, and basic organics.", false, EnsureZoneProfile("ZoneProfile_Resources_Starter.asset", "profile.resources.starter", "Resources Starter", 1.16f, 1.14f, 1.08f, 1.08f, 1.06f, 1.12f, "resources.pickups.near", "resources.clutter.mid", "resources.landmarks.far"), 5);
+            ConfigureZone(StarterReefFieldPath, "zone.resources.starter_reef", "Starter Reef Field", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, 1, 126f, 212f, "Starter flora-rich reef pocket for coral and kelp GPUI coverage near spawn.", false, EnsureZoneProfile("ZoneProfile_Resources_Starter.asset", "profile.resources.starter", "Resources Starter", 1.16f, 1.14f, 1.08f, 1.08f, 1.06f, 1.12f, "resources.pickups.near", "resources.clutter.mid", "resources.landmarks.far"), 5);
             ConfigureZone("--- WORLD ---/Fabrication_Outpost", "zone.fabrication.outpost", "Fabrication Outpost", WorldZoneAnchor.ZoneKind.Fabrication, WorldZoneAnchor.ZoneTier.Early, 4, 92f, 156f, "Safe utility stop for crafting, route recovery, and logistic reset.", true, EnsureZoneProfile("ZoneProfile_Fabrication_Early.asset", "profile.fabrication.early", "Fabrication Early", 1.04f, 1.02f, 1.12f, 1.1f, 1.04f, 1.16f, "fabrication.usables.near", "fabrication.outpost.mid", "fabrication.outpost.far"), 6);
             ConfigureZone("--- WORLD ---/Tool_Staging/Tool_TrialRange", "zone.trial.range", "Tool Trial Range", WorldZoneAnchor.ZoneKind.Trial, WorldZoneAnchor.ZoneTier.Early, 1, 110f, 190f, "Compact authored proving ground for tools, flows, and future prefab replacement.", false, EnsureZoneProfile("ZoneProfile_Trial_Early.asset", "profile.trial.early", "Trial Early", 1.08f, 1.08f, 1.06f, 1.06f, 1.08f, 1.18f, "trial.interactive.near", "trial.structures.mid", "trial.readability.far"), 9);
             ConfigureZone("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps", "zone.trial.construction", "Construction Ops", WorldZoneAnchor.ZoneKind.Construction, WorldZoneAnchor.ZoneTier.Mid, 2, 74f, 126f, "Construction socket, blocker, and placement-control lane.", false, EnsureZoneProfile("ZoneProfile_Construction_Mid.asset", "profile.construction.mid", "Construction Mid", 1.02f, 1.0f, 1.1f, 1.08f, 1.08f, 1.12f, "construction.sockets.near", "construction.frames.mid", "construction.spine.far"), 17);

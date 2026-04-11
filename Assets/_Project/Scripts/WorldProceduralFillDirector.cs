@@ -98,6 +98,15 @@ namespace Hecton8.World
             EvaluateFill();
         }
 
+        /// <summary>
+        /// Forces immediate procedural fill evaluation using current zone and content data.
+        /// </summary>
+        public void ForceRefresh()
+        {
+            ResolveReferences(force: true);
+            EvaluateFill();
+        }
+
         public void SetRules(IReadOnlyList<WorldProceduralPlacementRule> sourceRules)
         {
             rules.Clear();

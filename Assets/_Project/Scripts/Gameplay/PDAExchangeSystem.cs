@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
@@ -197,6 +198,15 @@ namespace Hecton8.Gameplay
 
             NotifyInfo($"EXCHANGE RELAY - {offer.offerName.ToUpperInvariant()} CONFIRMED");
             ExchangeStateChanged?.Invoke();
+
+            // Уведомляем Atlas6DirectiveSystem — бартер = рост доверия
+            Atlas6DirectiveSystem directive = Atlas6DirectiveSystem.Instance;
+            if (directive != null)
+                directive.RegisterBarterTransaction();
+
+            // Публикуем событие для QuestManager (OnItemCollected уже обрабатывается)
+            Atlas6Events.RaiseBarterAccepted(_executionCounts.Count);
+
             return true;
         }
 

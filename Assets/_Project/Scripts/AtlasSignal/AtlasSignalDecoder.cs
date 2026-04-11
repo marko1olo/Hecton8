@@ -19,6 +19,7 @@
 //   • Cached strings для каждой фазы.
 // ============================================================================
 
+using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Core;
 using Hecton8.Quest;
 using Hecton8.UI;
@@ -181,14 +182,10 @@ namespace Hecton8.AtlasSignal
 
                 NarrativeEvents.RaiseDiscoveryMade("atlas6_signal_fully_decoded");
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[AtlasDecoder] Signal fully decoded! Atlas-6 core message received.");
-#endif
+                LogSignalFullyDecoded();
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AtlasDecoder] Phase {phase}: {msg} (strength: {strength:F2})");
-#endif
+            LogPhaseAdvanced(phase, msg, strength);
         }
 
         private void HandleSignalPulse(float intensity)
@@ -205,6 +202,18 @@ namespace Hecton8.AtlasSignal
                 _currentPhase = newPhase;
                 OnPhaseAdvanced(newPhase, sys.CurrentStrength);
             }
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSignalFullyDecoded()
+        {
+            Debug.Log("[AtlasDecoder] Signal fully decoded. Atlas-6 core message received.");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPhaseAdvanced(int phase, string msg, float strength)
+        {
+            Debug.Log($"[AtlasDecoder] Phase {phase}: {msg} (strength: {strength:F2})");
         }
     }
 }

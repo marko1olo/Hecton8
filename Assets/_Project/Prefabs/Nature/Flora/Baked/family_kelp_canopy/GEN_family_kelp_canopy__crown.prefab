@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 607786104246709727}
   - component: {fileID: 6352745318341626283}
+  - component: {fileID: 7540349282321909531}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__crown
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4045908697405222912}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.9476757, y: 3.066741, z: 0.19296432}
-  m_Size: 6.133482
+  m_LocalReferencePoint: {x: -0.9451525, y: 3.0720441, z: 0.19666362}
+  m_Size: 6.1440883
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 1394292779535102565}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &7540349282321909531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4045908697405222912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: acd801c8ff88bfe45aca9d038e358da4, type: 2}
 --- !u!1 &8266372543203755845
 GameObject:
   m_ObjectHideFlags: 0

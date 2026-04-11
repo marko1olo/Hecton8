@@ -29,6 +29,8 @@
 // ============================================================================
 
 using System;
+using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
@@ -234,9 +236,7 @@ namespace Hecton8.AtlasSignal
                 _directiveConflictTriggered = true;
                 Atlas6Events.RaiseDirectiveConflict("directive_2_impossible_colony_dead");
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible — colony dead.");
-#endif
+                LogDirectiveConflict();
             }
         }
 
@@ -271,9 +271,7 @@ namespace Hecton8.AtlasSignal
             _playerStatus = newStatus;
             Atlas6Events.RaisePlayerStatusChanged(newStatus);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Atlas6] Player status: {newStatus}");
-#endif
+            LogPlayerStatus(newStatus);
         }
 
         private void HandleDiscovery(string discoveryId)
@@ -300,6 +298,18 @@ namespace Hecton8.AtlasSignal
         private void ResolvePlayer()
         {
             SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDirectiveConflict()
+        {
+            Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible; colony dead.");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPlayerStatus(Atlas6PlayerStatus newStatus)
+        {
+            Debug.Log($"[Atlas6] Player status: {newStatus}");
         }
 
         // ══════════════════════════════════════════════════════════

@@ -59,12 +59,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.08}
-  - variantId: family.debris.scatter.final.placeholder
-    prefab: {fileID: 8331325530306893951, guid: 89e8ce5b42df1844984c026b02166f1a, type: 3}
+  - variantId: family.debris.scatter.final.scrap_cluster
+    prefab: {fileID: 1906021698996115125, guid: 2463e9887c79bb34c8d62af7122265cf, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Debris/Debris_Scatter
   gameplayRole: General wreck and junk scatter for lived-in seabed.

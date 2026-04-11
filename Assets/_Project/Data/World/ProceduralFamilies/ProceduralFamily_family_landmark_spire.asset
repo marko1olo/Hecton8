@@ -59,18 +59,78 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.1}
-  - variantId: family.landmark.spire.proxy.split
-    prefab: {fileID: 3239083483146746579, guid: 19654f013f2217f43b3e544751f39f57, type: 3}
-    weight: 1
-    proxyOnly: 1
-    finalReady: 0
-    uniformScaleRange: {x: 0.95, y: 1.1}
-  - variantId: family.landmark.spire.final.placeholder
-    prefab: {fileID: 112817935218986656, guid: 135d0b7bdce1dd748918820f1383167e, type: 3}
+  - variantId: variant.landmark.spire.gen.00
+    prefab: {fileID: 7842910586818703692, guid: e3bbd5310e3042948ba5ee2e29f6d8e1, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.95, y: 1.1}
-  generativeGeologyProfile: {fileID: 0}
+  - variantId: variant.landmark.spire.gen.01
+    prefab: {fileID: 8354221957839240766, guid: 4d357b6e74f6618438ebdb1dbc829e86, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: variant.landmark.spire.gen.02
+    prefab: {fileID: 816243697743929162, guid: e45d9e5305ffff245b51057ad1b09503, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: variant.landmark.spire.gen.03
+    prefab: {fileID: 4699981602999646387, guid: a564c9983e087484cb16dc01e18f632d, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: variant.landmark.spire.gen.04
+    prefab: {fileID: 4076291589047674477, guid: 01be5dfecba0ad743bb39fefbd7a425a, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire_03
+    prefab: {fileID: 4699981602999646387, guid: a564c9983e087484cb16dc01e18f632d, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire_04
+    prefab: {fileID: 4076291589047674477, guid: 01be5dfecba0ad743bb39fefbd7a425a, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire_05
+    prefab: {fileID: 7057929459113797632, guid: 0bd4eadf9324cf04c8ee112d0642d8dc, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire
+    prefab: {fileID: 8826531106376444854, guid: def037db0aafef84c97430d0eb70ed07, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire_00
+    prefab: {fileID: 7842910586818703692, guid: e3bbd5310e3042948ba5ee2e29f6d8e1, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire_01
+    prefab: {fileID: 8354221957839240766, guid: 4d357b6e74f6618438ebdb1dbc829e86, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  - variantId: family.landmark.spire.final.landmark_spire_02
+    prefab: {fileID: 816243697743929162, guid: e45d9e5305ffff245b51057ad1b09503, type: 3}
+    weight: 2
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.98, y: 1.04}
+  generativeGeologyProfile: {fileID: 11400000, guid: 83b5313fa2321b449afc55a068a032eb, type: 2}
   futurePrefabRoot: World/Landmark/Landmark_Spire
   gameplayRole: Tall spires and strong route memory objects.

@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2834348803437866671}
   - component: {fileID: 8443215413731746244}
+  - component: {fileID: 1786848390759281089}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__reed__s80-140
   m_TagString: Untagged
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 6090826778527318517}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &1786848390759281089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4990492119355228535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: ea1069b297621a64682da1345fc46b03, type: 2}

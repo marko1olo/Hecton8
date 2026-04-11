@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0236fea028490468b21abcedde9cf9, type: 3}
+  m_Name: WorldGenerativeGeologyProfile_RockClusterMedium
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyProfile
+  profileId: geology.rock.cluster.medium
+  profileLabel: Rock Cluster Medium
+  generatorMode: 2
+  shapeArchetype: 2
+  compositionMode: 2
+  idealSlopeRange: {x: 0, y: 40}
+  idealCurvatureRange: {x: -0.34, y: 0.34}
+  idealCaveProximityRange: {x: 0, y: 0.42}
+  idealRidgeSignalRange: {x: 0.08, y: 0.78}
+  idealCanyonSignalRange: {x: 0, y: 0.58}
+  placementWeight: 1
+  compositionWeight: 1.08
+  contextPackThreshold: 0.56
+  terrainSeamMode: 3
+  caveBlendMode: 0
+  seamBlendRadius: 8
+  terrainRaiseMeters: 0.8
+  terrainCutMeters: 0.5
+  debrisCountMin: 1
+  debrisCountMax: 4
+  lodCount: 3
+  lodScreenHeights: {x: 0.6, y: 0.15, z: 0.04}
+  futureModelId: geology.rock.cluster.medium.generated.v1
+  neuralPromptHint: Generate medium rock clusters with 2-5 linked masses, strong
+    cover silhouette, and erosion layers without turning into noise.

@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3707659563180413619}
   - component: {fileID: 5088078943550631320}
+  - component: {fileID: 764370225371249729}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__mantle
   m_TagString: Untagged
@@ -133,7 +134,7 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5819684354763356758}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.26919442, y: 3.578588, z: 0.055375516}
+  m_LocalReferencePoint: {x: -0.26891792, y: 3.578588, z: 0.057420373}
   m_Size: 7.157176
   m_FadeMode: 1
   m_AnimateCrossFading: 1
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 6148909473769651303}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &764370225371249729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5819684354763356758}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 922f3db47f8f75542b4adac4d7ca2e17, type: 2}
 --- !u!1 &5841018789902764659
 GameObject:
   m_ObjectHideFlags: 0

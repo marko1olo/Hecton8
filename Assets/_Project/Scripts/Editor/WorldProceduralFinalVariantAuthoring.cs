@@ -134,36 +134,87 @@ namespace Hecton8.EditorTools
         {
             return new Dictionary<string, VariantSpec[]>(StringComparer.Ordinal)
             {
-                ["family.rock.small_floor"] = new[]
+                ["family.rock.small_floor"] = Combine(
+                    new[]
+                    {
+                        new VariantSpec(
+                            "family.rock.small_floor.final.nordic_beach",
+                            "Assets/_Project/Prefabs/Nature/Rocks/Nordic_Beach_Rock.prefab",
+                            1,
+                            new Vector2(0.8f, 1.08f)),
+                        new VariantSpec(
+                            "family.rock.small_floor.final.mossy_forest",
+                            "Assets/_Project/Prefabs/Nature/Rocks/Mossy_Forest_Rock.prefab",
+                            1,
+                            new Vector2(0.78f, 1.02f))
+                    },
+                    BuildIndexedGeologySpecs("family.rock.small_floor", "rock_floor", "PFB_Geo_RockFloor", 10, 2, new Vector2(0.92f, 1.08f))),
+                ["family.rock.cluster.medium"] = Combine(
+                    new[]
+                    {
+                        new VariantSpec(
+                            "family.rock.cluster.medium.final.beach_formation",
+                            "Assets/_Project/Prefabs/Nature/Rocks/Nordic_Beach_Rock_Formation.prefab",
+                            1,
+                            new Vector2(0.82f, 1.12f)),
+                        new VariantSpec(
+                            "family.rock.cluster.medium.final.forest_shelf",
+                            "Assets/_Project/Prefabs/Nature/Rocks/Forest_Rock_Shelf.prefab",
+                            1,
+                            new Vector2(0.86f, 1.05f)),
+                        new VariantSpec(
+                            "family.rock.cluster.medium.final.skala",
+                            "Assets/_Project/Prefabs/Nature/Rocks/Rock_Skala.prefab",
+                            1,
+                            new Vector2(0.78f, 0.98f))
+                    },
+                    BuildIndexedGeologySpecs("family.rock.cluster.medium", "rock_cluster", "PFB_Geo_RockCluster", 10, 2, new Vector2(0.95f, 1.08f))),
+                ["family.rock.shelf.large"] = BuildIndexedGeologySpecs("family.rock.shelf.large", "rock_shelf", "PFB_Geo_RockShelf", 8, 2, new Vector2(0.98f, 1.06f)),
+                ["family.rock.arch.large"] = Combine(
+                    new[]
+                    {
+                        new VariantSpec(
+                            "family.rock.arch.large.final.arch_large",
+                            "Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/PFB_Geo_RockArch_Large.prefab",
+                            1,
+                            new Vector2(0.98f, 1.05f))
+                    },
+                    BuildIndexedGeologySpecs("family.rock.arch.large", "rock_arch", "PFB_Geo_RockArch", 6, 2, new Vector2(0.98f, 1.05f))),
+                ["family.cave.entrance"] = Combine(
+                    new[]
+                    {
+                        new VariantSpec(
+                            "family.cave.entrance.final.cave_entrance",
+                            "Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/PFB_Geo_Cave_Entrance.prefab",
+                            1,
+                            new Vector2(0.98f, 1.06f))
+                    },
+                    BuildIndexedGeologySpecs("family.cave.entrance", "cave_entrance", "PFB_Geo_CaveEntrance", 6, 2, new Vector2(0.98f, 1.06f))),
+                ["family.landmark.spire"] = Combine(
+                    new[]
+                    {
+                        new VariantSpec(
+                            "family.landmark.spire.final.landmark_spire",
+                            "Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/PFB_Geo_Landmark_Spire.prefab",
+                            1,
+                            new Vector2(0.98f, 1.04f))
+                    },
+                    BuildIndexedGeologySpecs("family.landmark.spire", "landmark_spire", "PFB_Geo_LandmarkSpire", 6, 2, new Vector2(0.98f, 1.04f))),
+                ["family.plant.giant"] = new[]
                 {
                     new VariantSpec(
-                        "family.rock.small_floor.final.nordic_beach",
-                        "Assets/_Project/Prefabs/Nature/Rocks/Nordic_Beach_Rock.prefab",
+                        "family.plant.giant.final.silhouette",
+                        "Assets/_Project/Prefabs/Nature/OrganicMisc/Final/PFB_Organic_PlantGiant.prefab",
                         2,
-                        new Vector2(0.8f, 1.08f)),
-                    new VariantSpec(
-                        "family.rock.small_floor.final.mossy_forest",
-                        "Assets/_Project/Prefabs/Nature/Rocks/Mossy_Forest_Rock.prefab",
-                        1,
-                        new Vector2(0.78f, 1.02f))
+                        new Vector2(0.96f, 1.08f))
                 },
-                ["family.rock.cluster.medium"] = new[]
+                ["family.egg.cluster"] = new[]
                 {
                     new VariantSpec(
-                        "family.rock.cluster.medium.final.beach_formation",
-                        "Assets/_Project/Prefabs/Nature/Rocks/Nordic_Beach_Rock_Formation.prefab",
+                        "family.egg.cluster.final.nest_cluster",
+                        "Assets/_Project/Prefabs/Nature/OrganicMisc/Final/PFB_Organic_EggCluster.prefab",
                         2,
-                        new Vector2(0.82f, 1.12f)),
-                    new VariantSpec(
-                        "family.rock.cluster.medium.final.forest_shelf",
-                        "Assets/_Project/Prefabs/Nature/Rocks/Forest_Rock_Shelf.prefab",
-                        1,
-                        new Vector2(0.86f, 1.05f)),
-                    new VariantSpec(
-                        "family.rock.cluster.medium.final.skala",
-                        "Assets/_Project/Prefabs/Nature/Rocks/Rock_Skala.prefab",
-                        1,
-                        new Vector2(0.78f, 0.98f))
+                        new Vector2(0.94f, 1.06f))
                 },
                 ["family.ruin.module.single"] = new[]
                 {
@@ -177,6 +228,22 @@ namespace Hecton8.EditorTools
                         "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab",
                         1,
                         new Vector2(0.96f, 1.04f))
+                },
+                ["family.ruin.cluster.medium"] = new[]
+                {
+                    new VariantSpec(
+                        "family.ruin.cluster.medium.final.cluster_medium",
+                        "Assets/_Project/Prefabs/Construction/Final/PFB_Ruin_ClusterMedium.prefab",
+                        2,
+                        new Vector2(0.98f, 1.04f))
+                },
+                ["family.ruin.megastructure"] = new[]
+                {
+                    new VariantSpec(
+                        "family.ruin.megastructure.final.megastructure",
+                        "Assets/_Project/Prefabs/Construction/Final/PFB_Ruin_Megastructure.prefab",
+                        1,
+                        new Vector2(0.98f, 1.03f))
                 },
                 ["family.route.power"] = new[]
                 {
@@ -198,6 +265,94 @@ namespace Hecton8.EditorTools
                         "Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab",
                         2,
                         new Vector2(0.96f, 1.04f))
+                },
+                ["family.debris.scatter"] = new[]
+                {
+                    new VariantSpec(
+                        "family.debris.scatter.final.scrap_cluster",
+                        "Assets/_Project/Prefabs/Construction/Final/PFB_Debris_ScrapCluster.prefab",
+                        2,
+                        new Vector2(0.94f, 1.08f))
+                },
+                ["family.debris.field"] = new[]
+                {
+                    new VariantSpec(
+                        "family.debris.field.final.wreck_field",
+                        "Assets/_Project/Prefabs/Construction/Final/PFB_Debris_WreckField.prefab",
+                        2,
+                        new Vector2(0.96f, 1.08f))
+                },
+                ["family.pocket.resource"] = new[]
+                {
+                    new VariantSpec(
+                        "family.pocket.resource.final.cache",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Resource.prefab",
+                        2,
+                        new Vector2(0.94f, 1.08f))
+                },
+                ["family.pocket.hazard"] = new[]
+                {
+                    new VariantSpec(
+                        "family.pocket.hazard.final.vent_cluster",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Hazard.prefab",
+                        2,
+                        new Vector2(0.94f, 1.08f))
+                },
+                ["family.pocket.safe"] = new[]
+                {
+                    new VariantSpec(
+                        "family.pocket.safe.final.shelter",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Safe.prefab",
+                        2,
+                        new Vector2(0.94f, 1.08f))
+                },
+                ["family.creature.spawn.passive"] = new[]
+                {
+                    new VariantSpec(
+                        "family.creature.spawn.passive.final.school_anchor",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_CreatureSpawn_Passive.prefab",
+                        2,
+                        new Vector2(0.96f, 1.06f))
+                },
+                ["family.creature.spawn.predator"] = new[]
+                {
+                    new VariantSpec(
+                        "family.creature.spawn.predator.final.predator_lair",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_CreatureSpawn_Predator.prefab",
+                        2,
+                        new Vector2(0.96f, 1.06f))
+                },
+                ["family.creature.zone.large_threat"] = new[]
+                {
+                    new VariantSpec(
+                        "family.creature.zone.large_threat.final.ownership_zone",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_LargeThreat.prefab",
+                        1,
+                        new Vector2(0.98f, 1.03f))
+                },
+                ["family.creature.zone.abyss_apex"] = new[]
+                {
+                    new VariantSpec(
+                        "family.creature.zone.abyss_apex.final.ownership_zone",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_AbyssApex.prefab",
+                        1,
+                        new Vector2(0.98f, 1.03f))
+                },
+                ["family.creature.zone.reef_apex"] = new[]
+                {
+                    new VariantSpec(
+                        "family.creature.zone.reef_apex.final.ownership_zone",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_ReefApex.prefab",
+                        1,
+                        new Vector2(0.98f, 1.03f))
+                },
+                ["family.creature.zone.ruin_apex"] = new[]
+                {
+                    new VariantSpec(
+                        "family.creature.zone.ruin_apex.final.ownership_zone",
+                        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab",
+                        1,
+                        new Vector2(0.98f, 1.03f))
                 }
             };
         }
@@ -216,6 +371,49 @@ namespace Hecton8.EditorTools
             public string PrefabPath { get; }
             public int Weight { get; }
             public Vector2 UniformScaleRange { get; }
+        }
+
+        private static VariantSpec[] Combine(params VariantSpec[][] groups)
+        {
+            int totalCount = 0;
+            for (int i = 0; i < groups.Length; i++)
+                totalCount += groups[i] != null ? groups[i].Length : 0;
+
+            VariantSpec[] combined = new VariantSpec[totalCount];
+            int writeIndex = 0;
+            for (int i = 0; i < groups.Length; i++)
+            {
+                VariantSpec[] group = groups[i];
+                if (group == null)
+                    continue;
+
+                for (int j = 0; j < group.Length; j++)
+                    combined[writeIndex++] = group[j];
+            }
+
+            return combined;
+        }
+
+        private static VariantSpec[] BuildIndexedGeologySpecs(
+            string familyId,
+            string variantPrefix,
+            string prefabPrefix,
+            int count,
+            int weight,
+            Vector2 uniformScaleRange)
+        {
+            VariantSpec[] specs = new VariantSpec[count];
+            for (int i = 0; i < count; i++)
+            {
+                string suffix = i.ToString("D2");
+                specs[i] = new VariantSpec(
+                    $"{familyId}.final.{variantPrefix}_{suffix}",
+                    $"Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/{prefabPrefix}_{suffix}.prefab",
+                    weight,
+                    uniformScaleRange);
+            }
+
+            return specs;
         }
     }
 }

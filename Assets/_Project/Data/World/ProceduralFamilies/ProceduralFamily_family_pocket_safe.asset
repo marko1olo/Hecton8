@@ -59,12 +59,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.95, y: 1.08}
-  - variantId: family.pocket.safe.final.placeholder
-    prefab: {fileID: 8225299786010096520, guid: d445a1ca2fec4d44fbd2aa2b10a2d0ff, type: 3}
+  - variantId: family.pocket.safe.final.shelter
+    prefab: {fileID: 887549405413019854, guid: a1f9642851aa24343af8d33927f64661, type: 3}
     weight: 2
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.95, y: 1.08}
+    uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/SafePocket/Pocket_Safe
   gameplayRole: Breathing room and shelter pockets between pushes.

@@ -55,12 +55,12 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.9, y: 1.1}
-  - variantId: family.creature.zone.large_threat.final.placeholder
-    prefab: {fileID: 8921512551962036007, guid: bbef63ac874ed9b499a1dc4836213c7d, type: 3}
+  - variantId: family.creature.zone.large_threat.final.ownership_zone
+    prefab: {fileID: 8557074540447346287, guid: 92439494847222a4cac6063d22c5a042, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
-    uniformScaleRange: {x: 0.9, y: 1.1}
+    uniformScaleRange: {x: 0.98, y: 1.03}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/CreatureSpawn/LargeThreatZone
   gameplayRole: Authoritative large-threat ownership zone for macro-scale predator

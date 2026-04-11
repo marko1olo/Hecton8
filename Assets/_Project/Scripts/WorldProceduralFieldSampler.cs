@@ -1022,6 +1022,17 @@ namespace Hecton8.World
             float volcanicTokenBias = ContainsFamilyFlags(output.BiomeFamilyDataIndex, BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Glass | BiomeFamilyFlags.Magma | BiomeFamilyFlags.Basalt, biomeFamilies, biomeFamilyCount);
             float industrialTokenBias = ContainsFamilyFlags(output.BiomeFamilyDataIndex, BiomeFamilyFlags.Metallic | BiomeFamilyFlags.Industrial | BiomeFamilyFlags.Service, biomeFamilies, biomeFamilyCount);
             float riftTokenBias = ContainsFamilyFlags(output.BiomeFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Void | BiomeFamilyFlags.Hadal, biomeFamilies, biomeFamilyCount);
+            float softWaterTokenBias = ContainsFamilyFlags(output.BiomeFamilyDataIndex, BiomeFamilyFlags.Reef | BiomeFamilyFlags.Littoral | BiomeFamilyFlags.Fossil | BiomeFamilyFlags.Crystal | BiomeFamilyFlags.Coral | BiomeFamilyFlags.Kelp | BiomeFamilyFlags.Growth, biomeFamilies, biomeFamilyCount);
+
+            if (softWaterTokenBias > 0.5f &&
+                output.FertileBias > 0.58f &&
+                output.ServiceBias < 0.78f &&
+                output.HazardBias < 0.78f)
+            {
+                return output.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation || output.LandmarkBias > 0.72f || output.CoralPatternNoise > 0.68f
+                    ? WorldProceduralPattern.ReefNavigation
+                    : WorldProceduralPattern.FertileShallows;
+            }
 
             if (output.LandmarkBias > 0.82f && (steep01 > 0.42f || output.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation || output.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Progression))
                 return WorldProceduralPattern.LandmarkCorridor;
@@ -1051,7 +1062,7 @@ namespace Hecton8.World
                 return WorldProceduralPattern.IndustrialService;
             if (riftTokenBias > 0.5f)
                 return output.HazardBias > 0.58f ? WorldProceduralPattern.RiftHazard : WorldProceduralPattern.LandmarkCorridor;
-            if (ContainsFamilyFlags(output.BiomeFamilyDataIndex, BiomeFamilyFlags.Reef | BiomeFamilyFlags.Littoral | BiomeFamilyFlags.Crystal, biomeFamilies, biomeFamilyCount) > 0.5f)
+            if (softWaterTokenBias > 0.5f)
                 return output.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation ? WorldProceduralPattern.ReefNavigation : WorldProceduralPattern.FertileShallows;
             if (deep01 > 0.7f)
                 return WorldProceduralPattern.AbyssSparse;
@@ -2790,6 +2801,17 @@ namespace Hecton8.World
             float volcanicTokenBias = ContainsFamilyFlags(biomeFamilyDataIndex, biomeFamily, BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Glass | BiomeFamilyFlags.Magma | BiomeFamilyFlags.Basalt);
             float industrialTokenBias = ContainsFamilyFlags(biomeFamilyDataIndex, biomeFamily, BiomeFamilyFlags.Metallic | BiomeFamilyFlags.Industrial | BiomeFamilyFlags.Service);
             float riftTokenBias = ContainsFamilyFlags(biomeFamilyDataIndex, biomeFamily, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Void | BiomeFamilyFlags.Hadal);
+            float softWaterTokenBias = ContainsFamilyFlags(biomeFamilyDataIndex, biomeFamily, BiomeFamilyFlags.Reef | BiomeFamilyFlags.Littoral | BiomeFamilyFlags.Fossil | BiomeFamilyFlags.Crystal | BiomeFamilyFlags.Coral | BiomeFamilyFlags.Kelp | BiomeFamilyFlags.Growth);
+
+            if (softWaterTokenBias > 0.5f &&
+                fertileBias > 0.58f &&
+                serviceBias < 0.78f &&
+                hazardBias < 0.78f)
+            {
+                return resolvedZoneKind == WorldZoneAnchor.ZoneKind.Navigation || landmarkBias > 0.72f || coralNoise > 0.68f
+                    ? WorldProceduralPattern.ReefNavigation
+                    : WorldProceduralPattern.FertileShallows;
+            }
 
             if (landmarkBias > 0.82f && (steep01 > 0.42f || resolvedZoneKind == WorldZoneAnchor.ZoneKind.Navigation || resolvedZoneKind == WorldZoneAnchor.ZoneKind.Progression))
                 return WorldProceduralPattern.LandmarkCorridor;
@@ -2835,7 +2857,7 @@ namespace Hecton8.World
             if (riftTokenBias > 0.5f)
                 return hazardBias > 0.58f ? WorldProceduralPattern.RiftHazard : WorldProceduralPattern.LandmarkCorridor;
 
-            if (ContainsFamilyFlags(biomeFamilyDataIndex, biomeFamily, BiomeFamilyFlags.Reef | BiomeFamilyFlags.Littoral | BiomeFamilyFlags.Crystal) > 0.5f)
+            if (softWaterTokenBias > 0.5f)
                 return resolvedZoneKind == WorldZoneAnchor.ZoneKind.Navigation ? WorldProceduralPattern.ReefNavigation : WorldProceduralPattern.FertileShallows;
 
             if (deep01 > 0.7f)

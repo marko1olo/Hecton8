@@ -102,6 +102,8 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_SonarRadius");
         private static readonly int _ShaderSonarPulseTime =
             Shader.PropertyToID("_SonarPulseTime");
+        private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
+            new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: shared glitch pulse controller buffer
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -190,10 +192,9 @@ namespace Hecton8.Visor
             SpectrumEvents.RaiseModeChanged(mode);
 
             // Glitch pulse на визоре
-            var controllers = new System.Collections.Generic.List<VisorHUDController>(4);
-            VisorHUDController.CopyActiveControllersTo(controllers);
-            for (int i = 0; i < controllers.Count; i++)
-                controllers[i]?.GlitchPulse(0.2f);
+            VisorHUDController.CopyActiveControllersTo(s_glitchControllers);
+            for (int i = 0; i < s_glitchControllers.Count; i++)
+                s_glitchControllers[i]?.GlitchPulse(0.2f);
 
             string modeName = mode switch
             {

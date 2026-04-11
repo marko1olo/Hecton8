@@ -109,6 +109,16 @@ namespace Hecton8.World
             EvaluateSockets(forceRefresh: false);
         }
 
+        /// <summary>
+        /// Forces immediate socket discovery and zone-local content evaluation.
+        /// </summary>
+        public void ForceRefresh()
+        {
+            ResolveReferences(force: true);
+            RefreshSockets();
+            EvaluateSockets(forceRefresh: true);
+        }
+
         public void RefreshSockets()
         {
             WorldContentSocket.CopyActiveSocketsTo(_sockets);

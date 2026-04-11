@@ -17,10 +17,17 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
     private const int MaxPercent = 100;
     private const int MaxDepth = 5000;
     private const int MaxPressure = 600;
+    private const int MaxHeading = 360;
+    private const int MinTemperatureDeci = -1000;
+    private const int MaxTemperatureDeci = 2000;
+    private const int MaxSuitMassKg = 2000;
 
     private static readonly string[] PercentStrings;
     private static readonly string[] DepthStrings;
     private static readonly string[] PressureStrings;
+    private static readonly string[] HeadingStrings;
+    private static readonly string[] TemperatureStrings;
+    private static readonly string[] MassStrings;
 
     static HectonSuitHUD_v4()
     {
@@ -35,6 +42,18 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         PressureStrings = new string[MaxPressure + 1];
         for (int i = 0; i <= MaxPressure; i++)
             PressureStrings[i] = i.ToString() + " atm";
+
+        HeadingStrings = new string[MaxHeading + 1];
+        for (int i = 0; i <= MaxHeading; i++)
+            HeadingStrings[i] = i.ToString("000");
+
+        TemperatureStrings = new string[(MaxTemperatureDeci - MinTemperatureDeci) + 1];
+        for (int deci = MinTemperatureDeci; deci <= MaxTemperatureDeci; deci++)
+            TemperatureStrings[deci - MinTemperatureDeci] = $"{deci * 0.1f:0.0} C";
+
+        MassStrings = new string[MaxSuitMassKg + 1];
+        for (int i = 0; i <= MaxSuitMassKg; i++)
+            MassStrings[i] = i.ToString() + " kg";
     }
 
     [Header("Core")]
@@ -136,6 +155,9 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
     private float _safeWidth;
     private float _safeHeight;
     private bool _registeredToTickManager;
+    private string _cachedHeadingText = "000";
+    private string _cachedTemperatureText = "8.0 C";
+    private string _cachedMassText = "0 kg";
 
     public static void CopyActiveHudsTo(List<HectonSuitHUD_v4> results)
     {
@@ -288,6 +310,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         PollRuntimeData();
         ResolveSuitVariant();
         UpdateTemperature(dt);
+        RefreshCachedHudStrings();
         UpdateDiagnostics();
     }
 
@@ -495,13 +518,13 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
 
         if (HasTelemetry(SuitHUDProfile.TelemetryFlags.Temperature))
         {
-            DrawTelemetryRow("TEMPERATURE", _displayTemperature.ToString("0.0") + " C",
+            DrawTelemetryRow("TEMPERATURE", _cachedTemperatureText,
                 blockRight, blockBaseY + 40f - (rowStep * rowIndex++), 11f, 16f, ScaleAlpha(primaryColor, 0.95f));
         }
 
         if (HasTelemetry(SuitHUDProfile.TelemetryFlags.Mass) && _activeSuit != null)
         {
-            DrawTelemetryRow("SUIT MASS", Mathf.RoundToInt(_activeSuit.mass) + " kg",
+            DrawTelemetryRow("SUIT MASS", _cachedMassText,
                 blockRight, blockBaseY + 40f - (rowStep * rowIndex++), 11f, 16f, ScaleAlpha(primaryColor, 0.95f));
         }
 
@@ -662,11 +685,10 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
             return;
 
         float y = _safeTop - 36f;
-        string heading = Mathf.RoundToInt(_headingDegrees).ToString("000");
         string cardinal = ResolveCardinal(_headingDegrees);
 
         DrawTextCentered(cardinal, new Vector3(_safeCenterX, y + 8f, 0f), 10f, ScaleAlpha(dimColor, 0.9f));
-        DrawTextCentered(heading, new Vector3(_safeCenterX, y - 8f, 0f), 13f, ScaleAlpha(primaryColor, 0.95f));
+        DrawTextCentered(_cachedHeadingText, new Vector3(_safeCenterX, y - 8f, 0f), 13f, ScaleAlpha(primaryColor, 0.95f));
         Draw.Line(new Vector3(_safeCenterX - 48f, y - 18f, 0f), new Vector3(_safeCenterX + 48f, y - 18f, 0f), thinLine, ScaleAlpha(secondaryColor, 0.28f));
         Draw.Line(new Vector3(_safeCenterX - 4f, y - 18f, 0f), new Vector3(_safeCenterX + 4f, y - 18f, 0f), lineThickness, ScaleAlpha(primaryColor, 0.42f));
     }
@@ -1000,6 +1022,10 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         }
 
         _pdaOpen = PlayerPDA.IsOpen;
+        PollRuntimeData();
+        ResolveSuitVariant();
+        UpdateTemperature(0f);
+        RefreshCachedHudStrings();
     }
 
     private void HandleOxygenChanged(float _) => _oxygenNorm = survival != null ? Mathf.Clamp01(survival.OxygenNormalized) : _oxygenNorm;
@@ -1019,6 +1045,18 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         _debugTemperature = _displayTemperature;
         _debugFlashlightOn = _flashlightOn;
         _debugPdaOpen = _pdaOpen;
+    }
+
+    private void RefreshCachedHudStrings()
+    {
+        int heading = Mathf.Clamp(Mathf.RoundToInt(_headingDegrees), 0, MaxHeading);
+        _cachedHeadingText = HeadingStrings[heading];
+
+        int temperatureDeci = Mathf.Clamp(Mathf.RoundToInt(_displayTemperature * 10f), MinTemperatureDeci, MaxTemperatureDeci);
+        _cachedTemperatureText = TemperatureStrings[temperatureDeci - MinTemperatureDeci];
+
+        int massKg = _activeSuit != null ? Mathf.Clamp(Mathf.RoundToInt(_activeSuit.mass), 0, MaxSuitMassKg) : 0;
+        _cachedMassText = MassStrings[massKg];
     }
 
     private void DrawText(string text, Vector3 position, float size, Color color)

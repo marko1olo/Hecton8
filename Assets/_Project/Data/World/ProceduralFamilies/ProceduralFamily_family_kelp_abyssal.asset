@@ -59,8 +59,68 @@ MonoBehaviour:
     proxyOnly: 1
     finalReady: 0
     uniformScaleRange: {x: 0.94, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__cathedral
+    prefab: {fileID: 3791802875314060720, guid: fa893ad61d57a8b42b037300204b60ba, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.4, y: 2.3999999}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__cowl
+    prefab: {fileID: 261533971024895419, guid: 2859f86ceedeeaa4489e5c031b2ae405, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1, y: 1.8}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__lantern
+    prefab: {fileID: 2725559847537587584, guid: d30a6eb4bfacde047947112c7bdb30e3, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1, y: 1.8}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__petal
+    prefab: {fileID: 1135359093605613559, guid: 1fcb7e58ee80bf24385d07f88da76459, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1, y: 1.6999999}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__reed
+    prefab: {fileID: 4990492119355228535, guid: ded2ee1da5393014d97534facd5e1b96, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.79999995, y: 1.4}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__tatterveil
+    prefab: {fileID: 1676394202159551917, guid: f5de9ddba67443148b65972b648b40e0, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.1, y: 1.8499999}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__veilwall
+    prefab: {fileID: 905029647780345240, guid: 4c1b2673164140a40b18c5e5caf870f2, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 1.5, y: 2.3999999}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__braid
+    prefab: {fileID: 8915007685087999578, guid: 8cac7155b0e14864fb90bc5aaf830a99, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__mantle
+    prefab: {fileID: 5819684354763356758, guid: 29a7f41599ff1c94496fe100319ecdd2, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
   - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__nodule
     prefab: {fileID: 3890645747521861453, guid: 9523a2401c62f9b429de35d1bf6e391f, type: 3}
+    weight: 1
+    proxyOnly: 0
+    finalReady: 1
+    uniformScaleRange: {x: 0.96, y: 1.08}
+  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__pennant
+    prefab: {fileID: 3231351368205398563, guid: 44cf0747056808f43a4234f6202938e5, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
@@ -77,72 +137,12 @@ MonoBehaviour:
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.96, y: 1.08}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__mantle
-    prefab: {fileID: 5819684354763356758, guid: 29a7f41599ff1c94496fe100319ecdd2, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.96, y: 1.08}
   - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__whip
     prefab: {fileID: 7304483181323747057, guid: 318e23915115beb40bab4c16fe3186f3, type: 3}
     weight: 1
     proxyOnly: 0
     finalReady: 1
     uniformScaleRange: {x: 0.96, y: 1.08}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__braid
-    prefab: {fileID: 8915007685087999578, guid: 8cac7155b0e14864fb90bc5aaf830a99, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.96, y: 1.08}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__pennant
-    prefab: {fileID: 3231351368205398563, guid: 44cf0747056808f43a4234f6202938e5, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.96, y: 1.08}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__cathedral
-    prefab: {fileID: 3791802875314060720, guid: fa893ad61d57a8b42b037300204b60ba, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1.4, y: 2.3999999}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__reed
-    prefab: {fileID: 4990492119355228535, guid: ded2ee1da5393014d97534facd5e1b96, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 0.79999995, y: 1.4}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__cowl
-    prefab: {fileID: 261533971024895419, guid: 2859f86ceedeeaa4489e5c031b2ae405, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1.1, y: 1.8}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__veilwall
-    prefab: {fileID: 905029647780345240, guid: 4c1b2673164140a40b18c5e5caf870f2, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1.5, y: 2.3999999}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__lantern
-    prefab: {fileID: 2725559847537587584, guid: d30a6eb4bfacde047947112c7bdb30e3, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1, y: 1.8}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__petal
-    prefab: {fileID: 1135359093605613559, guid: 1fcb7e58ee80bf24385d07f88da76459, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1, y: 1.6999999}
-  - variantId: family.kelp.abyssal.final.flora.gen_family_kelp_abyssal__tatterveil
-    prefab: {fileID: 1676394202159551917, guid: f5de9ddba67443148b65972b648b40e0, type: 3}
-    weight: 1
-    proxyOnly: 0
-    finalReady: 1
-    uniformScaleRange: {x: 1.1, y: 1.8499999}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Kelp/Kelp_Abyssal
   gameplayRole: Deep strap-like kelp with dim biolum veins for abyssal route read

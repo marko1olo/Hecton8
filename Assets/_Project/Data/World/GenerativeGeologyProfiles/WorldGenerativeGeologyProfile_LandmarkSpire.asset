@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0236fea028490468b21abcedde9cf9, type: 3}
+  m_Name: WorldGenerativeGeologyProfile_LandmarkSpire
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldGenerativeGeologyProfile
+  profileId: geology.landmark.spire
+  profileLabel: Landmark Spire
+  generatorMode: 2
+  shapeArchetype: 2
+  compositionMode: 2
+  idealSlopeRange: {x: 8, y: 44}
+  idealCurvatureRange: {x: -0.28, y: 0.42}
+  idealCaveProximityRange: {x: 0, y: 0.48}
+  idealRidgeSignalRange: {x: 0.22, y: 1}
+  idealCanyonSignalRange: {x: 0, y: 0.54}
+  placementWeight: 1.02
+  compositionWeight: 1.16
+  contextPackThreshold: 0.62
+  terrainSeamMode: 3
+  caveBlendMode: 0
+  seamBlendRadius: 12
+  terrainRaiseMeters: 1.5
+  terrainCutMeters: 1.5
+  debrisCountMin: 2
+  debrisCountMax: 6
+  lodCount: 3
+  lodScreenHeights: {x: 0.6, y: 0.15, z: 0.04}
+  futureModelId: geology.landmark.spire.generated.v1
+  neuralPromptHint: Generate a tall underwater geological spire with strong silhouette
+    memory, layered erosion, base anchoring, and readable landmark-scale form from
+    far distance.

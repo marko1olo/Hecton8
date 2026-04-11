@@ -12,6 +12,8 @@ namespace Hecton8.EditorTools
     {
         private const string TextureRoot = "Assets/_Project/Art/Textures/WorldProceduralFlora";
         private const string ImportedTextureRoot = TextureRoot + "/Imported";
+        private const string TextureLibraryReportFileName = "PROCEDURAL_FLORA_TEXTURE_LIBRARY_REPORT.md";
+        private const string TextureRequestPacketFileName = "PROCEDURAL_FLORA_TEXTURE_REQUEST_PACKET.md";
         private const string FamilyKelpTall = "family.kelp.tall";
         private const string FamilyKelpPatchDense = "family.kelp.patch.dense";
         private const string FamilyKelpCanopy = "family.kelp.canopy";
@@ -160,6 +162,117 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Fixed imported texture import settings. Updated={updated}, Skipped={skipped}.");
         }
 
+        [MenuItem("Hecton/Validation/Scaffold Missing Flora Texture Import Folders", priority = 269)]
+        public static void ScaffoldMissingImportedTextureFolders()
+        {
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Textures");
+            EnsureFolder(TextureRoot);
+            EnsureFolder(ImportedTextureRoot);
+
+            int createdFolders = 0;
+            int missingFamilies = 0;
+
+            for (int familyIndex = 0; familyIndex < SupportedFamilyIds.Length; familyIndex++)
+            {
+                string familyId = SupportedFamilyIds[familyIndex];
+                ImportedFamilyStatus status = EvaluateImportedFamilyStatus(familyId);
+                if (status.CoverageComplete)
+                    continue;
+
+                missingFamilies++;
+                string folderPath = ImportedTextureRoot + "/" + familyId;
+                if (AssetDatabase.IsValidFolder(folderPath))
+                    continue;
+
+                EnsureFolder(folderPath);
+                createdFolders++;
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Scaffolded missing imported flora texture folders. CreatedFolders={createdFolders}, MissingFamilies={missingFamilies}.");
+        }
+
+        [MenuItem("Hecton/Validation/Generate Missing Flora Texture Request Packet", priority = 270)]
+        public static void GenerateMissingTextureRequestPacket()
+        {
+            StringBuilder markdown = new StringBuilder(8192);
+            markdown.AppendLine("# Procedural Flora Texture Request Packet");
+            markdown.AppendLine();
+            markdown.AppendLine($"Generated: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            markdown.AppendLine();
+            markdown.AppendLine("- Contract source: `Docs/PROCEDURAL_ASSET_PIPELINE.md`");
+            markdown.AppendLine("- Prompt rule: output prompts only. Do not generate placeholder production textures in code.");
+            markdown.AppendLine("- Imported target root: `" + ImportedTextureRoot + "`");
+            markdown.AppendLine("- Current gap: missing imported sets block final photoreal texture proof for the families listed below.");
+
+            int missingFamilyCount = 0;
+            for (int familyIndex = 0; familyIndex < SupportedFamilyIds.Length; familyIndex++)
+            {
+                string familyId = SupportedFamilyIds[familyIndex];
+                ImportedFamilyStatus status = EvaluateImportedFamilyStatus(familyId);
+                if (status.CoverageComplete)
+                    continue;
+
+                TextureRequestFamilySpec requestSpec = ResolveTextureRequestFamilySpec(familyId);
+                if (!requestSpec.IsValid)
+                    continue;
+
+                missingFamilyCount++;
+                markdown.AppendLine();
+                markdown.Append("## ").Append(familyId).AppendLine();
+                markdown.AppendLine();
+                markdown.Append("- Current imported coverage: `").Append(status.PresentMapCount).Append("/").Append(RequiredMapTokens.Length).AppendLine("`");
+                markdown.Append("- Current report note: `").Append(status.PrimaryNote).AppendLine("`");
+                markdown.Append("- Biome token: `").Append(requestSpec.BiomeToken).AppendLine("`");
+                markdown.Append("- Resolution target: `2048x2048`").AppendLine();
+                markdown.Append("- Import folder: `").Append(ImportedTextureRoot).Append('/').Append(familyId).AppendLine("`");
+                markdown.AppendLine();
+                markdown.AppendLine("### Missing Map Prompts");
+                markdown.AppendLine();
+
+                for (int mapIndex = 0; mapIndex < RequiredMapTokens.Length; mapIndex++)
+                {
+                    string mapToken = RequiredMapTokens[mapIndex];
+                    string importedPath = GetImportedTexturePath(familyId, mapToken);
+                    Texture2D importedTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(importedPath);
+                    if (importedTexture != null)
+                        continue;
+
+                    markdown.Append("- `").Append(mapToken).Append("` -> `").Append(importedPath).AppendLine("`");
+                    markdown.Append("  Prompt: `").Append(BuildMasterPrompt(requestSpec, mapToken)).AppendLine("`");
+                }
+            }
+
+            markdown.AppendLine();
+            markdown.AppendLine("## Unity Import Settings");
+            markdown.AppendLine();
+            markdown.AppendLine("- Texture Type: `Default` for `albedo` and `mask`");
+            markdown.AppendLine("- Texture Type: `Normal Map` for `normal` and `detail`");
+            markdown.AppendLine("- Wrap Mode: `Repeat`");
+            markdown.AppendLine("- Generate Mip Maps: `On`");
+            markdown.AppendLine("- Compression: `BC7` for color, `BC5/DXT5nm` for normals");
+            markdown.AppendLine("- Max Size: `2048`");
+            markdown.AppendLine("- sRGB: `On` for `albedo`, `Off` for `detail`, `normal`, `mask`");
+            markdown.AppendLine("- Read/Write: `Off`");
+            markdown.AppendLine();
+            markdown.AppendLine("## Validation After Import");
+            markdown.AppendLine();
+            markdown.AppendLine("- Apply imported maps to the matching family material.");
+            markdown.AppendLine("- Optional: run `Hecton/Validation/Scaffold Missing Flora Texture Import Folders` before copying files.");
+            markdown.AppendLine("- Run `Hecton/Validation/Fix Imported Flora Texture Import Settings`.");
+            markdown.AppendLine("- Run `Hecton/Validation/Report Imported Flora Texture Library`.");
+            markdown.AppendLine("- Run `Hecton/Validation/Reconcile Imported Flora Coverage` for the full post-import chain.");
+            markdown.AppendLine("- Set tiling to `4x4` in Unity and inspect for visible seams.");
+            markdown.AppendLine("- If seams remain, regenerate with: `FIX SEAMS: previous output had visible tile boundaries at 2x repetition, ensure exact edge matching on all four sides`.");
+
+            string reportPath = Path.Combine(Directory.GetCurrentDirectory(), TextureRequestPacketFileName);
+            File.WriteAllText(reportPath, markdown.ToString(), Encoding.UTF8);
+            AssetDatabase.Refresh();
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Wrote missing flora texture request packet to '{reportPath}'. MissingFamilies={missingFamilyCount}.");
+        }
+
         [MenuItem("Hecton/Validation/Report Imported Flora Texture Library", priority = 271)]
         public static void ReportImportedTextureLibrary()
         {
@@ -173,75 +286,39 @@ namespace Hecton8.EditorTools
 
             int completeFamilies = 0;
             int contractCleanFamilies = 0;
+            int missingFamilies = 0;
             double totalEstimatedGpuMb = 0.0;
             double cleanEstimatedGpuMb = 0.0;
 
             for (int familyIndex = 0; familyIndex < SupportedFamilyIds.Length; familyIndex++)
             {
                 string familyId = SupportedFamilyIds[familyIndex];
-                int presentMapCount = 0;
-                bool contractOk = true;
-                string firstNote = "ok";
-                double familyEstimatedGpuMb = 0.0;
-                string latestRevisionFolderName;
-                bool hasRevisionCandidate = TryGetLatestImportedRevisionFolderName(familyId, out latestRevisionFolderName);
-
-                for (int mapIndex = 0; mapIndex < RequiredMapTokens.Length; mapIndex++)
-                {
-                    string mapToken = RequiredMapTokens[mapIndex];
-                    string importedPath = GetImportedTexturePath(familyId, mapToken);
-                    Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(importedPath);
-                    if (texture == null)
-                    {
-                        if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
-                            firstNote = "missing-" + mapToken;
-
-                        continue;
-                    }
-
-                    presentMapCount++;
-                    familyEstimatedGpuMb += EstimateImportedTextureGpuMb(mapToken);
-                    string failureLabel;
-                    if (TryGetImportedTextureContractFailure(texture, familyId, mapToken, out failureLabel))
-                    {
-                        contractOk = false;
-                        if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
-                            firstNote = mapToken + ":" + failureLabel;
-                    }
-                }
-
-                if (hasRevisionCandidate)
-                {
-                    if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
-                        firstNote = "alt-revision:" + latestRevisionFolderName;
-                    else
-                        firstNote += " | alt-revision:" + latestRevisionFolderName;
-                }
-
-                bool coverageOk = presentMapCount == RequiredMapTokens.Length;
-                if (coverageOk)
+                ImportedFamilyStatus status = EvaluateImportedFamilyStatus(familyId);
+                if (status.CoverageComplete)
                     completeFamilies++;
+                else
+                    missingFamilies++;
 
-                if (coverageOk && contractOk)
+                if (status.ContractClean)
                 {
                     contractCleanFamilies++;
-                    cleanEstimatedGpuMb += familyEstimatedGpuMb;
+                    cleanEstimatedGpuMb += status.EstimatedGpuMb;
                 }
 
-                totalEstimatedGpuMb += familyEstimatedGpuMb;
+                totalEstimatedGpuMb += status.EstimatedGpuMb;
 
                 markdown.Append("| ");
                 markdown.Append(familyId);
                 markdown.Append(" | ");
-                markdown.Append(presentMapCount);
+                markdown.Append(status.PresentMapCount);
                 markdown.Append("/");
                 markdown.Append(RequiredMapTokens.Length);
                 markdown.Append(" | ");
-                markdown.Append(contractOk ? "ok" : "stale");
+                markdown.Append(ResolveContractLabel(status));
                 markdown.Append(" | ");
-                markdown.Append(familyEstimatedGpuMb.ToString("0.0"));
+                markdown.Append(status.EstimatedGpuMb.ToString("0.0"));
                 markdown.Append(" | ");
-                markdown.Append(firstNote);
+                markdown.Append(status.PrimaryNote);
                 markdown.AppendLine(" |");
             }
 
@@ -250,16 +327,47 @@ namespace Hecton8.EditorTools
             markdown.AppendLine();
             markdown.AppendLine($"- Family coverage complete: `{completeFamilies}/{SupportedFamilyIds.Length}`");
             markdown.AppendLine($"- Family contract clean: `{contractCleanFamilies}/{SupportedFamilyIds.Length}`");
+            markdown.AppendLine($"- Families still missing imported sets: `{missingFamilies}`");
             markdown.AppendLine($"- Estimated imported flora GPU memory: `{totalEstimatedGpuMb:0.0} MB`");
             markdown.AppendLine($"- Estimated clean-contract flora GPU memory: `{cleanEstimatedGpuMb:0.0} MB`");
             markdown.AppendLine($"- Texture red threshold reference: `{TextureMemoryRedThresholdMb:0} MB`");
             markdown.AppendLine($"- Imported root: `{ImportedTextureRoot}`");
+            markdown.AppendLine($"- Request packet: `{TextureRequestPacketFileName}`");
             markdown.AppendLine($"- Atlas note: `defer atlas merge until at least one full clean texture set exists for every target family; current family-level tiling workflow is cheaper to iterate and safer for MX350.`");
 
-            string reportPath = Path.Combine(Directory.GetCurrentDirectory(), "PROCEDURAL_FLORA_TEXTURE_LIBRARY_REPORT.md");
+            string reportPath = Path.Combine(Directory.GetCurrentDirectory(), TextureLibraryReportFileName);
             File.WriteAllText(reportPath, markdown.ToString(), Encoding.UTF8);
             AssetDatabase.Refresh();
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Wrote imported flora texture report to '{reportPath}'.");
+        }
+
+        [MenuItem("Hecton/Validation/Reconcile Imported Flora Coverage", priority = 273)]
+        public static void ReconcileImportedCoverage()
+        {
+            ScaffoldMissingImportedTextureFolders();
+            FixImportedTextureImportSettings();
+            ReportImportedTextureLibrary();
+            WorldProceduralFloraMaterialAuthoring.Apply();
+            WorldProceduralFloraFinalVariantValidator.Validate();
+            WorldProceduralFloraFinalStatusReport.GenerateReport();
+
+            int completeFamilies = 0;
+            int missingFamilies = 0;
+            int contractCleanFamilies = 0;
+
+            for (int familyIndex = 0; familyIndex < SupportedFamilyIds.Length; familyIndex++)
+            {
+                ImportedFamilyStatus status = EvaluateImportedFamilyStatus(SupportedFamilyIds[familyIndex]);
+                if (status.CoverageComplete)
+                    completeFamilies++;
+                else
+                    missingFamilies++;
+
+                if (status.ContractClean)
+                    contractCleanFamilies++;
+            }
+
+            Debug.Log($"[WorldProceduralFloraTextureAuthoring] Reconciled imported flora coverage. CoverageComplete={completeFamilies}/{SupportedFamilyIds.Length}, ContractClean={contractCleanFamilies}/{SupportedFamilyIds.Length}, MissingFamilies={missingFamilies}.");
         }
 
         public static Texture2D LoadKelpBaseTexture(string familyId)
@@ -950,6 +1058,119 @@ namespace Hecton8.EditorTools
             return $"{ImportedTextureRoot}/{familyId}/{mapToken}___{familyId}.png";
         }
 
+        private static ImportedFamilyStatus EvaluateImportedFamilyStatus(string familyId)
+        {
+            int presentMapCount = 0;
+            bool contractOk = true;
+            string firstNote = "ok";
+            double familyEstimatedGpuMb = 0.0;
+            string latestRevisionFolderName;
+            bool hasRevisionCandidate = TryGetLatestImportedRevisionFolderName(familyId, out latestRevisionFolderName);
+
+            for (int mapIndex = 0; mapIndex < RequiredMapTokens.Length; mapIndex++)
+            {
+                string mapToken = RequiredMapTokens[mapIndex];
+                string importedPath = GetImportedTexturePath(familyId, mapToken);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(importedPath);
+                if (texture == null)
+                {
+                    if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
+                        firstNote = "missing-" + mapToken;
+
+                    continue;
+                }
+
+                presentMapCount++;
+                familyEstimatedGpuMb += EstimateImportedTextureGpuMb(mapToken);
+                string failureLabel;
+                if (TryGetImportedTextureContractFailure(texture, familyId, mapToken, out failureLabel))
+                {
+                    contractOk = false;
+                    if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
+                        firstNote = mapToken + ":" + failureLabel;
+                }
+            }
+
+            if (hasRevisionCandidate)
+            {
+                if (string.Equals(firstNote, "ok", System.StringComparison.Ordinal))
+                    firstNote = "alt-revision:" + latestRevisionFolderName;
+                else
+                    firstNote += " | alt-revision:" + latestRevisionFolderName;
+            }
+
+            bool coverageComplete = presentMapCount == RequiredMapTokens.Length;
+            bool contractClean = coverageComplete && contractOk;
+            return new ImportedFamilyStatus(presentMapCount, familyEstimatedGpuMb, coverageComplete, contractClean, firstNote);
+        }
+
+        private static string ResolveContractLabel(ImportedFamilyStatus status)
+        {
+            if (!status.CoverageComplete)
+                return "missing";
+
+            return status.ContractClean ? "ok" : "stale";
+        }
+
+        private static TextureRequestFamilySpec ResolveTextureRequestFamilySpec(string familyId)
+        {
+            switch (familyId)
+            {
+                case FamilyCoralMassive:
+                    return new TextureRequestFamilySpec(
+                        familyId,
+                        "ORGANIC_shallow",
+                        "sunlit underwater, turquoise tones, silicon-based coral textures",
+                        "massive bulbous coral head surface, porous calcified cavities, weathered reef erosion, warm coral limestone tones");
+
+                case FamilyCoralPlate:
+                    return new TextureRequestFamilySpec(
+                        familyId,
+                        "ORGANIC_shallow",
+                        "sunlit underwater, turquoise tones, silicon-based coral textures",
+                        "thin layered plate coral surface, stacked shelf disks, laminar calcified ridges, subtle reef wear");
+
+                case FamilyCoralBrittle:
+                    return new TextureRequestFamilySpec(
+                        familyId,
+                        "ORGANIC_abyss",
+                        "bioluminescent deep sea, dark basalt substrate, pale translucent growths, chemosynthetic textures",
+                        "deep brittle coral skeleton surface, thin chalky branching lattice, mineral staining, chemosynthetic abyss wear");
+
+                default:
+                    return default;
+            }
+        }
+
+        private static string BuildMasterPrompt(TextureRequestFamilySpec requestSpec, string mapToken)
+        {
+            string texturePhrase;
+            switch (mapToken)
+            {
+                case "albedo":
+                    texturePhrase = "albedo/diffuse surface color, natural variation, calcified coral tones, zero specular highlights";
+                    break;
+
+                case "normal":
+                    texturePhrase = "normal map visualization, coral ridges, pores, grooves, and calcified branch scars, neutral purple-blue base, green-up convention, no color variation";
+                    break;
+
+                case "mask":
+                    texturePhrase = "mask texture, grayscale distribution of roughness and AO, calcified coral micro-surface variation, neutral gray base";
+                    break;
+
+                case "detail":
+                    texturePhrase = "fine detail normal map, coral pores, mineral grain, chalky micro-scratches, sub-millimeter surface noise, high frequency only";
+                    break;
+
+                default:
+                    texturePhrase = mapToken + " texture";
+                    break;
+            }
+
+            return $"Seamless tiling PBR {mapToken} texture, {texturePhrase}, {requestSpec.SubjectDescription}, {requestSpec.BiomeContext}, top-down orthographic view, uniform lighting, no shadows, no perspective distortion, photorealistic, 4K resolution, edge-perfect seamless tile pattern, --tile --v 6 --ar 1:1";
+        }
+
         private static bool TryGetLatestImportedRevisionFolderName(string familyId, out string folderName)
         {
             folderName = string.Empty;
@@ -1041,6 +1262,44 @@ namespace Hecton8.EditorTools
 
             if (!AssetDatabase.IsValidFolder(assetPath))
                 AssetDatabase.CreateFolder(parentPath, folderName);
+        }
+
+        private readonly struct ImportedFamilyStatus
+        {
+            public ImportedFamilyStatus(int presentMapCount, double estimatedGpuMb, bool coverageComplete, bool contractClean, string primaryNote)
+            {
+                PresentMapCount = presentMapCount;
+                EstimatedGpuMb = estimatedGpuMb;
+                CoverageComplete = coverageComplete;
+                ContractClean = contractClean;
+                PrimaryNote = primaryNote ?? string.Empty;
+            }
+
+            public int PresentMapCount { get; }
+            public double EstimatedGpuMb { get; }
+            public bool CoverageComplete { get; }
+            public bool ContractClean { get; }
+            public string PrimaryNote { get; }
+        }
+
+        private readonly struct TextureRequestFamilySpec
+        {
+            public TextureRequestFamilySpec(string familyId, string biomeToken, string biomeContext, string subjectDescription)
+            {
+                FamilyId = familyId ?? string.Empty;
+                BiomeToken = biomeToken ?? string.Empty;
+                BiomeContext = biomeContext ?? string.Empty;
+                SubjectDescription = subjectDescription ?? string.Empty;
+            }
+
+            public string FamilyId { get; }
+            public string BiomeToken { get; }
+            public string BiomeContext { get; }
+            public string SubjectDescription { get; }
+            public bool IsValid => !string.IsNullOrWhiteSpace(FamilyId)
+                && !string.IsNullOrWhiteSpace(BiomeToken)
+                && !string.IsNullOrWhiteSpace(BiomeContext)
+                && !string.IsNullOrWhiteSpace(SubjectDescription);
         }
     }
 }
