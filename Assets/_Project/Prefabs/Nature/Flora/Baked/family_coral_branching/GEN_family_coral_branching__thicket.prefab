@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1055264618919981818}
   - component: {fileID: 5758195086510340005}
-  - component: {fileID: 207012411292740123}
+  - component: {fileID: 321303541977066259}
   m_Layer: 0
   m_Name: GEN_family_coral_branching__thicket
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 205631269628856504}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &207012411292740123
+--- !u!114 &321303541977066259
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

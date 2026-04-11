@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5003445973194136664}
   - component: {fileID: 8543799053428293057}
-  - component: {fileID: 1486288525381589461}
+  - component: {fileID: 5735197156336721210}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__tuft
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 6801218426128618276}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1486288525381589461
+--- !u!114 &5735197156336721210
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

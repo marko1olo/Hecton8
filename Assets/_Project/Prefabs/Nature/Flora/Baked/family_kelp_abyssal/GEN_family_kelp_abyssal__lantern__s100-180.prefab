@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2696435018780662467}
   - component: {fileID: 4802611810270365598}
-  - component: {fileID: 3709901239677288717}
+  - component: {fileID: 9070998026433578140}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__lantern__s100-180
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 128155191717073309}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3709901239677288717
+--- !u!114 &9070998026433578140
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

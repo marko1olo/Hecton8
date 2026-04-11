@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3639776755234283968}
   - component: {fileID: 5845241627880705167}
-  - component: {fileID: 5321381570146889114}
+  - component: {fileID: 4993976638578669524}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__spire
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 6733237070532265197}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5321381570146889114
+--- !u!114 &4993976638578669524
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

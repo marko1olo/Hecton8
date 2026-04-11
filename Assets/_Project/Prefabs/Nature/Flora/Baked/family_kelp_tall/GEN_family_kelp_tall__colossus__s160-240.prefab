@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 514332603248230283}
   - component: {fileID: 4229090807356224239}
-  - component: {fileID: 4810415800136349802}
+  - component: {fileID: 1213372344416841857}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__colossus__s160-240
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 42709782738892648}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4810415800136349802
+--- !u!114 &1213372344416841857
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

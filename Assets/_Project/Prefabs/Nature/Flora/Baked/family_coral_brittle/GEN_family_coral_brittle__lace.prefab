@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 631307978991635211}
   - component: {fileID: 7129075538828608091}
-  - component: {fileID: 675873409629001011}
+  - component: {fileID: 2135610141428036598}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__lace
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 4123777543131688527}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &675873409629001011
+--- !u!114 &2135610141428036598
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

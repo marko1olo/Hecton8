@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1420199615521520398}
   - component: {fileID: 4374562211031092497}
-  - component: {fileID: 7780328105201439284}
+  - component: {fileID: 892510176807670755}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__tapestry__s160-240
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 6607944652983005690}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7780328105201439284
+--- !u!114 &892510176807670755
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1501043287995522705}
   - component: {fileID: 7426858278476794883}
-  - component: {fileID: 1301940785402489867}
+  - component: {fileID: 5903002639323865253}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__terrace
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 3393030078588161500}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1301940785402489867
+--- !u!114 &5903002639323865253
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

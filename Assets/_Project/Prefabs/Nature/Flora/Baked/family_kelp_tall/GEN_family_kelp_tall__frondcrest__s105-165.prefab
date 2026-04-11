@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6890893905434255646}
   - component: {fileID: 8036154575818681940}
-  - component: {fileID: 5122975273111767815}
+  - component: {fileID: 6600767502213245100}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__frondcrest__s105-165
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 4147097589233303562}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5122975273111767815
+--- !u!114 &6600767502213245100
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

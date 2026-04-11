@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6666928108141773594}
   - component: {fileID: 2330765068479559647}
-  - component: {fileID: 6675106358268865615}
+  - component: {fileID: 248218473342100215}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__brush
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 5598906301661750409}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6675106358268865615
+--- !u!114 &248218473342100215
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1606799836578873116}
   - component: {fileID: 5296668498596074754}
-  - component: {fileID: 3019395245142510606}
+  - component: {fileID: 3845593029818954829}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__cathedral
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 1159502902301678376}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3019395245142510606
+--- !u!114 &3845593029818954829
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

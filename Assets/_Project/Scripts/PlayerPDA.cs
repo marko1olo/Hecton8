@@ -332,8 +332,13 @@ namespace Hecton8.UI
             if (spectrum == null)
                 spectrum = EnsureRuntimeTab(root, "Tab_Spectrum", typeof(Hecton8.UI.PDASpectrumTab));
 
-            if (tabs == null || tabs.Length != 6)
-                tabs = new GameObject[6];
+            // Atlas Signal tab — auto-create if missing
+            GameObject atlasSignal = root.Find("Tab_AtlasSignal")?.gameObject;
+            if (atlasSignal == null)
+                atlasSignal = EnsureRuntimeTab(root, "Tab_AtlasSignal", typeof(Hecton8.UI.PDAAtlasSignalTab));
+
+            if (tabs == null || tabs.Length != 7)
+                tabs = new GameObject[7];
 
             if (inventory != null)   tabs[0] = inventory;
             if (loadout != null)     tabs[1] = loadout;
@@ -341,6 +346,7 @@ namespace Hecton8.UI
             if (barter != null)      tabs[3] = barter;
             if (dataLog != null)     tabs[4] = dataLog;
             if (spectrum != null)    tabs[5] = spectrum;
+            if (atlasSignal != null) tabs[6] = atlasSignal;
         }
 
         private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)

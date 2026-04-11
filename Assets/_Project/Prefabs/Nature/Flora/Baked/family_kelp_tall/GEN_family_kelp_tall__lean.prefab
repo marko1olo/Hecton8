@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 235959038158622213}
   - component: {fileID: 3453613899699939826}
-  - component: {fileID: 5264902016395280900}
+  - component: {fileID: 2621406388615152340}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__lean
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 6074210884237251128}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5264902016395280900
+--- !u!114 &2621406388615152340
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

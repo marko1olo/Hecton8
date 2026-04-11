@@ -281,35 +281,38 @@ namespace Hecton8.UI
                 _lastActiveTab = activeTabIndex;
             }
 
-            if (_leftFooterText != null &&
-                (_lastCargoCells != cargoCells ||
-                 _lastCargoTotal != cargoTotal ||
-                 _lastWeightDeci != weightDeci ||
-                 _lastReadyTools != readyTools ||
-                 _lastAssignedTools != assignedTools))
-            {
-                _leftFooterText.SetText(
-                    "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}",
-                    cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
-                _lastCargoCells = cargoCells;
-                _lastCargoTotal = cargoTotal;
-                _lastWeightDeci = weightDeci;
-                _lastReadyTools = readyTools;
-                _lastAssignedTools = assignedTools;
-            }
+             if (_leftFooterText != null &&
+                 (_lastCargoCells != cargoCells ||
+                  _lastCargoTotal != cargoTotal ||
+                  _lastWeightDeci != weightDeci ||
+                  _lastReadyTools != readyTools ||
+                  _lastAssignedTools != assignedTools))
+             {
+                 _leftFooterText.SetText(
+                     "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}",
+                     cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
+                 _lastCargoCells = cargoCells;
+                 _lastCargoTotal = cargoTotal;
+                 _lastWeightDeci = weightDeci;
+                 _lastReadyTools = readyTools;
+                 _lastAssignedTools = assignedTools;
+             }
 
-            if (_rightFooterText != null &&
-                (_lastOxygenPercent != oxygenPercent ||
-                 _lastEnergyPercent != energyPercent ||
-                 _lastPdaOpen != pdaOpen))
-            {
-                _rightFooterText.SetText(
-                    pdaOpen ? RightFooterOnlineFormat : RightFooterStandbyFormat,
-                    oxygenPercent, energyPercent);
-                _lastOxygenPercent = oxygenPercent;
-                _lastEnergyPercent = energyPercent;
-                _lastPdaOpen = pdaOpen;
-            }
+             if (_rightFooterText != null &&
+                 (_lastOxygenPercent != oxygenPercent ||
+                  _lastEnergyPercent != energyPercent ||
+                  _lastPdaOpen != pdaOpen))
+             {
+                 string footerText = pdaOpen ? RightFooterOnlineFormat : RightFooterStandbyFormat;
+                 footerText = string.Format(footerText, oxygenPercent, energyPercent);
+                 if (_rightFooterText.text != footerText)
+                 {
+                     _rightFooterText.text = footerText;
+                 }
+                 _lastOxygenPercent = oxygenPercent;
+                 _lastEnergyPercent = energyPercent;
+                 _lastPdaOpen = pdaOpen;
+             }
 
             Color severity = GetShellSeverityColor(energy, oxygen, weight, readyTools, assignedTools);
             if (_headerBg != null) _headerBg.color = severity;

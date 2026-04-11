@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8221303877743547167}
   - component: {fileID: 8802511979988140551}
-  - component: {fileID: 5688506653500038368}
+  - component: {fileID: 8134300903958602425}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__sprig
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 5106333472332589181}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5688506653500038368
+--- !u!114 &8134300903958602425
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

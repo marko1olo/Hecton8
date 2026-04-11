@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8565530975572702723}
   - component: {fileID: 3573988165521633490}
-  - component: {fileID: 2077990307996383286}
+  - component: {fileID: 4809409639103024157}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__veilwall__s150-240
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 3255685471269858569}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &2077990307996383286
+--- !u!114 &4809409639103024157
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

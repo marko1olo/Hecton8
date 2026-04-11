@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5526208315792619855}
   - component: {fileID: 7333270212304947232}
-  - component: {fileID: 4343239859157980817}
+  - component: {fileID: 9065324479561839071}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__thicket
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 6754341192481474234}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4343239859157980817
+--- !u!114 &9065324479561839071
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

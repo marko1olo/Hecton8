@@ -172,12 +172,41 @@ namespace Hecton8.Audio
             InitializePool2D();
         }
 
+        private void OnEnable()
+        {
+            // Subscribe to soundscape tier changes for ambient audio
+            Hecton8.World.SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
+        }
+
+        private void OnDisable()
+        {
+            Hecton8.World.SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+        }
+
         private void OnDestroy()
         {
             if (s_Instance == this)
             {
                 s_Instance = null;
             }
+        }
+
+        /// <summary>
+        /// Handle soundscape depth tier changes — switch ambient audio layers.
+        /// Called ~0.5s interval via SoundscapeEvents.
+        /// </summary>
+        private void HandleSoundscapeTierChanged(
+            Hecton8.World.SoundscapeTier oldTier,
+            Hecton8.World.SoundscapeTier newTier)
+        {
+            // TODO: Crossfade ambient audio based on tier
+            // Surface: waves, wind, Aegir hum
+            // Shallow: water song, fish, module creaks
+            // Twilight: growing silence, suit creaks
+            // Darkness: suit + breath, biolum clicks
+            // Abyss: mechanical creak, pressure hum
+            // DeepAbyss: subsonic pressure, controller vibration
+            // Thermal: thermal flows, mineral tower crackle
         }
 
         // ═══════════════════════════════════════════════════════

@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2321981628782460316}
   - component: {fileID: 2665958853045462461}
-  - component: {fileID: 2484839487118648670}
+  - component: {fileID: 7377200532509239872}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__paddle__s90-150
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 6293568287086376931}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &2484839487118648670
+--- !u!114 &7377200532509239872
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

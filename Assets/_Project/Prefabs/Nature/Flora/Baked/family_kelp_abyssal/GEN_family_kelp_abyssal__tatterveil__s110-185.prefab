@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8494425126232210460}
   - component: {fileID: 1588933570635852344}
-  - component: {fileID: 7145346562123464034}
+  - component: {fileID: 2607485021876650677}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__tatterveil__s110-185
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 2539064908788942320}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7145346562123464034
+--- !u!114 &2607485021876650677
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

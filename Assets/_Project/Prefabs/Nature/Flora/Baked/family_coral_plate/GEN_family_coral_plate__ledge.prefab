@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7209080438347262740}
   - component: {fileID: 9034607244846076513}
-  - component: {fileID: 1231175834352236615}
+  - component: {fileID: 8932540956426454827}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__ledge
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 1414779446692314068}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1231175834352236615
+--- !u!114 &8932540956426454827
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

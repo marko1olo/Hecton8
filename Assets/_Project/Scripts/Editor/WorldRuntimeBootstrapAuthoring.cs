@@ -584,7 +584,7 @@ namespace Hecton8.EditorTools
         {
             WorldProceduralPatternCatalog patternCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralPatternCatalog>(WorldProceduralPatternCatalogPath);
             WorldProceduralBiomeFamilyContextCatalog biomeContextCatalog = AssetDatabase.LoadAssetAtPath<WorldProceduralBiomeFamilyContextCatalog>(WorldProceduralBiomeContextCatalogPath);
-            GPUInstancer.GPUInstancerPrefabManager floraGpuiManager = FindSceneObjectIncludingInactive<GPUInstancer.GPUInstancerPrefabManager>();
+            GPUInstancer.GPUInstancerPrefabManager floraGpuiManager = ResolveRockRuntimeGpuiManager();
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
             so.FindProperty("fieldSampler").objectReferenceValue = fieldSampler;
@@ -616,6 +616,19 @@ namespace Hecton8.EditorTools
             director.SetFaunaSpawnRegistry(faunaSpawnRegistry);
             director.SetProceduralStateRegistry(proceduralStateRegistry);
             EditorUtility.SetDirty(director);
+        }
+
+        private static GPUInstancer.GPUInstancerPrefabManager ResolveRockRuntimeGpuiManager()
+        {
+            HectonRockManager rockManager = FindSceneObjectIncludingInactive<HectonRockManager>();
+            if (rockManager != null && rockManager.TryGetComponent(out GPUInstancer.GPUInstancerPrefabManager boundManager))
+                return boundManager;
+
+            GameObject runtimeRoot = GameObject.Find($"{ManagersRootName}/{RockRuntimeRootName}");
+            if (runtimeRoot != null && runtimeRoot.TryGetComponent(out GPUInstancer.GPUInstancerPrefabManager runtimeManager))
+                return runtimeManager;
+
+            return FindSceneObjectIncludingInactive<GPUInstancer.GPUInstancerPrefabManager>();
         }
 
         private static void ConfigureWorldGenerativeGeologyIntegrationDirector(

@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6147706325014075563}
   - component: {fileID: 3840101998207025733}
-  - component: {fileID: 5619086309623452361}
+  - component: {fileID: 8803052975731147579}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__whip
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 3197238330212196623}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5619086309623452361
+--- !u!114 &8803052975731147579
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

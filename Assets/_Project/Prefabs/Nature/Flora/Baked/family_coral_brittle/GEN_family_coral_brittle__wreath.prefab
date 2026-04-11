@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 544253949667042112}
   - component: {fileID: 1160034649576002458}
-  - component: {fileID: 6474615164822196268}
+  - component: {fileID: 903329552349079526}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__wreath
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 7846350222482676913}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6474615164822196268
+--- !u!114 &903329552349079526
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

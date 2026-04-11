@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7817332739450010732}
   - component: {fileID: 3217218035786901851}
-  - component: {fileID: 4176167008430934121}
+  - component: {fileID: 2382841924707608031}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__cathedral__s140-240
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 8266611728937803151}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4176167008430934121
+--- !u!114 &2382841924707608031
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

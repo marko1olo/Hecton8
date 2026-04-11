@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3409874711913996277}
   - component: {fileID: 3084898666511008224}
-  - component: {fileID: 8196386714991242891}
+  - component: {fileID: 8530260023321130944}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__sheetwall__s150-230
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 4295528051651438073}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8196386714991242891
+--- !u!114 &8530260023321130944
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

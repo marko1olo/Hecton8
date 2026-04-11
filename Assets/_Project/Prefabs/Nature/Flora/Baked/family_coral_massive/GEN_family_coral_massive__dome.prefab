@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2014228279382005564}
   - component: {fileID: 427236460479375738}
-  - component: {fileID: 6383593298158698550}
+  - component: {fileID: 3877228784690954200}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__dome
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 2706267699335321836}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6383593298158698550
+--- !u!114 &3877228784690954200
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

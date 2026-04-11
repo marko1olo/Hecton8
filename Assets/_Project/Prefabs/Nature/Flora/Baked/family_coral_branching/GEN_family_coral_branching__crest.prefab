@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4080127723265919190}
   - component: {fileID: 2514114961292831230}
-  - component: {fileID: 1528700845237002103}
+  - component: {fileID: 1115980330210946317}
   m_Layer: 0
   m_Name: GEN_family_coral_branching__crest
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 5453561042716194039}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1528700845237002103
+--- !u!114 &1115980330210946317
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

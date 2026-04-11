@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6667576831618204697}
   - component: {fileID: 5693060470172745869}
-  - component: {fileID: 7636156932743389696}
+  - component: {fileID: 328038828638404075}
   m_Layer: 0
   m_Name: GEN_family_coral_low__knoll
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 4076943856878235455}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7636156932743389696
+--- !u!114 &328038828638404075
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

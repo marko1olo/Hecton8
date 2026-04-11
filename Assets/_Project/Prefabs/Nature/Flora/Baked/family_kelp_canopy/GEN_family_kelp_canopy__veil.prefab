@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 416918817585308776}
   - component: {fileID: 8057969933472971911}
-  - component: {fileID: 6681037994488873573}
+  - component: {fileID: 4195544238136134396}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__veil
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 4921720310063794239}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6681037994488873573
+--- !u!114 &4195544238136134396
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

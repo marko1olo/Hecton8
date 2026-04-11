@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9080024192430757254}
   - component: {fileID: 8457046425896503786}
-  - component: {fileID: 358461424590262304}
+  - component: {fileID: 8265868965860465872}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__boulder
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 8401390656846606495}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &358461424590262304
+--- !u!114 &8265868965860465872
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

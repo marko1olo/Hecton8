@@ -11009,6 +11009,13 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldFaunaSpawnRegistry(ref faunaSpawnRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
+            if (floraGpuiManager == null &&
+                HectonRockManager.Instance != null &&
+                HectonRockManager.Instance.TryGetComponent(out GPUInstancerPrefabManager rockRuntimeGpuiManager))
+            {
+                floraGpuiManager = rockRuntimeGpuiManager;
+            }
+
             if (floraGpuiManager == null)
                 floraGpuiManager = UnityEngine.Object.FindAnyObjectByType<GPUInstancerPrefabManager>();
 

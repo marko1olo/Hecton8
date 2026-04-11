@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 54367180161356257}
   - component: {fileID: 8691768811658420629}
-  - component: {fileID: 2770432456667696499}
+  - component: {fileID: 2607963406549632219}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__buttress
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 913812112412230395}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &2770432456667696499
+--- !u!114 &2607963406549632219
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

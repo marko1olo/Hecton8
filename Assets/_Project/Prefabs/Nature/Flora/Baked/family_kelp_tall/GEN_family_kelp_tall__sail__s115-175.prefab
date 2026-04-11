@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 186035276161839760}
   - component: {fileID: 1304447335709656200}
-  - component: {fileID: 6070774850524256233}
+  - component: {fileID: 5879035028363277250}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__sail__s115-175
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 1809935744207580639}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6070774850524256233
+--- !u!114 &5879035028363277250
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

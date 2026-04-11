@@ -280,8 +280,14 @@ namespace Hecton8.UI
 
             // Обновляем статус
             int idx = (int)active;
-            if (_currentModeLabel != null)
-                _currentModeLabel.text = $"АКТИВНЫЙ РЕЖИМ: {ModeNames[idx]}";
+             if (_currentModeLabel != null)
+             {
+                 string modeText = string.Format("АКТИВНЫЙ РЕЖИМ: {0}", ModeNames[idx]);
+                 if (_currentModeLabel.text != modeText)
+                 {
+                     _currentModeLabel.text = modeText;
+                 }
+             }
 
             if (_statusLabel != null)
                 _statusLabel.text = ModeDescriptions[idx];

@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 941097600716748642}
   - component: {fileID: 3978448283701923410}
-  - component: {fileID: 3438917640394758982}
+  - component: {fileID: 8781858134785105386}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__stack
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 2368676487313790032}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3438917640394758982
+--- !u!114 &8781858134785105386
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

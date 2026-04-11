@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1953343341041440762}
   - component: {fileID: 3291993432514219843}
-  - component: {fileID: 7892357421532221994}
+  - component: {fileID: 7209996146728302093}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__rope
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 3014398868868561105}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7892357421532221994
+--- !u!114 &7209996146728302093
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

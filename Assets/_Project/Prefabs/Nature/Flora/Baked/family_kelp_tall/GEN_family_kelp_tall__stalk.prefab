@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 330873972081761550}
   - component: {fileID: 6279489077841361674}
-  - component: {fileID: 132867320515386220}
+  - component: {fileID: 2781342565902676318}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__stalk
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 6746147232262010288}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &132867320515386220
+--- !u!114 &2781342565902676318
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
