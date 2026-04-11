@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4558654464640802618}
   - component: {fileID: 8655227559400084949}
-  - component: {fileID: 1089570968498962484}
+  - component: {fileID: 3436849392444989627}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__ribbon
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 9209636424904469681}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1089570968498962484
+--- !u!114 &3436849392444989627
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

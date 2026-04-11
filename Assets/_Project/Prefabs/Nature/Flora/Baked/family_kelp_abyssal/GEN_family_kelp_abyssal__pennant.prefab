@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1145728022126199362}
   - component: {fileID: 3762975404802634111}
-  - component: {fileID: 4882953796496730640}
+  - component: {fileID: 8117821340346221646}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__pennant
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 9190681915542713240}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4882953796496730640
+--- !u!114 &8117821340346221646
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

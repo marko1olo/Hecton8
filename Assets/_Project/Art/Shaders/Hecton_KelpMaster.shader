@@ -368,6 +368,271 @@ Shader "Hecton8/Flora/KelpMaster"
             }
             ENDHLSL
         }
+
+        // ── ShadowCaster Pass (with vertex sway) ─────────────────
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex ShadowVert
+            #pragma fragment ShadowFrag
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
+                half4 _TipColor;
+                half4 _RimColor;
+                half4 _TransmissionColor;
+                half4 _BiolumColor;
+                half4 _SSSColor;
+                half _SSSStrength;
+                half _SSSPower;
+                half _SSSAmbient;
+                half _Smoothness;
+                half _AmbientStrength;
+                half _RimPower;
+                half _RimStrength;
+                half _TransmissionStrength;
+                half _EdgeTransmissionBoost;
+                half _VertexTintStrength;
+                half _AgeDarkening;
+                half _MoistureBoost;
+                half _DetailStrength;
+                half _NormalStrength;
+                half _NormalScale;
+                half _TriplanarScale;
+                half _TriplanarSharpness;
+                half _CurvatureWetnessStrength;
+                half _FresnelStrength;
+                half _FresnelPower;
+                half _HeightScale;
+                half _BladeCurveNormalStrength;
+                half _ThicknessStrength;
+                half _SpecularNoiseStrength;
+                half _MidribDarkening;
+                half _MidribGlossBoost;
+                half _EdgeWearDarkening;
+                half _EdgeDetailBoost;
+                half _CausticStrength;
+                half _CausticScale;
+                half _CausticSpeed;
+                half _BiolumStrength;
+                half _BiolumMaskStrength;
+                half _BiolumPulseAmplitude;
+                half _BiolumPulseFrequency;
+                half _BiolumCurrentResponse;
+                half _SwayAmplitude;
+                half _SwayFrequency;
+                half _SwaySpeed;
+                half _SwayPhaseScale;
+                half _PropWashDisplacement;
+            CBUFFER_END
+
+            float3 _LightDirection;
+            float4 _HectonPropWashPosition;
+            half _HectonPropWashForce;
+
+            struct ShadowAttributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float4 color : COLOR;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct ShadowVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            ShadowVaryings ShadowVert(ShadowAttributes input)
+            {
+                ShadowVaryings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float3 positionOS = input.positionOS.xyz;
+                half heightMask = saturate(input.uv.y);
+
+                // Replicate sway from ForwardLit for shadow consistency.
+                half swayPhase = (positionOS.x + positionOS.z) * _SwayPhaseScale + input.color.r * 2.1h;
+                half primaryWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
+                half secondaryWave = sin(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
+                half swayWave = primaryWave + secondaryWave;
+
+                // Prop wash interaction.
+                float3 positionWS_Interact = TransformObjectToWorld(positionOS);
+                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
+                float washDist = length(washDir);
+                float washStrength = saturate(1.0 - washDist / _HectonPropWashPosition.w);
+                positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
+
+                float3 positionWS = TransformObjectToWorld(positionOS);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
+
+                #if UNITY_REVERSED_Z
+                output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                #else
+                output.positionCS.z = max(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                #endif
+
+                return output;
+            }
+
+            half4 ShadowFrag(ShadowVaryings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(LOD_FADE_CROSSFADE)
+                LODFadeCrossFade(input.positionCS);
+                #endif
+                return 0;
+            }
+            ENDHLSL
+        }
+
+        // ── DepthOnly Pass (with vertex sway) ────────────────────
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            ZWrite On
+            ColorMask R
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex DepthVert
+            #pragma fragment DepthFrag
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
+                half4 _TipColor;
+                half4 _RimColor;
+                half4 _TransmissionColor;
+                half4 _BiolumColor;
+                half4 _SSSColor;
+                half _SSSStrength;
+                half _SSSPower;
+                half _SSSAmbient;
+                half _Smoothness;
+                half _AmbientStrength;
+                half _RimPower;
+                half _RimStrength;
+                half _TransmissionStrength;
+                half _EdgeTransmissionBoost;
+                half _VertexTintStrength;
+                half _AgeDarkening;
+                half _MoistureBoost;
+                half _DetailStrength;
+                half _NormalStrength;
+                half _NormalScale;
+                half _TriplanarScale;
+                half _TriplanarSharpness;
+                half _CurvatureWetnessStrength;
+                half _FresnelStrength;
+                half _FresnelPower;
+                half _HeightScale;
+                half _BladeCurveNormalStrength;
+                half _ThicknessStrength;
+                half _SpecularNoiseStrength;
+                half _MidribDarkening;
+                half _MidribGlossBoost;
+                half _EdgeWearDarkening;
+                half _EdgeDetailBoost;
+                half _CausticStrength;
+                half _CausticScale;
+                half _CausticSpeed;
+                half _BiolumStrength;
+                half _BiolumMaskStrength;
+                half _BiolumPulseAmplitude;
+                half _BiolumPulseFrequency;
+                half _BiolumCurrentResponse;
+                half _SwayAmplitude;
+                half _SwayFrequency;
+                half _SwaySpeed;
+                half _SwayPhaseScale;
+                half _PropWashDisplacement;
+            CBUFFER_END
+
+            float4 _HectonPropWashPosition;
+            half _HectonPropWashForce;
+
+            struct DepthAttributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float4 color : COLOR;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct DepthVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            DepthVaryings DepthVert(DepthAttributes input)
+            {
+                DepthVaryings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float3 positionOS = input.positionOS.xyz;
+                half heightMask = saturate(input.uv.y);
+                half swayPhase = (positionOS.x + positionOS.z) * _SwayPhaseScale + input.color.r * 2.1h;
+                half primaryWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
+                half secondaryWave = sin(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
+                half swayWave = primaryWave + secondaryWave;
+
+                float3 positionWS_Interact = TransformObjectToWorld(positionOS);
+                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
+                float washDist = length(washDir);
+                float washStrength = saturate(1.0 - washDist / _HectonPropWashPosition.w);
+                positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
+
+                output.positionCS = TransformObjectToHClip(positionOS);
+                return output;
+            }
+
+            half4 DepthFrag(DepthVaryings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(LOD_FADE_CROSSFADE)
+                LODFadeCrossFade(input.positionCS);
+                #endif
+                return 0;
+            }
+            ENDHLSL
+        }
     }
 
     FallBack Off

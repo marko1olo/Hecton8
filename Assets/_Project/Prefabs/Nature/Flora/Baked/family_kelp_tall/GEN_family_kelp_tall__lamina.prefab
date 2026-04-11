@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4373695222673269973}
   - component: {fileID: 2934405826051657750}
-  - component: {fileID: 4986631889411304945}
+  - component: {fileID: 8091664119473007288}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__lamina
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 2644683422654610314}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4986631889411304945
+--- !u!114 &8091664119473007288
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

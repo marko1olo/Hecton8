@@ -276,12 +276,16 @@ namespace Hecton8.Gameplay
             LogEventEnded(type);
         }
 
-                private static void LogEventStarted(RandomEventType type, float duration, float intensity)
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogEventStarted(RandomEventType type, float duration, float intensity)
         {
             Debug.Log($"[RandomEvent] Started: {type} (duration: {duration}s, intensity: {intensity:F2})");
         }
 
-                private static void LogEventEnded(RandomEventType type)
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogEventEnded(RandomEventType type)
         {
             Debug.Log($"[RandomEvent] Ended: {type}");
         }

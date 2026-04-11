@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2583425415231570981}
   - component: {fileID: 2638148735670374022}
-  - component: {fileID: 339537682391873995}
+  - component: {fileID: 2784279760712331459}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__bladder__s80-135
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 2026175355480188671}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &339537682391873995
+--- !u!114 &2784279760712331459
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

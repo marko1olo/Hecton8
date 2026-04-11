@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6779208452679657613}
   - component: {fileID: 239212687228300721}
-  - component: {fileID: 8889333876799144746}
+  - component: {fileID: 2722196485832560981}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__petal__s100-170
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 2288216019379064206}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8889333876799144746
+--- !u!114 &2722196485832560981
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

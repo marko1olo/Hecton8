@@ -201,7 +201,8 @@ namespace Hecton8.Gameplay
         //  EVENT HANDLERS
         // ══════════════════════════════════════════════════════════
 
-                private static void LogNightPredatorsRising(float intensity)
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogNightPredatorsRising(float intensity)
         {
             Debug.Log($"[Eclipse] Night predators rising! Intensity: {intensity:F2}");
         }

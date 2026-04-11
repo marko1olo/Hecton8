@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 913800672413137018}
   - component: {fileID: 2430195070035936303}
-  - component: {fileID: 7867387272789237792}
+  - component: {fileID: 7977958704044577417}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__halo
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 3966372546660218267}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7867387272789237792
+--- !u!114 &7977958704044577417
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

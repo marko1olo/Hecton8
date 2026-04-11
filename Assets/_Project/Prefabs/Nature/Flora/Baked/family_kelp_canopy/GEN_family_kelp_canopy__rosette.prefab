@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6057033099105394206}
   - component: {fileID: 7377880840096006684}
-  - component: {fileID: 6797462443236393000}
+  - component: {fileID: 4213915046820318237}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__rosette
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 7717366150874338016}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6797462443236393000
+--- !u!114 &4213915046820318237
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

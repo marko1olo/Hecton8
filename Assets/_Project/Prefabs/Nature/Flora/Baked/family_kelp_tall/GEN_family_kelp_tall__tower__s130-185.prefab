@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1077805123706271658}
   - component: {fileID: 1753865981688678966}
-  - component: {fileID: 5619363095801516082}
+  - component: {fileID: 8802597190061333562}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__tower__s130-185
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 2787945973049085647}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5619363095801516082
+--- !u!114 &8802597190061333562
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

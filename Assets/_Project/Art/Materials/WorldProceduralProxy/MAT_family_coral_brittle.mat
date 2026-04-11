@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_family_coral_brittle
-  m_Shader: {fileID: 4800000, guid: e68a6266905a8344bbe4747d50e48611, type: 3}
+  m_Shader: {fileID: 4800000, guid: b162c13e398ef054cbaab6dc14c8661f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:

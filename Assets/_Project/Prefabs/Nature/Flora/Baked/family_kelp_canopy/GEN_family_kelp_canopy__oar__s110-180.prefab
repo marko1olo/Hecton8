@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4053712851257852030}
   - component: {fileID: 4162904879509289477}
-  - component: {fileID: 357764862497044525}
+  - component: {fileID: 7689110312006960767}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__oar__s110-180
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 5722168025862456604}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &357764862497044525
+--- !u!114 &7689110312006960767
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3842955158494721495}
   - component: {fileID: 6376320141158605439}
-  - component: {fileID: 1079152357014504121}
+  - component: {fileID: 7188577328478525232}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__porous
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 2681390434552023796}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1079152357014504121
+--- !u!114 &7188577328478525232
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

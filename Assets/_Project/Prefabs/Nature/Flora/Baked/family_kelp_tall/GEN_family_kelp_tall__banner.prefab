@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2233376760747079125}
   - component: {fileID: 839794149895474044}
-  - component: {fileID: 8863080633156541419}
+  - component: {fileID: 4712913177890625257}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__banner
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 1002520320581327338}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8863080633156541419
+--- !u!114 &4712913177890625257
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

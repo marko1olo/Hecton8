@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4170817678124969994}
   - component: {fileID: 403996919750001411}
-  - component: {fileID: 7856423354540284170}
+  - component: {fileID: 7755665585265826530}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__cowl__s110-180
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 855568087783960356}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7856423354540284170
+--- !u!114 &7755665585265826530
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

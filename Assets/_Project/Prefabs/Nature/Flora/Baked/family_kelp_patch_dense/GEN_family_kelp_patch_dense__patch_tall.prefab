@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7366877387663881778}
   - component: {fileID: 5956670648471383989}
-  - component: {fileID: 3651701530755049869}
+  - component: {fileID: 9207688802853952698}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__patch_tall
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 2381109222543092241}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3651701530755049869
+--- !u!114 &9207688802853952698
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

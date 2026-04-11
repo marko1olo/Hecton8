@@ -249,7 +249,9 @@ namespace Hecton8.Gameplay
             return playerTransform.TryGetComponent(out _survivalSystem);
         }
 
-                private static void LogMilestoneTriggered(FirstHourMilestone milestone, float sessionTime)
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMilestoneTriggered(FirstHourMilestone milestone, float sessionTime)
         {
             Debug.Log($"[FirstHour] Milestone: {milestone} (t={sessionTime:F0}s)");
         }

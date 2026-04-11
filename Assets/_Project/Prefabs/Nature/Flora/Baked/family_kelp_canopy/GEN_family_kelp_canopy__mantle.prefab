@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2836736536419590771}
   - component: {fileID: 404765680726916661}
-  - component: {fileID: 3501759117781225900}
+  - component: {fileID: 1594640401140214030}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__mantle
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 1832183450937473566}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3501759117781225900
+--- !u!114 &1594640401140214030
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

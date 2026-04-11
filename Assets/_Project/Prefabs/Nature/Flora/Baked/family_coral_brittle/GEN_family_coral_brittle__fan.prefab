@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7123495212726406153}
   - component: {fileID: 7241583810734796632}
-  - component: {fileID: 4514236201456491990}
+  - component: {fileID: 153285289810912526}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__fan
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 4931399905430683017}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4514236201456491990
+--- !u!114 &153285289810912526
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

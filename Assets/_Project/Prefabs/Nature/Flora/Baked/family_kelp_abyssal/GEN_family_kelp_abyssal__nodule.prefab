@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8671275163916643262}
   - component: {fileID: 8187507851748657314}
-  - component: {fileID: 9143344754259120727}
+  - component: {fileID: 4678033214904349619}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__nodule
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 887643868631791103}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &9143344754259120727
+--- !u!114 &4678033214904349619
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

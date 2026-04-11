@@ -37,6 +37,8 @@ namespace NASAPunk.Visor
         [SerializeField] private ProjectionMode _projectionMode = ProjectionMode.Disabled;
 
         [Header("Runtime Render Texture Settings")]
+        [SerializeField] private bool _matchScreenResolution = true;
+        [SerializeField, Range(0.1f, 1f)] private float _renderScale = 0.5f;
         [SerializeField] private int _rtWidth = 1280;
         [SerializeField] private int _rtHeight = 720;
         [SerializeField] private FilterMode _filterMode = FilterMode.Bilinear;
@@ -406,31 +408,40 @@ namespace NASAPunk.Visor
             if (!_ownsRuntimeTexture)
                 _hudRT = null;
 
+            int targetWidth = _rtWidth;
+            int targetHeight = _rtHeight;
+
+            if (_matchScreenResolution)
+            {
+                targetWidth = Mathf.Max(32, Mathf.RoundToInt(Screen.width * _renderScale));
+                targetHeight = Mathf.Max(32, Mathf.RoundToInt(Screen.height * _renderScale));
+            }
+
             // Reuse RT if size matches
-            if (_hudRT != null && _hudRT.width == _rtWidth && _hudRT.height == _rtHeight && _hudRT.format == RenderTextureFormat.ARGB32)
+            if (_hudRT != null && _hudRT.width == targetWidth && _hudRT.height == targetHeight && _hudRT.format == RenderTextureFormat.ARGB32)
             {
                 _hudRT.filterMode = _filterMode;
                 if (!_hudRT.IsCreated())
                     _hudRT.Create();
                 _ownsRuntimeTexture = true;
-                _cachedRTWidth = _rtWidth;
-                _cachedRTHeight = _rtHeight;
+                _cachedRTWidth = targetWidth;
+                _cachedRTHeight = targetHeight;
                 return;
             }
 
             // Release old RT if size changed
             ReleaseOwnedRuntimeTexture();
 
-            _hudRT = new RenderTexture(_rtWidth, _rtHeight, 0, RenderTextureFormat.ARGB32)
+            _hudRT = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.ARGB32)
             {
                 filterMode = _filterMode,
                 useMipMap = false,
-                name = "VisorHUD_RT"
+                name = "VisorHUD_RT_Scaled"
             };
             _hudRT.Create();
             _ownsRuntimeTexture = true;
-            _cachedRTWidth = _rtWidth;
-            _cachedRTHeight = _rtHeight;
+            _cachedRTWidth = targetWidth;
+            _cachedRTHeight = targetHeight;
         }
 
         private void RebuildProjection()

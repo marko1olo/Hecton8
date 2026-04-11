@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3780567326544016680}
   - component: {fileID: 5296148549363514061}
-  - component: {fileID: 3645830649498173850}
+  - component: {fileID: 5322367836027413797}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__laminaria__s105-165
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 2069975068630865181}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3645830649498173850
+--- !u!114 &5322367836027413797
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

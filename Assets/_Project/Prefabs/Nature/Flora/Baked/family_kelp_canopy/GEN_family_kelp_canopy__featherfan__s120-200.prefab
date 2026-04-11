@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2785922254570599564}
   - component: {fileID: 2155133556604341510}
-  - component: {fileID: 8569187985918366897}
+  - component: {fileID: 3177624840573336996}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__featherfan__s120-200
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 7255454010943717251}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8569187985918366897
+--- !u!114 &3177624840573336996
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

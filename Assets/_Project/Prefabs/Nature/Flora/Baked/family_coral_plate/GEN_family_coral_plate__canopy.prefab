@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1027969464589250737}
   - component: {fileID: 8156817268016144417}
-  - component: {fileID: 5989128254877739209}
+  - component: {fileID: 2674896180029328257}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__canopy
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 4116993646650770151}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5989128254877739209
+--- !u!114 &2674896180029328257
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

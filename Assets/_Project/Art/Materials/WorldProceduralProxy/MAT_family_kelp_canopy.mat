@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_family_kelp_canopy
-  m_Shader: {fileID: 4800000, guid: 387a91b357d02234db4980a39572e4b9, type: 3}
+  m_Shader: {fileID: 4800000, guid: 446dc86f53b9a6e46aff1b420e3334f5, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:

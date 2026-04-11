@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2265248772024781474}
   - component: {fileID: 5333241037156959290}
-  - component: {fileID: 3574131528542677444}
+  - component: {fileID: 8516422787588153581}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__seedling__s55-90
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 5700067237900294082}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3574131528542677444
+--- !u!114 &8516422787588153581
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

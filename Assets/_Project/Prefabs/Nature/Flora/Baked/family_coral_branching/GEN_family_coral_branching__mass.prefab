@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8340969560871941225}
   - component: {fileID: 1058506813657185773}
-  - component: {fileID: 5247245366927028408}
+  - component: {fileID: 2226219948180142111}
   m_Layer: 0
   m_Name: GEN_family_coral_branching__mass
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 4422278334912107071}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5247245366927028408
+--- !u!114 &2226219948180142111
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

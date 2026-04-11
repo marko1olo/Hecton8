@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2369217068050735009}
   - component: {fileID: 7571305754733163419}
-  - component: {fileID: 4976023356827066103}
+  - component: {fileID: 491988952413317338}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__frond
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 6061462584608201362}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4976023356827066103
+--- !u!114 &491988952413317338
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

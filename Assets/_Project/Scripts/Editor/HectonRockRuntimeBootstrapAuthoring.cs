@@ -15,6 +15,10 @@ namespace Hecton8.EditorTools
         private const string ManagersRootName = "[MANAGERS]";
         private const string RockRuntimeRootName = "Rock_Runtime";
         private const string FloraFinalRootFolder = WorldProceduralFloraFinalVariantAuthoring.FloraFinalRootFolder;
+        private const string KelpMasterShaderPath = "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader";
+        private const string KelpMasterGpuiShaderPath = "Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader";
+        private const string CoralMasterShaderPath = "Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader";
+        private const string CoralMasterGpuiShaderPath = "Assets/_Project/Art/Shaders/Hecton_CoralMaster_GPUI.shader";
 
         private static readonly string[] RockPrefabPaths =
         {
@@ -194,6 +198,20 @@ namespace Hecton8.EditorTools
                     if (material == null || material.shader == null)
                         continue;
 
+                    if (TrySwapToFirstPartyFloraGpuiShader(material))
+                    {
+                        EditorUtility.SetDirty(material);
+                        continue;
+                    }
+
+                    string shaderAssetPath = AssetDatabase.GetAssetPath(material.shader);
+                    if (string.IsNullOrWhiteSpace(shaderAssetPath))
+                    {
+                        Debug.LogWarning($"[HectonRockRuntimeBootstrap] Skipping GPUI prep for '{prefabAsset.name}'. Shader asset path is empty: {material.shader.name}");
+                        allShadersSupported = false;
+                        continue;
+                    }
+
                     if (material.shader.name.StartsWith("Shader Graphs/"))
                     {
                         Debug.LogWarning($"[HectonRockRuntimeBootstrap] Skipping GPUI prep for '{prefabAsset.name}'. Shader Graph shader requires manual GPUI Setup: {material.shader.name}");
@@ -201,7 +219,18 @@ namespace Hecton8.EditorTools
                         continue;
                     }
 
-                    bool setupOk = GPUInstancerAPI.SetupShaderForGPUI(material.shader);
+                    bool setupOk;
+                    try
+                    {
+                        setupOk = GPUInstancerAPI.SetupShaderForGPUI(material.shader);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        Debug.LogWarning($"[HectonRockRuntimeBootstrap] GPUI shader prep failed for '{prefabAsset.name}' shader '{material.shader.name}': {ex.Message}");
+                        allShadersSupported = false;
+                        continue;
+                    }
+
                     if (!setupOk)
                     {
                         allShadersSupported = false;
@@ -213,6 +242,36 @@ namespace Hecton8.EditorTools
             }
 
             return allShadersSupported;
+        }
+
+        private static bool TrySwapToFirstPartyFloraGpuiShader(Material material)
+        {
+            if (material == null || material.shader == null)
+                return false;
+
+            string shaderPath = AssetDatabase.GetAssetPath(material.shader);
+            if (string.Equals(shaderPath, KelpMasterGpuiShaderPath, StringComparison.Ordinal) ||
+                string.Equals(shaderPath, CoralMasterGpuiShaderPath, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            string gpuiPath = shaderPath switch
+            {
+                KelpMasterShaderPath => KelpMasterGpuiShaderPath,
+                CoralMasterShaderPath => CoralMasterGpuiShaderPath,
+                _ => null
+            };
+
+            if (string.IsNullOrWhiteSpace(gpuiPath))
+                return false;
+
+            Shader gpuiShader = AssetDatabase.LoadAssetAtPath<Shader>(gpuiPath);
+            if (gpuiShader == null)
+                return false;
+
+            material.shader = gpuiShader;
+            return true;
         }
 
         private static void ConfigureGPUInstancerManager(

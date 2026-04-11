@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7893021220989113813}
   - component: {fileID: 7787635831617109865}
-  - component: {fileID: 8575695289219320804}
+  - component: {fileID: 2145278230051366418}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__nest__s65-105
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 5218874425188668736}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8575695289219320804
+--- !u!114 &2145278230051366418
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

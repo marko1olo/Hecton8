@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 375675114383485825}
   - component: {fileID: 2263730113930009210}
-  - component: {fileID: 8669991437581884642}
+  - component: {fileID: 3298475845171133903}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__paddlespray__s70-120
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 1723014648405728267}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8669991437581884642
+--- !u!114 &3298475845171133903
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

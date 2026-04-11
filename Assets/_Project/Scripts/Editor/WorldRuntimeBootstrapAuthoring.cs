@@ -895,6 +895,21 @@ namespace Hecton8.EditorTools
                 0.76f);
         }
 
+        private static void EnsureStarterReefFieldRoot(Transform playerTransform)
+        {
+            GameObject worldRoot = GameObject.Find(WorldRootName);
+            if (worldRoot == null)
+                return;
+
+            GameObject reefField = EnsureChild(worldRoot.transform, StarterReefFieldName);
+            Vector3 anchorPosition = playerTransform != null
+                ? playerTransform.position + new Vector3(24f, 0f, 36f)
+                : new Vector3(-1567f, 4900f, 2600f);
+            reefField.transform.position = anchorPosition;
+            reefField.transform.rotation = Quaternion.identity;
+            reefField.transform.localScale = Vector3.one;
+        }
+
         private static void ConfigurePopulationRules(WorldPopulationDirector director)
         {
             List<WorldPopulationRule> rules = new List<WorldPopulationRule>
@@ -1018,6 +1033,31 @@ namespace Hecton8.EditorTools
             so.FindProperty("nearDistance").floatValue = 180f;
             so.FindProperty("midDistance").floatValue = 320f;
             so.FindProperty("hysteresisPadding").floatValue = 28f;
+            AssignContentChildrenToRoots(so.FindProperty("nearOnlyRoots"), root.transform);
+            ClearObjectArray(so.FindProperty("midAndNearRoots"));
+            AssignSingleRoot(so.FindProperty("midOnlyRoots"), holders.mid);
+            AssignSingleRoot(so.FindProperty("farOnlyRoots"), holders.far);
+            ClearBehaviourArray(so.FindProperty("nearOnlyBehaviours"));
+            ClearBehaviourArray(so.FindProperty("midAndNearBehaviours"));
+            ClearBehaviourArray(so.FindProperty("midOnlyBehaviours"));
+            ClearBehaviourArray(so.FindProperty("farOnlyBehaviours"));
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(anchor);
+        }
+
+        private static void ConfigureStarterReefFieldSlice()
+        {
+            GameObject root = GameObject.Find(StarterReefFieldPath);
+            if (root == null)
+                return;
+
+            ZoneFidelityHolders holders = EnsureZoneFidelityHolders(root.transform);
+
+            WorldSliceAnchor anchor = GetOrAddComponent<WorldSliceAnchor>(root);
+            SerializedObject so = new SerializedObject(anchor);
+            so.FindProperty("nearDistance").floatValue = 168f;
+            so.FindProperty("midDistance").floatValue = 308f;
+            so.FindProperty("hysteresisPadding").floatValue = 26f;
             AssignContentChildrenToRoots(so.FindProperty("nearOnlyRoots"), root.transform);
             ClearObjectArray(so.FindProperty("midAndNearRoots"));
             AssignSingleRoot(so.FindProperty("midOnlyRoots"), holders.mid);

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3818964481435420799}
   - component: {fileID: 8742677504113510715}
-  - component: {fileID: 1016995536141126317}
+  - component: {fileID: 484842958189544593}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__shroud
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 2120618805451370633}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1016995536141126317
+--- !u!114 &484842958189544593
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

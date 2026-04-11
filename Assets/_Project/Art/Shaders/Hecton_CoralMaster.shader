@@ -241,7 +241,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 #endif
 
                 half3 baseTex = SampleFloraTriplanar(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, triplanarWeights).rgb;
-                half3 baseNormalWS = normalize(input.normalWS);
+                // NOTE: baseNormalWS already declared at L229 — no redeclaration.
                 half3 triplanarNormalWS = SampleFloraTriplanarNormal(
                         TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap),
                         samplePositionWS,
@@ -315,6 +315,129 @@ Shader "Hecton8/Flora/CoralMaster"
                 color = lerp(color, unity_FogColor.rgb * 0.88h, saturate(fresnel * (0.5h + wetness * 0.5h)));
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);
+            }
+            ENDHLSL
+        }
+
+        // ── ShadowCaster Pass ────────────────────────────────────
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex ShadowVert
+            #pragma fragment ShadowFrag
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
+
+            float3 _LightDirection;
+
+            struct ShadowAttributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct ShadowVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            ShadowVaryings ShadowVert(ShadowAttributes input)
+            {
+                ShadowVaryings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
+
+                #if UNITY_REVERSED_Z
+                output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                #else
+                output.positionCS.z = max(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                #endif
+
+                return output;
+            }
+
+            half4 ShadowFrag(ShadowVaryings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(LOD_FADE_CROSSFADE)
+                LODFadeCrossFade(input.positionCS);
+                #endif
+                return 0;
+            }
+            ENDHLSL
+        }
+
+        // ── DepthOnly Pass ───────────────────────────────────────
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            ZWrite On
+            ColorMask R
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex DepthVert
+            #pragma fragment DepthFrag
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
+
+            struct DepthAttributes
+            {
+                float4 positionOS : POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct DepthVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            DepthVaryings DepthVert(DepthAttributes input)
+            {
+                DepthVaryings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                return output;
+            }
+
+            half4 DepthFrag(DepthVaryings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(LOD_FADE_CROSSFADE)
+                LODFadeCrossFade(input.positionCS);
+                #endif
+                return 0;
             }
             ENDHLSL
         }

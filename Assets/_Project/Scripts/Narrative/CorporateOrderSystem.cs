@@ -68,6 +68,9 @@ namespace Hecton8.Narrative
         // COLD ALLOC: буфер для доставки приказов в SlowTick
         private readonly List<string> _deliveryBuffer = new List<string>(4);
 
+        // COLD ALLOC: буфер ключей для итерации Dictionary без foreach-аллокации
+        private readonly List<string> _pendingKeyBuffer = new List<string>(16);
+
         // ══════════════════════════════════════════════════════════
         //  ISaveable
         // ══════════════════════════════════════════════════════════
@@ -128,13 +131,19 @@ namespace Hecton8.Narrative
 
             _deliveryBuffer.Clear();
 
+            // Populate key buffer — avoids Dictionary enumerator GC alloc
+            _pendingKeyBuffer.Clear();
             foreach (var kvp in _pendingTimers)
+                _pendingKeyBuffer.Add(kvp.Key);
+
+            for (int i = 0; i < _pendingKeyBuffer.Count; i++)
             {
-                float remaining = kvp.Value - dt;
+                string key = _pendingKeyBuffer[i];
+                float remaining = _pendingTimers[key] - dt;
                 if (remaining <= 0f)
-                    _deliveryBuffer.Add(kvp.Key);
+                    _deliveryBuffer.Add(key);
                 else
-                    _pendingTimers[kvp.Key] = remaining;
+                    _pendingTimers[key] = remaining;
             }
 
             for (int i = 0; i < _deliveryBuffer.Count; i++)

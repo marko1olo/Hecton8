@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7917930861358076984}
   - component: {fileID: 5529748333828160593}
-  - component: {fileID: 3210583332582904756}
+  - component: {fileID: 4082034645918864240}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__shelf
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 3054878574573237278}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3210583332582904756
+--- !u!114 &4082034645918864240
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

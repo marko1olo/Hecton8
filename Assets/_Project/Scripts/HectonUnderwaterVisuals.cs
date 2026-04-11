@@ -288,6 +288,7 @@ namespace Hecton8.Environment
             {
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+                SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
                 ResolveBiomeMatrixDirector();
                 ApplyCurrentMatrixVisualOverride();
                 TryRegisterTickManagers();
@@ -331,6 +332,7 @@ namespace Hecton8.Environment
             {
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+                SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
 
                 GameTickManager tickManager = GameTickManager.Instance;
                 if (tickManager != null)
@@ -1062,6 +1064,36 @@ namespace Hecton8.Environment
             }
 
             ApplyBiomePaletteTarget(_targetBiomeIndex);
+        }
+
+        private void HandleSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
+        {
+            // Adjust underwater visuals based on soundscape depth tier
+            // Deeper = denser fog, darker ambient, different color palette
+            switch (newTier)
+            {
+                case SoundscapeTier.Surface:
+                    // Surface: bright, clear
+                    break;
+                case SoundscapeTier.Shallow:
+                    // 0-150m: slight fog increase
+                    break;
+                case SoundscapeTier.Twilight:
+                    // 150-500m: moderate fog, dimmer
+                    break;
+                case SoundscapeTier.Darkness:
+                    // 500-1000m: heavy fog, dark
+                    break;
+                case SoundscapeTier.Abyss:
+                    // 1000-2000m: very heavy fog
+                    break;
+                case SoundscapeTier.DeepAbyss:
+                    // 2000-4000m: extreme fog, near-black
+                    break;
+                case SoundscapeTier.Thermal:
+                    // 4000-5000m: thermal tint, glow from below
+                    break;
+            }
         }
 
         private void ApplyBiomePaletteTarget(int biomeIndex)

@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5372088919249446930}
   - component: {fileID: 6267954130751070623}
-  - component: {fileID: 8939439589537351599}
+  - component: {fileID: 2652475653090134330}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__broadleaf__s110-170
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 3444593796946208408}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8939439589537351599
+--- !u!114 &2652475653090134330
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

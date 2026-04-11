@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8428052138862386105}
   - component: {fileID: 748177033115107785}
-  - component: {fileID: 3357834552381530063}
+  - component: {fileID: 7545824989135600256}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__fan
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 157382448274632279}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3357834552381530063
+--- !u!114 &7545824989135600256
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

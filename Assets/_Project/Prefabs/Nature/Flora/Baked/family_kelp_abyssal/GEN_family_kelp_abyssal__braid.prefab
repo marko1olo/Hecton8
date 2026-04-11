@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3391375034707943432}
   - component: {fileID: 803659735873611165}
-  - component: {fileID: 7857968736421622338}
+  - component: {fileID: 4921443559153358924}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__braid
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 4169837229095132701}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7857968736421622338
+--- !u!114 &4921443559153358924
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

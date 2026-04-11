@@ -280,7 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6251481306573803611}
   - component: {fileID: 2790968653911813610}
-  - component: {fileID: 6430282152208389759}
+  - component: {fileID: 584563754673698136}
   m_Layer: 0
   m_Name: GEN_family_coral_low__saucer
   m_TagString: Untagged
@@ -334,7 +334,7 @@ LODGroup:
     - renderer: {fileID: 6713162912296516834}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6430282152208389759
+--- !u!114 &584563754673698136
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

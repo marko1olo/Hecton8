@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3707659563180413619}
   - component: {fileID: 5088078943550631320}
-  - component: {fileID: 764370225371249729}
+  - component: {fileID: 3706189713358872253}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__mantle
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 6148909473769651303}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &764370225371249729
+--- !u!114 &3706189713358872253
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

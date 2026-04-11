@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 260787944371866323}
   - component: {fileID: 6731856387103612200}
-  - component: {fileID: 6615216977402698574}
+  - component: {fileID: 664676496885040829}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__candelabra
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 3333512412787346721}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &6615216977402698574
+--- !u!114 &664676496885040829
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

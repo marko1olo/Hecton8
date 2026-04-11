@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 607786104246709727}
   - component: {fileID: 6352745318341626283}
-  - component: {fileID: 7540349282321909531}
+  - component: {fileID: 1180516614603532365}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__crown
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 1394292779535102565}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7540349282321909531
+--- !u!114 &1180516614603532365
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

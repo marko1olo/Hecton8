@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5375021706670462490}
   - component: {fileID: 4198097526594503375}
-  - component: {fileID: 7020314308000023840}
+  - component: {fileID: 8438567880988035174}
   m_Layer: 0
   m_Name: GEN_family_coral_low__mound
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 7765675206763315634}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7020314308000023840
+--- !u!114 &8438567880988035174
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

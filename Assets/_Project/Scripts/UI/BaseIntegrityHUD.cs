@@ -160,6 +160,7 @@ namespace Hecton8.UI
             CheckIntegrityWarnings(integrity);
         }
 
+            // COLD ALLOC: string format fires at most once per WarningCooldown interval
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7419018022176660366}
   - component: {fileID: 1131986098855177611}
-  - component: {fileID: 1944891799200074197}
+  - component: {fileID: 8342134249901610845}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__frilltuft__s75-125
   m_TagString: Untagged
@@ -64,7 +64,7 @@ LODGroup:
     - renderer: {fileID: 5963046109706840546}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1944891799200074197
+--- !u!114 &8342134249901610845
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2773288162289488630}
   - component: {fileID: 1014208027966360417}
-  - component: {fileID: 2593170093630112871}
+  - component: {fileID: 8994010820642732597}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__strap
   m_TagString: Untagged
@@ -154,7 +154,7 @@ LODGroup:
     - renderer: {fileID: 5292093423936425110}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &2593170093630112871
+--- !u!114 &8994010820642732597
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

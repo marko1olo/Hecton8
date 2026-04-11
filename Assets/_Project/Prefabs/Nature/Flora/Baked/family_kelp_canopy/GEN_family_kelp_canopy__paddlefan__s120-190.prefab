@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5267215978699312101}
   - component: {fileID: 7933566962743518060}
-  - component: {fileID: 7291476029723377686}
+  - component: {fileID: 4891110460412111783}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__paddlefan__s120-190
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 252734999669017877}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7291476029723377686
+--- !u!114 &4891110460412111783
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

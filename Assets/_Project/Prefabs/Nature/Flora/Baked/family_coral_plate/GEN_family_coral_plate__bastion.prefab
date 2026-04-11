@@ -190,7 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8289525913907401882}
   - component: {fileID: 7616774016666018146}
-  - component: {fileID: 2221958192723878414}
+  - component: {fileID: 5874454783485792882}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__bastion
   m_TagString: Untagged
@@ -244,7 +244,7 @@ LODGroup:
     - renderer: {fileID: 2835692001180289722}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &2221958192723878414
+--- !u!114 &5874454783485792882
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

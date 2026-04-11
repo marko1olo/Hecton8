@@ -98,6 +98,7 @@ namespace Hecton8.World
 
             EclipseGameplayEvents.OnEclipsePhaseChanged += HandleEclipsePhase;
             AtlasSignalEvents.OnSignalPulse             += HandleSignalPulse;
+            DepthZoneEvents.OnZoneEntered               += HandleDepthZoneEntered;
 
             _currentIntensity = baseIntensity;
             ApplyShader();
@@ -113,6 +114,7 @@ namespace Hecton8.World
 
             EclipseGameplayEvents.OnEclipsePhaseChanged -= HandleEclipsePhase;
             AtlasSignalEvents.OnSignalPulse             -= HandleSignalPulse;
+            DepthZoneEvents.OnZoneEntered               -= HandleDepthZoneEntered;
 
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);
         }
@@ -169,6 +171,18 @@ namespace Hecton8.World
         {
             _pulseBurst = signalPulseBoost * intensity;
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
+        }
+
+        private void HandleDepthZoneEntered(DepthZoneProfile zone)
+        {
+            if (zone == null) return;
+            // Zone-specific biolum intensity from profile
+            float zoneBiolum = zone.ambience.biolumIntensity;
+            if (zoneBiolum > 0.01f)
+            {
+                // Blend zone biolum with current depth-based intensity
+                _targetIntensity = Mathf.Max(_targetIntensity, zoneBiolum);
+            }
         }
 
         private bool ResolveSurvivalSystem()
