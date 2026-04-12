@@ -1,6 +1,5 @@
 using UnityEngine;
 using Hecton8.Core;
-using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
 
 namespace Hecton8.World
@@ -80,9 +79,9 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
-            if (!SceneBootstrap.IsGameReady) return;
+            if (!BootstrapState.IsGameReady) return;
 
-            Transform playerT = SceneBootstrap.CurrentPlayerTransform;
+            Transform playerT = BootstrapState.CurrentPlayerTransform;
             if (playerT == null) return;
 
             // Lazy cache player Rigidbody

@@ -4,7 +4,6 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using UnityEngine;
-using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using System.Collections.Generic;
@@ -341,7 +340,7 @@ namespace Hecton8.Biolum
 
             _nextCameraResolveTime = currentTime + CameraResolveCooldown;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            if (BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
                 Camera playerCamera = playerTransform.GetComponentInChildren<Camera>();
                 if (playerCamera != null)

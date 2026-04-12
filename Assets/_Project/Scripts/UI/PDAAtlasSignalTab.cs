@@ -332,7 +332,7 @@ namespace Hecton8.UI
             Anchor(section, new Vector2(0, 0.15f), new Vector2(1, 0.30f),
                 new Vector2(0, 0), new Vector2(0, 0));
 
-            _directionLabel = CreateText("Direction", section, 10f, colorDim, TextAlignmentOptions.MiddleLeft);
+            _directionLabel = CreateText("Direction", section, 10f, colorDim, TextAlignmentOptions.MidlineLeft);
             Anchor(_directionLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
         }
@@ -346,11 +346,11 @@ namespace Hecton8.UI
             Image cBg = section.gameObject.AddComponent<Image>();
             cBg.color = new Color(0.04f, 0.06f, 0.05f, 1f);
 
-            _pulseTimerLabel = CreateText("PulseTimer", section, 11f, colorWarning, TextAlignmentOptions.MiddleRight);
+            _pulseTimerLabel = CreateText("PulseTimer", section, 11f, colorWarning, TextAlignmentOptions.MidlineRight);
             Anchor(_pulseTimerLabel.rectTransform, new Vector2(0.5f, 0), new Vector2(1, 1),
                 new Vector2(0, 0), new Vector2(-12, 0));
 
-            TextMeshProUGUI label = CreateText("Label", section, 9f, colorDim, TextAlignmentOptions.MiddleLeft);
+            TextMeshProUGUI label = CreateText("Label", section, 9f, colorDim, TextAlignmentOptions.MidlineLeft);
             label.text = "СЛЕДУЮЩИЙ ПУЛЬС:";
             Anchor(label.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));

@@ -37,8 +37,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Hecton8.Bootstrap;
-using Hecton8.Core;
 using Hecton8.Dev;
 using UnityEngine;
 
@@ -195,8 +193,8 @@ namespace Hecton8.Core
             float dt = Time.deltaTime;
             float slowTickDt = dt;
             if (Application.isPlaying &&
-                SceneBootstrap.HasActiveInstance &&
-                !SceneBootstrap.IsGameReady &&
+                BootstrapState.HasActiveInstance &&
+                !BootstrapState.IsGameReady &&
                 slowTickDt <= 0f)
             {
                 slowTickDt = Time.unscaledDeltaTime;
@@ -206,7 +204,7 @@ namespace Hecton8.Core
             {
                 _loggedFirstUpdateExecution = true;
                 UnityEngine.Debug.Log(
-                    $"[GameTickManager] first-update timeScale={Time.timeScale:0.###} deltaTime={dt:0.###} slowTickDelta={slowTickDt:0.###} unscaledDeltaTime={Time.unscaledDeltaTime:0.###} bootstrapActive={SceneBootstrap.HasActiveInstance} bootstrapReady={SceneBootstrap.IsGameReady}",
+                    $"[GameTickManager] first-update timeScale={Time.timeScale:0.###} deltaTime={dt:0.###} slowTickDelta={slowTickDt:0.###} unscaledDeltaTime={Time.unscaledDeltaTime:0.###} bootstrapActive={BootstrapState.HasActiveInstance} bootstrapReady={BootstrapState.IsGameReady}",
                     this);
             }
 #endif

@@ -187,6 +187,10 @@ namespace Hecton8.World
             public float ShelterDensityHeat;
             public float ServiceDensityHeat;
             public float GenericHeat;
+            public float SecondaryHeight;
+            public float SecondaryDepthMeters;
+            public float SecondaryCaveProximity;
+            public float SecondaryDomainWeight;
             public int BiomeIndex;
             public int ZoneDataIndex;
             public int BiomeMatrixDataIndex;
@@ -194,6 +198,7 @@ namespace Hecton8.World
             public int ResolvedZoneKind;
             public int ResolvedPattern;
             public int PreviewOverrideActive;
+            public int SecondarySampleValid;
             public int SeafloorSource;
             public int IsValid;
         }
@@ -220,6 +225,9 @@ namespace Hecton8.World
             public WorldZoneAnchor.ZoneKind resolvedZoneKind;
             public WorldProceduralPattern resolvedPattern;
             public bool isPreviewOverride;
+            public int verticalDomainIndex;
+            public float verticalDomainWeight;
+            public bool isSecondaryDomain;
             public SeafloorSource seafloorSource;
             public bool isValid;
         }
@@ -317,6 +325,7 @@ namespace Hecton8.World
         private readonly List<WorldZoneAnchor> _zoneBakeList = new List<WorldZoneAnchor>(32);
         private readonly List<HectonBiomeMatrixProfile> _biomeMatrixBakeList = new List<HectonBiomeMatrixProfile>(160);
         private readonly List<HectonBiomeFamilyProfile> _biomeFamilyBakeList = new List<HectonBiomeFamilyProfile>(48);
+        private readonly List<WorldCaveDirector.CaveEntranceHint> _caveEntranceHintBakeList = new List<WorldCaveDirector.CaveEntranceHint>(32); // COLD ALLOC: cached cave entrance hints for Burst sampler bridge.
         private readonly Dictionary<WorldZoneAnchor, int> _zoneDataIndexLookup = new Dictionary<WorldZoneAnchor, int>(32);
         private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
         private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
@@ -326,14 +335,18 @@ namespace Hecton8.World
         private NativeArray<ZoneData> _burstZoneData;
         private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
         private NativeArray<BiomeFamilyData> _burstBiomeFamilyData;
+        private NativeArray<CaveEntranceHintData> _burstCaveEntranceHints;
         private int _burstZoneDataCount;
         private int _burstBiomeMatrixDataCount;
         private int _burstBiomeFamilyDataCount;
+        private int _burstCaveEntranceHintCount;
         private bool _isDataDirty = true;
         private int _lastActiveAnchorVersion = -1;
+        private int _lastCaveEntranceHintVersion = -1;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private bool _samplingFramePrepared;
         private int _samplingFrameId;
+        private WorldCaveDirector _worldCaveDirector;
 
         internal static WorldProceduralFieldSampler ActiveRuntimeInstance { get; private set; }
 
@@ -361,6 +374,14 @@ namespace Hecton8.World
 
             public int BiomeIndex;
             public int SamplingFrameId;
+        }
+
+        private struct CaveEntranceHintData
+        {
+            public float3 SurfacePosition;
+            public float3 InteriorPosition;
+            public float EntranceRadius;
+            public float InfluenceRadius;
         }
 
         private struct LocalTerrainContext
@@ -392,6 +413,7 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<ZoneData> Zones;
             [ReadOnly] public NativeArray<BiomeMatrixData> BiomeMatrices;
             [ReadOnly] public NativeArray<BiomeFamilyData> BiomeFamilies;
+            [ReadOnly] public NativeArray<CaveEntranceHintData> CaveEntranceHints;
             [WriteOnly] public NativeArray<CellOutputData> CellOutputs;
 
             public float SlopeProbeMeters;
@@ -408,6 +430,7 @@ namespace Hecton8.World
             public int ZoneCount;
             public int BiomeMatrixCount;
             public int BiomeFamilyCount;
+            public int CaveEntranceHintCount;
             public int LittoralKarstFamilyIndex;
             public int FossilReefFamilyIndex;
             public int SedimentDriftFamilyIndex;
@@ -436,6 +459,7 @@ namespace Hecton8.World
                     Zones,
                     BiomeMatrices,
                     BiomeFamilies,
+                    CaveEntranceHints,
                     SlopeProbeMeters,
                     FieldNoiseScale,
                     DetailNoiseScale,
@@ -450,6 +474,7 @@ namespace Hecton8.World
                     ZoneCount,
                     BiomeMatrixCount,
                     BiomeFamilyCount,
+                    CaveEntranceHintCount,
                     LittoralKarstFamilyIndex,
                     FossilReefFamilyIndex,
                     SedimentDriftFamilyIndex,
@@ -486,6 +511,7 @@ namespace Hecton8.World
                 ResolvedZoneKind = (int)WorldZoneAnchor.ZoneKind.Generic,
                 ResolvedPattern = (int)WorldProceduralPattern.SedimentResources,
                 PreviewOverrideActive = 0,
+                SecondarySampleValid = 0,
                 IsValid = 0
             };
         }
@@ -495,6 +521,7 @@ namespace Hecton8.World
             NativeArray<ZoneData> zones,
             NativeArray<BiomeMatrixData> biomeMatrices,
             NativeArray<BiomeFamilyData> biomeFamilies,
+            NativeArray<CaveEntranceHintData> caveEntranceHints,
             float slopeProbeMeters,
             float fieldNoiseScale,
             float detailNoiseScale,
@@ -509,6 +536,7 @@ namespace Hecton8.World
             int zoneCount,
             int biomeMatrixCount,
             int biomeFamilyCount,
+            int caveEntranceHintCount,
             int littoralKarstFamilyIndex,
             int fossilReefFamilyIndex,
             int sedimentDriftFamilyIndex,
@@ -615,6 +643,11 @@ namespace Hecton8.World
                 output.CanyonSignal * 0.18f +
                 output.CaveProximity * 0.18f +
                 output.CompositionNoise * 0.10f);
+            ResolveSecondaryDomain(
+                ref output,
+                input.WaterSurface,
+                caveEntranceHints,
+                caveEntranceHintCount);
             bool applyPreviewPatternOverride = forcePreviewPatternOverride != 0
                 && (limitPreviewPatternOverrideToFallback == 0 || output.SeafloorSource == (int)SeafloorSource.FallbackSynthetic);
 
@@ -658,6 +691,60 @@ namespace Hecton8.World
 
             ComputeHeatChannels(ref output, biomeMatrices, biomeMatrixCount);
             return output;
+        }
+
+        private static void ResolveSecondaryDomain(
+            ref CellOutputData output,
+            float waterSurface,
+            NativeArray<CaveEntranceHintData> caveEntranceHints,
+            int caveEntranceHintCount)
+        {
+            output.SecondarySampleValid = 0;
+            output.SecondaryHeight = 0f;
+            output.SecondaryDepthMeters = 0f;
+            output.SecondaryCaveProximity = 0f;
+            output.SecondaryDomainWeight = 0f;
+
+            if (!caveEntranceHints.IsCreated || caveEntranceHintCount <= 0)
+                return;
+
+            float2 cellXZ = output.Position.xz;
+            int bestHintIndex = -1;
+            float bestHintWeight = 0f;
+
+            for (int i = 0; i < caveEntranceHintCount; i++)
+            {
+                CaveEntranceHintData hint = caveEntranceHints[i];
+                float influenceRadius = math.max(0.01f, hint.InfluenceRadius);
+                float2 interiorXZ = hint.InteriorPosition.xz;
+                float distanceSqr = math.lengthsq(cellXZ - interiorXZ);
+                if (distanceSqr > influenceRadius * influenceRadius)
+                    continue;
+
+                float verticalDelta = output.SeafloorHeight - hint.InteriorPosition.y;
+                if (verticalDelta < 2f)
+                    continue;
+
+                float distance = math.sqrt(distanceSqr);
+                float radialWeight = 1f - math.saturate(distance / influenceRadius);
+                float verticalWeight = math.saturate(verticalDelta / math.max(4f, hint.EntranceRadius + hint.InfluenceRadius));
+                float combinedWeight = radialWeight * verticalWeight;
+                if (combinedWeight <= bestHintWeight)
+                    continue;
+
+                bestHintIndex = i;
+                bestHintWeight = combinedWeight;
+            }
+
+            if (bestHintIndex < 0)
+                return;
+
+            CaveEntranceHintData bestHint = caveEntranceHints[bestHintIndex];
+            output.SecondaryHeight = bestHint.InteriorPosition.y;
+            output.SecondaryDepthMeters = math.max(0f, waterSurface - output.SecondaryHeight);
+            output.SecondaryCaveProximity = math.saturate(math.max(output.CaveProximity, 0.72f + (bestHintWeight * 0.28f)));
+            output.SecondaryDomainWeight = bestHintWeight;
+            output.SecondarySampleValid = 1;
         }
 
         private static void FillNoiseContext(ref CellOutputData output, float fieldNoiseScale, float detailNoiseScale)
@@ -1516,6 +1603,7 @@ namespace Hecton8.World
                 Zones = _burstZoneData,
                 BiomeMatrices = _burstBiomeMatrixData,
                 BiomeFamilies = _burstBiomeFamilyData,
+                CaveEntranceHints = _burstCaveEntranceHints,
                 CellOutputs = cellOutputs,
                 SlopeProbeMeters = slopeProbeMeters,
                 FieldNoiseScale = fieldNoiseScale,
@@ -1531,6 +1619,7 @@ namespace Hecton8.World
                 ZoneCount = _burstZoneDataCount,
                 BiomeMatrixCount = _burstBiomeMatrixDataCount,
                 BiomeFamilyCount = _burstBiomeFamilyDataCount,
+                CaveEntranceHintCount = _burstCaveEntranceHintCount,
                 LittoralKarstFamilyIndex = ResolveBiomeFamilyDataIndex(littoralKarstFamily),
                 FossilReefFamilyIndex = ResolveBiomeFamilyDataIndex(fossilReefFamily),
                 SedimentDriftFamilyIndex = ResolveBiomeFamilyDataIndex(sedimentDriftFamily),
@@ -1551,21 +1640,51 @@ namespace Hecton8.World
 
         public bool TryBuildFieldSample(in CellOutputData output, out FieldSample sample)
         {
-            sample = default;
+            return TryBuildFieldSample(output, 0, out sample);
+        }
+
+        public int GetFieldSampleDomainCount(in CellOutputData output)
+        {
             if (output.IsValid == 0)
+                return 0;
+
+            return output.SecondarySampleValid != 0 ? 2 : 1;
+        }
+
+        public bool TryBuildFieldSample(in CellOutputData output, int domainIndex, out FieldSample sample)
+        {
+            sample = default;
+            if (output.IsValid == 0 || domainIndex < 0)
                 return false;
+
+            if (domainIndex > 0 && output.SecondarySampleValid == 0)
+                return false;
+
+            bool secondaryDomain = domainIndex == 1;
+            float domainHeight = secondaryDomain ? output.SecondaryHeight : output.SeafloorHeight;
+            float domainDepth = secondaryDomain ? output.SecondaryDepthMeters : output.DepthMeters;
+            float domainCaveProximity = secondaryDomain ? Mathf.Max(output.CaveProximity, output.SecondaryCaveProximity) : output.CaveProximity;
+            float domainCompositionPotential = secondaryDomain
+                ? Mathf.Clamp01(
+                    Mathf.Clamp01((output.SlopeDegrees - 6f) / 42f) * 0.16f +
+                    Mathf.Abs(output.Curvature) * 0.18f +
+                    output.RidgeSignal * 0.20f +
+                    output.CanyonSignal * 0.18f +
+                    domainCaveProximity * 0.18f +
+                    output.CompositionNoise * 0.10f)
+                : output.CompositionPotential;
 
             sample = new FieldSample
             {
-                position = new Vector3(output.Position.x, output.Position.y, output.Position.z),
-                seafloorHeight = output.SeafloorHeight,
-                depthMeters = output.DepthMeters,
+                position = new Vector3(output.Position.x, domainHeight, output.Position.z),
+                seafloorHeight = domainHeight,
+                depthMeters = domainDepth,
                 slopeDegrees = output.SlopeDegrees,
                 curvature = output.Curvature,
                 ridgeSignal = output.RidgeSignal,
                 canyonSignal = output.CanyonSignal,
-                caveProximity = output.CaveProximity,
-                compositionPotential = output.CompositionPotential,
+                caveProximity = domainCaveProximity,
+                compositionPotential = domainCompositionPotential,
                 biomeIndex = output.BiomeIndex,
                 zoneDataIndex = output.ZoneDataIndex,
                 biomeMatrixDataIndex = output.BiomeMatrixDataIndex,
@@ -1577,6 +1696,9 @@ namespace Hecton8.World
                 resolvedZoneKind = (WorldZoneAnchor.ZoneKind)output.ResolvedZoneKind,
                 resolvedPattern = (WorldProceduralPattern)output.ResolvedPattern,
                 isPreviewOverride = output.PreviewOverrideActive != 0,
+                verticalDomainIndex = domainIndex,
+                verticalDomainWeight = secondaryDomain ? output.SecondaryDomainWeight : 1f,
+                isSecondaryDomain = secondaryDomain,
                 seafloorSource = (SeafloorSource)output.SeafloorSource,
                 isValid = true
             };
@@ -1662,11 +1784,19 @@ namespace Hecton8.World
         public void PrepareBurstData()
         {
             ResolveReferences();
+            WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
 
             int activeAnchorVersion = WorldZoneAnchor.ActiveAnchorVersion;
             if (activeAnchorVersion != _lastActiveAnchorVersion)
             {
                 _lastActiveAnchorVersion = activeAnchorVersion;
+                _isDataDirty = true;
+            }
+
+            int caveEntranceHintVersion = _worldCaveDirector != null ? _worldCaveDirector.EntranceHintVersion : -1;
+            if (caveEntranceHintVersion != _lastCaveEntranceHintVersion)
+            {
+                _lastCaveEntranceHintVersion = caveEntranceHintVersion;
                 _isDataDirty = true;
             }
 
@@ -1715,6 +1845,10 @@ namespace Hecton8.World
                 RegisterMatrixForBake(anchor.DominantMatrixBiome);
                 RegisterFamilyForBake(anchor.DominantBiomeFamily);
             }
+
+            _caveEntranceHintBakeList.Clear();
+            if (_worldCaveDirector != null)
+                _worldCaveDirector.CollectEntranceHints(_caveEntranceHintBakeList);
 
             EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count);
             _burstBiomeFamilyDataCount = _biomeFamilyBakeList.Count;
@@ -1781,6 +1915,20 @@ namespace Hecton8.World
                     DominantMatrixDataIndex = ResolveBiomeMatrixDataIndex(anchor.DominantMatrixBiome),
                     DominantFamilyDataIndex = ResolveBiomeFamilyDataIndex(anchor.DominantBiomeFamily),
                     RouteCritical = anchor.RouteCritical ? 1 : 0
+                };
+            }
+
+            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count);
+            _burstCaveEntranceHintCount = _caveEntranceHintBakeList.Count;
+            for (int i = 0; i < _caveEntranceHintBakeList.Count; i++)
+            {
+                WorldCaveDirector.CaveEntranceHint hint = _caveEntranceHintBakeList[i];
+                _burstCaveEntranceHints[i] = new CaveEntranceHintData
+                {
+                    SurfacePosition = hint.SurfacePosition,
+                    InteriorPosition = hint.InteriorPosition,
+                    EntranceRadius = hint.EntranceRadius,
+                    InfluenceRadius = hint.InfluenceRadius
                 };
             }
 
@@ -3372,10 +3520,13 @@ namespace Hecton8.World
                 _burstBiomeMatrixData.Dispose();
             if (_burstBiomeFamilyData.IsCreated)
                 _burstBiomeFamilyData.Dispose();
+            if (_burstCaveEntranceHints.IsCreated)
+                _burstCaveEntranceHints.Dispose();
 
             _burstZoneDataCount = 0;
             _burstBiomeMatrixDataCount = 0;
             _burstBiomeFamilyDataCount = 0;
+            _burstCaveEntranceHintCount = 0;
         }
 
         private bool TryGetZoneData(int zoneDataIndex, out ZoneData zoneData)

@@ -463,7 +463,8 @@ namespace NASAPunk.Visor
                 return;
 
             _visorRenderer.GetPropertyBlock(_mpb);
-            _mpb.SetTexture(ID_HUDTex, _hudRT != null ? _hudRT : Texture2D.blackTexture);
+            Texture hudTexture = _hudRT != null ? (Texture)_hudRT : Texture2D.blackTexture;
+            _mpb.SetTexture(ID_HUDTex, hudTexture);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = true;
         }

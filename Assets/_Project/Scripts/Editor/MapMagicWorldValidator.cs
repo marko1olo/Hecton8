@@ -39,8 +39,7 @@ namespace Hecton8.EditorTools
             WorldProceduralFieldSampler worldProceduralFieldSampler = FindSceneObjectIncludingInactive<WorldProceduralFieldSampler>();
             WorldProceduralScatterDirector worldProceduralScatterDirector = FindSceneObjectIncludingInactive<WorldProceduralScatterDirector>();
             BiomeMatrixDirector biomeMatrixDirector = FindSceneObjectIncludingInactive<BiomeMatrixDirector>();
-            Component scatterBudgetController = FindSceneObjectIncludingInactive(
-                Type.GetType("Hecton8.World.ScatterBudgetController, Assembly-CSharp"));
+            ScatterBudgetController scatterBudgetController = FindSceneObjectIncludingInactive<ScatterBudgetController>();
 
             if (mapMagic == null)
             {

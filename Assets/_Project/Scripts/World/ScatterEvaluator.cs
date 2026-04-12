@@ -15,6 +15,7 @@ using System;
 using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,78 +26,11 @@ namespace Hecton8.World
     /// Evaluates scatter grid cells and produces candidate placement data
     /// using Burst-compiled jobs. Zero managed allocations in hot path.
     /// </summary>
-    public sealed class ScatterEvaluator : IDisposable
+    internal sealed class ScatterEvaluator : IDisposable
     {
         // ══════════════════════════════════════════════════════════
         //  DATA STRUCTURES (Blittable for Jobs)
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Blittable scatter candidate for Job System transport.
-        /// Managed refs (prefab, family) resolved post-job by ScatterReconciler.
-        /// </summary>
-        public struct CandidateData
-        {
-            /// <summary>World position of the candidate placement.</summary>
-            public float3 Position;
-
-            /// <summary>World-space up-aligned rotation (Y-axis euler).</summary>
-            public float Rotation;
-
-            /// <summary>Uniform scale factor.</summary>
-            public float Scale;
-
-            /// <summary>Deterministic hash for this grid cell (cellX, cellZ).</summary>
-            public long CellKey;
-
-            /// <summary>Index into the family/rule lookup table.</summary>
-            public int FamilyIndex;
-
-            /// <summary>Scatter layer index (0=Ground, 1=Flora, 2=Debris, 3=Resources).</summary>
-            public int LayerIndex;
-
-            /// <summary>Priority score — higher = more important to place.</summary>
-            public float Score;
-
-            /// <summary>Height sample source (0=MapMagic, 1=Raycast, 2=Fallback).</summary>
-            public int HeightSource;
-
-            /// <summary>Is this candidate valid for placement?</summary>
-            public bool IsValid;
-        }
-
-        /// <summary>
-        /// Configuration data for a single evaluation pass. Immutable during job execution.
-        /// </summary>
-        public struct EvaluationConfig
-        {
-            /// <summary>Grid cell size in world units.</summary>
-            public float CellSize;
-
-            /// <summary>Scatter radius in cells from player position.</summary>
-            public int RadiusCells;
-
-            /// <summary>Player world position at time of evaluation.</summary>
-            public float3 PlayerPosition;
-
-            /// <summary>Ground placement count per cell.</summary>
-            public int GroundPlacementsPerCell;
-
-            /// <summary>Cluster placement count per cell.</summary>
-            public int ClusterPlacementsPerCell;
-
-            /// <summary>Structure cell stride (every Nth cell).</summary>
-            public int StructureCellStride;
-
-            /// <summary>Spawn cell stride (every Nth cell).</summary>
-            public int SpawnCellStride;
-
-            /// <summary>Y offset above terrain surface.</summary>
-            public float SurfaceYOffset;
-
-            /// <summary>Seed for deterministic RNG.</summary>
-            public uint Seed;
-        }
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -108,7 +42,7 @@ namespace Hecton8.World
         //  NATIVE CONTAINERS (Persistent lifetime)
         // ══════════════════════════════════════════════════════════
 
-        private NativeArray<CandidateData> _candidates;
+        private NativeArray<ScatterSimulationCandidate> _candidates;
         private NativeArray<float> _heightSamples;
         private NativeArray<int> _candidateCount;
         private bool _disposed;
@@ -122,6 +56,7 @@ namespace Hecton8.World
 
         /// <summary>Whether an evaluation job is currently scheduled.</summary>
         public bool IsJobActive => _hasActiveJob;
+        public bool IsJobCompleted => _hasActiveJob && _activeHandle.IsCompleted;
 
         /// <summary>Number of valid candidates from the last completed evaluation.</summary>
         public int LastCandidateCount => _initialized && _candidateCount.IsCreated ? _candidateCount[0] : 0;
@@ -134,7 +69,7 @@ namespace Hecton8.World
         /// Allocates persistent native containers. Call once in Awake.
         /// </summary>
         /// <remarks>
-        /// COLD ALLOC: 4096 × CandidateData (~200 KB) + 4096 × float (~16 KB) + 4 B counter.
+        /// COLD ALLOC: 4096 × ScatterSimulationCandidate (~200 KB) + 4096 × float (~16 KB) + 4 B counter.
         /// Persistent alloc justified: reused every scatter evaluation cycle for entire scene lifetime.
         /// </remarks>
         public void Initialize()
@@ -142,7 +77,7 @@ namespace Hecton8.World
             if (_initialized) return;
 
             // COLD ALLOC: MaxCandidatesPerEvaluation entries, persistent lifetime.
-            _candidates = new NativeArray<CandidateData>(
+            _candidates = new NativeArray<ScatterSimulationCandidate>(
                 MaxCandidatesPerEvaluation, Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
 
@@ -169,7 +104,7 @@ namespace Hecton8.World
         /// [REQ] Schedule() at start of frame. Complete() at end or next frame.
         /// [FORBID] Schedule()+Complete() in same method.
         /// </remarks>
-        public JobHandle ScheduleEvaluation(EvaluationConfig config, NativeArray<float> heightSamples)
+        public JobHandle ScheduleEvaluation(ScatterSimulationConfig config, NativeArray<float> heightSamples)
         {
             if (!_initialized)
             {
@@ -221,7 +156,7 @@ namespace Hecton8.World
         /// </summary>
         /// <param name="results">Output slice of valid candidates.</param>
         /// <returns>Number of valid candidates.</returns>
-        public int CompleteAndGetResults(out NativeArray<CandidateData> results)
+        public int CompleteAndGetResults(out NativeArray<ScatterSimulationCandidate> results)
         {
             results = _candidates;
 
@@ -267,7 +202,7 @@ namespace Hecton8.World
 
         /// <summary>
         /// Burst-compiled job that evaluates scatter grid cells in parallel.
-        /// Produces blittable CandidateData for main-thread reconciliation.
+        /// Produces blittable ScatterSimulationCandidate for main-thread reconciliation.
         /// </summary>
         /// <remarks>
         /// No managed refs. No GC. No string ops.
@@ -275,12 +210,12 @@ namespace Hecton8.World
         /// Physics.RaycastNonAlloc or MapMagic queries before scheduling).
         /// </remarks>
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
-        private struct ScatterCellEvaluationJob : IJobParallelFor
+        private unsafe struct ScatterCellEvaluationJob : IJobParallelFor
         {
-            [ReadOnly] public EvaluationConfig Config;
+            [ReadOnly] public ScatterSimulationConfig Config;
             [ReadOnly] public NativeArray<float> HeightSamples;
             [NativeDisableParallelForRestriction]
-            public NativeArray<CandidateData> Candidates;
+            public NativeArray<ScatterSimulationCandidate> Candidates;
             [NativeDisableParallelForRestriction]
             public NativeArray<int> CandidateCount;
             public int MaxCandidates;
@@ -332,13 +267,13 @@ namespace Hecton8.World
                     int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
                     if (slot >= MaxCandidates) return;
 
-                    Candidates[slot] = new CandidateData
+                    Candidates[slot] = new ScatterSimulationCandidate
                     {
                         Position = new float3(worldX + offsetX, terrainHeight + Config.SurfaceYOffset, worldZ + offsetZ),
                         Rotation = yRotation,
                         Scale = scale,
                         CellKey = cellKey + g,
-                        FamilyIndex = -1, // Resolved by ScatterReconciler on main thread.
+                        FamilyIndex = Config.GroundFamilyIndex,
                         LayerIndex = 0, // Ground layer.
                         Score = distanceFactor * (1.0f + rng.NextFloat(0f, 0.15f)),
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
@@ -357,13 +292,13 @@ namespace Hecton8.World
                     int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
                     if (slot >= MaxCandidates) return;
 
-                    Candidates[slot] = new CandidateData
+                    Candidates[slot] = new ScatterSimulationCandidate
                     {
                         Position = new float3(worldX + offsetX, terrainHeight + Config.SurfaceYOffset, worldZ + offsetZ),
                         Rotation = yRotation,
                         Scale = scale,
                         CellKey = cellKey + 10000 + c,
-                        FamilyIndex = -1,
+                        FamilyIndex = Config.ClusterFamilyIndex,
                         LayerIndex = 1, // Flora layer.
                         Score = distanceFactor * 0.85f * (1.0f + rng.NextFloat(0f, 0.1f)),
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
@@ -382,13 +317,13 @@ namespace Hecton8.World
                     int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
                     if (slot >= MaxCandidates) return;
 
-                    Candidates[slot] = new CandidateData
+                    Candidates[slot] = new ScatterSimulationCandidate
                     {
                         Position = new float3(worldX, terrainHeight + Config.SurfaceYOffset, worldZ),
                         Rotation = yRotation,
                         Scale = scale,
                         CellKey = cellKey + 20000,
-                        FamilyIndex = -1,
+                        FamilyIndex = Config.StructureFamilyIndex,
                         LayerIndex = 2, // Debris/Structure layer.
                         Score = distanceFactor * 0.7f,
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
@@ -406,13 +341,13 @@ namespace Hecton8.World
                     int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
                     if (slot >= MaxCandidates) return;
 
-                    Candidates[slot] = new CandidateData
+                    Candidates[slot] = new ScatterSimulationCandidate
                     {
                         Position = new float3(worldX, terrainHeight + Config.SurfaceYOffset + 0.5f, worldZ),
                         Rotation = yRotation,
                         Scale = 1.0f,
                         CellKey = cellKey + 30000,
-                        FamilyIndex = -1,
+                        FamilyIndex = Config.SpawnFamilyIndex,
                         LayerIndex = 3, // Fauna/Resource layer.
                         Score = distanceFactor * 0.6f,
                         HeightSource = terrainHeight > -9999f ? 0 : 2,

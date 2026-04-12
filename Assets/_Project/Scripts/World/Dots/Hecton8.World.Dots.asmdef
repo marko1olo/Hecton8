@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.World.Dots",
+    "rootNamespace": "Hecton8.World.Dots",
+    "references": [
+        "Hecton8.World.Contracts",
+        "Unity.Entities",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

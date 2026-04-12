@@ -46,6 +46,35 @@ Based on review of key systems against AGENTS.md guidelines:
 - **AGENTS.md Violation**: Inefficient lookup that could become slow as list grows
 - **Recommendation**: Consider using HashSet<string> for O(1) lookups if order doesn't matter, or keep list sorted for binary search
 
+### 7. PerformanceMonitor.cs (Performance Monitoring System)
+- **Location**: Line 68: `_frameTimes = new List<float>()`; Lines 105, 131: List.Add in Tick (hot path)
+- **Issue**: List<float> allocations and string formatting in logging
+- **Severity**: Major (performance monitoring system)
+- **AGENTS.md Violation**: 
+  - Line 68: List allocation without explicit capacity
+  - Lines 105, 131: List.Add in Tick (hot path)
+  - Lines 186-221: String formatting in logging methods
+- **Recommendation**: 
+  - Add capacity comment: `// COLD ALLOC: [size] for [N] entries (reason)`
+  - Consider circular buffer or pre-allocated array with index tracking
+  - Move string formatting out of hot paths or guard with #if UNITY_EDITOR || DEVELOPMENT_BUILD
+
+### 8. PerformanceBudgetController.cs (Performance Budget System)
+- **Location**: Lines 44, 47-49, 55, 145, 256-278, 325-345
+- **Issue**: Multiple allocations and string formatting
+- **Severity**: Major (performance monitoring system)
+- **AGENTS.md Violations**:
+  - Line 44: Dictionary<string, SystemBudget> without capacity
+  - Lines 47-49: Float arrays without explicit capacity comments
+  - Line 55: StringBuilder in #if block (acceptable if dev-only)
+  - Line 145: Dictionary operations in ReportSystemPerformance
+  - Lines 256-278: Array allocation in EnsureFrameHistoryCapacity
+  - Lines 325-345: String formatting in LogBudgetStatusInternal
+- **Recommendation**:
+  - Add capacity comments to all allocations
+  - Consider object pooling for SystemBudget structs
+  - Ensure string formatting only occurs in dev builds
+
 ## Systems Compliant with AGENTS.md
 - HectonPlayerMovement.cs - Proper ITickable/IFixedTickable usage, zero GC in hot paths
 - FlashlightTool.cs - Proper event subscription management, zero GC in hot paths

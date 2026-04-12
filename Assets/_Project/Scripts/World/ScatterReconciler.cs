@@ -4,7 +4,7 @@
 //
 // ARCHITECTURE:
 //   Extracted from WorldProceduralScatterDirector (11,845-line monolith).
-//   Consumes blittable CandidateData from ScatterEvaluator (Job output),
+//   Consumes blittable ScatterSimulationCandidate from simulation backend output,
 //   resolves managed references (prefabs, families), and drives
 //   ObjectPoolManager.Spawn/Despawn for placement lifecycle.
 //
@@ -31,7 +31,7 @@ namespace Hecton8.World
     /// Spawns new placements, despawns stale ones, and tracks residency
     /// via a key-indexed managed array. All operations on main thread only.
     /// </summary>
-    public sealed class ScatterReconciler : IDisposable
+    internal sealed class ScatterReconciler : IDisposable
     {
         // ══════════════════════════════════════════════════════════
         //  DATA STRUCTURES
@@ -43,7 +43,7 @@ namespace Hecton8.World
         /// </summary>
         public struct LivePlacement
         {
-            /// <summary>Unique cell key matching CandidateData.CellKey.</summary>
+            /// <summary>Unique cell key matching ScatterSimulationCandidate.CellKey.</summary>
             public long CellKey;
 
             /// <summary>Spawned GameObject instance (from ObjectPoolManager).</summary>
@@ -128,20 +128,20 @@ namespace Hecton8.World
         /// Reconciles scatter evaluation output against live scene state.
         /// Spawns new candidates, retains existing matches, despawns stale entries.
         /// </summary>
-        /// <param name="candidates">Candidate array from ScatterEvaluator.</param>
+        /// <param name="candidates">Candidate array from the active scatter simulation backend.</param>
         /// <param name="candidateCount">Number of valid candidates in the array.</param>
-        /// <param name="resolvePrefab">
-        /// Callback to resolve a candidate's FamilyIndex + LayerIndex to a prefab.
-        /// Must return null if no prefab is available (skip placement).
+        /// <param name="prefabResolver">
+        /// Resolver for candidate FamilyIndex + LayerIndex to prefab mapping.
+        /// Must report false when no prefab is available.
         /// </param>
         /// <remarks>
         /// MAIN THREAD ONLY. Zero GC in hot path.
         /// [FORBID] Calling from Job/Task/Thread.
         /// </remarks>
         public void Reconcile(
-            NativeArray<ScatterEvaluator.CandidateData> candidates,
+            NativeArray<ScatterSimulationCandidate> candidates,
             int candidateCount,
-            Func<int, int, GameObject> resolvePrefab)
+            IScatterPrefabResolver prefabResolver)
         {
             if (!_initialized || _disposed) return;
 
@@ -161,7 +161,7 @@ namespace Hecton8.World
             int validCount = math.min(candidateCount, candidates.Length);
             for (int c = 0; c < validCount; c++)
             {
-                ScatterEvaluator.CandidateData candidate = candidates[c];
+                ScatterSimulationCandidate candidate = candidates[c];
                 if (!candidate.IsValid) continue;
 
                 int existingIndex = FindPlacementIndex(candidate.CellKey);
@@ -176,9 +176,9 @@ namespace Hecton8.World
                 else
                 {
                     // New candidate — attempt spawn.
-                    if (resolvePrefab == null) continue;
-
-                    GameObject prefab = resolvePrefab(candidate.FamilyIndex, candidate.LayerIndex);
+                    if (prefabResolver == null) continue;
+                    if (!prefabResolver.TryResolvePrefab(candidate.FamilyIndex, candidate.LayerIndex, out GameObject prefab))
+                        continue;
                     if (prefab == null) continue;
 
                     ObjectPoolManager poolManager = ObjectPoolManager.Instance;

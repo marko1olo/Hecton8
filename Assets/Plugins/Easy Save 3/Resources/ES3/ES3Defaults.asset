@@ -37,7 +37,10 @@ MonoBehaviour:
     - BakeryRuntimeAssembly
     - Crest
     - Den.Tools
+    - EasySave3
     - GPUInstancer
+    - Hecton8.Core
+    - Hecton8.Input.Generated
     - JBooth.MicroSplat.Core
     - Lofelt.NiceVibrations
     - Lofelt.NiceVibrations.Demo
@@ -61,6 +64,7 @@ MonoBehaviour:
     - ShapesRuntime
     - Tayx.Graphy
     - TechniePhysicsCreator
+    - VolumetricLightBeam
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1

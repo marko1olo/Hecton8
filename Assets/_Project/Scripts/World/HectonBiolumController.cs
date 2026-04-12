@@ -15,7 +15,6 @@
 // ============================================================================
 
 using Hecton8.AtlasSignal;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
@@ -190,7 +189,7 @@ namespace Hecton8.World
             if (survivalSystem != null)
                 return true;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
+            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
                 return false;

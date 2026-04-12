@@ -1,0 +1,14 @@
+{
+    "name": "Hecton8.Bootstrap.Contracts",
+    "rootNamespace": "Hecton8.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

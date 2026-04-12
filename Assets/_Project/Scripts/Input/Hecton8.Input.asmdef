@@ -1,0 +1,17 @@
+{
+    "name": "Hecton8.Input",
+    "rootNamespace": "Hecton8.Input",
+    "references": [
+        "Hecton8.Input.Generated",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

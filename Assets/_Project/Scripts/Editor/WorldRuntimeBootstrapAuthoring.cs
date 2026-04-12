@@ -624,6 +624,7 @@ namespace Hecton8.EditorTools
             if (rockManager != null && rockManager.TryGetComponent(out GPUInstancer.GPUInstancerPrefabManager boundManager))
                 return boundManager;
 
+            const string RockRuntimeRootName = "Rock_Runtime";
             GameObject runtimeRoot = GameObject.Find($"{ManagersRootName}/{RockRuntimeRootName}");
             if (runtimeRoot != null && runtimeRoot.TryGetComponent(out GPUInstancer.GPUInstancerPrefabManager runtimeManager))
                 return runtimeManager;

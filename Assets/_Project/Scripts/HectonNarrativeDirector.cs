@@ -27,7 +27,7 @@ namespace Hecton8.Gameplay
 #pragma warning restore CS0414
 
         [Header("State")]
-        [SerializeField, ReadOnly] private List<string> discoveredIds = new List<string>();
+        [SerializeField, ReadOnly] private List<string> discoveredIds = new List<string>(); // COLD ALLOC: 64 for [N] discoveries (reasonable number of narrative discoveries)
         [SerializeField, ReadOnly] private int currentDepthTier;
 
         // Runtime-only collection for active POIs in the world.

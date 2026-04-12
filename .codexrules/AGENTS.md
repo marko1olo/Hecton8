@@ -23,7 +23,7 @@ AA commercial product — Master Grade, enterprise-level, visually premium.
 
 | System | Status |
 |---|---|
-| Scene bootstrap | Architecturally required; BuildSettings stale (only 02_HECTON_WORLD in EditorBuildSettings) |
+| Scene bootstrap | Architecturally required; BuildSettings aligned (00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD) |
 | Save shell | Live — manual 3-slot (slot_1/2/3) |
 | Scatter | Live — main CPU offender |
 | VRAM / RT | RED — PENDING VERIFICATION (live probe: ~966 MB tex + ~531 MB RT) |
@@ -39,7 +39,7 @@ Normative: 00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD.
 Single-scene load via SceneManager.LoadScene/LoadSceneAsync.
 01_ORBIT exists as scene asset but is not in the main handoff.
 sandbox/ and _Recovery are not production.
-BuildSettings currently stale — contains only 02_HECTON_WORLD.
+BuildSettings currently aligned — contains 00_BOOTSTRAP, 01_MAIN_MENU, 02_HECTON_WORLD.
 
 [REQ] Heavy assets (terrain, ocean, caves) — Addressables async only.
 [FORBID] LoadSceneAsync(activateOnLoad:true) without loading screen — main thread freeze.
@@ -106,7 +106,7 @@ If task requests MasterAudio event names — confirm first; first-party does not
 Backend: Easy Save 3. Slots: slot_1/slot_2/slot_3. Key prefix = save_.
 Category auto-detected (auto/quick/manual). Files: .sav · .meta · .bak/.bakN · .tmp.
 Metadata: SlotName/GameVersion/Timestamp/PlayTimeSeconds/SceneName/PlayerPosition/Checksum.
-Migration: SaveDataMigration exists. Autosave — do not assume without code/log proof.
+Migration: SaveDataMigration exists. Autosave: do not assume — verify via code/log only.
 [REQ] Atomic: .tmp→verify→rename .sav. Never write directly to .sav. Create .bak BEFORE overwrite.
 [REQ] On load: verify checksum; mismatch = use .bak.
 [FORBID] Save during scene transitions — SaveEvents.OnSaveStarted must block.
@@ -122,10 +122,7 @@ FlashlightEvents : OnToggled, OnBatteryDepleted, OnOverheat
 PDAEvents       : OnOpened, OnClosed, OnTabChanged
 ModuleStatusEvents : OnModuleEnter, OnModuleExit
 ScanEvents      : OnScanTriggered, OnNodeFound, OnEntryDiscovered
-[REQ] All static Event Bus calls: main thread only.
-[FORBID] Invoke static events from Job/Task/Thread/async without main-thread routing.
-[REQ] Job result → NativeArray → read next Tick (main thread) → invoke.
-[FORBID] static event += / -= from non-main thread.
+[REQ] All Event Bus calls: main thread only. Job result → NativeArray → read next Tick → invoke. [FORBID] invoke/subscribe from Job/Thread/async.
 
 ### Third-Party
 MapMagic (terrain, via MapMagicBridge) · Crest (ocean, URP) · A* Pathfinding (AI)
@@ -144,7 +141,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 | Category | Forbidden | Allowed |
 |---|---|---|
 | Allocation | new class/List/Dict/array | new struct (Vector3/Color/Quaternion) |
-| Collections | LINQ (.Where .Select .Any .FirstOrDefault .ToList) · foreach on Dictionary/IEnumerable | for(int i) · foreach on List<T> or T[] |
+| Collections | LINQ (.Where .Select .Any .FirstOrDefault .ToList) · foreach on Dictionary/IEnumerable | for(int i) · foreach on List<T> or T[] · foreach on Dictionary<K,V> via explicit struct enumerator: var e=dict.GetEnumerator(); while(e.MoveNext()){} (no boxing) |
 | Strings | concat / interpolation / .ToString() / Enum.ToString/Parse | pre-cached strings |
 | Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
 | Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / Singleton.Instance |
@@ -167,9 +164,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 
 [FORBID] Update/LateUpdate/FixedUpdate in gameplay code.
 [REQ] Use ITickable/IFixedTickable/ISlowTickable via GameTickManager.
-[REQ] Register/Unregister pattern:
-void OnEnable()  { if (GameTickManager.Instance != null && !_registered) { GameTickManager.Instance.Register(this);   _registered = true; } }
-void OnDisable() { if (GameTickManager.Instance != null &&  _registered) { GameTickManager.Instance.Unregister(this); _registered = false; } }
+[REQ] Register/Unregister pattern: OnEnable→Register (guard: Instance!=null && !_registered), OnDisable→Unregister (guard: Instance!=null && _registered). Bool _registered prevents double calls.
 [EXCEPT] Update allowed: #if UNITY_EDITOR · camera controllers (post-Tick) · third-party timing wrappers · UI menu controllers (prefer ITickable).
 [FORBID] Time.deltaTime/fixedDeltaTime inside ITickable — use dt/fdt parameter only (tick scaling, dilation, testing).
 
@@ -183,6 +178,8 @@ void OnDisable() { if (GameTickManager.Instance != null &&  _registered) { GameT
 
 [FORBID] renderer.material (creates leaked copy).
 [REQ] MaterialPropertyBlock + renderer.Get/SetPropertyBlock. Cache Shader.PropertyToID as static readonly int.
+[REQ] Allocate once in Awake as field: private readonly MaterialPropertyBlock _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: self
+[FORBID] new MaterialPropertyBlock() in Tick or any hot path.
 
 ### 5. COROUTINES → STATE MACHINES
 
@@ -192,7 +189,8 @@ void OnDisable() { if (GameTickManager.Instance != null &&  _registered) { GameT
 ### 6. COLD ALLOCATIONS
 
 [FORBID] List/Dict/array in Awake/Start without explicit max capacity.
-[REQ] // COLD ALLOC: [size] for [N] entries (reason).
+[REQ] COLD ALLOC canonical format: // COLD ALLOC: Type[capacity] — reason — owner: ClassName
+[FORBID] Variants "cold alloc" / "Cold Alloc" / "//COLD" — only canonical format above.
 [REQ] Cold alloc > 1 MB: state exact size + justify why not lazy.
 
 ### 7. COLLECTION DETERMINISM
@@ -202,17 +200,14 @@ void OnDisable() { if (GameTickManager.Instance != null &&  _registered) { GameT
 
 ### 8. PHYSICS — NONALLOC ONLY
 
-``
-private readonly RaycastHit[] _hitBuffer = new RaycastHit[16]; // COLD ALLOC
-int count = Physics.RaycastNonAlloc(ray, _hitBuffer, maxDist, layerMask);
-``
-Same rule: OverlapSphereNonAlloc · SphereCastNonAlloc · BoxCastNonAlloc.
+[REQ] Pre-allocate buffer once (COLD ALLOC), use NonAlloc variant every call.
+Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · BoxCastNonAlloc.
 
 ### 9. DEBUG LOG HYGIENE
 
 [FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
 [REQ] Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional("UNITY_EDITOR")].
-[REQ] High-frequency logging systems (SlowTick diagnostics, scatter stats) — additional throttle: no more than once every 5 seconds via static float _nextLogTime.
+[REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
 [FORBID] LogWarning / LogError in ISlowTickable without throttle — SlowTick is called ~2 times/sec, which is 120 log entries/min.
 [REQ] Development Build — check Console for log spam before each milestone.
 [EXCEPT] One-time critical init errors — allowed without guard.
@@ -241,22 +236,22 @@ Same rule: OverlapSphereNonAlloc · SphereCastNonAlloc · BoxCastNonAlloc.
 
 [FORBID] Unbounded Texture2D/RT/Sprite/Material/Mesh/byte[]/NativeArray/List/Dict caches without owner, cap, eviction, and dispose path.
 [FORBID] RT/Texture2D/native containers without guaranteed Release/Destroy/Dispose on shutdown/despawn/unload.
-[REQ] NativeArray/NativeList/NativeHashMap: Dispose() in OnDisable or OnDestroy.
+[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: (1) jobHandle.Complete() → (2) nativeArray.Dispose(). Reversed order = native memory corruption.
 [REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
 [REQ] Allocator.Temp — single method only (never a field). Allocator.TempJob — single job cycle.
 [REQ] Every cache: owner · max size · eviction strategy · invalidation trigger.
 [REQ] Memory fix must preserve or improve frame time. Memory drop + CPU spike = REGRESSION.
 ### [RULE] JOBS / BURST
 
-[REQ] Schedule() — start of frame or SlowTick. Complete() — end of same or next frame.
-[FORBID] Schedule()+Complete() in same method (= synchronous, pointless).
-[REQ] All NativeArrays passed to Job: Dispose() after Complete().
-[REQ] Burst Jobs: no managed refs (class/string/delegate).
+[REQ] Schedule() at frame/SlowTick start. Complete() end of same or next frame.
+[FORBID] Schedule()+Complete() in same Tick/hot path method.
+[EXCEPT] Awake/Start one-time init: allowed with // COLD SYNC JOB + justification.
+[REQ] NativeArrays: Dispose() after Complete(). Burst: no managed refs.
 [FORBID] JobHandle.Complete() in hot path without measured justification.
 ### 14. SCRIPTABLEOBJECT RUNTIME MUTATION
 
 [FORBID] Mutating SO fields at runtime (persists in Editor).
-[REQ] var runtime = Instantiate(originalSO); // COLD ALLOC — or separate runtime data class seeded from SO.
+[REQ] Instantiate(originalSO) // COLD ALLOC — or separate runtime data class seeded from SO.
 
 ### 15. EVENT SUBSCRIPTION LEAKS
 
@@ -363,12 +358,7 @@ Same rule: OverlapSphereNonAlloc · SphereCastNonAlloc · BoxCastNonAlloc.
 
 ### [RULE] ARCHITECTURE FIRST
 
-Before writing ANY logic, answer:
-1. Does this belong here, or am I stuffing it into the nearest large file?
-2. Is there already an owner system for this responsibility?
-3. Am I mixing runtime placement, editor authoring, proxy generation, and baking in one class?
-4. Am I importing external subsystem wholesale instead of mapping into existing stack?
-5. Is this file already large/fragile — should this be a new focused helper?
+Before writing ANY logic: Does this belong here? · Is there already an owner? · Am I mixing runtime/editor/proxy/baking? · Am I importing external subsystem wholesale? · Is this file already large/fragile?
 
 [FORBID] God objects. Mixed ownership. Architecture drift behind "just authoring."
 [REQ] New subsystem — state it explicitly, justify why existing owner cannot hold it.
@@ -396,18 +386,10 @@ External patch: verify → implement FULLY (not paraphrased) → explain any dev
 ## CODE STYLE
 
 ### Naming
-_privateField · _serializedPrivate (underscore prefix)
-PublicField · PropertyName · MethodName (PascalCase)
-localVariable (camelCase) · const SomeConstant (PascalCase) · static readonly int _StaticField
+_privateField · _serializedPrivate · PublicField · PropertyName · MethodName (PascalCase) · localVariable (camelCase) · const SomeConstant (PascalCase) · static readonly int _StaticField
 
 ### Attributes
-``
-[Header("── Section ──────────────────")]
-[Tooltip("description")]   // on all [SerializeField]
-[SerializeField, Range()]  // where applicable
-[DisallowMultipleComponent]
-[RequireComponent(typeof(X))]
-``
+[Header("── Section ──────────────────")] · [Tooltip("description")] on all [SerializeField] · [SerializeField, Range()] where applicable · [DisallowMultipleComponent] · [RequireComponent(typeof(X))]
 sealed class unless inheritance intended.
 
 ### File Section Order
@@ -425,23 +407,14 @@ XML docs on all public members (summary · param · remarks).
 ### [PROTOCOL] MANDATORY PRE-CODE ANALYSIS
 
 Before ANY code generation, output [ANALYSIS] block:
-1. Target: exact log line or bug
-2. Affected systems: classes touched
-3. Zero GC proof: caching / NativeArray / no new
-4. State check: dict/pool empty? SlowTick called twice? Post-OnDisable?
-5. Rule quote: which directive you're following
+Target · Affected systems · Zero GC proof · State check (dict/pool empty? double SlowTick? post-OnDisable?) · Rule quote.
 
 WITHOUT THIS BLOCK — CODE IS REJECTED.
 
 ### Pre-Code Checklist
-1. Read FULL task before writing anything.
-2. Grep existing systems — find related classes, interfaces, managers.
-3. Identify dependencies: managers, interfaces, events.
-4. Find reference code — use similar class as template.
-5. Plan edge cases: pooled reuse, null manager, null deps, post-OnDisable.
+Read full task · Grep existing systems · Identify dependencies · Find reference class as template · Plan edge cases (pooled reuse, null manager, null deps, post-OnDisable).
 
 ### Post-Code Self-Review Checklist
-``
 □ new in Tick?                → cache
 □ StartCoroutine?             → ITickable state machine
 □ Update()?                    → ITickable (unless exception applies)
@@ -477,9 +450,10 @@ WITHOUT THIS BLOCK — CODE IS REJECTED.
 □ Particle GetParticles with new array? → pre-allocate
 □ Addressables.Load without Release?    → track + release
 □ Raw Instantiate()?          → ObjectPoolManager.Spawn
+□ new MaterialPropertyBlock() in Tick?  → Awake cache _mpb
+□ jobHandle.Complete() before Dispose()? → verify order
 □ Renderer.materials (alloc)?     → sharedMaterials
 □ gameObject.name in hot path?     → cache
-``
 
 ### Compilation Guard
 □ All using present (UnityEngine, Hecton8.*, System, etc.)
@@ -498,44 +472,26 @@ For Easy Save 3: add [ES3NonSerializable] where needed.
 ## VERIFICATION PROTOCOLS
 
 ### [RULE] GC VALIDATION
-[GC VERIFICATION]
-BEFORE: X KB/frame (method: Y) · AFTER: Z KB/frame · STATUS: 0 B / −N% / no change
-If not 0 B → PENDING VERIFICATION. Propose concrete next step confirmed by Profiler.
-[FORBID] Fake blocks (BEFORE: N/A). No real measurements → say "measured proof absent", model risk honestly.
+Format: BEFORE: X KB/frame · AFTER: Z KB/frame · STATUS: 0 B / −N% / no change.
+If not 0 B → PENDING VERIFICATION + next step. No real measurements → "measured proof absent". [FORBID] BEFORE: N/A.
 
 ### [RULE] REGRESSION GUARD
-[REGRESSION CHECK] BEFORE → AFTER (Mean GC · Peak GC · Reserved)
-STATUS: NO REGRESSION / REGRESSION DETECTED in [X]
-Metric > 10% worse → revert, report, propose different approach.
+[REGRESSION CHECK] BEFORE→AFTER (Mean GC · Peak GC · Reserved). >10% worse → revert + report. STATUS: NO REGRESSION / REGRESSION DETECTED in [X].
 
 ### [RULE] MEMORY RETENTION GUARD
-Baseline: idle 10 min (edit mode if editor-side, play mode if runtime-side).
-Capture: App Resident Memory · Texture Memory · GC Reserved Memory · Total Reserved Memory.
-Compare slope, not one snapshot. Memory flat but CPU worse = REGRESSION DETECTED.
+Baseline: idle 10 min. Capture: App Resident · Texture · GC Reserved · Total Reserved. Compare slope, not snapshot. Memory flat + CPU worse = REGRESSION DETECTED.
 
 ### [RULE] MANDATORY REGRESSION MODEL
-Every technical report must include:
-- REGRESSION MODEL: what could worsen in CPU, GC, memory, cadence, correctness, or readability
-- HOT PATH IMPACT: methods cheaper/dearer and why
-- FAILURE MODES: edge cases the patch could break
-- WHY KEPT / REJECTED
+Every technical report must include: REGRESSION MODEL (CPU/GC/memory/cadence/correctness) · HOT PATH IMPACT · FAILURE MODES · WHY KEPT/REJECTED.
 
 ### [PROTOCOL] MCP SERVER
-If MCP: run scene → wait 5 s → read GCMonitor logs → decide.
-MCP must inject AGENTS.md as system message every call.
-No logs → ask user to add GCMonitor. No MCP → request Profiler screenshot before+after.
-WITHOUT numbers — never declare solved.
+MCP: run scene → wait 5 s → read GCMonitor → decide. Inject AGENTS.md every call. No logs → ask for GCMonitor. No MCP → Profiler screenshot before+after. WITHOUT numbers — never declare solved.
 
 ### [REQ] AUTOMATED SELF-TEST PROTOCOL
-After writing any system:
-1. Exact repro steps.
-2. Expected GCMonitor output (0 B in hot paths).
-3. Edge cases: spam interact ×20, open/close UI ×10, despawn during Tick, null manager at start.
-4. MCP available: execute 1-3 automatically, report. No MCP: copy-paste test checklist.
+After writing any system: Exact repro steps · Expected GCMonitor output (0 B hot paths) · Edge cases (spam interact ×20, UI ×10, despawn during Tick, null manager) · MCP: auto-execute + report; no MCP: checklist.
 
 ### [RULE] STALL PROTOCOL (2+ failed passes)
-1. Document: methods changed · GC before/after · why no effect.
-2. Revert. 3. Different approach. 4. Bundle: raw logs + facts/hypotheses + key sources. 5. Offer external review.
+Document changes + GC delta + reason → Revert → Different approach → Bundle logs/facts/hypotheses → Offer external review.
 
 ---
 
@@ -587,9 +543,8 @@ After writing any system:
 
 ## COMMUNICATION
 
-Response: What was wrong → What I did → In-game result → What was verified.
-[REQ] Simple language first; jargon only if unavoidable.
-[REQ] Separate: Unity-verified vs code-review only. No metrics → regression model, not fake tables.
+Response format: What was wrong → What I did → In-game result → What was verified.
+[REQ] Simple language. Separate Unity-verified from code-review-only. No metrics → regression model, not fake tables.
 ---
 
 ## ABSOLUTELY FORBIDDEN
@@ -600,9 +555,13 @@ Response: What was wrong → What I did → In-game result → What was verified
 [FORBID] Change public API without permission — list deps first, confirm.
 [FORBID] Editor tools unless asked. async/await + destroyCancellationToken on pooled objects.
 [FORBID] UnityWebRequest without explicit task. [ExecuteInEditMode]/[ExecuteAlways] without need.
-[FORBID] async void in gameplay (uncaught exceptions). Awaitable/Task in hot paths → ITickable state machine.
-[EXCEPT] async only: bootstrap load · SaveManager internals · Addressables — outside hot path, with CancellationToken on scene unload.
-[FORBID] DontDestroyOnLoad without instruction. Singleton base classes — use existing Instance pattern.
+[FORBID] async void (uncaught exceptions) — use async Task only. Awaitable/Task in hot paths → ITickable state machine.
+[EXCEPT] async only: bootstrap load · SaveManager internals · Addressables — outside hot path.
+[REQ] Non-pooled MonoBehaviour async: destroyCancellationToken with WithCancellation().
+[FORBID] async on pooled objects — destroyCancellationToken does not fire on Despawn → leak. Use ITickable + handle.IsDone instead.
+[FORBID] DontDestroyOnLoad without instruction.
+[FORBID] Singleton base classes (MonoSingleton<T> etc.).
+[REQ] Singleton pattern — only explicit field: private static T _instance; public static T Instance => _instance; Awake: null-check→Destroy duplicate→assign; OnDestroy: null if self.
 [FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.
 [FORBID] Exceptions in gameplay — LogError + disable + continue. Complex Mesh Collider without justification.
 [FORBID] Guessing/inventing. Unclear → ASK.

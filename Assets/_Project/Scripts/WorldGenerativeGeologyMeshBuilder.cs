@@ -113,8 +113,10 @@ namespace Hecton8.World
             float[] sizes = new float[count];
             float[] heights = new float[count];
 
+            // COLD ALLOC: List[256/512] for procedural mesh vertex data — owner: BuildRockCluster
             List<Vector3> verts0 = new List<Vector3>(256);
             List<int> tris0 = new List<int>(512);
+            // COLD ALLOC: List[128/256] for LOD1 mesh data — owner: BuildRockCluster
             List<Vector3> verts1 = new List<Vector3>(128);
             List<int> tris1 = new List<int>(256);
 
@@ -426,6 +428,7 @@ namespace Hecton8.World
             float width, float height, float depth, float overhang,
             int seed, int sub, float noiseAmp)
         {
+            // COLD ALLOC: List[512/1024] for shelf mesh vertex data — owner: BuildShelfMesh
             List<Vector3> verts = new List<Vector3>(512);
             List<int> tris = new List<int>(1024);
 

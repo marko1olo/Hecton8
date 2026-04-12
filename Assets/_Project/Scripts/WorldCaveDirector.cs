@@ -36,6 +36,22 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4035)]
     public sealed class WorldCaveDirector : MonoBehaviour, ISlowTickable
     {
+        internal readonly struct CaveEntranceHint
+        {
+            public CaveEntranceHint(Vector3 surfacePosition, Vector3 interiorPosition, float entranceRadius, float influenceRadius)
+            {
+                SurfacePosition = surfacePosition;
+                InteriorPosition = interiorPosition;
+                EntranceRadius = entranceRadius;
+                InfluenceRadius = influenceRadius;
+            }
+
+            public Vector3 SurfacePosition { get; }
+            public Vector3 InteriorPosition { get; }
+            public float EntranceRadius { get; }
+            public float InfluenceRadius { get; }
+        }
+
         private enum CaveBiomePresetKind : byte
         {
             Generic = 0,
@@ -93,12 +109,14 @@ namespace Hecton8.World
         private readonly HashSet<long> _activeCaveKeys = new HashSet<long>();
         private readonly Dictionary<long, CaveInstance> _caveInstances = new Dictionary<long, CaveInstance>(32);
         private readonly Dictionary<long, PendingCaveSpawnState> _pendingCaveSpawns = new Dictionary<long, PendingCaveSpawnState>(16);
+        private readonly Dictionary<long, CaveEntranceHint[]> _caveEntranceHints = new Dictionary<long, CaveEntranceHint[]>(32); // COLD ALLOC: cached entrance hints for field sampling, capped by active caves.
         private readonly List<Vector3> _candidateBuffer = new List<Vector3>(8); // COLD ALLOC: buffered cave candidates, capped by maxCavesPerBiome.
         private readonly List<long> _staleCaveKeyBuffer = new List<long>(16); // COLD ALLOC: stale cave cleanup buffer, capped by active cave count around player.
         private readonly List<long> _pendingCaveKeyBuffer = new List<long>(16); // COLD ALLOC: buffered pending cave keys for deterministic cancel/cleanup without mutating dictionaries during enumeration.
         private CachedBiomeRuntimeContext _cachedBiomeRuntimeContext;
         private float _lastEvaluationTime = float.NegativeInfinity;
         private CancellationTokenSource _lifetimeCancellation;
+        private int _entranceHintVersion;
         private static readonly int _CrustIntensityId = Shader.PropertyToID("_CrustIntensity");
         private static readonly int _CrustColorId = Shader.PropertyToID("_CrustColor");
         private static readonly int _CrustRoughnessId = Shader.PropertyToID("_CrustRoughness");
@@ -136,6 +154,8 @@ namespace Hecton8.World
         private static readonly CavePreset _AbyssPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Abyss);
         private static readonly CavePreset _GenericPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Generic);
 
+        internal static WorldCaveDirector ActiveRuntimeInstance { get; private set; }
+
         /// <summary>Represents an active cave instance in the world.</summary>
         public struct CaveInstance
         {
@@ -148,6 +168,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
+
             if (_CaveSurfacePropertyBlock == null)
                 _CaveSurfacePropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared cave-surface block for dressing overlays.
 
@@ -186,6 +208,12 @@ namespace Hecton8.World
 
             CancelLifetimeCancellation();
             CancelAllPendingSpawns();
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -645,6 +673,26 @@ namespace Hecton8.World
             return _caveInstances.Values;
         }
 
+        internal int EntranceHintVersion => _entranceHintVersion;
+
+        internal void CollectEntranceHints(List<CaveEntranceHint> buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Clear();
+            Dictionary<long, CaveEntranceHint[]>.Enumerator enumerator = _caveEntranceHints.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                CaveEntranceHint[] hints = enumerator.Current.Value;
+                if (hints == null || hints.Length == 0)
+                    continue;
+
+                for (int i = 0; i < hints.Length; i++)
+                    buffer.Add(hints[i]);
+            }
+        }
+
         private void SpawnEntranceVisualCues(CaveInstance instance, CavePreset preset, Vector3 position, uint seed)
         {
             if (instance.volume == null)
@@ -671,6 +719,8 @@ namespace Hecton8.World
                     SpawnEntranceMarker(markerRoot, usedMarkerCount, entrance.surfacePosition, entrance.inwardDirection, instance);
                     usedMarkerCount++;
                 }
+
+                CacheEntranceHints(instance.key, entrances);
 
                 DisableUnusedChildren(markerRoot, usedMarkerCount);
             }
@@ -1082,6 +1132,35 @@ namespace Hecton8.World
 
             _caveInstances.Remove(caveKey);
             _activeCaveKeys.Remove(caveKey);
+            if (_caveEntranceHints.Remove(caveKey))
+                _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
+        }
+
+        private void CacheEntranceHints(long caveKey, NativeArray<CaveEntrance> entrances)
+        {
+            if (entrances.Length <= 0)
+            {
+                if (_caveEntranceHints.Remove(caveKey))
+                    _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
+                return;
+            }
+
+            CaveEntranceHint[] hints = new CaveEntranceHint[entrances.Length]; // COLD ALLOC: one hint array per cave, owner: WorldCaveDirector
+            for (int i = 0; i < entrances.Length; i++)
+            {
+                CaveEntrance entrance = entrances[i];
+                Vector3 surfacePosition = entrance.surfacePosition;
+                Vector3 interiorPosition = surfacePosition + ((Vector3)entrance.inwardDirection * entrance.funnelLength);
+                float influenceRadius = Mathf.Max(entrance.radius * 2.5f, entrance.funnelLength + entrance.innerRadius);
+                hints[i] = new CaveEntranceHint(
+                    surfacePosition,
+                    interiorPosition,
+                    entrance.radius,
+                    influenceRadius);
+            }
+
+            _caveEntranceHints[caveKey] = hints;
+            _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
         }
 
         private void RefreshBiomeRuntimeContext(HectonBiomeFamilyProfile biomeFamily)

@@ -79,27 +79,26 @@ namespace Hecton8.Bootstrap
         /// Indicates that bootstrap fully completed and heavyweight runtime world
         /// systems may start reacting to the final player state.
         /// </summary>
-        public static bool IsGameReady { get; private set; }
+        public static bool IsGameReady => BootstrapState.IsGameReady;
 
         /// <summary>
         /// Indicates that a live bootstrap instance currently owns scene startup.
         /// Runtime systems may use this to avoid premature player searches while
         /// bootstrap intentionally keeps the player inactive.
         /// </summary>
-        public static bool HasActiveInstance { get; private set; }
+        public static bool HasActiveInstance => BootstrapState.HasActiveInstance;
         internal static SceneBootstrap ActiveInstance { get; private set; }
 
         /// <summary>
         /// Last known player GameObject managed by bootstrap.
         /// </summary>
-        public static GameObject CurrentPlayerObject { get; private set; }
+        public static GameObject CurrentPlayerObject => BootstrapState.CurrentPlayerObject;
 
         /// <summary>
         /// Fast-access player transform for runtime systems that should avoid
         /// repeated scene-wide lookups.
         /// </summary>
-        public static Transform CurrentPlayerTransform =>
-            CurrentPlayerObject != null ? CurrentPlayerObject.transform : null;
+        public static Transform CurrentPlayerTransform => BootstrapState.CurrentPlayerTransform;
 
         /// <summary>
         /// Выстреливает при критической ошибке инициализации
@@ -113,10 +112,8 @@ namespace Hecton8.Bootstrap
         {
             OnGameReady = null;
             OnBootstrapFailed = null;
-            IsGameReady = false;
-            HasActiveInstance = false;
+            BootstrapState.Reset();
             ActiveInstance = null;
-            CurrentPlayerObject = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -287,7 +284,7 @@ namespace Hecton8.Bootstrap
             }
 
             ActiveInstance = this;
-            HasActiveInstance = true;
+            BootstrapState.PublishBootstrapPresence(true);
             PublishPlayerRuntimeReference();
         }
 
@@ -301,7 +298,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private async void Start()
         {
-            IsGameReady = false;
+            BootstrapState.PublishGameReady(false);
 
             // ── Деактивируем игрока на время загрузки ──
             DisablePlayer();
@@ -383,12 +380,12 @@ namespace Hecton8.Bootstrap
                 Log("HECTON-8 Scene Bootstrap — GAME READY");
                 Log("═══════════════════════════════════════════════");
 
-                IsGameReady = true;
+                BootstrapState.PublishGameReady(true);
                 OnGameReady?.Invoke();
             }
             catch (OperationCanceledException)
             {
-                IsGameReady = false;
+                BootstrapState.PublishGameReady(false);
                 // Если GO уничтожен — тихий выход, не спамим ошибкой
                 if (this == null || destroyCancellationToken.IsCancellationRequested)
                     return;
@@ -398,7 +395,7 @@ namespace Hecton8.Bootstrap
             }
             catch (Exception ex)
             {
-                IsGameReady = false;
+                BootstrapState.PublishGameReady(false);
                 // Если GO уже уничтожен — не трогаем
                 if (this == null) return;
 
@@ -409,17 +406,16 @@ namespace Hecton8.Bootstrap
 
         private void OnDestroy()
         {
-            if (CurrentPlayerObject == playerObject)
-                CurrentPlayerObject = null;
+            BootstrapState.ClearCurrentPlayerObject(playerObject);
 
             if (ActiveInstance == this)
             {
                 ActiveInstance = null;
-                HasActiveInstance = false;
+                BootstrapState.PublishBootstrapPresence(false);
             }
 
             if (Application.isPlaying)
-                IsGameReady = false;
+                BootstrapState.PublishGameReady(false);
         }
 
         /// <summary>
@@ -428,8 +424,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static bool TryGetCurrentPlayerTransform(out Transform playerTransform)
         {
-            playerTransform = CurrentPlayerTransform;
-            return playerTransform != null;
+            return BootstrapState.TryGetCurrentPlayerTransform(out playerTransform);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1163,7 +1158,7 @@ namespace Hecton8.Bootstrap
             if (playerObject == null && playerController != null)
                 playerObject = playerController.gameObject;
 
-            CurrentPlayerObject = playerObject;
+            BootstrapState.PublishCurrentPlayerObject(playerObject);
         }
 
         // ══════════════════════════════════════════════════════════

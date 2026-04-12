@@ -1,0 +1,28 @@
+{
+    "name": "Hecton8.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "GPUInstancer",
+        "Den.Tools",
+        "MapMagic",
+        "Crest",
+        "ShapesRuntime",
+        "EasySave3",
+        "VolumetricLightBeam"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

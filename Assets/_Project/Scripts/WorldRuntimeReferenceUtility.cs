@@ -1,4 +1,3 @@
-using Hecton8.Bootstrap;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -9,7 +8,7 @@ namespace Hecton8.World
 {
     /// <summary>
     /// Shared runtime reference helpers for world directors.
-    /// Keeps player resolution aligned with SceneBootstrap and reduces duplicated
+    /// Keeps player resolution aligned with bootstrap runtime state and reduces duplicated
     /// scene-wide fallback searches during runtime startup.
     /// </summary>
     internal static class WorldRuntimeReferenceUtility
@@ -31,7 +30,7 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer))
+            if (BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer))
             {
                 _CachedPlayerTransform = bootstrapPlayer;
                 target = bootstrapPlayer;
@@ -55,7 +54,7 @@ namespace Hecton8.World
             if (string.IsNullOrWhiteSpace(relativePath))
                 return false;
 
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer) ||
+            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer) ||
                 bootstrapPlayer == null)
             {
                 return false;
@@ -191,6 +190,15 @@ namespace Hecton8.World
                 return true;
 
             target = WorldProceduralFillDirector.ActiveRuntimeInstance;
+            return target != null;
+        }
+
+        public static bool TryResolveWorldCaveDirector(ref WorldCaveDirector target)
+        {
+            if (target != null)
+                return true;
+
+            target = WorldCaveDirector.ActiveRuntimeInstance;
             return target != null;
         }
 

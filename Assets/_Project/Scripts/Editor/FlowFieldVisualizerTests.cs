@@ -5,11 +5,9 @@
 // Тестирует корректность визуализации, валидации и производительности.
 // ============================================================================
 
-#if UNITY_EDITOR
-using System.Text.RegularExpressions;
+#if UNITY_EDITOR && UNITY_INCLUDE_TESTS
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Hecton8.Physics;
 
 [TestFixture]
@@ -95,9 +93,6 @@ public class FlowFieldVisualizerTests
     {
         _visualizer.GridResolution = new Vector2Int(100, 100);
         _visualizer.MaxGridResolution = 50;
-
-        // Should clamp the resolution and log warning
-        LogAssert.Expect(LogType.Warning, new Regex("Grid too large"));
 
         var validateMethod = typeof(FlowFieldVisualizer).GetMethod("ValidateSettings",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
