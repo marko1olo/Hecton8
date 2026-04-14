@@ -1,0 +1,122 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 596d4bbe2696cb445b98131cfacca40c, type: 3}
+  m_Name: MusicProfile_Base
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicBiomeProfile
+  _profileId: music.profile.base
+  _profileLabel: Base Interior
+  _minPauseSeconds: 70
+  _maxPauseSeconds: 150
+  _fadeInSeconds: 1.2
+  _fadeOutSeconds: 2.1
+  _crossfadeSeconds: 2
+  _shortTrackChance: 0
+  _shortTrackCooldownSeconds: 120
+  _localCalmWeight: 96
+  _localTenseWeight: 96
+  _allowCrossTensionMix: false
+  _crossTensionMixChance: 0
+  _longRepeatHorizon: 2
+  _shortRepeatHorizon: 1
+  _calmLongTracks: 
+  - _cueId: music.wam_base_lofi_11_beneath_the_iron_hull
+    _clip: {fileID: 8300000, guid: f154b8d2565ef2c4194b81bf4c32b9e5, type: 3}
+    _volume: 0.866
+    _weight: 1
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_1_muffled_underwater_hum
+    _clip: {fileID: 8300000, guid: 768a8f8f32e0e6e47b83d7e8023dea4f, type: 3}
+    _volume: 0.972
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_10_chill_midnight_at_the_pressure_gate
+    _clip: {fileID: 8300000, guid: 066e15ab95dea604a8d1a63593f6e38e, type: 3}
+    _volume: 0.866
+    _weight: 1
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_2_muffled_underwater_hum_1
+    _clip: {fileID: 8300000, guid: 8f32822a202a88547ac2034a1c095f85, type: 3}
+    _volume: 0.928
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_3_underwater_hum
+    _clip: {fileID: 8300000, guid: abd13bbe420ec9b4dbc18836d84ee874, type: 3}
+    _volume: 0.827
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_4_underwater_hum_1
+    _clip: {fileID: 8300000, guid: 70ec3422f2fd4eb40982cb6d00b68ac6, type: 3}
+    _volume: 0.994
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_5_iron_hull_lullaby
+    _clip: {fileID: 8300000, guid: 059c7d8007169c644a13ec64e7c3b385, type: 3}
+    _volume: 0.866
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_6_vinyl_warmth_echo
+    _clip: {fileID: 8300000, guid: a3fc0813d890f2b49b4127bafc9c868c, type: 3}
+    _volume: 1
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_7_vinyl_warmth_echo_1
+    _clip: {fileID: 8300000, guid: 2df6e5f8a95fb7047a177a696ed0b46d, type: 3}
+    _volume: 1
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_8_vinyl_crackle
+    _clip: {fileID: 8300000, guid: 2bd4b1725928a9148a154797eab74854, type: 3}
+    _volume: 0.846
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  - _cueId: music.warm_base_lofi_9_vinyl_crackle_1
+    _clip: {fileID: 8300000, guid: bd0cf680e8f1e8e49ab8d054efc3a89e, type: 3}
+    _volume: 0.983
+    _weight: 3
+    _role: 0
+    _tension: 0.18
+  _tenseLongTracks: []
+  _calmShortTracks: []
+  _tenseShortTracks: []
+  _discoveryStingers: []
+  _dangerStingers: []
+  _recoveryStingers: 
+  - _cueId: music.stinger_being_saved_1release_at_depth
+    _clip: {fileID: 8300000, guid: 2cee222960dc8d54098777e03cbd6adc, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.18
+  - _cueId: music.stinger_being_saved_2_pressure_gives_way
+    _clip: {fileID: 8300000, guid: 80df90f723d55ac43a0246898788db4b, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.18
+  - _cueId: music.stinger_being_saved_3_first_breath_above
+    _clip: {fileID: 8300000, guid: 170a7c1910c0b0b45a511f62e93d2f83, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.18
+  _calmBleedProfiles: []
+  _tenseBleedProfiles: []

@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_VolcanicGlass
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.18, g: 0.07, b: 0.05, a: 1}
-  fogDensity: 0.028
-  skyExposure: 0.68
-  ambientColor: {r: 0.22, g: 0.11, b: 0.08, a: 1}
-  sunIntensity: 0.42
+  fogColor: {r: 0.17, g: 0.065, b: 0.05, a: 1}
+  fogDensity: 0.03
+  skyExposure: 0.62
+  ambientColor: {r: 0.2, g: 0.1, b: 0.075, a: 1}
+  sunIntensity: 0.36
   temperature: 20
   radiation: 0

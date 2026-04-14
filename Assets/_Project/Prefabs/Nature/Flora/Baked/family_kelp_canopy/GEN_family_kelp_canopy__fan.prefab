@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8428052138862386105}
   - component: {fileID: 748177033115107785}
-  - component: {fileID: 1185950415449023066}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__fan
   m_TagString: Untagged
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 157382448274632279}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1185950415449023066
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1302863577762778687}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 625a2dc82f24ecc48b8793c0e90743ce, type: 2}
 --- !u!1 &2838009309918839533
 GameObject:
   m_ObjectHideFlags: 0

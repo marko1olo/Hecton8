@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Hecton8.Input;
 using TMPro;
 using UnityEngine;
@@ -87,6 +88,7 @@ namespace Hecton8.UI
 
         public void RefreshAllBindingsNow()
         {
+            Subscribe();
             EnsureBuilt();
             RefreshLabels();
             RefreshSelectionVisuals();
@@ -106,6 +108,7 @@ namespace Hecton8.UI
 
             input.OnNavigate += HandleNavigate;
             input.OnSubmit += HandleSubmit;
+            input.OnCancel += HandleCancel;
             input.OnTabNext += HandleTabNext;
             input.OnTabPrevious += HandleTabPrevious;
 
@@ -126,6 +129,7 @@ namespace Hecton8.UI
             {
                 input.OnNavigate -= HandleNavigate;
                 input.OnSubmit -= HandleSubmit;
+                input.OnCancel -= HandleCancel;
                 input.OnTabNext -= HandleTabNext;
                 input.OnTabPrevious -= HandleTabPrevious;
             }
@@ -161,20 +165,19 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
             if (_rows.Length == 0) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
-
-            RebindRow row = _rows[_selectedIndex];
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
-            if (action == null)
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
             {
-                SetStatus($"ACTION NOT FOUND: {row.actionMap}/{row.actionName}");
+                SetStatus("REBINDING SERVICE UNAVAILABLE.");
                 return;
             }
 
-            int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
-            if (bindingIndex < 0)
+            if (rebinding.IsRebinding) return;
+
+            RebindRow row = _rows[_selectedIndex];
+            InputManager input = InputManager.Instance;
+            if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                SetStatus($"NO REBINDABLE BINDING: {row.label}");
+                SetStatus(resolutionMessage);
                 return;
             }
 
@@ -193,18 +196,52 @@ namespace Hecton8.UI
         private void HandleTabNext()
         {
             if (!IsActive) return;
-            if (RebindingManager.TryGetInstance(out RebindingManager rebinding) && rebinding.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            {
+                SetStatus("REBINDING SERVICE UNAVAILABLE.");
+                return;
+            }
+
+            if (rebinding.IsRebinding) return;
             ResetSelectedBinding();
         }
 
         private void HandleTabPrevious()
         {
             if (!IsActive) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            {
+                SetStatus("REBINDING SERVICE UNAVAILABLE.");
+                return;
+            }
+
+            if (rebinding.IsRebinding)
+            {
+                SetStatus("CANNOT RESET ALL WHILE REBINDING.");
+                return;
+            }
 
             rebinding.ClearOverrides();
             RefreshAllBindingsNow();
             SetStatus("ALL BINDINGS RESET TO DEFAULTS.");
+        }
+
+        private void HandleCancel()
+        {
+            if (!IsActive) return;
+            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            {
+                SetStatus("REBINDING SERVICE UNAVAILABLE.");
+                return;
+            }
+
+            if (!rebinding.IsRebinding)
+            {
+                UpdateStatusForSelected();
+                return;
+            }
+
+            rebinding.CancelRebind();
         }
 
         private void HandleRebindStarted(string actionName, string actionMap, int bindingIndex)
@@ -228,26 +265,22 @@ namespace Hecton8.UI
         {
             RefreshAllBindingsNow();
             if (!IsActive) return;
-            UpdateStatusForSelected();
+            SetStatus("REBIND CANCELED.");
         }
 
         private void ResetSelectedBinding()
         {
-            if (_rows.Length == 0 || InputManager.Instance == null)
+            if (_rows.Length == 0)
+                return;
+
+            InputManager input = InputManager.Instance;
+            if (input == null)
                 return;
 
             RebindRow row = _rows[_selectedIndex];
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
-            if (action == null)
+            if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                SetStatus($"ACTION NOT FOUND: {row.actionMap}/{row.actionName}");
-                return;
-            }
-
-            int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
-            if (bindingIndex < 0)
-            {
-                SetStatus($"NO REBINDABLE BINDING: {row.label}");
+                SetStatus(resolutionMessage);
                 return;
             }
 
@@ -267,6 +300,9 @@ namespace Hecton8.UI
             RectTransform self = transform as RectTransform;
             if (self == null)
                 return;
+
+            if (_rows == null)
+                _rows = Array.Empty<RebindRow>();
 
             ClearChildren(self);
 
@@ -375,14 +411,13 @@ namespace Hecton8.UI
 
         private void RefreshRowBinding(RebindRow row)
         {
-            if (row.bindingText == null || InputManager.Instance == null)
+            if (row == null || row.bindingText == null)
                 return;
 
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
-            int bindingIndex = action != null ? ResolveBindingIndex(action, row.bindingIndex) : -1;
-            if (action == null || bindingIndex < 0)
+            InputManager input = InputManager.Instance;
+            if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                row.bindingText.SetText("--");
+                row.bindingText.SetText(resolutionMessage);
                 return;
             }
 
@@ -416,21 +451,14 @@ namespace Hecton8.UI
             }
 
             RebindRow row = _rows[_selectedIndex];
-            string binding = "--";
-            if (InputManager.Instance != null)
+            InputManager input = InputManager.Instance;
+            if (TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
-                if (action != null)
-                {
-                    int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
-                    if (bindingIndex >= 0)
-                    {
-                        binding = GetBindingDisplaySafe(action, bindingIndex);
-                    }
-                }
+                SetStatus($"REBIND: {row.label} [{resolutionMessage}]  |  TAB NEXT = RESET ONE  |  TAB PREV = RESET ALL");
+                return;
             }
 
-            SetStatus($"REBIND: {row.label} [{binding}]  |  TAB NEXT = RESET ONE  |  TAB PREV = RESET ALL");
+            SetStatus(resolutionMessage);
         }
 
         private void SetStatus(string value)
@@ -520,24 +548,76 @@ namespace Hecton8.UI
 
         private static RebindRow[] BuildDefaultRows()
         {
-            return new[]
+            List<RebindRow> rows = new List<RebindRow>(15);
+            AddRow(rows, "LOOK", "Player", "Look", 0);
+            AddRow(rows, "JUMP", "Player", "Jump", 0);
+            AddRow(rows, "SPRINT", "Player", "Sprint", 0);
+            AddRow(rows, "INTERACT", "Player", "Interact", 0);
+            AddRow(rows, "FLASHLIGHT", "Player", "Flashlight", 0);
+            AddRow(rows, "PDA", "Player", "PDA", 0);
+            AddRow(rows, "TOOL SLOT 1", "Player", "ToolSlot1", 0);
+            AddRow(rows, "TOOL SLOT 2", "Player", "ToolSlot2", 0);
+            AddRow(rows, "TOOL SLOT 3", "Player", "ToolSlot3", 0);
+            AddRow(rows, "TOOL SLOT 4", "Player", "ToolSlot4", 0);
+            AddRow(rows, "PRIMARY ACTION", "Player", "PrimaryAction", 0);
+            AddRow(rows, "SECONDARY ACTION", "Player", "SecondaryAction", 0);
+            AddRow(rows, "INVENTORY", "Player", "Inventory", 0);
+            AddRow(rows, "UI SUBMIT", "UI", "Submit", 0);
+            AddRow(rows, "UI CANCEL", "UI", "Cancel", 0);
+            return rows.ToArray();
+        }
+
+        private static void AddRow(List<RebindRow> rows, string label, string map, string action, int bindingIndex)
+        {
+            if (rows == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(label) ||
+                string.IsNullOrWhiteSpace(map) ||
+                string.IsNullOrWhiteSpace(action))
             {
-                MakeRow("LOOK", "Player", "Look", 0),
-                MakeRow("JUMP", "Player", "Jump", 0),
-                MakeRow("SPRINT", "Player", "Sprint", 0),
-                MakeRow("INTERACT", "Player", "Interact", 0),
-                MakeRow("FLASHLIGHT", "Player", "Flashlight", 0),
-                MakeRow("PDA", "Player", "PDA", 0),
-                MakeRow("TOOL SLOT 1", "Player", "ToolSlot1", 0),
-                MakeRow("TOOL SLOT 2", "Player", "ToolSlot2", 0),
-                MakeRow("TOOL SLOT 3", "Player", "ToolSlot3", 0),
-                MakeRow("TOOL SLOT 4", "Player", "ToolSlot4", 0),
-                MakeRow("PRIMARY ACTION", "Player", "PrimaryAction", 0),
-                MakeRow("SECONDARY ACTION", "Player", "SecondaryAction", 0),
-                MakeRow("INVENTORY", "Player", "Inventory", 0),
-                MakeRow("UI SUBMIT", "UI", "Submit", 0),
-                MakeRow("UI CANCEL", "UI", "Cancel", 0)
-            };
+                return;
+            }
+
+            rows.Add(MakeRow(label.Trim(), map.Trim(), action.Trim(), bindingIndex));
+        }
+
+        private static bool TryResolveRowBinding(
+            InputManager input,
+            RebindRow row,
+            out InputAction action,
+            out int bindingIndex,
+            out string resolutionMessage)
+        {
+            action = null;
+            bindingIndex = -1;
+            resolutionMessage = "INPUT MANAGER UNAVAILABLE.";
+
+            if (input == null)
+                return false;
+
+            if (row == null)
+            {
+                resolutionMessage = "INVALID BINDING ROW.";
+                return false;
+            }
+
+            action = input.GetAction(row.actionName, row.actionMap);
+            if (action == null)
+            {
+                resolutionMessage = $"MISSING ACTION: {row.actionMap}/{row.actionName}";
+                return false;
+            }
+
+            bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+            if (bindingIndex < 0)
+            {
+                resolutionMessage = $"NO REBINDABLE BINDING: {row.label}";
+                return false;
+            }
+
+            resolutionMessage = GetBindingDisplaySafe(action, bindingIndex);
+            return true;
         }
 
         private static RebindRow MakeRow(string label, string map, string action, int bindingIndex)

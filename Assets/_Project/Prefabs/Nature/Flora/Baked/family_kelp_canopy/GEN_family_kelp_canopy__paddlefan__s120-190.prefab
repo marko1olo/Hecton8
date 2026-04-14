@@ -190,7 +190,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5267215978699312101}
   - component: {fileID: 7933566962743518060}
-  - component: {fileID: 4880499267317820549}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__paddlefan__s120-190
   m_TagString: Untagged
@@ -244,19 +243,6 @@ LODGroup:
     - renderer: {fileID: 252734999669017877}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4880499267317820549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7152578667763258043}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 092bede2640c1c9439f326200205e5ed, type: 2}
 --- !u!1 &7405228063299872238
 GameObject:
   m_ObjectHideFlags: 0

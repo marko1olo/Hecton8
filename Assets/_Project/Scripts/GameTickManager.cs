@@ -51,11 +51,13 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         private static GameTickManager _instance;
+        private static bool _isShuttingDown;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _instance = null;
+            _isShuttingDown = false;
         }
 
         /// <summary>
@@ -158,7 +160,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (enableSlowTickProfiling)
+            if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {
                 UnityEngine.Debug.Log(
                     $"[GameTickManager] disabled tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
@@ -171,7 +173,7 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (enableSlowTickProfiling)
+            if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {
                 UnityEngine.Debug.Log(
                     $"[GameTickManager] destroyed isInstance={(_instance == this)} tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
@@ -180,6 +182,11 @@ namespace Hecton8.Core
 #endif
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void OnApplicationQuit()
+        {
+            _isShuttingDown = true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -201,12 +208,7 @@ namespace Hecton8.Core
             }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedFirstUpdateExecution && enableSlowTickProfiling)
-            {
                 _loggedFirstUpdateExecution = true;
-                UnityEngine.Debug.Log(
-                    $"[GameTickManager] first-update timeScale={Time.timeScale:0.###} deltaTime={dt:0.###} slowTickDelta={slowTickDt:0.###} unscaledDeltaTime={Time.unscaledDeltaTime:0.###} bootstrapActive={BootstrapState.HasActiveInstance} bootstrapReady={BootstrapState.IsGameReady}",
-                    this);
-            }
 #endif
 
             _tickables.BeginIteration();
@@ -240,6 +242,19 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             _debugTickCount = _tickables.Count;
 #endif
+        }
+
+        private static bool ShouldLogUnexpectedDisable()
+        {
+            if (_isShuttingDown)
+                return false;
+
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return false;
+#endif
+
+            return Application.isPlaying;
         }
 
         // ══════════════════════════════════════════════════════════

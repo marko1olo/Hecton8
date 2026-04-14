@@ -1,0 +1,23 @@
+{
+  "name": "Hecton8.PlayModeTests",
+  "rootNamespace": "Hecton8.Tests.PlayMode",
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "HECTON8_ENABLE_PLAYMODE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

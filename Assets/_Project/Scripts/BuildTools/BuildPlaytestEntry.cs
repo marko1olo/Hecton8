@@ -82,6 +82,9 @@ namespace Hecton8.BuildTools
         /// <summary>Timestamp когда entry была создана.</summary>
         public long CreatedTimestamp { get; private set; }
 
+        /// <summary>Показывает, был ли entry создан через фабрику и получил timestamp.</summary>
+        public readonly bool HasRecordedTimestamp => CreatedTimestamp > 0;
+
         /// <summary>
         /// Создает новую запись с текущим временем.
         /// </summary>
@@ -98,15 +101,15 @@ namespace Hecton8.BuildTools
         {
             return new BuildPlaytestEntry
             {
-                Version = version ?? "unknown",
+                Version = NormalizeText(version, "unknown"),
                 FpsMean = fpsMean,
                 FpsWorst = fpsWorst,
-                MainIrritant = mainIrritant ?? string.Empty,
-                MainVisualFlaw = mainVisualFlaw ?? string.Empty,
-                MainUXFlaw = mainUXFlaw ?? string.Empty,
-                MainContentGap = mainContentGap ?? string.Empty,
+                MainIrritant = NormalizeText(mainIrritant),
+                MainVisualFlaw = NormalizeText(mainVisualFlaw),
+                MainUXFlaw = NormalizeText(mainUXFlaw),
+                MainContentGap = NormalizeText(mainContentGap),
                 IsBlocker = isBlocker,
-                Notes = notes ?? string.Empty,
+                Notes = NormalizeText(notes),
                 CreatedTimestamp = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             };
         }
@@ -117,7 +120,7 @@ namespace Hecton8.BuildTools
         public readonly string ToMarkdownEntry()
         {
             string blocker = IsBlocker ? "🔴 BLOCKER" : "✓ OK";
-            string timestamp = new DateTime(CreatedTimestamp * 10000000, DateTimeKind.Utc).ToString("yyyy-MM-dd HH:mm");
+            string timestamp = FormatTimestamp(CreatedTimestamp);
 
             string markdown = $"## {Version} — {timestamp}" + "\n";
             markdown += $"- **Status:** {blocker}\n";
@@ -136,6 +139,19 @@ namespace Hecton8.BuildTools
         public override string ToString()
         {
             return $"[{Version}] FPS={FpsMean:F1}/{FpsWorst:F1} | Irritant: {MainIrritant} | Blocker={IsBlocker}";
+        }
+
+        private static string NormalizeText(string value, string fallback = "")
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        }
+
+        private static string FormatTimestamp(long timestamp)
+        {
+            if (timestamp <= 0)
+                return "uninitialized";
+
+            return DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime.ToString("yyyy-MM-dd HH:mm");
         }
     }
 

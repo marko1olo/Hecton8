@@ -80,9 +80,17 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (Instance == null)
+                Instance = this;
+
             SaveManager.Instance?.Register(this);
             ScanEvents.OnEntryDiscovered += HandleEntryDiscovered;
             ScanEvents.OnNodeFound += HandleNodeFound;
+        }
+
+        private void Start()
+        {
+            SaveManager.Instance?.Register(this);
         }
 
         private void OnDisable()
@@ -90,7 +98,10 @@ namespace Hecton8.Gameplay
             SaveManager.Instance?.Unregister(this);
             ScanEvents.OnEntryDiscovered -= HandleEntryDiscovered;
             ScanEvents.OnNodeFound -= HandleNodeFound;
+        }
 
+        private void OnDestroy()
+        {
             if (Instance == this)
                 Instance = null;
         }

@@ -9,6 +9,7 @@ namespace Hecton8.World
     public sealed class WorldPopulationDirector : MonoBehaviour, ISlowTickable
     {
         private const string NoneLabel = "None";
+        private const string NoMatchingRuleLabel = "No matching rule";
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -114,6 +115,12 @@ namespace Hecton8.World
             WorldZoneAnchor secondaryZone = worldZoneDirector != null ? worldZoneDirector.SecondaryZone : null;
             float zoneBlendFactor = worldZoneDirector != null ? worldZoneDirector.CurrentBlendFactor : 0f;
             WorldContentSocket socket = FindNearestSocketInZone(zone);
+
+            if (worldContentDirector == null || worldContentDirector.Sockets == null || worldContentDirector.Sockets.Count == 0)
+            {
+                UpdateDiagnostics(zone, secondaryZone, zoneBlendFactor, socket, null, 0f, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, 0, 0);
+                return;
+            }
 
             WorldPopulationRule primaryRule = null;
             float primaryDensityWeight = 0f;
@@ -308,7 +315,14 @@ namespace Hecton8.World
             }
 
             if (primaryRule == null)
+            {
+                if (captureDiagnostics)
+                {
+                    UpdateDiagnostics(zone, secondaryZone, blendFactor, socket, null, 0f, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, NoneLabel, 0, 0);
+                }
+
                 return default;
+            }
 
             return BuildPopulationSelection(
                 primaryRule,
@@ -421,7 +435,7 @@ namespace Hecton8.World
                 : "None";
             _debugZoneBlendFactor = Mathf.Clamp01(zoneBlendFactor);
             _debugCurrentSocket = socket != null ? socket.SocketLabel : "None";
-            _debugPrimaryRule = primaryRule != null ? primaryRule.ruleLabel : "None";
+            _debugPrimaryRule = primaryRule != null ? primaryRule.ruleLabel : NoMatchingRuleLabel;
             _debugPrimaryPrefabFamily = primaryRule != null && !string.IsNullOrWhiteSpace(primaryRule.prefabFamily)
                 ? primaryRule.prefabFamily
                 : "None";
@@ -464,7 +478,7 @@ namespace Hecton8.World
             if (blendFactor >= 0.68f)
                 return cleanSecondary;
 
-            return $"{cleanPrimary} | Подмешивается: {cleanSecondary}";
+            return $"{cleanPrimary} | blending with {cleanSecondary}";
         }
 
         private readonly struct PopulationSelection

@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7209080438347262740}
   - component: {fileID: 9034607244846076513}
-  - component: {fileID: 8932540956426454827}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__ledge
   m_TagString: Untagged
@@ -44,8 +43,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1670628547940789094}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.0118688345, y: 0.6174733, z: -0.020708203}
-  m_Size: 2.5189354
+  m_LocalReferencePoint: {x: 0.019355059, y: 0.7182649, z: -0.021350503}
+  m_Size: 2.62432
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 1414779446692314068}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8932540956426454827
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1670628547940789094}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: e462bda186b42a64590523aef573a39c, type: 2}
 --- !u!1 &4326982534290574632
 GameObject:
   m_ObjectHideFlags: 0

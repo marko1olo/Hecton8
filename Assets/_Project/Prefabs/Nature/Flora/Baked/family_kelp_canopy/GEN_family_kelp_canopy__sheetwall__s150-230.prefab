@@ -100,7 +100,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3409874711913996277}
   - component: {fileID: 3084898666511008224}
-  - component: {fileID: 8530260023321130944}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__sheetwall__s150-230
   m_TagString: Untagged
@@ -154,19 +153,6 @@ LODGroup:
     - renderer: {fileID: 4295528051651438073}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &8530260023321130944
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 611040833174435234}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 273f05744fec80045b4b8112eccf46e4, type: 2}
 --- !u!1 &705881347012351596
 GameObject:
   m_ObjectHideFlags: 0

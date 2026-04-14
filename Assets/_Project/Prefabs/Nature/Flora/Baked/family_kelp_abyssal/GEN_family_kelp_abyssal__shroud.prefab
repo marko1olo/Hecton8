@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3818964481435420799}
   - component: {fileID: 8742677504113510715}
-  - component: {fileID: 3714162483848423884}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__shroud
   m_TagString: Untagged
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 2120618805451370633}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3714162483848423884
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3774044292933396264}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: c7be40e728cd89144aa1ac0f70817c2a, type: 2}
 --- !u!1 &4842926084173805236
 GameObject:
   m_ObjectHideFlags: 0

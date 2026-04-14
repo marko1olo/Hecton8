@@ -1,39 +1,10 @@
 // ============================================================================
-// HECTON-8 — HectonLoreSystemsRoot.cs
-// Корневой компонент для всех лорных систем.
+// HECTON-8 - HectonLoreSystemsRoot.cs
+// Root component for all lore systems.
 //
-// НАЗНАЧЕНИЕ:
-//   Единая точка инициализации всех систем из лора.
-//   Назначить на GameObject "LoreSystems" в сцене 02_HECTON_WORLD.
-//
-// СИСТЕМЫ (в порядке DefaultExecutionOrder):
-//   -150: HectonNarrativeDirector (существующий)
-//   -140: AudioLogSystem
-//   -130: QuestManager
-//   -120: AtlasSignalSystem
-//   -110: SuitUpgradeManager
-//   -105: DepthZoneDirector
-//   -100: EclipseGameplaySystem
-//    -95: SpectrumSystem
-//    -90: AtlasSignalDecoder
-//    -85: HectonBiolumController
-//    -80: Atlas6DirectiveSystem
-//    -75: CorporateOrderSystem
-//    -70: RandomEventSystem
-//    -65: FirstHourDirector
-//    -60: SoundscapeSystem
-//    -55: BaseIntegrityHUD
-//    -50: EndingSystem
-//
-// ИСПОЛЬЗОВАНИЕ:
-//   1. Создать GameObject "LoreSystems" в сцене 02_HECTON_WORLD
-//   2. Добавить этот компонент
-//   3. Нажать [Setup All Systems] в инспекторе
-//   4. Назначить ссылки в инспекторе каждой системы
-//
-// ВАЖНО:
-//   Все системы используют [DefaultExecutionOrder] — порядок гарантирован.
-//   Этот компонент только создаёт дочерние объекты если их нет.
+// Purpose:
+//   Single bootstrap point for lore-related runtime systems.
+//   Intended for a GameObject named "LoreSystems" in 02_HECTON_WORLD.
 // ============================================================================
 
 using UnityEngine;
@@ -48,11 +19,13 @@ namespace Hecton8.Bootstrap
     [AddComponentMenu("Hecton8/Bootstrap/Hecton Lore Systems Root")]
     public sealed class HectonLoreSystemsRoot : MonoBehaviour
     {
-        [Header("── Auto-Setup ──────────────────────────────")]
-        [Tooltip("Автоматически создать дочерние объекты для всех систем при старте.")]
+        public const int ExpectedSystemCount = 16;
+
+        [Header("Auto Setup")]
+        [Tooltip("Create missing child systems automatically during startup.")]
         [SerializeField] private bool autoSetupOnAwake = true;
 
-        [Header("── Status ──────────────────────────────────")]
+        [Header("Status")]
         [SerializeField] private bool _audioLogSystemFound;
         [SerializeField] private bool _questManagerFound;
         [SerializeField] private bool _atlasSignalSystemFound;
@@ -73,136 +46,215 @@ namespace Hecton8.Bootstrap
         private void Awake()
         {
             if (autoSetupOnAwake)
+            {
                 SetupAllSystems();
+                return;
+            }
+
+            RefreshSystemStatus(false);
+        }
+
+        private void OnEnable()
+        {
+            RefreshSystemStatus(false);
+        }
+
+        private void OnValidate()
+        {
+            RefreshSystemStatus(false);
         }
 
         /// <summary>
-        /// Создаёт дочерние объекты для всех лорных систем если их нет.
-        /// Вызывается автоматически в Awake или вручную из инспектора.
+        /// Creates missing child objects and components for all lore systems.
         /// </summary>
+        [ContextMenu("Setup All Systems")]
         public void SetupAllSystems()
         {
-            EnsureSystem<Hecton8.Narrative.AudioLogSystem>("AudioLogSystem",
-                ref _audioLogSystemFound);
+            EnsureSystem<Hecton8.Narrative.AudioLogSystem>("AudioLogSystem", ref _audioLogSystemFound);
+            EnsureSystem<Hecton8.Quest.QuestManager>("QuestManager", ref _questManagerFound);
+            EnsureSystem<Hecton8.AtlasSignal.AtlasSignalSystem>("AtlasSignalSystem", ref _atlasSignalSystemFound);
+            EnsureAuthoringBoundSystem<Hecton8.Gameplay.SuitUpgradeManager>("SuitUpgradeManager", ref _suitUpgradeManagerFound);
+            EnsureSystem<Hecton8.World.DepthZoneDirector>("DepthZoneDirector", ref _depthZoneDirectorFound);
+            EnsureSystem<Hecton8.Gameplay.EclipseGameplaySystem>("EclipseGameplaySystem", ref _eclipseGameplaySystemFound);
+            EnsureSystem<Hecton8.Visor.SpectrumSystem>("SpectrumSystem", ref _spectrumSystemFound);
+            EnsureSystem<Hecton8.AtlasSignal.AtlasSignalDecoder>("AtlasSignalDecoder", ref _atlasSignalDecoderFound);
+            EnsureSystem<Hecton8.World.HectonBiolumController>("HectonBiolumController", ref _biolumControllerFound);
+            EnsureSystem<Hecton8.AtlasSignal.Atlas6DirectiveSystem>("Atlas6DirectiveSystem", ref _atlas6DirectiveSystemFound);
+            EnsureSystem<Hecton8.Narrative.CorporateOrderSystem>("CorporateOrderSystem", ref _corporateOrderSystemFound);
+            EnsureSystem<Hecton8.Gameplay.RandomEventSystem>("RandomEventSystem", ref _randomEventSystemFound);
+            EnsureSystem<Hecton8.Gameplay.FirstHourDirector>("FirstHourDirector", ref _firstHourDirectorFound);
+            EnsureSystem<Hecton8.World.SoundscapeSystem>("SoundscapeSystem", ref _soundscapeSystemFound);
+            EnsureSystem<Hecton8.UI.BaseIntegrityHUD>("BaseIntegrityHUD", ref _baseIntegrityHUDFound);
+            EnsureSystem<Hecton8.Gameplay.EndingSystem>("EndingSystem", ref _endingSystemFound);
 
-            EnsureSystem<Hecton8.Quest.QuestManager>("QuestManager",
-                ref _questManagerFound);
+            RefreshSystemStatus(false);
 
-            EnsureSystem<Hecton8.AtlasSignal.AtlasSignalSystem>("AtlasSignalSystem",
-                ref _atlasSignalSystemFound);
+        }
 
-            EnsureSystem<Hecton8.Gameplay.SuitUpgradeManager>("SuitUpgradeManager",
-                ref _suitUpgradeManagerFound);
-
-            EnsureSystem<Hecton8.World.DepthZoneDirector>("DepthZoneDirector",
-                ref _depthZoneDirectorFound);
-
-            EnsureSystem<Hecton8.Gameplay.EclipseGameplaySystem>("EclipseGameplaySystem",
-                ref _eclipseGameplaySystemFound);
-
-            EnsureSystem<Hecton8.Visor.SpectrumSystem>("SpectrumSystem",
-                ref _spectrumSystemFound);
-
-            EnsureSystem<Hecton8.AtlasSignal.AtlasSignalDecoder>("AtlasSignalDecoder",
-                ref _atlasSignalDecoderFound);
-
-            EnsureSystem<Hecton8.World.HectonBiolumController>("HectonBiolumController",
-                ref _biolumControllerFound);
-
-            EnsureSystem<Hecton8.AtlasSignal.Atlas6DirectiveSystem>("Atlas6DirectiveSystem",
-                ref _atlas6DirectiveSystemFound);
-
-            EnsureSystem<Hecton8.Narrative.CorporateOrderSystem>("CorporateOrderSystem",
-                ref _corporateOrderSystemFound);
-
-            EnsureSystem<Hecton8.Gameplay.RandomEventSystem>("RandomEventSystem",
-                ref _randomEventSystemFound);
-
-            EnsureSystem<Hecton8.Gameplay.FirstHourDirector>("FirstHourDirector",
-                ref _firstHourDirectorFound);
-
-            EnsureSystem<Hecton8.World.SoundscapeSystem>("SoundscapeSystem",
-                ref _soundscapeSystemFound);
-
-            EnsureSystem<Hecton8.UI.BaseIntegrityHUD>("BaseIntegrityHUD",
-                ref _baseIntegrityHUDFound);
-
-            EnsureSystem<Hecton8.Gameplay.EndingSystem>("EndingSystem",
-                ref _endingSystemFound);
+        /// <summary>
+        /// Refreshes the status flags and optionally reports missing systems.
+        /// </summary>
+        [ContextMenu("Validate Systems")]
+        public void ValidateSystems()
+        {
+            RefreshSystemStatus(true);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[LoreSystemsRoot] All lore systems initialized.");
+            Debug.Log($"[LoreSystemsRoot] Validation: {CountFoundSystems()}/{ExpectedSystemCount} systems present. Missing: {GetMissingSystemsSummary()}");
 #endif
+        }
+
+        public int GetFoundSystemCount()
+        {
+            RefreshSystemStatus(false);
+            return CountFoundSystems();
+        }
+
+        public bool IsBootstrappedFully()
+        {
+            return GetFoundSystemCount() == ExpectedSystemCount;
+        }
+
+        public string GetMissingSystemsSummary()
+        {
+            RefreshSystemStatus(false);
+
+            string[] missing = new string[ExpectedSystemCount];
+            int index = 0;
+
+            if (!_audioLogSystemFound) missing[index++] = "AudioLogSystem";
+            if (!_questManagerFound) missing[index++] = "QuestManager";
+            if (!_atlasSignalSystemFound) missing[index++] = "AtlasSignalSystem";
+            if (!_suitUpgradeManagerFound) missing[index++] = "SuitUpgradeManager";
+            if (!_depthZoneDirectorFound) missing[index++] = "DepthZoneDirector";
+            if (!_eclipseGameplaySystemFound) missing[index++] = "EclipseGameplaySystem";
+            if (!_spectrumSystemFound) missing[index++] = "SpectrumSystem";
+            if (!_atlasSignalDecoderFound) missing[index++] = "AtlasSignalDecoder";
+            if (!_biolumControllerFound) missing[index++] = "HectonBiolumController";
+            if (!_atlas6DirectiveSystemFound) missing[index++] = "Atlas6DirectiveSystem";
+            if (!_corporateOrderSystemFound) missing[index++] = "CorporateOrderSystem";
+            if (!_randomEventSystemFound) missing[index++] = "RandomEventSystem";
+            if (!_firstHourDirectorFound) missing[index++] = "FirstHourDirector";
+            if (!_soundscapeSystemFound) missing[index++] = "SoundscapeSystem";
+            if (!_baseIntegrityHUDFound) missing[index++] = "BaseIntegrityHUD";
+            if (!_endingSystemFound) missing[index++] = "EndingSystem";
+
+            if (index == 0)
+            {
+                return "None";
+            }
+
+            string[] compact = new string[index];
+            System.Array.Copy(missing, compact, index);
+            return string.Join(", ", compact);
+        }
+
+        public void RefreshSystemStatus(bool logMissingSystems)
+        {
+            _audioLogSystemFound = GetComponentInChildren<Hecton8.Narrative.AudioLogSystem>(true) != null;
+            _questManagerFound = GetComponentInChildren<Hecton8.Quest.QuestManager>(true) != null;
+            _atlasSignalSystemFound = GetComponentInChildren<Hecton8.AtlasSignal.AtlasSignalSystem>(true) != null;
+            _suitUpgradeManagerFound = GetComponentInChildren<Hecton8.Gameplay.SuitUpgradeManager>(true) != null;
+            _depthZoneDirectorFound = GetComponentInChildren<Hecton8.World.DepthZoneDirector>(true) != null;
+            _eclipseGameplaySystemFound = GetComponentInChildren<Hecton8.Gameplay.EclipseGameplaySystem>(true) != null;
+            _spectrumSystemFound = GetComponentInChildren<Hecton8.Visor.SpectrumSystem>(true) != null;
+            _atlasSignalDecoderFound = GetComponentInChildren<Hecton8.AtlasSignal.AtlasSignalDecoder>(true) != null;
+            _biolumControllerFound = GetComponentInChildren<Hecton8.World.HectonBiolumController>(true) != null;
+            _atlas6DirectiveSystemFound = GetComponentInChildren<Hecton8.AtlasSignal.Atlas6DirectiveSystem>(true) != null;
+            _corporateOrderSystemFound = GetComponentInChildren<Hecton8.Narrative.CorporateOrderSystem>(true) != null;
+            _randomEventSystemFound = GetComponentInChildren<Hecton8.Gameplay.RandomEventSystem>(true) != null;
+            _firstHourDirectorFound = GetComponentInChildren<Hecton8.Gameplay.FirstHourDirector>(true) != null;
+            _soundscapeSystemFound = GetComponentInChildren<Hecton8.World.SoundscapeSystem>(true) != null;
+            _baseIntegrityHUDFound = GetComponentInChildren<Hecton8.UI.BaseIntegrityHUD>(true) != null;
+            _endingSystemFound = GetComponentInChildren<Hecton8.Gameplay.EndingSystem>(true) != null;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (logMissingSystems && CountFoundSystems() < ExpectedSystemCount)
+            {
+                Debug.LogWarning($"[LoreSystemsRoot] Missing systems: {GetMissingSystemsSummary()}");
+            }
+#endif
+        }
+
+        private int CountFoundSystems()
+        {
+            int found = 0;
+            if (_audioLogSystemFound) found++;
+            if (_questManagerFound) found++;
+            if (_atlasSignalSystemFound) found++;
+            if (_suitUpgradeManagerFound) found++;
+            if (_depthZoneDirectorFound) found++;
+            if (_eclipseGameplaySystemFound) found++;
+            if (_spectrumSystemFound) found++;
+            if (_atlasSignalDecoderFound) found++;
+            if (_biolumControllerFound) found++;
+            if (_atlas6DirectiveSystemFound) found++;
+            if (_corporateOrderSystemFound) found++;
+            if (_randomEventSystemFound) found++;
+            if (_firstHourDirectorFound) found++;
+            if (_soundscapeSystemFound) found++;
+            if (_baseIntegrityHUDFound) found++;
+            if (_endingSystemFound) found++;
+            return found;
         }
 
         private void EnsureSystem<T>(string goName, ref bool foundFlag)
             where T : MonoBehaviour
         {
-            // Проверяем существующий дочерний объект
-            Transform existing = transform.Find(goName);
-            if (existing != null)
+            T existingComponent = GetComponentInChildren<T>(true);
+            if (existingComponent != null)
             {
-                foundFlag = existing.GetComponent<T>() != null;
-                if (!foundFlag)
-                {
-                    existing.gameObject.AddComponent<T>();
-                    foundFlag = true;
-                }
+                foundFlag = true;
                 return;
             }
 
-            // Создаём новый
+            Transform existingChild = transform.Find(goName);
+            if (existingChild != null)
+            {
+                if (existingChild.GetComponent<T>() == null)
+                {
+#if UNITY_EDITOR
+                    Undo.AddComponent<T>(existingChild.gameObject);
+#else
+                    existingChild.gameObject.AddComponent<T>();
+#endif
+                }
+
+                foundFlag = true;
+                return;
+            }
+
             GameObject go = new GameObject(goName);
+#if UNITY_EDITOR
+            Undo.RegisterCreatedObjectUndo(go, $"Create {goName}");
+#endif
             go.transform.SetParent(transform, false);
             go.AddComponent<T>();
             foundFlag = true;
         }
 
-#if UNITY_EDITOR
-        [ContextMenu("Setup All Systems")]
-        private void SetupAllSystemsEditor()
+        private void EnsureAuthoringBoundSystem<T>(string goName, ref bool foundFlag)
+            where T : MonoBehaviour
         {
-            SetupAllSystems();
-            EditorUtility.SetDirty(gameObject);
-        }
+            T existingComponent = GetComponentInChildren<T>(true);
+            if (existingComponent != null)
+            {
+                foundFlag = true;
+                return;
+            }
 
-        [ContextMenu("Validate Systems")]
-        private void ValidateSystems()
-        {
-            int found = 0;
-            int total = 16;
-
-            _audioLogSystemFound        = GetComponentInChildren<Hecton8.Narrative.AudioLogSystem>() != null;
-            _questManagerFound          = GetComponentInChildren<Hecton8.Quest.QuestManager>() != null;
-            _atlasSignalSystemFound     = GetComponentInChildren<Hecton8.AtlasSignal.AtlasSignalSystem>() != null;
-            _suitUpgradeManagerFound    = GetComponentInChildren<Hecton8.Gameplay.SuitUpgradeManager>() != null;
-            _depthZoneDirectorFound     = GetComponentInChildren<Hecton8.World.DepthZoneDirector>() != null;
-            _eclipseGameplaySystemFound = GetComponentInChildren<Hecton8.Gameplay.EclipseGameplaySystem>() != null;
-            _spectrumSystemFound        = GetComponentInChildren<Hecton8.Visor.SpectrumSystem>() != null;
-            _atlasSignalDecoderFound    = GetComponentInChildren<Hecton8.AtlasSignal.AtlasSignalDecoder>() != null;
-            _biolumControllerFound      = GetComponentInChildren<Hecton8.World.HectonBiolumController>() != null;
-            _atlas6DirectiveSystemFound = GetComponentInChildren<Hecton8.AtlasSignal.Atlas6DirectiveSystem>() != null;
-            _corporateOrderSystemFound  = GetComponentInChildren<Hecton8.Narrative.CorporateOrderSystem>() != null;
-            _randomEventSystemFound     = GetComponentInChildren<Hecton8.Gameplay.RandomEventSystem>() != null;
-            _firstHourDirectorFound     = GetComponentInChildren<Hecton8.Gameplay.FirstHourDirector>() != null;
-            _soundscapeSystemFound      = GetComponentInChildren<Hecton8.World.SoundscapeSystem>() != null;
-            _baseIntegrityHUDFound      = GetComponentInChildren<Hecton8.UI.BaseIntegrityHUD>() != null;
-            _endingSystemFound          = GetComponentInChildren<Hecton8.Gameplay.EndingSystem>() != null;
-
-            bool[] flags = {
-                _audioLogSystemFound, _questManagerFound, _atlasSignalSystemFound,
-                _suitUpgradeManagerFound, _depthZoneDirectorFound, _eclipseGameplaySystemFound,
-                _spectrumSystemFound, _atlasSignalDecoderFound, _biolumControllerFound,
-                _atlas6DirectiveSystemFound, _corporateOrderSystemFound, _randomEventSystemFound,
-                _firstHourDirectorFound, _soundscapeSystemFound, _baseIntegrityHUDFound,
-                _endingSystemFound
-            };
-
-            foreach (bool f in flags) if (f) found++;
-
-            Debug.Log($"[LoreSystemsRoot] Validation: {found}/{total} systems found.");
-            EditorUtility.SetDirty(gameObject);
-        }
+            if (Application.isPlaying)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning(
+                    $"[LoreSystemsRoot] Skipping runtime auto-create for '{goName}'. This system requires authored inspector data before play.",
+                    this);
 #endif
+                foundFlag = false;
+                return;
+            }
+
+            EnsureSystem<T>(goName, ref foundFlag);
+        }
     }
 }

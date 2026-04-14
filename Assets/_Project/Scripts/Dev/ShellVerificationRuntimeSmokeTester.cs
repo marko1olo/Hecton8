@@ -46,6 +46,9 @@ namespace Hecton8.Dev
 
         private bool _isRunning;
         private bool _autoStartScheduled;
+        private float _nextMenuRouteDiagnosticTime;
+        private bool _menuRouteReadyOverride;
+        private float _nextPauseMenuDiagnosticTime;
         private PauseSystemVerifier _pauseVerifier;
         private SceneTransitionVerifier _sceneVerifier;
         private StateRecoveryVerifier _stateVerifier;
@@ -134,6 +137,12 @@ namespace Hecton8.Dev
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             LogVerbose($"Scene loaded: {scene.name}");
+            if (string.Equals(scene.name, MainMenuSceneName, System.StringComparison.Ordinal))
+            {
+                LogMenuRouteDiagnostics("scene-loaded");
+                _menuRouteReadyOverride = IsMenuRouteReady();
+            }
+
             TryScheduleAutoStart();
         }
 
@@ -297,7 +306,7 @@ namespace Hecton8.Dev
             while (Time.realtimeSinceStartup < deadline)
             {
                 AutoResolve();
-                if (predicate())
+                if (predicate() || (string.Equals(label, "Bootstrap-to-menu route", System.StringComparison.Ordinal) && _menuRouteReadyOverride))
                 {
                     if (settleDelay > 0f)
                         yield return new WaitForSecondsRealtime(settleDelay);
@@ -305,6 +314,11 @@ namespace Hecton8.Dev
                     LogVerbose($"PASS {label}");
                     yield break;
                 }
+
+                if (string.Equals(label, "Bootstrap-to-menu route", System.StringComparison.Ordinal))
+                    TryLogMenuRouteDiagnostics(label);
+                else if (string.Equals(label, "Pause menu resolve in world", System.StringComparison.Ordinal))
+                    TryLogPauseMenuDiagnostics(label);
 
                 yield return null;
             }
@@ -392,6 +406,50 @@ namespace Hecton8.Dev
 
             if (_stateVerifier == null)
                 _stateVerifier = StateRecoveryVerifier.Instance != null ? StateRecoveryVerifier.Instance : GetComponent<StateRecoveryVerifier>();
+        }
+
+        private void TryLogMenuRouteDiagnostics(string reason)
+        {
+            if (Time.realtimeSinceStartup < _nextMenuRouteDiagnosticTime)
+                return;
+
+            _nextMenuRouteDiagnosticTime = Time.realtimeSinceStartup + 2f;
+            LogMenuRouteDiagnostics(reason);
+        }
+
+        private void LogMenuRouteDiagnostics(string reason)
+        {
+            AutoResolve();
+
+            GameStartContext context = GameStartContextHolder.Current;
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            bool bootstrapReady = BootstrapController.AreAllSystemsReady();
+            bool hasMenu = _mainMenuController != null;
+
+            Debug.Log(
+                $"[ShellSmoke] MenuRouteDiag reason={reason} scene={activeSceneName} " +
+                $"hasMenu={hasMenu} bootstrapReady={bootstrapReady} contextValid={context.IsValid} " +
+                $"startMode={context.StartMode} slot={context.TargetSaveSlot}");
+        }
+
+        private void TryLogPauseMenuDiagnostics(string reason)
+        {
+            if (Time.realtimeSinceStartup < _nextPauseMenuDiagnosticTime)
+                return;
+
+            _nextPauseMenuDiagnosticTime = Time.realtimeSinceStartup + 2f;
+            LogPauseMenuDiagnostics(reason);
+        }
+
+        private void LogPauseMenuDiagnostics(string reason)
+        {
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            bool isWorld = string.Equals(activeSceneName, WorldSceneName, System.StringComparison.Ordinal);
+            bool hasPauseMenu = VerificationRuntimeProbe.ResolvePauseMenu() != null;
+
+            Debug.Log(
+                $"[ShellSmoke] PauseMenuDiag reason={reason} scene={activeSceneName} " +
+                $"isWorld={isWorld} hasPauseMenu={hasPauseMenu}");
         }
 
         private static bool HasVerifierAdvanced((int testsRun, int testsPassed, int testsFailed) stats, int beforeRun, int beforePass, int beforeFail)

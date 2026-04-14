@@ -18,23 +18,20 @@ The following first-party groundwork is already landed in code:
   - `ScatterSimulationCandidate`
   - `ScatterSimulationResult`
   - `IScatterSimulationBackend`
-  - `IScatterPlacementReconciler`
 - classic adapters for the current non-DOTS path:
   - `ScatterClassicSimulationBackend`
-  - `ScatterClassicPlacementReconciler`
 - runtime orchestration seam:
   - `ScatterRuntimeBackendFacade`
 - owner-side integration groundwork:
   - backend lifecycle wiring in `WorldProceduralScatterDirector`
   - runtime rule/family lookup bridge
-  - prefab resolver bridge
   - height sample bridge
   - optional shadow-pass scheduling/completion path for backend parity checks
   - shadow parity counters for classic queued-candidate count vs backend candidate count
 
 What this means:
 
-- scatter now has an explicit simulation/reconcile backend boundary
+- scatter now has an explicit simulation backend boundary
 - future DOTS work can slot behind that seam without creating a second runtime owner
 - `WorldProceduralScatterDirector` remains the intended owner
 - owner can now schedule the backend seam in shadow mode without giving it placement ownership
@@ -57,23 +54,20 @@ What this means:
   - plan refresh, facade sync, binding-state lifetime, and shadow baseline bookkeeping are no longer spread across the director partial
 - scatter backend binding state now lives behind one owner-local contract:
   - `ScatterBackendBindingState`
-  - family index binding, representative prefab cache, and height-sample bridge are no longer a loose field cluster on the director partial
+  - representative layer-family indices and height-sample bridge are no longer a loose field cluster on the director partial
 - backend host now exposes a typed runtime status read-model:
   - `ScatterBackendRuntimeStatus`
   - director debug wiring no longer needs to read host state field-by-field
-- director/backend seam now has an explicit reconcile-complete wrapper, but it is still not activated as the live owner path:
-  - future live takeover route is now represented in code
-  - runtime still stays on classic placement ownership until parity/runtime proof exists
 - scatter backend scheduling and shadow completion now use typed owner-local contracts:
   - `ScatterBackendScheduleRequest`
   - `ScatterBackendShadowCompletion`
   - backend config building, height-sample bridging, and shadow parity completion bookkeeping moved into `ScatterBackendRuntimeHost`
-- scatter backend binding lookup and prefab resolution now live behind an owner-local bridge:
+- scatter backend binding lookup now lives behind an owner-local bridge:
   - `ScatterBackendBindingBridge`
-  - binding rebuild and lazy prefab cache resolution are no longer embedded directly in the main backend integration partial
+  - representative family-index rebuild is no longer embedded directly in the main backend integration partial
 - scatter backend support helpers now live under one owner-local support bundle:
   - `ScatterBackendSupportContext`
-  - resolver, binding bridge, and request factory are no longer three separate ad-hoc fields on the integration partial
+  - binding bridge and request factory are no longer separate ad-hoc fields on the integration partial
 - scatter contracts now live in a neutral assembly boundary:
   - `Hecton8.World.Contracts`
   - `ScatterSimulationContracts.cs`
@@ -84,7 +78,14 @@ What this means:
   - `Hecton8.World.Dots.asmdef`
   - `ScatterEntitiesSimulationBackend`
   - registration is provider-based, so the owner assembly still does not take a direct compile-time dependency on the DOTS assembly
-  - current Entities backend is still shadow-safe prototype work, not approved live placement ownership
+- current Entities backend is still shadow-safe prototype work, not approved live placement ownership
+- narrow DOTS scope contract now exists for scatter data bookkeeping only:
+  - `ScatterSimulationCellState`
+  - `ScatterSimulationEligibilityFlags`
+  - `ScatterSimulationQuotaState`
+  - `ScatterSimulationSuppressionState`
+  - `ScatterSimulationDirtyFlags`
+  - current Entities prototype now materializes cell-state / quota / suppression / dirty-flag data instead of only raw height samples
 
 Current package stance:
 
@@ -359,7 +360,6 @@ Primary files:
 - `Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs`
 - `Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs`
 - `Assets/_Project/Scripts/World/ScatterEvaluator.cs`
-- `Assets/_Project/Scripts/World/ScatterReconciler.cs`
 - `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`
 
 Why this is the strongest candidate:
@@ -394,7 +394,7 @@ Correct architecture:
 2. facade writes a compact input frame into DOTS world
 3. ECS systems evaluate residency and candidate outputs
 4. result buffer is read back on main thread
-5. existing reconciler or GPUI bridge applies changes
+5. existing owner-driven reconcile path or GPUI bridge applies changes
 
 This keeps:
 
@@ -410,7 +410,7 @@ The project already has:
 
 - `WorldProceduralFieldSampler.ScheduleCellSamplingJob(...)`
 - `ScatterEvaluator`
-- `ScatterReconciler`
+- owner-driven scatter reconcile/apply path inside `WorldProceduralScatterDirector`
 
 That means the architecture already wants a data backend and a main-thread owner boundary.
 
@@ -688,7 +688,6 @@ Target files:
 - `WorldProceduralScatterDirector.cs`
 - `WorldProceduralScatterWorkingMemory.cs`
 - `ScatterEvaluator.cs`
-- `ScatterReconciler.cs`
 
 Purpose:
 
@@ -781,7 +780,7 @@ Evidence already exists:
 
 - `WorldProceduralFieldSampler` produces compact cell inputs and outputs
 - `WorldProceduralScatterDirectorSamplingPipeline` already runs async job sampling then processes later
-- `ScatterEvaluator` and `ScatterReconciler` already split compute and apply phases
+- `ScatterEvaluator` is already isolated from the owner-driven apply path
 
 This is exactly the sort of system that can accept a DOTS backend under an existing owner.
 

@@ -5,7 +5,7 @@
 // ARCHITECTURE:
 //   Extracted from WorldProceduralScatterDirector (11,845-line monolith).
 //   Handles grid-cell iteration, height sampling, and candidate scoring
-//   on worker threads. Results consumed by ScatterReconciler on main thread.
+//   on worker threads. Results are consumed by the owner-driven scatter runtime path on main thread.
 //
 // OWNERSHIP: WorldProceduralScatterDirector owns and drives this evaluator.
 // LIFETIME:  Created in Awake, disposed in OnDisable/OnDestroy.

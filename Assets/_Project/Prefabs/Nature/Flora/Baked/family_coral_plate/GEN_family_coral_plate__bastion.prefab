@@ -190,7 +190,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8289525913907401882}
   - component: {fileID: 7616774016666018146}
-  - component: {fileID: 1903616301171995461}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__bastion
   m_TagString: Untagged
@@ -224,8 +223,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6324192862862685710}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.015870452, y: 0.7358279, z: -0.02573347}
-  m_Size: 2.6450768
+  m_LocalReferencePoint: {x: -0.07124376, y: 0.94853157, z: 0.005394697}
+  m_Size: 3.4524546
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -244,19 +243,6 @@ LODGroup:
     - renderer: {fileID: 2835692001180289722}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1903616301171995461
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6324192862862685710}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: e1773430cbe6d5e4eb87c90de021095e, type: 2}
 --- !u!1 &8942372335432730399
 GameObject:
   m_ObjectHideFlags: 0

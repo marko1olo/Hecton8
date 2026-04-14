@@ -103,7 +103,6 @@ namespace Hecton8.UI
             NotificationEvents.OnPushNotification += OnPushNotification;
 
             EnsureBuilt();
-            RegisterToTickManager();
         }
 
         private void OnDisable()
@@ -141,6 +140,10 @@ namespace Hecton8.UI
                         NotificationRequest next = _queue[0];
                         _queue.RemoveAt(0);
                         ShowImmediate(next.Message, next.Severity);
+                    }
+                    else
+                    {
+                        UnregisterFromTickManager();
                     }
                 }
             }
@@ -254,6 +257,7 @@ namespace Hecton8.UI
 
         private void ShowImmediate(string message, NotificationSeverity severity)
         {
+            RegisterToTickManager();
             ApplyVisuals(message, severity);
             _timer = displayDuration;
             _currentAlpha = 0f;

@@ -255,29 +255,31 @@ namespace Hecton8.Input
         public void SaveOverrides()
         {
             string json = InputManager.Instance.SaveBindingOverridesAsJson();
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
             if (string.IsNullOrEmpty(json))
             {
-                PlayerPrefs.DeleteKey(overridesPlayerPrefsKey);
+                options.DeleteKey(overridesPlayerPrefsKey);
             }
             else
             {
-                PlayerPrefs.SetString(overridesPlayerPrefsKey, json);
+                options.SetString(overridesPlayerPrefsKey, json);
             }
 
-            PlayerPrefs.Save();
+            options.Save();
             OnOverridesSaved?.Invoke();
             Log("Binding overrides saved.");
         }
 
         public void LoadOverrides()
         {
-            if (!PlayerPrefs.HasKey(overridesPlayerPrefsKey))
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            if (!options.HasKey(overridesPlayerPrefsKey))
             {
                 Log("No saved binding overrides found.");
                 return;
             }
 
-            string json = PlayerPrefs.GetString(overridesPlayerPrefsKey, string.Empty);
+            string json = options.GetString(overridesPlayerPrefsKey, string.Empty);
             if (string.IsNullOrEmpty(json))
             {
                 Log("Saved binding overrides key exists but payload is empty.");
@@ -296,8 +298,9 @@ namespace Hecton8.Input
 
             if (clearPlayerPrefs)
             {
-                PlayerPrefs.DeleteKey(overridesPlayerPrefsKey);
-                PlayerPrefs.Save();
+                UserOptionsPersistence options = UserOptionsPersistence.Instance;
+                options.DeleteKey(overridesPlayerPrefsKey);
+                options.Save();
             }
 
             OnOverridesCleared?.Invoke();

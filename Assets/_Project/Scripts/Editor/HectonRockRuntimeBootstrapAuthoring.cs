@@ -316,7 +316,7 @@ namespace Hecton8.EditorTools
 
         private static void RemoveHiZOcclusionGeneratorsFromSceneCameras()
         {
-            Camera[] sceneCameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Camera[] sceneCameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
             for (int i = 0; i < sceneCameras.Length; i++)
             {
                 GPUInstancerHiZOcclusionGenerator hiZ = sceneCameras[i] != null

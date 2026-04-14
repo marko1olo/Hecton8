@@ -232,7 +232,7 @@ namespace Hecton8.EditorTools
         {
             sb.AppendLine("── MATERIAL INSTANCE LEAKS ─────────────────────────────");
 
-            var renderers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+            var renderers = Object.FindObjectsByType<Renderer>();
             int leakCount = 0;
             var leakedNames = new List<string>(32); // COLD ALLOC: editor-only.
 
@@ -273,8 +273,6 @@ namespace Hecton8.EditorTools
 
             var shaders = Resources.FindObjectsOfTypeAll<Shader>();
             int highVariantCount = 0;
-            const int variantWarningThreshold = 128;
-
             for (int i = 0; i < shaders.Length; i++)
             {
                 Shader shader = shaders[i];

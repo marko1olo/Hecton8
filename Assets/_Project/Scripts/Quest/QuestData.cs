@@ -63,7 +63,7 @@ namespace Hecton8.Quest
         [Tooltip("ID для триггера (itemId / discoveryId / logId / signalId).")]
         [SerializeField] public string triggerId;
 
-        [Tooltip("Числовое значение для триггера (глубина в метрах / biomeId).")]
+        [Tooltip("Числовое значение для триггера (глубина в метрах / biomeId / quantity).")]
         [SerializeField] public float triggerValue;
 
         [Header("── Completion ──────────────────────────────")]
@@ -73,7 +73,7 @@ namespace Hecton8.Quest
         [Tooltip("ID для условия завершения.")]
         [SerializeField] public string completionId;
 
-        [Tooltip("Числовое значение для завершения.")]
+        [Tooltip("Числовое значение для завершения (глубина в метрах / biomeId / quantity).")]
         [SerializeField] public float completionValue;
 
         [Header("── Flags ────────────────────────────────────")]

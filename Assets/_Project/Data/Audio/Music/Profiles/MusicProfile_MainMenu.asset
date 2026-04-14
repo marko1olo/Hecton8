@@ -1,0 +1,50 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 596d4bbe2696cb445b98131cfacca40c, type: 3}
+  m_Name: MusicProfile_MainMenu
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicBiomeProfile
+  _profileId: music.profile.main_menu
+  _profileLabel: Main Menu
+  _minPauseSeconds: 12
+  _maxPauseSeconds: 28
+  _fadeInSeconds: 1.5
+  _fadeOutSeconds: 2.5
+  _crossfadeSeconds: 2.5
+  _shortTrackChance: 0
+  _shortTrackCooldownSeconds: 0
+  _localCalmWeight: 100
+  _localTenseWeight: 100
+  _allowCrossTensionMix: false
+  _crossTensionMixChance: 0
+  _longRepeatHorizon: 1
+  _shortRepeatHorizon: 1
+  _calmLongTracks: 
+  - _cueId: music.main_menu_1_sun_under_water
+    _clip: {fileID: 8300000, guid: 507c59559ae41eb46b475787e8d1b100, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 7
+    _tension: 0.1
+  - _cueId: music.main_menu_2_beneath_the_weight_of_miles
+    _clip: {fileID: 8300000, guid: 22ae131c0bebe4d4691995e8878796bc, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 7
+    _tension: 0.1
+  _tenseLongTracks: []
+  _calmShortTracks: []
+  _tenseShortTracks: []
+  _discoveryStingers: []
+  _dangerStingers: []
+  _recoveryStingers: []
+  _calmBleedProfiles: []
+  _tenseBleedProfiles: []

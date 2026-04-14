@@ -90,6 +90,11 @@ namespace Hecton8.Gameplay
         private const int TRACKED_INITIAL_CAPACITY = 16;
 
         /// <summary>
+        /// Максимум коллайдеров, пересчитываемых при холодной синхронизации interior zone.
+        /// </summary>
+        private const int INTERIOR_OVERLAP_CAPACITY = 32;
+
+        /// <summary>
         /// Коэффициент возврата ресурсов при деконструкции.
         /// 0.8 = 80% ресурсов возвращается.
         /// </summary>
@@ -223,6 +228,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         private readonly List<int> _keysToRemove = new List<int>(TRACKED_INITIAL_CAPACITY);
 
+        // COLD ALLOC: Collider[32] — resync interior occupants on enable/load/spawn — owner: BaseModule
+        private readonly Collider[] _interiorOverlapBuffer = new Collider[INTERIOR_OVERLAP_CAPACITY];
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES — для ConstructionManager save/load
         // ══════════════════════════════════════════════════════════
@@ -326,11 +334,13 @@ namespace Hecton8.Gameplay
             _isDeconstructing = false;
 
             RefreshVisualStateImmediate();
+            ResyncInteriorOccupants(true);
             TryStartDrain();
         }
 
         public void OnDespawn()
         {
+            NotifyModuleExitIfNeeded();
             StopDrain();
             SetLeakActive(false);
             SetFloodedVisual(false);
@@ -421,12 +431,14 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             GameTickManager.Instance?.Register((ISlowTickable)this);
+            ResyncInteriorOccupants(true);
         }
 
         private void OnDisable()
         {
             GameTickManager.Instance?.Unregister((ISlowTickable)this);
 
+            NotifyModuleExitIfNeeded();
             ReleaseAllTrackedObjects();
         }
 
@@ -443,29 +455,13 @@ namespace Hecton8.Gameplay
             // Player check runs BEFORE BuoyancyObject check —
             // player may or may not have BuoyancyObject,
             // but life support must work regardless.
-            if (other.CompareTag("Player") && _trackedPlayerSurvival == null)
-            {
-                other.TryGetComponent(out _trackedPlayerSurvival);
-            }
+            TryTrackPlayer(other, true);
 
             // ── Interior Zone: BuoyancyObject tracking ──
             if (!other.TryGetComponent(out BuoyancyObject buoyancy))
                 return;
 
-            #pragma warning disable CS0618
-            int key = other.GetInstanceID();
-            #pragma warning restore CS0618
-
-            if (_trackedObjects.ContainsKey(key))
-                return;
-
-            _trackedObjects[key] = buoyancy;
-            UpdateTrackedDiagnostics();
-
-            if (!isFlooded)
-            {
-                buoyancy.EnterDryZone();
-            }
+            TrackBuoyancyObject(other, buoyancy);
         }
 
         private void OnTriggerExit(Collider other)
@@ -473,15 +469,9 @@ namespace Hecton8.Gameplay
             if (other == null) return;
 
             // ── Life Support: detect player exit ──
-            if (other.CompareTag("Player"))
-            {
+            bool trackedPlayerExited = IsTrackedPlayerCollider(other);
+            if (trackedPlayerExited)
                 _trackedPlayerSurvival = null;
-            }
-            // v3.0: Notify HUD of module exit  | is this fragment located right? analyze
-            if (other.CompareTag("Player"))
-            {
-                ModuleStatusEvents.NotifyExit(this);
-            }
             // ── Interior Zone: BuoyancyObject tracking ──
             #pragma warning disable CS0618
             int key = other.GetInstanceID();
@@ -496,6 +486,13 @@ namespace Hecton8.Gameplay
                 {
                     buoyancy.ExitDryZone();
                 }
+            }
+
+            if (trackedPlayerExited)
+            {
+                ResyncInteriorOccupants(false);
+                if (_trackedPlayerSurvival == null)
+                    ModuleStatusEvents.NotifyExit(this);
             }
         }
 
@@ -590,6 +587,7 @@ namespace Hecton8.Gameplay
             _wasFlooded = isFlooded;
             RefreshVisualStateImmediate();
             SyncTrackedObjectsFloodState();
+            ResyncInteriorOccupants(true);
             TryStartDrain();
         }
 
@@ -919,6 +917,34 @@ namespace Hecton8.Gameplay
         //  PRIVATE — VISUALS
         // ══════════════════════════════════════════════════════════
 
+        private void ResyncInteriorOccupants(bool notifyPlayerEnter)
+        {
+            if (!TryGetInteriorOverlapQuery(out Vector3 worldCenter, out Vector3 halfExtents, out Quaternion worldRotation))
+                return;
+
+            int overlapCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+                worldCenter,
+                halfExtents,
+                _interiorOverlapBuffer,
+                worldRotation,
+                ~0,
+                QueryTriggerInteraction.Collide);
+
+            for (int i = 0; i < overlapCount; i++)
+            {
+                Collider overlap = _interiorOverlapBuffer[i];
+                _interiorOverlapBuffer[i] = null;
+
+                if (overlap == null || ReferenceEquals(overlap, interiorTrigger))
+                    continue;
+
+                TryTrackPlayer(overlap, notifyPlayerEnter);
+
+                if (overlap.TryGetComponent(out BuoyancyObject buoyancy))
+                    TrackBuoyancyObject(overlap, buoyancy);
+            }
+        }
+
         private void SetLeakActive(bool active)
         {
             if (leakVfx == null) return;
@@ -1001,6 +1027,79 @@ namespace Hecton8.Gameplay
         {
             if (_moduleMarker == null)
                 TryGetComponent(out _moduleMarker);
+        }
+
+        private bool TryGetInteriorOverlapQuery(out Vector3 worldCenter, out Vector3 halfExtents, out Quaternion worldRotation)
+        {
+            worldCenter = default;
+            halfExtents = default;
+            worldRotation = Quaternion.identity;
+
+            if (interiorTrigger == null)
+                return false;
+
+            Transform triggerTransform = interiorTrigger.transform;
+            Vector3 lossyScale = triggerTransform.lossyScale;
+            Vector3 absoluteScale = new Vector3(
+                Mathf.Abs(lossyScale.x),
+                Mathf.Abs(lossyScale.y),
+                Mathf.Abs(lossyScale.z));
+
+            worldCenter = triggerTransform.TransformPoint(interiorTrigger.center);
+            halfExtents = Vector3.Scale(interiorTrigger.size * 0.5f, absoluteScale);
+            worldRotation = triggerTransform.rotation;
+            return halfExtents.x > 0f && halfExtents.y > 0f && halfExtents.z > 0f;
+        }
+
+        private void TryTrackPlayer(Collider other, bool notifyEnter)
+        {
+            if (_trackedPlayerSurvival != null)
+                return;
+
+            if (!other.CompareTag("Player"))
+                return;
+
+            HectonSurvivalSystem resolvedSurvival = other.GetComponentInParent<HectonSurvivalSystem>();
+            if (resolvedSurvival == null)
+                return;
+
+            _trackedPlayerSurvival = resolvedSurvival;
+            if (notifyEnter)
+                ModuleStatusEvents.NotifyEnter(this);
+        }
+
+        private bool IsTrackedPlayerCollider(Collider other)
+        {
+            if (_trackedPlayerSurvival == null || !other.CompareTag("Player"))
+                return false;
+
+            HectonSurvivalSystem resolvedSurvival = other.GetComponentInParent<HectonSurvivalSystem>();
+            return ReferenceEquals(_trackedPlayerSurvival, resolvedSurvival);
+        }
+
+        private void TrackBuoyancyObject(Collider other, BuoyancyObject buoyancy)
+        {
+            #pragma warning disable CS0618
+            int key = other.GetInstanceID();
+            #pragma warning restore CS0618
+
+            if (_trackedObjects.ContainsKey(key))
+                return;
+
+            _trackedObjects[key] = buoyancy;
+            UpdateTrackedDiagnostics();
+
+            if (!isFlooded)
+                buoyancy.EnterDryZone();
+        }
+
+        private void NotifyModuleExitIfNeeded()
+        {
+            if (_trackedPlayerSurvival == null)
+                return;
+
+            _trackedPlayerSurvival = null;
+            ModuleStatusEvents.NotifyExit(this);
         }
 
         private void ReadBuildablePower()

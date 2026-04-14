@@ -126,6 +126,9 @@ namespace Hecton8.Inventory
         /// <param name="y">Строка якорной ячейки.</param>
         public void RemoveItem(ItemData item, int x, int y)
         {
+            if (item == null || _grid == null)
+                return;
+
             int idx = AnchorIndex(x, y);
             int count = _stackCounts[idx];
             if (count < 1) count = 1;
@@ -146,6 +149,9 @@ namespace Hecton8.Inventory
         /// </summary>
         public ItemData RemoveOneItem(int anchorX, int anchorY)
         {
+            if (_grid == null)
+                return null;
+
             ItemData item = _grid.GetCell(anchorX, anchorY);
             if (item == null) return null;
 
@@ -406,12 +412,25 @@ namespace Hecton8.Inventory
         /// </summary>
         public void PopulateSaveData(SaveData data)
         {
-            InventoryGrid grid = _grid;
-            int cols = grid.Columns;
-            int rows = grid.Rows;
+            if (data == null)
+                return;
 
             ref InventoryDTO dto = ref data.inventory;
             dto.EnsureCapacity();
+
+            InventoryGrid grid = _grid;
+            if (grid == null)
+            {
+                dto.gridColumns = this.columns;
+                dto.gridRows = this.rows;
+                dto.totalWeight = 0f;
+                dto.cellCount = 0;
+                return;
+            }
+
+            int cols = grid.Columns;
+            int rows = grid.Rows;
+
             dto.gridColumns  = cols;
             dto.gridRows     = rows;
             dto.totalWeight  = TotalWeight;
@@ -461,6 +480,9 @@ namespace Hecton8.Inventory
         /// </summary>
         public void LoadFromSaveData(SaveData data)
         {
+            if (data == null)
+                return;
+
             if (itemCatalog == null)
             {
                 Debug.LogError("[PlayerInventory] ItemCatalog not assigned! Cannot load inventory.");
@@ -468,6 +490,8 @@ namespace Hecton8.Inventory
             }
 
             InventoryDTO dto = data.inventory;
+            if (_grid == null)
+                return;
 
             // ── Очистка текущего инвентаря ──
             _grid.Clear();
@@ -495,10 +519,8 @@ namespace Hecton8.Inventory
                 // ── Размещение по сохранённым координатам ──
                 if (_grid.CheckFit(cell.x, cell.y, item.width, item.height))
                 {
-                    _grid.PlaceAt(item, cell.x, cell.y); //это надо или нет? я не понял нейронка не сказала точно. подумай надо или нет!
-                    // После успешного _grid.CheckFit / PlaceAt:
-                    _grid.PlaceAt(item, cell.x, cell.y); 
-                    
+                    _grid.PlaceAt(item, cell.x, cell.y);
+
                     int loadedCount = cell.stackCount > 0 ? cell.stackCount : 1;
                     _stackCounts[AnchorIndex(cell.x, cell.y)] = loadedCount;
                     TotalWeight += item.weight * loadedCount;

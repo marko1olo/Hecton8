@@ -208,11 +208,19 @@ namespace Hecton8.Power
             ReadBuildableData();
 
             // ── 2. Собираем IPowerComponent ──
-            _components.Clear();
+            if (_components == null)
+                _components = new List<IPowerComponent>(4);
+            else
+                _components.Clear();
+
             GetComponents(_components); // zero GC, fills list
 
             // ── 3. Ищем соседей и подключаемся к сети ──
-            _neighbors.Clear();
+            if (_neighbors == null)
+                _neighbors = new List<PowerNode>(6);
+            else
+                _neighbors.Clear();
+
             FindAndConnectNeighbors();
         }
 

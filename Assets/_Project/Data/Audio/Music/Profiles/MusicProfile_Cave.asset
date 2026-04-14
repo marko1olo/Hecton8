@@ -1,0 +1,174 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 596d4bbe2696cb445b98131cfacca40c, type: 3}
+  m_Name: MusicProfile_Cave
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicBiomeProfile
+  _profileId: music.profile.cave
+  _profileLabel: Cave
+  _minPauseSeconds: 45
+  _maxPauseSeconds: 110
+  _fadeInSeconds: 1.45
+  _fadeOutSeconds: 2.6
+  _crossfadeSeconds: 2.35
+  _shortTrackChance: 0.14
+  _shortTrackCooldownSeconds: 85
+  _localCalmWeight: 84
+  _localTenseWeight: 84
+  _allowCrossTensionMix: false
+  _crossTensionMixChance: 0
+  _longRepeatHorizon: 2
+  _shortRepeatHorizon: 1
+  _calmLongTracks: 
+  - _cueId: music.cave_ambient_1_pitch_black_silence
+    _clip: {fileID: 8300000, guid: fe727dabd2c9e3f4e8eafc492522d4ce, type: 3}
+    _volume: 0.923
+    _weight: 3
+    _role: 0
+    _tension: 0.42
+  - _cueId: music.cave_ambient_2_pitch_black_silence
+    _clip: {fileID: 8300000, guid: aabfefae74c85d44a91fa9e3863324e1, type: 3}
+    _volume: 0.861
+    _weight: 3
+    _role: 0
+    _tension: 0.42
+  - _cueId: music.cave_ambient_4_sub_bass_pressure
+    _clip: {fileID: 8300000, guid: cdef1f05e4d7c4249b1827fe762791ed, type: 3}
+    _volume: 1
+    _weight: 1
+    _role: 0
+    _tension: 0.42
+  - _cueId: music.cave_ambient_6_vinyl_underwater_ruins
+    _clip: {fileID: 8300000, guid: 5a48601cb08017f4fa518a9aadb101e4, type: 3}
+    _volume: 0.741
+    _weight: 3
+    _role: 0
+    _tension: 0.42
+  - _cueId: music.cave_ambient_8_cavern_click_scrape
+    _clip: {fileID: 8300000, guid: 106e7be27a028e649a5c5281ebbb8fdf, type: 3}
+    _volume: 0.851
+    _weight: 2
+    _role: 0
+    _tension: 0.42
+  _tenseLongTracks: 
+  - _cueId: music.cave_ambient_10_volcanic_steam_ritual
+    _clip: {fileID: 8300000, guid: c069b52ff68a85b45bbfb7068ae19e8a, type: 3}
+    _volume: 0.902
+    _weight: 3
+    _role: 0
+    _tension: 0.66
+  - _cueId: music.cave_ambient_3_sub_bass_pressure
+    _clip: {fileID: 8300000, guid: 7b92e59587ad31f4b93b6d3850e5546b, type: 3}
+    _volume: 0.7
+    _weight: 3
+    _role: 0
+    _tension: 0.66
+  - _cueId: music.cave_ambient_5_cavern_click_scrape
+    _clip: {fileID: 8300000, guid: 32e21a4abca161342bb21ac95b4cb88a, type: 3}
+    _volume: 0.989
+    _weight: 2
+    _role: 0
+    _tension: 0.66
+  - _cueId: music.cave_ambient_7_vinyl_underwater_ruins_1
+    _clip: {fileID: 8300000, guid: 81d4ad154384a634eb7d2c3311e4bc3f, type: 3}
+    _volume: 0.841
+    _weight: 2
+    _role: 0
+    _tension: 0.66
+  - _cueId: music.cave_ambient_9_volcanic_hiss_anthem
+    _clip: {fileID: 8300000, guid: 75d65fd413ccd124eaa0d4af54748974, type: 3}
+    _volume: 0.891
+    _weight: 3
+    _role: 0
+    _tension: 0.66
+  _calmShortTracks: []
+  _tenseShortTracks: []
+  _discoveryStingers: 
+  - _cueId: music.stinger_discovery_1_the_sunken_gate
+    _clip: {fileID: 8300000, guid: 81b174c662ccc04439985601bf432933, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 4
+    _tension: 0.5
+  - _cueId: music.stinger_discovery_2_the_sunken_archive
+    _clip: {fileID: 8300000, guid: 1d02a115923b51a4f8f672755ccae79b, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 4
+    _tension: 0.5
+  - _cueId: music.stinger_discovery_3_the_sunken_observatory
+    _clip: {fileID: 8300000, guid: db4ef760f2874e34e8ec3f9d07362a90, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 4
+    _tension: 0.5
+  - _cueId: music.stinger_discovery_4_the_sunken_observatory
+    _clip: {fileID: 8300000, guid: 3c54a92fe3f41814e93d1ade62f7d32a, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 4
+    _tension: 0.5
+  - _cueId: music.stinger_discovery_5_the_sunken_relic
+    _clip: {fileID: 8300000, guid: 7d69df16d9f2cc2479fa609a64af98f7, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 4
+    _tension: 0.5
+  - _cueId: music.stinger_hallucination_1_beneath_the_tide
+    _clip: {fileID: 8300000, guid: 768a73eccd87c184caf6f887803a490c, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 4
+    _tension: 0.5
+  _dangerStingers: 
+  - _cueId: music.stinger_dangerous_1_iron_teeth
+    _clip: {fileID: 8300000, guid: ef4fb939718b1124daf5bbdcf98c8ed8, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 5
+    _tension: 0.95
+  - _cueId: music.stinger_dangerous_2heartbeat_under_floorboards
+    _clip: {fileID: 8300000, guid: c8be0393845ff744a86f64139d6ad1ee, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 5
+    _tension: 0.95
+  _recoveryStingers: 
+  - _cueId: music.stinger_being_saved_1release_at_depth
+    _clip: {fileID: 8300000, guid: 2cee222960dc8d54098777e03cbd6adc, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.22
+  - _cueId: music.stinger_being_saved_2_pressure_gives_way
+    _clip: {fileID: 8300000, guid: 80df90f723d55ac43a0246898788db4b, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.22
+  - _cueId: music.stinger_being_saved_3_first_breath_above
+    _clip: {fileID: 8300000, guid: 170a7c1910c0b0b45a511f62e93d2f83, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.22
+  _calmBleedProfiles: 
+  - _profile: {fileID: 11400000, guid: 519c105bce6086e48b69182e2951ca40, type: 2}
+    _weight: 8
+  - _profile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
+    _weight: 6
+  _tenseBleedProfiles: 
+  - _profile: {fileID: 11400000, guid: a1a53362b69461a49a59c04b635d606b, type: 2}
+    _weight: 8
+  - _profile: {fileID: 11400000, guid: f336cbafe44b5ae4bb4d4dc08d358e74, type: 2}
+    _weight: 8
+  - _profile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
+    _weight: 6

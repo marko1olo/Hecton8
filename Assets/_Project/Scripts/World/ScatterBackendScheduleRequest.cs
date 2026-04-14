@@ -18,7 +18,11 @@ namespace Hecton8.World
             int structureStride,
             int spawnStride,
             float surfaceYOffset,
-            uint seed)
+            uint seed,
+            ScatterSimulationEligibilityFlags eligibilityMask,
+            ScatterSimulationSuppressionState defaultSuppressionState,
+            ScatterSimulationDirtyFlags dirtyFlags,
+            ScatterBackendParityReference parityReference)
         {
             ObserverPosition = observerPosition;
             TotalCells = totalCells;
@@ -30,6 +34,10 @@ namespace Hecton8.World
             SpawnStride = spawnStride;
             SurfaceYOffset = surfaceYOffset;
             Seed = seed;
+            EligibilityMask = eligibilityMask;
+            DefaultSuppressionState = defaultSuppressionState;
+            DirtyFlags = dirtyFlags;
+            ParityReference = parityReference;
         }
 
         public Vector3 ObserverPosition { get; }
@@ -42,5 +50,9 @@ namespace Hecton8.World
         public int SpawnStride { get; }
         public float SurfaceYOffset { get; }
         public uint Seed { get; }
+        public ScatterSimulationEligibilityFlags EligibilityMask { get; }
+        public ScatterSimulationSuppressionState DefaultSuppressionState { get; }
+        public ScatterSimulationDirtyFlags DirtyFlags { get; }
+        public ScatterBackendParityReference ParityReference { get; }
     }
 }

@@ -62,21 +62,33 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (Instance == null)
+                Instance = this;
+
+            ResolveDependencies();
+            RegisterWithSaveManager();
+        }
+
+        private void Start()
+        {
             ResolveDependencies();
             RegisterWithSaveManager();
         }
 
         private void OnDisable()
         {
-            if (Instance == this)
-                Instance = null;
-
             if (_registeredWithSaveManager)
             {
                 SaveManager sm = SaveManager.Instance;
                 if (sm != null) sm.Unregister(this);
                 _registeredWithSaveManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
         }
 
         /// <summary>Starts a mission by its ID.</summary>

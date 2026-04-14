@@ -16,6 +16,9 @@
 // ============================================================================
 
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Gameplay
 {
@@ -97,8 +100,29 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (string.IsNullOrEmpty(upgradeId))
-                upgradeId = name.ToLower().Replace(" ", "_");
+            if (string.IsNullOrWhiteSpace(upgradeId))
+                upgradeId = NormalizeId(name);
+            else
+                upgradeId = NormalizeId(upgradeId);
+
+            if (string.IsNullOrWhiteSpace(displayName))
+                displayName = name.Replace("_", " ");
+
+            tier = Mathf.Clamp(tier, 0, 4);
+
+            if (requirements == null)
+                requirements = new SuitUpgradeRequirement[0];
+        }
+
+        private static string NormalizeId(string source)
+        {
+            if (string.IsNullOrWhiteSpace(source))
+                return "suit_upgrade";
+
+            return source.Trim()
+                .ToLowerInvariant()
+                .Replace(" ", "_")
+                .Replace("-", "_");
         }
 #endif
     }

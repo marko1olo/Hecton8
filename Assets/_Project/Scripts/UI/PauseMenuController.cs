@@ -3,6 +3,8 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.SaveSystem;
+using Hecton.Localization;
+using Hecton.UI.MainMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -80,6 +82,8 @@ namespace Hecton8.UI
         private Button _savesBackButton;
         private Button _helpBackButton;
         private Button _settingsBackButton;
+        private Button _settingsLanguageButton;
+        private TextMeshProUGUI _settingsLanguageStatus;
 
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
@@ -117,14 +121,24 @@ namespace Hecton8.UI
                 GameTickManager.Instance.Register(this);
                 _registered = true;
             }
+
+            LocalizationManager.OnLanguageChanged += OnLanguageChanged;
         }
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+
             if (GameTickManager.Instance != null && _registered)
             {
                 GameTickManager.Instance.Unregister(this);
                 _registered = false;
+            }
+
+            if (_exitToMainMenuInFlight)
+            {
+                HandleMainMenuExitTransitionDisabled();
+                return;
             }
 
             bool restorePlayerInput = _isOpen && ShouldRestorePlayerInputOnDisable();
@@ -227,6 +241,25 @@ namespace Hecton8.UI
         {
             if (_controlsPanel != null)
                 _controlsPanel.RefreshAllBindingsNow();
+
+            RefreshLanguageSettingsStatus();
+        }
+
+        private void OnLanguageChanged(GameLanguage newLanguage)
+        {
+            RefreshLocalizedTexts();
+        }
+
+        private void RefreshLocalizedTexts()
+        {
+            // Refresh all visible text in pause menu
+            // Section titles, button labels, help text, etc.
+            // This ensures language changes are reflected immediately
+            if (_isOpen)
+            {
+                // Rebuild current section to refresh localized text
+                ShowSection(_activeSection);
+            }
         }
 
         private void ApplyClosedState(bool restorePlayerInput)
@@ -512,16 +545,25 @@ namespace Hecton8.UI
         private void BuildSettingsPanel(RectTransform panel)
         {
             CreateSectionTitle(panel, "SETTINGS").SetText("SETTINGS");
-            CreateSectionSub(panel, "Controls were moved out of the PDA. Rebind them here.")
+            CreateSectionSub(panel, "Controls were moved out of the PDA. Rebind them here. Language cycling is also available.")
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
+            RectTransform languageButton = CreateButton(panel, "LanguageButton", "CYCLE LANGUAGE", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -98f), new Vector2(420f, 38f), CycleLanguage);
+            _settingsLanguageButton = languageButton.GetComponent<Button>();
+
+            _settingsLanguageStatus = CreateText(panel, "LanguageStatus", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Center);
+            Anchor(_settingsLanguageStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(26f, -146f), new Vector2(-26f, -118f));
+            _settingsLanguageStatus.color = Dim;
+
             RectTransform controlsRoot = CreateRect(panel, "ControlsPanel");
-            Anchor(controlsRoot, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(22f, 62f), new Vector2(-22f, -80f));
+            Anchor(controlsRoot, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(22f, 160f), new Vector2(-22f, -80f));
             PauseControlsPanel controls = controlsRoot.gameObject.AddComponent<PauseControlsPanel>();
             controls.Configure(this, labelFont, labelFont);
             _controlsPanel = controls;
 
             _settingsBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            RefreshLanguageSettingsStatus();
         }
 
         private void ShowSection(PauseSection section)
@@ -566,6 +608,14 @@ namespace Hecton8.UI
             {
                 if (_saveStatus != null)
                     _saveStatus.SetText("SAVE MANAGER UNAVAILABLE.");
+
+                ModalWindow.ShowWithCustomLabels(
+                    "Save Error",
+                    "Save system is unavailable. Cannot save game.",
+                    null,
+                    null,
+                    "OK",
+                    null);
                 return;
             }
 
@@ -581,9 +631,24 @@ namespace Hecton8.UI
                 await saveManager.SaveGameAsync(slotName);
                 if (_saveStatus != null)
                 {
-                    _saveStatus.text = saveManager.LastOperationSucceeded
-                        ? $"{CachedToUpperInvariant(slotName)} WRITTEN."
-                        : $"{CachedToUpperInvariant(slotName)} FAILED. {CachedToUpperInvariant(saveManager.LastOperationError ?? string.Empty)}";
+                    if (saveManager.LastOperationSucceeded)
+                    {
+                        _saveStatus.text = $"{CachedToUpperInvariant(slotName)} WRITTEN.";
+                    }
+                    else
+                    {
+                        string errorMsg = saveManager.LastOperationError ?? "Unknown error";
+                        _saveStatus.text = $"{CachedToUpperInvariant(slotName)} FAILED. {CachedToUpperInvariant(errorMsg)}";
+
+                        // Show retry modal on failure
+                        ModalWindow.ShowWithCustomLabels(
+                            "Save Failed",
+                            $"Failed to save to {slotName}.\n\n{errorMsg}\n\nRetry?",
+                            () => SaveSlot(slotName), // Retry
+                            null, // Cancel just closes modal
+                            "Retry",
+                            "Cancel");
+                    }
                 }
             }
             catch (Exception ex)
@@ -591,6 +656,15 @@ namespace Hecton8.UI
                 Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {ex.Message}");
                 if (_saveStatus != null)
                     _saveStatus.text = $"{CachedToUpperInvariant(slotName)} FAILED. CHECK CONSOLE.";
+
+                // Show retry modal on exception
+                ModalWindow.ShowWithCustomLabels(
+                    "Save Error",
+                    $"Save operation crashed for {slotName}.\n\nCheck console for details.\n\nRetry?",
+                    () => SaveSlot(slotName), // Retry
+                    null, // Cancel just closes modal
+                    "Retry",
+                    "Cancel");
             }
         }
 
@@ -679,6 +753,13 @@ namespace Hecton8.UI
             if (pauseTimeScale)
                 Time.timeScale = 0f;
 
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 1f;
+                _canvasGroup.interactable = true;
+                _canvasGroup.blocksRaycasts = true;
+            }
+
             if (_headerTitle != null)
                 _headerTitle.SetText("MISSION PAUSE");
 
@@ -693,6 +774,30 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
             Debug.LogError($"[PauseMenuController] {message}");
 #endif
+        }
+
+        private void HandleMainMenuExitTransitionDisabled()
+        {
+            bool wasOpen = _isOpen;
+            _isOpen = false;
+            _activeSection = PauseSection.Main;
+
+            if (wasOpen)
+                UnregisterOpenMenu();
+
+            ClearPauseSelection();
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.interactable = false;
+                _canvasGroup.blocksRaycasts = false;
+            }
+
+            if (_mainMenuLoadOperation != null)
+                _mainMenuLoadOperation.allowSceneActivation = true;
+
+            _sceneActivationRequested = true;
         }
 
         private static void RegisterMainMenuCleanup(string sceneName)
@@ -964,10 +1069,38 @@ namespace Hecton8.UI
                 case PauseSection.Help:
                     return _helpBackButton;
                 case PauseSection.Settings:
-                    return _settingsBackButton;
+                    return _settingsLanguageButton != null ? _settingsLanguageButton : _settingsBackButton;
                 default:
                     return null;
             }
+        }
+
+        private void CycleLanguage()
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            if (localization == null)
+            {
+                RefreshLanguageSettingsStatus();
+                return;
+            }
+
+            localization.CycleLanguage();
+            RefreshLanguageSettingsStatus();
+        }
+
+        private void RefreshLanguageSettingsStatus()
+        {
+            if (_settingsLanguageStatus == null)
+                return;
+
+            LocalizationManager localization = LocalizationManager.Instance;
+            if (localization == null)
+            {
+                _settingsLanguageStatus.SetText("LANGUAGE OWNER UNAVAILABLE.");
+                return;
+            }
+
+            _settingsLanguageStatus.SetText($"CURRENT LANGUAGE: {CachedToUpperInvariant(localization.CurrentLanguage.ToString())}");
         }
 
         private void ClearPauseSelection()

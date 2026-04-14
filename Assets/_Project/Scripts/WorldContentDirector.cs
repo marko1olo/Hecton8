@@ -8,6 +8,10 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4050)]
     public sealed class WorldContentDirector : MonoBehaviour, ISlowTickable
     {
+        private const string NoneLabel = "None";
+        private const string UnresolvedZoneId = "zone.none";
+        private const string UnresolvedZoneLabel = "Unresolved zone";
+
         internal static WorldContentDirector ActiveRuntimeInstance { get; private set; }
 
         [Header("References")]
@@ -60,6 +64,7 @@ namespace Hecton8.World
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         public IReadOnlyList<WorldContentSocket> Sockets => _sockets;
+        public bool HasResolvedContext => playerTransform != null && worldZoneDirector != null;
 
         private void Awake()
         {
@@ -138,7 +143,7 @@ namespace Hecton8.World
             }
 
             WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
-            string currentZoneId = currentZone != null ? currentZone.ZoneId : "zone.none";
+            string currentZoneId = ResolveZoneId(currentZone);
 
             WorldContentSocket nearestSocket = null;
             float nearestDistanceSqr = float.MaxValue;
@@ -223,9 +228,21 @@ namespace Hecton8.World
             _debugNearestProceduralIntent = nearestSocket != null ? nearestSocket.ResolvedProceduralIntent : "None";
             _debugNearestProceduralReason = nearestSocket != null ? nearestSocket.ResolvedProceduralReason : "None";
             _debugNearestProceduralScore = nearestSocket != null ? nearestSocket.GetResolvedProceduralScore() : 0f;
-            _debugCurrentZone = worldZoneDirector != null && worldZoneDirector.CurrentZone != null
-                ? worldZoneDirector.CurrentZone.ZoneLabel
-                : "None";
+            _debugCurrentZone = ResolveZoneLabel(worldZoneDirector != null ? worldZoneDirector.CurrentZone : null);
+        }
+
+        private static string ResolveZoneId(WorldZoneAnchor zone)
+        {
+            return zone != null && !string.IsNullOrWhiteSpace(zone.ZoneId)
+                ? zone.ZoneId
+                : UnresolvedZoneId;
+        }
+
+        private static string ResolveZoneLabel(WorldZoneAnchor zone)
+        {
+            return zone != null && !string.IsNullOrWhiteSpace(zone.ZoneLabel)
+                ? zone.ZoneLabel
+                : UnresolvedZoneLabel;
         }
     }
 }

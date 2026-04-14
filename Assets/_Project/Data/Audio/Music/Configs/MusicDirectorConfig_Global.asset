@@ -1,0 +1,26 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28d1b2fb04d1bfa4384f30f5ae91e41c, type: 3}
+  m_Name: MusicDirectorConfig_Global
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicDirectorConfig
+  _mainMenuProfile: {fileID: 11400000, guid: a000aeb555c4daf43854afbd92c1f90e, type: 2}
+  _prologueProfile: {fileID: 11400000, guid: 0cb5b6deded87d54983fe8faf4b8e5ef, type: 2}
+  _shallowProfile: {fileID: 11400000, guid: 5c06f44782ad09b46930905adc0afd58, type: 2}
+  _shelfProfile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
+  _abyssProfile: {fileID: 11400000, guid: 519c105bce6086e48b69182e2951ca40, type: 2}
+  _caveProfile: {fileID: 11400000, guid: 5b422ca990e5df94aa44756cd8034fc3, type: 2}
+  _thermalProfile: {fileID: 11400000, guid: a1a53362b69461a49a59c04b635d606b, type: 2}
+  _baseProfile: {fileID: 11400000, guid: d6f8719a6c773c24cb57a95c21c775d8, type: 2}
+  _combatProfile: {fileID: 11400000, guid: f336cbafe44b5ae4bb4d4dc08d358e74, type: 2}
+  _fallbackProfile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
+  _musicMixerGroup: {fileID: 0}
+  _stingerMixerGroup: {fileID: 0}

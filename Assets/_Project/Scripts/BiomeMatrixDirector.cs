@@ -9,6 +9,8 @@ namespace Hecton8.Environment
     [DefaultExecutionOrder(-4035)]
     public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable
     {
+        private const string MissingProfileLabel = "No biome profile";
+
         public static event Action<HectonBiomeMatrixProfile> OnMatrixBiomeChanged;
         public static event Action<int, float> OnDepthTierChanged;
 
@@ -29,6 +31,7 @@ namespace Hecton8.Environment
         [SerializeField] private bool _debugPlaceholder;
         [SerializeField] private string _debugFamilyId = "None";
         [SerializeField] private string _debugFamilyLabel = "None";
+        [SerializeField] private string _debugResolutionMode = "Exact";
         [SerializeField] private string _debugAtmosphereMood = "None";
         [SerializeField] private string _debugPrimaryResourceTheme = "None";
         [SerializeField] private string _debugNavigationStyle = "None";
@@ -102,6 +105,7 @@ namespace Hecton8.Environment
         public HectonBiomeMatrixProfile CurrentProfile => _currentProfile;
         public HectonBiomeFamilyProfile CurrentFamilyProfile => _currentProfile != null ? _currentProfile.familyProfile : null;
         public HectonBiomeMatrixCatalog MatrixCatalog => matrixCatalog;
+        public bool HasCatalog => matrixCatalog != null && matrixCatalog.Count > 0;
         public int CurrentDepthTier => _currentDepthTier;
         public float CurrentDepthMeters => _currentDepthMeters;
 
@@ -170,8 +174,15 @@ namespace Hecton8.Environment
         {
             ResolveReferences();
 
-            if (playerTransform == null || matrixCatalog == null)
+            if (playerTransform == null || !HasCatalog)
             {
+                bool hadProfile = _currentProfile != null;
+                _currentProfile = null;
+                _currentDepthMeters = 0f;
+                _currentDepthTier = 1;
+                _debugResolutionMode = playerTransform == null ? "Missing player" : "Missing catalog";
+                if (hadProfile)
+                    OnMatrixBiomeChanged?.Invoke(null);
                 UpdateDiagnostics(null, 1, HectonBiomeMatrixProfile.CardinalRegion.North);
                 return;
             }
@@ -179,11 +190,13 @@ namespace Hecton8.Environment
             float depth = surfaceOffsetMeters - playerTransform.position.y;
             int tier = ResolveDepthTier(depth);
             HectonBiomeMatrixProfile.CardinalRegion region = ResolveRegion(playerTransform.position);
-            HectonBiomeMatrixProfile next = matrixCatalog.Resolve(tier, region);
+            bool usedFallback;
+            HectonBiomeMatrixProfile next = ResolveMatrixProfile(tier, region, out usedFallback);
             bool depthTierChanged = forcePublish || tier != _currentDepthTier;
 
             _currentDepthMeters = depth;
             _currentDepthTier = tier;
+            _debugResolutionMode = next == null ? MissingProfileLabel : usedFallback ? "Fallback" : "Exact";
 
             if (depthTierChanged)
                 OnDepthTierChanged?.Invoke(_currentDepthTier, _currentDepthMeters);
@@ -201,6 +214,58 @@ namespace Hecton8.Environment
         {
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+        }
+
+        private HectonBiomeMatrixProfile ResolveMatrixProfile(int tier, HectonBiomeMatrixProfile.CardinalRegion region, out bool usedFallback)
+        {
+            usedFallback = false;
+            if (matrixCatalog == null)
+                return null;
+
+            HectonBiomeMatrixProfile exact = matrixCatalog.Resolve(tier, region);
+            if (exact != null)
+                return exact;
+
+            HectonBiomeMatrixProfile[] profiles = matrixCatalog.Profiles;
+            if (profiles == null || profiles.Length == 0)
+                return null;
+
+            HectonBiomeMatrixProfile bestProfile = null;
+            int bestScore = int.MinValue;
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                HectonBiomeMatrixProfile profile = profiles[i];
+                if (profile == null)
+                    continue;
+
+                int tierDelta = Mathf.Abs(profile.depthTier - tier);
+                int score = 0;
+                score -= tierDelta * 20;
+
+                if (profile.depthTier == tier)
+                    score += 1200;
+                else if (tierDelta <= 1)
+                    score += 200;
+
+                if (profile.region == region)
+                    score += 150;
+
+                if (!profile.isPlaceholder)
+                    score += 100;
+
+                if (!string.IsNullOrWhiteSpace(profile.biomeName))
+                    score += 10;
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestProfile = profile;
+                }
+            }
+
+            usedFallback = bestProfile != null;
+            return bestProfile;
         }
 
         private int ResolveDepthTier(float depth)

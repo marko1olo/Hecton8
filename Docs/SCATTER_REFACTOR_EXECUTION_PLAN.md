@@ -83,8 +83,8 @@ Status: `PENDING`
 
 Status: `PENDING`
 
-- [ ] audit `ScatterEvaluator.cs` and `ScatterReconciler.cs`
-- [ ] decide:
+- [x] audit `ScatterEvaluator.cs` and removed backend-side reconcile stack
+- [x] decide:
   - integrate fully
   - quarantine
   - delete

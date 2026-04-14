@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_AbyssalSilt
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.08, g: 0.11, b: 0.16, a: 1}
-  fogDensity: 0.022
-  skyExposure: 0.55
-  ambientColor: {r: 0.12, g: 0.14, b: 0.18, a: 1}
-  sunIntensity: 0.35
+  fogColor: {r: 0.075, g: 0.105, b: 0.155, a: 1}
+  fogDensity: 0.024
+  skyExposure: 0.5
+  ambientColor: {r: 0.1, g: 0.12, b: 0.16, a: 1}
+  sunIntensity: 0.3
   temperature: 20
   radiation: 0

@@ -396,34 +396,25 @@ namespace Hecton8.World
         [SerializeField] private int _debugScatterBackendShadowLastClassicQueuedCandidates;
         [Tooltip("Delta between last shadow backend candidate count and classic queued-candidate count.")]
         [SerializeField] private int _debugScatterBackendShadowLastCandidateDelta;
+        [Tooltip("Delta between backend and classic ground placement counts in the last shadow parity pass.")]
+        [SerializeField] private int _debugScatterBackendShadowLastGroundDelta;
+        [Tooltip("Delta between backend and classic cluster placement counts in the last shadow parity pass.")]
+        [SerializeField] private int _debugScatterBackendShadowLastClusterDelta;
+        [Tooltip("Delta between backend and classic structure placement counts in the last shadow parity pass.")]
+        [SerializeField] private int _debugScatterBackendShadowLastStructureDelta;
+        [Tooltip("Delta between backend and classic spawn placement counts in the last shadow parity pass.")]
+        [SerializeField] private int _debugScatterBackendShadowLastSpawnDelta;
+        [Tooltip("True when backend and classic candidate checksums matched for the last shadow parity pass.")]
+        [SerializeField] private bool _debugScatterBackendShadowLastChecksumMatch;
+        [Tooltip("Last shadow parity verdict label for the scatter backend seam.")]
+        [SerializeField] private string _debugScatterBackendShadowLastParityStatus = "NotRun";
+        [Tooltip("Number of completed shadow passes that ended with a parity mismatch verdict.")]
+        [SerializeField] private int _debugScatterBackendShadowParityMismatchCount;
         [SerializeField] private string _debugLastScatterRefreshReason = "None";
         [SerializeField] private string _debugLastScatterInvalidationReason = "None";
 #pragma warning restore CS0414
 
         private readonly Dictionary<long, WorldProceduralProxyInstance> _activeInstances = new Dictionary<long, WorldProceduralProxyInstance>(1024);
-        private readonly List<GPUInstancerPrefabPrototype> _floraGpuiKnownPrototypes = new List<GPUInstancerPrefabPrototype>(96);
-        private readonly Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> _floraGpuiMatrices = new Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]>(96);
-        private readonly Dictionary<GPUInstancerPrefabPrototype, int> _floraGpuiCounts = new Dictionary<GPUInstancerPrefabPrototype, int>(96);
-        private readonly Dictionary<GPUInstancerPrefabPrototype, int> _floraGpuiBufferCapacities = new Dictionary<GPUInstancerPrefabPrototype, int>(96);
-        private readonly HashSet<GPUInstancerPrefabPrototype> _floraGpuiInitializedPrototypes = new HashSet<GPUInstancerPrefabPrototype>();
-        private bool _hasCachedPatternQuota;
-        private WorldProceduralPattern _cachedPatternQuotaPattern;
-        private HectonBiomeMatrixProfile _cachedPatternQuotaBiomeProfile;
-        private int _cachedPatternClusterRatioStart;
-        private int _cachedPatternPassiveSpawnMin;
-        private int _cachedPatternPredatorSpawnMax;
-        private bool _hasCachedBudgetScales;
-        private WorldProceduralPatternProfile _cachedBudgetScalePatternProfile;
-        private WorldProceduralBiomeFamilyContextProfile _cachedBudgetScaleBiomeContext;
-        private float _cachedGroundBudgetScale;
-        private float _cachedClusterBudgetScale;
-        private float _cachedStructureBudgetScale;
-        private float _cachedSpawnBudgetScale;
-        private readonly Dictionary<int, int> _prefabWarmupCounts = new Dictionary<int, int>(32);
-        private readonly Dictionary<int, GameObject> _prefabWarmupPrefabs = new Dictionary<int, GameObject>(32);
-        private readonly Dictionary<int, string> _prefabWarmupFamilyIds = new Dictionary<int, string>(32);
-        private readonly Dictionary<int, int> _prefabCreateAllowances = new Dictionary<int, int>(32);
-        private readonly Dictionary<int, int> _preferredFamilyPlacementCounts = new Dictionary<int, int>(16);
         private static WorldProceduralPatternProfile _emergencyPatternProfile;
         private static WorldGenerativeGeologyProfile _emergencyArchGeologyProfile;
         private static WorldGenerativeGeologyProfile _emergencyCanopyGeologyProfile;
@@ -439,35 +430,15 @@ namespace Hecton8.World
             _emergencyLandmarkGeologyProfile = null;
             _emergencyCaveGeologyProfile = null;
         }
-        private bool _registeredToTickManager;
-        private bool _subscribedToBootstrap;
-        private bool _sceneBootstrapPresenceResolved;
-        private bool _sceneBootstrapPresent;
-        private bool _bootstrapFailed;
-        private bool _allowBootstrapPrimePass;
         private Transform _scatterRootTransform;
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(32); // COLD ALLOC: scene root scan for scatter root resolve.
-        private bool _hasScatterRefreshSample;
-        private bool _lastScatterUsedFallbackOnly;
-        private Vector3 _lastScatterRefreshPosition;
-        private int _lastScatterRefreshCenterCellX;
-        private int _lastScatterRefreshCenterCellZ;
-        private float _lastScatterRefreshTime = float.NegativeInfinity;
-        private float _runtimeCellSize = 22f;
-        private int _runtimeRadiusCells = 7;
-        private float _runtimeChunkSize = 192f;
-        private float _runtimeMacroZoneSize = 768f;
-        private bool _hasPendingStartupPlacements;
-        private bool _hasPendingRuntimePlacements;
-        private bool _startupScatterStabilizationPending;
-        private float _startupScatterStartTime = float.NegativeInfinity;
+        private ScatterBootstrapRuntimeState _bootstrapRuntimeState;
+        private ScatterRefreshSampleState _scatterRefreshSampleState;
+        private ScatterResolvedRuntimeSettings _runtimeStreamingState;
+        private ScatterStartupRuntimeState _startupRuntimeState;
         private int _activeGpuiFloraPlacements;
-        private int _reconcilePlanVersion;
-        private bool _hasReconcileObserverSample;
-        private Vector3 _lastReconcileObserverPosition;
-        private bool _loggedRuntimeStartState;
-        private bool _loggedFirstSlowTick;
-        private float _nextTickDrivenScatterAttemptTime;
+        private ScatterReconcileRuntimeState _reconcileRuntimeState;
+        private ScatterLifecycleRuntimeState _lifecycleRuntimeState;
         private ScatterWorkingMemory _memory;
         private ref CandidateMap _groundRescueCandidates => ref _memory.GroundRescueCandidates;
         private ref CandidateMap _clusterRescueCandidates => ref _memory.ClusterRescueCandidates;
@@ -493,6 +464,11 @@ namespace Hecton8.World
         private List<ScatterCandidate> _candidateBuffer => _memory.CandidateBuffer;
         private List<long> _removalBuffer => _memory.RemovalBuffer;
         private List<WorldFaunaSpawnRegistry.Anchor> _faunaAnchorBuffer => _memory.FaunaAnchorBuffer;
+        private List<GPUInstancerPrefabPrototype> _floraGpuiKnownPrototypes => _memory.FloraGpuiKnownPrototypes;
+        private Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> _floraGpuiMatrices => _memory.FloraGpuiMatrices;
+        private Dictionary<GPUInstancerPrefabPrototype, int> _floraGpuiCounts => _memory.FloraGpuiCounts;
+        private Dictionary<GPUInstancerPrefabPrototype, int> _floraGpuiBufferCapacities => _memory.FloraGpuiBufferCapacities;
+        private HashSet<GPUInstancerPrefabPrototype> _floraGpuiInitializedPrototypes => _memory.FloraGpuiInitializedPrototypes;
         private List<ScatterCandidate> _clusterAccentOrderedCandidates => _memory.ClusterAccentOrderedCandidates;
         private List<ScatterCandidate> _clusterOrderedCandidates => _memory.ClusterOrderedCandidates;
         private List<ScatterCandidate> _exactClusterOrderedCandidates => _memory.ExactClusterOrderedCandidates;
@@ -571,9 +547,10 @@ namespace Hecton8.World
         private int _samplingSpawnBudget;
         private long _samplingRebuildStartTimestamp;
         private long _samplingInputsEndTimestamp;
+        private bool _loggedMissingPrefabRegistry;
 
         public int ActivePlacementCount => _activeInstances.Count + _activeGpuiFloraPlacements;
-        public bool HasPendingStartupPlacements => _hasPendingStartupPlacements;
+        public bool HasPendingStartupPlacements => _reconcileRuntimeState.HasPendingStartupPlacements;
 
         internal IReadOnlyDictionary<long, List<ScatterPlacement>> GetGridPlacements()
         {
@@ -590,15 +567,15 @@ namespace Hecton8.World
             if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning && !_samplingJobHandle.IsCompleted)
                 return;
 
-            if (_hasScatterRefreshSample && !_startupScatterStabilizationPending)
+            if (_scatterRefreshSampleState.HasSample && !_startupRuntimeState.StabilizationPending)
                 return;
 
-            if (Time.unscaledTime < _nextTickDrivenScatterAttemptTime)
+            if (Time.unscaledTime < _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime)
                 return;
 
             using (_scatterTickProfilerMarker.Auto())
             {
-                _nextTickDrivenScatterAttemptTime = Time.unscaledTime + 0.25f;
+                _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime = Time.unscaledTime + 0.25f;
                 RefreshRuntimeStreamingSettings();
                 RebuildScatterPreview();
             }
@@ -640,16 +617,11 @@ namespace Hecton8.World
             if (Application.isPlaying)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (!_loggedRuntimeStartState && enableScatterRebuildProfiling)
-                {
-                    _loggedRuntimeStartState = true;
-                    UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] start tickManagerReady={(GameTickManager.Instance != null)} registered={_registeredToTickManager} bootstrapReady={BootstrapState.IsGameReady} waitForBootstrap={waitForSceneBootstrap}",
-                        this);
-                }
+                if (!_lifecycleRuntimeState.LoggedRuntimeStartState && enableScatterRebuildProfiling)
+                    _lifecycleRuntimeState.LoggedRuntimeStartState = true;
 #endif
-                _startupScatterStabilizationPending = true;
-                _startupScatterStartTime = Time.unscaledTime;
+                _startupRuntimeState.StabilizationPending = true;
+                _startupRuntimeState.StartTime = Time.unscaledTime;
                 InvalidateScatterRefreshSample("startup");
                 return;
             }
@@ -667,11 +639,11 @@ namespace Hecton8.World
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
 
-            if (_registeredToTickManager && GameTickManager.Instance != null)
+            if (_lifecycleRuntimeState.RegisteredToTickManager && GameTickManager.Instance != null)
             {
                 GameTickManager.Instance.Unregister((ITickable)this);
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredToTickManager = false;
+                _lifecycleRuntimeState.RegisteredToTickManager = false;
             }
         }
 
@@ -730,9 +702,9 @@ namespace Hecton8.World
         public void SlowTick()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying && !_loggedFirstSlowTick && enableScatterRebuildProfiling)
+            if (Application.isPlaying && !_lifecycleRuntimeState.LoggedFirstSlowTick && enableScatterRebuildProfiling)
             {
-                _loggedFirstSlowTick = true;
+                _lifecycleRuntimeState.LoggedFirstSlowTick = true;
                 UnityEngine.Debug.Log(
                     $"[WorldScatterRuntime] first-slow-tick bootstrapReady={BootstrapState.IsGameReady} defer={ShouldDeferUntilBootstrapReady()} invalidation={_debugLastScatterInvalidationReason}",
                     this);
@@ -824,7 +796,7 @@ namespace Hecton8.World
                     if (TryRunScatterSamplingSynchronously())
                         return;
                 }
-                else if (_allowBootstrapPrimePass)
+                else if (_bootstrapRuntimeState.AllowPrimePass)
                 {
                     if (TryRunScatterSamplingSynchronously())
                         return;
@@ -878,8 +850,8 @@ namespace Hecton8.World
             if (playerTransform == null || fieldSampler == null || rules == null || rules.Count == 0)
                 return false;
 
-            bool previousAllowBootstrapPrimePass = _allowBootstrapPrimePass;
-            _allowBootstrapPrimePass = true;
+            bool previousAllowBootstrapPrimePass = _bootstrapRuntimeState.AllowPrimePass;
+            _bootstrapRuntimeState.AllowPrimePass = true;
 
             try
             {
@@ -889,19 +861,19 @@ namespace Hecton8.World
             }
             finally
             {
-                _allowBootstrapPrimePass = previousAllowBootstrapPrimePass;
+                _bootstrapRuntimeState.AllowPrimePass = previousAllowBootstrapPrimePass;
             }
         }
 
         private bool ShouldDeferUntilBootstrapReady()
         {
-            if (_allowBootstrapPrimePass)
+            if (_bootstrapRuntimeState.AllowPrimePass)
                 return false;
 
             if (!Application.isPlaying || !waitForSceneBootstrap || BootstrapState.IsGameReady)
                 return false;
 
-            if (_bootstrapFailed)
+            if (_bootstrapRuntimeState.Failed)
                 return false;
 
             return ResolveSceneBootstrapPresence();
@@ -909,9 +881,9 @@ namespace Hecton8.World
 
         private void HandleSceneBootstrapReady()
         {
-            _sceneBootstrapPresenceResolved = true;
-            _sceneBootstrapPresent = true;
-            _bootstrapFailed = false;
+            _bootstrapRuntimeState.PresenceResolved = true;
+            _bootstrapRuntimeState.Present = true;
+            _bootstrapRuntimeState.Failed = false;
             TryEnsureTickRegistration();
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap");
@@ -919,7 +891,7 @@ namespace Hecton8.World
             if (Application.isPlaying && enableScatterRebuildProfiling)
             {
                 UnityEngine.Debug.Log(
-                    $"[WorldScatterRuntime] bootstrap-ready registered={_registeredToTickManager} timeScale={Time.timeScale:0.###}",
+                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager} timeScale={Time.timeScale:0.###}",
                     this);
             }
 #endif
@@ -929,9 +901,9 @@ namespace Hecton8.World
 
         private void HandleSceneBootstrapFailed(string reason)
         {
-            _sceneBootstrapPresenceResolved = true;
-            _sceneBootstrapPresent = true;
-            _bootstrapFailed = true;
+            _bootstrapRuntimeState.PresenceResolved = true;
+            _bootstrapRuntimeState.Present = true;
+            _bootstrapRuntimeState.Failed = true;
             TryEnsureTickRegistration();
 
             if (!string.IsNullOrWhiteSpace(reason))
@@ -947,7 +919,7 @@ namespace Hecton8.World
             if (Application.isPlaying && enableScatterRebuildProfiling)
             {
                 UnityEngine.Debug.Log(
-                    $"[WorldScatterRuntime] bootstrap-failed registered={_registeredToTickManager} timeScale={Time.timeScale:0.###}",
+                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager} timeScale={Time.timeScale:0.###}",
                     this);
             }
 #endif
@@ -959,31 +931,31 @@ namespace Hecton8.World
         {
             if (BootstrapState.HasActiveInstance)
             {
-                _sceneBootstrapPresenceResolved = true;
-                _sceneBootstrapPresent = true;
+                _bootstrapRuntimeState.PresenceResolved = true;
+                _bootstrapRuntimeState.Present = true;
                 return true;
             }
 
-            if (_sceneBootstrapPresenceResolved)
-                return _sceneBootstrapPresent;
+            if (_bootstrapRuntimeState.PresenceResolved)
+                return _bootstrapRuntimeState.Present;
 
             SceneBootstrap bootstrap = SceneBootstrap.ActiveInstance;
-            _sceneBootstrapPresenceResolved = true;
-            _sceneBootstrapPresent = bootstrap != null
+            _bootstrapRuntimeState.PresenceResolved = true;
+            _bootstrapRuntimeState.Present = bootstrap != null
                 && bootstrap.isActiveAndEnabled
                 && bootstrap.gameObject.activeInHierarchy;
-            return _sceneBootstrapPresent;
+            return _bootstrapRuntimeState.Present;
         }
 
         private bool ShouldSkipScatterRefresh()
         {
-            if (!_hasScatterRefreshSample || playerTransform == null)
+            if (!_scatterRefreshSampleState.HasSample || playerTransform == null)
             {
                 _debugLastScatterRefreshReason = ShouldCollectScatterDetailedDiagnostics() ? _debugLastScatterInvalidationReason : "dirty";
                 return false;
             }
 
-            if (_lastScatterUsedFallbackOnly &&
+            if (_scatterRefreshSampleState.UsedFallbackOnly &&
                 fieldSampler != null &&
                 fieldSampler.TryResolveSeafloorSource(playerTransform.position, out WorldProceduralFieldSampler.SeafloorSource upgradedSource) &&
                 upgradedSource == WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight)
@@ -992,11 +964,11 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (_startupScatterStabilizationPending &&
+            if (_startupRuntimeState.StabilizationPending &&
                 Application.isPlaying &&
-                Time.unscaledTime - _startupScatterStartTime >= StartupScatterStabilizationDelaySeconds)
+                Time.unscaledTime - _startupRuntimeState.StartTime >= StartupScatterStabilizationDelaySeconds)
             {
-                _startupScatterStabilizationPending = false;
+                _startupRuntimeState.StabilizationPending = false;
                 _debugLastScatterRefreshReason = "startup-settle";
                 return false;
             }
@@ -1004,7 +976,7 @@ namespace Hecton8.World
             if (enableForcedScatterRefresh && scatterForcedRefreshInterval > 0f)
             {
                 float forcedInterval = Mathf.Max(0.5f, scatterForcedRefreshInterval);
-                if (Application.isPlaying && Time.unscaledTime - _lastScatterRefreshTime >= forcedInterval)
+                if (Application.isPlaying && Time.unscaledTime - _scatterRefreshSampleState.Time >= forcedInterval)
                 {
                     _debugLastScatterRefreshReason = "forced-interval";
                     return false;
@@ -1013,19 +985,19 @@ namespace Hecton8.World
 
             if (TryGetScatterCenterCell(out int centerCellX, out int centerCellZ))
             {
-                if (centerCellX != _lastScatterRefreshCenterCellX || centerCellZ != _lastScatterRefreshCenterCellZ)
+                if (centerCellX != _scatterRefreshSampleState.CenterCellX || centerCellZ != _scatterRefreshSampleState.CenterCellZ)
                 {
-                    int cellDeltaX = Mathf.Abs(centerCellX - _lastScatterRefreshCenterCellX);
-                    int cellDeltaZ = Mathf.Abs(centerCellZ - _lastScatterRefreshCenterCellZ);
+                    int cellDeltaX = Mathf.Abs(centerCellX - _scatterRefreshSampleState.CenterCellX);
+                    int cellDeltaZ = Mathf.Abs(centerCellZ - _scatterRefreshSampleState.CenterCellZ);
                     int maxCellDelta = Mathf.Max(cellDeltaX, cellDeltaZ);
-                    if (_runtimeRadiusCells > 2 && maxCellDelta <= 1)
+                    if (_runtimeStreamingState.RadiusCells > 2 && maxCellDelta <= 1)
                     {
                         _debugLastScatterRefreshReason = "cell-drift-buffer";
                         return true;
                     }
 
-                    float cellRefreshThreshold = Mathf.Max(Mathf.Max(0.5f, scatterRefreshDistanceThreshold), Mathf.Max(1f, _runtimeCellSize));
-                    if ((playerTransform.position - _lastScatterRefreshPosition).sqrMagnitude < cellRefreshThreshold * cellRefreshThreshold)
+                    float cellRefreshThreshold = Mathf.Max(Mathf.Max(0.5f, scatterRefreshDistanceThreshold), Mathf.Max(1f, _runtimeStreamingState.CellSize));
+                    if ((playerTransform.position - _scatterRefreshSampleState.Position).sqrMagnitude < cellRefreshThreshold * cellRefreshThreshold)
                     {
                         _debugLastScatterRefreshReason = "cell-hysteresis";
                         return true;
@@ -1040,31 +1012,31 @@ namespace Hecton8.World
             }
 
             float threshold = Mathf.Max(0.5f, scatterRefreshDistanceThreshold);
-            bool sameDistanceBucket = (playerTransform.position - _lastScatterRefreshPosition).sqrMagnitude < threshold * threshold;
+            bool sameDistanceBucket = (playerTransform.position - _scatterRefreshSampleState.Position).sqrMagnitude < threshold * threshold;
             _debugLastScatterRefreshReason = sameDistanceBucket ? "same-distance" : "distance-threshold";
             return sameDistanceBucket;
         }
 
         private bool HasPendingScatterReconcileWork()
         {
-            return _hasPendingStartupPlacements || _hasPendingRuntimePlacements;
+            return _reconcileRuntimeState.HasPendingStartupPlacements || _reconcileRuntimeState.HasPendingRuntimePlacements;
         }
 
         private void ContinuePendingScatterReconcile()
         {
             if (_desiredPlacements.Count == 0)
             {
-                _hasPendingStartupPlacements = false;
-                _hasPendingRuntimePlacements = false;
+                _reconcileRuntimeState.HasPendingStartupPlacements = false;
+                _reconcileRuntimeState.HasPendingRuntimePlacements = false;
                 return;
             }
 
             using (_scatterPendingReconcileProfilerMarker.Auto())
             {
                 ReconcileInstances(enableScatterRebuildProfiling);
-                _debugLastScatterRefreshReason = _hasPendingStartupPlacements
+                _debugLastScatterRefreshReason = _reconcileRuntimeState.HasPendingStartupPlacements
                     ? "pending-startup-batch"
-                    : (_hasPendingRuntimePlacements ? "pending-runtime-budget" : "pending-complete");
+                    : (_reconcileRuntimeState.HasPendingRuntimePlacements ? "pending-runtime-budget" : "pending-complete");
             }
         }
 
@@ -1170,14 +1142,15 @@ namespace Hecton8.World
             out float structureScale,
             out float spawnScale)
         {
-            if (_hasCachedBudgetScales &&
-                ReferenceEquals(_cachedBudgetScalePatternProfile, patternProfile) &&
-                ReferenceEquals(_cachedBudgetScaleBiomeContext, biomeContext))
+            EnsureWorkingMemory();
+            if (_memory.HasCachedBudgetScales &&
+                ReferenceEquals(_memory.CachedBudgetScalePatternProfile, patternProfile) &&
+                ReferenceEquals(_memory.CachedBudgetScaleBiomeContext, biomeContext))
             {
-                groundScale = _cachedGroundBudgetScale;
-                clusterScale = _cachedClusterBudgetScale;
-                structureScale = _cachedStructureBudgetScale;
-                spawnScale = _cachedSpawnBudgetScale;
+                groundScale = _memory.CachedGroundBudgetScale;
+                clusterScale = _memory.CachedClusterBudgetScale;
+                structureScale = _memory.CachedStructureBudgetScale;
+                spawnScale = _memory.CachedSpawnBudgetScale;
                 return;
             }
 
@@ -1186,13 +1159,13 @@ namespace Hecton8.World
             structureScale = GetCombinedBudgetScale(patternProfile, biomeContext, WorldPrefabFamilyProfile.ScatterLayer.Structure);
             spawnScale = GetCombinedBudgetScale(patternProfile, biomeContext, WorldPrefabFamilyProfile.ScatterLayer.Spawn);
 
-            _hasCachedBudgetScales = true;
-            _cachedBudgetScalePatternProfile = patternProfile;
-            _cachedBudgetScaleBiomeContext = biomeContext;
-            _cachedGroundBudgetScale = groundScale;
-            _cachedClusterBudgetScale = clusterScale;
-            _cachedStructureBudgetScale = structureScale;
-            _cachedSpawnBudgetScale = spawnScale;
+            _memory.HasCachedBudgetScales = true;
+            _memory.CachedBudgetScalePatternProfile = patternProfile;
+            _memory.CachedBudgetScaleBiomeContext = biomeContext;
+            _memory.CachedGroundBudgetScale = groundScale;
+            _memory.CachedClusterBudgetScale = clusterScale;
+            _memory.CachedStructureBudgetScale = structureScale;
+            _memory.CachedSpawnBudgetScale = spawnScale;
         }
 
         private void RecordScatterRefreshSample()
@@ -1200,13 +1173,13 @@ namespace Hecton8.World
             if (playerTransform == null)
                 return;
 
-            _hasScatterRefreshSample = true;
-            _lastScatterRefreshPosition = playerTransform.position;
-            _lastScatterRefreshTime = Application.isPlaying ? Time.unscaledTime : 0f;
+            _scatterRefreshSampleState.HasSample = true;
+            _scatterRefreshSampleState.Position = playerTransform.position;
+            _scatterRefreshSampleState.Time = Application.isPlaying ? Time.unscaledTime : 0f;
             if (TryGetScatterCenterCell(out int centerCellX, out int centerCellZ))
             {
-                _lastScatterRefreshCenterCellX = centerCellX;
-                _lastScatterRefreshCenterCellZ = centerCellZ;
+                _scatterRefreshSampleState.CenterCellX = centerCellX;
+                _scatterRefreshSampleState.CenterCellZ = centerCellZ;
             }
 
             _debugLastScatterInvalidationReason = "None";
@@ -1214,9 +1187,9 @@ namespace Hecton8.World
 
         private void InvalidateScatterRefreshSample(string reason = "manual")
         {
-            _hasScatterRefreshSample = false;
-            _lastScatterUsedFallbackOnly = false;
-            _lastScatterRefreshTime = float.NegativeInfinity;
+            _scatterRefreshSampleState.HasSample = false;
+            _scatterRefreshSampleState.UsedFallbackOnly = false;
+            _scatterRefreshSampleState.Time = float.NegativeInfinity;
             _debugLastScatterInvalidationReason = string.IsNullOrWhiteSpace(reason) ? "manual" : reason;
         }
 
@@ -1235,7 +1208,7 @@ namespace Hecton8.World
 
         private void TryEnsureTickRegistration()
         {
-            if (_registeredToTickManager)
+            if (_lifecycleRuntimeState.RegisteredToTickManager)
                 return;
 
             GameTickManager tickManager = GameTickManager.Instance;
@@ -1244,7 +1217,7 @@ namespace Hecton8.World
 
             tickManager.Register((ITickable)this);
             tickManager.Register((ISlowTickable)this);
-            _registeredToTickManager = true;
+            _lifecycleRuntimeState.RegisteredToTickManager = true;
         }
 
         private bool TryGetScatterCenterCell(out int centerCellX, out int centerCellZ)
@@ -1254,7 +1227,7 @@ namespace Hecton8.World
             if (playerTransform == null)
                 return false;
 
-            float size = Mathf.Max(6f, _runtimeCellSize);
+            float size = Mathf.Max(6f, _runtimeStreamingState.CellSize);
             Vector3 center = playerTransform.position;
             centerCellX = WorldToScatterCellIndex(center.x, size);
             centerCellZ = WorldToScatterCellIndex(center.z, size);
@@ -1281,8 +1254,8 @@ namespace Hecton8.World
             _sampledBiomeCounts.Clear();
             _sampledPatternCounts.Clear();
             _sampledZoneCounts.Clear();
-            _hasCachedPatternQuota = false;
-            _hasCachedBudgetScales = false;
+            _memory.HasCachedPatternQuota = false;
+            _memory.HasCachedBudgetScales = false;
         }
 
         private static void ClearDictionaryArray(Dictionary<string, int>[] dictionaries)
@@ -1489,14 +1462,40 @@ namespace Hecton8.World
             long diagnosticsEndTimestamp,
             int evaluatedCells)
         {
-            ScatterRebuildProfileSnapshot snapshot = ScatterDiagnosticsTracker.BuildRebuildProfileSnapshot(
+            ScatterDiagnosticsCommitContext context = BuildScatterDiagnosticsCommitContext(
                 rebuildStartTimestamp,
                 samplingInputsEndTimestamp,
                 samplingCompleteEndTimestamp,
                 samplingEndTimestamp,
                 rescueEndTimestamp,
                 restoreEndTimestamp,
-                reconcileMetrics,
+                in reconcileMetrics,
+                diagnosticsEndTimestamp,
+                evaluatedCells);
+            ScatterRebuildProfileSnapshot snapshot = ScatterDiagnosticsTracker.BuildRebuildProfileSnapshot(in context);
+            ApplyScatterRebuildProfileSnapshot(in snapshot);
+            EmitScatterRebuildProfileSnapshot(in snapshot);
+        }
+
+        private ScatterDiagnosticsCommitContext BuildScatterDiagnosticsCommitContext(
+            long rebuildStartTimestamp,
+            long samplingInputsEndTimestamp,
+            long samplingCompleteEndTimestamp,
+            long samplingEndTimestamp,
+            long rescueEndTimestamp,
+            long restoreEndTimestamp,
+            in ScatterReconcileMetrics reconcileMetrics,
+            long diagnosticsEndTimestamp,
+            int evaluatedCells)
+        {
+            return new ScatterDiagnosticsCommitContext(
+                rebuildStartTimestamp,
+                samplingInputsEndTimestamp,
+                samplingCompleteEndTimestamp,
+                samplingEndTimestamp,
+                rescueEndTimestamp,
+                restoreEndTimestamp,
+                in reconcileMetrics,
                 diagnosticsEndTimestamp,
                 evaluatedCells,
                 _desiredPlacements.Count,
@@ -1509,7 +1508,10 @@ namespace Hecton8.World
                 _debugPattern,
                 _debugTopFamily,
                 _debugLastScatterRefreshReason);
+        }
 
+        private void ApplyScatterRebuildProfileSnapshot(in ScatterRebuildProfileSnapshot snapshot)
+        {
             _debugLastScatterRebuildMs = snapshot.TotalMs;
             _debugSamplingStageMs = snapshot.SamplingMs;
             _debugRescueStageMs = snapshot.RescueMs;
@@ -1523,11 +1525,13 @@ namespace Hecton8.World
             _debugReconcileRebuiltCount = snapshot.RebuiltCount;
             _debugReconcileCreatedCount = snapshot.CreatedCount;
             _debugReconcileReusedCount = snapshot.ReusedCount;
+        }
 
+        private void EmitScatterRebuildProfileSnapshot(in ScatterRebuildProfileSnapshot snapshot)
+        {
             bool traceActive = RuntimeDiagnosticsTrace.IsActive;
             bool spikeDetected = snapshot.TotalMs >= Mathf.Max(1f, scatterRebuildSpikeThresholdMs);
             bool shouldLog = ShouldLogScatterRebuildSpike(spikeDetected);
-
             if (!traceActive && !shouldLog)
                 return;
 
@@ -1565,44 +1569,34 @@ namespace Hecton8.World
 
         private void SubscribeToBootstrap()
         {
-            if (_subscribedToBootstrap)
+            if (_lifecycleRuntimeState.SubscribedToBootstrap)
                 return;
 
             SceneBootstrap.OnGameReady += HandleSceneBootstrapReady;
             SceneBootstrap.OnBootstrapFailed += HandleSceneBootstrapFailed;
-            _subscribedToBootstrap = true;
+            _lifecycleRuntimeState.SubscribedToBootstrap = true;
         }
 
         private void UnsubscribeFromBootstrap()
         {
-            if (!_subscribedToBootstrap)
+            if (!_lifecycleRuntimeState.SubscribedToBootstrap)
                 return;
 
             SceneBootstrap.OnGameReady -= HandleSceneBootstrapReady;
             SceneBootstrap.OnBootstrapFailed -= HandleSceneBootstrapFailed;
-            _subscribedToBootstrap = false;
+            _lifecycleRuntimeState.SubscribedToBootstrap = false;
         }
 
         public void ClearScatterPreview()
         {
+            EnsureWorkingMemory();
+
             GameObject root = GetScatterRoot(false);
             if (root != null && _activeInstances.Count == 0)
                 ClearRootChildren(root.transform);
 
-            _removalBuffer.Clear();
-            foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
-                _removalBuffer.Add(pair.Key);
-
-            for (int i = 0; i < _removalBuffer.Count; i++)
-            {
-                long key = _removalBuffer[i];
-                if (!_activeInstances.TryGetValue(key, out WorldProceduralProxyInstance instance) || instance == null)
-                    continue;
-
-                DestroyProxyInstance(instance.gameObject);
-            }
-
-            _activeInstances.Clear();
+            CollectAllActiveScatterInstanceKeys(_removalBuffer);
+            RemoveBufferedActiveScatterInstances(_removalBuffer);
             ClearFloraGpuiVisibility();
             _removalBuffer.Clear();
             ReleaseCandidateListPlacements(_candidateBuffer);
@@ -1714,10 +1708,10 @@ namespace Hecton8.World
             _debugPatternSpawnBudgetScale = 1f;
             _debugTopHeat = 0f;
             _debugTopScore = 0f;
-            _debugRuntimeCellSize = _runtimeCellSize;
-            _debugRuntimeRadiusCells = _runtimeRadiusCells;
-            _debugRuntimeChunkSize = _runtimeChunkSize;
-            _debugRuntimeMacroZoneSize = _runtimeMacroZoneSize;
+            _debugRuntimeCellSize = _runtimeStreamingState.CellSize;
+            _debugRuntimeRadiusCells = _runtimeStreamingState.RadiusCells;
+            _debugRuntimeChunkSize = _runtimeStreamingState.ChunkSize;
+            _debugRuntimeMacroZoneSize = _runtimeStreamingState.MacroZoneSize;
             _debugGeneratedGeologyCount = 0;
             _debugPublishedFaunaAnchors = 0;
             _debugPublishedLargeThreatZones = 0;
@@ -1734,16 +1728,8 @@ namespace Hecton8.World
             _debugReconcileRebuiltCount = 0;
             _debugReconcileCreatedCount = 0;
             _debugReconcileReusedCount = 0;
-            ScatterHybridRuntimePlan backendPlan = ResolveScatterBackendPlan();
-            _debugScatterBackendExecutionMode = ScatterHybridRuntimeEntryPoint.GetExecutionModeLabel(backendPlan.ResolvedExecutionMode);
-            _debugScatterBackendKind = ScatterHybridRuntimeEntryPoint.GetBackendKindLabel(backendPlan.ResolvedBackendKind);
-            _debugScatterBackendResolutionReason = backendPlan.ResolutionReason;
-            _debugScatterBackendShadowPending = false;
-            _debugScatterBackendShadowPassesScheduled = 0;
-            _debugScatterBackendShadowPassesCompleted = 0;
-            _debugScatterBackendShadowLastCandidateCount = 0;
-            _debugScatterBackendShadowLastClassicQueuedCandidates = 0;
-            _debugScatterBackendShadowLastCandidateDelta = 0;
+            ScatterHybridRuntimePlan backendPlan = RefreshScatterBackendPlan();
+            ResetScatterBackendDebugTelemetry(backendPlan);
         }
 
         private ScatterCandidatePreview BuildCandidatePreview(
@@ -1955,204 +1941,48 @@ namespace Hecton8.World
                 if (_activeInstances.Count == 0)
                     ClearRootChildren(root);
 
-                int removedCount = 0;
-                int rebuiltCount = 0;
-                int createdCount = 0;
-                int reusedCount = 0;
                 bool initialWarmupPass = Application.isPlaying &&
-                                         (_activeInstances.Count == 0 || _hasPendingStartupPlacements);
+                                         (_activeInstances.Count == 0 || _reconcileRuntimeState.HasPendingStartupPlacements);
                 int remainingInitialCreateBudget = initialWarmupPass
                     ? (spreadInitialScatterWarmupAcrossTicks
                         ? Mathf.Max(1, maxInitialScatterCreatesPerRebuild)
                         : int.MaxValue)
                     : int.MaxValue;
-                _hasPendingStartupPlacements = false;
-                _hasPendingRuntimePlacements = false;
+                _reconcileRuntimeState.HasPendingStartupPlacements = false;
+                _reconcileRuntimeState.HasPendingRuntimePlacements = false;
                 ResetFloraGpuiAggregation();
 
+                ScatterReconcileCleanupContext cleanupContext = new ScatterReconcileCleanupContext(
+                    _activeInstances,
+                    _desiredPlacements,
+                    _removalBuffer);
                 using (_scatterReconcileCleanupProfilerMarker.Auto())
                 {
-                    _removalBuffer.Clear();
-
-                    foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
-                    {
-                        if (_desiredPlacements.ContainsKey(pair.Key))
-                            continue;
-
-                        _removalBuffer.Add(pair.Key);
-                    }
-
-                    for (int i = 0; i < _removalBuffer.Count; i++)
-                    {
-                        long key = _removalBuffer[i];
-                        if (!_activeInstances.TryGetValue(key, out WorldProceduralProxyInstance instance))
-                            continue;
-
-                        if (instance != null)
-                            DestroyProxyInstance(instance.gameObject);
-
-                        _activeInstances.Remove(key);
-                        removedCount++;
-                    }
+                    RemoveStaleScatterInstances(ref cleanupContext);
                 }
 
                 long cleanupEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : reconcileStartTimestamp;
                 if (!hasObserverPosition ||
-                    !_hasReconcileObserverSample ||
-                    _lastReconcileObserverPosition != observerPosition)
+                    !_reconcileRuntimeState.HasObserverSample ||
+                    _reconcileRuntimeState.LastObserverPosition != observerPosition)
                 {
                     InvalidateResolvedPlacementVariantCache();
-                    _hasReconcileObserverSample = hasObserverPosition;
-                    _lastReconcileObserverPosition = observerPosition;
+                    _reconcileRuntimeState.HasObserverSample = hasObserverPosition;
+                    _reconcileRuntimeState.LastObserverPosition = observerPosition;
                 }
-                _reconcilePlanVersion = _reconcilePlanVersion == int.MaxValue ? 1 : _reconcilePlanVersion + 1;
+                _reconcileRuntimeState.PlanVersion = _reconcileRuntimeState.PlanVersion == int.MaxValue ? 1 : _reconcileRuntimeState.PlanVersion + 1;
                 PrepareScatterPoolWarmup(initialWarmupPass, remainingInitialCreateBudget, observerPosition, hasObserverPosition);
+                ScatterReconcileExecutionContext reconcileContext = new ScatterReconcileExecutionContext(
+                    root,
+                    observerPosition,
+                    hasObserverPosition,
+                    cachedGeologyService,
+                    initialWarmupPass,
+                    remainingInitialCreateBudget);
 
                 using (_scatterReconcileSpawnProfilerMarker.Auto())
                 {
-                    foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
-                    {
-                        ScatterPlacement placement = pair.Value;
-                        ResolveReconcilePlan(
-                            placement,
-                            observerPosition,
-                            hasObserverPosition,
-                            out WorldProceduralProxyInstance instance,
-                            out WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
-                            out bool finalVariantActive,
-                            out bool requiresSpawn,
-                            out bool shouldApplyGeneratedGeology,
-                            out int syncSignature,
-                            out bool allowInitialWarmupCreate);
-
-                        if (TryRegisterFloraGpuiPlacement(placement, runtimeVariant, out GPUInstancerPrefabPrototype floraPrototype))
-                        {
-                            if (instance != null)
-                            {
-                                DestroyProxyInstance(instance.gameObject);
-                                _activeInstances.Remove(pair.Key);
-                                rebuiltCount++;
-                            }
-                            else
-                            {
-                                createdCount++;
-                            }
-
-                            continue;
-                        }
-
-                        if (instance != null)
-                        {
-                            if (requiresSpawn)
-                            {
-                                if (!TryReserveScatterCreate(runtimeVariant, initialWarmupPass))
-                                {
-                                    if (initialWarmupPass)
-                                        _hasPendingStartupPlacements = true;
-                                    else
-                                        _hasPendingRuntimePlacements = true;
-
-                                    continue;
-                                }
-
-                                DestroyProxyInstance(instance.gameObject);
-                                GameObject rebuilt = CreateScatterInstance(root, placement, runtimeVariant, finalVariantActive, out WorldProceduralProxyInstance rebuiltMetadata);
-                                if (rebuilt == null)
-                                {
-                                    if (initialWarmupPass)
-                                        _hasPendingStartupPlacements = true;
-                                    else
-                                        _hasPendingRuntimePlacements = true;
-
-                                    continue;
-                                }
-
-                                ApplyPlacement(rebuiltMetadata, placement, runtimeVariant, finalVariantActive);
-                                ApplyGeneratedGeology(
-                                    rebuiltMetadata,
-                                    placement,
-                                    finalVariantActive,
-                                    shouldApplyGeneratedGeology,
-                                    cachedGeologyService,
-                                    observerPosition,
-                                    hasObserverPosition);
-                                rebuiltMetadata.MarkScatterSync(
-                                    syncSignature,
-                                    shouldApplyGeneratedGeology);
-                                _activeInstances[pair.Key] = rebuiltMetadata;
-                                rebuiltCount++;
-                                continue;
-                            }
-
-                            if (instance.IsScatterSyncCurrent(syncSignature, shouldApplyGeneratedGeology))
-                            {
-                                reusedCount++;
-                                continue;
-                            }
-
-                            ApplyPlacement(instance, placement, runtimeVariant, finalVariantActive);
-                            ApplyGeneratedGeology(
-                                instance,
-                                placement,
-                                finalVariantActive,
-                                shouldApplyGeneratedGeology,
-                                cachedGeologyService,
-                                observerPosition,
-                                hasObserverPosition);
-                            instance.MarkScatterSync(syncSignature, shouldApplyGeneratedGeology);
-                            reusedCount++;
-                            continue;
-                        }
-
-                        if (initialWarmupPass && !allowInitialWarmupCreate)
-                            continue;
-
-                        if (initialWarmupPass && remainingInitialCreateBudget <= 0)
-                        {
-                            _hasPendingStartupPlacements = true;
-                            break;
-                        }
-
-                        if (!TryReserveScatterCreate(runtimeVariant, initialWarmupPass))
-                        {
-                            if (initialWarmupPass)
-                                _hasPendingStartupPlacements = true;
-                            else
-                                _hasPendingRuntimePlacements = true;
-
-                            continue;
-                        }
-
-                        GameObject go = CreateScatterInstance(root, placement, runtimeVariant, finalVariantActive, out WorldProceduralProxyInstance metadata);
-                        if (go == null)
-                        {
-                            if (initialWarmupPass)
-                                _hasPendingStartupPlacements = true;
-                            else
-                                _hasPendingRuntimePlacements = true;
-
-                            continue;
-                        }
-
-                        ApplyPlacement(metadata, placement, runtimeVariant, finalVariantActive);
-                        ApplyGeneratedGeology(
-                            metadata,
-                            placement,
-                            finalVariantActive,
-                            shouldApplyGeneratedGeology,
-                            cachedGeologyService,
-                            observerPosition,
-                            hasObserverPosition);
-                        metadata.MarkScatterSync(
-                            syncSignature,
-                            shouldApplyGeneratedGeology);
-                        _activeInstances[pair.Key] = metadata;
-                        createdCount++;
-                        if (initialWarmupPass)
-                            remainingInitialCreateBudget--;
-                    }
-
-                    FlushFloraGpuiBuffers();
+                    ReconcileDesiredPlacements(ref reconcileContext);
                 }
 
                 long spawnEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : cleanupEndTimestamp;
@@ -2163,20 +1993,251 @@ namespace Hecton8.World
 
                 long faunaEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : spawnEndTimestamp;
 
-                _debugReconcileRemovedCount = removedCount;
-                _debugReconcileRebuiltCount = rebuiltCount;
-                _debugReconcileCreatedCount = createdCount;
-                _debugReconcileReusedCount = reusedCount;
+                _debugReconcileRemovedCount = cleanupContext.RemovedCount;
+                _debugReconcileRebuiltCount = reconcileContext.RebuiltCount;
+                _debugReconcileCreatedCount = reconcileContext.CreatedCount;
+                _debugReconcileReusedCount = reconcileContext.ReusedCount;
 
                 return new ScatterReconcileMetrics(
-                    removedCount,
-                    rebuiltCount,
-                    createdCount,
-                    reusedCount,
+                    cleanupContext.RemovedCount,
+                    reconcileContext.RebuiltCount,
+                    reconcileContext.CreatedCount,
+                    reconcileContext.ReusedCount,
                     cleanupEndTimestamp,
                     spawnEndTimestamp,
                     faunaEndTimestamp);
             }
+        }
+
+        private void ReconcileDesiredPlacements(ref ScatterReconcileExecutionContext reconcileContext)
+        {
+            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            {
+                ScatterPlacement placement = pair.Value;
+                ScatterPlacementReconcilePlan plan = ResolveReconcilePlan(
+                    placement,
+                    reconcileContext.ObserverPosition,
+                    reconcileContext.HasObserverPosition);
+
+                if (TryHandleFloraGpuiReconcile(pair.Key, placement, plan, ref reconcileContext))
+                    continue;
+
+                if (TryHandleExistingInstanceReconcile(pair.Key, placement, plan, ref reconcileContext))
+                    continue;
+
+                if (!TryHandleNewInstanceReconcile(pair.Key, placement, plan, ref reconcileContext))
+                    break;
+            }
+
+            FlushFloraGpuiBuffers();
+        }
+
+        private void RemoveStaleScatterInstances(ref ScatterReconcileCleanupContext cleanupContext)
+        {
+            CollectStaleActiveScatterInstanceKeys(
+                cleanupContext.ActiveInstances,
+                cleanupContext.DesiredPlacements,
+                cleanupContext.RemovalBuffer);
+            cleanupContext.RemovedCount += RemoveBufferedActiveScatterInstances(cleanupContext.RemovalBuffer);
+        }
+
+        private void CollectAllActiveScatterInstanceKeys(List<long> removalBuffer)
+        {
+            removalBuffer.Clear();
+            foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
+                removalBuffer.Add(pair.Key);
+        }
+
+        private static void CollectStaleActiveScatterInstanceKeys(
+            Dictionary<long, WorldProceduralProxyInstance> activeInstances,
+            Dictionary<long, ScatterPlacement> desiredPlacements,
+            List<long> removalBuffer)
+        {
+            removalBuffer.Clear();
+            foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in activeInstances)
+            {
+                if (desiredPlacements.ContainsKey(pair.Key))
+                    continue;
+
+                removalBuffer.Add(pair.Key);
+            }
+        }
+
+        private int RemoveBufferedActiveScatterInstances(List<long> removalBuffer)
+        {
+            int removedCount = 0;
+            for (int i = 0; i < removalBuffer.Count; i++)
+            {
+                long key = removalBuffer[i];
+                if (!_activeInstances.TryGetValue(key, out WorldProceduralProxyInstance instance))
+                    continue;
+
+                if (instance != null)
+                    DestroyProxyInstance(instance.gameObject);
+
+                _activeInstances.Remove(key);
+                removedCount++;
+            }
+
+            return removedCount;
+        }
+
+        private bool TryHandleFloraGpuiReconcile(
+            long placementKey,
+            ScatterPlacement placement,
+            ScatterPlacementReconcilePlan plan,
+            ref ScatterReconcileExecutionContext reconcileContext)
+        {
+            if (!TryRegisterFloraGpuiPlacement(placement, plan.RuntimeVariant, out GPUInstancerPrefabPrototype floraPrototype))
+                return false;
+
+            if (plan.Instance != null)
+            {
+                DestroyProxyInstance(plan.Instance.gameObject);
+                _activeInstances.Remove(placementKey);
+                reconcileContext.RebuiltCount++;
+            }
+            else
+            {
+                reconcileContext.CreatedCount++;
+            }
+
+            return true;
+        }
+
+        private bool TryHandleExistingInstanceReconcile(
+            long placementKey,
+            ScatterPlacement placement,
+            ScatterPlacementReconcilePlan plan,
+            ref ScatterReconcileExecutionContext reconcileContext)
+        {
+            if (plan.Instance == null)
+                return false;
+
+            if (plan.RequiresSpawn)
+            {
+                if (!TryReserveScatterCreate(plan.RuntimeVariant, reconcileContext.InitialWarmupPass))
+                {
+                    MarkPendingScatterReconcile(reconcileContext.InitialWarmupPass);
+                    return true;
+                }
+
+                DestroyProxyInstance(plan.Instance.gameObject);
+                GameObject rebuilt = CreateScatterInstance(
+                    reconcileContext.Root,
+                    placement,
+                    plan.RuntimeVariant,
+                    plan.FinalVariantActive,
+                    out WorldProceduralProxyInstance rebuiltMetadata);
+                if (rebuilt == null)
+                {
+                    MarkPendingScatterReconcile(reconcileContext.InitialWarmupPass);
+                    return true;
+                }
+
+                ApplyScatterReconcileSync(rebuiltMetadata, placement, plan, ref reconcileContext);
+                _activeInstances[placementKey] = rebuiltMetadata;
+                reconcileContext.RebuiltCount++;
+                return true;
+            }
+
+            if (plan.Instance.IsScatterSyncCurrent(plan.SyncSignature, plan.ShouldApplyGeneratedGeology))
+            {
+                reconcileContext.ReusedCount++;
+                return true;
+            }
+
+            ApplyScatterReconcileSync(plan.Instance, placement, plan, ref reconcileContext);
+            reconcileContext.ReusedCount++;
+            return true;
+        }
+
+        private bool TryHandleNewInstanceReconcile(
+            long placementKey,
+            ScatterPlacement placement,
+            ScatterPlacementReconcilePlan plan,
+            ref ScatterReconcileExecutionContext reconcileContext)
+        {
+            if (reconcileContext.InitialWarmupPass && !plan.AllowInitialWarmupCreate)
+                return true;
+
+            if (reconcileContext.InitialWarmupPass && reconcileContext.RemainingInitialCreateBudget <= 0)
+            {
+                _reconcileRuntimeState.HasPendingStartupPlacements = true;
+                return false;
+            }
+
+            if (!TryReserveScatterCreate(plan.RuntimeVariant, reconcileContext.InitialWarmupPass))
+            {
+                MarkPendingScatterReconcile(reconcileContext.InitialWarmupPass);
+                return true;
+            }
+
+            if (!TryCreateScatterReconcileInstance(
+                    placementKey,
+                    placement,
+                    plan,
+                    ref reconcileContext,
+                    out WorldProceduralProxyInstance metadata))
+            {
+                return true;
+            }
+
+            reconcileContext.CreatedCount++;
+            if (reconcileContext.InitialWarmupPass)
+                reconcileContext.RemainingInitialCreateBudget--;
+
+            return true;
+        }
+
+        private bool TryCreateScatterReconcileInstance(
+            long placementKey,
+            ScatterPlacement placement,
+            ScatterPlacementReconcilePlan plan,
+            ref ScatterReconcileExecutionContext reconcileContext,
+            out WorldProceduralProxyInstance metadata)
+        {
+            GameObject go = CreateScatterInstance(
+                reconcileContext.Root,
+                placement,
+                plan.RuntimeVariant,
+                plan.FinalVariantActive,
+                out metadata);
+            if (go == null)
+            {
+                MarkPendingScatterReconcile(reconcileContext.InitialWarmupPass);
+                return false;
+            }
+
+            ApplyScatterReconcileSync(metadata, placement, plan, ref reconcileContext);
+            _activeInstances[placementKey] = metadata;
+            return true;
+        }
+
+        private void ApplyScatterReconcileSync(
+            WorldProceduralProxyInstance instance,
+            ScatterPlacement placement,
+            ScatterPlacementReconcilePlan plan,
+            ref ScatterReconcileExecutionContext reconcileContext)
+        {
+            ApplyPlacement(instance, placement, plan.RuntimeVariant, plan.FinalVariantActive);
+            ApplyGeneratedGeology(
+                instance,
+                placement,
+                plan.FinalVariantActive,
+                plan.ShouldApplyGeneratedGeology,
+                reconcileContext.CachedGeologyService,
+                reconcileContext.ObserverPosition,
+                reconcileContext.HasObserverPosition);
+            instance.MarkScatterSync(plan.SyncSignature, plan.ShouldApplyGeneratedGeology);
+        }
+
+        private void MarkPendingScatterReconcile(bool initialWarmupPass)
+        {
+            if (initialWarmupPass)
+                _reconcileRuntimeState.HasPendingStartupPlacements = true;
+            else
+                _reconcileRuntimeState.HasPendingRuntimePlacements = true;
         }
 
         private void PublishFaunaRegistrySnapshot()
@@ -2188,8 +2249,7 @@ namespace Hecton8.World
 
             if (faunaSpawnRegistry == null)
             {
-                _debugPublishedFaunaAnchors = 0;
-                _debugPublishedLargeThreatZones = 0;
+                ResetPublishedFaunaSnapshotCounts();
                 return;
             }
 
@@ -2197,25 +2257,8 @@ namespace Hecton8.World
             int largeThreatZoneCount = 0;
             foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
             {
-                ScatterPlacement placement = pair.Value;
-                bool largeThreatZone = placement.IsLargeThreatZone;
-                bool faunaAnchor = placement.IsFaunaAnchor;
-                if (!faunaAnchor)
+                if (!TryBuildFaunaRegistryAnchor(pair.Value, out WorldFaunaSpawnRegistry.Anchor anchor, out bool largeThreatZone))
                     continue;
-
-                WorldFaunaSpawnRegistry.Anchor anchor = new WorldFaunaSpawnRegistry.Anchor
-                {
-                    runtimeKey = placement.Key,
-                    position = placement.Position,
-                    radius = placement.FaunaAnchorRadius,
-                    chunkCoord = placement.ChunkCoord,
-                    macroZoneCoord = placement.HasMacroZone
-                        ? placement.MacroZoneCoord
-                        : WorldMacroZoneCoordinate.FromWorldPosition(placement.Position, _runtimeMacroZoneSize),
-                    streamingLayer = placement.StreamingLayer,
-                    familyId = placement.Family != null ? placement.Family.familyId : "world.family.generic",
-                    isLargeThreatZone = largeThreatZone
-                };
 
                 _faunaAnchorBuffer.Add(anchor);
                 if (largeThreatZone)
@@ -2230,119 +2273,204 @@ namespace Hecton8.World
             _faunaSnapshotDirty = false;
         }
 
+        private void ResetPublishedFaunaSnapshotCounts()
+        {
+            _debugPublishedFaunaAnchors = 0;
+            _debugPublishedLargeThreatZones = 0;
+        }
+
+        private bool TryBuildFaunaRegistryAnchor(
+            ScatterPlacement placement,
+            out WorldFaunaSpawnRegistry.Anchor anchor,
+            out bool largeThreatZone)
+        {
+            anchor = default;
+            largeThreatZone = false;
+            if (!placement.IsFaunaAnchor)
+                return false;
+
+            largeThreatZone = placement.IsLargeThreatZone;
+            anchor = new WorldFaunaSpawnRegistry.Anchor
+            {
+                runtimeKey = placement.Key,
+                position = placement.Position,
+                radius = placement.FaunaAnchorRadius,
+                chunkCoord = placement.ChunkCoord,
+                macroZoneCoord = placement.HasMacroZone
+                    ? placement.MacroZoneCoord
+                    : WorldMacroZoneCoordinate.FromWorldPosition(placement.Position, _runtimeStreamingState.MacroZoneSize),
+                streamingLayer = placement.StreamingLayer,
+                familyId = placement.Family != null ? placement.Family.familyId : "world.family.generic",
+                isLargeThreatZone = largeThreatZone
+            };
+            return true;
+        }
+
         private void PrepareScatterPoolWarmup(
             bool initialWarmupPass,
             int initialCreateBudget,
             Vector3 observerPosition,
             bool hasObserverPosition)
         {
+            if (!TryBuildScatterPoolWarmupContext(
+                    initialWarmupPass,
+                    initialCreateBudget,
+                    observerPosition,
+                    hasObserverPosition,
+                    out ScatterPoolWarmupContext warmupContext))
+            {
+                return;
+            }
+
+            CollectScatterPoolWarmupDemand(ref warmupContext);
+            ApplyScatterPoolWarmupAllowances(ref warmupContext);
+            ClearScatterPoolWarmupScratch();
+        }
+
+        private bool TryBuildScatterPoolWarmupContext(
+            bool initialWarmupPass,
+            int initialCreateBudget,
+            Vector3 observerPosition,
+            bool hasObserverPosition,
+            out ScatterPoolWarmupContext warmupContext)
+        {
+            warmupContext = default;
+            if (_memory == null)
+                return false;
+
+            Dictionary<int, int> prefabCreateAllowances = _memory.PrefabCreateAllowances;
+            prefabCreateAllowances.Clear();
+
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            _prefabCreateAllowances.Clear();
             if (pool == null)
+                return false;
+
+            ClearScatterPoolWarmupScratch();
+            bool useExactStartupWarmup = initialWarmupPass && spreadInitialScatterWarmupAcrossTicks;
+            warmupContext = new ScatterPoolWarmupContext(
+                pool,
+                prefabCreateAllowances,
+                _memory.PrefabWarmupCounts,
+                _memory.PrefabWarmupPrefabs,
+                _memory.PrefabWarmupFamilyIds,
+                observerPosition,
+                hasObserverPosition,
+                initialWarmupPass,
+                useExactStartupWarmup,
+                initialWarmupPass
+                    ? (useExactStartupWarmup
+                        ? Mathf.Max(0, maxPoolWarmupPerRebuild)
+                        : int.MaxValue)
+                    : 0,
+                initialWarmupPass
+                    ? (useExactStartupWarmup
+                        ? Mathf.Max(0, maxPoolWarmupPerPrefabPerRebuild)
+                        : int.MaxValue)
+                    : 0,
+                initialWarmupPass
+                    ? Mathf.Max(0, initialCreateBudget)
+                    : int.MaxValue,
+                RuntimeDiagnosticsTrace.IsActive);
+            return true;
+        }
+
+        private void ClearScatterPoolWarmupScratch()
+        {
+            if (_memory == null)
                 return;
 
-            _prefabWarmupCounts.Clear();
-            _prefabWarmupPrefabs.Clear();
-            _prefabWarmupFamilyIds.Clear();
-            bool useExactStartupWarmup = initialWarmupPass && spreadInitialScatterWarmupAcrossTicks;
-            int remainingWarmupBudget = initialWarmupPass
-                ? (useExactStartupWarmup
-                    ? Mathf.Max(0, maxPoolWarmupPerRebuild)
-                    : int.MaxValue)
-                : 0;
-            int perPrefabWarmupLimit = initialWarmupPass
-                ? (useExactStartupWarmup
-                    ? Mathf.Max(0, maxPoolWarmupPerPrefabPerRebuild)
-                    : int.MaxValue)
-                : 0;
-            int remainingInitialWarmupCreates = initialWarmupPass
-                ? Mathf.Max(0, initialCreateBudget)
-                : int.MaxValue;
-            bool diagnosticsTraceActive = RuntimeDiagnosticsTrace.IsActive;
+            _memory.PrefabWarmupCounts.Clear();
+            _memory.PrefabWarmupPrefabs.Clear();
+            _memory.PrefabWarmupFamilyIds.Clear();
+        }
 
+        private void CollectScatterPoolWarmupDemand(ref ScatterPoolWarmupContext warmupContext)
+        {
             foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
             {
                 ScatterPlacement placement = pair.Value;
-                if (initialWarmupPass && !ShouldCreateDuringInitialWarmup(placement, observerPosition, hasObserverPosition))
+                if (warmupContext.InitialWarmupPass &&
+                    !ShouldCreateDuringInitialWarmup(
+                        placement,
+                        warmupContext.ObserverPosition,
+                        warmupContext.HasObserverPosition))
+                {
                     continue;
+                }
 
-                if (initialWarmupPass && remainingInitialWarmupCreates <= 0)
+                if (warmupContext.InitialWarmupPass && warmupContext.RemainingInitialWarmupCreates <= 0)
                     break;
 
-                ResolveReconcilePlan(
+                ScatterPlacementReconcilePlan plan = ResolveReconcilePlan(
                     placement,
-                    observerPosition,
-                    hasObserverPosition,
-                    out WorldProceduralProxyInstance instance,
-                    out WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
-                    out bool finalVariantActive,
-                    out bool requiresSpawn,
-                    out bool shouldApplyGeneratedGeology,
-                    out int syncSignature,
-                    out bool allowInitialWarmupCreate);
+                    warmupContext.ObserverPosition,
+                    warmupContext.HasObserverPosition);
 
-                if (initialWarmupPass && !allowInitialWarmupCreate)
+                if (warmupContext.InitialWarmupPass && !plan.AllowInitialWarmupCreate)
                     continue;
 
-                if (ShouldUseFloraGpuiPath(placement, runtimeVariant, out _))
+                if (ShouldUseFloraGpuiPath(placement, plan.RuntimeVariant, out _))
                     continue;
 
-                GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
-                if (prefab == null || !requiresSpawn)
+                GameObject prefab = plan.RuntimeVariant != null ? plan.RuntimeVariant.prefab : null;
+                if (prefab == null || !plan.RequiresSpawn)
                     continue;
 
                 string familyId = placement.Family != null ? placement.Family.familyId : string.Empty;
                 RegisterWarmupPrefab(prefab, familyId, 1);
-                if (initialWarmupPass)
-                    remainingInitialWarmupCreates--;
+                if (warmupContext.InitialWarmupPass)
+                    warmupContext.RemainingInitialWarmupCreates--;
             }
+        }
 
-            foreach (KeyValuePair<int, int> pair in _prefabWarmupCounts)
+        private void ApplyScatterPoolWarmupAllowances(ref ScatterPoolWarmupContext warmupContext)
+        {
+            foreach (KeyValuePair<int, int> pair in warmupContext.PrefabWarmupCounts)
             {
-                if (remainingWarmupBudget <= 0)
+                if (warmupContext.RemainingWarmupBudget <= 0)
                     break;
 
-                GameObject prefab = _prefabWarmupPrefabs[pair.Key];
-                _prefabWarmupFamilyIds.TryGetValue(pair.Key, out string familyId);
+                GameObject prefab = warmupContext.PrefabWarmupPrefabs[pair.Key];
+                warmupContext.PrefabWarmupFamilyIds.TryGetValue(pair.Key, out string familyId);
                 int directDemandCount = Mathf.Max(0, pair.Value);
-                int reserveCount = ResolveWarmupReserveCount(familyId, directDemandCount, initialWarmupPass);
-                int availableCount = pool.GetAvailableCount(prefab);
+                int reserveCount = ResolveWarmupReserveCount(
+                    familyId,
+                    directDemandCount,
+                    warmupContext.InitialWarmupPass);
+                int availableCount = warmupContext.Pool.GetAvailableCount(prefab);
                 int reserveTopUp = reserveCount;
 
                 int missingCount = directDemandCount + reserveTopUp - availableCount;
-                if (useExactStartupWarmup && missingCount > 0)
+                if (warmupContext.UseExactStartupWarmup && missingCount > 0)
                 {
-                    int effectivePerPrefabLimit = perPrefabWarmupLimit;
-                    if (effectivePerPrefabLimit <= 0 || remainingWarmupBudget <= 0)
+                    int effectivePerPrefabLimit = warmupContext.PerPrefabWarmupLimit;
+                    if (effectivePerPrefabLimit <= 0 || warmupContext.RemainingWarmupBudget <= 0)
                         continue;
 
                     int warmupCount = Mathf.Min(
                         missingCount,
                         effectivePerPrefabLimit,
-                        remainingWarmupBudget);
+                        warmupContext.RemainingWarmupBudget);
                     if (warmupCount > 0)
                     {
                         int availableBeforeWarmup = availableCount;
-                        pool.Warmup(prefab, warmupCount);
-                        remainingWarmupBudget = Mathf.Max(0, remainingWarmupBudget - warmupCount);
+                        warmupContext.Pool.Warmup(prefab, warmupCount);
+                        warmupContext.RemainingWarmupBudget = Mathf.Max(0, warmupContext.RemainingWarmupBudget - warmupCount);
 
-                        if (diagnosticsTraceActive)
+                        if (warmupContext.DiagnosticsTraceActive)
                         {
                             RuntimeDiagnosticsTrace.WriteEvent(
                                 "pool",
-                                $"warmup family={familyId} prefab={prefab.name} count={warmupCount} availableBefore={availableBeforeWarmup} reserve={reserveCount} reserveTopUp={reserveTopUp} missing={missingCount} startup={useExactStartupWarmup}");
+                                $"warmup family={familyId} prefab={prefab.name} count={warmupCount} availableBefore={availableBeforeWarmup} reserve={reserveCount} reserveTopUp={reserveTopUp} missing={missingCount} startup={warmupContext.UseExactStartupWarmup}");
                         }
                     }
                 }
-                int availableAfterWarmup = pool.GetAvailableCount(prefab);
+
+                int availableAfterWarmup = warmupContext.Pool.GetAvailableCount(prefab);
                 int allowedCount = Mathf.Min(directDemandCount, availableAfterWarmup);
                 if (allowedCount > 0)
-                    _prefabCreateAllowances[pair.Key] = allowedCount;
+                    warmupContext.PrefabCreateAllowances[pair.Key] = allowedCount;
             }
-
-            _prefabWarmupCounts.Clear();
-            _prefabWarmupPrefabs.Clear();
-            _prefabWarmupFamilyIds.Clear();
         }
 
         private bool TryReserveScatterCreate(
@@ -2356,38 +2484,68 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return true;
 
+            if (!TryGetPrefabRegistry(out PrefabRegistry prefabRegistry))
+                return false;
+
             #pragma warning disable CS0618
-            int prefabId = prefab.GetInstanceID();
+            int prefabId = prefabRegistry.GetOrRegisterPrefab(prefab);
             #pragma warning restore CS0618
-            if (!_prefabCreateAllowances.TryGetValue(prefabId, out int remainingCount))
+            if (_memory == null)
+                return false;
+
+            Dictionary<int, int> prefabCreateAllowances = _memory.PrefabCreateAllowances;
+            if (!prefabCreateAllowances.TryGetValue(prefabId, out int remainingCount))
                 return false;
 
             if (remainingCount <= 0)
                 return false;
 
             if (remainingCount == 1)
-                _prefabCreateAllowances.Remove(prefabId);
+                prefabCreateAllowances.Remove(prefabId);
             else
-                _prefabCreateAllowances[prefabId] = remainingCount - 1;
+                prefabCreateAllowances[prefabId] = remainingCount - 1;
 
             return true;
         }
 
         private void RegisterWarmupPrefab(GameObject prefab, string familyId, int requiredCount)
         {
-            if (prefab == null)
+            if (prefab == null || _memory == null)
+                return;
+
+            if (!TryGetPrefabRegistry(out PrefabRegistry prefabRegistry))
                 return;
 
             #pragma warning disable CS0618
-            int prefabId = prefab.GetInstanceID();
+            int prefabId = prefabRegistry.GetOrRegisterPrefab(prefab);
             #pragma warning restore CS0618
-            if (_prefabWarmupCounts.TryGetValue(prefabId, out int count))
-                _prefabWarmupCounts[prefabId] = count + Mathf.Max(0, requiredCount);
+            Dictionary<int, int> prefabWarmupCounts = _memory.PrefabWarmupCounts;
+            Dictionary<int, GameObject> prefabWarmupPrefabs = _memory.PrefabWarmupPrefabs;
+            Dictionary<int, string> prefabWarmupFamilyIds = _memory.PrefabWarmupFamilyIds;
+            if (prefabWarmupCounts.TryGetValue(prefabId, out int count))
+                prefabWarmupCounts[prefabId] = count + Mathf.Max(0, requiredCount);
             else
-                _prefabWarmupCounts.Add(prefabId, Mathf.Max(0, requiredCount));
+                prefabWarmupCounts.Add(prefabId, Mathf.Max(0, requiredCount));
 
-            _prefabWarmupPrefabs[prefabId] = prefab;
-            _prefabWarmupFamilyIds[prefabId] = familyId ?? string.Empty;
+            prefabWarmupPrefabs[prefabId] = prefab;
+            prefabWarmupFamilyIds[prefabId] = familyId ?? string.Empty;
+        }
+
+        private bool TryGetPrefabRegistry(out PrefabRegistry prefabRegistry)
+        {
+            prefabRegistry = PrefabRegistry.Instance;
+            if (prefabRegistry != null)
+                return true;
+
+            if (!_loggedMissingPrefabRegistry)
+            {
+                _loggedMissingPrefabRegistry = true;
+                UnityEngine.Debug.LogError(
+                    "[WorldScatter] PrefabRegistry not initialized. Scatter create/warmup path aborted.",
+                    this);
+            }
+
+            return false;
         }
 
         private int GetStartupWarmupReserve(string familyId)
@@ -2414,60 +2572,74 @@ namespace Hecton8.World
             return Mathf.Max(configuredReserve, directDemandCount);
         }
 
-        private void ResolveReconcilePlan(
+        private ScatterPlacementReconcilePlan ResolveReconcilePlan(
             ScatterPlacement placement,
             Vector3 observerPosition,
-            bool hasObserverPosition,
-            out WorldProceduralProxyInstance instance,
-            out WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
-            out bool finalVariantActive,
-            out bool requiresSpawn,
-            out bool shouldApplyGeneratedGeology,
-            out int syncSignature,
-            out bool allowInitialWarmupCreate)
+            bool hasObserverPosition)
         {
             if (placement == null)
             {
-                instance = null;
-                runtimeVariant = null;
-                finalVariantActive = false;
-                requiresSpawn = false;
-                shouldApplyGeneratedGeology = false;
-                syncSignature = 0;
-                allowInitialWarmupCreate = false;
-                return;
+                return new ScatterPlacementReconcilePlan(
+                    null,
+                    null,
+                    null,
+                    false,
+                    false,
+                    false,
+                    0,
+                    false);
             }
 
             if (placement.TryGetCachedReconcilePlan(
-                    _reconcilePlanVersion,
-                    out instance,
-                    out runtimeVariant,
-                    out finalVariantActive,
-                    out requiresSpawn,
-                    out shouldApplyGeneratedGeology,
-                    out syncSignature,
-                    out allowInitialWarmupCreate))
+                    _reconcileRuntimeState.PlanVersion,
+                    out WorldProceduralProxyInstance cachedInstance,
+                    out WorldPrefabFamilyProfile.VariantEntry cachedRuntimeVariant,
+                    out bool cachedFinalVariantActive,
+                    out bool cachedRequiresSpawn,
+                    out bool cachedShouldApplyGeneratedGeology,
+                    out int cachedSyncSignature,
+                    out bool cachedAllowInitialWarmupCreate))
             {
-                return;
+                return new ScatterPlacementReconcilePlan(
+                    placement,
+                    cachedInstance,
+                    cachedRuntimeVariant,
+                    cachedFinalVariantActive,
+                    cachedRequiresSpawn,
+                    cachedShouldApplyGeneratedGeology,
+                    cachedSyncSignature,
+                    cachedAllowInitialWarmupCreate);
             }
 
-            runtimeVariant = GetResolvedPlacementVariant(
+            WorldPrefabFamilyProfile.VariantEntry runtimeVariant = GetResolvedPlacementVariant(
                 placement,
                 observerPosition,
                 hasObserverPosition,
-                out finalVariantActive);
+                out bool finalVariantActive);
 
+            WorldProceduralProxyInstance instance;
+            bool requiresSpawn;
             if (_activeInstances.TryGetValue(placement.Key, out instance) && instance != null)
                 requiresSpawn = RequiresInstanceRebuild(instance, placement, runtimeVariant, finalVariantActive);
             else
                 requiresSpawn = true;
 
-            shouldApplyGeneratedGeology = ShouldApplyGeneratedGeology(placement, finalVariantActive, observerPosition, hasObserverPosition);
-            syncSignature = ComputePlacementSyncSignature(placement, runtimeVariant, finalVariantActive);
-            allowInitialWarmupCreate = ShouldCreateDuringInitialWarmup(placement, observerPosition, hasObserverPosition);
+            bool shouldApplyGeneratedGeology = ShouldApplyGeneratedGeology(placement, finalVariantActive, observerPosition, hasObserverPosition);
+            int syncSignature = ComputePlacementSyncSignature(placement, runtimeVariant, finalVariantActive);
+            bool allowInitialWarmupCreate = ShouldCreateDuringInitialWarmup(placement, observerPosition, hasObserverPosition);
 
             placement.CacheReconcilePlan(
-                _reconcilePlanVersion,
+                _reconcileRuntimeState.PlanVersion,
+                instance,
+                runtimeVariant,
+                finalVariantActive,
+                requiresSpawn,
+                shouldApplyGeneratedGeology,
+                syncSignature,
+                allowInitialWarmupCreate);
+
+            return new ScatterPlacementReconcilePlan(
+                placement,
                 instance,
                 runtimeVariant,
                 finalVariantActive,
@@ -2497,7 +2669,9 @@ namespace Hecton8.World
             return GetHorizontalDistanceSqr(placement.Position, observerPosition) <= allowedRadius * allowedRadius;
         }
 
-        private bool TryRegisterDesiredPlacement(ScatterPlacement placement, float now)
+        private bool TryRegisterDesiredPlacement(
+            ScatterPlacement placement,
+            in ScatterPlacementRegistrationContext registrationContext)
         {
             if (placement == null || placement.Key == 0L)
                 return false;
@@ -2510,43 +2684,56 @@ namespace Hecton8.World
 
             EnsurePlacementRuntimeStateResolved(placement);
 
-            bool alreadyRegistered = _desiredPlacements.TryGetValue(placement.Key, out ScatterPlacement existingDesired);
+            Dictionary<long, ScatterPlacement> desiredPlacements = registrationContext.DesiredPlacements;
+            Dictionary<long, ScatterPlacement> retainedPlacements = registrationContext.RetainedPlacements;
+            Dictionary<long, float> placementLastSeenTimes = registrationContext.PlacementLastSeenTimes;
+            bool alreadyRegistered = desiredPlacements.TryGetValue(placement.Key, out ScatterPlacement existingDesired);
             if (alreadyRegistered)
             {
                 if (!ReferenceEquals(existingDesired, placement))
                 {
                     ReleasePlacement(existingDesired);
                     RetainPlacement(placement);
-                    _desiredPlacements[placement.Key] = placement;
+                    desiredPlacements[placement.Key] = placement;
                     _faunaSnapshotDirty = true;
                 }
             }
             else
             {
                 RetainPlacement(placement);
-                _desiredPlacements[placement.Key] = placement;
+                desiredPlacements[placement.Key] = placement;
                 _faunaSnapshotDirty = true;
             }
 
-            if (_retainedPlacements.TryGetValue(placement.Key, out ScatterPlacement existingRetained))
+            if (retainedPlacements.TryGetValue(placement.Key, out ScatterPlacement existingRetained))
             {
                 if (!ReferenceEquals(existingRetained, placement))
                 {
                     ReleasePlacement(existingRetained);
                     RetainPlacement(placement);
-                    _retainedPlacements[placement.Key] = placement;
+                    retainedPlacements[placement.Key] = placement;
                 }
             }
             else
             {
                 RetainPlacement(placement);
-                _retainedPlacements[placement.Key] = placement;
+                retainedPlacements[placement.Key] = placement;
             }
 
-            _placementLastSeenTimes[placement.Key] = now;
+            placementLastSeenTimes[placement.Key] = registrationContext.Now;
             if (!alreadyRegistered)
                 RegisterPlacementInGrid(placement);
             return true;
+        }
+
+        private bool TryRegisterDesiredPlacement(ScatterPlacement placement, float now)
+        {
+            ScatterPlacementRegistrationContext registrationContext = new ScatterPlacementRegistrationContext(
+                _desiredPlacements,
+                _retainedPlacements,
+                _placementLastSeenTimes,
+                now);
+            return TryRegisterDesiredPlacement(placement, in registrationContext);
         }
 
         private void EnsurePlacementRuntimeStateResolved(ScatterPlacement placement)
@@ -2560,9 +2747,9 @@ namespace Hecton8.World
                 preferFinalVariant: false);
             float scale = ResolveScaleMultiplier(variant, placement.StableHash);
             Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(placement.StableHash % 360), 0f);
-            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(placement.Position, _runtimeChunkSize);
+            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(placement.Position, _runtimeStreamingState.ChunkSize);
             WorldMacroZoneCoordinate macroZoneCoord = placement.HasMacroZone
-                ? WorldMacroZoneCoordinate.FromWorldPosition(placement.Position, _runtimeMacroZoneSize)
+                ? WorldMacroZoneCoordinate.FromWorldPosition(placement.Position, _runtimeStreamingState.MacroZoneSize)
                 : default;
             placement.ResolveDeferredRuntimeState(variant, rotation, scale, chunkCoord, macroZoneCoord);
         }
@@ -2582,28 +2769,40 @@ namespace Hecton8.World
             }
         }
 
+        private void EvictStaleRetainedPlacements(in ScatterRetentionEvictionContext evictionContext)
+        {
+            List<long> removalBuffer = evictionContext.RemovalBuffer;
+            Dictionary<long, float> placementLastSeenTimes = evictionContext.PlacementLastSeenTimes;
+            Dictionary<long, ScatterPlacement> retainedPlacements = evictionContext.RetainedPlacements;
+            removalBuffer.Clear();
+
+            foreach (KeyValuePair<long, float> pair in placementLastSeenTimes)
+            {
+                if (evictionContext.Now - pair.Value > evictionContext.RemovalThresholdSeconds)
+                    removalBuffer.Add(pair.Key);
+            }
+
+            for (int i = 0; i < removalBuffer.Count; i++)
+            {
+                long key = removalBuffer[i];
+                if (retainedPlacements.TryGetValue(key, out ScatterPlacement placement))
+                    ReleasePlacement(placement);
+                retainedPlacements.Remove(key);
+                placementLastSeenTimes.Remove(key);
+            }
+
+            removalBuffer.Clear();
+        }
+
         private void EvictStaleRetainedPlacements(float now)
         {
-            float graceSeconds = Mathf.Max(0.25f, missingPlacementGraceSeconds);
-            float threshold = graceSeconds * 1.5f;
-            _removalBuffer.Clear();
-
-            foreach (KeyValuePair<long, float> pair in _placementLastSeenTimes)
-            {
-                if (now - pair.Value > threshold)
-                    _removalBuffer.Add(pair.Key);
-            }
-
-            for (int i = 0; i < _removalBuffer.Count; i++)
-            {
-                long key = _removalBuffer[i];
-                if (_retainedPlacements.TryGetValue(key, out ScatterPlacement placement))
-                    ReleasePlacement(placement);
-                _retainedPlacements.Remove(key);
-                _placementLastSeenTimes.Remove(key);
-            }
-
-            _removalBuffer.Clear();
+            ScatterRetentionEvictionContext evictionContext = new ScatterRetentionEvictionContext(
+                _retainedPlacements,
+                _placementLastSeenTimes,
+                _removalBuffer,
+                now,
+                Mathf.Max(0.25f, missingPlacementGraceSeconds) * 1.5f);
+            EvictStaleRetainedPlacements(in evictionContext);
         }
 
         private void ResetPlacementGrid()
@@ -2642,35 +2841,49 @@ namespace Hecton8.World
                 _maxRegisteredPlacementSpacingMeters = spacing;
         }
 
-        private void RestoreRecentDesiredPlacements(Vector3 observerPosition, float now)
+        private void RestoreRecentDesiredPlacements(in ScatterRetentionRestoreContext restoreContext)
         {
             if (_activeInstances.Count == 0)
                 return;
 
-            float graceSeconds = Mathf.Max(0.25f, missingPlacementGraceSeconds);
+            Dictionary<long, ScatterPlacement> desiredPlacements = restoreContext.DesiredPlacements;
+            Dictionary<long, ScatterPlacement> retainedPlacements = restoreContext.RetainedPlacements;
+            Dictionary<long, float> placementLastSeenTimes = restoreContext.PlacementLastSeenTimes;
             foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
             {
                 long runtimeKey = pair.Key;
-                if (_desiredPlacements.ContainsKey(runtimeKey))
+                if (desiredPlacements.ContainsKey(runtimeKey))
                     continue;
 
-                if (!_placementLastSeenTimes.TryGetValue(runtimeKey, out float lastSeenTime) ||
-                    now - lastSeenTime > graceSeconds)
+                if (!placementLastSeenTimes.TryGetValue(runtimeKey, out float lastSeenTime) ||
+                    restoreContext.Now - lastSeenTime > restoreContext.GraceSeconds)
                 {
                     continue;
                 }
 
-                if (!_retainedPlacements.TryGetValue(runtimeKey, out ScatterPlacement placement))
+                if (!retainedPlacements.TryGetValue(runtimeKey, out ScatterPlacement placement))
                     continue;
 
-                if (!IsPlacementWithinResidency(placement, observerPosition))
+                if (!IsPlacementWithinResidency(placement, restoreContext.ObserverPosition))
                     continue;
 
                 EnsurePlacementRuntimeStateResolved(placement);
                 RetainPlacement(placement);
-                _desiredPlacements[runtimeKey] = placement;
+                desiredPlacements[runtimeKey] = placement;
                 _faunaSnapshotDirty = true;
             }
+        }
+
+        private void RestoreRecentDesiredPlacements(Vector3 observerPosition, float now)
+        {
+            ScatterRetentionRestoreContext restoreContext = new ScatterRetentionRestoreContext(
+                _desiredPlacements,
+                _retainedPlacements,
+                _placementLastSeenTimes,
+                observerPosition,
+                now,
+                Mathf.Max(0.25f, missingPlacementGraceSeconds));
+            RestoreRecentDesiredPlacements(in restoreContext);
         }
 
         private bool IsPlacementWithinResidency(ScatterPlacement placement, Vector3 observerPosition)
@@ -2722,8 +2935,8 @@ namespace Hecton8.World
                     {
                         WorldChunkStreamingProfile.LayerProfile layerProfile = chunkStreamingProfile.GetLayerProfileOrDefault(l);
                         n = Mathf.Max(24f, chunkStreamingProfile.fullSimulationRadius * Mathf.Max(0.35f, layerProfile.nearRadiusScale));
-                        m = Mathf.Max(n + _runtimeCellSize, chunkStreamingProfile.midSimulationRadius * Mathf.Max(0.35f, layerProfile.midRadiusScale));
-                        f = Mathf.Max(m + _runtimeCellSize, chunkStreamingProfile.visualResidencyRadius * Mathf.Max(0.35f, layerProfile.farRadiusScale));
+                        m = Mathf.Max(n + _runtimeStreamingState.CellSize, chunkStreamingProfile.midSimulationRadius * Mathf.Max(0.35f, layerProfile.midRadiusScale));
+                        f = Mathf.Max(m + _runtimeStreamingState.CellSize, chunkStreamingProfile.visualResidencyRadius * Mathf.Max(0.35f, layerProfile.farRadiusScale));
                     }
                     _layerNearRadii[i] = n;
                     _layerMidRadii[i] = m;
@@ -2750,21 +2963,21 @@ namespace Hecton8.World
 
         private void RefreshRuntimeStreamingSettings()
         {
-            _runtimeCellSize = Mathf.Max(6f, cellSize);
-            _runtimeRadiusCells = Mathf.Max(2, radiusCells);
-            _runtimeChunkSize = 192f;
-            _runtimeMacroZoneSize = 768f;
+            _runtimeStreamingState.CellSize = Mathf.Max(6f, cellSize);
+            _runtimeStreamingState.RadiusCells = Mathf.Max(2, radiusCells);
+            _runtimeStreamingState.ChunkSize = 192f;
+            _runtimeStreamingState.MacroZoneSize = 768f;
 
             if (chunkStreamingProfile != null)
             {
-                _runtimeChunkSize = Mathf.Max(_runtimeCellSize, chunkStreamingProfile.chunkSizeMeters);
-                _runtimeMacroZoneSize = Mathf.Max(_runtimeChunkSize, chunkStreamingProfile.macroZoneSizeMeters);
+                _runtimeStreamingState.ChunkSize = Mathf.Max(_runtimeStreamingState.CellSize, chunkStreamingProfile.chunkSizeMeters);
+                _runtimeStreamingState.MacroZoneSize = Mathf.Max(_runtimeStreamingState.ChunkSize, chunkStreamingProfile.macroZoneSizeMeters);
             }
 
-            _debugRuntimeCellSize = _runtimeCellSize;
-            _debugRuntimeRadiusCells = _runtimeRadiusCells;
-            _debugRuntimeChunkSize = _runtimeChunkSize;
-            _debugRuntimeMacroZoneSize = _runtimeMacroZoneSize;
+            _debugRuntimeCellSize = _runtimeStreamingState.CellSize;
+            _debugRuntimeRadiusCells = _runtimeStreamingState.RadiusCells;
+            _debugRuntimeChunkSize = _runtimeStreamingState.ChunkSize;
+            _debugRuntimeMacroZoneSize = _runtimeStreamingState.MacroZoneSize;
         }
 
         private WorldPrefabFamilyProfile.VariantEntry ResolvePlacementVariant(ScatterPlacement placement)
@@ -3297,7 +3510,7 @@ namespace Hecton8.World
 
             float candidateSpacing = candidate.Placement.EffectiveSpacing;
             float maxRelevantDistance = Mathf.Max(candidateSpacing, _maxRegisteredPlacementSpacingMeters) * 1.35f;
-            int searchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(maxRelevantDistance / Mathf.Max(1f, _runtimeCellSize)));
+            int searchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(maxRelevantDistance / Mathf.Max(1f, _runtimeStreamingState.CellSize)));
             int cellX = candidate.Placement.CellX;
             int cellZ = candidate.Placement.CellZ;
 
@@ -4176,25 +4389,7 @@ namespace Hecton8.World
             in ScatterCandidate candidate,
             bool needsPreviewRescue,
             bool needsRuntimeSpawnRescue,
-            int structureStride,
-            int spawnStride,
-            ref CandidateMap groundCandidates,
-            ref CandidateMap clusterCandidates,
-            Dictionary<long, ScatterCandidate> structureCandidates,
-            Dictionary<long, ScatterCandidate> spawnCandidates,
-            ref CandidateMap clusterFertileCandidates,
-            ref CandidateMap clusterNestCandidates,
-            ref CandidateMap clusterResourceCandidates,
-            ref CandidateMap clusterShelterCandidates,
-            ref CandidateMap clusterHazardCandidates,
-            ref CandidateMap clusterDebrisCandidates,
-            ref CandidateMap clusterRockCandidates,
-            ref CandidateMap structureNaturalCandidates,
-            ref CandidateMap structureTechCandidates,
-            ref CandidateMap structureCaveCandidates,
-            ref CandidateMap structureBioCandidates,
-            ref CandidateMap passiveSpawnCandidates,
-            ref CandidateMap predatorSpawnCandidates)
+            ref ScatterRescueTrackingContext trackingContext)
         {
             if (!needsPreviewRescue && !needsRuntimeSpawnRescue)
                 return;
@@ -4202,59 +4397,59 @@ namespace Hecton8.World
             switch (candidate.Family.scatterLayer)
             {
                 case WorldPrefabFamilyProfile.ScatterLayer.Ground:
-                    TrackWindowCandidate(candidate, 1, ref groundCandidates);
+                    TrackWindowCandidate(candidate, 1, ref trackingContext.GroundCandidates);
                     break;
                 case WorldPrefabFamilyProfile.ScatterLayer.Cluster:
-                    TrackWindowCandidate(candidate, 1, ref clusterCandidates);
+                    TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterCandidates);
                     switch (GetClusterAccentRole(candidate.Family))
                     {
                         case WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth:
-                            TrackWindowCandidate(candidate, 1, ref clusterFertileCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterFertileCandidates);
                             break;
                         case WorldPrefabFamilyProfile.ClusterAccentRole.BiologicalNest:
-                            TrackWindowCandidate(candidate, 1, ref clusterNestCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterNestCandidates);
                             break;
                         case WorldPrefabFamilyProfile.ClusterAccentRole.ResourcePocket:
-                            TrackWindowCandidate(candidate, 1, ref clusterResourceCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterResourceCandidates);
                             break;
                         case WorldPrefabFamilyProfile.ClusterAccentRole.ShelterPocket:
-                            TrackWindowCandidate(candidate, 1, ref clusterShelterCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterShelterCandidates);
                             break;
                         case WorldPrefabFamilyProfile.ClusterAccentRole.HazardPocket:
-                            TrackWindowCandidate(candidate, 1, ref clusterHazardCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterHazardCandidates);
                             break;
                         case WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField:
-                            TrackWindowCandidate(candidate, 1, ref clusterDebrisCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterDebrisCandidates);
                             break;
                         case WorldPrefabFamilyProfile.ClusterAccentRole.RockCover:
-                            TrackWindowCandidate(candidate, 1, ref clusterRockCandidates);
+                            TrackWindowCandidate(candidate, 1, ref trackingContext.ClusterRockCandidates);
                             break;
                     }
                     break;
                 case WorldPrefabFamilyProfile.ScatterLayer.Structure:
-                    TrackWindowCandidate(candidate, structureStride, structureCandidates);
+                    TrackWindowCandidate(candidate, trackingContext.StructureStride, trackingContext.StructureCandidates);
                     switch (GetStructureAccentRole(candidate.Family))
                     {
                         case WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark:
-                            TrackWindowCandidate(candidate, structureStride, ref structureNaturalCandidates);
+                            TrackWindowCandidate(candidate, trackingContext.StructureStride, ref trackingContext.StructureNaturalCandidates);
                             break;
                         case WorldPrefabFamilyProfile.StructureAccentRole.TechFragment:
-                            TrackWindowCandidate(candidate, structureStride, ref structureTechCandidates);
+                            TrackWindowCandidate(candidate, trackingContext.StructureStride, ref trackingContext.StructureTechCandidates);
                             break;
                         case WorldPrefabFamilyProfile.StructureAccentRole.CaveRead:
-                            TrackWindowCandidate(candidate, structureStride, ref structureCaveCandidates);
+                            TrackWindowCandidate(candidate, trackingContext.StructureStride, ref trackingContext.StructureCaveCandidates);
                             break;
                         case WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette:
-                            TrackWindowCandidate(candidate, structureStride, ref structureBioCandidates);
+                            TrackWindowCandidate(candidate, trackingContext.StructureStride, ref trackingContext.StructureBioCandidates);
                             break;
                     }
                     break;
                 case WorldPrefabFamilyProfile.ScatterLayer.Spawn:
-                    TrackWindowCandidate(candidate, spawnStride, spawnCandidates);
+                    TrackWindowCandidate(candidate, trackingContext.SpawnStride, trackingContext.SpawnCandidates);
                     if (IsPassiveSpawnFamily(candidate.Family))
-                        TrackWindowCandidate(candidate, spawnStride, ref passiveSpawnCandidates);
+                        TrackWindowCandidate(candidate, trackingContext.SpawnStride, ref trackingContext.PassiveSpawnCandidates);
                     else if (IsPredatorSpawnFamily(candidate.Family))
-                        TrackWindowCandidate(candidate, spawnStride, ref predatorSpawnCandidates);
+                        TrackWindowCandidate(candidate, trackingContext.SpawnStride, ref trackingContext.PredatorSpawnCandidates);
                     break;
             }
         }
@@ -4305,42 +4500,43 @@ namespace Hecton8.World
         }
 
         private void InjectRescuePlacementsIfNeeded(
-            WorldProceduralPattern pattern,
-            HectonBiomeMatrixProfile biomeProfile,
-            int clusterBudget,
-            int structureStride,
-            int spawnStride,
-            int structureBudget,
-            int spawnBudget,
-            int[] layerPlacementCounts,
-            int[] clusterAccentCounts,
-            int[] structureAccentCounts,
+            in ScatterRescueContext rescueContext,
             ref int passiveSpawnCount,
             ref int predatorSpawnCount,
-            ScatterCandidate[] layerTopCandidates,
-            bool[] layerTopValid,
-            Dictionary<string, int>[] layerFamilyCounts,
-            Dictionary<string, int>[] layerBiomeCounts,
-            CandidateMap groundCandidates,
-            CandidateMap clusterCandidates,
-            Dictionary<long, ScatterCandidate> structureCandidates,
-            Dictionary<long, ScatterCandidate> spawnCandidates,
-            CandidateMap clusterFertileCandidates,
-            CandidateMap clusterNestCandidates,
-            CandidateMap clusterResourceCandidates,
-            CandidateMap clusterShelterCandidates,
-            CandidateMap clusterHazardCandidates,
-            CandidateMap clusterDebrisCandidates,
-            CandidateMap clusterRockCandidates,
-            CandidateMap structureNaturalCandidates,
-            CandidateMap structureTechCandidates,
-            CandidateMap structureCaveCandidates,
-            CandidateMap structureBioCandidates,
-            CandidateMap passiveSpawnCandidates,
-            CandidateMap predatorSpawnCandidates,
             out int injectedSpawnPlacements)
         {
             injectedSpawnPlacements = 0;
+            WorldProceduralPattern pattern = rescueContext.Pattern;
+            HectonBiomeMatrixProfile biomeProfile = rescueContext.BiomeProfile;
+            int clusterBudget = rescueContext.ClusterBudget;
+            int structureStride = rescueContext.StructureStride;
+            int spawnStride = rescueContext.SpawnStride;
+            int structureBudget = rescueContext.StructureBudget;
+            int spawnBudget = rescueContext.SpawnBudget;
+            int[] layerPlacementCounts = rescueContext.LayerPlacementCounts;
+            int[] clusterAccentCounts = rescueContext.ClusterAccentCounts;
+            int[] structureAccentCounts = rescueContext.StructureAccentCounts;
+            ScatterCandidate[] layerTopCandidates = rescueContext.LayerTopCandidates;
+            bool[] layerTopValid = rescueContext.LayerTopValid;
+            Dictionary<string, int>[] layerFamilyCounts = rescueContext.LayerFamilyCounts;
+            Dictionary<string, int>[] layerBiomeCounts = rescueContext.LayerBiomeCounts;
+            CandidateMap groundCandidates = rescueContext.GroundCandidates;
+            CandidateMap clusterCandidates = rescueContext.ClusterCandidates;
+            Dictionary<long, ScatterCandidate> structureCandidates = rescueContext.StructureCandidates;
+            Dictionary<long, ScatterCandidate> spawnCandidates = rescueContext.SpawnCandidates;
+            CandidateMap clusterFertileCandidates = rescueContext.ClusterFertileCandidates;
+            CandidateMap clusterNestCandidates = rescueContext.ClusterNestCandidates;
+            CandidateMap clusterResourceCandidates = rescueContext.ClusterResourceCandidates;
+            CandidateMap clusterShelterCandidates = rescueContext.ClusterShelterCandidates;
+            CandidateMap clusterHazardCandidates = rescueContext.ClusterHazardCandidates;
+            CandidateMap clusterDebrisCandidates = rescueContext.ClusterDebrisCandidates;
+            CandidateMap clusterRockCandidates = rescueContext.ClusterRockCandidates;
+            CandidateMap structureNaturalCandidates = rescueContext.StructureNaturalCandidates;
+            CandidateMap structureTechCandidates = rescueContext.StructureTechCandidates;
+            CandidateMap structureCaveCandidates = rescueContext.StructureCaveCandidates;
+            CandidateMap structureBioCandidates = rescueContext.StructureBioCandidates;
+            CandidateMap passiveSpawnCandidates = rescueContext.PassiveSpawnCandidates;
+            CandidateMap predatorSpawnCandidates = rescueContext.PredatorSpawnCandidates;
             int groundLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Ground;
             int minimumGroundCount = ResolveMinimumGroundPlacements(pattern, biomeProfile);
             if (layerPlacementCounts[groundLayerIndex] < minimumGroundCount)
@@ -4900,7 +5096,10 @@ namespace Hecton8.World
             FillOrderedCandidateBuffer(rescueCandidates, ordered);
             if (rebuildOccupiedBuffer)
                 RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
-            Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
+            Dictionary<int, int> familyCounts = _memory != null ? _memory.PreferredFamilyPlacementCounts : null;
+            if (familyCounts == null)
+                return 0;
+
             BuildPreferredFamilyPlacementCounts(
                 biomeProfile.preferredClusterFamilies,
                 WorldPrefabFamilyProfile.ScatterLayer.Cluster,
@@ -5135,7 +5334,10 @@ namespace Hecton8.World
         {
             if (biomeProfile?.preferredStructureFamilies == null || ordered == null || ordered.Count == 0)
                 return 0;
-            Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
+            Dictionary<int, int> familyCounts = _memory != null ? _memory.PreferredFamilyPlacementCounts : null;
+            if (familyCounts == null)
+                return 0;
+
             BuildPreferredFamilyPlacementCounts(
                 biomeProfile.preferredStructureFamilies,
                 WorldPrefabFamilyProfile.ScatterLayer.Structure,
@@ -5282,7 +5484,10 @@ namespace Hecton8.World
         {
             if (biomeProfile?.preferredSpawnFamilies == null || ordered == null || ordered.Count == 0)
                 return 0;
-            Dictionary<int, int> familyCounts = _preferredFamilyPlacementCounts;
+            Dictionary<int, int> familyCounts = _memory != null ? _memory.PreferredFamilyPlacementCounts : null;
+            if (familyCounts == null)
+                return 0;
+
             BuildPreferredFamilyPlacementCounts(
                 biomeProfile.preferredSpawnFamilies,
                 WorldPrefabFamilyProfile.ScatterLayer.Spawn,
@@ -6199,9 +6404,10 @@ namespace Hecton8.World
             WorldProceduralPattern pattern,
             HectonBiomeMatrixProfile biomeProfile)
         {
-            if (_hasCachedPatternQuota &&
-                _cachedPatternQuotaPattern == pattern &&
-                ReferenceEquals(_cachedPatternQuotaBiomeProfile, biomeProfile))
+            EnsureWorkingMemory();
+            if (_memory.HasCachedPatternQuota &&
+                _memory.CachedPatternQuotaPattern == pattern &&
+                ReferenceEquals(_memory.CachedPatternQuotaBiomeProfile, biomeProfile))
             {
                 return;
             }
@@ -6233,13 +6439,13 @@ namespace Hecton8.World
                     (WorldPrefabFamilyProfile.StructureAccentRole)i);
             }
 
-            _cachedPatternClusterRatioStart = ResolvePatternClusterRatioStart(pattern);
-            _cachedPatternPassiveSpawnMin = ResolvePatternPassiveSpawnMin(pattern, biomeProfile);
-            _cachedPatternPredatorSpawnMax = Mathf.Max(0, ResolvePatternPredatorSpawnMax(pattern, biomeProfile));
+            _memory.CachedPatternClusterRatioStart = ResolvePatternClusterRatioStart(pattern);
+            _memory.CachedPatternPassiveSpawnMin = ResolvePatternPassiveSpawnMin(pattern, biomeProfile);
+            _memory.CachedPatternPredatorSpawnMax = Mathf.Max(0, ResolvePatternPredatorSpawnMax(pattern, biomeProfile));
 
-            _hasCachedPatternQuota = true;
-            _cachedPatternQuotaPattern = pattern;
-            _cachedPatternQuotaBiomeProfile = biomeProfile;
+            _memory.HasCachedPatternQuota = true;
+            _memory.CachedPatternQuotaPattern = pattern;
+            _memory.CachedPatternQuotaBiomeProfile = biomeProfile;
         }
 
         private CandidateMap GetAccentRoleCandidatePool(
@@ -6948,8 +7154,9 @@ namespace Hecton8.World
             };
 
             float angle = Mathf.Abs(stableHash % 360) * Mathf.Deg2Rad;
-            #pragma warning disable CS0618
-            float radiusT = StableRandom01(stableHash, stableHash >> 4, family != null ? family.GetInstanceID() : 0);
+            // v3.0: Use stable hash instead of deprecated GetInstanceID for ScriptableObject
+            int familyHash = family != null ? family.name.GetHashCode() : 0;
+            float radiusT = StableRandom01(stableHash, stableHash >> 4, familyHash);
             #pragma warning restore CS0618
             float radius = baseRadius * Mathf.Lerp(0.18f, 1f, radiusT);
             Vector3 offset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
@@ -8190,18 +8397,14 @@ namespace Hecton8.World
             if (preferredFamilies == null || family == null)
                 return -1;
 
-            #pragma warning disable CS0618
-            int familyInstanceId = family.GetInstanceID();
-            #pragma warning restore CS0618
+            int familyInstanceId = GetPreferredFamilyInstanceId(family);
             for (int i = 0; i < preferredFamilies.Length; i++)
             {
                 WorldPrefabFamilyProfile preferred = preferredFamilies[i];
                 if (preferred == null)
                     continue;
 
-                #pragma warning disable CS0618
-                if (ReferenceEquals(preferred, family) || preferred.GetInstanceID() == familyInstanceId)
-                #pragma warning restore CS0618
+                if (ReferenceEquals(preferred, family) || GetPreferredFamilyInstanceId(preferred) == familyInstanceId)
                     return i;
             }
 
@@ -8309,7 +8512,7 @@ namespace Hecton8.World
                 return 0;
 
             #pragma warning disable CS0618
-            return family.GetInstanceID();
+            return family != null ? family.name.GetHashCode() : 0;
             #pragma warning restore CS0618
         }
 
@@ -10391,6 +10594,7 @@ namespace Hecton8.World
 
         private void ResetFloraGpuiAggregation()
         {
+            EnsureWorkingMemory();
             _activeGpuiFloraPlacements = 0;
 
             for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
@@ -10408,6 +10612,7 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
             out GPUInstancerPrefabPrototype prototype)
         {
+            EnsureWorkingMemory();
             if (!ShouldUseFloraGpuiPath(placement, runtimeVariant, out prototype))
                 return false;
 
@@ -10438,6 +10643,7 @@ namespace Hecton8.World
 
         private void FlushFloraGpuiBuffers()
         {
+            EnsureWorkingMemory();
             if (floraGpuiManager == null || !Application.isPlaying)
                 return;
 
@@ -10491,6 +10697,7 @@ namespace Hecton8.World
 
         private void ClearFloraGpuiVisibility()
         {
+            EnsureWorkingMemory();
             _activeGpuiFloraPlacements = 0;
 
             if (floraGpuiManager == null || !Application.isPlaying)

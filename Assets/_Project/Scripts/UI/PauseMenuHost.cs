@@ -14,12 +14,8 @@ namespace Hecton8.UI
                 return;
 
             Transform existing = parent.Find(rootName);
-            RectTransform root;
-            if (existing != null)
-            {
-                root = existing as RectTransform;
-            }
-            else
+            RectTransform root = existing as RectTransform;
+            if (root == null)
             {
                 GameObject go = new GameObject(rootName, typeof(RectTransform));
                 go.layer = gameObject.layer;
@@ -35,7 +31,6 @@ namespace Hecton8.UI
             PauseMenuController controller = root.GetComponent<PauseMenuController>();
             if (controller == null)
                 controller = root.gameObject.AddComponent<PauseMenuController>();
-
         }
     }
 }

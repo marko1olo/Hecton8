@@ -52,6 +52,7 @@ namespace Hecton8.World
 #pragma warning disable CS0414
         [Header("Diagnostics")]
         [SerializeField] private string _debugCurrentBand = "Surface";
+        [SerializeField] private string _debugLastBlocker = "None";
         [SerializeField] private float _debugCurrentDepth;
         [SerializeField] private bool _debugApplied;
         [SerializeField] private bool _debugPlayerReady;
@@ -173,6 +174,17 @@ namespace Hecton8.World
             ApplyCurrentBudget(force: false);
         }
 
+        /// <summary>
+        /// Returns a compact summary for diagnostics and log output.
+        /// </summary>
+        public string DescribeStatus()
+        {
+            return
+                $"band={_debugCurrentBand} depth={_debugCurrentDepth:F1} applied={_debugApplied} " +
+                $"blocker={_debugLastBlocker} player={_debugPlayerReady} bridge={_debugBridgeReady} " +
+                $"scavenge={_debugScavengeReady} collider={_debugColliderReady}";
+        }
+
         public void SetDirectorScales(
             float scavengeRadiusScale,
             float spawnScale,
@@ -268,6 +280,9 @@ namespace Hecton8.World
             if (playerTransform == null || !TryResolveCurrentDepth(out float depth))
             {
                 _debugApplied = false;
+                _debugCurrentDepth = 0f;
+                _debugCurrentBand = "Unresolved";
+                _debugLastBlocker = GetBlockerReason();
                 UpdateDiagnostics();
                 return;
             }
@@ -307,6 +322,7 @@ namespace Hecton8.World
 
             _lastAppliedBand = band;
             _debugApplied = true;
+            _debugLastBlocker = "None";
             UpdateDiagnostics();
         }
 
@@ -350,6 +366,8 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
             if (_playerMovement == null && playerTransform != null)
                 playerTransform.TryGetComponent(out _playerMovement);
+            if (playerTransform == null)
+                _playerMovement = null;
 
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
@@ -468,6 +486,26 @@ namespace Hecton8.World
                 _debugProfileResourcesNearScale = 1f;
                 _debugProfileDebrisNearScale = 1f;
             }
+        }
+
+        private string GetBlockerReason()
+        {
+            if (playerTransform == null)
+                return "player-missing";
+
+            if (mapMagicBridge == null)
+                return "mapmagic-missing";
+
+            if (!mapMagicBridge.IsAvailable)
+                return "bridge-unavailable";
+
+            if (scavengePopulator == null)
+                return "scavenge-missing";
+
+            if (proximityColliderSystem == null)
+                return "collider-missing";
+
+            return "depth-unresolved";
         }
     }
 }

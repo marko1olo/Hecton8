@@ -676,7 +676,6 @@ namespace Hecton8.World
                     request.geologyProfileId,
                     elapsedMs,
                     ex);
-                throw;
             }
             finally
             {

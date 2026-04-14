@@ -32,11 +32,6 @@ namespace Hecton8.World
                 ResolveScatterBackendRequestedExecutionMode());
         }
 
-        private bool ShouldRunScatterBackendShadowPass()
-        {
-            return RefreshScatterBackendPlan().RunsShadowPass;
-        }
-
         private void EnsureScatterBackendHost()
         {
             if (_scatterBackendHost != null)
@@ -60,19 +55,7 @@ namespace Hecton8.World
             RefreshScatterBackendPlan();
             EnsureScatterBackendSupportContext();
             _scatterBackendHost.SyncFacade();
-            ScatterBackendRuntimeStatus status = _scatterBackendHost.GetStatus();
-            _debugScatterBackendExecutionMode = status.ResolvedExecutionModeLabel;
-            _debugScatterBackendResolutionReason = status.ResolutionReason;
-
-            if (!status.HasFacade)
-            {
-                _debugScatterBackendKind = status.ActiveBackendKindLabel;
-                _debugScatterBackendShadowPending = false;
-                return;
-            }
-
-            _debugScatterBackendKind = status.ActiveBackendKindLabel;
-            _debugScatterBackendShadowPending = status.IsJobActive;
+            ApplyScatterBackendRuntimeStatus(_scatterBackendHost.GetStatus());
         }
 
         private void DisposeScatterBackendFacade()
@@ -84,11 +67,7 @@ namespace Hecton8.World
             }
 
             _scatterBackendSupportContext = null;
-
-            _debugScatterBackendExecutionMode = ScatterHybridRuntimeEntryPoint.GetExecutionModeLabel(ResolveScatterBackendRequestedExecutionMode());
-            _debugScatterBackendKind = ScatterHybridRuntimeEntryPoint.GetBackendKindLabel(ScatterSimulationBackendKind.ClassicJobs);
-            _debugScatterBackendResolutionReason = "backend-facade-disposed";
-            _debugScatterBackendShadowPending = false;
+            ResetScatterBackendDebugStatus();
         }
 
         private void RebuildScatterBackendLookup()
@@ -102,43 +81,6 @@ namespace Hecton8.World
 
             EnsureScatterBackendFacadeInitialized();
             _scatterBackendSupportContext.BindingBridge.RebuildLookup(_scatterBackendHost, _runtimeRuleBuffer);
-        }
-
-        private bool TryResolveScatterBackendPrefab(int familyIndex, int layerIndex, out GameObject prefab)
-        {
-            prefab = null;
-            EnsureScatterBackendSupportContext();
-            return _scatterBackendSupportContext.BindingBridge.TryResolvePrefab(_scatterBackendHost, familyIndex, layerIndex, out prefab);
-        }
-
-        private bool TryScheduleScatterBackendFacadePass(
-            Vector3 observerPosition,
-            int totalCells,
-            int groundBudget,
-            int clusterBudget,
-            int structureStride,
-            int spawnStride)
-        {
-            EnsureScatterBackendFacadeInitialized();
-            if (_scatterBackendHost == null)
-                return false;
-
-            ScatterBackendScheduleRequest request = _scatterBackendSupportContext.RequestFactory.Create(
-                observerPosition,
-                totalCells,
-                groundBudget,
-                clusterBudget,
-                structureStride,
-                spawnStride);
-
-            return _scatterBackendHost.TrySchedule(request, _memory);
-        }
-
-        private bool TryCompleteScatterBackendFacadePass()
-        {
-            EnsureScatterBackendSupportContext();
-            return _scatterBackendHost != null
-                && _scatterBackendHost.TryCompleteAndReconcile(_scatterBackendSupportContext.PrefabResolver);
         }
 
         private void PumpScatterBackendShadowPass()
@@ -157,44 +99,23 @@ namespace Hecton8.World
 
                 if (_scatterBackendHost.TryCompleteShadowPass(out ScatterBackendShadowCompletion completion))
                 {
-                    _debugScatterBackendShadowPassesCompleted++;
-                    _debugScatterBackendShadowLastCandidateCount = completion.CandidateCount;
-                    _debugScatterBackendShadowLastClassicQueuedCandidates = completion.ClassicQueuedCandidateCount;
-                    _debugScatterBackendShadowLastCandidateDelta = completion.CandidateDelta;
-                    _debugScatterBackendShadowPending = completion.IsJobActive;
+                    ApplyScatterBackendShadowCompletion(completion);
                 }
             }
         }
 
         private void TryScheduleScatterBackendShadowPass(
-            Vector3 observerPosition,
-            int totalCells,
-            int groundBudget,
-            int clusterBudget,
-            int structureStride,
-            int spawnStride)
+            in ScatterBackendShadowScheduleContext context)
         {
-            if (!ShouldRunScatterBackendShadowPass())
-                return;
-
             using (_scatterBackendShadowScheduleProfilerMarker.Auto())
             {
-                EnsureScatterBackendFacadeInitialized();
-                if (_scatterBackendHost == null || !_scatterBackendHost.HasFacade || _scatterBackendHost.IsFacadeJobActive)
-                {
-                    _debugScatterBackendShadowPending = _scatterBackendHost != null && _scatterBackendHost.IsFacadeJobActive;
+                if (!TryPrepareScatterBackendShadowScheduling())
                     return;
-                }
 
-                if (TryScheduleScatterBackendFacadePass(
-                    observerPosition,
-                    totalCells,
-                    groundBudget,
-                    clusterBudget,
-                    structureStride,
-                    spawnStride))
+                ScatterBackendScheduleRequest request = _scatterBackendSupportContext.RequestFactory.Create(context);
+                if (_scatterBackendHost.TrySchedule(request, _memory))
                 {
-                    _scatterBackendHost.SetShadowPendingClassicQueuedCandidates(_debugQueuedCandidates);
+                    _scatterBackendHost.SetShadowPendingClassicParity(context.ClassicParityReference);
                     _debugScatterBackendKind = _scatterBackendHost.ActiveBackendKindLabel;
                     _debugScatterBackendShadowPassesScheduled++;
                     _debugScatterBackendShadowPending = true;
@@ -202,9 +123,76 @@ namespace Hecton8.World
             }
         }
 
-        private bool HasScatterBackendFacadePendingWork()
+        private bool TryPrepareScatterBackendShadowScheduling()
         {
-            return _scatterBackendHost != null && _scatterBackendHost.HasPendingFacadeWork();
+            ScatterHybridRuntimePlan plan = RefreshScatterBackendPlan();
+            if (!plan.RunsShadowPass)
+                return false;
+
+            EnsureScatterBackendSupportContext();
+            _scatterBackendHost.SyncFacade();
+            ApplyScatterBackendRuntimeStatus(_scatterBackendHost.GetStatus());
+
+            if (_scatterBackendHost == null || !_scatterBackendHost.HasFacade || _scatterBackendHost.IsFacadeJobActive)
+            {
+                _debugScatterBackendShadowPending = _scatterBackendHost != null && _scatterBackendHost.IsFacadeJobActive;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ApplyScatterBackendRuntimeStatus(in ScatterBackendRuntimeStatus status)
+        {
+            _debugScatterBackendExecutionMode = status.ResolvedExecutionModeLabel;
+            _debugScatterBackendKind = status.ActiveBackendKindLabel;
+            _debugScatterBackendResolutionReason = status.ResolutionReason;
+            _debugScatterBackendShadowPending = status.HasFacade && status.IsJobActive;
+        }
+
+        private void ApplyScatterBackendShadowCompletion(in ScatterBackendShadowCompletion completion)
+        {
+            _debugScatterBackendShadowPassesCompleted++;
+            _debugScatterBackendShadowLastCandidateCount = completion.CandidateCount;
+            _debugScatterBackendShadowLastClassicQueuedCandidates = completion.ClassicQueuedCandidateCount;
+            _debugScatterBackendShadowLastCandidateDelta = completion.CandidateDelta;
+            _debugScatterBackendShadowLastGroundDelta = completion.GroundDelta;
+            _debugScatterBackendShadowLastClusterDelta = completion.ClusterDelta;
+            _debugScatterBackendShadowLastStructureDelta = completion.StructureDelta;
+            _debugScatterBackendShadowLastSpawnDelta = completion.SpawnDelta;
+            _debugScatterBackendShadowLastChecksumMatch = completion.CandidateChecksumMatch;
+            _debugScatterBackendShadowLastParityStatus = completion.ParityStatusLabel;
+            if (!completion.HasParityMatch)
+                _debugScatterBackendShadowParityMismatchCount++;
+            _debugScatterBackendShadowPending = completion.IsJobActive;
+        }
+
+        private void ResetScatterBackendDebugStatus()
+        {
+            _debugScatterBackendExecutionMode = ScatterHybridRuntimeEntryPoint.GetExecutionModeLabel(ResolveScatterBackendRequestedExecutionMode());
+            _debugScatterBackendKind = ScatterHybridRuntimeEntryPoint.GetBackendKindLabel(ScatterSimulationBackendKind.ClassicJobs);
+            _debugScatterBackendResolutionReason = "backend-facade-disposed";
+            _debugScatterBackendShadowPending = false;
+        }
+
+        private void ResetScatterBackendDebugTelemetry(in ScatterHybridRuntimePlan plan)
+        {
+            _debugScatterBackendExecutionMode = ScatterHybridRuntimeEntryPoint.GetExecutionModeLabel(plan.ResolvedExecutionMode);
+            _debugScatterBackendKind = ScatterHybridRuntimeEntryPoint.GetBackendKindLabel(plan.ResolvedBackendKind);
+            _debugScatterBackendResolutionReason = plan.ResolutionReason;
+            _debugScatterBackendShadowPending = false;
+            _debugScatterBackendShadowPassesScheduled = 0;
+            _debugScatterBackendShadowPassesCompleted = 0;
+            _debugScatterBackendShadowLastCandidateCount = 0;
+            _debugScatterBackendShadowLastClassicQueuedCandidates = 0;
+            _debugScatterBackendShadowLastCandidateDelta = 0;
+            _debugScatterBackendShadowLastGroundDelta = 0;
+            _debugScatterBackendShadowLastClusterDelta = 0;
+            _debugScatterBackendShadowLastStructureDelta = 0;
+            _debugScatterBackendShadowLastSpawnDelta = 0;
+            _debugScatterBackendShadowLastChecksumMatch = false;
+            _debugScatterBackendShadowLastParityStatus = "NotRun";
+            _debugScatterBackendShadowParityMismatchCount = 0;
         }
 
     }

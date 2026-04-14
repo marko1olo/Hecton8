@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Profile_Eclipse
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.020425422, g: 0.064955585, b: 0.16037738, a: 1}
-  fogDensity: 0.00015
-  skyExposure: 0.38
-  ambientColor: {r: 0.45, g: 0.45, b: 0.55, a: 1}
-  sunIntensity: 0.04
+  fogColor: {r: 0.028, g: 0.072, b: 0.152, a: 1}
+  fogDensity: 0.00029
+  skyExposure: 0.42
+  ambientColor: {r: 0.16, g: 0.185, b: 0.245, a: 1}
+  sunIntensity: 0.05

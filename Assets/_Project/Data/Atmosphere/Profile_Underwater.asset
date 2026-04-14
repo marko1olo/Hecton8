@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Profile_Underwater
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0, g: 0.20854293, b: 0.49056602, a: 1}
-  fogDensity: 0.002
-  skyExposure: 1.2
-  ambientColor: {r: 0.45, g: 0.45, b: 0.55, a: 1}
-  sunIntensity: 1.69
+  fogColor: {r: 0.015, g: 0.235, b: 0.46, a: 1}
+  fogDensity: 0.0032
+  skyExposure: 1
+  ambientColor: {r: 0.24, g: 0.28, b: 0.34, a: 1}
+  sunIntensity: 1.42

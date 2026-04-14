@@ -23,6 +23,9 @@ using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Gameplay
 {
@@ -115,6 +118,11 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+#if UNITY_EDITOR
+            if (allUpgrades == null || allUpgrades.Length == 0)
+                SyncUpgradeCatalogFromFolder();
+#endif
+
             // COLD ALLOC: runtime clone of baseStats
             _runtimeStats = Instantiate(baseStats);
         }
@@ -135,6 +143,60 @@ namespace Hecton8.Gameplay
             NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
         }
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+                return;
+
+            if (allUpgrades == null || allUpgrades.Length == 0)
+                SyncUpgradeCatalogFromFolder();
+        }
+
+        private void SyncUpgradeCatalogFromFolder()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:SuitUpgradeData", new[] { "Assets/_Project/Data/Lore/SuitUpgrades" });
+            if (guids == null || guids.Length == 0)
+                return;
+
+            List<SuitUpgradeData> upgrades = new List<SuitUpgradeData>(guids.Length);
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                SuitUpgradeData upgrade = AssetDatabase.LoadAssetAtPath<SuitUpgradeData>(path);
+                if (upgrade != null)
+                    upgrades.Add(upgrade);
+            }
+
+            if (upgrades.Count == 0)
+                return;
+
+            upgrades.Sort(CompareUpgradeCatalogEntries);
+            allUpgrades = upgrades.ToArray();
+            EditorUtility.SetDirty(this);
+        }
+
+        private static int CompareUpgradeCatalogEntries(SuitUpgradeData left, SuitUpgradeData right)
+        {
+            if (ReferenceEquals(left, right))
+                return 0;
+            if (left == null)
+                return 1;
+            if (right == null)
+                return -1;
+
+            int tierCompare = left.tier.CompareTo(right.tier);
+            if (tierCompare != 0)
+                return tierCompare;
+
+            int categoryCompare = ((int)left.category).CompareTo((int)right.category);
+            if (categoryCompare != 0)
+                return categoryCompare;
+
+            return string.CompareOrdinal(left.upgradeId, right.upgradeId);
+        }
+#endif
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
@@ -145,6 +207,7 @@ namespace Hecton8.Gameplay
         public bool CanInstall(SuitUpgradeData upgrade)
         {
             if (upgrade == null) return false;
+            if (string.IsNullOrEmpty(upgrade.upgradeId)) return false;
             if (_installedUpgrades.Contains(upgrade.upgradeId)) return false;
             if (!string.IsNullOrEmpty(upgrade.requiredBlueprintId) &&
                 !_unlockedBlueprints.Contains(upgrade.requiredBlueprintId))
@@ -178,6 +241,9 @@ namespace Hecton8.Gameplay
 
         private void HandleDiscovery(string discoveryId)
         {
+            if (string.IsNullOrEmpty(discoveryId) || allUpgrades == null)
+                return;
+
             // Проверяем — является ли это чертежом апгрейда
             for (int i = 0; i < allUpgrades.Length; i++)
             {
@@ -213,7 +279,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void RebuildRuntimeStats()
         {
-            if (_runtimeStats == null || baseStats == null) return;
+            if (_runtimeStats == null || baseStats == null || allUpgrades == null) return;
 
             // Накапливаем дельты
             float dOxygen    = 0f;

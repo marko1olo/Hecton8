@@ -1,0 +1,110 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 596d4bbe2696cb445b98131cfacca40c, type: 3}
+  m_Name: MusicProfile_Combat
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicBiomeProfile
+  _profileId: music.profile.combat
+  _profileLabel: Combat
+  _minPauseSeconds: 3
+  _maxPauseSeconds: 15
+  _fadeInSeconds: 0.8
+  _fadeOutSeconds: 1.8
+  _crossfadeSeconds: 1.4
+  _shortTrackChance: 0.08
+  _shortTrackCooldownSeconds: 55
+  _localCalmWeight: 50
+  _localTenseWeight: 70
+  _allowCrossTensionMix: false
+  _crossTensionMixChance: 0
+  _longRepeatHorizon: 2
+  _shortRepeatHorizon: 2
+  _calmLongTracks: []
+  _tenseLongTracks: 
+  - _cueId: music.being_attacked_1_metallic_alarm_panic
+    _clip: {fileID: 8300000, guid: 054f500f297e56549a8c78ff8ef2f168, type: 3}
+    _volume: 0.939
+    _weight: 1
+    _role: 2
+    _tension: 0.92
+  - _cueId: music.being_attacked_2_metallic_alarm_panic_1
+    _clip: {fileID: 8300000, guid: e8e5f71b9a4bf1a4e817f21006fac253, type: 3}
+    _volume: 1
+    _weight: 1
+    _role: 2
+    _tension: 0.92
+  - _cueId: music.being_attacked_3_metallic_alarm
+    _clip: {fileID: 8300000, guid: 1853600af657d204495cca9569d7876c, type: 3}
+    _volume: 0.939
+    _weight: 1
+    _role: 2
+    _tension: 0.92
+  - _cueId: music.being_attacked_4_metallic_alarm_1
+    _clip: {fileID: 8300000, guid: 0a9c94b9fae7fa2469c77d7fccf0832f, type: 3}
+    _volume: 0.827
+    _weight: 1
+    _role: 2
+    _tension: 0.92
+  _calmShortTracks: []
+  _tenseShortTracks: 
+  - _cueId: music.danger_zatmenie_1_distant_metallic_groan
+    _clip: {fileID: 8300000, guid: 5d1593e1d1e1cc341847c32c4a3c3f4c, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 3
+    _tension: 0.94
+  - _cueId: music.danger_zatmenie_2_abandoned_depths
+    _clip: {fileID: 8300000, guid: c7454eac9fe308c42b277982ed62ceef, type: 3}
+    _volume: 0.649
+    _weight: 1
+    _role: 3
+    _tension: 0.94
+  _discoveryStingers: []
+  _dangerStingers: 
+  - _cueId: music.stinger_dangerous_1_iron_teeth
+    _clip: {fileID: 8300000, guid: ef4fb939718b1124daf5bbdcf98c8ed8, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 5
+    _tension: 0.98
+  - _cueId: music.stinger_dangerous_2heartbeat_under_floorboards
+    _clip: {fileID: 8300000, guid: c8be0393845ff744a86f64139d6ad1ee, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 5
+    _tension: 0.98
+  _recoveryStingers: 
+  - _cueId: music.stinger_being_saved_1release_at_depth
+    _clip: {fileID: 8300000, guid: 2cee222960dc8d54098777e03cbd6adc, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.22
+  - _cueId: music.stinger_being_saved_2_pressure_gives_way
+    _clip: {fileID: 8300000, guid: 80df90f723d55ac43a0246898788db4b, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.22
+  - _cueId: music.stinger_being_saved_3_first_breath_above
+    _clip: {fileID: 8300000, guid: 170a7c1910c0b0b45a511f62e93d2f83, type: 3}
+    _volume: 0.917
+    _weight: 1
+    _role: 6
+    _tension: 0.22
+  _calmBleedProfiles: []
+  _tenseBleedProfiles: 
+  - _profile: {fileID: 11400000, guid: 519c105bce6086e48b69182e2951ca40, type: 2}
+    _weight: 10
+  - _profile: {fileID: 11400000, guid: a1a53362b69461a49a59c04b635d606b, type: 2}
+    _weight: 10
+  - _profile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
+    _weight: 10

@@ -53,6 +53,7 @@ namespace Hecton8.Bootstrap
         private const string GameTickManagerRuntimeName = "[GameTickManager]";
         private const string SaveManagerRuntimeName = "[SaveManager]";
         private const string ObjectPoolManagerRuntimeName = "[ObjectPoolManager]";
+        private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private static BootstrapController _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -137,6 +138,9 @@ namespace Hecton8.Bootstrap
             if (!_initializationComplete || !Application.isPlaying)
                 return;
 
+            // Fresh bootstrap entry must start from a clean shell handoff state.
+            // Recovery paths that require preserved context already reseed it explicitly.
+            GameStartContextHolder.Reset();
             SceneManager.LoadScene(MainMenuSceneName);
         }
 
@@ -146,7 +150,7 @@ namespace Hecton8.Bootstrap
             VerifyBootstrapIsFirstScene();
 
             // ── Game Tick Manager (должен быть первым) ──
-            Log("[1/4] Initializing GameTickManager...");
+            Log("[1/5] Initializing GameTickManager...");
             GameTickManager gameTickManager = EnsureGameTickManager();
             if (gameTickManager == null)
             {
@@ -157,7 +161,7 @@ namespace Hecton8.Bootstrap
             Log("  ✓ GameTickManager initialized");
 
             // ── Save Manager ──
-            Log("[2/4] Initializing SaveManager...");
+            Log("[2/5] Initializing SaveManager...");
             SaveManager saveManager = EnsureSaveManager();
             if (saveManager == null)
             {
@@ -168,7 +172,7 @@ namespace Hecton8.Bootstrap
             Log("  ✓ SaveManager initialized");
 
             // ── Input Manager ──
-            Log("[3/4] Initializing InputManager...");
+            Log("[3/5] Initializing InputManager...");
             if (InputManager.Instance == null)
             {
                 LogWarning("InputManager.Instance is null. Gameplay input will be unavailable.");
@@ -180,7 +184,7 @@ namespace Hecton8.Bootstrap
             }
 
             // ── Object Pool Manager ──
-            Log("[4/4] Initializing ObjectPoolManager...");
+            Log("[4/5] Initializing ObjectPoolManager...");
             ObjectPoolManager objectPoolManager = EnsureObjectPoolManager();
             if (objectPoolManager == null)
             {
@@ -189,6 +193,16 @@ namespace Hecton8.Bootstrap
             }
             EnsureDontDestroyOnLoad(objectPoolManager.gameObject);
             Log("  ✓ ObjectPoolManager initialized");
+
+            Log("[5/5] Initializing PrefabRegistry...");
+            PrefabRegistry prefabRegistry = EnsurePrefabRegistry();
+            if (prefabRegistry == null)
+            {
+                LogError("PrefabRegistry.Instance is null after access!");
+                return;
+            }
+            EnsureDontDestroyOnLoad(prefabRegistry.gameObject);
+            Log("  PrefabRegistry initialized");
 
             Log("All systems initialized successfully.");
         }
@@ -270,6 +284,17 @@ namespace Hecton8.Bootstrap
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
             GameObject go = new GameObject(ObjectPoolManagerRuntimeName);
             return go.AddComponent<ObjectPoolManager>();
+        }
+
+        private static PrefabRegistry EnsurePrefabRegistry()
+        {
+            PrefabRegistry registry = PrefabRegistry.Instance;
+            if (registry != null)
+                return registry;
+
+            // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted registry.
+            GameObject go = new GameObject(PrefabRegistryRuntimeName);
+            return go.AddComponent<PrefabRegistry>();
         }
 
         // ══════════════════════════════════════════════════════════

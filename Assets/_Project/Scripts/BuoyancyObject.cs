@@ -411,10 +411,6 @@ namespace Hecton8.Physics
             if (waterLayer >= 0 && (groundLayers & (1 << waterLayer)) != 0)
             {
                 groundLayers &= ~(1 << waterLayer);
-                Debug.LogWarning(
-                    $"[BuoyancyObject] Removed 'Water' layer from groundLayers on '{gameObject.name}'. " +
-                    "Water must be excluded to prevent false ground detection.",
-                    this);
             }
         }
 

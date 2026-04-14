@@ -6,17 +6,15 @@ using UnityEngine;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Orchestrates the active scatter simulation backend and main-thread placement reconciler.
-    /// This is the seam that future DOTS backends plug into without changing scene ownership.
+    /// Orchestrates the active scatter simulation backend.
+    /// Scene ownership remains outside the backend seam.
     /// </summary>
     internal sealed class ScatterRuntimeBackendFacade : IDisposable
     {
         private static readonly ProfilerMarker _backendScheduleProfilerMarker = new("WorldScatter.Backend.Schedule");
         private static readonly ProfilerMarker _backendCompleteProfilerMarker = new("WorldScatter.Backend.Complete");
-        private static readonly ProfilerMarker _backendReconcileProfilerMarker = new("WorldScatter.Backend.Reconcile");
 
         private readonly IScatterSimulationBackend _simulationBackend;
-        private readonly IScatterPlacementReconciler _placementReconciler;
         private bool _disposed;
         private bool _initialized;
         private int _lastCandidateCount;
@@ -27,22 +25,19 @@ namespace Hecton8.World
         /// </summary>
         /// <param name="backendKind">Requested simulation backend kind.</param>
         public ScatterRuntimeBackendFacade(ScatterSimulationBackendKind backendKind)
-            : this(CreateSimulationBackend(backendKind), CreatePlacementReconciler())
+            : this(CreateSimulationBackend(backendKind))
         {
         }
 
         /// <summary>
-        /// Creates a backend facade with explicit dependencies.
+        /// Creates a backend facade with explicit dependency injection for simulation.
         /// Intended for controlled runtime composition and test injection.
         /// </summary>
         /// <param name="simulationBackend">Simulation backend implementation.</param>
-        /// <param name="placementReconciler">Main-thread placement reconciler implementation.</param>
         public ScatterRuntimeBackendFacade(
-            IScatterSimulationBackend simulationBackend,
-            IScatterPlacementReconciler placementReconciler)
+            IScatterSimulationBackend simulationBackend)
         {
             _simulationBackend = simulationBackend;
-            _placementReconciler = placementReconciler;
         }
 
         /// <summary>Active simulation backend kind.</summary>
@@ -60,20 +55,8 @@ namespace Hecton8.World
         /// <summary>Candidate count returned by the last completed simulation pass.</summary>
         public int LastCandidateCount => _lastCandidateCount;
 
-        /// <summary>Live placement count reported by the active reconciler.</summary>
-        public int ActivePlacementCount => _placementReconciler != null ? _placementReconciler.ActivePlacementCount : 0;
-
-        /// <summary>Spawn count from the last reconcile pass.</summary>
-        public int LastSpawnCount => _placementReconciler != null ? _placementReconciler.LastSpawnCount : 0;
-
-        /// <summary>Despawn count from the last reconcile pass.</summary>
-        public int LastDespawnCount => _placementReconciler != null ? _placementReconciler.LastDespawnCount : 0;
-
-        /// <summary>Retained placement count from the last reconcile pass.</summary>
-        public int LastRetainedCount => _placementReconciler != null ? _placementReconciler.LastRetainedCount : 0;
-
         /// <summary>
-        /// Initializes the active backend and reconciler. Safe to call multiple times.
+        /// Initializes the active simulation backend. Safe to call multiple times.
         /// </summary>
         public void Initialize()
         {
@@ -89,37 +72,20 @@ namespace Hecton8.World
         /// </summary>
         /// <param name="config">Simulation config for the current pass.</param>
         /// <param name="heightSamples">Pre-sampled terrain heights.</param>
+        /// <param name="cellStates">Owner-derived per-cell narrow-scope state snapshot.</param>
         /// <returns>True when scheduling succeeded; false when backend is unavailable or already busy.</returns>
-        public bool TrySchedule(ScatterSimulationConfig config, NativeArray<float> heightSamples)
+        public bool TrySchedule(
+            ScatterSimulationConfig config,
+            NativeArray<float> heightSamples,
+            NativeArray<ScatterSimulationCellState> cellStates)
         {
             if (!IsInitialized || _simulationBackend == null)
                 return false;
 
             using (_backendScheduleProfilerMarker.Auto())
             {
-                return _simulationBackend.TrySchedule(config, heightSamples);
+                return _simulationBackend.TrySchedule(config, heightSamples, cellStates);
             }
-        }
-
-        /// <summary>
-        /// Completes the active simulation pass and immediately reconciles live placements on the main thread.
-        /// </summary>
-        /// <param name="prefabResolver">Prefab resolver for candidate family/layer pairs.</param>
-        /// <returns>True when a pending pass was completed and reconciled.</returns>
-        public bool TryCompleteAndReconcile(IScatterPrefabResolver prefabResolver)
-        {
-            if (!IsInitialized || _simulationBackend == null || _placementReconciler == null)
-                return false;
-
-            if (!TryCompleteSimulation(out ScatterSimulationResult result))
-                return false;
-
-            using (_backendReconcileProfilerMarker.Auto())
-            {
-                _placementReconciler.Reconcile(result.Candidates, result.CandidateCount, prefabResolver);
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -154,18 +120,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Despawns all placements owned by the active reconciler.
-        /// </summary>
-        public void DespawnAll()
-        {
-            if (_placementReconciler == null)
-                return;
-
-            _placementReconciler.DespawnAll();
-        }
-
-        /// <summary>
-        /// Releases backend state and any live placements owned by the reconciler.
+        /// Releases backend state.
         /// </summary>
         public void Dispose()
         {
@@ -173,7 +128,6 @@ namespace Hecton8.World
                 return;
 
             _simulationBackend?.Dispose();
-            _placementReconciler?.Dispose();
             _disposed = true;
             _initialized = false;
             _lastCandidateCount = 0;
@@ -198,11 +152,6 @@ namespace Hecton8.World
 #endif
                     return new ScatterClassicSimulationBackend();
             }
-        }
-
-        private static IScatterPlacementReconciler CreatePlacementReconciler()
-        {
-            return new ScatterClassicPlacementReconciler();
         }
     }
 }

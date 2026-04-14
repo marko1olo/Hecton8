@@ -24,11 +24,17 @@ using System.Collections.Generic;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
 using Hecton8.Core;
+using Hecton8.Interaction;
 using Hecton8.Gameplay;
+using Hecton8.Items;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Quest
 {
@@ -43,6 +49,8 @@ namespace Hecton8.Quest
         [Header("── Quest Registry ──────────────────────────")]
         [Tooltip("Все квесты проекта. Назначить в инспекторе.")]
         [SerializeField] private QuestData[] allQuests = new QuestData[0];
+
+        private const string kQuestFolder = "Assets/_Project/Data/Lore/Quests";
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -67,6 +75,7 @@ namespace Hecton8.Quest
 
         private float _currentDepth;
         private bool _registered;
+        private bool _biomeDiscoveryRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -102,6 +111,7 @@ namespace Hecton8.Quest
                 SaveManager.Instance.Register(this);
 
             SubscribeToEvents();
+            TrySubscribeToBiomeDiscovery();
         }
 
         private void OnDisable()
@@ -116,6 +126,7 @@ namespace Hecton8.Quest
                 SaveManager.Instance.Unregister(this);
 
             UnsubscribeFromEvents();
+            UnsubscribeFromBiomeDiscovery();
         }
 
         private void Start()
@@ -127,7 +138,17 @@ namespace Hecton8.Quest
                 if (q != null && q.autoActivateOnStart)
                     ActivateQuest(q.questId);
             }
+
+            TrySubscribeToBiomeDiscovery();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            TryAutoPopulateQuestRegistry();
+            BuildLookup();
+        }
+#endif
 
         // ══════════════════════════════════════════════════════════
         //  ISlowTickable — depth-based триггеры
@@ -178,9 +199,6 @@ namespace Hecton8.Quest
             if (_questLookup.TryGetValue(questId, out QuestData q))
                 NotificationEvents.PushInfo($"НОВАЯ ЦЕЛЬ: {q.displayTitle}");
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Quest] Activated: {questId}");
-#endif
         }
 
         /// <summary>Завершить квест по ID.</summary>
@@ -217,6 +235,13 @@ namespace Hecton8.Quest
             ProcessCompletion(QuestCompletionType.OnDiscoveryMade, discoveryId, 0f);
         }
 
+        private void HandleItemCollected(ItemData itemData, int quantity, Transform interactor)
+        {
+            string itemId = itemData != null ? itemData.name : string.Empty;
+            ProcessTrigger(QuestTriggerType.OnItemCollected, itemId, quantity);
+            ProcessCompletion(QuestCompletionType.OnItemCollected, itemId, quantity);
+        }
+
         private void HandleAudioLogDiscovered(string logId)
         {
             ProcessTrigger(QuestTriggerType.OnAudioLogFound, logId, 0f);
@@ -231,6 +256,12 @@ namespace Hecton8.Quest
         private void HandleSignalDetected(UnityEngine.Vector3 sourcePos)
         {
             ProcessTrigger(QuestTriggerType.OnSignalDetected, string.Empty, 0f);
+        }
+
+        private void HandleBiomeDiscovered(int biomeId)
+        {
+            ProcessTrigger(QuestTriggerType.OnBiomeEntered, string.Empty, biomeId);
+            ProcessCompletion(QuestCompletionType.OnBiomeEntered, string.Empty, biomeId);
         }
 
         private void HandleDepthTierReached(int tier)
@@ -272,8 +303,19 @@ namespace Hecton8.Quest
                 if (_activeQuests.Contains(q.questId)) continue;
                 if (_completedQuests.Contains(q.questId)) continue;
 
-                // Проверяем совпадение ID (если требуется)
-                if (!string.IsNullOrEmpty(q.triggerId) && q.triggerId != id) continue;
+                if (q.triggerType == QuestTriggerType.OnBiomeEntered)
+                {
+                    if (!Mathf.Approximately(q.triggerValue, value)) continue;
+                }
+                else if (q.triggerType == QuestTriggerType.OnItemCollected)
+                {
+                    if (!string.IsNullOrEmpty(q.triggerId) && q.triggerId != id) continue;
+                    if (q.triggerValue > 0f && value < q.triggerValue) continue;
+                }
+                else if (!string.IsNullOrEmpty(q.triggerId) && q.triggerId != id)
+                {
+                    continue;
+                }
 
                 ActivateQuest(q.questId);
             }
@@ -288,7 +330,19 @@ namespace Hecton8.Quest
                 if (q.completionType != type) continue;
                 if (!_activeQuests.Contains(q.questId)) continue;
 
-                if (!string.IsNullOrEmpty(q.completionId) && q.completionId != id) continue;
+                if (q.completionType == QuestCompletionType.OnBiomeEntered)
+                {
+                    if (!Mathf.Approximately(q.completionValue, value)) continue;
+                }
+                else if (q.completionType == QuestCompletionType.OnItemCollected)
+                {
+                    if (!string.IsNullOrEmpty(q.completionId) && q.completionId != id) continue;
+                    if (q.completionValue > 0f && value < q.completionValue) continue;
+                }
+                else if (!string.IsNullOrEmpty(q.completionId) && q.completionId != id)
+                {
+                    continue;
+                }
 
                 CompleteQuest(q.questId);
             }
@@ -296,6 +350,7 @@ namespace Hecton8.Quest
 
         private void SubscribeToEvents()
         {
+            InteractionEvents.OnItemCollected    += HandleItemCollected;
             NarrativeEvents.OnDiscoveryMade      += HandleDiscoveryMade;
             NarrativeEvents.OnDepthTierReached   += HandleDepthTierReached;
             AudioLogEvents.OnLogDiscovered       += HandleAudioLogDiscovered;
@@ -305,12 +360,71 @@ namespace Hecton8.Quest
 
         private void UnsubscribeFromEvents()
         {
+            InteractionEvents.OnItemCollected    -= HandleItemCollected;
             NarrativeEvents.OnDiscoveryMade      -= HandleDiscoveryMade;
             NarrativeEvents.OnDepthTierReached   -= HandleDepthTierReached;
             AudioLogEvents.OnLogDiscovered       -= HandleAudioLogDiscovered;
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
             AtlasSignalEvents.OnSignalDetected   -= HandleSignalDetected;
         }
+
+        private void TrySubscribeToBiomeDiscovery()
+        {
+            if (_biomeDiscoveryRegistered)
+                return;
+
+            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            if (discoveryManager == null)
+                return;
+
+            discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+            _biomeDiscoveryRegistered = true;
+        }
+
+        private void UnsubscribeFromBiomeDiscovery()
+        {
+            if (!_biomeDiscoveryRegistered)
+                return;
+
+            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            if (discoveryManager != null)
+                discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
+
+            _biomeDiscoveryRegistered = false;
+        }
+
+#if UNITY_EDITOR
+        private void TryAutoPopulateQuestRegistry()
+        {
+            if (allQuests != null && allQuests.Length > 0)
+                return;
+
+            string[] guids = AssetDatabase.FindAssets("t:QuestData", new[] { kQuestFolder });
+            if (guids == null || guids.Length == 0)
+                return;
+
+            QuestData[] loaded = new QuestData[guids.Length];
+            int count = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                QuestData quest = AssetDatabase.LoadAssetAtPath<QuestData>(path);
+                if (quest == null)
+                    continue;
+
+                loaded[count++] = quest;
+            }
+
+            if (count <= 0)
+                return;
+
+            if (count != loaded.Length)
+                System.Array.Resize(ref loaded, count);
+
+            allQuests = loaded;
+            EditorUtility.SetDirty(this);
+        }
+#endif
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable

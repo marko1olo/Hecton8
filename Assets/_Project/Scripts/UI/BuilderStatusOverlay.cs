@@ -70,11 +70,14 @@ namespace Hecton8.UI
         private TextMeshProUGUI _hintLine;
         private float _nextRefreshAt;
         private float _nextAutoResolveAt;
-        private int _lastStateHash;
+        private int _lastStaticStateHash;
+        private int _lastLiveStateHash;
         private readonly StringBuilder _sb = new StringBuilder(192);
         private bool _tickRegistered;
         private PlayerInventory _subscribedInventory;
         private PlayerToolManager _subscribedToolManager;
+        private int _inventoryRevision;
+        private bool _lastVisibleState;
 
         private void OnEnable()
         {
@@ -109,7 +112,8 @@ namespace Hecton8.UI
         private void ForceRefresh()
         {
             _nextRefreshAt = 0f;
-            _lastStateHash = int.MinValue;
+            _lastStaticStateHash = int.MinValue;
+            _lastLiveStateHash = int.MinValue;
             RefreshState();
         }
 
@@ -203,6 +207,7 @@ namespace Hecton8.UI
 
         private void HandleInventoryChanged()
         {
+            _inventoryRevision++;
             if (IsBuilderOverlayVisible())
                 ForceRefresh();
         }
@@ -309,11 +314,10 @@ namespace Hecton8.UI
                 return;
 
             bool shouldShow = playerBuilder.IsEquipped && playerBuilder.ActiveBuildable != null;
-            if (_canvasGroup != null)
+            if (_canvasGroup != null && _lastVisibleState != shouldShow)
             {
-                // Keep the overlay object active so the component can recover
-                // when the builder becomes equipped again on the same frame tree.
                 _canvasGroup.alpha = shouldShow ? 1f : 0f;
+                _lastVisibleState = shouldShow;
             }
 
             if (!shouldShow)
@@ -327,52 +331,64 @@ namespace Hecton8.UI
             int buildCount = playerBuilder.BuildableCount;
             int builtModuleCount = constructionManager != null ? constructionManager.ModuleCount : 0;
             float powerRating = data != null ? data.powerRating : 0f;
-            int stateHash = ComputeStateHash(data, hasResources, canPlace, snapped, activeIndex, buildCount, powerRating, builtModuleCount);
+            int staticStateHash = ComputeStaticStateHash(data, activeIndex, buildCount, powerRating, builtModuleCount);
+            int liveStateHash = ComputeLiveStateHash(hasResources, canPlace, snapped);
+            bool staticChanged = staticStateHash != _lastStaticStateHash;
+            bool liveChanged = liveStateHash != _lastLiveStateHash;
 
-            if (stateHash == _lastStateHash)
+            if (!staticChanged && !liveChanged)
                 return;
 
-            _lastStateHash = stateHash;
-            if (data != null)
-                _moduleName.text = CachedToUpperInvariant(data.moduleName) + " [" + data.FamilyShortCode + "]";
-            else
-                _moduleName.text = "NO MODULE";
-            _indexLine.SetText("MODULE {0}/{1}  //  BUILT {2}", activeIndex + 1, Mathf.Max(1, buildCount), builtModuleCount);
-            _queueLine.SetText(BuildQueueHint(activeIndex, buildCount));
+            if (staticChanged)
+            {
+                _lastStaticStateHash = staticStateHash;
+                if (data != null)
+                    _moduleName.text = CachedToUpperInvariant(data.moduleName) + " [" + data.FamilyShortCode + "]";
+                else
+                    _moduleName.text = "NO MODULE";
 
-            if (!hasResources)
-            {
-                _placementLine.color = BlockedColor;
-                _placementLine.SetText("PLACEMENT // HOLD - MISSING COST");
-            }
-            else if (!canPlace)
-            {
-                _placementLine.color = WarnColor;
-                _placementLine.SetText(snapped ? "PLACEMENT // SOCKET BLOCKED" : "PLACEMENT // BLOCKED");
-            }
-            else if (snapped)
-            {
-                _placementLine.color = ReadyColor;
-                _placementLine.SetText("PLACEMENT // SNAPPED READY");
-            }
-            else
-            {
-                _placementLine.color = TitleColor;
-                _placementLine.SetText("PLACEMENT // READY");
+                _indexLine.SetText("MODULE {0}/{1}  //  BUILT {2}", activeIndex + 1, Mathf.Max(1, buildCount), builtModuleCount);
+                _queueLine.SetText(BuildQueueHint(activeIndex, buildCount));
+
+                if (powerRating > 0f)
+                    _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}  //  +{powerRating:0}W NET";
+                else if (powerRating < 0f)
+                    _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}  //  {powerRating:0}W LOAD";
+                else
+                    _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}";
+
+                BuildCostSummary(data, hasResources);
             }
 
-            _resourceLine.color = hasResources ? ReadyColor : WarnColor;
-            _resourceLine.SetText(hasResources ? "RESOURCES // READY" : "RESOURCES // INSUFFICIENT");
+            if (liveChanged)
+            {
+                _lastLiveStateHash = liveStateHash;
+                if (!hasResources)
+                {
+                    _placementLine.color = BlockedColor;
+                    _placementLine.SetText("PLACEMENT // HOLD - MISSING COST");
+                }
+                else if (!canPlace)
+                {
+                    _placementLine.color = WarnColor;
+                    _placementLine.SetText(snapped ? "PLACEMENT // SOCKET BLOCKED" : "PLACEMENT // BLOCKED");
+                }
+                else if (snapped)
+                {
+                    _placementLine.color = ReadyColor;
+                    _placementLine.SetText("PLACEMENT // SNAPPED READY");
+                }
+                else
+                {
+                    _placementLine.color = TitleColor;
+                    _placementLine.SetText("PLACEMENT // READY");
+                }
 
-            if (powerRating > 0f)
-                _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}  //  +{powerRating:0}W NET";
-            else if (powerRating < 0f)
-                _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}  //  {powerRating:0}W LOAD";
-            else
-                _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}";
-
-            BuildCostSummary(data);
-            _hintLine.SetText(CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()));
+                _resourceLine.color = hasResources ? ReadyColor : WarnColor;
+                _resourceLine.SetText(hasResources ? "RESOURCES // READY" : "RESOURCES // INSUFFICIENT");
+                _costLine.color = hasResources ? DimColor : WarnColor;
+                _hintLine.SetText(CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()));
+            }
         }
 
         private bool ShouldKeepTicking()
@@ -440,7 +456,7 @@ namespace Hecton8.UI
             _tickRegistered = false;
         }
 
-        private int ComputeStateHash(BuildableData data, bool hasResources, bool canPlace, bool snapped, int activeIndex, int buildCount, float powerRating, int builtModuleCount)
+        private int ComputeStaticStateHash(BuildableData data, int activeIndex, int buildCount, float powerRating, int builtModuleCount)
         {
             unchecked
             {
@@ -448,13 +464,11 @@ namespace Hecton8.UI
                 #pragma warning disable CS0618
                 hash = hash * 31 + (data != null ? data.GetInstanceID() : 0);
                 #pragma warning restore CS0618
-                hash = hash * 31 + (hasResources ? 1 : 0);
-                hash = hash * 31 + (canPlace ? 1 : 0);
-                hash = hash * 31 + (snapped ? 1 : 0);
                 hash = hash * 31 + activeIndex;
                 hash = hash * 31 + buildCount;
                 hash = hash * 31 + builtModuleCount;
                 hash = hash * 31 + Mathf.RoundToInt(powerRating * 10f);
+                hash = hash * 31 + _inventoryRevision;
                 if (data != null && data.buildCost != null && inventory != null)
                 {
                     for (int i = 0; i < data.buildCost.Count; i++)
@@ -466,9 +480,20 @@ namespace Hecton8.UI
                         hash = hash * 31 + cost.item.GetInstanceID();
                         #pragma warning restore CS0618
                         hash = hash * 31 + cost.amount;
-                        hash = hash * 31 + inventory.CountTotal(cost.item);
                     }
                 }
+                return hash;
+            }
+        }
+
+        private static int ComputeLiveStateHash(bool hasResources, bool canPlace, bool snapped)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + (hasResources ? 1 : 0);
+                hash = hash * 31 + (canPlace ? 1 : 0);
+                hash = hash * 31 + (snapped ? 1 : 0);
                 return hash;
             }
         }
@@ -491,7 +516,7 @@ namespace Hecton8.UI
             return _sb.ToString();
         }
 
-        private void BuildCostSummary(BuildableData data)
+        private void BuildCostSummary(BuildableData data, bool hasResources)
         {
             if (_costLine == null)
                 return;
@@ -523,7 +548,7 @@ namespace Hecton8.UI
                 _sb.Append(cost.amount);
             }
 
-            _costLine.color = playerBuilder != null && playerBuilder.HasResourcesForActiveBuildable ? DimColor : WarnColor;
+            _costLine.color = hasResources ? DimColor : WarnColor;
             _costLine.SetText(_sb.ToString());
         }
 

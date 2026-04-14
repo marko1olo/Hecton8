@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_FossilReef
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.26, g: 0.46, b: 0.38, a: 1}
-  fogDensity: 0.012
-  skyExposure: 0.88
-  ambientColor: {r: 0.24, g: 0.34, b: 0.3, a: 1}
-  sunIntensity: 0.82
+  fogColor: {r: 0.24, g: 0.43, b: 0.37, a: 1}
+  fogDensity: 0.013
+  skyExposure: 0.84
+  ambientColor: {r: 0.22, g: 0.31, b: 0.28, a: 1}
+  sunIntensity: 0.76
   temperature: 20
   radiation: 0

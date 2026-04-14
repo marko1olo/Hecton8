@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_SedimentDrift
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.54, g: 0.6, b: 0.58, a: 1}
-  fogDensity: 0.01
-  skyExposure: 1.05
-  ambientColor: {r: 0.42, g: 0.42, b: 0.46, a: 1}
-  sunIntensity: 1.1
+  fogColor: {r: 0.5, g: 0.57, b: 0.56, a: 1}
+  fogDensity: 0.011
+  skyExposure: 0.98
+  ambientColor: {r: 0.38, g: 0.39, b: 0.43, a: 1}
+  sunIntensity: 1
   temperature: 20
   radiation: 0

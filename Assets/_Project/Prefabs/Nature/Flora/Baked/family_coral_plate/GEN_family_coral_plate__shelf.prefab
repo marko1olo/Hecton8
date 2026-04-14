@@ -280,7 +280,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7917930861358076984}
   - component: {fileID: 5529748333828160593}
-  - component: {fileID: 3842536948335228971}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__shelf
   m_TagString: Untagged
@@ -314,8 +313,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5173967772101553297}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.015202165, y: 0.6853286, z: -0.02507925}
-  m_Size: 2.3760722
+  m_LocalReferencePoint: {x: 0.0204103, y: 0.6896676, z: -0.028399825}
+  m_Size: 2.430519
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -334,16 +333,3 @@ LODGroup:
     - renderer: {fileID: 3054878574573237278}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3842536948335228971
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5173967772101553297}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 9b267bf032da5b24a9a66e472549b4d4, type: 2}

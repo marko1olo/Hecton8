@@ -1,13 +1,12 @@
 // ============================================================================
-// HECTON-8 — HectonLoreSceneSetupEditor.cs
-// Editor утилита: быстрая настройка лорных систем в сцене.
-//
-// Меню: Hecton8 → Lore → Setup Lore Systems in Scene
+// HECTON-8 - HectonLoreSceneSetupEditor.cs
+// Editor helper for quick lore bootstrap setup.
 // ============================================================================
 
 #if UNITY_EDITOR
 using Hecton8.Bootstrap;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Hecton8.Editor
@@ -17,46 +16,66 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Lore/Setup Lore Systems in Scene")]
         public static void SetupLoreSystemsInScene()
         {
-            // Ищем существующий LoreSystems объект
-            HectonLoreSystemsRoot existing =
-                Object.FindAnyObjectByType<HectonLoreSystemsRoot>();
-
+            HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>();
             if (existing != null)
             {
+                existing.ValidateSystems();
                 EditorUtility.DisplayDialog(
                     "Lore Systems",
-                    "HectonLoreSystemsRoot уже существует в сцене.\n" +
-                    "Используйте кнопку [Setup All Systems] в инспекторе.",
+                    "HectonLoreSystemsRoot already exists in the scene.\nUse the inspector actions to validate or reconcile it.",
                     "OK");
+
                 Selection.activeGameObject = existing.gameObject;
+                EditorGUIUtility.PingObject(existing.gameObject);
                 return;
             }
 
-            // Создаём новый
             GameObject go = new GameObject("LoreSystems");
+            Undo.RegisterCreatedObjectUndo(go, "Create LoreSystems");
+
             HectonLoreSystemsRoot root = go.AddComponent<HectonLoreSystemsRoot>();
             root.SetupAllSystems();
 
-            Undo.RegisterCreatedObjectUndo(go, "Create LoreSystems");
+            EditorSceneManager.MarkSceneDirty(go.scene);
             Selection.activeGameObject = go;
+            EditorGUIUtility.PingObject(go);
 
             EditorUtility.DisplayDialog(
                 "Lore Systems",
-                "LoreSystems создан в сцене.\n\n" +
-                "Следующие шаги:\n" +
-                "1. Создать ScriptableObject ассеты (Data/Lore/)\n" +
-                "2. Назначить ссылки в инспекторе каждой системы\n" +
-                "3. Разместить AudioLogPickup и NarrativeDiscovery в мире\n\n" +
-                "Подробнее: Assets/_Project/Scripts/LORE_SYSTEMS_GUIDE.md",
+                "LoreSystems created in the scene.\n\n" +
+                "Next steps:\n" +
+                "1. Create ScriptableObject assets under Data/Lore/\n" +
+                "2. Wire references in the inspector for each system\n" +
+                "3. Place AudioLogPickup and NarrativeDiscovery objects in the world\n\n" +
+                "See: Assets/_Project/Scripts/LORE_SYSTEMS_GUIDE.md",
                 "OK");
 
             Debug.Log("[LoreSetup] LoreSystems created. See LORE_SYSTEMS_GUIDE.md for setup instructions.");
         }
 
+        [MenuItem("Hecton8/Lore/Validate Lore Systems in Scene")]
+        public static void ValidateLoreSystemsInScene()
+        {
+            HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>();
+            if (existing == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "Lore Systems",
+                    "No HectonLoreSystemsRoot exists in the active scene.",
+                    "OK");
+                return;
+            }
+
+            existing.ValidateSystems();
+            Selection.activeGameObject = existing.gameObject;
+            EditorGUIUtility.PingObject(existing.gameObject);
+        }
+
         [MenuItem("Hecton8/Lore/Create Lore Data Folder Structure")]
         public static void CreateLoreDataFolders()
         {
-            string[] folders = {
+            string[] folders =
+            {
                 "Assets/_Project/Data/Lore",
                 "Assets/_Project/Data/Lore/AudioLogs",
                 "Assets/_Project/Data/Lore/Quests",
@@ -79,12 +98,12 @@ namespace Hecton8.Editor
 
             EditorUtility.DisplayDialog(
                 "Lore Data Folders",
-                "Папки созданы:\n" +
-                "• Data/Lore/AudioLogs — AudioLogData ассеты\n" +
-                "• Data/Lore/Quests — QuestData ассеты\n" +
-                "• Data/Lore/DepthZones — DepthZoneProfile ассеты\n" +
-                "• Data/Lore/SuitUpgrades — SuitUpgradeData ассеты\n" +
-                "• Data/Lore/Registries — Registry SO ассеты",
+                "Folders created:\n" +
+                "• Data/Lore/AudioLogs - AudioLogData assets\n" +
+                "• Data/Lore/Quests - QuestData assets\n" +
+                "• Data/Lore/DepthZones - DepthZoneProfile assets\n" +
+                "• Data/Lore/SuitUpgrades - SuitUpgradeData assets\n" +
+                "• Data/Lore/Registries - registry ScriptableObjects",
                 "OK");
         }
 
@@ -94,10 +113,13 @@ namespace Hecton8.Editor
             string path = "Assets/_Project/Scripts/LORE_SYSTEMS_GUIDE.md";
             Object asset = AssetDatabase.LoadAssetAtPath<Object>(path);
             if (asset != null)
+            {
                 AssetDatabase.OpenAsset(asset);
+            }
             else
-                EditorUtility.DisplayDialog("Not Found",
-                    $"Файл не найден: {path}", "OK");
+            {
+                EditorUtility.DisplayDialog("Not Found", $"File not found: {path}", "OK");
+            }
         }
 
         [MenuItem("Hecton8/Lore/Create Default SO Assets")]
@@ -114,7 +136,6 @@ namespace Hecton8.Editor
             created += CreateSOIfMissing<Hecton8.Narrative.DeepReachCorporationData>(
                 "Assets/_Project/Data/Lore/Registries/DeepReachCorporationData.asset");
 
-            // DepthZone profiles — 7 зон из лора
             created += CreateDepthZoneProfile("DepthZone_TheSpine",
                 "THE SPINE / SHALLOW GRAVE", 0f, 100f, 0, 0.1f,
                 "Assets/_Project/Data/Lore/DepthZones/DepthZone_TheSpine.asset");
@@ -124,40 +145,39 @@ namespace Hecton8.Editor
                 "Assets/_Project/Data/Lore/DepthZones/DepthZone_DrownedFactories.asset");
 
             created += CreateDepthZoneProfile("DepthZone_TheDropUpper",
-                "THE DROP — UPPER", 1000f, 2500f, 2, 0.6f,
+                "THE DROP - UPPER", 1000f, 2500f, 2, 0.6f,
                 "Assets/_Project/Data/Lore/DepthZones/DepthZone_TheDropUpper.asset");
 
             created += CreateDepthZoneProfile("DepthZone_TheDropDeep",
-                "THE DROP — DEEP ABYSS", 2500f, 4000f, 3, 0.8f,
+                "THE DROP - DEEP ABYSS", 2500f, 4000f, 3, 0.8f,
                 "Assets/_Project/Data/Lore/DepthZones/DepthZone_TheDropDeep.asset");
 
             created += CreateDepthZoneProfile("DepthZone_ThermalFields",
-                "THERMAL FIELDS — THE RIFT", 4000f, 5500f, 4, 1.0f,
+                "THERMAL FIELDS - THE RIFT", 4000f, 5500f, 4, 1.0f,
                 "Assets/_Project/Data/Lore/DepthZones/DepthZone_ThermalFields.asset");
 
-            // SuitUpgrade profiles — Tier 0-4
             created += CreateSuitUpgrade("SuitUpgrade_Hull_Tier1",
-                "КОРПУС ТИР 1 — до -500м", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 1,
+                "HULL TIER 1 - to -500m", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 1,
                 350f, 0f, 0f, 0f, 0f, 0f, 0f,
                 "Assets/_Project/Data/Lore/SuitUpgrades/SuitUpgrade_Hull_Tier1.asset");
 
             created += CreateSuitUpgrade("SuitUpgrade_Oxygen_Tier1",
-                "КИСЛОРОД ТИР 1 — 8 мин", Hecton8.Gameplay.SuitUpgradeCategory.Oxygen, 1,
+                "OXYGEN TIER 1 - 8 min", Hecton8.Gameplay.SuitUpgradeCategory.Oxygen, 1,
                 0f, 140f, 0f, 0f, 0f, 0f, 0f,
                 "Assets/_Project/Data/Lore/SuitUpgrades/SuitUpgrade_Oxygen_Tier1.asset");
 
             created += CreateSuitUpgrade("SuitUpgrade_Hull_Tier2",
-                "КОРПУС ТИР 2 — до -1500м", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 2,
+                "HULL TIER 2 - to -1500m", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 2,
                 1000f, 0f, 0f, 0f, 0f, 0f, 0f,
                 "Assets/_Project/Data/Lore/SuitUpgrades/SuitUpgrade_Hull_Tier2.asset");
 
             created += CreateSuitUpgrade("SuitUpgrade_Hull_Tier3",
-                "КОРПУС ТИР 3 — до -3500м", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 3,
+                "HULL TIER 3 - to -3500m", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 3,
                 3000f, 0f, 0f, 0f, 0f, 0f, 0f,
                 "Assets/_Project/Data/Lore/SuitUpgrades/SuitUpgrade_Hull_Tier3.asset");
 
             created += CreateSuitUpgrade("SuitUpgrade_Hull_Tier4",
-                "КОРПУС ТИР 4 — до -5000м", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 4,
+                "HULL TIER 4 - to -5000m", Hecton8.Gameplay.SuitUpgradeCategory.Hull, 4,
                 4850f, 0f, 0f, 0f, 0f, 0f, 0f,
                 "Assets/_Project/Data/Lore/SuitUpgrades/SuitUpgrade_Hull_Tier4.asset");
 
@@ -166,15 +186,16 @@ namespace Hecton8.Editor
 
             EditorUtility.DisplayDialog(
                 "Lore Assets Created",
-                $"Создано {created} ассетов в Assets/_Project/Data/Lore/\n\n" +
-                "Назначьте их в инспекторе соответствующих систем.",
+                $"Created {created} assets in Assets/_Project/Data/Lore/\n\nAssign them in the relevant system inspectors.",
                 "OK");
         }
 
         private static int CreateSOIfMissing<T>(string path) where T : ScriptableObject
         {
             if (AssetDatabase.LoadAssetAtPath<T>(path) != null)
+            {
                 return 0;
+            }
 
             T so = ScriptableObject.CreateInstance<T>();
             AssetDatabase.CreateAsset(so, path);
@@ -186,9 +207,11 @@ namespace Hecton8.Editor
             string path)
         {
             if (AssetDatabase.LoadAssetAtPath<Hecton8.World.DepthZoneProfile>(path) != null)
+            {
                 return 0;
+            }
 
-            var so = ScriptableObject.CreateInstance<Hecton8.World.DepthZoneProfile>();
+            Hecton8.World.DepthZoneProfile so = ScriptableObject.CreateInstance<Hecton8.World.DepthZoneProfile>();
             so.zoneId = id;
             so.displayName = displayName;
             so.minDepth = minDepth;
@@ -207,9 +230,11 @@ namespace Hecton8.Editor
             string path)
         {
             if (AssetDatabase.LoadAssetAtPath<Hecton8.Gameplay.SuitUpgradeData>(path) != null)
+            {
                 return 0;
+            }
 
-            var so = ScriptableObject.CreateInstance<Hecton8.Gameplay.SuitUpgradeData>();
+            Hecton8.Gameplay.SuitUpgradeData so = ScriptableObject.CreateInstance<Hecton8.Gameplay.SuitUpgradeData>();
             so.upgradeId = upgradeId;
             so.displayName = displayName;
             so.category = category;

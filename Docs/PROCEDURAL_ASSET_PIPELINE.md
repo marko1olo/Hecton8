@@ -154,6 +154,21 @@ Tools: MapMagic 2.1.18 · GPU Instancer Pro · Mantis LOD · Mesh Baker
 | Mask (ARM)    | BC7    | 2048     | No   | R=AO G=Rough B=Height/Metal |
 | Detail Normal | BC5    | 1024     | No   | Micro-relief, shader blend  |
 
+### CURRENT FLORA RUNTIME CONTRACT
+[REQ] `WorldProceduralFlora` currently ships a category-owned texture contract, not generic ARM/detail-normal.
+[REQ] Do not reinterpret imported flora channels unless the runtime shaders are changed in the same task.
+[REQ] Current runtime ownership:
+      - `_DetailMap` = linear grayscale micro-detail / breakup / caustic modulation
+      - `_MaskMap` = flora-specific packed control map owned by the shader
+      - kelp/coral channel semantics differ; shader code is source of truth
+[REQ] Importer settings still stay strict:
+      - `albedo`  = sRGB On, Default
+      - `normal`  = sRGB Off, Normal Map
+      - `mask`    = sRGB Off, Default
+      - `detail`  = sRGB Off, Default
+[WARN] If runtime is migrated to true ARM + detail-normal packing, update:
+       shader sampling, material authoring, validator rules, and all imported family sets together.
+
 [REQ] Все текстуры seamless (Wrap Mode = Repeat).
 [REQ] Один атлас на biome/family. Один Material на GPU Instancer batch.
 [REQ] Generate Mip Maps = On. Streaming = Off.

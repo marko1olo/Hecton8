@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2233376760747079125}
   - component: {fileID: 839794149895474044}
-  - component: {fileID: 5988140360259961790}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__banner
   m_TagString: Untagged
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 1002520320581327338}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5988140360259961790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 682122124304312042}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 89e8cb69ce0d87d488d71c17d419c4dd, type: 2}
 --- !u!1 &2201756210600993794
 GameObject:
   m_ObjectHideFlags: 0

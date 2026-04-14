@@ -8,39 +8,21 @@ namespace Hecton8.World
     internal static class ScatterDiagnosticsTracker
     {
         public static ScatterRebuildProfileSnapshot BuildRebuildProfileSnapshot(
-            long rebuildStartTimestamp,
-            long samplingInputsEndTimestamp,
-            long samplingCompleteEndTimestamp,
-            long samplingEndTimestamp,
-            long rescueEndTimestamp,
-            long restoreEndTimestamp,
-            in ScatterReconcileMetrics reconcileMetrics,
-            long diagnosticsEndTimestamp,
-            int evaluatedCells,
-            int desiredCount,
-            int activeCount,
-            int floraGpuiActiveCount,
-            int floraGpuiPrototypeCount,
-            bool floraGpuiReady,
-            string zone,
-            string biome,
-            string pattern,
-            string topFamily,
-            string reason)
+            in WorldProceduralScatterDirector.ScatterDiagnosticsCommitContext context)
         {
-            long reconcileEndTimestamp = reconcileMetrics.EndTimestamp;
-            float samplingInputMs = GetElapsedMilliseconds(rebuildStartTimestamp, samplingInputsEndTimestamp);
-            float samplingWaitMs = GetElapsedMilliseconds(samplingInputsEndTimestamp, samplingCompleteEndTimestamp);
-            float samplingPostMs = GetElapsedMilliseconds(samplingCompleteEndTimestamp, samplingEndTimestamp);
-            float samplingMs = GetElapsedMilliseconds(rebuildStartTimestamp, samplingEndTimestamp);
-            float rescueMs = GetElapsedMilliseconds(samplingEndTimestamp, rescueEndTimestamp);
-            float restoreMs = GetElapsedMilliseconds(rescueEndTimestamp, restoreEndTimestamp);
-            float reconcileMs = GetElapsedMilliseconds(restoreEndTimestamp, reconcileEndTimestamp);
-            float diagnosticsMs = GetElapsedMilliseconds(reconcileEndTimestamp, diagnosticsEndTimestamp);
-            float totalMs = GetElapsedMilliseconds(rebuildStartTimestamp, diagnosticsEndTimestamp);
-            float reconcileCleanupMs = GetElapsedMilliseconds(restoreEndTimestamp, reconcileMetrics.CleanupEndTimestamp);
-            float reconcileSpawnMs = GetElapsedMilliseconds(reconcileMetrics.CleanupEndTimestamp, reconcileMetrics.SpawnEndTimestamp);
-            float reconcileFaunaMs = GetElapsedMilliseconds(reconcileMetrics.SpawnEndTimestamp, reconcileMetrics.EndTimestamp);
+            long reconcileEndTimestamp = context.ReconcileMetrics.EndTimestamp;
+            float samplingInputMs = GetElapsedMilliseconds(context.RebuildStartTimestamp, context.SamplingInputsEndTimestamp);
+            float samplingWaitMs = GetElapsedMilliseconds(context.SamplingInputsEndTimestamp, context.SamplingCompleteEndTimestamp);
+            float samplingPostMs = GetElapsedMilliseconds(context.SamplingCompleteEndTimestamp, context.SamplingEndTimestamp);
+            float samplingMs = GetElapsedMilliseconds(context.RebuildStartTimestamp, context.SamplingEndTimestamp);
+            float rescueMs = GetElapsedMilliseconds(context.SamplingEndTimestamp, context.RescueEndTimestamp);
+            float restoreMs = GetElapsedMilliseconds(context.RescueEndTimestamp, context.RestoreEndTimestamp);
+            float reconcileMs = GetElapsedMilliseconds(context.RestoreEndTimestamp, reconcileEndTimestamp);
+            float diagnosticsMs = GetElapsedMilliseconds(reconcileEndTimestamp, context.DiagnosticsEndTimestamp);
+            float totalMs = GetElapsedMilliseconds(context.RebuildStartTimestamp, context.DiagnosticsEndTimestamp);
+            float reconcileCleanupMs = GetElapsedMilliseconds(context.RestoreEndTimestamp, context.ReconcileMetrics.CleanupEndTimestamp);
+            float reconcileSpawnMs = GetElapsedMilliseconds(context.ReconcileMetrics.CleanupEndTimestamp, context.ReconcileMetrics.SpawnEndTimestamp);
+            float reconcileFaunaMs = GetElapsedMilliseconds(context.ReconcileMetrics.SpawnEndTimestamp, context.ReconcileMetrics.EndTimestamp);
 
             return new ScatterRebuildProfileSnapshot(
                 totalMs,
@@ -55,21 +37,21 @@ namespace Hecton8.World
                 reconcileSpawnMs,
                 reconcileFaunaMs,
                 diagnosticsMs,
-                reconcileMetrics.RemovedCount,
-                reconcileMetrics.RebuiltCount,
-                reconcileMetrics.CreatedCount,
-                reconcileMetrics.ReusedCount,
-                evaluatedCells,
-                desiredCount,
-                activeCount,
-                floraGpuiActiveCount,
-                floraGpuiPrototypeCount,
-                floraGpuiReady,
-                zone,
-                biome,
-                pattern,
-                topFamily,
-                reason);
+                context.ReconcileMetrics.RemovedCount,
+                context.ReconcileMetrics.RebuiltCount,
+                context.ReconcileMetrics.CreatedCount,
+                context.ReconcileMetrics.ReusedCount,
+                context.EvaluatedCells,
+                context.DesiredCount,
+                context.ActiveCount,
+                context.FloraGpuiActiveCount,
+                context.FloraGpuiPrototypeCount,
+                context.FloraGpuiReady,
+                context.Zone,
+                context.Biome,
+                context.Pattern,
+                context.TopFamily,
+                context.Reason);
         }
 
         public static void EmitRebuildReport(
@@ -114,25 +96,7 @@ namespace Hecton8.World
     internal static class ScatterDiagnosticsTracker
     {
         public static ScatterRebuildProfileSnapshot BuildRebuildProfileSnapshot(
-            long rebuildStartTimestamp,
-            long samplingInputsEndTimestamp,
-            long samplingCompleteEndTimestamp,
-            long samplingEndTimestamp,
-            long rescueEndTimestamp,
-            long restoreEndTimestamp,
-            in ScatterReconcileMetrics reconcileMetrics,
-            long diagnosticsEndTimestamp,
-            int evaluatedCells,
-            int desiredCount,
-            int activeCount,
-            int floraGpuiActiveCount,
-            int floraGpuiPrototypeCount,
-            bool floraGpuiReady,
-            string zone,
-            string biome,
-            string pattern,
-            string topFamily,
-            string reason)
+            in WorldProceduralScatterDirector.ScatterDiagnosticsCommitContext context)
         {
             return default;
         }

@@ -23,6 +23,11 @@ namespace Hecton8.UI
         private static readonly Color BindingColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
         private static readonly Color HintColor = new Color(0.58f, 0.78f, 0.74f, 0.72f);
         private static readonly Color SelectionColor = new Color(0.46f, 0.98f, 0.94f, 0.9f);
+        private static readonly string[] ExcludedControlPaths =
+        {
+            "<Pointer>/position",
+            "<Pointer>/delta"
+        };
 
         [Serializable]
         public sealed class RebindRow
@@ -162,6 +167,9 @@ namespace Hecton8.UI
             rebinding.OnRebindStarted += HandleRebindStarted;
             rebinding.OnRebindCompleted += HandleRebindCompleted;
             rebinding.OnRebindCanceled += HandleRebindCanceled;
+            rebinding.OnOverridesLoaded += HandleBindingOverridesChanged;
+            rebinding.OnOverridesSaved += HandleBindingOverridesChanged;
+            rebinding.OnOverridesCleared += HandleBindingOverridesChanged;
 
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
             PDAEvents.OnOpened += HandlePdaOpened;
@@ -189,6 +197,9 @@ namespace Hecton8.UI
                 rebinding.OnRebindStarted -= HandleRebindStarted;
                 rebinding.OnRebindCompleted -= HandleRebindCompleted;
                 rebinding.OnRebindCanceled -= HandleRebindCanceled;
+                rebinding.OnOverridesLoaded -= HandleBindingOverridesChanged;
+                rebinding.OnOverridesSaved -= HandleBindingOverridesChanged;
+                rebinding.OnOverridesCleared -= HandleBindingOverridesChanged;
             }
 
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
@@ -200,7 +211,7 @@ namespace Hecton8.UI
         private void HandleNavigate(Vector2 direction)
         {
             if (!IsControlsTabActive) return;
-            if (rows.Length == 0) return;
+            if (rows == null || rows.Length == 0) return;
             if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
             int delta = 0;
@@ -208,18 +219,21 @@ namespace Hecton8.UI
             else if (direction.y < -0.35f) delta = 1;
 
             if (delta == 0) return;
-            _selectedIndex = WrapIndex(_selectedIndex + delta, rows.Length);
-            RefreshSelectionVisuals();
-            UpdateStatusForSelected();
+            MoveSelection(delta);
         }
 
         private void HandleSubmit()
         {
             if (!IsControlsTabActive) return;
-            if (rows.Length == 0) return;
+            if (rows == null || rows.Length == 0) return;
             if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
-            RebindRow row = rows[_selectedIndex];
+            if (!TryGetSelectedRow(out RebindRow row, out _))
+            {
+                SetStatus("No bindings configured.");
+                return;
+            }
+
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
@@ -240,7 +254,7 @@ namespace Hecton8.UI
                 bindingIndex,
                 expectedControlType: null,
                 cancelPath: "<Keyboard>/escape",
-                excludedControlPaths: new[] { "<Pointer>/position", "<Pointer>/delta" });
+                excludedControlPaths: ExcludedControlPaths);
 
             if (!started)
             {
@@ -258,7 +272,7 @@ namespace Hecton8.UI
         private void HandleTabNext()
         {
             if (!IsControlsTabActive) return;
-            if (rows.Length == 0) return;
+            if (rows == null || rows.Length == 0) return;
             if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
 
             ResetSelectedBinding();
@@ -312,9 +326,21 @@ namespace Hecton8.UI
             RefreshAll();
         }
 
+        private void HandleBindingOverridesChanged()
+        {
+            if (!IsControlsTabActive) return;
+            RefreshAllBindings();
+            UpdateStatusForSelected();
+        }
+
         private void ResetSelectedBinding()
         {
-            RebindRow row = rows[_selectedIndex];
+            if (!TryGetSelectedRow(out RebindRow row, out _))
+            {
+                SetStatus("No bindings configured.");
+                return;
+            }
+
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
@@ -343,6 +369,12 @@ namespace Hecton8.UI
         private void RefreshAll()
         {
             EnsureBuilt();
+            if (autoResolveRowReferences)
+            {
+                ResolveRowReferencesByName();
+            }
+
+            NormalizeSelectedIndex();
             RefreshLabels();
             RefreshSelectionVisuals();
             RefreshAllBindings();
@@ -488,6 +520,22 @@ namespace Hecton8.UI
             rows = BuildDefaultRows();
         }
 
+        private void NormalizeSelectedIndex()
+        {
+            if (rows == null || rows.Length == 0)
+            {
+                _selectedIndex = 0;
+                return;
+            }
+
+            if (_selectedIndex >= 0 && _selectedIndex < rows.Length && IsBindableRow(rows[_selectedIndex]))
+                return;
+
+            _selectedIndex = GetFirstValidRowIndex();
+            if (_selectedIndex < 0)
+                _selectedIndex = 0;
+        }
+
         private void ResolveRowReferencesByName()
         {
             if (rows == null || rows.Length == 0) return;
@@ -574,9 +622,14 @@ namespace Hecton8.UI
 
         private void RefreshLabels()
         {
+            if (rows == null) return;
+
             for (int i = 0; i < rows.Length; i++)
             {
                 RebindRow row = rows[i];
+                if (!IsBindableRow(row))
+                    continue;
+
                 if (row.labelText != null)
                 {
                     row.labelText.text = row.label;
@@ -586,14 +639,23 @@ namespace Hecton8.UI
 
         private void RefreshAllBindings()
         {
+            if (rows == null) return;
+
             for (int i = 0; i < rows.Length; i++)
             {
-                RefreshRowBinding(rows[i]);
+                RebindRow row = rows[i];
+                if (!IsBindableRow(row))
+                    continue;
+
+                RefreshRowBinding(row);
             }
         }
 
         private void RefreshRowBinding(RebindRow row)
         {
+            if (!IsBindableRow(row))
+                return;
+
             if (row.bindingText == null) return;
 
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
@@ -609,9 +671,15 @@ namespace Hecton8.UI
 
         private void RefreshSelectionVisuals()
         {
+            if (rows == null) return;
+
             for (int i = 0; i < rows.Length; i++)
             {
-                GameObject indicator = rows[i].selectedIndicator;
+                RebindRow row = rows[i];
+                if (!IsBindableRow(row))
+                    continue;
+
+                GameObject indicator = row.selectedIndicator;
                 if (indicator != null)
                 {
                     indicator.SetActive(i == _selectedIndex);
@@ -642,13 +710,12 @@ namespace Hecton8.UI
 
         private void UpdateStatusForSelected()
         {
-            if (rows.Length == 0)
+            if (!TryGetSelectedRow(out RebindRow row, out _))
             {
                 SetStatus("No bindings configured.");
                 return;
             }
 
-            RebindRow row = rows[_selectedIndex];
             string binding = "--";
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
             if (action != null)
@@ -661,6 +728,77 @@ namespace Hecton8.UI
             }
 
             SetStatus($"{readyPrefix}: {row.label} [{binding}]  |  {resetHint}");
+        }
+
+        private bool TryGetSelectedRow(out RebindRow row, out int rowIndex)
+        {
+            row = null;
+            rowIndex = -1;
+
+            if (rows == null || rows.Length == 0)
+                return false;
+
+            NormalizeSelectedIndex();
+
+            if (_selectedIndex >= 0 && _selectedIndex < rows.Length)
+            {
+                row = rows[_selectedIndex];
+                if (IsBindableRow(row))
+                {
+                    rowIndex = _selectedIndex;
+                    return true;
+                }
+            }
+
+            rowIndex = GetFirstValidRowIndex();
+            if (rowIndex < 0)
+                return false;
+
+            _selectedIndex = rowIndex;
+            row = rows[rowIndex];
+            return IsBindableRow(row);
+        }
+
+        private static bool IsBindableRow(RebindRow row)
+        {
+            return row != null &&
+                   !string.IsNullOrWhiteSpace(row.actionMap) &&
+                   !string.IsNullOrWhiteSpace(row.actionName);
+        }
+
+        private int GetFirstValidRowIndex()
+        {
+            if (rows == null || rows.Length == 0)
+                return -1;
+
+            for (int i = 0; i < rows.Length; i++)
+            {
+                if (IsBindableRow(rows[i]))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void MoveSelection(int delta)
+        {
+            if (rows == null || rows.Length == 0)
+                return;
+
+            NormalizeSelectedIndex();
+            int current = _selectedIndex;
+
+            for (int i = 0; i < rows.Length; i++)
+            {
+                current = WrapIndex(current + delta, rows.Length);
+                if (IsBindableRow(rows[current]))
+                {
+                    _selectedIndex = current;
+                    RefreshSelectionVisuals();
+                    UpdateStatusForSelected();
+                    return;
+                }
+            }
         }
 
         private static int ResolveBindingIndex(InputAction action, int preferredIndex)

@@ -1,0 +1,50 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 596d4bbe2696cb445b98131cfacca40c, type: 3}
+  m_Name: MusicProfile_Prologue
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicBiomeProfile
+  _profileId: music.profile.prologue
+  _profileLabel: Prologue
+  _minPauseSeconds: 18
+  _maxPauseSeconds: 45
+  _fadeInSeconds: 1.5
+  _fadeOutSeconds: 2.5
+  _crossfadeSeconds: 2.2
+  _shortTrackChance: 0.08
+  _shortTrackCooldownSeconds: 75
+  _localCalmWeight: 80
+  _localTenseWeight: 80
+  _allowCrossTensionMix: false
+  _crossTensionMixChance: 0
+  _longRepeatHorizon: 1
+  _shortRepeatHorizon: 1
+  _calmLongTracks: 
+  - _cueId: music.prologue_1_iron_heavy_rain
+    _clip: {fileID: 8300000, guid: 9290c542008720742929db961ffb572c, type: 3}
+    _volume: 0.891
+    _weight: 1
+    _role: 8
+    _tension: 0.32
+  _tenseLongTracks: []
+  _calmShortTracks: []
+  _tenseShortTracks: []
+  _discoveryStingers: []
+  _dangerStingers: []
+  _recoveryStingers: []
+  _calmBleedProfiles: 
+  - _profile: {fileID: 11400000, guid: a000aeb555c4daf43854afbd92c1f90e, type: 2}
+    _weight: 20
+  - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
+    _weight: 10
+  _tenseBleedProfiles: 
+  - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
+    _weight: 20

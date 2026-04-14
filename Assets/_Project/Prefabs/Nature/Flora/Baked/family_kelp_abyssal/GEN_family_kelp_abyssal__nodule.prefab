@@ -100,7 +100,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8671275163916643262}
   - component: {fileID: 8187507851748657314}
-  - component: {fileID: 5421353062116474381}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__nodule
   m_TagString: Untagged
@@ -154,19 +153,6 @@ LODGroup:
     - renderer: {fileID: 887643868631791103}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &5421353062116474381
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3890645747521861453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 30ec8ddacdfa5494284569e012569d00, type: 2}
 --- !u!1 &5142951429694425757
 GameObject:
   m_ObjectHideFlags: 0

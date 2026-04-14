@@ -59,6 +59,8 @@ namespace Hecton8.World
         internal static WorldGenerativeGeologyIntegrationDirector ActiveRuntimeInstance { get; private set; }
 
         public IReadOnlyList<WorldGenerativeGeologySeamPlan> ActivePlans => _orderedPlans;
+        public int ActivePlanCount => _orderedPlans.Count;
+        public bool HasActivePlans => _orderedPlans.Count > 0;
 
         private void Awake()
         {
@@ -143,6 +145,24 @@ namespace Hecton8.World
         public bool TryGetBinding(long runtimeKey, out WorldGenerativeGeologyBinding binding)
         {
             return _bindingsByKey.TryGetValue(runtimeKey, out binding);
+        }
+
+        public bool TryGetTopPlan(out WorldGenerativeGeologySeamPlan plan, out WorldGenerativeGeologyBinding binding)
+        {
+            plan = default;
+            binding = null;
+
+            if (_orderedPlans.Count == 0)
+                return false;
+
+            plan = _orderedPlans[0];
+            if (!_bindingsByKey.TryGetValue(plan.runtimeKey, out binding) || binding == null)
+            {
+                binding = null;
+                return false;
+            }
+
+            return true;
         }
 
         public void CopyPlansTo(List<WorldGenerativeGeologySeamPlan> destination)
@@ -409,6 +429,9 @@ namespace Hecton8.World
             out WorldGenerativeGeologySeamPlan plan)
         {
             plan = default;
+
+            if (binding == null || binding.transform == null)
+                return false;
 
             Transform targetTransform = binding.transform;
             float playerDistance = Vector3.Distance(playerTransform.position, targetTransform.position);

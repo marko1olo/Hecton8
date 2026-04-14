@@ -10,7 +10,13 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralFloraMaterialAuthoring
     {
         private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
+        private const string KelpGpuiShaderName = "GPUInstancer/Hecton8/Flora/KelpMaster";
         private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
+        private const string CoralGpuiShaderName = "GPUInstancer/Hecton8/Flora/CoralMaster";
+        private const string KelpShaderPath = "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader";
+        private const string KelpGpuiShaderPath = "Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader";
+        private const string CoralShaderPath = "Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader";
+        private const string CoralGpuiShaderPath = "Assets/_Project/Art/Shaders/Hecton_CoralMaster_GPUI.shader";
         internal const string QualityMx350Keyword = "_QUALITY_MX350";
         internal const string QualityHighKeyword = "_QUALITY_HIGH";
         internal const string NormalScaleProperty = "_NormalScale";
@@ -33,17 +39,31 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Authoring/Apply Procedural Flora Materials", priority = 176)]
         public static void Apply()
         {
-            Shader kelpShader = Shader.Find(KelpShaderName);
-            Shader coralShader = Shader.Find(CoralShaderName);
+            Shader kelpShader = ResolvePreferredFloraShader(
+                KelpGpuiShaderPath,
+                KelpShaderPath,
+                KelpGpuiShaderName,
+                KelpShaderName);
+            Shader coralShader = ResolvePreferredFloraShader(
+                CoralGpuiShaderPath,
+                CoralShaderPath,
+                CoralGpuiShaderName,
+                CoralShaderName);
             if (kelpShader == null)
             {
-                Debug.LogWarning($"[WorldProceduralFloraMaterialAuthoring] Missing shader '{KelpShaderName}'.");
+                Debug.LogWarning(
+                    "[WorldProceduralFloraMaterialAuthoring] Missing kelp shader. Expected " +
+                    DescribeExpectedShaderVariant("family.kelp.tall") +
+                    ".");
                 return;
             }
 
             if (coralShader == null)
             {
-                Debug.LogWarning($"[WorldProceduralFloraMaterialAuthoring] Missing shader '{CoralShaderName}'.");
+                Debug.LogWarning(
+                    "[WorldProceduralFloraMaterialAuthoring] Missing coral shader. Expected " +
+                    DescribeExpectedShaderVariant("family.coral.low") +
+                    ".");
                 return;
             }
 
@@ -70,7 +90,7 @@ namespace Hecton8.EditorTools
 
             if (ApplyCoralMaterial(CoralPlateMaterialPath, coralShader, new Color(0.34f, 0.36f, 0.42f), new Color(0.84f, 0.78f, 0.60f), new Color(0.20f, 0.58f, 0.64f), new Color(0.88f, 0.72f, 0.56f), 0.46f))
                 touchedMaterials++;
-            if (ApplyCoralMaterial(CoralBrittleMaterialPath, coralShader, new Color(0.08f, 0.10f, 0.12f), new Color(0.44f, 0.56f, 0.58f), new Color(0.18f, 0.74f, 0.82f), new Color(0.26f, 0.88f, 0.84f), 0.58f, 0.64f, new Color(0.24f, 0.96f, 0.86f)))
+            if (ApplyCoralMaterial(CoralBrittleMaterialPath, coralShader, new Color(0.08f, 0.10f, 0.12f), new Color(0.34f, 0.46f, 0.48f), new Color(0.16f, 0.56f, 0.64f), new Color(0.24f, 0.70f, 0.72f), 0.58f, 0.34f, new Color(0.18f, 0.74f, 0.76f)))
                 touchedMaterials++;
 
             AssetDatabase.SaveAssets();
@@ -217,6 +237,81 @@ namespace Hecton8.EditorTools
             material.SetFloat("_SpecularHighlights", 0f);
             material.SetFloat("_GlossyReflections", 0f);
             material.SetFloat("_BumpScale", 1f);
+
+            if (familyId == "family.kelp.tall")
+            {
+                material.SetColor("_BaseColor", new Color(0.54f, 0.66f, 0.44f, 1f));
+                material.SetColor("_TipColor", new Color(0.68f, 0.78f, 0.54f, 1f));
+                material.SetColor("_TransmissionColor", new Color(0.40f, 0.58f, 0.30f, 1f));
+                material.SetColor("_RimColor", new Color(0.60f, 0.70f, 0.50f, 1f));
+                material.SetFloat("_Smoothness", 0.17f);
+                material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.88f));
+                material.SetFloat("_ThicknessStrength", Mathf.Max(material.GetFloat("_ThicknessStrength"), 0.76f));
+                material.SetFloat("_VertexTintStrength", Mathf.Max(material.GetFloat("_VertexTintStrength"), 0.56f));
+                material.SetFloat("_AgeDarkening", Mathf.Max(material.GetFloat("_AgeDarkening"), 0.22f));
+                material.SetFloat("_AmbientStrength", 0.40f);
+                material.SetFloat("_TransmissionStrength", 0.66f);
+                material.SetFloat("_EdgeTransmissionBoost", 0.30f);
+                material.SetFloat("_RimStrength", 0.16f);
+                material.SetFloat("_CausticStrength", 0.08f);
+                material.SetFloat("_CausticScale", 1.36f);
+            }
+            else if (familyId == "family.kelp.patch.dense")
+            {
+                material.SetColor("_BaseColor", new Color(0.60f, 0.76f, 0.52f, 1f));
+                material.SetColor("_TipColor", new Color(0.72f, 0.84f, 0.60f, 1f));
+                material.SetColor("_TransmissionColor", new Color(0.46f, 0.66f, 0.36f, 1f));
+                material.SetColor("_RimColor", new Color(0.64f, 0.78f, 0.58f, 1f));
+                material.SetFloat("_Smoothness", 0.16f);
+                material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.90f));
+                material.SetFloat("_ThicknessStrength", Mathf.Max(material.GetFloat("_ThicknessStrength"), 0.74f));
+                material.SetFloat("_VertexTintStrength", Mathf.Max(material.GetFloat("_VertexTintStrength"), 0.60f));
+                material.SetFloat("_AgeDarkening", Mathf.Max(material.GetFloat("_AgeDarkening"), 0.18f));
+                material.SetFloat("_AmbientStrength", 0.42f);
+                material.SetFloat("_TransmissionStrength", 0.70f);
+                material.SetFloat("_EdgeTransmissionBoost", 0.34f);
+                material.SetFloat("_RimStrength", 0.18f);
+                material.SetFloat("_CausticStrength", 0.08f);
+                material.SetFloat("_CausticScale", 1.40f);
+            }
+            else if (familyId == "family.kelp.canopy")
+            {
+                material.SetColor("_BaseColor", new Color(0.72f, 0.88f, 0.58f, 1f));
+                material.SetColor("_TipColor", new Color(0.78f, 0.92f, 0.62f, 1f));
+                material.SetColor("_TransmissionColor", new Color(0.60f, 0.82f, 0.44f, 1f));
+                material.SetColor("_RimColor", new Color(0.74f, 0.88f, 0.66f, 1f));
+                material.SetFloat("_Smoothness", 0.18f);
+                material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.88f));
+                material.SetFloat("_ThicknessStrength", Mathf.Max(material.GetFloat("_ThicknessStrength"), 0.78f));
+                material.SetFloat("_VertexTintStrength", Mathf.Max(material.GetFloat("_VertexTintStrength"), 0.62f));
+                material.SetFloat("_AgeDarkening", Mathf.Max(material.GetFloat("_AgeDarkening"), 0.18f));
+                material.SetFloat("_AmbientStrength", 0.44f);
+                material.SetFloat("_TransmissionStrength", 0.72f);
+                material.SetFloat("_EdgeTransmissionBoost", 0.38f);
+                material.SetFloat("_RimStrength", 0.22f);
+                material.SetFloat("_CausticStrength", 0.10f);
+                material.SetFloat("_CausticScale", 1.46f);
+            }
+            else if (familyId == "family.kelp.abyssal")
+            {
+                material.SetColor("_BaseColor", new Color(0.22f, 0.34f, 0.34f, 1f));
+                material.SetColor("_TipColor", new Color(0.30f, 0.50f, 0.48f, 1f));
+                material.SetColor("_TransmissionColor", new Color(0.16f, 0.34f, 0.32f, 1f));
+                material.SetColor("_RimColor", new Color(0.30f, 0.48f, 0.48f, 1f));
+                material.SetFloat("_Smoothness", 0.18f);
+                material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.88f));
+                material.SetFloat("_ThicknessStrength", Mathf.Max(material.GetFloat("_ThicknessStrength"), 0.72f));
+                material.SetFloat("_AmbientStrength", 0.36f);
+                material.SetFloat("_RimStrength", 0.16f);
+                material.SetFloat("_BiolumStrength", 0.18f);
+                material.SetFloat("_BiolumMaskStrength", 0.64f);
+                material.SetFloat("_BiolumPulseAmplitude", 0.06f);
+                material.SetFloat("_BiolumPulseFrequency", 0.28f);
+                material.SetColor("_BiolumColor", new Color(0.14f, 0.46f, 0.46f, 1f));
+                material.SetFloat("_CausticStrength", 0.06f);
+                material.SetFloat("_CausticScale", 1.12f);
+            }
+
             EditorUtility.SetDirty(material);
             return true;
         }
@@ -353,6 +448,86 @@ namespace Hecton8.EditorTools
             material.SetFloat("_SpecularHighlights", 0f);
             material.SetFloat("_GlossyReflections", 0f);
             material.SetFloat("_BumpScale", 1f);
+
+            if (familyId == "family.coral.low")
+            {
+                material.SetColor("_BaseColor", new Color(0.78f, 0.68f, 0.58f, 1f));
+                material.SetColor("_AccentColor", new Color(0.88f, 0.72f, 0.56f, 1f));
+                material.SetColor("_RimColor", new Color(0.72f, 0.64f, 0.58f, 1f));
+                material.SetColor("_SubsurfaceColor", new Color(0.86f, 0.74f, 0.60f, 1f));
+                material.SetFloat("_Smoothness", 0.22f);
+                material.SetFloat("_AmbientStrength", 0.46f);
+                material.SetFloat("_RimStrength", 0.14f);
+                material.SetFloat("_SubsurfaceStrength", 0.22f);
+                material.SetFloat("_CausticStrength", 0.08f);
+                material.SetFloat("_CausticScale", 1.12f);
+            }
+            else if (familyId == "family.coral.branching")
+            {
+                material.SetColor("_BaseColor", new Color(0.74f, 0.62f, 0.60f, 1f));
+                material.SetColor("_AccentColor", new Color(0.90f, 0.60f, 0.54f, 1f));
+                material.SetColor("_RimColor", new Color(0.76f, 0.58f, 0.56f, 1f));
+                material.SetColor("_SubsurfaceColor", new Color(0.88f, 0.68f, 0.60f, 1f));
+                material.SetFloat("_Smoothness", 0.23f);
+                material.SetFloat("_AmbientStrength", 0.48f);
+                material.SetFloat("_RimStrength", 0.18f);
+                material.SetFloat("_SubsurfaceStrength", 0.28f);
+                material.SetFloat("_CausticStrength", 0.10f);
+                material.SetFloat("_CausticScale", 1.18f);
+            }
+            else if (familyId == "family.coral.massive")
+            {
+                material.SetColor("_BaseColor", new Color(0.74f, 0.70f, 0.62f, 1f));
+                material.SetColor("_AccentColor", new Color(0.84f, 0.74f, 0.58f, 1f));
+                material.SetColor("_RimColor", new Color(0.72f, 0.68f, 0.60f, 1f));
+                material.SetColor("_SubsurfaceColor", new Color(0.86f, 0.76f, 0.62f, 1f));
+                material.SetFloat("_Smoothness", 0.22f);
+                material.SetFloat("_AmbientStrength", 0.46f);
+                material.SetFloat("_RimStrength", 0.14f);
+                material.SetFloat("_SubsurfaceStrength", 0.22f);
+                material.SetFloat("_CavityStrength", Mathf.Max(material.GetFloat("_CavityStrength"), 0.40f));
+                material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.72f));
+                material.SetFloat("_CausticStrength", 0.08f);
+                material.SetFloat("_CausticScale", 1.14f);
+            }
+            else if (familyId == "family.coral.plate")
+            {
+                material.SetColor("_BaseColor", new Color(0.70f, 0.68f, 0.60f, 1f));
+                material.SetColor("_AccentColor", new Color(0.86f, 0.78f, 0.62f, 1f));
+                material.SetColor("_SubsurfaceColor", new Color(0.88f, 0.80f, 0.64f, 1f));
+                material.SetColor("_RimColor", new Color(0.76f, 0.72f, 0.62f, 1f));
+                material.SetFloat("_Smoothness", 0.24f);
+                material.SetFloat("_DetailStrength", Mathf.Max(material.GetFloat("_DetailStrength"), 0.30f));
+                material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.74f));
+                material.SetFloat("_ThicknessStrength", Mathf.Max(material.GetFloat("_ThicknessStrength"), 0.56f));
+                material.SetFloat("_CavityStrength", Mathf.Max(material.GetFloat("_CavityStrength"), 0.42f));
+                material.SetFloat("_AmbientStrength", 0.44f);
+                material.SetFloat("_SubsurfaceStrength", 0.28f);
+                material.SetFloat("_RimStrength", 0.18f);
+                material.SetFloat("_CausticStrength", 0.10f);
+                material.SetFloat("_CausticScale", 1.18f);
+            }
+            else if (familyId == "family.coral.brittle")
+            {
+                material.SetColor("_BaseColor", new Color(0.52f, 0.58f, 0.56f, 1f));
+                material.SetColor("_AccentColor", new Color(0.58f, 0.66f, 0.62f, 1f));
+                material.SetColor("_RimColor", new Color(0.50f, 0.58f, 0.56f, 1f));
+                material.SetColor("_SubsurfaceColor", new Color(0.44f, 0.52f, 0.50f, 1f));
+                material.SetColor("_BiolumColor", new Color(0.10f, 0.38f, 0.38f, 1f));
+                material.SetFloat("_Smoothness", 0.22f);
+                material.SetFloat("_AmbientStrength", 0.40f);
+                material.SetFloat("_BiolumStrength", 0.06f);
+                material.SetFloat("_BiolumMaskStrength", 0.56f);
+                material.SetFloat("_BiolumPulseAmplitude", 0.04f);
+                material.SetFloat("_BiolumPulseFrequency", 0.24f);
+                material.SetFloat("_CausticStrength", 0.05f);
+                material.SetFloat("_CausticScale", 1.02f);
+                material.SetFloat("_RimStrength", 0.10f);
+                material.SetFloat("_SubsurfaceStrength", 0.12f);
+                material.SetFloat("_VertexTintStrength", 0.30f);
+                material.SetFloat("_ThicknessStrength", 0.36f);
+            }
+
             EditorUtility.SetDirty(material);
             return true;
         }
@@ -419,6 +594,39 @@ namespace Hecton8.EditorTools
             return false;
         }
 
+        internal static bool IsAcceptedFloraShader(Shader shader, string familyId)
+        {
+            if (shader == null || string.IsNullOrWhiteSpace(familyId))
+                return false;
+
+            switch (ResolveFloraCategory(familyId))
+            {
+                case FloraShaderCategory.Kelp:
+                    return IsAcceptedShaderVariant(shader, KelpShaderPath, KelpGpuiShaderPath, KelpShaderName, KelpGpuiShaderName);
+
+                case FloraShaderCategory.Coral:
+                    return IsAcceptedShaderVariant(shader, CoralShaderPath, CoralGpuiShaderPath, CoralShaderName, CoralGpuiShaderName);
+
+                default:
+                    return false;
+            }
+        }
+
+        internal static string DescribeExpectedShaderVariant(string familyId)
+        {
+            switch (ResolveFloraCategory(familyId))
+            {
+                case FloraShaderCategory.Kelp:
+                    return $"'{KelpShaderName}' or '{KelpGpuiShaderName}'";
+
+                case FloraShaderCategory.Coral:
+                    return $"'{CoralShaderName}' or '{CoralGpuiShaderName}'";
+
+                default:
+                    return "known flora shader variant";
+            }
+        }
+
         private static string ResolveFamilyIdFromMaterialPath(string materialPath)
         {
             if (materialPath == KelpTallMaterialPath)
@@ -472,6 +680,70 @@ namespace Hecton8.EditorTools
             return material;
         }
 
+        private static Shader ResolvePreferredFloraShader(
+            string preferredAssetPath,
+            string fallbackAssetPath,
+            string preferredShaderName,
+            string fallbackShaderName)
+        {
+            Shader shader = LoadShaderAsset(preferredAssetPath);
+            if (shader != null)
+                return shader;
+
+            shader = LoadShaderAsset(fallbackAssetPath);
+            if (shader != null)
+                return shader;
+
+            shader = Shader.Find(preferredShaderName);
+            if (shader != null)
+                return shader;
+
+            return Shader.Find(fallbackShaderName);
+        }
+
+        private static Shader LoadShaderAsset(string assetPath)
+        {
+            return string.IsNullOrWhiteSpace(assetPath) ? null : AssetDatabase.LoadAssetAtPath<Shader>(assetPath);
+        }
+
+        private static bool IsAcceptedShaderVariant(
+            Shader shader,
+            string baseShaderPath,
+            string gpuiShaderPath,
+            string baseShaderName,
+            string gpuiShaderName)
+        {
+            if (shader == null)
+                return false;
+
+            string shaderPath = AssetDatabase.GetAssetPath(shader);
+            if (!string.IsNullOrWhiteSpace(shaderPath))
+            {
+                if (string.Equals(shaderPath, baseShaderPath, System.StringComparison.Ordinal)
+                    || string.Equals(shaderPath, gpuiShaderPath, System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return string.Equals(shader.name, baseShaderName, System.StringComparison.Ordinal)
+                || string.Equals(shader.name, gpuiShaderName, System.StringComparison.Ordinal);
+        }
+
+        private static FloraShaderCategory ResolveFloraCategory(string familyId)
+        {
+            if (string.IsNullOrWhiteSpace(familyId))
+                return FloraShaderCategory.Unknown;
+
+            if (familyId.StartsWith("family.kelp.", System.StringComparison.Ordinal))
+                return FloraShaderCategory.Kelp;
+
+            if (familyId.StartsWith("family.coral.", System.StringComparison.Ordinal))
+                return FloraShaderCategory.Coral;
+
+            return FloraShaderCategory.Unknown;
+        }
+
         private static void ApplySharedFloraShaderContract(
             Material material,
             float normalScale,
@@ -495,7 +767,46 @@ namespace Hecton8.EditorTools
 
         private static bool HasPositiveFloatProperty(Material material, string propertyName)
         {
-            return material.HasProperty(propertyName) && material.GetFloat(propertyName) > 0.0001f;
+            if (material == null || string.IsNullOrWhiteSpace(propertyName))
+                return false;
+
+            if (material.HasProperty(propertyName) && material.GetFloat(propertyName) > 0.0001f)
+                return true;
+
+            float serializedValue;
+            return TryGetSerializedFloat(material, propertyName, out serializedValue) && serializedValue > 0.0001f;
+        }
+
+        private static bool TryGetSerializedFloat(Material material, string propertyName, out float value)
+        {
+            value = 0f;
+            if (material == null || string.IsNullOrWhiteSpace(propertyName))
+                return false;
+
+            SerializedObject serializedMaterial = new SerializedObject(material);
+            SerializedProperty floatProperties = serializedMaterial.FindProperty("m_SavedProperties.m_Floats");
+            if (floatProperties == null || !floatProperties.isArray)
+                return false;
+
+            for (int i = 0; i < floatProperties.arraySize; i++)
+            {
+                SerializedProperty floatEntry = floatProperties.GetArrayElementAtIndex(i);
+                if (floatEntry == null)
+                    continue;
+
+                SerializedProperty keyProperty = floatEntry.FindPropertyRelative("first");
+                SerializedProperty valueProperty = floatEntry.FindPropertyRelative("second");
+                if (keyProperty == null || valueProperty == null)
+                    continue;
+
+                if (!string.Equals(keyProperty.stringValue, propertyName, System.StringComparison.Ordinal))
+                    continue;
+
+                value = valueProperty.floatValue;
+                return true;
+            }
+
+            return false;
         }
 
         private static void EnsureFolder(string assetPath)
@@ -513,6 +824,13 @@ namespace Hecton8.EditorTools
 
             if (!AssetDatabase.IsValidFolder(assetPath))
                 AssetDatabase.CreateFolder(parentPath, folderName);
+        }
+
+        private enum FloraShaderCategory : byte
+        {
+            Unknown = 0,
+            Kelp = 1,
+            Coral = 2
         }
     }
 }

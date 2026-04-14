@@ -65,12 +65,24 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (Instance == null)
+                Instance = this;
+
+            SaveManager.Instance?.Register(this);
+        }
+
+        private void Start()
+        {
             SaveManager.Instance?.Register(this);
         }
 
         private void OnDisable()
         {
             SaveManager.Instance?.Unregister(this);
+        }
+
+        private void OnDestroy()
+        {
             if (Instance == this)
                 Instance = null;
         }

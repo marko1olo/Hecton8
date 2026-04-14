@@ -1,4 +1,5 @@
 using System;
+using GPUInstancer;
 using Hecton8.Environment;
 using Unity.Collections;
 using UnityEngine;
@@ -11,6 +12,7 @@ namespace Hecton8.World
         {
             public NativeArray<WorldProceduralFieldSampler.CellInputData> CellSamplingInputs;
             public NativeArray<WorldProceduralFieldSampler.CellOutputData> CellSamplingOutputs;
+            public NativeArray<ScatterSimulationCellState> ScatterBackendCellStates;
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> DesiredPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(2048);
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> RetainedPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(4096);
             public readonly System.Collections.Generic.Dictionary<long, float> PlacementLastSeenTimes = new System.Collections.Generic.Dictionary<long, float>(4096);
@@ -36,11 +38,34 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>> GridPlacementBuckets = new System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>>(512);
             public readonly System.Collections.Generic.Dictionary<long, ScatterCandidate> StructureRescueCandidates = new System.Collections.Generic.Dictionary<long, ScatterCandidate>(64);
             public readonly System.Collections.Generic.Dictionary<long, ScatterCandidate> SpawnRescueCandidates = new System.Collections.Generic.Dictionary<long, ScatterCandidate>(64);
+            public readonly System.Collections.Generic.Dictionary<int, int> PrefabWarmupCounts = new System.Collections.Generic.Dictionary<int, int>(32);
+            public readonly System.Collections.Generic.Dictionary<int, GameObject> PrefabWarmupPrefabs = new System.Collections.Generic.Dictionary<int, GameObject>(32);
+            public readonly System.Collections.Generic.Dictionary<int, string> PrefabWarmupFamilyIds = new System.Collections.Generic.Dictionary<int, string>(32);
+            public readonly System.Collections.Generic.Dictionary<int, int> PrefabCreateAllowances = new System.Collections.Generic.Dictionary<int, int>(32);
+            public readonly System.Collections.Generic.Dictionary<int, int> PreferredFamilyPlacementCounts = new System.Collections.Generic.Dictionary<int, int>(16);
             public readonly WorldProceduralPatternProfile[] PatternProfileCache = new WorldProceduralPatternProfile[16];
             public readonly System.Collections.Generic.Dictionary<Hecton8.Environment.HectonBiomeFamilyProfile, WorldProceduralBiomeFamilyContextProfile> BiomeContextCache = new System.Collections.Generic.Dictionary<Hecton8.Environment.HectonBiomeFamilyProfile, WorldProceduralBiomeFamilyContextProfile>(32);
+            public bool HasCachedPatternQuota;
+            public WorldProceduralPattern CachedPatternQuotaPattern;
+            public HectonBiomeMatrixProfile CachedPatternQuotaBiomeProfile;
+            public int CachedPatternClusterRatioStart;
+            public int CachedPatternPassiveSpawnMin;
+            public int CachedPatternPredatorSpawnMax;
+            public bool HasCachedBudgetScales;
+            public WorldProceduralPatternProfile CachedBudgetScalePatternProfile;
+            public WorldProceduralBiomeFamilyContextProfile CachedBudgetScaleBiomeContext;
+            public float CachedGroundBudgetScale;
+            public float CachedClusterBudgetScale;
+            public float CachedStructureBudgetScale;
+            public float CachedSpawnBudgetScale;
             public readonly float[] LayerNearRadii = new float[8];
             public readonly float[] LayerMidRadii = new float[8];
             public readonly float[] LayerFarRadii = new float[8];
+            public readonly System.Collections.Generic.List<GPUInstancerPrefabPrototype> FloraGpuiKnownPrototypes = new System.Collections.Generic.List<GPUInstancerPrefabPrototype>(96);
+            public readonly System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> FloraGpuiMatrices = new System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]>(96);
+            public readonly System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, int> FloraGpuiCounts = new System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, int>(96);
+            public readonly System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, int> FloraGpuiBufferCapacities = new System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, int>(96);
+            public readonly System.Collections.Generic.HashSet<GPUInstancerPrefabPrototype> FloraGpuiInitializedPrototypes = new System.Collections.Generic.HashSet<GPUInstancerPrefabPrototype>();
             public float CachedLayerRadiiCellSize = -1f;
             public WorldChunkStreamingProfile CachedLayerRadiiProfile;
             public readonly ScatterCandidate[] LayerTopCandidatesBuffer = new ScatterCandidate[ScatterLayerCount];
@@ -84,6 +109,7 @@ namespace Hecton8.World
 
                 EnsureCapacity(ref CellSamplingInputs, requiredCapacity);
                 EnsureCapacity(ref CellSamplingOutputs, requiredCapacity);
+                EnsureCapacity(ref ScatterBackendCellStates, requiredCapacity);
             }
 
             public void EnsureCandidateMapsInitialized()
@@ -112,6 +138,8 @@ namespace Hecton8.World
                     CellSamplingInputs.Dispose();
                 if (CellSamplingOutputs.IsCreated)
                     CellSamplingOutputs.Dispose();
+                if (ScatterBackendCellStates.IsCreated)
+                    ScatterBackendCellStates.Dispose();
 
                 GroundRescueCandidates.Dispose();
                 ClusterRescueCandidates.Dispose();
@@ -156,11 +184,34 @@ namespace Hecton8.World
                 GridPlacements.Clear();
                 StructureRescueCandidates.Clear();
                 SpawnRescueCandidates.Clear();
+                PrefabWarmupCounts.Clear();
+                PrefabWarmupPrefabs.Clear();
+                PrefabWarmupFamilyIds.Clear();
+                PrefabCreateAllowances.Clear();
+                PreferredFamilyPlacementCounts.Clear();
                 Array.Clear(PatternProfileCache, 0, PatternProfileCache.Length);
                 BiomeContextCache.Clear();
+                HasCachedPatternQuota = false;
+                CachedPatternQuotaPattern = default;
+                CachedPatternQuotaBiomeProfile = null;
+                CachedPatternClusterRatioStart = 0;
+                CachedPatternPassiveSpawnMin = 0;
+                CachedPatternPredatorSpawnMax = 0;
+                HasCachedBudgetScales = false;
+                CachedBudgetScalePatternProfile = null;
+                CachedBudgetScaleBiomeContext = null;
+                CachedGroundBudgetScale = 0f;
+                CachedClusterBudgetScale = 0f;
+                CachedStructureBudgetScale = 0f;
+                CachedSpawnBudgetScale = 0f;
                 Array.Clear(LayerNearRadii, 0, LayerNearRadii.Length);
                 Array.Clear(LayerMidRadii, 0, LayerMidRadii.Length);
                 Array.Clear(LayerFarRadii, 0, LayerFarRadii.Length);
+                FloraGpuiKnownPrototypes.Clear();
+                FloraGpuiMatrices.Clear();
+                FloraGpuiCounts.Clear();
+                FloraGpuiBufferCapacities.Clear();
+                FloraGpuiInitializedPrototypes.Clear();
                 CachedLayerRadiiCellSize = -1f;
                 CachedLayerRadiiProfile = null;
                 Array.Clear(LayerTopCandidatesBuffer, 0, LayerTopCandidatesBuffer.Length);

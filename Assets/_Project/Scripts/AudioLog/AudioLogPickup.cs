@@ -47,7 +47,7 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
-            BuildCache();
+            _alreadyDiscovered = false;
 
             // Проверяем уже обнаружен ли лог
             if (logData != null && AudioLogSystem.Instance != null)
@@ -55,16 +55,28 @@ namespace Hecton8.Narrative
                 _alreadyDiscovered = AudioLogSystem.Instance.IsDiscovered(logData.logId);
 
                 if (_alreadyDiscovered && deactivateAfterPickup)
+                {
+                    BuildCache();
                     gameObject.SetActive(false);
+                    return;
+                }
             }
+
+            BuildCache();
         }
 
         private void BuildCache()
         {
-            if (logData != null)
-                _cachedInteractText = $"{interactVerb}: {logData.displayTitle}";
-            else
+            if (logData == null)
+            {
                 _cachedInteractText = interactVerb;
+                return;
+            }
+
+            string title = logData.DisplayTitleOrFallback;
+            _cachedInteractText = _alreadyDiscovered
+                ? $"{interactVerb}: {title} (повторно)"
+                : $"{interactVerb}: {title}";
         }
 
         // ══════════════════════════════════════════════════════════
@@ -104,6 +116,7 @@ namespace Hecton8.Narrative
 
             system.PlayLog(logData);
             _alreadyDiscovered = true;
+            BuildCache();
 
             if (deactivateAfterPickup)
                 gameObject.SetActive(false);
@@ -114,6 +127,9 @@ namespace Hecton8.Narrative
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (string.IsNullOrWhiteSpace(interactVerb))
+                interactVerb = "Воспроизвести запись";
+
             BuildCache();
         }
 #endif

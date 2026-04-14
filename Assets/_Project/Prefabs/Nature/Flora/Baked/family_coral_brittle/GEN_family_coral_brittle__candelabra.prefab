@@ -190,7 +190,6 @@ GameObject:
   m_Component:
   - component: {fileID: 260787944371866323}
   - component: {fileID: 6731856387103612200}
-  - component: {fileID: 7099554082585554894}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__candelabra
   m_TagString: Untagged
@@ -244,19 +243,6 @@ LODGroup:
     - renderer: {fileID: 3333512412787346721}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7099554082585554894
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6912597073594834391}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: bd2083626c2f19e479088f511eec5ed9, type: 2}
 --- !u!1 &8008064111299669764
 GameObject:
   m_ObjectHideFlags: 0

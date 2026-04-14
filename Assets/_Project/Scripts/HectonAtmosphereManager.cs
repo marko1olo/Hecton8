@@ -64,6 +64,9 @@ namespace Hecton8.Atmosphere
     [ExecuteAlways]
     public class HectonAtmosphereManager : MonoBehaviour, ITickable
     {
+        private const float VisualEnterUnderwaterDepth = 0.01f;
+        private const float VisualExitUnderwaterDepth = 0.005f;
+
         #region ══════════ AtmosphereSnapshot ══════════
 
         private struct AtmosphereSnapshot
@@ -204,6 +207,7 @@ namespace Hecton8.Atmosphere
         private bool _underwaterExternalFlag;
         private bool _autoUnderwaterState;
         private HectonPlayerMovement _playerMovement;
+        private Transform _playerCameraTransform;
 
         private AtmosphereSnapshot _transitionOrigin;
         private AtmosphereSnapshot _currentValues;
@@ -610,7 +614,11 @@ namespace Hecton8.Atmosphere
 
             float depth = ResolvePlayerDepth();
             _autoUnderwaterState =
-                SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, _autoUnderwaterState);
+                SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                    depth,
+                    _autoUnderwaterState,
+                    VisualEnterUnderwaterDepth,
+                    VisualExitUnderwaterDepth);
 
             return _autoUnderwaterState;
         }
@@ -800,6 +808,9 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolvePlayerDepth()
         {
+            if (_playerCameraTransform != null)
+                return math.max(0f, _waterSurfaceY - _playerCameraTransform.position.y);
+
             if (_playerMovement != null)
                 return _playerMovement.CurrentDepth;
 
@@ -812,9 +823,15 @@ namespace Hecton8.Atmosphere
         private void CachePlayerMovement()
         {
             _playerMovement = null;
+            _playerCameraTransform = null;
 
             if (_playerTransform != null)
+            {
                 _playerTransform.TryGetComponent(out _playerMovement);
+                Camera playerOwnedCamera = _playerTransform.GetComponentInChildren<Camera>(true);
+                if (playerOwnedCamera != null)
+                    _playerCameraTransform = playerOwnedCamera.transform;
+            }
         }
 
         private void ResolveBiomeMatrixDirector()

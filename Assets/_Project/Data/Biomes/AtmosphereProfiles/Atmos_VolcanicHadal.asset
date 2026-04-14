@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_VolcanicHadal
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.16, g: 0.03, b: 0.03, a: 1}
-  fogDensity: 0.036
-  skyExposure: 0.52
-  ambientColor: {r: 0.18, g: 0.06, b: 0.05, a: 1}
-  sunIntensity: 0.28
+  fogColor: {r: 0.15, g: 0.03, b: 0.03, a: 1}
+  fogDensity: 0.038
+  skyExposure: 0.48
+  ambientColor: {r: 0.16, g: 0.055, b: 0.05, a: 1}
+  sunIntensity: 0.24
   temperature: 20
   radiation: 0

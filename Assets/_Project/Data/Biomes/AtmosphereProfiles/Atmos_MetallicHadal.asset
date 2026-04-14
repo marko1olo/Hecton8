@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_MetallicHadal
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.14, g: 0.1, b: 0.08, a: 1}
-  fogDensity: 0.03
-  skyExposure: 0.6
-  ambientColor: {r: 0.18, g: 0.16, b: 0.14, a: 1}
-  sunIntensity: 0.34
+  fogColor: {r: 0.13, g: 0.095, b: 0.075, a: 1}
+  fogDensity: 0.032
+  skyExposure: 0.56
+  ambientColor: {r: 0.16, g: 0.145, b: 0.125, a: 1}
+  sunIntensity: 0.3
   temperature: 20
   radiation: 0

@@ -32,6 +32,16 @@ namespace Hecton.UI.MainMenu
         private Color _detailsBaseColor;
         private bool _useCompactSingleTextLayout;
 
+        /// <summary>
+        /// True when the slot button can currently be selected by menu navigation.
+        /// </summary>
+        public bool IsInteractable => _button != null && _button.interactable;
+
+        /// <summary>
+        /// Exposes the authored button for menu focus routing.
+        /// </summary>
+        public Button ButtonComponent => _button;
+
         private void Awake()
         {
             AutoWireTextReferences();

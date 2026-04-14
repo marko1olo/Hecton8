@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.SaveSystem;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -66,6 +67,7 @@ namespace Hecton.UI.MainMenu
         private bool _registeredToTickManager;
         private bool _settingsAvailable;
         private bool _sceneActivationRequested;
+        private bool _refreshSelectionRequested;
         private int _lastLoadingPercent = -1;
         private float _lastUnscaledTickTime;
         private float _transitionElapsed;
@@ -76,6 +78,7 @@ namespace Hecton.UI.MainMenu
         private AsyncOperation _sceneLoadOperation;
         private CanvasGroup _transitionFromPanel;
         private CanvasGroup _transitionToPanel;
+        private CanvasGroup _currentPanel;
         private PanelTransitionState _panelTransitionState;
 
         private void Awake()
@@ -183,6 +186,8 @@ namespace Hecton.UI.MainMenu
             SetPanelImmediate(saveLoadGroup, false);
             SetPanelImmediate(settingsGroup, false);
             SetPanelImmediate(loadingGroup, false);
+            _currentPanel = mainMenuGroup;
+            RequestSelectionRefresh();
         }
 
         private void OnNewGameClicked()
@@ -230,9 +235,6 @@ namespace Hecton.UI.MainMenu
 
         private void OnBackFromSettingsClicked()
         {
-            if (!_settingsAvailable)
-                return;
-
             SwitchPanel(settingsGroup, mainMenuGroup);
         }
 
@@ -389,27 +391,36 @@ namespace Hecton.UI.MainMenu
         public void OpenSaveLoadMenu()
         {
             EnsureSlotInstances();
-            if (_slotUIs == null)
-                return;
 
             if (_saveManager == null)
                 _saveManager = SaveManager.Instance;
 
-            for (int i = 0; i < SlotCount; i++)
+            if (_slotUIs != null)
             {
-                string slotName = SlotNames[i];
-                SaveSlotUI slotUI = _slotUIs[i];
-                if (slotUI == null)
-                    continue;
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    string slotName = SlotNames[i];
+                    SaveSlotUI slotUI = _slotUIs[i];
+                    if (slotUI == null)
+                        continue;
 
-                if (_saveManager != null && _saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
-                {
-                    slotUI.Init(slotInfo, OnSlotClicked);
+                    if (_saveManager != null && _saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
+                    {
+                        slotUI.Init(slotInfo, OnSlotClicked);
+                    }
+                    else
+                    {
+                        slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
+                    }
                 }
-                else
-                {
-                    slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
-                }
+            }
+            else
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning(
+                    "[MainMenuController] Save shell is missing or incomplete. " +
+                    "Opening save/load in fallback state so the player can still back out.");
+#endif
             }
 
             SwitchPanel(mainMenuGroup, saveLoadGroup);
@@ -451,15 +462,30 @@ namespace Hecton.UI.MainMenu
                 found++;
             }
 
-            if (found < SlotCount)
-                return false;
-
             _slotUIs = slotUis;
-            return true;
+
+#if UNITY_EDITOR
+            if (found < SlotCount)
+            {
+                Debug.LogWarning(
+                    $"[MainMenuController] Save shell bound {found}/{SlotCount} slot instances. " +
+                    "Fallback focus/back handling remains active, but the authored slot shell is incomplete.");
+            }
+#endif
+
+            return found > 0;
         }
 
         private void OnSlotClicked(string slotName)
         {
+            if (string.IsNullOrEmpty(slotName))
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning("[MainMenuController] Ignored empty slot click.");
+#endif
+                return;
+            }
+
             LocalizationManager loc = LocalizationManager.Instance;
             string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_TITLE) : "Load Game";
             string message = loc != null
@@ -480,6 +506,28 @@ namespace Hecton.UI.MainMenu
             if (_isSceneLoadInFlight)
                 return;
 
+            // Validate save exists before loading
+            if (!string.IsNullOrEmpty(slotName))
+            {
+                if (_saveManager != null && !_saveManager.SaveExists(slotName))
+                {
+                    LocalizationManager loc = LocalizationManager.Instance;
+                    string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_ERROR_TITLE) : "Load Error";
+                    string message = loc != null
+                        ? loc.GetFormatted(LocalizationKeys.MODAL_LOAD_ERROR_MESSAGE, slotName)
+                        : $"Save file does not exist for {slotName}.";
+
+                    ModalWindow.ShowWithCustomLabels(
+                        title,
+                        message,
+                        () => OpenSaveLoadMenu(), // Return to save/load menu
+                        null,
+                        "OK",
+                        null);
+                    return;
+                }
+            }
+
             _isSceneLoadInFlight = true;
 
             GameStartContext context = string.IsNullOrEmpty(slotName)
@@ -497,6 +545,8 @@ namespace Hecton.UI.MainMenu
             SetPanelImmediate(saveLoadGroup, false);
             SetPanelImmediate(settingsGroup, false);
             SetPanelImmediate(loadingGroup, true);
+            _currentPanel = loadingGroup;
+            RequestSelectionRefresh();
 
             _loadingPercentTemplate = ResolveLoadingPercentTemplate();
             _sceneActivationRequested = false;
@@ -512,8 +562,21 @@ namespace Hecton.UI.MainMenu
                     $"[MainMenuController] Failed to load scene \"{targetSceneName}\". " +
                     "Ensure it is added to Build Settings!");
 #endif
-                SetPanelImmediate(loadingGroup, false);
-                SetPanelImmediate(mainMenuGroup, true);
+
+                LocalizationManager loc = LocalizationManager.Instance;
+                string title = loc != null ? loc.Get(LocalizationKeys.MODAL_SCENE_LOAD_ERROR_TITLE) : "Scene Load Error";
+                string message = loc != null
+                    ? loc.GetFormatted(LocalizationKeys.MODAL_SCENE_LOAD_ERROR_MESSAGE, targetSceneName)
+                    : $"Failed to load scene \"{targetSceneName}\". Check Build Settings.";
+
+                ModalWindow.ShowWithCustomLabels(
+                    title,
+                    message,
+                    () => StartGame(slotName), // Retry
+                    () => { SetPanelImmediate(loadingGroup, false); SetPanelImmediate(mainMenuGroup, true); }, // Cancel
+                    "Retry",
+                    "Return to Menu");
+
                 return;
             }
 
@@ -526,7 +589,7 @@ namespace Hecton.UI.MainMenu
         /// </summary>
         public void SwitchPanel(CanvasGroup from, CanvasGroup to)
         {
-            if (_isTransitioning || from == null || to == null)
+            if (_isTransitioning || from == null || to == null || from == to)
                 return;
 
             TryRegisterToTickManager();
@@ -549,8 +612,121 @@ namespace Hecton.UI.MainMenu
             if (unscaledDeltaTime <= 0f)
                 return;
 
+            HandleCancelInput();
             UpdatePanelTransition(unscaledDeltaTime);
             UpdateSceneLoad();
+            RefreshSelectionIfNeeded();
+        }
+
+        private void HandleCancelInput()
+        {
+            if (_isTransitioning || _isSceneLoadInFlight || !Input.GetKeyDown(KeyCode.Escape))
+                return;
+
+            if (_currentPanel == settingsGroup)
+            {
+                OnBackFromSettingsClicked();
+                return;
+            }
+
+            if (_currentPanel == saveLoadGroup)
+            {
+                OnBackFromSaveLoadClicked();
+                return;
+            }
+
+            if (_currentPanel == mainMenuGroup)
+                OnQuitClicked();
+        }
+
+        private void RefreshSelectionIfNeeded()
+        {
+            if (!_refreshSelectionRequested)
+                return;
+
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+                return;
+
+            _refreshSelectionRequested = false;
+
+            Button target = ResolveDefaultSelectionButton();
+            GameObject selected = eventSystem.currentSelectedGameObject;
+
+            if (target == null)
+            {
+                if (selected != null)
+                    eventSystem.SetSelectedGameObject(null);
+
+                return;
+            }
+
+            if (selected != target.gameObject)
+                eventSystem.SetSelectedGameObject(target.gameObject);
+        }
+
+        private void RequestSelectionRefresh()
+        {
+            _refreshSelectionRequested = true;
+        }
+
+        private Button ResolveDefaultSelectionButton()
+        {
+            if (_currentPanel == saveLoadGroup)
+            {
+                Button slotButton = GetFirstInteractableSlotButton();
+                if (slotButton != null)
+                    return slotButton;
+
+                return btnBackFromSaveLoad;
+            }
+
+            if (_currentPanel == settingsGroup)
+                return btnBackFromSettings;
+
+            if (_currentPanel == loadingGroup)
+                return null;
+
+            return FirstInteractableButton(btnNewGame, btnLoadGame, btnSettings, btnQuit);
+        }
+
+        private Button GetFirstInteractableSlotButton()
+        {
+            if (_slotUIs == null)
+                return null;
+
+            for (int i = 0; i < _slotUIs.Length; i++)
+            {
+                SaveSlotUI slotUi = _slotUIs[i];
+                if (slotUi == null)
+                    continue;
+
+                if (slotUi.IsInteractable)
+                    return slotUi.ButtonComponent;
+            }
+
+            return null;
+        }
+
+        private static Button FirstInteractableButton(
+            Button first,
+            Button second,
+            Button third,
+            Button fourth)
+        {
+            if (first != null && first.interactable)
+                return first;
+
+            if (second != null && second.interactable)
+                return second;
+
+            if (third != null && third.interactable)
+                return third;
+
+            if (fourth != null && fourth.interactable)
+                return fourth;
+
+            return null;
         }
 
         private void UpdatePanelTransition(float unscaledDeltaTime)
@@ -587,9 +763,11 @@ namespace Hecton.UI.MainMenu
             _transitionToPanel.interactable = true;
             _transitionToPanel.blocksRaycasts = true;
             _panelTransitionState = PanelTransitionState.None;
+            _currentPanel = _transitionToPanel;
             _transitionFromPanel = null;
             _transitionToPanel = null;
             _isTransitioning = false;
+            RequestSelectionRefresh();
         }
 
         private void UpdateSceneLoad()
@@ -667,7 +845,7 @@ namespace Hecton.UI.MainMenu
             _registeredToTickManager = false;
         }
 
-        private static void SetPanelImmediate(CanvasGroup group, bool visible)
+        private void SetPanelImmediate(CanvasGroup group, bool visible)
         {
             if (group == null)
                 return;
@@ -675,6 +853,8 @@ namespace Hecton.UI.MainMenu
             group.alpha = visible ? 1f : 0f;
             group.interactable = visible;
             group.blocksRaycasts = visible;
+            if (visible)
+                _currentPanel = group;
         }
     }
 }

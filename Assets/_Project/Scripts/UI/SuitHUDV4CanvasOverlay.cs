@@ -186,6 +186,8 @@ namespace Hecton8.UI
         private Color _appliedPressureColor;
         private bool _styleApplied;
         private bool _canvasStateApplied;
+        private bool _hasAppliedRootVisibility;
+        private bool _appliedRootVisible;
         private Canvas _appliedCanvasTarget;
         private Camera _appliedProjectionCamera;
         private RenderPath _appliedRenderPath;
@@ -638,6 +640,8 @@ namespace Hecton8.UI
                 _rootCanvasGroup = _root.GetComponent<CanvasGroup>();
                 if (_rootCanvasGroup == null)
                     _rootCanvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
+
+                _hasAppliedRootVisibility = false;
             }
         }
 
@@ -650,9 +654,14 @@ namespace Hecton8.UI
             if (_rootCanvasGroup == null)
                 return;
 
+            if (_hasAppliedRootVisibility && _appliedRootVisible == visible)
+                return;
+
             _rootCanvasGroup.alpha = visible ? 1f : 0f;
             _rootCanvasGroup.interactable = visible;
             _rootCanvasGroup.blocksRaycasts = visible;
+            _appliedRootVisible = visible;
+            _hasAppliedRootVisibility = true;
         }
 
         private Vector2 ResolveTelemetryOffset()

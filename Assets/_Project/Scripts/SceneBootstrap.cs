@@ -468,6 +468,17 @@ namespace Hecton8.Bootstrap
                 Log("  ✓ ObjectPoolManager");
             }
 
+            if (PrefabRegistry.Instance == null)
+            {
+                Debug.LogError("[SceneBootstrap] PrefabRegistry NOT FOUND! " +
+                    "Run through 00_BOOTSTRAP or create a GameObject with PrefabRegistry component.");
+                allCritical = false;
+            }
+            else
+            {
+                Log("  PrefabRegistry");
+            }
+
             if (SaveManager.Instance == null)
             {
                 Debug.LogError("[SceneBootstrap] SaveManager NOT FOUND! " +
@@ -580,34 +591,43 @@ namespace Hecton8.Bootstrap
             var allBehaviours = FindObjectsByType<MonoBehaviour>(
                 FindObjectsInactive.Exclude);
 
-            MonoBehaviour hectonWorldGen = null;
-            MonoBehaviour mapMagic = null;
+            MonoBehaviour productionWorldGen = null;
+            MonoBehaviour temporaryWorldGen = null;
 
             for (int i = 0, len = allBehaviours.Length; i < len; i++)
             {
-                string typeName = allBehaviours[i].GetType().Name;
+                MonoBehaviour behaviour = allBehaviours[i];
+                string typeName = behaviour.GetType().Name;
 
-                if (hectonWorldGen == null && typeName == "HectonWorldGenerator")
+                if (typeName != "HectonWorldGenerator" &&
+                    typeName != "MapMagicObject" &&
+                    typeName != "MapMagic")
                 {
-                    hectonWorldGen = allBehaviours[i];
+                    continue;
                 }
 
-                if (mapMagic == null &&
-                    (typeName == "MapMagicObject" || typeName == "MapMagic"))
+                if (IsTemporaryRuntimeShellObject(behaviour.gameObject))
                 {
-                    mapMagic = allBehaviours[i];
+                    temporaryWorldGen ??= behaviour;
+                    continue;
                 }
+
+                productionWorldGen = behaviour;
+                break;
             }
 
-            if (mapMagic != null)
+            if (productionWorldGen != null)
             {
-                Log($"  MapMagic active: {mapMagic.gameObject.name}");
+                Log($"  Production world generator active: {productionWorldGen.gameObject.name} " +
+                    $"({productionWorldGen.GetType().Name})");
                 return;
             }
 
-            if (hectonWorldGen != null)
+            if (temporaryWorldGen != null)
             {
-                Log($"  HectonWorldGenerator active (legacy path): {hectonWorldGen.gameObject.name}");
+                Log($"  Blocker: world generation exists only under temporary shell " +
+                    $"'{temporaryWorldGen.gameObject.name}' ({temporaryWorldGen.GetType().Name}). " +
+                    "Bootstrap will use static scene geometry until direct scene cleanup removes the shell.");
                 return;
             }
 
@@ -950,12 +970,14 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            _worldProceduralScatterDirector ??=
-                WorldProceduralScatterDirector.ActiveRuntimeInstance;
-
-            if (_worldProceduralScatterDirector == null)
+            if (!TryResolveProductionScatterDirector(out _worldProceduralScatterDirector,
+                    out string scatterBlocker))
             {
-                Log("  WorldProceduralScatterDirector not found — skipping runtime world prime.");
+                if (!string.IsNullOrEmpty(scatterBlocker))
+                    Log(scatterBlocker);
+                else
+                    Log("  WorldProceduralScatterDirector not found — skipping runtime world prime.");
+
                 return;
             }
 
@@ -1152,13 +1174,112 @@ namespace Hecton8.Bootstrap
 
         private void PublishPlayerRuntimeReference()
         {
-            if (playerObject == null && playerRigidbody != null)
+            if (IsTemporaryRuntimeShellObject(playerObject))
+                playerObject = null;
+
+            if (playerObject == null && playerRigidbody != null &&
+                !IsTemporaryRuntimeShellObject(playerRigidbody.gameObject))
                 playerObject = playerRigidbody.gameObject;
 
-            if (playerObject == null && playerController != null)
+            if (playerObject == null && playerController != null &&
+                !IsTemporaryRuntimeShellObject(playerController.gameObject))
                 playerObject = playerController.gameObject;
 
             BootstrapState.PublishCurrentPlayerObject(playerObject);
+        }
+
+        private bool TryResolveProductionScatterDirector(
+            out WorldProceduralScatterDirector director,
+            out string blocker)
+        {
+            director = null;
+            blocker = null;
+
+            WorldProceduralScatterDirector activeDirector =
+                WorldProceduralScatterDirector.ActiveRuntimeInstance;
+
+            if (activeDirector != null)
+            {
+                if (!IsTemporaryRuntimeShellObject(activeDirector.gameObject))
+                {
+                    director = activeDirector;
+                    return true;
+                }
+
+                blocker =
+                    $"  Blocker: active scatter director '{activeDirector.gameObject.name}' " +
+                    "is a temporary runtime shell. Ignoring it and searching for a production truth-path.";
+            }
+
+            WorldProceduralScatterDirector[] allDirectors =
+                FindObjectsByType<WorldProceduralScatterDirector>(
+                    FindObjectsInactive.Exclude);
+
+            for (int i = 0, len = allDirectors.Length; i < len; i++)
+            {
+                WorldProceduralScatterDirector candidate = allDirectors[i];
+
+                if (IsTemporaryRuntimeShellObject(candidate.gameObject))
+                    continue;
+
+                director = candidate;
+                return true;
+            }
+
+            if (activeDirector != null)
+            {
+                blocker =
+                    $"  Blocker: scatter director only exists under temporary shell " +
+                    $"'{activeDirector.gameObject.name}'. Direct scene cleanup required.";
+                return false;
+            }
+
+            blocker =
+                "  WorldProceduralScatterDirector not found — skipping runtime world prime.";
+            return false;
+        }
+
+        private static bool IsTemporaryRuntimeShellObject(GameObject candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            Transform current = candidate.transform;
+            while (current != null)
+            {
+                if (IsTemporaryRuntimeShellName(current.name))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsTemporaryRuntimeShellName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            if (name.StartsWith("__", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (name.StartsWith("temp", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (name.IndexOf("_trial", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            if (name.IndexOf("_staging", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            if (name.IndexOf("_preview", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            if (name.IndexOf("_smoke", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            return false;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -232,7 +232,39 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
-            _instance.ShowInternal(title, message, onConfirm, onCancel);
+            _instance.ShowInternal(title, message, onConfirm, onCancel, null, null);
+        }
+
+        /// <summary>
+        /// Shows the modal window with custom button labels.
+        /// Title, message, and button labels should already be localized by the caller.
+        /// </summary>
+        /// <param name="title">Window title (pre-localized).</param>
+        /// <param name="message">Message body (pre-localized).</param>
+        /// <param name="onConfirm">Callback on confirm button.</param>
+        /// <param name="onCancel">Callback on cancel button. If null, cancel simply closes the window.</param>
+        /// <param name="confirmLabel">Custom confirm button label (e.g., "Retry"). If null, uses default localized label.</param>
+        /// <param name="cancelLabel">Custom cancel button label (e.g., "Return to Menu"). If null, uses default localized label.</param>
+        public static void ShowWithCustomLabels(
+            string title,
+            string message,
+            Action onConfirm,
+            Action onCancel,
+            string confirmLabel,
+            string cancelLabel)
+        {
+            if (_instance == null)
+            {
+#if UNITY_EDITOR
+                Debug.LogError(
+                    "[ModalWindow] No ModalWindow instance found in scene! " +
+                    "Add ModalWindow component to your Canvas."
+                );
+#endif
+                return;
+            }
+
+            _instance.ShowInternal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
         }
 
         /// <summary>
@@ -254,7 +286,9 @@ namespace Hecton.UI.MainMenu
             string title,
             string message,
             Action onConfirm,
-            Action onCancel)
+            Action onCancel,
+            string customConfirmLabel,
+            string customCancelLabel)
         {
             if (titleText   != null) titleText.SetText(title);
             if (messageText != null) messageText.SetText(message);
@@ -262,8 +296,26 @@ namespace Hecton.UI.MainMenu
             _cachedOnConfirm = onConfirm;
             _cachedOnCancel  = onCancel;
 
-            // Refresh button labels in case language changed since last show
-            RefreshButtonLabels();
+            // Use custom labels if provided, otherwise refresh with localized defaults
+            if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
+            {
+                confirmButtonLabel.SetText(customConfirmLabel);
+            }
+            else if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
+            {
+                cancelButtonLabel.SetText(customCancelLabel);
+            }
+            else
+            {
+                RefreshButtonLabels();
+            }
+
+            // Apply custom labels if provided
+            if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
+                confirmButtonLabel.SetText(customConfirmLabel);
+
+            if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
+                cancelButtonLabel.SetText(customCancelLabel);
 
             if (btnCancel != null)
             {

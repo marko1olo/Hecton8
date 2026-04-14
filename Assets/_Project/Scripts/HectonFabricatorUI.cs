@@ -261,6 +261,7 @@ namespace Hecton8.UI
         private bool _navUpPressed;
         private bool _navDownPressed;
         private bool _confirmPressed;
+        private bool _tickRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -305,7 +306,6 @@ namespace Hecton8.UI
         public override void OnEnable()
         {
             base.OnEnable();
-            GameTickManager.Instance?.Register((ITickable)this);
 
             // ── Subscribe to InputManager events ──
             if (InputManager.Instance != null)
@@ -365,7 +365,7 @@ namespace Hecton8.UI
         public override void OnDisable()
         {
             base.OnDisable();
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            UnregisterTick();
 
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
 
@@ -409,6 +409,12 @@ namespace Hecton8.UI
         /// </summary>
         public void Tick(float deltaTime)
         {
+            if (_isOpen && _currentFabricator == null)
+            {
+                CloseMenu();
+                return;
+            }
+
             // Input is now handled via HandleNavigateInput, etc. callbacks.
 
             UpdateDiagnostics();
@@ -465,7 +471,10 @@ namespace Hecton8.UI
 
             if (_isCrafting)
             {
-                _currentFabricator?.CancelCraft();
+                if (_currentFabricator != null)
+                    _currentFabricator.CancelCraft();
+                else
+                    CloseMenu();
                 return;
             }
 
@@ -524,7 +533,8 @@ namespace Hecton8.UI
 
         private void HandleFabricatorOpened(Fabricator fabricator)
         {
-            if (fabricator == null) return;
+            if (fabricator == null || fabricator.AvailableRecipes == null)
+                return;
 
             _currentFabricator = fabricator;
             _allRecipes        = fabricator.AvailableRecipes;
@@ -532,9 +542,11 @@ namespace Hecton8.UI
             _selectedIndex     = 0;
             _isCrafting        = false;
             _craftProgress     = 0f;
+            UnregisterTick();
 
             _isOpen    = true;
             IsMenuOpen = true;
+            RegisterTick();
 
             // ── Switch to UI input map ──
             if (InputManager.Instance != null)
@@ -596,12 +608,38 @@ namespace Hecton8.UI
             _filteredRecipes.Clear();
             _isCrafting        = false;
             _craftProgress     = 0f;
+            UnregisterTick();
 
             // ── Restore cursor for gameplay ──
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible   = false;
 
             UpdateDiagnostics();
+        }
+
+        private void RegisterTick()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 ﻿# Procedural Flora Texture Library Report
 
-Generated: 2026-04-10 19:54:10
+Generated: 2026-04-13 12:25:32
 
 | Family | Coverage | Contract | Est. GPU MB | Notes |
 | --- | --- | --- | --- | --- |
@@ -10,17 +10,17 @@ Generated: 2026-04-10 19:54:10
 | family.kelp.abyssal | 4/4 | ok | 17.2 | ok |
 | family.coral.low | 4/4 | ok | 17.2 | ok |
 | family.coral.branching | 4/4 | ok | 17.2 | alt-revision:family.coral.branching.v2 |
-| family.coral.massive | 0/4 | missing | 0.0 | missing-albedo |
-| family.coral.plate | 0/4 | missing | 0.0 | missing-albedo |
-| family.coral.brittle | 0/4 | missing | 0.0 | missing-albedo |
+| family.coral.massive | 4/4 | ok | 17.2 | ok |
+| family.coral.plate | 4/4 | ok | 17.2 | ok |
+| family.coral.brittle | 4/4 | ok | 17.2 | ok |
 
 ## Summary
 
-- Family coverage complete: `6/9`
-- Family contract clean: `6/9`
-- Families still missing imported sets: `3`
-- Estimated imported flora GPU memory: `103.2 MB`
-- Estimated clean-contract flora GPU memory: `103.2 MB`
+- Family coverage complete: `9/9`
+- Family contract clean: `9/9`
+- Families still missing imported sets: `0`
+- Estimated imported flora GPU memory: `154.8 MB`
+- Estimated clean-contract flora GPU memory: `154.8 MB`
 - Texture red threshold reference: `900 MB`
 - Imported root: `Assets/_Project/Art/Textures/WorldProceduralFlora/Imported`
 - Request packet: `PROCEDURAL_FLORA_TEXTURE_REQUEST_PACKET.md`

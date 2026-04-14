@@ -62,11 +62,30 @@ namespace Hecton8.Narrative
                 ? durationOverride
                 : (audioClip != null ? audioClip.length : 0f);
 
+        public bool HasAudioClip => audioClip != null;
+        public bool HasSubtitleText => !string.IsNullOrWhiteSpace(subtitleText);
+        public bool HasArchiveSummary => !string.IsNullOrWhiteSpace(archiveSummary);
+        public string SafeLogId => string.IsNullOrWhiteSpace(logId) ? "audio_log" : logId;
+        public string DisplayTitleOrFallback => string.IsNullOrWhiteSpace(displayTitle) ? SafeLogId : displayTitle;
+        public string AuthorOrFallback => string.IsNullOrWhiteSpace(author) ? "НЕИЗВЕСТНО" : author;
+        public string SubtitleOrFallback => subtitleText ?? string.Empty;
+        public string ArchiveSummaryOrFallback => HasArchiveSummary ? archiveSummary : "Запись отсутствует.";
+        public string RecordDateOrFallback => string.IsNullOrWhiteSpace(recordDate) ? "ДАТА НЕИЗВЕСТНА" : recordDate;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(logId))
-                logId = name.ToLower().Replace(" ", "_");
+                logId = name.ToLowerInvariant().Replace(" ", "_");
+
+            if (string.IsNullOrWhiteSpace(displayTitle))
+                displayTitle = name;
+
+            if (string.IsNullOrWhiteSpace(author))
+                author = "НЕИЗВЕСТНО";
+
+            if (durationOverride < 0f)
+                durationOverride = 0f;
         }
 #endif
     }

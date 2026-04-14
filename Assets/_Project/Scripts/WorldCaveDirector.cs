@@ -253,9 +253,7 @@ namespace Hecton8.World
 
             // Spawn caves at candidates
             foreach (Vector3 candidate in candidates)
-            {
                 TryQueueCaveSpawn(candidate, biomeFamily);
-            }
 
             UpdateDiagnostics();
         }
@@ -273,26 +271,37 @@ namespace Hecton8.World
                 return _candidateBuffer;
 
             Vector3 playerPos = playerTransform.position;
+            Vector3 routeAnchor = ResolveCaveRouteAnchor(zone, playerPos);
+            float routeQuality = ResolveCaveRouteQuality(zone);
+            float searchRadius = Mathf.Max(60f, caveSearchRadius);
+            float spawnChance = math.saturate(caveSpawnProbability * routeQuality);
 
             // Generate candidates around player within search radius
             // Use deterministic seeding based on biome and position
             int biomeSeed = _cachedBiomeRuntimeContext.FamilyHash;
-            Unity.Mathematics.Random rng = new Unity.Mathematics.Random((uint)(biomeSeed + Mathf.FloorToInt(playerPos.x / 100f) + Mathf.FloorToInt(playerPos.z / 100f)));
-            float spawnChance = math.saturate(caveSpawnProbability);
+            uint seed = (uint)(biomeSeed + Mathf.FloorToInt(routeAnchor.x / 100f) + Mathf.FloorToInt(routeAnchor.z / 100f));
+            if (seed == 0u)
+                seed = 1u;
+
+            Unity.Mathematics.Random rng = new Unity.Mathematics.Random(seed);
 
             if (rng.NextFloat() > spawnChance)
                 return _candidateBuffer;
 
-            int candidateCount = rng.NextInt(1, maxCavesPerBiome + 1);
+            int requestedCount = Mathf.Max(1, maxCavesPerBiome);
+            int candidateCount = rng.NextInt(1, requestedCount + 1);
+            float minDistance = Mathf.Clamp(Mathf.Max(24f, minCaveSpacing), 12f, searchRadius - 1f);
+            if (zone != null && zone.RouteCritical)
+                candidateCount = Mathf.Min(candidateCount + 1, requestedCount);
 
             for (int i = 0; i < candidateCount; i++)
             {
                 // Random position within radius, biased toward terrain features
                 float angle = rng.NextFloat(0f, 2f * Mathf.PI);
-                float distance = rng.NextFloat(50f, caveSearchRadius);
+                float distance = rng.NextFloat(minDistance, searchRadius);
 
                 Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
-                Vector3 candidatePos = playerPos + offset;
+                Vector3 candidatePos = routeAnchor + offset;
 
                 // Sample terrain height
                 if (mapMagicBridge != null && mapMagicBridge.TryGetHeight(candidatePos.x, candidatePos.z, out float terrainHeight))
@@ -300,24 +309,8 @@ namespace Hecton8.World
                     candidatePos.y = terrainHeight - 5f; // Slightly below surface for cave entrance
                 }
 
-                // Check spacing from existing caves
-                bool tooClose = false;
-                Dictionary<long, CaveInstance>.Enumerator caveEnumerator = _caveInstances.GetEnumerator();
-                while (caveEnumerator.MoveNext())
-                {
-                    CaveInstance existing = caveEnumerator.Current.Value;
-
-                    if (Vector3.Distance(existing.position, candidatePos) < minCaveSpacing)
-                    {
-                        tooClose = true;
-                        break;
-                    }
-                }
-
-                if (!tooClose)
-                {
+                if (!IsCandidateTooClose(candidatePos, minDistance))
                     _candidateBuffer.Add(candidatePos);
-                }
             }
 
             return _candidateBuffer;
@@ -325,6 +318,9 @@ namespace Hecton8.World
 
         private void TryQueueCaveSpawn(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
         {
+            if (biomeFamily == null)
+                return;
+
             long caveKey = GenerateCaveKey(position, biomeFamily);
 
             if (_activeCaveKeys.Contains(caveKey) || _pendingCaveSpawns.ContainsKey(caveKey))
@@ -372,6 +368,14 @@ namespace Hecton8.World
                     return;
                 }
 
+                HectonVoxelVolume voxelVolume = caveVolume.GetComponent<HectonVoxelVolume>();
+                if (voxelVolume == null)
+                {
+                    CleanupSpawnedVolume(caveVolume);
+                    LogCaveSpawnFailure(position, "Generated cave volume did not include HectonVoxelVolume.");
+                    return;
+                }
+
                 if (!isActiveAndEnabled ||
                     !_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState currentState) ||
                     !ReferenceEquals(currentState, pendingState))
@@ -380,24 +384,21 @@ namespace Hecton8.World
                     return;
                 }
 
-                        CaveInstance instance = new CaveInstance
-                        {
-                            key = caveKey,
-                            position = position,
-                            preset = preset,
-                    volume = caveVolume.GetComponent<HectonVoxelVolume>(),
-                            isActive = true
-                        };
+                CaveInstance instance = new CaveInstance
+                {
+                    key = caveKey,
+                    position = position,
+                    preset = preset,
+                    volume = voxelVolume,
+                    isActive = true
+                };
 
-                        if (instance.volume != null)
-                        {
-                            instance.volume.caveKey = caveKey;
-                            instance.volume.generationPosition = position;
-                            instance.volume.preset = preset;
-                        }
+                instance.volume.caveKey = caveKey;
+                instance.volume.generationPosition = position;
+                instance.volume.preset = preset;
 
-                        _caveInstances[caveKey] = instance;
-                        _activeCaveKeys.Add(caveKey);
+                _caveInstances[caveKey] = instance;
+                _activeCaveKeys.Add(caveKey);
                 SpawnEntranceVisualCues(instance, preset, position, seed);
                 ApplyEntranceQualityPass(instance, preset);
                 InitializeCaveDressingLayer(instance, preset);
@@ -1184,6 +1185,60 @@ namespace Hecton8.World
             _cachedBiomeRuntimeContext.FamilyHash = familyId.GetHashCode();
             _cachedBiomeRuntimeContext.SupportsCaves = EvaluateBiomeCaveSupport(familyId);
             _cachedBiomeRuntimeContext.PresetKind = ResolveBiomePresetKind(familyId);
+        }
+
+        private static Vector3 ResolveCaveRouteAnchor(WorldZoneAnchor zone, Vector3 playerPosition)
+        {
+            if (zone == null)
+                return playerPosition;
+
+            Vector3 zonePosition = zone.transform.position;
+            if (zone.RouteCritical || zone.Kind == WorldZoneAnchor.ZoneKind.Navigation || zone.Kind == WorldZoneAnchor.ZoneKind.Progression)
+                return zonePosition;
+
+            return Vector3.Lerp(playerPosition, zonePosition, 0.35f);
+        }
+
+        private static float ResolveCaveRouteQuality(WorldZoneAnchor zone)
+        {
+            if (zone == null)
+                return 1f;
+
+            float quality = zone.Kind switch
+            {
+                WorldZoneAnchor.ZoneKind.Navigation => 1.18f,
+                WorldZoneAnchor.ZoneKind.Progression => 1.14f,
+                WorldZoneAnchor.ZoneKind.Resources => 1.08f,
+                WorldZoneAnchor.ZoneKind.Service => 1.05f,
+                WorldZoneAnchor.ZoneKind.Power => 1.05f,
+                _ => 1f
+            };
+
+            if (zone.RouteCritical)
+                quality += 0.08f;
+
+            return Mathf.Clamp(quality, 0.9f, 1.3f);
+        }
+
+        private bool IsCandidateTooClose(Vector3 candidatePosition, float minSpacing)
+        {
+            float minSpacingSqr = Mathf.Max(0f, minSpacing) * Mathf.Max(0f, minSpacing);
+
+            Dictionary<long, CaveInstance>.Enumerator caveEnumerator = _caveInstances.GetEnumerator();
+            while (caveEnumerator.MoveNext())
+            {
+                CaveInstance existing = caveEnumerator.Current.Value;
+                if (Vector3.SqrMagnitude(existing.position - candidatePosition) < minSpacingSqr)
+                    return true;
+            }
+
+            for (int i = 0; i < _candidateBuffer.Count; i++)
+            {
+                if (Vector3.SqrMagnitude(_candidateBuffer[i] - candidatePosition) < minSpacingSqr)
+                    return true;
+            }
+
+            return false;
         }
 
         private PendingCaveSpawnState CreatePendingSpawnState()

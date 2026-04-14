@@ -15,6 +15,10 @@ namespace Hecton.Localization
         public const string MODAL_LOAD_MESSAGE = "MODAL_LOAD_MESSAGE";
         public const string MODAL_QUIT_TITLE = "MODAL_QUIT_TITLE";
         public const string MODAL_QUIT_MESSAGE = "MODAL_QUIT_MESSAGE";
+        public const string MODAL_LOAD_ERROR_TITLE = "MODAL_LOAD_ERROR_TITLE";
+        public const string MODAL_LOAD_ERROR_MESSAGE = "MODAL_LOAD_ERROR_MESSAGE";
+        public const string MODAL_SCENE_LOAD_ERROR_TITLE = "MODAL_SCENE_LOAD_ERROR_TITLE";
+        public const string MODAL_SCENE_LOAD_ERROR_MESSAGE = "MODAL_SCENE_LOAD_ERROR_MESSAGE";
         public const string SLOT_PREFIX = "SLOT_PREFIX";
         public const string SLOT_NO_DATA = "SLOT_NO_DATA";
         public const string SLOT_PLAYTIME = "SLOT_PLAYTIME";

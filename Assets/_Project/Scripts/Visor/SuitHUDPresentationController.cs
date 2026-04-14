@@ -468,8 +468,7 @@ namespace NASAPunk.Visor
             if (hud == null)
                 return;
 
-            if (standardFallbackProfile != null)
-                hud.SetFallbackProfile(standardFallbackProfile);
+            hud.SetFallbackProfile(standardFallbackProfile);
 
             if (targetCamera != null)
                 hud.SetHudCamera(targetCamera);

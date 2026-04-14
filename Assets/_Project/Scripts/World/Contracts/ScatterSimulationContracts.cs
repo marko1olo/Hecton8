@@ -18,6 +18,80 @@ namespace Hecton8.World
         ReservedLiveOwnership = 2
     }
 
+    [Flags]
+    public enum ScatterSimulationEligibilityFlags : byte
+    {
+        None = 0,
+        Ground = 1 << 0,
+        Cluster = 1 << 1,
+        Structure = 1 << 2,
+        Spawn = 1 << 3,
+        All = Ground | Cluster | Structure | Spawn
+    }
+
+    [Flags]
+    public enum ScatterSimulationDirtyFlags : byte
+    {
+        None = 0,
+        Heights = 1 << 0,
+        Eligibility = 1 << 1,
+        Quotas = 1 << 2,
+        Suppression = 1 << 3,
+        Candidates = 1 << 4,
+        FullRebuild = 1 << 5
+    }
+
+    public enum ScatterSimulationSuppressionState : byte
+    {
+        None = 0,
+        Suppressed = 1,
+        Retained = 2
+    }
+
+    public struct ScatterSimulationLayerQuota
+    {
+        public int PlacementsPerCell;
+        public int CellStride;
+        public int FamilyIndex;
+    }
+
+    public struct ScatterSimulationQuotaState
+    {
+        public ScatterSimulationLayerQuota Ground;
+        public ScatterSimulationLayerQuota Cluster;
+        public ScatterSimulationLayerQuota Structure;
+        public ScatterSimulationLayerQuota Spawn;
+    }
+
+    public struct ScatterSimulationCellState
+    {
+        public long CellKey;
+        public int CellX;
+        public int CellZ;
+        public float Height;
+        public int HeightSource;
+        public ScatterSimulationEligibilityFlags Eligibility;
+        public ScatterSimulationSuppressionState Suppression;
+        public ScatterSimulationDirtyFlags DirtyFlags;
+    }
+
+    public struct ScatterSimulationParitySnapshot
+    {
+        public int CandidateCount;
+        public int GroundCount;
+        public int ClusterCount;
+        public int StructureCount;
+        public int SpawnCount;
+        public int EligibleGroundCells;
+        public int EligibleClusterCells;
+        public int EligibleStructureCells;
+        public int EligibleSpawnCells;
+        public int DirtyCellCount;
+        public int SuppressedCellCount;
+        public ulong CandidateChecksum;
+        public ulong CellChecksum;
+    }
+
     /// <summary>
     /// Immutable config for one scatter simulation pass.
     /// Shared by classic Jobs and future DOTS backends.
@@ -27,6 +101,12 @@ namespace Hecton8.World
         public float CellSize;
         public int RadiusCells;
         public float3 PlayerPosition;
+        public ScatterSimulationQuotaState QuotaState;
+        public ScatterSimulationEligibilityFlags DefaultEligibility;
+        public ScatterSimulationSuppressionState DefaultSuppressionState;
+        public ScatterSimulationDirtyFlags DirtyFlags;
+
+        // Legacy mirrors kept for classic evaluator compatibility during hybrid transition.
         public int GroundPlacementsPerCell;
         public int ClusterPlacementsPerCell;
         public int StructureCellStride;
@@ -41,7 +121,7 @@ namespace Hecton8.World
 
     /// <summary>
     /// Blittable scatter candidate contract shared by classic Jobs and future DOTS backends.
-    /// Managed refs are resolved later by the main-thread reconciler.
+    /// Managed refs are resolved later by the owner-driven main-thread apply path.
     /// </summary>
     internal struct ScatterSimulationCandidate
     {
@@ -62,14 +142,19 @@ namespace Hecton8.World
     /// </summary>
     internal readonly struct ScatterSimulationResult
     {
-        public ScatterSimulationResult(NativeArray<ScatterSimulationCandidate> candidates, int candidateCount)
+        public ScatterSimulationResult(
+            NativeArray<ScatterSimulationCandidate> candidates,
+            int candidateCount,
+            ScatterSimulationParitySnapshot paritySnapshot)
         {
             Candidates = candidates;
             CandidateCount = candidateCount;
+            ParitySnapshot = paritySnapshot;
         }
 
         public NativeArray<ScatterSimulationCandidate> Candidates { get; }
         public int CandidateCount { get; }
+        public ScatterSimulationParitySnapshot ParitySnapshot { get; }
     }
 
     /// <summary>
@@ -84,36 +169,12 @@ namespace Hecton8.World
         bool IsJobCompleted { get; }
 
         void Initialize();
-        bool TrySchedule(ScatterSimulationConfig config, NativeArray<float> heightSamples);
+        bool TrySchedule(
+            ScatterSimulationConfig config,
+            NativeArray<float> heightSamples,
+            NativeArray<ScatterSimulationCellState> cellStates);
         bool TryComplete(out ScatterSimulationResult result);
         void ForceComplete();
     }
 
-    /// <summary>
-    /// Resolves prefabs for scatter candidates on the main thread.
-    /// This avoids wiring managed delegates through hot-path reconciliation calls.
-    /// </summary>
-    internal interface IScatterPrefabResolver
-    {
-        bool TryResolvePrefab(int familyIndex, int layerIndex, out GameObject prefab);
-    }
-
-    /// <summary>
-    /// Main-thread owner for live placement reconciliation.
-    /// Simulation backend may change; scene ownership must not.
-    /// </summary>
-    internal interface IScatterPlacementReconciler : IDisposable
-    {
-        int ActivePlacementCount { get; }
-        int LastSpawnCount { get; }
-        int LastDespawnCount { get; }
-        int LastRetainedCount { get; }
-
-        void Reconcile(
-            NativeArray<ScatterSimulationCandidate> candidates,
-            int candidateCount,
-            IScatterPrefabResolver prefabResolver);
-
-        void DespawnAll();
-    }
 }

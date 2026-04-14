@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Hecton8.Input;
 
 namespace Hecton.Localization
 {
@@ -64,8 +65,8 @@ namespace Hecton.Localization
                  "Имя файла должно совпадать с GameLanguage enum (English.json, Russian.json).")]
         [SerializeField] private TextAsset[] languageFiles;
 
-        // PlayerPrefs ключ
-        private const string PREFS_LANGUAGE_KEY = "Hecton_Language";
+        // Shared user-options key owned by UserOptionsPersistence.
+        private const string PREFS_LANGUAGE_KEY = UserOptionsPersistence.LanguageKey;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -166,8 +167,9 @@ namespace Hecton.Localization
             CurrentLanguage = language;
 
             // Сохраняем выбор
-            PlayerPrefs.SetInt(PREFS_LANGUAGE_KEY, (int)language);
-            PlayerPrefs.Save();
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            options.SetInt(PREFS_LANGUAGE_KEY, (int)language);
+            options.Save();
 
             // Оповещаем подписчиков
             OnLanguageChanged?.Invoke(language);
@@ -342,15 +344,15 @@ namespace Hecton.Localization
 
         private void RestoreSavedLanguage()
         {
-            if (PlayerPrefs.HasKey(PREFS_LANGUAGE_KEY))
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            if (options.HasKey(PREFS_LANGUAGE_KEY))
             {
-                int saved = PlayerPrefs.GetInt(PREFS_LANGUAGE_KEY, (int)defaultLanguage);
+                int saved = options.GetInt(PREFS_LANGUAGE_KEY, (int)defaultLanguage);
                 CurrentLanguage = (GameLanguage)saved;
+                return;
             }
-            else
-            {
-                CurrentLanguage = defaultLanguage;
-            }
+
+            CurrentLanguage = defaultLanguage;
         }
     }
 }

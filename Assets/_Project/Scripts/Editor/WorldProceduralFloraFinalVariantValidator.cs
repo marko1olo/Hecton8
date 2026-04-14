@@ -412,8 +412,9 @@ namespace Hecton8.EditorTools
             ICollection<string> warnings,
             ICollection<string> issues)
         {
-            if (material.shader == null || material.shader.name != expectedShaderName)
-                issues.Add($"{prefabPath}: {floraLabel} renderer '{renderer.name}' must use shader '{expectedShaderName}', found '{(material.shader != null ? material.shader.name : "<null>")}'.");
+            if (!WorldProceduralFloraMaterialAuthoring.IsAcceptedFloraShader(material.shader, familyId))
+                issues.Add(
+                    $"{prefabPath}: {floraLabel} renderer '{renderer.name}' must use {WorldProceduralFloraMaterialAuthoring.DescribeExpectedShaderVariant(familyId)}, found '{(material.shader != null ? material.shader.name : "<null>")}'.");
             else
             {
                 string shaderContractFailure;

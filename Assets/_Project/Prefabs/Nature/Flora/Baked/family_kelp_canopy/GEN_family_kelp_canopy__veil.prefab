@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 416918817585308776}
   - component: {fileID: 8057969933472971911}
-  - component: {fileID: 4195544238136134396}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__veil
   m_TagString: Untagged
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 4921720310063794239}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4195544238136134396
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1196597465967447414}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: cf317296d94504848b09e7fedb08ea1b, type: 2}
 --- !u!1 &2842135458841239736
 GameObject:
   m_ObjectHideFlags: 0

@@ -136,6 +136,8 @@ namespace Hecton8.Audio
         [SerializeField] private AudioMixerSnapshot baseInteriorSnapshot;
 
         [SerializeField] private AudioMixerSnapshot surfaceSnapshot;
+        [SerializeField] private AudioMixerSnapshot surfaceRainSnapshot;
+        [SerializeField] private AudioMixerSnapshot surfaceStormSnapshot;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — TRANSITION
@@ -223,6 +225,8 @@ namespace Hecton8.Audio
         private bool _hasCachedExteriorZone;
         private AcousticZoneState _cachedExteriorZone;
         private List<AudioSource> _playerAudioSources;
+        private float _surfacePrecipitationIntensity;
+        private float _surfaceElectricalActivity;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -436,9 +440,7 @@ namespace Hecton8.Audio
         {
             ApplyAmbientLoopState(AcousticZoneState.Surface);
 
-            AudioMixerSnapshot targetSnapshot = surfaceSnapshot != null
-                ? surfaceSnapshot
-                : baseInteriorSnapshot;
+            AudioMixerSnapshot targetSnapshot = ResolveSurfaceSnapshot();
 
             if (targetSnapshot != null)
             {
@@ -494,9 +496,7 @@ namespace Hecton8.Audio
             }
             else if (zone == AcousticZoneState.Surface)
             {
-                AudioMixerSnapshot targetSnapshot = surfaceSnapshot != null
-                    ? surfaceSnapshot
-                    : baseInteriorSnapshot;
+                AudioMixerSnapshot targetSnapshot = ResolveSurfaceSnapshot();
 
                 if (targetSnapshot != null)
                     targetSnapshot.TransitionTo(0f);
@@ -532,6 +532,20 @@ namespace Hecton8.Audio
             if (sam == null) return;
 
             sam.PlayStatic2D(clip, transitionVolume);
+        }
+
+        private AudioMixerSnapshot ResolveSurfaceSnapshot()
+        {
+            if (_surfaceElectricalActivity >= 0.55f && surfaceStormSnapshot != null)
+                return surfaceStormSnapshot;
+
+            if (_surfacePrecipitationIntensity >= 0.2f && surfaceRainSnapshot != null)
+                return surfaceRainSnapshot;
+
+            if (surfaceSnapshot != null)
+                return surfaceSnapshot;
+
+            return baseInteriorSnapshot;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -755,6 +769,32 @@ namespace Hecton8.Audio
 
                 playerUnderwaterAmbientSource = candidate;
                 return;
+            }
+        }
+
+        internal void SetSurfaceWeatherMix(float precipitationIntensity, float electricalActivity)
+        {
+            _surfacePrecipitationIntensity = Mathf.Clamp01(precipitationIntensity);
+            _surfaceElectricalActivity = Mathf.Clamp01(electricalActivity);
+
+            if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
+            {
+                AudioMixerSnapshot snapshot = ResolveSurfaceSnapshot();
+                if (snapshot != null)
+                    snapshot.TransitionTo(transitionDuration);
+            }
+        }
+
+        internal void ClearSurfaceWeatherMix()
+        {
+            _surfacePrecipitationIntensity = 0f;
+            _surfaceElectricalActivity = 0f;
+
+            if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
+            {
+                AudioMixerSnapshot snapshot = ResolveSurfaceSnapshot();
+                if (snapshot != null)
+                    snapshot.TransitionTo(transitionDuration);
             }
         }
 

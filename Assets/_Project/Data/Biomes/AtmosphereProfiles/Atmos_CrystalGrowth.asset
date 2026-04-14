@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_CrystalGrowth
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.18, g: 0.42, b: 0.55, a: 1}
-  fogDensity: 0.009
-  skyExposure: 1.2
-  ambientColor: {r: 0.26, g: 0.34, b: 0.42, a: 1}
-  sunIntensity: 0.9
+  fogColor: {r: 0.17, g: 0.39, b: 0.53, a: 1}
+  fogDensity: 0.01
+  skyExposure: 1.1
+  ambientColor: {r: 0.24, g: 0.32, b: 0.4, a: 1}
+  sunIntensity: 0.84
   temperature: 20
   radiation: 0

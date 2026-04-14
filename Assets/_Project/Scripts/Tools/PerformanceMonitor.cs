@@ -96,6 +96,12 @@ namespace Hecton8.Tools
                 GameTickManager.Instance.Unregister(this);
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
+        }
+
         public void Tick(float dt)
         {
             if (!_isCapturing) return;
@@ -127,10 +133,11 @@ namespace Hecton8.Tools
 
             _isCapturing = true;
             _captureStartTime = Time.unscaledTime;
+            _lastLogTime = Time.unscaledTime;
             EnsureFrameBufferCapacity();
             _frameTimes.Clear();
 
-            LogCaptureStarted();
+            LogCaptureStarted(_captureFrameCount);
         }
 
         /// <summary>
@@ -152,12 +159,30 @@ namespace Hecton8.Tools
             return CreateSnapshot();
         }
 
+        /// <summary>
+        /// Returns a compact status string for console or tooling use.
+        /// </summary>
+        public string DescribeStatus()
+        {
+            int sampleCount = _frameTimes != null ? _frameTimes.Count : 0;
+            float elapsed = _isCapturing ? Time.unscaledTime - _captureStartTime : 0f;
+            float mean = sampleCount > 0 ? CalculateMean(_frameTimes) : 0f;
+            float worst = sampleCount > 0 ? CalculateMax(_frameTimes) : 0f;
+            float best = sampleCount > 0 ? CalculateMin(_frameTimes) : 0f;
+
+            return
+                $"capturing={_isCapturing} samples={sampleCount}/{_captureFrameCount} elapsed={elapsed:F1}s " +
+                $"mean={mean:F2}ms worst={worst:F2}ms best={best:F2}ms " +
+                $"autoLog={_autoLogToConsole} recordEntry={_recordBuildPlaytestEntry}";
+        }
+
         private void CompleteCapture()
         {
             _isCapturing = false;
+            int sampleCount = _frameTimes != null ? _frameTimes.Count : 0;
             var snapshot = CreateSnapshot();
 
-            LogCaptureCompleted(snapshot);
+            LogCaptureCompleted(snapshot, sampleCount);
 
 #if UNITY_EDITOR
             RecordBuildPlaytestEntry(snapshot);
@@ -185,7 +210,7 @@ namespace Hecton8.Tools
 
         private void LogCurrentPerformance(float currentFrameTimeMs)
         {
-            LogCurrentFrameTime(currentFrameTimeMs);
+            LogCurrentFrameTime(currentFrameTimeMs, _frameTimes != null ? _frameTimes.Count : 0);
         }
 
 #if UNITY_EDITOR
@@ -274,24 +299,30 @@ namespace Hecton8.Tools
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static void LogCaptureStarted()
+        private static void LogCaptureStarted(int targetFrameCount)
         {
-            Debug.Log("[PerformanceMonitor] Started performance capture");
+            Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
         }
 
-        private static void LogCaptureCompleted(PerformanceSnapshot snapshot)
+        private static void LogCaptureCompleted(PerformanceSnapshot snapshot, int sampleCount)
         {
-            Debug.Log($"[PerformanceMonitor] Capture complete:\n{snapshot.ToDetailedString()}");
+            if (sampleCount <= 0)
+            {
+                Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
+                return;
+            }
+
+            Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
         }
 
-        private static void LogCurrentFrameTime(float currentFrameTimeMs)
+        private static void LogCurrentFrameTime(float currentFrameTimeMs, int sampleCount)
         {
-            Debug.Log($"[PerformanceMonitor] Current: {currentFrameTimeMs:F2}ms");
+            Debug.Log($"[PerformanceMonitor] Current: {currentFrameTimeMs:F2}ms | samples={sampleCount}");
         }
 #else
-        private static void LogCaptureStarted() { }
-        private static void LogCaptureCompleted(PerformanceSnapshot snapshot) { }
-        private static void LogCurrentFrameTime(float currentFrameTimeMs) { }
+        private static void LogCaptureStarted(int targetFrameCount) { }
+        private static void LogCaptureCompleted(PerformanceSnapshot snapshot, int sampleCount) { }
+        private static void LogCurrentFrameTime(float currentFrameTimeMs, int sampleCount) { }
 #endif
 
         private void OnValidate()

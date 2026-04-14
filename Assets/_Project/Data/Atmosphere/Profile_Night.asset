@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Profile_Night
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.052287295, g: 0.1087678, b: 0.23584908, a: 1}
-  fogDensity: 0.00015
-  skyExposure: 1.2
-  ambientColor: {r: 0.45, g: 0.45, b: 0.55, a: 1}
-  sunIntensity: 0.11
+  fogColor: {r: 0.036, g: 0.078, b: 0.165, a: 1}
+  fogDensity: 0.00024
+  skyExposure: 0.78
+  ambientColor: {r: 0.19, g: 0.215, b: 0.28, a: 1}
+  sunIntensity: 0.08

@@ -190,7 +190,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1953343341041440762}
   - component: {fileID: 3291993432514219843}
-  - component: {fileID: 7209996146728302093}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__rope
   m_TagString: Untagged
@@ -244,19 +243,6 @@ LODGroup:
     - renderer: {fileID: 3014398868868561105}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &7209996146728302093
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7265103543554835487}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: edccf44699151ac42b3f69147817809c, type: 2}
 --- !u!1 &7812000670594846412
 GameObject:
   m_ObjectHideFlags: 0

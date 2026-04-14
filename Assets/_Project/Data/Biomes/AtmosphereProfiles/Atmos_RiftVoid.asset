@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_RiftVoid
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.04, g: 0.04, b: 0.08, a: 1}
-  fogDensity: 0.04
-  skyExposure: 0.4
-  ambientColor: {r: 0.08, g: 0.08, b: 0.12, a: 1}
-  sunIntensity: 0.22
+  fogColor: {r: 0.035, g: 0.035, b: 0.075, a: 1}
+  fogDensity: 0.042
+  skyExposure: 0.36
+  ambientColor: {r: 0.07, g: 0.07, b: 0.11, a: 1}
+  sunIntensity: 0.18
   temperature: 20
   radiation: 0

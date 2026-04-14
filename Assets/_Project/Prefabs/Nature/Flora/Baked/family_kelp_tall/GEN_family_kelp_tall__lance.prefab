@@ -190,7 +190,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8273192080418518881}
   - component: {fileID: 6607769406220232018}
-  - component: {fileID: 4658019715083713419}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__lance
   m_TagString: Untagged
@@ -244,19 +243,6 @@ LODGroup:
     - renderer: {fileID: 2401355731339601647}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &4658019715083713419
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5388218626990383478}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: c7fe5cbe693cec548876fef6e57a9713, type: 2}
 --- !u!1 &6083341402720565488
 GameObject:
   m_ObjectHideFlags: 0

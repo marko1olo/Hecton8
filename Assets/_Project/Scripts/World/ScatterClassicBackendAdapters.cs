@@ -10,6 +10,8 @@ namespace Hecton8.World
     /// </summary>
     internal sealed class ScatterClassicSimulationBackend : IScatterSimulationBackend
     {
+        private const ulong FnvOffset = 14695981039346656037UL;
+        private const ulong FnvPrime = 1099511628211UL;
         private readonly ScatterEvaluator _evaluator;
         private bool _disposed;
         private bool _initialized;
@@ -34,7 +36,10 @@ namespace Hecton8.World
             _initialized = true;
         }
 
-        public bool TrySchedule(ScatterSimulationConfig config, NativeArray<float> heightSamples)
+        public bool TrySchedule(
+            ScatterSimulationConfig config,
+            NativeArray<float> heightSamples,
+            NativeArray<ScatterSimulationCellState> cellStates)
         {
             if (!IsInitialized || _evaluator.IsJobActive)
                 return false;
@@ -50,7 +55,7 @@ namespace Hecton8.World
                 return false;
 
             int candidateCount = _evaluator.CompleteAndGetResults(out NativeArray<ScatterSimulationCandidate> candidates);
-            result = new ScatterSimulationResult(candidates, candidateCount);
+            result = new ScatterSimulationResult(candidates, candidateCount, BuildParitySnapshot(candidates, candidateCount));
             return true;
         }
 
@@ -71,54 +76,39 @@ namespace Hecton8.World
             _disposed = true;
             _initialized = false;
         }
-    }
 
-    /// <summary>
-    /// Classic main-thread placement reconciler adapter.
-    /// Keeps spawn/despawn ownership outside any simulation backend.
-    /// </summary>
-    internal sealed class ScatterClassicPlacementReconciler : IScatterPlacementReconciler
-    {
-        private readonly ScatterReconciler _reconciler;
-        private bool _disposed;
-
-        public ScatterClassicPlacementReconciler()
-        {
-            // COLD ALLOC: ScatterReconciler[1] - classic scatter placement reconciler wrapper - owner: ScatterClassicPlacementReconciler
-            _reconciler = new ScatterReconciler();
-        }
-
-        public int ActivePlacementCount => _disposed ? 0 : _reconciler.ActivePlacementCount;
-        public int LastSpawnCount => _disposed ? 0 : _reconciler.LastSpawnCount;
-        public int LastDespawnCount => _disposed ? 0 : _reconciler.LastDespawnCount;
-        public int LastRetainedCount => _disposed ? 0 : _reconciler.LastRetainedCount;
-
-        public void Reconcile(
+        private static ScatterSimulationParitySnapshot BuildParitySnapshot(
             NativeArray<ScatterSimulationCandidate> candidates,
-            int candidateCount,
-            IScatterPrefabResolver prefabResolver)
+            int candidateCount)
         {
-            if (_disposed)
-                return;
+            ScatterSimulationParitySnapshot snapshot = default;
+            ulong hash = FnvOffset;
+            for (int i = 0; i < candidateCount; i++)
+            {
+                ScatterSimulationCandidate candidate = candidates[i];
+                switch (candidate.LayerIndex)
+                {
+                    case 0:
+                        snapshot.GroundCount++;
+                        break;
+                    case 1:
+                        snapshot.ClusterCount++;
+                        break;
+                    case 2:
+                        snapshot.StructureCount++;
+                        break;
+                    case 3:
+                        snapshot.SpawnCount++;
+                        break;
+                }
 
-            _reconciler.Reconcile(candidates, candidateCount, prefabResolver);
-        }
+                hash = (hash ^ (ulong)candidate.CellKey) * FnvPrime;
+                hash = (hash ^ (ulong)(uint)candidate.LayerIndex) * FnvPrime;
+            }
 
-        public void DespawnAll()
-        {
-            if (_disposed)
-                return;
-
-            _reconciler.DespawnAll();
-        }
-
-        public void Dispose()
-        {
-            if (_disposed)
-                return;
-
-            _reconciler.Dispose();
-            _disposed = true;
+            snapshot.CandidateCount = candidateCount;
+            snapshot.CandidateChecksum = hash;
+            return snapshot;
         }
     }
 }

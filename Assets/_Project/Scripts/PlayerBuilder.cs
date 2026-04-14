@@ -835,16 +835,16 @@ namespace Hecton8.Building
 
         private void TryPlaceModuleInternal()
         {
-            if (_currentGhost == null || !_currentGhost.CanBuild)
+            if (activeBuildable == null)
             {
-                NotifyBuildBlocked("PLACEMENT INVALID");
+                NotifyBuildBlocked("NO MODULE SELECTED");
                 PlaySound(errorSound);
                 return;
             }
 
-            if (activeBuildable == null)
+            if (_currentGhostObj == null || _currentGhost == null || !_currentGhost.CanBuild)
             {
-                NotifyBuildBlocked("NO MODULE SELECTED");
+                NotifyBuildBlocked("PLACEMENT INVALID");
                 PlaySound(errorSound);
                 return;
             }
@@ -905,14 +905,14 @@ namespace Hecton8.Building
 
         private bool HasResources(BuildableData data)
         {
-            if (data.buildCost == null || data.buildCost.Count == 0) return true;
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0) return true;
             if (inventory == null || inventory.Grid == null) return false;
             List<InventoryCost> costs = data.buildCost;
 
             for (int c = 0, cCount = costs.Count; c < cCount; c++)
             {
                 InventoryCost cost = costs[c];
-                if (cost.item == null) continue;
+                if (cost == null || cost.item == null || cost.amount <= 0) continue;
                 if (inventory.CountTotal(cost.item) < cost.amount)
                     return false;
             }
@@ -1302,7 +1302,7 @@ namespace Hecton8.Building
 
         private void ConsumeResources(BuildableData data)
         {
-            if (data.buildCost == null) return;
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0) return;
             if (inventory == null || inventory.Grid == null) return;
 
             InventoryGrid grid = inventory.Grid;
@@ -1313,7 +1313,7 @@ namespace Hecton8.Building
             for (int c = 0, cCount = costs.Count; c < cCount; c++)
             {
                 InventoryCost cost = costs[c];
-                if (cost.item == null) continue;
+                if (cost == null || cost.item == null || cost.amount <= 0) continue;
 
                 int remaining = cost.amount;
 

@@ -70,6 +70,7 @@ namespace Hecton8.UI
         private Image _playButtonBg;
         private TextMeshProUGUI _playButtonLabel;
         private TextMeshProUGUI _countLabel;
+        private TextMeshProUGUI _emptyStateLabel;
 
         // List rows — pre-allocated
         private readonly List<LogRow> _rows = new List<LogRow>(32);
@@ -86,6 +87,8 @@ namespace Hecton8.UI
         private string _prevSubtitleText;
 
         private const float TICK_DT = 1f / 60f;
+
+        private int CatalogCount => allLogs != null ? allLogs.Length : 0;
 
         // ══════════════════════════════════════════════════════════
         //  NESTED TYPE
@@ -175,7 +178,7 @@ namespace Hecton8.UI
         /// <summary>Выбрать запись по индексу в allLogs.</summary>
         public void SelectLog(int logIndex)
         {
-            if (logIndex < 0 || logIndex >= allLogs.Length) return;
+            if (logIndex < 0 || logIndex >= CatalogCount) return;
 
             _selectedIndex = logIndex;
             RefreshDetail();
@@ -185,12 +188,15 @@ namespace Hecton8.UI
         /// <summary>Воспроизвести выбранную запись.</summary>
         public void PlaySelected()
         {
-            if (_selectedIndex < 0 || _selectedIndex >= allLogs.Length) return;
+            if (_selectedIndex < 0 || _selectedIndex >= CatalogCount) return;
 
             AudioLogSystem system = AudioLogSystem.Instance;
             if (system == null) return;
 
-            system.PlayLog(allLogs[_selectedIndex]);
+            AudioLogData log = GetLog(_selectedIndex);
+            if (log == null) return;
+
+            system.PlayLog(log);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -206,8 +212,8 @@ namespace Hecton8.UI
             _playbackRemaining = data != null ? data.Duration : 0f;
             if (_subtitleLabel != null && data != null)
             {
-                _subtitleLabel.text = data.subtitleText;
-                _prevSubtitleText = data.subtitleText;
+                _subtitleLabel.text = data.SubtitleOrFallback;
+                _prevSubtitleText = data.SubtitleOrFallback;
             }
             RefreshPlayButton(true);
         }
@@ -290,9 +296,12 @@ namespace Hecton8.UI
             Image lBg = _listPanel.gameObject.AddComponent<Image>();
             lBg.color = new Color(0.03f, 0.05f, 0.04f, 1f);
 
-            // Scroll view would be ideal but for minimal impl — static rows
+            // Scroll view would be ideal but for minimal impl – static rows
             // COLD ALLOC: up to 32 rows
             BuildLogRows();
+
+            if (_rows.Count == 0)
+                BuildEmptyState();
         }
 
         private void BuildLogRows()
@@ -300,10 +309,11 @@ namespace Hecton8.UI
             _rows.Clear();
             float rowH = 44f;
             float y = 0f;
+            int logCount = CatalogCount;
 
-            for (int i = 0; i < allLogs.Length && i < 32; i++)
+            for (int i = 0; i < logCount && i < 32; i++)
             {
-                AudioLogData log = allLogs[i];
+                AudioLogData log = GetLog(i);
                 if (log == null) continue;
 
                 RectTransform rowRoot = CreateRect($"Row_{i}", _listPanel);
@@ -321,7 +331,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI titleLabel = CreateText("Title", rowRoot, 10f, colorText, TextAlignmentOptions.MidlineLeft);
                 Anchor(titleLabel.rectTransform, new Vector2(0.08f, 0), new Vector2(0.75f, 1),
                     new Vector2(4, 0), new Vector2(0, 0));
-                titleLabel.text = log.displayTitle;
+                titleLabel.text = log.DisplayTitleOrFallback;
 
                 TextMeshProUGUI catLabel = CreateText("Cat", rowRoot, 8f, colorDim, TextAlignmentOptions.MidlineRight);
                 Anchor(catLabel.rectTransform, new Vector2(0.75f, 0), new Vector2(1, 1),
@@ -346,6 +356,21 @@ namespace Hecton8.UI
 
                 y += rowH;
             }
+        }
+
+        private void BuildEmptyState()
+        {
+            RectTransform emptyState = CreateRect("EmptyState", _listPanel);
+            Anchor(emptyState, new Vector2(0, 0), new Vector2(1, 1),
+                new Vector2(16, 16), new Vector2(-16, -16));
+
+            Image emptyBg = emptyState.gameObject.AddComponent<Image>();
+            emptyBg.color = new Color(0.05f, 0.07f, 0.06f, 0.75f);
+
+            _emptyStateLabel = CreateText("EmptyStateLabel", emptyState, 10f, colorDim, TextAlignmentOptions.Center);
+            _emptyStateLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
+            _emptyStateLabel.text = "АРХИВ ПУСТ\nНазначь AudioLogData в allLogs.";
+            Stretch(_emptyStateLabel.rectTransform, 16, 16, 16, 16);
         }
 
         private void BuildDetailPanel()
@@ -418,14 +443,24 @@ namespace Hecton8.UI
         {
             AudioLogSystem system = AudioLogSystem.Instance;
             int discovered = system != null ? system.DiscoveredCount : 0;
+            int logCount = CatalogCount;
 
             if (_countLabel != null)
-                _countLabel.text = $"{discovered}/{allLogs.Length} ЗАПИСЕЙ";
+                _countLabel.text = $"{discovered}/{logCount} ЗАПИСЕЙ";
+
+            if (_emptyStateLabel != null)
+                _emptyStateLabel.gameObject.SetActive(logCount == 0);
+
+            if (logCount == 0)
+            {
+                SetDetailVisible(false);
+                return;
+            }
 
             for (int i = 0; i < _rows.Count; i++)
             {
                 LogRow row = _rows[i];
-                AudioLogData log = allLogs[row.LogIndex];
+                AudioLogData log = GetLog(row.LogIndex);
                 bool isDiscovered = system != null && log != null && system.IsDiscovered(log.logId);
 
                 // Dim undiscovered entries
@@ -436,7 +471,7 @@ namespace Hecton8.UI
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    row.TitleLabel.text = isDiscovered ? log.displayTitle : "??? ЗАШИФРОВАНО ???";
+                    row.TitleLabel.text = isDiscovered ? log.DisplayTitleOrFallback : "??? ЗАШИФРОВАНО ???";
             }
 
             RefreshRowHighlights();
@@ -444,13 +479,13 @@ namespace Hecton8.UI
 
         private void RefreshDetail()
         {
-            if (_selectedIndex < 0 || _selectedIndex >= allLogs.Length)
+            if (_selectedIndex < 0 || _selectedIndex >= CatalogCount)
             {
                 SetDetailVisible(false);
                 return;
             }
 
-            AudioLogData log = allLogs[_selectedIndex];
+            AudioLogData log = GetLog(_selectedIndex);
             if (log == null) { SetDetailVisible(false); return; }
 
             AudioLogSystem system = AudioLogSystem.Instance;
@@ -459,16 +494,16 @@ namespace Hecton8.UI
             SetDetailVisible(true);
 
             if (_titleLabel != null)
-                _titleLabel.text = isDiscovered ? log.displayTitle.ToUpperInvariant() : "??? ЗАШИФРОВАНО ???";
+                _titleLabel.text = isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : "??? ЗАШИФРОВАНО ???";
 
             if (_authorLabel != null)
-                _authorLabel.text = isDiscovered ? $"АВТОР: {log.author}" : "АВТОР: НЕИЗВЕСТЕН";
+                _authorLabel.text = isDiscovered ? $"АВТОР: {log.AuthorOrFallback}" : "АВТОР: НЕИЗВЕСТЕН";
 
             if (_dateLabel != null)
-                _dateLabel.text = isDiscovered ? log.recordDate : "ДАТА: НЕИЗВЕСТНА";
+                _dateLabel.text = isDiscovered ? log.RecordDateOrFallback : "ДАТА: НЕИЗВЕСТНА";
 
             if (_summaryLabel != null)
-                _summaryLabel.text = isDiscovered ? log.archiveSummary : "Запись зашифрована. Требуется взаимодействие с источником.";
+                _summaryLabel.text = isDiscovered ? log.ArchiveSummaryOrFallback : "Запись зашифрована. Требуется взаимодействие с источником.";
 
             // Play button — только для обнаруженных
             if (_playButtonBg != null)
@@ -485,7 +520,7 @@ namespace Hecton8.UI
             for (int i = 0; i < _rows.Count; i++)
             {
                 LogRow row = _rows[i];
-                AudioLogData log = allLogs[row.LogIndex];
+                AudioLogData log = GetLog(row.LogIndex);
                 bool isSelected = row.LogIndex == _selectedIndex;
                 bool isPlaying = log != null && log.logId == playingId;
 
@@ -536,6 +571,18 @@ namespace Hecton8.UI
             if (_authorLabel != null)  _authorLabel.gameObject.SetActive(visible);
             if (_dateLabel != null)    _dateLabel.gameObject.SetActive(visible);
             if (_summaryLabel != null) _summaryLabel.gameObject.SetActive(visible);
+            if (_subtitleLabel != null) _subtitleLabel.gameObject.SetActive(visible);
+            if (_playbackTimerLabel != null) _playbackTimerLabel.gameObject.SetActive(visible);
+            if (_playButtonBg != null) _playButtonBg.gameObject.SetActive(visible);
+            if (_playButtonLabel != null) _playButtonLabel.gameObject.SetActive(visible);
+        }
+
+        private AudioLogData GetLog(int index)
+        {
+            if (allLogs == null || index < 0 || index >= allLogs.Length)
+                return null;
+
+            return allLogs[index];
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 // ============================================================================
-// HECTON-8 — HectonLoreSystemsRootEditor.cs
-// Кастомный инспектор для HectonLoreSystemsRoot.
+// HECTON-8 - HectonLoreSystemsRootEditor.cs
+// Custom inspector for HectonLoreSystemsRoot.
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -17,25 +17,42 @@ namespace Hecton8.Editor
         {
             DrawDefaultInspector();
 
-            EditorGUILayout.Space(8);
-            EditorGUILayout.LabelField("── Actions ──────────────────────────────", EditorStyles.boldLabel);
-
             HectonLoreSystemsRoot root = (HectonLoreSystemsRoot)target;
+            int found = root.GetFoundSystemCount();
+            string missing = root.GetMissingSystemsSummary();
 
-            GUI.backgroundColor = new Color(0.4f, 0.8f, 0.5f);
-            if (GUILayout.Button("▶  Setup All Systems", GUILayout.Height(32)))
+            EditorGUILayout.Space(8);
+            EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
+
+            MessageType statusType = found == HectonLoreSystemsRoot.ExpectedSystemCount
+                ? MessageType.Info
+                : MessageType.Warning;
+
+            EditorGUILayout.HelpBox(
+                $"Lore bootstrap status: {found}/{HectonLoreSystemsRoot.ExpectedSystemCount} systems present.\nMissing: {missing}",
+                statusType);
+
+            using (new EditorGUI.DisabledScope(root == null))
             {
-                root.SetupAllSystems();
-                EditorUtility.SetDirty(root.gameObject);
+                if (GUILayout.Button("Setup All Systems", GUILayout.Height(30)))
+                {
+                    Undo.RecordObject(root.gameObject, "Setup Lore Systems");
+                    root.SetupAllSystems();
+                    EditorUtility.SetDirty(root);
+                }
+
+                if (GUILayout.Button("Validate Systems", GUILayout.Height(24)))
+                {
+                    root.ValidateSystems();
+                    EditorUtility.SetDirty(root);
+                }
             }
-            GUI.backgroundColor = Color.white;
 
             EditorGUILayout.Space(4);
             EditorGUILayout.HelpBox(
-                "Нажмите 'Setup All Systems' чтобы создать все лорные системы как дочерние объекты.\n" +
-                "После создания назначьте ссылки в инспекторе каждой системы.\n\n" +
-                "Системы создаются только если их нет — безопасно нажимать повторно.",
-                MessageType.Info);
+                "This inspector only reconciles child systems and reports missing ones.\n" +
+                "It does not author content or patch the live world scene.",
+                MessageType.None);
         }
     }
 }

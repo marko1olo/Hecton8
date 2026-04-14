@@ -128,6 +128,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9000)]
     public sealed class PerformanceMonitor : MonoBehaviour, ITickable
     {
+        private const float MillisecondsPerSecond = 1000f;
         // ════════════════════════════════════════════════════════════
         //  SINGLETON
         // ════════════════════════════════════════════════════════════
@@ -137,6 +138,11 @@ namespace Hecton8.Core
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
+        {
+            ClearStaticState();
+        }
+
+        private static void ClearStaticState()
         {
             _instance = null;
             OnFrameTimeSpike = null;
@@ -156,6 +162,11 @@ namespace Hecton8.Core
 
         /// <summary>Fired when pending job count exceeds jobBacklogThreshold.</summary>
         public static event Action OnJobQueueBacklog;
+
+        /// <summary>
+        /// True when at least one sample has been captured.
+        /// </summary>
+        public static bool HasCurrentStats => _instance != null && _instance._sampleCountTotal > 0;
 
         // ════════════════════════════════════════════════════════════
         //  INSPECTOR CONFIG
@@ -203,6 +214,7 @@ namespace Hecton8.Core
         private PerformanceSnapshot _lastSnapshot;
 
         private int _sampleCounter;
+        private int _sampleCountTotal;
         private float _autoReportTimer;
 
         private float[] _frameTimeHistory;
@@ -234,6 +246,8 @@ namespace Hecton8.Core
             _frameStopwatch = new System.Diagnostics.Stopwatch();
             _frameTimeHistory = new float[Mathf.Max(1, (int)(avgFrameWindow * 60))];
             _sampleCounter = 0;
+            _sampleCountTotal = 0;
+            _autoReportTimer = autoReportInterval;
 
             _lastGCTotalMemory = GC.GetTotalMemory(false);
             _lastGCCollectionCount = GC.CollectionCount(0);
@@ -255,6 +269,12 @@ namespace Hecton8.Core
                 GameTickManager.Instance.Unregister(this);
                 _isRegisteredToTickManager = false;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+                ClearStaticState();
         }
 
         // ════════════════════════════════════════════════════════════
@@ -332,6 +352,7 @@ namespace Hecton8.Core
             _lastGCTotalMemory = gcTotal;
             _lastGCCollectionCount = gcCollections;
             _lastSnapshot = _currentSnapshot;
+            _sampleCountTotal++;
         }
 
         private void UpdateHistory()
@@ -374,16 +395,38 @@ namespace Hecton8.Core
                 if (_instance == null)
                     return default;
 
+                float deltaSeconds = Mathf.Max(_instance._currentSnapshot.deltaTime, Mathf.Epsilon);
+                float uptimeSeconds = Mathf.Max(Time.realtimeSinceStartup, Mathf.Epsilon);
+
                 return new PerformanceStats
                 {
                     frameTimeMs = _instance._currentSnapshot.frameTimeMs,
                     avgFrameTimeMs = _instance._avgFrameTimeMs,
                     peakFrameTimeMs = _instance._peakFrameTimeMs,
-                    gcAllocRateMBperSec = _instance._currentSnapshot.gcAllocatedThisFrame / (1024f * 1024f) / _instance._currentSnapshot.deltaTime,
+                    gcAllocRateMBperSec = _instance._currentSnapshot.gcAllocatedThisFrame / (1024f * 1024f) / deltaSeconds,
                     totalHeapBytes = _instance._currentSnapshot.gcTotalMemory,
-                    gcCollectionCountRate = (int)(_instance._currentSnapshot.gcCollectionCount / Time.realtimeSinceStartup)
+                    gcCollectionCountRate = (int)(_instance._currentSnapshot.gcCollectionCount / uptimeSeconds)
                 };
             }
+        }
+
+        /// <summary>
+        /// Compact status string for console or inspector logs.
+        /// </summary>
+        public static string DescribeStatus()
+        {
+            if (_instance == null)
+                return "PerformanceMonitor: Not initialized";
+
+            if (!HasCurrentStats)
+                return "PerformanceMonitor: No samples yet";
+
+            PerformanceStats stats = CurrentStats;
+            return
+                $"[PERF] samples={_instance._sampleCountTotal} " +
+                $"frame={stats.frameTimeMs:F2}ms avg={stats.avgFrameTimeMs:F2}ms peak={stats.peakFrameTimeMs:F2}ms " +
+                $"gc={stats.gcAllocRateMBperSec:F2}MB/s heap={stats.totalHeapBytes / (1024f * 1024f):F1}MB " +
+                $"collections={stats.gcCollectionCountRate}/s";
         }
 
         /// <summary>
@@ -392,12 +435,7 @@ namespace Hecton8.Core
         /// </summary>
         public static string GetReport()
         {
-            if (_instance == null)
-                return "PerformanceMonitor: Not initialized";
-
-            var stats = CurrentStats;
-            return $"[PERF] Frame={stats.frameTimeMs:F2}ms Avg={stats.avgFrameTimeMs:F2}ms Peak={stats.peakFrameTimeMs:F2}ms " +
-                   $"| GC={stats.gcAllocRateMBperSec:F2}MB/s Heap={stats.totalHeapBytes / (1024f * 1024f):F1}MB";
+            return DescribeStatus();
         }
     }
 }

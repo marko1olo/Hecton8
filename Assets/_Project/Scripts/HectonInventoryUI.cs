@@ -153,6 +153,7 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
 
     // ── Inventory content hash для ленивого ребилда строк ──
     private int _contentHash;
+    private bool _tickRegistered;
 
     // ══════════════════════════════════════════════════════════════════
     //  LIFECYCLE — ImmediateModeShapeDrawer
@@ -161,8 +162,6 @@ public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
 public override void OnEnable()
     {
         base.OnEnable();
-        GameTickManager.Instance?.Register((ITickable)this);
-
         if (InputManager.Instance != null)
         {
             InputManager.Instance.OnInventory += HandleInventoryToggle;
@@ -180,7 +179,7 @@ public override void OnDisable()
             InputManager.Instance.OnCancel    -= HandleCancel;
         }
 
-        GameTickManager.Instance?.Unregister((ITickable)this);
+        UnregisterTick();
         _isOpen = false;
         base.OnDisable();
     }
@@ -195,6 +194,12 @@ public override void OnDisable()
     /// </summary>
 public void Tick(float deltaTime)
     {
+        if (_isOpen && (inventory == null || inventory.Grid == null))
+        {
+            SetOpenState(false);
+            return;
+        }
+
         // Input is fully event-driven via InputManager
     }
 
@@ -239,12 +244,55 @@ private void HandleInventoryToggle()
 
     private void SetOpenState(bool open)
     {
+        if (open && (inventory == null || inventory.Grid == null))
+        {
+            _isOpen = false;
+            _selectedCol = -1;
+            _selectedRow = -1;
+            UnregisterTick();
+            InputManager.Instance?.SwitchToPlayerInput();
+            return;
+        }
+
         _isOpen = open;
 
         if (_isOpen)
+        {
+            RegisterTick();
             InputManager.Instance?.SwitchToUIInput();
+        }
         else
+        {
+            _selectedCol = -1;
+            _selectedRow = -1;
+            UnregisterTick();
             InputManager.Instance?.SwitchToPlayerInput();
+        }
+    }
+
+    private void RegisterTick()
+    {
+        if (_tickRegistered)
+            return;
+
+        GameTickManager tickManager = GameTickManager.Instance;
+        if (tickManager == null)
+            return;
+
+        tickManager.Register((ITickable)this);
+        _tickRegistered = true;
+    }
+
+    private void UnregisterTick()
+    {
+        if (!_tickRegistered)
+            return;
+
+        GameTickManager tickManager = GameTickManager.Instance;
+        if (tickManager != null)
+            tickManager.Unregister((ITickable)this);
+
+        _tickRegistered = false;
     }
 
     private void HandleNavigate(Vector2 dir)

@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a3469f73c2ed9440b76cc7e7918dba6, type: 3}
+  m_Name: SurfaceWeatherProfile_ElectricalStorm
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Atmosphere.SurfaceWeatherProfile
+  weatherKind: 4
+  selectionWeight: 0.24
+  minDurationSeconds: 70
+  maxDurationSeconds: 150
+  cloudDensityThreshold: 0.06
+  cloudSoftness: 0.38
+  cloudSpeedMultiplier: 1.55
+  windDirection: {x: 0.55, y: 0.83}
+  skyLuminanceMultiplier: 0.48
+  starVisibilityMultiplier: 0
+  stormEmissionMultiplier: 1.85
+  cloudLitColor: {r: 0.48, g: 0.53, b: 0.61, a: 1}
+  cloudShadowColor: {r: 0.15, g: 0.17, b: 0.24, a: 1}
+  sunsetCloudColor: {r: 0.62, g: 0.31, b: 0.16, a: 1}
+  nightCloudColor: {r: 0.03, g: 0.03, b: 0.05, a: 1}
+  surfaceFogColor: {r: 0.45, g: 0.49, b: 0.54, a: 1}
+  surfaceFogDensity: 0.0048
+  surfaceAmbientColor: {r: 0.24, g: 0.26, b: 0.3, a: 1}
+  surfaceSunMultiplier: 0.32
+  sunDiscMultiplier: 0.44
+  sunScatterMultiplier: 0.52
+  oceanWindSpeedKmh: 62
+  oceanFoamStrength: 1.8
+  oceanFoamCoverage: 1.65
+  oceanFoamScale: 1.18
+  precipitationIntensity: 0.92
+  electricalActivity: 0.88
+  lightningFlashIntensity: 1.8
+  lightningFlashDuration: 0.12
+  thunderDelayMin: 0.4
+  thunderDelayMax: 1.4
+  lightningStrikeDistanceMin: 90
+  lightningStrikeDistanceMax: 220
+  lightningWindBias: 0.82
+  thunderPropagationDistanceScale: 4.1
+  thunderVolumeNear: 1
+  thunderVolumeFar: 0.5
+  thunderPitchMin: 0.64
+  thunderPitchMax: 0.88
+  localRainAreaScale: 1.2
+  localRainDensityMultiplier: 1.3
+  surfaceImpactRadiusScale: 1.28
+  surfaceImpactDensityMultiplier: 1.26
+  lightningBoltWidthMultiplier: 1.2
+  lightningLightRangeMultiplier: 1.18
+  gustStrength: 0.58
+  gustFrequency: 0.055
+  squallStrength: 0.58
+  squallFrequency: 0.022

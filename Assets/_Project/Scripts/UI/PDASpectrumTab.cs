@@ -12,7 +12,6 @@
 //   • Показывает статус сонара (последний пульс, радиус).
 // ============================================================================
 
-using Hecton8.Core;
 using Hecton8.Visor;
 using TMPro;
 using UnityEngine;
@@ -22,7 +21,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Spectrum Tab")]
-    public sealed class PDASpectrumTab : MonoBehaviour, ITickable
+    public sealed class PDASpectrumTab : MonoBehaviour
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -45,7 +44,6 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private bool _built;
-        private bool _registered;
 
         // Mode buttons
         private readonly ModeButton[] _modeButtons = new ModeButton[4];
@@ -54,8 +52,6 @@ namespace Hecton8.UI
         private TextMeshProUGUI _statusLabel;
         private TextMeshProUGUI _sonarStatusLabel;
         private TextMeshProUGUI _currentModeLabel;
-
-        private SpectrumMode _displayedMode = (SpectrumMode)(-1);
 
         private static readonly string[] ModeNames =
         {
@@ -87,12 +83,6 @@ namespace Hecton8.UI
         {
             if (!_built) EnsureBuilt();
 
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
-
             SpectrumEvents.OnModeChanged += HandleModeChanged;
             PDAEvents.OnOpened += HandlePDAOpened;
 
@@ -101,31 +91,13 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
-
             SpectrumEvents.OnModeChanged -= HandleModeChanged;
             PDAEvents.OnOpened -= HandlePDAOpened;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable — обновление статуса сонара
+        //  EVENT-DRIVEN REFRESH
         // ══════════════════════════════════════════════════════════
-
-        public void Tick(float deltaTime)
-        {
-            SpectrumSystem sys = SpectrumSystem.Instance;
-            if (sys == null) return;
-
-            SpectrumMode mode = sys.CurrentMode;
-            if (mode == _displayedMode) return;
-
-            _displayedMode = mode;
-            RefreshModeDisplay();
-        }
 
         // ══════════════════════════════════════════════════════════
         //  EVENT HANDLERS
@@ -265,8 +237,6 @@ namespace Hecton8.UI
         {
             SpectrumSystem sys = SpectrumSystem.Instance;
             SpectrumMode active = sys != null ? sys.CurrentMode : SpectrumMode.Normal;
-
-            _displayedMode = active;
 
             // Обновляем кнопки
             for (int i = 0; i < _modeButtons.Length; i++)

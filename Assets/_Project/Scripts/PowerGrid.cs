@@ -131,7 +131,9 @@ namespace Hecton8.Power
         public void AddNode(PowerNode node)
         {
             if (node == null) return;
-            _nodes.Add(node);
+            if (!_nodes.Add(node) && ReferenceEquals(node.Grid, this))
+                return;
+
             node.SetGrid(this);
         }
 
@@ -157,6 +159,11 @@ namespace Hecton8.Power
         {
             if (other == null) return;
             if (ReferenceEquals(other, this)) return;
+            if (other._nodes == null || other._nodes.Count == 0)
+            {
+                other._nodes?.Clear();
+                return;
+            }
 
             foreach (PowerNode node in other._nodes)
             {

@@ -135,9 +135,11 @@ namespace Hecton8.EditorTools
                 EnsureAssetFolder("Assets/Screenshots");
                 EnsureAssetFolder(AutomationPreviewFolder);
 
+                WorldProceduralFloraMaterialAuthoring.Apply();
                 WorldProceduralFloraBakedStarterGenerator.Generate();
                 WorldProceduralFloraFinalVariantAuthoring.ApplyBakedFloraFinals();
                 WorldProceduralFloraFinalVariantValidator.Validate();
+                WorldProceduralFloraTextureAuthoring.ReportImportedTextureLibrary();
                 GenerateReport();
 
                 BuildAutomationPreviewQueue(request);
@@ -1113,7 +1115,7 @@ namespace Hecton8.EditorTools
 
         private static MaterialState EvaluateMaterialState(string familyId, Renderer[] renderers, bool isGenerated)
         {
-            string expectedShaderName = ResolveExpectedShaderName(familyId);
+            string expectedShaderLabel = WorldProceduralFloraMaterialAuthoring.DescribeExpectedShaderVariant(familyId);
             bool instancingOk = true;
             bool shaderOk = true;
             bool shaderContractOk = true;
@@ -1162,10 +1164,10 @@ namespace Hecton8.EditorTools
                         if (!material.enableInstancing)
                             instancingOk = false;
 
-                        if (string.IsNullOrEmpty(expectedShaderName))
+                        if (string.IsNullOrEmpty(expectedShaderLabel))
                             continue;
 
-                        if (material.shader == null || material.shader.name != expectedShaderName)
+                        if (!WorldProceduralFloraMaterialAuthoring.IsAcceptedFloraShader(material.shader, familyId))
                         {
                             shaderOk = false;
                         }
@@ -1232,7 +1234,7 @@ namespace Hecton8.EditorTools
             if (!anyMaterial)
                 return new MaterialState(false, false, false, false, false, "missing-materials");
 
-            if (string.IsNullOrEmpty(expectedShaderName))
+            if (string.IsNullOrEmpty(expectedShaderLabel))
                 return new MaterialState(instancingOk, true, true, true, !generatedTextureSourceUsed, instancingOk ? "ok" : "instancing-off");
 
             if (instancingOk && shaderOk && shaderContractOk && textureStackOk && importedTextureContractOk && !generatedTextureSourceUsed)
@@ -1300,17 +1302,6 @@ namespace Hecton8.EditorTools
 
             failureLabel = string.Empty;
             return false;
-        }
-
-        private static string ResolveExpectedShaderName(string familyId)
-        {
-            if (familyId.StartsWith("family.kelp.", StringComparison.Ordinal))
-                return KelpShaderName;
-
-            if (familyId.StartsWith("family.coral.", StringComparison.Ordinal))
-                return CoralShaderName;
-
-            return string.Empty;
         }
 
         private static RendererState EvaluateRendererState(Renderer[] renderers)

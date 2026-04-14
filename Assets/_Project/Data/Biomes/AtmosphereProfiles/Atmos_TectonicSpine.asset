@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_TectonicSpine
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.22, g: 0.28, b: 0.46, a: 1}
-  fogDensity: 0.014
-  skyExposure: 0.8
-  ambientColor: {r: 0.2, g: 0.22, b: 0.28, a: 1}
-  sunIntensity: 0.7
+  fogColor: {r: 0.2, g: 0.26, b: 0.43, a: 1}
+  fogDensity: 0.015
+  skyExposure: 0.74
+  ambientColor: {r: 0.18, g: 0.2, b: 0.26, a: 1}
+  sunIntensity: 0.62
   temperature: 20
   radiation: 0

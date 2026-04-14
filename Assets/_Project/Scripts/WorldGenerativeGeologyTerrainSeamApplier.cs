@@ -414,8 +414,14 @@ namespace Hecton8.World
         private static RectInt BuildPlanRect(Terrain terrain, in WorldGenerativeGeologySeamPlan plan)
         {
             TerrainData terrainData = terrain.terrainData;
+            if (terrainData == null || terrainData.heightmapResolution < 2)
+                return default;
+
             Vector3 position = terrain.transform.position;
             Vector3 size = terrainData.size;
+            if (size.x <= 0.001f || size.z <= 0.001f || plan.seamBlendRadius <= 0f)
+                return default;
+
             int maxIndex = terrainData.heightmapResolution - 1;
             float radius = Mathf.Max(1f, plan.seamBlendRadius);
             float minX01 = Mathf.Clamp01((plan.worldPosition.x - radius - position.x) / size.x);

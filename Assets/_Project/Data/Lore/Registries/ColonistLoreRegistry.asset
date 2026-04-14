@@ -123,3 +123,45 @@ MonoBehaviour:
       847 \u0434\u043D\u0435\u0439 \u043D\u0430\u0437\u0430\u0434."
     locationHint: "\u0421\u0435\u043A\u0442\u043E\u0440 3, \u043D\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u043E\u043D\u043D\u044B\u0439
       \u043F\u043E\u0441\u0442"
+  - discoveryId: first_hour_shadow_event
+    displayName: "Event - Shadow (First Hour)"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "First-hour fear beat. Large fast shadow from the left. Meant to break overconfidence."
+    locationHint: "First hour, shallow corridor"
+  - discoveryId: first_colony_module_spotted
+    displayName: "Event - First Colony Module"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "First orientation target for the opening hour. Reads as a distant objective, not a hard marker."
+    locationHint: "First hour, forward silhouette"
+  - discoveryId: zone_the_spine
+    displayName: "Zone - THE SPINE / SHALLOW GRAVE"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "Start zone. Shallow water. Safe orientation. Coral reefs and the first visibility lesson."
+    locationHint: "Opening area, 0-100m"
+  - discoveryId: zone_drowned_factories
+    displayName: "Zone - THE DROWNED FACTORIES"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "West slope. Flooded colony modules. First real pressure ramp and risk increase."
+    locationHint: "West slope, 100-1500m"
+  - discoveryId: zone_the_drop_upper
+    displayName: "Zone - THE DROP / UPPER ABYSS"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "East wall. Sudden vertical drop. Absolute dark. Leviathans and the shift into full tension."
+    locationHint: "East wall, 1000-2500m"
+  - discoveryId: zone_deep_abyss
+    displayName: "Zone - DEEP ABYSS / THE VOID"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "Abyssal plain. Isolation. Equipment failure is lethal. Narrative should shift into dread here."
+    locationHint: "Abyss, 2500-4000m"
+  - discoveryId: zone_thermal_fields
+    displayName: "Zone - THERMAL FIELDS / THE RIFT"
+    objectType: 0
+    linkedAudioLog: {fileID: 0}
+    description: "Rift zones. Hydrothermal vents. Deepest live space. Atlas-6 core and the third-phase endpoint."
+    locationHint: "Rift, 4000-5500m"

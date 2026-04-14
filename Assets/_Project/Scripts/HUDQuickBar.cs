@@ -77,6 +77,9 @@ namespace Hecton8.UI
         private string _lastDirectiveAdvicePreset;
         private bool _lastDirectiveHasAdvice;
         private bool _registeredToTickManager;
+        private bool _slotVisualsDirty;
+        private bool _statusDirty;
+        private ToolDurabilitySystem _subscribedDurabilitySystem;
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
@@ -89,7 +92,8 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
-            Refresh();
+            MarkAllDirty();
+            Refresh(forceStatus: true);
             RegisterToTickManager();
         }
 
@@ -101,6 +105,8 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            RefreshDurabilitySubscription();
+
             // Dim when PDA is open
             if (_canvasGroup != null)
             {
@@ -109,11 +115,7 @@ namespace Hecton8.UI
                     1f - Mathf.Exp(-8f * deltaTime));
             }
 
-            if (Time.unscaledTime >= _nextStatusRefreshAt)
-            {
-                _nextStatusRefreshAt = Time.unscaledTime + 0.15f;
-                Refresh();
-            }
+            Refresh();
         }
 
         private void RegisterToTickManager()
@@ -165,6 +167,8 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
+            RefreshDurabilitySubscription();
+
             if (toolManager != null)
             {
                 toolManager.ActiveSlotChanged += OnSlotChanged;
@@ -179,10 +183,73 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged -= OnSlotChanged;
                 toolManager.ToolAssignmentsChanged -= OnAssignmentsChanged;
             }
+
+            if (_subscribedDurabilitySystem != null)
+            {
+                _subscribedDurabilitySystem.OnDurabilityChanged -= HandleDurabilityChanged;
+                _subscribedDurabilitySystem.OnToolBroken -= HandleToolBroken;
+                _subscribedDurabilitySystem.OnToolRepaired -= HandleToolRepaired;
+                _subscribedDurabilitySystem = null;
+            }
         }
 
-        private void OnSlotChanged(int _) => Refresh();
-        private void OnAssignmentsChanged() => Refresh();
+        private void RefreshDurabilitySubscription()
+        {
+            ToolDurabilitySystem currentSystem = ToolDurabilitySystem.Instance;
+            if (ReferenceEquals(_subscribedDurabilitySystem, currentSystem))
+                return;
+
+            if (_subscribedDurabilitySystem != null)
+            {
+                _subscribedDurabilitySystem.OnDurabilityChanged -= HandleDurabilityChanged;
+                _subscribedDurabilitySystem.OnToolBroken -= HandleToolBroken;
+                _subscribedDurabilitySystem.OnToolRepaired -= HandleToolRepaired;
+            }
+
+            _subscribedDurabilitySystem = currentSystem;
+            if (_subscribedDurabilitySystem != null)
+            {
+                _subscribedDurabilitySystem.OnDurabilityChanged += HandleDurabilityChanged;
+                _subscribedDurabilitySystem.OnToolBroken += HandleToolBroken;
+                _subscribedDurabilitySystem.OnToolRepaired += HandleToolRepaired;
+            }
+        }
+
+        private void MarkAllDirty()
+        {
+            _slotVisualsDirty = true;
+            _statusDirty = true;
+            _nextStatusRefreshAt = 0f;
+        }
+
+        private void OnSlotChanged(int _)
+        {
+            _slotVisualsDirty = true;
+            _statusDirty = true;
+            Refresh(forceStatus: true);
+        }
+
+        private void OnAssignmentsChanged()
+        {
+            _slotVisualsDirty = true;
+            _statusDirty = true;
+            Refresh(forceStatus: true);
+        }
+
+        private void HandleDurabilityChanged(string toolId, float _, float __)
+        {
+            InvalidateToolSlotVisuals(toolId);
+        }
+
+        private void HandleToolBroken(string toolId)
+        {
+            InvalidateToolSlotVisuals(toolId);
+        }
+
+        private void HandleToolRepaired(string toolId, float _)
+        {
+            InvalidateToolSlotVisuals(toolId);
+        }
 
         // ══════════════════════════════════════════════════════════
         //  BUILD
@@ -314,95 +381,142 @@ namespace Hecton8.UI
         //  REFRESH
         // ══════════════════════════════════════════════════════════
 
-        private void Refresh()
+        private void InvalidateToolSlotVisuals(string toolId)
         {
-            if (toolManager == null || _slotBgs == null) return;
+            if (string.IsNullOrEmpty(toolId) || !IsAssignedToolIdTracked(toolId))
+                return;
 
-            int active = toolManager.CurrentSlotIndex;
+            _slotVisualsDirty = true;
+            _statusDirty = true;
+        }
+
+        private bool IsAssignedToolIdTracked(string toolId)
+        {
+            if (toolManager == null || string.IsNullOrEmpty(toolId))
+                return false;
 
             for (int i = 0; i < SlotCount; i++)
             {
-                bool isActive = i == active;
-                _slotBgs[i].color = isActive ? SlotActive : SlotBg;
-                _slotKeys[i].color = isActive ? KeyActive : KeyDim;
-
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                if (prefab != null && prefab.TryGetComponent<PlayerTool>(out var tool)
-                    && tool.ToolData != null && tool.ToolData.icon != null)
-                {
-                    bool available = toolManager.IsToolAvailableInSlot(i);
-                    Sprite desiredSprite = tool.ToolData.icon;
-                    if (!ReferenceEquals(_slotIconSprites[i], desiredSprite))
-                    {
-                        _slotIcons[i].sprite = desiredSprite;
-                        _slotIconSprites[i] = desiredSprite;
-                    }
+                if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
+                    continue;
 
-                    if (!_slotIconVisible[i] || _slotIconAvailable[i] != available)
-                    {
-                        _slotIcons[i].color = available ? Color.white : IconUnavailable;
-                        _slotIconVisible[i] = true;
-                        _slotIconAvailable[i] = available;
-                    }
+                if (string.Equals(tool.Metadata.toolID, toolId, System.StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void Refresh(bool forceStatus = false)
+        {
+            if (toolManager == null || _slotBgs == null)
+                return;
+
+            if (_slotVisualsDirty)
+            {
+                RefreshSlotVisuals();
+                _slotVisualsDirty = false;
+            }
+
+            bool shouldPollStatus = toolManager.CurrentTool != null && Time.unscaledTime >= _nextStatusRefreshAt;
+            if (!forceStatus && !_statusDirty && !shouldPollStatus)
+                return;
+
+            RefreshStatusText();
+            _statusDirty = false;
+            _nextStatusRefreshAt = Time.unscaledTime + 0.15f;
+        }
+
+        private void RefreshSlotVisuals()
+        {
+            int activeSlot = toolManager.CurrentSlotIndex;
+            for (int i = 0; i < SlotCount; i++)
+                RefreshSlotVisuals(i, activeSlot);
+        }
+
+        private void RefreshSlotVisuals(int slotIndex, int activeSlot)
+        {
+            bool isActive = slotIndex == activeSlot;
+            _slotBgs[slotIndex].color = isActive ? SlotActive : SlotBg;
+            _slotKeys[slotIndex].color = isActive ? KeyActive : KeyDim;
+
+            GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
+            if (prefab != null && prefab.TryGetComponent(out PlayerTool tool) &&
+                tool.ToolData != null && tool.ToolData.icon != null)
+            {
+                bool available = toolManager.IsToolAvailableInSlot(slotIndex);
+                Sprite desiredSprite = tool.ToolData.icon;
+                if (!ReferenceEquals(_slotIconSprites[slotIndex], desiredSprite))
+                {
+                    _slotIcons[slotIndex].sprite = desiredSprite;
+                    _slotIconSprites[slotIndex] = desiredSprite;
                 }
-                else
+
+                if (!_slotIconVisible[slotIndex] || _slotIconAvailable[slotIndex] != available)
                 {
-                    if (_slotIconVisible[i] || _slotIconSprites[i] != null)
-                    {
-                        _slotIcons[i].sprite = null;
-                        _slotIcons[i].color = IconHidden;
-                        _slotIconSprites[i] = null;
-                        _slotIconVisible[i] = false;
-                        _slotIconAvailable[i] = false;
-                    }
+                    _slotIcons[slotIndex].color = available ? Color.white : IconUnavailable;
+                    _slotIconVisible[slotIndex] = true;
+                    _slotIconAvailable[slotIndex] = available;
                 }
+            }
+            else if (_slotIconVisible[slotIndex] || _slotIconSprites[slotIndex] != null)
+            {
+                _slotIcons[slotIndex].sprite = null;
+                _slotIcons[slotIndex].color = IconHidden;
+                _slotIconSprites[slotIndex] = null;
+                _slotIconVisible[slotIndex] = false;
+                _slotIconAvailable[slotIndex] = false;
+            }
 
-                // Durability bar
-                if (_durBars != null && i < _durBars.Length && _durBars[i] != null)
+            RefreshDurabilityVisual(slotIndex, prefab);
+        }
+
+        private void RefreshDurabilityVisual(int slotIndex, GameObject prefab)
+        {
+            if (_durBars == null || slotIndex >= _durBars.Length || _durBars[slotIndex] == null)
+                return;
+
+            bool showDurability = false;
+            float desiredWidth = 0f;
+            Color desiredColor = DurHidden;
+
+            if (prefab != null && prefab.TryGetComponent(out PlayerTool tool) && tool.Metadata != null)
+            {
+                ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+                if (durabilitySystem != null)
                 {
-                    bool showDur = false;
-                    float desiredWidth = 0f;
-                    Color desiredDurColor = DurHidden;
-
-                    if (prefab != null
-                        && prefab.TryGetComponent<PlayerTool>(out var ptool)
-                        && ptool.Metadata != null)
+                    float maxDurability = tool.Metadata.maxDurability;
+                    if (maxDurability > 0f)
                     {
-                        var durSys = ToolDurabilitySystem.Instance;
-                        if (durSys != null)
-                        {
-                            float maxD = ptool.Metadata.maxDurability;
-                            if (maxD > 0f)
-                            {
-                                float curD = durSys.GetDurability(
-                                    ptool.Metadata.toolID, maxD);
-                                float norm = Mathf.Clamp01(curD / maxD);
-
-                                desiredWidth = (slotSize - 6f) * norm;
-                                desiredDurColor = Color.Lerp(DurWarning, DurGood, norm);
-                                showDur = true;
-                            }
-                        }
-                    }
-
-                    if (_slotDurVisible[i] != showDur || !Mathf.Approximately(_slotDurWidths[i], desiredWidth))
-                    {
-                        _durBars[i].rectTransform.sizeDelta = new Vector2(desiredWidth, 2f);
-                        _slotDurWidths[i] = desiredWidth;
-                        _slotDurVisible[i] = showDur;
-                    }
-
-                    if (_slotDurVisible[i])
-                    {
-                        _durBars[i].color = desiredDurColor;
-                    }
-                    else if (_durBars[i].color.a > 0f)
-                    {
-                        _durBars[i].color = DurHidden;
+                        float currentDurability = durabilitySystem.GetDurability(tool.Metadata.toolID, maxDurability);
+                        float normalizedDurability = Mathf.Clamp01(currentDurability / maxDurability);
+                        desiredWidth = (slotSize - 6f) * normalizedDurability;
+                        desiredColor = Color.Lerp(DurWarning, DurGood, normalizedDurability);
+                        showDurability = true;
                     }
                 }
             }
 
+            if (_slotDurVisible[slotIndex] != showDurability || !Mathf.Approximately(_slotDurWidths[slotIndex], desiredWidth))
+            {
+                _durBars[slotIndex].rectTransform.sizeDelta = new Vector2(desiredWidth, 2f);
+                _slotDurWidths[slotIndex] = desiredWidth;
+                _slotDurVisible[slotIndex] = showDurability;
+            }
+
+            if (_slotDurVisible[slotIndex])
+            {
+                _durBars[slotIndex].color = desiredColor;
+            }
+            else if (_durBars[slotIndex].color.a > 0f)
+            {
+                _durBars[slotIndex].color = DurHidden;
+            }
+        }
+
+        private void RefreshStatusText()
+        {
             if (_toolSummary != null)
             {
                 string summary = toolManager.GetCurrentToolOperationalSummary();
@@ -413,22 +527,22 @@ namespace Hecton8.UI
                 }
             }
 
-            if (_toolDirective != null)
+            if (_toolDirective == null)
+                return;
+
+            string directive = toolManager.GetCurrentToolOperationalDirective();
+            Transform origin = toolManager != null ? toolManager.transform : null;
+            bool hasAdvice = FieldLoadoutAdvisor.TryBuildForwardPresetName(origin, fieldAdviceRange, fieldAdviceMask, out string advicePreset);
+            if (_lastDirectiveBase != directive ||
+                _lastDirectiveHasAdvice != hasAdvice ||
+                _lastDirectiveAdvicePreset != advicePreset)
             {
-                string directive = toolManager.GetCurrentToolOperationalDirective();
-                Transform origin = toolManager != null ? toolManager.transform : null;
-                bool hasAdvice = FieldLoadoutAdvisor.TryBuildForwardPresetName(origin, fieldAdviceRange, fieldAdviceMask, out string advicePreset);
-                if (_lastDirectiveBase != directive ||
-                    _lastDirectiveHasAdvice != hasAdvice ||
-                    _lastDirectiveAdvicePreset != advicePreset)
-                {
-                    _toolDirective.text = hasAdvice
-                        ? directive + "  KIT " + advicePreset
-                        : directive;
-                    _lastDirectiveBase = directive;
-                    _lastDirectiveHasAdvice = hasAdvice;
-                    _lastDirectiveAdvicePreset = advicePreset;
-                }
+                _toolDirective.text = hasAdvice
+                    ? directive + "  KIT " + advicePreset
+                    : directive;
+                _lastDirectiveBase = directive;
+                _lastDirectiveHasAdvice = hasAdvice;
+                _lastDirectiveAdvicePreset = advicePreset;
             }
         }
 

@@ -39,8 +39,12 @@ MonoBehaviour:
     - Den.Tools
     - EasySave3
     - GPUInstancer
+    - Hecton8.Bootstrap.Contracts
     - Hecton8.Core
+    - Hecton8.Input
     - Hecton8.Input.Generated
+    - Hecton8.World.Contracts
+    - Hecton8.World.Dots
     - JBooth.MicroSplat.Core
     - Lofelt.NiceVibrations
     - Lofelt.NiceVibrations.Demo

@@ -1,6 +1,8 @@
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using EntitiesWorld = Unity.Entities.World;
@@ -14,14 +16,21 @@ namespace Hecton8.World.Dots
     internal sealed class ScatterEntitiesSimulationBackend : IScatterSimulationBackend
     {
         private const int HeightSourceEntities = 2;
+        private const int MaxCandidatesPerCell = 4;
+        private const ulong FnvOffset = 14695981039346656037UL;
+        private const ulong FnvPrime = 1099511628211UL;
 
         private EntitiesWorld _world;
         private EntityManager _entityManager;
         private Entity _requestEntity;
         private NativeArray<ScatterSimulationCandidate> _resultCandidates;
+        private NativeArray<ScatterSimulationCellState> _jobCellStates;
+        private NativeArray<ScatterSimulationCandidate> _jobCandidateSlots;
+        private JobHandle _simulationJobHandle;
         private bool _initialized;
         private bool _disposed;
         private bool _jobActive;
+        private int _scheduledCellCount;
 
         public ScatterSimulationBackendKind BackendKind => ScatterSimulationBackendKind.EntitiesDots;
         public bool IsInitialized => _initialized && !_disposed;
@@ -33,8 +42,7 @@ namespace Hecton8.World.Dots
                 if (_disposed || !_jobActive || !_entityManager.Exists(_requestEntity))
                     return false;
 
-                ScatterEntitiesSimulationStatus status = _entityManager.GetComponentData<ScatterEntitiesSimulationStatus>(_requestEntity);
-                return Time.frameCount > status.ScheduledFrame;
+                return _simulationJobHandle.IsCompleted;
             }
         }
 
@@ -49,40 +57,83 @@ namespace Hecton8.World.Dots
             EntityArchetype archetype = _entityManager.CreateArchetype(
                 typeof(ScatterEntitiesSimulationRequest),
                 typeof(ScatterEntitiesSimulationStatus),
+                typeof(ScatterEntitiesScopeState),
+                typeof(ScatterEntitiesQuotaState),
                 typeof(ScatterEntitiesHeightSampleElement),
+                typeof(ScatterEntitiesCellStateElement),
                 typeof(ScatterEntitiesCandidateElement));
 
             _requestEntity = _entityManager.CreateEntity(archetype);
             _initialized = true;
         }
 
-        public bool TrySchedule(ScatterSimulationConfig config, NativeArray<float> heightSamples)
+        public bool TrySchedule(
+            ScatterSimulationConfig config,
+            NativeArray<float> heightSamples,
+            NativeArray<ScatterSimulationCellState> cellStates)
         {
-            if (!IsInitialized || _jobActive || !_entityManager.Exists(_requestEntity) || !heightSamples.IsCreated || heightSamples.Length == 0)
+            if (!IsInitialized || _jobActive || !_entityManager.Exists(_requestEntity) || !heightSamples.IsCreated || !cellStates.IsCreated || heightSamples.Length == 0)
                 return false;
 
+            EnsureJobCapacity(heightSamples.Length);
+
             DynamicBuffer<ScatterEntitiesHeightSampleElement> heightBuffer = _entityManager.GetBuffer<ScatterEntitiesHeightSampleElement>(_requestEntity);
+            DynamicBuffer<ScatterEntitiesCellStateElement> cellStateBuffer = _entityManager.GetBuffer<ScatterEntitiesCellStateElement>(_requestEntity);
             DynamicBuffer<ScatterEntitiesCandidateElement> candidateBuffer = _entityManager.GetBuffer<ScatterEntitiesCandidateElement>(_requestEntity);
             heightBuffer.Clear();
+            cellStateBuffer.Clear();
             candidateBuffer.Clear();
             heightBuffer.EnsureCapacity(heightSamples.Length);
+            cellStateBuffer.EnsureCapacity(heightSamples.Length);
 
             for (int i = 0; i < heightSamples.Length; i++)
+            {
+                ScatterSimulationCellState cellState = i < cellStates.Length
+                    ? cellStates[i]
+                    : BuildCellState(config, i, heightSamples[i]);
                 heightBuffer.Add(new ScatterEntitiesHeightSampleElement { Value = heightSamples[i] });
+                cellStateBuffer.Add(new ScatterEntitiesCellStateElement
+                {
+                    Value = cellState
+                });
+
+                _jobCellStates[i] = cellState;
+            }
 
             _entityManager.SetComponentData(_requestEntity, new ScatterEntitiesSimulationRequest
             {
                 Config = config,
                 HeightSampleCount = heightSamples.Length
             });
+            _entityManager.SetComponentData(_requestEntity, new ScatterEntitiesScopeState
+            {
+                EligibilityMask = config.DefaultEligibility,
+                DefaultSuppressionState = config.DefaultSuppressionState,
+                DirtyFlags = config.DirtyFlags
+            });
+            _entityManager.SetComponentData(_requestEntity, new ScatterEntitiesQuotaState
+            {
+                Value = config.QuotaState
+            });
 
             _entityManager.SetComponentData(_requestEntity, new ScatterEntitiesSimulationStatus
             {
                 CandidateCount = 0,
-                ScheduledFrame = Time.frameCount,
+                ScheduledCellCount = heightSamples.Length,
                 Completed = 0
             });
 
+            _scheduledCellCount = heightSamples.Length;
+            ScatterSimulationDirtyFlags activeDirtyFlags = config.DirtyFlags;
+            _simulationJobHandle = new ScatterEntitiesCandidateJob
+            {
+                Cells = _jobCellStates,
+                CandidateSlots = _jobCandidateSlots,
+                Config = config,
+                QuotaState = config.QuotaState,
+                ActiveDirtyFlags = activeDirtyFlags,
+                CellCount = _scheduledCellCount
+            }.Schedule(_scheduledCellCount, 32);
             _jobActive = true;
             return true;
         }
@@ -90,37 +141,14 @@ namespace Hecton8.World.Dots
         public bool TryComplete(out ScatterSimulationResult result)
         {
             result = default;
-            if (!IsInitialized || !_jobActive || !_entityManager.Exists(_requestEntity))
+            if (!IsInitialized || !_jobActive || !_entityManager.Exists(_requestEntity) || !_simulationJobHandle.IsCompleted)
                 return false;
 
-            RunSimulation();
-
-            ScatterEntitiesSimulationStatus status = _entityManager.GetComponentData<ScatterEntitiesSimulationStatus>(_requestEntity);
-            if (status.Completed == 0)
-                return false;
-
-            DynamicBuffer<ScatterEntitiesCandidateElement> candidateBuffer = _entityManager.GetBuffer<ScatterEntitiesCandidateElement>(_requestEntity);
-            EnsureResultCapacity(candidateBuffer.Length);
-
-            for (int i = 0; i < candidateBuffer.Length; i++)
-            {
-                ScatterEntitiesCandidateElement candidate = candidateBuffer[i];
-                _resultCandidates[i] = new ScatterSimulationCandidate
-                {
-                    Position = candidate.Position,
-                    Rotation = candidate.Rotation,
-                    Scale = candidate.Scale,
-                    CellKey = candidate.CellKey,
-                    FamilyIndex = candidate.FamilyIndex,
-                    LayerIndex = candidate.LayerIndex,
-                    Score = candidate.Score,
-                    HeightSource = candidate.HeightSource,
-                    IsValid = candidate.IsValid != 0
-                };
-            }
-
-            result = new ScatterSimulationResult(_resultCandidates, candidateBuffer.Length);
+            _simulationJobHandle.Complete();
+            ScatterSimulationParitySnapshot paritySnapshot = CompleteScheduledSimulation();
+            result = new ScatterSimulationResult(_resultCandidates, paritySnapshot.CandidateCount, paritySnapshot);
             _jobActive = false;
+            _scheduledCellCount = 0;
             return true;
         }
 
@@ -129,8 +157,9 @@ namespace Hecton8.World.Dots
             if (!IsInitialized || !_jobActive)
                 return;
 
-            RunSimulation();
+            _simulationJobHandle.Complete();
             _jobActive = false;
+            _scheduledCellCount = 0;
         }
 
         public void Dispose()
@@ -138,8 +167,15 @@ namespace Hecton8.World.Dots
             if (_disposed)
                 return;
 
+            if (_jobActive)
+                _simulationJobHandle.Complete();
+
             if (_resultCandidates.IsCreated)
                 _resultCandidates.Dispose();
+            if (_jobCellStates.IsCreated)
+                _jobCellStates.Dispose();
+            if (_jobCandidateSlots.IsCreated)
+                _jobCandidateSlots.Dispose();
 
             if (_world != null && _world.IsCreated)
                 _world.Dispose();
@@ -150,50 +186,200 @@ namespace Hecton8.World.Dots
             _jobActive = false;
         }
 
-        private void RunSimulation()
+        private ScatterSimulationParitySnapshot CompleteScheduledSimulation()
         {
-            ScatterEntitiesSimulationRequest request = _entityManager.GetComponentData<ScatterEntitiesSimulationRequest>(_requestEntity);
             ScatterEntitiesSimulationStatus status = _entityManager.GetComponentData<ScatterEntitiesSimulationStatus>(_requestEntity);
-            if (status.Completed != 0)
-                return;
-
-            DynamicBuffer<ScatterEntitiesHeightSampleElement> heights = _entityManager.GetBuffer<ScatterEntitiesHeightSampleElement>(_requestEntity);
             DynamicBuffer<ScatterEntitiesCandidateElement> candidates = _entityManager.GetBuffer<ScatterEntitiesCandidateElement>(_requestEntity);
             candidates.Clear();
+            int totalSlotCount = math.max(0, _scheduledCellCount * MaxCandidatesPerCell);
+            candidates.EnsureCapacity(totalSlotCount);
+            EnsureResultCapacity(totalSlotCount);
 
-            ScatterSimulationConfig config = request.Config;
-            int totalCells = math.min(request.HeightSampleCount, heights.Length);
-            for (int i = 0; i < totalCells; i++)
+            ScatterSimulationParitySnapshot paritySnapshot = default;
+            BuildCellParitySnapshot(_jobCellStates, _scheduledCellCount, ref paritySnapshot);
+
+            int candidateCount = 0;
+            for (int i = 0; i < totalSlotCount; i++)
             {
-                float height = heights[i].Value;
-                int localX = config.RadiusCells > 0 ? (i % ((config.RadiusCells * 2) + 1)) - config.RadiusCells : 0;
-                int localZ = config.RadiusCells > 0 ? (i / ((config.RadiusCells * 2) + 1)) - config.RadiusCells : 0;
-                float3 basePosition = config.PlayerPosition + new float3(localX * config.CellSize, height + config.SurfaceYOffset, localZ * config.CellSize);
-                long cellKey = ((long)(uint)(localX & 0xFFFF) << 32) | (uint)(localZ & 0xFFFF);
-                uint cellSeed = config.Seed ^ (uint)(i + 1) * 747796405u;
+                ScatterSimulationCandidate candidate = _jobCandidateSlots[i];
+                if (!candidate.IsValid)
+                    continue;
 
-                TryAddCandidate(candidates, basePosition, cellKey, config.GroundFamilyIndex, 0, config.GroundPlacementsPerCell > 0, ref cellSeed, 1f);
-                TryAddCandidate(candidates, basePosition, cellKey, config.ClusterFamilyIndex, 1, config.ClusterPlacementsPerCell > 0 && (i % 2) == 0, ref cellSeed, 0.75f);
-                TryAddCandidate(candidates, basePosition, cellKey, config.StructureFamilyIndex, 2, config.StructureCellStride > 0 && (i % math.max(1, config.StructureCellStride)) == 0, ref cellSeed, 0.5f);
-                TryAddCandidate(candidates, basePosition, cellKey, config.SpawnFamilyIndex, 3, config.SpawnCellStride > 0 && (i % math.max(1, config.SpawnCellStride)) == 0, ref cellSeed, 0.35f);
+                _resultCandidates[candidateCount++] = candidate;
+                candidates.Add(new ScatterEntitiesCandidateElement
+                {
+                    Position = candidate.Position,
+                    Rotation = candidate.Rotation,
+                    Scale = candidate.Scale,
+                    CellKey = candidate.CellKey,
+                    FamilyIndex = candidate.FamilyIndex,
+                    LayerIndex = candidate.LayerIndex,
+                    Score = candidate.Score,
+                    HeightSource = candidate.HeightSource,
+                    IsValid = 1
+                });
+                AccumulateCandidateParity(ref paritySnapshot, candidate);
             }
 
-            status.CandidateCount = candidates.Length;
+            paritySnapshot.CandidateCount = candidateCount;
+            status.CandidateCount = candidateCount;
             status.Completed = 1;
             _entityManager.SetComponentData(_requestEntity, status);
+            return paritySnapshot;
         }
 
-        private static void TryAddCandidate(
-            DynamicBuffer<ScatterEntitiesCandidateElement> candidates,
+        private static ScatterSimulationCellState BuildCellState(
+            ScatterSimulationConfig config,
+            int cellIndex,
+            float height)
+        {
+            int diameter = config.RadiusCells > 0 ? (config.RadiusCells * 2) + 1 : 1;
+            int localX = config.RadiusCells > 0 ? (cellIndex % diameter) - config.RadiusCells : 0;
+            int localZ = config.RadiusCells > 0 ? (cellIndex / diameter) - config.RadiusCells : 0;
+            long cellKey = ((long)(uint)(localX & 0xFFFF) << 32) | (uint)(localZ & 0xFFFF);
+            return new ScatterSimulationCellState
+            {
+                CellKey = cellKey,
+                CellX = localX,
+                CellZ = localZ,
+                Height = height,
+                HeightSource = HeightSourceEntities,
+                Eligibility = config.DefaultEligibility,
+                Suppression = config.DefaultSuppressionState,
+                DirtyFlags = config.DirtyFlags
+            };
+        }
+
+        private void EnsureJobCapacity(int cellCount)
+        {
+            int requiredCells = math.max(1, cellCount);
+            int requiredCandidates = math.max(1, requiredCells * MaxCandidatesPerCell);
+            EnsureCellStateCapacity(requiredCells);
+            EnsureCandidateSlotCapacity(requiredCandidates);
+        }
+
+        private void EnsureCellStateCapacity(int requiredLength)
+        {
+            if (_jobCellStates.IsCreated && _jobCellStates.Length >= requiredLength)
+                return;
+
+            if (_jobCellStates.IsCreated)
+                _jobCellStates.Dispose();
+
+            // COLD ALLOC: NativeArray<ScatterSimulationCellState>[NextPowerOfTwo(requiredLength)] - entities scatter cell-state job input - owner: ScatterEntitiesSimulationBackend
+            _jobCellStates = new NativeArray<ScatterSimulationCellState>(
+                math.max(1, math.ceilpow2(requiredLength)),
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+        }
+
+        private void EnsureCandidateSlotCapacity(int requiredLength)
+        {
+            if (_jobCandidateSlots.IsCreated && _jobCandidateSlots.Length >= requiredLength)
+                return;
+
+            if (_jobCandidateSlots.IsCreated)
+                _jobCandidateSlots.Dispose();
+
+            // COLD ALLOC: NativeArray<ScatterSimulationCandidate>[NextPowerOfTwo(requiredLength)] - entities scatter candidate job output slots - owner: ScatterEntitiesSimulationBackend
+            _jobCandidateSlots = new NativeArray<ScatterSimulationCandidate>(
+                math.max(1, math.ceilpow2(requiredLength)),
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static void BuildCellParitySnapshot(
+            NativeArray<ScatterSimulationCellState> cells,
+            int cellCount,
+            ref ScatterSimulationParitySnapshot snapshot)
+        {
+            ulong hash = FnvOffset;
+            for (int i = 0; i < cellCount; i++)
+            {
+                ScatterSimulationCellState cell = cells[i];
+                if ((cell.Eligibility & ScatterSimulationEligibilityFlags.Ground) != 0)
+                    snapshot.EligibleGroundCells++;
+                if ((cell.Eligibility & ScatterSimulationEligibilityFlags.Cluster) != 0)
+                    snapshot.EligibleClusterCells++;
+                if ((cell.Eligibility & ScatterSimulationEligibilityFlags.Structure) != 0)
+                    snapshot.EligibleStructureCells++;
+                if ((cell.Eligibility & ScatterSimulationEligibilityFlags.Spawn) != 0)
+                    snapshot.EligibleSpawnCells++;
+                if (cell.DirtyFlags != ScatterSimulationDirtyFlags.None)
+                    snapshot.DirtyCellCount++;
+                if (cell.Suppression == ScatterSimulationSuppressionState.Suppressed)
+                    snapshot.SuppressedCellCount++;
+
+                hash = HashCombine(hash, (ulong)cell.CellKey);
+                hash = HashCombine(hash, (ulong)(uint)cell.HeightSource);
+                hash = HashCombine(hash, math.asuint(cell.Height));
+                hash = HashCombine(hash, (ulong)(uint)cell.Eligibility);
+                hash = HashCombine(hash, (ulong)(uint)cell.Suppression);
+                hash = HashCombine(hash, (ulong)(uint)cell.DirtyFlags);
+            }
+
+            snapshot.CellChecksum = hash;
+        }
+
+        private static void AccumulateCandidateParity(
+            ref ScatterSimulationParitySnapshot snapshot,
+            ScatterSimulationCandidate candidate)
+        {
+            switch (candidate.LayerIndex)
+            {
+                case 0:
+                    snapshot.GroundCount++;
+                    break;
+                case 1:
+                    snapshot.ClusterCount++;
+                    break;
+                case 2:
+                    snapshot.StructureCount++;
+                    break;
+                case 3:
+                    snapshot.SpawnCount++;
+                    break;
+            }
+
+            ulong hash = snapshot.CandidateChecksum == 0UL ? FnvOffset : snapshot.CandidateChecksum;
+            hash = HashCombine(hash, (ulong)candidate.CellKey);
+            hash = HashCombine(hash, (ulong)(uint)candidate.LayerIndex);
+            snapshot.CandidateChecksum = hash;
+        }
+
+        private static ulong HashCombine(ulong hash, ulong value)
+        {
+            return (hash ^ value) * FnvPrime;
+        }
+
+        private static void TryWriteLayerCandidate(
+            NativeArray<ScatterSimulationCandidate> candidates,
+            int slotIndex,
             float3 basePosition,
             long cellKey,
-            int familyIndex,
+            ScatterSimulationLayerQuota quota,
+            ScatterSimulationEligibilityFlags requiredEligibility,
+            ScatterSimulationCellState cellState,
+            int cellIndex,
             int layerIndex,
-            bool shouldEmit,
             ref uint seed,
             float scoreScale)
         {
-            if (!shouldEmit || familyIndex < 0)
+            candidates[slotIndex] = default;
+            if ((cellState.Eligibility & requiredEligibility) == 0)
+                return;
+
+            int familyIndex = quota.FamilyIndex;
+            if (familyIndex < 0)
+                return;
+
+            bool shouldEmit = layerIndex switch
+            {
+                0 => quota.PlacementsPerCell > 0,
+                1 => quota.PlacementsPerCell > 0 && (cellIndex % 2) == 0,
+                _ => quota.CellStride > 0 && (cellIndex % math.max(1, quota.CellStride)) == 0
+            };
+            if (!shouldEmit)
                 return;
 
             float random01 = NextRandom01(ref seed);
@@ -202,7 +388,7 @@ namespace Hecton8.World.Dots
             float offsetX = (NextRandom01(ref seed) - 0.5f) * 2f;
             float offsetZ = (NextRandom01(ref seed) - 0.5f) * 2f;
 
-            candidates.Add(new ScatterEntitiesCandidateElement
+            candidates[slotIndex] = new ScatterSimulationCandidate
             {
                 Position = basePosition + new float3(offsetX, 0f, offsetZ),
                 Rotation = rotation,
@@ -211,9 +397,9 @@ namespace Hecton8.World.Dots
                 FamilyIndex = familyIndex,
                 LayerIndex = layerIndex,
                 Score = random01 * scoreScale,
-                HeightSource = HeightSourceEntities,
-                IsValid = 1
-            });
+                HeightSource = cellState.HeightSource,
+                IsValid = true
+            };
         }
 
         private void EnsureResultCapacity(int requiredLength)
@@ -238,6 +424,56 @@ namespace Hecton8.World.Dots
         {
             state = (state * 1664525u) + 1013904223u;
             return (state & 0x00FFFFFFu) / 16777215f;
+        }
+
+        private struct ScatterEntitiesCandidateJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<ScatterSimulationCellState> Cells;
+            [NativeDisableParallelForRestriction] public NativeArray<ScatterSimulationCandidate> CandidateSlots;
+            public ScatterSimulationConfig Config;
+            public ScatterSimulationQuotaState QuotaState;
+            public ScatterSimulationDirtyFlags ActiveDirtyFlags;
+            public int CellCount;
+
+            public void Execute(int index)
+            {
+                int baseSlot = index * MaxCandidatesPerCell;
+                CandidateSlots[baseSlot + 0] = default;
+                CandidateSlots[baseSlot + 1] = default;
+                CandidateSlots[baseSlot + 2] = default;
+                CandidateSlots[baseSlot + 3] = default;
+
+                if (index < 0 || index >= CellCount)
+                    return;
+
+                ScatterSimulationDirtyFlags refreshMask = ScatterSimulationDirtyFlags.FullRebuild
+                    | ScatterSimulationDirtyFlags.Candidates
+                    | ScatterSimulationDirtyFlags.Heights
+                    | ScatterSimulationDirtyFlags.Eligibility
+                    | ScatterSimulationDirtyFlags.Quotas
+                    | ScatterSimulationDirtyFlags.Suppression;
+                if ((ActiveDirtyFlags & refreshMask) == 0)
+                    return;
+
+                ScatterSimulationCellState cellState = Cells[index];
+                if ((cellState.DirtyFlags & ActiveDirtyFlags) == 0 && (ActiveDirtyFlags & ScatterSimulationDirtyFlags.FullRebuild) == 0)
+                    return;
+
+                if (cellState.Suppression == ScatterSimulationSuppressionState.Suppressed)
+                    return;
+
+                float3 basePosition = Config.PlayerPosition + new float3(
+                    cellState.CellX * Config.CellSize,
+                    cellState.Height + Config.SurfaceYOffset,
+                    cellState.CellZ * Config.CellSize);
+                long cellKey = cellState.CellKey;
+                uint cellSeed = Config.Seed ^ ((uint)(index + 1) * 747796405u);
+
+                TryWriteLayerCandidate(CandidateSlots, baseSlot + 0, basePosition, cellKey, QuotaState.Ground, ScatterSimulationEligibilityFlags.Ground, cellState, index, 0, ref cellSeed, 1f);
+                TryWriteLayerCandidate(CandidateSlots, baseSlot + 1, basePosition, cellKey, QuotaState.Cluster, ScatterSimulationEligibilityFlags.Cluster, cellState, index, 1, ref cellSeed, 0.75f);
+                TryWriteLayerCandidate(CandidateSlots, baseSlot + 2, basePosition, cellKey, QuotaState.Structure, ScatterSimulationEligibilityFlags.Structure, cellState, index, 2, ref cellSeed, 0.5f);
+                TryWriteLayerCandidate(CandidateSlots, baseSlot + 3, basePosition, cellKey, QuotaState.Spawn, ScatterSimulationEligibilityFlags.Spawn, cellState, index, 3, ref cellSeed, 0.35f);
+            }
         }
     }
 }

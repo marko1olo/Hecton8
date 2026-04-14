@@ -112,19 +112,19 @@ Material:
     - _AgeDarkening: 0.1
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AmbientStrength: 0.48
+    - _AmbientStrength: 0.36
     - _BiolumCurrentResponse: 0.38
-    - _BiolumMaskStrength: 1.06
-    - _BiolumPulseAmplitude: 0.18
-    - _BiolumPulseFrequency: 0.72
-    - _BiolumStrength: 0.52
+    - _BiolumMaskStrength: 0.64
+    - _BiolumPulseAmplitude: 0.06
+    - _BiolumPulseFrequency: 0.28
+    - _BiolumStrength: 0.18
     - _BladeCurveNormalStrength: 0.18
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CausticScale: 1.5
+    - _CausticScale: 1.12
     - _CausticSpeed: 0.52
-    - _CausticStrength: 0.12
+    - _CausticStrength: 0.06
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 0
@@ -150,14 +150,18 @@ Material:
     - _MidribGlossBoost: 0.14
     - _MoistureBoost: 0.14
     - _NormalScale: 0.75
-    - _NormalStrength: 0.82
+    - _NormalStrength: 0.88
     - _OcclusionStrength: 1
     - _Parallax: 0.005
+    - _PropWashDisplacement: 0.85
     - _QueueOffset: 0
     - _ReceiveShadows: 0
     - _RimPower: 2.7
-    - _RimStrength: 0.28
-    - _Smoothness: 0.2
+    - _RimStrength: 0.16
+    - _SSSAmbient: 0.15
+    - _SSSPower: 4
+    - _SSSStrength: 1.2
+    - _Smoothness: 0.18
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 0
     - _SpecularNoiseStrength: 0.34
@@ -168,7 +172,7 @@ Material:
     - _SwayFrequency: 1.1
     - _SwayPhaseScale: 0.72
     - _SwaySpeed: 0.85
-    - _ThicknessStrength: 0.68
+    - _ThicknessStrength: 0.72
     - _TransmissionStrength: 0.68
     - _TriplanarScale: 0.32
     - _TriplanarSharpness: 4
@@ -177,13 +181,14 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BiolumColor: {r: 0.2, g: 0.9, b: 0.88, a: 1}
+    - _BaseColor: {r: 0.22, g: 0.34, b: 0.34, a: 1}
+    - _BiolumColor: {r: 0.14, g: 0.46, b: 0.46, a: 1}
     - _Color: {r: 0.1, g: 0.22, b: 0.24, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _RimColor: {r: 0.916, g: 0.948, b: 0.954, a: 1}
+    - _RimColor: {r: 0.3, g: 0.48, b: 0.48, a: 1}
+    - _SSSColor: {r: 0.45, g: 0.82, b: 0.37999994, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _TipColor: {r: 0.8944, g: 0.904, b: 0.9064, a: 1}
-    - _TransmissionColor: {r: 0.8524, g: 0.9676, b: 0.9784, a: 1}
+    - _TipColor: {r: 0.3, g: 0.5, b: 0.48, a: 1}
+    - _TransmissionColor: {r: 0.16, g: 0.34, b: 0.32, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

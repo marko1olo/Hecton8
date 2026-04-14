@@ -91,6 +91,8 @@ namespace Hecton8.Systems.AI
         /// </summary>
         public static event Action<bool> OnPredatorPressureChanged;
 
+        internal static HectonDirectorAI ActiveRuntimeInstance { get; private set; }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
         // ══════════════════════════════════════════════════════════
@@ -325,6 +327,7 @@ namespace Hecton8.Systems.AI
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolvePlayerAndSurvival();
         }
 
@@ -352,6 +355,12 @@ namespace Hecton8.Systems.AI
             NarrativeEvents.OnDiscoveryMade   -= HandleNarrativeDiscovery;
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
             HectonCelestialEngine.OnEclipseEnd   -= HandleEclipseEnd;
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
         }
 
         // ══════════════════════════════════════════════════════════

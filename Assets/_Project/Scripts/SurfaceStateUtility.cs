@@ -14,13 +14,23 @@ namespace Hecton8.Core
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool ResolveUnderwaterFromDepth(float depth, bool wasUnderwater)
+            => ResolveUnderwaterFromDepth(depth, wasUnderwater, EnterUnderwaterDepth, ExitUnderwaterDepth);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool ResolveUnderwaterFromDepth(
+            float depth,
+            bool wasUnderwater,
+            float enterUnderwaterDepth,
+            float exitUnderwaterDepth)
         {
             float clampedDepth = math.max(0f, depth);
+            float clampedEnterDepth = math.max(0f, enterUnderwaterDepth);
+            float clampedExitDepth = math.max(0f, math.min(exitUnderwaterDepth, clampedEnterDepth));
 
             if (wasUnderwater)
-                return clampedDepth > ExitUnderwaterDepth;
+                return clampedDepth > clampedExitDepth;
 
-            return clampedDepth >= EnterUnderwaterDepth;
+            return clampedDepth >= clampedEnterDepth;
         }
 
     }

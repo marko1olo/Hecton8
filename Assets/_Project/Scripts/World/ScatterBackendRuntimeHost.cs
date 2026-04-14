@@ -14,7 +14,7 @@ namespace Hecton8.World
         private ScatterBackendBindingState _bindingState;
         private ScatterHybridRuntimePlan _plan;
         private ScatterSimulationBackendKind _resolvedBackendKind = ScatterSimulationBackendKind.ClassicJobs;
-        private int _shadowPendingClassicQueuedCandidates;
+        private ScatterBackendParityReference _shadowPendingClassicParity;
 
         public ScatterBackendBindingState BindingState => _bindingState;
         public bool HasFacade => _facade != null;
@@ -65,7 +65,7 @@ namespace Hecton8.World
             }
 
             if (resetPendingState)
-                _shadowPendingClassicQueuedCandidates = 0;
+                _shadowPendingClassicParity = default;
 
             return resetPendingState;
         }
@@ -85,27 +85,17 @@ namespace Hecton8.World
             _bindingState?.ResetLookup();
         }
 
-        public void SetShadowPendingClassicQueuedCandidates(int value)
+        public void SetShadowPendingClassicParity(in ScatterBackendParityReference parityReference)
         {
-            _shadowPendingClassicQueuedCandidates = value;
-        }
-
-        public bool HasPendingFacadeWork()
-        {
-            return _facade != null && _facade.IsJobActive;
+            _shadowPendingClassicParity = parityReference;
         }
 
         public bool TrySchedule(in ScatterBackendScheduleRequest request, ScatterWorkingMemory memory)
         {
-            if (_facade == null || _bindingState == null || !_bindingState.TryPopulateHeightSamples(memory, request.TotalCells))
+            if (_facade == null || _bindingState == null || !_bindingState.TryPopulateCellData(memory, request.TotalCells))
                 return false;
 
-            return _facade.TrySchedule(BuildConfig(request), _bindingState.HeightSamples);
-        }
-
-        public bool TryCompleteAndReconcile(IScatterPrefabResolver prefabResolver)
-        {
-            return _facade != null && prefabResolver != null && _facade.TryCompleteAndReconcile(prefabResolver);
+            return _facade.TrySchedule(BuildConfig(request), _bindingState.HeightSamples, _bindingState.CellStates);
         }
 
         public bool TryCompleteShadowPass(out ScatterBackendShadowCompletion completion)
@@ -115,11 +105,11 @@ namespace Hecton8.World
                 return false;
 
             completion = new ScatterBackendShadowCompletion(
-                result.CandidateCount,
-                _shadowPendingClassicQueuedCandidates,
+                result.ParitySnapshot,
+                _shadowPendingClassicParity,
                 _facade.IsJobActive);
 
-            _shadowPendingClassicQueuedCandidates = 0;
+            _shadowPendingClassicParity = default;
             return true;
         }
 
@@ -134,7 +124,7 @@ namespace Hecton8.World
             DisposeBindingState();
             _plan = default;
             _resolvedBackendKind = ScatterSimulationBackendKind.ClassicJobs;
-            _shadowPendingClassicQueuedCandidates = 0;
+            _shadowPendingClassicParity = default;
         }
 
         private void DisposeBindingState()
@@ -148,19 +138,51 @@ namespace Hecton8.World
 
         private ScatterSimulationConfig BuildConfig(in ScatterBackendScheduleRequest request)
         {
+            ScatterSimulationQuotaState quotaState = new ScatterSimulationQuotaState
+            {
+                Ground = new ScatterSimulationLayerQuota
+                {
+                    PlacementsPerCell = Mathf.Max(0, request.GroundBudget),
+                    CellStride = 1,
+                    FamilyIndex = _bindingState != null ? _bindingState.GroundFamilyIndex : -1
+                },
+                Cluster = new ScatterSimulationLayerQuota
+                {
+                    PlacementsPerCell = Mathf.Max(0, request.ClusterBudget),
+                    CellStride = 1,
+                    FamilyIndex = _bindingState != null ? _bindingState.ClusterFamilyIndex : -1
+                },
+                Structure = new ScatterSimulationLayerQuota
+                {
+                    PlacementsPerCell = 1,
+                    CellStride = Mathf.Max(1, request.StructureStride),
+                    FamilyIndex = _bindingState != null ? _bindingState.StructureFamilyIndex : -1
+                },
+                Spawn = new ScatterSimulationLayerQuota
+                {
+                    PlacementsPerCell = 1,
+                    CellStride = Mathf.Max(1, request.SpawnStride),
+                    FamilyIndex = _bindingState != null ? _bindingState.SpawnFamilyIndex : -1
+                }
+            };
+
             return new ScatterSimulationConfig
             {
                 CellSize = Mathf.Max(6f, request.CellSize),
                 RadiusCells = Mathf.Max(2, request.RadiusCells),
                 PlayerPosition = request.ObserverPosition,
-                GroundPlacementsPerCell = Mathf.Max(0, request.GroundBudget),
-                ClusterPlacementsPerCell = Mathf.Max(0, request.ClusterBudget),
-                StructureCellStride = Mathf.Max(1, request.StructureStride),
-                SpawnCellStride = Mathf.Max(1, request.SpawnStride),
-                GroundFamilyIndex = _bindingState != null ? _bindingState.GroundFamilyIndex : -1,
-                ClusterFamilyIndex = _bindingState != null ? _bindingState.ClusterFamilyIndex : -1,
-                StructureFamilyIndex = _bindingState != null ? _bindingState.StructureFamilyIndex : -1,
-                SpawnFamilyIndex = _bindingState != null ? _bindingState.SpawnFamilyIndex : -1,
+                QuotaState = quotaState,
+                DefaultEligibility = request.EligibilityMask,
+                DefaultSuppressionState = request.DefaultSuppressionState,
+                DirtyFlags = request.DirtyFlags,
+                GroundPlacementsPerCell = quotaState.Ground.PlacementsPerCell,
+                ClusterPlacementsPerCell = quotaState.Cluster.PlacementsPerCell,
+                StructureCellStride = quotaState.Structure.CellStride,
+                SpawnCellStride = quotaState.Spawn.CellStride,
+                GroundFamilyIndex = quotaState.Ground.FamilyIndex,
+                ClusterFamilyIndex = quotaState.Cluster.FamilyIndex,
+                StructureFamilyIndex = quotaState.Structure.FamilyIndex,
+                SpawnFamilyIndex = quotaState.Spawn.FamilyIndex,
                 SurfaceYOffset = request.SurfaceYOffset,
                 Seed = request.Seed
             };

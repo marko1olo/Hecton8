@@ -1,7 +1,6 @@
 using Hecton8.Gameplay;
 using Hecton8.Bootstrap;
 using Hecton8.Inventory;
-using Hecton8.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +9,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour, ITickable
+    public sealed class PDAShellChrome : MonoBehaviour
     {
         private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
         private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
@@ -20,6 +19,7 @@ namespace Hecton8.UI
         private const string ActiveTabDataLog = "ACTIVE TAB // DATA LOG";
         private const string ActiveTabSpectrum = "ACTIVE TAB // SPECTRUM";
         private const string ActiveTabUnknown = "ACTIVE TAB // UNKNOWN";
+        private const string LeftFooterFormat = "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}";
         private const string RightFooterOnlineFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA ONLINE";
         private const string RightFooterStandbyFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA STANDBY";
 
@@ -40,11 +40,7 @@ namespace Hecton8.UI
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
-        [Header("Settings")]
-        [SerializeField, Range(0.05f, 1f)] private float refreshInterval = 0.2f;
-
         private bool _built;
-        private float _nextRefreshTime;
         private RectTransform _chromeRoot;
         private CanvasGroup _chromeCanvasGroup;
         private Image _headerBg;
@@ -53,7 +49,6 @@ namespace Hecton8.UI
         private TextMeshProUGUI _tabText;
         private TextMeshProUGUI _leftFooterText;
         private TextMeshProUGUI _rightFooterText;
-        private bool _tickRegistered;
         private int _lastActiveTab = int.MinValue;
         private int _lastCargoCells = -1;
         private int _lastCargoTotal = -1;
@@ -63,25 +58,26 @@ namespace Hecton8.UI
         private int _lastOxygenPercent = int.MinValue;
         private int _lastEnergyPercent = int.MinValue;
         private bool _lastPdaOpen;
+        private PlayerInventory _subscribedInventory;
+        private PlayerToolManager _subscribedToolManager;
+        private HectonSurvivalSystem _subscribedSurvivalSystem;
 
         private void Awake()
         {
-            AutoResolve();
+            RefreshBindings();
         }
 
         private void OnEnable()
         {
-            AutoResolve();
+            RefreshBindings();
             EnsureBuilt();
             Subscribe();
-            RefreshChrome(true);
-            EvaluateTickRegistration();
+            RefreshChrome();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
-            UnregisterTick();
         }
 
         private void AutoResolve()
@@ -111,19 +107,42 @@ namespace Hecton8.UI
                 numericFont = labelFont;
         }
 
+        private void RefreshBindings()
+        {
+            PlayerInventory previousInventory = playerInventory;
+            PlayerToolManager previousToolManager = toolManager;
+            HectonSurvivalSystem previousSurvivalSystem = survivalSystem;
+
+            AutoResolve();
+
+            if (!ReferenceEquals(previousInventory, playerInventory))
+            {
+                UnsubscribeInventory(previousInventory);
+                SubscribeInventory(playerInventory);
+            }
+
+            if (!ReferenceEquals(previousToolManager, toolManager))
+            {
+                UnsubscribeToolManager(previousToolManager);
+                SubscribeToolManager(toolManager);
+            }
+
+            if (!ReferenceEquals(previousSurvivalSystem, survivalSystem))
+            {
+                UnsubscribeSurvival(previousSurvivalSystem);
+                SubscribeSurvival(survivalSystem);
+            }
+        }
+
         private void Subscribe()
         {
             PDAEvents.OnOpened += HandlePdaOpened;
             PDAEvents.OnClosed += HandlePdaClosed;
             PDAEvents.OnTabChanged += HandleTabChanged;
 
-            if (playerInventory != null)
-                playerInventory.InventoryChanged += HandleInventoryChanged;
-            if (toolManager != null)
-            {
-                toolManager.ActiveSlotChanged += HandleSlotChanged;
-                toolManager.ToolAssignmentsChanged += HandleAssignmentsChanged;
-            }
+            SubscribeInventory(playerInventory);
+            SubscribeToolManager(toolManager);
+            SubscribeSurvival(survivalSystem);
         }
 
         private void Unsubscribe()
@@ -132,62 +151,109 @@ namespace Hecton8.UI
             PDAEvents.OnClosed -= HandlePdaClosed;
             PDAEvents.OnTabChanged -= HandleTabChanged;
 
-            if (playerInventory != null)
-                playerInventory.InventoryChanged -= HandleInventoryChanged;
-            if (toolManager != null)
-            {
-                toolManager.ActiveSlotChanged -= HandleSlotChanged;
-                toolManager.ToolAssignmentsChanged -= HandleAssignmentsChanged;
-            }
+            UnsubscribeInventory(_subscribedInventory);
+            UnsubscribeToolManager(_subscribedToolManager);
+            UnsubscribeSurvival(_subscribedSurvivalSystem);
+        }
+
+        private void SubscribeInventory(PlayerInventory inventory)
+        {
+            if (inventory == null || ReferenceEquals(_subscribedInventory, inventory))
+                return;
+
+            inventory.InventoryChanged += HandleInventoryChanged;
+            _subscribedInventory = inventory;
+        }
+
+        private void UnsubscribeInventory(PlayerInventory inventory)
+        {
+            if (inventory == null)
+                return;
+
+            inventory.InventoryChanged -= HandleInventoryChanged;
+            if (ReferenceEquals(_subscribedInventory, inventory))
+                _subscribedInventory = null;
+        }
+
+        private void SubscribeToolManager(PlayerToolManager manager)
+        {
+            if (manager == null || ReferenceEquals(_subscribedToolManager, manager))
+                return;
+
+            manager.ActiveSlotChanged += HandleSlotChanged;
+            manager.ToolAssignmentsChanged += HandleAssignmentsChanged;
+            _subscribedToolManager = manager;
+        }
+
+        private void UnsubscribeToolManager(PlayerToolManager manager)
+        {
+            if (manager == null)
+                return;
+
+            manager.ActiveSlotChanged -= HandleSlotChanged;
+            manager.ToolAssignmentsChanged -= HandleAssignmentsChanged;
+            if (ReferenceEquals(_subscribedToolManager, manager))
+                _subscribedToolManager = null;
+        }
+
+        private void SubscribeSurvival(HectonSurvivalSystem system)
+        {
+            if (system == null || ReferenceEquals(_subscribedSurvivalSystem, system))
+                return;
+
+            system.OnOxygenChanged += HandleOxygenChanged;
+            system.OnEnergyChanged += HandleEnergyChanged;
+            _subscribedSurvivalSystem = system;
+        }
+
+        private void UnsubscribeSurvival(HectonSurvivalSystem system)
+        {
+            if (system == null)
+                return;
+
+            system.OnOxygenChanged -= HandleOxygenChanged;
+            system.OnEnergyChanged -= HandleEnergyChanged;
+            if (ReferenceEquals(_subscribedSurvivalSystem, system))
+                _subscribedSurvivalSystem = null;
         }
 
         private void HandlePdaOpened(int _)
         {
-            RefreshChrome(true);
-            EvaluateTickRegistration();
+            RefreshBindings();
+            RefreshChrome();
         }
         private void HandlePdaClosed(float _)
         {
-            RefreshChrome(true);
-            UnregisterTick();
+            RefreshChrome();
         }
 
         private void HandleTabChanged(int _, int __)
         {
-            RefreshChrome(true);
-            EvaluateTickRegistration();
+            RefreshChrome();
         }
 
         private void HandleInventoryChanged()
         {
             if (PlayerPDA.IsOpen)
-                RefreshChrome(true);
+                RefreshChrome();
         }
 
         private void HandleSlotChanged(int _)
         {
             if (PlayerPDA.IsOpen)
-                RefreshChrome(true);
+                RefreshChrome();
         }
 
         private void HandleAssignmentsChanged()
         {
             if (PlayerPDA.IsOpen)
-                RefreshChrome(true);
+                RefreshChrome();
         }
 
-        public void Tick(float deltaTime)
+        private void HandleOxygenChanged(float _)
         {
-            if (!PlayerPDA.IsOpen)
-            {
-                UnregisterTick();
-                return;
-            }
-
-            if (Time.unscaledTime < _nextRefreshTime)
-                return;
-
-            RefreshChrome(false);
+            if (PlayerPDA.IsOpen)
+                RefreshChrome();
         }
 
         private void EnsureBuilt()
@@ -250,12 +316,16 @@ namespace Hecton8.UI
             _built = true;
         }
 
-        private void RefreshChrome(bool immediate)
+        private void HandleEnergyChanged(float _)
+        {
+            if (PlayerPDA.IsOpen)
+                RefreshChrome();
+        }
+
+        private void RefreshChrome()
         {
             if (!_built)
                 return;
-
-            _nextRefreshTime = Time.unscaledTime + refreshInterval;
 
             string tabName = GetActiveTabLabel();
             int cargoCells = playerInventory != null && playerInventory.Grid != null
@@ -283,11 +353,7 @@ namespace Hecton8.UI
 
              if (_leftFooterText != null && (_lastCargoCells != cargoCells || _lastCargoTotal != cargoTotal || _lastWeightDeci != weightDeci || _lastReadyTools != readyTools || _lastAssignedTools != assignedTools))
              {
-                 string cargoText = string.Format("CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}", cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
-                 if (_leftFooterText.text != cargoText)
-                 {
-                     _leftFooterText.text = cargoText;
-                 }
+                 _leftFooterText.SetText(LeftFooterFormat, cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
                  _lastCargoCells = cargoCells;
                  _lastCargoTotal = cargoTotal;
                  _lastWeightDeci = weightDeci;
@@ -300,12 +366,10 @@ namespace Hecton8.UI
                   _lastEnergyPercent != energyPercent ||
                   _lastPdaOpen != pdaOpen))
              {
-                 string footerText = pdaOpen ? RightFooterOnlineFormat : RightFooterStandbyFormat;
-                 footerText = string.Format(footerText, oxygenPercent, energyPercent);
-                 if (_rightFooterText.text != footerText)
-                 {
-                     _rightFooterText.text = footerText;
-                 }
+                 if (pdaOpen)
+                     _rightFooterText.SetText(RightFooterOnlineFormat, oxygenPercent, energyPercent);
+                 else
+                     _rightFooterText.SetText(RightFooterStandbyFormat, oxygenPercent, energyPercent);
                  _lastOxygenPercent = oxygenPercent;
                  _lastEnergyPercent = energyPercent;
                  _lastPdaOpen = pdaOpen;
@@ -317,50 +381,7 @@ namespace Hecton8.UI
             if (_tabText != null) _tabText.color = energy < 0.25f || oxygen < 0.3f ? AlertText : Dim;
             if (_rightFooterText != null) _rightFooterText.color = energy < 0.25f || oxygen < 0.3f ? AlertText : DimLow;
             if (_chromeCanvasGroup != null)
-                _chromeCanvasGroup.alpha = pdaOpen || immediate ? 1f : 0f;
-        }
-
-        private void EvaluateTickRegistration()
-        {
-            if (!isActiveAndEnabled)
-            {
-                UnregisterTick();
-                return;
-            }
-
-            if (PlayerPDA.IsOpen)
-            {
-                RegisterTick();
-            }
-            else
-            {
-                UnregisterTick();
-            }
-        }
-
-        private void RegisterTick()
-        {
-            if (_tickRegistered)
-                return;
-
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
-            _tickRegistered = true;
-        }
-
-        private void UnregisterTick()
-        {
-            if (!_tickRegistered)
-                return;
-
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
-            _tickRegistered = false;
+                _chromeCanvasGroup.alpha = pdaOpen ? 1f : 0f;
         }
 
         private string GetActiveTabLabel()

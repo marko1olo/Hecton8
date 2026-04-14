@@ -54,9 +54,10 @@ using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
+using CrestUnderwaterRenderer = global::Crest.UnderwaterRenderer;
+using CrestOceanRenderer = global::Crest.OceanRenderer;
 
 #if UNITY_EDITOR
-using CrestUnderwaterRenderer = global::Crest.UnderwaterRenderer;
 using UnityEditor;
 #endif
 
@@ -69,6 +70,8 @@ namespace Hecton8.Environment
     {
         private const float RuntimeCameraResolveRetryInterval = 1f;
         private const float EditorCameraResolveRetryInterval = 0.25f;
+        private const float VisualEnterUnderwaterDepth = 0.01f;
+        private const float VisualExitUnderwaterDepth = 0.005f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
@@ -186,6 +189,12 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_ScatterColourBase");
         private static readonly int _ID_ScatterColourShallow =
             Shader.PropertyToID("_ScatterColourShallow");
+        private static readonly int _ID_Diffuse =
+            Shader.PropertyToID("_Diffuse");
+        private static readonly int _ID_DiffuseGrazing =
+            Shader.PropertyToID("_DiffuseGrazing");
+        private static readonly int _ID_SubSurfaceShallowCol =
+            Shader.PropertyToID("_SubSurfaceShallowCol");
         private static readonly int _ID_DepthFogDensity =
             Shader.PropertyToID("_DepthFogDensity");
         private static readonly int _ID_SunSize =
@@ -240,6 +249,11 @@ namespace Hecton8.Environment
         private Color _baseSunDiscColor;
         private Color _baseSunScatterColor;
         private bool  _baseSkyColorsCaptured;
+        private bool  _surfaceWeatherOverrideActive;
+        private Color _surfaceWeatherFogColor;
+        private float _surfaceWeatherFogDensity;
+        private Color _surfaceWeatherAmbientColor;
+        private float _surfaceWeatherSunMultiplier = 1f;
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
@@ -255,6 +269,11 @@ namespace Hecton8.Environment
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
+        private CrestOceanRenderer _oceanRenderer;
+        private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
+        private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
+        private Material _lastRuntimeOceanMaterial;
+        private bool _pendingRuntimeCrestMaterialSync;
         private int _spaceCameraOriginalCullingMask;
 #if UNITY_EDITOR
         private CrestUnderwaterRenderer _editorCrestUnderwaterRenderer;
@@ -272,6 +291,17 @@ namespace Hecton8.Environment
 
         private void OnEnable()
         {
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorUpdate;
+#endif
+
+            if (Application.isPlaying)
+            {
+                _debugEditorDriven = false;
+                if (mainCamera != null && !IsRuntimeMainCamera(mainCamera))
+                    mainCamera = null;
+            }
+
             ResolvePlayerCamera();
             ResolveMainCamera();
             ResolveSpaceCamera();
@@ -281,11 +311,17 @@ namespace Hecton8.Environment
             CaptureBaseValues();
             CaptureSkyBaseColors();
             InitializeCurrentValues();
+            _pendingRuntimeCrestMaterialSync = true;
+            EnsureCrestUnderwaterPassOwnership();
+            ApplyCrestMaterial();
 
             RenderPipelineManager.beginCameraRendering += EnforceFogState;
 
             if (Application.isPlaying)
             {
+                _debugEditorDriven = false;
+                EnsureRuntimeVisualOwners();
+                EnsureGameplayCameraStackEnabled();
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
                 SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
@@ -305,9 +341,27 @@ namespace Hecton8.Environment
             _sunVisualWasDisabled = false;
         }
 
+        private void EnsureGameplayCameraStackEnabled()
+        {
+            if (mainCamera != null && !mainCamera.enabled)
+                mainCamera.enabled = true;
+
+            if (_spaceCamera != null && !_spaceCamera.enabled)
+                _spaceCamera.enabled = true;
+
+            EnsureCrestUnderwaterPassOwnership();
+        }
+
         private void Start()
         {
             if (!Application.isPlaying) return;
+
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorUpdate;
+#endif
+            _debugEditorDriven = false;
+            EnsureRuntimeVisualOwners();
+            EnsureGameplayCameraStackEnabled();
 
             if (!_registeredTick || !_registeredSlowTick)
                 TryRegisterTickManagers();
@@ -322,6 +376,9 @@ namespace Hecton8.Environment
                 ResolveBiomeMatrixDirector();
 
             ApplyCurrentMatrixVisualOverride();
+            EnsureRuntimeVisualOwners();
+            EnsureCrestUnderwaterPassOwnership();
+            ApplyCrestMaterial();
         }
 
         private void OnDisable()
@@ -359,6 +416,8 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             ResumeEditorWaterRendering();
 #endif
+            _pendingRuntimeCrestMaterialSync = true;
+            _lastRuntimeOceanMaterial = null;
             RestoreBaseValues();
             RestoreSunVisual();
             RestoreSpaceCameraDefaults();
@@ -469,21 +528,12 @@ namespace Hecton8.Environment
                 _editorCrestSuppressed = _editorCrestUnderwaterRendererWasEnabled;
             }
 
-            // Never suppress the only gameplay base camera in edit mode. Losing
-            // editor focus or running automation must not leave the scene with
-            // "No cameras rendering" in Game view.
+            // Do not suppress gameplay cameras in edit mode. The Game view must
+            // remain usable for live preview and tooling.
             _editorGameplayMainCameraWasEnabled = false;
             _editorGameplayMainCameraSuppressed = false;
-
-            ResolveGameplaySpaceCameraForEditor();
-            if (_editorGameplaySpaceCamera == null)
-                return;
-
-            _editorGameplaySpaceCameraWasEnabled = _editorGameplaySpaceCamera.enabled;
-            if (_editorGameplaySpaceCameraWasEnabled)
-                _editorGameplaySpaceCamera.enabled = false;
-
-            _editorGameplaySpaceCameraSuppressed = _editorGameplaySpaceCameraWasEnabled;
+            _editorGameplaySpaceCameraWasEnabled = false;
+            _editorGameplaySpaceCameraSuppressed = false;
         }
 
         private void ResumeEditorWaterRendering()
@@ -536,6 +586,9 @@ namespace Hecton8.Environment
 
         public void Tick(float deltaTime)
         {
+            EnsureRuntimeVisualOwners();
+            TryApplyRuntimeCrestMaterialSync();
+
             if (playerCamera == null)
             {
                 ResolvePlayerCamera();
@@ -544,7 +597,11 @@ namespace Hecton8.Environment
 
             float depth = ResolveCurrentDepth();
             bool isUnderwater =
-                SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, _wasUnderwater);
+                SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                    depth,
+                    _wasUnderwater,
+                    VisualEnterUnderwaterDepth,
+                    VisualExitUnderwaterDepth);
 
             ApplySpaceCameraDepthState(depth, isUnderwater);
 
@@ -576,9 +633,12 @@ namespace Hecton8.Environment
                 {
                     float baseSun = ResolveProfileSunIntensity();
                     float horizon = ResolveHorizonFade();
-                    sunLight.intensity = baseSun * horizon;
+                    sunLight.intensity = baseSun * horizon * ResolveSurfaceSunMultiplier();
 
-                    UpdateSurfaceLightDiagnostics(baseSun, horizon, baseSun * horizon);
+                    UpdateSurfaceLightDiagnostics(
+                        baseSun,
+                        horizon,
+                        baseSun * horizon * ResolveSurfaceSunMultiplier());
                 }
 
                 return;
@@ -835,6 +895,34 @@ namespace Hecton8.Environment
         //  FOG
         // ══════════════════════════════════════════════════════════
 
+        private Color ResolveSurfaceFogColor()
+        {
+            return _surfaceWeatherOverrideActive
+                ? _surfaceWeatherFogColor
+                : surfaceFogColor;
+        }
+
+        private float ResolveSurfaceFogDensity()
+        {
+            return _surfaceWeatherOverrideActive
+                ? _surfaceWeatherFogDensity
+                : surfaceFogDensity;
+        }
+
+        private Color ResolveSurfaceAmbientColor()
+        {
+            return _surfaceWeatherOverrideActive
+                ? _surfaceWeatherAmbientColor
+                : surfaceAmbientColor;
+        }
+
+        private float ResolveSurfaceSunMultiplier()
+        {
+            return _surfaceWeatherOverrideActive
+                ? _surfaceWeatherSunMultiplier
+                : 1f;
+        }
+
         private void ApplyUnderwaterFog(float lightFactor, float currentDepth)
         {
             RenderSettings.fogColor = _currentFogColor;
@@ -844,6 +932,8 @@ namespace Hecton8.Environment
 
             float smoothSubmerge = math.saturate(currentDepth / 0.5f);
             float surfDensity = enableSurfaceFog ? surfaceFogDensity : 0.0001f;
+            if (_surfaceWeatherOverrideActive)
+                surfDensity = ResolveSurfaceFogDensity();
 
             _cachedFogDensity = Mathf.Lerp(surfDensity, targetDensity, smoothSubmerge);
             RenderSettings.fogDensity = _cachedFogDensity;
@@ -858,6 +948,23 @@ namespace Hecton8.Environment
             if (cam.cameraType != CameraType.Game && cam.cameraType != CameraType.SceneView)
                 return;
 
+            if (Application.isPlaying)
+            {
+                _debugEditorDriven = false;
+
+                if (!_registeredTick || !_registeredSlowTick)
+                    TryRegisterTickManagers();
+
+                if (mainCamera == null ||
+                    !IsRuntimeMainCamera(mainCamera) ||
+                    _spaceCamera == null ||
+                    _spaceCameraUnderwaterRenderer == null)
+                {
+                    EnsureRuntimeVisualOwners();
+                    EnsureGameplayCameraStackEnabled();
+                }
+            }
+
             if (_wasUnderwater)
             {
                 RenderSettings.fog = true;
@@ -869,8 +976,8 @@ namespace Hecton8.Environment
                 if (enableSurfaceFog)
                 {
                     RenderSettings.fog = true;
-                    RenderSettings.fogColor = surfaceFogColor;
-                    RenderSettings.fogDensity = surfaceFogDensity;
+                    RenderSettings.fogColor = ResolveSurfaceFogColor();
+                    RenderSettings.fogDensity = ResolveSurfaceFogDensity();
                 }
                 else
                 {
@@ -918,7 +1025,7 @@ namespace Hecton8.Environment
             {
                 float baseSun = ResolveProfileSunIntensity();
                 float horizon = ResolveHorizonFade();
-                sunLight.intensity = baseSun * horizon;
+                sunLight.intensity = baseSun * horizon * ResolveSurfaceSunMultiplier();
             }
 
             if (_baseValuesCaptured && sunFlare != null)
@@ -934,8 +1041,8 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog        = true;
                 RenderSettings.fogMode    = FogMode.ExponentialSquared;
-                RenderSettings.fogColor   = surfaceFogColor;
-                RenderSettings.fogDensity = surfaceFogDensity;
+                RenderSettings.fogColor   = ResolveSurfaceFogColor();
+                RenderSettings.fogDensity = ResolveSurfaceFogDensity();
             }
             else
             {
@@ -943,7 +1050,7 @@ namespace Hecton8.Environment
             }
 
             RenderSettings.ambientMode  = AmbientMode.Flat;
-            RenderSettings.ambientLight = surfaceAmbientColor;
+            RenderSettings.ambientLight = ResolveSurfaceAmbientColor();
 
             if (mainCamera != null)
                 mainCamera.clearFlags = CameraClearFlags.Skybox;
@@ -1017,13 +1124,34 @@ namespace Hecton8.Environment
 
         private void ApplyCrestMaterial()
         {
-            if (oceanUnderwaterMaterial == null) return;
+            ApplyCrestMaterial(oceanUnderwaterMaterial);
 
-            oceanUnderwaterMaterial.SetColor(
-                _ID_ScatterColourBase, _currentScatterBase);
-            oceanUnderwaterMaterial.SetColor(
-                _ID_ScatterColourShallow, _currentScatterShallow);
-            oceanUnderwaterMaterial.SetVector(
+            Material runtimeOceanMaterial = CrestOceanRenderer.Instance != null
+                ? CrestOceanRenderer.Instance.OceanMaterial
+                : null;
+
+            if (runtimeOceanMaterial != null &&
+                !ReferenceEquals(runtimeOceanMaterial, oceanUnderwaterMaterial))
+            {
+                ApplyCrestMaterial(runtimeOceanMaterial);
+            }
+
+            _lastRuntimeOceanMaterial = runtimeOceanMaterial;
+            _pendingRuntimeCrestMaterialSync = false;
+        }
+
+        private void ApplyCrestMaterial(Material targetMaterial)
+        {
+            if (targetMaterial == null)
+                return;
+
+            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourBase, _currentScatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_Diffuse, _currentScatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseGrazing, _currentScatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourShallow, _currentScatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowCol, _currentScatterShallow);
+            SetMaterialVectorIfPresent(
+                targetMaterial,
                 _ID_DepthFogDensity,
                 new Vector4(
                     _currentDepthFogDensity.x,
@@ -1138,6 +1266,25 @@ namespace Hecton8.Environment
             }
         }
 
+        internal void SetSurfaceWeatherOverride(
+            Color fogColor,
+            float fogDensity,
+            Color ambientColor,
+            float sunMultiplier)
+        {
+            _surfaceWeatherOverrideActive = true;
+            _surfaceWeatherFogColor = fogColor;
+            _surfaceWeatherFogDensity = Mathf.Max(0f, fogDensity);
+            _surfaceWeatherAmbientColor = ambientColor;
+            _surfaceWeatherSunMultiplier = Mathf.Max(0f, sunMultiplier);
+        }
+
+        internal void ClearSurfaceWeatherOverride()
+        {
+            _surfaceWeatherOverrideActive = false;
+            _surfaceWeatherSunMultiplier = 1f;
+        }
+
         public bool IsUnderwater
         {
             get
@@ -1196,9 +1343,25 @@ namespace Hecton8.Environment
 
         private void ResolveMainCamera()
         {
-            if (mainCamera != null) return;
+            if (mainCamera != null &&
+                (!Application.isPlaying || IsRuntimeMainCamera(mainCamera)))
+            {
+                return;
+            }
+
+            mainCamera = null;
             if (Application.isPlaying)
             {
+                if (playerCamera != null)
+                {
+                    Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                    if (IsRuntimeMainCamera(playerOwnedCamera))
+                    {
+                        mainCamera = playerOwnedCamera;
+                        return;
+                    }
+                }
+
                 if (Time.unscaledTime < _nextRuntimeMainCameraResolveTime)
                     return;
 
@@ -1223,6 +1386,9 @@ namespace Hecton8.Environment
                 if (sv != null) mainCamera = sv.camera;
             }
 #endif
+
+            if (Application.isPlaying)
+                EnsureCrestUnderwaterPassOwnership();
         }
 
         private void ResolveGameplayMainCameraForEditor()
@@ -1285,12 +1451,19 @@ namespace Hecton8.Environment
             if (_spaceCamera != null)
                 return;
 
-            if (mainCamera == null)
-                return;
+            Transform spaceCameraTransform = null;
+            if (playerCamera != null)
+                spaceCameraTransform = playerCamera.Find("SpaceCamera");
 
-            Transform spaceCameraTransform = mainCamera.transform.Find("SpaceCamera");
-            if (spaceCameraTransform == null && mainCamera.transform.parent != null)
-                spaceCameraTransform = mainCamera.transform.parent.Find("SpaceCamera");
+            if (spaceCameraTransform == null)
+            {
+                if (mainCamera == null)
+                    return;
+
+                spaceCameraTransform = mainCamera.transform.Find("SpaceCamera");
+                if (spaceCameraTransform == null && mainCamera.transform.parent != null)
+                    spaceCameraTransform = mainCamera.transform.parent.Find("SpaceCamera");
+            }
 
             if (spaceCameraTransform == null)
                 return;
@@ -1301,6 +1474,135 @@ namespace Hecton8.Environment
 
             _spaceCameraOriginalCullingMask = _spaceCamera.cullingMask;
             _spaceCameraMaskCaptured = true;
+
+            if (Application.isPlaying)
+                EnsureCrestUnderwaterPassOwnership();
+        }
+
+        private void EnsureCrestUnderwaterPassOwnership()
+        {
+            if (!Application.isPlaying || mainCamera == null)
+                return;
+
+            if (!mainCamera.TryGetComponent(out _mainCameraUnderwaterRenderer) ||
+                _mainCameraUnderwaterRenderer == null)
+            {
+                _mainCameraUnderwaterRenderer = null;
+                return;
+            }
+
+            ResolveSpaceCamera();
+            if (_spaceCamera == null)
+                return;
+
+            if (!_spaceCamera.TryGetComponent(out _spaceCameraUnderwaterRenderer) ||
+                _spaceCameraUnderwaterRenderer == null)
+            {
+                // COLD ALLOC: UnderwaterRenderer[1] — ensure Crest fullscreen underwater pass is present on the base camera stack owner — owner: HectonUnderwaterVisuals
+                _spaceCameraUnderwaterRenderer =
+                    _spaceCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
+            }
+
+            CopyUnderwaterRendererSettings(
+                _mainCameraUnderwaterRenderer,
+                _spaceCameraUnderwaterRenderer);
+
+            EnsureCrestOceanCameraOwnership();
+        }
+
+        private void EnsureCrestOceanCameraOwnership()
+        {
+            if (!Application.isPlaying || _spaceCamera == null)
+                return;
+
+            _oceanRenderer = CrestOceanRenderer.Instance;
+            if (_oceanRenderer == null)
+                return;
+
+            if (!ReferenceEquals(_oceanRenderer.ViewCamera, _spaceCamera))
+                _oceanRenderer.ViewCamera = _spaceCamera;
+
+            Transform spaceCameraTransform = _spaceCamera.transform;
+            if (!ReferenceEquals(_oceanRenderer.Viewpoint, spaceCameraTransform))
+                _oceanRenderer.Viewpoint = spaceCameraTransform;
+        }
+
+        private void EnsureRuntimeVisualOwners()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (mainCamera == null || !IsRuntimeMainCamera(mainCamera))
+                ResolveMainCamera();
+
+            if (_spaceCamera == null)
+                ResolveSpaceCamera();
+
+            if (_spaceCamera != null)
+                EnsureCrestOceanCameraOwnership();
+
+            if (_spaceCameraUnderwaterRenderer == null || _mainCameraUnderwaterRenderer == null)
+                EnsureCrestUnderwaterPassOwnership();
+        }
+
+        private void TryApplyRuntimeCrestMaterialSync()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            CrestOceanRenderer oceanRenderer = CrestOceanRenderer.Instance;
+            Material runtimeOceanMaterial = oceanRenderer != null ? oceanRenderer.OceanMaterial : null;
+            if (runtimeOceanMaterial == null)
+                return;
+
+            bool densityLooksStale =
+                oceanRenderer != null &&
+                oceanRenderer.UnderwaterDepthFogDensity.sqrMagnitude <= 0.000001f &&
+                _currentDepthFogDensity.sqrMagnitude > 0.000001f;
+
+            if (!_pendingRuntimeCrestMaterialSync &&
+                !densityLooksStale &&
+                ReferenceEquals(runtimeOceanMaterial, _lastRuntimeOceanMaterial))
+            {
+                return;
+            }
+
+            ApplyCrestMaterial();
+        }
+
+        private static bool IsRuntimeMainCamera(Camera camera)
+        {
+            return camera != null &&
+                   camera.cameraType != CameraType.SceneView &&
+                   camera.CompareTag("MainCamera");
+        }
+
+        private static void CopyUnderwaterRendererSettings(
+            CrestUnderwaterRenderer source,
+            CrestUnderwaterRenderer target)
+        {
+            if (source == null || target == null || ReferenceEquals(source, target))
+                return;
+
+            target._mode = source._mode;
+            target._depthFogDensityFactor = source._depthFogDensityFactor;
+            target._volumeGeometry = source._volumeGeometry;
+            target._invertCulling = source._invertCulling;
+            target._enableShaderAPI = source._enableShaderAPI;
+            target._copyOceanMaterialParamsEachFrame = source._copyOceanMaterialParamsEachFrame;
+            target._farPlaneMultiplier = source._farPlaneMultiplier;
+        }
+
+        private static void SetMaterialColorIfPresent(Material targetMaterial, int propertyId, Color value)
+        {
+            if (targetMaterial != null && targetMaterial.HasProperty(propertyId))
+                targetMaterial.SetColor(propertyId, value);
+        }
+
+        private static void SetMaterialVectorIfPresent(Material targetMaterial, int propertyId, Vector4 value)
+        {
+            if (targetMaterial != null && targetMaterial.HasProperty(propertyId))
+                targetMaterial.SetVector(propertyId, value);
         }
 
         private void ValidateReferences()
@@ -1399,13 +1701,13 @@ namespace Hecton8.Environment
 
         private float ResolveCurrentDepth()
         {
+            if (playerCamera != null)
+                return math.max(0f, ResolveWaterLevel() - playerCamera.position.y);
+
             if (_playerMovement != null)
                 return _playerMovement.CurrentDepth;
 
-            if (playerCamera == null)
-                return 0f;
-
-            return math.max(0f, ResolveWaterLevel() - playerCamera.position.y);
+            return 0f;
         }
 
         private void CachePlayerMovement(Transform playerTransform)

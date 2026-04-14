@@ -30,7 +30,13 @@ namespace Hecton8.Input
         private static readonly object _lock = new object();
         private static bool _isShuttingDown;
         private HectonInputActions _generatedInputActions;
+        private InputActionAsset _runtimeInputActionAsset;
         private bool _inputMapsInitialized;
+        private bool _playerActionsSubscribed;
+        private bool _uiActionsSubscribed;
+        private bool _initialActivationComplete;
+        private bool _restorePlayerInputOnEnable;
+        private bool _restoreUiInputOnEnable;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -141,7 +147,7 @@ namespace Hecton8.Input
         
         public bool IsPlayerInputEnabled => _playerActionMap?.enabled ?? false;
         public bool IsUIInputEnabled => _uiActionMap?.enabled ?? false;
-        public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _inputActionAsset != null;
+        public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
         
         public Vector2 MoveInput => _moveAction?.ReadValue<Vector2>() ?? Vector2.zero;
         public Vector2 LookInput => _lookAction?.ReadValue<Vector2>() ?? Vector2.zero;
@@ -150,7 +156,7 @@ namespace Hecton8.Input
         public bool IsPrimaryActionHeld => _primaryActionAction?.IsPressed() ?? false;
         public bool IsSecondaryActionHeld => _secondaryActionAction?.IsPressed() ?? false;
         public float VerticalMovementInput => _verticalMovementAction?.ReadValue<float>() ?? 0f;
-        public InputActionAsset InputActionsAsset => _inputActionAsset;
+        public InputActionAsset InputActionsAsset => _runtimeInputActionAsset;
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INITIALIZATION
@@ -176,22 +182,66 @@ namespace Hecton8.Input
             
             InitializeInputActions();
         }
+
+        private void OnEnable()
+        {
+            if (_isShuttingDown)
+                return;
+
+            EnsureInputActionsInitialized();
+
+            if (!_initialActivationComplete)
+                return;
+
+            if (_restorePlayerInputOnEnable)
+                SafeEnableActionMap(_playerActionMap);
+
+            if (_restoreUiInputOnEnable && _uiActionMap != null)
+                SafeEnableActionMap(_uiActionMap);
+        }
+
+        private void OnDisable()
+        {
+            _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
+            _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
+
+            SafeDisableActionMapForTeardown(_playerActionMap);
+            SafeDisableActionMapForTeardown(_uiActionMap);
+        }
+
+        private void Start()
+        {
+            _initialActivationComplete = true;
+            EnablePlayerInput();
+        }
         
         private void InitializeInputActions()
         {
+            if (_inputMapsInitialized && IsActionMapUsable(_playerActionMap))
+                return;
+
+            ResetInputActionCaches(disposeRuntimeAsset: true);
             _inputMapsInitialized = false;
 
-            // Prefer an inspector-assigned asset, but keep a generated fallback so
-            // runtime bootstrap never depends on Resources.Load.
-            if (_inputActionAsset == null)
+            InputActionAsset templateAsset = _inputActionAsset;
+            if (templateAsset == null)
             {
-                _generatedInputActions = new HectonInputActions();
-                _inputActionAsset = _generatedInputActions.asset;
+                _generatedInputActions ??= new HectonInputActions(); // COLD ALLOC: HectonInputActions[1] — runtime fallback input asset wrapper — owner: InputManager
+                templateAsset = _generatedInputActions.asset;
             }
+
+            if (templateAsset == null)
+            {
+                Debug.LogError("[InputManager] No InputActionAsset template available.");
+                return;
+            }
+
+            _runtimeInputActionAsset = Instantiate(templateAsset); // COLD ALLOC: InputActionAsset[1] — runtime input clone isolates live maps from template asset state — owner: InputManager
+            _runtimeInputActionAsset.name = templateAsset.name;
             
             // Get action maps
-            _playerActionMap = _inputActionAsset.FindActionMap("Player");
-            _uiActionMap = _inputActionAsset.FindActionMap("UI");
+            _playerActionMap = _runtimeInputActionAsset.FindActionMap("Player");
+            _uiActionMap = _runtimeInputActionAsset.FindActionMap("UI");
             
             if (_playerActionMap == null)
             {
@@ -216,9 +266,6 @@ namespace Hecton8.Input
                 SubscribeToUIActions();
 
             _inputMapsInitialized = true;
-            
-            // Enable player input by default
-            EnablePlayerInput();
         }
         
         private void CachePlayerActions()
@@ -255,6 +302,9 @@ namespace Hecton8.Input
         
         private void SubscribeToPlayerActions()
         {
+            if (_playerActionsSubscribed)
+                return;
+
             _moveAction.performed += OnMovePerformed;
             _moveAction.canceled += OnMoveCanceled;
             
@@ -284,15 +334,116 @@ namespace Hecton8.Input
             
             _verticalMovementAction.performed += OnVerticalMovementPerformed;
             _verticalMovementAction.canceled += OnVerticalMovementCanceled;
+
+            _playerActionsSubscribed = true;
         }
         
         private void SubscribeToUIActions()
         {
+            if (_uiActionsSubscribed)
+                return;
+
             _navigateAction.performed += OnNavigatePerformed;
             _submitAction.performed += OnSubmitPerformed;
             _cancelAction.performed += OnCancelPerformed;
             _tabNextAction.performed += OnTabNextPerformed;
             _tabPreviousAction.performed += OnTabPreviousPerformed;
+
+            _uiActionsSubscribed = true;
+        }
+
+        private void UnsubscribeFromPlayerActions()
+        {
+            if (!_playerActionsSubscribed)
+                return;
+
+            if (_moveAction != null)
+            {
+                _moveAction.performed -= OnMovePerformed;
+                _moveAction.canceled -= OnMoveCanceled;
+            }
+
+            if (_lookAction != null)
+                _lookAction.performed -= OnLookPerformed;
+
+            if (_jumpAction != null)
+            {
+                _jumpAction.performed -= OnJumpPerformed;
+                _jumpAction.canceled -= OnJumpCanceledPerformed;
+            }
+
+            if (_sprintAction != null)
+            {
+                _sprintAction.performed -= OnSprintPerformed;
+                _sprintAction.canceled -= OnSprintCanceledPerformed;
+            }
+
+            if (_interactAction != null)
+                _interactAction.performed -= OnInteractPerformed;
+
+            if (_flashlightAction != null)
+                _flashlightAction.performed -= OnFlashlightPerformed;
+
+            if (_pdaAction != null)
+                _pdaAction.performed -= OnPDAPerformed;
+
+            if (_inventoryAction != null)
+                _inventoryAction.performed -= OnInventoryPerformed;
+
+            if (_toolSlot1Action != null)
+                _toolSlot1Action.performed -= OnToolSlot1Performed;
+
+            if (_toolSlot2Action != null)
+                _toolSlot2Action.performed -= OnToolSlot2Performed;
+
+            if (_toolSlot3Action != null)
+                _toolSlot3Action.performed -= OnToolSlot3Performed;
+
+            if (_toolSlot4Action != null)
+                _toolSlot4Action.performed -= OnToolSlot4Performed;
+
+            if (_primaryActionAction != null)
+            {
+                _primaryActionAction.performed -= OnPrimaryActionPerformed;
+                _primaryActionAction.canceled -= OnPrimaryActionCanceledPerformed;
+            }
+
+            if (_secondaryActionAction != null)
+            {
+                _secondaryActionAction.performed -= OnSecondaryActionPerformed;
+                _secondaryActionAction.canceled -= OnSecondaryActionCanceledPerformed;
+            }
+
+            if (_verticalMovementAction != null)
+            {
+                _verticalMovementAction.performed -= OnVerticalMovementPerformed;
+                _verticalMovementAction.canceled -= OnVerticalMovementCanceled;
+            }
+
+            _playerActionsSubscribed = false;
+        }
+
+        private void UnsubscribeFromUIActions()
+        {
+            if (!_uiActionsSubscribed)
+                return;
+
+            if (_navigateAction != null)
+                _navigateAction.performed -= OnNavigatePerformed;
+
+            if (_submitAction != null)
+                _submitAction.performed -= OnSubmitPerformed;
+
+            if (_cancelAction != null)
+                _cancelAction.performed -= OnCancelPerformed;
+
+            if (_tabNextAction != null)
+                _tabNextAction.performed -= OnTabNextPerformed;
+
+            if (_tabPreviousAction != null)
+                _tabPreviousAction.performed -= OnTabPreviousPerformed;
+
+            _uiActionsSubscribed = false;
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -341,22 +492,25 @@ namespace Hecton8.Input
         
         public void EnablePlayerInput()
         {
-            if (!CanSwitchActionMaps)
+            if (!EnsureInputActionsInitialized())
                 return;
 
+            _restorePlayerInputOnEnable = true;
             SafeEnableActionMap(_playerActionMap);
         }
         
         public void DisablePlayerInput()
         {
+            _restorePlayerInputOnEnable = false;
             SafeDisableActionMap(_playerActionMap);
         }
         
         public void EnableUIInput()
         {
-            if (!CanSwitchActionMaps || _uiActionMap == null)
+            if (!EnsureInputActionsInitialized() || _uiActionMap == null)
                 return;
 
+            _restoreUiInputOnEnable = true;
             SafeEnableActionMap(_uiActionMap);
         }
         
@@ -365,12 +519,13 @@ namespace Hecton8.Input
             if (_uiActionMap == null)
                 return;
 
+            _restoreUiInputOnEnable = false;
             SafeDisableActionMap(_uiActionMap);
         }
         
         public void SwitchToPlayerInput()
         {
-            if (!CanSwitchActionMaps)
+            if (!EnsureInputActionsInitialized())
                 return;
 
             DisableUIInput();
@@ -379,7 +534,7 @@ namespace Hecton8.Input
         
         public void SwitchToUIInput()
         {
-            if (!CanSwitchActionMaps)
+            if (!EnsureInputActionsInitialized())
                 return;
 
             if (_uiActionMap == null)
@@ -399,7 +554,7 @@ namespace Hecton8.Input
         
         public InputAction GetAction(string actionName, string actionMap = "Player")
         {
-            if (!_inputMapsInitialized || string.IsNullOrWhiteSpace(actionName))
+            if (string.IsNullOrWhiteSpace(actionName) || !EnsureInputActionsInitialized())
                 return null;
 
             try
@@ -500,20 +655,20 @@ namespace Hecton8.Input
 
         public string SaveBindingOverridesAsJson()
         {
-            if (_inputActionAsset == null) return string.Empty;
-            return _inputActionAsset.SaveBindingOverridesAsJson();
+            if (_runtimeInputActionAsset == null) return string.Empty;
+            return _runtimeInputActionAsset.SaveBindingOverridesAsJson();
         }
 
         public void LoadBindingOverridesFromJson(string json)
         {
-            if (_inputActionAsset == null || string.IsNullOrEmpty(json)) return;
-            _inputActionAsset.LoadBindingOverridesFromJson(json);
+            if (_runtimeInputActionAsset == null || string.IsNullOrEmpty(json)) return;
+            _runtimeInputActionAsset.LoadBindingOverridesFromJson(json);
         }
 
         public void ClearBindingOverrides()
         {
-            if (_inputActionAsset == null) return;
-            _inputActionAsset.RemoveAllBindingOverrides();
+            if (_runtimeInputActionAsset == null) return;
+            _runtimeInputActionAsset.RemoveAllBindingOverrides();
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -525,36 +680,9 @@ namespace Hecton8.Input
             if (_instance == this)
                 _isShuttingDown = true;
 
-            SafeDisableActionMapForTeardown(_playerActionMap);
-            SafeDisableActionMapForTeardown(_uiActionMap);
-
-            _inputMapsInitialized = false;
-
+            ResetInputActionCaches(disposeRuntimeAsset: true);
             _generatedInputActions?.Dispose();
             _generatedInputActions = null;
-            _inputActionAsset = null;
-            _playerActionMap = null;
-            _uiActionMap = null;
-            _moveAction = null;
-            _lookAction = null;
-            _jumpAction = null;
-            _sprintAction = null;
-            _interactAction = null;
-            _flashlightAction = null;
-            _pdaAction = null;
-            _toolSlot1Action = null;
-            _toolSlot2Action = null;
-            _toolSlot3Action = null;
-            _toolSlot4Action = null;
-            _primaryActionAction = null;
-            _secondaryActionAction = null;
-            _verticalMovementAction = null;
-            _inventoryAction = null;
-            _navigateAction = null;
-            _submitAction = null;
-            _cancelAction = null;
-            _tabNextAction = null;
-            _tabPreviousAction = null;
 
             if (_instance == this)
                 _instance = null;
@@ -568,6 +696,9 @@ namespace Hecton8.Input
         private void SafeEnableActionMap(InputActionMap actionMap)
         {
             if (!IsActionMapUsable(actionMap))
+                return;
+
+            if (actionMap.enabled)
                 return;
 
             try
@@ -622,37 +753,64 @@ namespace Hecton8.Input
             }
             catch (InvalidOperationException)
             {
-                HandleStaleActionMap(actionMap);
             }
             catch (ArgumentOutOfRangeException)
             {
-                HandleStaleActionMap(actionMap);
             }
             catch (Exception)
             {
-                HandleStaleActionMap(actionMap);
             }
         }
 
         private void HandleStaleActionMap(InputActionMap actionMap)
         {
-            if (ReferenceEquals(actionMap, _playerActionMap))
-                _playerActionMap = null;
-            else if (ReferenceEquals(actionMap, _uiActionMap))
-                _uiActionMap = null;
+            ResetInputActionCaches(disposeRuntimeAsset: true);
 
-            if (_playerActionMap == null && _uiActionMap == null)
-                _inputMapsInitialized = false;
+            if (_isShuttingDown)
+                return;
+
+            InitializeInputActions();
+            if (!_inputMapsInitialized || !_initialActivationComplete)
+                return;
+
+            if (_restorePlayerInputOnEnable)
+                SafeEnableActionMap(_playerActionMap);
+
+            if (_restoreUiInputOnEnable && _uiActionMap != null)
+                SafeEnableActionMap(_uiActionMap);
         }
 
-        private bool IsActionMapUsable(InputActionMap actionMap)
+        private static bool IsActionMapEnabledForStateCapture(InputActionMap actionMap)
         {
-            if (!_inputMapsInitialized || actionMap == null || _isShuttingDown || _inputActionAsset == null)
+            if (actionMap == null)
                 return false;
 
             try
             {
-                if (!ReferenceEquals(actionMap.asset, _inputActionAsset))
+                return actionMap.enabled;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private bool IsActionMapUsable(InputActionMap actionMap)
+        {
+            if (!_inputMapsInitialized || actionMap == null || _isShuttingDown || _runtimeInputActionAsset == null)
+                return false;
+
+            try
+            {
+                if (!ReferenceEquals(actionMap.asset, _runtimeInputActionAsset))
                 {
                     HandleStaleActionMap(actionMap);
                     return false;
@@ -665,6 +823,69 @@ namespace Hecton8.Input
             }
 
             return true;
+        }
+
+        private bool EnsureInputActionsInitialized()
+        {
+            if (_isShuttingDown)
+                return false;
+
+            if (_inputMapsInitialized && IsActionMapUsable(_playerActionMap))
+                return true;
+
+            InitializeInputActions();
+            return _inputMapsInitialized && IsActionMapUsable(_playerActionMap);
+        }
+
+        private void ResetInputActionCaches(bool disposeRuntimeAsset)
+        {
+            SafeDisableActionMapForTeardown(_playerActionMap);
+            SafeDisableActionMapForTeardown(_uiActionMap);
+
+            UnsubscribeFromPlayerActions();
+            UnsubscribeFromUIActions();
+
+            _inputMapsInitialized = false;
+            _playerActionMap = null;
+            _uiActionMap = null;
+            _moveAction = null;
+            _lookAction = null;
+            _jumpAction = null;
+            _sprintAction = null;
+            _interactAction = null;
+            _flashlightAction = null;
+            _pdaAction = null;
+            _toolSlot1Action = null;
+            _toolSlot2Action = null;
+            _toolSlot3Action = null;
+            _toolSlot4Action = null;
+            _primaryActionAction = null;
+            _secondaryActionAction = null;
+            _verticalMovementAction = null;
+            _inventoryAction = null;
+            _navigateAction = null;
+            _submitAction = null;
+            _cancelAction = null;
+            _tabNextAction = null;
+            _tabPreviousAction = null;
+
+            if (!disposeRuntimeAsset)
+                return;
+
+            DisposeRuntimeInputActionAsset();
+        }
+
+        private void DisposeRuntimeInputActionAsset()
+        {
+            if (_runtimeInputActionAsset == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_runtimeInputActionAsset);
+            else
+                DestroyImmediate(_runtimeInputActionAsset);
+
+            _runtimeInputActionAsset = null;
         }
     }
 }

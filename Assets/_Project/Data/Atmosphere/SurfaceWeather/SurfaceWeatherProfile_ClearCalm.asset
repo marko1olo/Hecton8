@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a3469f73c2ed9440b76cc7e7918dba6, type: 3}
+  m_Name: SurfaceWeatherProfile_ClearCalm
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Atmosphere.SurfaceWeatherProfile
+  weatherKind: 0
+  selectionWeight: 1.35
+  minDurationSeconds: 180
+  maxDurationSeconds: 320
+  cloudDensityThreshold: 0.38
+  cloudSoftness: 0.24
+  cloudSpeedMultiplier: 0.55
+  windDirection: {x: 1, y: 0.15}
+  skyLuminanceMultiplier: 1.08
+  starVisibilityMultiplier: 1
+  stormEmissionMultiplier: 0.95
+  cloudLitColor: {r: 0.95, g: 0.98, b: 1, a: 1}
+  cloudShadowColor: {r: 0.58, g: 0.62, b: 0.72, a: 1}
+  sunsetCloudColor: {r: 1.18, g: 0.63, b: 0.31, a: 1}
+  nightCloudColor: {r: 0.08, g: 0.09, b: 0.12, a: 1}
+  surfaceFogColor: {r: 0.77, g: 0.82, b: 0.88, a: 1}
+  surfaceFogDensity: 0.0008
+  surfaceAmbientColor: {r: 0.57, g: 0.6, b: 0.64, a: 1}
+  surfaceSunMultiplier: 1.08
+  sunDiscMultiplier: 1.05
+  sunScatterMultiplier: 1.05
+  oceanWindSpeedKmh: 8
+  oceanFoamStrength: 0.75
+  oceanFoamCoverage: 0.8
+  oceanFoamScale: 1
+  precipitationIntensity: 0
+  electricalActivity: 0
+  lightningFlashIntensity: 0
+  lightningFlashDuration: 0.06
+  thunderDelayMin: 0.7
+  thunderDelayMax: 2.2
+  lightningStrikeDistanceMin: 120
+  lightningStrikeDistanceMax: 280
+  lightningWindBias: 0.42
+  thunderPropagationDistanceScale: 2.2
+  thunderVolumeNear: 0.82
+  thunderVolumeFar: 0.38
+  thunderPitchMin: 0.76
+  thunderPitchMax: 0.98
+  localRainAreaScale: 0.9
+  localRainDensityMultiplier: 0.7
+  surfaceImpactRadiusScale: 0.85
+  surfaceImpactDensityMultiplier: 0.7
+  lightningBoltWidthMultiplier: 0.8
+  lightningLightRangeMultiplier: 0.85
+  gustStrength: 0.04
+  gustFrequency: 0.018
+  squallStrength: 0.02
+  squallFrequency: 0.008

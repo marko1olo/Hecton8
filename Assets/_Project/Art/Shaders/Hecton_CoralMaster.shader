@@ -19,7 +19,7 @@ Shader "Hecton8/Flora/CoralMaster"
         _SubsurfaceColor ("Subsurface Color", Color) = (0.94, 0.62, 0.48, 1)
         _BiolumColor ("Biolum Color", Color) = (0.26, 0.95, 0.84, 1)
 
-        [Header(PBR & Lighting)]
+        [Header(PBR and Lighting)]
         _Smoothness ("Smoothness", Range(0, 1)) = 0.34
         _AmbientStrength ("Ambient Strength", Range(0, 1)) = 0.46
         _RimPower ("Rim Power", Range(0.5, 8)) = 2.8

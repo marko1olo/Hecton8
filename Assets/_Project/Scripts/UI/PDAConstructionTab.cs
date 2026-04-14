@@ -69,8 +69,32 @@ namespace Hecton8.UI
         private TextMeshProUGUI[] _cardBodies;
         private Image[] _cardButtonBgs;
         private TextMeshProUGUI[] _cardButtonLabels;
+        private PDAConstructionSelectButton[] _cardButtons;
+        private bool[] _cardVisibility;
         private readonly StringBuilder _sb = new StringBuilder(512);
         private bool _tickRegistered;
+        private bool _summaryDirty;
+        private bool _catalogDirty;
+        private bool _layoutDirty;
+        private bool _builderActionVisible;
+        private bool _fieldActionVisible;
+        private PlayerInventory _subscribedInventory;
+        private Hecton8.Gameplay.PlayerToolManager _subscribedToolManager;
+        private ModuleCatalog _lastCatalog;
+        private BuildableData _lastCatalogActiveBuildable;
+        private int _lastVisibleCardCount = -1;
+        private int _cachedCatalogCount;
+        private int _cachedGeneratorCount;
+        private int _cachedConsumerCount;
+        private int _cachedPassiveCount;
+        private int _cachedStructureCount;
+        private int _cachedHabitatCount;
+        private int _cachedUtilityCount;
+        private int _cachedLogisticsCount;
+        private int _cachedFabricationCount;
+        private int _cachedDefenseCount;
+        private PDAConstructionBuilderActionButton _builderActionButton;
+        private PDAConstructionFieldActionButton _fieldActionButton;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -125,7 +149,8 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
-            RefreshAll(true);
+            MarkAllDirty();
+            Refresh(true);
             EvaluateTickRegistration();
         }
 
@@ -165,6 +190,8 @@ namespace Hecton8.UI
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
+
+            RefreshSubscriptions();
         }
 
         private void AutoResolveTabIndex()
@@ -175,9 +202,7 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            if (playerInventory != null)
-                playerInventory.InventoryChanged += HandleInventoryChanged;
-
+            RefreshSubscriptions();
             PDAEvents.OnOpened += HandlePdaOpened;
             PDAEvents.OnClosed += HandlePdaClosed;
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
@@ -185,25 +210,86 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (playerInventory != null)
-                playerInventory.InventoryChanged -= HandleInventoryChanged;
+            if (_subscribedInventory != null)
+            {
+                _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
+                _subscribedInventory = null;
+            }
+
+            if (_subscribedToolManager != null)
+            {
+                _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
+                _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
+                _subscribedToolManager = null;
+            }
 
             PDAEvents.OnOpened -= HandlePdaOpened;
             PDAEvents.OnClosed -= HandlePdaClosed;
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
         }
 
+        private void RefreshSubscriptions()
+        {
+            if (!ReferenceEquals(_subscribedInventory, playerInventory))
+            {
+                if (_subscribedInventory != null)
+                    _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
+
+                _subscribedInventory = playerInventory;
+                if (_subscribedInventory != null)
+                    _subscribedInventory.InventoryChanged += HandleInventoryChanged;
+            }
+
+            if (!ReferenceEquals(_subscribedToolManager, toolManager))
+            {
+                if (_subscribedToolManager != null)
+                {
+                    _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
+                    _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
+                }
+
+                _subscribedToolManager = toolManager;
+                if (_subscribedToolManager != null)
+                {
+                    _subscribedToolManager.ActiveSlotChanged += HandleActiveSlotChanged;
+                    _subscribedToolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
+                }
+            }
+        }
+
         private void HandleInventoryChanged()
         {
             if (IsTabActive)
-                RefreshAll(true);
+            {
+                MarkAllDirty();
+                Refresh();
+            }
+        }
+
+        private void HandleActiveSlotChanged(int _)
+        {
+            if (!IsTabActive)
+                return;
+
+            MarkSummaryDirty();
+            Refresh();
+        }
+
+        private void HandleToolAssignmentsChanged()
+        {
+            if (!IsTabActive)
+                return;
+
+            MarkSummaryDirty();
+            Refresh();
         }
 
         private void HandlePdaOpened(int tab)
         {
             if (tab == constructionTabIndex)
             {
-                RefreshAll(true);
+                MarkAllDirty();
+                Refresh(true);
                 EvaluateTickRegistration();
             }
             else
@@ -221,7 +307,8 @@ namespace Hecton8.UI
         {
             if (newTab == constructionTabIndex)
             {
-                RefreshAll(true);
+                MarkAllDirty();
+                Refresh(true);
                 EvaluateTickRegistration();
             }
             else
@@ -232,16 +319,21 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            AutoResolve();
+
             if (!IsTabActive)
             {
                 UnregisterTick();
                 return;
             }
 
-            if (Time.unscaledTime < _nextRefreshAt)
-                return;
+            UpdateCatalogTracking();
 
-            RefreshAll(false);
+            if (Time.unscaledTime >= _nextRefreshAt)
+                _summaryDirty = true;
+
+            if (_summaryDirty || _catalogDirty)
+                Refresh();
         }
 
         private void EnsureBuilt()
@@ -319,6 +411,7 @@ namespace Hecton8.UI
                 _builderActionBg,
                 new Color(0.08f, 0.16f, 0.18f, 0.58f),
                 new Color(0.12f, 0.24f, 0.28f, 0.82f));
+            _builderActionButton = actionButton;
 
             _fieldActionRoot = CreateRect(left, "FieldAction");
             _fieldActionRoot.anchorMin = new Vector2(1f, 0f);
@@ -342,6 +435,7 @@ namespace Hecton8.UI
                 _fieldActionBg,
                 new Color(0.08f, 0.16f, 0.18f, 0.58f),
                 new Color(0.12f, 0.24f, 0.28f, 0.82f));
+            _fieldActionButton = fieldButton;
 
             _deployActionRoot = CreateRect(left, "DeployAction");
             _deployActionRoot.anchorMin = new Vector2(1f, 0f);
@@ -376,6 +470,8 @@ namespace Hecton8.UI
             _cardBodies = new TextMeshProUGUI[maxVisibleCards];
             _cardButtonBgs = new Image[maxVisibleCards];
             _cardButtonLabels = new TextMeshProUGUI[maxVisibleCards];
+            _cardButtons = new PDAConstructionSelectButton[maxVisibleCards];
+            _cardVisibility = new bool[maxVisibleCards];
 
             const float cardGap = 10f;
             const float cardHeight = 82f;
@@ -441,6 +537,8 @@ namespace Hecton8.UI
                 _cardBodies[i] = cardBody;
                 _cardButtonBgs[i] = actionBg;
                 _cardButtonLabels[i] = actionLabel;
+                _cardButtons[i] = button;
+                _cardVisibility[i] = true;
             }
 
             _hintText = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Italic, TextAlignmentOptions.Center);
@@ -452,16 +550,60 @@ namespace Hecton8.UI
             _built = true;
         }
 
-        private void RefreshAll(bool immediate)
+        private void MarkAllDirty()
+        {
+            _summaryDirty = true;
+            _catalogDirty = true;
+            _layoutDirty = true;
+        }
+
+        private void MarkSummaryDirty()
+        {
+            _summaryDirty = true;
+        }
+
+        private void UpdateCatalogTracking()
+        {
+            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
+            int visibleCount = catalog != null ? Mathf.Min(catalog.Count, maxVisibleCards) : 0;
+
+            if (!ReferenceEquals(_lastCatalog, catalog) ||
+                !ReferenceEquals(_lastCatalogActiveBuildable, active) ||
+                _lastVisibleCardCount != visibleCount)
+            {
+                _lastCatalog = catalog;
+                _lastCatalogActiveBuildable = active;
+                _lastVisibleCardCount = visibleCount;
+                _catalogDirty = true;
+            }
+        }
+
+        private void Refresh(bool immediate = false)
         {
             if (!_built)
                 return;
 
+            UpdateCatalogTracking();
+
+            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
+            int visibleCount = catalog != null ? Mathf.Min(catalog.Count, maxVisibleCards) : 0;
+
+            if (_catalogDirty)
+                RefreshCatalogCache(catalog);
+
             _nextRefreshAt = Time.unscaledTime + refreshInterval;
-            RefreshSummary();
-            RefreshCatalog();
-            if (immediate && gameObject.activeSelf)
+            if (_summaryDirty)
+                RefreshSummary();
+            if (_catalogDirty)
+                RefreshCatalog(catalog, active, visibleCount);
+            if ((immediate || _layoutDirty) && gameObject.activeSelf)
                 LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
+
+            _summaryDirty = false;
+            _catalogDirty = false;
+            _layoutDirty = false;
         }
 
         private void EvaluateTickRegistration()
@@ -520,15 +662,6 @@ namespace Hecton8.UI
             bool canPlace = playerBuilder != null && playerBuilder.CanPlaceActiveBuildable;
             bool snapped = playerBuilder != null && playerBuilder.IsSnapped;
             BuildableData next = playerBuilder != null ? playerBuilder.GetRelativeBuildable(1) : null;
-            int generatorCount = CountModulesByPowerRole(catalog, 1);
-            int consumerCount = CountModulesByPowerRole(catalog, -1);
-            int passiveCount = CountModulesByPowerRole(catalog, 0);
-            int structureCount = CountModulesByFamily(catalog, BuildableFamily.Structure);
-            int habitatCount = CountModulesByFamily(catalog, BuildableFamily.Habitat);
-            int utilityCount = CountModulesByFamily(catalog, BuildableFamily.Utility);
-            int logisticsCount = CountModulesByFamily(catalog, BuildableFamily.Logistics);
-            int fabricationCount = CountModulesByFamily(catalog, BuildableFamily.Fabrication);
-            int defenseCount = CountModulesByFamily(catalog, BuildableFamily.Defense);
             int builderSlot = toolManager != null ? toolManager.FindAssignedSlotForToolType<Hecton8.Gameplay.BuilderTool>() : -1;
             bool builderActive = toolManager != null && toolManager.CurrentTool is Hecton8.Gameplay.BuilderTool;
             bool builderReady = builderSlot >= 0 && toolManager != null && toolManager.IsToolAvailableInSlot(builderSlot);
@@ -536,20 +669,25 @@ namespace Hecton8.UI
 
             _sb.Clear();
             _sb.AppendLine("CONSTRUCTION BACKBONE");
-            _sb.Append("CATALOG     ").Append(catalog != null ? catalog.Count : 0).AppendLine(" MODULES");
-            _sb.Append("FAMILIES    G").Append(generatorCount).Append(" / C").Append(consumerCount).Append(" / P").Append(passiveCount).AppendLine();
-            _sb.Append("DOMAINS     STR ").Append(structureCount)
-                .Append(" | HAB ").Append(habitatCount)
-                .Append(" | UTL ").Append(utilityCount).AppendLine();
-            _sb.Append("EXTENDED    LOG ").Append(logisticsCount)
-                .Append(" | FAB ").Append(fabricationCount)
-                .Append(" | DEF ").Append(defenseCount).AppendLine();
+            _sb.Append("CATALOG     ").Append(_cachedCatalogCount).AppendLine(" MODULES");
+            _sb.Append("FAMILIES    G").Append(_cachedGeneratorCount).Append(" / C").Append(_cachedConsumerCount).Append(" / P").Append(_cachedPassiveCount).AppendLine();
+            _sb.Append("DOMAINS     STR ").Append(_cachedStructureCount)
+                .Append(" | HAB ").Append(_cachedHabitatCount)
+                .Append(" | UTL ").Append(_cachedUtilityCount).AppendLine();
+            _sb.Append("EXTENDED    LOG ").Append(_cachedLogisticsCount)
+                .Append(" | FAB ").Append(_cachedFabricationCount)
+                .Append(" | DEF ").Append(_cachedDefenseCount).AppendLine();
             _sb.Append("BUILT       ").Append(builtCount).AppendLine(" REGISTERED");
             _sb.Append("BUILDER     ").Append(DescribeBuilderState(builderSlot, builderReady, builderActive)).AppendLine();
             _sb.Append("ACTIVE      ").Append(active != null ? CachedToUpperInvariant(active.moduleName) : "NONE").AppendLine();
             _sb.Append("FAMILY      ").Append(active != null ? active.FamilyLabel : "N/A").AppendLine();
             _sb.Append("ROLE        ").Append(active != null ? DescribePowerRole(active) : "N/A").AppendLine();
-            _sb.Append("INDEX       ").Append(activeIndex >= 0 ? $"{activeIndex + 1}/{Mathf.Max(1, catalog != null ? catalog.Count : 0)}" : "N/A").AppendLine();
+            _sb.Append("INDEX       ");
+            if (activeIndex >= 0)
+                _sb.Append(activeIndex + 1).Append('/').Append(Mathf.Max(1, _cachedCatalogCount));
+            else
+                _sb.Append("N/A");
+            _sb.AppendLine();
             _sb.Append("MODE        ").Append(snapped ? "SNAPPED" : "FREE PLACEMENT").AppendLine();
             _summaryText.SetText(_sb.ToString());
 
@@ -574,17 +712,26 @@ namespace Hecton8.UI
             RefreshFieldAction(active, hasResources, canPlace, builderSlot, builderReady, builderActive, hasPreview);
         }
 
-        private void RefreshCatalog()
+        private void RefreshCatalogCache(ModuleCatalog catalog)
         {
-            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
-            int count = catalog != null ? Mathf.Min(catalog.Count, maxVisibleCards) : 0;
-            BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
+            _cachedCatalogCount = catalog != null ? catalog.Count : 0;
+            _cachedGeneratorCount = CountModulesByPowerRole(catalog, 1);
+            _cachedConsumerCount = CountModulesByPowerRole(catalog, -1);
+            _cachedPassiveCount = CountModulesByPowerRole(catalog, 0);
+            _cachedStructureCount = CountModulesByFamily(catalog, BuildableFamily.Structure);
+            _cachedHabitatCount = CountModulesByFamily(catalog, BuildableFamily.Habitat);
+            _cachedUtilityCount = CountModulesByFamily(catalog, BuildableFamily.Utility);
+            _cachedLogisticsCount = CountModulesByFamily(catalog, BuildableFamily.Logistics);
+            _cachedFabricationCount = CountModulesByFamily(catalog, BuildableFamily.Fabrication);
+            _cachedDefenseCount = CountModulesByFamily(catalog, BuildableFamily.Defense);
+        }
 
+        private void RefreshCatalog(ModuleCatalog catalog, BuildableData active, int count)
+        {
             for (int i = 0; i < maxVisibleCards; i++)
             {
                 bool visible = i < count && catalog != null;
-                if (_cardRoots[i] != null)
-                    _cardRoots[i].gameObject.SetActive(visible);
+                SetCardVisible(i, visible);
                 if (!visible)
                     continue;
 
@@ -605,7 +752,7 @@ namespace Hecton8.UI
                     ? new Color(0.14f, 0.3f, 0.28f, 0.78f)
                     : (hasCost ? new Color(0.08f, 0.16f, 0.18f, 0.58f) : new Color(0.28f, 0.2f, 0.06f, 0.72f));
 
-                PDAConstructionSelectButton button = _cardButtonBgs[i].GetComponent<PDAConstructionSelectButton>();
+                PDAConstructionSelectButton button = _cardButtons[i];
                 if (button != null)
                 {
                     button.SetVisualState(_cardButtonBgs[i].color, new Color(0.12f, 0.24f, 0.28f, 0.82f));
@@ -626,7 +773,8 @@ namespace Hecton8.UI
 
             playerBuilder.SetActiveBuildable(data);
             hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — {CachedToUpperInvariant(data.moduleName)} ARMED");
-            RefreshAll(true);
+            MarkAllDirty();
+            Refresh(true);
         }
 
         internal void InvokeBuilderAction()
@@ -644,7 +792,8 @@ namespace Hecton8.UI
             {
                 toolManager.Holster();
                 hudNotification?.ShowInfo("CONSTRUCTION MATRIX — BUILDER HOLSTERED");
-                RefreshAll(true);
+                MarkSummaryDirty();
+                Refresh();
                 return;
             }
 
@@ -658,7 +807,8 @@ namespace Hecton8.UI
 
                 toolManager.SwitchToSlot(builderSlot);
                 hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — BUILDER ACTIVATED [S{builderSlot + 1}]");
-                RefreshAll(true);
+                MarkSummaryDirty();
+                Refresh();
                 return;
             }
 
@@ -672,7 +822,8 @@ namespace Hecton8.UI
             int targetSlot = Mathf.Clamp(toolManager.SlotCount - 1, 0, Mathf.Max(0, toolManager.SlotCount - 1));
             toolManager.SetAssignedToolPrefab(targetSlot, builderPrefab, holsterIfCurrentInvalid: false);
             hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — BUILDER ARMED TO S{targetSlot + 1}");
-            RefreshAll(true);
+            MarkSummaryDirty();
+            Refresh();
         }
 
         internal void InvokeFieldAction()
@@ -708,7 +859,8 @@ namespace Hecton8.UI
                     else
                         hudNotification?.ShowWarning("CONSTRUCTION MATRIX - DEPLOY FAILED");
 
-                    RefreshAll(true);
+                    MarkAllDirty();
+                    Refresh(true);
                     return;
                 }
 
@@ -736,7 +888,8 @@ namespace Hecton8.UI
             if (!builderReady)
             {
                 hudNotification?.ShowWarning($"CONSTRUCTION MATRIX - BUILDER NOT IN CARGO [S{builderSlot + 1}]");
-                RefreshAll(true);
+                MarkSummaryDirty();
+                Refresh();
                 return;
             }
 
@@ -774,7 +927,8 @@ namespace Hecton8.UI
             if (playerBuilder.TryDeployActiveBuildableFromPreview())
             {
                 hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - {CachedToUpperInvariant(playerBuilder.ActiveBuildable.moduleName)} DEPLOYED");
-                RefreshAll(true);
+                MarkAllDirty();
+                Refresh(true);
             }
             else
             {
@@ -956,11 +1110,11 @@ namespace Hecton8.UI
 
             if (toolManager == null)
             {
-                _builderActionRoot.gameObject.SetActive(false);
+                SetActionRootVisible(_builderActionRoot, ref _builderActionVisible, false);
                 return;
             }
 
-            _builderActionRoot.gameObject.SetActive(true);
+            SetActionRootVisible(_builderActionRoot, ref _builderActionVisible, true);
 
             if (builderActive)
             {
@@ -987,7 +1141,7 @@ namespace Hecton8.UI
                 _builderActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
             }
 
-            PDAConstructionBuilderActionButton button = _builderActionBg.GetComponent<PDAConstructionBuilderActionButton>();
+            PDAConstructionBuilderActionButton button = _builderActionButton;
             if (button != null)
                 button.SetVisualState(_builderActionBg.color, new Color(0.12f, 0.24f, 0.28f, 0.82f));
         }
@@ -1006,11 +1160,11 @@ namespace Hecton8.UI
 
             if (active == null || playerBuilder == null)
             {
-                _fieldActionRoot.gameObject.SetActive(false);
+                SetActionRootVisible(_fieldActionRoot, ref _fieldActionVisible, false);
                 return;
             }
 
-            _fieldActionRoot.gameObject.SetActive(true);
+            SetActionRootVisible(_fieldActionRoot, ref _fieldActionVisible, true);
 
             if (builderActive && canPlace)
             {
@@ -1051,9 +1205,31 @@ namespace Hecton8.UI
                 _fieldActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
             }
 
-            PDAConstructionFieldActionButton button = _fieldActionBg.GetComponent<PDAConstructionFieldActionButton>();
+            PDAConstructionFieldActionButton button = _fieldActionButton;
             if (button != null)
                 button.SetVisualState(_fieldActionBg.color, new Color(0.12f, 0.24f, 0.28f, 0.82f));
+        }
+
+        private void SetCardVisible(int index, bool visible)
+        {
+            if (_cardRoots == null || _cardVisibility == null || index < 0 || index >= _cardRoots.Length || index >= _cardVisibility.Length)
+                return;
+
+            RectTransform root = _cardRoots[index];
+            if (root == null || _cardVisibility[index] == visible)
+                return;
+
+            root.gameObject.SetActive(visible);
+            _cardVisibility[index] = visible;
+        }
+
+        private static void SetActionRootVisible(RectTransform root, ref bool currentVisible, bool visible)
+        {
+            if (root == null || currentVisible == visible)
+                return;
+
+            root.gameObject.SetActive(visible);
+            currentVisible = visible;
         }
 
         private static string TrimForCard(string text, int maxChars)

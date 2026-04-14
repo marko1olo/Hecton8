@@ -76,6 +76,7 @@ namespace Hecton8.UI
         private float _pulseCountdown;
         private bool _signalDetected;
         private bool _dirty;
+        private int _lastCountdownSeconds = int.MinValue;
         private UnityEngine.Camera _mainCamera;
 
         // Pre-cached strings — zero GC
@@ -179,6 +180,7 @@ namespace Hecton8.UI
         {
             // Reset countdown to 683 seconds (11:23)
             _pulseCountdown = 683f;
+            _lastCountdownSeconds = int.MinValue;
             _dirty = true;
         }
 
@@ -186,6 +188,7 @@ namespace Hecton8.UI
         {
             _signalDetected = true;
             _pulseCountdown = 683f;
+            _lastCountdownSeconds = int.MinValue;
             _dirty = true;
         }
 
@@ -453,6 +456,7 @@ namespace Hecton8.UI
 
             if (!_signalDetected)
             {
+
                 _directionLabel.text = "НАПРАВЛЕНИЕ: —";
                 _directionLabel.color = colorDim;
                 return;
@@ -481,11 +485,19 @@ namespace Hecton8.UI
 
             if (!_signalDetected)
             {
+                if (_lastCountdownSeconds == -1)
+                    return;
+
+                _lastCountdownSeconds = -1;
                 _pulseTimerLabel.text = "—:—";
                 return;
             }
 
             int totalSecs = Mathf.CeilToInt(_pulseCountdown);
+            if (totalSecs == _lastCountdownSeconds)
+                return;
+
+            _lastCountdownSeconds = totalSecs;
             int mins = totalSecs / 60;
             int secs = totalSecs % 60;
             _pulseTimerLabel.SetText("{0:D2}:{1:D2}", mins, secs);

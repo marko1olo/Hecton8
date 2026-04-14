@@ -100,7 +100,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2014228279382005564}
   - component: {fileID: 427236460479375738}
-  - component: {fileID: 3877228784690954200}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__dome
   m_TagString: Untagged
@@ -154,19 +153,6 @@ LODGroup:
     - renderer: {fileID: 2706267699335321836}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3877228784690954200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3579978456539832865}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: dc73d416111151b46b632a58f0f030b8, type: 2}
 --- !u!1 &3662022803420921655
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_LittoralKarst
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.62, g: 0.76, b: 0.84, a: 1}
-  fogDensity: 0.006
-  skyExposure: 1.35
-  ambientColor: {r: 0.52, g: 0.55, b: 0.6, a: 1}
-  sunIntensity: 1.55
+  fogColor: {r: 0.58, g: 0.72, b: 0.82, a: 1}
+  fogDensity: 0.0065
+  skyExposure: 1.26
+  ambientColor: {r: 0.48, g: 0.52, b: 0.58, a: 1}
+  sunIntensity: 1.48
   temperature: 20
   radiation: 0

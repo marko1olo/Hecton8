@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a3469f73c2ed9440b76cc7e7918dba6, type: 3}
+  m_Name: SurfaceWeatherProfile_ClearBreeze
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Atmosphere.SurfaceWeatherProfile
+  weatherKind: 1
+  selectionWeight: 1.15
+  minDurationSeconds: 140
+  maxDurationSeconds: 260
+  cloudDensityThreshold: 0.28
+  cloudSoftness: 0.24
+  cloudSpeedMultiplier: 1
+  windDirection: {x: 1, y: 0.35}
+  skyLuminanceMultiplier: 1
+  starVisibilityMultiplier: 0.9
+  stormEmissionMultiplier: 1
+  cloudLitColor: {r: 0.9, g: 0.93, b: 0.98, a: 1}
+  cloudShadowColor: {r: 0.5, g: 0.56, b: 0.66, a: 1}
+  sunsetCloudColor: {r: 1.14, g: 0.58, b: 0.28, a: 1}
+  nightCloudColor: {r: 0.07, g: 0.08, b: 0.11, a: 1}
+  surfaceFogColor: {r: 0.72, g: 0.78, b: 0.84, a: 1}
+  surfaceFogDensity: 0.0012
+  surfaceAmbientColor: {r: 0.52, g: 0.55, b: 0.6, a: 1}
+  surfaceSunMultiplier: 0.96
+  sunDiscMultiplier: 1
+  sunScatterMultiplier: 1
+  oceanWindSpeedKmh: 18
+  oceanFoamStrength: 1
+  oceanFoamCoverage: 1
+  oceanFoamScale: 1
+  precipitationIntensity: 0
+  electricalActivity: 0
+  lightningFlashIntensity: 0
+  lightningFlashDuration: 0.07
+  thunderDelayMin: 0.7
+  thunderDelayMax: 2.4
+  lightningStrikeDistanceMin: 130
+  lightningStrikeDistanceMax: 300
+  lightningWindBias: 0.5
+  thunderPropagationDistanceScale: 2.4
+  thunderVolumeNear: 0.84
+  thunderVolumeFar: 0.4
+  thunderPitchMin: 0.74
+  thunderPitchMax: 0.98
+  localRainAreaScale: 1
+  localRainDensityMultiplier: 0.82
+  surfaceImpactRadiusScale: 0.95
+  surfaceImpactDensityMultiplier: 0.82
+  lightningBoltWidthMultiplier: 0.88
+  lightningLightRangeMultiplier: 0.92
+  gustStrength: 0.08
+  gustFrequency: 0.024
+  squallStrength: 0.06
+  squallFrequency: 0.01

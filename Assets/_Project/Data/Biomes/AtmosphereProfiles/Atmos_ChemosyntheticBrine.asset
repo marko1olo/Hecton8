@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f10c4f5372397c41bf21460e9421885, type: 3}
   m_Name: Atmos_ChemosyntheticBrine
   m_EditorClassIdentifier: Assembly-CSharp::AtmosphereProfile
-  fogColor: {r: 0.09, g: 0.24, b: 0.18, a: 1}
-  fogDensity: 0.026
-  skyExposure: 0.74
-  ambientColor: {r: 0.16, g: 0.24, b: 0.2, a: 1}
-  sunIntensity: 0.46
+  fogColor: {r: 0.08, g: 0.22, b: 0.17, a: 1}
+  fogDensity: 0.028
+  skyExposure: 0.68
+  ambientColor: {r: 0.14, g: 0.21, b: 0.18, a: 1}
+  sunIntensity: 0.4
   temperature: 20
   radiation: 0

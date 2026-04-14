@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 using ScatterWorkingMemory = Hecton8.World.WorldProceduralScatterDirector.ScatterWorkingMemory;
@@ -8,20 +7,15 @@ namespace Hecton8.World
 {
     /// <summary>
     /// Owner-local binding state for the scatter backend seam.
-    /// Keeps family indices, prefab cache, and height-sample bridge out of the director's ad-hoc field set.
+    /// Keeps representative layer-family indices and height-sample bridge out of the director's ad-hoc field set.
     /// </summary>
     internal sealed class ScatterBackendBindingState : IDisposable
     {
-        private readonly Dictionary<int, WorldPrefabFamilyProfile> _familiesByIndex;
-        private readonly Dictionary<int, GameObject> _representativePrefabs;
         private NativeArray<float> _heightSamples;
+        private NativeArray<ScatterSimulationCellState> _cellStates;
 
         public ScatterBackendBindingState()
         {
-            // COLD ALLOC: Dictionary<int, WorldPrefabFamilyProfile>[128] — scatter backend family lookup — owner: ScatterBackendBindingState
-            _familiesByIndex = new Dictionary<int, WorldPrefabFamilyProfile>(128);
-            // COLD ALLOC: Dictionary<int, GameObject>[128] — scatter backend prefab cache — owner: ScatterBackendBindingState
-            _representativePrefabs = new Dictionary<int, GameObject>(128);
             ResetLookup();
         }
 
@@ -31,68 +25,42 @@ namespace Hecton8.World
         public int SpawnFamilyIndex { get; private set; }
 
         public NativeArray<float> HeightSamples => _heightSamples;
+        public NativeArray<ScatterSimulationCellState> CellStates => _cellStates;
 
         public void ResetLookup()
         {
-            _familiesByIndex.Clear();
-            _representativePrefabs.Clear();
             GroundFamilyIndex = -1;
             ClusterFamilyIndex = -1;
             StructureFamilyIndex = -1;
             SpawnFamilyIndex = -1;
         }
 
-        public bool TryRegisterFamily(
+        public bool TryRegisterRepresentativeFamilyIndex(
             WorldPrefabFamilyProfile family,
-            int familyIndex,
-            GameObject representativePrefab)
+            int familyIndex)
         {
-            if (family == null || familyIndex == 0 || _familiesByIndex.ContainsKey(familyIndex))
+            if (family == null || familyIndex == 0)
                 return false;
 
-            _familiesByIndex.Add(familyIndex, family);
-            _representativePrefabs.Add(familyIndex, representativePrefab);
-            RegisterRepresentativeFamilyIndex(family, familyIndex);
-            return true;
+            return RegisterRepresentativeFamilyIndex(family, familyIndex);
         }
 
-        public bool TryResolveCachedPrefab(int familyIndex, int layerIndex, out GameObject prefab)
+        public bool TryPopulateCellData(ScatterWorkingMemory memory, int cellCount)
         {
-            prefab = null;
-            if (!_familiesByIndex.TryGetValue(familyIndex, out WorldPrefabFamilyProfile family) || family == null)
-                return false;
-
-            if ((int)family.scatterLayer != layerIndex)
-                return false;
-
-            return _representativePrefabs.TryGetValue(familyIndex, out prefab) && prefab != null;
-        }
-
-        public bool TryGetFamily(int familyIndex, out WorldPrefabFamilyProfile family)
-        {
-            return _familiesByIndex.TryGetValue(familyIndex, out family);
-        }
-
-        public void CacheRepresentativePrefab(int familyIndex, GameObject prefab)
-        {
-            if (familyIndex == 0)
-                return;
-
-            _representativePrefabs[familyIndex] = prefab;
-        }
-
-        public bool TryPopulateHeightSamples(ScatterWorkingMemory memory, int cellCount)
-        {
-            if (memory == null || !memory.CellSamplingOutputs.IsCreated || cellCount <= 0)
+            if (memory == null || !memory.CellSamplingOutputs.IsCreated || !memory.ScatterBackendCellStates.IsCreated || cellCount <= 0)
                 return false;
 
             EnsureHeightSampleCapacity(cellCount);
-            if (!_heightSamples.IsCreated)
+            EnsureCellStateCapacity(cellCount);
+            if (!_heightSamples.IsCreated || !_cellStates.IsCreated)
                 return false;
 
-            int copyCount = Mathf.Min(cellCount, memory.CellSamplingOutputs.Length);
+            int copyCount = Mathf.Min(cellCount, Mathf.Min(memory.CellSamplingOutputs.Length, memory.ScatterBackendCellStates.Length));
             for (int i = 0; i < copyCount; i++)
+            {
                 _heightSamples[i] = memory.CellSamplingOutputs[i].SeafloorHeight;
+                _cellStates[i] = memory.ScatterBackendCellStates[i];
+            }
 
             return copyCount > 0;
         }
@@ -101,6 +69,8 @@ namespace Hecton8.World
         {
             if (_heightSamples.IsCreated)
                 _heightSamples.Dispose();
+            if (_cellStates.IsCreated)
+                _cellStates.Dispose();
 
             ResetLookup();
         }
@@ -123,27 +93,63 @@ namespace Hecton8.World
                 NativeArrayOptions.UninitializedMemory);
         }
 
-        private void RegisterRepresentativeFamilyIndex(WorldPrefabFamilyProfile family, int familyIndex)
+        private void EnsureCellStateCapacity(int requiredCapacity)
+        {
+            if (requiredCapacity <= 0)
+                return;
+
+            if (_cellStates.IsCreated && _cellStates.Length >= requiredCapacity)
+                return;
+
+            if (_cellStates.IsCreated)
+                _cellStates.Dispose();
+
+            // COLD ALLOC: NativeArray<ScatterSimulationCellState>[NextPowerOfTwo(requiredCapacity)] - scatter backend cell-state bridge - owner: ScatterBackendBindingState
+            _cellStates = new NativeArray<ScatterSimulationCellState>(
+                Mathf.NextPowerOfTwo(requiredCapacity),
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+        }
+
+        private bool RegisterRepresentativeFamilyIndex(WorldPrefabFamilyProfile family, int familyIndex)
         {
             switch (family.scatterLayer)
             {
                 case WorldPrefabFamilyProfile.ScatterLayer.Ground:
                     if (GroundFamilyIndex < 0)
+                    {
                         GroundFamilyIndex = familyIndex;
-                    break;
+                        return true;
+                    }
+
+                    return false;
                 case WorldPrefabFamilyProfile.ScatterLayer.Cluster:
                     if (ClusterFamilyIndex < 0)
+                    {
                         ClusterFamilyIndex = familyIndex;
-                    break;
+                        return true;
+                    }
+
+                    return false;
                 case WorldPrefabFamilyProfile.ScatterLayer.Structure:
                     if (StructureFamilyIndex < 0)
+                    {
                         StructureFamilyIndex = familyIndex;
-                    break;
+                        return true;
+                    }
+
+                    return false;
                 case WorldPrefabFamilyProfile.ScatterLayer.Spawn:
                     if (SpawnFamilyIndex < 0)
+                    {
                         SpawnFamilyIndex = familyIndex;
-                    break;
+                        return true;
+                    }
+
+                    return false;
             }
+
+            return false;
         }
     }
 }

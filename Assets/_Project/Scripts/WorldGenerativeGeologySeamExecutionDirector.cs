@@ -299,7 +299,13 @@ namespace Hecton8.World
 
         private void ApplySeam(WorldGenerativeGeologyBinding binding, in WorldGenerativeGeologySeamPlan plan)
         {
+            if (binding == null || binding.transform == null)
+                return;
+
             WorldGenerativeGeologySeamRuntime runtime = GetOrCreateSeamRuntime(binding.transform, plan.runtimeKey);
+            if (runtime == null)
+                return;
+
             Transform seamRoot = runtime.transform;
             int buildSignature = ComputeBuildSignature(plan);
             if (runtime.BuildSignature == buildSignature)
@@ -426,6 +432,9 @@ namespace Hecton8.World
 
         private WorldGenerativeGeologySeamRuntime GetOrCreateSeamRuntime(Transform host, long runtimeKey)
         {
+            if (host == null)
+                return null;
+
             if (_runtimeCacheByKey.TryGetValue(runtimeKey, out WorldGenerativeGeologySeamRuntime cachedRuntime) &&
                 cachedRuntime != null &&
                 cachedRuntime.transform.parent == host &&

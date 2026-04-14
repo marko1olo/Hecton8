@@ -9,16 +9,33 @@ namespace Hecton8.World.Dots
         public int HeightSampleCount;
     }
 
+    internal struct ScatterEntitiesScopeState : IComponentData
+    {
+        public ScatterSimulationEligibilityFlags EligibilityMask;
+        public ScatterSimulationSuppressionState DefaultSuppressionState;
+        public ScatterSimulationDirtyFlags DirtyFlags;
+    }
+
+    internal struct ScatterEntitiesQuotaState : IComponentData
+    {
+        public ScatterSimulationQuotaState Value;
+    }
+
     internal struct ScatterEntitiesSimulationStatus : IComponentData
     {
         public int CandidateCount;
-        public int ScheduledFrame;
+        public int ScheduledCellCount;
         public byte Completed;
     }
 
     internal struct ScatterEntitiesHeightSampleElement : IBufferElementData
     {
         public float Value;
+    }
+
+    internal struct ScatterEntitiesCellStateElement : IBufferElementData
+    {
+        public ScatterSimulationCellState Value;
     }
 
     internal struct ScatterEntitiesCandidateElement : IBufferElementData

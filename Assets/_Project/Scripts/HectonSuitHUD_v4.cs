@@ -155,6 +155,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
     private float _safeWidth;
     private float _safeHeight;
     private bool _registeredToTickManager;
+    private float _previousDepthSample;
     private string _cachedHeadingText = "000";
     private string _cachedTemperatureText = "8.0 C";
     private string _cachedMassText = "0 kg";
@@ -308,6 +309,8 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         _pulseTimer += dt;
         _timeSinceEnable += dt;
         PollRuntimeData();
+        _depthTrendVelocity = _depthMeters - _previousDepthSample;
+        _previousDepthSample = _depthMeters;
         ResolveSuitVariant();
         UpdateTemperature(dt);
         RefreshCachedHudStrings();
@@ -354,17 +357,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
 
     private void PollRuntimeData()
     {
-        float depthBefore = _depthMeters;
-
-        if (survival != null)
-        {
-            _oxygenNorm = Mathf.Clamp01(survival.OxygenNormalized);
-            _powerNorm = Mathf.Clamp01(survival.EnergyNormalized);
-            _healthNorm = Mathf.Clamp01(survival.IntegrityNormalized);
-            _depthMeters = Mathf.Max(0f, survival.Depth);
-            _pressureAtm = Mathf.Max(1f, survival.Pressure);
-        }
-        else
+        if (survival == null)
         {
             if (playerMovement != null)
                 _depthMeters = Mathf.Max(0f, playerMovement.CurrentDepth);
@@ -379,13 +372,9 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
 
         if (flashlight != null)
         {
-            _flashlightOn = flashlight.IsOn;
             _flashlightHeat = Mathf.Clamp01(flashlight.HeatLevel);
             _flashlightCritical = flashlight.IsOverheated || flashlight.IsFlickering;
         }
-
-        _pdaOpen = PlayerPDA.IsOpen;
-        _depthTrendVelocity = _depthMeters - depthBefore;
     }
 
     private void UpdateTemperature(float dt)
@@ -983,6 +972,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
             survival.OnEnergyChanged += HandleEnergyChanged;
             survival.OnIntegrityChanged += HandleIntegrityChanged;
             survival.OnDepthChanged += HandleDepthChanged;
+            survival.OnPressureChanged += HandlePressureChanged;
         }
 
         FlashlightEvents.OnToggled += HandleFlashlightToggled;
@@ -998,6 +988,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
             survival.OnEnergyChanged -= HandleEnergyChanged;
             survival.OnIntegrityChanged -= HandleIntegrityChanged;
             survival.OnDepthChanged -= HandleDepthChanged;
+            survival.OnPressureChanged -= HandlePressureChanged;
         }
 
         FlashlightEvents.OnToggled -= HandleFlashlightToggled;
@@ -1013,16 +1004,23 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
             HandleEnergyChanged(survival.Energy);
             HandleIntegrityChanged(survival.Integrity);
             HandleDepthChanged(survival.Depth);
+            HandlePressureChanged(survival.Pressure);
+        }
+        else
+        {
+            _pressureAtm = 1f + (_depthMeters / 10f);
         }
 
         if (flashlight != null)
         {
             _flashlightOn = flashlight.IsOn;
             _flashlightHeat = flashlight.HeatLevel;
+            _flashlightCritical = flashlight.IsOverheated || flashlight.IsFlickering;
         }
 
         _pdaOpen = PlayerPDA.IsOpen;
         PollRuntimeData();
+        _previousDepthSample = _depthMeters;
         ResolveSuitVariant();
         UpdateTemperature(0f);
         RefreshCachedHudStrings();
@@ -1032,6 +1030,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
     private void HandleEnergyChanged(float _) => _powerNorm = survival != null ? Mathf.Clamp01(survival.EnergyNormalized) : _powerNorm;
     private void HandleIntegrityChanged(float _) => _healthNorm = survival != null ? Mathf.Clamp01(survival.IntegrityNormalized) : _healthNorm;
     private void HandleDepthChanged(float value) => _depthMeters = Mathf.Max(0f, value);
+    private void HandlePressureChanged(float value) => _pressureAtm = Mathf.Max(1f, value);
     private void HandleFlashlightToggled(bool isOn) => _flashlightOn = isOn;
     private void HandlePdaOpened(int _) => _pdaOpen = true;
     private void HandlePdaClosed(float _) => _pdaOpen = false;

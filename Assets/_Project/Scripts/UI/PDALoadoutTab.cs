@@ -94,6 +94,7 @@ namespace Hecton8.UI
         private CanvasGroup _recommendedActionCanvasGroup;
         private Image _recommendedActionBg;
         private TextMeshProUGUI _recommendedActionLabel;
+        private ToolDurabilitySystem _subscribedDurabilitySystem;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -128,6 +129,7 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
         }
@@ -242,6 +244,34 @@ namespace Hecton8.UI
 
             PDAEvents.OnOpened -= HandlePdaOpened;
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            UnsubscribeDurabilitySystem();
+        }
+
+        private void RefreshDurabilityBindings()
+        {
+            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            if (_subscribedDurabilitySystem == durabilitySystem)
+                return;
+
+            UnsubscribeDurabilitySystem();
+            if (durabilitySystem == null)
+                return;
+
+            durabilitySystem.OnDurabilityChanged += HandleDurabilityChanged;
+            durabilitySystem.OnToolBroken += HandleToolBroken;
+            durabilitySystem.OnToolRepaired += HandleToolRepaired;
+            _subscribedDurabilitySystem = durabilitySystem;
+        }
+
+        private void UnsubscribeDurabilitySystem()
+        {
+            if (_subscribedDurabilitySystem == null)
+                return;
+
+            _subscribedDurabilitySystem.OnDurabilityChanged -= HandleDurabilityChanged;
+            _subscribedDurabilitySystem.OnToolBroken -= HandleToolBroken;
+            _subscribedDurabilitySystem.OnToolRepaired -= HandleToolRepaired;
+            _subscribedDurabilitySystem = null;
         }
 
         private void HandleInventoryChanged()
@@ -265,9 +295,31 @@ namespace Hecton8.UI
                 RefreshAll();
         }
 
+        private void HandleDurabilityChanged(string _, float __, float ___)
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
+
+        private void HandleToolBroken(string _)
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
+
+        private void HandleToolRepaired(string _, float __)
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
+
         private void HandlePdaOpened(int tab)
         {
             if (tab != loadoutTabIndex) return;
+            RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
         }
@@ -275,6 +327,7 @@ namespace Hecton8.UI
         private void HandlePdaTabChanged(int _, int newTab)
         {
             if (newTab != loadoutTabIndex) return;
+            RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
         }

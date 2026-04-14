@@ -88,9 +88,15 @@ namespace Hecton8.Tools
                 GameTickManager.Instance.Unregister(this);
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
+        }
+
         public void Tick(float dt)
         {
-            UpdateFrameTimeAverage(dt * 1000f);
+            UpdateFrameTimeAverage(Mathf.Max(0f, dt) * 1000f);
 
             // Check budgets and apply throttling if needed
             if (_enableThrottling)
@@ -111,6 +117,12 @@ namespace Hecton8.Tools
         /// </summary>
         public void RegisterSystem(string systemName, IBudgetManagedSystem system)
         {
+            if (string.IsNullOrWhiteSpace(systemName) || system == null)
+            {
+                LogInvalidRegistration(systemName);
+                return;
+            }
+
             if (_systemBudgets.ContainsKey(systemName))
             {
                 LogDuplicateRegistration(systemName);
@@ -133,6 +145,9 @@ namespace Hecton8.Tools
         /// </summary>
         public void UnregisterSystem(string systemName)
         {
+            if (string.IsNullOrWhiteSpace(systemName))
+                return;
+
             if (_systemBudgets.Remove(systemName))
             {
                 LogSystemUnregistered(systemName);
@@ -144,9 +159,13 @@ namespace Hecton8.Tools
         /// </summary>
         public void ReportSystemPerformance(string systemName, float timeUsedMs)
         {
+            if (string.IsNullOrWhiteSpace(systemName))
+                return;
+
             if (!_systemBudgets.TryGetValue(systemName, out var budget))
                 return;
 
+            timeUsedMs = Mathf.Max(0f, timeUsedMs);
             budget.LastFrameTimeMs = timeUsedMs;
             budget.TotalTimeMs += timeUsedMs;
             budget.FrameCount++;
@@ -188,6 +207,57 @@ namespace Hecton8.Tools
             }
 
             return status;
+        }
+
+        /// <summary>
+        /// Returns a compact human-readable status line.
+        /// </summary>
+        public string DescribeStatus()
+        {
+            int throttledCount = CountThrottledSystems();
+            int overBudgetCount = CountOverBudgetSystems();
+
+            StringBuilder statusBuilder = new StringBuilder(256);
+            statusBuilder.Append("[PerformanceBudgetController] avgFrame=");
+            statusBuilder.Append(_currentFrameTimeAverage.ToString("F2"));
+            statusBuilder.Append("ms target=");
+            statusBuilder.Append(_targetFrameTimeMs.ToString("F2"));
+            statusBuilder.Append("ms max=");
+            statusBuilder.Append(_maxFrameTimeMs.ToString("F2"));
+            statusBuilder.Append("ms systems=");
+            statusBuilder.Append(_systemBudgets.Count);
+            statusBuilder.Append(" throttled=");
+            statusBuilder.Append(throttledCount);
+            statusBuilder.Append(" overBudget=");
+            statusBuilder.Append(overBudgetCount);
+
+            if (_systemBudgets.Count == 0)
+            {
+                statusBuilder.Append(" budgets=none");
+                return statusBuilder.ToString();
+            }
+
+            statusBuilder.Append(" budgets:");
+            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, SystemBudget> kvp = enumerator.Current;
+                SystemBudget budget = kvp.Value;
+                float avgTime = budget.FrameCount > 0 ? budget.TotalTimeMs / budget.FrameCount : 0f;
+                float budgetUsage = budget.BudgetMs > 0f ? avgTime / budget.BudgetMs : 0f;
+                statusBuilder.Append(' ');
+                statusBuilder.Append(kvp.Key);
+                statusBuilder.Append('=');
+                statusBuilder.Append(avgTime.ToString("F2"));
+                statusBuilder.Append("ms/");
+                statusBuilder.Append(budget.BudgetMs.ToString("F2"));
+                statusBuilder.Append("ms(");
+                statusBuilder.AppendFormat("{0:P0}", budgetUsage);
+                statusBuilder.Append(budget.IsThrottled ? ",throttled" : ",ok");
+                statusBuilder.Append(')');
+            }
+
+            return statusBuilder.ToString();
         }
 
         private void InitializeBudgets()
@@ -253,6 +323,32 @@ namespace Hecton8.Tools
             LogBudgetStatusInternal();
         }
 
+        private int CountThrottledSystems()
+        {
+            int count = 0;
+            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (enumerator.Current.Value.IsThrottled)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private int CountOverBudgetSystems()
+        {
+            int count = 0;
+            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (enumerator.Current.Value.OverBudgetCount > 0)
+                    count++;
+            }
+
+            return count;
+        }
+
         private void UpdateFrameTimeAverage(float frameTimeMs)
         {
             EnsureFrameHistoryCapacity();
@@ -297,6 +393,11 @@ namespace Hecton8.Tools
             Debug.LogWarning($"[PerformanceBudgetController] System '{systemName}' already registered");
         }
 
+        private void LogInvalidRegistration(string systemName)
+        {
+            Debug.LogWarning($"[PerformanceBudgetController] Ignoring invalid registration '{systemName}'");
+        }
+
         private void LogSystemRegistered(string systemName, float budgetMs)
         {
             Debug.Log($"[PerformanceBudgetController] Registered system '{systemName}' with {budgetMs:F2}ms budget");
@@ -324,28 +425,11 @@ namespace Hecton8.Tools
 
         private void LogBudgetStatusInternal()
         {
-            _statusLogBuilder.Clear();
-            _statusLogBuilder.Append("[PerformanceBudgetController] Frame Time: ");
-            _statusLogBuilder.Append(_currentFrameTimeAverage.ToString("F2"));
-            _statusLogBuilder.Append("ms | Budgets:");
-
-            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                KeyValuePair<string, SystemBudget> kvp = enumerator.Current;
-                SystemBudget budget = kvp.Value;
-                float avgTime = budget.FrameCount > 0 ? budget.TotalTimeMs / budget.FrameCount : 0f;
-                float budgetUsage = budget.BudgetMs > 0f ? avgTime / budget.BudgetMs : 0f;
-                _statusLogBuilder.Append(' ');
-                _statusLogBuilder.Append(kvp.Key);
-                _statusLogBuilder.Append(':');
-                _statusLogBuilder.AppendFormat("{0:P0}", budgetUsage);
-            }
-
-            Debug.Log(_statusLogBuilder.ToString());
+            Debug.Log(DescribeStatus());
         }
 #else
         private void LogDuplicateRegistration(string systemName) { }
+        private void LogInvalidRegistration(string systemName) { }
         private void LogSystemRegistered(string systemName, float budgetMs) { }
         private void LogSystemUnregistered(string systemName) { }
         private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs) { }

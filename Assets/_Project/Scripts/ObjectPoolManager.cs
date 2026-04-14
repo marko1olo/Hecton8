@@ -40,6 +40,7 @@ namespace Hecton8.Core
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
+        private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private static ObjectPoolManager _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -97,6 +98,7 @@ namespace Hecton8.Core
 
         /// <summary>
         /// Основное хранилище пулов.
+        /// Key = PrefabRegistry.GetOrRegisterPrefab(prefab) — стабильный, уникальный, int.
         /// Key = prefab.GetInstanceID() — стабильный, уникальный, int.
         /// Value = Pool (очередь + контейнер + метаданные).
         /// </summary>
@@ -117,6 +119,7 @@ namespace Hecton8.Core
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            EnsurePrefabRegistry();
 
             // ── Инициализация словаря ──
             // Начальная ёмкость 32 — покрывает большинство игр.
@@ -160,39 +163,36 @@ namespace Hecton8.Core
         /// <param name="prefab">Оригинальный префаб (не экземпляр!).</param>
         /// <param name="count">Сколько объектов предсоздать.</param>
         public void Warmup(GameObject prefab, int count)
-        {
-            if (prefab == null)
-            {
-                Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
-                return;
-            }
+                {
+                    if (prefab == null)
+                    {
+                        Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
+                        return;
+                    }
 
-            if (count <= 0) return;
+                    if (count <= 0) return;
 
-            #pragma warning disable CS0618
-            #pragma warning disable CS0618
-            #pragma warning disable CS0618
-            #pragma warning disable CS0618
-            int id = prefab.GetInstanceID();
-            #pragma warning restore CS0618
-            #pragma warning restore CS0618
-            #pragma warning restore CS0618
-            #pragma warning restore CS0618
+                    if (!TryGetPrefabRegistry(out PrefabRegistry registry))
+                        return;
 
-            if (!_pools.TryGetValue(id, out Pool pool))
-            {
-                pool = CreatePool(prefab, id);
-            }
+                    // v3.0: Use PrefabRegistry instead of deprecated GetInstanceID()
+                    int id = registry.GetOrRegisterPrefab(prefab);
 
-            for (int i = 0; i < count; i++)
-            {
-                GameObject obj = InstantiatePooled(prefab, id, pool);
-                obj.SetActive(false);
-                pool.available.Enqueue(obj);
-            }
+                    if (!_pools.TryGetValue(id, out Pool pool))
+                    {
+                        pool = CreatePool(prefab, id);
+                    }
 
-            UpdateDiagnostics();
-        }
+                    for (int i = 0; i < count; i++)
+                    {
+                        GameObject obj = InstantiatePooled(prefab, id, pool);
+                        obj.SetActive(false);
+                        pool.available.Enqueue(obj);
+                    }
+
+                    UpdateDiagnostics();
+                }
+
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API — SPAWN
@@ -232,9 +232,10 @@ namespace Hecton8.Core
                 return null;
             }
 
-            #pragma warning disable CS0618
-            int id = prefab.GetInstanceID();
-            #pragma warning restore CS0618
+            if (!TryGetPrefabRegistry(out PrefabRegistry registry))
+                return null;
+
+            int id = registry.GetOrRegisterPrefab(prefab);
 
             // ── Получаем или создаём пул ──
             if (!_pools.TryGetValue(id, out Pool pool))
@@ -391,9 +392,10 @@ namespace Hecton8.Core
         public int GetAvailableCount(GameObject prefab)
         {
             if (prefab == null) return 0;
-            #pragma warning disable CS0618
-            int id = prefab.GetInstanceID();
-            #pragma warning restore CS0618
+            if (!TryGetPrefabRegistry(out PrefabRegistry registry))
+                return 0;
+
+            int id = registry.GetOrRegisterPrefab(prefab);
             return _pools.TryGetValue(id, out Pool pool) ? pool.available.Count : 0;
         }
 
@@ -401,9 +403,11 @@ namespace Hecton8.Core
         public bool HasPool(GameObject prefab)
         {
             if (prefab == null) return false;
-            #pragma warning disable CS0618
-            return _pools.ContainsKey(prefab.GetInstanceID());
-            #pragma warning restore CS0618
+            if (!TryGetPrefabRegistry(out PrefabRegistry registry))
+                return false;
+
+            int id = registry.GetPrefabId(prefab);
+            return id != 0 && _pools.ContainsKey(id);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -417,9 +421,10 @@ namespace Hecton8.Core
         public void ClearPool(GameObject prefab)
         {
             if (prefab == null) return;
-            #pragma warning disable CS0618
-            int id = prefab.GetInstanceID();
-            #pragma warning restore CS0618
+            if (!TryGetPrefabRegistry(out PrefabRegistry registry))
+                return;
+
+            int id = registry.GetOrRegisterPrefab(prefab);
 
             if (!_pools.TryGetValue(id, out Pool pool)) return;
 
@@ -467,6 +472,26 @@ namespace Hecton8.Core
         /// Создаёт новый пул и контейнер в Hierarchy.
         /// Одна аллокация Dictionary entry + один GameObject контейнер.
         /// </summary>
+        private static bool TryGetPrefabRegistry(out PrefabRegistry registry)
+        {
+            registry = EnsurePrefabRegistry();
+            return registry != null;
+        }
+
+        private static PrefabRegistry EnsurePrefabRegistry()
+        {
+            PrefabRegistry registry = PrefabRegistry.Instance;
+            if (registry != null)
+                return registry;
+
+            if (!Application.isPlaying)
+                return null;
+
+            // COLD ALLOC: GameObject[1] — runtime prefab registry bootstrap fallback — owner: ObjectPoolManager
+            GameObject registryRoot = new GameObject(PrefabRegistryRuntimeName);
+            return registryRoot.AddComponent<PrefabRegistry>();
+        }
+
         private Pool CreatePool(GameObject prefab, int prefabId)
         {
             // ── Контейнер для чистоты Hierarchy ──
@@ -602,6 +627,7 @@ namespace Hecton8.Core
             /// <summary>Оригинальный префаб (для расширения пула).</summary>
             public GameObject prefab;
 
+            /// <summary>PrefabRegistry ID оригинального префаба.</summary>
             /// <summary>GetInstanceID() оригинального префаба.</summary>
             public int prefabId;
         }

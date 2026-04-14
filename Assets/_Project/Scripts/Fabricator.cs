@@ -292,6 +292,8 @@ namespace Hecton8.Crafting
             if (_isCrafting) return false;
             if (!_hasPower) return false;
             if (_playerInventory == null || _playerInventory.Grid == null) return false;
+            if (recipe.ingredients == null || recipe.ingredients.Count == 0) return false;
+            if (recipe.resultItem == null || recipe.resultQuantity <= 0) return false;
             if (!IsRecipeUnlocked(recipe)) return false;
 
             if (!HasIngredients(recipe))
@@ -376,6 +378,11 @@ namespace Hecton8.Crafting
         public void Tick(float deltaTime)
         {
             if (!_isCrafting) return;
+            if (_activeRecipe == null)
+            {
+                CancelCraft();
+                return;
+            }
 
             // ── Проверка дистанции (всегда, даже без питания) ──
             if (!IsPlayerInRange())
@@ -422,6 +429,15 @@ namespace Hecton8.Crafting
         private void CompleteCraft()
         {
             RecipeData recipe = _activeRecipe;
+            if (recipe == null)
+            {
+                _isCrafting = false;
+                _craftTimer = 0f;
+                _lastPublishedProgress = 0f;
+                NotifyGridBalanceChanged();
+                return;
+            }
+
             ItemData   result = recipe.resultItem;
 
             _isCrafting   = false;
@@ -492,6 +508,9 @@ namespace Hecton8.Crafting
 
         private bool HasIngredients(RecipeData recipe)
         {
+            if (recipe == null || recipe.ingredients == null || _playerInventory == null || _playerInventory.Grid == null)
+                return false;
+
             InventoryGrid grid = _playerInventory.Grid;
             int cols = grid.Columns;
             int rows = grid.Rows;
@@ -527,6 +546,9 @@ namespace Hecton8.Crafting
 
         private int CountIngredientCells(RecipeData recipe)
         {
+            if (recipe == null || recipe.ingredients == null)
+                return 0;
+
             int total = 0;
             List<InventoryCost> costs = recipe.ingredients;
 
@@ -542,6 +564,9 @@ namespace Hecton8.Crafting
 
         private void ConsumeIngredients(RecipeData recipe)
         {
+            if (recipe == null || recipe.ingredients == null || _playerInventory == null || _playerInventory.Grid == null)
+                return;
+
             InventoryGrid grid = _playerInventory.Grid;
             int cols = grid.Columns;
             int rows = grid.Rows;
@@ -585,10 +610,12 @@ namespace Hecton8.Crafting
 
         private void RefundIngredients()
         {
-            if (_activeRecipe == null || _playerInventory == null) return;
+            if (_activeRecipe == null || _playerInventory == null || _playerInventory.Grid == null) return;
 
             InventoryGrid grid = _playerInventory.Grid;
             List<InventoryCost> costs = _activeRecipe.ingredients;
+            if (costs == null || costs.Count == 0)
+                return;
 
             for (int c = 0, cCount = costs.Count; c < cCount; c++)
             {

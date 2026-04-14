@@ -216,6 +216,9 @@ namespace Hecton8.Power
         /// <returns>Созданная PowerGrid.</returns>
         public static PowerGrid CreateGrid(PowerNode initialNode)
         {
+            if (initialNode == null)
+                return null;
+
             EnsureStorage();
 
             PowerGrid grid = new PowerGrid();
@@ -305,6 +308,7 @@ namespace Hecton8.Power
         {
             if (grid == null) return;
             if (grid.NodeCount <= 1) return; // 0 или 1 узел — всегда связная
+            if (grid.Nodes == null || grid.Nodes.Count == 0) return;
 
             _bfsQueue.Clear();
             _bfsVisited.Clear();

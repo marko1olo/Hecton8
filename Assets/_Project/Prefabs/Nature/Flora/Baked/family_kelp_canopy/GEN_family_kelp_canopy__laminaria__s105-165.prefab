@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3780567326544016680}
   - component: {fileID: 5296148549363514061}
-  - component: {fileID: 1342124606010046542}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__laminaria__s105-165
   m_TagString: Untagged
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 2069975068630865181}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &1342124606010046542
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 817647484752394222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 1f83db509e336004d86a03df92e24f15, type: 2}
 --- !u!1 &1406147801338472068
 GameObject:
   m_ObjectHideFlags: 0

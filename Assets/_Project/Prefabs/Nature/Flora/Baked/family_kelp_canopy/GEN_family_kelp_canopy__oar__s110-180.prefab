@@ -190,7 +190,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4053712851257852030}
   - component: {fileID: 4162904879509289477}
-  - component: {fileID: 878886952853495535}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__oar__s110-180
   m_TagString: Untagged
@@ -244,19 +243,6 @@ LODGroup:
     - renderer: {fileID: 5722168025862456604}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &878886952853495535
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5468879681644119805}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 3accc342aac72184cb5e61ae2c468ddd, type: 2}
 --- !u!1 &7144729617403713506
 GameObject:
   m_ObjectHideFlags: 0

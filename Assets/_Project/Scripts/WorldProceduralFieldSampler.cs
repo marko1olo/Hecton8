@@ -347,6 +347,8 @@ namespace Hecton8.World
         private bool _samplingFramePrepared;
         private int _samplingFrameId;
         private WorldCaveDirector _worldCaveDirector;
+        private JobHandle _lastSamplingJobHandle;
+        private bool _hasPendingSamplingJob;
 
         internal static WorldProceduralFieldSampler ActiveRuntimeInstance { get; private set; }
 
@@ -1515,6 +1517,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            CompletePendingSamplingJob();
             DisposeBurstData();
             _isDataDirty = true;
             _samplingFramePrepared = false;
@@ -1523,6 +1526,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            CompletePendingSamplingJob();
             DisposeBurstData();
             _isDataDirty = true;
 
@@ -1635,7 +1639,10 @@ namespace Hecton8.World
                 CrystalGrowthFamilyIndex = ResolveBiomeFamilyDataIndex(crystalGrowthFamily)
             };
 
-            return job.Schedule(cellCount, math.max(1, math.min(32, cellCount / 8)));
+            JobHandle handle = job.Schedule(cellCount, math.max(1, math.min(32, cellCount / 8)));
+            _lastSamplingJobHandle = handle;
+            _hasPendingSamplingJob = true;
+            return handle;
         }
 
         public bool TryBuildFieldSample(in CellOutputData output, out FieldSample sample)
@@ -1783,6 +1790,7 @@ namespace Hecton8.World
 
         public void PrepareBurstData()
         {
+            CompletePendingSamplingJob();
             ResolveReferences();
             WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
 
@@ -3514,6 +3522,8 @@ namespace Hecton8.World
 
         private void DisposeBurstData()
         {
+            CompletePendingSamplingJob();
+
             if (_burstZoneData.IsCreated)
                 _burstZoneData.Dispose();
             if (_burstBiomeMatrixData.IsCreated)
@@ -3527,6 +3537,16 @@ namespace Hecton8.World
             _burstBiomeMatrixDataCount = 0;
             _burstBiomeFamilyDataCount = 0;
             _burstCaveEntranceHintCount = 0;
+        }
+
+        private void CompletePendingSamplingJob()
+        {
+            if (!_hasPendingSamplingJob)
+                return;
+
+            _lastSamplingJobHandle.Complete();
+            _lastSamplingJobHandle = default;
+            _hasPendingSamplingJob = false;
         }
 
         private bool TryGetZoneData(int zoneDataIndex, out ZoneData zoneData)

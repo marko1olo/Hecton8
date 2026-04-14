@@ -489,62 +489,259 @@ namespace Hecton8.EditorTools
 
         private static void BuildPlate(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod)
         {
+            bool isShelf = spec.Variant == CoralVariant.Shelf;
+            bool isLedge = spec.Variant == CoralVariant.Ledge;
+            bool isStack = spec.Variant == CoralVariant.Stack;
+            bool isCanopy = spec.Variant == CoralVariant.Canopy;
+            bool isTerrace = spec.Variant == CoralVariant.Terrace;
+            bool isBastion = spec.Variant == CoralVariant.Bastion;
+            bool isArchitecturalPlate = isCanopy || isTerrace || isBastion;
             int radialSegments = Mathf.Max(lod == 0 ? 16 : 12, spec.LongitudeSegments + (lod == 0 ? 4 : 0) - (lod * 4));
-            if (spec.Variant == CoralVariant.Shelf && lod == 0)
+            if ((isShelf || isCanopy) && lod == 0)
+                radialSegments += 4;
+            if ((isTerrace || isBastion) && lod == 0)
                 radialSegments += 4;
 
-            float primaryThickness = spec.Variant == CoralVariant.Shelf ? scale.y * 0.052f : scale.y * 0.07f;
-            float secondaryThickness = spec.Variant == CoralVariant.Shelf ? scale.y * 0.038f : scale.y * 0.05f;
+            float primaryThickness = isCanopy
+                ? scale.y * 0.054f
+                : isShelf
+                ? scale.y * 0.052f
+                : isTerrace
+                ? scale.y * 0.062f
+                : isBastion
+                ? scale.y * 0.066f
+                : isStack
+                ? scale.y * 0.058f
+                : scale.y * 0.068f;
+            float secondaryThickness = isCanopy
+                ? scale.y * 0.038f
+                : isShelf
+                ? scale.y * 0.038f
+                : isTerrace
+                ? scale.y * 0.046f
+                : isBastion
+                ? scale.y * 0.05f
+                : isStack
+                ? scale.y * 0.044f
+                : scale.y * 0.048f;
+
+            if (isCanopy)
+            {
+                BuildCanopyPlate(buffers, spec, scale, lod, radialSegments, primaryThickness, secondaryThickness);
+                return;
+            }
+
+            if (isArchitecturalPlate)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.04f, scale.y * 0.18f, scale.z * 0.02f),
+                    new Vector3(scale.x * (isBastion ? 0.34f : 0.28f), scale.y * (isBastion ? 0.22f : 0.2f), scale.z * (isBastion ? 0.3f : 0.26f)),
+                    lod == 0 ? 6 : 5,
+                    lod == 0 ? 10 : 8,
+                    spec.WarpAmplitude * (isBastion ? 0.48f : 0.42f),
+                    spec.WarpFrequencyA + 0.5f,
+                    spec.WarpFrequencyB + 0.3f,
+                    0.7f,
+                    spec.Color);
+
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(scale.x * 0.08f, scale.y * 0.38f, -scale.z * 0.04f),
+                    new Vector3(scale.x * (isCanopy ? 0.24f : 0.26f), scale.y * 0.14f, scale.z * (isCanopy ? 0.22f : 0.24f)),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.34f,
+                    spec.WarpFrequencyA + 0.9f,
+                    spec.WarpFrequencyB + 0.7f,
+                    0.74f,
+                    spec.Color);
+
+                if (lod <= 1)
+                {
+                    AddWarpedBlob(
+                        buffers,
+                        new Vector3(-scale.x * 0.02f, scale.y * 0.3f, scale.z * 0.01f),
+                        new Vector3(scale.x * 0.22f, scale.y * 0.16f, scale.z * 0.2f),
+                        5,
+                        8,
+                        spec.WarpAmplitude * 0.28f,
+                        spec.WarpFrequencyA + 1.4f,
+                        spec.WarpFrequencyB + 0.9f,
+                        0.78f,
+                        spec.Color);
+                }
+            }
+
             AddBezierTube(
                 buffers,
-                new Vector3(0f, 0f, 0f),
-                new Vector3(0f, scale.y * 0.18f, 0f),
-                new Vector3(scale.x * 0.04f, scale.y * 0.36f, scale.z * 0.02f),
-                new Vector3(0f, scale.y * 0.58f, 0f),
-                scale.x * 0.15f,
-                scale.x * 0.08f,
+                new Vector3(isArchitecturalPlate ? -scale.x * 0.04f : 0f, 0f, isArchitecturalPlate ? scale.z * 0.02f : 0f),
+                new Vector3(
+                    isCanopy ? -scale.x * 0.06f : isTerrace ? -scale.x * 0.08f : isBastion ? -scale.x * 0.06f : 0f,
+                    scale.y * (isCanopy ? 0.1f : isArchitecturalPlate ? 0.14f : 0.18f),
+                    isCanopy ? scale.z * 0.06f : isArchitecturalPlate ? scale.z * 0.04f : 0f),
+                new Vector3(
+                    isCanopy ? scale.x * 0.01f : isTerrace ? scale.x * 0.02f : isBastion ? scale.x * 0.08f : scale.x * 0.04f,
+                    scale.y * (isCanopy ? 0.2f : isArchitecturalPlate ? 0.28f : 0.36f),
+                    isCanopy ? -scale.z * 0.04f : isBastion ? -scale.z * 0.06f : scale.z * 0.02f),
+                new Vector3(
+                    isCanopy ? -scale.x * 0.01f : isTerrace ? -scale.x * 0.02f : isBastion ? scale.x * 0.04f : 0f,
+                    scale.y * (isCanopy ? 0.34f : isArchitecturalPlate ? 0.46f : 0.58f),
+                    isCanopy ? -scale.z * 0.02f : isTerrace ? scale.z * 0.02f : isBastion ? -scale.z * 0.04f : 0f),
+                isCanopy ? scale.x * 0.24f : isArchitecturalPlate ? scale.x * 0.18f : scale.x * 0.15f,
+                isCanopy ? scale.x * 0.12f : isArchitecturalPlate ? scale.x * 0.092f : scale.x * 0.08f,
                 Mathf.Max(4, spec.PathSegments - lod),
                 Mathf.Max(5, spec.RadialSegments - lod),
                 spec.Color,
-                spec.WarpAmplitude * 0.12f);
+                spec.WarpAmplitude * (isCanopy ? 0.22f : isArchitecturalPlate ? 0.18f : 0.12f));
 
             AddWarpedPlate(
                 buffers,
-                new Vector3(0f, scale.y * 0.6f, 0f),
-                Quaternion.Euler(spec.Variant == CoralVariant.Shelf ? -4f : 0f, 6f, spec.Variant == CoralVariant.Shelf ? 11f : 4f),
-                scale.x * (spec.Variant == CoralVariant.Shelf ? 1.08f : 1.02f),
-                scale.z * (spec.Variant == CoralVariant.Shelf ? 0.96f : 0.92f),
+                new Vector3(
+                    isCanopy ? -scale.x * 0.08f : isTerrace ? -scale.x * 0.12f : isBastion ? -scale.x * 0.08f : 0f,
+                    scale.y * (isCanopy ? 0.48f : isTerrace ? 0.56f : isBastion ? 0.58f : 0.6f),
+                    isCanopy ? scale.z * 0.02f : isTerrace ? scale.z * 0.04f : isBastion ? scale.z * 0.02f : 0f),
+                Quaternion.Euler(
+                    isCanopy ? -14f : isShelf ? -6f : isLedge ? -2f : isTerrace ? -10f : isBastion ? 2f : 2f,
+                    isCanopy ? 18f : isShelf ? 8f : isLedge ? 14f : isTerrace ? 12f : isBastion ? 22f : 10f,
+                    isCanopy ? 20f : isShelf ? 14f : isLedge ? 10f : isTerrace ? 10f : isBastion ? 18f : 6f),
+                scale.x * (isCanopy ? 1.28f : isShelf ? 1.12f : isLedge ? 1.08f : isTerrace ? 1.34f : isBastion ? 1.42f : 1.04f),
+                scale.z * (isCanopy ? 1.08f : isShelf ? 0.98f : isLedge ? 0.94f : isTerrace ? 1.12f : isBastion ? 1.18f : 0.9f),
                 primaryThickness,
                 radialSegments,
-                spec.WarpAmplitude * (spec.Variant == CoralVariant.Shelf ? 0.46f : 0.38f),
+                spec.WarpAmplitude * (isCanopy ? 0.62f : isShelf ? 0.52f : isLedge ? 0.44f : isTerrace ? 0.68f : isBastion ? 0.64f : 0.4f),
                 spec.Color);
 
             AddWarpedPlate(
                 buffers,
-                new Vector3(-scale.x * 0.16f, scale.y * 0.9f, scale.z * 0.14f),
-                Quaternion.Euler(spec.Variant == CoralVariant.Shelf ? 2f : 6f, 14f, spec.Variant == CoralVariant.Shelf ? -28f : -18f),
-                scale.x * (spec.Variant == CoralVariant.Shelf ? 0.9f : 0.82f),
-                scale.z * (spec.Variant == CoralVariant.Shelf ? 0.78f : 0.74f),
+                new Vector3(
+                    isCanopy ? -scale.x * 0.14f : isTerrace ? -scale.x * 0.2f : isBastion ? -scale.x * 0.18f : -scale.x * 0.16f,
+                    scale.y * (isCanopy ? 0.68f : isTerrace ? 0.84f : isBastion ? 0.86f : 0.9f),
+                    isCanopy ? scale.z * 0.14f : isTerrace ? scale.z * 0.18f : isBastion ? scale.z * 0.12f : scale.z * 0.14f),
+                Quaternion.Euler(
+                    isCanopy ? -6f : isShelf ? 1f : isLedge ? 10f : isTerrace ? 2f : isBastion ? 0f : 7f,
+                    isCanopy ? 12f : isShelf ? 18f : isLedge ? 20f : isTerrace ? 20f : isBastion ? 26f : 14f,
+                    isCanopy ? -28f : isShelf ? -32f : isLedge ? -24f : isTerrace ? -28f : isBastion ? -34f : -18f),
+                scale.x * (isCanopy ? 0.9f : isShelf ? 0.94f : isLedge ? 0.88f : isTerrace ? 1.02f : isBastion ? 1.08f : 0.82f),
+                scale.z * (isCanopy ? 0.76f : isShelf ? 0.8f : isLedge ? 0.76f : isTerrace ? 0.84f : isBastion ? 0.88f : 0.72f),
                 secondaryThickness,
                 radialSegments - 2,
-                spec.WarpAmplitude * (spec.Variant == CoralVariant.Shelf ? 0.42f : 0.34f),
+                spec.WarpAmplitude * (isCanopy ? 0.42f : isShelf ? 0.46f : isLedge ? 0.4f : isTerrace ? 0.48f : isBastion ? 0.5f : 0.34f),
                 spec.Color);
 
             if (lod <= 1)
             {
                 AddWarpedPlate(
                     buffers,
-                    new Vector3(scale.x * 0.08f, scale.y * 0.78f, -scale.z * 0.12f),
-                    Quaternion.Euler(-6f, -12f, 18f),
-                    scale.x * 0.7f,
-                    scale.z * 0.58f,
-                    scale.y * 0.038f,
+                    new Vector3(
+                        isCanopy ? scale.x * 0.06f : isTerrace ? scale.x * 0.16f : isBastion ? scale.x * 0.1f : scale.x * 0.08f,
+                        scale.y * (isCanopy ? 0.62f : isTerrace ? 0.76f : isBastion ? 0.8f : 0.78f),
+                        isCanopy ? -scale.z * 0.12f : isTerrace ? -scale.z * 0.16f : isBastion ? -scale.z * 0.14f : -scale.z * 0.12f),
+                    Quaternion.Euler(isCanopy ? -18f : isTerrace ? -12f : isBastion ? -14f : -6f, isCanopy ? -22f : isTerrace ? -18f : isBastion ? -20f : -12f, isCanopy ? 30f : isTerrace ? 24f : isBastion ? 26f : 18f),
+                    scale.x * (isCanopy ? 0.74f : isTerrace ? 0.86f : isBastion ? 0.9f : 0.7f),
+                    scale.z * (isCanopy ? 0.58f : isTerrace ? 0.64f : isBastion ? 0.7f : 0.58f),
+                    scale.y * (isCanopy ? 0.036f : isTerrace ? 0.042f : isBastion ? 0.044f : 0.038f),
                     Mathf.Max(12, radialSegments - 3),
-                    spec.WarpAmplitude * 0.26f,
+                    spec.WarpAmplitude * (isCanopy ? 0.38f : isArchitecturalPlate ? 0.34f : 0.26f),
                     spec.Color);
+
+                if (isCanopy)
+                {
+                    AddWarpedBlob(
+                        buffers,
+                        new Vector3(scale.x * 0.08f, scale.y * 0.5f, scale.z * 0.06f),
+                        new Vector3(scale.x * 0.18f, scale.y * 0.12f, scale.z * 0.16f),
+                        5,
+                        8,
+                        spec.WarpAmplitude * 0.24f,
+                        spec.WarpFrequencyA + 1.1f,
+                        spec.WarpFrequencyB + 0.6f,
+                        0.8f,
+                        spec.Color);
+                }
+                else
+                {
+                    AddWarpedPlate(
+                        buffers,
+                        new Vector3(
+                            isTerrace ? scale.x * 0.18f : isBastion ? scale.x * 0.24f : scale.x * 0.1f,
+                            scale.y * (isTerrace ? 0.6f : isBastion ? 0.64f : 0.5f),
+                            isTerrace ? scale.z * 0.12f : isBastion ? scale.z * 0.1f : scale.z * 0.12f),
+                        Quaternion.Euler(isTerrace ? 10f : isBastion ? 6f : 14f, isTerrace ? -24f : isBastion ? -30f : -18f, isShelf ? 22f : isTerrace ? 28f : isBastion ? 32f : 16f),
+                        scale.x * (isShelf ? 0.54f : isTerrace ? 0.7f : isBastion ? 0.76f : 0.46f),
+                        scale.z * (isShelf ? 0.42f : isTerrace ? 0.5f : isBastion ? 0.54f : 0.36f),
+                        scale.y * (isArchitecturalPlate ? 0.032f : 0.026f),
+                        Mathf.Max(10, radialSegments - 7),
+                        spec.WarpAmplitude * (isArchitecturalPlate ? 0.28f : 0.22f),
+                        spec.Color);
+                }
             }
 
-            if (spec.Variant == CoralVariant.Shelf || spec.Variant == CoralVariant.Stack)
+            if (isCanopy)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.04f, scale.y * 0.46f, scale.z * 0.04f),
+                    new Vector3(scale.x * 0.32f, scale.y * 0.2f, scale.z * 0.28f),
+                    6,
+                    10,
+                    spec.WarpAmplitude * 0.48f,
+                    spec.WarpFrequencyA + 0.8f,
+                    spec.WarpFrequencyB + 0.5f,
+                    0.72f,
+                    spec.Color);
+
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.02f, scale.y * 0.56f, scale.z * 0.02f),
+                    new Vector3(scale.x * 0.22f, scale.y * 0.12f, scale.z * 0.18f),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.22f,
+                    spec.WarpFrequencyA + 1.2f,
+                    spec.WarpFrequencyB + 0.7f,
+                    0.78f,
+                    spec.Color);
+
+                AddWarpedPlate(
+                    buffers,
+                    new Vector3(scale.x * 0.16f, scale.y * 0.84f, -scale.z * 0.04f),
+                    Quaternion.Euler(-10f, -24f, 28f),
+                    scale.x * 0.8f,
+                    scale.z * 0.62f,
+                    scale.y * 0.036f,
+                    radialSegments - 5,
+                    spec.WarpAmplitude * 0.34f,
+                    spec.Color);
+
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(scale.x * 0.16f, scale.y * 0.62f, -scale.z * 0.02f),
+                    new Vector3(scale.x * 0.24f, scale.y * 0.12f, scale.z * 0.2f),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.28f,
+                    spec.WarpFrequencyA + 1.3f,
+                    spec.WarpFrequencyB + 0.9f,
+                    0.76f,
+                    spec.Color);
+
+                if (lod == 0)
+                {
+                    AddWarpedPlate(
+                        buffers,
+                        new Vector3(-scale.x * 0.34f, scale.y * 0.72f, scale.z * 0.18f),
+                        Quaternion.Euler(18f, 38f, -42f),
+                        scale.x * 0.72f,
+                        scale.z * 0.5f,
+                        scale.y * 0.03f,
+                        radialSegments - 8,
+                        spec.WarpAmplitude * 0.34f,
+                        spec.Color);
+                }
+            }
+
+            if (isShelf || isStack)
             {
                 AddWarpedPlate(
                     buffers,
@@ -558,7 +755,7 @@ namespace Hecton8.EditorTools
                     spec.Color);
             }
 
-            if (spec.Variant == CoralVariant.Shelf)
+            if (isShelf)
             {
                 AddWarpedPlate(
                     buffers,
@@ -619,7 +816,7 @@ namespace Hecton8.EditorTools
                     0.8f,
                     spec.Color);
             }
-            else if (spec.Variant == CoralVariant.Ledge)
+            else if (isLedge)
             {
                 AddWarpedPlate(
                     buffers,
@@ -643,33 +840,288 @@ namespace Hecton8.EditorTools
                     spec.WarpFrequencyB + 0.6f,
                     0.8f,
                     spec.Color);
-            }
-            else if (spec.Variant == CoralVariant.Stack)
-            {
+
                 AddWarpedPlate(
                     buffers,
-                    new Vector3(-scale.x * 0.1f, scale.y * 1.34f, scale.z * 0.08f),
-                    Quaternion.Euler(8f, 10f, -16f),
-                    scale.x * 0.56f,
-                    scale.z * 0.5f,
-                    scale.y * 0.04f,
-                    radialSegments - 6,
-                    spec.WarpAmplitude * 0.22f,
+                    new Vector3(-scale.x * 0.26f, scale.y * 1.02f, scale.z * 0.1f),
+                    Quaternion.Euler(6f, 28f, -30f),
+                    scale.x * 0.68f,
+                    scale.z * 0.52f,
+                    scale.y * 0.034f,
+                    radialSegments - 5,
+                    spec.WarpAmplitude * 0.28f,
                     spec.Color);
 
-                if (lod == 0)
+                AddBezierTube(
+                    buffers,
+                    new Vector3(-scale.x * 0.18f, scale.y * 0.18f, scale.z * 0.06f),
+                    new Vector3(-scale.x * 0.24f, scale.y * 0.36f, scale.z * 0.08f),
+                    new Vector3(-scale.x * 0.3f, scale.y * 0.66f, scale.z * 0.1f),
+                    new Vector3(-scale.x * 0.24f, scale.y * 0.96f, scale.z * 0.12f),
+                    scale.x * 0.078f,
+                    scale.x * 0.038f,
+                    Mathf.Max(3, spec.PathSegments - 1),
+                    Mathf.Max(4, spec.RadialSegments - 1),
+                    spec.Color,
+                    spec.WarpAmplitude * 0.1f);
+            }
+            else if (isStack || isTerrace || isBastion)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.02f, scale.y * (isBastion ? 0.58f : 0.54f), scale.z * 0.02f),
+                    new Vector3(scale.x * (isBastion ? 0.26f : 0.22f), scale.y * 0.14f, scale.z * (isBastion ? 0.24f : 0.2f)),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.32f,
+                    spec.WarpFrequencyA + 1.1f,
+                    spec.WarpFrequencyB + 0.4f,
+                    0.76f,
+                    spec.Color);
+
+                if (isTerrace || isBastion)
+                {
+                    AddWarpedFanPlate(
+                        buffers,
+                        new Vector3(isBastion ? -scale.x * 0.08f : -scale.x * 0.14f, scale.y * (isBastion ? 0.96f : 0.98f), isBastion ? scale.z * 0.04f : scale.z * 0.12f),
+                        Quaternion.Euler(isTerrace ? 2f : 6f, isBastion ? 18f : 12f, isTerrace ? -16f : -22f),
+                        scale.x * (isBastion ? 0.94f : 0.88f),
+                        scale.z * (isBastion ? 0.78f : 0.72f),
+                        scale.y * (isBastion ? 0.056f : 0.052f),
+                        radialSegments - 6,
+                        spec.WarpAmplitude * (isBastion ? 0.38f : 0.34f),
+                        isTerrace ? 8f : -12f,
+                        isTerrace ? 208f : 182f,
+                        spec.Color);
+                }
+                else
                 {
                     AddWarpedPlate(
                         buffers,
-                        new Vector3(scale.x * 0.14f, scale.y * 1.52f, -scale.z * 0.1f),
-                        Quaternion.Euler(-4f, -16f, 18f),
-                        scale.x * 0.42f,
-                        scale.z * 0.36f,
-                        scale.y * 0.028f,
-                        radialSegments - 8,
-                        spec.WarpAmplitude * 0.18f,
+                        new Vector3(-scale.x * 0.1f, scale.y * 1.34f, scale.z * 0.08f),
+                        Quaternion.Euler(8f, 10f, -16f),
+                        scale.x * 0.56f,
+                        scale.z * 0.5f,
+                        scale.y * 0.04f,
+                        radialSegments - 6,
+                        spec.WarpAmplitude * 0.22f,
                         spec.Color);
                 }
+
+                if (lod == 0)
+                {
+                    if (isTerrace || isBastion)
+                    {
+                        AddWarpedFanPlate(
+                            buffers,
+                            new Vector3(scale.x * (isBastion ? 0.12f : 0.08f), scale.y * (isBastion ? 1.22f : 1.14f), isBastion ? -scale.z * 0.08f : -scale.z * 0.1f),
+                            Quaternion.Euler(isTerrace ? -6f : -8f, isBastion ? -14f : -20f, isTerrace ? 20f : 26f),
+                            scale.x * (isBastion ? 0.72f : 0.62f),
+                            scale.z * (isBastion ? 0.56f : 0.48f),
+                            scale.y * (isBastion ? 0.042f : 0.036f),
+                            radialSegments - 8,
+                            spec.WarpAmplitude * (isBastion ? 0.3f : 0.24f),
+                            isTerrace ? -24f : -36f,
+                            isTerrace ? 156f : 142f,
+                            spec.Color);
+                    }
+                    else
+                    {
+                        AddWarpedPlate(
+                            buffers,
+                            new Vector3(scale.x * 0.14f, scale.y * 1.52f, -scale.z * 0.1f),
+                            Quaternion.Euler(-4f, -16f, 18f),
+                            scale.x * 0.42f,
+                            scale.z * 0.36f,
+                            scale.y * 0.028f,
+                            radialSegments - 8,
+                            spec.WarpAmplitude * 0.18f,
+                            spec.Color);
+                    }
+                }
+
+                if (lod <= 1)
+                {
+                    if (isTerrace || isBastion)
+                    {
+                        AddWarpedFanPlate(
+                            buffers,
+                            new Vector3(scale.x * 0.28f, scale.y * (isBastion ? 0.82f : 0.86f), -scale.z * (isBastion ? 0.1f : 0.18f)),
+                            Quaternion.Euler(isTerrace ? -10f : -12f, isBastion ? -18f : -24f, isTerrace ? 24f : 30f),
+                            scale.x * (isBastion ? 0.72f : 0.66f),
+                            scale.z * (isBastion ? 0.5f : 0.46f),
+                            scale.y * (isBastion ? 0.04f : 0.036f),
+                            radialSegments - 7,
+                            spec.WarpAmplitude * (isBastion ? 0.3f : 0.28f),
+                            isTerrace ? 24f : -18f,
+                            isTerrace ? 214f : 168f,
+                            spec.Color);
+                    }
+                    else
+                    {
+                        AddWarpedPlate(
+                            buffers,
+                            new Vector3(scale.x * 0.28f, scale.y * 0.82f, -scale.z * 0.1f),
+                            Quaternion.Euler(-12f, -18f, 30f),
+                            scale.x * 0.72f,
+                            scale.z * 0.5f,
+                            scale.y * 0.04f,
+                            radialSegments - 7,
+                            spec.WarpAmplitude * 0.3f,
+                            spec.Color);
+                    }
+                }
+            }
+
+            if (lod == 0 && !isArchitecturalPlate)
+            {
+                AddBezierTube(
+                    buffers,
+                    new Vector3(scale.x * 0.06f, scale.y * 0.16f, -scale.z * 0.04f),
+                    new Vector3(scale.x * 0.08f, scale.y * 0.34f, -scale.z * 0.02f),
+                    new Vector3(scale.x * 0.12f, scale.y * 0.54f, 0f),
+                    new Vector3(scale.x * 0.16f, scale.y * 0.72f, scale.z * 0.04f),
+                    scale.x * 0.06f,
+                    scale.x * 0.028f,
+                    Mathf.Max(3, spec.PathSegments - 1),
+                    Mathf.Max(4, spec.RadialSegments - 2),
+                    spec.Color,
+                    spec.WarpAmplitude * 0.08f);
+            }
+        }
+
+        private static void BuildCanopyPlate(MeshBuffers buffers, CoralSpec spec, Vector3 scale, int lod, int radialSegments, float primaryThickness, float secondaryThickness)
+        {
+            int pathSegments = Mathf.Max(4, spec.PathSegments - lod);
+            int radialTubeSegments = Mathf.Max(5, spec.RadialSegments - lod);
+
+            AddWarpedBlob(
+                buffers,
+                new Vector3(-scale.x * 0.1f, scale.y * 0.18f, scale.z * 0.03f),
+                new Vector3(scale.x * 0.48f, scale.y * 0.28f, scale.z * 0.38f),
+                lod == 0 ? 7 : 5,
+                lod == 0 ? 12 : 8,
+                spec.WarpAmplitude * 0.54f,
+                spec.WarpFrequencyA + 0.45f,
+                spec.WarpFrequencyB + 0.3f,
+                0.66f,
+                spec.Color);
+
+            AddWarpedBlob(
+                buffers,
+                new Vector3(scale.x * 0.1f, scale.y * 0.26f, -scale.z * 0.06f),
+                new Vector3(scale.x * 0.28f, scale.y * 0.15f, scale.z * 0.24f),
+                5,
+                8,
+                spec.WarpAmplitude * 0.3f,
+                spec.WarpFrequencyA + 1.1f,
+                spec.WarpFrequencyB + 0.5f,
+                0.74f,
+                spec.Color);
+
+            AddBezierTube(
+                buffers,
+                new Vector3(-scale.x * 0.16f, 0f, scale.z * 0.02f),
+                new Vector3(-scale.x * 0.22f, scale.y * 0.08f, scale.z * 0.04f),
+                new Vector3(-scale.x * 0.3f, scale.y * 0.18f, scale.z * 0.02f),
+                new Vector3(-scale.x * 0.34f, scale.y * 0.28f, -scale.z * 0.01f),
+                scale.x * 0.22f,
+                scale.x * 0.11f,
+                pathSegments,
+                radialTubeSegments,
+                spec.Color,
+                spec.WarpAmplitude * 0.16f);
+
+            AddWarpedBlob(
+                buffers,
+                new Vector3(-scale.x * 0.32f, scale.y * 0.32f, 0f),
+                new Vector3(scale.x * 0.28f, scale.y * 0.18f, scale.z * 0.24f),
+                5,
+                8,
+                spec.WarpAmplitude * 0.28f,
+                spec.WarpFrequencyA + 0.8f,
+                spec.WarpFrequencyB + 0.6f,
+                0.78f,
+                spec.Color);
+
+            AddWarpedFanPlate(
+                buffers,
+                new Vector3(-scale.x * 0.3f, scale.y * 0.5f, scale.z * 0.04f),
+                Quaternion.Euler(-14f, 12f, 22f),
+                scale.x * 1.18f,
+                scale.z * 0.9f,
+                primaryThickness,
+                radialSegments + (lod == 0 ? 4 : 1),
+                spec.WarpAmplitude * 0.72f,
+                32f,
+                192f,
+                spec.Color);
+
+            AddWarpedBlob(
+                buffers,
+                new Vector3(-scale.x * 0.22f, scale.y * 0.44f, scale.z * 0.08f),
+                new Vector3(scale.x * 0.34f, scale.y * 0.18f, scale.z * 0.28f),
+                5,
+                8,
+                spec.WarpAmplitude * 0.26f,
+                spec.WarpFrequencyA + 1.3f,
+                spec.WarpFrequencyB + 0.8f,
+                0.76f,
+                spec.Color);
+
+            AddWarpedFanPlate(
+                buffers,
+                new Vector3(-scale.x * 0.18f, scale.y * 0.66f, -scale.z * 0.02f),
+                Quaternion.Euler(-2f, 8f, 18f),
+                scale.x * 0.78f,
+                scale.z * 0.58f,
+                secondaryThickness,
+                Mathf.Max(14, radialSegments - 4),
+                spec.WarpAmplitude * 0.46f,
+                46f,
+                174f,
+                spec.Color);
+
+            AddWarpedBlob(
+                buffers,
+                new Vector3(-scale.x * 0.2f, scale.y * 0.58f, scale.z * 0.02f),
+                new Vector3(scale.x * 0.26f, scale.y * 0.16f, scale.z * 0.2f),
+                5,
+                8,
+                spec.WarpAmplitude * 0.22f,
+                spec.WarpFrequencyA + 1.6f,
+                spec.WarpFrequencyB + 0.7f,
+                0.8f,
+                spec.Color);
+
+            if (lod <= 1)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.42f, scale.y * 0.32f, scale.z * 0.12f),
+                    new Vector3(scale.x * 0.18f, scale.y * 0.12f, scale.z * 0.16f),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.22f,
+                    spec.WarpFrequencyA + 1.9f,
+                    spec.WarpFrequencyB + 0.9f,
+                    0.82f,
+                    spec.Color);
+            }
+
+            if (lod == 0)
+            {
+                AddWarpedBlob(
+                    buffers,
+                    new Vector3(-scale.x * 0.3f, scale.y * 0.26f, scale.z * 0.18f),
+                    new Vector3(scale.x * 0.2f, scale.y * 0.09f, scale.z * 0.18f),
+                    5,
+                    8,
+                    spec.WarpAmplitude * 0.16f,
+                    spec.WarpFrequencyA + 1.7f,
+                    spec.WarpFrequencyB + 0.8f,
+                    0.84f,
+                    spec.Color);
             }
         }
 
@@ -757,6 +1209,68 @@ namespace Hecton8.EditorTools
                 buffers.AddTriangle(centerTopIndex + 1, nextRingStart + 1, ringStart + 1);
                 buffers.AddQuad(ringStart + 2, nextRingStart + 2, nextRingStart + 3, ringStart + 3);
             }
+        }
+
+        private static void AddWarpedFanPlate(MeshBuffers buffers, Vector3 center, Quaternion rotation, float radiusX, float radiusZ, float thickness, int radialSegments, float wobble, float startAngleDeg, float endAngleDeg, Color32 color)
+        {
+            int centerTopIndex = buffers.Vertices.Count;
+            Vector3 up = rotation * Vector3.up;
+            Vector3 right = rotation * Vector3.right;
+            Vector3 forward = rotation * Vector3.forward;
+            Vector4 tangent = new Vector4(right.x, right.y, right.z, 1f);
+
+            buffers.AddVertex(center + up * (thickness * 0.5f), up, tangent, new Vector2(0.5f, 0.5f), color);
+            buffers.AddVertex(center - up * (thickness * 0.5f), -up, tangent, new Vector2(0.5f, 0.5f), color);
+
+            float startAngle = startAngleDeg * Mathf.Deg2Rad;
+            float endAngle = endAngleDeg * Mathf.Deg2Rad;
+            for (int i = 0; i <= radialSegments; i++)
+            {
+                float u = i / (float)radialSegments;
+                float angle = Mathf.Lerp(startAngle, endAngle, u);
+                float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;
+                float edgeDrop = Mathf.Sin(angle * 2f + 0.6f) * thickness * 0.22f;
+                Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));
+                Vector3 topVertex = center + radial + up * (thickness * 0.5f + edgeDrop);
+                Vector3 bottomVertex = center + radial - up * (thickness * 0.5f - edgeDrop * 0.35f);
+                Vector3 rimNormal = (radial.normalized + up * 0.18f).normalized;
+
+                buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);
+                buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);
+                buffers.AddVertex(topVertex, rimNormal, tangent, new Vector2(u, 1f), color);
+                buffers.AddVertex(bottomVertex, rimNormal, tangent, new Vector2(u, 0f), color);
+            }
+
+            for (int i = 0; i < radialSegments; i++)
+            {
+                int ringStart = centerTopIndex + 2 + i * 4;
+                int nextRingStart = ringStart + 4;
+                buffers.AddTriangle(centerTopIndex, ringStart, nextRingStart);
+                buffers.AddTriangle(centerTopIndex + 1, nextRingStart + 1, ringStart + 1);
+                buffers.AddQuad(ringStart + 2, nextRingStart + 2, nextRingStart + 3, ringStart + 3);
+            }
+
+            AddFanPlateEdgeCap(buffers, centerTopIndex, centerTopIndex + 2, false, tangent, color);
+            AddFanPlateEdgeCap(buffers, centerTopIndex, centerTopIndex + 2 + radialSegments * 4, true, tangent, color);
+        }
+
+        private static void AddFanPlateEdgeCap(MeshBuffers buffers, int centerTopIndex, int ringStartIndex, bool flipNormal, Vector4 tangent, Color32 color)
+        {
+            Vector3 centerTop = buffers.Vertices[centerTopIndex];
+            Vector3 centerBottom = buffers.Vertices[centerTopIndex + 1];
+            Vector3 edgeTop = buffers.Vertices[ringStartIndex];
+            Vector3 edgeBottom = buffers.Vertices[ringStartIndex + 1];
+            Vector3 edgeDirection = (edgeTop - centerTop).normalized;
+            Vector3 edgeNormal = Vector3.Cross(edgeDirection, centerTop - centerBottom).normalized;
+            if (flipNormal)
+                edgeNormal = -edgeNormal;
+
+            int edgeStartIndex = buffers.Vertices.Count;
+            buffers.AddVertex(centerTop, edgeNormal, tangent, new Vector2(0f, 1f), color);
+            buffers.AddVertex(centerBottom, edgeNormal, tangent, new Vector2(0f, 0f), color);
+            buffers.AddVertex(edgeTop, edgeNormal, tangent, new Vector2(1f, 1f), color);
+            buffers.AddVertex(edgeBottom, edgeNormal, tangent, new Vector2(1f, 0f), color);
+            buffers.AddQuad(edgeStartIndex, edgeStartIndex + 2, edgeStartIndex + 3, edgeStartIndex + 1);
         }
 
         private static void AddWarpedBlob(MeshBuffers buffers, Vector3 center, Vector3 radii, int latSegments, int lonSegments, float warpAmplitude, float frequencyA, float frequencyB, float bottomFlattening, Color32 color)
@@ -945,9 +1459,9 @@ namespace Hecton8.EditorTools
                 case "family_coral_plate__ledge": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 26, 6, 0, 0.06f, 2.4f, 4.9f, new Color32(186, 168, 152, 255), 3600); return true;
                 case "family_coral_plate__shelf": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 24, 6, 0, 0.06f, 2.5f, 5.1f, new Color32(180, 162, 150, 255), 4200); return true;
                 case "family_coral_plate__stack": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 26, 6, 0, 0.065f, 2.7f, 5.4f, new Color32(182, 166, 154, 255), 3800); return true;
-                case "family_coral_plate__terrace": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Stack, 8, 30, 6, 0, 0.072f, 3.5f, 6.0f, new Color32(188, 172, 156, 255), 4600); return true;
-                case "family_coral_plate__canopy": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Shelf, 8, 28, 6, 0, 0.07f, 3.1f, 5.8f, new Color32(184, 166, 154, 255), 4500); return true;
-                case "family_coral_plate__bastion": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Ledge, 8, 30, 6, 0, 0.074f, 3.8f, 6.3f, new Color32(190, 174, 160, 255), 4400); return true;
+                case "family_coral_plate__terrace": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Terrace, 8, 30, 6, 0, 0.072f, 3.5f, 6.0f, new Color32(188, 172, 156, 255), 4600); return true;
+                case "family_coral_plate__canopy": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Canopy, 8, 28, 6, 0, 0.07f, 3.1f, 5.8f, new Color32(184, 166, 154, 255), 4500); return true;
+                case "family_coral_plate__bastion": spec = new CoralSpec(CoralShape.Plate, CoralVariant.Bastion, 8, 30, 6, 0, 0.074f, 3.8f, 6.3f, new Color32(190, 174, 160, 255), 4400); return true;
                 case "family_coral_brittle__sprig": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 9, 6, 0.045f, 3.4f, 5.2f, new Color32(108, 150, 158, 255), 4400); return true;
                 case "family_coral_brittle__fan": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Fan, 8, 0, 9, 7, 0.05f, 3.8f, 5.8f, new Color32(118, 166, 170, 255), 5200); return true;
                 case "family_coral_brittle__spire": spec = new CoralSpec(CoralShape.Branching, CoralVariant.Branch, 8, 0, 10, 8, 0.042f, 3.1f, 4.8f, new Color32(124, 176, 182, 255), 5200); return true;
@@ -1005,7 +1519,7 @@ namespace Hecton8.EditorTools
         }
 
         private enum CoralShape { Low, Branching, Massive, Plate }
-        private enum CoralVariant { Bed, Plate, Knoll, Branch, Mass, Fan, Head, Porous, Boulder, Ledge, Shelf, Stack }
+        private enum CoralVariant { Bed, Plate, Knoll, Branch, Mass, Fan, Head, Porous, Boulder, Ledge, Shelf, Stack, Terrace, Canopy, Bastion }
 
         private readonly struct CoralSpec
         {

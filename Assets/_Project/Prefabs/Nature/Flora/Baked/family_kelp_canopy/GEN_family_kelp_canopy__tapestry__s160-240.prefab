@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1420199615521520398}
   - component: {fileID: 4374562211031092497}
-  - component: {fileID: 892510176807670755}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__tapestry__s160-240
   m_TagString: Untagged
@@ -44,8 +43,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4153338824899112357}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -5.839477, y: 11.305624, z: -0.02824092}
-  m_Size: 22.611248
+  m_LocalReferencePoint: {x: 0.80425644, y: 11.172974, z: 0.5622883}
+  m_Size: 25.416264
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -64,19 +63,6 @@ LODGroup:
     - renderer: {fileID: 6607944652983005690}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &892510176807670755
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4153338824899112357}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
-  prefabPrototype: {fileID: 11400000, guid: 755bea02ada9d9540a6f97d465e41641, type: 2}
 --- !u!1 &4289740148094549114
 GameObject:
   m_ObjectHideFlags: 0

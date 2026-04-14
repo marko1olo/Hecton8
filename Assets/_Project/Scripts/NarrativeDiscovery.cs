@@ -37,6 +37,7 @@ namespace Hecton8.Interaction
         private string _cachedInteractText;
 
         public string DiscoveryId => discoveryId;
+        public bool HasValidDiscoveryId => !string.IsNullOrWhiteSpace(discoveryId);
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -92,6 +93,14 @@ namespace Hecton8.Interaction
 
         public void Interact(Transform interactor)
         {
+            if (!HasValidDiscoveryId)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[Narrative] '{name}' has no discoveryId. Interaction ignored.");
+#endif
+                return;
+            }
+
             if (HectonNarrativeDirector.Instance != null && HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
             {
                 // Уже открыто — но аудиолог можно переслушать

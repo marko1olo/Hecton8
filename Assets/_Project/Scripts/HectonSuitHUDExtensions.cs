@@ -139,6 +139,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     private const float AutoResolveRetryInterval = 1f;
     private readonly string[] _toolSlotNames = new string[ToolSlotCount];
     private PlayerToolManager _subscribedToolManager;
+    private int _activeToolSlotIndex = -1;
     private float _nextAutoResolveAt;
     private bool _tickRegistered;
     private float _overheatFlagTimer;
@@ -469,12 +470,10 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         float slotW = (availableWidth - slotGap * (ToolSlotCount - 1)) / ToolSlotCount;
         float slotH = 30f;
 
-        int activeSlot = toolManager != null ? toolManager.CurrentSlotIndex : -1;
-
         for (int i = 0; i < ToolSlotCount; i++)
         {
             float slotX = startX + i * (slotW + slotGap);
-            bool isActive = activeSlot == i;
+            bool isActive = _activeToolSlotIndex == i;
             Color borderColor = isActive ? normalColor : frameColor * 0.65f;
             Color fillColor = isActive
                 ? new Color(normalColor.r, normalColor.g, normalColor.b, 0.1f)
@@ -674,9 +673,11 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
             return;
 
         UnsubscribeToolManager();
+        toolManager.ActiveSlotChanged += HandleActiveSlotChanged;
         toolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
         _subscribedToolManager = toolManager;
         RefreshToolSlotCache();
+        _activeToolSlotIndex = toolManager.CurrentSlotIndex;
     }
 
     private void UnsubscribeToolManager()
@@ -684,8 +685,15 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         if (_subscribedToolManager == null)
             return;
 
+        _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
         _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
         _subscribedToolManager = null;
+        _activeToolSlotIndex = -1;
+    }
+
+    private void HandleActiveSlotChanged(int slotIndex)
+    {
+        _activeToolSlotIndex = slotIndex;
     }
 
     private void HandleToolAssignmentsChanged()
@@ -758,6 +766,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         _flashlightOverheated = flashlight != null && flashlight.IsOverheated;
         _flashlightFlickering = flashlight != null && flashlight.IsFlickering;
         _pdaOpen = PlayerPDA.IsOpen;
+        _activeToolSlotIndex = toolManager != null ? toolManager.CurrentSlotIndex : -1;
         RefreshToolSlotCache();
     }
 
