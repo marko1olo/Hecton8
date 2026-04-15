@@ -279,3 +279,19 @@ Each button needs a Text child GameObject with TextMeshProUGUI:
 **Testing**: 0% complete. Requires Inspector wiring first.
 
 **STATUS**: Ready for manual Inspector assignment in Unity Editor. Follow steps 1-10 above.
+# CURRENT STATUS OVERRIDE
+
+The previous version of this document was inaccurate and should not be followed literally.
+
+Verified current state in `Assets/_Project/Scenes/01_MAIN_MENU.unity`:
+- `Panel_Settings` hierarchy was rebuilt and serialized `SettingsPanel` references are assigned in-scene
+- `[SettingsManager]` has `mainCamera` and `urpVolume` assigned
+- a dedicated `[SETTINGS_VOLUME]` scene object exists for Bloom/Motion Blur ownership
+- `MainMenuController.btnBackFromSettings` is assigned to a dedicated `Btn_BackFromSettings`
+
+Critical correction:
+- manual Inspector wiring is no longer the required path for `01_MAIN_MENU`
+- the old guide omitted required `SettingsPanel` fields and missed the `btnBackFromSettings` gate in `MainMenuController`
+- `AmbientOcclusion` is still not applied to a live renderer feature owner at runtime; only Bloom and Motion Blur have a concrete scene owner
+
+Treat the rest of this file as historical notes unless revalidated.

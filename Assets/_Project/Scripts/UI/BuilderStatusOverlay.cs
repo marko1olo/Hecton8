@@ -343,9 +343,16 @@ namespace Hecton8.UI
             {
                 _lastStaticStateHash = staticStateHash;
                 if (data != null)
-                    _moduleName.text = CachedToUpperInvariant(data.moduleName) + " [" + data.FamilyShortCode + "]";
+                {
+                    // ZERO-GC: Use StringBuilder to avoid string concatenation allocation
+                    _sb.Clear();
+                    _sb.Append(CachedToUpperInvariant(data.moduleName)).Append(" [").Append(data.FamilyShortCode).Append(']');
+                    _moduleName.text = _sb.ToString();
+                }
                 else
+                {
                     _moduleName.text = "NO MODULE";
+                }
 
                 _indexLine.SetText("MODULE {0}/{1}  //  BUILT {2}", activeIndex + 1, Mathf.Max(1, buildCount), builtModuleCount);
                 _queueLine.SetText(BuildQueueHint(activeIndex, buildCount));

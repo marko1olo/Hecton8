@@ -19,10 +19,86 @@ namespace Hecton.Localization
         public const string MODAL_LOAD_ERROR_MESSAGE = "MODAL_LOAD_ERROR_MESSAGE";
         public const string MODAL_SCENE_LOAD_ERROR_TITLE = "MODAL_SCENE_LOAD_ERROR_TITLE";
         public const string MODAL_SCENE_LOAD_ERROR_MESSAGE = "MODAL_SCENE_LOAD_ERROR_MESSAGE";
+        public const string WARNING_BACKUP_USED_TITLE = "WARNING_BACKUP_USED_TITLE";
+        public const string WARNING_BACKUP_USED_MESSAGE = "WARNING_BACKUP_USED_MESSAGE";
+        public const string ERROR_LOAD_FAILED_TITLE = "ERROR_LOAD_FAILED_TITLE";
+        public const string ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE = "ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE";
+        public const string ERROR_LOAD_FAILED_MESSAGE = "ERROR_LOAD_FAILED_MESSAGE";
         public const string SLOT_PREFIX = "SLOT_PREFIX";
         public const string SLOT_NO_DATA = "SLOT_NO_DATA";
         public const string SLOT_PLAYTIME = "SLOT_PLAYTIME";
         public const string LOADING_PERCENT = "LOADING_PERCENT";
+
+        // ── Settings Panel ──
+        public const string SETTINGS_GRAPHICS = "SETTINGS_GRAPHICS";
+        public const string SETTINGS_AUDIO = "SETTINGS_AUDIO";
+        public const string SETTINGS_QUALITY_PRESET = "SETTINGS_QUALITY_PRESET";
+        public const string SETTINGS_PRESET_LOW = "SETTINGS_PRESET_LOW";
+        public const string SETTINGS_PRESET_MEDIUM = "SETTINGS_PRESET_MEDIUM";
+        public const string SETTINGS_PRESET_HIGH = "SETTINGS_PRESET_HIGH";
+        public const string SETTINGS_PRESET_ULTRA = "SETTINGS_PRESET_ULTRA";
+        public const string SETTINGS_FOV = "SETTINGS_FOV";
+        public const string SETTINGS_SHADOW_DISTANCE = "SETTINGS_SHADOW_DISTANCE";
+        public const string SETTINGS_VSYNC = "SETTINGS_VSYNC";
+        public const string SETTINGS_FULLSCREEN = "SETTINGS_FULLSCREEN";
+        public const string SETTINGS_AO = "SETTINGS_AO";
+        public const string SETTINGS_BLOOM = "SETTINGS_BLOOM";
+        public const string SETTINGS_MOTION_BLUR = "SETTINGS_MOTION_BLUR";
+        public const string SETTINGS_MASTER_VOLUME = "SETTINGS_MASTER_VOLUME";
+        public const string SETTINGS_APPLY = "SETTINGS_APPLY";
+        public const string SETTINGS_CANCEL = "SETTINGS_CANCEL";
+        public const string ERROR_SETTINGS_APPLY_FAILED = "ERROR_SETTINGS_APPLY_FAILED";
+        public const string ERROR_SETTINGS_UNAVAILABLE = "ERROR_SETTINGS_UNAVAILABLE";
+
+        // ── Save System Errors ──
+        public const string ERROR_SAVE_MANAGER_UNAVAILABLE = "ERROR_SAVE_MANAGER_UNAVAILABLE";
+        public const string ERROR_SAVE_FAILED_TITLE = "ERROR_SAVE_FAILED_TITLE";
+        public const string ERROR_SAVE_FAILED_MESSAGE = "ERROR_SAVE_FAILED_MESSAGE";
+        public const string ERROR_SAVE_CRASHED_TITLE = "ERROR_SAVE_CRASHED_TITLE";
+        public const string ERROR_SAVE_CRASHED_MESSAGE = "ERROR_SAVE_CRASHED_MESSAGE";
+        public const string ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE = "ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE";
+
+        // ── Pause Menu ──
+        public const string PAUSE_RESUME = "PAUSE_RESUME";
+        public const string PAUSE_SAVE_STATION = "PAUSE_SAVE_STATION";
+        public const string PAUSE_FIELD_GUIDE = "PAUSE_FIELD_GUIDE";
+        public const string PAUSE_SETTINGS = "PAUSE_SETTINGS";
+        public const string PAUSE_EXIT_TO_MENU = "PAUSE_EXIT_TO_MENU";
+        public const string PAUSE_QUIT = "PAUSE_QUIT";
+        public const string PAUSE_BACK = "PAUSE_BACK";
+        public const string PAUSE_SAVE_STATUS_AWAITING = "PAUSE_SAVE_STATUS_AWAITING";
+        public const string PAUSE_SAVE_STATUS_SUCCESS = "PAUSE_SAVE_STATUS_SUCCESS";
+        public const string PAUSE_SAVE_STATUS_FAILED = "PAUSE_SAVE_STATUS_FAILED";
+        public const string PAUSE_FIELD_GUIDE_TITLE = "PAUSE_FIELD_GUIDE_TITLE";
+        public const string PAUSE_FIELD_GUIDE_TEXT = "PAUSE_FIELD_GUIDE_TEXT";
+        public const string MODAL_EXIT_TO_MENU_TITLE = "MODAL_EXIT_TO_MENU_TITLE";
+        public const string MODAL_EXIT_TO_MENU_MESSAGE = "MODAL_EXIT_TO_MENU_MESSAGE";
+
+        // ── Input Rebinding ──
+        public const string REBIND_WAITING_FOR_INPUT = "REBIND_WAITING_FOR_INPUT";
+        public const string REBIND_CONFLICT_TITLE = "REBIND_CONFLICT_TITLE";
+        public const string REBIND_CONFLICT_MESSAGE = "REBIND_CONFLICT_MESSAGE";
+        public const string REBIND_CANCELED = "REBIND_CANCELED";
+        public const string REBIND_COMPLETE = "REBIND_COMPLETE";
+        public const string REBIND_BINDINGS_SAVED = "REBIND_BINDINGS_SAVED";
+        public const string REBIND_BINDINGS_REVERTED = "REBIND_BINDINGS_REVERTED";
+        public const string REBIND_BINDINGS_RESET = "REBIND_BINDINGS_RESET";
+        public const string REBIND_SERVICE_UNAVAILABLE = "REBIND_SERVICE_UNAVAILABLE";
+        public const string REBIND_ACTION_LOOK = "REBIND_ACTION_LOOK";
+        public const string REBIND_ACTION_JUMP = "REBIND_ACTION_JUMP";
+        public const string REBIND_ACTION_SPRINT = "REBIND_ACTION_SPRINT";
+        public const string REBIND_ACTION_INTERACT = "REBIND_ACTION_INTERACT";
+        public const string REBIND_ACTION_FLASHLIGHT = "REBIND_ACTION_FLASHLIGHT";
+        public const string REBIND_ACTION_PDA = "REBIND_ACTION_PDA";
+        public const string REBIND_ACTION_TOOL_SLOT_1 = "REBIND_ACTION_TOOL_SLOT_1";
+        public const string REBIND_ACTION_TOOL_SLOT_2 = "REBIND_ACTION_TOOL_SLOT_2";
+        public const string REBIND_ACTION_TOOL_SLOT_3 = "REBIND_ACTION_TOOL_SLOT_3";
+        public const string REBIND_ACTION_TOOL_SLOT_4 = "REBIND_ACTION_TOOL_SLOT_4";
+        public const string REBIND_ACTION_PRIMARY = "REBIND_ACTION_PRIMARY";
+        public const string REBIND_ACTION_SECONDARY = "REBIND_ACTION_SECONDARY";
+        public const string REBIND_ACTION_INVENTORY = "REBIND_ACTION_INVENTORY";
+        public const string REBIND_ACTION_UI_SUBMIT = "REBIND_ACTION_UI_SUBMIT";
+        public const string REBIND_ACTION_UI_CANCEL = "REBIND_ACTION_UI_CANCEL";
 
         // ── HectonFabricatorUI ──
         public const string UI_FABRICATOR = "UI_FABRICATOR";

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Optimization;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 #if UNITY_EDITOR
@@ -50,6 +51,18 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 0.1f)] private float _distortion = 0.02f;
         [SerializeField] private bool _previewInEditMode = true;
 
+        [Header("Water Runoff")]
+        [SerializeField, Range(0f, 0.05f)] private float _waterRunoffDistortion = 0.012f;
+        [SerializeField, Range(0.5f, 4f)] private float _waterRunoffSpeed = 1.35f;
+        [SerializeField, Range(0.5f, 12f)] private float _waterDropletScale = 5f;
+        [SerializeField, Range(0f, 2f)] private float _waterDropletDensity = 1f;
+        [SerializeField, Range(0f, 1f)] private float _submergeRunoffIntensity = 0.26f;
+        [SerializeField, Range(0f, 1f)] private float _surfaceRunoffIntensity = 0.7f;
+        [SerializeField, Range(0f, 1f)] private float _submergeRunoffHoldDuration = 0.08f;
+        [SerializeField, Range(0f, 1.5f)] private float _surfaceRunoffHoldDuration = 0.24f;
+        [SerializeField, Range(0.25f, 10f)] private float _submergeRunoffRecoverySpeed = 1.4f;
+        [SerializeField, Range(0.25f, 10f)] private float _surfaceRunoffRecoverySpeed = 1.8f;
+
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
         [SerializeField] private bool _syncPoseInEditMode = false;
@@ -88,6 +101,9 @@ namespace NASAPunk.Visor
         private float _glitchTimer;
         private float _glitchDuration;
         private float _glitchOriginalIntensity;
+        private float _waterRunoffIntensity;
+        private float _waterRunoffHoldTimer;
+        private float _waterRunoffRecoverySpeed;
         private bool _runtimeTickRegistered;
         private bool _editorPreviewSuspended;
 
@@ -98,6 +114,11 @@ namespace NASAPunk.Visor
         private static readonly int ID_HUDColor = Shader.PropertyToID("_HUD_Color");
         private static readonly int ID_ScratchBleed = Shader.PropertyToID("_HUD_ScratchBleed");
         private static readonly int ID_Distortion = Shader.PropertyToID("_DistortionStrength");
+        private static readonly int ID_WaterRunoffStrength = Shader.PropertyToID("_WaterRunoffStrength");
+        private static readonly int ID_WaterRunoffSpeed = Shader.PropertyToID("_WaterRunoffSpeed");
+        private static readonly int ID_WaterRunoffDistortion = Shader.PropertyToID("_WaterRunoffDistortion");
+        private static readonly int ID_WaterDropletDensity = Shader.PropertyToID("_WaterDropletDensity");
+        private static readonly int ID_WaterDropletScale = Shader.PropertyToID("_WaterDropletScale");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -151,12 +172,26 @@ namespace NASAPunk.Visor
                 _glitchActive = false;
             }
 
+            if (_waterRunoffIntensity > 0f || _waterRunoffHoldTimer > 0f)
+            {
+                _waterRunoffIntensity = 0f;
+                _waterRunoffHoldTimer = 0f;
+                _materialPropertiesDirty = true;
+                ApplyMaterialProperties();
+            }
+
             UnregisterRuntimeTick();
             ReleaseRT();
             InvalidatePoseCache();
 #if UNITY_EDITOR
             EditorApplication.update -= EditorTick;
 #endif
+        }
+
+        private void OnDestroy()
+        {
+            // Ensure RT is released on component destruction
+            ReleaseRT();
         }
 
 #if UNITY_EDITOR
@@ -203,6 +238,7 @@ namespace NASAPunk.Visor
             AutoResolveReferences(force: false);
             SyncProjectionPose();
             UpdateGlitchState(deltaTime);
+            UpdateWaterRunoffState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -359,6 +395,11 @@ namespace NASAPunk.Visor
             _mpb.SetColor(ID_HUDColor, _hudTint);
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
             _mpb.SetFloat(ID_Distortion, _distortion);
+            _mpb.SetFloat(ID_WaterRunoffStrength, _waterRunoffIntensity);
+            _mpb.SetFloat(ID_WaterRunoffSpeed, _waterRunoffSpeed);
+            _mpb.SetFloat(ID_WaterRunoffDistortion, _waterRunoffDistortion);
+            _mpb.SetFloat(ID_WaterDropletDensity, _waterDropletDensity);
+            _mpb.SetFloat(ID_WaterDropletScale, _waterDropletScale);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
         }
@@ -381,6 +422,37 @@ namespace NASAPunk.Visor
             float rand01 = XorShift01();
             _hudIntensity = _glitchOriginalIntensity * (0.1f + rand01 * 1.9f);
             _materialPropertiesDirty = true;
+        }
+
+        private void UpdateWaterRunoffState(float deltaTime)
+        {
+            if (_waterRunoffHoldTimer > 0f)
+            {
+                _waterRunoffHoldTimer -= deltaTime;
+                if (_waterRunoffHoldTimer < 0f)
+                    _waterRunoffHoldTimer = 0f;
+
+                return;
+            }
+
+            if (_waterRunoffIntensity <= 0.001f)
+            {
+                if (_waterRunoffIntensity != 0f)
+                {
+                    _waterRunoffIntensity = 0f;
+                    _materialPropertiesDirty = true;
+                }
+
+                return;
+            }
+
+            float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _waterRunoffRecoverySpeed) * deltaTime);
+            float nextIntensity = Mathf.Lerp(_waterRunoffIntensity, 0f, t);
+            if (!Mathf.Approximately(nextIntensity, _waterRunoffIntensity))
+            {
+                _waterRunoffIntensity = nextIntensity;
+                _materialPropertiesDirty = true;
+            }
         }
 
         private void PrepareProjectionTexture()
@@ -432,13 +504,13 @@ namespace NASAPunk.Visor
             // Release old RT if size changed
             ReleaseOwnedRuntimeTexture();
 
-            _hudRT = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.ARGB32)
-            {
-                filterMode = _filterMode,
-                useMipMap = false,
-                name = "VisorHUD_RT_Scaled"
-            };
-            _hudRT.Create();
+            // Rent RT from pool (zero-GC, O(1) lookup)
+            _hudRT = RenderTexturePool.Instance.Rent(targetWidth, targetHeight, RenderTextureFormat.ARGB32, this);
+            _hudRT.filterMode = _filterMode;
+            _hudRT.useMipMap = false;
+            _hudRT.name = "VisorHUD_RT_Scaled";
+            if (!_hudRT.IsCreated())
+                _hudRT.Create();
             _ownsRuntimeTexture = true;
             _cachedRTWidth = targetWidth;
             _cachedRTHeight = targetHeight;
@@ -490,11 +562,22 @@ namespace NASAPunk.Visor
             if (!_ownsRuntimeTexture || _hudRT == null)
                 return;
 
-            _hudRT.Release();
-            if (Application.isPlaying)
-                Destroy(_hudRT);
+            // Register disposal with lifecycle tracker
+            if (RenderTextureLifecycleTracker.Instance != null)
+                RenderTextureLifecycleTracker.Instance.RegisterDisposal(_hudRT);
+
+            // Return to pool for reuse (zero-GC)
+            if (RenderTexturePool.Instance != null)
+                RenderTexturePool.Instance.Return(_hudRT);
             else
-                DestroyImmediate(_hudRT);
+            {
+                // Fallback if pool not available (Editor mode or shutdown)
+                _hudRT.Release();
+                if (Application.isPlaying)
+                    Destroy(_hudRT);
+                else
+                    DestroyImmediate(_hudRT);
+            }
         }
 
         private void SuspendEditModeProjection()
@@ -805,6 +888,42 @@ namespace NASAPunk.Visor
             _glitchTimer = 0f;
             _glitchDuration = duration;
             _glitchRngState = (uint)(Time.unscaledTime * 1000f) | 1u;
+        }
+
+        /// <summary>
+        /// Triggers a short visor runoff pulse when crossing into water.
+        /// </summary>
+        public void TriggerSubmergeRunoff()
+        {
+            TriggerWaterRunoff(
+                _submergeRunoffIntensity,
+                _submergeRunoffHoldDuration,
+                _submergeRunoffRecoverySpeed);
+        }
+
+        /// <summary>
+        /// Triggers a stronger visor runoff pulse when breaking back to the surface.
+        /// </summary>
+        public void TriggerSurfaceBreakRunoff()
+        {
+            TriggerWaterRunoff(
+                _surfaceRunoffIntensity,
+                _surfaceRunoffHoldDuration,
+                _surfaceRunoffRecoverySpeed);
+        }
+
+        private void TriggerWaterRunoff(float intensity, float holdDuration, float recoverySpeed)
+        {
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            if (_waterRunoffIntensity < clampedIntensity)
+                _waterRunoffIntensity = clampedIntensity;
+
+            _waterRunoffHoldTimer = Mathf.Max(_waterRunoffHoldTimer, holdDuration);
+            _waterRunoffRecoverySpeed = Mathf.Max(0.1f, recoverySpeed);
+            _materialPropertiesDirty = true;
         }
 
 #if UNITY_EDITOR

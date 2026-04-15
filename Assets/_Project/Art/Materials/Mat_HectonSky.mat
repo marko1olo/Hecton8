@@ -141,7 +141,7 @@ Material:
     - _CloudDensityThreshold: 0.28
     - _CloudOverlayMode: 0
     - _CloudSoftness: 0.24
-    - _CloudSpeedMult: 0.0009909249
+    - _CloudSpeedMult: 0.0009886477
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
@@ -154,7 +154,7 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 0.00016000001
+    - _GameTime: 0.00019999992
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -185,7 +185,7 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.28893033
+    - _SunElevation: 0.28893387
     - _SunScatterIntensity: 0.5
     - _SunScatterPower: 12.5
     - _SunSize: 0.002
@@ -208,7 +208,7 @@ Material:
     - _HazeColor: {r: 0.32, g: 0.37, b: 0.43, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
-    - _NightCloudColor: {r: 0.06999986, g: 0.07999986, b: 0.1099998, a: 1}
+    - _NightCloudColor: {r: 0.0699999, g: 0.0799999, b: 0.10999986, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
     - _SkyColorHorizon: {r: 0.4248, g: 0.38736, b: 0.61200005, a: 1}
     - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}

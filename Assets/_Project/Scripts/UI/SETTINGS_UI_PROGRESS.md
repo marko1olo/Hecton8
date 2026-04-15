@@ -219,6 +219,18 @@ private void ApplyCameraFOV(float fov)
 
 ## Summary
 
+---
+
+## CURRENT STATUS OVERRIDE
+
+- Inspector wiring is no longer the primary pending task for `01_MAIN_MENU`; the settings panel hierarchy and serialized references were rebuilt in-scene.
+- `SettingsManager.mainCamera` and `SettingsManager.urpVolume` are assigned in the authored scene state.
+- `AmbientOcclusion` is persisted in settings data, but this document previously overstated runtime support.
+- The project does not currently expose a live renderer-feature owner for SSAO through `VolumeProfile.TryGet`.
+- Live post-processing preview in this branch only has a concrete scene owner for Bloom and Motion Blur.
+- Any claim here that AO/Bloom/Motion Blur are all driven the same way through URP Volume is false for the current project state.
+- Play mode verification remains `PENDING VERIFICATION`.
+
 **Backend**: 100% complete. URP Volume integration, Camera FOV application, quality presets, persistence — all working.
 
 **UI Layout**: 80% complete. Core structure created (presets, FOV, shadow distance, toggles, audio, actions). Missing: additional volume sliders, quality buttons, reset button.

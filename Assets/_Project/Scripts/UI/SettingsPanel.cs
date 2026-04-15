@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Hecton.Localization;
 
 namespace Hecton8.UI
 {
@@ -59,12 +60,36 @@ namespace Hecton8.UI
         [SerializeField] private Button btnApply;
         [SerializeField] private Button btnCancel;
 
+        [Header("=== LIVE PREVIEW ===")]
+        [SerializeField] private SettingsLivePreview livePreview;
+
+        [Header("=== ANIMATION ===")]
+        [SerializeField] private SettingsPanelAnimator panelAnimator;
+
+        [Header("=== COMPARISON VIEW ===")]
+        [SerializeField] private SettingsComparisonView comparisonView;
+
+        [Header("=== PERFORMANCE ===")]
+        [SerializeField, Tooltip("Apply button cooldown (seconds)")]
+        private float applyButtonCooldown = 0.5f;
+
+        [SerializeField, Tooltip("Slider throttle interval (seconds)")]
+        private float sliderThrottleInterval = 0.1f;
+
+        [SerializeField, Tooltip("Toggle debounce interval (seconds)")]
+        private float toggleDebounceInterval = 0.05f;
+
         // ══════════════════════════════════════════════════════════
         // FIELDS
         // ══════════════════════════════════════════════════════════
 
         private SettingsManager _settings;
         private bool _initialized;
+
+        // Performance guards
+        private float _nextApplyTime;
+        private float _nextSliderUpdateTime;
+        private float _nextToggleUpdateTime;
         private int _cachedQualityLevel = -1;
         private float _cachedMasterVolume = -1f;
         private float _cachedMusicVolume = -1f;
@@ -85,6 +110,41 @@ namespace Hecton8.UI
         private static readonly string[] AntiAliasingNames = { "None", "FXAA", "SMAA", "TAA" };
         private static readonly string[] TextureQualityNames = { "Low", "Medium", "High", "Ultra" };
 
+        // ZERO-GC: Cached strings for volume/FOV/shadow distance display
+        private static readonly string[] VolumePercentStrings = new string[101]; // COLD ALLOC: string[101] — volume percentage strings 0-100% — owner: SettingsPanel
+        private static readonly string[] FOVStrings = new string[51]; // COLD ALLOC: string[51] — FOV strings 60-110° — owner: SettingsPanel
+        private static readonly string[] ShadowDistanceStrings = new string[251]; // COLD ALLOC: string[251] — shadow distance strings 50-300m — owner: SettingsPanel
+
+        // ZERO-GC: Dirty flags to prevent unnecessary SetText calls
+        private string _prevMasterVolumeText = null;
+        private string _prevMusicVolumeText = null;
+        private string _prevSfxVolumeText = null;
+        private string _prevAmbientVolumeText = null;
+        private string _prevFOVText = null;
+        private string _prevShadowDistanceText = null;
+
+        // ZERO-GC: Static constructor to pre-generate all display strings
+        static SettingsPanel()
+        {
+            // Pre-generate volume percentage strings (0-100%)
+            for (int i = 0; i <= 100; i++)
+            {
+                VolumePercentStrings[i] = i.ToString() + "%";
+            }
+
+            // Pre-generate FOV strings (60-110°)
+            for (int i = 0; i <= 50; i++)
+            {
+                FOVStrings[i] = (60 + i).ToString() + "°";
+            }
+
+            // Pre-generate shadow distance strings (50-300m)
+            for (int i = 0; i <= 250; i++)
+            {
+                ShadowDistanceStrings[i] = (50 + i).ToString() + "m";
+            }
+        }
+
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -101,11 +161,29 @@ namespace Hecton8.UI
 
             LoadCurrentSettings();
             RefreshAllUI();
+
+            // Play fade-in animation
+            if (panelAnimator != null)
+                panelAnimator.PlayFadeIn();
+
+            // Show comparison view
+            if (comparisonView != null)
+                comparisonView.Show();
         }
 
         private void OnDisable()
         {
             UnbindSliders();
+
+            // Fade out animation (if supported)
+            if (panelAnimator != null && panelAnimator.IsPlaying())
+            {
+                panelAnimator.SkipAnimation();
+            }
+
+            // Hide comparison view
+            if (comparisonView != null)
+                comparisonView.Hide();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -352,17 +430,50 @@ namespace Hecton8.UI
             if (sliderAmbientVolume != null)
                 sliderAmbientVolume.SetValueWithoutNotify(_cachedAmbientVolume);
 
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtMasterVolume != null)
-                txtMasterVolume.SetText($"{Mathf.RoundToInt(_cachedMasterVolume * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(_cachedMasterVolume * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevMasterVolumeText != text)
+                {
+                    txtMasterVolume.SetText(text);
+                    _prevMasterVolumeText = text;
+                }
+            }
 
             if (txtMusicVolume != null)
-                txtMusicVolume.SetText($"{Mathf.RoundToInt(_cachedMusicVolume * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(_cachedMusicVolume * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevMusicVolumeText != text)
+                {
+                    txtMusicVolume.SetText(text);
+                    _prevMusicVolumeText = text;
+                }
+            }
 
             if (txtSfxVolume != null)
-                txtSfxVolume.SetText($"{Mathf.RoundToInt(_cachedSfxVolume * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(_cachedSfxVolume * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevSfxVolumeText != text)
+                {
+                    txtSfxVolume.SetText(text);
+                    _prevSfxVolumeText = text;
+                }
+            }
 
             if (txtAmbientVolume != null)
-                txtAmbientVolume.SetText($"{Mathf.RoundToInt(_cachedAmbientVolume * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(_cachedAmbientVolume * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevAmbientVolumeText != text)
+                {
+                    txtAmbientVolume.SetText(text);
+                    _prevAmbientVolumeText = text;
+                }
+            }
         }
 
         private void RefreshVideoUI()
@@ -379,8 +490,18 @@ namespace Hecton8.UI
             if (sliderFieldOfView != null)
                 sliderFieldOfView.SetValueWithoutNotify(_cachedFieldOfView);
 
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtFieldOfView != null)
-                txtFieldOfView.SetText($"{Mathf.RoundToInt(_cachedFieldOfView)}°");
+            {
+                int fov = Mathf.RoundToInt(_cachedFieldOfView);
+                int index = Mathf.Clamp(fov - 60, 0, 50);
+                string text = FOVStrings[index];
+                if (_prevFOVText != text)
+                {
+                    txtFieldOfView.SetText(text);
+                    _prevFOVText = text;
+                }
+            }
 
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
                 txtShadowQuality.SetText(ShadowQualityNames[_cachedShadowQuality]);
@@ -388,8 +509,18 @@ namespace Hecton8.UI
             if (sliderShadowDistance != null)
                 sliderShadowDistance.SetValueWithoutNotify(_cachedShadowDistance);
 
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtShadowDistance != null)
-                txtShadowDistance.SetText($"{Mathf.RoundToInt(_cachedShadowDistance)}m");
+            {
+                int distance = Mathf.RoundToInt(_cachedShadowDistance);
+                int index = Mathf.Clamp(distance - 50, 0, 250);
+                string text = ShadowDistanceStrings[index];
+                if (_prevShadowDistanceText != text)
+                {
+                    txtShadowDistance.SetText(text);
+                    _prevShadowDistanceText = text;
+                }
+            }
 
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
                 txtAntiAliasing.SetText(AntiAliasingNames[_cachedAntiAliasing]);
@@ -419,6 +550,10 @@ namespace Hecton8.UI
             _settings.ApplyQualityPreset(0);
             LoadCurrentSettings();
             RefreshAllUI();
+
+            // Update comparison view
+            if (comparisonView != null)
+                comparisonView.UpdateComparison(0);
         }
 
         private void OnPresetMedium()
@@ -429,6 +564,10 @@ namespace Hecton8.UI
             _settings.ApplyQualityPreset(1);
             LoadCurrentSettings();
             RefreshAllUI();
+
+            // Update comparison view
+            if (comparisonView != null)
+                comparisonView.UpdateComparison(1);
         }
 
         private void OnPresetHigh()
@@ -439,6 +578,10 @@ namespace Hecton8.UI
             _settings.ApplyQualityPreset(2);
             LoadCurrentSettings();
             RefreshAllUI();
+
+            // Update comparison view
+            if (comparisonView != null)
+                comparisonView.UpdateComparison(2);
         }
 
         private void OnPresetUltra()
@@ -449,6 +592,10 @@ namespace Hecton8.UI
             _settings.ApplyQualityPreset(3);
             LoadCurrentSettings();
             RefreshAllUI();
+
+            // Update comparison view
+            if (comparisonView != null)
+                comparisonView.UpdateComparison(3);
         }
 
         private void OnQualityDecrease()
@@ -477,9 +624,30 @@ namespace Hecton8.UI
 
         private void OnFieldOfViewChanged(float value)
         {
+            // Throttle slider updates
+            if (Time.unscaledTime < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+
             _cachedFieldOfView = value;
+            
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtFieldOfView != null)
-                txtFieldOfView.SetText($"{Mathf.RoundToInt(value)}°");
+            {
+                int fov = Mathf.RoundToInt(value);
+                int index = Mathf.Clamp(fov - 60, 0, 50);
+                string text = FOVStrings[index];
+                if (_prevFOVText != text)
+                {
+                    txtFieldOfView.SetText(text);
+                    _prevFOVText = text;
+                }
+            }
+
+            // Live preview
+            if (livePreview != null)
+                livePreview.PreviewFOV(value);
         }
 
         private void OnShadowQualityDecrease()
@@ -498,9 +666,26 @@ namespace Hecton8.UI
 
         private void OnShadowDistanceChanged(float value)
         {
+            // Throttle slider updates
+            if (Time.unscaledTime < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+
             _cachedShadowDistance = value;
+            
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtShadowDistance != null)
-                txtShadowDistance.SetText($"{Mathf.RoundToInt(value)}m");
+            {
+                int distance = Mathf.RoundToInt(value);
+                int index = Mathf.Clamp(distance - 50, 0, 250);
+                string text = ShadowDistanceStrings[index];
+                if (_prevShadowDistanceText != text)
+                {
+                    txtShadowDistance.SetText(text);
+                    _prevShadowDistanceText = text;
+                }
+            }
         }
 
         private void OnAntiAliasingDecrease()
@@ -519,17 +704,44 @@ namespace Hecton8.UI
 
         private void OnAmbientOcclusionChanged(bool value)
         {
+            // Debounce toggle changes
+            if (Time.unscaledTime < _nextToggleUpdateTime)
+                return;
+
+            _nextToggleUpdateTime = Time.unscaledTime + toggleDebounceInterval;
+
             _cachedAmbientOcclusion = value;
+            UpdatePostProcessingPreview();
         }
 
         private void OnBloomChanged(bool value)
         {
+            // Debounce toggle changes
+            if (Time.unscaledTime < _nextToggleUpdateTime)
+                return;
+
+            _nextToggleUpdateTime = Time.unscaledTime + toggleDebounceInterval;
+
             _cachedBloom = value;
+            UpdatePostProcessingPreview();
         }
 
         private void OnMotionBlurChanged(bool value)
         {
+            // Debounce toggle changes
+            if (Time.unscaledTime < _nextToggleUpdateTime)
+                return;
+
+            _nextToggleUpdateTime = Time.unscaledTime + toggleDebounceInterval;
+
             _cachedMotionBlur = value;
+            UpdatePostProcessingPreview();
+        }
+
+        private void UpdatePostProcessingPreview()
+        {
+            if (livePreview != null)
+                livePreview.PreviewPostProcessing(_cachedAmbientOcclusion, _cachedBloom, _cachedMotionBlur);
         }
 
         private void OnTextureQualityDecrease()
@@ -552,30 +764,94 @@ namespace Hecton8.UI
 
         private void OnMasterVolumeChanged(float value)
         {
+            // Throttle slider updates
+            if (Time.unscaledTime < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+
             _cachedMasterVolume = value;
+            
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtMasterVolume != null)
-                txtMasterVolume.SetText($"{Mathf.RoundToInt(value * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(value * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevMasterVolumeText != text)
+                {
+                    txtMasterVolume.SetText(text);
+                    _prevMasterVolumeText = text;
+                }
+            }
         }
 
         private void OnMusicVolumeChanged(float value)
         {
+            // Throttle slider updates
+            if (Time.unscaledTime < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+
             _cachedMusicVolume = value;
+            
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtMusicVolume != null)
-                txtMusicVolume.SetText($"{Mathf.RoundToInt(value * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(value * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevMusicVolumeText != text)
+                {
+                    txtMusicVolume.SetText(text);
+                    _prevMusicVolumeText = text;
+                }
+            }
         }
 
         private void OnSfxVolumeChanged(float value)
         {
+            // Throttle slider updates
+            if (Time.unscaledTime < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+
             _cachedSfxVolume = value;
+            
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtSfxVolume != null)
-                txtSfxVolume.SetText($"{Mathf.RoundToInt(value * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(value * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevSfxVolumeText != text)
+                {
+                    txtSfxVolume.SetText(text);
+                    _prevSfxVolumeText = text;
+                }
+            }
         }
 
         private void OnAmbientVolumeChanged(float value)
         {
+            // Throttle slider updates
+            if (Time.unscaledTime < _nextSliderUpdateTime)
+                return;
+
+            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+
             _cachedAmbientVolume = value;
+            
+            // ZERO-GC: Use cached strings and dirty flags
             if (txtAmbientVolume != null)
-                txtAmbientVolume.SetText($"{Mathf.RoundToInt(value * 100f)}%");
+            {
+                int percent = Mathf.RoundToInt(value * 100f);
+                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
+                if (_prevAmbientVolumeText != text)
+                {
+                    txtAmbientVolume.SetText(text);
+                    _prevAmbientVolumeText = text;
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -597,6 +873,22 @@ namespace Hecton8.UI
             if (_settings == null)
                 return;
 
+            // Apply button cooldown guard
+            if (Time.unscaledTime < _nextApplyTime)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[SettingsPanel] Apply button on cooldown. Please wait.");
+#endif
+                return;
+            }
+
+            _nextApplyTime = Time.unscaledTime + applyButtonCooldown;
+
+            // Apply live preview immediately
+            if (livePreview != null)
+                livePreview.ApplyImmediately();
+
+            // Apply all cached settings to SettingsManager
             _settings.QualityLevel = _cachedQualityLevel;
             _settings.MasterVolume = _cachedMasterVolume;
             _settings.MusicVolume = _cachedMusicVolume;
@@ -612,10 +904,32 @@ namespace Hecton8.UI
             _settings.Bloom = _cachedBloom;
             _settings.MotionBlur = _cachedMotionBlur;
             _settings.TextureQuality = _cachedTextureQuality;
+
+            // Verify all settings applied successfully
+            bool success = _settings.ApplyAllSettings();
+            if (!success)
+            {
+                // Show error modal with retry/revert options (localized)
+                LocalizationManager loc = LocalizationManager.Instance;
+                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SETTINGS_APPLY_FAILED) : "Settings Apply Failed";
+                string message = loc != null ? loc.Get(LocalizationKeys.ERROR_SETTINGS_UNAVAILABLE) : "Some settings failed to apply. Check console for details.\n\nRetry or revert to defaults?";
+                
+                Hecton.UI.MainMenu.ModalWindow.ShowWithCustomLabels(
+                    title,
+                    message,
+                    () => OnApply(), // Retry
+                    () => OnResetDefaults(), // Revert to defaults
+                    "Retry",
+                    "Revert to Defaults");
+            }
         }
 
         private void OnCancel()
         {
+            // Cancel live preview
+            if (livePreview != null)
+                livePreview.CancelPending();
+
             LoadCurrentSettings();
             RefreshAllUI();
         }

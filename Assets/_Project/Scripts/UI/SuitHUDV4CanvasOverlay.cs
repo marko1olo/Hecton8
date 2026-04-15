@@ -1422,6 +1422,11 @@ namespace Hecton8.UI
             rect.sizeDelta = size;
         }
 
+        // ZERO-GC: Cached colors for veil (reused with alpha modulation)
+        private static readonly Color VeilBaseTop = new Color(0.01f, 0.04f, 0.06f, 1f);
+        private static readonly Color VeilBaseBottom = new Color(0.01f, 0.04f, 0.06f, 1f);
+        private static readonly Color VeilBaseSide = new Color(0.01f, 0.03f, 0.05f, 1f);
+
         private void ApplyStaticStyleIfNeeded(Color primary, Color secondary, Color dim, Color warning)
         {
             if (_styleApplied &&
@@ -1437,10 +1442,11 @@ namespace Hecton8.UI
 
             _root.localScale = Vector3.one * overallScale;
 
-            _topVeil.color = new Color(0.01f, 0.04f, 0.06f, chromeAlpha * 0.45f);
-            _bottomVeil.color = new Color(0.01f, 0.04f, 0.06f, chromeAlpha * 0.55f);
-            _leftVeil.color = new Color(0.01f, 0.03f, 0.05f, chromeAlpha * 0.16f);
-            _rightVeil.color = new Color(0.01f, 0.03f, 0.05f, chromeAlpha * 0.16f);
+            // ZERO-GC: Modulate alpha on cached colors
+            _topVeil.color = Alpha(VeilBaseTop, chromeAlpha * 0.45f);
+            _bottomVeil.color = Alpha(VeilBaseBottom, chromeAlpha * 0.55f);
+            _leftVeil.color = Alpha(VeilBaseSide, chromeAlpha * 0.16f);
+            _rightVeil.color = Alpha(VeilBaseSide, chromeAlpha * 0.16f);
             _headerLine.color = Alpha(primary, 0.22f);
             _headerWingLeft.color = Alpha(primary, 0.16f);
             _headerWingRight.color = Alpha(primary, 0.16f);

@@ -50,10 +50,13 @@ using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
+using Hecton8.VFX;
 using Hecton8.World;
+using NASAPunk.Visor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
+using VLB;
 using CrestUnderwaterRenderer = global::Crest.UnderwaterRenderer;
 using CrestOceanRenderer = global::Crest.OceanRenderer;
 
@@ -72,6 +75,9 @@ namespace Hecton8.Environment
         private const float EditorCameraResolveRetryInterval = 0.25f;
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
+        private const string UnderwaterSuspendedMotesChildName = "Underwater_SuspendedMotes";
+        private const string UnderwaterExhaleBubblesChildName = "Underwater_ExhaleBubbles";
+        private const string UnderwaterShallowSunBeamChildName = "Underwater_ShallowSunBeam";
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
@@ -83,6 +89,16 @@ namespace Hecton8.Environment
         [SerializeField] private LensFlareComponentSRP sunFlare;
         [SerializeField] private Transform sunVisualTransform;
         [SerializeField] private Camera mainCamera;
+        [SerializeField] private LandingImpactVFX transitionCameraVfx;
+        [SerializeField] private VisorHUDController transitionVisorController;
+        [Tooltip("Near-camera suspended particulate system parented under the runtime main camera.")]
+        [SerializeField] private ParticleSystem underwaterSuspendedMotes;
+        [Tooltip("Burst-only exhale bubble system parented under the runtime main camera.")]
+        [SerializeField] private ParticleSystem underwaterExhaleBubbles;
+        [Tooltip("Optional shallow-water god ray beam parented under the runtime main camera.")]
+        [SerializeField] private VolumetricLightBeamHD shallowSunBeam;
+        [Tooltip("Attached light used only to drive the VLB beam. Keep cullingMask = 0 to avoid lighting the world.")]
+        [SerializeField] private Light shallowSunBeamLight;
 
         [Header("═══ ATMOSPHERE MANAGER ═══")]
         [SerializeField] private HectonAtmosphereManager atmosphereManager;
@@ -146,6 +162,75 @@ namespace Hecton8.Environment
         [SerializeField] private float biomeTransitionSpeed = 0.2f;
         [SerializeField] private float slowTickInterval = 0.5f;
 
+        [Header("â•â•â• SUBMERGE IMPULSE â•â•â•")]
+        [SerializeField, UnityEngine.Range(0f, 0.6f)] private float submergeDarkenStrength = 0.2f;
+        [SerializeField, UnityEngine.Range(0f, 2f)] private float submergeFogBoost = 0.45f;
+        [SerializeField, UnityEngine.Range(0.05f, 1f)] private float submergeImpulseDuration = 0.32f;
+        [SerializeField, UnityEngine.Range(0.1f, 2f)] private float submergeImpulseDepthWindow = 0.9f;
+
+        [Header("â•â•â• SHALLOW CAUSTICS â•â•â•")]
+        [SerializeField] private bool enableShallowCaustics = true;
+        [SerializeField, UnityEngine.Range(0.1f, 4f)] private float causticsStrengthScale = 1f;
+        [SerializeField, UnityEngine.Range(0.05f, 2f)] private float causticsFadeInDepth = 0.3f;
+        [SerializeField, UnityEngine.Range(1f, 40f)] private float causticsFadeOutDepth = 18f;
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float causticsMinLightFactor = 0.18f;
+
+        [Header("─── UNDERWATER MOTES ───")]
+        [Tooltip("Enables camera-local suspended particulate while underwater.")]
+        [SerializeField] private bool enableSuspendedMotes = true;
+        [Tooltip("Base emission rate at clean shallow water.")]
+        [SerializeField, UnityEngine.Range(0f, 64f)] private float suspendedMotesMinEmission = 6f;
+        [Tooltip("Emission ceiling at deeper or dirtier water.")]
+        [SerializeField, UnityEngine.Range(0f, 128f)] private float suspendedMotesMaxEmission = 24f;
+        [Tooltip("Depth at which the particle field reaches full density.")]
+        [SerializeField, UnityEngine.Range(0.25f, 40f)] private float suspendedMotesFullEmissionDepth = 10f;
+        [Tooltip("Extra emission injected during the first moment of submerge.")]
+        [SerializeField, UnityEngine.Range(0f, 32f)] private float suspendedMotesSubmergeBoost = 10f;
+        [Tooltip("How strongly biome turbidity raises particulate density.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float suspendedMotesTurbidityWeight = 0.65f;
+
+        [Header("─── BOTTOM SILT ───")]
+        [Tooltip("Boosts near-camera particulate when the player moves close to the seafloor.")]
+        [SerializeField] private bool enableBottomSiltBoost = true;
+        [Tooltip("Maximum interval between bottom probes while underwater.")]
+        [SerializeField, UnityEngine.Range(0.05f, 1f)] private float bottomSiltProbeInterval = 0.18f;
+        [Tooltip("No extra disturbed silt above this seafloor distance.")]
+        [SerializeField, UnityEngine.Range(0.25f, 12f)] private float bottomSiltActivationDistance = 3.5f;
+        [Tooltip("Full disturbed-silt response when this close to the seafloor.")]
+        [SerializeField, UnityEngine.Range(0.1f, 4f)] private float bottomSiltFullDistance = 1.2f;
+        [Tooltip("Minimum player speed before disturbed silt appears.")]
+        [SerializeField, UnityEngine.Range(0f, 6f)] private float bottomSiltMinSpeed = 0.85f;
+        [Tooltip("Player speed at which disturbed silt reaches full intensity.")]
+        [SerializeField, UnityEngine.Range(0.25f, 12f)] private float bottomSiltFullSpeed = 3.4f;
+        [Tooltip("Maximum extra emission injected into the existing suspended motes field near the seabed.")]
+        [SerializeField, UnityEngine.Range(0f, 48f)] private float bottomSiltEmissionBoost = 14f;
+
+        [Header("─── EXHALE BUBBLES ───")]
+        [Tooltip("Emits a short bubble burst on each underwater exhale event from the player movement owner.")]
+        [SerializeField] private bool enableExhaleBubbles = true;
+        [Tooltip("Minimum burst count in clean shallow water.")]
+        [SerializeField, UnityEngine.Range(0, 32)] private int exhaleBubbleMinBurstCount = 7;
+        [Tooltip("Burst count ceiling in deeper or murkier water.")]
+        [SerializeField, UnityEngine.Range(1, 48)] private int exhaleBubbleMaxBurstCount = 14;
+        [Tooltip("Depth at which exhale bubbles reach their full burst density.")]
+        [SerializeField, UnityEngine.Range(0.5f, 40f)] private float exhaleBubbleFullDepth = 14f;
+        [Tooltip("How strongly turbidity contributes to burst density.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float exhaleBubbleTurbidityWeight = 0.35f;
+        [Tooltip("Protects against duplicate exhale events landing in the same short window.")]
+        [SerializeField, UnityEngine.Range(0.05f, 1f)] private float exhaleBubbleMinInterval = 0.28f;
+
+        [Header("─── SHALLOW SUN BEAM ───")]
+        [Tooltip("Enables the near-camera shallow-water sunshaft proxy.")]
+        [SerializeField] private bool enableShallowSunBeam = true;
+        [Tooltip("Beam fades in over this first shallow depth range.")]
+        [SerializeField, UnityEngine.Range(0.05f, 4f)] private float shallowSunBeamFadeInDepth = 0.75f;
+        [Tooltip("Beam is fully faded out by this depth.")]
+        [SerializeField, UnityEngine.Range(2f, 40f)] private float shallowSunBeamFadeOutDepth = 16f;
+        [Tooltip("Minimum underwater light factor required before the shaft appears.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float shallowSunBeamMinLightFactor = 0.32f;
+        [Tooltip("Maximum light intensity pushed into the proxy beam light.")]
+        [SerializeField, UnityEngine.Range(0f, 4f)] private float shallowSunBeamMaxLightIntensity = 0.55f;
+
         [Header("═══ SURFACE DEFAULTS ═══")]
         [ColorUsage(false)]
         [SerializeField] private Color surfaceFogColor = new Color(0.7f, 0.75f, 0.8f, 1f);
@@ -174,6 +259,12 @@ namespace Hecton8.Environment
         [SerializeField] private int   _debugTargetBiome;
         [SerializeField] private float _debugTransitionProgress;
         [SerializeField] private bool  _debugIsUnderwater;
+        [SerializeField] private float _debugCausticsStrength;
+        [SerializeField] private float _debugSuspendedMotesEmission;
+        [SerializeField] private float _debugBottomDistance;
+        [SerializeField] private float _debugBottomSiltBoost;
+        [SerializeField] private int   _debugExhaleBubbleBurstCount;
+        [SerializeField] private float _debugShallowSunBeamIntensity;
         [SerializeField] private bool  _debugPhysicsEngineFound;
         [SerializeField] private bool  _debugAtmoManagerFound;
         [SerializeField] private bool  _debugSunVisualActive;
@@ -201,6 +292,10 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_SunSize");
         private static readonly int _ID_SunEdgeSoftness =
             Shader.PropertyToID("_SunEdgeSoftness");
+        private static readonly int _ID_Caustics =
+            Shader.PropertyToID("_Caustics");
+        private static readonly int _ID_CausticsStrength =
+            Shader.PropertyToID("_CausticsStrength");
         private static readonly int _ID_SunDiscColor =
             Shader.PropertyToID("_SunDiscColor");
         private static readonly int _ID_SunScatterColor =
@@ -222,6 +317,8 @@ namespace Hecton8.Environment
         private HectonAtmosphereManager _cachedAtmoManager;
         private bool _atmoManagerCached;
         private HectonPlayerMovement _playerMovement;
+        private HectonPlayerMovement _subscribedPlayerMovement;
+        private Rigidbody _playerRigidbody;
         private HectonBiomeProfile _matrixRuntimeVisualProfile;
 
         private int _targetBiomeIndex;
@@ -258,18 +355,32 @@ namespace Hecton8.Environment
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
+        private float _submergeImpulseTimer;
+        private float _cachedVisualDepth;
+        private float _cachedLightFactor;
+        private float _cachedCausticsStrength;
+        private float _cachedSuspendedMotesEmission = -1f;
+        private float _cachedBottomDistance = float.PositiveInfinity;
+        private float _cachedBottomSiltBoost;
+        private float _cachedShallowSunBeamLightIntensity = -1f;
+        private bool _cachedVisualIsUnderwater;
+        private bool _underwaterSuspendedMotesPlaying;
+        private bool _shallowSunBeamActive;
         private bool _editorGameplayMainCameraSuppressed;
         private bool _editorGameplaySpaceCameraSuppressed;
         private bool _sunVisualWasDisabled;
         private bool _editorCrestSuppressed;
         private bool _spaceCameraSuppressed;
         private bool _spaceCameraMaskCaptured;
+        private float _nextBottomSiltProbeTime = float.NegativeInfinity;
+        private float _nextExhaleBubbleAllowedTime = float.NegativeInfinity;
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
         private CrestOceanRenderer _oceanRenderer;
+        private Transform _shallowSunBeamTransform;
         private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
         private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
         private Material _lastRuntimeOceanMaterial;
@@ -284,6 +395,7 @@ namespace Hecton8.Environment
 #endif
 
         private float _editorSlowTickAccum;
+        private readonly RaycastHit[] _bottomSiltProbeHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] — reused seafloor probe buffer for underwater bottom-silt gating — owner: HectonUnderwaterVisuals
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -304,6 +416,10 @@ namespace Hecton8.Environment
 
             ResolvePlayerCamera();
             ResolveMainCamera();
+            ResolveTransitionVisorController();
+            ResolveUnderwaterParticles();
+            ResolveUnderwaterExhaleBubbles();
+            ResolveShallowSunBeam();
             ResolveSpaceCamera();
             ValidateReferences();
             CachePhysicsEngine();
@@ -418,6 +534,14 @@ namespace Hecton8.Environment
 #endif
             _pendingRuntimeCrestMaterialSync = true;
             _lastRuntimeOceanMaterial = null;
+            _cachedBottomDistance = float.PositiveInfinity;
+            _cachedBottomSiltBoost = 0f;
+            _nextBottomSiltProbeTime = float.NegativeInfinity;
+            _nextExhaleBubbleAllowedTime = float.NegativeInfinity;
+            UnsubscribePlayerMovement(_subscribedPlayerMovement);
+            DisableUnderwaterSuspendedMotes(true);
+            DisableUnderwaterExhaleBubbles(true);
+            DisableShallowSunBeam(true);
             RestoreBaseValues();
             RestoreSunVisual();
             RestoreSpaceCameraDefaults();
@@ -606,6 +730,9 @@ namespace Hecton8.Environment
             ApplySpaceCameraDepthState(depth, isUnderwater);
 
             UpdateDepthDiagnostics(depth, isUnderwater);
+            UpdateSubmergeImpulse(deltaTime);
+            _cachedVisualDepth = depth;
+            _cachedVisualIsUnderwater = isUnderwater;
 
             // ══════════════════════════════════════════════
             //  ABOVE WATER
@@ -615,10 +742,17 @@ namespace Hecton8.Environment
             {
                 if (_wasUnderwater)
                 {
+                    TriggerSurfaceBreakImpulse();
+                    _cachedLightFactor = 1f;
+                    _cachedCausticsStrength = 0f;
                     ApplySurfaceDefaults();
                     RestoreSkyMaterialDefaults();
                     _wasUnderwater = false;
                 }
+
+                UpdateUnderwaterSuspendedMotes(depth, 1f, 0f, false);
+                DisableUnderwaterExhaleBubbles(true);
+                UpdateShallowSunBeam(depth, 1f, false);
 
                 // ── v5.1: Write sunLight.intensity EVERY FRAME above water ──
                 // This is the "base" value that CelestialEngine will multiply
@@ -652,6 +786,7 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog     = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
+                TriggerSubmergeImpulse();
                 _wasUnderwater = true;
             }
 
@@ -660,6 +795,12 @@ namespace Hecton8.Environment
             // ══════════════════════════════════════════════
 
             float lightFactor = math.saturate(globalLightCurve.Evaluate(depth));
+            float submergeImpulse = EvaluateSubmergeImpulse(depth);
+            lightFactor *= 1f - (submergeDarkenStrength * submergeImpulse);
+            _cachedLightFactor = lightFactor;
+            _cachedCausticsStrength = ResolveCausticsStrength(depth, lightFactor, isUnderwater);
+            UpdateUnderwaterSuspendedMotes(depth, lightFactor, submergeImpulse, true);
+            UpdateShallowSunBeam(depth, lightFactor, true);
 
             // ── Sun intensity = profile × horizon × depthCurve ──
             float baseSunIntensity = ResolveProfileSunIntensity();
@@ -670,7 +811,7 @@ namespace Hecton8.Environment
             ApplySunVisualState(lightFactor);
             ApplySunScattering(lightFactor);
             ApplySunColorFade(lightFactor);
-            ApplyUnderwaterFog(lightFactor, depth);
+            ApplyUnderwaterFog(lightFactor, depth, submergeImpulse);
             ApplyUnderwaterAmbient();
             ApplyUnderwaterCamera();
 
@@ -923,12 +1064,13 @@ namespace Hecton8.Environment
                 : 1f;
         }
 
-        private void ApplyUnderwaterFog(float lightFactor, float currentDepth)
+        private void ApplyUnderwaterFog(float lightFactor, float currentDepth, float submergeImpulse)
         {
             RenderSettings.fogColor = _currentFogColor;
 
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
+            targetDensity *= 1f + (submergeFogBoost * submergeImpulse);
 
             float smoothSubmerge = math.saturate(currentDepth / 0.5f);
             float surfDensity = enableSurfaceFog ? surfaceFogDensity : 0.0001f;
@@ -1063,6 +1205,9 @@ namespace Hecton8.Environment
                     _currentScatterBase     = surfProfile.scatterColorBase;
                     _currentScatterShallow  = surfProfile.scatterColorShallow;
                     _currentDepthFogDensity = surfProfile.depthFogDensity;
+                    _cachedVisualDepth = 0f;
+                    _cachedVisualIsUnderwater = false;
+                    _cachedCausticsStrength = 0f;
                     ApplyCrestMaterial();
                 }
             }
@@ -1158,6 +1303,14 @@ namespace Hecton8.Environment
                     _currentDepthFogDensity.y,
                     _currentDepthFogDensity.z,
                     0f));
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_Caustics,
+                _cachedCausticsStrength > 0.001f ? 1f : 0f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_CausticsStrength,
+                _cachedCausticsStrength);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1535,6 +1688,15 @@ namespace Hecton8.Environment
             if (mainCamera == null || !IsRuntimeMainCamera(mainCamera))
                 ResolveMainCamera();
 
+            if (underwaterSuspendedMotes == null)
+                ResolveUnderwaterParticles();
+
+            if (underwaterExhaleBubbles == null)
+                ResolveUnderwaterExhaleBubbles();
+
+            if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
+                ResolveShallowSunBeam();
+
             if (_spaceCamera == null)
                 ResolveSpaceCamera();
 
@@ -1603,6 +1765,534 @@ namespace Hecton8.Environment
         {
             if (targetMaterial != null && targetMaterial.HasProperty(propertyId))
                 targetMaterial.SetVector(propertyId, value);
+        }
+
+        private static void SetMaterialFloatIfPresent(Material targetMaterial, int propertyId, float value)
+        {
+            if (targetMaterial != null && targetMaterial.HasProperty(propertyId))
+                targetMaterial.SetFloat(propertyId, value);
+        }
+
+        private void TriggerSubmergeImpulse()
+        {
+            ResolveTransitionCameraVfx();
+            if (transitionCameraVfx != null)
+                transitionCameraVfx.TriggerSubmergeImpulse();
+
+            ResolveTransitionVisorController();
+            if (transitionVisorController != null)
+                transitionVisorController.TriggerSubmergeRunoff();
+
+            _submergeImpulseTimer = submergeImpulseDuration;
+        }
+
+        private void TriggerSurfaceBreakImpulse()
+        {
+            ResolveTransitionCameraVfx();
+            if (transitionCameraVfx != null)
+                transitionCameraVfx.TriggerSurfaceBreakImpulse();
+
+            ResolveTransitionVisorController();
+            if (transitionVisorController != null)
+                transitionVisorController.TriggerSurfaceBreakRunoff();
+        }
+
+        private void ResolveTransitionCameraVfx()
+        {
+            if (transitionCameraVfx != null)
+                return;
+
+            if (mainCamera == null)
+                ResolveMainCamera();
+
+            if (mainCamera != null)
+                mainCamera.TryGetComponent(out transitionCameraVfx);
+        }
+
+        private void ResolveTransitionVisorController()
+        {
+            if (transitionVisorController != null)
+                return;
+
+            if (mainCamera == null)
+                ResolveMainCamera();
+
+            if (mainCamera == null)
+                return;
+
+            Transform playerRoot = mainCamera.transform.parent;
+            if (playerRoot == null)
+                return;
+
+            Transform visorTransform = playerRoot.Find("Suit_Visor");
+            if (visorTransform != null)
+                visorTransform.TryGetComponent(out transitionVisorController);
+        }
+
+        private void ResolveUnderwaterParticles()
+        {
+            if (underwaterSuspendedMotes != null)
+                return;
+
+            if (mainCamera == null)
+                ResolveMainCamera();
+
+            if (mainCamera == null)
+                return;
+
+            Transform motesTransform = mainCamera.transform.Find(UnderwaterSuspendedMotesChildName);
+            if (motesTransform != null)
+                motesTransform.TryGetComponent(out underwaterSuspendedMotes);
+        }
+
+        private void ResolveUnderwaterExhaleBubbles()
+        {
+            if (underwaterExhaleBubbles != null)
+                return;
+
+            if (mainCamera == null)
+                ResolveMainCamera();
+
+            if (mainCamera == null)
+                return;
+
+            Transform exhaleTransform = mainCamera.transform.Find(UnderwaterExhaleBubblesChildName);
+            if (exhaleTransform != null)
+                exhaleTransform.TryGetComponent(out underwaterExhaleBubbles);
+        }
+
+        private void ResolveShallowSunBeam()
+        {
+            if (shallowSunBeam != null &&
+                shallowSunBeamLight != null &&
+                _shallowSunBeamTransform != null)
+            {
+                return;
+            }
+
+            if (mainCamera == null)
+                ResolveMainCamera();
+
+            if (mainCamera == null)
+                return;
+
+            Transform beamTransform = mainCamera.transform.Find(UnderwaterShallowSunBeamChildName);
+            if (beamTransform == null)
+                return;
+
+            _shallowSunBeamTransform = beamTransform;
+            if (shallowSunBeam == null)
+                beamTransform.TryGetComponent(out shallowSunBeam);
+            if (shallowSunBeamLight == null)
+                beamTransform.TryGetComponent(out shallowSunBeamLight);
+        }
+
+        private void UpdateSubmergeImpulse(float deltaTime)
+        {
+            if (_submergeImpulseTimer <= 0f)
+                return;
+
+            _submergeImpulseTimer -= deltaTime;
+            if (_submergeImpulseTimer < 0f)
+                _submergeImpulseTimer = 0f;
+        }
+
+        private float EvaluateSubmergeImpulse(float depth)
+        {
+            if (_submergeImpulseTimer <= 0f || submergeImpulseDuration <= 0.0001f)
+                return 0f;
+
+            float timeFade = _submergeImpulseTimer / submergeImpulseDuration;
+            float depthFade = 1f - math.saturate(depth / math.max(0.01f, submergeImpulseDepthWindow));
+            return timeFade * depthFade;
+        }
+
+        private void UpdateUnderwaterSuspendedMotes(
+            float depth,
+            float lightFactor,
+            float submergeImpulse,
+            bool isUnderwater)
+        {
+            if (underwaterSuspendedMotes == null)
+                ResolveUnderwaterParticles();
+
+            if (underwaterSuspendedMotes == null)
+                return;
+
+            float targetEmission = 0f;
+            bool shouldPlay = false;
+
+            if (enableSuspendedMotes && isUnderwater)
+            {
+                float depthFactor = math.saturate(
+                    depth / math.max(0.01f, suspendedMotesFullEmissionDepth));
+                float turbidityFactor = math.saturate(
+                    (_currentTurbidity - 0.5f) * suspendedMotesTurbidityWeight);
+                float darknessFactor = 1f - lightFactor;
+                float densityFactor = math.saturate(
+                    depthFactor * 0.45f +
+                    turbidityFactor * 0.35f +
+                    darknessFactor * 0.2f);
+
+                targetEmission = math.lerp(
+                    suspendedMotesMinEmission,
+                    suspendedMotesMaxEmission,
+                    densityFactor);
+                targetEmission += ResolveBottomSiltEmissionBoost(isUnderwater);
+                targetEmission += submergeImpulse * suspendedMotesSubmergeBoost;
+                shouldPlay = targetEmission > 0.01f;
+            }
+            else
+            {
+                ResolveBottomSiltEmissionBoost(false);
+            }
+
+            if (math.abs(targetEmission - _cachedSuspendedMotesEmission) > 0.05f)
+            {
+                ParticleSystem.EmissionModule emission = underwaterSuspendedMotes.emission;
+                emission.rateOverTime = new ParticleSystem.MinMaxCurve(targetEmission);
+                _cachedSuspendedMotesEmission = targetEmission;
+            }
+
+            if (shouldPlay)
+            {
+                if (!_underwaterSuspendedMotesPlaying)
+                {
+                    underwaterSuspendedMotes.Play(true);
+                    _underwaterSuspendedMotesPlaying = true;
+                }
+            }
+            else
+            {
+                DisableUnderwaterSuspendedMotes(true);
+            }
+
+#if UNITY_EDITOR
+            _debugSuspendedMotesEmission = targetEmission;
+#endif
+        }
+
+        private void DisableUnderwaterSuspendedMotes(bool clearParticles)
+        {
+            if (underwaterSuspendedMotes == null)
+                return;
+
+            if (_cachedSuspendedMotesEmission != 0f)
+            {
+                ParticleSystem.EmissionModule emission = underwaterSuspendedMotes.emission;
+                emission.rateOverTime = new ParticleSystem.MinMaxCurve(0f);
+                _cachedSuspendedMotesEmission = 0f;
+            }
+
+            if (_underwaterSuspendedMotesPlaying)
+            {
+                underwaterSuspendedMotes.Stop(
+                    true,
+                    clearParticles
+                        ? ParticleSystemStopBehavior.StopEmittingAndClear
+                        : ParticleSystemStopBehavior.StopEmitting);
+                _underwaterSuspendedMotesPlaying = false;
+            }
+
+            _cachedBottomSiltBoost = 0f;
+
+#if UNITY_EDITOR
+            _debugSuspendedMotesEmission = 0f;
+            _debugBottomDistance = 0f;
+            _debugBottomSiltBoost = 0f;
+#endif
+        }
+
+        private void DisableUnderwaterExhaleBubbles(bool clearParticles)
+        {
+            if (underwaterExhaleBubbles == null)
+                return;
+
+            if (underwaterExhaleBubbles.isPlaying || underwaterExhaleBubbles.particleCount > 0)
+            {
+                underwaterExhaleBubbles.Stop(
+                    true,
+                    clearParticles
+                        ? ParticleSystemStopBehavior.StopEmittingAndClear
+                        : ParticleSystemStopBehavior.StopEmitting);
+            }
+
+#if UNITY_EDITOR
+            _debugExhaleBubbleBurstCount = 0;
+#endif
+        }
+
+        private void HandlePlayerExhale()
+        {
+            if (!enableExhaleBubbles || !_cachedVisualIsUnderwater)
+                return;
+
+            if (Time.unscaledTime < _nextExhaleBubbleAllowedTime)
+                return;
+
+            if (underwaterExhaleBubbles == null)
+                ResolveUnderwaterExhaleBubbles();
+
+            if (underwaterExhaleBubbles == null)
+                return;
+
+            int burstCount = ResolveExhaleBubbleBurstCount();
+            if (burstCount <= 0)
+                return;
+
+            _nextExhaleBubbleAllowedTime = Time.unscaledTime + exhaleBubbleMinInterval;
+
+            underwaterExhaleBubbles.Play(true);
+            underwaterExhaleBubbles.Emit(burstCount);
+
+#if UNITY_EDITOR
+            _debugExhaleBubbleBurstCount = burstCount;
+#endif
+        }
+
+        private int ResolveExhaleBubbleBurstCount()
+        {
+            int minBurst = math.max(0, exhaleBubbleMinBurstCount);
+            int maxBurst = math.max(minBurst, exhaleBubbleMaxBurstCount);
+            if (maxBurst <= 0)
+                return 0;
+
+            float depthFactor = math.saturate(
+                _cachedVisualDepth / math.max(0.01f, exhaleBubbleFullDepth));
+            float turbidityFactor = math.saturate((_currentTurbidity - 0.5f) * exhaleBubbleTurbidityWeight);
+            float burstFactor = math.saturate(depthFactor * 0.65f + turbidityFactor * 0.35f);
+            return (int)math.round(math.lerp(minBurst, maxBurst, burstFactor));
+        }
+
+        private float ResolveBottomSiltEmissionBoost(bool isUnderwater)
+        {
+            if (!enableBottomSiltBoost || !isUnderwater)
+            {
+                _cachedBottomSiltBoost = 0f;
+                _cachedBottomDistance = float.PositiveInfinity;
+#if UNITY_EDITOR
+                _debugBottomDistance = 0f;
+                _debugBottomSiltBoost = 0f;
+#endif
+                return 0f;
+            }
+
+            if (playerCamera == null)
+                ResolvePlayerCamera();
+
+            if (playerCamera == null)
+            {
+                _cachedBottomSiltBoost = 0f;
+                _cachedBottomDistance = float.PositiveInfinity;
+#if UNITY_EDITOR
+                _debugBottomDistance = 0f;
+                _debugBottomSiltBoost = 0f;
+#endif
+                return 0f;
+            }
+
+            RefreshBottomSiltProbe(playerCamera.position);
+
+            if (_playerRigidbody == null)
+            {
+                Transform playerRoot = playerCamera.parent;
+                if (playerRoot != null)
+                    playerRoot.TryGetComponent(out _playerRigidbody);
+            }
+
+            float playerSpeed = _playerRigidbody != null ? _playerRigidbody.linearVelocity.magnitude : 0f;
+            float distanceFactor = 1f - math.saturate(
+                (_cachedBottomDistance - bottomSiltFullDistance) /
+                math.max(0.01f, bottomSiltActivationDistance - bottomSiltFullDistance));
+            float speedFactor = math.saturate(
+                (playerSpeed - bottomSiltMinSpeed) /
+                math.max(0.01f, bottomSiltFullSpeed - bottomSiltMinSpeed));
+
+            float boost = bottomSiltEmissionBoost * distanceFactor * speedFactor;
+            _cachedBottomSiltBoost = boost;
+
+#if UNITY_EDITOR
+            _debugBottomDistance = float.IsPositiveInfinity(_cachedBottomDistance) ? 0f : _cachedBottomDistance;
+            _debugBottomSiltBoost = boost;
+#endif
+            return boost;
+        }
+
+        private void RefreshBottomSiltProbe(Vector3 probePosition)
+        {
+            if (Time.unscaledTime < _nextBottomSiltProbeTime)
+                return;
+
+            _nextBottomSiltProbeTime = Time.unscaledTime + math.max(0.05f, bottomSiltProbeInterval);
+            _cachedBottomDistance = ResolveBottomSiltDistance(probePosition);
+        }
+
+        private float ResolveBottomSiltDistance(Vector3 probePosition)
+        {
+            MapMagicBridge bridge = MapMagicBridge.Instance;
+            if (bridge != null && bridge.TryGetHeight(probePosition.x, probePosition.z, out float seafloorHeight))
+                return math.max(0f, probePosition.y - seafloorHeight);
+
+            float waterSurface = bridge != null ? bridge.WaterSurfaceLevel : ResolveWaterLevel();
+            float rayOriginY = math.max(waterSurface + 1000f, probePosition.y + 1000f);
+            Vector3 rayOrigin = new Vector3(probePosition.x, rayOriginY, probePosition.z);
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                rayOrigin,
+                Vector3.down,
+                _bottomSiltProbeHits,
+                40000f,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.PositiveInfinity;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                RaycastHit hit = _bottomSiltProbeHits[hitIndex];
+                if (ShouldIgnoreBottomSiltHit(hit))
+                    continue;
+
+                float hitDistance = math.max(0f, probePosition.y - hit.point.y);
+                if (hitDistance < bestDistance)
+                    bestDistance = hitDistance;
+            }
+
+            return bestDistance;
+        }
+
+        private bool ShouldIgnoreBottomSiltHit(RaycastHit hit)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return true;
+
+            Transform playerRoot = _playerRigidbody != null
+                ? _playerRigidbody.transform
+                : (playerCamera != null ? playerCamera.parent : null);
+            Transform hitTransform = hitCollider.transform;
+            if (playerRoot != null &&
+                (hitTransform == playerRoot || hitTransform.IsChildOf(playerRoot)))
+            {
+                return true;
+            }
+
+            Rigidbody hitBody = hit.rigidbody;
+            if (hitBody == null)
+                return false;
+
+            if (_playerRigidbody != null && hitBody == _playerRigidbody)
+                return true;
+
+            if (playerRoot == null)
+                return false;
+
+            Transform hitBodyTransform = hitBody.transform;
+            return hitBodyTransform == playerRoot || hitBodyTransform.IsChildOf(playerRoot);
+        }
+
+        private void UpdateShallowSunBeam(float depth, float lightFactor, bool isUnderwater)
+        {
+            if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
+                ResolveShallowSunBeam();
+
+            if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
+                return;
+
+            float targetIntensity = 0f;
+            bool shouldActivate = false;
+
+            if (enableShallowSunBeam && isUnderwater)
+            {
+                float fadeIn = math.saturate(depth / math.max(0.01f, shallowSunBeamFadeInDepth));
+                float fadeOut = 1f - math.saturate(
+                    (depth - shallowSunBeamFadeInDepth) /
+                    math.max(0.01f, shallowSunBeamFadeOutDepth - shallowSunBeamFadeInDepth));
+                float lightFade = math.saturate(
+                    (lightFactor - shallowSunBeamMinLightFactor) /
+                    math.max(0.0001f, 1f - shallowSunBeamMinLightFactor));
+                float beamFactor = fadeIn * fadeOut * lightFade * ResolveHorizonFade();
+                targetIntensity = shallowSunBeamMaxLightIntensity * beamFactor;
+                shouldActivate = targetIntensity > 0.001f;
+            }
+
+            if (shouldActivate)
+            {
+                GameObject beamObject = _shallowSunBeamTransform.gameObject;
+                if (!_shallowSunBeamActive && !beamObject.activeSelf)
+                    beamObject.SetActive(true);
+
+                if (sunLight != null)
+                {
+                    Vector3 beamDirection = sunLight.transform.forward;
+                    if (beamDirection.sqrMagnitude > 0.0001f)
+                    {
+                        beamDirection = beamDirection.normalized;
+                        Vector3 beamUp = math.abs(Vector3.Dot(beamDirection, Vector3.up)) > 0.98f
+                            ? (mainCamera != null ? mainCamera.transform.right : Vector3.right)
+                            : Vector3.up;
+                        _shallowSunBeamTransform.rotation = Quaternion.LookRotation(beamDirection, beamUp);
+                    }
+                }
+
+                if (math.abs(targetIntensity - _cachedShallowSunBeamLightIntensity) > 0.01f)
+                {
+                    shallowSunBeamLight.intensity = targetIntensity;
+                    _cachedShallowSunBeamLightIntensity = targetIntensity;
+                }
+
+                _shallowSunBeamActive = true;
+            }
+            else
+            {
+                DisableShallowSunBeam(true);
+            }
+
+#if UNITY_EDITOR
+            _debugShallowSunBeamIntensity = targetIntensity;
+#endif
+        }
+
+        private void DisableShallowSunBeam(bool setInactive)
+        {
+            if (shallowSunBeamLight != null && _cachedShallowSunBeamLightIntensity != 0f)
+            {
+                shallowSunBeamLight.intensity = 0f;
+                _cachedShallowSunBeamLightIntensity = 0f;
+            }
+
+            if (_shallowSunBeamTransform != null && _shallowSunBeamActive && setInactive)
+                _shallowSunBeamTransform.gameObject.SetActive(false);
+
+            _shallowSunBeamActive = false;
+
+#if UNITY_EDITOR
+            _debugShallowSunBeamIntensity = 0f;
+#endif
+        }
+
+        private float ResolveCausticsStrength(float depth, float lightFactor, bool isUnderwater)
+        {
+            if (!enableShallowCaustics || !isUnderwater)
+            {
+#if UNITY_EDITOR
+                _debugCausticsStrength = 0f;
+#endif
+                return 0f;
+            }
+
+            float fadeIn = math.saturate(depth / math.max(0.01f, causticsFadeInDepth));
+            float fadeOut = 1f - math.saturate(
+                (depth - causticsFadeInDepth) /
+                math.max(0.01f, causticsFadeOutDepth - causticsFadeInDepth));
+            float lightFade = math.saturate(
+                (lightFactor - causticsMinLightFactor) /
+                math.max(0.0001f, 1f - causticsMinLightFactor));
+
+            float strength = causticsStrengthScale * fadeIn * fadeOut * lightFade;
+
+#if UNITY_EDITOR
+            _debugCausticsStrength = strength;
+#endif
+            return strength;
         }
 
         private void ValidateReferences()
@@ -1712,10 +2402,42 @@ namespace Hecton8.Environment
 
         private void CachePlayerMovement(Transform playerTransform)
         {
-            _playerMovement = null;
+            HectonPlayerMovement nextPlayerMovement = null;
+            Rigidbody nextPlayerRigidbody = null;
 
             if (playerTransform != null)
-                playerTransform.TryGetComponent(out _playerMovement);
+            {
+                playerTransform.TryGetComponent(out nextPlayerMovement);
+                playerTransform.TryGetComponent(out nextPlayerRigidbody);
+            }
+
+            if (!ReferenceEquals(_subscribedPlayerMovement, nextPlayerMovement))
+            {
+                UnsubscribePlayerMovement(_subscribedPlayerMovement);
+                SubscribePlayerMovement(nextPlayerMovement);
+            }
+
+            _playerMovement = nextPlayerMovement;
+            _playerRigidbody = nextPlayerRigidbody;
+        }
+
+        private void SubscribePlayerMovement(HectonPlayerMovement movement)
+        {
+            if (movement == null)
+                return;
+
+            movement.OnExhale += HandlePlayerExhale;
+            _subscribedPlayerMovement = movement;
+        }
+
+        private void UnsubscribePlayerMovement(HectonPlayerMovement movement)
+        {
+            if (movement == null)
+                return;
+
+            movement.OnExhale -= HandlePlayerExhale;
+            if (ReferenceEquals(_subscribedPlayerMovement, movement))
+                _subscribedPlayerMovement = null;
         }
 
         private void CachePhysicsEngine()

@@ -2,6 +2,7 @@ using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -54,6 +55,7 @@ namespace Hecton.UI.MainMenu
         [Header("=== LOADING SCREEN ===")]
         [SerializeField] private Slider loadingProgressBar;
         [SerializeField] private TMP_Text loadingPercentText;
+        [SerializeField] private LoadingTipsDisplay loadingTips;
 
         [Header("=== CONFIG ===")]
         [SerializeField] private float fadeDuration = 0.2f;
@@ -68,6 +70,8 @@ namespace Hecton.UI.MainMenu
         private bool _settingsAvailable;
         private bool _sceneActivationRequested;
         private bool _refreshSelectionRequested;
+        private bool _isSaveLoadBusy;
+        private bool _lastLoadUsedBackup;
         private int _lastLoadingPercent = -1;
         private float _lastUnscaledTickTime;
         private float _transitionElapsed;
@@ -75,11 +79,13 @@ namespace Hecton.UI.MainMenu
         private string _loadingPercentTemplate = "{0}%";
         private SaveManager _saveManager;
         private SaveSlotUI[] _slotUIs;
+        private bool[] _slotButtonAvailability;
         private AsyncOperation _sceneLoadOperation;
         private CanvasGroup _transitionFromPanel;
         private CanvasGroup _transitionToPanel;
         private CanvasGroup _currentPanel;
         private PanelTransitionState _panelTransitionState;
+
 
         private void Awake()
         {
@@ -118,12 +124,32 @@ namespace Hecton.UI.MainMenu
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+            
+            // Subscribe to save/load events for UI feedback
+            SaveEvents.OnSaveStarted += OnSaveStarted;
+            SaveEvents.OnSaveCompleted += OnSaveCompleted;
+            SaveEvents.OnSaveFailed += OnSaveFailed;
+            SaveEvents.OnLoadStarted += OnLoadStarted;
+            SaveEvents.OnLoadCompleted += OnLoadCompleted;
+            SaveEvents.OnLoadFailed += OnLoadFailed;
+            
             RefreshLocalizedTexts();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            // TASK 31: Null-safe event unsubscription in OnDisable
+            if (LocalizationManager.Instance != null)
+                LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            
+            // Unsubscribe from save/load events with null checks
+            SaveEvents.OnSaveStarted -= OnSaveStarted;
+            SaveEvents.OnSaveCompleted -= OnSaveCompleted;
+            SaveEvents.OnSaveFailed -= OnSaveFailed;
+            SaveEvents.OnLoadStarted -= OnLoadStarted;
+            SaveEvents.OnLoadCompleted -= OnLoadCompleted;
+            SaveEvents.OnLoadFailed -= OnLoadFailed;
+            
             UnregisterFromTickManager();
             _lastUnscaledTickTime = 0f;
         }
@@ -131,6 +157,7 @@ namespace Hecton.UI.MainMenu
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
             RefreshLocalizedTexts();
+            RefreshLoadingLocalization();
         }
 
         private void RefreshLocalizedTexts()
@@ -387,13 +414,45 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Opens the Save/Load panel, clears the container, generates slots.
         /// Uses Hecton8.SaveSystem.SaveManager for metadata queries.
+        /// Displays "Save system unavailable" if SaveManager is null.
         /// </summary>
         public void OpenSaveLoadMenu()
         {
+            if (_isSaveLoadBusy || _isSceneLoadInFlight)
+                return;
+
             EnsureSlotInstances();
 
             if (_saveManager == null)
                 _saveManager = SaveManager.Instance;
+
+            // TASK 31: Comprehensive null check for SaveManager
+            if (_saveManager == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[MainMenuController] SaveManager.Instance is null. Save/Load features unavailable.");
+#endif
+                // Display error message to user
+                LocalizationManager loc = LocalizationManager.Instance;
+                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save System Unavailable";
+                string message = loc != null 
+                    ? loc.Get(LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE) 
+                    : "The save system is currently unavailable.\n\nPlease restart the game or contact support if this persists.";
+
+                ModalWindow.ShowWithCustomLabels(
+                    title,
+                    message,
+                    () => SwitchPanel(saveLoadGroup, mainMenuGroup), // Return to main menu
+                    null,
+                    "Return to Menu",
+                    null);
+
+                // Disable load game button to prevent future attempts
+                if (btnLoadGame != null)
+                    btnLoadGame.interactable = false;
+
+                return;
+            }
 
             if (_slotUIs != null)
             {
@@ -404,13 +463,17 @@ namespace Hecton.UI.MainMenu
                     if (slotUI == null)
                         continue;
 
-                    if (_saveManager != null && _saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
+                    if (_saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
                     {
                         slotUI.Init(slotInfo, OnSlotClicked);
+                        if (_slotButtonAvailability != null && i < _slotButtonAvailability.Length)
+                            _slotButtonAvailability[i] = slotInfo != null && slotInfo.HasAnySaveData;
                     }
                     else
                     {
                         slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
+                        if (_slotButtonAvailability != null && i < _slotButtonAvailability.Length)
+                            _slotButtonAvailability[i] = false;
                     }
                 }
             }
@@ -444,7 +507,7 @@ namespace Hecton.UI.MainMenu
             if (slotsContainer == null)
                 return false;
 
-            SaveSlotUI[] slotUis = new SaveSlotUI[SlotCount]; // COLD ALLOC: fixed save-shell slot cache
+            SaveSlotUI[] slotUis = new SaveSlotUI[SlotCount]; // COLD ALLOC: SaveSlotUI[3] — fixed save-shell slot cache — owner: MainMenuController
             int found = 0;
 
             for (int i = 0; i < slotsContainer.childCount && found < SlotCount; i++)
@@ -463,6 +526,7 @@ namespace Hecton.UI.MainMenu
             }
 
             _slotUIs = slotUis;
+            _slotButtonAvailability = new bool[SlotCount]; // COLD ALLOC: bool[3] — save-slot availability cache — owner: MainMenuController
 
 #if UNITY_EDITOR
             if (found < SlotCount)
@@ -478,6 +542,9 @@ namespace Hecton.UI.MainMenu
 
         private void OnSlotClicked(string slotName)
         {
+            if (_isSaveLoadBusy || _isSceneLoadInFlight)
+                return;
+
             if (string.IsNullOrEmpty(slotName))
             {
 #if UNITY_EDITOR
@@ -500,16 +567,42 @@ namespace Hecton.UI.MainMenu
         /// Empty slotName = new game, otherwise = load save.
         /// Writes to GameStartContextHolder for inter-scene communication.
         /// Cold persistence is owned by the holder, not by MainMenuController.
+        /// TASK 31: Comprehensive null checks for SaveManager before loading.
         /// </summary>
         public void StartGame(string slotName)
         {
-            if (_isSceneLoadInFlight)
+            if (_isSceneLoadInFlight || _isSaveLoadBusy)
                 return;
 
             // Validate save exists before loading
             if (!string.IsNullOrEmpty(slotName))
             {
-                if (_saveManager != null && !_saveManager.SaveExists(slotName))
+                // TASK 31: Null check for SaveManager before save validation
+                if (_saveManager == null)
+                    _saveManager = SaveManager.Instance;
+
+                if (_saveManager == null)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError("[MainMenuController] SaveManager.Instance is null. Cannot validate save file.");
+#endif
+                    LocalizationManager loc = LocalizationManager.Instance;
+                    string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save System Unavailable";
+                    string message = loc != null
+                        ? loc.Get(LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE)
+                        : "The save system is currently unavailable.\n\nCannot load save file.";
+
+                    ModalWindow.ShowWithCustomLabels(
+                        title,
+                        message,
+                        () => OpenSaveLoadMenu(), // Return to save/load menu
+                        null,
+                        "OK",
+                        null);
+                    return;
+                }
+
+                if (!_saveManager.SaveExists(slotName))
                 {
                     LocalizationManager loc = LocalizationManager.Instance;
                     string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_ERROR_TITLE) : "Load Error";
@@ -547,6 +640,10 @@ namespace Hecton.UI.MainMenu
             SetPanelImmediate(loadingGroup, true);
             _currentPanel = loadingGroup;
             RequestSelectionRefresh();
+
+            // Start loading tips
+            if (loadingTips != null)
+                loadingTips.StartTipCycle();
 
             _loadingPercentTemplate = ResolveLoadingPercentTemplate();
             _sceneActivationRequested = false;
@@ -587,10 +684,16 @@ namespace Hecton.UI.MainMenu
         /// Smoothly fades out one panel and fades in the next.
         /// Double-click protected via instant interactable/blocksRaycasts toggle.
         /// </summary>
-        public void SwitchPanel(CanvasGroup from, CanvasGroup to)
+        private void SwitchPanel(CanvasGroup from, CanvasGroup to)
         {
             if (_isTransitioning || from == null || to == null || from == to)
                 return;
+
+            // Play panel transition sound
+            if (to == mainMenuGroup)
+                UIAudioFeedback.PlayPanelClose();
+            else
+                UIAudioFeedback.PlayPanelOpen();
 
             TryRegisterToTickManager();
             _isTransitioning = true;
@@ -620,7 +723,8 @@ namespace Hecton.UI.MainMenu
 
         private void HandleCancelInput()
         {
-            if (_isTransitioning || _isSceneLoadInFlight || !Input.GetKeyDown(KeyCode.Escape))
+            // Input spam protection: ignore input during transitions or scene loading
+            if (_isTransitioning || _isSceneLoadInFlight || _isSaveLoadBusy || !Input.GetKeyDown(KeyCode.Escape))
                 return;
 
             if (_currentPanel == settingsGroup)
@@ -777,6 +881,10 @@ namespace Hecton.UI.MainMenu
 
             if (_sceneLoadOperation.isDone)
             {
+                // Stop loading tips when scene loads
+                if (loadingTips != null)
+                    loadingTips.StopTipCycle();
+
                 _sceneLoadOperation = null;
                 return;
             }
@@ -793,6 +901,10 @@ namespace Hecton.UI.MainMenu
             _sceneLoadOperation.allowSceneActivation = true;
         }
 
+        /// <summary>
+        /// Updates loading progress visual with zero-GC dirty flag pattern.
+        /// Uses TMP_Text.SetText(string, object) which is allocation-free.
+        /// </summary>
         private void UpdateLoadingProgressVisual(int percent)
         {
             percent = Mathf.Clamp(percent, 0, 100);
@@ -800,6 +912,7 @@ namespace Hecton.UI.MainMenu
             if (loadingProgressBar != null)
                 loadingProgressBar.value = percent / 100f;
 
+            // Dirty flag: only update text when value changes (zero-GC)
             if (loadingPercentText != null && _lastLoadingPercent != percent)
             {
                 loadingPercentText.SetText(_loadingPercentTemplate, percent);
@@ -811,6 +924,219 @@ namespace Hecton.UI.MainMenu
         {
             LocalizationManager loc = LocalizationManager.Instance;
             return loc != null ? loc.Get(LocalizationKeys.LOADING_PERCENT) : "{0}%";
+        }
+
+        private void RefreshLoadingLocalization()
+        {
+            _loadingPercentTemplate = ResolveLoadingPercentTemplate();
+
+            if (loadingPercentText == null || _lastLoadingPercent < 0)
+                return;
+
+            loadingPercentText.SetText(_loadingPercentTemplate, _lastLoadingPercent);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // SAVE/LOAD EVENT HANDLERS
+        // ══════════════════════════════════════════════════════════
+
+        // ══════════════════════════════════════════════════════════
+        // SAVE/LOAD EVENT HANDLERS
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Called when save operation starts. Sets busy flag and disables save/load buttons.
+        /// </summary>
+        private void OnSaveStarted(string slotName)
+        {
+            _isSaveLoadBusy = true;
+            SetSaveLoadButtonsInteractable(false);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[MainMenuController] Save started: {slotName}");
+#endif
+        }
+
+        /// <summary>
+        /// Called when save operation completes successfully.
+        /// Re-enables buttons and updates slot metadata.
+        /// </summary>
+        private void OnSaveCompleted(string slotName)
+        {
+            _isSaveLoadBusy = false;
+            SetSaveLoadButtonsInteractable(true);
+
+            // Refresh slot metadata to show updated save info
+            if (_saveManager != null && _slotUIs != null)
+            {
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    string slotNameToRefresh = SlotNames[i];
+                    SaveSlotUI slotUI = _slotUIs[i];
+                    if (slotUI == null)
+                        continue;
+
+                    if (_saveManager.TryGetSaveSlotInfo(slotNameToRefresh, out SaveSlotInfo slotInfo))
+                    {
+                        slotUI.Init(slotInfo, OnSlotClicked);
+                        if (_slotButtonAvailability != null && i < _slotButtonAvailability.Length)
+                            _slotButtonAvailability[i] = slotInfo != null && slotInfo.HasAnySaveData;
+                    }
+                }
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[MainMenuController] Save completed: {slotName}");
+#endif
+
+            RequestSelectionRefresh();
+        }
+
+        /// <summary>
+        /// Called when save operation fails. Displays error modal and re-enables buttons.
+        /// </summary>
+        private void OnSaveFailed(string slotName, string error)
+        {
+            _isSaveLoadBusy = false;
+            SetSaveLoadButtonsInteractable(true);
+
+            // Display error modal
+            LocalizationManager loc = LocalizationManager.Instance;
+            string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
+            string message = loc != null
+                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, slotName, error)
+                : $"Failed to save to {slotName}.\n\n{error}";
+
+            ModalWindow.ShowWithCustomLabels(
+                title,
+                message,
+                null, // No retry in main menu (only in pause menu)
+                null,
+                "OK",
+                null);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[MainMenuController] Save failed: {slotName} - {error}");
+#endif
+
+            RequestSelectionRefresh();
+        }
+
+        /// <summary>
+        /// Called when load operation starts. Sets busy flag and disables load buttons.
+        /// </summary>
+        private void OnLoadStarted(string slotName)
+        {
+            _isSaveLoadBusy = true;
+            _lastLoadUsedBackup = false;
+            SetSaveLoadButtonsInteractable(false);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[MainMenuController] Load started: {slotName}");
+#endif
+        }
+
+        /// <summary>
+        /// Called when load operation completes successfully.
+        /// Re-enables buttons and proceeds with game start.
+        /// </summary>
+        private void OnLoadCompleted(string slotName)
+        {
+            _isSaveLoadBusy = false;
+
+            // Check if backup was used (SaveManager should set this flag)
+            if (_saveManager != null && _saveManager.LastLoadUsedBackup)
+            {
+                _lastLoadUsedBackup = true;
+
+                // Display backup recovery notification
+                LocalizationManager loc = LocalizationManager.Instance;
+                string title = loc != null ? loc.Get(LocalizationKeys.WARNING_BACKUP_USED_TITLE) : "Backup Loaded";
+                string message = loc != null
+                    ? loc.GetFormatted(LocalizationKeys.WARNING_BACKUP_USED_MESSAGE, slotName)
+                    : $"Primary save file was corrupt. Loaded from backup for {slotName}.";
+
+                ModalWindow.ShowWithCustomLabels(
+                    title,
+                    message,
+                    null,
+                    null,
+                    "OK",
+                    null);
+            }
+
+            SetSaveLoadButtonsInteractable(true);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[MainMenuController] Load completed: {slotName} (backup used: {_lastLoadUsedBackup})");
+#endif
+
+            RequestSelectionRefresh();
+        }
+
+        /// <summary>
+        /// Called when load operation fails. Displays error modal with retry/return options.
+        /// </summary>
+        private void OnLoadFailed(string slotName, string error)
+        {
+            _isSaveLoadBusy = false;
+            SetSaveLoadButtonsInteractable(true);
+
+            // Check if error indicates corrupt save with no backup
+            bool isCorruptNoBackup = error.Contains("corrupt") || error.Contains("checksum") || error.Contains("No valid save data");
+
+            LocalizationManager loc = LocalizationManager.Instance;
+            string title = loc != null ? loc.Get(LocalizationKeys.ERROR_LOAD_FAILED_TITLE) : "Load Failed";
+            string message;
+
+            if (isCorruptNoBackup)
+            {
+                message = loc != null
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE, slotName)
+                    : $"No valid save data found for {slotName}.\n\nThe save file is corrupt and no backup is available.";
+            }
+            else
+            {
+                message = loc != null
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_FAILED_MESSAGE, slotName, error)
+                    : $"Failed to load {slotName}.\n\n{error}";
+            }
+
+            ModalWindow.ShowWithCustomLabels(
+                title,
+                message,
+                () => StartGame(slotName), // Retry
+                () => SwitchPanel(saveLoadGroup, mainMenuGroup), // Return to menu
+                "Retry",
+                "Return to Menu");
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[MainMenuController] Load failed: {slotName} - {error}");
+#endif
+
+            RequestSelectionRefresh();
+        }
+
+        private void SetSaveLoadButtonsInteractable(bool interactable)
+        {
+            if (btnBackFromSaveLoad != null)
+                btnBackFromSaveLoad.interactable = interactable;
+
+            if (_slotUIs == null)
+                return;
+
+            for (int i = 0; i < _slotUIs.Length; i++)
+            {
+                SaveSlotUI slotUI = _slotUIs[i];
+                if (slotUI == null || slotUI.ButtonComponent == null)
+                    continue;
+
+                bool slotAvailable = slotUI.IsInteractable;
+                if (_slotButtonAvailability != null && i < _slotButtonAvailability.Length)
+                    slotAvailable = _slotButtonAvailability[i];
+
+                slotUI.ButtonComponent.interactable = interactable && slotAvailable;
+            }
         }
 
         private float GetUnscaledDeltaTime()

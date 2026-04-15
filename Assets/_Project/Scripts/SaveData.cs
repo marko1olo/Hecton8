@@ -138,6 +138,9 @@ namespace Hecton8.SaveSystem
         /// <summary>Завершённые миссии (MissionManager). v4.6 MISSIONS</summary>
         public List<string> missionCompletedIds = new List<string>();
 
+        /// <summary>LOD quality preset (0=Low, 1=Medium, 2=High). v4.7 LOD</summary>
+        public int LODQualityPreset = 1; // Default: Medium
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════
@@ -182,7 +185,8 @@ namespace Hecton8.SaveSystem
                 endingComplete = false,
                 endingConditionMet = false,
                 missionActiveIds = new List<string>(),
-                missionCompletedIds = new List<string>()
+                missionCompletedIds = new List<string>(),
+                LODQualityPreset = 1 // Default: Medium
             };
         }
 

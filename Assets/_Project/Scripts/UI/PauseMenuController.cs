@@ -3,6 +3,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.SaveSystem;
+using Hecton8.Crafting;
 using Hecton.Localization;
 using Hecton.UI.MainMenu;
 using TMPro;
@@ -56,10 +57,12 @@ namespace Hecton8.UI
         private bool _built;
         private bool _isOpen;
         private bool _exitToMainMenuInFlight;
+        private bool _saveOperationInFlight;
         private bool _sceneActivationRequested;
         private PauseSection _activeSection;
         private float _cachedTimeScale = 1f;
         private AsyncOperation _mainMenuLoadOperation;
+        private int _lastMainMenuLoadPercent = -1;
 
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
@@ -80,6 +83,7 @@ namespace Hecton8.UI
         private Button _mainResumeButton;
         private Button _savesFirstButton;
         private Button _savesBackButton;
+        private Button[] _saveSlotButtons;
         private Button _helpBackButton;
         private Button _settingsBackButton;
         private Button _settingsLanguageButton;
@@ -89,7 +93,22 @@ namespace Hecton8.UI
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
         public static bool IsAnyOpen => _openMenuCount > 0;
 
-        // Простой кэш для ToUpperInvariant, чтобы уменьшить аллокации в UI-строках
+        // ══════════════════════════════════════════════════════════
+        // CACHED STRINGS (zero-GC)
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly string _cachedWriting = "WRITING ";
+        private static readonly string _cachedWritten = " WRITTEN.";
+        private static readonly string _cachedFailed = " FAILED. ";
+        private static readonly string _cachedSaveManagerUnavailable = "SAVE MANAGER UNAVAILABLE.";
+        private static readonly string _cachedSaveInProgress = "SAVE ALREADY IN PROGRESS.";
+        private static readonly string _cachedCheckConsole = " FAILED. CHECK CONSOLE.";
+        private static readonly string _cachedAwaitingSaveCommand = "Awaiting save command.";
+        private static readonly string _cachedPreparingSceneTransition = "Preparing scene transition...";
+        private static readonly string _cachedLoadingMainMenuPrefix = "Loading main menu... ";
+        private static readonly string _cachedPercentSuffix = "%";
+
+        // Simple cache for ToUpperInvariant to reduce allocations in UI strings
         private static readonly string[] _cachedUpperStrings = new string[16];
 
         private static string CachedToUpperInvariant(string input)
@@ -123,11 +142,20 @@ namespace Hecton8.UI
             }
 
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+            SaveEvents.OnSaveStarted += HandleSaveStarted;
+            SaveEvents.OnSaveCompleted += HandleSaveCompleted;
+            SaveEvents.OnSaveFailed += HandleSaveFailed;
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            // TASK 31: Null-safe event unsubscription in OnDisable
+            if (LocalizationManager.Instance != null)
+                LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            
+            SaveEvents.OnSaveStarted -= HandleSaveStarted;
+            SaveEvents.OnSaveCompleted -= HandleSaveCompleted;
+            SaveEvents.OnSaveFailed -= HandleSaveFailed;
 
             if (GameTickManager.Instance != null && _registered)
             {
@@ -171,6 +199,9 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (_saveOperationInFlight)
+                return;
+
             bool escapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             bool startPressed = Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame;
 
@@ -200,6 +231,20 @@ namespace Hecton8.UI
             if (_isOpen)
                 return;
 
+            // TASK 33: Close PDA before opening pause menu if PDA is open
+            if (PlayerPDA.IsOpen && playerPDA != null)
+            {
+                playerPDA.ForceClose();
+            }
+
+            // TASK 33: Close Fabricator before opening pause menu if Fabricator is open
+            if (HectonFabricatorUI.IsMenuOpen)
+            {
+                // Trigger CraftingEvents.OnFabricatorClosed to properly close the fabricator
+                // HectonFabricatorUI subscribes to this event and will call CloseMenu()
+                CraftingEvents.RaiseFabricatorClosed();
+            }
+
             EnsureBuilt();
             EnsureEventSystem();
 
@@ -213,11 +258,15 @@ namespace Hecton8.UI
                 Time.timeScale = 0f;
             }
 
+            // TASK 33: Ensure correct input mode restoration
             if (InputManager.Instance != null)
                 InputManager.Instance.SwitchToUIInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            // Audio feedback for pause menu open
+            UIAudioFeedback.PlayPanelOpen();
 
             ShowSection(PauseSection.Main);
 
@@ -233,6 +282,9 @@ namespace Hecton8.UI
         {
             if (!_isOpen)
                 return;
+
+            // Audio feedback for pause menu close
+            UIAudioFeedback.PlayPanelClose();
 
             ApplyClosedState(restorePlayerInput: true);
         }
@@ -495,6 +547,7 @@ namespace Hecton8.UI
             CreateSectionSub(panel, "Manual save points. Use these before risky dives or major construction changes.")
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
+            _saveSlotButtons = new Button[saveSlots.Length];
             for (int i = 0; i < saveSlots.Length; i++)
             {
                 string slotName = saveSlots[i];
@@ -502,9 +555,11 @@ namespace Hecton8.UI
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
                     () => SaveSlot(slotName));
+                Button slotButton = btn.GetComponent<Button>();
+                _saveSlotButtons[i] = slotButton;
 
                 if (i == 0)
-                    _savesFirstButton = btn.GetComponent<Button>();
+                    _savesFirstButton = slotButton;
 
                 TextMeshProUGUI label = GetText(btn, "Label");
                 if (label != null)
@@ -514,9 +569,10 @@ namespace Hecton8.UI
             _saveStatus = CreateText(panel, "SaveStatus", numericFont, 11f, FontStyles.Normal, TextAlignmentOptions.Center);
             Anchor(_saveStatus.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(22f, 66f), new Vector2(-22f, 22f));
             _saveStatus.color = Dim;
-            _saveStatus.SetText("Awaiting save command.");
+            _saveStatus.SetText(_cachedAwaitingSaveCommand);
 
             _savesBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
+            RefreshSaveSectionState();
         }
 
         private void BuildHelpPanel(RectTransform panel)
@@ -568,7 +624,14 @@ namespace Hecton8.UI
 
         private void ShowSection(PauseSection section)
         {
+            PauseSection previousSection = _activeSection;
             _activeSection = section;
+
+            // Audio feedback for section transitions (not on initial open)
+            if (previousSection != section && _isOpen)
+            {
+                UIAudioFeedback.PlayPanelOpen();
+            }
 
             SetPanelVisible(_mainPanelCanvasGroup, section == PauseSection.Main);
             SetPanelVisible(_savesPanelCanvasGroup, section == PauseSection.Saves);
@@ -585,6 +648,7 @@ namespace Hecton8.UI
                     break;
                 case PauseSection.Saves:
                     _headerSub.SetText("manual persistence via SaveManager");
+                    RefreshSaveSectionState();
                     break;
                 case PauseSection.Help:
                     _headerSub.SetText("compact operational reference for current tool and inventory loop");
@@ -598,20 +662,47 @@ namespace Hecton8.UI
             SelectDefaultButtonForSection(section);
         }
 
-        private async void SaveSlot(string slotName)
+        /// <summary>
+        /// Initiates save operation for the specified slot.
+        /// Wraps async Task to avoid async void pattern (AGENTS.md compliance).
+        /// </summary>
+        private void SaveSlot(string slotName)
         {
+            if (_saveOperationInFlight)
+            {
+                if (_saveStatus != null)
+                    _saveStatus.SetText(_cachedSaveInProgress);
+                return;
+            }
+
+            _ = SaveSlotAsync(slotName);
+        }
+
+        /// <summary>
+        /// Async save operation with proper exception handling and zero-GC string operations.
+        /// Returns Task to enable proper async/await pattern.
+        /// </summary>
+        private async System.Threading.Tasks.Task SaveSlotAsync(string slotName)
+        {
+            string upperSlotName = CachedToUpperInvariant(slotName);
+
             if (_saveStatus != null)
-                _saveStatus.text = $"WRITING {CachedToUpperInvariant(slotName)}...";
+                _saveStatus.text = string.Concat(_cachedWriting, upperSlotName, "...");
 
             SaveManager saveManager = SaveManager.Instance;
             if (saveManager == null)
             {
                 if (_saveStatus != null)
-                    _saveStatus.SetText("SAVE MANAGER UNAVAILABLE.");
+                    _saveStatus.SetText(_cachedSaveManagerUnavailable);
+
+                // Localized error message
+                LocalizationManager loc = LocalizationManager.Instance;
+                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save Error";
+                string message = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save system is unavailable. Cannot save game.";
 
                 ModalWindow.ShowWithCustomLabels(
-                    "Save Error",
-                    "Save system is unavailable. Cannot save game.",
+                    title,
+                    message,
                     null,
                     null,
                     "OK",
@@ -624,43 +715,29 @@ namespace Hecton8.UI
                 if (saveManager.IsBusy)
                 {
                     if (_saveStatus != null)
-                        _saveStatus.text = "SAVE ALREADY IN PROGRESS.";
+                        _saveStatus.SetText(_cachedSaveInProgress);
                     return;
                 }
 
                 await saveManager.SaveGameAsync(slotName);
-                if (_saveStatus != null)
-                {
-                    if (saveManager.LastOperationSucceeded)
-                    {
-                        _saveStatus.text = $"{CachedToUpperInvariant(slotName)} WRITTEN.";
-                    }
-                    else
-                    {
-                        string errorMsg = saveManager.LastOperationError ?? "Unknown error";
-                        _saveStatus.text = $"{CachedToUpperInvariant(slotName)} FAILED. {CachedToUpperInvariant(errorMsg)}";
-
-                        // Show retry modal on failure
-                        ModalWindow.ShowWithCustomLabels(
-                            "Save Failed",
-                            $"Failed to save to {slotName}.\n\n{errorMsg}\n\nRetry?",
-                            () => SaveSlot(slotName), // Retry
-                            null, // Cancel just closes modal
-                            "Retry",
-                            "Cancel");
-                    }
-                }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {ex.Message}");
                 if (_saveStatus != null)
-                    _saveStatus.text = $"{CachedToUpperInvariant(slotName)} FAILED. CHECK CONSOLE.";
+                    _saveStatus.SetText(string.Concat(upperSlotName, _cachedCheckConsole));
+
+                // Localized error message
+                LocalizationManager loc = LocalizationManager.Instance;
+                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_CRASHED_TITLE) : "Save Error";
+                string message = loc != null 
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE, slotName)
+                    : $"Save operation crashed for {slotName}.\n\nCheck console for details.\n\nRetry?";
 
                 // Show retry modal on exception
                 ModalWindow.ShowWithCustomLabels(
-                    "Save Error",
-                    $"Save operation crashed for {slotName}.\n\nCheck console for details.\n\nRetry?",
+                    title,
+                    message,
                     () => SaveSlot(slotName), // Retry
                     null, // Cancel just closes modal
                     "Retry",
@@ -680,6 +757,7 @@ namespace Hecton8.UI
 
             _exitToMainMenuInFlight = true;
             _sceneActivationRequested = false;
+            _lastMainMenuLoadPercent = -1;
 
             if (_canvasGroup != null)
             {
@@ -704,7 +782,7 @@ namespace Hecton8.UI
                 _footerHint.SetText("loading menu shell and releasing world memory");
 
             if (_saveStatus != null)
-                _saveStatus.SetText("Preparing scene transition...");
+                _saveStatus.SetText(_cachedPreparingSceneTransition);
 
             GameStartContextHolder.Reset();
             RegisterMainMenuCleanup(mainMenuSceneName);
@@ -733,8 +811,11 @@ namespace Hecton8.UI
             float progress = Mathf.Clamp01(_mainMenuLoadOperation.progress / 0.9f);
             int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
 
-            if (_saveStatus != null)
-                _saveStatus.SetText($"Loading main menu... {percent}%");
+            if (_saveStatus != null && percent != _lastMainMenuLoadPercent)
+            {
+                _lastMainMenuLoadPercent = percent;
+                _saveStatus.SetText(string.Concat(_cachedLoadingMainMenuPrefix, percent.ToString(), _cachedPercentSuffix));
+            }
 
             if (_sceneActivationRequested || _mainMenuLoadOperation.progress < 0.9f)
                 return;
@@ -748,6 +829,7 @@ namespace Hecton8.UI
             _exitToMainMenuInFlight = false;
             _sceneActivationRequested = false;
             _mainMenuLoadOperation = null;
+            _lastMainMenuLoadPercent = -1;
             UnregisterMainMenuCleanup();
 
             if (pauseTimeScale)
@@ -855,6 +937,17 @@ namespace Hecton8.UI
 
         private void QuitApplication()
         {
+            // TASK 33: Ensure all settings are saved before Application.Quit()
+            // Save UserOptions (input overrides, etc.)
+            if (UserOptionsPersistence.Instance != null)
+            {
+                UserOptionsPersistence.Instance.Save();
+            }
+
+            // SettingsManager saves settings individually via PlayerPrefs
+            // PlayerPrefs.Save() is called by UserOptionsPersistence.Save()
+            // No additional save needed here
+
             if (pauseTimeScale)
                 Time.timeScale = 1f;
 
@@ -1065,7 +1158,7 @@ namespace Hecton8.UI
                 case PauseSection.Main:
                     return _mainResumeButton;
                 case PauseSection.Saves:
-                    return _savesFirstButton != null ? _savesFirstButton : _savesBackButton;
+                    return GetFirstInteractableSaveButton() ?? _savesBackButton;
                 case PauseSection.Help:
                     return _helpBackButton;
                 case PauseSection.Settings:
@@ -1073,6 +1166,123 @@ namespace Hecton8.UI
                 default:
                     return null;
             }
+        }
+
+        private Button GetFirstInteractableSaveButton()
+        {
+            if (_saveSlotButtons == null)
+                return _savesFirstButton;
+
+            for (int i = 0; i < _saveSlotButtons.Length; i++)
+            {
+                Button button = _saveSlotButtons[i];
+                if (button != null && button.interactable && button.gameObject.activeInHierarchy)
+                    return button;
+            }
+
+            return null;
+        }
+
+        private void RefreshSaveSectionState()
+        {
+            // TASK 31: SaveManager null check with user-facing error message
+            SaveManager saveManager = SaveManager.Instance;
+            
+            // If SaveManager is unavailable, disable all save buttons and display error
+            if (saveManager == null)
+            {
+                SetSaveButtonsInteractable(false);
+                
+                if (_saveStatus != null)
+                    _saveStatus.SetText(_cachedSaveManagerUnavailable);
+                
+                return;
+            }
+            
+            bool isBusy = _saveOperationInFlight || saveManager.IsBusy;
+            SetSaveButtonsInteractable(!isBusy);
+
+            if (_saveStatus == null)
+                return;
+
+            if (isBusy)
+            {
+                _saveStatus.SetText(_cachedSaveInProgress);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(_saveStatus.text))
+                _saveStatus.SetText(_cachedAwaitingSaveCommand);
+        }
+
+        private void SetSaveButtonsInteractable(bool interactable)
+        {
+            if (_saveSlotButtons == null)
+            {
+                if (_savesBackButton != null)
+                    _savesBackButton.interactable = interactable;
+                return;
+            }
+
+            for (int i = 0; i < _saveSlotButtons.Length; i++)
+            {
+                Button button = _saveSlotButtons[i];
+                if (button == null)
+                    continue;
+
+                button.interactable = interactable;
+            }
+
+            if (_savesBackButton != null)
+                _savesBackButton.interactable = interactable;
+        }
+
+        private void HandleSaveStarted(string slotName)
+        {
+            _saveOperationInFlight = true;
+            SetSaveButtonsInteractable(false);
+
+            if (_saveStatus != null)
+                _saveStatus.SetText(string.Concat(_cachedWriting, CachedToUpperInvariant(slotName), "..."));
+        }
+
+        private void HandleSaveCompleted(string slotName)
+        {
+            _saveOperationInFlight = false;
+            SetSaveButtonsInteractable(true);
+
+            if (_saveStatus != null)
+                _saveStatus.SetText(string.Concat(CachedToUpperInvariant(slotName), _cachedWritten));
+
+            if (_activeSection == PauseSection.Saves)
+                SelectDefaultButtonForSection(PauseSection.Saves);
+        }
+
+        private void HandleSaveFailed(string slotName, string error)
+        {
+            _saveOperationInFlight = false;
+            SetSaveButtonsInteractable(true);
+
+            string normalizedError = string.IsNullOrEmpty(error) ? "Unknown error" : error;
+            if (_saveStatus != null)
+                _saveStatus.SetText(string.Concat(CachedToUpperInvariant(slotName), _cachedFailed, CachedToUpperInvariant(normalizedError)));
+
+            LocalizationManager loc = LocalizationManager.Instance;
+            string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
+            string message = loc != null
+                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, slotName, normalizedError)
+                : $"Failed to save to {slotName}.\n\n{normalizedError}\n\nRetry?";
+
+            ModalWindow.ShowWithCustomLabels(
+                title,
+                message,
+                () => SaveSlot(slotName),
+                null,
+                "Retry",
+                "Cancel");
+
+            if (_activeSection == PauseSection.Saves)
+                SelectDefaultButtonForSection(PauseSection.Saves);
         }
 
         private void CycleLanguage()

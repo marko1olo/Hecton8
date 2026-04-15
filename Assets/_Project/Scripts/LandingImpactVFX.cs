@@ -61,6 +61,39 @@ namespace Hecton8.VFX
         [SerializeField, Range(0f, 0.5f)]
         private float holdDuration = 0.08f;
 
+        [Header("── Water Transition ─────────────────────────")]
+        [Tooltip("Chromatic aberration boost when crossing into water.")]
+        [SerializeField, Range(0f, 1f)]
+        private float submergeChromaticIntensity = 0.22f;
+
+        [Tooltip("Vignette boost when crossing into water.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float submergeVignetteIntensity = 0.16f;
+
+        [Tooltip("How long the underwater entry impulse stays at peak before fading.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float submergeHoldDuration = 0.06f;
+
+        [Tooltip("How quickly the underwater entry impulse fades.")]
+        [SerializeField, Range(0.5f, 15f)]
+        private float submergeRecoverySpeed = 6f;
+
+        [Tooltip("Chromatic aberration boost when breaking back to the surface.")]
+        [SerializeField, Range(0f, 1f)]
+        private float surfaceBreakChromaticIntensity = 0.12f;
+
+        [Tooltip("Vignette boost when breaking back to the surface.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float surfaceBreakVignetteIntensity = 0.08f;
+
+        [Tooltip("How long the surface-break impulse stays at peak before fading.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float surfaceBreakHoldDuration = 0.04f;
+
+        [Tooltip("How quickly the surface-break impulse fades.")]
+        [SerializeField, Range(0.5f, 15f)]
+        private float surfaceBreakRecoverySpeed = 7.5f;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED — Post-processing references (grabbed once)
         // ══════════════════════════════════════════════════════════
@@ -85,6 +118,11 @@ namespace Hecton8.VFX
         private bool _hasChromatic;
         private bool _hasVignette;
         private bool _registeredToTickManager;
+        private float _waterTransitionIntensity;
+        private float _waterTransitionHoldTimer;
+        private float _waterTransitionChromaticScale;
+        private float _waterTransitionVignetteScale;
+        private float _waterTransitionRecoverySpeed;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -160,10 +198,14 @@ namespace Hecton8.VFX
 
         public void Tick(float deltaTime)
         {
-            if (playerMovement == null || _playerRb == null) return;
-
             if (deltaTime <= 0f) return;
 
+            UpdateLandingEffect(deltaTime);
+            UpdateWaterTransitionEffect(deltaTime);
+            ApplyPostProcessing();
+            return;
+
+#if false
             bool isGrounded = playerMovement.IsGrounded;
 
             // ── Track pre-landing velocity (while airborne) ──
@@ -235,6 +277,7 @@ namespace Hecton8.VFX
                 _vignette.intensity.value = _baseVignetteIntensity +
                     _currentIntensity * maxVignetteIntensity;
             }
+#endif
         }
 
         // ══════════════════════════════════════════════════════════
@@ -253,6 +296,30 @@ namespace Hecton8.VFX
             _holdTimer = holdDuration;
         }
 
+        /// <summary>
+        /// Triggers the short optical shock when the camera crosses into water.
+        /// </summary>
+        public void TriggerSubmergeImpulse()
+        {
+            TriggerWaterTransitionImpulse(
+                submergeChromaticIntensity,
+                submergeVignetteIntensity,
+                submergeHoldDuration,
+                submergeRecoverySpeed);
+        }
+
+        /// <summary>
+        /// Triggers the short optical shock when the camera breaks back to the surface.
+        /// </summary>
+        public void TriggerSurfaceBreakImpulse()
+        {
+            TriggerWaterTransitionImpulse(
+                surfaceBreakChromaticIntensity,
+                surfaceBreakVignetteIntensity,
+                surfaceBreakHoldDuration,
+                surfaceBreakRecoverySpeed);
+        }
+
         private void RegisterToTickManager()
         {
             if (_registeredToTickManager || GameTickManager.Instance == null)
@@ -269,6 +336,114 @@ namespace Hecton8.VFX
 
             GameTickManager.Instance.Unregister((ITickable)this);
             _registeredToTickManager = false;
+        }
+
+        private void UpdateLandingEffect(float deltaTime)
+        {
+            if (playerMovement == null || _playerRb == null)
+                return;
+
+            bool isGrounded = playerMovement.IsGrounded;
+
+            if (!isGrounded)
+            {
+                _preLandingVelocityY = _playerRb.linearVelocity.y;
+            }
+
+            if (isGrounded && !_wasGrounded)
+            {
+                SuitData suit = playerMovement.CurrentSuit;
+                if (suit != null)
+                {
+                    float fallSpeed = math.abs(_preLandingVelocityY);
+
+                    if (fallSpeed >= suit.impactVelocityThreshold)
+                    {
+                        float range = math.max(
+                            suit.impactVelocityMax - suit.impactVelocityThreshold, 0.1f);
+                        float normalizedImpact = math.clamp(
+                            (fallSpeed - suit.impactVelocityThreshold) / range,
+                            0f, 1f);
+
+                        _currentIntensity = normalizedImpact;
+                        _holdTimer = holdDuration;
+                    }
+                }
+            }
+
+            _wasGrounded = isGrounded;
+
+            if (_holdTimer > 0f)
+            {
+                _holdTimer -= deltaTime;
+                return;
+            }
+
+            if (_currentIntensity > 0.001f)
+            {
+                float speed = recoverySpeed;
+                SuitData suit = playerMovement.CurrentSuit;
+                if (suit != null)
+                {
+                    speed = suit.impactRecoverySpeed;
+                }
+
+                float t = 1f - math.exp(-speed * deltaTime);
+                _currentIntensity = math.lerp(_currentIntensity, 0f, t);
+            }
+            else
+            {
+                _currentIntensity = 0f;
+            }
+        }
+
+        private void UpdateWaterTransitionEffect(float deltaTime)
+        {
+            if (_waterTransitionHoldTimer > 0f)
+            {
+                _waterTransitionHoldTimer -= deltaTime;
+                return;
+            }
+
+            if (_waterTransitionIntensity > 0.001f)
+            {
+                float t = 1f - math.exp(-_waterTransitionRecoverySpeed * deltaTime);
+                _waterTransitionIntensity = math.lerp(_waterTransitionIntensity, 0f, t);
+            }
+            else
+            {
+                _waterTransitionIntensity = 0f;
+            }
+        }
+
+        private void ApplyPostProcessing()
+        {
+            if (_hasChromatic)
+            {
+                _chromatic.intensity.value = _baseChromaticIntensity +
+                    _currentIntensity * maxChromaticIntensity +
+                    _waterTransitionIntensity * _waterTransitionChromaticScale;
+            }
+
+            if (_hasVignette)
+            {
+                _vignette.intensity.value = _baseVignetteIntensity +
+                    _currentIntensity * maxVignetteIntensity +
+                    _waterTransitionIntensity * _waterTransitionVignetteScale;
+            }
+        }
+
+        private void TriggerWaterTransitionImpulse(
+            float chromaticScale,
+            float vignetteScale,
+            float holdTime,
+            float decaySpeed)
+        {
+            _waterTransitionIntensity = 1f;
+            _waterTransitionHoldTimer = holdTime;
+            _waterTransitionChromaticScale = math.max(0f, chromaticScale);
+            _waterTransitionVignetteScale = math.max(0f, vignetteScale);
+            _waterTransitionRecoverySpeed = math.max(0.1f, decaySpeed);
         }
     }
 }

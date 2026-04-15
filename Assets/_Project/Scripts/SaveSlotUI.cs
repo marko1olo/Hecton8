@@ -19,6 +19,9 @@ namespace Hecton.UI.MainMenu
         [SerializeField] private TMP_Text slotNameText;
         [SerializeField] private TMP_Text detailsText;
 
+        [Header("=== Thumbnail ===")]
+        [SerializeField] private Hecton8.UI.SaveSlotThumbnail thumbnail;
+
         private Button _button;
         private string _slotId;
         private bool _exists;
@@ -41,6 +44,16 @@ namespace Hecton.UI.MainMenu
         /// Exposes the authored button for menu focus routing.
         /// </summary>
         public Button ButtonComponent => _button;
+
+        /// <summary>
+        /// Slot id owned by this authored slot view.
+        /// </summary>
+        public string SlotId => _slotId;
+
+        /// <summary>
+        /// True when this slot currently represents existing save data.
+        /// </summary>
+        public bool HasSaveData => _exists;
 
         private void Awake()
         {
@@ -92,6 +105,7 @@ namespace Hecton.UI.MainMenu
             _onClickCallback = onClickCallback;
 
             ApplyPresentation();
+            UpdateThumbnail();
 
             if (_button != null)
                 _button.interactable = _exists && _onClickCallback != null;
@@ -120,6 +134,7 @@ namespace Hecton.UI.MainMenu
             _statusLabel = slotInfo.GetStatusLabel();
             _integrityState = slotInfo.IntegrityState;
             ApplyPresentation();
+            UpdateThumbnail();
         }
 
         private void AutoWireTextReferences()
@@ -348,6 +363,20 @@ namespace Hecton.UI.MainMenu
                 return slotId.Substring(underscoreIndex + 1);
 
             return slotId;
+        }
+
+        /// <summary>
+        /// Updates thumbnail display based on slot state.
+        /// </summary>
+        private void UpdateThumbnail()
+        {
+            if (thumbnail == null)
+                return;
+
+            if (_exists && !string.IsNullOrEmpty(_slotId))
+                thumbnail.LoadThumbnail(_slotId);
+            else
+                thumbnail.ClearThumbnail();
         }
     }
 }

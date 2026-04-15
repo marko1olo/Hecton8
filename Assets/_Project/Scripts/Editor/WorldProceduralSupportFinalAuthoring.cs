@@ -36,8 +36,15 @@ namespace Hecton8.EditorTools
             if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Resource.prefab", new Vector3(3.2f, 1.8f, 3.0f), BuildResourcePocketLods(resourceMat)) != null)
                 createdCount++;
 
-            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Hazard.prefab", new Vector3(3.8f, 2.8f, 3.8f), BuildHazardPocketLods(hazardMat)) != null)
+            GameObject hazardPocketPrefab = CreateCompositeFinalPrefab(
+                $"{FinalPrefabFolder}/PFB_Support_Pocket_Hazard.prefab",
+                new Vector3(3.8f, 2.8f, 3.8f),
+                BuildHazardPocketLods(hazardMat));
+            if (hazardPocketPrefab != null)
+            {
+                AttachHazardVentVfx(hazardPocketPrefab);
                 createdCount++;
+            }
 
             if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Safe.prefab", new Vector3(4.2f, 2.6f, 4.2f), BuildSafePocketLods(safeMat)) != null)
                 createdCount++;
@@ -461,6 +468,292 @@ namespace Hecton8.EditorTools
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static void AttachHazardVentVfx(GameObject prefabAsset)
+        {
+            if (prefabAsset == null)
+                return;
+
+            string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
+            if (string.IsNullOrEmpty(prefabPath))
+                return;
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                Transform lod0 = FindChildByName(prefabRoot.transform, "LOD0");
+                Transform lod1 = FindChildByName(prefabRoot.transform, "LOD1");
+                Material particleMaterial = ResolveParticleMaterial();
+
+                if (lod0 != null)
+                {
+                    ConfigureHazardVentBubbleColumn(
+                        lod0,
+                        "VentBubbleColumn_Main",
+                        new Vector3(0f, 1.16f, 0f),
+                        14f,
+                        96,
+                        0.11f,
+                        0.18f,
+                        2.8f,
+                        4.2f,
+                        0.45f,
+                        1.2f,
+                        particleMaterial);
+
+                    ConfigureHazardVentBubbleColumn(
+                        lod0,
+                        "VentBubbleColumn_Secondary",
+                        new Vector3(0.24f, 1.02f, -0.18f),
+                        7f,
+                        48,
+                        0.07f,
+                        0.13f,
+                        2.2f,
+                        3.4f,
+                        0.35f,
+                        0.92f,
+                        particleMaterial);
+                }
+
+                if (lod1 != null)
+                {
+                    ConfigureHazardVentBubbleColumn(
+                        lod1,
+                        "VentBubbleColumn_LOD1",
+                        new Vector3(0f, 0.98f, 0f),
+                        6f,
+                        40,
+                        0.08f,
+                        0.14f,
+                        2.0f,
+                        3.0f,
+                        0.32f,
+                        0.84f,
+                        particleMaterial);
+                }
+
+                SyncHazardVentLodRenderers(prefabRoot, lod0, lod1);
+
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void ConfigureHazardVentBubbleColumn(
+            Transform parent,
+            string childName,
+            Vector3 localPosition,
+            float emissionRate,
+            int maxParticles,
+            float sizeMin,
+            float sizeMax,
+            float lifetimeMin,
+            float lifetimeMax,
+            float speedMin,
+            float speedMax,
+            Material particleMaterial)
+        {
+            Transform child = FindChildByName(parent, childName);
+            if (child == null)
+            {
+                GameObject childObject = new GameObject(childName);
+                childObject.transform.SetParent(parent, false);
+                child = childObject.transform;
+            }
+
+            child.localPosition = localPosition;
+            child.localRotation = Quaternion.identity;
+            child.localScale = Vector3.one;
+
+            if (!child.TryGetComponent(out ParticleSystem particleSystem))
+                particleSystem = child.gameObject.AddComponent<ParticleSystem>();
+
+            ParticleSystemRenderer renderer = child.GetComponent<ParticleSystemRenderer>();
+            if (renderer == null)
+                renderer = child.gameObject.AddComponent<ParticleSystemRenderer>();
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.duration = 6f;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(lifetimeMin, lifetimeMax);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(speedMin, speedMax);
+            main.startSize = new ParticleSystem.MinMaxCurve(sizeMin, sizeMax);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.82f, 0.94f, 1f, 0.28f));
+            main.gravityModifier = 0f;
+            main.maxParticles = maxParticles;
+            main.cullingMode = ParticleSystemCullingMode.Pause;
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.enabled = true;
+            emission.rateOverTime = new ParticleSystem.MinMaxCurve(emissionRate);
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.ConeVolume;
+            shape.angle = 7f;
+            shape.radius = 0.12f;
+            shape.length = 0.36f;
+            shape.position = Vector3.zero;
+            shape.rotation = Vector3.zero;
+            shape.scale = Vector3.one;
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.Local;
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.2f, 0.42f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
+
+            ParticleSystem.SizeOverLifetimeModule sizeOverLifetime = particleSystem.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(
+                1f,
+                new AnimationCurve(
+                    new Keyframe(0f, 0.68f),
+                    new Keyframe(0.6f, 1f),
+                    new Keyframe(1f, 1.26f)));
+
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particleSystem.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(0.78f, 0.92f, 1f), 0f),
+                    new GradientColorKey(new Color(0.92f, 0.98f, 1f), 1f),
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0f, 0f),
+                    new GradientAlphaKey(0.24f, 0.12f),
+                    new GradientAlphaKey(0.34f, 0.72f),
+                    new GradientAlphaKey(0f, 1f),
+                });
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
+            noise.enabled = false;
+
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.alignment = ParticleSystemRenderSpace.View;
+            renderer.lengthScale = 1f;
+            renderer.velocityScale = 0f;
+            renderer.cameraVelocityScale = 0f;
+            renderer.normalDirection = 1f;
+            renderer.sortingFudge = 2f;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.lightProbeUsage = LightProbeUsage.Off;
+            renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            renderer.sharedMaterial = particleMaterial;
+
+            EditorUtility.SetDirty(child.gameObject);
+        }
+
+        private static void SyncHazardVentLodRenderers(GameObject prefabRoot, Transform lod0, Transform lod1)
+        {
+            if (prefabRoot == null)
+                return;
+
+            LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
+            if (lodGroup == null)
+                return;
+
+            LOD[] lods = lodGroup.GetLODs();
+            if (lods == null || lods.Length < 2)
+                return;
+
+            lods[0].renderers = AppendRenderers(
+                lods[0].renderers,
+                ResolveRenderer(lod0, "VentBubbleColumn_Main"),
+                ResolveRenderer(lod0, "VentBubbleColumn_Secondary"));
+
+            lods[1].renderers = AppendRenderers(
+                lods[1].renderers,
+                ResolveRenderer(lod1, "VentBubbleColumn_LOD1"));
+
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+            EditorUtility.SetDirty(lodGroup);
+        }
+
+        private static Renderer[] AppendRenderers(Renderer[] existing, params Renderer[] additions)
+        {
+            int existingCount = existing != null ? existing.Length : 0;
+            int additionCount = 0;
+            for (int i = 0; i < additions.Length; i++)
+            {
+                if (additions[i] != null && !ContainsRenderer(existing, additions[i]))
+                    additionCount++;
+            }
+
+            if (additionCount <= 0)
+                return existing ?? System.Array.Empty<Renderer>();
+
+            Renderer[] combined = new Renderer[existingCount + additionCount];
+            int writeIndex = 0;
+            for (int i = 0; i < existingCount; i++)
+                combined[writeIndex++] = existing[i];
+
+            for (int i = 0; i < additions.Length; i++)
+            {
+                if (additions[i] != null && !ContainsRenderer(existing, additions[i]))
+                    combined[writeIndex++] = additions[i];
+            }
+
+            return combined;
+        }
+
+        private static bool ContainsRenderer(Renderer[] renderers, Renderer candidate)
+        {
+            if (renderers == null || candidate == null)
+                return false;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] == candidate)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Renderer ResolveRenderer(Transform parent, string childName)
+        {
+            Transform child = FindChildByName(parent, childName);
+            return child != null ? child.GetComponent<Renderer>() : null;
+        }
+
+        private static Transform FindChildByName(Transform parent, string childName)
+        {
+            if (parent == null || string.IsNullOrEmpty(childName))
+                return null;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == childName)
+                    return child;
+            }
+
+            return null;
+        }
+
+        private static Material ResolveParticleMaterial()
+        {
+            Material material = AssetDatabase.GetBuiltinExtraResource<Material>("Default-ParticleSystem.mat");
+            if (material != null)
+                return material;
+
+            return AssetDatabase.GetBuiltinExtraResource<Material>("Default-Particle.mat");
         }
 
         private static void EnsureFolder(string path)

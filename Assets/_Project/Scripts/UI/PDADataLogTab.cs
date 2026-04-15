@@ -57,6 +57,16 @@ namespace Hecton8.UI
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>Кэшированные строки для AudioLogCategory enum (избегает Enum.ToString() даже в COLD path)</summary>
+        private static readonly string[] _cachedCategoryStrings = new string[]
+        {
+            "PERSONAL",   // AudioLogCategory.Personal = 0
+            "TECHNICAL",  // AudioLogCategory.Technical = 1
+            "EMERGENCY",  // AudioLogCategory.Emergency = 2
+            "ATLAS6",     // AudioLogCategory.Atlas6 = 3
+            "UNKNOWN"     // AudioLogCategory.Unknown = 4
+        };
+
         // UI roots
         private RectTransform _root;
         private RectTransform _listPanel;
@@ -336,7 +346,10 @@ namespace Hecton8.UI
                 TextMeshProUGUI catLabel = CreateText("Cat", rowRoot, 8f, colorDim, TextAlignmentOptions.MidlineRight);
                 Anchor(catLabel.rectTransform, new Vector2(0.75f, 0), new Vector2(1, 1),
                     new Vector2(0, 0), new Vector2(-6, 0));
-                catLabel.text = log.category.ToString().ToUpperInvariant();
+                int categoryIndex = (int)log.category;
+                catLabel.text = categoryIndex >= 0 && categoryIndex < _cachedCategoryStrings.Length
+                    ? _cachedCategoryStrings[categoryIndex]
+                    : "UNKNOWN";
 
                 // Button component
                 LogRowButton btn = rowRoot.gameObject.AddComponent<LogRowButton>();

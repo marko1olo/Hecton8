@@ -234,3 +234,14 @@ int shadowQuality = SettingsManager.Instance.ShadowQuality;
 4. Implement URP Volume integration for AO/Bloom/Motion Blur
 5. Implement Camera FOV application
 6. Add resolution dropdown UI
+# CURRENT STATUS OVERRIDE
+
+This guide contains stale claims. Use the corrections below as normative until the body text is re-authored.
+
+Verified now:
+- `FieldOfView` is applied to `mainCamera`
+- Bloom and Motion Blur are applied through a scene `Volume` owner referenced by `[SettingsManager]`
+- `01_MAIN_MENU` scene wiring exists in-scene; manual Inspector assignment is not the primary path anymore
+
+Not verified / not fully implemented:
+- `AmbientOcclusion` does not currently drive a runtime renderer-feature owner; the UI flag persists, but visual application is still pending

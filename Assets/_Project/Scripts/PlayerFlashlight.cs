@@ -171,6 +171,20 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional Volumetric Light Beam component for sci-fi beam rendering.")]
         [SerializeField] private VolumetricLightBeamAbstractBase volumetricBeam;
 
+        [Header("— Underwater Beam Response —")]
+        [Tooltip("Makes the flashlight beam feel denser underwater without touching the spotlight owner.")]
+        [SerializeField] private bool enableUnderwaterBeamResponse = true;
+        [Tooltip("Depth at which the underwater beam response reaches full strength.")]
+        [SerializeField, Range(0.25f, 20f)] private float underwaterBeamFullDepth = 8f;
+        [Tooltip("Maximum multiplier applied to the beam intensity underwater.")]
+        [SerializeField, Range(1f, 3f)] private float underwaterBeamMaxMultiplier = 1.35f;
+        [Tooltip("Maximum beam noise injected underwater.")]
+        [SerializeField, Range(0f, 0.4f)] private float underwaterBeamNoiseMax = 0.16f;
+        [Tooltip("Target side softness underwater. Lower = harder shaft, higher = softer volume.")]
+        [SerializeField, Range(0.5f, 3f)] private float underwaterBeamSideSoftness = 1.2f;
+        [Tooltip("Small underwater jitter to stop the shaft from looking dead.")]
+        [SerializeField, Range(0f, 0.15f)] private float underwaterBeamJitterMax = 0.03f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -183,6 +197,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugIsFlickering;
         [SerializeField] private bool _debugIsOverheated;
         [SerializeField] private float _debugCooldownRemaining;
+        [SerializeField] private float _debugVolumetricMultiplier;
+        [SerializeField] private float _debugVolumetricDepth;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -216,6 +232,7 @@ namespace Hecton8.Gameplay
         private BeamMode _beamMode;
         private Camera _cachedMainCamera;
         private Transform _cachedMainCameraTransform;
+        private HectonPlayerMovement _playerMovement;
         private float _nextCameraResolveTime;
 
         private const float CameraResolveCooldown = 1f;
@@ -345,6 +362,8 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             SubscribeToInputManager();
+            if (_playerMovement == null || flashlightLight == null || volumetricBeam == null)
+                ResolveReferences();
 
             // Блокируем логику в меню (хотя InputManager должен отключать Player map, 
             // мы всё равно обрабатываем переходы и батарею)
@@ -522,10 +541,14 @@ namespace Hecton8.Gameplay
         {
             ResolveMainCameraReference(true);
             ResolveFlashlightLight();
+            ResolveVolumetricBeam();
 
-            if (survivalSystem == null && enableBatteryDrain)
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                if (_playerMovement == null)
+                    playerTransform.TryGetComponent(out _playerMovement);
+
+                if (survivalSystem == null && enableBatteryDrain)
                     survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
             }
         }
@@ -595,6 +618,19 @@ namespace Hecton8.Gameplay
                     break;
             }
             flashlightLight.shadows = LightShadows.None;
+        }
+
+        private void ResolveVolumetricBeam()
+        {
+            if (volumetricBeam != null || flashlightLight == null)
+                return;
+
+            if (flashlightLight.TryGetComponent(out VolumetricLightBeamHD hdBeam))
+            {
+                volumetricBeam = hdBeam;
+                _vlbHD = hdBeam;
+                _vlbResolved = true;
+            }
         }
 
         private void ValidateSurvivalSystemBinding()
@@ -768,6 +804,10 @@ namespace Hecton8.Gameplay
         /// </summary>
         private VolumetricLightBeamHD _vlbHD;
         private bool _vlbResolved;
+        private float _cachedBeamIntensityMultiplier = -1f;
+        private float _cachedBeamNoiseIntensity = -1f;
+        private float _cachedBeamSideSoftness = -1f;
+        private float _cachedBeamJitter = -1f;
 
         /// <summary>
         /// Обновляет интенсивность volumetric beam без рефлексии.
@@ -781,7 +821,11 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void UpdateVolumetricBeam(float intensity)
         {
-            if (volumetricBeam == null) return;
+            if (volumetricBeam == null)
+                ResolveVolumetricBeam();
+
+            if (volumetricBeam == null)
+                return;
 
             if (!_vlbResolved)
             {
@@ -799,7 +843,48 @@ namespace Hecton8.Gameplay
 
             if (_vlbHD != null)
             {
-                _vlbHD.intensityMultiplier = intensity / Mathf.Max(0.01f, GetModeIntensity());
+                float multiplier = intensity / Mathf.Max(0.01f, GetModeIntensity());
+                float depth = 0f;
+                float noiseIntensity = 0f;
+                float sideSoftness = 1.5f;
+                float jitter = 0f;
+
+                if (enableUnderwaterBeamResponse && _playerMovement != null)
+                {
+                    depth = Mathf.Max(0f, _playerMovement.CurrentDepth);
+                    float depthFactor = Mathf.Clamp01(depth / Mathf.Max(0.01f, underwaterBeamFullDepth));
+                    multiplier *= Mathf.Lerp(1f, underwaterBeamMaxMultiplier, depthFactor);
+                    noiseIntensity = underwaterBeamNoiseMax * depthFactor;
+                    sideSoftness = Mathf.Lerp(1.5f, underwaterBeamSideSoftness, depthFactor);
+                    jitter = underwaterBeamJitterMax * depthFactor;
+                }
+
+                if (Mathf.Abs(_cachedBeamIntensityMultiplier - multiplier) > 0.01f)
+                {
+                    _vlbHD.intensityMultiplier = multiplier;
+                    _cachedBeamIntensityMultiplier = multiplier;
+                }
+
+                if (Mathf.Abs(_cachedBeamNoiseIntensity - noiseIntensity) > 0.005f)
+                {
+                    _vlbHD.noiseIntensity = noiseIntensity;
+                    _cachedBeamNoiseIntensity = noiseIntensity;
+                }
+
+                if (Mathf.Abs(_cachedBeamSideSoftness - sideSoftness) > 0.01f)
+                {
+                    _vlbHD.sideSoftness = sideSoftness;
+                    _cachedBeamSideSoftness = sideSoftness;
+                }
+
+                if (Mathf.Abs(_cachedBeamJitter - jitter) > 0.005f)
+                {
+                    _vlbHD.jitteringFactor = jitter;
+                    _cachedBeamJitter = jitter;
+                }
+
+                _debugVolumetricMultiplier = multiplier;
+                _debugVolumetricDepth = depth;
             }
         }
 

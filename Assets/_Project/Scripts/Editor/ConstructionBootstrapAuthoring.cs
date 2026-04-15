@@ -19,6 +19,10 @@ namespace Hecton8.EditorTools
         private const string GhostPrefabFolder = "Assets/_Project/Prefabs/Construction/Ghosts";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
         private const string TitaniumPrefabPath = "Assets/_Project/Prefabs/Item_Titanium.prefab";
+        private const string DustParticlesPrefabPath = "Assets/VolumetricLightBeam/Resources/DustParticles.prefab";
+        private const string LeakVfxChildName = "LeakVfx";
+        private const string RuinClusterMediumPrefabName = "PFB_Ruin_ClusterMedium.prefab";
+        private const string RuinMegastructurePrefabName = "PFB_Ruin_Megastructure.prefab";
 
         [MenuItem("Hecton/Authoring/Rebuild Starter Construction Kit", priority = 215)]
         public static void RebuildStarterConstructionKit()
@@ -1300,6 +1304,8 @@ namespace Hecton8.EditorTools
                 SerializedObject moduleSo = new SerializedObject(baseModule);
                 moduleSo.FindProperty("interiorTrigger").objectReferenceValue = trigger;
                 moduleSo.ApplyModifiedPropertiesWithoutUndo();
+
+                AttachModuleLeakVfx(root.transform, baseModule, scale, primitiveType);
             }
 
             int socketsLayer = LayerMask.NameToLayer("Sockets");
@@ -1364,6 +1370,111 @@ namespace Hecton8.EditorTools
                 new LOD(0.04f, lod2Renderers.ToArray())
             });
             lodGroup.RecalculateBounds();
+        }
+
+        private static void AttachModuleLeakVfx(Transform root, BaseModule baseModule, Vector3 scale, PrimitiveType primitiveType)
+        {
+            if (root == null || baseModule == null)
+                return;
+
+            GameObject dustParticlesPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DustParticlesPrefabPath);
+            if (dustParticlesPrefab == null)
+                return;
+
+            Transform visualRoot = root.Find("LOD0");
+            if (visualRoot == null)
+                visualRoot = root;
+
+            GameObject existingLeak = FindChild(visualRoot, LeakVfxChildName);
+            if (existingLeak != null)
+                Object.DestroyImmediate(existingLeak);
+
+            GameObject leakObject = PrefabUtility.InstantiatePrefab(dustParticlesPrefab, visualRoot) as GameObject;
+            if (leakObject == null)
+                return;
+
+            leakObject.name = LeakVfxChildName;
+
+            if (!leakObject.TryGetComponent(out ParticleSystem leakParticleSystem))
+                return;
+
+            ConfigureModuleLeakVfx(leakObject.transform, leakParticleSystem, scale, primitiveType);
+
+            SerializedObject moduleSo = new SerializedObject(baseModule);
+            moduleSo.FindProperty("leakVfx").objectReferenceValue = leakParticleSystem;
+            moduleSo.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureModuleLeakVfx(Transform leakTransform, ParticleSystem leakParticleSystem, Vector3 scale, PrimitiveType primitiveType)
+        {
+            if (leakTransform == null || leakParticleSystem == null)
+                return;
+
+            bool isFlatModule = primitiveType == PrimitiveType.Cube && scale.y <= 0.5f;
+
+            Vector3 localPosition;
+            Vector3 localScale;
+            Vector3 shapeScale;
+            float lifetime;
+            float startSpeed;
+            float startSize;
+            float emissionRate;
+            float maxParticleSize;
+            float sortingFudge;
+
+            if (isFlatModule)
+            {
+                localPosition = new Vector3(scale.x * 0.34f, 0.08f, scale.z * 0.28f);
+                localScale = new Vector3(0.14f, 0.22f, 0.14f);
+                shapeScale = new Vector3(0.1f, 0.02f, 0.1f);
+                lifetime = 2.4f;
+                startSpeed = 0.42f;
+                startSize = 0.04f;
+                emissionRate = 5f;
+                maxParticleSize = 0.09f;
+                sortingFudge = 1.5f;
+            }
+            else
+            {
+                localPosition = new Vector3(scale.x * 0.36f, -scale.y * 0.26f, scale.z * 0.18f);
+                localScale = new Vector3(0.18f, 0.32f, 0.18f);
+                shapeScale = new Vector3(0.14f, 0.06f, 0.14f);
+                lifetime = 2.9f;
+                startSpeed = 0.58f;
+                startSize = 0.05f;
+                emissionRate = 7f;
+                maxParticleSize = 0.12f;
+                sortingFudge = 2f;
+            }
+
+            leakTransform.localPosition = localPosition;
+            leakTransform.localRotation = Quaternion.identity;
+            leakTransform.localScale = localScale;
+
+            ParticleSystem.MainModule main = leakParticleSystem.main;
+            main.playOnAwake = false;
+            main.duration = 5.1f;
+            main.simulationSpeed = 0.42f;
+            main.maxParticles = 64;
+            main.startLifetime = lifetime;
+            main.startSpeed = startSpeed;
+            main.startSize = startSize;
+            main.cullingMode = ParticleSystemCullingMode.PauseAndCatchup;
+
+            ParticleSystem.EmissionModule emission = leakParticleSystem.emission;
+            emission.rateOverTime = emissionRate;
+
+            ParticleSystem.ShapeModule shape = leakParticleSystem.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = shapeScale;
+
+            ParticleSystemRenderer renderer = leakParticleSystem.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.lengthScale = 1f;
+                renderer.sortingFudge = sortingFudge;
+                renderer.maxParticleSize = maxParticleSize;
+            }
         }
 
         private static void AddModuleTrimSet(Transform parent, Vector3 scale, Material material, bool includeCrossMembers, List<Renderer> renderers)
@@ -1486,10 +1597,120 @@ namespace Hecton8.EditorTools
             collider.center = new Vector3(0f, colliderSize.y * 0.5f, 0f);
 
             BuildCompositeVisuals(root.transform, lodSpecs);
+            AttachCompositeRuinLeakVfx(root.transform, prefabPath);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             Object.DestroyImmediate(root);
             return prefab;
+        }
+
+        private static void AttachCompositeRuinLeakVfx(Transform root, string prefabPath)
+        {
+            if (root == null || string.IsNullOrEmpty(prefabPath))
+                return;
+
+            if (prefabPath.EndsWith(RuinClusterMediumPrefabName))
+            {
+                AttachAmbientLeakPlume(
+                    root,
+                    "RuinLeakPlume_Main",
+                    new Vector3(2.35f, 1.18f, -0.65f),
+                    new Vector3(0.2f, 0.42f, 0.2f),
+                    6f,
+                    3.1f,
+                    0.46f,
+                    0.055f,
+                    1.8f,
+                    0.11f);
+                return;
+            }
+
+            if (prefabPath.EndsWith(RuinMegastructurePrefabName))
+            {
+                AttachAmbientLeakPlume(
+                    root,
+                    "RuinLeakPlume_Core",
+                    new Vector3(2.9f, 2.35f, -2.2f),
+                    new Vector3(0.24f, 0.52f, 0.24f),
+                    7f,
+                    3.4f,
+                    0.5f,
+                    0.06f,
+                    2f,
+                    0.12f);
+                AttachAmbientLeakPlume(
+                    root,
+                    "RuinLeakPlume_Bridge",
+                    new Vector3(-1.1f, 1.05f, 4.55f),
+                    new Vector3(0.2f, 0.44f, 0.2f),
+                    5f,
+                    2.9f,
+                    0.42f,
+                    0.05f,
+                    1.6f,
+                    0.1f);
+            }
+        }
+
+        private static void AttachAmbientLeakPlume(
+            Transform root,
+            string childName,
+            Vector3 localPosition,
+            Vector3 localScale,
+            float emissionRate,
+            float lifetime,
+            float startSpeed,
+            float startSize,
+            float sortingFudge,
+            float maxParticleSize)
+        {
+            if (root == null)
+                return;
+
+            GameObject dustParticlesPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DustParticlesPrefabPath);
+            if (dustParticlesPrefab == null)
+                return;
+
+            Transform visualRoot = root.Find("LOD0");
+            if (visualRoot == null)
+                visualRoot = root;
+
+            GameObject existingLeak = FindChild(visualRoot, childName);
+            if (existingLeak != null)
+                Object.DestroyImmediate(existingLeak);
+
+            GameObject leakObject = PrefabUtility.InstantiatePrefab(dustParticlesPrefab, visualRoot) as GameObject;
+            if (leakObject == null)
+                return;
+
+            leakObject.name = childName;
+
+            if (!leakObject.TryGetComponent(out ParticleSystem leakParticleSystem))
+                return;
+
+            leakObject.transform.localPosition = localPosition;
+            leakObject.transform.localRotation = Quaternion.identity;
+            leakObject.transform.localScale = localScale;
+
+            ParticleSystem.MainModule main = leakParticleSystem.main;
+            main.playOnAwake = true;
+            main.simulationSpeed = 0.38f;
+            main.maxParticles = 72;
+            main.startLifetime = lifetime;
+            main.startSpeed = startSpeed;
+            main.startSize = startSize;
+            main.cullingMode = ParticleSystemCullingMode.PauseAndCatchup;
+
+            ParticleSystem.EmissionModule emission = leakParticleSystem.emission;
+            emission.rateOverTime = emissionRate;
+
+            ParticleSystemRenderer renderer = leakParticleSystem.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.lengthScale = 1f;
+                renderer.sortingFudge = sortingFudge;
+                renderer.maxParticleSize = maxParticleSize;
+            }
         }
 
         private static void BuildCompositeVisuals(Transform parent, CompositeLodSpec[] lodSpecs)

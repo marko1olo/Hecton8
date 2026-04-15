@@ -250,3 +250,18 @@ Only then can status change from "PENDING VERIFICATION" to "VERIFIED".
 ## SUMMARY
 
 Graphics settings system is **production-ready** at the backend level. All code is zero GC, fully compliant with AGENTS.md, and follows Subnautica-style design principles. UI structure is 90% complete. **Manual Inspector wiring required** (15-20 min) before testing can begin. Follow SETTINGS_WIRING_GUIDE.md for step-by-step instructions.
+# CURRENT STATUS OVERRIDE
+
+This summary was stale. The previous version incorrectly said manual Inspector wiring was still pending.
+
+Verified current state:
+- `01_MAIN_MENU.unity` now contains an authored settings panel hierarchy, not a half-built placeholder
+- `SettingsPanel` serialized fields are assigned
+- `[SettingsManager]` references `Main Camera`, `MasterMixer`, and a scene `[SETTINGS_VOLUME]`
+- `MainMenuController.btnBackFromSettings` is assigned
+
+Critical correction:
+- Bloom and Motion Blur have a scene volume owner
+- Ambient Occlusion is still only persisted in data/UI; it is not wired to a runtime renderer-feature owner in current code
+
+Status remains `PENDING VERIFICATION` until play-mode logs/profiler data exist.

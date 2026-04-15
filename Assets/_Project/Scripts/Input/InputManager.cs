@@ -37,6 +37,7 @@ namespace Hecton8.Input
         private bool _initialActivationComplete;
         private bool _restorePlayerInputOnEnable;
         private bool _restoreUiInputOnEnable;
+        private bool _hasEnabledOnce;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -185,10 +186,15 @@ namespace Hecton8.Input
 
         private void OnEnable()
         {
-            if (_isShuttingDown)
+            if (_isShuttingDown || _instance != this)
                 return;
 
-            EnsureInputActionsInitialized();
+            if (_hasEnabledOnce)
+                ReinitializeInputActions();
+            else
+                EnsureInputActionsInitialized();
+
+            _hasEnabledOnce = true;
 
             if (!_initialActivationComplete)
                 return;
@@ -202,8 +208,8 @@ namespace Hecton8.Input
 
         private void OnDisable()
         {
-            _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
-            _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
+            if (_instance != this)
+                return;
 
             SafeDisableActionMapForTeardown(_playerActionMap);
             SafeDisableActionMapForTeardown(_uiActionMap);
@@ -571,6 +577,26 @@ namespace Hecton8.Input
             
             return null;
         }
+
+        public InputActionMap GetActionMap(string actionMap = "Player")
+        {
+            if (!EnsureInputActionsInitialized())
+                return null;
+
+            try
+            {
+                if (actionMap == "Player")
+                    return _playerActionMap;
+                if (actionMap == "UI")
+                    return _uiActionMap;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
+            return null;
+        }
         
         public string GetBindingDisplayString(string actionName, string actionMap = "Player", int bindingIndex = 0)
         {
@@ -675,6 +701,15 @@ namespace Hecton8.Input
         // CLEANUP
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         
+        private void ReinitializeInputActions()
+        {
+            if (_isShuttingDown)
+                return;
+
+            ResetInputActionCaches(disposeRuntimeAsset: true);
+            InitializeInputActions();
+        }
+
         private void OnDestroy()
         {
             if (_instance == this)

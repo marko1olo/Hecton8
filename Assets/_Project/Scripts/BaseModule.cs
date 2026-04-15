@@ -100,6 +100,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         private const float REFUND_RATIO = 0.8f;
 
+        /// <summary>
+        /// Canonical child name for module-local leak particle owner.
+        /// Used as a cold-path fallback when serialized reference is missing.
+        /// </summary>
+        private const string LeakVfxChildName = "LeakVfx";
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -1027,6 +1033,23 @@ namespace Hecton8.Gameplay
         {
             if (_moduleMarker == null)
                 TryGetComponent(out _moduleMarker);
+
+            if (leakVfx == null)
+                ResolveLeakVfxReference();
+        }
+
+        private void ResolveLeakVfxReference()
+        {
+            Transform leakTransform = transform.Find(LeakVfxChildName);
+            if (leakTransform == null)
+            {
+                Transform lod0Transform = transform.Find("LOD0");
+                if (lod0Transform != null)
+                    leakTransform = lod0Transform.Find(LeakVfxChildName);
+            }
+
+            if (leakTransform != null)
+                leakTransform.TryGetComponent(out leakVfx);
         }
 
         private bool TryGetInteriorOverlapQuery(out Vector3 worldCenter, out Vector3 halfExtents, out Quaternion worldRotation)

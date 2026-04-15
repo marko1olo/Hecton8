@@ -22,13 +22,28 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Shell Verification Runtime Smoke Tester")]
     public sealed class ShellVerificationRuntimeSmokeTester : MonoBehaviour
     {
+        private enum ResumePhase
+        {
+            None = 0,
+            AwaitMenuShell = 1,
+            AwaitWorldNewGame = 2,
+            AwaitPauseRecovery = 3,
+            AwaitInputRestoration = 4,
+            AwaitReturnToMenu = 5
+        }
+
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const float AutoStartRetryWindow = 3f;
+        private const float EditorStableWindowSeconds = 0.5f;
+        private const string ResumePhaseKey = "Hecton8.ShellSmoke.ResumePhase";
+        private const string ResumeSaveSlotKey = "Hecton8.ShellSmoke.ResumeSaveSlot";
 
         [Header("Execution")]
         [SerializeField] private bool runOnStart = true;
+        [SerializeField, Tooltip("Suppress automatic smoke execution while the runtime profiler owns the baseline pass.")]
+        private bool suppressAutoStartWhileRuntimeProfilerActive = true;
         [SerializeField] private float startupDelay = 0.75f;
         [SerializeField] private float actionTimeout = 20f;
         [SerializeField] private float settleDelay = 0.25f;
@@ -106,6 +121,23 @@ namespace Hecton8.Dev
             if (!Application.isPlaying || _isRunning || _autoStartScheduled)
                 return;
 
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            bool canAutoStartFromScene =
+                string.Equals(activeSceneName, BootstrapSceneName, System.StringComparison.Ordinal) ||
+                string.Equals(activeSceneName, MainMenuSceneName, System.StringComparison.Ordinal) ||
+                (string.Equals(activeSceneName, WorldSceneName, System.StringComparison.Ordinal) && HasPendingResumeState());
+            if (!canAutoStartFromScene)
+            {
+                LogVerbose($"Auto-start skipped in scene '{activeSceneName}'");
+                return;
+            }
+
+            if (ShouldSuppressAutoStart())
+            {
+                LogVerbose("Auto-start suppressed because RuntimePerformanceProfiler is active.");
+                return;
+            }
+
             _autoStartScheduled = true;
             LogVerbose("Auto-start scheduled");
             StartCoroutine(DeferredAutoStartRoutine());
@@ -165,13 +197,26 @@ namespace Hecton8.Dev
                 if (startupDelay > 0f)
                     yield return new WaitForSecondsRealtime(startupDelay);
 
+                yield return WaitForEditorStability();
+                if (string.Equals(_debugLastPhase, "Failed", System.StringComparison.Ordinal))
+                    yield break;
+
                 AutoResolve();
                 EnsureVerifiers();
 
                 string activeSceneName = SceneManager.GetActiveScene().name;
+                ResumePhase resumePhase = LoadResumePhase();
+                string resumeSaveSlot = LoadResumeSaveSlot();
+                if (CanResumeFromWorld(activeSceneName, resumePhase))
+                {
+                    yield return ResumeFromWorldPhase(resumePhase, resumeSaveSlot);
+                    yield break;
+                }
+
                 if (string.Equals(activeSceneName, BootstrapSceneName, System.StringComparison.Ordinal))
                 {
                     _debugLastPhase = "BootstrapToMenu";
+                    SaveResumeState(ResumePhase.AwaitMenuShell);
                     Debug.Log("[ShellSmoke] Waiting for bootstrap-to-menu route.");
                     yield return WaitUntil(IsMenuRouteReady, "Bootstrap-to-menu route");
                     activeSceneName = SceneManager.GetActiveScene().name;
@@ -198,6 +243,7 @@ namespace Hecton8.Dev
                 Debug.Log("[ShellSmoke] Starting shell verification smoke pass.");
 
                 _debugLastPhase = "NewGameTransition";
+                SaveResumeState(ResumePhase.AwaitWorldNewGame);
                 _mainMenuController.StartGame(string.Empty);
                 _sceneVerifier.VerifyNewGameTransition();
                 yield return WaitUntil(IsWorldNewGameReady, "New-game world handoff");
@@ -208,6 +254,7 @@ namespace Hecton8.Dev
                 }
 
                 _debugLastPhase = "PauseRecovery";
+                SaveResumeState(ResumePhase.AwaitPauseRecovery);
                 yield return WaitUntil(HasPauseMenuInWorld, "Pause menu resolve in world");
                 if (!HasPauseMenuInWorld())
                 {
@@ -229,6 +276,7 @@ namespace Hecton8.Dev
                 }
 
                 _debugLastPhase = "InputRestoration";
+                SaveResumeState(ResumePhase.AwaitInputRestoration);
                 (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
                 _stateVerifier.VerifyInputRestoration();
                 yield return WaitUntil(
@@ -243,6 +291,7 @@ namespace Hecton8.Dev
                 }
 
                 _debugLastPhase = "ReturnToMenu";
+                SaveResumeState(ResumePhase.AwaitReturnToMenu);
                 (stateRunBefore, statePassBefore, stateFailBefore) = _stateVerifier.GetStats();
                 _stateVerifier.VerifyReturnToMenuRecovery();
                 yield return WaitUntil(IsMenuRouteReady, "Return-to-menu route");
@@ -254,6 +303,7 @@ namespace Hecton8.Dev
                     yield break;
                 }
 
+                ClearResumeState();
                 if (runLoadSlotIfAvailable)
                 {
                     _debugLastPhase = "LoadSlot";
@@ -290,9 +340,7 @@ namespace Hecton8.Dev
                     }
                 }
 
-                _debugLastPhase = "Complete";
-                _debugLastPass = true;
-                Debug.Log($"[ShellSmoke] COMPLETE pass=True saveSlot={_debugLastSaveSlot}");
+                CompleteRun();
             }
             finally
             {
@@ -324,6 +372,38 @@ namespace Hecton8.Dev
             }
 
             Fail($"{label} timed out after {actionTimeout:0.00}s.");
+        }
+
+        private IEnumerator WaitForEditorStability()
+        {
+#if UNITY_EDITOR
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(1f, actionTimeout);
+            float stableSince = -1f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                bool isCompiling = UnityEditor.EditorApplication.isCompiling;
+                bool isUpdating = UnityEditor.EditorApplication.isUpdating;
+                bool isChangingPlayMode = UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode;
+                if (!isCompiling && !isUpdating && !isChangingPlayMode)
+                {
+                    if (stableSince < 0f)
+                        stableSince = Time.realtimeSinceStartup;
+
+                    if ((Time.realtimeSinceStartup - stableSince) >= EditorStableWindowSeconds)
+                        yield break;
+                }
+                else
+                {
+                    stableSince = -1f;
+                }
+
+                yield return null;
+            }
+
+            Fail("Editor did not reach a stable non-compiling state before smoke start.");
+#else
+            yield break;
+#endif
         }
 
         private bool IsWorldNewGameReady()
@@ -452,6 +532,119 @@ namespace Hecton8.Dev
                 $"isWorld={isWorld} hasPauseMenu={hasPauseMenu}");
         }
 
+        private IEnumerator ResumeFromWorldPhase(ResumePhase resumePhase, string resumeSaveSlot)
+        {
+            Debug.Log($"[ShellSmoke] Resume start phase={resumePhase} scene={SceneManager.GetActiveScene().name} slot={resumeSaveSlot}");
+
+            if (resumePhase == ResumePhase.AwaitWorldNewGame && !IsWorldNewGameReady())
+            {
+                Fail("Resume requested in world, but new-game handoff state is invalid.");
+                yield break;
+            }
+
+            if (resumePhase == ResumePhase.AwaitWorldNewGame || resumePhase == ResumePhase.AwaitPauseRecovery)
+            {
+                _debugLastPhase = "PauseRecovery";
+                SaveResumeState(ResumePhase.AwaitPauseRecovery, resumeSaveSlot);
+                yield return WaitUntil(HasPauseMenuInWorld, "Pause menu resolve in world");
+                if (!HasPauseMenuInWorld())
+                {
+                    Fail("PauseMenuController not found after world load.");
+                    yield break;
+                }
+
+                (int pauseRunBefore, int pausePassBefore, int pauseFailBefore) = _pauseVerifier.GetStats();
+                _pauseVerifier.TestPauseMenuNavigation();
+                yield return WaitUntil(
+                    () => HasVerifierAdvanced(_pauseVerifier.GetStats(), pauseRunBefore, pausePassBefore, pauseFailBefore),
+                    "PauseSystemVerifier completion");
+
+                (int pauseRunAfter, int pausePassAfter, int pauseFailAfter) = _pauseVerifier.GetStats();
+                if (!HasVerifierPassed(pauseRunBefore, pausePassBefore, pauseFailBefore, pauseRunAfter, pausePassAfter, pauseFailAfter))
+                {
+                    Fail("PauseSystemVerifier did not report a passing result.");
+                    yield break;
+                }
+
+                resumePhase = ResumePhase.AwaitInputRestoration;
+            }
+
+            if (resumePhase == ResumePhase.AwaitInputRestoration)
+            {
+                _debugLastPhase = "InputRestoration";
+                SaveResumeState(ResumePhase.AwaitInputRestoration, resumeSaveSlot);
+                (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
+                _stateVerifier.VerifyInputRestoration();
+                yield return WaitUntil(
+                    () => HasVerifierAdvanced(_stateVerifier.GetStats(), stateRunBefore, statePassBefore, stateFailBefore),
+                    "StateRecoveryVerifier input completion");
+
+                (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
+                if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
+                {
+                    Fail("StateRecoveryVerifier input restoration failed.");
+                    yield break;
+                }
+
+                resumePhase = ResumePhase.AwaitReturnToMenu;
+            }
+
+            if (resumePhase == ResumePhase.AwaitReturnToMenu)
+            {
+                _debugLastPhase = "ReturnToMenu";
+                SaveResumeState(ResumePhase.AwaitReturnToMenu, resumeSaveSlot);
+                (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
+                _stateVerifier.VerifyReturnToMenuRecovery();
+                yield return WaitUntil(IsMenuRouteReady, "Return-to-menu route");
+
+                (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
+                if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
+                {
+                    Fail("StateRecoveryVerifier return-to-menu failed.");
+                    yield break;
+                }
+            }
+
+            ClearResumeState();
+            if (runLoadSlotIfAvailable)
+            {
+                _debugLastPhase = "LoadSlot";
+                string saveSlot = ResolveExistingSaveSlot();
+                _debugLastSaveSlot = saveSlot;
+                if (!string.IsNullOrEmpty(saveSlot))
+                {
+                    (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
+                    _stateVerifier.VerifyLoadSlotFromShellRecovery();
+                    yield return WaitUntil(() => IsWorldLoadReady(saveSlot), "Load-slot world handoff");
+
+                    (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
+                    if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
+                    {
+                        Fail($"StateRecoveryVerifier load-slot recovery failed for {saveSlot}.");
+                        yield break;
+                    }
+
+                    _debugLastPhase = "ReturnToMenuAfterLoad";
+                    (stateRunBefore, statePassBefore, stateFailBefore) = _stateVerifier.GetStats();
+                    _stateVerifier.VerifyReturnToMenuRecovery();
+                    yield return WaitUntil(IsMenuRouteReady, "Return-to-menu after load");
+
+                    (stateRunAfter, statePassAfter, stateFailAfter) = _stateVerifier.GetStats();
+                    if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
+                    {
+                        Fail("StateRecoveryVerifier return-to-menu after load failed.");
+                        yield break;
+                    }
+                }
+                else
+                {
+                    LogVerbose("Skipping load-slot verification because no save slot is available.");
+                }
+            }
+
+            CompleteRun();
+        }
+
         private static bool HasVerifierAdvanced((int testsRun, int testsPassed, int testsFailed) stats, int beforeRun, int beforePass, int beforeFail)
         {
             return stats.testsRun > beforeRun || stats.testsPassed > beforePass || stats.testsFailed > beforeFail;
@@ -464,6 +657,7 @@ namespace Hecton8.Dev
 
         private void Fail(string issue)
         {
+            ClearResumeState();
             _debugLastPass = false;
             _debugLastIssue = string.IsNullOrEmpty(issue) ? "Unknown failure." : issue;
             _debugLastPhase = "Failed";
@@ -474,6 +668,91 @@ namespace Hecton8.Dev
         {
             if (verboseLogging)
                 Debug.Log($"[ShellSmoke] {message}");
+        }
+
+        private bool ShouldSuppressAutoStart()
+        {
+            if (!suppressAutoStartWhileRuntimeProfilerActive)
+                return false;
+
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            if (string.Equals(activeSceneName, MainMenuSceneName, System.StringComparison.Ordinal))
+                return false;
+
+            if (HasPendingResumeState())
+                return false;
+
+            RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
+            return profiler != null &&
+                   profiler.IsProfilingActive &&
+                   string.Equals(activeSceneName, BootstrapSceneName, System.StringComparison.Ordinal);
+        }
+
+        public bool WantsAutoStart()
+        {
+            return runOnStart;
+        }
+
+        internal static bool HasPersistedResumeState()
+        {
+            return HasPendingResumeState();
+        }
+
+        private static bool CanResumeFromWorld(string activeSceneName, ResumePhase resumePhase)
+        {
+            if (!string.Equals(activeSceneName, WorldSceneName, System.StringComparison.Ordinal))
+                return false;
+
+            return resumePhase == ResumePhase.AwaitWorldNewGame ||
+                   resumePhase == ResumePhase.AwaitPauseRecovery ||
+                   resumePhase == ResumePhase.AwaitInputRestoration ||
+                   resumePhase == ResumePhase.AwaitReturnToMenu;
+        }
+
+        private static ResumePhase LoadResumePhase()
+        {
+            int rawPhase = PlayerPrefs.GetInt(ResumePhaseKey, 0);
+            if (rawPhase < (int)ResumePhase.None || rawPhase > (int)ResumePhase.AwaitReturnToMenu)
+                return ResumePhase.None;
+
+            return (ResumePhase)rawPhase;
+        }
+
+        private static string LoadResumeSaveSlot()
+        {
+            return PlayerPrefs.GetString(ResumeSaveSlotKey, string.Empty);
+        }
+
+        private static bool HasPendingResumeState()
+        {
+            return LoadResumePhase() != ResumePhase.None;
+        }
+
+        private static void PersistResumeState(ResumePhase resumePhase, string resumeSaveSlot)
+        {
+            PlayerPrefs.SetInt(ResumePhaseKey, (int)resumePhase);
+            PlayerPrefs.SetString(ResumeSaveSlotKey, resumeSaveSlot ?? string.Empty);
+            PlayerPrefs.Save();
+        }
+
+        private void SaveResumeState(ResumePhase resumePhase, string resumeSaveSlot = "")
+        {
+            PersistResumeState(resumePhase, resumeSaveSlot);
+        }
+
+        private static void ClearResumeState()
+        {
+            PlayerPrefs.DeleteKey(ResumePhaseKey);
+            PlayerPrefs.DeleteKey(ResumeSaveSlotKey);
+            PlayerPrefs.Save();
+        }
+
+        private void CompleteRun()
+        {
+            ClearResumeState();
+            _debugLastPhase = "Complete";
+            _debugLastPass = true;
+            Debug.Log($"[ShellSmoke] COMPLETE pass=True saveSlot={_debugLastSaveSlot}");
         }
     }
 }

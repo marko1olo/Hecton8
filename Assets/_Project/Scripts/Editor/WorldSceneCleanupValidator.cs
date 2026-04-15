@@ -60,7 +60,6 @@ namespace Hecton8.Editor
         public static void ValidateWorldSceneCleanup()
         {
             Scene currentScene = SceneManager.GetActiveScene();
-            bool needsReload = false;
 
             if (currentScene.path != ProductionWorldScene)
             {
@@ -75,7 +74,6 @@ namespace Hecton8.Editor
 
                 EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
                 EditorSceneManager.OpenScene(ProductionWorldScene, OpenSceneMode.Single);
-                needsReload = true;
             }
 
             List<GameObject> tempObjects = new List<GameObject>(); // COLD ALLOC: temp object collection for validation

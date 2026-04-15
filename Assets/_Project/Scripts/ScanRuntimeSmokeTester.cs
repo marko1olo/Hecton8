@@ -204,7 +204,17 @@ namespace Hecton8.Gameplay
 
                 if (candidate is Component component)
                 {
-                    if (!component.gameObject.scene.IsValid())
+                    GameObject owner = null;
+                    try
+                    {
+                        owner = component.gameObject;
+                    }
+                    catch (System.Exception)
+                    {
+                        continue;
+                    }
+
+                    if (owner == null || !owner.scene.IsValid())
                         continue;
 
                     return candidate;

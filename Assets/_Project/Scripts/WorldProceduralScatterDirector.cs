@@ -1473,6 +1473,7 @@ namespace Hecton8.World
                 diagnosticsEndTimestamp,
                 evaluatedCells);
             ScatterRebuildProfileSnapshot snapshot = ScatterDiagnosticsTracker.BuildRebuildProfileSnapshot(in context);
+            RuntimePerformanceProfiler.RecordScatterRebuildProfile(in snapshot);
             ApplyScatterRebuildProfileSnapshot(in snapshot);
             EmitScatterRebuildProfileSnapshot(in snapshot);
         }

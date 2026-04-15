@@ -60,6 +60,7 @@ namespace Hecton8.Input
         public event Action<string, string, int> OnRebindStarted;
         public event Action<string, string, int, string> OnRebindCompleted;
         public event Action<string, string, int> OnRebindCanceled;
+        public event Action<string, string, string, Action, Action> OnConflictDetected; // actionName, conflictingAction, newBinding, onConfirm, onCancel
         public event Action OnOverridesLoaded;
         public event Action OnOverridesSaved;
         public event Action OnOverridesCleared;
@@ -189,6 +190,30 @@ namespace Hecton8.Input
                     string.IsNullOrEmpty(display))
                 {
                     display = "--";
+                }
+
+                // TASK 16: Conflict detection
+                string conflictingAction = DetectConflict(action, bindingIndex, actionMap);
+                if (!string.IsNullOrEmpty(conflictingAction))
+                {
+                    // Store state for conflict resolution
+                    string capturedActionName = actionName;
+                    string capturedActionMap = actionMap;
+                    int capturedBindingIndex = bindingIndex;
+                    string capturedDisplay = display;
+                    bool capturedWasEnabled = wasEnabled;
+
+                    DisposeActiveRebind();
+
+                    // Invoke conflict event with confirm/cancel callbacks
+                    OnConflictDetected?.Invoke(
+                        capturedActionName,
+                        conflictingAction,
+                        capturedDisplay,
+                        () => CompleteRebindAfterConflictResolution(capturedActionName, capturedActionMap, capturedBindingIndex, capturedDisplay), // Confirm
+                        () => CancelRebindAfterConflict(action, capturedActionName, capturedActionMap, capturedBindingIndex, capturedWasEnabled) // Cancel
+                    );
+                    return;
                 }
 
                 DisposeActiveRebind();
@@ -356,6 +381,111 @@ namespace Hecton8.Input
         private void LogWarning(string message)
         {
             Debug.LogWarning($"[RebindingManager] {message}");
+        }
+
+        /// <summary>
+        /// TASK 16: Detects if the new binding conflicts with another action.
+        /// Returns the name of the conflicting action, or null if no conflict.
+        /// SAFETY: Validates action map and actions collection before iteration.
+        /// </summary>
+        private string DetectConflict(InputAction currentAction, int currentBindingIndex, string currentActionMap)
+        {
+            if (currentAction == null || InputManager.Instance == null)
+                return null;
+
+            string newPath;
+            try
+            {
+                newPath = currentAction.bindings[currentBindingIndex].effectivePath;
+            }
+            catch
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(newPath))
+                return null;
+
+            // Check all actions in the same action map for conflicts
+            InputActionMap actionMap = InputManager.Instance.GetActionMap(currentActionMap);
+            if (actionMap == null)
+                return null;
+
+            // SAFETY: ReadOnlyArray is a struct; only the count check is meaningful here.
+            if (actionMap.actions.Count == 0)
+                return null;
+
+            foreach (InputAction action in actionMap.actions)
+            {
+                if (action == null || action == currentAction)
+                    continue;
+
+                for (int i = 0; i < action.bindings.Count; i++)
+                {
+                    try
+                    {
+                        InputBinding binding = action.bindings[i];
+                        
+                        // Skip composite roots and parts
+                        if (binding.isComposite || binding.isPartOfComposite)
+                            continue;
+
+                        string existingPath = binding.effectivePath;
+                        if (string.IsNullOrEmpty(existingPath))
+                            continue;
+
+                        // Check if paths match
+                        if (string.Equals(existingPath, newPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return action.name;
+                        }
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// TASK 16: Completes rebind after user confirms conflict resolution.
+        /// </summary>
+        private void CompleteRebindAfterConflictResolution(string actionName, string actionMap, int bindingIndex, string display)
+        {
+            if (saveOverridesAfterRebind)
+            {
+                SaveOverrides();
+            }
+
+            OnRebindCompleted?.Invoke(actionName, actionMap, bindingIndex, display);
+            Log($"Rebind complete (after conflict resolution): {actionMap}/{actionName}[{bindingIndex}] => {display}");
+        }
+
+        /// <summary>
+        /// TASK 16: Cancels rebind after user rejects conflict resolution.
+        /// Removes the binding override to restore previous state.
+        /// </summary>
+        private void CancelRebindAfterConflict(InputAction action, string actionName, string actionMap, int bindingIndex, bool wasEnabled)
+        {
+            if (action != null)
+            {
+                try
+                {
+                    action.RemoveBindingOverride(bindingIndex);
+                    if (wasEnabled)
+                        action.Enable();
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"Failed to remove binding override after conflict cancel: {ex.Message}");
+                }
+            }
+
+            OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
+            Log($"Rebind canceled (conflict rejected): {actionMap}/{actionName}[{bindingIndex}]");
         }
     }
 }

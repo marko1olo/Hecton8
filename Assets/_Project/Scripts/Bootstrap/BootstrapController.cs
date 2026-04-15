@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Hecton8.Core;
+using Hecton8.Dev;
 using Hecton8.Input;
 using Hecton8.SaveSystem;
 
@@ -54,6 +55,7 @@ namespace Hecton8.Bootstrap
         private const string SaveManagerRuntimeName = "[SaveManager]";
         private const string ObjectPoolManagerRuntimeName = "[ObjectPoolManager]";
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
+        private const string RuntimePerformanceProfilerRuntimeName = "[RuntimePerformanceProfiler]";
         private static BootstrapController _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -161,6 +163,20 @@ namespace Hecton8.Bootstrap
             Log("  ✓ GameTickManager initialized");
 
             // ── Save Manager ──
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Log("[1.5/5] Initializing RuntimePerformanceProfiler...");
+            RuntimePerformanceProfiler runtimePerformanceProfiler = EnsureRuntimePerformanceProfiler();
+            if (runtimePerformanceProfiler != null)
+            {
+                runtimePerformanceProfiler.ConfigureForDevRun(
+                    autoStartOnEnable: true,
+                    enableBudgetViolationLogging: true,
+                    enableWindowLogging: false,
+                    sampleWindow: 2f);
+                EnsureDontDestroyOnLoad(runtimePerformanceProfiler.gameObject);
+                Log("  RuntimePerformanceProfiler initialized");
+            }
+#endif
             Log("[2/5] Initializing SaveManager...");
             SaveManager saveManager = EnsureSaveManager();
             if (saveManager == null)
@@ -259,6 +275,10 @@ namespace Hecton8.Bootstrap
             if (manager != null)
                 return manager;
 
+            GameTickManager existing = UnityEngine.Object.FindAnyObjectByType<GameTickManager>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
+
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
             GameObject go = new GameObject(GameTickManagerRuntimeName);
             return go.AddComponent<GameTickManager>();
@@ -269,6 +289,10 @@ namespace Hecton8.Bootstrap
             SaveManager manager = SaveManager.Instance;
             if (manager != null)
                 return manager;
+
+            SaveManager existing = UnityEngine.Object.FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
 
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
             GameObject go = new GameObject(SaveManagerRuntimeName);
@@ -281,6 +305,10 @@ namespace Hecton8.Bootstrap
             if (manager != null)
                 return manager;
 
+            ObjectPoolManager existing = UnityEngine.Object.FindAnyObjectByType<ObjectPoolManager>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
+
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
             GameObject go = new GameObject(ObjectPoolManagerRuntimeName);
             return go.AddComponent<ObjectPoolManager>();
@@ -292,6 +320,10 @@ namespace Hecton8.Bootstrap
             if (registry != null)
                 return registry;
 
+            PrefabRegistry existing = UnityEngine.Object.FindAnyObjectByType<PrefabRegistry>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
+
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted registry.
             GameObject go = new GameObject(PrefabRegistryRuntimeName);
             return go.AddComponent<PrefabRegistry>();
@@ -300,6 +332,23 @@ namespace Hecton8.Bootstrap
         // ══════════════════════════════════════════════════════════
         //  DEBUG
         // ══════════════════════════════════════════════════════════
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static RuntimePerformanceProfiler EnsureRuntimePerformanceProfiler()
+        {
+            RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
+            if (profiler != null)
+                return profiler;
+
+            RuntimePerformanceProfiler existing = UnityEngine.Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
+
+            // COLD ALLOC: bootstrap fallback runtime profiler root for scatter baseline diagnostics.
+            GameObject go = new GameObject(RuntimePerformanceProfilerRuntimeName);
+            return go.AddComponent<RuntimePerformanceProfiler>();
+        }
+#endif
 
         private static void Log(string message)
         {

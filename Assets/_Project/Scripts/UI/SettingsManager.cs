@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Rendering;
@@ -93,6 +94,8 @@ namespace Hecton8.UI
         private Volume urpVolume;
 
         private UserOptionsPersistence _persistence;
+        private Camera _cachedMainCamera; // Cache Camera.main lookup
+        private VolumeProfile _cachedVolumeProfile; // Cache Volume profile lookup
         private int _cachedQualityLevel = -1;
         private float _cachedMasterVolume = -1f;
         private float _cachedMusicVolume = -1f;
@@ -125,9 +128,19 @@ namespace Hecton8.UI
 
             _instance = this;
             _isShuttingDown = false;
-            DontDestroyOnLoad(gameObject);
+            if (Application.isPlaying)
+            {
+                if (transform.parent != null)
+                    transform.SetParent(null, true);
+
+                DontDestroyOnLoad(gameObject);
+            }
 
             _persistence = UserOptionsPersistence.Instance;
+
+            TryResolveMainCameraReference();
+            TryResolveVolumeProfileReference();
+
             LoadAllSettings();
             ApplyAllSettings();
         }
@@ -146,6 +159,10 @@ namespace Hecton8.UI
         // PUBLIC API — GRAPHICS
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Gets or sets the Unity quality level (0-based index into QualitySettings.names).
+        /// Automatically clamped to valid range and persisted to PlayerPrefs.
+        /// </summary>
         public int QualityLevel
         {
             get => _cachedQualityLevel;
@@ -161,6 +178,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets VSync enabled state (0=off, 1=on).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public bool Vsync
         {
             get => _cachedVsync;
@@ -175,6 +196,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets fullscreen mode.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public bool Fullscreen
         {
             get => _cachedFullscreen;
@@ -189,6 +214,12 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Sets screen resolution (width x height) and applies fullscreen state.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
+        /// <param name="width">Screen width in pixels</param>
+        /// <param name="height">Screen height in pixels</param>
         public void SetResolution(int width, int height)
         {
             if (_cachedResolutionWidth == width && _cachedResolutionHeight == height)
@@ -201,12 +232,21 @@ namespace Hecton8.UI
             SaveInt(ResolutionHeightKey, height);
         }
 
+        /// <summary>
+        /// Gets current screen resolution.
+        /// </summary>
+        /// <param name="width">Output: screen width in pixels</param>
+        /// <param name="height">Output: screen height in pixels</param>
         public void GetResolution(out int width, out int height)
         {
             width = _cachedResolutionWidth;
             height = _cachedResolutionHeight;
         }
 
+        /// <summary>
+        /// Gets or sets camera field of view in degrees (clamped 60-110).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public float FieldOfView
         {
             get => _cachedFieldOfView;
@@ -222,6 +262,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets shadow quality (0=Off, 1=Low, 2=Medium, 3=High).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public int ShadowQuality
         {
             get => _cachedShadowQuality;
@@ -236,6 +280,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets shadow draw distance in meters (clamped 50-300).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public float ShadowDistance
         {
             get => _cachedShadowDistance;
@@ -251,6 +299,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets anti-aliasing mode (0=None, 1=FXAA, 2=SMAA, 3=TAA).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public int AntiAliasing
         {
             get => _cachedAntiAliasing;
@@ -265,6 +317,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets ambient occlusion post-processing effect enabled state.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public bool AmbientOcclusion
         {
             get => _cachedAmbientOcclusion;
@@ -279,6 +335,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets bloom post-processing effect enabled state.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public bool Bloom
         {
             get => _cachedBloom;
@@ -293,6 +353,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets motion blur post-processing effect enabled state.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public bool MotionBlur
         {
             get => _cachedMotionBlur;
@@ -307,6 +371,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets texture quality (0=Low, 1=Medium, 2=High, 3=Ultra).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public int TextureQuality
         {
             get => _cachedTextureQuality;
@@ -326,6 +394,10 @@ namespace Hecton8.UI
         // PUBLIC API — AUDIO
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Gets or sets master volume (0-1, converted to dB for AudioMixer).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public float MasterVolume
         {
             get => _cachedMasterVolume;
@@ -341,6 +413,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets music volume (0-1, converted to dB for AudioMixer).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public float MusicVolume
         {
             get => _cachedMusicVolume;
@@ -356,6 +432,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets SFX volume (0-1, converted to dB for AudioMixer).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public float SfxVolume
         {
             get => _cachedSfxVolume;
@@ -371,6 +451,10 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Gets or sets ambient volume (0-1, converted to dB for AudioMixer).
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
         public float AmbientVolume
         {
             get => _cachedAmbientVolume;
@@ -390,8 +474,43 @@ namespace Hecton8.UI
         // PUBLIC API — RESET
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Reset all settings to defaults.
+        /// Clears all PlayerPrefs keys, sets default values, applies, and saves.
+        /// </summary>
         public void ResetToDefaults()
         {
+            // Clear all Hecton_* PlayerPrefs keys before setting defaults
+            if (_persistence != null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[SettingsManager] Clearing all settings keys from PlayerPrefs...");
+#endif
+                PlayerPrefs.DeleteKey(QualityLevelKey);
+                PlayerPrefs.DeleteKey(MasterVolumeKey);
+                PlayerPrefs.DeleteKey(MusicVolumeKey);
+                PlayerPrefs.DeleteKey(SfxVolumeKey);
+                PlayerPrefs.DeleteKey(AmbientVolumeKey);
+                PlayerPrefs.DeleteKey(VsyncKey);
+                PlayerPrefs.DeleteKey(FullscreenKey);
+                PlayerPrefs.DeleteKey(ResolutionWidthKey);
+                PlayerPrefs.DeleteKey(ResolutionHeightKey);
+                PlayerPrefs.DeleteKey(FieldOfViewKey);
+                PlayerPrefs.DeleteKey(ShadowQualityKey);
+                PlayerPrefs.DeleteKey(ShadowDistanceKey);
+                PlayerPrefs.DeleteKey(AntiAliasingKey);
+                PlayerPrefs.DeleteKey(AmbientOcclusionKey);
+                PlayerPrefs.DeleteKey(BloomKey);
+                PlayerPrefs.DeleteKey(MotionBlurKey);
+                PlayerPrefs.DeleteKey(TextureQualityKey);
+                PlayerPrefs.Save();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[SettingsManager] All settings keys cleared. Applying defaults...");
+#endif
+            }
+
+            // Set default values
             QualityLevel = DefaultQualityLevel;
             MasterVolume = DefaultVolume;
             MusicVolume = DefaultVolume;
@@ -410,6 +529,15 @@ namespace Hecton8.UI
 
             Resolution defaultRes = Screen.currentResolution;
             SetResolution(defaultRes.width, defaultRes.height);
+
+            // Save defaults to persistence
+            if (_persistence != null)
+            {
+                _persistence.Save();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[SettingsManager] Default settings applied and saved.");
+#endif
+            }
         }
 
         /// <summary>
@@ -476,91 +604,468 @@ namespace Hecton8.UI
         // PRIVATE — LOAD/SAVE
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Load all settings from persistence with validation and repair.
+        /// Clamps out-of-range values and uses defaults for missing keys.
+        /// </summary>
         private void LoadAllSettings()
         {
-            _cachedQualityLevel = LoadInt(QualityLevelKey, DefaultQualityLevel);
-            _cachedMasterVolume = LoadFloat(MasterVolumeKey, DefaultVolume);
-            _cachedMusicVolume = LoadFloat(MusicVolumeKey, DefaultVolume);
-            _cachedSfxVolume = LoadFloat(SfxVolumeKey, DefaultVolume);
-            _cachedAmbientVolume = LoadFloat(AmbientVolumeKey, DefaultVolume);
+            // Load with validation
+            _cachedQualityLevel = ValidateQualityLevel(LoadInt(QualityLevelKey, DefaultQualityLevel));
+            _cachedMasterVolume = ValidateVolume(LoadFloat(MasterVolumeKey, DefaultVolume));
+            _cachedMusicVolume = ValidateVolume(LoadFloat(MusicVolumeKey, DefaultVolume));
+            _cachedSfxVolume = ValidateVolume(LoadFloat(SfxVolumeKey, DefaultVolume));
+            _cachedAmbientVolume = ValidateVolume(LoadFloat(AmbientVolumeKey, DefaultVolume));
             _cachedVsync = LoadBool(VsyncKey, true);
             _cachedFullscreen = LoadBool(FullscreenKey, true);
 
             Resolution currentRes = Screen.currentResolution;
-            _cachedResolutionWidth = LoadInt(ResolutionWidthKey, currentRes.width);
-            _cachedResolutionHeight = LoadInt(ResolutionHeightKey, currentRes.height);
+            _cachedResolutionWidth = ValidateResolutionDimension(LoadInt(ResolutionWidthKey, currentRes.width), 640, 7680);
+            _cachedResolutionHeight = ValidateResolutionDimension(LoadInt(ResolutionHeightKey, currentRes.height), 480, 4320);
 
-            _cachedFieldOfView = LoadFloat(FieldOfViewKey, DefaultFOV);
-            _cachedShadowQuality = LoadInt(ShadowQualityKey, 2);
-            _cachedShadowDistance = LoadFloat(ShadowDistanceKey, 200f);
-            _cachedAntiAliasing = LoadInt(AntiAliasingKey, 2);
+            _cachedFieldOfView = ValidateFOV(LoadFloat(FieldOfViewKey, DefaultFOV));
+            _cachedShadowQuality = ValidateShadowQuality(LoadInt(ShadowQualityKey, 2));
+            _cachedShadowDistance = ValidateShadowDistance(LoadFloat(ShadowDistanceKey, 200f));
+            _cachedAntiAliasing = ValidateAntiAliasing(LoadInt(AntiAliasingKey, 2));
             _cachedAmbientOcclusion = LoadBool(AmbientOcclusionKey, true);
             _cachedBloom = LoadBool(BloomKey, true);
             _cachedMotionBlur = LoadBool(MotionBlurKey, false);
-            _cachedTextureQuality = LoadInt(TextureQualityKey, 2);
+            _cachedTextureQuality = ValidateTextureQuality(LoadInt(TextureQualityKey, 2));
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[SettingsManager] Settings loaded and validated successfully.");
+#endif
         }
 
-        private void ApplyAllSettings()
+        // ══════════════════════════════════════════════════════════
+        // VALIDATION HELPERS
+        // ══════════════════════════════════════════════════════════
+
+        private static int ValidateQualityLevel(int value)
         {
-            QualitySettings.SetQualityLevel(_cachedQualityLevel, true);
-            QualitySettings.vSyncCount = _cachedVsync ? 1 : 0;
-            Screen.fullScreen = _cachedFullscreen;
-            Screen.SetResolution(_cachedResolutionWidth, _cachedResolutionHeight, _cachedFullscreen);
+            int maxLevel = QualitySettings.names.Length - 1;
+            if (value < 0 || value > maxLevel)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid quality level {value}, clamping to [0, {maxLevel}]");
+#endif
+                return Mathf.Clamp(value, 0, maxLevel);
+            }
+            return value;
+        }
 
-            QualitySettings.shadowDistance = _cachedShadowDistance;
-            QualitySettings.globalTextureMipmapLimit = 3 - _cachedTextureQuality;
+        private static float ValidateVolume(float value)
+        {
+            if (value < 0f || value > 1f)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid volume {value}, clamping to [0, 1]");
+#endif
+                return Mathf.Clamp01(value);
+            }
+            return value;
+        }
 
-            ApplyCameraFOV(_cachedFieldOfView);
-            ApplyPostProcessing();
+        private static int ValidateResolutionDimension(int value, int min, int max)
+        {
+            if (value < min || value > max)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid resolution dimension {value}, clamping to [{min}, {max}]");
+#endif
+                return Mathf.Clamp(value, min, max);
+            }
+            return value;
+        }
 
-            ApplyMixerVolume("MasterVolume", _cachedMasterVolume);
+        private static float ValidateFOV(float value)
+        {
+            if (value < 60f || value > 110f)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid FOV {value}, clamping to [60, 110]");
+#endif
+                return Mathf.Clamp(value, 60f, 110f);
+            }
+            return value;
+        }
+
+        private static int ValidateShadowQuality(int value)
+        {
+            if (value < 0 || value > 3)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid shadow quality {value}, clamping to [0, 3]");
+#endif
+                return Mathf.Clamp(value, 0, 3);
+            }
+            return value;
+        }
+
+        private static float ValidateShadowDistance(float value)
+        {
+            if (value < 50f || value > 300f)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid shadow distance {value}, clamping to [50, 300]");
+#endif
+                return Mathf.Clamp(value, 50f, 300f);
+            }
+            return value;
+        }
+
+        private static int ValidateAntiAliasing(int value)
+        {
+            if (value < 0 || value > 3)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid anti-aliasing {value}, clamping to [0, 3]");
+#endif
+                return Mathf.Clamp(value, 0, 3);
+            }
+            return value;
+        }
+
+        private static int ValidateTextureQuality(int value)
+        {
+            if (value < 0 || value > 3)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid texture quality {value}, clamping to [0, 3]");
+#endif
+                return Mathf.Clamp(value, 0, 3);
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Apply all cached settings to Unity systems with comprehensive error handling.
+        /// Returns true if all settings applied successfully, false if any failed.
+        /// Logs detailed errors for each failure and attempts to continue with remaining settings.
+        /// </summary>
+        public bool ApplyAllSettings()
+        {
+            bool success = true;
+            int failureCount = 0;
+
+            // Quality Level
+            if (!TryApplyQualityLevel(_cachedQualityLevel))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            // VSync
+            if (!TryApplyVSync(_cachedVsync))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            // Fullscreen
+            if (!TryApplyFullscreen(_cachedFullscreen))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            // Resolution
+            if (!TryApplyResolution(_cachedResolutionWidth, _cachedResolutionHeight, _cachedFullscreen))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            // Shadow Distance
+            if (!TryApplyShadowDistance(_cachedShadowDistance))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            // Texture Quality
+            if (!TryApplyTextureQuality(_cachedTextureQuality))
+            {
+                success = false;
+                failureCount++;
+            }
+
+            // Camera FOV
+            if (!ApplyCameraFOV(_cachedFieldOfView))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[SettingsManager] FOV setting unavailable (Camera not found)");
+#endif
+                success = false;
+                failureCount++;
+            }
+
+            // Post-Processing
+            if (!ApplyPostProcessing())
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[SettingsManager] Post-processing unavailable (URP Volume not found)");
+#endif
+                success = false;
+                failureCount++;
+            }
+
+            // Audio
+            if (!ApplyMixerVolume("MasterVolume", _cachedMasterVolume))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[SettingsManager] Audio settings unavailable (AudioMixer not found)");
+#endif
+                success = false;
+                failureCount++;
+            }
+
             ApplyMixerVolume("MusicVolume", _cachedMusicVolume);
             ApplyMixerVolume("SfxVolume", _cachedSfxVolume);
             ApplyMixerVolume("AmbientVolume", _cachedAmbientVolume);
-        }
 
-        private void ApplyCameraFOV(float fov)
-        {
-            if (mainCamera == null)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (failureCount > 0)
             {
-                mainCamera = Camera.main;
-                if (mainCamera == null)
-                    return;
+                Debug.LogWarning($"[SettingsManager] Applied settings with {failureCount} failure(s). Check warnings above.");
             }
+            else
+            {
+                Debug.Log("[SettingsManager] All settings applied successfully.");
+            }
+#endif
 
-            mainCamera.fieldOfView = fov;
+            return success;
         }
 
-        private void ApplyPostProcessing()
-        {
-            if (urpVolume == null || urpVolume.profile == null)
-                return;
+        // ══════════════════════════════════════════════════════════
+        // SAFE APPLICATION HELPERS
+        // ══════════════════════════════════════════════════════════
 
-            VolumeProfile profile = urpVolume.profile;
+        private static bool TryApplyQualityLevel(int level)
+        {
+            try
+            {
+                QualitySettings.SetQualityLevel(level, true);
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SettingsManager] Failed to apply quality level {level}: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool TryApplyVSync(bool enabled)
+        {
+            try
+            {
+                QualitySettings.vSyncCount = enabled ? 1 : 0;
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SettingsManager] Failed to apply VSync: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool TryApplyFullscreen(bool enabled)
+        {
+            try
+            {
+                Screen.fullScreen = enabled;
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SettingsManager] Failed to apply fullscreen: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool TryApplyResolution(int width, int height, bool fullscreen)
+        {
+            try
+            {
+                Screen.SetResolution(width, height, fullscreen);
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SettingsManager] Failed to apply resolution {width}x{height}: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool TryApplyShadowDistance(float distance)
+        {
+            try
+            {
+                QualitySettings.shadowDistance = distance;
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SettingsManager] Failed to apply shadow distance: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool TryApplyTextureQuality(int quality)
+        {
+            try
+            {
+                QualitySettings.globalTextureMipmapLimit = 3 - quality;
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SettingsManager] Failed to apply texture quality: {ex.Message}");
+                return false;
+            }
+        }
+
+        private bool ApplyCameraFOV(float fov)
+        {
+            if (!TryResolveMainCameraReference())
+                return false;
+
+            _cachedMainCamera.fieldOfView = fov;
+            return true;
+        }
+
+        private bool ApplyPostProcessing()
+        {
+            if (!TryResolveVolumeProfileReference())
+                return false;
 
             // Bloom
-            if (profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom))
+            if (_cachedVolumeProfile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom))
             {
                 bloom.active = _cachedBloom;
             }
 
             // Motion Blur
-            if (profile.TryGet(out UnityEngine.Rendering.Universal.MotionBlur motionBlur))
+            if (_cachedVolumeProfile.TryGet(out UnityEngine.Rendering.Universal.MotionBlur motionBlur))
             {
                 motionBlur.active = _cachedMotionBlur;
             }
+
+            return true;
         }
 
-        private void ApplyMixerVolume(string parameterName, float normalizedVolume)
+        private bool TryResolveMainCameraReference()
+        {
+            if (_cachedMainCamera != null)
+                return true;
+
+            if (mainCamera != null)
+            {
+                _cachedMainCamera = mainCamera;
+                return true;
+            }
+
+            _cachedMainCamera = Camera.main;
+            if (_cachedMainCamera != null)
+                return true;
+
+            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                Camera candidate = cameras[i];
+                if (candidate == null || !candidate.gameObject.scene.IsValid())
+                    continue;
+
+                mainCamera = candidate;
+                _cachedMainCamera = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryResolveVolumeProfileReference()
+        {
+            if (_cachedVolumeProfile != null)
+                return true;
+
+            if (urpVolume != null && urpVolume.profile != null)
+            {
+                _cachedVolumeProfile = urpVolume.profile;
+                return true;
+            }
+
+            Volume[] volumes = UnityEngine.Object.FindObjectsByType<Volume>(FindObjectsInactive.Include);
+            Volume fallback = null;
+
+            for (int i = 0; i < volumes.Length; i++)
+            {
+                Volume candidate = volumes[i];
+                if (candidate == null ||
+                    candidate.profile == null ||
+                    !candidate.gameObject.scene.IsValid())
+                {
+                    continue;
+                }
+
+                if (candidate.isGlobal)
+                {
+                    urpVolume = candidate;
+                    _cachedVolumeProfile = candidate.profile;
+                    return true;
+                }
+
+                if (fallback == null)
+                    fallback = candidate;
+            }
+
+            if (fallback == null)
+                return false;
+
+            urpVolume = fallback;
+            _cachedVolumeProfile = fallback.profile;
+            return true;
+        }
+
+        /// <summary>
+        /// Applies volume to AudioMixer parameter with validation.
+        /// SAFETY: Validates parameter exists before setting value.
+        /// </summary>
+        /// <param name="parameterName">AudioMixer exposed parameter name</param>
+        /// <param name="normalizedVolume">Volume value 0-1</param>
+        /// <returns>True if parameter was set successfully, false otherwise</returns>
+        private bool ApplyMixerVolume(string parameterName, float normalizedVolume)
         {
             if (audioMixer == null)
-                return;
+                return false;
 
             float db = normalizedVolume > 0.0001f
                 ? Mathf.Log10(normalizedVolume) * 20f
                 : -80f;
 
-            audioMixer.SetFloat(parameterName, db);
+            // SAFETY: Validate parameter exists before setting
+            try
+            {
+                // Try to set the parameter - SetFloat returns false if parameter doesn't exist
+                bool success = audioMixer.SetFloat(parameterName, db);
+                
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!success)
+                {
+                    Debug.LogWarning($"[SettingsManager] AudioMixer parameter '{parameterName}' not found or not exposed.");
+                }
+#endif
+                
+                return success;
+            }
+            catch (System.Exception ex)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[SettingsManager] Failed to set AudioMixer parameter '{parameterName}': {ex.Message}");
+#endif
+                return false;
+            }
         }
 
         private int LoadInt(string key, int defaultValue)

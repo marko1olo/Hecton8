@@ -337,8 +337,12 @@ namespace Hecton8.UI
                 PDAExchangeSystem.OfferSnapshot snapshot = _snapshotBuffer[i];
                 BarterOfferData offer = snapshot.Offer;
 
-                _cardTitles[i].text = CachedToUpperInvariant(offer.offerName) + "  //  " + CachedToUpperInvariant(offer.channelName);
-                _sb.Length = 0;
+                // ZERO-GC: Use StringBuilder to avoid string concatenation allocation
+                _sb.Clear();
+                _sb.Append(CachedToUpperInvariant(offer.offerName)).Append("  //  ").Append(CachedToUpperInvariant(offer.channelName));
+                _cardTitles[i].text = _sb.ToString();
+                
+                _sb.Clear();
                 _sb.Append("REQ  ").Append(exchangeSystem.BuildBundleSummary(offer.costs, "NONE")).AppendLine();
                 _sb.Append("OUT  ").Append(exchangeSystem.BuildBundleSummary(offer.rewards, "NO PAYOUT")).AppendLine();
                 if (!string.IsNullOrWhiteSpace(offer.requiredScanEntryId))

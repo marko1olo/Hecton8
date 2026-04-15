@@ -65,6 +65,17 @@ namespace Hecton8.UI
         /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
         private static readonly string[] _cachedUpperStrings = new string[16];
 
+        /// <summary>Кэшированные строки для ItemCategory enum (избегает Enum.ToString() в hot path)</summary>
+        private static readonly string[] _cachedCategoryStrings = new string[]
+        {
+            "MISCELLANEOUS", // ItemCategory.Miscellaneous = 0
+            "MATERIAL",      // ItemCategory.Material = 1
+            "TOOL",          // ItemCategory.Tool = 2
+            "EQUIPMENT",     // ItemCategory.Equipment = 3
+            "CONSUMABLE",    // ItemCategory.Consumable = 4
+            "COMPONENT"      // ItemCategory.Component = 5
+        };
+
         private bool _built;
         private bool _refreshDirty;
         private RectTransform[] _slotRoots;
@@ -640,7 +651,9 @@ namespace Hecton8.UI
                     _slotStatuses[i].SetText(active ? "READY / ACTIVE" : "READY");
                 }
 
-                string category = item != null ? CachedToUpperInvariant(item.category.ToString()) : "TOOL";
+                string category = item != null && (int)item.category >= 0 && (int)item.category < _cachedCategoryStrings.Length
+                    ? _cachedCategoryStrings[(int)item.category]
+                    : "TOOL";
                 float weight = item != null ? item.weight : 0f;
                 float currentDurability = meta != null && durabilitySystem != null
                     ? durabilitySystem.GetDurability(meta.toolID, meta.maxDurability)
