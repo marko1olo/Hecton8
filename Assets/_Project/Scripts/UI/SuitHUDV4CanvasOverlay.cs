@@ -245,6 +245,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            SceneBootstrap.OnGameReady += HandleSceneBootstrapReady;
             RegisterActiveOverlay();
             _layoutBuilt = false;
             InvalidateVisualCaches();
@@ -264,6 +265,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            SceneBootstrap.OnGameReady -= HandleSceneBootstrapReady;
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
             ClearDepthSignalSubscription();
@@ -302,6 +304,17 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             RefreshAll(deltaTime, forceResolve: false);
+        }
+
+        private void HandleSceneBootstrapReady()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            _layoutBuilt = false;
+            InvalidateVisualCaches();
+            TryRegisterRuntimeTick();
+            RefreshAll(0.016f, forceResolve: true);
         }
 
         private void RefreshAll(float dt, bool forceResolve)
@@ -434,17 +447,23 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 return;
 
+            bool useProjectionCanvas =
+                renderPath == RenderPath.ProjectionSource &&
+                projectionCamera != null;
             bool canvasStateMatches =
                 _canvasStateApplied &&
                 ReferenceEquals(_appliedCanvasTarget, targetCanvas) &&
                 ReferenceEquals(_appliedProjectionCamera, projectionCamera) &&
                 _appliedRenderPath == renderPath &&
-                _appliedOverlaySortingOrder == overlaySortingOrder;
+                _appliedOverlaySortingOrder == overlaySortingOrder &&
+                IsCanvasStateCurrent(useProjectionCanvas);
 
             if (canvasStateMatches)
                 return;
 
-            if (renderPath == RenderPath.ProjectionSource && projectionCamera != null)
+            targetCanvas.enabled = true;
+
+            if (useProjectionCanvas)
             {
                 targetCanvas.renderMode = RenderMode.ScreenSpaceCamera;
                 targetCanvas.worldCamera = projectionCamera;
@@ -484,6 +503,48 @@ namespace Hecton8.UI
             _appliedProjectionCamera = projectionCamera;
             _appliedRenderPath = renderPath;
             _appliedOverlaySortingOrder = overlaySortingOrder;
+        }
+
+        private bool IsCanvasStateCurrent(bool useProjectionCanvas)
+        {
+            if (targetCanvas == null || !targetCanvas.enabled)
+                return false;
+
+            if (useProjectionCanvas)
+            {
+                if (targetCanvas.renderMode != RenderMode.ScreenSpaceCamera)
+                    return false;
+                if (!ReferenceEquals(targetCanvas.worldCamera, projectionCamera))
+                    return false;
+                if (!Mathf.Approximately(targetCanvas.planeDistance, projectionPlaneDistance))
+                    return false;
+                if (targetCanvas.sortingOrder != 0)
+                    return false;
+            }
+            else
+            {
+                if (targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                    return false;
+                if (targetCanvas.worldCamera != null)
+                    return false;
+                if (targetCanvas.sortingOrder != overlaySortingOrder)
+                    return false;
+            }
+
+            CanvasScaler scaler = ResolveCanvasScaler();
+            if (scaler != null)
+            {
+                if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
+                    return false;
+                if (!Approximately(scaler.referenceResolution, new Vector2(1600f, 900f)))
+                    return false;
+                if (scaler.screenMatchMode != CanvasScaler.ScreenMatchMode.MatchWidthOrHeight)
+                    return false;
+                if (!Mathf.Approximately(scaler.matchWidthOrHeight, 0.5f))
+                    return false;
+            }
+
+            return true;
         }
 
         private void EnsureHierarchy()
@@ -654,14 +715,29 @@ namespace Hecton8.UI
             if (_rootCanvasGroup == null)
                 return;
 
-            if (_hasAppliedRootVisibility && _appliedRootVisible == visible)
+            if (_hasAppliedRootVisibility &&
+                _appliedRootVisible == visible &&
+                IsRootVisibilityCurrent(visible))
+            {
                 return;
+            }
 
             _rootCanvasGroup.alpha = visible ? 1f : 0f;
             _rootCanvasGroup.interactable = visible;
             _rootCanvasGroup.blocksRaycasts = visible;
             _appliedRootVisible = visible;
             _hasAppliedRootVisibility = true;
+        }
+
+        private bool IsRootVisibilityCurrent(bool visible)
+        {
+            if (_rootCanvasGroup == null)
+                return false;
+
+            float expectedAlpha = visible ? 1f : 0f;
+            return Mathf.Approximately(_rootCanvasGroup.alpha, expectedAlpha) &&
+                   _rootCanvasGroup.interactable == visible &&
+                   _rootCanvasGroup.blocksRaycasts == visible;
         }
 
         private Vector2 ResolveTelemetryOffset()
@@ -784,7 +860,10 @@ namespace Hecton8.UI
         private void ResolveProfile()
         {
             _activeSuit = playerMovement != null ? playerMovement.CurrentSuit : null;
-            _activeProfile = _activeSuit != null && _activeSuit.HudProfile != null ? _activeSuit.HudProfile : defaultHudProfile;
+            SuitHUDProfile runtimeOverride = PlayerExpressionManager.ActiveHudProfileOverride;
+            _activeProfile = runtimeOverride != null
+                ? runtimeOverride
+                : (_activeSuit != null && _activeSuit.HudProfile != null ? _activeSuit.HudProfile : defaultHudProfile);
         }
 
         private void ResolvePalette(out Color primary, out Color secondary, out Color dim, out Color warning)
@@ -850,7 +929,10 @@ namespace Hecton8.UI
 
         private string ResolveSuitLabel()
         {
-            string overrideLabel = _activeProfile != null ? _activeProfile.DisplayNameOverride : null;
+            string runtimeOverrideLabel = PlayerExpressionManager.ActiveSuitLabelOverride;
+            string overrideLabel = !string.IsNullOrWhiteSpace(runtimeOverrideLabel)
+                ? runtimeOverrideLabel
+                : (_activeProfile != null ? _activeProfile.DisplayNameOverride : null);
             if (ReferenceEquals(_cachedSuitLabelSuit, _activeSuit) &&
                 string.Equals(_cachedSuitLabelOverride, overrideLabel, System.StringComparison.Ordinal))
             {
@@ -1550,6 +1632,12 @@ namespace Hecton8.UI
                 labels[i] = "HEADING " + i.ToString("000") + " / " + ResolveCardinal(i);
 
             return labels;
+        }
+
+        private static bool Approximately(Vector2 a, Vector2 b)
+        {
+            return Mathf.Approximately(a.x, b.x) &&
+                   Mathf.Approximately(a.y, b.y);
         }
 
         public void SetRenderPathProjectionSource(bool projectionSource)

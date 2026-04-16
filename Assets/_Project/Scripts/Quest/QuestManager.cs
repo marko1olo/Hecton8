@@ -21,6 +21,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
 using Hecton8.Core;
@@ -101,11 +102,7 @@ namespace Hecton8.Quest
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
@@ -116,17 +113,21 @@ namespace Hecton8.Quest
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
 
             UnsubscribeFromEvents();
             UnsubscribeFromBiomeDiscovery();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         private void Start()
@@ -186,6 +187,32 @@ namespace Hecton8.Quest
         // ══════════════════════════════════════════════════════════
 
         /// <summary>Активировать квест по ID.</summary>
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
+        }
+
+        /// <summary>Activate quest by ID.</summary>
         public void ActivateQuest(string questId)
         {
             if (string.IsNullOrEmpty(questId)) return;
@@ -197,7 +224,13 @@ namespace Hecton8.Quest
 
             // HUD notification — показываем название квеста если есть в lookup
             if (_questLookup.TryGetValue(questId, out QuestData q))
-                NotificationEvents.PushInfo($"НОВАЯ ЦЕЛЬ: {q.displayTitle}");
+            {
+                string title = q.DisplayTitleOrFallback;
+                LocalizationManager localization = LocalizationManager.Instance;
+                NotificationEvents.PushInfo(localization != null
+                    ? localization.GetFormatted(LocalizationKeys.QUEST_NEW_OBJECTIVE, title)
+                    : "NEW OBJECTIVE: " + title);
+            }
 
         }
 
@@ -212,7 +245,13 @@ namespace Hecton8.Quest
             QuestEvents.RaiseCompleted(questId);
 
             if (_questLookup.TryGetValue(questId, out QuestData q))
-                NotificationEvents.PushInfo($"ЦЕЛЬ ВЫПОЛНЕНА: {q.displayTitle}");
+            {
+                string title = q.DisplayTitleOrFallback;
+                LocalizationManager localization = LocalizationManager.Instance;
+                NotificationEvents.PushInfo(localization != null
+                    ? localization.GetFormatted(LocalizationKeys.QUEST_COMPLETED, title)
+                    : "OBJECTIVE COMPLETED: " + title);
+            }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Quest] Completed: {questId}");
@@ -256,6 +295,11 @@ namespace Hecton8.Quest
         private void HandleSignalDetected(UnityEngine.Vector3 sourcePos)
         {
             ProcessTrigger(QuestTriggerType.OnSignalDetected, string.Empty, 0f);
+        }
+
+        private void HandleSignalDecoded(string messageId)
+        {
+            ProcessCompletion(QuestCompletionType.OnSignalDecoded, messageId, 0f);
         }
 
         private void HandleBiomeDiscovered(int biomeId)
@@ -356,6 +400,7 @@ namespace Hecton8.Quest
             AudioLogEvents.OnLogDiscovered       += HandleAudioLogDiscovered;
             HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
             AtlasSignalEvents.OnSignalDetected   += HandleSignalDetected;
+            AtlasSignalEvents.OnSignalDecoded    += HandleSignalDecoded;
         }
 
         private void UnsubscribeFromEvents()
@@ -366,6 +411,7 @@ namespace Hecton8.Quest
             AudioLogEvents.OnLogDiscovered       -= HandleAudioLogDiscovered;
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
             AtlasSignalEvents.OnSignalDetected   -= HandleSignalDetected;
+            AtlasSignalEvents.OnSignalDecoded    -= HandleSignalDecoded;
         }
 
         private void TrySubscribeToBiomeDiscovery()

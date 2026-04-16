@@ -52,13 +52,42 @@ namespace Hecton8.Core
 
         private static GameTickManager _instance;
         private static bool _isShuttingDown;
+        private static bool _isEditorExitingPlayMode;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _instance = null;
             _isShuttingDown = false;
+            _isEditorExitingPlayMode = false;
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorPlayModeHooks()
+        {
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            switch (state)
+            {
+                case UnityEditor.PlayModeStateChange.ExitingPlayMode:
+                    _isShuttingDown = true;
+                    _isEditorExitingPlayMode = true;
+                    break;
+                case UnityEditor.PlayModeStateChange.EnteredEditMode:
+                    _isEditorExitingPlayMode = false;
+                    _isShuttingDown = false;
+                    break;
+                case UnityEditor.PlayModeStateChange.EnteredPlayMode:
+                    _isEditorExitingPlayMode = false;
+                    break;
+            }
+        }
+#endif
 
         /// <summary>
         /// Глобальный доступ к менеджеру тиков.
@@ -246,11 +275,11 @@ namespace Hecton8.Core
 
         private static bool ShouldLogUnexpectedDisable()
         {
-            if (_isShuttingDown)
+            if (_isShuttingDown || _isEditorExitingPlayMode)
                 return false;
 
 #if UNITY_EDITOR
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            if (!UnityEditor.EditorApplication.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return false;
 #endif
 

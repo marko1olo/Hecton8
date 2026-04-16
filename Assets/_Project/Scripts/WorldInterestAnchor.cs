@@ -20,6 +20,8 @@ namespace Hecton8.World
         }
 
         [Header("Identity")]
+        [SerializeField, Tooltip("Stable debug/readability label used by runtime systems instead of hierarchy Object.name.")]
+        private string interestLabel = "Progression Hub";
         [SerializeField] private InterestKind interestKind = InterestKind.ProgressionHub;
 
         [Header("Influence")]
@@ -40,6 +42,9 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastInfluence;
 
         public InterestKind Kind => interestKind;
+        public string InterestLabel => string.IsNullOrWhiteSpace(interestLabel)
+            ? BuildDefaultInterestLabel(interestKind)
+            : interestLabel;
         public float FullInfluenceRadius => fullInfluenceRadius;
         public float FalloffRadius => falloffRadius;
         public float ScavengeRadiusScale => scavengeRadiusScale;
@@ -123,6 +128,20 @@ namespace Hecton8.World
             _ActiveAnchors.Remove(anchor);
         }
 
+        private static string BuildDefaultInterestLabel(InterestKind kind)
+        {
+            return kind switch
+            {
+                InterestKind.ResourceField => "Resource Field",
+                InterestKind.Fabrication => "Fabrication",
+                InterestKind.ToolRange => "Tool Range",
+                InterestKind.Construction => "Construction",
+                InterestKind.Power => "Power",
+                InterestKind.Service => "Service",
+                _ => "Progression Hub"
+            };
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -139,6 +158,9 @@ namespace Hecton8.World
             colliderOpsScale = Mathf.Clamp(colliderOpsScale, 0.85f, 1.4f);
             sliceNearScale = Mathf.Clamp(sliceNearScale, 0.85f, 1.35f);
             sliceMidScale = Mathf.Clamp(sliceMidScale, 0.9f, 1.45f);
+
+            if (string.IsNullOrWhiteSpace(interestLabel))
+                interestLabel = BuildDefaultInterestLabel(interestKind);
         }
 #endif
     }

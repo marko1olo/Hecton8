@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -225,7 +226,11 @@ namespace Hecton8.Gameplay
             _installedUpgrades.Add(upgrade.upgradeId);
             RebuildRuntimeStats();
 
-            NotificationEvents.PushInfo($"АПГРЕЙД УСТАНОВЛЕН: {upgrade.displayName}");
+            string displayName = upgrade.DisplayNameOrFallback;
+            LocalizationManager localization = LocalizationManager.Instance;
+            NotificationEvents.PushInfo(localization != null
+                ? localization.GetFormatted(LocalizationKeys.SUIT_UPGRADE_INSTALLED, displayName)
+                : "UPGRADE INSTALLED: " + displayName);
 
             LogUpgradeInstalled(upgrade.upgradeId, upgrade.tier);
             return true;
@@ -252,9 +257,13 @@ namespace Hecton8.Gameplay
                 {
                     if (_unlockedBlueprints.Add(discoveryId))
                     {
-                        NotificationEvents.PushInfo($"ЧЕРТЁЖ РАЗБЛОКИРОВАН: {u.displayName}");
+                        string displayName = u.DisplayNameOrFallback;
+                        LocalizationManager localization = LocalizationManager.Instance;
+                        NotificationEvents.PushInfo(localization != null
+                            ? localization.GetFormatted(LocalizationKeys.SUIT_BLUEPRINT_UNLOCKED, displayName)
+                            : "BLUEPRINT UNLOCKED: " + displayName);
 
-                        LogBlueprintUnlocked(discoveryId, u.displayName);
+                        LogBlueprintUnlocked(discoveryId, displayName);
                     }
                     break;
                 }

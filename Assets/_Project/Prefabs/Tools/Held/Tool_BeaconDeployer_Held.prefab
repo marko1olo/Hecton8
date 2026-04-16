@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4670523361556303152}
   - component: {fileID: 1118752989228168991}
+  - component: {fileID: 1107848549961868074}
   m_Layer: 0
   m_Name: Tool_BeaconDeployer_Held
   m_TagString: Untagged
@@ -49,16 +50,53 @@ MonoBehaviour:
   _toolMetadata: {fileID: 11400000, guid: fadbbdd964fc8d24fb973ac00bf0ce9f, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  _swimContract: {fileID: 0}
   deployRange: 12
   deployCooldown: 0.25
+  retractRange: 6
   maxActiveBeacons: 24
   deploymentMask:
     serializedVersion: 2
     m_Bits: 4294967295
   worldBeaconPrefab: {fileID: 0}
+  feedbackInterval: 0.45
   beaconColor: {r: 0.25, g: 1, b: 0.95, a: 1}
   beaconScale: {x: 0.22, y: 0.45, z: 0.22}
   fallbackLightRange: 4
+  _debugActiveBeaconCount: 0
+--- !u!114 &1107848549961868074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3322295463934918442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9fb1903b49f6e428d8fc12ce0a4103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerToolSwimContract
+  toolHand: 0
+  swimRootPresentationWeight: 0.5
+  swimSupportHandWeight: 0.8
+  swimToolHandWeight: 0.14
+  activeUseSupportHandBoost: 0.2
+  swimRootPoseBias:
+    localPositionOffset: {x: 0.018, y: -0.012, z: -0.038}
+    localEulerOffset: {x: 2, y: 4, z: 3}
+  swimSupportHandPoseBias:
+    localPositionOffset: {x: -0.048, y: 0.034, z: 0.028}
+    localEulerOffset: {x: 8, y: -18, z: -10}
+  swimToolHandPoseBias:
+    localPositionOffset: {x: 0.024, y: -0.012, z: -0.036}
+    localEulerOffset: {x: 4, y: 10, z: 6}
+  activeUseRootPoseBias:
+    localPositionOffset: {x: 0.004, y: -0.008, z: -0.018}
+    localEulerOffset: {x: 2, y: 2, z: 2}
+  activeUseSupportHandPoseBias:
+    localPositionOffset: {x: -0.018, y: 0.024, z: 0.024}
+    localEulerOffset: {x: 6, y: -10, z: -8}
 --- !u!1 &6485885076159146977
 GameObject:
   m_ObjectHideFlags: 0

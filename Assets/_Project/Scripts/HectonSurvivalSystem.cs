@@ -180,10 +180,7 @@ namespace Hecton8.Gameplay
 
         private void UpdateOxygen(float dt)
         {
-            _surfaceContractUnderwater =
-                SurfaceStateUtility.ResolveUnderwaterFromDepth(
-                    depth,
-                    _surfaceContractUnderwater);
+            _surfaceContractUnderwater = ResolveSurfaceContractUnderwater();
 
             if (!_surfaceContractUnderwater)
             {
@@ -195,6 +192,28 @@ namespace Hecton8.Gameplay
 
             float pressureFactor = math.max(1f, pressure * 0.5f);
             oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * dt);
+        }
+
+        private bool ResolveSurfaceContractUnderwater()
+        {
+            if (_playerMovement != null)
+            {
+                switch (_playerMovement.CurrentLocomotionMode)
+                {
+                    case PlayerLocomotionMode.UnderwaterSwim:
+                        return true;
+
+                    case PlayerLocomotionMode.SurfaceSwim:
+                        return _playerMovement.IsPlayerSubmerged;
+
+                    default:
+                        return false;
+                }
+            }
+
+            return SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                depth,
+                _surfaceContractUnderwater);
         }
 
         private void DrainPassiveEnergy(float dt)

@@ -12,6 +12,12 @@ namespace Hecton8.EditorTools
     {
         private const string MaterialFolder = "Assets/_Project/Art/Materials/WorldSupport";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/WorldSupport/Final";
+        private const string VentSheenMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_RuinSeepSheen.mat";
+        private const string IndustrialStripeDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/stripes_03.prefab";
+        private const string IndustrialScuffDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/decal_04.prefab";
+        private const string RuinApexStripeFrameChildName = "RuinApexStripe_Frame";
+        private const string RuinApexStripeCrossSpanChildName = "RuinApexStripe_CrossSpan";
+        private const string RuinApexScuffBaseChildName = "RuinApexScuff_Base";
 
         [MenuItem("Hecton/Authoring/Rebuild Procedural World Support Finals", priority = 179)]
         public static void RebuildWorldSupportFinals()
@@ -33,20 +39,20 @@ namespace Hecton8.EditorTools
             Material ruinMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_RuinApex.mat", new Color(0.34f, 0.66f, 0.82f, 1f));
 
             int createdCount = 0;
-            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Resource.prefab", new Vector3(3.2f, 1.8f, 3.0f), BuildResourcePocketLods(resourceMat)) != null)
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Resource.prefab", new Vector3(3.2f, 1.8f, 3.0f), BuildResourcePocketLods(resourceMat, passiveMat)) != null)
                 createdCount++;
 
             GameObject hazardPocketPrefab = CreateCompositeFinalPrefab(
                 $"{FinalPrefabFolder}/PFB_Support_Pocket_Hazard.prefab",
                 new Vector3(3.8f, 2.8f, 3.8f),
-                BuildHazardPocketLods(hazardMat));
+                BuildHazardPocketLods(hazardMat, predatorMat));
             if (hazardPocketPrefab != null)
             {
                 AttachHazardVentVfx(hazardPocketPrefab);
                 createdCount++;
             }
 
-            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Safe.prefab", new Vector3(4.2f, 2.6f, 4.2f), BuildSafePocketLods(safeMat)) != null)
+            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Safe.prefab", new Vector3(4.2f, 2.6f, 4.2f), BuildSafePocketLods(safeMat, passiveMat)) != null)
                 createdCount++;
 
             if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_CreatureSpawn_Passive.prefab", new Vector3(3.6f, 2.4f, 3.6f), BuildPassiveSpawnLods(passiveMat, safeMat)) != null)
@@ -64,15 +70,19 @@ namespace Hecton8.EditorTools
             if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_ReefApex.prefab", new Vector3(15f, 10f, 15f), BuildReefApexZoneLods(reefMat, passiveMat)) != null)
                 createdCount++;
 
-            if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_RuinApex.prefab", new Vector3(17f, 14f, 17f), BuildRuinApexZoneLods(ruinMat, predatorMat)) != null)
+            GameObject ruinApexPrefab = CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Zone_RuinApex.prefab", new Vector3(17f, 14f, 17f), BuildRuinApexZoneLods(ruinMat, predatorMat));
+            if (ruinApexPrefab != null)
+            {
+                AttachRuinApexIndustrialDecals(ruinApexPrefab);
                 createdCount++;
+            }
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[WorldProceduralSupportFinalAuthoring] Rebuilt world-support final prefabs. Created={createdCount}.");
         }
 
-        private static CompositeLodSpec[] BuildResourcePocketLods(Material resourceMat)
+        private static CompositeLodSpec[] BuildResourcePocketLods(Material resourceMat, Material passiveMat)
         {
             return new[]
             {
@@ -85,6 +95,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("ShardB", PrimitiveType.Cylinder, new Vector3(0.28f, 1.2f, 0.28f), new Vector3(0.82f, 0.58f, -0.42f), new Vector3(-8f, 0f, -16f), resourceMat),
                         new VisualPrimitiveSpec("BaseChunkA", PrimitiveType.Sphere, new Vector3(0.82f, 0.46f, 0.76f), new Vector3(-0.58f, 0.18f, -0.22f), Vector3.zero, resourceMat),
                         new VisualPrimitiveSpec("BaseChunkB", PrimitiveType.Sphere, new Vector3(0.68f, 0.36f, 0.62f), new Vector3(0.52f, 0.16f, 0.34f), Vector3.zero, resourceMat),
+                        new VisualPrimitiveSpec("ForagerA", PrimitiveType.Capsule, new Vector3(0.24f, 0.92f, 0.24f), new Vector3(-0.24f, 0.34f, 0.78f), new Vector3(6f, 0f, 12f), passiveMat),
+                        new VisualPrimitiveSpec("ForagerB", PrimitiveType.Capsule, new Vector3(0.2f, 0.78f, 0.2f), new Vector3(0.44f, 0.28f, -0.66f), new Vector3(-8f, 0f, -14f), passiveMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod1Threshold,
@@ -93,6 +105,7 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("MassA", PrimitiveType.Cube, new Vector3(1.2f, 0.92f, 1.0f), new Vector3(0f, 0.46f, 0f), new Vector3(0f, 12f, 0f), resourceMat),
                         new VisualPrimitiveSpec("MassB", PrimitiveType.Cylinder, new Vector3(0.30f, 1.1f, 0.30f), new Vector3(-0.42f, 0.54f, 0.24f), new Vector3(0f, 0f, 14f), resourceMat),
                         new VisualPrimitiveSpec("MassC", PrimitiveType.Cylinder, new Vector3(0.24f, 0.92f, 0.24f), new Vector3(0.46f, 0.44f, -0.18f), new Vector3(0f, 0f, -14f), resourceMat),
+                        new VisualPrimitiveSpec("ForagerSilhouette", PrimitiveType.Capsule, new Vector3(0.42f, 0.9f, 0.42f), new Vector3(0.12f, 0.3f, 0.18f), Vector3.zero, passiveMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod2Threshold,
@@ -103,7 +116,7 @@ namespace Hecton8.EditorTools
             };
         }
 
-        private static CompositeLodSpec[] BuildHazardPocketLods(Material hazardMat)
+        private static CompositeLodSpec[] BuildHazardPocketLods(Material hazardMat, Material predatorMat)
         {
             return new[]
             {
@@ -116,6 +129,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("SpineB", PrimitiveType.Cylinder, new Vector3(0.18f, 2.0f, 0.18f), new Vector3(1.0f, 0.92f, -0.54f), new Vector3(-18f, 0f, -26f), hazardMat),
                         new VisualPrimitiveSpec("SpineC", PrimitiveType.Cylinder, new Vector3(0.16f, 1.6f, 0.16f), new Vector3(-0.32f, 0.72f, -1.0f), new Vector3(12f, 0f, 14f), hazardMat),
                         new VisualPrimitiveSpec("SpineD", PrimitiveType.Cylinder, new Vector3(0.16f, 1.5f, 0.16f), new Vector3(0.44f, 0.70f, 1.02f), new Vector3(-10f, 0f, -18f), hazardMat),
+                        new VisualPrimitiveSpec("ParasiteA", PrimitiveType.Cylinder, new Vector3(0.12f, 1.10f, 0.12f), new Vector3(-0.86f, 1.22f, 0.88f), new Vector3(0f, 0f, 20f), predatorMat),
+                        new VisualPrimitiveSpec("ParasiteB", PrimitiveType.Cylinder, new Vector3(0.10f, 0.96f, 0.10f), new Vector3(0.92f, 1.14f, -0.82f), new Vector3(0f, 0f, -22f), predatorMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod1Threshold,
@@ -124,6 +139,7 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("VentMass", PrimitiveType.Cylinder, new Vector3(1.3f, 1.1f, 1.3f), new Vector3(0f, 0.54f, 0f), Vector3.zero, hazardMat),
                         new VisualPrimitiveSpec("SpineA", PrimitiveType.Cylinder, new Vector3(0.16f, 1.4f, 0.16f), new Vector3(-0.72f, 0.72f, 0.38f), new Vector3(10f, 0f, 18f), hazardMat),
                         new VisualPrimitiveSpec("SpineB", PrimitiveType.Cylinder, new Vector3(0.16f, 1.5f, 0.16f), new Vector3(0.68f, 0.76f, -0.34f), new Vector3(-10f, 0f, -18f), hazardMat),
+                        new VisualPrimitiveSpec("PredatorPerch", PrimitiveType.Cylinder, new Vector3(0.14f, 1.08f, 0.14f), new Vector3(0f, 0.96f, 0.62f), new Vector3(0f, 0f, 12f), predatorMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod2Threshold,
@@ -134,7 +150,7 @@ namespace Hecton8.EditorTools
             };
         }
 
-        private static CompositeLodSpec[] BuildSafePocketLods(Material safeMat)
+        private static CompositeLodSpec[] BuildSafePocketLods(Material safeMat, Material passiveMat)
         {
             return new[]
             {
@@ -146,6 +162,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("ShelterArchB", PrimitiveType.Capsule, new Vector3(1.0f, 1.9f, 1.0f), new Vector3(0.92f, 0.92f, 0f), new Vector3(0f, 0f, -42f), safeMat),
                         new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(2.4f, 1.1f, 2.4f), new Vector3(0f, 1.32f, 0f), Vector3.zero, safeMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(1.8f, 0.2f, 1.8f), new Vector3(0f, 0.1f, 0f), Vector3.zero, safeMat),
+                        new VisualPrimitiveSpec("VisitorA", PrimitiveType.Capsule, new Vector3(0.28f, 1.10f, 0.28f), new Vector3(-0.68f, 0.58f, 0.72f), new Vector3(8f, 0f, 12f), passiveMat),
+                        new VisualPrimitiveSpec("VisitorB", PrimitiveType.Capsule, new Vector3(0.24f, 0.92f, 0.24f), new Vector3(0.74f, 0.54f, -0.64f), new Vector3(-8f, 0f, -10f), passiveMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod1Threshold,
@@ -154,6 +172,7 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(2.2f, 1.0f, 2.2f), new Vector3(0f, 1.2f, 0f), Vector3.zero, safeMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(1.6f, 0.18f, 1.6f), new Vector3(0f, 0.09f, 0f), Vector3.zero, safeMat),
                         new VisualPrimitiveSpec("Support", PrimitiveType.Capsule, new Vector3(0.82f, 1.5f, 0.82f), new Vector3(0f, 0.78f, 0f), Vector3.zero, safeMat),
+                        new VisualPrimitiveSpec("VisitorSilhouette", PrimitiveType.Capsule, new Vector3(0.52f, 1.12f, 0.52f), new Vector3(0f, 0.58f, 0.22f), Vector3.zero, passiveMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod2Threshold,
@@ -176,6 +195,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("BeaconA", PrimitiveType.Capsule, new Vector3(0.42f, 1.6f, 0.42f), new Vector3(-0.92f, 0.78f, 0.54f), new Vector3(8f, 0f, 12f), passiveMat),
                         new VisualPrimitiveSpec("BeaconB", PrimitiveType.Capsule, new Vector3(0.38f, 1.4f, 0.38f), new Vector3(0.86f, 0.68f, -0.48f), new Vector3(-8f, 0f, -10f), passiveMat),
                         new VisualPrimitiveSpec("BeaconC", PrimitiveType.Capsule, new Vector3(0.32f, 1.2f, 0.32f), new Vector3(0.24f, 0.60f, 0.96f), new Vector3(10f, 0f, -6f), safeMat),
+                        new VisualPrimitiveSpec("FryA", PrimitiveType.Capsule, new Vector3(0.18f, 0.68f, 0.18f), new Vector3(-0.34f, 0.42f, 0.88f), new Vector3(12f, 0f, 18f), passiveMat),
+                        new VisualPrimitiveSpec("FryB", PrimitiveType.Capsule, new Vector3(0.16f, 0.58f, 0.16f), new Vector3(0.46f, 0.36f, -0.82f), new Vector3(-10f, 0f, -16f), passiveMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod1Threshold,
@@ -184,6 +205,7 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("SpawnMass", PrimitiveType.Cylinder, new Vector3(1.4f, 0.18f, 1.4f), new Vector3(0f, 0.09f, 0f), Vector3.zero, passiveMat),
                         new VisualPrimitiveSpec("BeaconA", PrimitiveType.Capsule, new Vector3(0.34f, 1.28f, 0.34f), new Vector3(-0.52f, 0.62f, 0.22f), Vector3.zero, passiveMat),
                         new VisualPrimitiveSpec("BeaconB", PrimitiveType.Capsule, new Vector3(0.30f, 1.08f, 0.30f), new Vector3(0.58f, 0.54f, -0.26f), Vector3.zero, safeMat),
+                        new VisualPrimitiveSpec("SpawnVisitor", PrimitiveType.Capsule, new Vector3(0.34f, 0.72f, 0.34f), new Vector3(0.14f, 0.28f, 0.42f), Vector3.zero, passiveMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod2Threshold,
@@ -207,6 +229,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("ToothB", PrimitiveType.Cylinder, new Vector3(0.16f, 2.0f, 0.16f), new Vector3(0.92f, 0.92f, -0.46f), new Vector3(0f, 0f, -34f), predatorMat),
                         new VisualPrimitiveSpec("ToothC", PrimitiveType.Cylinder, new Vector3(0.14f, 1.6f, 0.14f), new Vector3(-0.28f, 0.74f, -1.02f), new Vector3(0f, 0f, 20f), predatorMat),
                         new VisualPrimitiveSpec("ToothD", PrimitiveType.Cylinder, new Vector3(0.14f, 1.5f, 0.14f), new Vector3(0.42f, 0.70f, 1.0f), new Vector3(0f, 0f, -18f), predatorMat),
+                        new VisualPrimitiveSpec("ScoutA", PrimitiveType.Cylinder, new Vector3(0.10f, 0.96f, 0.10f), new Vector3(-0.62f, 1.08f, 0.94f), new Vector3(0f, 0f, 18f), predatorMat),
+                        new VisualPrimitiveSpec("ScoutB", PrimitiveType.Cylinder, new Vector3(0.10f, 0.88f, 0.10f), new Vector3(0.68f, 1.02f, -0.88f), new Vector3(0f, 0f, -20f), predatorMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod1Threshold,
@@ -215,6 +239,7 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("NestMass", PrimitiveType.Sphere, new Vector3(1.8f, 0.66f, 1.8f), new Vector3(0f, 0.24f, 0f), Vector3.zero, hazardMat),
                         new VisualPrimitiveSpec("ToothA", PrimitiveType.Cylinder, new Vector3(0.14f, 1.4f, 0.14f), new Vector3(-0.48f, 0.68f, 0.28f), new Vector3(0f, 0f, 18f), predatorMat),
                         new VisualPrimitiveSpec("ToothB", PrimitiveType.Cylinder, new Vector3(0.14f, 1.5f, 0.14f), new Vector3(0.52f, 0.72f, -0.24f), new Vector3(0f, 0f, -18f), predatorMat),
+                        new VisualPrimitiveSpec("ScoutPerch", PrimitiveType.Cylinder, new Vector3(0.12f, 0.94f, 0.12f), new Vector3(0.06f, 0.78f, 0.46f), new Vector3(0f, 0f, 12f), predatorMat),
                     }),
                 new CompositeLodSpec(
                     WorldProceduralSupportContract.RequiredLod2Threshold,
@@ -237,6 +262,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("ArchA", PrimitiveType.Capsule, new Vector3(1.2f, 9.2f, 1.2f), new Vector3(-3.8f, 4.6f, 0f), new Vector3(0f, 0f, 28f), abyssMat),
                         new VisualPrimitiveSpec("ArchB", PrimitiveType.Capsule, new Vector3(1.2f, 9.2f, 1.2f), new Vector3(3.8f, 4.6f, 0f), new Vector3(0f, 0f, -28f), abyssMat),
                         new VisualPrimitiveSpec("Ring", PrimitiveType.Cylinder, new Vector3(4.6f, 0.22f, 4.6f), new Vector3(0f, 2.2f, 0f), new Vector3(90f, 0f, 0f), predatorMat),
+                        new VisualPrimitiveSpec("SentryA", PrimitiveType.Capsule, new Vector3(0.64f, 2.2f, 0.64f), new Vector3(-2.26f, 2.9f, 2.12f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("SentryB", PrimitiveType.Capsule, new Vector3(0.58f, 2.0f, 0.58f), new Vector3(2.34f, 2.76f, -2.04f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(5.4f, 0.28f, 5.4f), new Vector3(0f, 0.14f, 0f), Vector3.zero, abyssMat),
                     }),
                 new CompositeLodSpec(
@@ -245,6 +272,7 @@ namespace Hecton8.EditorTools
                     {
                         new VisualPrimitiveSpec("Spine", PrimitiveType.Cylinder, new Vector3(0.68f, 7.0f, 0.68f), new Vector3(0f, 3.5f, 0f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("ArchMass", PrimitiveType.Capsule, new Vector3(1.0f, 7.8f, 1.0f), new Vector3(0f, 3.8f, 0f), new Vector3(0f, 0f, 90f), abyssMat),
+                        new VisualPrimitiveSpec("SentrySilhouette", PrimitiveType.Capsule, new Vector3(0.86f, 2.4f, 0.86f), new Vector3(0.18f, 2.84f, 0.26f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(4.8f, 0.22f, 4.8f), new Vector3(0f, 0.11f, 0f), Vector3.zero, abyssMat),
                     }),
                 new CompositeLodSpec(
@@ -268,6 +296,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("FinA", PrimitiveType.Cube, new Vector3(1.2f, 9.4f, 8.6f), new Vector3(-3.8f, 4.8f, 0f), new Vector3(0f, 18f, 14f), predatorMat),
                         new VisualPrimitiveSpec("FinB", PrimitiveType.Cube, new Vector3(1.2f, 9.4f, 8.6f), new Vector3(3.8f, 4.8f, 0f), new Vector3(0f, -18f, -14f), predatorMat),
                         new VisualPrimitiveSpec("Halo", PrimitiveType.Cylinder, new Vector3(6.2f, 0.28f, 6.2f), new Vector3(0f, 7.2f, 0f), new Vector3(90f, 0f, 0f), predatorMat),
+                        new VisualPrimitiveSpec("WatcherA", PrimitiveType.Capsule, new Vector3(0.72f, 2.6f, 0.72f), new Vector3(-2.12f, 6.9f, 2.36f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("WatcherB", PrimitiveType.Capsule, new Vector3(0.66f, 2.3f, 0.66f), new Vector3(2.34f, 6.34f, -2.08f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(10.4f, 0.5f, 10.4f), new Vector3(0f, 0.24f, 0f), Vector3.zero, abyssMat),
                     }),
                 new CompositeLodSpec(
@@ -276,6 +306,7 @@ namespace Hecton8.EditorTools
                     {
                         new VisualPrimitiveSpec("Mass", PrimitiveType.Cube, new Vector3(5.0f, 10.4f, 5.0f), new Vector3(0f, 5.2f, 0f), Vector3.zero, abyssMat),
                         new VisualPrimitiveSpec("CrossFin", PrimitiveType.Cube, new Vector3(1.0f, 8.0f, 7.0f), new Vector3(0f, 4.0f, 0f), new Vector3(0f, 0f, 90f), predatorMat),
+                        new VisualPrimitiveSpec("WatcherSilhouette", PrimitiveType.Capsule, new Vector3(0.96f, 2.8f, 0.96f), new Vector3(0.34f, 6.08f, 0.42f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(9.2f, 0.4f, 9.2f), new Vector3(0f, 0.2f, 0f), Vector3.zero, abyssMat),
                     }),
                 new CompositeLodSpec(
@@ -299,6 +330,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("StemA", PrimitiveType.Capsule, new Vector3(1.0f, 7.4f, 1.0f), new Vector3(-2.4f, 3.6f, 2.0f), new Vector3(0f, 0f, 16f), passiveMat),
                         new VisualPrimitiveSpec("StemB", PrimitiveType.Capsule, new Vector3(0.92f, 6.8f, 0.92f), new Vector3(2.6f, 3.3f, -1.8f), new Vector3(0f, 0f, -14f), passiveMat),
                         new VisualPrimitiveSpec("StemC", PrimitiveType.Capsule, new Vector3(0.86f, 6.2f, 0.86f), new Vector3(0.6f, 3.0f, 2.8f), new Vector3(0f, 0f, 8f), passiveMat),
+                        new VisualPrimitiveSpec("DriftVisitorA", PrimitiveType.Capsule, new Vector3(0.56f, 1.8f, 0.56f), new Vector3(-1.82f, 4.9f, 1.58f), Vector3.zero, passiveMat),
+                        new VisualPrimitiveSpec("DriftVisitorB", PrimitiveType.Capsule, new Vector3(0.52f, 1.58f, 0.52f), new Vector3(1.94f, 4.72f, -1.36f), Vector3.zero, passiveMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(5.6f, 0.32f, 5.6f), new Vector3(0f, 0.16f, 0f), Vector3.zero, reefMat),
                     }),
                 new CompositeLodSpec(
@@ -307,6 +340,7 @@ namespace Hecton8.EditorTools
                     {
                         new VisualPrimitiveSpec("Canopy", PrimitiveType.Sphere, new Vector3(6.4f, 3.0f, 6.4f), new Vector3(0f, 4.1f, 0f), Vector3.zero, reefMat),
                         new VisualPrimitiveSpec("StemMass", PrimitiveType.Capsule, new Vector3(1.1f, 6.0f, 1.1f), new Vector3(0f, 3.0f, 0f), Vector3.zero, passiveMat),
+                        new VisualPrimitiveSpec("CanopyVisitor", PrimitiveType.Capsule, new Vector3(0.72f, 1.9f, 0.72f), new Vector3(0.42f, 4.28f, 0.38f), Vector3.zero, passiveMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(5.0f, 0.28f, 5.0f), new Vector3(0f, 0.14f, 0f), Vector3.zero, reefMat),
                     }),
                 new CompositeLodSpec(
@@ -330,6 +364,8 @@ namespace Hecton8.EditorTools
                         new VisualPrimitiveSpec("FrameB", PrimitiveType.Cube, new Vector3(1.4f, 9.8f, 1.4f), new Vector3(3.6f, 4.9f, -2.6f), new Vector3(0f, -10f, -4f), ruinMat),
                         new VisualPrimitiveSpec("CrossSpan", PrimitiveType.Cube, new Vector3(8.8f, 0.52f, 2.2f), new Vector3(0f, 7.8f, 0f), new Vector3(0f, 16f, 0f), ruinMat),
                         new VisualPrimitiveSpec("ThreatNest", PrimitiveType.Sphere, new Vector3(3.8f, 2.2f, 3.8f), new Vector3(0f, 1.1f, 0f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("PerchA", PrimitiveType.Capsule, new Vector3(0.68f, 2.2f, 0.68f), new Vector3(-2.34f, 6.46f, 1.94f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("PerchB", PrimitiveType.Capsule, new Vector3(0.62f, 2.0f, 0.62f), new Vector3(2.18f, 6.18f, -1.74f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("Anchor", PrimitiveType.Cylinder, new Vector3(4.4f, 0.3f, 4.4f), new Vector3(0f, 0.15f, 0f), Vector3.zero, ruinMat),
                     }),
                 new CompositeLodSpec(
@@ -338,6 +374,7 @@ namespace Hecton8.EditorTools
                     {
                         new VisualPrimitiveSpec("FrameMass", PrimitiveType.Cube, new Vector3(7.6f, 7.8f, 2.4f), new Vector3(0f, 4.0f, 0f), new Vector3(0f, 12f, 0f), ruinMat),
                         new VisualPrimitiveSpec("Nest", PrimitiveType.Sphere, new Vector3(3.4f, 2.0f, 3.4f), new Vector3(0f, 1.0f, 0f), Vector3.zero, predatorMat),
+                        new VisualPrimitiveSpec("NestSentinel", PrimitiveType.Capsule, new Vector3(0.9f, 2.5f, 0.9f), new Vector3(0.22f, 3.16f, 0.38f), Vector3.zero, predatorMat),
                         new VisualPrimitiveSpec("Base", PrimitiveType.Cylinder, new Vector3(4.0f, 0.24f, 4.0f), new Vector3(0f, 0.12f, 0f), Vector3.zero, ruinMat),
                     }),
                 new CompositeLodSpec(
@@ -362,6 +399,8 @@ namespace Hecton8.EditorTools
                 collider.center = new Vector3(0f, colliderSize.y * 0.5f, 0f);
 
                 BuildCompositeVisuals(root.transform, lodSpecs);
+                ApplyAmbientFaunaShadowPolicy(root.transform);
+                EditorUtility.SetDirty(root);
                 GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 return savedPrefab != null ? savedPrefab : AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             }
@@ -413,6 +452,30 @@ namespace Hecton8.EditorTools
             }
         }
 
+        private static void ApplyAmbientFaunaShadowPolicy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+                return;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                    continue;
+
+                if (!IsAmbientFaunaPrimitive(renderer.gameObject.name))
+                    continue;
+
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                EditorUtility.SetDirty(renderer);
+            }
+        }
+
         private static Renderer CreateVisualPrimitive(
             Transform parent,
             string name,
@@ -435,9 +498,54 @@ namespace Hecton8.EditorTools
 
             Renderer renderer = visual.GetComponent<Renderer>();
             if (renderer != null)
+            {
                 renderer.sharedMaterial = material;
+                if (IsAmbientFaunaPrimitive(name))
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                }
+            }
 
             return renderer;
+        }
+
+        private static bool IsAmbientFaunaPrimitive(string name)
+        {
+            switch (name)
+            {
+                case "VisitorA":
+                case "VisitorB":
+                case "VisitorSilhouette":
+                case "ForagerA":
+                case "ForagerB":
+                case "ForagerSilhouette":
+                case "FryA":
+                case "FryB":
+                case "SpawnVisitor":
+                case "ParasiteA":
+                case "ParasiteB":
+                case "PredatorPerch":
+                case "ScoutA":
+                case "ScoutB":
+                case "ScoutPerch":
+                case "DriftVisitorA":
+                case "DriftVisitorB":
+                case "CanopyVisitor":
+                case "SentryA":
+                case "SentryB":
+                case "SentrySilhouette":
+                case "WatcherA":
+                case "WatcherB":
+                case "WatcherSilhouette":
+                case "PerchA":
+                case "PerchB":
+                case "NestSentinel":
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
         private static Material CreateOrUpdateMaterial(string path, Color baseColor)
@@ -501,6 +609,12 @@ namespace Hecton8.EditorTools
                         0.45f,
                         1.2f,
                         particleMaterial);
+                    ConfigureHazardVentSheen(
+                        lod0,
+                        "VentSheen_Main",
+                        new Vector3(0f, 0.98f, 0f),
+                        new Vector3(90f, 0f, 0f),
+                        new Vector3(0.56f, 0.38f, 1f));
 
                     ConfigureHazardVentBubbleColumn(
                         lod0,
@@ -515,6 +629,12 @@ namespace Hecton8.EditorTools
                         0.35f,
                         0.92f,
                         particleMaterial);
+                    ConfigureHazardVentSheen(
+                        lod0,
+                        "VentSheen_Secondary",
+                        new Vector3(0.24f, 0.88f, -0.18f),
+                        new Vector3(90f, 0f, 0f),
+                        new Vector3(0.34f, 0.24f, 1f));
                 }
 
                 if (lod1 != null)
@@ -532,6 +652,12 @@ namespace Hecton8.EditorTools
                         0.32f,
                         0.84f,
                         particleMaterial);
+                    ConfigureHazardVentSheen(
+                        lod1,
+                        "VentSheen_LOD1",
+                        new Vector3(0f, 0.84f, 0f),
+                        new Vector3(90f, 0f, 0f),
+                        new Vector3(0.46f, 0.3f, 1f));
                 }
 
                 SyncHazardVentLodRenderers(prefabRoot, lod0, lod1);
@@ -658,6 +784,165 @@ namespace Hecton8.EditorTools
             EditorUtility.SetDirty(child.gameObject);
         }
 
+        private static void ConfigureHazardVentSheen(
+            Transform parent,
+            string childName,
+            Vector3 localPosition,
+            Vector3 localEulerAngles,
+            Vector3 localScale)
+        {
+            Material ventSheenMaterial = AssetDatabase.LoadAssetAtPath<Material>(VentSheenMaterialPath);
+            if (parent == null || ventSheenMaterial == null)
+                return;
+
+            Transform child = FindChildByName(parent, childName);
+            if (child == null)
+            {
+                GameObject sheenObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                sheenObject.name = childName;
+                sheenObject.transform.SetParent(parent, false);
+                child = sheenObject.transform;
+            }
+
+            child.localPosition = localPosition;
+            child.localRotation = Quaternion.Euler(localEulerAngles);
+            child.localScale = localScale;
+
+            Collider collider = child.GetComponent<Collider>();
+            if (collider != null)
+                Object.DestroyImmediate(collider);
+
+            MeshRenderer sheenRenderer = child.GetComponent<MeshRenderer>();
+            if (sheenRenderer != null)
+            {
+                sheenRenderer.sharedMaterial = ventSheenMaterial;
+                sheenRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                sheenRenderer.receiveShadows = false;
+                sheenRenderer.lightProbeUsage = LightProbeUsage.Off;
+                sheenRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                sheenRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            }
+
+            EditorUtility.SetDirty(child.gameObject);
+        }
+
+        private static void AttachRuinApexIndustrialDecals(GameObject prefabAsset)
+        {
+            if (prefabAsset == null)
+                return;
+
+            string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
+            if (string.IsNullOrEmpty(prefabPath))
+                return;
+
+            GameObject stripePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(IndustrialStripeDecalPrefabPath);
+            GameObject scuffPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(IndustrialScuffDecalPrefabPath);
+            if (stripePrefab == null || scuffPrefab == null)
+                return;
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                Transform lod0 = FindChildByName(prefabRoot.transform, "LOD0");
+                if (lod0 == null)
+                    return;
+
+                AttachSupportDecal(
+                    lod0,
+                    stripePrefab,
+                    RuinApexStripeFrameChildName,
+                    new Vector3(-3.18f, 5.78f, 3.54f),
+                    new Vector3(6f, -102f, 4f),
+                    new Vector3(0.92f, 1.46f, 1f));
+                AttachSupportDecal(
+                    lod0,
+                    stripePrefab,
+                    RuinApexStripeCrossSpanChildName,
+                    new Vector3(0.42f, 7.92f, 1.16f),
+                    new Vector3(0f, 18f, 0f),
+                    new Vector3(1.42f, 1.78f, 1f));
+                AttachSupportDecal(
+                    lod0,
+                    scuffPrefab,
+                    RuinApexScuffBaseChildName,
+                    new Vector3(0.58f, 0.42f, 1.64f),
+                    new Vector3(84f, 24f, 0f),
+                    new Vector3(1.34f, 1.12f, 1f));
+
+                SyncRuinApexIndustrialDecalRenderers(prefabRoot, lod0);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void AttachSupportDecal(
+            Transform parent,
+            GameObject decalPrefab,
+            string childName,
+            Vector3 localPosition,
+            Vector3 localEulerAngles,
+            Vector3 localScale)
+        {
+            if (parent == null || decalPrefab == null || string.IsNullOrEmpty(childName))
+                return;
+
+            Transform child = FindChildByName(parent, childName);
+            if (child == null)
+            {
+                Object instance = PrefabUtility.InstantiatePrefab(decalPrefab, parent);
+                if (instance is not GameObject childObject)
+                    return;
+
+                childObject.name = childName;
+                child = childObject.transform;
+            }
+
+            child.localPosition = localPosition;
+            child.localRotation = Quaternion.Euler(localEulerAngles);
+            child.localScale = localScale;
+
+            Renderer renderer = child.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.lightProbeUsage = LightProbeUsage.Off;
+                renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+                renderer.allowOcclusionWhenDynamic = false;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            EditorUtility.SetDirty(child.gameObject);
+        }
+
+        private static void SyncRuinApexIndustrialDecalRenderers(GameObject prefabRoot, Transform lod0)
+        {
+            if (prefabRoot == null || lod0 == null)
+                return;
+
+            LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
+            if (lodGroup == null)
+                return;
+
+            LOD[] lods = lodGroup.GetLODs();
+            if (lods == null || lods.Length < 1)
+                return;
+
+            lods[0].renderers = AppendRenderers(
+                lods[0].renderers,
+                ResolveRenderer(lod0, RuinApexStripeFrameChildName),
+                ResolveRenderer(lod0, RuinApexStripeCrossSpanChildName),
+                ResolveRenderer(lod0, RuinApexScuffBaseChildName));
+
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+            EditorUtility.SetDirty(lodGroup);
+        }
+
         private static void SyncHazardVentLodRenderers(GameObject prefabRoot, Transform lod0, Transform lod1)
         {
             if (prefabRoot == null)
@@ -674,11 +959,14 @@ namespace Hecton8.EditorTools
             lods[0].renderers = AppendRenderers(
                 lods[0].renderers,
                 ResolveRenderer(lod0, "VentBubbleColumn_Main"),
-                ResolveRenderer(lod0, "VentBubbleColumn_Secondary"));
+                ResolveRenderer(lod0, "VentBubbleColumn_Secondary"),
+                ResolveRenderer(lod0, "VentSheen_Main"),
+                ResolveRenderer(lod0, "VentSheen_Secondary"));
 
             lods[1].renderers = AppendRenderers(
                 lods[1].renderers,
-                ResolveRenderer(lod1, "VentBubbleColumn_LOD1"));
+                ResolveRenderer(lod1, "VentBubbleColumn_LOD1"),
+                ResolveRenderer(lod1, "VentSheen_LOD1"));
 
             lodGroup.SetLODs(lods);
             lodGroup.RecalculateBounds();

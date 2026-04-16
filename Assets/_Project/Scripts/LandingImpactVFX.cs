@@ -94,6 +94,15 @@ namespace Hecton8.VFX
         [SerializeField, Range(0.5f, 15f)]
         private float surfaceBreakRecoverySpeed = 7.5f;
 
+        [Header("── Locomotion Mode Mix ──────────────────────")]
+        [Tooltip("Interior walk impacts should feel slightly damped compared to hard exterior ground.")]
+        [SerializeField, Range(0f, 1f)]
+        private float dryInteriorImpactMultiplier = 0.82f;
+
+        [Tooltip("Shallow-wade impacts should feel heavily cushioned by water.")]
+        [SerializeField, Range(0f, 1f)]
+        private float shallowWadeImpactMultiplier = 0.48f;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED — Post-processing references (grabbed once)
         // ══════════════════════════════════════════════════════════
@@ -364,6 +373,7 @@ namespace Hecton8.VFX
                         float normalizedImpact = math.clamp(
                             (fallSpeed - suit.impactVelocityThreshold) / range,
                             0f, 1f);
+                        normalizedImpact *= ResolveImpactMultiplier();
 
                         _currentIntensity = normalizedImpact;
                         _holdTimer = holdDuration;
@@ -444,6 +454,24 @@ namespace Hecton8.VFX
             _waterTransitionChromaticScale = math.max(0f, chromaticScale);
             _waterTransitionVignetteScale = math.max(0f, vignetteScale);
             _waterTransitionRecoverySpeed = math.max(0.1f, decaySpeed);
+        }
+
+        private float ResolveImpactMultiplier()
+        {
+            if (playerMovement == null)
+                return 1f;
+
+            switch (playerMovement.CurrentLocomotionMode)
+            {
+                case PlayerLocomotionMode.DryInteriorWalk:
+                    return dryInteriorImpactMultiplier;
+
+                case PlayerLocomotionMode.ShallowWadeWalk:
+                    return shallowWadeImpactMultiplier;
+
+                default:
+                    return 1f;
+            }
         }
     }
 }

@@ -1,11 +1,11 @@
 using System;
 using Hecton8.Audio;
+using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Crest;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -18,7 +18,6 @@ namespace Hecton8.Atmosphere
     [DefaultExecutionOrder(-4500)]
     public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, ISlowTickable
     {
-        private const string WorldSceneName = "02_HECTON_WORLD";
         private const float ResolveRetryInterval = 2f;
         private const int ShelterSampleCount = 5;
 
@@ -165,42 +164,6 @@ namespace Hecton8.Atmosphere
         private static void ResetStaticState()
         {
             _instance = null;
-            SceneManager.sceneLoaded -= HandleSceneLoaded;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void RegisterSceneHooks()
-        {
-            SceneManager.sceneLoaded -= HandleSceneLoaded;
-            SceneManager.sceneLoaded += HandleSceneLoaded;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsureInitialSceneInstance()
-        {
-            HandleSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
-        }
-
-        private static void HandleSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
-        {
-            if (!Application.isPlaying || _instance != null || !ShouldBootstrapScene(scene))
-                return;
-
-            if (FindAnyObjectByType<HectonSurfaceWeatherDirector>() != null)
-                return;
-
-            if (GameTickManager.Instance == null)
-                return;
-
-            GameObject runtimeRoot = new GameObject("[SURFACE_WEATHER]");
-            runtimeRoot.AddComponent<HectonSurfaceWeatherDirector>();
-        }
-
-        private static bool ShouldBootstrapScene(Scene scene)
-        {
-            return scene.IsValid() &&
-                   scene.isLoaded &&
-                   string.Equals(scene.name, WorldSceneName, StringComparison.Ordinal);
         }
 
         [Header("Weather Profiles")]
@@ -274,6 +237,8 @@ namespace Hecton8.Atmosphere
         private readonly RuntimeWeatherProfile[] _fallbackProfiles = new RuntimeWeatherProfile[5];
         // COLD ALLOC: RaycastHit[8] - reusable shelter probe hits for local rain exposure checks - owner: HectonSurfaceWeatherDirector
         private readonly RaycastHit[] _shelterHits = new RaycastHit[8];
+        // COLD ALLOC: List<GameObject>[16] - root traversal buffer for cold-path scene-owned manager resolve - owner: HectonSurfaceWeatherDirector
+        private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer = new System.Collections.Generic.List<GameObject>(16);
 
         private RuntimeWeatherProfile _targetProfile;
         private WeatherFrameState _currentState;
@@ -370,17 +335,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
-            if (_registeredTick && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ITickable)this);
-                _registeredTick = false;
-            }
-
-            if (_registeredSlowTick && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredSlowTick = false;
-            }
+            TryUnregisterTickManagers();
 
             RefreshPlayerMovementSubscription(null);
             ClearWeatherBindings();
@@ -388,6 +343,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDestroy()
         {
+            TryUnregisterTickManagers();
             RefreshPlayerMovementSubscription(null);
 
             if (_instance == this)
@@ -441,6 +397,27 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private void TryUnregisterTickManagers()
+        {
+            GameTickManager tickManager = GameTickManager.Instance;
+
+            if (_registeredTick)
+            {
+                if (tickManager != null)
+                    tickManager.Unregister((ITickable)this);
+
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                if (tickManager != null)
+                    tickManager.Unregister((ISlowTickable)this);
+
+                _registeredSlowTick = false;
+            }
+        }
+
         private void TryResolveDependencies(bool force)
         {
             if (!Application.isPlaying)
@@ -451,19 +428,8 @@ namespace Hecton8.Atmosphere
 
             _nextResolveTime = Time.unscaledTime + ResolveRetryInterval;
 
-            if (playerMovement == null)
-                playerMovement = FindAnyObjectByType<HectonPlayerMovement>();
-
-            _playerTransform = playerMovement != null ? playerMovement.transform : null;
-
-            if (underwaterVisuals == null)
-                underwaterVisuals = FindAnyObjectByType<HectonUnderwaterVisuals>();
-
-            if (celestialEngine == null)
-                celestialEngine = FindAnyObjectByType<HectonCelestialEngine>();
-
-            if (acousticZoneController == null)
-                acousticZoneController = FindAnyObjectByType<AcousticZoneController>();
+            ResolvePlayerMovementReference();
+            ResolveSceneOwnedReferences();
 
             if (_oceanRenderer == null)
                 _oceanRenderer = OceanRenderer.Instance;
@@ -476,6 +442,57 @@ namespace Hecton8.Atmosphere
 
             RefreshPlayerMovementSubscription();
             CacheOceanDefaults();
+        }
+
+        private void ResolvePlayerMovementReference()
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
+                currentPlayerTransform != null)
+            {
+                _playerTransform = currentPlayerTransform;
+
+                if (playerMovement == null || playerMovement.transform != currentPlayerTransform)
+                    currentPlayerTransform.TryGetComponent(out playerMovement);
+            }
+            else
+            {
+                _playerTransform = playerMovement != null ? playerMovement.transform : null;
+            }
+        }
+
+        private void ResolveSceneOwnedReferences()
+        {
+            if (underwaterVisuals == null)
+                TryGetComponent(out underwaterVisuals);
+
+            if (acousticZoneController == null)
+                acousticZoneController = AcousticZoneController.Instance;
+
+            if (acousticZoneController == null)
+                TryGetComponent(out acousticZoneController);
+
+            if (weatherVfxRig == null)
+                weatherVfxRig = GetComponentInChildren<SurfaceWeatherVfxRig>(true);
+
+            if (celestialEngine != null)
+                return;
+
+            _sceneRootBuffer.Clear();
+            gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+            int rootCount = _sceneRootBuffer.Count;
+            for (int i = 0; i < rootCount; i++)
+            {
+                GameObject rootObject = _sceneRootBuffer[i];
+                if (rootObject == null)
+                    continue;
+
+                HectonCelestialEngine candidate = rootObject.GetComponentInChildren<HectonCelestialEngine>(true);
+                if (candidate == null)
+                    continue;
+
+                celestialEngine = candidate;
+                break;
+            }
         }
 
         private SurfaceWeatherVfxRig CreateRuntimeVfxRig()
@@ -1766,9 +1783,34 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private void TryAssignEditorSceneReferences()
+        {
+            if (playerMovement == null && SceneBootstrap.CurrentPlayerTransform != null)
+                SceneBootstrap.CurrentPlayerTransform.TryGetComponent(out playerMovement);
+
+            if (underwaterVisuals == null)
+                TryGetComponent(out underwaterVisuals);
+
+            if (acousticZoneController == null)
+                acousticZoneController = GetComponent<AcousticZoneController>();
+
+            if (weatherVfxRig == null)
+                weatherVfxRig = GetComponentInChildren<SurfaceWeatherVfxRig>(true);
+
+            if (celestialEngine == null)
+                celestialEngine = FindAnyObjectByType<HectonCelestialEngine>();
+        }
+
+        private void Reset()
+        {
+            TryAssignEditorAuthoringDefaults();
+            TryAssignEditorSceneReferences();
+        }
+
         private void OnValidate()
         {
             TryAssignEditorAuthoringDefaults();
+            TryAssignEditorSceneReferences();
 
             if (surfaceSuppressionDepth < surfaceActivationDepth)
                 surfaceSuppressionDepth = surfaceActivationDepth;

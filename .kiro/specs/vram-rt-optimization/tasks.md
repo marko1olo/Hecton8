@@ -20,7 +20,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
   - Define `VRAMBudgetThresholds` struct with default values (900/500/1200 MB)
   - _Requirements: 1.1, 1.2, 1.3, 2.1_
 
-- [ ] 2. Implement VRAMMonitor singleton with ISlowTickable
+- [x] 2. Implement VRAMMonitor singleton with ISlowTickable
   - [x] 2.1 Create VRAMMonitor class with singleton pattern and ISlowTickable
     - Implement singleton pattern (explicit `_instance` field, Awake null-check, OnDestroy cleanup)
     - Add `[DefaultExecutionOrder(-8000)]` and `[DisallowMultipleComponent]`
@@ -49,7 +49,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that `GetVRAMBreakdown()` returns values matching internal state
     - Test that `IsTextureMemoryOverBudget`, `IsRenderTextureMemoryOverBudget`, `IsTotalVRAMOverBudget` properties work correctly
 
-- [ ] 3. Implement RenderTextureLifecycleTracker singleton
+- [x] 3. Implement RenderTextureLifecycleTracker singleton
   - [x] 3.1 Create RenderTextureLifecycleTracker class with singleton pattern
     - Implement singleton pattern with `[DefaultExecutionOrder(-7999)]`
     - Add cold allocations: `Dictionary<int, RenderTextureAllocationRecord>[256]`, `List<Record>[32]`, `StringBuilder[2048]`
@@ -94,10 +94,10 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 2.4**
     - Test that duplicate allocations (same owner, resolution, format within 1 frame) are detected
 
-- [ ] 4. Checkpoint - Ensure all tests pass
+- [x] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement RenderTexturePool singleton with O(1) pooling
+- [x] 5. Implement RenderTexturePool singleton with O(1) pooling
   - [x] 5.1 Create RenderTexturePool class with singleton pattern
     - Implement singleton pattern with `[DefaultExecutionOrder(-7998)]`
     - Add cold allocations: 4 `Dictionary<int, Queue<RenderTexture>>[16]` (one per format: R8, RG16, RGBA16, RGBA32)
@@ -141,7 +141,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that all pooled RTs are released on SceneManager.sceneUnloaded event
     - Verify pool count is 0 after scene unload
 
-- [ ] 6. Implement subsystem managers (Visor, Camera, PostFX, UI)
+- [x] 6. Implement subsystem managers (Visor, Camera, PostFX, UI)
   - [x] 6.1 Create VisorRTManager singleton with ISlowTickable
     - Implement singleton pattern with `[DefaultExecutionOrder(-7997)]`
     - Add cold allocations: `StringBuilder[1024]`, `List<RenderTextureAllocationRecord>[32]`
@@ -190,10 +190,10 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 6.5, 7.4, 8.4, 9.4**
     - Test that warnings include breakdown by RT owner when over budget
 
-- [ ] 7. Checkpoint - Ensure all tests pass
+- [x] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement VRAMOptimizationBootstrap initialization
+- [x] 8. Implement VRAMOptimizationBootstrap initialization
   - [x] 8.1 Create VRAMOptimizationBootstrap class with RuntimeInitializeOnLoadMethod
     - Add `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`
     - Create GameObject "__VRAMOptimizationBootstrap" with DontDestroyOnLoad
@@ -206,7 +206,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that DontDestroyOnLoad is applied
     - Test that all singletons are registered with GameTickManager
 
-- [ ] 9. Integrate with VisorHUDController for RT disposal fix
+- [x] 9. Integrate with VisorHUDController for RT disposal fix
   - [x] 9.1 Modify VisorHUDController to use RenderTexturePool
     - Replace `new RenderTexture()` with `RenderTexturePool.Instance.Rent()`
     - Call `RenderTextureLifecycleTracker.Instance.RegisterAllocation()` after Rent
@@ -220,7 +220,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 6.3, 7.3, 8.3, 9.3**
     - Test that all Visor RTs are disposed within 1 frame of VisorHUDController disable/destroy
 
-- [ ] 10. Integrate with RuntimePerformanceProfiler for VRAM reporting
+- [x] 10. Integrate with RuntimePerformanceProfiler for VRAM reporting
   - [x] 10.1 Add VRAM monitoring to RuntimePerformanceProfiler.SlowTick()
     - Query `VRAMMonitor.Instance.GetVRAMBreakdown()` for texture, RT, total VRAM
     - Store values in `_debugLastTextureMB`, `_debugLastRenderTextureMB`, `_debugLastTotalVRAMMB` fields
@@ -232,10 +232,10 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that RuntimePerformanceProfiler displays VRAM stats correctly
     - Test that warnings are shown when thresholds exceeded
 
-- [ ] 11. Checkpoint - Ensure all tests pass
+- [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement RenderTextureFormatOptimizer Editor tool
+- [x] 12. Implement RenderTextureFormatOptimizer Editor tool
   - [x] 12.1 Create RenderTextureFormatOptimizer static class (Editor-only)
     - Add `#if UNITY_EDITOR` guard
     - Implement `AnalyzeFormats()` querying LifecycleTracker for all tracked RTs
@@ -254,7 +254,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 3.3**
     - Test that memory savings are calculated correctly for format changes
 
-  - [ ] 12.4 Implement format change validation
+  - [x] 12.4 Implement format change validation
     - Implement `ValidateFormatChange()` rendering test frame at old and new formats
     - Use `Texture2D.ReadPixels()` to capture pixel data
     - Compare byte-by-byte for bit-identical validation
@@ -266,7 +266,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 3.5**
     - Test that lossless format changes (RGBA32 → R8 for R-only) produce bit-identical output
 
-  - [ ] 12.6 Implement VRAM delta measurement for format optimization
+  - [x] 12.6 Implement VRAM delta measurement for format optimization
     - Capture BEFORE VRAM via `Profiler.GetTotalAllocatedMemoryLong()`
     - Apply format change
     - Capture AFTER VRAM
@@ -284,7 +284,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 3.4**
     - Test that report includes all RTs with suboptimal formats
 
-- [ ] 13. Implement RenderTextureResolutionAnalyzer Editor tool
+- [x] 13. Implement RenderTextureResolutionAnalyzer Editor tool
   - [x] 13.1 Create RenderTextureResolutionAnalyzer static class (Editor-only)
     - Add `#if UNITY_EDITOR` guard
     - Implement `AnalyzeResolutions()` querying LifecycleTracker for all tracked RTs
@@ -325,7 +325,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - **Validates: Requirements 4.5**
     - Test that report includes all RTs with oversized resolutions
 
-  - [ ] 13.8 Implement screenshot capture for visual regression testing
+  - [x] 13.8 Implement screenshot capture for visual regression testing
     - Implement `CaptureScreenshot()` rendering RT to Texture2D
     - Export as PNG at 1920×1080 resolution
     - Capture BEFORE and AFTER screenshots for comparison
@@ -336,10 +336,10 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that screenshots are captured correctly at 1920×1080
     - Test that BEFORE and AFTER screenshots are saved to correct paths
 
-- [ ] 14. Checkpoint - Ensure all tests pass
+- [x] 14. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Implement RenderTextureLifecycleWindow Editor UI
+- [x] 15. Implement RenderTextureLifecycleWindow Editor UI
   - [x] 15.1 Create RenderTextureLifecycleWindow EditorWindow class
     - Add `#if UNITY_EDITOR` guard
     - Add `[MenuItem("Hecton8/Optimization/RenderTexture Lifecycle Viewer")]`
@@ -353,7 +353,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that Editor window displays correct RT count and memory
     - Test that audit report is displayed correctly grouped by owner
 
-- [ ] 16. Create Editor menu items for optimization tools
+- [x] 16. Create Editor menu items for optimization tools
   - [x] 16.1 Add menu items for FormatOptimizer and ResolutionAnalyzer
     - Add `[MenuItem("Hecton8/Optimization/Analyze RT Formats")]` calling `FormatOptimizer.AnalyzeFormats()`
     - Add `[MenuItem("Hecton8/Optimization/Analyze RT Resolutions")]` calling `ResolutionAnalyzer.AnalyzeResolutions()`
@@ -365,7 +365,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that menu items invoke correct analysis methods
     - Test that results are displayed correctly in EditorWindow
 
-- [ ] 17. Final integration and wiring
+- [x] 17. Final integration and wiring
   - [x] 17.1 Wire all components together and verify initialization order
     - Verify bootstrap creates all singletons in correct order
     - Verify all singletons register with GameTickManager
@@ -381,7 +381,7 @@ This implementation plan breaks down the VRAM/RenderTexture Optimization System 
     - Test that pooling works end-to-end
     - Test that subsystem managers work end-to-end
 
-- [ ] 18. Final checkpoint - Ensure all tests pass
+- [x] 18. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

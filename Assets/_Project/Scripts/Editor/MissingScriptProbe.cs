@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
@@ -10,13 +11,15 @@ namespace Hecton8.Editor
     [InitializeOnLoad]
     internal static class MissingScriptProbe
     {
-        private const int LoadedObjectRescanFrames = 120;
+        private const int LoadedObjectRescanPassCount = 6;
+        private const double LoadedObjectRescanIntervalSeconds = 0.5d;
         private const int AssetScanLogLimit = 64;
         private static readonly string[] AssetScanRoots = { "Assets" };
         private static readonly StringBuilder ReportBuilder = new StringBuilder(512);
         private static readonly HashSet<string> ReportedKeys = new HashSet<string>();
         private static bool _prefabAssetScanCompleted;
-        private static int _remainingPlayModeRescanFrames;
+        private static int _remainingPlayModeRescanPasses;
+        private static double _nextPlayModeRescanAt;
 
         static MissingScriptProbe()
         {
@@ -31,12 +34,14 @@ namespace Hecton8.Editor
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 ScanLoadedObjects("entered-play-mode");
-                _remainingPlayModeRescanFrames = LoadedObjectRescanFrames;
+                _remainingPlayModeRescanPasses = LoadedObjectRescanPassCount;
+                _nextPlayModeRescanAt = EditorApplication.timeSinceStartup + LoadedObjectRescanIntervalSeconds;
                 ScanPrefabAssetsOnce();
             }
             else if (state == PlayModeStateChange.ExitingPlayMode)
             {
-                _remainingPlayModeRescanFrames = 0;
+                _remainingPlayModeRescanPasses = 0;
+                _nextPlayModeRescanAt = 0d;
             }
         }
 
@@ -47,17 +52,24 @@ namespace Hecton8.Editor
 
         private static void HandleEditorUpdate()
         {
-            if (_remainingPlayModeRescanFrames <= 0)
+            if (_remainingPlayModeRescanPasses <= 0)
                 return;
 
             if (!EditorApplication.isPlaying)
             {
-                _remainingPlayModeRescanFrames = 0;
+                _remainingPlayModeRescanPasses = 0;
+                _nextPlayModeRescanAt = 0d;
                 return;
             }
 
-            _remainingPlayModeRescanFrames--;
-            ScanLoadedObjects($"play-update:{LoadedObjectRescanFrames - _remainingPlayModeRescanFrames}");
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextPlayModeRescanAt)
+                return;
+
+            int completedPassIndex = (LoadedObjectRescanPassCount - _remainingPlayModeRescanPasses) + 1;
+            _remainingPlayModeRescanPasses--;
+            _nextPlayModeRescanAt = now + LoadedObjectRescanIntervalSeconds;
+            ScanLoadedObjects($"play-rescan:{completedPassIndex}");
         }
 
         private static void ScanLoadedObjects(string reason)
@@ -69,6 +81,15 @@ namespace Hecton8.Editor
                 if (gameObject == null)
                     continue;
 
+                if (gameObject.hideFlags != HideFlags.None)
+                    continue;
+
+                Scene scene = gameObject.scene;
+                bool isSceneObject = scene.IsValid() && scene.isLoaded && !string.IsNullOrEmpty(scene.path);
+                bool isDontDestroyObject = scene.IsValid() && string.Equals(scene.name, "DontDestroyOnLoad", global::System.StringComparison.Ordinal);
+                if (!isSceneObject && !isDontDestroyObject)
+                    continue;
+
                 int missingCount = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(gameObject);
                 if (missingCount <= 0)
                     continue;
@@ -78,7 +99,6 @@ namespace Hecton8.Editor
                     .Append(reason)
                     .Append(" scene=");
 
-                Scene scene = gameObject.scene;
                 ReportBuilder.Append(scene.IsValid() ? scene.name : "DontDestroyOnLoad");
                 ReportBuilder.Append(" path=")
                     .Append(GetHierarchyPath(gameObject.transform))
@@ -161,10 +181,6 @@ namespace Hecton8.Editor
                 Debug.LogWarning(
                     $"[MissingScriptProbe] Prefab scan found {totalMissingScripts} missing scripts across {totalObjectCount} objects. " +
                     $"Logged first {Mathf.Min(loggedObjectCount, AssetScanLogLimit)} objects.");
-            }
-            else
-            {
-                Debug.Log("[MissingScriptProbe] No missing scripts found in prefab assets under Assets.");
             }
         }
 

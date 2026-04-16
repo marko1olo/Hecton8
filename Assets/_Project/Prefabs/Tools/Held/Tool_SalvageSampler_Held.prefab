@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8361392589512197000}
   - component: {fileID: 7921274327005728234}
+  - component: {fileID: 2493075126144140622}
   m_Layer: 0
   m_Name: Tool_SalvageSampler_Held
   m_TagString: Untagged
@@ -139,6 +140,8 @@ MonoBehaviour:
   _toolMetadata: {fileID: 11400000, guid: 2e970b837e5937d4c8e408130928ebac, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  _swimContract: {fileID: 0}
   samplingRange: 3.2
   sampleDamage: 18
   sampleImpulse: 1.5
@@ -146,3 +149,36 @@ MonoBehaviour:
   samplingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  feedbackInterval: 0.45
+--- !u!114 &2493075126144140622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6564105744471423693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9fb1903b49f6e428d8fc12ce0a4103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerToolSwimContract
+  toolHand: 0
+  swimRootPresentationWeight: 0.44
+  swimSupportHandWeight: 0.74
+  swimToolHandWeight: 0.1
+  activeUseSupportHandBoost: 0.18
+  swimRootPoseBias:
+    localPositionOffset: {x: 0.028, y: -0.018, z: -0.052}
+    localEulerOffset: {x: 5, y: 6, z: 4}
+  swimSupportHandPoseBias:
+    localPositionOffset: {x: -0.052, y: 0.038, z: 0.034}
+    localEulerOffset: {x: 10, y: -22, z: -14}
+  swimToolHandPoseBias:
+    localPositionOffset: {x: 0.032, y: -0.016, z: -0.05}
+    localEulerOffset: {x: 6, y: 12, z: 8}
+  activeUseRootPoseBias:
+    localPositionOffset: {x: 0.008, y: -0.014, z: -0.026}
+    localEulerOffset: {x: 4, y: 2, z: 3}
+  activeUseSupportHandPoseBias:
+    localPositionOffset: {x: -0.02, y: 0.036, z: 0.028}
+    localEulerOffset: {x: 10, y: -16, z: -12}

@@ -18,6 +18,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Hecton8.Core;
 using Hecton8.Bootstrap;
+using Hecton8.World;
 
 namespace Hecton8.Guardian
 {
@@ -33,6 +34,8 @@ namespace Hecton8.Guardian
 
         private void Awake()
         {
+            WorldShippingSceneRuntimeGuard.CleanupLoadedScene(gameObject.scene);
+
             if (!_enforceBootstrap)
                 return;
 

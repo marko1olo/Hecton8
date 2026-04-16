@@ -30,6 +30,10 @@ Shader "NASAPunk/SuitVisor"
         _WaterRunoffDistortion ("Water Runoff Distortion", Range(0, 0.05)) = 0.012
         _WaterDropletDensity ("Water Droplet Density", Range(0, 2)) = 1
         _WaterDropletScale ("Water Droplet Scale", Range(0.5, 12)) = 5
+        _WaterRunoffNormalTex ("Water Runoff Normal", 2D) = "bump" {}
+        _WaterRunoffNormalStrength ("Water Runoff Normal Strength", Range(0, 2)) = 0.85
+        _WaterDropletMaskTex ("Water Droplet Mask", 2D) = "black" {}
+        _WaterDropletMaskInfluence ("Water Droplet Mask Influence", Range(0, 1)) = 1
 
         [Header(Refraction Distortion)]
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
@@ -100,6 +104,10 @@ Shader "NASAPunk/SuitVisor"
                 float  _WaterRunoffDistortion;
                 float  _WaterDropletDensity;
                 float  _WaterDropletScale;
+                float4 _WaterRunoffNormalTex_ST;
+                float  _WaterRunoffNormalStrength;
+                float4 _WaterDropletMaskTex_ST;
+                float  _WaterDropletMaskInfluence;
 
                 float  _DistortionStrength;
                 float  _DistortionFalloff;
@@ -116,6 +124,8 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_HUD_RenderTexture); SAMPLER(sampler_HUD_RenderTexture);
             TEXTURE2D(_ScratchNormalMap); SAMPLER(sampler_ScratchNormalMap);
             TEXTURE2D(_FingerprintTex); SAMPLER(sampler_FingerprintTex);
+            TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
+            TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
 
             struct Attributes
@@ -159,6 +169,49 @@ Shader "NASAPunk/SuitVisor"
                 p = frac(p * float2(123.34, 456.21));
                 p += dot(p, p + 45.32);
                 return frac(p.x * p.y);
+            }
+
+            float SampleRgbMask(float3 rgb)
+            {
+                return saturate(dot(rgb, float3(0.2126, 0.7152, 0.0722)));
+            }
+
+            float ComputeProceduralScratchMask(float2 uv)
+            {
+                float2 scratchUV = uv * float2(96.0, 52.0);
+                float2 coarseCell = floor(scratchUV * float2(0.22, 0.12));
+
+                float gateA = step(0.72, Hash21(coarseCell + 0.17));
+                float gateB = step(0.78, Hash21(coarseCell * 1.23 + 0.61));
+
+                float lineA = abs(frac(scratchUV.x + scratchUV.y * 0.18) - 0.5);
+                float lineB = abs(frac(scratchUV.x * 0.74 - scratchUV.y * 0.22 + 0.31) - 0.5);
+
+                float scratchA = (1.0 - smoothstep(0.010, 0.032, lineA)) * gateA;
+                float scratchB = (1.0 - smoothstep(0.012, 0.038, lineB)) * gateB;
+
+                float edgeWear = smoothstep(0.10, 0.82, EdgeMask(uv, 1.4));
+                float topBias = smoothstep(0.18, 0.96, uv.y);
+                return saturate((scratchA * 0.72 + scratchB * 0.58) * edgeWear * topBias * 0.32);
+            }
+
+            float ComputeProceduralSmudgeMask(float2 uv)
+            {
+                float2 smudgeUV = uv * float2(5.6, 7.4);
+                float2 cellId = floor(smudgeUV);
+                float2 cell = frac(smudgeUV) - 0.5;
+
+                float seedA = Hash21(cellId + 0.37);
+                float seedB = Hash21(cellId * 1.29 + 0.91);
+
+                float smearA = step(0.64, seedA)
+                    * (1.0 - smoothstep(0.10, 0.38, length(cell * float2(1.7, 0.7))));
+                float smearB = step(0.76, seedB)
+                    * (1.0 - smoothstep(0.08, 0.34, length((cell + float2(seedA - 0.5, seedB - 0.5) * 0.22) * float2(0.9, 1.5))));
+
+                float edgeBias = smoothstep(0.08, 0.74, EdgeMask(uv, 1.1));
+                float topBias = smoothstep(0.08, 0.86, uv.y);
+                return saturate((smearA * 0.66 + smearB * 0.52) * edgeBias * topBias * 0.28);
             }
 
             float ComputeWaterRunoffMask(float2 uv, float time)
@@ -228,7 +281,19 @@ Shader "NASAPunk/SuitVisor"
                 float2 scratchUV = TRANSFORM_TEX(IN.uv, _ScratchNormalMap);
                 float4 scratchPacked = SAMPLE_TEXTURE2D(_ScratchNormalMap, sampler_ScratchNormalMap, scratchUV);
                 float3 scratchNormalTS = UnpackScaledNormal(scratchPacked, _ScratchNormalStrength);
-                float scratchMask = length(scratchNormalTS.xy);
+                float scratchTextureMask = length(scratchNormalTS.xy);
+                float proceduralScratchMask = ComputeProceduralScratchMask(IN.uv);
+                float2 proceduralScratchXY = clamp(
+                    float2(ddx(proceduralScratchMask), ddy(proceduralScratchMask)) * (_ScratchNormalStrength * 12.0),
+                    -0.22,
+                    0.22);
+                float proceduralScratchBlend = saturate(1.0 - scratchTextureMask * 3.0);
+                scratchNormalTS.xy = clamp(
+                    scratchNormalTS.xy + proceduralScratchXY * proceduralScratchBlend,
+                    -0.48,
+                    0.48);
+                scratchNormalTS.z = sqrt(max(0.0, 1.0 - dot(scratchNormalTS.xy, scratchNormalTS.xy)));
+                float scratchMask = saturate(max(scratchTextureMask, proceduralScratchMask));
 
                 float3x3 TBN = float3x3(
                     normalize(IN.tangentWS),
@@ -238,7 +303,9 @@ Shader "NASAPunk/SuitVisor"
                 float3 normalWS = normalize(mul(scratchNormalTS, TBN));
 
                 float2 fpUV = TRANSFORM_TEX(IN.uv, _FingerprintTex);
-                float fingerprint = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, fpUV).r * _FingerprintStrength;
+                float fingerprintSample = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, fpUV).r;
+                float proceduralSmudgeMask = ComputeProceduralSmudgeMask(IN.uv);
+                float fingerprint = max(fingerprintSample, proceduralSmudgeMask) * _FingerprintStrength;
                 float smudgeOpacity = fingerprint * 0.4;
 
                 float3 viewDir = normalize(IN.viewDirWS);
@@ -255,10 +322,22 @@ Shader "NASAPunk/SuitVisor"
                 if (_WaterRunoffStrength > 0.001)
                 {
                     float runoffTime = _Time.y * _WaterRunoffSpeed;
-                    runoffMask = ComputeWaterRunoffMask(IN.uv, runoffTime);
+                    float proceduralRunoffMask = ComputeWaterRunoffMask(IN.uv, runoffTime);
+                    float2 dropletMaskUV = TRANSFORM_TEX(IN.uv + float2(0.0, runoffTime * -0.035), _WaterDropletMaskTex);
+                    float authoredDropletMask = SampleRgbMask(
+                        SAMPLE_TEXTURE2D(_WaterDropletMaskTex, sampler_WaterDropletMaskTex, dropletMaskUV).rgb);
+                    runoffMask = lerp(
+                        proceduralRunoffMask,
+                        max(proceduralRunoffMask, authoredDropletMask),
+                        saturate(_WaterDropletMaskInfluence));
                     runoffMask = saturate(runoffMask * _WaterRunoffStrength * (1.0 + fingerprint * 0.5));
-                    distortionOffset += scratchNormalTS.xy * runoffMask * _WaterRunoffDistortion;
-                    distortionOffset.y -= runoffMask * _WaterRunoffDistortion * 0.5;
+
+                    float2 runoffNormalUV = TRANSFORM_TEX(IN.uv + float2(0.0, runoffTime * -0.08), _WaterRunoffNormalTex);
+                    float4 runoffNormalPacked = SAMPLE_TEXTURE2D(_WaterRunoffNormalTex, sampler_WaterRunoffNormalTex, runoffNormalUV);
+                    float3 runoffNormalTS = UnpackScaledNormal(runoffNormalPacked, _WaterRunoffNormalStrength);
+                    float2 runoffDistortion = (scratchNormalTS.xy * 0.35 + runoffNormalTS.xy) * _WaterRunoffDistortion;
+                    distortionOffset += runoffDistortion * runoffMask;
+                    distortionOffset.y -= runoffMask * _WaterRunoffDistortion * (0.35 + abs(runoffNormalTS.y) * 0.25);
                 }
 
                 float2 refractedUV = screenUV + distortionOffset;
@@ -275,9 +354,11 @@ Shader "NASAPunk/SuitVisor"
                 float hudAlpha = hudSample.a * hudEdgeFade * rtMask;
                 float3 hudColor = hudSample.rgb * _HUD_Color.rgb * _HUD_Intensity;
 
-                float scratchBleed = scratchMask * _HUD_ScratchBleed * hudAlpha;
+                float wetImperfectionBoost = 1.0 + runoffMask * 0.9;
+                float boostedFingerprint = saturate(fingerprint * wetImperfectionBoost);
+                float scratchBleed = scratchMask * _HUD_ScratchBleed * hudAlpha * wetImperfectionBoost;
                 float3 hudScratchGlow = hudColor * scratchBleed * 0.5;
-                float3 hudFingerprintGlow = hudColor * fingerprint * hudAlpha * 0.3;
+                float3 hudFingerprintGlow = hudColor * boostedFingerprint * hudAlpha * 0.3;
 
                 float3 reflectDir = reflect(-viewDir, normalWS);
                 float3 envRefl = GlossyEnvironmentReflection(reflectDir, _Smoothness, _EnvReflStrength);
@@ -286,6 +367,8 @@ Shader "NASAPunk/SuitVisor"
                 float3 specular = mainLight.color * pow(
                     saturate(dot(reflect(-mainLight.direction, normalWS), viewDir)),
                     128.0 * _Smoothness) * 0.3;
+                float wetHazeMask = saturate(runoffMask * (0.45 + proceduralSmudgeMask * 0.55) + scratchMask * runoffMask * 0.35);
+                float3 runoffSheen = (fresnelColor * 0.55 + specular * 0.25 + mainLight.color * 0.04) * runoffMask;
 
                 float3 finalColor = 0.0;
                 finalColor += sceneColor * (1.0 - _BaseColor.a);
@@ -298,13 +381,16 @@ Shader "NASAPunk/SuitVisor"
                 finalColor += hudScratchGlow;
                 finalColor += hudFingerprintGlow;
                 finalColor = lerp(finalColor, sceneColor * 0.86 + 0.04 + fresnelColor * 0.2, runoffMask * 0.35);
+                finalColor = lerp(finalColor, finalColor * 0.78 + sceneColor * 0.18 + fresnelColor * 0.12, wetHazeMask * 0.22);
+                finalColor += runoffSheen;
 
                 float finalAlpha = _GlassAlpha
                     + hudAlpha * 0.9
                     + fresnel * 0.4
                     + smudgeOpacity
                     + scratchBleed * 0.2
-                    + runoffMask * 0.18;
+                    + runoffMask * 0.18
+                    + wetHazeMask * 0.08;
                 finalAlpha = saturate(finalAlpha);
 
                 finalColor = MixFog(finalColor, IN.fogCoord);

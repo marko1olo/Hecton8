@@ -20,6 +20,7 @@
 
 using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -96,11 +97,7 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
@@ -110,11 +107,7 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
@@ -123,6 +116,14 @@ namespace Hecton8.Narrative
 
             if (_isPlaying)
                 StopPlayback();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -165,14 +166,18 @@ namespace Hecton8.Narrative
             if (_discoveredLogs.Contains(data.logId))
                 return;
 
+            string displayTitle = data.DisplayTitleOrFallback;
             _discoveredLogs.Add(data.logId);
             AudioLogEvents.RaiseLogDiscovered(data.logId);
-            NotificationEvents.PushInfo($"ЗАПИСЬ ОБНАРУЖЕНА: {data.displayTitle}");
+            LocalizationManager localization = LocalizationManager.Instance;
+            NotificationEvents.PushInfo(localization != null
+                ? localization.GetFormatted(LocalizationKeys.AUDIOLOG_DISCOVERED, displayTitle)
+                : "LOG DISCOVERED: " + displayTitle);
 
             // Также регистрируем в NarrativeDirector
             NarrativeEvents.RaiseDiscoveryMade(data.logId);
 
-            LogDiscovered(data.logId, data.displayTitle);
+            LogDiscovered(data.logId, displayTitle);
         }
 
         /// <summary>
@@ -191,11 +196,12 @@ namespace Hecton8.Narrative
                 StopPlayback();
 
             // Воспроизводим через SpatialAudioManager
-            if (data.audioClip != null)
+            AudioClip playbackClip = data.ResolvedAudioClip;
+            if (playbackClip != null)
             {
                 if (SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
                 {
-                    audioManager.PlayStatic2D(data.audioClip, playbackVolume);
+                    audioManager.PlayStatic2D(playbackClip, playbackVolume);
                 }
             }
 
@@ -248,6 +254,31 @@ namespace Hecton8.Narrative
         private void HandleNarrativeDiscovery(string discoveryId)
         {
             // NarrativeDirector уже обработал — ничего дополнительного не нужно
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

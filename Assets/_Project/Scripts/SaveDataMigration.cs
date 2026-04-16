@@ -18,6 +18,7 @@ namespace Hecton8.SaveSystem
         private const int MinBiomeId = 1;
         private const int MaxBiomeId = 108;
         private const int InvalidBiomeId = -1;
+        private const int MaxAtlasRevealStage = 4;
 
         public static bool MigrateInPlace(SaveData data, out int originalVersion, out string summary)
         {
@@ -79,7 +80,9 @@ namespace Hecton8.SaveSystem
             changed |= EnsureBarter(ref data.barter, steps);
             changed |= EnsureFieldOperations(ref data.fieldOperations, steps);
             changed |= EnsureBeaconNetwork(ref data.beaconNetwork, steps);
-            changed |= EnsureLoreSystems(ref data, steps);
+            changed |= EnsureLoreSystems(ref data, sourceVersion, steps);
+            changed |= EnsurePlayerExpression(ref data, steps);
+            changed |= EnsurePerformanceSettings(ref data, sourceVersion, steps);
 
             if (data.version != SaveData.CurrentVersion)
             {
@@ -189,6 +192,37 @@ namespace Hecton8.SaveSystem
             }
 
             return changed;
+        }
+
+        private static bool EnsurePerformanceSettings(ref SaveData data, int sourceVersion, List<string> steps)
+        {
+            bool changed = false;
+
+            if (data.LODQualityPreset < 0 || data.LODQualityPreset > 2)
+            {
+                data.LODQualityPreset = 1;
+                changed = true;
+                steps.Add("lod quality preset repaired");
+            }
+
+            if (sourceVersion < SaveData.CurrentVersion && !data.DynamicResolutionEnabled)
+            {
+                data.DynamicResolutionEnabled = true;
+                changed = true;
+                steps.Add("dynamic resolution default repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsurePlayerExpression(ref SaveData data, List<string> steps)
+        {
+            if (data.playerExpressionProfileId != null)
+                return false;
+
+            data.playerExpressionProfileId = string.Empty;
+            steps.Add("player expression profile initialized");
+            return true;
         }
 
         private static bool EnsureConstruction(ref ConstructionDTO dto, int sourceVersion, List<string> steps)
@@ -395,7 +429,7 @@ namespace Hecton8.SaveSystem
 
         // ── v11-16: Lore Systems ──────────────────────────────────
 
-        private static bool EnsureLoreSystems(ref SaveData data, List<string> steps)
+        private static bool EnsureLoreSystems(ref SaveData data, int sourceVersion, List<string> steps)
         {
             bool changed = false;
 
@@ -467,6 +501,27 @@ namespace Hecton8.SaveSystem
                 data.missionCompletedIds = new System.Collections.Generic.List<string>();
                 changed = true;
                 steps.Add("mission completed list created");
+            }
+
+            int inferredRevealStage = data.endingConditionMet
+                ? MaxAtlasRevealStage
+                : data.narrativeDepthTier >= 4
+                    ? 3
+                    : data.narrativeDepthTier >= 3
+                        ? 2
+                        : data.atlasSignalDetected
+                            ? 2
+                            : 0;
+
+            int clampedRevealStage = Mathf.Clamp(data.atlasSignalRevealStage, 0, MaxAtlasRevealStage);
+            if (sourceVersion < SaveData.CurrentVersion && clampedRevealStage < inferredRevealStage)
+                clampedRevealStage = inferredRevealStage;
+
+            if (clampedRevealStage != data.atlasSignalRevealStage)
+            {
+                data.atlasSignalRevealStage = clampedRevealStage;
+                changed = true;
+                steps.Add("atlas reveal stage repaired");
             }
 
             return changed;

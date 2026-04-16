@@ -1,10 +1,12 @@
 using UnityEngine;
+using Hecton.Localization;
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     public sealed class PropulsionTool : PlayerTool
     {
+        private const string PropulsionCategory = "PROPULSION";
         private readonly struct PropulsionAssessment
         {
             public readonly string Headline;
@@ -22,7 +24,11 @@ namespace Hecton8.Gameplay
 
             public string BuildHudMessage()
             {
-                return $"{Headline} | {Summary} | {Recommendation}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_ASSESSMENT, "{0} | {1} | {2}"),
+                    Headline,
+                    Summary,
+                    Recommendation);
             }
         }
 
@@ -81,7 +87,10 @@ namespace Hecton8.Gameplay
             {
                 if (_lockedBody != null)
                 {
-                    ReleaseLockedTarget("TRACTOR LOCK RELEASED", "Locked target was released by operator command.", "INFO");
+                    ReleaseLockedTarget(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_RELEASED, "TRACTOR LOCK RELEASED"),
+                        ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_RELEASED, "Locked target was released by operator command."),
+                        "INFO");
                     return;
                 }
 
@@ -118,23 +127,27 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_lockedBody != null)
-                return $"PROPULSION // TRACTOR HOLD // {_lockedNameUpper ?? "CARGO"}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_OPERATIONAL_HOLD, "PROPULSION // TRACTOR HOLD // {0}"),
+                    _lockedNameUpper ?? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO"));
 
             if (TryGetAssessmentCached(out PropulsionAssessment assessment))
-                return $"PROPULSION // {assessment.Headline}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_OPERATIONAL_ASSESSMENT, "PROPULSION // {0}"),
+                    assessment.Headline);
 
-            return "PROPULSION // READY";
+            return ResolveLocalized(LocalizationKeys.PROPULSION_OPERATIONAL_READY, "PROPULSION // READY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_lockedBody != null)
-                return "Secondary releases. Primary launches the locked cargo forward.";
+                return ResolveLocalized(LocalizationKeys.PROPULSION_DIRECTIVE_HOLD, "Secondary releases. Primary launches the locked cargo forward.");
 
             if (TryGetAssessmentCached(out PropulsionAssessment assessment))
                 return assessment.Recommendation;
 
-            return "Primary pushes mass. Secondary locks and reels mobile cargo.";
+            return ResolveLocalized(LocalizationKeys.PROPULSION_DIRECTIVE_READY, "Primary pushes mass. Secondary locks and reels mobile cargo.");
         }
 
         private void ApplyDirectedForce(float force, bool pushAway)
@@ -144,13 +157,15 @@ namespace Hecton8.Gameplay
 
             if (!TryGetTargetHit(out RaycastHit hit))
             {
-                Warn(pushAway ? "PROPULSION - NO MASS LOCK" : "TRACTOR - NO MASS LOCK");
+                Warn(pushAway
+                    ? ResolveLocalized(LocalizationKeys.PROPULSION_HUD_NO_MASS_LOCK, "PROPULSION - NO MASS LOCK")
+                    : ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_NO_MASS_LOCK, "TRACTOR - NO MASS LOCK"));
                 return;
             }
 
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
-                Warn("PROPULSION - TARGET NOT MOBILE");
+                Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TARGET_NOT_MOBILE, "PROPULSION - TARGET NOT MOBILE"));
                 return;
             }
 
@@ -159,7 +174,7 @@ namespace Hecton8.Gameplay
                 if (body != null)
                     PublishAssessment(BuildAssessment(body, hit.distance, false));
                 else
-                    Warn("PROPULSION - TARGET LOCK INVALID");
+                    Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TARGET_LOCK_INVALID, "PROPULSION - TARGET LOCK INVALID"));
                 return;
             }
 
@@ -173,23 +188,29 @@ namespace Hecton8.Gameplay
             body.AddForce(direction.normalized * force, ForceMode.Force);
             if (Time.time >= _nextFeedbackAt)
             {
-                string title = pushAway ? "PROPULSION IMPULSE APPLIED" : "TRACTOR IMPULSE APPLIED";
+                string title = pushAway
+                    ? ResolveLocalized(LocalizationKeys.PROPULSION_LOG_IMPULSE_APPLIED_TITLE, "PROPULSION IMPULSE APPLIED")
+                    : ResolveLocalized(LocalizationKeys.PROPULSION_LOG_TRACTOR_IMPULSE_TITLE, "TRACTOR IMPULSE APPLIED");
                 PropulsionAssessment assessment = BuildAssessment(body, hit.distance, true);
                 PublishAssessment(pushAway
                     ? new PropulsionAssessment(
-                        "PROPULSION - IMPULSE APPLIED",
+                        ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_IMPULSE_APPLIED, "PROPULSION - IMPULSE APPLIED"),
                         assessment.Summary,
-                        pushAway ? "Create space or clear the lane." : assessment.Recommendation,
+                        pushAway ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_IMPULSE_APPLIED, "Create space or clear the lane.") : assessment.Recommendation,
                         "INFO")
                     : new PropulsionAssessment(
-                        "TRACTOR - MASS REELING",
+                        ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_MASS_REELING, "TRACTOR - MASS REELING"),
                         assessment.Summary,
-                        "Hold the line until the cargo stabilizes.",
+                        ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_MASS_REELING, "Hold the line until the cargo stabilizes."),
                         "INFO"));
                 FieldOperationLogSystem.RecordOperation(
-                    "PROPULSION",
+                    ResolveLocalized(LocalizationKeys.PROPULSION_CATEGORY, PropulsionCategory),
                     title,
-                    $"{body.gameObject.name} | MASS {body.mass:0.0} kg | RANGE {hit.distance:0.0} m",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_LOG_MASS_RANGE, "{0} | MASS {1:0.0} kg | RANGE {2:0.0} m"),
+                        body.gameObject.name,
+                        body.mass,
+                        hit.distance),
                     "INFO");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -202,13 +223,13 @@ namespace Hecton8.Gameplay
 
             if (!TryGetTargetHit(out RaycastHit hit))
             {
-                Warn("TRACTOR - NO MASS LOCK");
+                Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_NO_MASS_LOCK, "TRACTOR - NO MASS LOCK"));
                 return;
             }
 
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
-                Warn("TRACTOR - TARGET NOT MOBILE");
+                Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_TARGET_NOT_MOBILE, "TRACTOR - TARGET NOT MOBILE"));
                 return;
             }
 
@@ -217,7 +238,7 @@ namespace Hecton8.Gameplay
                 if (body != null)
                     PublishAssessment(BuildAssessment(body, hit.distance, true));
                 else
-                    Warn("TRACTOR - TARGET LOCK INVALID");
+                    Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_TARGET_LOCK_INVALID, "TRACTOR - TARGET LOCK INVALID"));
                 return;
             }
 
@@ -230,18 +251,27 @@ namespace Hecton8.Gameplay
             _lockedBody = body;
             _lockedName = body.gameObject.name;
             _lockedNameUpper = string.IsNullOrWhiteSpace(_lockedName)
-                ? "CARGO"
+                ? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO")
                 : _lockedName.ToUpperInvariant();
             InvalidateAssessmentCache();
             PublishAssessment(new PropulsionAssessment(
-                $"TRACTOR LOCK - {_lockedNameUpper}",
-                $"Mass {body.mass:0.0} kg secured at {hit.distance:0.0} m.",
-                "Hold steady, then launch or reposition on demand.",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_LOCK, "TRACTOR LOCK - {0}"),
+                    _lockedNameUpper),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_TRACTOR_LOCK, "Mass {0:0.0} kg secured at {1:0.0} m."),
+                    body.mass,
+                    hit.distance),
+                ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_TRACTOR_LOCK, "Hold steady, then launch or reposition on demand."),
                 "INFO"));
             FieldOperationLogSystem.RecordOperation(
-                "PROPULSION",
-                "TRACTOR LOCK ACQUIRED",
-                $"{_lockedName} | MASS {body.mass:0.0} kg | RANGE {hit.distance:0.0} m",
+                ResolveLocalized(LocalizationKeys.PROPULSION_CATEGORY, PropulsionCategory),
+                ResolveLocalized(LocalizationKeys.PROPULSION_LOG_LOCK_ACQUIRED_TITLE, "TRACTOR LOCK ACQUIRED"),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_LOG_MASS_RANGE, "{0} | MASS {1:0.0} kg | RANGE {2:0.0} m"),
+                    _lockedName,
+                    body.mass,
+                    hit.distance),
                 "INFO");
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -253,7 +283,10 @@ namespace Hecton8.Gameplay
 
             if (!_lockedBody.gameObject.activeInHierarchy || _lockedBody.isKinematic)
             {
-                ReleaseLockedTarget("TRACTOR LOCK LOST", "Locked mass became invalid during field handling.", "WARN");
+                ReleaseLockedTarget(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_INVALID, "Locked mass became invalid during field handling."),
+                    "WARN");
                 return;
             }
 
@@ -263,7 +296,10 @@ namespace Hecton8.Gameplay
 
             if (distance > maxHoldBreakDistance)
             {
-                ReleaseLockedTarget("TRACTOR LOCK LOST", "Locked mass drifted outside the stable handling envelope.", "WARN");
+                ReleaseLockedTarget(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_DRIFTED, "Locked mass drifted outside the stable handling envelope."),
+                    "WARN");
                 return;
             }
 
@@ -274,9 +310,11 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextFeedbackAt)
             {
                 PublishAssessment(new PropulsionAssessment(
-                    $"TRACTOR HOLD - {_lockedNameUpper ?? "CARGO"}",
-                    $"Cargo remains stabilized inside the handling envelope.",
-                    "Release to drop or primary-fire to launch.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_HOLD, "TRACTOR HOLD - {0}"),
+                        _lockedNameUpper ?? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO")),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_TRACTOR_HOLD, "Cargo remains stabilized inside the handling envelope."),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_TRACTOR_HOLD, "Release to drop or primary-fire to launch."),
                     "INFO"));
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -291,19 +329,23 @@ namespace Hecton8.Gameplay
             string lockedName = string.IsNullOrWhiteSpace(_lockedName) ? body.gameObject.name : _lockedName;
             string lockedNameUpper = _lockedNameUpper;
             if (string.IsNullOrWhiteSpace(lockedNameUpper))
-                lockedNameUpper = string.IsNullOrWhiteSpace(lockedName) ? "CARGO" : lockedName.ToUpperInvariant();
+                lockedNameUpper = string.IsNullOrWhiteSpace(lockedName) ? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO") : lockedName.ToUpperInvariant();
             body.AddForce(_cachedTransform.forward * (launchImpulse * Mathf.Max(0.5f, GetEfficiency())), ForceMode.Impulse);
             ForceReleaseWithoutFeedback();
 
             PublishAssessment(new PropulsionAssessment(
-                $"PROPULSION LAUNCH - {lockedNameUpper}",
-                "Locked cargo was released as a forward kinetic projectile.",
-                "Confirm impact path and reacquire the next target.",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_LAUNCH, "PROPULSION LAUNCH - {0}"),
+                    lockedNameUpper),
+                ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LAUNCH, "Locked cargo was released as a forward kinetic projectile."),
+                ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_LAUNCH, "Confirm impact path and reacquire the next target."),
                 "INFO"));
             FieldOperationLogSystem.RecordOperation(
-                "PROPULSION",
-                "PROPULSION LAUNCH",
-                $"{lockedName} was launched from tractor hold.",
+                ResolveLocalized(LocalizationKeys.PROPULSION_CATEGORY, PropulsionCategory),
+                ResolveLocalized(LocalizationKeys.PROPULSION_LOG_LAUNCH_TITLE, "PROPULSION LAUNCH"),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_LOG_LAUNCH_MESSAGE, "{0} was launched from tractor hold."),
+                    lockedName),
                 "INFO");
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -312,7 +354,7 @@ namespace Hecton8.Gameplay
         {
             string lockedName = _lockedBody != null
                 ? (string.IsNullOrWhiteSpace(_lockedName) ? _lockedBody.gameObject.name : _lockedName)
-                : "UNKNOWN MASS";
+                : ResolveLocalized(LocalizationKeys.PROPULSION_UNKNOWN_MASS, "UNKNOWN MASS");
 
             ForceReleaseWithoutFeedback();
 
@@ -320,9 +362,12 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowInfo(hudMessage);
 
             FieldOperationLogSystem.RecordOperation(
-                "PROPULSION",
+                ResolveLocalized(LocalizationKeys.PROPULSION_CATEGORY, PropulsionCategory),
                 hudMessage,
-                $"{lockedName}. {summary}",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_LOG_RELEASE_MESSAGE, "{0}. {1}"),
+                    lockedName,
+                    summary),
                 severity);
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -342,9 +387,9 @@ namespace Hecton8.Gameplay
 
             ToolHitUtility.ShowWarning(message);
             FieldOperationLogSystem.RecordOperation(
-                "PROPULSION",
+                ResolveLocalized(LocalizationKeys.PROPULSION_CATEGORY, PropulsionCategory),
                 message,
-                "Directed force command could not be completed on the current target.",
+                ResolveLocalized(LocalizationKeys.PROPULSION_LOG_WARN_MESSAGE, "Directed force command could not be completed on the current target."),
                 "WARN");
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -361,9 +406,9 @@ namespace Hecton8.Gameplay
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
                 assessment = new PropulsionAssessment(
-                    "TARGET NOT MOBILE",
-                    "The current contact does not expose a movable rigidbody.",
-                    "Switch tools or sweep for free cargo.",
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TARGET_NOT_MOBILE, "TARGET NOT MOBILE"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_TARGET_NOT_MOBILE, "The current contact does not expose a movable rigidbody."),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_TARGET_NOT_MOBILE, "Switch tools or sweep for free cargo."),
                     "WARN");
                 return true;
             }
@@ -420,18 +465,24 @@ namespace Hecton8.Gameplay
             if (body == null)
             {
                 return new PropulsionAssessment(
-                    tractorIntent ? "TRACTOR - TARGET LOCK INVALID" : "PROPULSION - TARGET LOCK INVALID",
-                    "Mass signature collapsed before handling began.",
-                    "Sweep for another movable object.",
+                    tractorIntent
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_TARGET_LOCK_INVALID, "TRACTOR - TARGET LOCK INVALID")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TARGET_LOCK_INVALID, "PROPULSION - TARGET LOCK INVALID"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_TARGET_LOCK_INVALID, "Mass signature collapsed before handling began."),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_TARGET_LOCK_INVALID, "Sweep for another movable object."),
                     "WARN");
             }
 
             if (body.isKinematic)
             {
                 return new PropulsionAssessment(
-                    tractorIntent ? "TRACTOR - STRUCTURE ANCHORED" : "PROPULSION - STRUCTURE ANCHORED",
-                    $"{body.gameObject.name} is fixed in place and cannot be manipulated.",
-                    "Use cutter, builder, or move on.",
+                    tractorIntent
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_STRUCTURE_ANCHORED, "TRACTOR - STRUCTURE ANCHORED")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_STRUCTURE_ANCHORED, "PROPULSION - STRUCTURE ANCHORED"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_STRUCTURE_ANCHORED, "{0} is fixed in place and cannot be manipulated."),
+                        body.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_STRUCTURE_ANCHORED, "Use cutter, builder, or move on."),
                     "WARN");
             }
 
@@ -441,9 +492,15 @@ namespace Hecton8.Gameplay
                     return descriptorAssessment;
 
                 return new PropulsionAssessment(
-                    tractorIntent ? "TRACTOR - MASS EXCEEDS SAFE LOCK" : "PROPULSION - MASS EXCEEDS SAFE THRUST",
-                    $"{body.gameObject.name} weighs {body.mass:0.0} kg at {distance:0.0} m.",
-                    "Do not force it. Use planning, deconstruction, or another route.",
+                    tractorIntent
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_MASS_EXCEEDS, "TRACTOR - MASS EXCEEDS SAFE LOCK")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_MASS_EXCEEDS, "PROPULSION - MASS EXCEEDS SAFE THRUST"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_MASS_EXCEEDS, "{0} weighs {1:0.0} kg at {2:0.0} m."),
+                        body.gameObject.name,
+                        body.mass,
+                        distance),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_MASS_EXCEEDS, "Do not force it. Use planning, deconstruction, or another route."),
                     "WARN");
             }
 
@@ -453,31 +510,46 @@ namespace Hecton8.Gameplay
             if (body.mass <= 20f)
             {
                 return new PropulsionAssessment(
-                    tractorIntent ? "TRACTOR - LIGHT CARGO" : "PROPULSION - LIGHT CARGO",
-                    $"{body.gameObject.name} is a light utility object ({body.mass:0.0} kg).",
                     tractorIntent
-                        ? "Stable lock is easy. Reposition or carry it through hazards."
-                        : "Use short impulses for precise path clearing.",
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_LIGHT_CARGO, "TRACTOR - LIGHT CARGO")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_LIGHT_CARGO, "PROPULSION - LIGHT CARGO"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LIGHT_CARGO, "{0} is a light utility object ({1:0.0} kg)."),
+                        body.gameObject.name,
+                        body.mass),
+                    tractorIntent
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_LIGHT_CARGO_TRACTOR, "Stable lock is easy. Reposition or carry it through hazards.")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_LIGHT_CARGO, "Use short impulses for precise path clearing."),
                     "INFO");
             }
 
             if (body.mass <= 90f)
             {
                 return new PropulsionAssessment(
-                    tractorIntent ? "TRACTOR - WORKLOAD MASS" : "PROPULSION - WORKLOAD MASS",
-                    $"{body.gameObject.name} sits in the normal handling band ({body.mass:0.0} kg).",
                     tractorIntent
-                        ? "Lock, steady, then launch or place it deliberately."
-                        : "Impulse is safe, but keep the lane clear.",
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_WORKLOAD, "TRACTOR - WORKLOAD MASS")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_WORKLOAD, "PROPULSION - WORKLOAD MASS"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_WORKLOAD, "{0} sits in the normal handling band ({1:0.0} kg)."),
+                        body.gameObject.name,
+                        body.mass),
+                    tractorIntent
+                        ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_WORKLOAD_TRACTOR, "Lock, steady, then launch or place it deliberately.")
+                        : ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_WORKLOAD, "Impulse is safe, but keep the lane clear."),
                     "INFO");
             }
 
             return new PropulsionAssessment(
-                tractorIntent ? "TRACTOR - HEAVY CARGO" : "PROPULSION - HEAVY CARGO",
-                $"{body.gameObject.name} is heavy but still inside the safe operating envelope ({body.mass:0.0} kg).",
                 tractorIntent
-                    ? "Expect sluggish response and keep the hold distance stable."
-                    : "Use controlled impulses. Avoid close-range rebounds.",
+                    ? ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TRACTOR_HEAVY_CARGO, "TRACTOR - HEAVY CARGO")
+                    : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_HEAVY_CARGO, "PROPULSION - HEAVY CARGO"),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_HEAVY_CARGO, "{0} is heavy but still inside the safe operating envelope ({1:0.0} kg)."),
+                    body.gameObject.name,
+                    body.mass),
+                tractorIntent
+                    ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_HEAVY_CARGO_TRACTOR, "Expect sluggish response and keep the hold distance stable.")
+                    : ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_HEAVY_CARGO, "Use controlled impulses. Avoid close-range rebounds."),
                 "WARN");
         }
 
@@ -511,6 +583,13 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
 
             _nextFeedbackAt = Time.time + feedbackInterval;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            return LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

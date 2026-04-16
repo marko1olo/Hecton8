@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -129,7 +130,7 @@ namespace Hecton8.Gameplay
             LastDiscoveredId = biomeId;
 
             string biomeName = GetBiomeName(biomeId);
-            Debug.Log($"[Discovery] New biome discovered: {biomeName} (ID {biomeId}).", this);
+            LogBiomeDiscovered(biomeName, biomeId, this);
 
             OnBiomeDiscovered?.Invoke(biomeId);
 
@@ -234,6 +235,12 @@ namespace Hecton8.Gameplay
             }
 
             return InvalidBiomeId;
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBiomeDiscovered(string biomeName, int biomeId, UnityEngine.Object context)
+        {
+            UnityEngine.Debug.Log($"[Discovery] New biome discovered: {biomeName} (ID {biomeId}).", context);
         }
 
 

@@ -73,9 +73,13 @@ namespace Hecton8.Editor
 
             SerializedProperty displayNameProp = serializedObject.FindProperty("displayName");
             SerializedProperty verbProp = serializedObject.FindProperty("interactVerb");
+            SerializedProperty linkedAudioLogProp = serializedObject.FindProperty("linkedAudioLog");
 
             if (displayNameProp != null)
                 displayNameProp.stringValue = entry.displayName;
+
+            if (linkedAudioLogProp != null)
+                linkedAudioLogProp.objectReferenceValue = entry.linkedAudioLog;
 
             if (verbProp != null)
             {

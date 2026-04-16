@@ -38,6 +38,7 @@ namespace Hecton8.UI
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private PlayerPDA playerPDA;
+        [SerializeField] private PlayerExpressionManager playerExpressionManager;
         [SerializeField] private HUDNotification hudNotification;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
@@ -101,6 +102,10 @@ namespace Hecton8.UI
         private TextMeshProUGUI[] _presetBodies;
         private TextMeshProUGUI _summaryText;
         private TextMeshProUGUI _hintText;
+        private RectTransform _identityActionRoot;
+        private CanvasGroup _identityActionCanvasGroup;
+        private Image _identityActionBg;
+        private TextMeshProUGUI _identityActionLabel;
         private RectTransform _recommendedActionRoot;
         private CanvasGroup _recommendedActionCanvasGroup;
         private Image _recommendedActionBg;
@@ -194,6 +199,8 @@ namespace Hecton8.UI
 
             if (playerPDA == null)
                 playerPDA = GetComponentInParent<PlayerPDA>();
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
             if (labelFont == null)
@@ -241,6 +248,7 @@ namespace Hecton8.UI
 
             PDAEvents.OnOpened += HandlePdaOpened;
             PDAEvents.OnTabChanged += HandlePdaTabChanged;
+            PlayerExpressionEvents.OnProfileChanged += HandlePlayerExpressionChanged;
         }
 
         private void Unsubscribe()
@@ -255,6 +263,7 @@ namespace Hecton8.UI
 
             PDAEvents.OnOpened -= HandlePdaOpened;
             PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            PlayerExpressionEvents.OnProfileChanged -= HandlePlayerExpressionChanged;
             UnsubscribeDurabilitySystem();
         }
 
@@ -321,6 +330,13 @@ namespace Hecton8.UI
         }
 
         private void HandleToolRepaired(string _, float __)
+        {
+            _refreshDirty = true;
+            if (IsTabActive)
+                RefreshAll();
+        }
+
+        private void HandlePlayerExpressionChanged(PlayerExpressionProfile _)
         {
             _refreshDirty = true;
             if (IsTabActive)
@@ -533,6 +549,28 @@ namespace Hecton8.UI
                 new Vector2(20f, 18f), new Vector2(-20f, 46f));
             _summaryText.color = Dim;
 
+            _identityActionRoot = CreateRect(self, "IdentityActionButton");
+            _identityActionRoot.anchorMin = new Vector2(1f, 0f);
+            _identityActionRoot.anchorMax = new Vector2(1f, 0f);
+            _identityActionRoot.pivot = new Vector2(1f, 0f);
+            _identityActionRoot.anchoredPosition = new Vector2(-20f, 82f);
+            _identityActionRoot.sizeDelta = new Vector2(184f, 26f);
+            _identityActionBg = EnsureImage(_identityActionRoot.gameObject);
+            _identityActionBg.color = new Color(0.08f, 0.18f, 0.2f, 0.82f);
+            _identityActionBg.raycastTarget = true;
+            _identityActionLabel = CreateText(_identityActionRoot, "IdentityActionLabel", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_identityActionLabel.rectTransform, 0f, 0f, 0f, 0f);
+            _identityActionLabel.color = Primary;
+            _identityActionLabel.SetText("CYCLE SUIT IDENTITY");
+            _identityActionCanvasGroup = EnsureCanvasGroup(_identityActionRoot);
+            PDALoadoutIdentityButton identityButton = _identityActionRoot.gameObject.AddComponent<PDALoadoutIdentityButton>();
+            identityButton.Init(
+                this,
+                _identityActionBg,
+                new Color(0.08f, 0.18f, 0.2f, 0.82f),
+                new Color(0.14f, 0.28f, 0.3f, 0.94f));
+            SetCanvasGroupVisible(_identityActionCanvasGroup, false);
+
             _recommendedActionRoot = CreateRect(self, "RecommendedActionButton");
             _recommendedActionRoot.anchorMin = new Vector2(1f, 0f);
             _recommendedActionRoot.anchorMax = new Vector2(1f, 0f);
@@ -573,6 +611,7 @@ namespace Hecton8.UI
             RefreshSlots();
             RefreshPresets();
             RefreshSummary();
+            RefreshIdentityAction();
             _refreshDirty = false;
         }
 
@@ -734,6 +773,10 @@ namespace Hecton8.UI
             _summaryBuilder.Append(" | ACTIVE SLOT ").Append(toolManager.CurrentSlotIndex >= 0 ? (toolManager.CurrentSlotIndex + 1).ToString() : "--");
             _summaryBuilder.Append(" | KIT MASS ").Append(totalWeight.ToString("0.0")).Append(" kg");
             _summaryBuilder.Append(" | PRESET ").Append(GetMatchedPresetName());
+            _summaryBuilder.Append(" | IDENTITY ").Append(GetActiveExpressionName());
+            string liveSuitName = GetLiveExpressionSuitName();
+            if (!string.IsNullOrWhiteSpace(liveSuitName))
+                _summaryBuilder.Append(" | SHELL ").Append(CachedToUpperInvariant(liveSuitName));
             _summaryBuilder.Append(" | SUGGESTED ").Append(recommendedPresetName);
             _summaryBuilder.Append('\n');
             _summaryBuilder.Append("ACTIVE TOOL: ").Append(toolManager.GetCurrentToolOperationalSummary());
@@ -746,6 +789,21 @@ namespace Hecton8.UI
                 var sb = scope.Value;
                 sb.Append(GetLoadoutDirective(assigned, ready, missing, broken));
                 sb.Append("  LIVE: ").Append(toolManager.GetCurrentToolOperationalDirective());
+                sb.Append("  IDENTITY: ").Append(GetActiveExpressionSummary());
+
+                string identityLoadout = GetActiveExpressionLoadoutName();
+                if (!string.IsNullOrWhiteSpace(identityLoadout))
+                    sb.Append("  IDENTITY KIT: ").Append(CachedToUpperInvariant(identityLoadout));
+
+                string identitySuit = GetActiveExpressionSuitName();
+                if (!string.IsNullOrWhiteSpace(identitySuit))
+                {
+                    sb.Append("  IDENTITY SHELL: ").Append(CachedToUpperInvariant(identitySuit));
+
+                    if (!IsExpressionSuitApplied())
+                        sb.Append(" (PENDING SYNC)");
+                }
+
                 sb.Append("  FIELD: ").Append(recommendedPresetDirective);
 
                 if (_hintText != null)
@@ -753,6 +811,33 @@ namespace Hecton8.UI
             }
 
             RefreshRecommendedAction();
+        }
+
+        private void RefreshIdentityAction()
+        {
+            if (_identityActionRoot == null || _identityActionLabel == null || _identityActionBg == null)
+                return;
+
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            if (playerExpressionManager == null || playerExpressionManager.ProfileCount <= 1)
+            {
+                SetCanvasGroupVisible(_identityActionCanvasGroup, false);
+                return;
+            }
+
+            int nextProfileIndex = playerExpressionManager.GetNextProfileIndex();
+            PlayerExpressionProfile nextProfile = playerExpressionManager.GetProfile(nextProfileIndex);
+            if (nextProfile == null)
+            {
+                SetCanvasGroupVisible(_identityActionCanvasGroup, false);
+                return;
+            }
+
+            SetCanvasGroupVisible(_identityActionCanvasGroup, true);
+            _identityActionLabel.SetText($"NEXT IDENTITY - {CachedToUpperInvariant(nextProfile.DisplayName)}");
+            _identityActionBg.color = new Color(0.08f, 0.18f, 0.2f, 0.82f);
         }
 
         private string GetLoadoutDirective(int assigned, int ready, int missing, int broken)
@@ -946,6 +1031,26 @@ namespace Hecton8.UI
             InvokePresetAction(presetIndex);
         }
 
+        internal void InvokeIdentityCycleAction()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            if (playerExpressionManager == null)
+            {
+                NotifyWarning("SUIT IDENTITY CATALOG IS NOT AVAILABLE");
+                return;
+            }
+
+            if (!playerExpressionManager.CycleNextProfile(false))
+            {
+                NotifyWarning("FAILED TO SWITCH SUIT IDENTITY");
+                return;
+            }
+
+            RefreshAll();
+        }
+
         private void NotifyInfo(string message)
         {
             if (hudNotification == null)
@@ -1129,6 +1234,64 @@ namespace Hecton8.UI
             return description.Length > 44
                 ? description.Substring(0, 44).TrimEnd() + "..."
                 : description;
+        }
+
+        private string GetActiveExpressionName()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            return playerExpressionManager != null
+                ? CachedToUpperInvariant(playerExpressionManager.GetActiveProfileName())
+                : "STANDARD";
+        }
+
+        private string GetActiveExpressionSummary()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            return playerExpressionManager != null
+                ? playerExpressionManager.GetActiveProfileSummary()
+                : "Suit identity matrix is offline.";
+        }
+
+        private string GetActiveExpressionLoadoutName()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            return playerExpressionManager != null
+                ? playerExpressionManager.GetActiveRecommendedLoadoutName()
+                : string.Empty;
+        }
+
+        private string GetActiveExpressionSuitName()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            return playerExpressionManager != null
+                ? playerExpressionManager.GetActiveRecommendedSuitName()
+                : string.Empty;
+        }
+
+        private string GetLiveExpressionSuitName()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            return playerExpressionManager != null
+                ? playerExpressionManager.GetLiveSuitName()
+                : string.Empty;
+        }
+
+        private bool IsExpressionSuitApplied()
+        {
+            if (playerExpressionManager == null)
+                playerExpressionManager = PlayerExpressionManager.Instance;
+
+            return playerExpressionManager != null && playerExpressionManager.IsActiveRecommendedSuitApplied();
         }
 
         private static void ClearChildren(Transform parent)
@@ -1351,6 +1514,41 @@ namespace Hecton8.UI
         public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
         {
             _tab?.InvokeRecommendedPresetAction();
+        }
+
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_bg != null) _bg.color = _hoverColor;
+        }
+
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_bg != null) _bg.color = _normalColor;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    internal sealed class PDALoadoutIdentityButton : MonoBehaviour,
+        UnityEngine.EventSystems.IPointerClickHandler,
+        UnityEngine.EventSystems.IPointerEnterHandler,
+        UnityEngine.EventSystems.IPointerExitHandler
+    {
+        private PDALoadoutTab _tab;
+        private Image _bg;
+        private Color _normalColor;
+        private Color _hoverColor;
+
+        public void Init(PDALoadoutTab tab, Image bg, Color normal, Color hover)
+        {
+            _tab = tab;
+            _bg = bg;
+            _normalColor = normal;
+            _hoverColor = hover;
+        }
+
+        public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            _tab?.InvokeIdentityCycleAction();
         }
 
         public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)

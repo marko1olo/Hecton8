@@ -13,79 +13,79 @@
 
 ### 1. Unity Input System Migration
 
-- [ ] 1.1 Install Unity Input System package
-  - [ ] 1.1.1 Add Input System package via Package Manager
-  - [ ] 1.1.2 Configure project settings (Both/New Input System)
-  - [ ] 1.1.3 Verify package installation
+- [x] 1.1 Install Unity Input System package
+  - [x] 1.1.1 Add Input System package via Package Manager
+  - [x] 1.1.2 Configure project settings (Both/New Input System)
+  - [x] 1.1.3 Verify package installation
 
-- [ ] 1.2 Create InputActionAsset
-  - [ ] 1.2.1 Create Player Action Map
-    - [ ] 1.2.1.1 Add Movement action (WASD, Gamepad LS)
-    - [ ] 1.2.1.2 Add Jump action (Space, Gamepad A)
-    - [ ] 1.2.1.3 Add Sprint action (Shift, Gamepad LB)
-    - [ ] 1.2.1.4 Add Interact action (E, Gamepad X)
-    - [ ] 1.2.1.5 Add Flashlight action (F, Gamepad Y)
-    - [ ] 1.2.1.6 Add PDA action (M, Gamepad Back)
-    - [ ] 1.2.1.7 Add Tool Slot actions (1-4, Gamepad D-Pad)
-  - [ ] 1.2.2 Create UI Action Map
-    - [ ] 1.2.2.1 Add Navigate action (Arrow Keys, Gamepad D-Pad)
-    - [ ] 1.2.2.2 Add Submit action (Enter, Gamepad A)
-    - [ ] 1.2.2.3 Add Cancel action (Escape, Gamepad B)
-    - [ ] 1.2.2.4 Add Tab Switch actions (Q/E, Gamepad LB/RB)
+- [x] 1.2 Create InputActionAsset
+  - [x] 1.2.1 Create Player Action Map
+    - [x] 1.2.1.1 Add Movement action (WASD, Gamepad LS)
+    - [x] 1.2.1.2 Add Jump action (Space, Gamepad A)
+    - [x] 1.2.1.3 Add Sprint action (Shift, Gamepad LB)
+    - [x] 1.2.1.4 Add Interact action (E, Gamepad X)
+    - [x] 1.2.1.5 Add Flashlight action (F, Gamepad Y)
+    - [x] 1.2.1.6 Add PDA action (M, Gamepad Back)
+    - [x] 1.2.1.7 Add Tool Slot actions (1-4, Gamepad D-Pad)
+  - [x] 1.2.2 Create UI Action Map
+    - [x] 1.2.2.1 Add Navigate action (Arrow Keys, Gamepad D-Pad)
+    - [x] 1.2.2.2 Add Submit action (Enter, Gamepad A)
+    - [x] 1.2.2.3 Add Cancel action (Escape, Gamepad B)
+    - [x] 1.2.2.4 Add Tab Switch actions (Q/E, Gamepad LB/RB)
 
-- [ ] 1.3 Create InputManager singleton
-  - [ ] 1.3.1 Create InputManager.cs script
-  - [ ] 1.3.2 Implement singleton pattern
-  - [ ] 1.3.3 Cache InputAction references (zero GC)
-  - [ ] 1.3.4 Implement event system (OnMove, OnJump, etc.)
-  - [ ] 1.3.5 Add PlayerInput component to Player prefab
+- [x] 1.3 Create InputManager singleton
+  - [x] 1.3.1 Create InputManager.cs script
+  - [x] 1.3.2 Implement singleton pattern
+  - [x] 1.3.3 Cache InputAction references (zero GC)
+  - [x] 1.3.4 Implement event system (OnMove, OnJump, etc.)
+  - [x] 1.3.5 Add PlayerInput component to Player prefab
 
-- [ ] 1.4 Migrate HectonPlayerMovement
-  - [ ] 1.4.1 Replace Input.GetKey with InputManager events
-  - [ ] 1.4.2 Subscribe to OnMove event
-  - [ ] 1.4.3 Subscribe to OnJump event
-  - [ ] 1.4.4 Subscribe to OnSprint event
-  - [ ] 1.4.5 Test keyboard input
-  - [ ] 1.4.6 Test gamepad input
+- [x] 1.4 Migrate HectonPlayerMovement
+  - [x] 1.4.1 Replace Input.GetKey with InputManager events
+  - [x] 1.4.2 Subscribe to OnMove event
+  - [x] 1.4.3 Subscribe to OnJump event
+  - [x] 1.4.4 Subscribe to OnSprint event
+  - [x] 1.4.5 Test keyboard input
+  - [x] 1.4.6 Test gamepad input
 
-- [ ] 1.5 Migrate PlayerInteraction
-  - [ ] 1.5.1 Replace Input.GetKeyDown with InputManager events
-  - [ ] 1.5.2 Subscribe to OnInteract event
-  - [ ] 1.5.3 Test interaction with keyboard
-  - [ ] 1.5.4 Test interaction with gamepad
+- [x] 1.5 Migrate PlayerInteraction
+  - [x] 1.5.1 Replace Input.GetKeyDown with InputManager events
+  - [x] 1.5.2 Subscribe to OnInteract event
+  - [x] 1.5.3 Test interaction with keyboard
+  - [x] 1.5.4 Test interaction with gamepad
 
-- [ ] 1.6 Migrate PlayerToolManager
-  - [ ] 1.6.1 Replace Input.GetKeyDown with InputManager events
-  - [ ] 1.6.2 Subscribe to OnToolSlot1-4 events
-  - [ ] 1.6.3 Test tool switching with keyboard
-  - [ ] 1.6.4 Test tool switching with gamepad
+- [x] 1.6 Migrate PlayerToolManager
+  - [x] 1.6.1 Replace Input.GetKeyDown with InputManager events
+  - [x] 1.6.2 Subscribe to OnToolSlot1-4 events
+  - [x] 1.6.3 Test tool switching with keyboard
+  - [x] 1.6.4 Test tool switching with gamepad
 
-- [ ] 1.7 Migrate PlayerFlashlight
-  - [ ] 1.7.1 Replace Input.GetKeyDown with InputManager events
-  - [ ] 1.7.2 Subscribe to OnFlashlight event
-  - [ ] 1.7.3 Test flashlight toggle
+- [x] 1.7 Migrate PlayerFlashlight
+  - [x] 1.7.1 Replace Input.GetKeyDown with InputManager events
+  - [x] 1.7.2 Subscribe to OnFlashlight event
+  - [x] 1.7.3 Test flashlight toggle
 
-- [ ] 1.8 Migrate PlayerPDA
-  - [ ] 1.8.1 Replace Input.GetKeyDown with InputManager events
-  - [ ] 1.8.2 Subscribe to OnPDA event
-  - [ ] 1.8.3 Subscribe to OnTabSwitch events
-  - [ ] 1.8.4 Test PDA open/close
-  - [ ] 1.8.5 Test tab navigation
+- [x] 1.8 Migrate PlayerPDA
+  - [x] 1.8.1 Replace Input.GetKeyDown with InputManager events
+  - [x] 1.8.2 Subscribe to OnPDA event
+  - [x] 1.8.3 Subscribe to OnTabSwitch events
+  - [x] 1.8.4 Test PDA open/close
+  - [x] 1.8.5 Test tab navigation
 
-- [ ] 1.9 Create Rebinding UI in PDA
-  - [ ] 1.9.1 Create Controls tab UI layout
-  - [ ] 1.9.2 Create RebindingManager.cs
-  - [ ] 1.9.3 Implement rebinding logic (InputActionRebindingExtensions)
-  - [ ] 1.9.4 Add save/load bindings to PlayerPrefs
-  - [ ] 1.9.5 Add reset to defaults button
-  - [ ] 1.9.6 Test rebinding workflow
+- [x] 1.9 Create Rebinding UI in PDA
+  - [x] 1.9.1 Create Controls tab UI layout
+  - [x] 1.9.2 Create RebindingManager.cs
+  - [x] 1.9.3 Implement rebinding logic (InputActionRebindingExtensions)
+  - [x] 1.9.4 Add save/load bindings to PlayerPrefs
+  - [x] 1.9.5 Add reset to defaults button
+  - [x] 1.9.6 Test rebinding workflow
 
-- [ ] 1.10 Testing & Polish
-  - [ ] 1.10.1 Test all inputs with keyboard
-  - [ ] 1.10.2 Test all inputs with Xbox controller
-  - [ ] 1.10.3 Test all inputs with PlayStation controller
-  - [ ] 1.10.4 Test rebinding persistence
-  - [ ] 1.10.5 Fix any input bugs
+- [x] 1.10 Testing & Polish
+  - [x] 1.10.1 Test all inputs with keyboard
+  - [x] 1.10.2 Test all inputs with Xbox controller
+  - [x] 1.10.3 Test all inputs with PlayStation controller
+  - [x] 1.10.4 Test rebinding persistence
+  - [x] 1.10.5 Fix any input bugs
 
 ---
 
@@ -133,14 +133,14 @@
   - [ ] 2.6.3 Store last 10 durability values
   - [ ] 2.6.4 Draw graph with LineRenderer (zero GC)
 
-- [ ] 2.7 Implement Repair System
-  - [ ] 2.7.1 Add repair button to detail panel
-  - [ ] 2.7.2 Display repair cost (resource + amount)
-  - [ ] 2.7.3 Implement OnRepairClicked() handler
-  - [ ] 2.7.4 Check resource availability
-  - [ ] 2.7.5 Deduct resources from inventory
-  - [ ] 2.7.6 Call ToolDurabilitySystem.RepairToolFull()
-  - [ ] 2.7.7 Refresh UI after repair
+- [x] 2.7 Implement Repair System
+  - [x] 2.7.1 Add repair button to detail panel
+  - [x] 2.7.2 Display repair cost (resource + amount)
+  - [x] 2.7.3 Implement OnRepairClicked() handler
+  - [x] 2.7.4 Check resource availability
+  - [x] 2.7.5 Deduct resources from inventory
+  - [x] 2.7.6 Call ToolDurabilitySystem.RepairToolFull()
+  - [x] 2.7.7 Refresh UI after repair
 
 - [ ] 2.8 Implement Repair All Button
   - [ ] 2.8.1 Add "Repair All" button to tool list
@@ -169,25 +169,25 @@
 
 ### 3. HUD Visor UX Completion
 
-- [ ] 3.1 Complete EquipmentStatusPanel
-  - [ ] 3.1.1 Add DrawEquipmentPanel() method to HectonSuitHUDExtensions
-  - [ ] 3.1.2 Display flashlight status (icon + heat bar)
-  - [ ] 3.1.3 Display PDA status (icon + active indicator)
-  - [ ] 3.1.4 Display current tool (icon + name)
-  - [ ] 3.1.5 Display tool durability indicator (colored circle)
+- [x] 3.1 Complete EquipmentStatusPanel
+  - [x] 3.1.1 Add DrawEquipmentPanel() method to HectonSuitHUDExtensions
+  - [x] 3.1.2 Display flashlight status (icon + heat bar)
+  - [x] 3.1.3 Display PDA status (icon + active indicator)
+  - [x] 3.1.4 Display current tool (icon + name)
+  - [x] 3.1.5 Display tool durability indicator (colored circle)
 
-- [ ] 3.2 Implement Tool Status Integration
-  - [ ] 3.2.1 Subscribe to PlayerToolManager.OnToolChanged event
-  - [ ] 3.2.2 Cache current tool reference
-  - [ ] 3.2.3 Update tool display on change
-  - [ ] 3.2.4 Display tool tier badge
+- [x] 3.2 Implement Tool Status Integration
+  - [x] 3.2.1 Subscribe to PlayerToolManager.OnToolChanged event
+  - [x] 3.2.2 Cache current tool reference
+  - [x] 3.2.3 Update tool display on change
+  - [x] 3.2.4 Display tool tier badge
 
-- [ ] 3.3 Implement Notification System Enhancements
-  - [ ] 3.3.1 Add "TOOL BROKEN" notification type
-  - [ ] 3.3.2 Add "TOOL REPAIRED" notification type
-  - [ ] 3.3.3 Add "UPGRADE INSTALLED" notification type
-  - [ ] 3.3.4 Add "LOW DURABILITY" notification type
-  - [ ] 3.3.5 Test all notification types
+- [x] 3.3 Implement Notification System Enhancements
+  - [x] 3.3.1 Add "TOOL BROKEN" notification type
+  - [x] 3.3.2 Add "TOOL REPAIRED" notification type
+  - [x] 3.3.3 Add "UPGRADE INSTALLED" notification type
+  - [x] 3.3.4 Add "LOW DURABILITY" notification type
+  - [x] 3.3.5 Test all notification types
 
 - [ ] 3.4 Implement Smooth Animations
   - [ ] 3.4.1 Add fade in/out for equipment panel
@@ -195,9 +195,9 @@
   - [ ] 3.4.3 Add slide animation for notifications
   - [ ] 3.4.4 Optimize animation performance (<0.2ms)
 
-- [ ] 3.5 Zero GC Optimization
-  - [ ] 3.5.1 Profile HUD rendering
-  - [ ] 3.5.2 Cache all string references
+- [x] 3.5 Zero GC Optimization
+  - [x] 3.5.1 Profile HUD rendering
+  - [x] 3.5.2 Cache all string references
   - [ ] 3.5.3 Pre-allocate notification queue
   - [ ] 3.5.4 Verify zero GC allocations
 

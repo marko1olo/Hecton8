@@ -13,6 +13,7 @@ namespace Hecton8.World
             public Vector3 Position;
             public int CenterCellX;
             public int CenterCellZ;
+            public int RadiusCells;
             public float Time;
         }
 
@@ -45,6 +46,7 @@ namespace Hecton8.World
             public bool Present;
             public bool Failed;
             public bool AllowPrimePass;
+            public bool SamplingPipelinePrewarmed;
         }
 
         private struct ScatterLifecycleRuntimeState

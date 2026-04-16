@@ -16,6 +16,7 @@
 
 using System;
 using System.Diagnostics;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Quest;
@@ -59,6 +60,10 @@ namespace Hecton8.World
         [Tooltip("Система выживания для чтения глубины.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
+        [Header("â”€â”€ Notification Cadence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Minimum delay between depth-zone enter HUD messages. Prevents boundary spam and early-route noise.")]
+        [SerializeField, Min(0f)] private float zoneNotificationCooldown = 18f;
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -75,10 +80,12 @@ namespace Hecton8.World
         private DepthZoneProfile _currentZone;
         private bool _registered;
         private bool _hullWarningShown;
+        private float _nextZoneNotificationTime;
         // COLD ALLOC: small per-zone message caches avoid string formatting in SlowTick transition path.
         private readonly DepthZoneProfile[] _cachedMessageZones = new DepthZoneProfile[32];
         private readonly string[] _cachedZoneEnterMessages = new string[32];
         private readonly string[] _cachedHullWarningMessages = new string[32];
+        private readonly string[] _cachedZoneRouteCueMessages = new string[32];
         private int _cachedMessageCount;
 
         // ══════════════════════════════════════════════════════════
@@ -100,22 +107,26 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             ResolveSurvivalSystem();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
+
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            _nextZoneNotificationTime = 0f;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -164,9 +175,13 @@ namespace Hecton8.World
                     NarrativeEvents.RaiseDiscoveryMade(newZone.discoveryId);
 
                 // HUD уведомление
-                NotificationEvents.PushInfo(GetZoneEnterMessage(newZone));
+                if (ShouldPublishZoneEnterNotification())
+                {
+                    NotificationEvents.PushInfo(GetZoneEnterMessage(newZone));
+                    _nextZoneNotificationTime = Time.unscaledTime + Mathf.Max(0f, zoneNotificationCooldown);
+                }
 
-                LogZoneEntered(newZone.displayName, depth);
+                LogZoneEntered(newZone.DisplayNameOrFallback, depth);
             }
         }
 
@@ -210,6 +225,18 @@ namespace Hecton8.World
             }
         }
 
+        private bool ShouldPublishZoneEnterNotification()
+        {
+            if (Time.unscaledTime < _nextZoneNotificationTime)
+                return false;
+
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector == null)
+                return true;
+
+            return firstHourDirector.IsMilestoneComplete(FirstHourMilestone.Orientation);
+        }
+
         private bool ResolveSurvivalSystem()
         {
             if (survivalSystem != null)
@@ -232,18 +259,35 @@ namespace Hecton8.World
                 return;
 
             int maxCacheCount = Mathf.Min(zones.Length, _cachedMessageZones.Length);
+            LocalizationManager manager = LocalizationManager.Instance;
             for (int i = 0; i < maxCacheCount; i++)
             {
                 DepthZoneProfile zone = zones[i];
                 if (zone == null)
                     continue;
 
-                string displayName = string.IsNullOrEmpty(zone.displayName) ? "НЕИЗВЕСТНАЯ ЗОНА" : zone.displayName.ToUpperInvariant();
+                zone.RebuildCache();
+                string fallbackUnknown = manager != null
+                    ? manager.GetOrFallback(manager.CurrentLanguage, LocalizationKeys.DEPTH_ZONE_UNKNOWN, "UNKNOWN ZONE")
+                    : "UNKNOWN ZONE";
+                string resolvedDisplayName = string.IsNullOrWhiteSpace(zone.DisplayNameOrFallback)
+                    ? fallbackUnknown
+                    : zone.DisplayNameOrFallback;
+                string uppercaseZoneLabel = resolvedDisplayName.ToUpperInvariant();
+                string zoneEnterLabel = manager != null
+                    ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, uppercaseZoneLabel)
+                    : "ZONE: " + uppercaseZoneLabel;
+                string zoneRouteCue = ResolveZoneRouteCue(zone);
                 _cachedMessageZones[_cachedMessageCount] = zone;
-                _cachedZoneEnterMessages[_cachedMessageCount] = "ЗОНА: " + displayName;
-                _cachedHullWarningMessages[_cachedMessageCount] =
-                    "ПРЕДУПРЕЖДЕНИЕ: КОРПУС СКАФАНДРА НЕ РАССЧИТАН НА ЭТУ ГЛУБИНУ. ТРЕБУЕТСЯ ТИР " +
-                    zone.requiredHullTier + ".";
+                _cachedZoneEnterMessages[_cachedMessageCount] = string.IsNullOrWhiteSpace(zone.cachedHudLabel)
+                    ? zoneEnterLabel
+                    : zone.cachedHudLabel;
+                _cachedZoneRouteCueMessages[_cachedMessageCount] = string.IsNullOrWhiteSpace(zoneRouteCue)
+                    ? _cachedZoneEnterMessages[_cachedMessageCount]
+                    : _cachedZoneEnterMessages[_cachedMessageCount] + " — " + zoneRouteCue;
+                _cachedHullWarningMessages[_cachedMessageCount] = manager != null
+                    ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_HULL_WARNING, zone.requiredHullTier)
+                    : "WARNING: SUIT HULL IS NOT RATED FOR THIS DEPTH. TIER " + zone.requiredHullTier + ".";
                 _cachedMessageCount++;
             }
         }
@@ -253,10 +297,10 @@ namespace Hecton8.World
             for (int i = 0; i < _cachedMessageCount; i++)
             {
                 if (_cachedMessageZones[i] == zone)
-                    return _cachedZoneEnterMessages[i];
+                    return _cachedZoneRouteCueMessages[i];
             }
 
-            return "ЗОНА: НЕИЗВЕСТНАЯ ЗОНА";
+            return ResolveZoneEnterFallback(ResolveUnknownZoneLabel());
         }
 
         private string GetHullWarningMessage(DepthZoneProfile zone)
@@ -267,13 +311,85 @@ namespace Hecton8.World
                     return _cachedHullWarningMessages[i];
             }
 
-            return "ПРЕДУПРЕЖДЕНИЕ: КОРПУС СКАФАНДРА НЕ РАССЧИТАН НА ЭТУ ГЛУБИНУ.";
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_HULL_WARNING, zone != null ? zone.requiredHullTier : 0)
+                : "WARNING: SUIT HULL IS NOT RATED FOR THIS DEPTH.";
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogZoneEntered(string zoneDisplayName, float depth)
         {
             UnityEngine.Debug.Log($"[DepthZone] Entered: {zoneDisplayName} (depth: {depth:F0}m)");
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RebuildZoneMessageCache();
+        }
+
+        private static string ResolveUnknownZoneLabel()
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, LocalizationKeys.DEPTH_ZONE_UNKNOWN, "UNKNOWN ZONE")
+                : "UNKNOWN ZONE";
+        }
+
+        private static string ResolveZoneEnterFallback(string zoneLabel)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, zoneLabel)
+                : "ZONE: " + zoneLabel;
+        }
+
+        private static string ResolveZoneRouteCue(DepthZoneProfile zone)
+        {
+            if (zone == null)
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(zone.DescriptionOrFallback))
+                return zone.DescriptionOrFallback.ToUpperInvariant();
+
+            if (zone.isThermal)
+                return "THERMAL WATER DISTORTS COLOR AND RANGE. TRUST YOUR RETURN LINE, NOT THE GLOW.";
+
+            if (zone.hasCaves)
+                return "CAVES CUT READABILITY. HOLD A CLEAN EXIT VECTOR BEFORE YOU COMMIT.";
+
+            if (zone.dangerLevel >= 0.75f)
+                return "HIGH-PRESSURE WATER. ROUTE MEMORY MATTERS MORE THAN GREED HERE.";
+
+            if (zone.dangerLevel >= 0.45f)
+                return "VISIBILITY FALLS FAST. KEEP THE SAFER SILHOUETTE IN MEMORY.";
+
+            return "READ THE SHELVES, NOT THE NOISE. SAFE WATER IS FOR RESET, NOT FORWARD PROGRESS.";
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
         }
     }
 }

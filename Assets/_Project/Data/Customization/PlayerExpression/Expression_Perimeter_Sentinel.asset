@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bbfa2ce707120c4bb74b57f629ad5ab, type: 3}
+  m_Name: Expression_Perimeter_Sentinel
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerExpressionProfile
+  profileId: expression.perimeter.sentinel
+  displayName: PERIMETER SENTINEL
+  hudLabelOverride: PERIMETER SENTINEL
+  summary: Security-forward identity for threatened routes, perimeter denial, stun
+    response, and hazard interception.
+  unlockedByDefault: 1
+  hudProfile: {fileID: 11400000, guid: e496a40111bab3d47884fd0ed5adb17b, type: 2}
+  recommendedSuit: {fileID: 11400000, guid: 0ac4df6679641f2488e9fb8e11c34d5b, type: 2}
+  recommendedLoadout: {fileID: 11400000, guid: cebc0acb95899da4cb76d8605f784e9f, type: 2}

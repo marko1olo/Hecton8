@@ -1,13 +1,12 @@
 // ============================================================================
 // HECTON-8 — NarrativeDiscovery.cs
-// Компонент для лорных объектов (черные ящики, КПК, обломки).
-// Позволяет "открывать" лор через механику взаимодействия.
-// Опционально воспроизводит AudioLog при взаимодействии.
+// Компонент для лорных объектов (чёрные ящики, КПК, обломки).
 // ============================================================================
 
+using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Interaction;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Narrative;
 using UnityEngine;
 
@@ -16,15 +15,25 @@ namespace Hecton8.Interaction
     [DisallowMultipleComponent]
     public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable
     {
+        private const string DefaultStudyVerbRu = "Изучить";
+        private const string DefaultStudyVerbEn = "Study";
+        private const string DefaultPlaybackVerbRu = "Воспроизвести запись";
+        private const string DefaultPlaybackVerbEn = "Play Log";
+        private const string DefaultTextVerbRu = "Открыть запись";
+        private const string DefaultTextVerbEn = "Open Log";
+        private const string DefaultArchiveVerbRu = "Открыть архив";
+        private const string DefaultArchiveVerbEn = "Open Archive";
+
         [Header("── Discovery ─────────────────────────────────")]
         [Tooltip("Уникальный ID открытия (для сохранения и триггеров)")]
         [SerializeField] private string discoveryId;
-        
+
         [Tooltip("Текст подсказки: 'Забрать КПК', 'Изучить бортовой самописец'")]
-        [SerializeField] private string interactVerb = "Изучить";
-        
+        [SerializeField] private string interactVerb = DefaultStudyVerbRu;
+
         [Tooltip("Название объекта (для лога)")]
         [SerializeField] private string displayName = "Объект";
+        [SerializeField] private LocalizedTextReference localizedDisplayName;
 
         [Header("── Audio Log (опционально) ───────────────────")]
         [Tooltip("Если назначен — воспроизводит аудиодневник при взаимодействии.")]
@@ -35,60 +44,72 @@ namespace Hecton8.Interaction
         [SerializeField] private GameObject highlightObject;
 
         private string _cachedInteractText;
+        private bool _registeredLifecycle;
 
         public string DiscoveryId => discoveryId;
         public bool HasValidDiscoveryId => !string.IsNullOrWhiteSpace(discoveryId);
 
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
-
-        private bool _registeredLifecycle;
-
         private void OnEnable()
         {
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             RebuildCache();
-            
-            // Register for AI Director guidance
+
             NarrativeEvents.RaiseNarrativePOIRegistered(this);
             _registeredLifecycle = true;
 
-            // Если уже открыто — отключаем (если настройка активна)
-            if (disableAfterDiscovery && HectonNarrativeDirector.Instance != null)
+            if (disableAfterDiscovery && HectonNarrativeDirector.Instance != null &&
+                HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
             {
-                if (HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
-                {
-                    gameObject.SetActive(false);
-                }
+                gameObject.SetActive(false);
             }
         }
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+
             if (_registeredLifecycle)
             {
                 NarrativeEvents.RaiseNarrativePOIDisposed(this);
                 _registeredLifecycle = false;
             }
+
+            if (highlightObject != null)
+                highlightObject.SetActive(false);
         }
 
         private void RebuildCache()
         {
-            _cachedInteractText = $"{interactVerb} {displayName}";
+            _cachedInteractText = ResolveInteractVerb() + " " + ResolveDisplayName();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  IINTERACTABLE
-        // ══════════════════════════════════════════════════════════
+        private string ResolveInteractVerb()
+        {
+            if (HasCustomInteractVerb())
+                return interactVerb;
+
+            if (linkedAudioLog == null)
+                return ResolveLocalized(LocalizationKeys.INTERACT_STUDY, DefaultStudyVerbEn);
+
+            if (linkedAudioLog.IsTextOnlyPlayback)
+                return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_LOG, DefaultTextVerbEn);
+
+            if (!linkedAudioLog.HasPlaybackPayload && linkedAudioLog.HasVisibleContent)
+                return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_ARCHIVE, DefaultArchiveVerbEn);
+
+            return ResolveLocalized(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
+        }
 
         public void OnHoverStart()
         {
-            if (highlightObject != null) highlightObject.SetActive(true);
+            if (highlightObject != null)
+                highlightObject.SetActive(true);
         }
 
         public void OnHoverEnd()
         {
-            if (highlightObject != null) highlightObject.SetActive(false);
+            if (highlightObject != null)
+                highlightObject.SetActive(false);
         }
 
         public void Interact(Transform interactor)
@@ -103,44 +124,97 @@ namespace Hecton8.Interaction
 
             if (HectonNarrativeDirector.Instance != null && HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
             {
-                // Уже открыто — но аудиолог можно переслушать
                 if (linkedAudioLog != null && AudioLogSystem.Instance != null)
                     AudioLogSystem.Instance.PlayLog(linkedAudioLog);
 
-                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[Narrative] '{discoveryId}' already discovered.");
-                #endif
+#endif
                 return;
             }
 
-            // Оповещаем систему
             NarrativeEvents.RaiseDiscoveryMade(discoveryId);
 
-            // Воспроизводим аудиолог если назначен
             if (linkedAudioLog != null && AudioLogSystem.Instance != null)
                 AudioLogSystem.Instance.PlayLog(linkedAudioLog);
 
-            #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Narrative] Discovery made: {discoveryId} ({displayName})");
-            #endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Narrative] Discovery made: {discoveryId} ({ResolveDisplayName()})");
+#endif
 
             if (disableAfterDiscovery)
-            {
                 gameObject.SetActive(false);
-            }
         }
 
         public string GetInteractText() => _cachedInteractText;
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(discoveryId))
-            {
                 discoveryId = gameObject.name.ToLower().Replace(" ", "_");
-            }
+
             RebuildCache();
         }
-        #endif
+#endif
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RebuildCache();
+        }
+
+        private string ResolveDisplayName()
+        {
+            return localizedDisplayName.ResolveOrFallback(FallbackOrDefault(displayName, "Object"));
+        }
+
+        private bool HasCustomInteractVerb()
+        {
+            if (string.IsNullOrWhiteSpace(interactVerb))
+                return false;
+
+            return !IsLegacyDefaultVerb(interactVerb);
+        }
+
+        private static bool IsLegacyDefaultVerb(string value)
+        {
+            return string.Equals(value, DefaultStudyVerbRu, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultStudyVerbEn, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultPlaybackVerbRu, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultPlaybackVerbEn, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultTextVerbRu, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultTextVerbEn, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultArchiveVerbRu, System.StringComparison.Ordinal) ||
+                   string.Equals(value, DefaultArchiveVerbEn, System.StringComparison.Ordinal);
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
+        }
+
+        private static string FallbackOrDefault(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        internal void ConfigureRecoveryPlacement(
+            string id,
+            string fallbackDisplayName,
+            AudioLogData logData,
+            bool disableAfterUse)
+        {
+            discoveryId = id;
+            displayName = fallbackDisplayName;
+            localizedDisplayName = default;
+            interactVerb = string.Empty;
+            linkedAudioLog = logData;
+            disableAfterDiscovery = disableAfterUse;
+            highlightObject = null;
+            RebuildCache();
+        }
     }
 }

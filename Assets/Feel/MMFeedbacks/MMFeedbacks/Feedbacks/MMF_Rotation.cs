@@ -7,6 +7,7 @@ namespace MoreMountains.Feedbacks
 	/// <summary>
 	/// This feedback animates the rotation of the specified object when played
 	/// </summary>
+	[global::System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will animate the target's rotation on the 3 specified animation curves (one per axis), for the specified duration (in seconds).")]
 	[FeedbackPath("Transform/Rotation")]

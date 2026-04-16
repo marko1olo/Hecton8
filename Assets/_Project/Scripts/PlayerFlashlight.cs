@@ -306,11 +306,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance == null) return;
-            if (_registered) return;
-            GameTickManager.Instance.Register(this);
-            _registered = true;
-
+            TryRegister();
             SubscribeToInputManager();
         }
 
@@ -320,13 +316,8 @@ namespace Hecton8.Gameplay
             if (flashlightLight != null)
                 ConfigureFlashlightLight();
 
-            if (_registered) return;
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
-            else
+            TryRegister();
+            if (!_registered)
             {
                 Debug.LogError(
                     "[PlayerFlashlight] GameTickManager.Instance is null at Start(). " +
@@ -338,12 +329,13 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
+            UnsubscribeFromInputManager();
+        }
 
+        private void OnDestroy()
+        {
+            TryUnregister();
             UnsubscribeFromInputManager();
         }
 
@@ -551,6 +543,31 @@ namespace Hecton8.Gameplay
                 if (survivalSystem == null && enableBatteryDrain)
                     survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
             }
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         private static bool IsGameplayInputBlockedByMenu()

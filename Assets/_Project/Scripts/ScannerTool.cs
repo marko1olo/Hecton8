@@ -6,6 +6,7 @@ using Hecton8.Construction;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
+using Hecton.Localization;
 using Shapes;
 using Unity.Mathematics;
 using UnityEngine;
@@ -15,6 +16,9 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class ScannerTool : PlayerTool
     {
+        private const int AtlasDetectionRevealStage = 2;
+        private const int AtlasNavigationRevealStage = 3;
+
         private enum ScanMode
         {
             Expedition = 0,
@@ -44,19 +48,36 @@ namespace Hecton8.Gameplay
                 {
                     return mode switch
                     {
-                        ScanMode.Resource => "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane.",
-                        ScanMode.Structure => "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector.",
-                        _ => "SCANNER - CLEAR | No meaningful contacts in the active sweep."
+                        ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane."),
+                        ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector."),
+                        _ => ResolveLocalized(LocalizationKeys.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.")
                     };
                 }
 
                 return mode switch
                 {
-                    ScanMode.Resource => $"SCANNER - RESOURCES {resourceContacts} // PICKUPS {pickupContacts} | {BuildRecommendation(mode)}",
-                    ScanMode.Structure => $"SCANNER - STRUCTURES {structureContacts} // ROUTE {routeContacts} | {BuildRecommendation(mode)}",
+                    ScanMode.Resource => string.Format(
+                        ResolveLocalized(LocalizationKeys.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
+                        resourceContacts,
+                        pickupContacts,
+                        BuildRecommendation(mode)),
+                    ScanMode.Structure => string.Format(
+                        ResolveLocalized(LocalizationKeys.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
+                        structureContacts,
+                        routeContacts,
+                        BuildRecommendation(mode)),
                     _ => floraContacts > 0
-                        ? $"SCANNER - CONTACTS {totalContacts} // BIO {bioformContacts} // FLORA {floraContacts} | {BuildRecommendation(mode)}"
-                        : $"SCANNER - CONTACTS {totalContacts} // BIO {bioformContacts} | {BuildRecommendation(mode)}"
+                        ? string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
+                            totalContacts,
+                            bioformContacts,
+                            floraContacts,
+                            BuildRecommendation(mode))
+                        : string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}"),
+                            totalContacts,
+                            bioformContacts,
+                            BuildRecommendation(mode))
                 };
             }
 
@@ -64,9 +85,9 @@ namespace Hecton8.Gameplay
             {
                 return mode switch
                 {
-                    ScanMode.Resource => "RESOURCE SWEEP COMPLETE",
-                    ScanMode.Structure => "STRUCTURE SWEEP COMPLETE",
-                    _ => "HYDROACOUSTIC CONTACTS ARCHIVED"
+                    ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE, "RESOURCE SWEEP COMPLETE"),
+                    ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE, "STRUCTURE SWEEP COMPLETE"),
+                    _ => ResolveLocalized(LocalizationKeys.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE, "HYDROACOUSTIC CONTACTS ARCHIVED")
                 };
             }
 
@@ -76,19 +97,47 @@ namespace Hecton8.Gameplay
                 {
                     return mode switch
                     {
-                        ScanMode.Resource => $"No harvestable or cached resource signatures were resolved inside the {radius:0}m sweep. Recommendation: Shift to another extraction lane.",
-                        ScanMode.Structure => $"No modules, markers, or authored intel contacts were resolved inside the {radius:0}m sweep. Recommendation: Continue transit or widen the structural search area.",
-                        _ => $"No meaningful contacts were resolved in the last {radius:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."
+                        ScanMode.Resource => string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
+                            radius),
+                        ScanMode.Structure => string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
+                            radius),
+                        _ => string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
+                            radius)
                     };
                 }
 
                 return mode switch
                 {
-                    ScanMode.Resource => $"{resourceContacts} resource signatures and {pickupContacts} cached pickups resolved inside {radius:0}m. Recommendation: {BuildRecommendation(mode)}",
-                    ScanMode.Structure => $"{structureContacts} structural contacts, {routeContacts} route markers, and {scannableContacts} databank contacts resolved inside {radius:0}m. Recommendation: {BuildRecommendation(mode)}",
+                    ScanMode.Resource => string.Format(
+                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
+                        resourceContacts,
+                        pickupContacts,
+                        radius,
+                        BuildRecommendation(mode)),
+                    ScanMode.Structure => string.Format(
+                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
+                        structureContacts,
+                        routeContacts,
+                        scannableContacts,
+                        radius,
+                        BuildRecommendation(mode)),
                     _ => floraContacts > 0
-                        ? $"{totalContacts} contact signatures resolved inside {radius:0}m pulse envelope, including {bioformContacts} bioform-coded contacts and {floraContacts} flora signatures. Recommendation: {BuildRecommendation(mode)}"
-                        : $"{totalContacts} contact signatures resolved inside {radius:0}m pulse envelope, including {bioformContacts} bioform-coded contacts. Recommendation: {BuildRecommendation(mode)}"
+                        ? string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
+                            totalContacts,
+                            radius,
+                            bioformContacts,
+                            floraContacts,
+                            BuildRecommendation(mode))
+                        : string.Format(
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
+                            totalContacts,
+                            radius,
+                            bioformContacts,
+                            BuildRecommendation(mode))
                 };
             }
 
@@ -98,39 +147,39 @@ namespace Hecton8.Gameplay
                 {
                     return mode switch
                     {
-                        ScanMode.Resource => "Shift to another extraction lane.",
-                        ScanMode.Structure => "Widen the search or continue transit.",
-                        _ => "Advance to the next scouting point."
+                        ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_SHIFT_LANE, "Shift to another extraction lane."),
+                        ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_WIDEN_SEARCH, "Widen the search or continue transit."),
+                        _ => ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_ADVANCE_SCOUT, "Advance to the next scouting point.")
                     };
                 }
 
                 return mode switch
                 {
                     ScanMode.Resource => resourcePoiContacts > 0
-                        ? "A resource pocket is authored in this lane. Sweep it, then recover in sequence."
+                        ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_RESOURCE_POCKET, "A resource pocket is authored in this lane. Sweep it, then recover in sequence.")
                         : resourceContacts > 0
-                            ? "Mark the richest lane and recover in sequence."
-                            : "Cached pickups exist, but no live resource node is leading this lane.",
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_MARK_RICHEST_LANE, "Mark the richest lane and recover in sequence.")
+                            : ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY, "Cached pickups exist, but no live resource node is leading this lane."),
                     ScanMode.Structure => hazardContacts > 0
-                        ? "Hazard probe resolved. Switch to cautious approach and inspect with focus tools."
+                        ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_HAZARD_PROBE, "Hazard probe resolved. Switch to cautious approach and inspect with focus tools.")
                         : routeContacts > 0
-                            ? "Route markers are live in this sector. Hold the lane readable and stage beacon relays."
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_ROUTE_MARKERS, "Route markers are live in this sector. Hold the lane readable and stage beacon relays.")
                         : structurePoiContacts > 0
-                                ? "Structural waypoint resolved. Hold this route for navigation or service work."
+                                ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT, "Structural waypoint resolved. Hold this route for navigation or service work.")
                                 : structureContacts > 0
-                                    ? "Hold this route for construction, salvage, or return navigation."
-                                    : "Databank signal only. Sweep closer before committing tools.",
+                                    ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_HOLD_ROUTE, "Hold this route for construction, salvage, or return navigation.")
+                                    : ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_DATABANK_ONLY, "Databank signal only. Sweep closer before committing tools."),
                     _ => totalContacts >= 4
-                        ? "Sector is dense with contacts. Slow down and classify before pushing deeper."
+                        ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_DENSE_SECTOR, "Sector is dense with contacts. Slow down and classify before pushing deeper.")
                         : floraContacts > 0
-                            ? "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on."
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_FLORA_PRESENT, "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on.")
                         : bioformContacts > 0
-                            ? "Bioform signatures are present. Confirm posture before closing distance."
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_BIOFORM_PRESENT, "Bioform signatures are present. Confirm posture before closing distance.")
                         : cargoContacts > 0
-                            ? "Cargo signatures are present. Prepare propulsion or harpoon handling before transit."
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_CARGO_PRESENT, "Cargo signatures are present. Prepare propulsion or harpoon handling before transit.")
                         : expeditionContacts > 0
-                            ? "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper."
-                            : "Sparse contact field. Safe to keep moving with periodic sweeps."
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT, "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper.")
+                            : ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_SPARSE_FIELD, "Sparse contact field. Safe to keep moving with periodic sweeps.")
                 };
             }
         }
@@ -215,7 +264,7 @@ namespace Hecton8.Gameplay
             {
                 if (now >= _nextCooldownFeedbackAt)
                 {
-                    ToolHitUtility.ShowWarning("SCANNER - RECHARGING");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
                     _nextCooldownFeedbackAt = now + cooldownFeedbackInterval;
                 }
                 return;
@@ -242,7 +291,7 @@ namespace Hecton8.Gameplay
             }
 
             FieldOperationLogSystem.RecordOperation(
-                "SCAN",
+                ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
                 result.BuildOperationTitle(_scanMode),
                 result.BuildOperationSummary(_scanMode, scanRadius),
                 "INFO");
@@ -266,7 +315,7 @@ namespace Hecton8.Gameplay
 
             ToolHitUtility.ShowInfo(_currentModeHudMessage);
             FieldOperationLogSystem.RecordOperation(
-                "SCAN",
+                ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
                 _currentModeOperationTitle,
                 _currentModeSummary,
                 "INFO");
@@ -290,39 +339,72 @@ namespace Hecton8.Gameplay
 
             // Сигнал Атлас-6 — показываем силу если обнаружен
             AtlasSignalSystem signal = AtlasSignalSystem.Instance;
-            if (signal != null && signal.IsDetected)
+            if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
             {
                 float strength = signal.CurrentStrength;
                 string strengthBar = strength > 0.66f ? "███" : strength > 0.33f ? "██░" : "█░░";
+                if (signal.CurrentRevealStage < AtlasNavigationRevealStage)
+                {
+                    return cooldownRemaining > 0.01f
+                        ? string.Format("SCANNER // SIGNAL [{0}] // PATTERN HOLD", strengthBar)
+                        : string.Format("SCANNER // SIGNAL [{0}] // CONTACT", strengthBar);
+                }
+
                 if (cooldownRemaining > 0.01f)
-                    return $"SCANNER // SIGNAL [{strengthBar}] {strength * 100f:0}% // RECHARGING";
-                return $"SCANNER // SIGNAL [{strengthBar}] {strength * 100f:0}% // READY";
+                    return string.Format(
+                        ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_SIGNAL_RECHARGING, "SCANNER // SIGNAL [{0}] {1:0}% // RECHARGING"),
+                        strengthBar,
+                        strength * 100f);
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_SIGNAL_READY, "SCANNER // SIGNAL [{0}] {1:0}% // READY"),
+                    strengthBar,
+                    strength * 100f);
             }
 
             if (cooldownRemaining > 0.01f)
-                return $"SCANNER // {_currentModeLabel} // RECHARGING {cooldownRemaining:0.0}S";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_MODE_RECHARGING, "SCANNER // {0} // RECHARGING {1:0.0}S"),
+                    _currentModeLabel,
+                    cooldownRemaining);
 
             if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
-                return $"SCANNER // {_currentModeLabel} // LAST {_lastResult.totalContacts} CONTACTS";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_LAST_CONTACTS, "SCANNER // {0} // LAST {1} CONTACTS"),
+                    _currentModeLabel,
+                    _lastResult.totalContacts);
 
-            return $"SCANNER // {_currentModeLabel} // READY {scanRadius:0}M";
+            return string.Format(
+                ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_READY, "SCANNER // {0} // READY {1:0}M"),
+                _currentModeLabel,
+                scanRadius);
         }
 
         public override string GetOperationalDirective()
         {
             // Сигнал Атлас-6 — показываем направление
             AtlasSignalSystem signal = AtlasSignalSystem.Instance;
-            if (signal != null && signal.IsDetected && _cachedTransform != null)
+            if (signal != null &&
+                signal.CurrentRevealStage >= AtlasNavigationRevealStage &&
+                _cachedTransform != null)
             {
                 Vector3 dir = signal.DirectionToCore;
                 float angle = Vector3.SignedAngle(_cachedTransform.forward, dir, Vector3.up);
-                string bearing = angle > 10f ? "→ ПРАВЕЕ" : angle < -10f ? "← ЛЕВЕЕ" : "↓ ПРЯМО ВНИЗ";
-                return $"СИГНАЛ АТЛАС-6 ОБНАРУЖЕН. ПЕЛЕНГ: {bearing} ({Mathf.Abs(angle):0}°). ИСТОЧНИК НА ГЛУБИНЕ.";
+                string bearing = angle > 10f
+                    ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_RIGHT, "RIGHT")
+                    : angle < -10f
+                        ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_LEFT, "LEFT")
+                        : ResolveLocalized(LocalizationKeys.SCANNER_BEARING_DOWN, "DIRECTLY BELOW");
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SCANNER_DIRECTIVE_ATLAS_SIGNAL, "ATLAS-6 SIGNAL DETECTED. BEARING: {0} ({1:0}°). SOURCE IS DEEPER."),
+                    bearing,
+                    Mathf.Abs(angle));
             }
 
             float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
             if (cooldownRemaining > 0.01f)
-                return $"Hold for recharge. Next pulse in {cooldownRemaining:0.0} seconds.";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING, "Hold for recharge. Next pulse in {0:0.0} seconds."),
+                    cooldownRemaining);
 
             if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
                 return _lastResult.BuildRecommendation(_scanMode);
@@ -405,9 +487,9 @@ namespace Hecton8.Gameplay
                     {
                         ScanEvents.OnEntryDiscovered?.Invoke(
                             "scan.resource_node",
-                            "RESOURCE DEPOSIT",
-                            "Resource",
-                            "Hydroacoustic pulse returned a mineral-density signature. Mark for salvage or extraction.");
+                            ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_TITLE, "RESOURCE DEPOSIT"),
+                            ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_CATEGORY, "Resource"),
+                            ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_SUMMARY, "Hydroacoustic pulse returned a mineral-density signature. Mark for salvage or extraction."));
                         genericResourceLogged = true;
                     }
                     meaningfulContact = true;
@@ -540,7 +622,9 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(itemId))
                 return false;
 
-            string title = string.IsNullOrWhiteSpace(item.itemName) ? "UNIDENTIFIED PICKUP" : ZeroGCStringCache.CachedToUpperInvariant(item.itemName);
+            string title = string.IsNullOrWhiteSpace(item.itemName)
+                ? ResolveLocalized(LocalizationKeys.SCANNER_TITLE_UNIDENTIFIED_PICKUP, "UNIDENTIFIED PICKUP")
+                : ZeroGCStringCache.CachedToUpperInvariant(item.itemName);
             string category = DescribeItemCategory(item.category);
             string summary = BuildPickupSummary(item, pickup.Quantity);
             ScanEvents.OnEntryDiscovered?.Invoke($"item.{itemId}".ToLowerInvariant(), title, category, summary);
@@ -557,7 +641,9 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(moduleId))
                 return false;
 
-            string title = string.IsNullOrWhiteSpace(data.moduleName) ? "UNIDENTIFIED MODULE" : ZeroGCStringCache.CachedToUpperInvariant(data.moduleName);
+            string title = string.IsNullOrWhiteSpace(data.moduleName)
+                ? ResolveLocalized(LocalizationKeys.SCANNER_TITLE_UNIDENTIFIED_MODULE, "UNIDENTIFIED MODULE")
+                : ZeroGCStringCache.CachedToUpperInvariant(data.moduleName);
             string category = $"Construction/{data.FamilyLabel}";
             string summary = string.IsNullOrWhiteSpace(data.description)
                 ? $"Base module archived. Power role: {DescribePowerRole(data)}."
@@ -604,9 +690,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => "RESOURCE",
-                ScanMode.Structure => "STRUCTURE",
-                _ => "EXPEDITION"
+                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_RESOURCE, "RESOURCE"),
+                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_STRUCTURE, "STRUCTURE"),
+                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_EXPEDITION, "EXPEDITION")
             };
         }
 
@@ -622,9 +708,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => "SCANNER MODE - RESOURCE",
-                ScanMode.Structure => "SCANNER MODE - STRUCTURE",
-                _ => "SCANNER MODE - EXPEDITION"
+                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_HUD_RESOURCE, "SCANNER MODE - RESOURCE"),
+                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_HUD_STRUCTURE, "SCANNER MODE - STRUCTURE"),
+                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_HUD_EXPEDITION, "SCANNER MODE - EXPEDITION")
             };
         }
 
@@ -632,9 +718,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => "SCAN MODE - RESOURCE",
-                ScanMode.Structure => "SCAN MODE - STRUCTURE",
-                _ => "SCAN MODE - EXPEDITION"
+                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_LOG_RESOURCE, "SCAN MODE - RESOURCE"),
+                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_LOG_STRUCTURE, "SCAN MODE - STRUCTURE"),
+                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_LOG_EXPEDITION, "SCAN MODE - EXPEDITION")
             };
         }
 
@@ -642,9 +728,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => "Scanner now prioritizes mineral, salvage, and cached pickup signatures.",
-                ScanMode.Structure => "Scanner now prioritizes authored intel contacts, module markers, and structural returns.",
-                _ => "Scanner now runs full-spectrum expedition sweeps across all supported contact classes."
+                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_SUMMARY_RESOURCE, "Scanner now prioritizes mineral, salvage, and cached pickup signatures."),
+                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_SUMMARY_STRUCTURE, "Scanner now prioritizes authored intel contacts, module markers, and structural returns."),
+                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_SUMMARY_EXPEDITION, "Scanner now runs full-spectrum expedition sweeps across all supported contact classes.")
             };
         }
 
@@ -685,6 +771,13 @@ namespace Hecton8.Gameplay
                 return "Consumer";
 
             return "Passive";
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            return LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         // Zero-GC behavior is now provided by Hecton8.Core.ZeroGCStringCache.

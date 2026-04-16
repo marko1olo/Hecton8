@@ -64,6 +64,7 @@ namespace Hecton8.World
         [SerializeField] private float abyssDepth     = 1000f;
         [SerializeField] private float deepAbyssDepth = 2000f;
         [SerializeField] private float thermalDepth   = 4000f;
+        [SerializeField] private float tierDepthHysteresis = 18f;
 
         [Header("── References ──────────────────────────────")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
@@ -105,11 +106,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             ResolveSurvivalSystem();
 
@@ -118,11 +115,32 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -135,7 +153,7 @@ namespace Hecton8.World
                 return;
 
             float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
-            SoundscapeTier newTier = CalculateTier(depth);
+            SoundscapeTier newTier = CalculateTier(depth, _currentTier);
 
             if (newTier == _currentTier) return;
 
@@ -154,15 +172,72 @@ namespace Hecton8.World
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
 
-        private SoundscapeTier CalculateTier(float depth)
+        private SoundscapeTier CalculateTier(float depth, SoundscapeTier currentTier)
         {
-            if (depth < shallowDepth)   return SoundscapeTier.Surface;
-            if (depth < twilightDepth)  return SoundscapeTier.Shallow;
-            if (depth < darknessDepth)  return SoundscapeTier.Twilight;
-            if (depth < abyssDepth)     return SoundscapeTier.Darkness;
-            if (depth < deepAbyssDepth) return SoundscapeTier.Abyss;
-            if (depth < thermalDepth)   return SoundscapeTier.DeepAbyss;
-            return SoundscapeTier.Thermal;
+            float hysteresis = Mathf.Max(0f, tierDepthHysteresis);
+
+            switch (currentTier)
+            {
+                case SoundscapeTier.Surface:
+                    return depth >= shallowDepth + hysteresis
+                        ? SoundscapeTier.Shallow
+                        : SoundscapeTier.Surface;
+
+                case SoundscapeTier.Shallow:
+                    if (depth < shallowDepth - hysteresis)
+                        return SoundscapeTier.Surface;
+                    if (depth >= twilightDepth + hysteresis)
+                        return SoundscapeTier.Twilight;
+                    return SoundscapeTier.Shallow;
+
+                case SoundscapeTier.Twilight:
+                    if (depth < twilightDepth - hysteresis)
+                        return SoundscapeTier.Shallow;
+                    if (depth >= darknessDepth + hysteresis)
+                        return SoundscapeTier.Darkness;
+                    return SoundscapeTier.Twilight;
+
+                case SoundscapeTier.Darkness:
+                    if (depth < darknessDepth - hysteresis)
+                        return SoundscapeTier.Twilight;
+                    if (depth >= abyssDepth + hysteresis)
+                        return SoundscapeTier.Abyss;
+                    return SoundscapeTier.Darkness;
+
+                case SoundscapeTier.Abyss:
+                    if (depth < abyssDepth - hysteresis)
+                        return SoundscapeTier.Darkness;
+                    if (depth >= deepAbyssDepth + hysteresis)
+                        return SoundscapeTier.DeepAbyss;
+                    return SoundscapeTier.Abyss;
+
+                case SoundscapeTier.DeepAbyss:
+                    if (depth < deepAbyssDepth - hysteresis)
+                        return SoundscapeTier.Abyss;
+                    if (depth >= thermalDepth + hysteresis)
+                        return SoundscapeTier.Thermal;
+                    return SoundscapeTier.DeepAbyss;
+
+                case SoundscapeTier.Thermal:
+                    return depth < thermalDepth - hysteresis
+                        ? SoundscapeTier.DeepAbyss
+                        : SoundscapeTier.Thermal;
+
+                default:
+                    if (depth < shallowDepth)
+                        return SoundscapeTier.Surface;
+                    if (depth < twilightDepth)
+                        return SoundscapeTier.Shallow;
+                    if (depth < darknessDepth)
+                        return SoundscapeTier.Twilight;
+                    if (depth < abyssDepth)
+                        return SoundscapeTier.Darkness;
+                    if (depth < deepAbyssDepth)
+                        return SoundscapeTier.Abyss;
+                    if (depth < thermalDepth)
+                        return SoundscapeTier.DeepAbyss;
+                    return SoundscapeTier.Thermal;
+            }
         }
 
         private bool ResolveSurvivalSystem()

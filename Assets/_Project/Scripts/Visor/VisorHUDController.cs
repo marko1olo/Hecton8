@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Optimization;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 #if UNITY_EDITOR
@@ -43,6 +44,11 @@ namespace NASAPunk.Visor
         [SerializeField] private int _rtWidth = 1280;
         [SerializeField] private int _rtHeight = 720;
         [SerializeField] private FilterMode _filterMode = FilterMode.Bilinear;
+        [SerializeField] private bool _enableAdaptiveRuntimeRTScaling = true;
+        [SerializeField, Range(0.25f, 1f)] private float _adaptiveRuntimeRTMinScale = 0.35f;
+        [SerializeField, Range(0.5f, 1f)] private float _adaptiveVRAMWarningScale = 0.82f;
+        [SerializeField, Range(0.35f, 1f)] private float _adaptiveVRAMCriticalScale = 0.68f;
+        [SerializeField, Range(0.01f, 0.25f)] private float _adaptiveScaleQuantizationStep = 0.05f;
 
         [Header("Runtime Tuning")]
         [SerializeField, Range(0f, 5f)] private float _hudIntensity = 2.5f;
@@ -81,6 +87,7 @@ namespace NASAPunk.Visor
         private bool _ownsRuntimeTexture;
         private int _cachedRTWidth = -1;
         private int _cachedRTHeight = -1;
+        private float _cachedEffectiveRenderScale = -1f;
         private float _nextAutoResolveAt;
         private bool _materialPropertiesDirty = true;
         private UniversalAdditionalCameraData _cachedHudCameraData;
@@ -122,6 +129,14 @@ namespace NASAPunk.Visor
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
+        internal bool CanPresentProjection =>
+            isActiveAndEnabled &&
+            _hudCamera != null &&
+            _hudCamera.isActiveAndEnabled &&
+            _visorRenderer != null &&
+            _visorRenderer.enabled &&
+            !_visorRenderer.forceRenderingOff &&
+            _visorRenderer.gameObject.activeInHierarchy;
 
         public static void CopyActiveControllersTo(List<VisorHUDController> results)
         {
@@ -237,6 +252,7 @@ namespace NASAPunk.Visor
         {
             AutoResolveReferences(force: false);
             SyncProjectionPose();
+            RefreshAdaptiveRuntimeProjection();
             UpdateGlitchState(deltaTime);
             UpdateWaterRunoffState(deltaTime);
             if (_materialPropertiesDirty)
@@ -464,6 +480,7 @@ namespace NASAPunk.Visor
                 _ownsRuntimeTexture = false;
                 _cachedRTWidth = -1;
                 _cachedRTHeight = -1;
+                _cachedEffectiveRenderScale = -1f;
                 return;
             }
 
@@ -474,20 +491,17 @@ namespace NASAPunk.Visor
                 _ownsRuntimeTexture = false;
                 _cachedRTWidth = -1;
                 _cachedRTHeight = -1;
+                _cachedEffectiveRenderScale = -1f;
                 return;
             }
 
             if (!_ownsRuntimeTexture)
                 _hudRT = null;
 
-            int targetWidth = _rtWidth;
-            int targetHeight = _rtHeight;
-
-            if (_matchScreenResolution)
-            {
-                targetWidth = Mathf.Max(32, Mathf.RoundToInt(Screen.width * _renderScale));
-                targetHeight = Mathf.Max(32, Mathf.RoundToInt(Screen.height * _renderScale));
-            }
+            float effectiveRenderScale = ResolveEffectiveRuntimeRenderScale();
+            int targetWidth;
+            int targetHeight;
+            CalculateTargetRTDimensions(effectiveRenderScale, out targetWidth, out targetHeight);
 
             // Reuse RT if size matches
             if (_hudRT != null && _hudRT.width == targetWidth && _hudRT.height == targetHeight && _hudRT.format == RenderTextureFormat.ARGB32)
@@ -498,6 +512,7 @@ namespace NASAPunk.Visor
                 _ownsRuntimeTexture = true;
                 _cachedRTWidth = targetWidth;
                 _cachedRTHeight = targetHeight;
+                _cachedEffectiveRenderScale = effectiveRenderScale;
                 return;
             }
 
@@ -514,6 +529,77 @@ namespace NASAPunk.Visor
             _ownsRuntimeTexture = true;
             _cachedRTWidth = targetWidth;
             _cachedRTHeight = targetHeight;
+            _cachedEffectiveRenderScale = effectiveRenderScale;
+        }
+
+        private void RefreshAdaptiveRuntimeProjection()
+        {
+            if (!Application.isPlaying ||
+                _projectionMode != ProjectionMode.RuntimeRenderTexture ||
+                _hudCamera == null)
+            {
+                return;
+            }
+
+            float effectiveRenderScale = ResolveEffectiveRuntimeRenderScale();
+            int targetWidth;
+            int targetHeight;
+            CalculateTargetRTDimensions(effectiveRenderScale, out targetWidth, out targetHeight);
+
+            if (_hudRT != null &&
+                _cachedRTWidth == targetWidth &&
+                _cachedRTHeight == targetHeight &&
+                Mathf.Approximately(_cachedEffectiveRenderScale, effectiveRenderScale))
+            {
+                return;
+            }
+
+            PrepareProjectionTexture();
+            BindRT();
+        }
+
+        private float ResolveEffectiveRuntimeRenderScale()
+        {
+            float effectiveScale = Mathf.Clamp01(_renderScale);
+            if (!_enableAdaptiveRuntimeRTScaling || !Application.isPlaying)
+                return QuantizeAdaptiveScale(Mathf.Clamp(effectiveScale, 0.1f, 1f));
+
+            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            if (scaler != null && scaler.Enabled)
+                effectiveScale *= Mathf.Clamp01(scaler.CurrentRenderScale);
+
+            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            if (vramMonitor != null)
+            {
+                switch (vramMonitor.PressureState)
+                {
+                    case VRAMMonitor.VRAMPressureState.Critical:
+                        effectiveScale *= _adaptiveVRAMCriticalScale;
+                        break;
+
+                    case VRAMMonitor.VRAMPressureState.Warning:
+                        effectiveScale *= _adaptiveVRAMWarningScale;
+                        break;
+                }
+            }
+
+            effectiveScale = Mathf.Clamp(effectiveScale, _adaptiveRuntimeRTMinScale, 1f);
+            return QuantizeAdaptiveScale(effectiveScale);
+        }
+
+        private void CalculateTargetRTDimensions(float effectiveRenderScale, out int targetWidth, out int targetHeight)
+        {
+            int baseWidth = _matchScreenResolution ? Screen.width : _rtWidth;
+            int baseHeight = _matchScreenResolution ? Screen.height : _rtHeight;
+            float clampedScale = Mathf.Clamp(effectiveRenderScale, 0.1f, 1f);
+            targetWidth = Mathf.Max(32, Mathf.RoundToInt(baseWidth * clampedScale));
+            targetHeight = Mathf.Max(32, Mathf.RoundToInt(baseHeight * clampedScale));
+        }
+
+        private float QuantizeAdaptiveScale(float scale)
+        {
+            float quantizationStep = Mathf.Max(0.01f, _adaptiveScaleQuantizationStep);
+            return Mathf.Round(scale / quantizationStep) * quantizationStep;
         }
 
         private void RebuildProjection()
@@ -555,6 +641,7 @@ namespace NASAPunk.Visor
             _ownsRuntimeTexture = false;
             _cachedRTWidth = -1;
             _cachedRTHeight = -1;
+            _cachedEffectiveRenderScale = -1f;
         }
 
         private void ReleaseOwnedRuntimeTexture()
@@ -596,6 +683,7 @@ namespace NASAPunk.Visor
             _ownsRuntimeTexture = false;
             _cachedRTWidth = -1;
             _cachedRTHeight = -1;
+            _cachedEffectiveRenderScale = -1f;
 
             if (_visorRenderer != null)
             {
@@ -630,17 +718,14 @@ namespace NASAPunk.Visor
             if (hudCameraData == null)
                 return;
 
-            UniversalAdditionalCameraData baseCameraData = EnsureValidBaseStackCamera()
-                ? GetCachedBaseCameraData()
-                : null;
+            Camera stackBaseCamera = ResolveHudStackBaseCamera();
+            UniversalAdditionalCameraData baseCameraData = GetCameraData(stackBaseCamera);
 
             bool projected = _projectionMode != ProjectionMode.Disabled;
             if (projected)
             {
                 hudCameraData.renderType = CameraRenderType.Base;
-
-                if (baseCameraData != null && baseCameraData.cameraStack.Contains(_hudCamera))
-                    baseCameraData.cameraStack.Remove(_hudCamera);
+                RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
 
                 _hudCamera.clearFlags = CameraClearFlags.SolidColor;
                 Color color = _hudCamera.backgroundColor;
@@ -650,13 +735,94 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            hudCameraData.renderType = CameraRenderType.Overlay;
+            // Overlay fallback renders through the screen-space HUD canvas, so the HUD camera
+            // must not stay in any URP stack. Leaving it stacked reintroduces a broken runtime
+            // path on renderers that report stacking inconsistently.
+            RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
+            hudCameraData.renderType = CameraRenderType.Base;
+            _hudCamera.clearFlags = CameraClearFlags.Depth;
+            _hudCamera.enabled = false;
+        }
 
-            if (baseCameraData != null && !baseCameraData.cameraStack.Contains(_hudCamera))
-                baseCameraData.cameraStack.Add(_hudCamera);
+        private bool ShouldUseHudBaseDepthFallback(
+            Camera stackBaseCamera,
+            UniversalAdditionalCameraData baseCameraData)
+        {
+            if (_hudCamera == null)
+                return true;
+
+            if (stackBaseCamera == null || baseCameraData == null)
+                return true;
+
+            ScriptableRenderer baseRenderer = baseCameraData.scriptableRenderer;
+            if (baseRenderer == null)
+                return true;
+
+            return !baseRenderer.SupportsCameraStackingType(CameraRenderType.Base) ||
+                   !baseRenderer.SupportsCameraStackingType(CameraRenderType.Overlay);
+        }
+
+        private void ApplyHudBaseDepthFallback(
+            UniversalAdditionalCameraData hudCameraData,
+            Camera stackBaseCamera,
+            UniversalAdditionalCameraData baseCameraData)
+        {
+            hudCameraData.renderType = CameraRenderType.Base;
+            RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
+
+            float fallbackDepth = ResolveHudFallbackDepth();
+            if (!Mathf.Approximately(_hudCamera.depth, fallbackDepth))
+                _hudCamera.depth = fallbackDepth;
 
             _hudCamera.clearFlags = CameraClearFlags.Depth;
             _hudCamera.enabled = true;
+        }
+
+        private void RemoveHudCameraFromKnownStacks(
+            Camera stackBaseCamera,
+            UniversalAdditionalCameraData baseCameraData)
+        {
+            if (_hudCamera == null)
+                return;
+
+            RemoveHudCameraFromStack(baseCameraData);
+            RemoveHudCameraFromStack(GetCameraData(stackBaseCamera));
+            RemoveHudCameraFromStack(GetCameraData(_baseStackCamera));
+            RemoveHudCameraFromStack(GetCameraData(_referenceCamera));
+        }
+
+        private void RemoveHudCameraFromStack(UniversalAdditionalCameraData cameraData)
+        {
+            if (cameraData == null || cameraData.cameraStack == null)
+                return;
+
+            if (cameraData.cameraStack.Contains(_hudCamera))
+                cameraData.cameraStack.Remove(_hudCamera);
+        }
+
+        private float ResolveHudFallbackDepth()
+        {
+            float fallbackDepth = _hudCamera != null ? _hudCamera.depth : 0f;
+
+            if (_baseStackCamera != null)
+                fallbackDepth = Mathf.Max(fallbackDepth, _baseStackCamera.depth + 2f);
+
+            if (_referenceCamera != null)
+                fallbackDepth = Mathf.Max(fallbackDepth, _referenceCamera.depth + 1f);
+
+            return fallbackDepth;
+        }
+
+        private Camera ResolveHudStackBaseCamera()
+        {
+            if (_referenceCamera != null &&
+                _referenceCamera != _hudCamera &&
+                TryGetBaseCameraData(_referenceCamera, out _))
+            {
+                return _referenceCamera;
+            }
+
+            return EnsureValidBaseStackCamera() ? _baseStackCamera : null;
         }
 
         private bool EnsureValidBaseStackCamera()
@@ -679,11 +845,7 @@ namespace NASAPunk.Visor
 
         private bool HasValidBaseStackCamera()
         {
-            if (_baseStackCamera == null)
-                return false;
-
-            UniversalAdditionalCameraData baseCameraData = GetCachedBaseCameraData();
-            return baseCameraData != null && baseCameraData.renderType == CameraRenderType.Base;
+            return TryGetBaseCameraData(_baseStackCamera, out _);
         }
 
         private Camera TryResolveBaseStackCameraFromHierarchy()
@@ -805,6 +967,17 @@ namespace NASAPunk.Visor
                 _cachedBaseCameraData = _baseStackCamera.GetComponent<UniversalAdditionalCameraData>();
 
             return _cachedBaseCameraData;
+        }
+
+        private static UniversalAdditionalCameraData GetCameraData(Camera camera)
+        {
+            return camera != null ? camera.GetComponent<UniversalAdditionalCameraData>() : null;
+        }
+
+        private static bool TryGetBaseCameraData(Camera camera, out UniversalAdditionalCameraData cameraData)
+        {
+            cameraData = GetCameraData(camera);
+            return cameraData != null && cameraData.renderType == CameraRenderType.Base;
         }
 
         private void InvalidatePoseCache()

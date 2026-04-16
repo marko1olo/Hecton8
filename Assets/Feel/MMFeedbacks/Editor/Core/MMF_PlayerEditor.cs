@@ -1083,16 +1083,28 @@ namespace MoreMountains.Feedbacks
 
 		protected virtual void StoreRuntimeChanges()
 		{
-			foreach (MMF_Player player in FindObjectsOfType<MMF_Player>().Where(p => p.KeepPlayModeChanges))
+			MMF_Player[] players = FindObjectsByType<MMF_Player>(FindObjectsInactive.Exclude);
+			foreach (MMF_Player player in players)
 			{
+				if (player == null || !player.KeepPlayModeChanges)
+				{
+					continue;
+				}
+
 				MMF_PlayerCopy.StoreRuntimeChanges(player);
 			}
 		}
 
 		protected virtual void ApplyRuntimeChanges()
 		{
-			foreach (MMF_Player player in FindObjectsOfType<MMF_Player>().Where(MMF_PlayerCopy.RuntimeChanges.ContainsKey))
+			MMF_Player[] players = FindObjectsByType<MMF_Player>(FindObjectsInactive.Exclude);
+			foreach (MMF_Player player in players)
 			{
+				if (player == null || !MMF_PlayerCopy.RuntimeChanges.ContainsKey(player))
+				{
+					continue;
+				}
+
 				MMF_PlayerCopy.ApplyRuntimeChanges(player);
 			}
 			ForceRepaint();

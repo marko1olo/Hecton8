@@ -135,7 +135,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8feb1a3b87c7bee43b0a4296f492c53e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Construction.ModuleMarker
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Construction.ModuleMarker
   buildableData: {fileID: 0}
 --- !u!136 &5111201081702676074
 CapsuleCollider:

@@ -129,11 +129,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
             HectonCelestialEngine.OnEclipseEnd   += HandleEclipseEnd;
@@ -141,14 +137,18 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
             HectonCelestialEngine.OnEclipseEnd   -= HandleEclipseEnd;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -245,6 +245,31 @@ namespace Hecton8.Gameplay
         private static void LogEclipseEnded()
         {
             Debug.Log("[Eclipse] Eclipse ended — temperature recovering.");
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
         }
     }
 }

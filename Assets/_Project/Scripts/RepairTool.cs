@@ -24,6 +24,7 @@
 //   • Нет Update().
 // ============================================================================
 
+using Hecton.Localization;
 using Hecton8.Gameplay;
 using UnityEngine;
 
@@ -39,6 +40,7 @@ namespace Hecton8.Gameplay
         private const string RepairToolCriticalDamageHeadline = "CRITICAL DAMAGE";
         private const string RepairToolHeavyDamageHeadline = "HEAVY DAMAGE";
         private const string RepairToolPatchingHeadline = "PATCHING";
+        private const string RepairToolCategory = "REPAIR";
 
         private struct ServiceDiagnosis
         {
@@ -164,7 +166,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_noTargetReportedThisUse)
                 {
-                    ToolHitUtility.ShowWarning("REPAIR TOOL - NO TARGET");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_NO_TARGET, "REPAIR TOOL - NO TARGET"));
                     _noTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
@@ -185,7 +187,7 @@ namespace Hecton8.Gameplay
                 {
                     if (!_healthyTargetReportedThisUse)
                     {
-                        ToolHitUtility.ShowInfo("REPAIR TOOL - MODULE SEALED");
+                        ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
                         _healthyTargetReportedThisUse = true;
                     }
 
@@ -202,9 +204,15 @@ namespace Hecton8.Gameplay
                     ServiceDiagnosis diagnosis = BuildDiagnosis(module);
                     ToolHitUtility.ShowInfo(GetActiveRepairHudMessage(diagnosis.headline));
                     FieldOperationLogSystem.RecordOperation(
-                        "REPAIR",
-                        "MODULE REPAIR STARTED",
-                        $"{module.name} entered active repair service. {diagnosis.summary} {diagnosis.recommendation}",
+                        ResolveLocalized(LocalizationKeys.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                        ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
+                        string.Format(
+                            ResolveLocalized(
+                                LocalizationKeys.REPAIR_TOOL_LOG_STARTED_MESSAGE,
+                                "{0} entered active repair service. {1} {2}"),
+                            module.name,
+                            diagnosis.summary,
+                            diagnosis.recommendation),
                         "INFO");
                     _activeRepairReportedThisUse = true;
                 }
@@ -213,11 +221,15 @@ namespace Hecton8.Gameplay
                     module.CurrentIntegrity >= module.MaxIntegrity &&
                     !module.IsFlooded)
                 {
-                    ToolHitUtility.ShowInfo("REPAIR TOOL - MODULE RESTORED");
+                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
                     FieldOperationLogSystem.RecordOperation(
-                        "REPAIR",
-                        "MODULE RESTORED",
-                        $"{module.name} reached full integrity and dry status.",
+                        ResolveLocalized(LocalizationKeys.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                        ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
+                        string.Format(
+                            ResolveLocalized(
+                                LocalizationKeys.REPAIR_TOOL_LOG_RESTORED_MESSAGE,
+                                "{0} reached full integrity and dry status."),
+                            module.name),
                         "INFO");
                 }
             }
@@ -225,7 +237,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_invalidTargetReportedThisUse)
                 {
-                    ToolHitUtility.ShowWarning("REPAIR TOOL - INVALID TARGET");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_INVALID_TARGET, "REPAIR TOOL - INVALID TARGET"));
                     _invalidTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
@@ -245,7 +257,7 @@ namespace Hecton8.Gameplay
 
             if (!didHit)
             {
-                ToolHitUtility.ShowWarning("REPAIR TOOL - NO MODULE IN RANGE");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_NO_MODULE, "REPAIR TOOL - NO MODULE IN RANGE"));
                 InvalidateDiagnosisCache();
                 return;
             }
@@ -256,7 +268,7 @@ namespace Hecton8.Gameplay
                     : null;
             if (module == null)
             {
-                ToolHitUtility.ShowWarning("REPAIR TOOL - TARGET NOT SERVICEABLE");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_NOT_SERVICEABLE, "REPAIR TOOL - TARGET NOT SERVICEABLE"));
                 InvalidateDiagnosisCache();
                 return;
             }
@@ -264,7 +276,7 @@ namespace Hecton8.Gameplay
             ServiceDiagnosis diagnosis = BuildDiagnosis(module);
             PublishDiagnosis(diagnosis);
             FieldOperationLogSystem.RecordOperation(
-                "REPAIR",
+                ResolveLocalized(LocalizationKeys.REPAIR_TOOL_CATEGORY, RepairToolCategory),
                 GetServiceDiagnosisLogTitle(diagnosis.headline),
                 $"{diagnosis.summary} {diagnosis.recommendation}",
                 diagnosis.severity);
@@ -298,23 +310,29 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_isRepairing)
-                return "REPAIR TOOL // ACTIVE SERVICE";
+                return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_OPERATIONAL_ACTIVE, "REPAIR TOOL // ACTIVE SERVICE");
 
             if (TryGetServiceDiagnosisCached(out ServiceDiagnosis diagnosis))
-                return $"REPAIR TOOL // {diagnosis.priority}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.REPAIR_TOOL_OPERATIONAL_PRIORITY, "REPAIR TOOL // {0}"),
+                    diagnosis.priority);
 
-            return "REPAIR TOOL // STANDBY";
+            return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_OPERATIONAL_STANDBY, "REPAIR TOOL // STANDBY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_isRepairing)
-                return "Hold the beam steady until the service window closes.";
+                return ResolveLocalized(
+                    LocalizationKeys.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE,
+                    "Hold the beam steady until the service window closes.");
 
             if (TryGetServiceDiagnosisCached(out ServiceDiagnosis diagnosis))
                 return diagnosis.recommendation;
 
-            return "Sweep a damaged module to diagnose or begin repair.";
+            return ResolveLocalized(
+                LocalizationKeys.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE,
+                "Sweep a damaged module to diagnose or begin repair.");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -473,11 +491,17 @@ namespace Hecton8.Gameplay
                 return new ServiceDiagnosis
                 {
                     status = "FLOODED",
-                    headline = "NO POWER",
-                    summary = $"Integrity {(integrity01 * 100f):0}% // compartment flooded // pumps offline.",
-                    recommendation = "Restore power before expecting water evacuation.",
+                    headline = RepairToolNoPowerHeadline,
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.REPAIR_TOOL_SUMMARY_NO_POWER,
+                            "Integrity {0:0}% // compartment flooded // pumps offline."),
+                        integrity01 * 100f),
+                    recommendation = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_RECOMMEND_NO_POWER,
+                        "Restore power before expecting water evacuation."),
                     severity = "WARN",
-                    priority = "SERVICE BLOCKED"
+                    priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED")
                 };
             }
 
@@ -486,11 +510,17 @@ namespace Hecton8.Gameplay
                 return new ServiceDiagnosis
                 {
                     status = "DRAINING",
-                    headline = "DRAINING",
-                    summary = $"Integrity {(integrity01 * 100f):0}% // pumps are clearing floodwater.",
-                    recommendation = "Hold perimeter and let the compartment finish draining.",
+                    headline = RepairToolDrainingHeadline,
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.REPAIR_TOOL_SUMMARY_DRAINING,
+                            "Integrity {0:0}% // pumps are clearing floodwater."),
+                        integrity01 * 100f),
+                    recommendation = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_RECOMMEND_DRAINING,
+                        "Hold perimeter and let the compartment finish draining."),
                     severity = "INFO",
-                    priority = "STABILIZING"
+                    priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING")
                 };
             }
 
@@ -499,11 +529,17 @@ namespace Hecton8.Gameplay
                 return new ServiceDiagnosis
                 {
                     status = "FLOODED",
-                    headline = "FLOODED",
-                    summary = $"Integrity {(integrity01 * 100f):0}% // compartment breach still active.",
-                    recommendation = "Continue repair until integrity reaches 100% and pump cycle can start.",
+                    headline = RepairToolFloodedHeadline,
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.REPAIR_TOOL_SUMMARY_FLOODED,
+                            "Integrity {0:0}% // compartment breach still active."),
+                        integrity01 * 100f),
+                    recommendation = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_RECOMMEND_FLOODED,
+                        "Continue repair until integrity reaches 100% and pump cycle can start."),
                     severity = "WARN",
-                    priority = "IMMEDIATE SERVICE"
+                    priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE")
                 };
             }
 
@@ -512,11 +548,15 @@ namespace Hecton8.Gameplay
                 return new ServiceDiagnosis
                 {
                     status = "SEALED",
-                    headline = "SEALED",
-                    summary = "Integrity 100% // hull stable // compartment dry.",
-                    recommendation = "No further repair action required.",
+                    headline = RepairToolSealedHeadline,
+                    summary = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_SUMMARY_SEALED,
+                        "Integrity 100% // hull stable // compartment dry."),
+                    recommendation = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_RECOMMEND_SEALED,
+                        "No further repair action required."),
                     severity = "INFO",
-                    priority = "SERVICE COMPLETE"
+                    priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE")
                 };
             }
 
@@ -525,11 +565,17 @@ namespace Hecton8.Gameplay
                 return new ServiceDiagnosis
                 {
                     status = "CRITICAL",
-                    headline = "CRITICAL DAMAGE",
-                    summary = $"Integrity {(integrity01 * 100f):0}% // hull failure risk elevated.",
-                    recommendation = "Maintain continuous repair contact until the module exits critical range.",
+                    headline = RepairToolCriticalDamageHeadline,
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.REPAIR_TOOL_SUMMARY_CRITICAL,
+                            "Integrity {0:0}% // hull failure risk elevated."),
+                        integrity01 * 100f),
+                    recommendation = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_RECOMMEND_CRITICAL,
+                        "Maintain continuous repair contact until the module exits critical range."),
                     severity = "CRITICAL",
-                    priority = "CRITICAL RESPONSE"
+                    priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE")
                 };
             }
 
@@ -538,28 +584,47 @@ namespace Hecton8.Gameplay
                 return new ServiceDiagnosis
                 {
                     status = "DAMAGED",
-                    headline = "HEAVY DAMAGE",
-                    summary = $"Integrity {(integrity01 * 100f):0}% // hull is compromised but recoverable.",
-                    recommendation = "Keep the repair beam on target and avoid leaving the module unattended.",
+                    headline = RepairToolHeavyDamageHeadline,
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.REPAIR_TOOL_SUMMARY_HEAVY,
+                            "Integrity {0:0}% // hull is compromised but recoverable."),
+                        integrity01 * 100f),
+                    recommendation = ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_RECOMMEND_HEAVY,
+                        "Keep the repair beam on target and avoid leaving the module unattended."),
                     severity = "WARN",
-                    priority = "ACTIVE SERVICE"
+                    priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE")
                 };
             }
 
             return new ServiceDiagnosis
             {
                 status = "DAMAGED",
-                headline = "PATCHING",
-                summary = $"Integrity {(integrity01 * 100f):0}% // module is nearly sealed.",
-                recommendation = "Finish the repair cycle to restore full integrity.",
+                headline = RepairToolPatchingHeadline,
+                summary = string.Format(
+                    ResolveLocalized(
+                        LocalizationKeys.REPAIR_TOOL_SUMMARY_PATCHING,
+                        "Integrity {0:0}% // module is nearly sealed."),
+                    integrity01 * 100f),
+                recommendation = ResolveLocalized(
+                    LocalizationKeys.REPAIR_TOOL_RECOMMEND_PATCHING,
+                    "Finish the repair cycle to restore full integrity."),
                 severity = "INFO",
-                priority = "FINAL PASS"
+                priority = ResolveLocalized(LocalizationKeys.REPAIR_TOOL_PRIORITY_FINAL_PASS, "FINAL PASS")
             };
         }
 
         private static void PublishDiagnosis(ServiceDiagnosis diagnosis)
         {
-            string message = $"REPAIR DIAG - {diagnosis.headline} // {diagnosis.priority} // {diagnosis.summary} // {diagnosis.recommendation}";
+            string message = string.Format(
+                ResolveLocalized(
+                    LocalizationKeys.REPAIR_TOOL_DIAG_MESSAGE,
+                    "REPAIR DIAG - {0} // {1} // {2} // {3}"),
+                diagnosis.headline,
+                diagnosis.priority,
+                diagnosis.summary,
+                diagnosis.recommendation);
             if (diagnosis.severity == "CRITICAL")
                 ToolHitUtility.ShowWarning(message);
             else if (diagnosis.severity == "WARN")
@@ -573,21 +638,23 @@ namespace Hecton8.Gameplay
             switch (headline)
             {
                 case RepairToolNoPowerHeadline:
-                    return "REPAIR TOOL - NO POWER";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER");
                 case RepairToolDrainingHeadline:
-                    return "REPAIR TOOL - DRAINING";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_DRAINING, "REPAIR TOOL - DRAINING");
                 case RepairToolFloodedHeadline:
-                    return "REPAIR TOOL - FLOODED";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_FLOODED, "REPAIR TOOL - FLOODED");
                 case RepairToolSealedHeadline:
-                    return "REPAIR TOOL - SEALED";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - SEALED");
                 case RepairToolCriticalDamageHeadline:
-                    return "REPAIR TOOL - CRITICAL DAMAGE";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_CRITICAL_DAMAGE, "REPAIR TOOL - CRITICAL DAMAGE");
                 case RepairToolHeavyDamageHeadline:
-                    return "REPAIR TOOL - HEAVY DAMAGE";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_HEAVY_DAMAGE, "REPAIR TOOL - HEAVY DAMAGE");
                 case RepairToolPatchingHeadline:
-                    return "REPAIR TOOL - PATCHING";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_PATCHING, "REPAIR TOOL - PATCHING");
                 default:
-                    return "REPAIR TOOL - " + headline;
+                    return string.Format(
+                        ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_GENERIC, "REPAIR TOOL - {0}"),
+                        headline);
             }
         }
 
@@ -596,22 +663,32 @@ namespace Hecton8.Gameplay
             switch (headline)
             {
                 case RepairToolNoPowerHeadline:
-                    return "SERVICE DIAG - NO POWER";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_NO_POWER, "SERVICE DIAG - NO POWER");
                 case RepairToolDrainingHeadline:
-                    return "SERVICE DIAG - DRAINING";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_DRAINING, "SERVICE DIAG - DRAINING");
                 case RepairToolFloodedHeadline:
-                    return "SERVICE DIAG - FLOODED";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_FLOODED, "SERVICE DIAG - FLOODED");
                 case RepairToolSealedHeadline:
-                    return "SERVICE DIAG - SEALED";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_SEALED, "SERVICE DIAG - SEALED");
                 case RepairToolCriticalDamageHeadline:
-                    return "SERVICE DIAG - CRITICAL DAMAGE";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_CRITICAL, "SERVICE DIAG - CRITICAL DAMAGE");
                 case RepairToolHeavyDamageHeadline:
-                    return "SERVICE DIAG - HEAVY DAMAGE";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_HEAVY, "SERVICE DIAG - HEAVY DAMAGE");
                 case RepairToolPatchingHeadline:
-                    return "SERVICE DIAG - PATCHING";
+                    return ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
                 default:
-                    return "SERVICE DIAG - " + headline;
+                    return string.Format(
+                        ResolveLocalized(LocalizationKeys.REPAIR_TOOL_LOG_DIAG_GENERIC, "SERVICE DIAG - {0}"),
+                        headline);
             }
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

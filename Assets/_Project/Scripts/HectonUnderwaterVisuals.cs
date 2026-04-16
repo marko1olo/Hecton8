@@ -55,6 +55,7 @@ using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Unity.Mathematics;
 using VLB;
 using CrestUnderwaterRenderer = global::Crest.UnderwaterRenderer;
@@ -146,6 +147,16 @@ namespace Hecton8.Environment
         [Header("═══ DEEP CELESTIAL CULL ═══")]
         [Tooltip("Suppresses SpaceCamera celestial rendering below this depth to cut deep-water render overhead without touching shallow water.")]
         [SerializeField] private float deepCelestialCullDepth = 1000f;
+        [Tooltip("Keeps SpaceCamera celestial rendering suppressed until the player climbs clearly out of the deep-water threshold instead of thrashing at one boundary.")]
+        [SerializeField, UnityEngine.Range(0f, 300f)] private float deepCelestialCullDepthHysteresis = 120f;
+        [Tooltip("Allows weak hardware to suppress the extra celestial camera earlier once dynamic resolution has already fallen and the player is no longer in shallow water.")]
+        [SerializeField] private bool enableAdaptiveSpaceCameraCull = true;
+        [Tooltip("Do not suppress the celestial camera from perf pressure in shallow water. This preserves near-surface sky readability.")]
+        [SerializeField, UnityEngine.Range(0f, 1000f)] private float adaptiveSpaceCameraCullMinDepth = 350f;
+        [Tooltip("Render-scale threshold that triggers earlier SpaceCamera suppression on weak hardware.")]
+        [SerializeField, UnityEngine.Range(0.5f, 1f)] private float adaptiveSpaceCameraCullRenderScale = 0.76f;
+        [Tooltip("Render-scale threshold required before the SpaceCamera is restored after adaptive suppression.")]
+        [SerializeField, UnityEngine.Range(0.5f, 1f)] private float adaptiveSpaceCameraRestoreRenderScale = 0.9f;
 
         [Header("═══ SUN VISUAL ═══")]
         [UnityEngine.Range(0.0001f, 0.05f)]
@@ -231,6 +242,78 @@ namespace Hecton8.Environment
         [Tooltip("Maximum light intensity pushed into the proxy beam light.")]
         [SerializeField, UnityEngine.Range(0f, 4f)] private float shallowSunBeamMaxLightIntensity = 0.55f;
 
+        [Header("─── ECOLOGY RESPONSE ───")]
+        [Tooltip("How strongly fauna mood can thicken underwater suspended particulates.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float ecologySuspendedMotesWeight = 0.28f;
+        [Tooltip("How strongly fauna mood can increase exhale bubble burst density.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float ecologyBubbleWeight = 0.18f;
+        [Tooltip("How strongly calm/lively fauna space keeps shallow beams readable before deeper fade takes over.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float ecologySunBeamWeight = 0.16f;
+        [Header("Adaptive Budget Response")]
+        [Tooltip("Scales underwater near-camera dressing from DynamicResolutionScaler render scale so weak devices shed expensive dressing before the frame collapses.")]
+        [SerializeField] private bool enableAdaptiveBudgetResponse = true;
+        [Tooltip("Render scale at which adaptive dressing reaches its minimum authored budget response.")]
+        [SerializeField, UnityEngine.Range(0.5f, 1f)] private float adaptiveBudgetFloorRenderScale = 0.7f;
+        [Tooltip("Minimum suspended motes density allowed at the adaptive budget floor.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float adaptiveMotesBudgetFloor = 0.55f;
+        [Tooltip("Minimum exhale bubble density allowed at the adaptive budget floor.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float adaptiveBubbleBudgetFloor = 0.6f;
+        [Tooltip("Minimum shallow sun-beam intensity allowed at the adaptive budget floor.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float adaptiveBeamBudgetFloor = 0.7f;
+        [Tooltip("Minimum shallow caustics intensity allowed at the adaptive budget floor.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float adaptiveCausticsBudgetFloor = 0.72f;
+        [Tooltip("Maximum bottom-silt probe interval multiplier at the adaptive budget floor. Higher values reduce probe cadence on weak frames.")]
+        [SerializeField, UnityEngine.Range(1f, 4f)] private float adaptiveBottomSiltProbeIntervalMultiplier = 1.8f;
+
+        [Header("Soundscape Tier Response")]
+        // Depth-band response stays inside the underwater visual owner instead of a fake global audio owner.
+        [Tooltip("Applies authored soundscape depth tiers to underwater fog, ambient, beam, and caustics so each depth band reads like a different water mass.")]
+        [SerializeField] private bool enableSoundscapeTierResponse = true;
+        [Tooltip("Ambient tint injected only in thermal tier so the abyss stops reading as flat blue-black.")]
+        [SerializeField] private Color thermalTierTintColor = new Color(0.22f, 0.1f, 0.03f, 1f);
+        [Tooltip("Thermal tier tint blend amount applied to fog and ambient colors.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float thermalTierTintBlend = 0.28f;
+        [Tooltip("Fog density multiplier in twilight tier.")]
+        [SerializeField, UnityEngine.Range(0.5f, 2f)] private float twilightTierFogScale = 1.08f;
+        [Tooltip("Fog density multiplier in darkness tier.")]
+        [SerializeField, UnityEngine.Range(0.5f, 2f)] private float darknessTierFogScale = 1.18f;
+        [Tooltip("Fog density multiplier in abyss tier.")]
+        [SerializeField, UnityEngine.Range(0.5f, 2f)] private float abyssTierFogScale = 1.32f;
+        [Tooltip("Fog density multiplier in deep abyss tier.")]
+        [SerializeField, UnityEngine.Range(0.5f, 2f)] private float deepAbyssTierFogScale = 1.48f;
+        [Tooltip("Fog density multiplier in thermal tier.")]
+        [SerializeField, UnityEngine.Range(0.5f, 2f)] private float thermalTierFogScale = 1.3f;
+        [Tooltip("Ambient intensity multiplier in twilight tier.")]
+        [SerializeField, UnityEngine.Range(0.25f, 1.5f)] private float twilightTierAmbientScale = 0.94f;
+        [Tooltip("Ambient intensity multiplier in darkness tier.")]
+        [SerializeField, UnityEngine.Range(0.25f, 1.5f)] private float darknessTierAmbientScale = 0.82f;
+        [Tooltip("Ambient intensity multiplier in abyss tier.")]
+        [SerializeField, UnityEngine.Range(0.25f, 1.5f)] private float abyssTierAmbientScale = 0.72f;
+        [Tooltip("Ambient intensity multiplier in deep abyss tier.")]
+        [SerializeField, UnityEngine.Range(0.25f, 1.5f)] private float deepAbyssTierAmbientScale = 0.62f;
+        [Tooltip("Ambient intensity multiplier in thermal tier.")]
+        [SerializeField, UnityEngine.Range(0.25f, 1.5f)] private float thermalTierAmbientScale = 0.78f;
+        [Tooltip("Shallow sun beam intensity multiplier in twilight tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float twilightTierBeamScale = 0.88f;
+        [Tooltip("Shallow sun beam intensity multiplier in darkness tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float darknessTierBeamScale = 0.6f;
+        [Tooltip("Shallow sun beam intensity multiplier in abyss tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float abyssTierBeamScale = 0.32f;
+        [Tooltip("Shallow sun beam intensity multiplier in deep abyss tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float deepAbyssTierBeamScale = 0.14f;
+        [Tooltip("Shallow sun beam intensity multiplier in thermal tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float thermalTierBeamScale = 0.16f;
+        [Tooltip("Caustics intensity multiplier in twilight tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float twilightTierCausticsScale = 0.92f;
+        [Tooltip("Caustics intensity multiplier in darkness tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float darknessTierCausticsScale = 0.58f;
+        [Tooltip("Caustics intensity multiplier in abyss tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float abyssTierCausticsScale = 0.28f;
+        [Tooltip("Caustics intensity multiplier in deep abyss tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float deepAbyssTierCausticsScale = 0.1f;
+        [Tooltip("Caustics intensity multiplier in thermal tier.")]
+        [SerializeField, UnityEngine.Range(0f, 1.5f)] private float thermalTierCausticsScale = 0.14f;
+
         [Header("═══ SURFACE DEFAULTS ═══")]
         [ColorUsage(false)]
         [SerializeField] private Color surfaceFogColor = new Color(0.7f, 0.75f, 0.8f, 1f);
@@ -265,6 +348,23 @@ namespace Hecton8.Environment
         [SerializeField] private float _debugBottomSiltBoost;
         [SerializeField] private int   _debugExhaleBubbleBurstCount;
         [SerializeField] private float _debugShallowSunBeamIntensity;
+        [SerializeField] private string _debugFaunaMood = "None";
+        [SerializeField] private string _debugFaunaAmbience = "None";
+        [SerializeField] private float _debugEcologyMotesMultiplier = 1f;
+        [SerializeField] private float _debugEcologyBubbleMultiplier = 1f;
+        [SerializeField] private float _debugEcologyBeamMultiplier = 1f;
+        [SerializeField] private float _debugAdaptiveRenderScale = 1f;
+        [SerializeField] private float _debugAdaptiveBudgetNormalized = 1f;
+        [SerializeField] private float _debugAdaptiveMotesScale = 1f;
+        [SerializeField] private float _debugAdaptiveBubbleScale = 1f;
+        [SerializeField] private float _debugAdaptiveBeamScale = 1f;
+        [SerializeField] private float _debugAdaptiveCausticsScale = 1f;
+        [SerializeField] private float _debugAdaptiveBottomProbeScale = 1f;
+        [SerializeField] private string _debugSoundscapeTier = "Shallow";
+        [SerializeField] private float _debugSoundscapeFogScale = 1f;
+        [SerializeField] private float _debugSoundscapeAmbientScale = 1f;
+        [SerializeField] private float _debugSoundscapeBeamScale = 1f;
+        [SerializeField] private float _debugSoundscapeCausticsScale = 1f;
         [SerializeField] private bool  _debugPhysicsEngineFound;
         [SerializeField] private bool  _debugAtmoManagerFound;
         [SerializeField] private bool  _debugSunVisualActive;
@@ -320,6 +420,23 @@ namespace Hecton8.Environment
         private HectonPlayerMovement _subscribedPlayerMovement;
         private Rigidbody _playerRigidbody;
         private HectonBiomeProfile _matrixRuntimeVisualProfile;
+        private WorldProceduralFaunaMood _currentFaunaMood;
+        private string _currentFaunaAmbienceSummary;
+        private float _ecologySuspendedMotesMultiplier = 1f;
+        private float _ecologyBubbleMultiplier = 1f;
+        private float _ecologySunBeamMultiplier = 1f;
+        private float _adaptiveBudgetNormalized = 1f;
+        private float _adaptiveMotesScale = 1f;
+        private float _adaptiveBubbleScale = 1f;
+        private float _adaptiveBeamScale = 1f;
+        private float _adaptiveCausticsScale = 1f;
+        private float _adaptiveBottomSiltProbeIntervalScale = 1f;
+        private SoundscapeTier _currentSoundscapeTier = SoundscapeTier.Shallow;
+        private float _soundscapeFogDensityScale = 1f;
+        private float _soundscapeAmbientScale = 1f;
+        private float _soundscapeBeamScale = 1f;
+        private float _soundscapeCausticsScale = 1f;
+        private float _soundscapeThermalTintBlend = 0f;
 
         private int _targetBiomeIndex;
 
@@ -376,16 +493,29 @@ namespace Hecton8.Environment
         private float _nextExhaleBubbleAllowedTime = float.NegativeInfinity;
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
+        private float _nextRuntimeReferenceWarningTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
+        private Camera _capturedCompositionMainCamera;
+        private Camera _capturedCompositionSpaceCamera;
         private CrestOceanRenderer _oceanRenderer;
         private Transform _shallowSunBeamTransform;
         private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
         private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
         private Material _lastRuntimeOceanMaterial;
         private bool _pendingRuntimeCrestMaterialSync;
+        private bool _cameraCompositionDefaultsCaptured;
+        private bool _runtimeCameraStackFallbackActive;
         private int _spaceCameraOriginalCullingMask;
+        private int _mainCameraOriginalCullingMask;
+        private float _mainCameraOriginalDepth;
+        private float _spaceCameraOriginalDepth;
+        private CameraClearFlags _mainCameraOriginalClearFlags;
+        private CameraRenderType _mainCameraOriginalRenderType;
+        private CameraRenderType _spaceCameraOriginalRenderType;
+        private const int CelestialLayerIndex = 15;
+        private const int _CelestialLayerMask = 1 << CelestialLayerIndex;
 #if UNITY_EDITOR
         private CrestUnderwaterRenderer _editorCrestUnderwaterRenderer;
         private bool _editorCrestUnderwaterRendererWasEnabled;
@@ -465,7 +595,159 @@ namespace Hecton8.Environment
             if (_spaceCamera != null && !_spaceCamera.enabled)
                 _spaceCamera.enabled = true;
 
+            ApplyGameplayCameraCompositionMode();
             EnsureCrestUnderwaterPassOwnership();
+        }
+
+        private void ApplyGameplayCameraCompositionMode()
+        {
+            if (!Application.isPlaying || mainCamera == null)
+                return;
+
+            ResolveSpaceCamera();
+            if (_spaceCamera == null)
+                return;
+
+            if (!mainCamera.TryGetComponent(out UniversalAdditionalCameraData mainCameraData) ||
+                mainCameraData == null ||
+                !_spaceCamera.TryGetComponent(out UniversalAdditionalCameraData spaceCameraData) ||
+                spaceCameraData == null)
+            {
+                return;
+            }
+
+            CaptureGameplayCameraCompositionDefaults(mainCameraData, spaceCameraData);
+
+            if (SupportsGameplayCameraStacking(mainCameraData, spaceCameraData))
+            {
+                RestoreGameplayCameraCompositionDefaults(mainCameraData, spaceCameraData);
+                return;
+            }
+
+            ApplyGameplayCameraCompositionFallback(mainCameraData, spaceCameraData);
+        }
+
+        private void CaptureGameplayCameraCompositionDefaults(
+            UniversalAdditionalCameraData mainCameraData,
+            UniversalAdditionalCameraData spaceCameraData)
+        {
+            if (_cameraCompositionDefaultsCaptured &&
+                ReferenceEquals(_capturedCompositionMainCamera, mainCamera) &&
+                ReferenceEquals(_capturedCompositionSpaceCamera, _spaceCamera))
+            {
+                return;
+            }
+
+            _capturedCompositionMainCamera = mainCamera;
+            _capturedCompositionSpaceCamera = _spaceCamera;
+            _mainCameraOriginalDepth = mainCamera.depth;
+            _spaceCameraOriginalDepth = _spaceCamera.depth;
+            _mainCameraOriginalClearFlags = mainCamera.clearFlags;
+            _mainCameraOriginalRenderType = mainCameraData.renderType;
+            _spaceCameraOriginalRenderType = spaceCameraData.renderType;
+            _mainCameraOriginalCullingMask = mainCamera.cullingMask;
+            _cameraCompositionDefaultsCaptured = true;
+        }
+
+        private static bool SupportsGameplayCameraStacking(
+            UniversalAdditionalCameraData mainCameraData,
+            UniversalAdditionalCameraData spaceCameraData)
+        {
+            ScriptableRenderer mainRenderer = mainCameraData.scriptableRenderer;
+            ScriptableRenderer spaceRenderer = spaceCameraData.scriptableRenderer;
+
+            return mainRenderer != null &&
+                   spaceRenderer != null &&
+                   mainRenderer.SupportsCameraStackingType(CameraRenderType.Overlay) &&
+                   spaceRenderer.SupportsCameraStackingType(CameraRenderType.Base);
+        }
+
+        private void ApplyGameplayCameraCompositionFallback(
+            UniversalAdditionalCameraData mainCameraData,
+            UniversalAdditionalCameraData spaceCameraData)
+        {
+            if (spaceCameraData.renderType != CameraRenderType.Base)
+                spaceCameraData.renderType = CameraRenderType.Base;
+
+            if (mainCameraData.renderType != CameraRenderType.Base)
+                mainCameraData.renderType = CameraRenderType.Base;
+
+            float fallbackSpaceDepth = _cameraCompositionDefaultsCaptured ? _spaceCameraOriginalDepth : _spaceCamera.depth;
+            float fallbackMainDepth = math.max(
+                _cameraCompositionDefaultsCaptured ? _mainCameraOriginalDepth : mainCamera.depth,
+                fallbackSpaceDepth + 1f);
+
+            if (!Mathf.Approximately(_spaceCamera.depth, fallbackSpaceDepth))
+                _spaceCamera.depth = fallbackSpaceDepth;
+
+            if (!Mathf.Approximately(mainCamera.depth, fallbackMainDepth))
+                mainCamera.depth = fallbackMainDepth;
+
+            EnsureFallbackMainCameraCelestialVisibility(mainCamera);
+            _runtimeCameraStackFallbackActive = true;
+            ApplyRuntimeMainCameraClearFlags(CameraClearFlags.Depth);
+        }
+
+        private void RestoreGameplayCameraCompositionDefaults(
+            UniversalAdditionalCameraData mainCameraData,
+            UniversalAdditionalCameraData spaceCameraData)
+        {
+            if (!_cameraCompositionDefaultsCaptured)
+                return;
+
+            if (spaceCameraData.renderType != _spaceCameraOriginalRenderType)
+                spaceCameraData.renderType = _spaceCameraOriginalRenderType;
+
+            if (mainCameraData.renderType != _mainCameraOriginalRenderType)
+                mainCameraData.renderType = _mainCameraOriginalRenderType;
+
+            if (!Mathf.Approximately(_spaceCamera.depth, _spaceCameraOriginalDepth))
+                _spaceCamera.depth = _spaceCameraOriginalDepth;
+
+            if (!Mathf.Approximately(mainCamera.depth, _mainCameraOriginalDepth))
+                mainCamera.depth = _mainCameraOriginalDepth;
+
+            if (_runtimeCameraStackFallbackActive || mainCamera.clearFlags != _mainCameraOriginalClearFlags)
+                mainCamera.clearFlags = _mainCameraOriginalClearFlags;
+
+            if (_cameraCompositionDefaultsCaptured &&
+                mainCamera.cullingMask != _mainCameraOriginalCullingMask)
+            {
+                mainCamera.cullingMask = _mainCameraOriginalCullingMask;
+            }
+
+            if (spaceCameraData.renderType == CameraRenderType.Base &&
+                mainCameraData.renderType == CameraRenderType.Overlay)
+            {
+                var stack = spaceCameraData.cameraStack;
+                if (stack != null && !stack.Contains(mainCamera))
+                    stack.Add(mainCamera);
+            }
+
+            _runtimeCameraStackFallbackActive = false;
+        }
+
+        private static void EnsureFallbackMainCameraCelestialVisibility(Camera mainCamera)
+        {
+            if (mainCamera == null || _CelestialLayerMask == 0)
+                return;
+
+            int fallbackMask = mainCamera.cullingMask | _CelestialLayerMask;
+            if (mainCamera.cullingMask != fallbackMask)
+                mainCamera.cullingMask = fallbackMask;
+        }
+
+        private void ApplyRuntimeMainCameraClearFlags(CameraClearFlags desiredFlags)
+        {
+            if (mainCamera == null)
+                return;
+
+            CameraClearFlags appliedFlags = _runtimeCameraStackFallbackActive
+                ? CameraClearFlags.Depth
+                : desiredFlags;
+
+            if (mainCamera.clearFlags != appliedFlags)
+                mainCamera.clearFlags = appliedFlags;
         }
 
         private void Start()
@@ -594,6 +876,31 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying) return;
 
+            Camera authoredGameplayCamera = null;
+            if (IsRuntimeMainCamera(mainCamera))
+            {
+                authoredGameplayCamera = mainCamera;
+            }
+            else if (playerCamera != null)
+            {
+                Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                if (IsRuntimeMainCamera(playerOwnedCamera))
+                    authoredGameplayCamera = playerOwnedCamera;
+            }
+
+            // Preserve scene source-of-truth when the underwater owner is already
+            // wired to the gameplay camera. SceneView fallback is only for unwired preview.
+            if (authoredGameplayCamera != null)
+            {
+                if (!ReferenceEquals(mainCamera, authoredGameplayCamera))
+                    mainCamera = authoredGameplayCamera;
+                if (playerCamera == null || !ReferenceEquals(playerCamera, authoredGameplayCamera.transform))
+                    playerCamera = authoredGameplayCamera.transform;
+
+                _nextEditorCameraResolveTime = float.NegativeInfinity;
+                return;
+            }
+
             var sv = SceneView.lastActiveSceneView;
             if (sv != null && sv.camera != null)
             {
@@ -720,17 +1027,13 @@ namespace Hecton8.Environment
             }
 
             float depth = ResolveCurrentDepth();
-            bool isUnderwater =
-                SurfaceStateUtility.ResolveUnderwaterFromDepth(
-                    depth,
-                    _wasUnderwater,
-                    VisualEnterUnderwaterDepth,
-                    VisualExitUnderwaterDepth);
+            bool isUnderwater = ResolveUnderwaterVisualState(depth);
 
             ApplySpaceCameraDepthState(depth, isUnderwater);
 
             UpdateDepthDiagnostics(depth, isUnderwater);
             UpdateSubmergeImpulse(deltaTime);
+            RefreshAdaptiveBudgetResponse();
             _cachedVisualDepth = depth;
             _cachedVisualIsUnderwater = isUnderwater;
 
@@ -824,9 +1127,18 @@ namespace Hecton8.Environment
 
         public void SlowTick()
         {
+            if (Application.isPlaying)
+            {
+                ResolvePlayerCamera();
+                ResolveMainCamera();
+                ResolveSunVisualTransform();
+                WarnIfRuntimeReferencesStillMissing();
+            }
+
             if (playerCamera == null) return;
 
             RefreshTargetsFromCurrentProfile();
+            RefreshSoundscapeTierResponse(false);
 
             float lerpT = math.saturate(biomeTransitionSpeed * slowTickInterval);
             InterpolateBiomeParameters(lerpT);
@@ -918,6 +1230,12 @@ namespace Hecton8.Environment
         {
             if (sunVisualTransform == null) return;
 
+            if (_cachedAtmoManager != null)
+            {
+                HideSunVisualAboveWater();
+                return;
+            }
+
             float disableAt = sunVisualDisableThreshold;
             float enableAt  = sunVisualDisableThreshold * 2f;
 
@@ -945,11 +1263,27 @@ namespace Hecton8.Environment
 
         private void RestoreSunVisual()
         {
+            if (_cachedAtmoManager != null)
+            {
+                HideSunVisualAboveWater();
+                return;
+            }
+
             if (sunVisualTransform != null && _sunVisualWasDisabled)
             {
                 sunVisualTransform.gameObject.SetActive(true);
                 _sunVisualWasDisabled = false;
             }
+        }
+
+        private void HideSunVisualAboveWater()
+        {
+            if (sunVisualTransform == null) return;
+
+            if (sunVisualTransform.gameObject.activeSelf)
+                sunVisualTransform.gameObject.SetActive(false);
+
+            _sunVisualWasDisabled = true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1066,10 +1400,12 @@ namespace Hecton8.Environment
 
         private void ApplyUnderwaterFog(float lightFactor, float currentDepth, float submergeImpulse)
         {
-            RenderSettings.fogColor = _currentFogColor;
+            Color fogColor = ResolveUnderwaterFogColor();
+            RenderSettings.fogColor = fogColor;
 
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
+            targetDensity *= _soundscapeFogDensityScale;
             targetDensity *= 1f + (submergeFogBoost * submergeImpulse);
 
             float smoothSubmerge = math.saturate(currentDepth / 0.5f);
@@ -1110,7 +1446,7 @@ namespace Hecton8.Environment
             if (_wasUnderwater)
             {
                 RenderSettings.fog = true;
-                RenderSettings.fogColor = _currentFogColor;
+                RenderSettings.fogColor = ResolveUnderwaterFogColor();
                 RenderSettings.fogDensity = _cachedFogDensity;
             }
             else
@@ -1136,10 +1472,11 @@ namespace Hecton8.Environment
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
 
+            Color effectiveAmbient = ResolveUnderwaterAmbientColor();
             Color ambient;
-            ambient.r = math.max(_currentAmbientColor.r, MIN_AMBIENT.r);
-            ambient.g = math.max(_currentAmbientColor.g, MIN_AMBIENT.g);
-            ambient.b = math.max(_currentAmbientColor.b, MIN_AMBIENT.b);
+            ambient.r = math.max(effectiveAmbient.r, MIN_AMBIENT.r);
+            ambient.g = math.max(effectiveAmbient.g, MIN_AMBIENT.g);
+            ambient.b = math.max(effectiveAmbient.b, MIN_AMBIENT.b);
             ambient.a = 1f;
 
             RenderSettings.ambientLight = ambient;
@@ -1148,8 +1485,32 @@ namespace Hecton8.Environment
         private void ApplyUnderwaterCamera()
         {
             if (mainCamera == null) return;
-            mainCamera.clearFlags      = CameraClearFlags.SolidColor;
-            mainCamera.backgroundColor = _currentFogColor;
+            mainCamera.backgroundColor = ResolveUnderwaterFogColor();
+            ApplyRuntimeMainCameraClearFlags(CameraClearFlags.SolidColor);
+        }
+
+        private Color ResolveUnderwaterAmbientColor()
+        {
+            Color ambientColor = _currentAmbientColor;
+            ambientColor.r *= _soundscapeAmbientScale;
+            ambientColor.g *= _soundscapeAmbientScale;
+            ambientColor.b *= _soundscapeAmbientScale;
+
+            if (_soundscapeThermalTintBlend > 0.001f)
+                ambientColor = Color.Lerp(ambientColor, thermalTierTintColor, _soundscapeThermalTintBlend);
+
+            ambientColor.a = 1f;
+            return ambientColor;
+        }
+
+        private Color ResolveUnderwaterFogColor()
+        {
+            if (_soundscapeThermalTintBlend <= 0.001f)
+                return _currentFogColor;
+
+            Color fogColor = Color.Lerp(_currentFogColor, thermalTierTintColor, _soundscapeThermalTintBlend);
+            fogColor.a = 1f;
+            return fogColor;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1177,7 +1538,7 @@ namespace Hecton8.Environment
                     sunFlare.enabled = true;
             }
 
-            RestoreSunVisual();
+            HideSunVisualAboveWater();
 
             if (enableSurfaceFog)
             {
@@ -1194,8 +1555,7 @@ namespace Hecton8.Environment
             RenderSettings.ambientMode  = AmbientMode.Flat;
             RenderSettings.ambientLight = ResolveSurfaceAmbientColor();
 
-            if (mainCamera != null)
-                mainCamera.clearFlags = CameraClearFlags.Skybox;
+            ApplyRuntimeMainCameraClearFlags(CameraClearFlags.Skybox);
 
             if (biomePalette != null)
             {
@@ -1215,8 +1575,7 @@ namespace Hecton8.Environment
 
         private void RestoreCameraDefaults()
         {
-            if (mainCamera != null)
-                mainCamera.clearFlags = CameraClearFlags.Skybox;
+            ApplyRuntimeMainCameraClearFlags(CameraClearFlags.Skybox);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1334,6 +1693,7 @@ namespace Hecton8.Environment
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
             HectonBiomeProfile nextOverride = profile != null ? profile.runtimeVisualProfile : null;
+            ApplyEcologyContext(profile);
             if (_matrixRuntimeVisualProfile == nextOverride)
                 return;
 
@@ -1349,32 +1709,78 @@ namespace Hecton8.Environment
 
         private void HandleSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
         {
-            // Adjust underwater visuals based on soundscape depth tier
-            // Deeper = denser fog, darker ambient, different color palette
-            switch (newTier)
+            ApplySoundscapeTierResponse(newTier);
+        }
+
+        private void RefreshSoundscapeTierResponse(bool force)
+        {
+            SoundscapeTier tier = SoundscapeSystem.Instance != null
+                ? SoundscapeSystem.Instance.CurrentTier
+                : SoundscapeTier.Shallow;
+
+            ApplySoundscapeTierResponse(tier);
+        }
+
+        private void ApplySoundscapeTierResponse(SoundscapeTier tier)
+        {
+            _currentSoundscapeTier = tier;
+            _soundscapeFogDensityScale = 1f;
+            _soundscapeAmbientScale = 1f;
+            _soundscapeBeamScale = 1f;
+            _soundscapeCausticsScale = 1f;
+            _soundscapeThermalTintBlend = 0f;
+
+            if (!enableSoundscapeTierResponse)
             {
-                case SoundscapeTier.Surface:
-                    // Surface: bright, clear
-                    break;
-                case SoundscapeTier.Shallow:
-                    // 0-150m: slight fog increase
-                    break;
+                UpdateSoundscapeDiagnostics();
+                return;
+            }
+
+            switch (tier)
+            {
                 case SoundscapeTier.Twilight:
-                    // 150-500m: moderate fog, dimmer
+                    _soundscapeFogDensityScale = twilightTierFogScale;
+                    _soundscapeAmbientScale = twilightTierAmbientScale;
+                    _soundscapeBeamScale = twilightTierBeamScale;
+                    _soundscapeCausticsScale = twilightTierCausticsScale;
                     break;
+
                 case SoundscapeTier.Darkness:
-                    // 500-1000m: heavy fog, dark
+                    _soundscapeFogDensityScale = darknessTierFogScale;
+                    _soundscapeAmbientScale = darknessTierAmbientScale;
+                    _soundscapeBeamScale = darknessTierBeamScale;
+                    _soundscapeCausticsScale = darknessTierCausticsScale;
                     break;
+
                 case SoundscapeTier.Abyss:
-                    // 1000-2000m: very heavy fog
+                    _soundscapeFogDensityScale = abyssTierFogScale;
+                    _soundscapeAmbientScale = abyssTierAmbientScale;
+                    _soundscapeBeamScale = abyssTierBeamScale;
+                    _soundscapeCausticsScale = abyssTierCausticsScale;
                     break;
+
                 case SoundscapeTier.DeepAbyss:
-                    // 2000-4000m: extreme fog, near-black
+                    _soundscapeFogDensityScale = deepAbyssTierFogScale;
+                    _soundscapeAmbientScale = deepAbyssTierAmbientScale;
+                    _soundscapeBeamScale = deepAbyssTierBeamScale;
+                    _soundscapeCausticsScale = deepAbyssTierCausticsScale;
                     break;
+
                 case SoundscapeTier.Thermal:
-                    // 4000-5000m: thermal tint, glow from below
+                    _soundscapeFogDensityScale = thermalTierFogScale;
+                    _soundscapeAmbientScale = thermalTierAmbientScale;
+                    _soundscapeBeamScale = thermalTierBeamScale;
+                    _soundscapeCausticsScale = thermalTierCausticsScale;
+                    _soundscapeThermalTintBlend = thermalTierTintBlend;
+                    break;
+
+                case SoundscapeTier.Surface:
+                case SoundscapeTier.Shallow:
+                default:
                     break;
             }
+
+            UpdateSoundscapeDiagnostics();
         }
 
         private void ApplyBiomePaletteTarget(int biomeIndex)
@@ -1526,10 +1932,22 @@ namespace Hecton8.Environment
                         return;
                 }
 
+                if (TryGetComponent(out Camera localCamera) && IsRuntimeMainCamera(localCamera))
+                {
+                    mainCamera = localCamera;
+                    return;
+                }
 
-                // Fallback: Camera.main (cold retry path — not hot path)
-                if (Camera.main != null)
-                    mainCamera = Camera.main;
+                Camera childCamera = GetComponentInChildren<Camera>(true);
+                if (IsRuntimeMainCamera(childCamera))
+                {
+                    mainCamera = childCamera;
+                    return;
+                }
+
+                Camera parentCamera = GetComponentInParent<Camera>();
+                if (IsRuntimeMainCamera(parentCamera))
+                    mainCamera = parentCamera;
 
             }
 #if UNITY_EDITOR
@@ -1685,8 +2103,14 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
+            if (playerCamera == null)
+                ResolvePlayerCamera();
+
             if (mainCamera == null || !IsRuntimeMainCamera(mainCamera))
                 ResolveMainCamera();
+
+            if (sunVisualTransform == null)
+                ResolveSunVisualTransform();
 
             if (underwaterSuspendedMotes == null)
                 ResolveUnderwaterParticles();
@@ -1887,6 +2311,22 @@ namespace Hecton8.Environment
                 beamTransform.TryGetComponent(out shallowSunBeamLight);
         }
 
+        private void ResolveSunVisualTransform()
+        {
+            if (sunVisualTransform != null)
+                return;
+
+            if (sunLight == null)
+                sunLight = RenderSettings.sun;
+
+            if (sunLight == null)
+                return;
+
+            Transform resolvedSunVisual = sunLight.transform.Find("Sun_Body");
+            if (resolvedSunVisual != null)
+                sunVisualTransform = resolvedSunVisual;
+        }
+
         private void UpdateSubmergeImpulse(float deltaTime)
         {
             if (_submergeImpulseTimer <= 0f)
@@ -1905,6 +2345,49 @@ namespace Hecton8.Environment
             float timeFade = _submergeImpulseTimer / submergeImpulseDuration;
             float depthFade = 1f - math.saturate(depth / math.max(0.01f, submergeImpulseDepthWindow));
             return timeFade * depthFade;
+        }
+
+        private void RefreshAdaptiveBudgetResponse()
+        {
+            if (!enableAdaptiveBudgetResponse)
+            {
+                ApplyAdaptiveBudgetResponse(1f, 1f);
+                return;
+            }
+
+            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            if (scaler == null || !scaler.Enabled)
+            {
+                ApplyAdaptiveBudgetResponse(1f, 1f);
+                return;
+            }
+
+            float renderScale = math.saturate(scaler.CurrentRenderScale);
+            float normalized = math.saturate(
+                (renderScale - adaptiveBudgetFloorRenderScale) /
+                math.max(0.0001f, 1f - adaptiveBudgetFloorRenderScale));
+
+            ApplyAdaptiveBudgetResponse(renderScale, normalized);
+        }
+
+        private void ApplyAdaptiveBudgetResponse(float renderScale, float normalized)
+        {
+            _adaptiveBudgetNormalized = normalized;
+            _adaptiveMotesScale = math.lerp(adaptiveMotesBudgetFloor, 1f, normalized);
+            _adaptiveBubbleScale = math.lerp(adaptiveBubbleBudgetFloor, 1f, normalized);
+            _adaptiveBeamScale = math.lerp(adaptiveBeamBudgetFloor, 1f, normalized);
+            _adaptiveCausticsScale = math.lerp(adaptiveCausticsBudgetFloor, 1f, normalized);
+            _adaptiveBottomSiltProbeIntervalScale = math.lerp(adaptiveBottomSiltProbeIntervalMultiplier, 1f, normalized);
+
+#if UNITY_EDITOR
+            _debugAdaptiveRenderScale = renderScale;
+            _debugAdaptiveBudgetNormalized = normalized;
+            _debugAdaptiveMotesScale = _adaptiveMotesScale;
+            _debugAdaptiveBubbleScale = _adaptiveBubbleScale;
+            _debugAdaptiveBeamScale = _adaptiveBeamScale;
+            _debugAdaptiveCausticsScale = _adaptiveCausticsScale;
+            _debugAdaptiveBottomProbeScale = _adaptiveBottomSiltProbeIntervalScale;
+#endif
         }
 
         private void UpdateUnderwaterSuspendedMotes(
@@ -1938,6 +2421,8 @@ namespace Hecton8.Environment
                     suspendedMotesMinEmission,
                     suspendedMotesMaxEmission,
                     densityFactor);
+                targetEmission *= _ecologySuspendedMotesMultiplier;
+                targetEmission *= _adaptiveMotesScale;
                 targetEmission += ResolveBottomSiltEmissionBoost(isUnderwater);
                 targetEmission += submergeImpulse * suspendedMotesSubmergeBoost;
                 shouldPlay = targetEmission > 0.01f;
@@ -2061,7 +2546,8 @@ namespace Hecton8.Environment
                 _cachedVisualDepth / math.max(0.01f, exhaleBubbleFullDepth));
             float turbidityFactor = math.saturate((_currentTurbidity - 0.5f) * exhaleBubbleTurbidityWeight);
             float burstFactor = math.saturate(depthFactor * 0.65f + turbidityFactor * 0.35f);
-            return (int)math.round(math.lerp(minBurst, maxBurst, burstFactor));
+            int burstCount = (int)math.round(math.lerp(minBurst, maxBurst, burstFactor) * _ecologyBubbleMultiplier * _adaptiveBubbleScale);
+            return math.max(0, burstCount);
         }
 
         private float ResolveBottomSiltEmissionBoost(bool isUnderwater)
@@ -2108,7 +2594,7 @@ namespace Hecton8.Environment
                 (playerSpeed - bottomSiltMinSpeed) /
                 math.max(0.01f, bottomSiltFullSpeed - bottomSiltMinSpeed));
 
-            float boost = bottomSiltEmissionBoost * distanceFactor * speedFactor;
+            float boost = bottomSiltEmissionBoost * distanceFactor * speedFactor * _adaptiveMotesScale;
             _cachedBottomSiltBoost = boost;
 
 #if UNITY_EDITOR
@@ -2123,7 +2609,7 @@ namespace Hecton8.Environment
             if (Time.unscaledTime < _nextBottomSiltProbeTime)
                 return;
 
-            _nextBottomSiltProbeTime = Time.unscaledTime + math.max(0.05f, bottomSiltProbeInterval);
+            _nextBottomSiltProbeTime = Time.unscaledTime + math.max(0.05f, bottomSiltProbeInterval * _adaptiveBottomSiltProbeIntervalScale);
             _cachedBottomDistance = ResolveBottomSiltDistance(probePosition);
         }
 
@@ -2210,7 +2696,7 @@ namespace Hecton8.Environment
                     (lightFactor - shallowSunBeamMinLightFactor) /
                     math.max(0.0001f, 1f - shallowSunBeamMinLightFactor));
                 float beamFactor = fadeIn * fadeOut * lightFade * ResolveHorizonFade();
-                targetIntensity = shallowSunBeamMaxLightIntensity * beamFactor;
+                targetIntensity = shallowSunBeamMaxLightIntensity * beamFactor * _ecologySunBeamMultiplier * _adaptiveBeamScale * _soundscapeBeamScale;
                 shouldActivate = targetIntensity > 0.001f;
             }
 
@@ -2287,7 +2773,7 @@ namespace Hecton8.Environment
                 (lightFactor - causticsMinLightFactor) /
                 math.max(0.0001f, 1f - causticsMinLightFactor));
 
-            float strength = causticsStrengthScale * fadeIn * fadeOut * lightFade;
+            float strength = causticsStrengthScale * fadeIn * fadeOut * lightFade * _adaptiveCausticsScale * _soundscapeCausticsScale;
 
 #if UNITY_EDITOR
             _debugCausticsStrength = strength;
@@ -2295,22 +2781,98 @@ namespace Hecton8.Environment
             return strength;
         }
 
+        private void ApplyEcologyContext(HectonBiomeMatrixProfile profile)
+        {
+            _currentFaunaMood = profile != null ? profile.faunaMood : WorldProceduralFaunaMood.None;
+
+            HectonFaunaFamilyProfile faunaFamily = profile != null &&
+                                                  profile.familyProfile != null
+                ? profile.familyProfile.faunaFamilyProfile
+                : null;
+
+            _currentFaunaAmbienceSummary = faunaFamily != null ? faunaFamily.ambienceSummary : null;
+
+            switch (_currentFaunaMood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    _ecologySuspendedMotesMultiplier = 0.92f;
+                    _ecologyBubbleMultiplier = 0.94f;
+                    _ecologySunBeamMultiplier = 1f + ecologySunBeamWeight;
+                    break;
+
+                case WorldProceduralFaunaMood.Lively:
+                    _ecologySuspendedMotesMultiplier = 1f + ecologySuspendedMotesWeight;
+                    _ecologyBubbleMultiplier = 1f + ecologyBubbleWeight;
+                    _ecologySunBeamMultiplier = 1f + ecologySunBeamWeight * 0.4f;
+                    break;
+
+                case WorldProceduralFaunaMood.Mixed:
+                    _ecologySuspendedMotesMultiplier = 1f + ecologySuspendedMotesWeight * 0.55f;
+                    _ecologyBubbleMultiplier = 1f + ecologyBubbleWeight * 0.45f;
+                    _ecologySunBeamMultiplier = 1f;
+                    break;
+
+                case WorldProceduralFaunaMood.Hostile:
+                    _ecologySuspendedMotesMultiplier = 1f + ecologySuspendedMotesWeight * 0.75f;
+                    _ecologyBubbleMultiplier = 1f + ecologyBubbleWeight * 0.7f;
+                    _ecologySunBeamMultiplier = 1f - ecologySunBeamWeight;
+                    break;
+
+                default:
+                    _ecologySuspendedMotesMultiplier = 1f;
+                    _ecologyBubbleMultiplier = 1f;
+                    _ecologySunBeamMultiplier = 1f;
+                    break;
+            }
+
+#if UNITY_EDITOR
+            _debugFaunaMood = _currentFaunaMood.ToString();
+            _debugFaunaAmbience = string.IsNullOrWhiteSpace(_currentFaunaAmbienceSummary)
+                ? "None"
+                : _currentFaunaAmbienceSummary;
+            _debugEcologyMotesMultiplier = _ecologySuspendedMotesMultiplier;
+            _debugEcologyBubbleMultiplier = _ecologyBubbleMultiplier;
+            _debugEcologyBeamMultiplier = _ecologySunBeamMultiplier;
+#endif
+        }
+
         private void ValidateReferences()
         {
-            if (playerCamera == null && Application.isPlaying)
-                Debug.LogError("[HectonUnderwaterVisuals] playerCamera not found!", this);
+            if (Application.isPlaying)
+            {
+                ResolvePlayerCamera();
+                ResolveMainCamera();
+                ResolveSunVisualTransform();
+            }
+
             if (biomePalette == null)
                 Debug.LogWarning("[HectonUnderwaterVisuals] biomePalette not assigned.", this);
             if (oceanUnderwaterMaterial == null)
                 Debug.LogWarning("[HectonUnderwaterVisuals] oceanUnderwaterMaterial not assigned.", this);
-            if (sunVisualTransform == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] sunVisualTransform not assigned.", this);
-            if (mainCamera == null && Application.isPlaying)
-                Debug.LogWarning("[HectonUnderwaterVisuals] mainCamera not assigned.", this);
             if (skyMaterial == null)
                 Debug.LogWarning("[HectonUnderwaterVisuals] skyMaterial not assigned.", this);
             if (globalLightCurve == null || globalLightCurve.length == 0)
                 Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty!", this);
+        }
+
+        private void WarnIfRuntimeReferencesStillMissing()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (Time.unscaledTime < _nextRuntimeReferenceWarningTime)
+                return;
+
+            _nextRuntimeReferenceWarningTime = Time.unscaledTime + 5f;
+
+            if (playerCamera == null)
+                Debug.LogWarning("[HectonUnderwaterVisuals] playerCamera still unresolved after runtime retry.", this);
+
+            if (mainCamera == null)
+                Debug.LogWarning("[HectonUnderwaterVisuals] mainCamera still unresolved after runtime retry.", this);
+
+            if (sunVisualTransform == null)
+                Debug.LogWarning("[HectonUnderwaterVisuals] sunVisualTransform still unresolved after runtime retry.", this);
         }
 
         private void ResolveBiomeMatrixDirector()
@@ -2354,10 +2916,10 @@ namespace Hecton8.Environment
         private void ApplySpaceCameraDepthState(float depth, bool isUnderwater)
         {
             ResolveSpaceCamera();
-            if (_spaceCamera == null)
+            if (_spaceCamera == null && mainCamera == null)
                 return;
 
-            bool shouldSuppress = isUnderwater && depth >= deepCelestialCullDepth;
+            bool shouldSuppress = ShouldSuppressSpaceCamera(depth, isUnderwater);
             if (_spaceCameraSuppressed == shouldSuppress)
                 return;
 
@@ -2367,14 +2929,62 @@ namespace Hecton8.Environment
                 _spaceCameraMaskCaptured = true;
             }
 
-            _spaceCamera.cullingMask = shouldSuppress ? 0 : _spaceCameraOriginalCullingMask;
+            if (_runtimeCameraStackFallbackActive && mainCamera != null)
+            {
+                int visibleMask = _mainCameraOriginalCullingMask | _CelestialLayerMask;
+                int hiddenMask = visibleMask & ~_CelestialLayerMask;
+                int targetMask = shouldSuppress ? hiddenMask : visibleMask;
+                if (mainCamera.cullingMask != targetMask)
+                    mainCamera.cullingMask = targetMask;
+            }
+
+            if (_spaceCamera != null)
+                _spaceCamera.cullingMask = shouldSuppress ? 0 : _spaceCameraOriginalCullingMask;
+
             _spaceCameraSuppressed = shouldSuppress;
+        }
+
+        private bool ShouldSuppressSpaceCamera(float depth, bool isUnderwater)
+        {
+            if (!isUnderwater)
+                return false;
+
+            float renderScale = 1f;
+            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            if (scaler != null)
+                renderScale = math.saturate(scaler.CurrentRenderScale);
+
+            float depthReleaseThreshold = math.max(0f, deepCelestialCullDepth - deepCelestialCullDepthHysteresis);
+            float adaptiveDepthReleaseThreshold = math.max(0f, adaptiveSpaceCameraCullMinDepth - deepCelestialCullDepthHysteresis);
+
+            if (_spaceCameraSuppressed)
+            {
+                bool keepDepthSuppressed = depth >= depthReleaseThreshold;
+                bool keepPerfSuppressed =
+                    enableAdaptiveSpaceCameraCull &&
+                    depth >= adaptiveDepthReleaseThreshold &&
+                    renderScale <= adaptiveSpaceCameraRestoreRenderScale;
+                return keepDepthSuppressed || keepPerfSuppressed;
+            }
+
+            bool suppressByDepth = depth >= deepCelestialCullDepth;
+            bool suppressByPerf =
+                enableAdaptiveSpaceCameraCull &&
+                depth >= adaptiveSpaceCameraCullMinDepth &&
+                renderScale <= adaptiveSpaceCameraCullRenderScale;
+            return suppressByDepth || suppressByPerf;
         }
 
         private void RestoreSpaceCameraDefaults()
         {
+            if (mainCamera != null && _cameraCompositionDefaultsCaptured)
+                mainCamera.cullingMask = _mainCameraOriginalCullingMask;
+
             if (_spaceCamera == null || !_spaceCameraMaskCaptured)
+            {
+                _spaceCameraSuppressed = false;
                 return;
+            }
 
             _spaceCamera.cullingMask = _spaceCameraOriginalCullingMask;
             _spaceCameraSuppressed = false;
@@ -2391,13 +3001,37 @@ namespace Hecton8.Environment
 
         private float ResolveCurrentDepth()
         {
-            if (playerCamera != null)
-                return math.max(0f, ResolveWaterLevel() - playerCamera.position.y);
-
             if (_playerMovement != null)
                 return _playerMovement.CurrentDepth;
 
+            if (playerCamera != null)
+                return math.max(0f, ResolveWaterLevel() - playerCamera.position.y);
+
             return 0f;
+        }
+
+        private bool ResolveUnderwaterVisualState(float depth)
+        {
+            if (_playerMovement != null)
+            {
+                switch (_playerMovement.CurrentLocomotionMode)
+                {
+                    case PlayerLocomotionMode.UnderwaterSwim:
+                        return true;
+
+                    case PlayerLocomotionMode.SurfaceSwim:
+                        return _playerMovement.IsPlayerSubmerged;
+
+                    default:
+                        return false;
+                }
+            }
+
+            return SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                depth,
+                _wasUnderwater,
+                VisualEnterUnderwaterDepth,
+                VisualExitUnderwaterDepth);
         }
 
         private void CachePlayerMovement(Transform playerTransform)
@@ -2568,6 +3202,16 @@ namespace Hecton8.Environment
             _debugHorizonFade = horizon;
             _debugFinalSunIntensity = finalIntensity;
             _debugLightFactor = 1f;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateSoundscapeDiagnostics()
+        {
+            _debugSoundscapeTier = _currentSoundscapeTier.ToString();
+            _debugSoundscapeFogScale = _soundscapeFogDensityScale;
+            _debugSoundscapeAmbientScale = _soundscapeAmbientScale;
+            _debugSoundscapeBeamScale = _soundscapeBeamScale;
+            _debugSoundscapeCausticsScale = _soundscapeCausticsScale;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -100,22 +100,21 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
-
+            TryRegister();
             ResolvePlayerTransform();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -207,6 +206,31 @@ namespace Hecton8.UI
 
             _playerTransform = playerTransform;
             return true;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
     }
 }

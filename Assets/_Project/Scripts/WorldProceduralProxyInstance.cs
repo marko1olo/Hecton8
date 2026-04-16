@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     [DisallowMultipleComponent]
-    public sealed class WorldProceduralProxyInstance : MonoBehaviour
+    public sealed class WorldProceduralProxyInstance : MonoBehaviour, IPoolable
     {
         private const string ScatterLayerGroundLabel = "Ground";
         private const string ScatterLayerClusterLabel = "Cluster";
@@ -73,6 +75,15 @@ namespace Hecton8.World
         [SerializeField, HideInInspector] private int scatterSyncSignature;
         [SerializeField, HideInInspector] private bool generatedGeologyApplied;
 
+        private LODSystemManager _lodSystemManager;
+        private CullingManager _cullingManager;
+        private bool _cullingRegistered;
+
+        // COLD ALLOC: List<LODGroup>[4] — runtime child LOD scan buffer — owner: WorldProceduralProxyInstance
+        private readonly List<LODGroup> _lodGroupBuffer = new List<LODGroup>(4);
+        // COLD ALLOC: List<LODGroup>[4] — currently registered LOD groups — owner: WorldProceduralProxyInstance
+        private readonly List<LODGroup> _registeredLodGroups = new List<LODGroup>(4);
+
         public string ActiveVariantId => variantId;
         public bool IsFinalVariantActive => finalVariantActive;
         public bool SupportsFinalVariant => supportsFinalVariant;
@@ -94,6 +105,21 @@ namespace Hecton8.World
         public float CanyonSignal => canyonSignal;
         public float CompositionPotential => compositionPotential;
         public bool IsGeneratedGeologyApplied => generatedGeologyApplied;
+
+        private void OnEnable()
+        {
+            RefreshOptimizationRegistration();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterOptimizationRegistration();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterOptimizationRegistration();
+        }
 
         private static string ResolveScatterLayerLabel(WorldPrefabFamilyProfile family)
         {
@@ -189,6 +215,7 @@ namespace Hecton8.World
             hasMacroZone = false;
             macroZoneX = 0;
             macroZoneZ = 0;
+            RefreshOptimizationRegistration();
         }
 
         public void ConfigureScatter(
@@ -269,6 +296,22 @@ namespace Hecton8.World
             macroZoneZ = configuredMacroZoneCoord.z;
         }
 
+        /// <summary>
+        /// Re-applies runtime optimization ownership after a pooled instance becomes active.
+        /// </summary>
+        public void OnSpawn()
+        {
+            RefreshOptimizationRegistration();
+        }
+
+        /// <summary>
+        /// Releases runtime optimization ownership before the pooled instance is deactivated.
+        /// </summary>
+        public void OnDespawn()
+        {
+            UnregisterOptimizationRegistration();
+        }
+
         public bool IsScatterSyncCurrent(int syncSignature, bool geologyApplied)
         {
             return scatterSyncSignature == syncSignature && generatedGeologyApplied == geologyApplied;
@@ -278,6 +321,107 @@ namespace Hecton8.World
         {
             scatterSyncSignature = syncSignature;
             generatedGeologyApplied = geologyApplied;
+            RefreshOptimizationRegistration();
+        }
+
+        private void RefreshOptimizationRegistration()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            RefreshLodRegistration();
+            RefreshCullingRegistration();
+        }
+
+        private void RefreshLodRegistration()
+        {
+            LODSystemManager manager = LODSystemManager.Instance;
+            if (manager == null)
+            {
+                UnregisterLodGroups();
+                _lodSystemManager = null;
+                return;
+            }
+
+            if (!ReferenceEquals(_lodSystemManager, manager))
+            {
+                UnregisterLodGroups();
+                _lodSystemManager = manager;
+            }
+
+            _lodGroupBuffer.Clear();
+            gameObject.GetComponentsInChildren(true, _lodGroupBuffer);
+
+            for (int i = _registeredLodGroups.Count - 1; i >= 0; i--)
+            {
+                LODGroup registered = _registeredLodGroups[i];
+                if (registered != null && _lodGroupBuffer.Contains(registered))
+                    continue;
+
+                if (registered != null)
+                    _lodSystemManager.UnregisterLODGroup(registered);
+
+                _registeredLodGroups.RemoveAt(i);
+            }
+
+            for (int i = 0; i < _lodGroupBuffer.Count; i++)
+            {
+                LODGroup lodGroup = _lodGroupBuffer[i];
+                if (lodGroup == null || _registeredLodGroups.Contains(lodGroup))
+                    continue;
+
+                _lodSystemManager.RegisterLODGroup(lodGroup);
+                _registeredLodGroups.Add(lodGroup);
+            }
+        }
+
+        private void RefreshCullingRegistration()
+        {
+            CullingManager manager = CullingManager.Instance;
+            if (manager == null)
+            {
+                UnregisterCulling();
+                _cullingManager = null;
+                return;
+            }
+
+            UnregisterCulling();
+            _cullingManager = manager;
+            int registeredObjectCount = _cullingManager.RegisteredObjectCount;
+            _cullingManager.RegisterCullableObject(gameObject);
+            _cullingRegistered = _cullingManager.RegisteredObjectCount > registeredObjectCount;
+        }
+
+        private void UnregisterOptimizationRegistration()
+        {
+            UnregisterLodGroups();
+            UnregisterCulling();
+        }
+
+        private void UnregisterLodGroups()
+        {
+            if (_lodSystemManager != null)
+            {
+                for (int i = _registeredLodGroups.Count - 1; i >= 0; i--)
+                {
+                    LODGroup lodGroup = _registeredLodGroups[i];
+                    if (lodGroup != null)
+                        _lodSystemManager.UnregisterLODGroup(lodGroup);
+                }
+            }
+
+            _registeredLodGroups.Clear();
+        }
+
+        private void UnregisterCulling()
+        {
+            if (!_cullingRegistered)
+                return;
+
+            if (_cullingManager != null)
+                _cullingManager.UnregisterCullableObject(gameObject);
+
+            _cullingRegistered = false;
         }
     }
 }

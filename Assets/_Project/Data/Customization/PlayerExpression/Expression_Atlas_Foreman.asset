@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bbfa2ce707120c4bb74b57f629ad5ab, type: 3}
+  m_Name: Expression_Atlas_Foreman
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerExpressionProfile
+  profileId: expression.atlas.foreman
+  displayName: ATLAS FOREMAN
+  hudLabelOverride: ATLAS FOREMAN
+  summary: Heavy industrial identity tuned for structured habitat growth, grid extension,
+    and controlled fabrication work.
+  unlockedByDefault: 1
+  hudProfile: {fileID: 11400000, guid: 927e40db136221c4a80aa685581a8bed, type: 2}
+  recommendedSuit: {fileID: 11400000, guid: f4883a5936c63ea4691f64213da4ce96, type: 2}
+  recommendedLoadout: {fileID: 11400000, guid: d53ff5d7b7f68e347884f7e9fab197ba, type: 2}

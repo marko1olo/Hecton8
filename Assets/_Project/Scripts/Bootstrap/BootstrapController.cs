@@ -56,6 +56,7 @@ namespace Hecton8.Bootstrap
         private const string ObjectPoolManagerRuntimeName = "[ObjectPoolManager]";
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const string RuntimePerformanceProfilerRuntimeName = "[RuntimePerformanceProfiler]";
+        private const string BootstrapAudioListenerRuntimeName = "[BootstrapAudioListener]";
         private static BootstrapController _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -108,6 +109,7 @@ namespace Hecton8.Bootstrap
             }
 
             _instance = this;
+            EnsureBootstrapAudioListener(currentScene);
 
             // ── DontDestroyOnLoad ──
             DontDestroyOnLoad(gameObject);
@@ -329,6 +331,31 @@ namespace Hecton8.Bootstrap
             return go.AddComponent<PrefabRegistry>();
         }
 
+        private static void EnsureBootstrapAudioListener(Scene bootstrapScene)
+        {
+            AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
+                FindObjectsInactive.Exclude);
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                AudioListener listener = listeners[i];
+                if (listener == null || !listener.enabled || !listener.gameObject.activeInHierarchy)
+                    continue;
+
+                return;
+            }
+
+            // COLD ALLOC: GameObject[1] — bootstrap-only audio listener root to suppress no-listener warnings before menu handoff — owner: BootstrapController
+            GameObject listenerObject = new GameObject(BootstrapAudioListenerRuntimeName);
+            if (bootstrapScene.IsValid())
+                SceneManager.MoveGameObjectToScene(listenerObject, bootstrapScene);
+
+            listenerObject.AddComponent<AudioListener>();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeDiagnosticsTrace.WriteEvent("bootstrap.audio", "created bootstrap-only listener");
+#endif
+        }
+
         // ══════════════════════════════════════════════════════════
         //  DEBUG
         // ══════════════════════════════════════════════════════════
@@ -344,16 +371,14 @@ namespace Hecton8.Bootstrap
             if (existing != null)
                 return existing;
 
-            // COLD ALLOC: bootstrap fallback runtime profiler root for scatter baseline diagnostics.
-            GameObject go = new GameObject(RuntimePerformanceProfilerRuntimeName);
-            return go.AddComponent<RuntimePerformanceProfiler>();
+            return null;
         }
 #endif
 
         private static void Log(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[BootstrapController] {message}");
+            RuntimeDiagnosticsTrace.WriteEvent("bootstrap", message);
 #endif
         }
 

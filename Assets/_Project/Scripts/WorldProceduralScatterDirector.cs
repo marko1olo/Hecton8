@@ -224,6 +224,8 @@ namespace Hecton8.World
         [SerializeField] private float surfaceYOffset = 0.2f;
         [SerializeField] private float missingPlacementGraceSeconds = 8f;
         [SerializeField] private bool waitForSceneBootstrap = true;
+        [SerializeField, Tooltip("Caps bootstrap prime scatter radius so pre-activation warmup does not block on the full runtime sampling window.")]
+        private int bootstrapPrimeRadiusCells = 3;
         [SerializeField] private float scatterRefreshDistanceThreshold = 8f;
         [SerializeField] private bool enableForcedScatterRefresh = false;
         [SerializeField] private float scatterForcedRefreshInterval = 0f;
@@ -548,9 +550,14 @@ namespace Hecton8.World
         private long _samplingRebuildStartTimestamp;
         private long _samplingInputsEndTimestamp;
         private bool _loggedMissingPrefabRegistry;
+        private float _nextScatterLifecycleLogTime;
 
         public int ActivePlacementCount => _activeInstances.Count + _activeGpuiFloraPlacements;
         public bool HasPendingStartupPlacements => _reconcileRuntimeState.HasPendingStartupPlacements;
+        internal bool HasBootstrapPrimeWork =>
+            _isSamplingJobRunning ||
+            _scatterState != ScatterState.Idle ||
+            _reconcileRuntimeState.HasPendingStartupPlacements;
 
         internal IReadOnlyDictionary<long, List<ScatterPlacement>> GetGridPlacements()
         {
@@ -567,9 +574,6 @@ namespace Hecton8.World
             if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning && !_samplingJobHandle.IsCompleted)
                 return;
 
-            if (_scatterRefreshSampleState.HasSample && !_startupRuntimeState.StabilizationPending)
-                return;
-
             if (Time.unscaledTime < _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime)
                 return;
 
@@ -577,6 +581,15 @@ namespace Hecton8.World
             {
                 _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime = Time.unscaledTime + 0.25f;
                 RefreshRuntimeStreamingSettings();
+
+                if (ShouldSkipScatterRefresh())
+                {
+                    if (HasPendingScatterReconcileWork())
+                        ContinuePendingScatterReconcile();
+
+                    return;
+                }
+
                 RebuildScatterPreview();
             }
         }
@@ -702,9 +715,10 @@ namespace Hecton8.World
         public void SlowTick()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying && !_lifecycleRuntimeState.LoggedFirstSlowTick && enableScatterRebuildProfiling)
+            if (Application.isPlaying && !_lifecycleRuntimeState.LoggedFirstSlowTick && ShouldLogScatterLifecycleDiagnostics())
             {
                 _lifecycleRuntimeState.LoggedFirstSlowTick = true;
+                _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
                     $"[WorldScatterRuntime] first-slow-tick bootstrapReady={BootstrapState.IsGameReady} defer={ShouldDeferUntilBootstrapReady()} invalidation={_debugLastScatterInvalidationReason}",
                     this);
@@ -798,7 +812,10 @@ namespace Hecton8.World
                 }
                 else if (_bootstrapRuntimeState.AllowPrimePass)
                 {
-                    if (TryRunScatterSamplingSynchronously())
+                    if (HandleScatterStateMachine())
+                        return;
+
+                    if (TryBeginScatterSampling())
                         return;
                 }
                 else
@@ -855,7 +872,9 @@ namespace Hecton8.World
 
             try
             {
-                InvalidateScatterRefreshSample("scene-bootstrap-prime");
+                if (!HasBootstrapPrimeWork)
+                    InvalidateScatterRefreshSample("scene-bootstrap-prime");
+
                 RebuildScatterPreview();
                 return true;
             }
@@ -863,6 +882,25 @@ namespace Hecton8.World
             {
                 _bootstrapRuntimeState.AllowPrimePass = previousAllowBootstrapPrimePass;
             }
+        }
+
+        internal bool TryPrewarmBootstrapSamplingPipeline()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            if (_bootstrapRuntimeState.SamplingPipelinePrewarmed)
+                return true;
+
+            ResolveReferences();
+            if (fieldSampler == null)
+                return false;
+
+            bool warmed = fieldSampler.TryPrewarmSamplingJob();
+            if (warmed)
+                _bootstrapRuntimeState.SamplingPipelinePrewarmed = true;
+
+            return warmed;
         }
 
         private bool ShouldDeferUntilBootstrapReady()
@@ -888,8 +926,9 @@ namespace Hecton8.World
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying && enableScatterRebuildProfiling)
+            if (ShouldLogScatterLifecycleDiagnostics())
             {
+                _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
                         $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager} timeScale={Time.timeScale:0.###}",
                     this);
@@ -916,8 +955,9 @@ namespace Hecton8.World
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap-failed");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying && enableScatterRebuildProfiling)
+            if (ShouldLogScatterLifecycleDiagnostics())
             {
+                _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
                         $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager} timeScale={Time.timeScale:0.###}",
                     this);
@@ -952,6 +992,13 @@ namespace Hecton8.World
             if (!_scatterRefreshSampleState.HasSample || playerTransform == null)
             {
                 _debugLastScatterRefreshReason = ShouldCollectScatterDetailedDiagnostics() ? _debugLastScatterInvalidationReason : "dirty";
+                return false;
+            }
+
+            int activeRadiusCells = ResolveActiveScatterSamplingRadiusCells(_runtimeStreamingState.RadiusCells);
+            if (_scatterRefreshSampleState.RadiusCells != activeRadiusCells)
+            {
+                _debugLastScatterRefreshReason = "radius-changed";
                 return false;
             }
 
@@ -1020,6 +1067,15 @@ namespace Hecton8.World
         private bool HasPendingScatterReconcileWork()
         {
             return _reconcileRuntimeState.HasPendingStartupPlacements || _reconcileRuntimeState.HasPendingRuntimePlacements;
+        }
+
+        private int ResolveActiveScatterSamplingRadiusCells(int runtimeRadiusCells)
+        {
+            int resolvedRadiusCells = Mathf.Max(2, runtimeRadiusCells);
+            if (Application.isPlaying && _bootstrapRuntimeState.AllowPrimePass)
+                resolvedRadiusCells = Mathf.Min(resolvedRadiusCells, Mathf.Max(2, bootstrapPrimeRadiusCells));
+
+            return resolvedRadiusCells;
         }
 
         private void ContinuePendingScatterReconcile()
@@ -1176,6 +1232,7 @@ namespace Hecton8.World
             _scatterRefreshSampleState.HasSample = true;
             _scatterRefreshSampleState.Position = playerTransform.position;
             _scatterRefreshSampleState.Time = Application.isPlaying ? Time.unscaledTime : 0f;
+            _scatterRefreshSampleState.RadiusCells = ResolveActiveScatterSamplingRadiusCells(_runtimeStreamingState.RadiusCells);
             if (TryGetScatterCenterCell(out int centerCellX, out int centerCellZ))
             {
                 _scatterRefreshSampleState.CenterCellX = centerCellX;
@@ -1189,6 +1246,7 @@ namespace Hecton8.World
         {
             _scatterRefreshSampleState.HasSample = false;
             _scatterRefreshSampleState.UsedFallbackOnly = false;
+            _scatterRefreshSampleState.RadiusCells = 0;
             _scatterRefreshSampleState.Time = float.NegativeInfinity;
             _debugLastScatterInvalidationReason = string.IsNullOrWhiteSpace(reason) ? "manual" : reason;
         }
@@ -1550,10 +1608,24 @@ namespace Hecton8.World
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             return spikeDetected ||
-                   _activeGpuiFloraPlacements > 0 ||
-                   _debugLastScatterRefreshReason == "startup" ||
-                   _debugLastScatterRefreshReason == "scene-bootstrap" ||
-                   _debugLastScatterRefreshReason == "scene-bootstrap-failed";
+                   (enableScatterDetailedDiagnostics &&
+                    (_activeGpuiFloraPlacements > 0 ||
+                     _debugLastScatterRefreshReason == "startup" ||
+                     _debugLastScatterRefreshReason == "scene-bootstrap" ||
+                     _debugLastScatterRefreshReason == "scene-bootstrap-failed"));
+#else
+            return false;
+#endif
+        }
+
+        private bool ShouldLogScatterLifecycleDiagnostics()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!Application.isPlaying || !enableScatterDetailedDiagnostics)
+                return false;
+
+            float now = Time.unscaledTime;
+            return now >= _nextScatterLifecycleLogTime;
 #else
             return false;
 #endif
@@ -7155,10 +7227,9 @@ namespace Hecton8.World
             };
 
             float angle = Mathf.Abs(stableHash % 360) * Mathf.Deg2Rad;
-            // v3.0: Use stable hash instead of deprecated GetInstanceID for ScriptableObject
-            int familyHash = family != null ? family.name.GetHashCode() : 0;
+            int familyHash = GetPreferredFamilyInstanceId(family);
             float radiusT = StableRandom01(stableHash, stableHash >> 4, familyHash);
-            #pragma warning restore CS0618
+#pragma warning restore CS0618
             float radius = baseRadius * Mathf.Lerp(0.18f, 1f, radiusT);
             Vector3 offset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             return origin + offset;
@@ -8512,9 +8583,12 @@ namespace Hecton8.World
             if (family == null)
                 return 0;
 
-            #pragma warning disable CS0618
-            return family != null ? family.name.GetHashCode() : 0;
-            #pragma warning restore CS0618
+            if (!string.IsNullOrWhiteSpace(family.familyId))
+                return family.familyId.GetHashCode();
+
+#pragma warning disable CS0618
+            return family.GetInstanceID();
+#pragma warning restore CS0618
         }
 
         private void CountPlacedServiceStructureDomains(

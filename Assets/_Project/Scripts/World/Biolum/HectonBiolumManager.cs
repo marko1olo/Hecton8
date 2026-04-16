@@ -99,48 +99,29 @@ namespace Hecton8.Biolum
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
             ResetFloraShaderGlobals();
         }
 
         private void Start()
         {
             Initialize();
-
-            if (GameTickManager.Instance != null && !_tickRegistered)
-            {
-                GameTickManager.Instance.Register(this);
-                _tickRegistered = true;
-            }
         }
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_tickRegistered)
-            {
-                GameTickManager.Instance.Register(this);
-                _tickRegistered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _tickRegistered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _tickRegistered = false;
-            }
+            TryUnregister();
 
             ResetFloraShaderGlobals();
         }
 
         private void OnDestroy()
         {
-            if (GameTickManager.Instance != null && _tickRegistered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _tickRegistered = false;
-            }
+            TryUnregister();
 
             ResetFloraShaderGlobals();
 
@@ -255,8 +236,6 @@ namespace Hecton8.Biolum
             _debugOceanZoneCount = _activeOceanZones.Count;
             _debugFloorZoneCount = _activeFloorZones.Count;
 #endif
-            TickZones(deltaTime);
-
             _floraGlobalUpdateTimer += deltaTime;
             if (_floraGlobalUpdateTimer < 0.18f)
             {
@@ -417,46 +396,30 @@ namespace Hecton8.Biolum
         // EDITOR
         // ─────────────────────────────────────────────────────────────────────────────
 
-        private void TickZones(float deltaTime)
+        private void TryRegister()
         {
-#if UNITY_EDITOR
-            _debugZoneTickPasses++;
-#endif
-            TickZoneList(_activeCaveZones, deltaTime);
-            TickZoneList(_activeOceanZones, deltaTime);
-            TickZoneList(_activeFloorZones, deltaTime);
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _tickRegistered = true;
         }
 
-        private static void TickZoneList(List<HectonBiolumZone> zones, float deltaTime)
+        private void TryUnregister()
         {
-            for (int i = zones.Count - 1; i >= 0; i--)
-            {
-                HectonBiolumZone zone = zones[i];
-                if (zone == null || zone is UnityEngine.Object zoneObject && zoneObject == null)
-                {
-                    zones.RemoveAt(i);
-                    continue;
-                }
+            if (!_tickRegistered)
+                return;
 
-                zone.Tick(deltaTime);
-            }
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _tickRegistered = false;
         }
-
-        #if UNITY_EDITOR
-        private void OnGUI()
-        {
-            if (!_debugLogUpdates) return;
-
-            GUI.Label(new Rect(10, 10, 400, 120),
-                $"[BIOLUM MANAGER]\n" +
-                $"Caves: {_activeCaveZones.Count}\n" +
-                $"Ocean: {_activeOceanZones.Count}\n" +
-                $"Floor: {_activeFloorZones.Count}\n" +
-                $"Total: {_activeCaveZones.Count + _activeOceanZones.Count + _activeFloorZones.Count} zones\n" +
-                $"Mood: {_globalMoodLevel:F2}\n" +
-                $"Intensity Scale: {_globalIntensityScale:F2}");
-        }
-        #endif
     }
     #pragma warning restore CS0414
 }

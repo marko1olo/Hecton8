@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 
 namespace Hecton8.UI
@@ -14,6 +15,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Settings Live Preview")]
     public sealed class SettingsLivePreview : MonoBehaviour, ITickable
     {
+        private const float MainCameraResolveRetryInterval = 1f;
+
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -33,6 +36,7 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _isDirty;
         private float _dirtyTimer;
+        private float _mainCameraResolveRetryTimer;
         private float _pendingFOV = -1f;
         private bool _pendingBloom;
         private bool _pendingMotionBlur;
@@ -44,20 +48,17 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -121,6 +122,9 @@ namespace Hecton8.UI
 
         public void Tick(float dt)
         {
+            if (_mainCameraResolveRetryTimer > 0f)
+                _mainCameraResolveRetryTimer -= dt;
+
             if (!_isDirty)
                 return;
 
@@ -145,18 +149,65 @@ namespace Hecton8.UI
 
         private void ApplyFOV()
         {
-            if (mainCamera == null)
+            if (!TryResolveMainCamera())
             {
-                mainCamera = Camera.main;
-                if (mainCamera == null)
-                {
-                    _pendingFOV = -1f;
-                    return;
-                }
+                _pendingFOV = -1f;
+                return;
             }
 
             mainCamera.fieldOfView = _pendingFOV;
             _pendingFOV = -1f;
+        }
+
+        private bool TryResolveMainCamera()
+        {
+            if (mainCamera != null)
+                return true;
+
+            if (_mainCameraResolveRetryTimer > 0f)
+                return false;
+
+            _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
+                {
+                    mainCamera = playerOwnedCamera;
+                    return true;
+                }
+
+                Camera playerChildCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                if (playerChildCamera != null)
+                {
+                    mainCamera = playerChildCamera;
+                    return true;
+                }
+            }
+
+            if (TryGetComponent(out Camera localCamera))
+            {
+                mainCamera = localCamera;
+                return true;
+            }
+
+            Camera childCamera = GetComponentInChildren<Camera>(true);
+            if (childCamera != null)
+            {
+                mainCamera = childCamera;
+                return true;
+            }
+
+            Camera parentCamera = GetComponentInParent<Camera>();
+            if (parentCamera != null)
+            {
+                mainCamera = parentCamera;
+                return true;
+            }
+
+            mainCamera = null;
+            return false;
         }
 
         private void ApplyPostProcessing()
@@ -182,6 +233,31 @@ namespace Hecton8.UI
             }
 
             _hasPendingPostProcessing = false;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
         }
     }
 }

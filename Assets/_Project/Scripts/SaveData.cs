@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 16; // v16: EndingSystem
+        public const int CurrentVersion = 18; // v18: AtlasRevealStage
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -93,11 +93,17 @@ namespace Hecton8.SaveSystem
         /// <summary>Таймер пульса сигнала (для сохранения ритма). v4.0 ATLAS</summary>
         public float atlasSignalPulseTimer;
 
+        /// <summary>Максимальная раскрытая стадия позднего Atlas-manifestation. v4.10 ATLAS</summary>
+        public int atlasSignalRevealStage;
+
         /// <summary>Установленные апгрейды скафандра. v4.1 UPGRADES</summary>
         public List<string> suitInstalledUpgradeIds = new List<string>();
 
         /// <summary>Разблокированные чертежи апгрейдов. v4.1 UPGRADES</summary>
         public List<string> suitUnlockedBlueprintIds = new List<string>();
+
+        /// <summary>ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ ÑÐ°Ð¼Ð¾Ð²Ñ‹Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ°. v4.9 EXPRESSION</summary>
+        public string playerExpressionProfileId = string.Empty;
 
         /// <summary>Статус игрока с точки зрения Атлас-6. v4.2 ATLAS6</summary>
         public int atlas6PlayerStatus;
@@ -141,6 +147,9 @@ namespace Hecton8.SaveSystem
         /// <summary>LOD quality preset (0=Low, 1=Medium, 2=High). v4.7 LOD</summary>
         public int LODQualityPreset = 1; // Default: Medium
 
+        /// <summary>Dynamic resolution scaling enabled. v4.8 LOD</summary>
+        public bool DynamicResolutionEnabled = true; // Default: Enabled
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════
@@ -171,8 +180,10 @@ namespace Hecton8.SaveSystem
                 questCompletedIds = new List<string>(),
                 atlasSignalDetected = false,
                 atlasSignalPulseTimer = 0f,
+                atlasSignalRevealStage = 0,
                 suitInstalledUpgradeIds = new List<string>(),
                 suitUnlockedBlueprintIds = new List<string>(),
+                playerExpressionProfileId = string.Empty,
                 atlas6PlayerStatus = 0,
                 atlas6BarterCount = 0,
                 atlas6DirectiveConflictTriggered = false,
@@ -186,7 +197,8 @@ namespace Hecton8.SaveSystem
                 endingConditionMet = false,
                 missionActiveIds = new List<string>(),
                 missionCompletedIds = new List<string>(),
-                LODQualityPreset = 1 // Default: Medium
+                LODQualityPreset = 1, // Default: Medium
+                DynamicResolutionEnabled = true // Default: Enabled
             };
         }
 

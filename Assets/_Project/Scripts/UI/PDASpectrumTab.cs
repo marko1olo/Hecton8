@@ -115,13 +115,8 @@ namespace Hecton8.UI
             if (_built) return;
             _built = true;
 
-            // Auto-resolve Cyrillic font — same pattern as PDADataLogTab
             if (_labelFont == null)
-            {
-                _labelFont = UnityEngine.Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/текст SDF");
-                if (_labelFont == null)
-                    _labelFont = TMPro.TMP_Settings.defaultFontAsset;
-            }
+                _labelFont = TMPro.TMP_Settings.defaultFontAsset;
 
             RectTransform root = GetComponent<RectTransform>();
 
@@ -349,7 +344,7 @@ namespace Hecton8.UI
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = alignment;
-            tmp.overflowMode = TextOverflowModes.Ellipsis;
+            tmp.overflowMode = TextOverflowModes.Truncate;
             tmp.raycastTarget = false;
             return tmp;
         }

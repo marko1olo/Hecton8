@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bbfa2ce707120c4bb74b57f629ad5ab, type: 3}
+  m_Name: Expression_Salvage_Breacher
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerExpressionProfile
+  profileId: expression.salvage.breacher
+  displayName: SALVAGE BREACHER
+  hudLabelOverride: SALVAGE BREACHER
+  summary: Close-quarters recovery identity for wreck cutting, repair passes, hostile
+    salvage windows, and extraction runs.
+  unlockedByDefault: 1
+  hudProfile: {fileID: 11400000, guid: 0092151ede309934481b4f8052320ef7, type: 2}
+  recommendedSuit: {fileID: 11400000, guid: f4883a5936c63ea4691f64213da4ce96, type: 2}
+  recommendedLoadout: {fileID: 11400000, guid: 1489ce2bef6e40544915d3d6721eb017, type: 2}

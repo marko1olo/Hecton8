@@ -249,6 +249,8 @@ namespace Hecton8.Bootstrap
         private const float GroundCheckLogIntervalSec = 5f;
         private const float BytesPerMegabyte = 1024f * 1024f;
         private readonly RaycastHit[] _groundCheckHits = new RaycastHit[1]; // COLD ALLOC: bootstrap ground-ready probe only needs the nearest collider.
+        private readonly List<GameObject> _shippingCleanupRootObjects = new List<GameObject>(64); // COLD ALLOC: List<GameObject>[64] — root cache for one-shot shipping scene cleanup — owner: SceneBootstrap
+        private readonly List<Transform> _shippingCleanupTraversalStack = new List<Transform>(256); // COLD ALLOC: List<Transform>[256] — traversal stack for one-shot shipping scene cleanup — owner: SceneBootstrap
         private static readonly string[] _TextureMemoryCandidates =
         {
             "Texture Memory",
@@ -302,6 +304,7 @@ namespace Hecton8.Bootstrap
 
             // ── Деактивируем игрока на время загрузки ──
             DisablePlayer();
+            ApplyShippingSceneCleanup();
 
             Log("═══════════════════════════════════════════════");
             Log("HECTON-8 Scene Bootstrap — Initializing...");
@@ -416,6 +419,19 @@ namespace Hecton8.Bootstrap
 
             if (Application.isPlaying)
                 BootstrapState.PublishGameReady(false);
+        }
+
+        private void ApplyShippingSceneCleanup()
+        {
+            int suppressedCount = WorldShippingContentFilter.DeactivateSuppressedSceneObjects(
+                gameObject.scene,
+                _shippingCleanupRootObjects,
+                _shippingCleanupTraversalStack);
+
+            if (suppressedCount <= 0)
+                return;
+
+            Log($"[ShippingCleanup] Deactivated {suppressedCount} dev/trial scene objects before world startup.");
         }
 
         /// <summary>
@@ -984,6 +1000,9 @@ namespace Hecton8.Bootstrap
             int passCount = Mathf.Clamp(scatterBootstrapPrimePasses, 1, 4);
             Log($"  Priming procedural scatter before player activation ({passCount} pass(es))...");
 
+            if (_worldProceduralScatterDirector.TryPrewarmBootstrapSamplingPipeline())
+                Log("  Scatter sampling pipeline prewarmed before bootstrap prime.");
+
             for (int i = 0; i < passCount; i++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -995,7 +1014,7 @@ namespace Hecton8.Bootstrap
                     return;
                 }
 
-                if (!_worldProceduralScatterDirector.HasPendingStartupPlacements)
+                if (!_worldProceduralScatterDirector.HasBootstrapPrimeWork)
                 {
                     Log($"  Scatter prime completed in {i + 1} pass(es).");
                     return;
@@ -1301,6 +1320,9 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void Log(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Dev.RuntimeDiagnosticsTrace.WriteEvent("scene-bootstrap", message);
+#endif
             if (verboseLogging)
                 Debug.Log($"[SceneBootstrap] {message}");
         }

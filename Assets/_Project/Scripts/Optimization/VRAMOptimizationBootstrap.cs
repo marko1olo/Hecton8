@@ -24,11 +24,6 @@ namespace Hecton8.Optimization
             FindOrCreateManager<CameraRTManager>(ref bootstrap);
             FindOrCreateManager<PostFXRTManager>(ref bootstrap);
             FindOrCreateManager<UIRTManager>(ref bootstrap);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (bootstrap != null)
-                Debug.Log("[VRAMOptimization] Bootstrap complete.");
-#endif
         }
 
         private static T FindOrCreateManager<T>(ref GameObject bootstrap) where T : Component

@@ -70,13 +70,6 @@ namespace Hecton8.Optimization
             }
             
             _instance = this;
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
         }
         
         private void OnEnable()

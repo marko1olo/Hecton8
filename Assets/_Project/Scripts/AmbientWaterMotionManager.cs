@@ -64,6 +64,7 @@ namespace Hecton8.Physics
         private float _mediumDistanceSqr;
         private float _farDistanceSqr;
         private float _cullDistanceSqr;
+        private bool _tickRegistered;
 
         // ── Observer resolve cooldown ────────────────────────────────────────
         // Если observer не назначен и не найден — не дёргаем bootstrap каждый кадр.
@@ -92,16 +93,18 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ITickable)this);
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregister();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -318,6 +321,31 @@ namespace Hecton8.Physics
             _mediumDistanceSqr = mediumDistance * mediumDistance;
             _farDistanceSqr = farDistance * farDistance;
             _cullDistanceSqr = cullDistance * cullDistance;
+        }
+
+        private void TryRegister()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
         }
 
 #if UNITY_EDITOR

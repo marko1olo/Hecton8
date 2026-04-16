@@ -39,6 +39,7 @@ namespace Hecton8.EditorTools
             WorldProceduralFieldSampler worldProceduralFieldSampler = FindSceneObjectIncludingInactive<WorldProceduralFieldSampler>();
             WorldProceduralScatterDirector worldProceduralScatterDirector = FindSceneObjectIncludingInactive<WorldProceduralScatterDirector>();
             BiomeMatrixDirector biomeMatrixDirector = FindSceneObjectIncludingInactive<BiomeMatrixDirector>();
+            WorldReadabilityDirector worldReadabilityDirector = FindSceneObjectIncludingInactive<WorldReadabilityDirector>();
             ScatterBudgetController scatterBudgetController = FindSceneObjectIncludingInactive<ScatterBudgetController>();
 
             if (mapMagic == null)
@@ -227,6 +228,16 @@ namespace Hecton8.EditorTools
             else
             {
                 ValidateBiomeMatrixDirector(biomeMatrixDirector, ref errorCount, ref warningCount);
+            }
+
+            if (worldReadabilityDirector == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] Scene is missing WorldReadabilityDirector.");
+                warningCount++;
+            }
+            else
+            {
+                ValidateWorldReadabilityDirector(worldReadabilityDirector, ref warningCount);
             }
 
             if (errorCount <= 0 && warningCount <= 0)
@@ -1041,6 +1052,27 @@ namespace Hecton8.EditorTools
                     Debug.LogWarning($"[MapMagicWorldValidation] Matrix biome '{profile.biomeName}' is missing familyProfile.", profile);
                     warningCount++;
                 }
+            }
+        }
+
+        private static void ValidateWorldReadabilityDirector(
+            WorldReadabilityDirector worldReadabilityDirector,
+            ref int warningCount)
+        {
+            SerializedObject so = new SerializedObject(worldReadabilityDirector);
+            SerializedProperty worldZoneDirector = so.FindProperty("worldZoneDirector");
+            SerializedProperty biomeMatrixDirector = so.FindProperty("biomeMatrixDirector");
+
+            if (worldZoneDirector == null || worldZoneDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldReadabilityDirector is using runtime auto-resolve for WorldZoneDirector.", worldReadabilityDirector);
+                warningCount++;
+            }
+
+            if (biomeMatrixDirector == null || biomeMatrixDirector.objectReferenceValue == null)
+            {
+                Debug.LogWarning("[MapMagicWorldValidation] WorldReadabilityDirector is using runtime auto-resolve for BiomeMatrixDirector.", worldReadabilityDirector);
+                warningCount++;
             }
         }
 

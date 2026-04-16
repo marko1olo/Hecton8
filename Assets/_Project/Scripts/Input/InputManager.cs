@@ -37,7 +37,6 @@ namespace Hecton8.Input
         private bool _initialActivationComplete;
         private bool _restorePlayerInputOnEnable;
         private bool _restoreUiInputOnEnable;
-        private bool _hasEnabledOnce;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -146,8 +145,8 @@ namespace Hecton8.Input
         // PROPERTIES
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         
-        public bool IsPlayerInputEnabled => _playerActionMap?.enabled ?? false;
-        public bool IsUIInputEnabled => _uiActionMap?.enabled ?? false;
+        public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
+        public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
         public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
         
         public Vector2 MoveInput => _moveAction?.ReadValue<Vector2>() ?? Vector2.zero;
@@ -189,12 +188,7 @@ namespace Hecton8.Input
             if (_isShuttingDown || _instance != this)
                 return;
 
-            if (_hasEnabledOnce)
-                ReinitializeInputActions();
-            else
-                EnsureInputActionsInitialized();
-
-            _hasEnabledOnce = true;
+            EnsureInputActionsInitialized();
 
             if (!_initialActivationComplete)
                 return;
@@ -211,8 +205,8 @@ namespace Hecton8.Input
             if (_instance != this)
                 return;
 
-            SafeDisableActionMapForTeardown(_playerActionMap);
-            SafeDisableActionMapForTeardown(_uiActionMap);
+            _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
+            _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
         }
 
         private void Start()
@@ -242,7 +236,13 @@ namespace Hecton8.Input
                 return;
             }
 
-            _runtimeInputActionAsset = Instantiate(templateAsset); // COLD ALLOC: InputActionAsset[1] — runtime input clone isolates live maps from template asset state — owner: InputManager
+            _runtimeInputActionAsset = CreateRuntimeInputActionAsset(templateAsset);
+            if (_runtimeInputActionAsset == null)
+            {
+                Debug.LogError("[InputManager] Failed to create runtime InputActionAsset clone.");
+                return;
+            }
+
             _runtimeInputActionAsset.name = templateAsset.name;
             
             // Get action maps
@@ -300,6 +300,26 @@ namespace Hecton8.Input
             _cancelAction = _uiActionMap.FindAction("Cancel");
             _tabNextAction = _uiActionMap.FindAction("TabNext");
             _tabPreviousAction = _uiActionMap.FindAction("TabPrevious");
+        }
+
+        private InputActionAsset CreateRuntimeInputActionAsset(InputActionAsset templateAsset)
+        {
+            if (templateAsset == null)
+                return null;
+
+            try
+            {
+                string templateJson = templateAsset.ToJson(); // COLD ALLOC: string[template asset json] — detached runtime clone source — owner: InputManager
+                if (string.IsNullOrEmpty(templateJson))
+                    return null;
+
+                return InputActionAsset.FromJson(templateJson); // COLD ALLOC: InputActionAsset[1] — detached runtime input asset — owner: InputManager
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[InputManager] Runtime InputActionAsset clone failed: {ex.Message}");
+                return null;
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -733,11 +753,11 @@ namespace Hecton8.Input
             if (!IsActionMapUsable(actionMap))
                 return;
 
-            if (actionMap.enabled)
-                return;
-
             try
             {
+                if (actionMap.enabled)
+                    return;
+
                 actionMap.Enable();
             }
             catch (InvalidOperationException)
@@ -761,6 +781,9 @@ namespace Hecton8.Input
 
             try
             {
+                if (!actionMap.enabled)
+                    return;
+
                 actionMap.Disable();
             }
             catch (InvalidOperationException)
@@ -779,7 +802,7 @@ namespace Hecton8.Input
 
         private void SafeDisableActionMapForTeardown(InputActionMap actionMap)
         {
-            if (actionMap == null)
+            if (!IsActionMapOwnedByRuntimeAsset(actionMap))
                 return;
 
             try
@@ -872,13 +895,45 @@ namespace Hecton8.Input
             return _inputMapsInitialized && IsActionMapUsable(_playerActionMap);
         }
 
+        private bool TryGetActionMapEnabled(InputActionMap actionMap)
+        {
+            if (actionMap == null || _isShuttingDown)
+                return false;
+
+            try
+            {
+                if (_runtimeInputActionAsset != null && !ReferenceEquals(actionMap.asset, _runtimeInputActionAsset))
+                {
+                    HandleStaleActionMap(actionMap);
+                    return false;
+                }
+
+                return actionMap.enabled;
+            }
+            catch (InvalidOperationException)
+            {
+                HandleStaleActionMap(actionMap);
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                HandleStaleActionMap(actionMap);
+                return false;
+            }
+            catch (Exception)
+            {
+                HandleStaleActionMap(actionMap);
+                return false;
+            }
+        }
+
         private void ResetInputActionCaches(bool disposeRuntimeAsset)
         {
-            SafeDisableActionMapForTeardown(_playerActionMap);
-            SafeDisableActionMapForTeardown(_uiActionMap);
-
             UnsubscribeFromPlayerActions();
             UnsubscribeFromUIActions();
+
+            SafeDisableActionMapForTeardown(_playerActionMap);
+            SafeDisableActionMapForTeardown(_uiActionMap);
 
             _inputMapsInitialized = false;
             _playerActionMap = null;
@@ -921,6 +976,29 @@ namespace Hecton8.Input
                 DestroyImmediate(_runtimeInputActionAsset);
 
             _runtimeInputActionAsset = null;
+        }
+
+        private bool IsActionMapOwnedByRuntimeAsset(InputActionMap actionMap)
+        {
+            if (actionMap == null || _runtimeInputActionAsset == null)
+                return false;
+
+            try
+            {
+                return ReferenceEquals(actionMap.asset, _runtimeInputActionAsset);
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

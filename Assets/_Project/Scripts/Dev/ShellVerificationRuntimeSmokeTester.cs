@@ -48,7 +48,7 @@ namespace Hecton8.Dev
         [SerializeField] private float actionTimeout = 20f;
         [SerializeField] private float settleDelay = 0.25f;
         [SerializeField] private bool runLoadSlotIfAvailable = true;
-        [SerializeField] private bool verboseLogging = true;
+        [SerializeField] private bool verboseLogging = false;
 
 #pragma warning disable CS0414
         [Header("Debug")]
@@ -73,8 +73,7 @@ namespace Hecton8.Dev
         {
             DontDestroyOnLoad(gameObject);
             AutoResolve();
-            Debug.Log($"[ShellSmoke] Awake runOnStart={runOnStart} verbose={verboseLogging} scene={SceneManager.GetActiveScene().name}");
-            LogVerbose("Awake");
+            LogVerbose($"Awake runOnStart={runOnStart} verbose={verboseLogging} scene={SceneManager.GetActiveScene().name}");
         }
 
         private void Start()
@@ -118,7 +117,7 @@ namespace Hecton8.Dev
 
         private void TryScheduleAutoStart()
         {
-            if (!Application.isPlaying || _isRunning || _autoStartScheduled)
+            if (!Application.isPlaying || _isRunning || _autoStartScheduled || !IsAutoStartSupported())
                 return;
 
             string activeSceneName = SceneManager.GetActiveScene().name;
@@ -145,6 +144,12 @@ namespace Hecton8.Dev
 
         private IEnumerator DeferredAutoStartRoutine()
         {
+            if (!IsAutoStartSupported())
+            {
+                _autoStartScheduled = false;
+                yield break;
+            }
+
             float deadline = Time.realtimeSinceStartup + AutoStartRetryWindow;
             while (Time.realtimeSinceStartup < deadline)
             {
@@ -171,7 +176,8 @@ namespace Hecton8.Dev
             LogVerbose($"Scene loaded: {scene.name}");
             if (string.Equals(scene.name, MainMenuSceneName, System.StringComparison.Ordinal))
             {
-                LogMenuRouteDiagnostics("scene-loaded");
+                if (_isRunning || WantsAutoStart() || HasPendingResumeState())
+                    LogMenuRouteDiagnostics("scene-loaded");
                 _menuRouteReadyOverride = IsMenuRouteReady();
             }
 
@@ -666,7 +672,7 @@ namespace Hecton8.Dev
 
         private void LogVerbose(string message)
         {
-            if (verboseLogging)
+            if (verboseLogging && _isRunning)
                 Debug.Log($"[ShellSmoke] {message}");
         }
 
@@ -690,10 +696,19 @@ namespace Hecton8.Dev
 
         public bool WantsAutoStart()
         {
-            return runOnStart;
+            return runOnStart && IsAutoStartSupported();
         }
 
-        internal static bool HasPersistedResumeState()
+        private static bool IsAutoStartSupported()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+            return false;
+#endif
+        }
+
+        public static bool HasPersistedResumeState()
         {
             return HasPendingResumeState();
         }

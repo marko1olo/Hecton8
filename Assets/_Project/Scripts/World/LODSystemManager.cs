@@ -33,6 +33,7 @@ using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
 using Unity.Mathematics;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 
@@ -74,6 +75,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
     public sealed class LODSystemManager : MonoBehaviour, ITickable, ISaveable
     {
+        private const float CameraResolveRetryInterval = 1f;
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -96,15 +99,15 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Crossfade distance threshold (meters)")]
         private float _crossfadeDistanceThreshold = 50f;
 
-        [SerializeField, Tooltip("Crossfade duration (seconds)")]
-        private float _crossfadeDuration = 0.75f;
-
         [Header("── Performance ──────────────────")]
         [SerializeField, Tooltip("Max LOD groups to process per frame")]
         private int _maxLODGroupsPerFrame = 500;
 
         [SerializeField, Tooltip("Enable performance monitoring")]
         private bool _enablePerformanceMonitoring = true;
+
+        [SerializeField, Tooltip("Optional explicit main camera reference. Falls back to cold-path camera resolve.")]
+        private Camera _cameraReference;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -131,6 +134,9 @@ namespace Hecton8.World
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
+        private float _cameraResolveRetryTimer;
+        private float _defaultLODBias = 1f;
+        private float _nextNullCleanupTime;
 
         private float _lodSystemCPUTime;
 
@@ -169,7 +175,7 @@ namespace Hecton8.World
             if (_instance != null && _instance != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[LODSystemManager] Duplicate instance detected. Destroying " + gameObject.name);
+                Debug.LogWarning("[LODSystemManager] Duplicate instance detected. Destroying duplicate.");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -180,6 +186,9 @@ namespace Hecton8.World
             // Pre-allocate NativeArrays
             _lodGroupPositions = new NativeArray<float3>(_maxLODGroupsPerFrame, Allocator.Persistent);
             _lodGroupSquaredDistances = new NativeArray<float>(_maxLODGroupsPerFrame, Allocator.Persistent);
+            _defaultLODBias = QualitySettings.lodBias;
+            TryResolveMainCamera();
+            ApplyQualityPreset(_qualityPreset);
 
             // Register with SaveManager
             if (SaveManager.Instance != null)
@@ -194,20 +203,14 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            RestoreDefaultLODBias();
+            UnregisterAllImpostorCandidates();
+            TryUnregister();
 
             // Complete any pending jobs
             if (_jobScheduled)
@@ -239,9 +242,38 @@ namespace Hecton8.World
             if (_lodGroupSquaredDistances.IsCreated)
                 _lodGroupSquaredDistances.Dispose();
 
+            RestoreDefaultLODBias();
+            UnregisterAllImpostorCandidates();
+            TryUnregister();
+
             // Clear singleton
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -256,15 +288,21 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             // Cache camera reference
-            if (_mainCamera == null)
+            if (_mainCamera == null && !TryResolveMainCamera(dt))
             {
-                _mainCamera = Camera.main;
-                if (_mainCamera == null) return;
-                _cameraTransform = _mainCamera.transform;
+                return;
             }
 
             // Early exit if no LOD groups registered
             if (_registeredLODGroups.Count == 0) return;
+
+            if (Time.time >= _nextNullCleanupTime)
+            {
+                _nextNullCleanupTime = Time.time + 1f;
+                CleanupNullRegistrations();
+
+                if (_registeredLODGroups.Count == 0) return;
+            }
 
             long startTicks = 0;
             if (_enablePerformanceMonitoring)
@@ -320,18 +358,14 @@ namespace Hecton8.World
             int presetValue = data.LODQualityPreset;
             if (presetValue >= 0 && presetValue <= 2)
             {
-                _qualityPreset = (LODQualityPreset)presetValue;
-                
-                // Apply LOD bias immediately
-                QualitySettings.lodBias = GetLODBias();
+                ApplyQualityPreset((LODQualityPreset)presetValue);
             }
             else
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[LODSystemManager] Invalid quality preset value. Using default (Medium).");
                 #endif
-                _qualityPreset = LODQualityPreset.Medium;
-                QualitySettings.lodBias = 1.0f;
+                ApplyQualityPreset(LODQualityPreset.Medium);
             }
         }
 
@@ -354,6 +388,7 @@ namespace Hecton8.World
             _registeredLODGroups.Add(lodGroup);
             _lodGroupTransforms.Add(lodGroup.transform);
             _registeredLODGroupsSet.Add(lodGroup);
+            TryRegisterImpostorCandidate(lodGroup);
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_registeredLODGroups.Count > _maxLODGroupsPerFrame)
@@ -374,6 +409,8 @@ namespace Hecton8.World
 
             // O(1) check via HashSet
             if (!_registeredLODGroupsSet.Remove(lodGroup)) return;
+
+            TryUnregisterImpostorCandidate(lodGroup);
 
             // Find and remove from lists (O(n) but only if HashSet confirmed presence)
             for (int i = _registeredLODGroups.Count - 1; i >= 0; i--)
@@ -415,18 +452,7 @@ namespace Hecton8.World
         /// <param name="preset">Quality preset to apply</param>
         public void SetQualityPreset(LODQualityPreset preset)
         {
-            _qualityPreset = preset;
-
-            // Apply LOD bias to all registered LOD groups
-            float lodBias = GetLODBias();
-            QualitySettings.lodBias = lodBias;
-
-            #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // Use cached strings to avoid Enum.ToString() allocation
-            string presetName = preset == LODQualityPreset.Low ? "Low" : 
-                               preset == LODQualityPreset.High ? "High" : "Medium";
-            Debug.Log("[LODSystemManager] Quality preset set to " + presetName + ". LOD bias: " + lodBias);
-            #endif
+            ApplyQualityPreset(preset);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -495,6 +521,143 @@ namespace Hecton8.World
         //  BURST-COMPILED JOB
         // ══════════════════════════════════════════════════════════
 
+        private bool TryResolveMainCamera(float dt = 0f)
+        {
+            if (_cameraTransform != null)
+                return true;
+
+            if (_cameraResolveRetryTimer > 0f)
+            {
+                _cameraResolveRetryTimer -= Mathf.Max(0f, dt);
+                return false;
+            }
+
+            _cameraResolveRetryTimer = CameraResolveRetryInterval;
+            _mainCamera = _cameraReference;
+            if (_mainCamera == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (!playerTransform.TryGetComponent(out _mainCamera))
+                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+            }
+
+            if (_mainCamera == null)
+            {
+                return false;
+            }
+
+            _cameraTransform = _mainCamera.transform;
+            _cameraResolveRetryTimer = 0f;
+            return true;
+        }
+
+        private void ApplyQualityPreset(LODQualityPreset preset)
+        {
+            _qualityPreset = preset;
+            QualitySettings.lodBias = GetLODBias();
+
+            if (DynamicResolutionScaler.Instance != null)
+            {
+                DynamicResolutionScaler.Instance.SetQualityPreset(preset);
+            }
+        }
+
+        private void RestoreDefaultLODBias()
+        {
+            QualitySettings.lodBias = _defaultLODBias;
+        }
+
+        private void TryRegisterImpostorCandidate(LODGroup lodGroup)
+        {
+            if (!ShouldUseImpostorCandidate(lodGroup))
+                return;
+
+            ImpostorSystem impostorSystem = ImpostorSystem.Instance;
+            if (impostorSystem == null)
+                return;
+
+            impostorSystem.RegisterImpostorCandidate(lodGroup.gameObject, lodGroup);
+        }
+
+        private void TryUnregisterImpostorCandidate(LODGroup lodGroup)
+        {
+            if (lodGroup == null)
+                return;
+
+            ImpostorSystem impostorSystem = ImpostorSystem.Instance;
+            if (impostorSystem == null)
+                return;
+
+            impostorSystem.UnregisterImpostorCandidate(lodGroup.gameObject);
+        }
+
+        private void UnregisterAllImpostorCandidates()
+        {
+            ImpostorSystem impostorSystem = ImpostorSystem.Instance;
+            if (impostorSystem == null)
+                return;
+
+            for (int i = _registeredLODGroups.Count - 1; i >= 0; i--)
+            {
+                LODGroup lodGroup = _registeredLODGroups[i];
+                if (lodGroup == null)
+                    continue;
+
+                impostorSystem.UnregisterImpostorCandidate(lodGroup.gameObject);
+            }
+        }
+
+        private static bool ShouldUseImpostorCandidate(LODGroup lodGroup)
+        {
+            if (lodGroup == null || !lodGroup.enabled)
+                return false;
+
+            if (lodGroup.size < 1f)
+                return false;
+
+            return lodGroup.gameObject.activeInHierarchy;
+        }
+
+        private void CleanupNullRegistrations()
+        {
+            bool removedAny = false;
+
+            for (int i = _registeredLODGroups.Count - 1; i >= 0; i--)
+            {
+                if (_registeredLODGroups[i] != null && _lodGroupTransforms[i] != null)
+                {
+                    continue;
+                }
+
+                int lastIndex = _registeredLODGroups.Count - 1;
+                if (i != lastIndex)
+                {
+                    _registeredLODGroups[i] = _registeredLODGroups[lastIndex];
+                    _lodGroupTransforms[i] = _lodGroupTransforms[lastIndex];
+                }
+
+                _registeredLODGroups.RemoveAt(lastIndex);
+                _lodGroupTransforms.RemoveAt(lastIndex);
+                removedAny = true;
+            }
+
+            if (!removedAny)
+            {
+                return;
+            }
+
+            _registeredLODGroupsSet.Clear();
+            for (int i = 0; i < _registeredLODGroups.Count; i++)
+            {
+                LODGroup lodGroup = _registeredLODGroups[i];
+                if (lodGroup != null)
+                {
+                    _registeredLODGroupsSet.Add(lodGroup);
+                }
+            }
+        }
+
         /// <summary>
         /// Burst-compiled job for calculating squared distances from camera to LOD groups.
         /// Uses squared distance to avoid expensive sqrt operations.
@@ -512,5 +675,134 @@ namespace Hecton8.World
                 SquaredDistances[index] = math.lengthsq(delta);
             }
         }
+
+        // ══════════════════════════════════════════════════════════
+        //  EDITOR GIZMOS
+        // ══════════════════════════════════════════════════════════
+
+        #if UNITY_EDITOR
+
+        [Header("── Gizmos ──────────────────")]
+        [SerializeField, Tooltip("Enable LOD Gizmos visualization")]
+        private bool _enableGizmos = false;
+
+        [SerializeField, Tooltip("Show LOD transition distance spheres")]
+        private bool _showTransitionSpheres = true;
+
+        [SerializeField, Tooltip("Show current LOD level labels")]
+        private bool _showLODLabels = true;
+
+        [SerializeField, Tooltip("Show cull distance visualization")]
+        private bool _showCullDistance = false;
+
+        // Cached colors to avoid allocation
+        private static readonly Color _lod0Color = new Color(0f, 1f, 0f, 0.3f);
+        private static readonly Color _lod1Color = new Color(1f, 1f, 0f, 0.3f);
+        private static readonly Color _lod2Color = new Color(1f, 0.5f, 0f, 0.3f);
+        private static readonly Color _cullColor = new Color(1f, 0f, 0f, 0.3f);
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!_enableGizmos) return;
+            if (!Application.isPlaying) return;
+            if (_mainCamera == null) return;
+
+            Vector3 camPos = _mainCamera.transform.position;
+
+            // Draw transition distance spheres
+            if (_showTransitionSpheres)
+            {
+                DrawTransitionSpheres(camPos);
+            }
+
+            // Draw LOD labels and cull distance
+            for (int i = 0; i < _registeredLODGroups.Count; i++)
+            {
+                LODGroup lodGroup = _registeredLODGroups[i];
+                if (lodGroup == null) continue;
+
+                Vector3 objPos = _lodGroupTransforms[i].position;
+                float sqrDist = _lodGroupSquaredDistances[i];
+                float dist = Mathf.Sqrt(sqrDist);
+
+                // Show current LOD level label
+                if (_showLODLabels)
+                {
+                    DrawLODLabel(lodGroup, objPos, dist);
+                }
+
+                // Show cull distance
+                if (_showCullDistance)
+                {
+                    DrawCullDistance(lodGroup, objPos);
+                }
+            }
+        }
+
+        private void DrawTransitionSpheres(Vector3 camPos)
+        {
+            LOD[] lods = _registeredLODGroups.Count > 0 ? _registeredLODGroups[0].GetLODs() : null;
+            if (lods == null || lods.Length == 0) return;
+
+            float lodBias = GetLODBias();
+
+            // Draw sphere for each LOD transition
+            for (int i = 0; i < lods.Length; i++)
+            {
+                float screenRelativeHeight = lods[i].screenRelativeTransitionHeight;
+                if (screenRelativeHeight <= 0f) continue;
+
+                // Approximate distance from screen height
+                float distance = 1f / screenRelativeHeight * lodBias * 10f;
+
+                Color color = i == 0 ? _lod0Color : i == 1 ? _lod1Color : i == 2 ? _lod2Color : _cullColor;
+                Gizmos.color = color;
+                Gizmos.DrawWireSphere(camPos, distance);
+
+                // Draw label
+                UnityEditor.Handles.Label(
+                    camPos + Vector3.up * distance,
+                    $"LOD{i} ({distance:F1}m)",
+                    UnityEditor.EditorStyles.whiteBoldLabel
+                );
+            }
+        }
+
+        private static void DrawLODLabel(LODGroup lodGroup, Vector3 objPos, float dist)
+        {
+            // Get current LOD level
+            LOD[] lods = lodGroup.GetLODs();
+            int currentLOD = -1;
+
+            for (int i = 0; i < lods.Length; i++)
+            {
+                float screenHeight = lods[i].screenRelativeTransitionHeight;
+                if (screenHeight > 0f)
+                {
+                    currentLOD = i;
+                    break;
+                }
+            }
+
+            string label = currentLOD >= 0 ? $"LOD{currentLOD} ({dist:F1}m)" : $"Culled ({dist:F1}m)";
+            UnityEditor.Handles.Label(objPos + Vector3.up * 2f, label, UnityEditor.EditorStyles.whiteBoldLabel);
+        }
+
+        private static void DrawCullDistance(LODGroup lodGroup, Vector3 objPos)
+        {
+            LOD[] lods = lodGroup.GetLODs();
+            if (lods.Length == 0) return;
+
+            // Last LOD is cull distance
+            float cullScreenHeight = lods[lods.Length - 1].screenRelativeTransitionHeight;
+            if (cullScreenHeight <= 0f) return;
+
+            float cullDistance = 1f / cullScreenHeight * 10f;
+
+            Gizmos.color = _cullColor;
+            Gizmos.DrawWireSphere(objPos, cullDistance);
+        }
+
+        #endif
     }
 }

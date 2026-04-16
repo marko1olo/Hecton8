@@ -108,6 +108,7 @@ namespace Hecton8.EditorTools
             WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
+            WorldReadabilityDirector readabilityDirector = GetOrAddComponent<WorldReadabilityDirector>(managersRoot);
             WorldCaveDirector caveDirector = GetOrAddComponent<WorldCaveDirector>(managersRoot);
             ProximityColliderSystem proximityColliderSystem = GetOrAddComponent<ProximityColliderSystem>(managersRoot);
             HectonBiolumManager biolumManager = GetOrAddComponent<HectonBiolumManager>(managersRoot);
@@ -170,6 +171,7 @@ namespace Hecton8.EditorTools
                 geologySeamExecutionDirector,
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>());
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
+            ConfigureWorldReadabilityDirector(readabilityDirector, zoneDirector, biomeMatrixDirector);
             ConfigureWorldCaveDirector(
                 caveDirector,
                 playerTransform,
@@ -476,6 +478,18 @@ namespace Hecton8.EditorTools
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
             so.FindProperty("matrixCatalog").objectReferenceValue = catalog;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureWorldReadabilityDirector(
+            WorldReadabilityDirector director,
+            WorldZoneDirector zoneDirector,
+            BiomeMatrixDirector biomeMatrixDirector)
+        {
+            SerializedObject so = new SerializedObject(director);
+            so.FindProperty("worldZoneDirector").objectReferenceValue = zoneDirector;
+            so.FindProperty("biomeMatrixDirector").objectReferenceValue = biomeMatrixDirector;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(director);
         }

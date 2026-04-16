@@ -84,6 +84,7 @@ namespace Hecton8.Power
         [SerializeField] private float _debugTotalGeneration;
         [SerializeField] private float _debugTotalConsumption;
         [SerializeField] private int   _debugDeficitGrids;
+        private bool _tickRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  STORAGE
@@ -143,16 +144,18 @@ namespace Hecton8.Power
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ISlowTickable)this);
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ISlowTickable)this);
+            TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregister();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -442,6 +445,31 @@ namespace Hecton8.Power
         // ══════════════════════════════════════════════════════════
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
+
+        private void TryRegister()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _tickRegistered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _tickRegistered = false;
+        }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateDiagnostics(float gen, float con, int nodes, int deficits)

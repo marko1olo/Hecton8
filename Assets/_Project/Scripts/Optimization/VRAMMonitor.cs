@@ -14,6 +14,16 @@ namespace Hecton8.Optimization
     [DefaultExecutionOrder(-8000)]
     public sealed class VRAMMonitor : MonoBehaviour, ISlowTickable
     {
+        /// <summary>
+        /// High-level VRAM pressure state derived from budget utilization.
+        /// </summary>
+        public enum VRAMPressureState : byte
+        {
+            Stable = 0,
+            Warning = 1,
+            Critical = 2
+        }
+
         // ── SINGLETON ──────────────────────────────────────────────────────────────
         
         private static VRAMMonitor _instance;
@@ -27,6 +37,10 @@ namespace Hecton8.Optimization
         
         [Header("── VRAM Budget Thresholds ──────────────────")]
         [SerializeField] private VRAMBudgetThresholds _budgetThresholds = VRAMBudgetThresholds.Default;
+        [Tooltip("Budget utilization at which VRAM pressure moves from stable to warning state.")]
+        [SerializeField, Range(0.5f, 1f)] private float _warningBudgetFraction = 0.82f;
+        [Tooltip("Budget utilization at which VRAM pressure becomes critical even before the hard budget break.")]
+        [SerializeField, Range(0.7f, 1.5f)] private float _criticalBudgetFraction = 0.95f;
         
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
@@ -73,6 +87,21 @@ namespace Hecton8.Optimization
         /// </summary>
         public bool IsTotalVRAMOverBudget => TotalVRAMBytes > _budgetThresholds.TotalVRAMBudgetBytes;
         
+        /// <summary>
+        /// Normalized RenderTexture budget utilization.
+        /// </summary>
+        public float RenderTextureBudgetUtilization { get; private set; }
+        
+        /// <summary>
+        /// Normalized total VRAM budget utilization.
+        /// </summary>
+        public float TotalVRAMBudgetUtilization { get; private set; }
+        
+        /// <summary>
+        /// Current high-level VRAM pressure state.
+        /// </summary>
+        public VRAMPressureState PressureState { get; private set; }
+        
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
         
         private void Awake()
@@ -84,13 +113,6 @@ namespace Hecton8.Optimization
             }
             
             _instance = this;
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
             
             StartRecorders();
         }
@@ -181,6 +203,13 @@ namespace Hecton8.Optimization
             }
             
             TotalVRAMBytes = Profiler.GetTotalAllocatedMemoryLong();
+            RenderTextureBudgetUtilization = CalculateBudgetUtilization(
+                RenderTextureMemoryBytes,
+                _budgetThresholds.RenderTextureMemoryBudgetBytes);
+            TotalVRAMBudgetUtilization = CalculateBudgetUtilization(
+                TotalVRAMBytes,
+                _budgetThresholds.TotalVRAMBudgetBytes);
+            UpdatePressureState();
         }
         
         private void CheckThresholds()
@@ -195,6 +224,31 @@ namespace Hecton8.Optimization
                 }
 #endif
             }
+        }
+
+        private float CalculateBudgetUtilization(long usedBytes, long budgetBytes)
+        {
+            if (budgetBytes <= 0L)
+                return 0f;
+
+            return usedBytes / (float)budgetBytes;
+        }
+
+        private void UpdatePressureState()
+        {
+            float maxUtilization = RenderTextureBudgetUtilization > TotalVRAMBudgetUtilization
+                ? RenderTextureBudgetUtilization
+                : TotalVRAMBudgetUtilization;
+
+            if (IsRenderTextureMemoryOverBudget || IsTotalVRAMOverBudget || maxUtilization >= _criticalBudgetFraction)
+            {
+                PressureState = VRAMPressureState.Critical;
+                return;
+            }
+
+            PressureState = maxUtilization >= _warningBudgetFraction
+                ? VRAMPressureState.Warning
+                : VRAMPressureState.Stable;
         }
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

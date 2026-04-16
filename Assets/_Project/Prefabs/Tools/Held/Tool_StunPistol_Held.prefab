@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5187313751581688007}
   - component: {fileID: 489436614716823268}
+  - component: {fileID: 9150663868011811746}
   m_Layer: 0
   m_Name: Tool_StunPistol_Held
   m_TagString: Untagged
@@ -49,6 +50,8 @@ MonoBehaviour:
   _toolMetadata: {fileID: 11400000, guid: b1b94d9447f32854bbfd39ad03e115b6, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  _swimContract: {fileID: 0}
   range: 22
   damage: 10
   impulse: 9
@@ -57,6 +60,39 @@ MonoBehaviour:
   targetMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  feedbackInterval: 0.35
+--- !u!114 &9150663868011811746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2166434716932352637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9fb1903b49f6e428d8fc12ce0a4103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerToolSwimContract
+  toolHand: 0
+  swimRootPresentationWeight: 0.33
+  swimSupportHandWeight: 0.56
+  swimToolHandWeight: 0.04
+  activeUseSupportHandBoost: 0.1
+  swimRootPoseBias:
+    localPositionOffset: {x: 0.03, y: -0.02, z: -0.054}
+    localEulerOffset: {x: 6, y: 6, z: 5}
+  swimSupportHandPoseBias:
+    localPositionOffset: {x: -0.05, y: 0.028, z: 0.022}
+    localEulerOffset: {x: 8, y: -20, z: -12}
+  swimToolHandPoseBias:
+    localPositionOffset: {x: 0.03, y: -0.018, z: -0.052}
+    localEulerOffset: {x: 8, y: 14, z: 10}
+  activeUseRootPoseBias:
+    localPositionOffset: {x: 0.01, y: -0.016, z: -0.024}
+    localEulerOffset: {x: 4, y: 3, z: 3}
+  activeUseSupportHandPoseBias:
+    localPositionOffset: {x: -0.016, y: 0.026, z: 0.02}
+    localEulerOffset: {x: 8, y: -12, z: -10}
 --- !u!1 &2829468109170894550
 GameObject:
   m_ObjectHideFlags: 0

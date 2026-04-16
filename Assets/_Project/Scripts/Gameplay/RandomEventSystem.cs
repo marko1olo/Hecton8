@@ -117,22 +117,14 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             ResolveSurvivalSystem();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             // Сбрасываем все активные события
             for (int i = 0; i < _eventTimers.Length; i++)
@@ -146,6 +138,14 @@ namespace Hecton8.Gameplay
 
             Shader.SetGlobalFloat(_ShaderBiolumStorm, 0f);
             Shader.SetGlobalFloat(_ShaderGlitchActive, 0f);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -179,6 +179,31 @@ namespace Hecton8.Gameplay
             TryTriggerFaunaMigration();
             TryTriggerGlitch(depth);
             TryTriggerCaveCollapse(depth);
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         // ══════════════════════════════════════════════════════════

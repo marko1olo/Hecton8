@@ -1,23 +1,18 @@
+using Hecton.Localization;
+using Hecton8.Core;
 using TMPro;
 using UnityEngine;
-using Hecton8.Core;
-using Hecton.Localization;
 
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Displays rotating gameplay tips during loading screens (Subnautica-style).
-    /// Tips cycle every N seconds with smooth fade transitions.
-    /// Zero-GC: ITickable, cached strings, no LINQ.
+    /// Displays rotating gameplay tips during loading screens.
+    /// Tips cycle every N seconds with fade transitions.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Loading Tips Display")]
     public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable
     {
-        // ══════════════════════════════════════════════════════════
-        // INSPECTOR
-        // ══════════════════════════════════════════════════════════
-
         [Header("=== UI REFERENCES ===")]
         [SerializeField] private TextMeshProUGUI tipText;
         [SerializeField] private CanvasGroup tipCanvasGroup;
@@ -32,10 +27,6 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Show tips in random order")]
         private bool randomOrder = true;
 
-        // ══════════════════════════════════════════════════════════
-        // FIELDS
-        // ══════════════════════════════════════════════════════════
-
         private bool _registered;
         private bool _isActive;
         private int _currentTipIndex;
@@ -43,9 +34,28 @@ namespace Hecton8.UI
         private float _fadeTimer;
         private bool _isFadingIn;
         private bool _isFadingOut;
-        private string[] _tips; // COLD ALLOC: loading tips cache
+        private string[] _tips;
 
-        private static readonly string[] DefaultTips = // COLD ALLOC: fallback tips
+        private static readonly string[] TipKeys = // COLD ALLOC: localization keys for loading tips — owner: LoadingTipsDisplay
+        {
+            LocalizationKeys.LOADING_TIP_01,
+            LocalizationKeys.LOADING_TIP_02,
+            LocalizationKeys.LOADING_TIP_03,
+            LocalizationKeys.LOADING_TIP_04,
+            LocalizationKeys.LOADING_TIP_05,
+            LocalizationKeys.LOADING_TIP_06,
+            LocalizationKeys.LOADING_TIP_07,
+            LocalizationKeys.LOADING_TIP_08,
+            LocalizationKeys.LOADING_TIP_09,
+            LocalizationKeys.LOADING_TIP_10,
+            LocalizationKeys.LOADING_TIP_11,
+            LocalizationKeys.LOADING_TIP_12,
+            LocalizationKeys.LOADING_TIP_13,
+            LocalizationKeys.LOADING_TIP_14,
+            LocalizationKeys.LOADING_TIP_15,
+        };
+
+        private static readonly string[] DefaultTips = // COLD ALLOC: fallback tips — owner: LoadingTipsDisplay
         {
             "Scan unknown objects to unlock blueprints and research data.",
             "Save frequently before risky dives or major construction changes.",
@@ -54,19 +64,15 @@ namespace Hecton8.UI
             "Use quick slots (1-4) to arm tools without opening inventory.",
             "PDA (TAB) provides mission logs, blueprints, and scan data.",
             "Fabricators require power and raw materials to craft items.",
-            "Oxygen levels drop faster at greater depths — plan your route.",
-            "Flashlight battery depletes over time — conserve power in lit areas.",
+            "Oxygen levels drop faster at greater depths, plan your route.",
+            "Flashlight battery depletes over time, conserve power in lit areas.",
             "Suit integrity degrades from fauna contact and pressure damage.",
             "Base modules require power grid connection to function.",
             "Scan flora and fauna to complete biological database entries.",
-            "Some resources are depth-locked — upgrade suit before deep dives.",
+            "Some resources are depth-locked, upgrade the suit before deep dives.",
             "Crafting stations unlock advanced recipes as you progress.",
             "Emergency oxygen stations provide temporary life support.",
         };
-
-        // ══════════════════════════════════════════════════════════
-        // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -77,29 +83,24 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             StartTipCycle();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             StopTipCycle();
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        private void OnDestroy()
+        {
+            TryUnregister();
+        }
 
         public void StartTipCycle()
         {
@@ -132,16 +133,11 @@ namespace Hecton8.UI
                 tipCanvasGroup.alpha = 0f;
         }
 
-        // ══════════════════════════════════════════════════════════
-        // ITICKABLE
-        // ══════════════════════════════════════════════════════════
-
         public void Tick(float dt)
         {
             if (!_isActive || tipText == null || tipCanvasGroup == null)
                 return;
 
-            // Handle fade in
             if (_isFadingIn)
             {
                 _fadeTimer += dt;
@@ -158,7 +154,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Handle fade out
             if (_isFadingOut)
             {
                 _fadeTimer += dt;
@@ -175,7 +170,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Handle tip display duration
             _tipTimer += dt;
             if (_tipTimer >= tipDuration)
             {
@@ -184,15 +178,22 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        // PRIVATE
-        // ══════════════════════════════════════════════════════════
-
         private void LoadTips()
         {
-            // Localized loading tips are not implemented yet.
-            // Keep the runtime path deterministic and avoid dependency on localization startup order.
-            _tips = DefaultTips;
+            if (_tips == null || _tips.Length != TipKeys.Length)
+            {
+                // COLD ALLOC: string[15] — resolved loading tips cache — owner: LoadingTipsDisplay
+                _tips = new string[TipKeys.Length];
+            }
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            for (int i = 0; i < TipKeys.Length; i++)
+            {
+                string fallback = i < DefaultTips.Length ? DefaultTips[i] : string.Empty;
+                _tips[i] = manager != null
+                    ? manager.GetOrFallback(manager.CurrentLanguage, TipKeys[i], fallback)
+                    : fallback;
+            }
         }
 
         private void ShowTip(int index)
@@ -210,24 +211,56 @@ namespace Hecton8.UI
 
             if (randomOrder)
             {
-                // Random tip (avoid repeating same tip)
                 int newIndex = Random.Range(0, _tips.Length);
                 if (_tips.Length > 1)
                 {
                     while (newIndex == _currentTipIndex)
                         newIndex = Random.Range(0, _tips.Length);
                 }
+
                 _currentTipIndex = newIndex;
             }
             else
             {
-                // Sequential tips
                 _currentTipIndex = (_currentTipIndex + 1) % _tips.Length;
             }
 
             ShowTip(_currentTipIndex);
             _isFadingIn = true;
             _fadeTimer = 0f;
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            LoadTips();
+
+            if (_isActive)
+                ShowTip(_currentTipIndex);
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
         }
     }
 }

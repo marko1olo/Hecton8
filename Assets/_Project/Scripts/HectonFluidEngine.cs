@@ -403,6 +403,7 @@ namespace Hecton8.Physics
                 }
             }
 
+            ReleaseIdleNativeBuffersIfNeeded();
             UpdateDiagnostics();
         }
 
@@ -426,7 +427,11 @@ namespace Hecton8.Physics
         public void FixedTick(float fixedDeltaTime)
         {
             int count = _objects.Count;
-            if (count == 0) return;
+            if (count == 0)
+            {
+                ReleaseIdleNativeBuffersIfNeeded();
+                return;
+            }
             _debugNearCount = 0;
             _debugMediumCount = 0;
             _debugFarCount = 0;
@@ -451,7 +456,11 @@ namespace Hecton8.Physics
 
             // Пересчитываем count после очистки destroyed объектов
             count = _objects.Count;
-            if (count == 0) return;
+            if (count == 0)
+            {
+                ReleaseIdleNativeBuffersIfNeeded();
+                return;
+            }
 
             // ── 3. Schedule Job ──
             BuoyancyJob job = new BuoyancyJob
@@ -703,6 +712,14 @@ namespace Hecton8.Physics
             if (_resultTorques.IsCreated) _resultTorques.Dispose();
 
             _nativeCapacity = 0;
+        }
+
+        private void ReleaseIdleNativeBuffersIfNeeded()
+        {
+            if (_objects.Count > 0 || _nativeCapacity <= 0)
+                return;
+
+            DisposeNativeArrays();
         }
 
         // ══════════════════════════════════════════════════════════

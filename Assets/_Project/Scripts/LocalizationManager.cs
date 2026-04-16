@@ -1,33 +1,72 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Text.RegularExpressions;
 using Hecton8.Input;
+using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton.Localization
 {
     /// <summary>
-    /// Язык игры. Расширяется по мере добавления локализаций.
+    /// Game language identifiers supported by the first-party localization layer.
     /// </summary>
     public enum GameLanguage
     {
         English = 0,
         Russian = 1,
-        // Chinese = 2,
-        // Japanese = 3,
+        German = 2,
+        French = 3,
+        Spanish = 4,
+        Italian = 5,
+        PortugueseBrazilian = 6,
+        Polish = 7,
+        Turkish = 8,
+        Ukrainian = 9,
+        ChineseSimplified = 10,
+        ChineseTraditional = 11,
+        Japanese = 12,
+        Korean = 13,
+        Hindi = 14,
+        Indonesian = 15,
+        Arabic = 16,
     }
 
     /// <summary>
-    /// Менеджер локализации. Загружает таблицы переводов, 
-    /// отдаёт строки по ключу, оповещает подписчиков при смене языка.
-    /// 
-    /// Singleton (DontDestroyOnLoad). Инициализируется до любого UI.
+    /// Runtime owner for string localization tables and language switching.
     /// </summary>
+    [DisallowMultipleComponent]
     public sealed class LocalizationManager : MonoBehaviour
     {
-        // ──────────────────────────────────────────────
-        // SINGLETON
-        // ──────────────────────────────────────────────
+        // COLD ALLOC: Regex[1] — flat JSON key/value extraction for localization tables — owner: LocalizationManager
+        private static readonly Regex FlatJsonEntryRegex = new Regex(
+            "\"(?<key>(?:\\\\.|[^\"\\\\])*)\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"\\\\])*)\"",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private const string DefaultLanguageTableFolder = "Assets/_Project/Scripts";
+
         public static LocalizationManager Instance { get; private set; }
+
+        public static event Action<GameLanguage> OnLanguageChanged;
+
+        [Header("=== Config ===")]
+        [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
+
+        [Header("=== Localization Data (JSON TextAssets) ===")]
+        [Tooltip("Each TextAsset is a flat JSON object: { \"KEY\": \"Value\" }. File name must match the GameLanguage enum name.")]
+        [SerializeField] private TextAsset[] languageFiles;
+
+        // Shared user-options key owned by UserOptionsPersistence.
+        private const string PrefsLanguageKey = UserOptionsPersistence.LanguageKey;
+
+        // COLD ALLOC: Dictionary[20] — language tables for UI/content lookup — owner: LocalizationManager
+        private readonly Dictionary<GameLanguage, Dictionary<string, string>> _tables =
+            new Dictionary<GameLanguage, Dictionary<string, string>>(20);
+
+        /// <summary>
+        /// Active language for runtime lookups.
+        /// </summary>
+        public GameLanguage CurrentLanguage { get; private set; } = GameLanguage.English;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -35,42 +74,6 @@ namespace Hecton.Localization
             Instance = null;
             OnLanguageChanged = null;
         }
-
-        // ──────────────────────────────────────────────
-        // EVENTS
-        // ──────────────────────────────────────────────
-        /// <summary>
-        /// Вызывается при смене языка. Все UI-компоненты подписываются
-        /// и обновляют свои тексты.
-        /// </summary>
-        public static event Action<GameLanguage> OnLanguageChanged;
-
-        // ──────────────────────────────────────────────
-        // STATE
-        // ──────────────────────────────────────────────
-        public GameLanguage CurrentLanguage { get; private set; } = GameLanguage.English;
-
-        // Таблица: язык → (ключ → перевод)
-        private readonly Dictionary<GameLanguage, Dictionary<string, string>> _tables =
-            new Dictionary<GameLanguage, Dictionary<string, string>>();
-
-        // ──────────────────────────────────────────────
-        // INSPECTOR
-        // ──────────────────────────────────────────────
-        [Header("=== CONFIG ===")]
-        [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
-
-        [Header("=== LOCALIZATION DATA (JSON TextAssets) ===")]
-        [Tooltip("Каждый TextAsset — JSON-файл с парами key:value для одного языка. " +
-                 "Имя файла должно совпадать с GameLanguage enum (English.json, Russian.json).")]
-        [SerializeField] private TextAsset[] languageFiles;
-
-        // Shared user-options key owned by UserOptionsPersistence.
-        private const string PREFS_LANGUAGE_KEY = UserOptionsPersistence.LanguageKey;
-
-        // ══════════════════════════════════════════════
-        // LIFECYCLE
-        // ══════════════════════════════════════════════
 
         private void Awake()
         {
@@ -87,6 +90,18 @@ namespace Hecton.Localization
             RestoreSavedLanguage();
         }
 
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            SyncLanguageFilesFromDefaultFolder();
+        }
+
+        private void OnValidate()
+        {
+            SyncLanguageFilesFromDefaultFolder();
+        }
+#endif
+
         private void OnDestroy()
         {
             if (Instance == this)
@@ -96,48 +111,30 @@ namespace Hecton.Localization
             }
         }
 
-        // ══════════════════════════════════════════════
-        // PUBLIC API
-        // ══════════════════════════════════════════════
-
         /// <summary>
-        /// Возвращает локализованную строку по ключу.
-        /// Если ключ не найден — возвращает сам ключ (для дебага).
+        /// Resolve a localized string for the current language.
+        /// Missing keys return the key itself in development-friendly fashion.
         /// </summary>
         public string Get(string key)
         {
-            if (string.IsNullOrEmpty(key))
+            if (string.IsNullOrWhiteSpace(key))
                 return string.Empty;
 
-            if (_tables.TryGetValue(CurrentLanguage, out Dictionary<string, string> table))
-            {
-                if (table.TryGetValue(key, out string value))
-                    return value;
-            }
-
-            // Fallback: попробовать English
-            if (CurrentLanguage != GameLanguage.English &&
-                _tables.TryGetValue(GameLanguage.English, out Dictionary<string, string> fallback))
-            {
-                if (fallback.TryGetValue(key, out string value))
-                    return value;
-            }
+            if (TryGet(CurrentLanguage, key, out string value))
+                return value;
 
 #if UNITY_EDITOR
             Debug.LogWarning($"[Localization] Missing key: \"{key}\" for {CurrentLanguage}");
 #endif
-            // Возвращаем ключ как есть — сразу видно что не переведено
             return key;
         }
 
         /// <summary>
-        /// Возвращает локализованную строку с подстановкой аргументов.
-        /// Использует string.Format: Get("modal.load.message") → "Load save \"{0}\"?"
+        /// Resolve a formatted localized string.
         /// </summary>
         public string GetFormatted(string key, params object[] args)
         {
             string template = Get(key);
-
             if (args == null || args.Length == 0)
                 return template;
 
@@ -149,29 +146,56 @@ namespace Hecton.Localization
             {
 #if UNITY_EDITOR
                 Debug.LogError(
-                    $"[Localization] Format error for key \"{key}\", " +
-                    $"template: \"{template}\", args count: {args.Length}"
-                );
+                    $"[Localization] Format error for key \"{key}\", template: \"{template}\", args count: {args.Length}");
 #endif
                 return template;
             }
         }
 
         /// <summary>
-        /// Переключает язык и оповещает всех подписчиков.
+        /// Attempt to resolve a key for the requested language without logging warnings.
+        /// Falls back to English when the target table does not contain the key.
+        /// </summary>
+        public bool TryGet(GameLanguage language, string key, out string value)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                value = string.Empty;
+                return false;
+            }
+
+            if (TryGetFromTable(language, key, out value))
+                return true;
+
+            if (language != GameLanguage.English && TryGetFromTable(GameLanguage.English, key, out value))
+                return true;
+
+            value = string.Empty;
+            return false;
+        }
+
+        /// <summary>
+        /// Resolve a key with an explicit fallback string.
+        /// </summary>
+        public string GetOrFallback(GameLanguage language, string key, string fallback)
+        {
+            return TryGet(language, key, out string value) ? value : (fallback ?? string.Empty);
+        }
+
+        /// <summary>
+        /// Switch the active language and notify subscribers.
         /// </summary>
         public void SetLanguage(GameLanguage language)
         {
-            if (CurrentLanguage == language) return;
+            if (CurrentLanguage == language)
+                return;
 
             CurrentLanguage = language;
 
-            // Сохраняем выбор
             UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            options.SetInt(PREFS_LANGUAGE_KEY, (int)language);
+            options.SetInt(PrefsLanguageKey, (int)language);
             options.Save();
 
-            // Оповещаем подписчиков
             OnLanguageChanged?.Invoke(language);
 
 #if UNITY_EDITOR
@@ -180,7 +204,7 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Переключает на следующий язык (для кнопки в настройках).
+        /// Cycle to the next language in the enum order.
         /// </summary>
         public void CycleLanguage()
         {
@@ -189,17 +213,12 @@ namespace Hecton.Localization
             SetLanguage((GameLanguage)next);
         }
 
-        // ══════════════════════════════════════════════
-        // ЗАГРУЗКА ТАБЛИЦ
-        // ══════════════════════════════════════════════
-
         private void LoadAllTables()
         {
             _tables.Clear();
 
             if (languageFiles == null || languageFiles.Length == 0)
             {
-                // Нет файлов — загружаем встроенные данные (hardcoded fallback)
                 LoadBuiltInTables();
                 return;
             }
@@ -207,136 +226,103 @@ namespace Hecton.Localization
             for (int i = 0; i < languageFiles.Length; i++)
             {
                 TextAsset file = languageFiles[i];
-                if (file == null) continue;
+                if (file == null)
+                    continue;
 
-                // Имя файла = имя языка
-                if (!Enum.TryParse(file.name, true, out GameLanguage lang))
+                if (!Enum.TryParse(file.name, true, out GameLanguage language))
                 {
 #if UNITY_EDITOR
                     Debug.LogWarning(
                         $"[Localization] Cannot parse language from filename: \"{file.name}\". " +
-                        $"Expected: {string.Join(", ", Enum.GetNames(typeof(GameLanguage)))}"
-                    );
+                        $"Expected one of: {string.Join(", ", Enum.GetNames(typeof(GameLanguage)))}");
 #endif
                     continue;
                 }
 
-                Dictionary<string, string> table = ParseJsonTable(file.text);
-                _tables[lang] = table;
+                _tables[language] = ParseJsonTable(file.text);
             }
 
-            // Если English не загрузился из файлов — добавляем встроенный
             if (!_tables.ContainsKey(GameLanguage.English))
-            {
                 LoadBuiltInTables();
-            }
         }
 
-        /// <summary>
-        /// Парсит простой плоский JSON: { "key": "value", ... }
-        /// Не требует Newtonsoft — работает через Unity JsonUtility обёртку.
-        /// </summary>
         private static Dictionary<string, string> ParseJsonTable(string json)
         {
-            var result = new Dictionary<string, string>(64);
-
-            if (string.IsNullOrEmpty(json))
+            // COLD ALLOC: Dictionary[128] — parsed localization table entries — owner: LocalizationManager
+            var result = new Dictionary<string, string>(128);
+            if (string.IsNullOrWhiteSpace(json))
                 return result;
 
-            // Простой парсер для плоского JSON (ключ-значение)
-            // Для продакшена заменить на Newtonsoft или Unity Localization Package
             try
             {
-                // Убираем внешние скобки и разбиваем по строкам
-                json = json.Trim();
-                if (json.StartsWith("{")) json = json.Substring(1);
-                if (json.EndsWith("}"))   json = json.Substring(0, json.Length - 1);
-
-                string[] entries = json.Split(',');
-
-                for (int i = 0; i < entries.Length; i++)
+                MatchCollection matches = FlatJsonEntryRegex.Matches(json);
+                for (int i = 0; i < matches.Count; i++)
                 {
-                    string entry = entries[i].Trim();
-                    if (string.IsNullOrEmpty(entry)) continue;
+                    Match match = matches[i];
+                    if (!match.Success)
+                        continue;
 
-                    int colonIndex = entry.IndexOf(':');
-                    if (colonIndex < 0) continue;
+                    string key = Regex.Unescape(match.Groups["key"].Value);
+                    string value = Regex.Unescape(match.Groups["value"].Value);
 
-                    string key   = entry.Substring(0, colonIndex).Trim().Trim('"');
-                    string value = entry.Substring(colonIndex + 1).Trim().Trim('"');
-
-                    if (!string.IsNullOrEmpty(key))
-                    {
+                    if (!string.IsNullOrWhiteSpace(key))
                         result[key] = value;
-                    }
                 }
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
 #if UNITY_EDITOR
-                Debug.LogError($"[Localization] JSON parse error: {e.Message}");
+                Debug.LogError($"[Localization] JSON parse error: {exception.Message}");
 #endif
             }
 
             return result;
         }
 
-        /// <summary>
-        /// Встроенные таблицы — гарантированный fallback,
-        /// чтобы игра работала даже без JSON-файлов.
-        /// </summary>
         private void LoadBuiltInTables()
         {
-            // ── ENGLISH ──
             if (!_tables.ContainsKey(GameLanguage.English))
             {
-                _tables[GameLanguage.English] = new Dictionary<string, string>(32)
+                _tables[GameLanguage.English] = new Dictionary<string, string>(160)
                 {
-                    { LocalizationKeys.MENU_NEW_GAME,   "New Game" },
-                    { LocalizationKeys.MENU_LOAD_GAME,  "Load Game" },
-                    { LocalizationKeys.MENU_SETTINGS,   "Settings" },
-                    { LocalizationKeys.MENU_QUIT,       "Quit" },
-
-                    { LocalizationKeys.MODAL_CONFIRM,   "Confirm" },
-                    { LocalizationKeys.MODAL_CANCEL,    "Cancel" },
-                    { LocalizationKeys.MODAL_NEW_GAME_TITLE,   "New Game" },
+                    { LocalizationKeys.MENU_NEW_GAME, "New Game" },
+                    { LocalizationKeys.MENU_LOAD_GAME, "Load Game" },
+                    { LocalizationKeys.MENU_SETTINGS, "Settings" },
+                    { LocalizationKeys.MENU_QUIT, "Quit" },
+                    { LocalizationKeys.MODAL_CONFIRM, "Confirm" },
+                    { LocalizationKeys.MODAL_CANCEL, "Cancel" },
+                    { LocalizationKeys.MODAL_NEW_GAME_TITLE, "New Game" },
                     { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Start a new game?" },
-                    { LocalizationKeys.MODAL_LOAD_TITLE,       "Load Game" },
-                    { LocalizationKeys.MODAL_LOAD_MESSAGE,     "Load save \"{0}\"?" },
-                    { LocalizationKeys.MODAL_QUIT_TITLE,       "Quit" },
-                    { LocalizationKeys.MODAL_QUIT_MESSAGE,     "Quit the game?" },
-
-                    { LocalizationKeys.SLOT_PREFIX,     "SLOT" },
-                    { LocalizationKeys.SLOT_NO_DATA,    "NO DATA" },
-                    { LocalizationKeys.SLOT_PLAYTIME,   "Playtime" },
-
+                    { LocalizationKeys.MODAL_LOAD_TITLE, "Load Game" },
+                    { LocalizationKeys.MODAL_LOAD_MESSAGE, "Load save \"{0}\"?" },
+                    { LocalizationKeys.MODAL_QUIT_TITLE, "Quit" },
+                    { LocalizationKeys.MODAL_QUIT_MESSAGE, "Quit the game?" },
+                    { LocalizationKeys.SLOT_PREFIX, "SLOT" },
+                    { LocalizationKeys.SLOT_NO_DATA, "NO DATA" },
+                    { LocalizationKeys.SLOT_PLAYTIME, "Playtime" },
                     { LocalizationKeys.LOADING_PERCENT, "{0}%" },
                 };
             }
 
-            // ── RUSSIAN ──
             if (!_tables.ContainsKey(GameLanguage.Russian))
             {
-                _tables[GameLanguage.Russian] = new Dictionary<string, string>(32)
+                _tables[GameLanguage.Russian] = new Dictionary<string, string>(160)
                 {
-                    { LocalizationKeys.MENU_NEW_GAME,   "\u041d\u043e\u0432\u0430\u044f \u0438\u0433\u0440\u0430" },
-                    { LocalizationKeys.MENU_LOAD_GAME,  "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c" },
-                    { LocalizationKeys.MENU_SETTINGS,   "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438" },
-                    { LocalizationKeys.MENU_QUIT,       "\u0412\u044b\u0445\u043e\u0434" },
-
-                    { LocalizationKeys.MODAL_CONFIRM,   "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044c" },
-                    { LocalizationKeys.MODAL_CANCEL,    "\u041e\u0442\u043c\u0435\u043d\u0430" },
-                    { LocalizationKeys.MODAL_NEW_GAME_TITLE,   "\u041d\u043e\u0432\u0430\u044f \u0438\u0433\u0440\u0430" },
-                    { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "\u041d\u0430\u0447\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0438\u0433\u0440\u0443?" },
-                    { LocalizationKeys.MODAL_LOAD_TITLE,       "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430" },
-                    { LocalizationKeys.MODAL_LOAD_MESSAGE,     "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u0438\u0435 \"{0}\"?" },
-                    { LocalizationKeys.MODAL_QUIT_TITLE,       "\u0412\u044b\u0445\u043e\u0434" },
-                    { LocalizationKeys.MODAL_QUIT_MESSAGE,     "\u0412\u044b\u0439\u0442\u0438 \u0438\u0437 \u0438\u0433\u0440\u044b?" },
-
-                    { LocalizationKeys.SLOT_PREFIX,     "\u0421\u041b\u041e\u0422" },
-                    { LocalizationKeys.SLOT_NO_DATA,    "\u041d\u0415\u0422 \u0414\u0410\u041d\u041d\u042b\u0425" },
-                    { LocalizationKeys.SLOT_PLAYTIME,   "\u0412\u0440\u0435\u043c\u044f \u0438\u0433\u0440\u044b" },
-
+                    { LocalizationKeys.MENU_NEW_GAME, "Новая игра" },
+                    { LocalizationKeys.MENU_LOAD_GAME, "Загрузить" },
+                    { LocalizationKeys.MENU_SETTINGS, "Настройки" },
+                    { LocalizationKeys.MENU_QUIT, "Выход" },
+                    { LocalizationKeys.MODAL_CONFIRM, "Подтвердить" },
+                    { LocalizationKeys.MODAL_CANCEL, "Отмена" },
+                    { LocalizationKeys.MODAL_NEW_GAME_TITLE, "Новая игра" },
+                    { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Начать новую игру?" },
+                    { LocalizationKeys.MODAL_LOAD_TITLE, "Загрузка" },
+                    { LocalizationKeys.MODAL_LOAD_MESSAGE, "Загрузить сохранение \"{0}\"?" },
+                    { LocalizationKeys.MODAL_QUIT_TITLE, "Выход" },
+                    { LocalizationKeys.MODAL_QUIT_MESSAGE, "Выйти из игры?" },
+                    { LocalizationKeys.SLOT_PREFIX, "СЛОТ" },
+                    { LocalizationKeys.SLOT_NO_DATA, "НЕТ ДАННЫХ" },
+                    { LocalizationKeys.SLOT_PLAYTIME, "Время игры" },
                     { LocalizationKeys.LOADING_PERCENT, "{0}%" },
                 };
             }
@@ -345,14 +331,81 @@ namespace Hecton.Localization
         private void RestoreSavedLanguage()
         {
             UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            if (options.HasKey(PREFS_LANGUAGE_KEY))
+            if (options.HasKey(PrefsLanguageKey))
             {
-                int saved = options.GetInt(PREFS_LANGUAGE_KEY, (int)defaultLanguage);
-                CurrentLanguage = (GameLanguage)saved;
+                int saved = options.GetInt(PrefsLanguageKey, (int)defaultLanguage);
+                if (Enum.IsDefined(typeof(GameLanguage), saved))
+                {
+                    CurrentLanguage = (GameLanguage)saved;
+                    return;
+                }
+
+                CurrentLanguage = defaultLanguage;
                 return;
             }
 
             CurrentLanguage = defaultLanguage;
+        }
+
+#if UNITY_EDITOR
+        private void SyncLanguageFilesFromDefaultFolder()
+        {
+            Array languages = Enum.GetValues(typeof(GameLanguage));
+            int languageCount = languages.Length;
+            TextAsset[] discovered = new TextAsset[languageCount];
+            int discoveredCount = 0;
+
+            for (int i = 0; i < languageCount; i++)
+            {
+                GameLanguage language = (GameLanguage)languages.GetValue(i);
+                string path = DefaultLanguageTableFolder + "/" + language + ".json";
+                TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
+                if (asset == null)
+                    continue;
+
+                discovered[discoveredCount++] = asset;
+            }
+
+            if (HasSameLanguageFiles(languageFiles, discovered, discoveredCount))
+                return;
+
+            TextAsset[] trimmed = new TextAsset[discoveredCount];
+            for (int i = 0; i < discoveredCount; i++)
+                trimmed[i] = discovered[i];
+
+            languageFiles = trimmed;
+            EditorUtility.SetDirty(this);
+        }
+
+        private static bool HasSameLanguageFiles(TextAsset[] existing, TextAsset[] candidate, int candidateCount)
+        {
+            if (existing == null)
+                return candidateCount == 0;
+
+            if (existing.Length != candidateCount)
+                return false;
+
+            for (int i = 0; i < candidateCount; i++)
+            {
+                if (existing[i] != candidate[i])
+                    return false;
+            }
+
+            return true;
+        }
+#endif
+
+        private bool TryGetFromTable(GameLanguage language, string key, out string value)
+        {
+            if (_tables.TryGetValue(language, out Dictionary<string, string> table) &&
+                table != null &&
+                table.TryGetValue(key, out value))
+            {
+                return true;
+            }
+
+            value = string.Empty;
+            return false;
         }
     }
 }

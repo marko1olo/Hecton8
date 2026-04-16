@@ -1,3 +1,4 @@
+using Hecton.Localization;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -47,7 +48,9 @@ namespace Hecton8.Gameplay
         public void Configure(string beaconId, string label, GameObject sourcePrefab, Color color, float range)
         {
             BeaconId = string.IsNullOrWhiteSpace(beaconId) ? System.Guid.NewGuid().ToString("N") : beaconId;
-            Label = string.IsNullOrWhiteSpace(label) ? "BEACON" : CachedToUpperInvariant(label.Trim());
+            Label = string.IsNullOrWhiteSpace(label)
+                ? ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON")
+                : CachedToUpperInvariant(label.Trim());
             BeaconColor = color;
             LightRange = Mathf.Max(0.5f, range);
             _sourcePrefab = sourcePrefab;
@@ -120,9 +123,19 @@ namespace Hecton8.Gameplay
             return s_fallbackBeaconMaterial;
         }
 
+
+
         // ══════════════════════════════════════════════════════════
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
+        }
 
         private static readonly string[] _cachedUpperStrings = new string[16];
 

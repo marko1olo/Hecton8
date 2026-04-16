@@ -1,6 +1,7 @@
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Input;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -8,6 +9,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class StunPistolTool : PlayerTool
     {
+        public const string StunCategory = "STUN";
         private readonly struct StunAssessment
         {
             public readonly string Headline;
@@ -25,7 +27,11 @@ namespace Hecton8.Gameplay
 
             public string BuildHudMessage()
             {
-                return $"{Headline} | {Summary} | {Recommendation}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.STUN_HUD_ASSESSMENT, "{0} | {1} | {2}"),
+                    Headline,
+                    Summary,
+                    Recommendation);
             }
         }
 
@@ -84,9 +90,12 @@ namespace Hecton8.Gameplay
                     {
                         PublishAssessment(assessment);
                         FieldOperationLogSystem.RecordOperation(
-                            "STUN",
+                            ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                             assessment.Headline,
-                            $"{assessment.Summary} | {assessment.Recommendation}",
+                            string.Format(
+                                ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
+                                assessment.Summary,
+                                assessment.Recommendation),
                             assessment.Severity);
                         _nextFeedbackAt = Time.time + feedbackInterval;
                     }
@@ -97,18 +106,23 @@ namespace Hecton8.Gameplay
                     {
                         PublishAssessment(descriptorAssessment);
                         FieldOperationLogSystem.RecordOperation(
-                            "STUN",
+                            ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                             descriptorAssessment.Headline,
-                            $"{descriptorAssessment.Summary} | {descriptorAssessment.Recommendation}",
+                            string.Format(
+                                ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
+                                descriptorAssessment.Summary,
+                                descriptorAssessment.Recommendation),
                             descriptorAssessment.Severity);
                     }
                     else
                     {
-                        ToolHitUtility.ShowWarning("STUN PISTOL - NO BIOFORM CIRCUIT");
+                        ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_BIOFORM_CIRCUIT, "STUN PISTOL - NO BIOFORM CIRCUIT"));
                         FieldOperationLogSystem.RecordOperation(
-                            "STUN",
-                            "STUN SHOT HIT NON-BIOFORM TARGET",
-                            $"{hit.collider.gameObject.name} absorbed a stun shot without a compatible AI circuit.",
+                            ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                            ResolveLocalized(LocalizationKeys.STUN_LOG_NON_BIOFORM_TITLE, "STUN SHOT HIT NON-BIOFORM TARGET"),
+                            string.Format(
+                                ResolveLocalized(LocalizationKeys.STUN_LOG_NON_BIOFORM_MESSAGE, "{0} absorbed a stun shot without a compatible AI circuit."),
+                                hit.collider.gameObject.name),
                             "WARN");
                     }
                     _nextFeedbackAt = Time.time + feedbackInterval;
@@ -116,11 +130,11 @@ namespace Hecton8.Gameplay
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning("STUN PISTOL - NO TARGET LOCK");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
                 FieldOperationLogSystem.RecordOperation(
-                    "STUN",
-                    "STUN SHOT RETURNED CLEAR",
-                    "No valid target was present in the stun pistol engagement cone.",
+                    ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                    ResolveLocalized(LocalizationKeys.STUN_LOG_CLEAR_TITLE, "STUN SHOT RETURNED CLEAR"),
+                    ResolveLocalized(LocalizationKeys.STUN_LOG_CLEAR_MESSAGE, "No valid target was present in the stun pistol engagement cone."),
                     "WARN");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -141,23 +155,27 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_cooldown > 0f)
-                return $"STUN PISTOL // RECHARGING {_cooldown:0.0}S";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_RECHARGING, "STUN PISTOL // RECHARGING {0:0.0}S"),
+                    _cooldown);
 
             if (TryGetAssessmentCached(out StunAssessment assessment))
-                return $"STUN PISTOL // {assessment.Headline}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_ASSESSMENT, "STUN PISTOL // {0}"),
+                    assessment.Headline);
 
-            return "STUN PISTOL // READY";
+            return ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_READY, "STUN PISTOL // READY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_cooldown > 0f)
-                return "Capacitors are recharging for the next disruption shot.";
+                return ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_RECHARGING, "Capacitors are recharging for the next disruption shot.");
 
             if (TryGetAssessmentCached(out StunAssessment assessment))
                 return assessment.Recommendation;
 
-            return "Primary disrupts. Secondary checks whether the target is worth stunning.";
+            return ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_READY, "Primary disrupts. Secondary checks whether the target is worth stunning.");
         }
 
         public override void UseSecondary(float deltaTime)
@@ -186,15 +204,18 @@ namespace Hecton8.Gameplay
                 {
                     PublishAssessment(descriptorAssessment);
                     FieldOperationLogSystem.RecordOperation(
-                        "STUN",
+                        ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                         descriptorAssessment.Headline,
-                        $"{descriptorAssessment.Summary} | {descriptorAssessment.Recommendation}",
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
+                            descriptorAssessment.Summary,
+                            descriptorAssessment.Recommendation),
                         descriptorAssessment.Severity);
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 else
                 {
-                    WarnSecondary("STUN PISTOL - TARGET HAS NO BIO CIRCUIT");
+                    WarnSecondary(ResolveLocalized(LocalizationKeys.STUN_HUD_TARGET_NO_BIO_CIRCUIT, "STUN PISTOL - TARGET HAS NO BIO CIRCUIT"));
                 }
                 InvalidateAssessmentCache();
                 return;
@@ -204,9 +225,12 @@ namespace Hecton8.Gameplay
             StunAssessment assessment = BuildAssessment(ai, stunState);
             PublishAssessment(assessment);
             FieldOperationLogSystem.RecordOperation(
-                "STUN",
+                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                 assessment.Headline,
-                $"{assessment.Summary} | {assessment.Recommendation}",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
+                    assessment.Summary,
+                    assessment.Recommendation),
                 assessment.Severity);
 
             _nextFeedbackAt = Time.time + feedbackInterval;
@@ -220,9 +244,9 @@ namespace Hecton8.Gameplay
 
             ToolHitUtility.ShowWarning(message);
             FieldOperationLogSystem.RecordOperation(
-                "STUN",
+                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                 message,
-                "Secondary target check could not confirm a valid disruption candidate.",
+                ResolveLocalized(LocalizationKeys.STUN_LOG_SECONDARY_FAILED, "Secondary target check could not confirm a valid disruption candidate."),
                 "WARN");
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -246,9 +270,9 @@ namespace Hecton8.Gameplay
                     return true;
 
                 assessment = new StunAssessment(
-                    "TARGET HAS NO BIO CIRCUIT",
-                    "The current contact does not expose a valid disruption target.",
-                    "Switch tools or reacquire a bioform.",
+                    ResolveLocalized(LocalizationKeys.STUN_HEADLINE_NO_BIO_CIRCUIT, "TARGET HAS NO BIO CIRCUIT"),
+                    ResolveLocalized(LocalizationKeys.STUN_SUMMARY_NO_BIO_CIRCUIT, "The current contact does not expose a valid disruption target."),
+                    ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_NO_BIO_CIRCUIT, "Switch tools or reacquire a bioform."),
                     "WARN");
                 return true;
             }
@@ -306,45 +330,55 @@ namespace Hecton8.Gameplay
             if (ai == null)
             {
                 return new StunAssessment(
-                    "STUN PISTOL - NO BIOFORM",
-                    "No compatible bioform circuit was detected.",
-                    "Sweep a valid creature target.",
+                    ResolveLocalized(LocalizationKeys.STUN_HEADLINE_NO_BIOFORM, "STUN PISTOL - NO BIOFORM"),
+                    ResolveLocalized(LocalizationKeys.STUN_SUMMARY_NO_BIOFORM, "No compatible bioform circuit was detected."),
+                    ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_NO_BIOFORM, "Sweep a valid creature target."),
                     "WARN");
             }
 
             if (stunState != null && stunState.IsArmed)
             {
                 return new StunAssessment(
-                    $"STUN PISTOL - TARGET DISRUPTED {stunState.RemainingTime:0.0}S",
-                    $"{ai.gameObject.name} is already offline and unable to act.",
-                    "Reposition, retreat, or finish another target.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TARGET_DISRUPTED, "STUN PISTOL - TARGET DISRUPTED {0:0.0}S"),
+                        stunState.RemainingTime),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TARGET_DISRUPTED, "{0} is already offline and unable to act."),
+                        ai.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TARGET_DISRUPTED, "Reposition, retreat, or finish another target."),
                     "INFO");
             }
 
             if (ai.IsDead || ai.CurrentHealth <= 0.01f)
             {
                 return new StunAssessment(
-                    "STUN PISTOL - TARGET DOWN",
-                    $"{ai.gameObject.name} no longer presents an active threat.",
-                    "Recover samples or move on.",
+                    ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TARGET_DOWN, "STUN PISTOL - TARGET DOWN"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TARGET_DOWN, "{0} no longer presents an active threat."),
+                        ai.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TARGET_DOWN, "Recover samples or move on."),
                     "INFO");
             }
 
             if (ai.IsSleeping)
             {
                 return new StunAssessment(
-                    "STUN PISTOL - DORMANT CONTACT",
-                    $"{ai.gameObject.name} is dormant and can be disrupted before wake-up.",
-                    "Take the shot now or bypass quietly.",
+                    ResolveLocalized(LocalizationKeys.STUN_HEADLINE_DORMANT_CONTACT, "STUN PISTOL - DORMANT CONTACT"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.STUN_SUMMARY_DORMANT_CONTACT, "{0} is dormant and can be disrupted before wake-up."),
+                        ai.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_DORMANT_CONTACT, "Take the shot now or bypass quietly."),
                     "INFO");
             }
 
             if (ai.HealthNormalized <= 0.25f)
             {
                 return new StunAssessment(
-                    "STUN PISTOL - FRACTURED TARGET",
-                    $"{ai.gameObject.name} is heavily weakened and close to collapse.",
-                    "Disrupt, then finish or disengage safely.",
+                    ResolveLocalized(LocalizationKeys.STUN_HEADLINE_FRACTURED_TARGET, "STUN PISTOL - FRACTURED TARGET"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.STUN_SUMMARY_FRACTURED_TARGET, "{0} is heavily weakened and close to collapse."),
+                        ai.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_FRACTURED_TARGET, "Disrupt, then finish or disengage safely."),
                     "WARN");
             }
 
@@ -352,16 +386,20 @@ namespace Hecton8.Gameplay
             {
                 case HectonBaseAI.AIState.Aggressive:
                     return new StunAssessment(
-                        "STUN PISTOL - AGGRESSIVE THREAT",
-                        $"{ai.gameObject.name} is actively attacking and should be disrupted immediately.",
-                        "Fire now, then create distance.",
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_AGGRESSIVE_THREAT, "STUN PISTOL - AGGRESSIVE THREAT"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_SUMMARY_AGGRESSIVE_THREAT, "{0} is actively attacking and should be disrupted immediately."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_AGGRESSIVE_THREAT, "Fire now, then create distance."),
                         "CRITICAL");
 
                 case HectonBaseAI.AIState.Threaten:
                     return new StunAssessment(
-                        "STUN PISTOL - TERRITORIAL WARNING",
-                        $"{ai.gameObject.name} is pressuring you and may escalate if you keep pushing forward.",
-                        "A disruption shot can break the warning spiral before it becomes a direct attack.",
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TERRITORIAL_WARNING, "STUN PISTOL - TERRITORIAL WARNING"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TERRITORIAL_WARNING, "{0} is pressuring you and may escalate if you keep pushing forward."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TERRITORIAL_WARNING, "A disruption shot can break the warning spiral before it becomes a direct attack."),
                         "WARN");
 
                 case HectonBaseAI.AIState.Stalk:
@@ -369,17 +407,25 @@ namespace Hecton8.Gameplay
                     bool packHunt = ai.UsesPackHuntBehavior;
                     bool feintCapable = ai.UsesFeintRushBehavior;
                     return new StunAssessment(
-                        packHunt ? "STUN PISTOL - PACK HUNT TRACKING" : "STUN PISTOL - PREDATOR TRACKING",
                         packHunt
-                            ? $"{ai.gameObject.name} is tracking your movement as part of a hunting group."
-                            : (feintCapable
-                                ? $"{ai.gameObject.name} is tracking your movement and can fake a charge before the real commit."
-                                : $"{ai.gameObject.name} is tracking your movement and building toward a commit."),
+                            ? ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PACK_HUNT, "STUN PISTOL - PACK HUNT TRACKING")
+                            : ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PREDATOR_TRACKING, "STUN PISTOL - PREDATOR TRACKING"),
                         packHunt
-                            ? "Disrupt now and break the group before the flank closes."
+                            ? string.Format(
+                                ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PACK_HUNT, "{0} is tracking your movement as part of a hunting group."),
+                                ai.gameObject.name)
                             : (feintCapable
-                                ? "Disrupt only if the fake charge becomes a real entry. Do not waste the shot too early."
-                                : "Disrupt now if you want to deny the opening rush."),
+                                ? string.Format(
+                                    ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PREDATOR_FEINT, "{0} is tracking your movement and can fake a charge before the real commit."),
+                                    ai.gameObject.name)
+                                : string.Format(
+                                    ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PREDATOR_TRACKING, "{0} is tracking your movement and building toward a commit."),
+                                    ai.gameObject.name)),
+                        packHunt
+                            ? ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PACK_HUNT, "Disrupt now and break the group before the flank closes.")
+                            : (feintCapable
+                                ? ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PREDATOR_FEINT, "Disrupt only if the fake charge becomes a real entry. Do not waste the shot too early.")
+                                : ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PREDATOR_TRACKING, "Disrupt now if you want to deny the opening rush.")),
                         "WARN");
                 }
 
@@ -389,49 +435,63 @@ namespace Hecton8.Gameplay
                     bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
                     return new StunAssessment(
                         ambushLeviathan
-                            ? "STUN PISTOL - LEVIATHAN AMBUSH"
+                            ? ResolveLocalized(LocalizationKeys.STUN_HEADLINE_LEVIATHAN_AMBUSH, "STUN PISTOL - LEVIATHAN AMBUSH")
                             : (sentinelLeviathan
-                                ? "STUN PISTOL - LEVIATHAN SENTINEL"
-                                : "STUN PISTOL - LEVIATHAN PRESSURE"),
+                                ? ResolveLocalized(LocalizationKeys.STUN_HEADLINE_LEVIATHAN_SENTINEL, "STUN PISTOL - LEVIATHAN SENTINEL")
+                                : ResolveLocalized(LocalizationKeys.STUN_HEADLINE_LEVIATHAN_PRESSURE, "STUN PISTOL - LEVIATHAN PRESSURE")),
                         ambushLeviathan
-                            ? $"{ai.gameObject.name} is coiling for a burst attack with very little warning."
+                            ? string.Format(
+                                ResolveLocalized(LocalizationKeys.STUN_SUMMARY_LEVIATHAN_AMBUSH, "{0} is coiling for a burst attack with very little warning."),
+                                ai.gameObject.name)
                             : (sentinelLeviathan
-                                ? $"{ai.gameObject.name} is holding a guarded route and may force you off the line."
-                                : $"{ai.gameObject.name} is holding a heavy pressure circle and may crash into direct contact if you close distance."),
+                                ? string.Format(
+                                    ResolveLocalized(LocalizationKeys.STUN_SUMMARY_LEVIATHAN_SENTINEL, "{0} is holding a guarded route and may force you off the line."),
+                                    ai.gameObject.name)
+                                : string.Format(
+                                    ResolveLocalized(LocalizationKeys.STUN_SUMMARY_LEVIATHAN_PRESSURE, "{0} is holding a heavy pressure circle and may crash into direct contact if you close distance."),
+                                    ai.gameObject.name)),
                         ambushLeviathan
-                            ? "Disrupt only to break the burst window, then move immediately."
+                            ? ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_LEVIATHAN_AMBUSH, "Disrupt only to break the burst window, then move immediately.")
                             : (sentinelLeviathan
-                                ? "Use disruption only if you are forcing passage through the guarded corridor."
-                                : "Disrupt only if you need a break window, then disengage hard."),
+                                ? ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_LEVIATHAN_SENTINEL, "Use disruption only if you are forcing passage through the guarded corridor.")
+                                : ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_LEVIATHAN_PRESSURE, "Disrupt only if you need a break window, then disengage hard.")),
                         "CRITICAL");
                 }
 
                 case HectonBaseAI.AIState.Feint:
                     return new StunAssessment(
-                        "STUN PISTOL - FALSE CHARGE",
-                        $"{ai.gameObject.name} is in a false-charge pass and may peel away or crash into a real hit if you hold the line.",
-                        "Hold the shot until the pass tightens or the return swing begins.",
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_FALSE_CHARGE, "STUN PISTOL - FALSE CHARGE"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_SUMMARY_FALSE_CHARGE, "{0} is in a false-charge pass and may peel away or crash into a real hit if you hold the line."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_FALSE_CHARGE, "Hold the shot until the pass tightens or the return swing begins."),
                         "CRITICAL");
 
                 case HectonBaseAI.AIState.Escape:
                     return new StunAssessment(
-                        "STUN PISTOL - PANIC RESPONSE",
-                        $"{ai.gameObject.name} is fleeing and can be stopped for recovery or control.",
-                        "Disrupt if pursuit matters, otherwise hold fire.",
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PANIC_RESPONSE, "STUN PISTOL - PANIC RESPONSE"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PANIC_RESPONSE, "{0} is fleeing and can be stopped for recovery or control."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PANIC_RESPONSE, "Disrupt if pursuit matters, otherwise hold fire."),
                         "INFO");
 
                 case HectonBaseAI.AIState.Wander:
                     return new StunAssessment(
-                        "STUN PISTOL - PATROL CONTACT",
-                        $"{ai.gameObject.name} is mobile but not yet committed to attack.",
-                        "Open with disruption before it closes distance.",
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PATROL_CONTACT, "STUN PISTOL - PATROL CONTACT"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PATROL_CONTACT, "{0} is mobile but not yet committed to attack."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PATROL_CONTACT, "Open with disruption before it closes distance."),
                         "INFO");
 
                 default:
                     return new StunAssessment(
-                        "STUN PISTOL - TARGET VULNERABLE",
-                        $"{ai.gameObject.name} is stable and susceptible to a disruption shot.",
-                        "Take a clean shot when ready.",
+                        ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TARGET_VULNERABLE, "STUN PISTOL - TARGET VULNERABLE"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TARGET_VULNERABLE, "{0} is stable and susceptible to a disruption shot."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TARGET_VULNERABLE, "Take a clean shot when ready."),
                         "INFO");
             }
         }
@@ -459,6 +519,13 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowWarning(assessment.BuildHudMessage());
             else
                 ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
+        }
+
+        public static string ResolveLocalized(string key, string fallback)
+        {
+            return LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 
@@ -518,9 +585,11 @@ namespace Hecton8.Gameplay
         private void LogRecovery()
         {
             FieldOperationLogSystem.RecordOperation(
-                "STUN",
-                "BIOFORM RECOVERED",
-                $"{_target.gameObject.name} recovered from disruption and resumed activity.",
+                StunPistolTool.ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunPistolTool.StunCategory),
+                StunPistolTool.ResolveLocalized(LocalizationKeys.STUN_LOG_RECOVERED_TITLE, "BIOFORM RECOVERED"),
+                string.Format(
+                    StunPistolTool.ResolveLocalized(LocalizationKeys.STUN_LOG_RECOVERED_MESSAGE, "{0} recovered from disruption and resumed activity."),
+                    _target.gameObject.name),
                 "INFO");
         }
 

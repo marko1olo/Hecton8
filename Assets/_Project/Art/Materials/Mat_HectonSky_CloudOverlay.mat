@@ -126,6 +126,13 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
+    - _CelestialHaloFade: 0.55
+    - _CelestialStarFade: 0.85
+    - _CelestialSunFade: 0.65
+    - _CelestialTransmittanceScrollSpeed: 0.001
+    - _CelestialTransmittanceSoftness: 0.24
+    - _CelestialTransmittanceStrength: 0.4
+    - _CelestialTransmittanceThreshold: 0.52
     - _CirrusOpacity: 1
     - _CirrusParallaxStrength: 0.5
     - _CirrusSpeedMult: 0.008
@@ -177,11 +184,11 @@ Material:
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
-    - _SunEdgeSoftness: 0.001
+    - _SunEdgeSoftness: 0.00215
     - _SunElevation: 0.58930904
-    - _SunScatterIntensity: 0.7
-    - _SunScatterPower: 12.3
-    - _SunSize: 0.002
+    - _SunScatterIntensity: 0.72
+    - _SunScatterPower: 8.2
+    - _SunSize: 0.00155
     - _Surface: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
@@ -190,6 +197,7 @@ Material:
     - _AegirHaloColor: {r: 0.52, g: 0.6, b: 0.78, a: 1}
     - _BacklitColor: {r: 0.39999998, g: 0.90006435, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
     - _CirrusColor: {r: 0.82, g: 0.84, b: 0.9, a: 1}
     - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _CloudColorLit: {r: 0.78, g: 0.82, b: 0.88, a: 1}
@@ -208,8 +216,8 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
-    - _SunDiscColor: {r: 18, g: 16.8, b: 11.8, a: 1}
-    - _SunScatterColor: {r: 0.9, g: 0.68, b: 0.3, a: 1}
+    - _SunDiscColor: {r: 7.9, g: 7.1, b: 4.9, a: 1}
+    - _SunScatterColor: {r: 1, g: 0.78, b: 0.34, a: 1}
     - _SunsetCloudColor: {r: 1.18, g: 0.54, b: 0.24, a: 1}
     - _SunsetHorizonColor: {r: 1.72, g: 0.7, b: 0.2, a: 1}
     - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}

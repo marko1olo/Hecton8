@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55d3d09f36858744a91172b3095bbc93, type: 3}
+  m_Name: SwimPresentation_Heavy_Industrial
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SwimPresentationProfile
+  strokeStyle: 2
+  baseLocalPosition: {x: 0, y: -0.24, z: 0.36}
+  baseLocalEuler: {x: 4, y: 0, z: 0}
+  leftGuideBaseLocalPosition: {x: -0.162, y: -0.082, z: 0.005}
+  leftGuideBaseLocalEuler: {x: 12, y: -18, z: -9}
+  rightGuideBaseLocalPosition: {x: 0.162, y: -0.082, z: 0.005}
+  rightGuideBaseLocalEuler: {x: 12, y: 18, z: 9}
+  surfaceTreadCadence: 0.42
+  surfaceStrokeCadence: 0.74
+  underwaterStrokeCadence: 0.68
+  sprintCadenceMultiplier: 1.18
+  speedCadenceInfluence: 0.22
+  strokeSurgeAmplitude: 0.043
+  strokeVerticalAmplitude: 0.022
+  strokeRollAmplitude: 1.6
+  strokePitchAmplitude: 1.3
+  glideBias: 0.28
+  handReachDistance: 0.075
+  handPullDistance: 0.11
+  handOutwardDistance: 0.028
+  handDownwardDistance: 0.026
+  handRecoveryLift: 0.016
+  handYawAmplitude: 10
+  handRollAmplitude: 12
+  handPitchAmplitude: 14
+  sprintHandTuckDistance: 0.04
+  surfaceHandSync: 0.88
+  idleDriftAmplitude: 0.009
+  idleDriftFrequency: 0.19
+  turnLagYaw: 11
+  turnLagRoll: 8.5
+  turnLagResponse: 7
+  accelerationKickAmplitude: 0.01
+  inertialSinkAmplitude: 0.025
+  surfaceStrokeStartSpeed: 0.72
+  underwaterStrokeStartSpeed: 0.62
+  underwaterSprintStartSpeed: 4.2

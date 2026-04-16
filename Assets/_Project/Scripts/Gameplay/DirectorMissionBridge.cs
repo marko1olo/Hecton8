@@ -30,6 +30,10 @@ namespace Hecton8.Gameplay
         [Tooltip("ID discovery для rare discovery события.")]
         [SerializeField] private string rareDiscoveryId = "director_rare_discovery";
 
+        [Header("── Early-Game Gate ─────────────────────────")]
+        [Tooltip("Do not let director-side missions compete with the early onboarding spine before this milestone is reached.")]
+        [SerializeField] private FirstHourMilestone minimumMilestone = FirstHourMilestone.FirstCraft;
+
         private int _lastMissionIndex;
 
         private void OnEnable()
@@ -46,6 +50,9 @@ namespace Hecton8.Gameplay
 
         private void HandleMissionTrigger(Vector3 position)
         {
+            if (!CanServeDirectorContent())
+                return;
+
             if (directorMissionIds == null || directorMissionIds.Length == 0)
                 return;
 
@@ -74,8 +81,20 @@ namespace Hecton8.Gameplay
 
         private void HandleRareDiscovery(Vector3 position)
         {
+            if (!CanServeDirectorContent())
+                return;
+
             if (!string.IsNullOrEmpty(rareDiscoveryId))
                 NarrativeEvents.RaiseDiscoveryMade(rareDiscoveryId);
+        }
+
+        private bool CanServeDirectorContent()
+        {
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector == null)
+                return true;
+
+            return firstHourDirector.IsMilestoneComplete(minimumMilestone);
         }
     }
 }

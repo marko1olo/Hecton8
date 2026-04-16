@@ -1,10 +1,9 @@
 // ============================================================================
 // HECTON-8 - SaveStation.cs
 // Мирный терминал сохранения с defensive-поведением и интеграцией в HUD.
-//
-// ВЕРСИЯ: production pass с валидацией слота и уведомлениями игрока
 // ============================================================================
 
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -19,13 +18,10 @@ namespace Hecton8.Interaction
     [RequireComponent(typeof(Collider))]
     public sealed class SaveStation : MonoBehaviour, IInteractable
     {
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR - SETTINGS
-        // ══════════════════════════════════════════════════════════
-
         [Header("── Settings ──────────────────────────────")]
         [Tooltip("Отображаемое имя терминала в подсказке взаимодействия.")]
         [SerializeField] private string _stationName = "Save Station";
+        [SerializeField] private LocalizedTextReference _localizedStationName;
 
         [Tooltip("Имя save-слота, в который терминал будет сохранять игру.")]
         [SerializeField] private string _saveSlot = "slot_0";
@@ -37,24 +33,23 @@ namespace Hecton8.Interaction
         [Tooltip("Звук активации терминала.")]
         [SerializeField] private AudioClip _interactionSound;
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
-
         private string _cachedInteractText;
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
             RefreshCachedInteractText();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  IInteractable
-        // ══════════════════════════════════════════════════════════
+        private void OnEnable()
+        {
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            RefreshCachedInteractText();
+        }
+
+        private void OnDisable()
+        {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+        }
 
         /// <inheritdoc />
         public void OnHoverStart()
@@ -73,7 +68,7 @@ namespace Hecton8.Interaction
             if (saveManager == null)
             {
                 ResolveHudNotification();
-                _hudNotification?.ShowWarning("SAVE SYSTEM OFFLINE");
+                _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE"));
                 Debug.LogError("[SaveStation] SaveManager instance not found.", this);
                 return;
             }
@@ -81,7 +76,7 @@ namespace Hecton8.Interaction
             if (string.IsNullOrWhiteSpace(_saveSlot))
             {
                 ResolveHudNotification();
-                _hudNotification?.ShowWarning("SAVE SLOT NOT CONFIGURED");
+                _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED"));
                 Debug.LogWarning("[SaveStation] Save slot is not configured.", this);
                 return;
             }
@@ -89,7 +84,7 @@ namespace Hecton8.Interaction
             if (saveManager.IsBusy)
             {
                 ResolveHudNotification();
-                _hudNotification?.ShowInfo("SAVE ALREADY IN PROGRESS");
+                _hudNotification?.ShowInfo(ResolveLocalized(LocalizationKeys.SAVE_STATION_BUSY, "SAVE ALREADY IN PROGRESS"));
                 Debug.LogWarning($"[SaveStation] Save skipped for '{_saveSlot}' because another save/load is already running.", this);
                 return;
             }
@@ -97,7 +92,7 @@ namespace Hecton8.Interaction
             PlayInteractionSound();
 
             ResolveHudNotification();
-            _hudNotification?.ShowInfo("SAVE REQUESTED");
+            _hudNotification?.ShowInfo(ResolveLocalized(LocalizationKeys.SAVE_STATION_REQUESTED, "SAVE REQUESTED"));
 
             _ = saveManager.SaveGameAsync(_saveSlot);
             InteractionEvents.RaiseInteractionStarted(this, interactor);
@@ -108,10 +103,6 @@ namespace Hecton8.Interaction
         {
             return _cachedInteractText;
         }
-
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE METHODS
-        // ══════════════════════════════════════════════════════════
 
         private void PlayInteractionSound()
         {
@@ -133,15 +124,28 @@ namespace Hecton8.Interaction
 
         private void RefreshCachedInteractText()
         {
-            if (string.IsNullOrWhiteSpace(_stationName))
-                _stationName = "Save Station";
-
-            _cachedInteractText = $"Save Game ({_stationName})";
+            string stationName = _localizedStationName.ResolveOrFallback(FallbackOrDefault(_stationName, "Save Station"));
+            string actionLabel = ResolveLocalized(LocalizationKeys.INTERACT_SAVE_GAME, "Save Game");
+            _cachedInteractText = actionLabel + " (" + stationName + ")";
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  EDITOR
-        // ══════════════════════════════════════════════════════════
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RefreshCachedInteractText();
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
+        }
+
+        private static string FallbackOrDefault(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()

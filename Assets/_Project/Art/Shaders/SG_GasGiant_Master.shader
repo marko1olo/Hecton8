@@ -832,7 +832,20 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                                  + stormEmission
                                  + emissionMapContrib;    // ═══ NEW ═══
 
+                half3 preVeilColor = finalColor;
+                half midDiscMask = saturate((1.0h - limbWeld) * (1.0h - horizonBand * 0.85h));
+                half upperHazeSuppression = 1.0h - saturate(upperHazeField * 1.15h);
+                half mediumHazeSuppression = 1.0h - saturate(mediumHazeField * 0.65h);
+                half beltRecoveryMask = saturate(
+                    distanceVeil
+                    * midDiscMask
+                    * upperHazeSuppression
+                    * mediumHazeSuppression
+                    * (1.0h - _NightBlend * 0.55h)
+                    * 0.42h);
+
                 finalColor = lerp(finalColor, distanceVeilColor, distanceVeil);
+                finalColor = lerp(finalColor, preVeilColor, beltRecoveryMask);
                 finalColor *= lerp(1.0h,
                                    1.0h - _DistanceAirMassDarken,
                                    broadAirMass);

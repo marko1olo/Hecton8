@@ -789,7 +789,10 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
     private void ResolveSuitVariant()
     {
         SuitData suit = playerMovement != null ? playerMovement.CurrentSuit : null;
-        SuitHUDProfile profile = suit != null && suit.HudProfile != null ? suit.HudProfile : defaultHudProfile;
+        SuitHUDProfile overrideProfile = PlayerExpressionManager.ActiveHudProfileOverride;
+        SuitHUDProfile profile = overrideProfile != null
+            ? overrideProfile
+            : (suit != null && suit.HudProfile != null ? suit.HudProfile : defaultHudProfile);
         if (ReferenceEquals(_activeSuit, suit) && ReferenceEquals(_activeHudProfile, profile))
             return;
 
@@ -802,9 +805,12 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         if (profile != null)
         {
             _telemetryFlags = profile.VisibleTelemetry;
-            _suitLabel = string.IsNullOrWhiteSpace(profile.DisplayNameOverride)
-                ? SanitizeSuitName(suit != null ? suit.name : "STANDARD")
-                : profile.DisplayNameOverride.ToUpperInvariant();
+            string runtimeLabelOverride = PlayerExpressionManager.ActiveSuitLabelOverride;
+            _suitLabel = !string.IsNullOrWhiteSpace(runtimeLabelOverride)
+                ? runtimeLabelOverride.ToUpperInvariant()
+                : (string.IsNullOrWhiteSpace(profile.DisplayNameOverride)
+                    ? SanitizeSuitName(suit != null ? suit.name : "STANDARD")
+                    : profile.DisplayNameOverride.ToUpperInvariant());
             ApplyProfilePalette(profile);
             return;
         }

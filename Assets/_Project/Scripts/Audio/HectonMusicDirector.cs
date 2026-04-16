@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Environment;
+using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
 using Hecton8.World;
 using UnityEngine;
@@ -229,6 +230,8 @@ namespace Hecton8.Audio
         private int _forceCalmSelectionsRemaining;
         private bool _selectionUsedCrossTension;
         private bool _selectionUsedDepthBlend;
+        private bool _lastAcousticInteriorState;
+        private bool _hasLastAcousticInteriorState;
 
         /// <summary>
         /// Global access to the music director.
@@ -335,22 +338,13 @@ namespace Hecton8.Audio
             BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             AcousticZoneController.OnAcousticZoneChanged -= HandleAcousticZoneChanged;
-
-            if (_registeredTick && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ITickable)this);
-                _registeredTick = false;
-            }
-
-            if (_registeredSlowTick && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredSlowTick = false;
-            }
+            TryUnregisterTickHandlers();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterTickHandlers();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -577,16 +571,41 @@ namespace Hecton8.Audio
 
         private void TryRegisterTickHandlers()
         {
-            if (!_registeredTick && GameTickManager.Instance != null)
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            if (!_registeredTick)
             {
-                GameTickManager.Instance.Register((ITickable)this);
+                tickManager.Register((ITickable)this);
                 _registeredTick = true;
             }
 
-            if (!_registeredSlowTick && GameTickManager.Instance != null)
+            if (!_registeredSlowTick)
             {
-                GameTickManager.Instance.Register((ISlowTickable)this);
+                tickManager.Register((ISlowTickable)this);
                 _registeredSlowTick = true;
+            }
+        }
+
+        private void TryUnregisterTickHandlers()
+        {
+            GameTickManager tickManager = GameTickManager.Instance;
+
+            if (_registeredTick)
+            {
+                if (tickManager != null)
+                    tickManager.Unregister((ITickable)this);
+
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                if (tickManager != null)
+                    tickManager.Unregister((ISlowTickable)this);
+
+                _registeredSlowTick = false;
             }
         }
 
@@ -1724,6 +1743,11 @@ namespace Hecton8.Audio
 
         private void HandleAcousticZoneChanged(bool isInterior)
         {
+            if (_hasLastAcousticInteriorState && _lastAcousticInteriorState == isInterior)
+                return;
+
+            _lastAcousticInteriorState = isInterior;
+            _hasLastAcousticInteriorState = true;
             ReevaluateContext(true);
         }
 
@@ -1739,6 +1763,13 @@ namespace Hecton8.Audio
 
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector != null &&
+                !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+            {
+                return;
+            }
+
             PlayDiscoveryStinger();
         }
 

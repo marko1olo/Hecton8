@@ -241,7 +241,7 @@ namespace Hecton8.Core
         public static void LogCurrent()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[GameStartContextHolder] {Current}");
+            Hecton8.Dev.RuntimeDiagnosticsTrace.WriteEvent("game-start", Current.ToString());
 #endif
         }
 

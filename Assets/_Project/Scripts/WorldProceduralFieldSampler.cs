@@ -1645,6 +1645,49 @@ namespace Hecton8.World
             return handle;
         }
 
+        internal bool TryPrewarmSamplingJob()
+        {
+            PrepareBurstData();
+
+            // COLD SYNC JOB: prewarm Burst compilation and worker setup before player activation so the first runtime scatter pass does not absorb one-time compilation debt.
+            NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+
+            try
+            {
+                BeginScatterSamplingFrame();
+                warmupInputs[0] = new CellInputData
+                {
+                    Position = new float3(0f, 0f, 0f),
+                    CenterHeight = 0f,
+                    NorthHeight = 0f,
+                    SouthHeight = 0f,
+                    EastHeight = 0f,
+                    WestHeight = 0f,
+                    WaterSurface = 64f,
+                    BiomeIndex = 0,
+                    CellX = 0,
+                    CellZ = 0,
+                    SeafloorSource = (int)SeafloorSource.FallbackSynthetic,
+                    IsValid = 1
+                };
+
+                JobHandle warmupHandle = ScheduleCellSamplingJob(warmupInputs, warmupOutputs, 1);
+                warmupHandle.Complete();
+                _lastSamplingJobHandle = default;
+                _hasPendingSamplingJob = false;
+                return true;
+            }
+            finally
+            {
+                EndScatterSamplingFrame();
+                if (warmupInputs.IsCreated)
+                    warmupInputs.Dispose();
+                if (warmupOutputs.IsCreated)
+                    warmupOutputs.Dispose();
+            }
+        }
+
         public bool TryBuildFieldSample(in CellOutputData output, out FieldSample sample)
         {
             return TryBuildFieldSample(output, 0, out sample);

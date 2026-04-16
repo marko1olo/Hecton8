@@ -72,37 +72,52 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ResolveReferences();
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
+            TryRegister();
         }
 
         private void Start()
         {
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
+            TryRegister();
 
             RebuildIntegrationPlans();
         }
 
         private void OnDisable()
         {
-            if (_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredToTickManager = false;
-            }
+            TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregister();
+
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        private void TryRegister()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register((ISlowTickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister((ISlowTickable)this);
+
+            _registeredToTickManager = false;
         }
 
         public void SlowTick()

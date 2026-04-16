@@ -88,6 +88,8 @@ namespace Hecton8.AtlasSignal
     [DefaultExecutionOrder(-80)]
     public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable
     {
+        private const int MinimumRevealStageForDirectiveContact = 2;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -170,11 +172,7 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
@@ -188,11 +186,7 @@ namespace Hecton8.AtlasSignal
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
@@ -200,6 +194,14 @@ namespace Hecton8.AtlasSignal
             NarrativeEvents.OnDiscoveryMade    -= HandleDiscovery;
             Atlas6Events.OnBarterAccepted      -= HandleBarterAccepted;
             AtlasSignalEvents.OnSignalDetected -= HandleSignalDetected;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -216,6 +218,7 @@ namespace Hecton8.AtlasSignal
 
             AtlasSignalSystem signal = AtlasSignalSystem.Instance;
             if (signal == null) return;
+            if (!signal.IsDetected) return;
 
             float distToCore = Vector3.Distance(_playerTransform.position, signal.AtlasCorePosition);
 
@@ -238,6 +241,31 @@ namespace Hecton8.AtlasSignal
 
                 LogDirectiveConflict();
             }
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -277,7 +305,7 @@ namespace Hecton8.AtlasSignal
         private void HandleDiscovery(string discoveryId)
         {
             // Обнаружение терминала Атлас-6 → Detected
-            if (discoveryId.StartsWith("atlas6_") && _playerStatus == Atlas6PlayerStatus.Unknown)
+            if (CanAdoptAtlasStatusFromDiscovery(discoveryId))
                 SetStatus(Atlas6PlayerStatus.Detected);
         }
 
@@ -293,6 +321,25 @@ namespace Hecton8.AtlasSignal
         {
             if (_playerStatus == Atlas6PlayerStatus.Unknown)
                 SetStatus(Atlas6PlayerStatus.Detected);
+        }
+
+        private bool CanAdoptAtlasStatusFromDiscovery(string discoveryId)
+        {
+            if (_playerStatus != Atlas6PlayerStatus.Unknown)
+                return false;
+
+            if (string.IsNullOrEmpty(discoveryId) || !discoveryId.StartsWith("atlas6_"))
+                return false;
+
+            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            if (signal != null)
+                return signal.CurrentRevealStage >= MinimumRevealStageForDirectiveContact;
+
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector != null)
+                return firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule);
+
+            return true;
         }
 
         private void ResolvePlayer()

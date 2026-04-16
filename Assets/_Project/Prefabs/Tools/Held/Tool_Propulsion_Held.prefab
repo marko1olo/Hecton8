@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5809351018414027186}
   - component: {fileID: 4702733535216915999}
+  - component: {fileID: 1513402988957420496}
   m_Layer: 0
   m_Name: Tool_Propulsion_Held
   m_TagString: Untagged
@@ -49,6 +50,8 @@ MonoBehaviour:
   _toolMetadata: {fileID: 11400000, guid: 86a1f3eb4f50a20499706bd5c314cf56, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  _swimContract: {fileID: 0}
   range: 18
   pushForce: 85
   pullForce: 62
@@ -56,6 +59,44 @@ MonoBehaviour:
   targetMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  feedbackInterval: 0.35
+  holdDistance: 3.8
+  holdSpringForce: 92
+  holdDamping: 9
+  maxHoldBreakDistance: 16
+  launchImpulse: 22
+--- !u!114 &1513402988957420496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883046840169899827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9fb1903b49f6e428d8fc12ce0a4103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerToolSwimContract
+  toolHand: 0
+  swimRootPresentationWeight: 0.4
+  swimSupportHandWeight: 0.62
+  swimToolHandWeight: 0.05
+  activeUseSupportHandBoost: 0.14
+  swimRootPoseBias:
+    localPositionOffset: {x: 0.02, y: -0.018, z: -0.05}
+    localEulerOffset: {x: 4, y: 5, z: 3}
+  swimSupportHandPoseBias:
+    localPositionOffset: {x: -0.044, y: 0.032, z: 0.03}
+    localEulerOffset: {x: 8, y: -20, z: -12}
+  swimToolHandPoseBias:
+    localPositionOffset: {x: 0.024, y: -0.014, z: -0.046}
+    localEulerOffset: {x: 5, y: 10, z: 6}
+  activeUseRootPoseBias:
+    localPositionOffset: {x: 0.006, y: -0.012, z: -0.024}
+    localEulerOffset: {x: 3, y: 2, z: 2}
+  activeUseSupportHandPoseBias:
+    localPositionOffset: {x: -0.018, y: 0.03, z: 0.022}
+    localEulerOffset: {x: 8, y: -14, z: -10}
 --- !u!1 &5259587744455386403
 GameObject:
   m_ObjectHideFlags: 0

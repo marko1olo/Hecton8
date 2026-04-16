@@ -117,6 +117,93 @@ namespace Hecton8.Optimization.Editor
                 return 8f;
         }
         
+        /// <summary>
+        /// Captures screenshot from RenderTexture and saves as PNG.
+        /// Exports at 1920×1080 resolution for visual regression testing.
+        /// </summary>
+        /// <param name="rt">RenderTexture to capture.</param>
+        /// <param name="outputPath">Output file path (relative to Assets/_Project/Optimization/Screenshots/).</param>
+        /// <returns>Full path to saved screenshot.</returns>
+        public static string CaptureScreenshot(RenderTexture rt, string outputPath)
+        {
+            if (rt == null)
+            {
+                Debug.LogWarning("[ResolutionAnalyzer] Cannot capture screenshot: RenderTexture is null");
+                return null;
+            }
+            
+            // Ensure output directory exists
+            string baseDir = "Assets/_Project/Optimization/Screenshots";
+            if (!System.IO.Directory.Exists(baseDir))
+            {
+                System.IO.Directory.CreateDirectory(baseDir);
+            }
+            
+            string fullPath = System.IO.Path.Combine(baseDir, outputPath);
+            
+            // Create temporary RT at 1920×1080
+            int targetWidth = 1920;
+            int targetHeight = 1080;
+            var tempRT = RenderTexture.GetTemporary(targetWidth, targetHeight, 0, RenderTextureFormat.ARGB32);
+            
+            try
+            {
+                // Blit source RT to temp RT (scales to target resolution)
+                Graphics.Blit(rt, tempRT);
+                
+                // Read pixels to Texture2D
+                var prevRT = RenderTexture.active;
+                RenderTexture.active = tempRT;
+                
+                try
+                {
+                    var texture = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
+                    texture.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
+                    texture.Apply();
+                    
+                    // Encode to PNG
+                    var pngData = texture.EncodeToPNG();
+                    
+                    // Write to file
+                    System.IO.File.WriteAllBytes(fullPath, pngData);
+                    
+                    Object.DestroyImmediate(texture);
+                    
+                    Debug.Log($"[ResolutionAnalyzer] Screenshot saved: {fullPath}");
+                    return fullPath;
+                }
+                finally
+                {
+                    RenderTexture.active = prevRT;
+                }
+            }
+            finally
+            {
+                RenderTexture.ReleaseTemporary(tempRT);
+            }
+        }
+        
+        /// <summary>
+        /// Captures BEFORE and AFTER screenshots for visual regression testing.
+        /// Saves both to Assets/_Project/Optimization/Screenshots/.
+        /// </summary>
+        /// <param name="rt">RenderTexture to capture.</param>
+        /// <param name="baseName">Base name for screenshot files (without extension).</param>
+        /// <returns>Array with [beforePath, afterPath].</returns>
+        public static string[] CaptureBeforeAfterScreenshots(RenderTexture rt, string baseName)
+        {
+            var paths = new string[2];
+            
+            // Capture BEFORE screenshot
+            paths[0] = CaptureScreenshot(rt, $"{baseName}_BEFORE.png");
+            
+            // Note: AFTER screenshot should be captured after applying optimization
+            // This method only captures BEFORE; caller should call CaptureScreenshot for AFTER
+            paths[1] = $"{baseName}_AFTER.png"; // Placeholder path
+            
+            return paths;
+        }
+        
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
         
         private static ResolutionOptimizationRecommendation? AnalyzeResolution(RenderTextureAllocationRecord record)

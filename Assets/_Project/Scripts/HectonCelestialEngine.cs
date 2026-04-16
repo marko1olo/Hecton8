@@ -63,6 +63,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
 using Hecton8.Atmosphere;
+using Hecton8.World;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -108,6 +109,7 @@ namespace Hecton8.Celestial
         [Header("═══ REFERENCES ═══")]
         [SerializeField] private Light sunLight;
         [SerializeField] private Transform aegirTransform;
+        [SerializeField] private ObserverRelativeCelestialBody aegirObserverRelativeBody;
         [SerializeField] private Renderer aegirRenderer;
         [SerializeField] private Transform playerTransform;
         [SerializeField] private HectonAtmosphereManager _atmosphereManager;
@@ -152,6 +154,16 @@ namespace Hecton8.Celestial
         [Header("═══ DEEP VRAM GATE ═══")]
         [Tooltip("Below this depth, celestial textures are detached from runtime materials to reduce deep-water VRAM residency. Asset imports are not modified.")]
         [SerializeField, Min(0f)] private float deepTextureUnloadDepth = 1000f;
+        [Tooltip("Keeps celestial texture residency reduced until the player climbs clearly out of the deep-water threshold instead of thrashing at one boundary.")]
+        [SerializeField, Min(0f)] private float deepTextureDepthHysteresis = 120f;
+        [Tooltip("Allows weak hardware to drop heavy celestial textures earlier when dynamic resolution has already collapsed and the player is no longer in shallow water.")]
+        [SerializeField] private bool enableAdaptiveDeepTextureResidency = true;
+        [Tooltip("Do not reduce celestial texture residency from perf pressure in shallow water. This keeps near-surface sky readability intact.")]
+        [SerializeField, Min(0f)] private float adaptiveDeepTextureMinDepth = 350f;
+        [Tooltip("Render-scale threshold that triggers early celestial texture detachment under perf pressure.")]
+        [SerializeField, Range(0.5f, 1f)] private float adaptiveDeepTextureUnloadRenderScale = 0.76f;
+        [Tooltip("Render-scale threshold required before celestial textures are restored after a perf-pressure reduction.")]
+        [SerializeField, Range(0.5f, 1f)] private float adaptiveDeepTextureRestoreRenderScale = 0.9f;
 
         [Header("═══ ORBITAL PARAMETERS ═══")]
         [SerializeField] private float orbitalPeriod = 3600f;
@@ -239,6 +251,8 @@ namespace Hecton8.Celestial
         private float _cachedAegirRadius;
         private Material _aegirSharedMaterial;
         private bool _deepTextureResidencyReduced;
+        private float _currentDepthMeters;
+        private float _currentAdaptiveRenderScale = 1f;
 
         private Texture _skyHighCloudTexDefault;
         private Texture _skyMainCloudAtlasDefault;
@@ -376,9 +390,15 @@ namespace Hecton8.Celestial
 
                 BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
                 if (director != null)
-                    ApplyDeepTextureResidency(director.CurrentDepthMeters);
+                {
+                    _currentDepthMeters = Mathf.Max(0f, director.CurrentDepthMeters);
+                    UpdateDeepTextureResidencyState();
+                }
                 else
+                {
+                    _currentDepthMeters = 0f;
                     RestoreCelestialTextureDefaults();
+                }
             }
 #if UNITY_EDITOR
             else
@@ -469,13 +489,14 @@ namespace Hecton8.Celestial
 
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
-            UpdateGlobalShaderData();
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
+            UpdateGlobalShaderData();
 
             UpdateSkyMaterial();
 
             UpdateAegirMaterial();
             UpdatePlanetShine();
+            UpdateDeepTextureResidencyState();
 
             // v5.1: ApplySunOcclusion is the LAST intensity writer.
             // It MULTIPLIES whatever UnderwaterVisuals wrote.
@@ -495,6 +516,8 @@ namespace Hecton8.Celestial
 
             if (aegirTransform == null)
                 Debug.LogError("[HectonCelestialEngine] Aegir Transform is not assigned!", this);
+            else if (aegirObserverRelativeBody == null)
+                aegirTransform.TryGetComponent(out aegirObserverRelativeBody);
 
             if (playerTransform == null)
             {
@@ -613,18 +636,7 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            if (aegirTransform != null && playerTransform != null)
-            {
-                float radius = _cachedAegirRadius;
-                float distance = math.max(
-                    math.length((float3)aegirTransform.position - (float3)playerTransform.position),
-                    0.01f);
-                _eclipseAngularRadius = math.degrees(math.atan2(radius, distance));
-            }
-            else
-            {
-                _eclipseAngularRadius = 5f;
-            }
+            _eclipseAngularRadius = GetAegirAngularRadiusDegrees();
         }
 
         private float ComputeAegirWorldRadius()
@@ -643,6 +655,48 @@ namespace Hecton8.Celestial
         }
 
         private float GetAegirWorldRadius() => _cachedAegirRadius;
+
+        private bool TryResolveAegirSkyDirection(out float3 direction)
+        {
+            if (aegirObserverRelativeBody != null)
+            {
+                Vector3 currentDirection = aegirObserverRelativeBody.CurrentDirection;
+                if (currentDirection.sqrMagnitude > 0.0001f)
+                {
+                    direction = math.normalize((float3)currentDirection);
+                    return true;
+                }
+            }
+
+            if (aegirTransform != null && playerTransform != null)
+            {
+                float3 playerPos = (float3)playerTransform.position;
+                float3 aegirPos = (float3)aegirTransform.position;
+                direction = math.normalizesafe(aegirPos - playerPos);
+                if (math.lengthsq(direction) > 0.0001f)
+                    return true;
+            }
+
+            direction = float3.zero;
+            return false;
+        }
+
+        private float GetAegirAngularRadiusDegrees()
+        {
+            if (aegirObserverRelativeBody != null)
+                return math.max(aegirObserverRelativeBody.AngularDiameterDegrees * 0.5f, 0.01f);
+
+            if (aegirTransform != null && playerTransform != null)
+            {
+                float radius = GetAegirWorldRadius();
+                float distance = math.max(
+                    math.length((float3)aegirTransform.position - (float3)playerTransform.position),
+                    0.01f);
+                return math.degrees(math.atan2(radius, distance));
+            }
+
+            return math.max(_eclipseAngularRadius, 0.01f);
+        }
 
         // ─────────────────────────────────────────────
         // SUN DIRECTION RESOLUTION
@@ -686,6 +740,13 @@ namespace Hecton8.Celestial
 
         private void UpdateSunVisualPosition()
         {
+            if (_atmosphereManager != null)
+            {
+                if (sunVisualTransform != null && sunVisualTransform.gameObject.activeSelf)
+                    sunVisualTransform.gameObject.SetActive(false);
+                return;
+            }
+
             if (sunVisualTransform == null || sunLight == null) return;
 
             Vector3 towardSun = -sunLight.transform.forward;
@@ -734,12 +795,19 @@ namespace Hecton8.Celestial
 
         private void HandleDepthTierChanged(int depthTier, float depthMeters)
         {
-            ApplyDeepTextureResidency(depthMeters);
+            _currentDepthMeters = Mathf.Max(0f, depthMeters);
+            UpdateDeepTextureResidencyState();
         }
 
-        private void ApplyDeepTextureResidency(float depthMeters)
+        private void UpdateDeepTextureResidencyState()
         {
-            bool shouldReduceResidency = depthMeters >= deepTextureUnloadDepth;
+            float depthMeters = Mathf.Max(0f, _currentDepthMeters);
+            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            _currentAdaptiveRenderScale = scaler != null
+                ? Mathf.Clamp01(scaler.CurrentRenderScale)
+                : 1f;
+
+            bool shouldReduceResidency = ShouldReduceDeepTextureResidency(depthMeters, _currentAdaptiveRenderScale);
             if (shouldReduceResidency == _deepTextureResidencyReduced)
                 return;
 
@@ -747,6 +815,30 @@ namespace Hecton8.Celestial
                 DetachDeepCelestialTextures();
             else
                 RestoreCelestialTextureDefaults();
+        }
+
+        private bool ShouldReduceDeepTextureResidency(float depthMeters, float renderScale)
+        {
+            float depthReleaseThreshold = Mathf.Max(0f, deepTextureUnloadDepth - deepTextureDepthHysteresis);
+            float adaptiveDepthReleaseThreshold = Mathf.Max(0f, adaptiveDeepTextureMinDepth - deepTextureDepthHysteresis);
+
+            if (_deepTextureResidencyReduced)
+            {
+                bool keepDepthReduced = depthMeters >= depthReleaseThreshold;
+                bool keepPerfReduced =
+                    enableAdaptiveDeepTextureResidency &&
+                    depthMeters >= adaptiveDepthReleaseThreshold &&
+                    renderScale <= adaptiveDeepTextureRestoreRenderScale;
+                return keepDepthReduced || keepPerfReduced;
+            }
+
+            bool reduceByDepth = depthMeters >= deepTextureUnloadDepth;
+            bool reduceByPerfPressure =
+                enableAdaptiveDeepTextureResidency &&
+                depthMeters >= adaptiveDeepTextureMinDepth &&
+                renderScale <= adaptiveDeepTextureUnloadRenderScale;
+
+            return reduceByDepth || reduceByPerfPressure;
         }
 
         private void DetachDeepCelestialTextures()
@@ -917,11 +1009,8 @@ namespace Hecton8.Celestial
             float3 fromSun = -_resolvedSunDirection;
             Vector4 sunDirection = new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f);
             Vector4 aegirDirection = Vector4.zero;
-            if (aegirTransform != null && playerTransform != null)
+            if (TryResolveAegirSkyDirection(out float3 toAegir))
             {
-                float3 playerPos = (float3)playerTransform.position;
-                float3 aegirPos  = (float3)aegirTransform.position;
-                float3 toAegir   = math.normalizesafe(aegirPos - playerPos);
                 aegirDirection = new Vector4(toAegir.x, toAegir.y, toAegir.z, 0f);
             }
 
@@ -997,7 +1086,7 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            if (aegirTransform == null || playerTransform == null)
+            if (!TryResolveAegirSkyDirection(out float3 toAegir))
             {
                 _sunOcclusionFactor = 0f;
                 _smoothedOcclusionFactor = math.lerp(
@@ -1005,18 +1094,13 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            float3 playerPos = (float3)playerTransform.position;
-            float3 aegirPos  = (float3)aegirTransform.position;
             float3 toSun     = _resolvedSunDirection;
-            float3 toAegir   = math.normalizesafe(aegirPos - playerPos);
 
             float dotSunAegir = math.dot(toSun, toAegir);
             float angularSeparationDeg = math.degrees(
                 math.acos(math.clamp(dotSunAegir, -1f, 1f)));
 
-            float radius = GetAegirWorldRadius();
-            float dist = math.max(math.length(aegirPos - playerPos), 0.01f);
-            float dynamicAngularRadius = math.degrees(math.atan2(radius, dist));
+            float dynamicAngularRadius = GetAegirAngularRadiusDegrees();
 
             float innerEdge = dynamicAngularRadius;
             float outerEdge = dynamicAngularRadius + math.max(flareFadeMarginDegrees, 0.01f);
@@ -1071,6 +1155,7 @@ namespace Hecton8.Celestial
         private void ApplySunOcclusion()
         {
             float visibility = 1.0f - _smoothedOcclusionFactor;
+            bool skyOwnsPrimarySunDisc = _atmosphereManager != null;
 
             // ── Sun Light Intensity ──
             if (sunLight != null)
@@ -1109,10 +1194,14 @@ namespace Hecton8.Celestial
             if (sunVisualTransform != null)
             {
                 bool shouldBeActive = visibility > 0.001f;
-                if (sunVisualTransform.gameObject.activeSelf != shouldBeActive)
-                    sunVisualTransform.gameObject.SetActive(shouldBeActive);
 
-                if (shouldBeActive)
+                if (!skyOwnsPrimarySunDisc
+                    && sunVisualTransform.gameObject.activeSelf != shouldBeActive)
+                {
+                    sunVisualTransform.gameObject.SetActive(shouldBeActive);
+                }
+
+                if (shouldBeActive && sunVisualTransform.gameObject.activeSelf)
                 {
                     Renderer sunRenderer = GetCachedSunDiscRenderer();
                     if (sunRenderer != null)
@@ -1136,6 +1225,12 @@ namespace Hecton8.Celestial
             return _cachedSunDiscRenderer;
         }
 
+        private void HideSunVisualDisc()
+        {
+            if (sunVisualTransform != null && sunVisualTransform.gameObject.activeSelf)
+                sunVisualTransform.gameObject.SetActive(false);
+        }
+
         private void RestoreSunDefaults()
         {
             if (sunLight != null && _baseSunIntensityCaptured && _atmosphereManager == null)
@@ -1149,8 +1244,14 @@ namespace Hecton8.Celestial
                     _sunLensFlare.enabled = true;
             }
 
-            if (sunVisualTransform != null && !sunVisualTransform.gameObject.activeSelf)
+            if (_atmosphereManager != null)
+            {
+                HideSunVisualDisc();
+            }
+            else if (sunVisualTransform != null && !sunVisualTransform.gameObject.activeSelf)
+            {
                 sunVisualTransform.gameObject.SetActive(true);
+            }
         }
 
         // ─────────────────────────────────────────────
@@ -1193,11 +1294,24 @@ namespace Hecton8.Celestial
 
         private void UpdateGlobalShaderData()
         {
-            if (_atmosphereManager != null) return;
+            if (_atmosphereManager == null)
+            {
+                float3 fromSun = -_resolvedSunDirection;
+                Shader.SetGlobalVector(_ID_SunDirection,
+                    new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
+            }
 
-            float3 fromSun = -_resolvedSunDirection;
-            Shader.SetGlobalVector(_ID_SunDirection,
-                new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
+            Vector4 aegirDirection = Vector4.zero;
+            if (TryResolveAegirSkyDirection(out float3 toAegir))
+                aegirDirection = new Vector4(toAegir.x, toAegir.y, toAegir.z, 0f);
+
+            Shader.SetGlobalVector(_ID_AegirDirection, aegirDirection);
+            Shader.SetGlobalColor(_ID_SkyColorZenith, _resolvedSkyZenith);
+            Shader.SetGlobalColor(_ID_SkyColorHorizon, _resolvedSkyHorizon);
+            Shader.SetGlobalColor(_ID_SkyColorNadir, _resolvedSkyNadir);
+            Shader.SetGlobalFloat(_ID_NightBlend, _currentBlend);
+            Shader.SetGlobalFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+            Shader.SetGlobalFloat(_ID_GameTime, _gameTime);
         }
 
         // ─────────────────────────────────────────────
@@ -1208,13 +1322,10 @@ namespace Hecton8.Celestial
         {
             _currentBacklitFactor = 0f;
 
-            if (aegirTransform == null || playerTransform == null) return;
-
-            float3 playerPos = (float3)playerTransform.position;
-            float3 aegirPos  = (float3)aegirTransform.position;
+            if (!TryResolveAegirSkyDirection(out float3 playerToGiant))
+                return;
 
             float3 playerToSun = _resolvedSunDirection;
-            float3 playerToGiant = math.normalizesafe(aegirPos - playerPos);
 
             float alignment = math.dot(playerToSun, playerToGiant);
 
@@ -1242,10 +1353,9 @@ namespace Hecton8.Celestial
 
             float3 toSun = _resolvedSunDirection;
 
-            if (aegirTransform != null && playerTransform != null)
+            if (TryResolveAegirSkyDirection(out float3 playerToAegir))
             {
-                float3 aegirToPlayer = math.normalizesafe(
-                    (float3)playerTransform.position - (float3)aegirTransform.position);
+                float3 aegirToPlayer = -playerToAegir;
                 _currentPhase = math.dot(toSun, aegirToPlayer);
             }
             else
@@ -1282,13 +1392,10 @@ namespace Hecton8.Celestial
 
         private void UpdatePlanetShine()
         {
-            if (_planetShineLight == null || aegirTransform == null || playerTransform == null)
+            if (_planetShineLight == null || !TryResolveAegirSkyDirection(out float3 playerToAegir))
                 return;
 
-            float3 aegirPos   = (float3)aegirTransform.position;
-            float3 playerPos  = (float3)playerTransform.position;
-
-            float3 aegirToPlayer = math.normalizesafe(playerPos - aegirPos);
+            float3 aegirToPlayer = -playerToAegir;
             float3 aegirToSun = _resolvedSunDirection;
 
             float rawPhase = math.dot(aegirToSun, aegirToPlayer);
@@ -1313,22 +1420,16 @@ namespace Hecton8.Celestial
 
         private void DetectEclipse()
         {
-            if (aegirTransform == null || playerTransform == null)
+            if (!TryResolveAegirSkyDirection(out float3 toAegir))
                 return;
 
-            float3 playerPos = (float3)playerTransform.position;
-            float3 aegirPos  = (float3)aegirTransform.position;
-
             float3 toSun = _resolvedSunDirection;
-            float3 toAegir = math.normalizesafe(aegirPos - playerPos);
 
             float dotSunAegir = math.dot(toSun, toAegir);
             float angleDeg = math.degrees(
                 math.acos(math.clamp(dotSunAegir, -1f, 1f)));
 
-            float radius = GetAegirWorldRadius();
-            float dist = math.max(math.length(aegirPos - playerPos), 0.01f);
-            float dynamicAngularRadius = math.degrees(math.atan2(radius, dist));
+            float dynamicAngularRadius = GetAegirAngularRadiusDegrees();
 
             float enterThreshold = dynamicAngularRadius;
             float exitThreshold  = dynamicAngularRadius + eclipseHysteresisMargin;

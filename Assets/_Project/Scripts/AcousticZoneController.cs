@@ -50,17 +50,27 @@ using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Audio;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)] // После FluidEngine (-5000), до большинства систем
     public sealed class AcousticZoneController : MonoBehaviour, ITickable
     {
+#if UNITY_EDITOR
+        private const string DefaultWaterDrainSoundPath = "Assets/_Project/Audio/Movement/swimming -onwater.wav";
+        private const string DefaultWaterFillSoundPath = "Assets/_Project/Audio/Movement/swimming - underwater.ogg";
+        private const string DefaultMasterMixerPath = "Assets/_Project/MasterMixer.mixer";
+#endif
+
         private enum AcousticZoneState : byte
         {
             Surface = 0,
@@ -79,17 +89,6 @@ namespace Hecton8.Audio
         {
             _instance = null;
             OnAcousticZoneChanged = null;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsureRuntimeInstance()
-        {
-            if (!Application.isPlaying || _instance != null || GameTickManager.Instance == null)
-                return;
-
-            // COLD ALLOC: one singleton root in gameplay scenes that already have GameTickManager.
-            GameObject runtimeRoot = new GameObject("AcousticZoneController_Root");
-            runtimeRoot.AddComponent<AcousticZoneController>();
         }
 
         public static AcousticZoneController Instance
@@ -135,6 +134,9 @@ namespace Hecton8.Audio
                  "чистые средние, лёгкий механический гул.")]
         [SerializeField] private AudioMixerSnapshot baseInteriorSnapshot;
 
+        [Tooltip("Optional MasterMixer asset used to auto-resolve authored snapshot refs by name in cold path/editor.")]
+        [SerializeField] private AudioMixer masterMixer;
+
         [SerializeField] private AudioMixerSnapshot surfaceSnapshot;
         [SerializeField] private AudioMixerSnapshot surfaceRainSnapshot;
         [SerializeField] private AudioMixerSnapshot surfaceStormSnapshot;
@@ -152,6 +154,26 @@ namespace Hecton8.Audio
         [Tooltip("Время перехода при входе в воду (может быть быстрее,\n" +
                  "т.к. 'вода заполняет шлюз' мгновеннее, чем 'откачка').")]
         [SerializeField] private float underwaterTransitionDuration = 1.5f;
+
+        [Header("── Exterior State Stability ───────────────────────")]
+        [Tooltip("Глубина входа в подводное акустическое состояние.\n" +
+                 "Держится выше визуального порога, чтобы акустика не дрожала на ряби у поверхности.")]
+        [SerializeField] private float acousticEnterUnderwaterDepth = SurfaceStateUtility.EnterUnderwaterDepth;
+
+        [Tooltip("Глубина выхода из подводного акустического состояния.\n" +
+                 "Должна быть ниже enter-порога, чтобы сохранить hysteresis.")]
+        [SerializeField] private float acousticExitUnderwaterDepth = SurfaceStateUtility.ExitUnderwaterDepth;
+        [SerializeField, Range(0.1f, 1f)] private float acousticEnterImmersionRatio = 0.82f;
+        [SerializeField, Range(0.05f, 0.95f)] private float acousticExitImmersionRatio = 0.6f;
+        [SerializeField] private float acousticForceUnderwaterDepth = 1.1f;
+
+        [Tooltip("Минимальное время подтверждения для переключения между Surface и Underwater.\n" +
+                 "Interior переключается без задержки.")]
+        [SerializeField] private float exteriorTransitionDebounce = 0.35f;
+
+        [Tooltip("Минимальное время удержания внешнего акустического состояния после уже совершенного перехода.\n" +
+                 "Не дает Surface/Underwater щелкать на пограничной болтанке у поверхности.")]
+        [SerializeField] private float exteriorTransitionHoldTime = 1.25f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — TRANSITION SOUNDS
@@ -183,6 +205,94 @@ namespace Hecton8.Audio
                  "Если не задана — контроллер лениво ищет первый 2D loop/playOnAwake source под player root.")]
         [SerializeField] private AudioSource playerUnderwaterAmbientSource;
 
+        [Header("── Biome Ambient Response ─────────────────────────")]
+        [Tooltip("Опциональная ссылка на BiomeMatrixDirector. Если не задана — контроллер лениво резолвит runtime owner.")]
+        [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
+
+        [Tooltip("Период повторной попытки резолва BiomeMatrixDirector в cold/runtime path.")]
+        [SerializeField] private float biomeMatrixResolveRetryInterval = 1f;
+
+        [Tooltip("Множитель громкости подводного loop в calm biome.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float calmAmbientVolumeScale = 0.84f;
+
+        [Tooltip("Множитель громкости подводного loop в lively biome.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float livelyAmbientVolumeScale = 1.05f;
+
+        [Tooltip("Множитель громкости подводного loop в mixed/neutral biome.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float mixedAmbientVolumeScale = 0.94f;
+
+        [Tooltip("Множитель громкости подводного loop в hostile biome.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float hostileAmbientVolumeScale = 0.72f;
+
+        [Tooltip("Множитель pitch подводного loop в calm biome.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float calmAmbientPitchScale = 1.02f;
+
+        [Tooltip("Множитель pitch подводного loop в lively biome.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float livelyAmbientPitchScale = 1.01f;
+
+        [Tooltip("Множитель pitch подводного loop в mixed/neutral biome.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float mixedAmbientPitchScale = 0.96f;
+
+        [Tooltip("Множитель pitch подводного loop в hostile biome.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float hostileAmbientPitchScale = 0.90f;
+
+        [Header("── Soundscape Tier Response ────────────────────")]
+        // Existing underwater acoustic owner consumes depth-band context directly.
+        [Tooltip("Опциональная ссылка на SoundscapeSystem. Если не задана — контроллер лениво резолвит runtime owner.")]
+        [SerializeField] private SoundscapeSystem soundscapeSystem;
+
+        [Tooltip("Период повторной попытки резолва SoundscapeSystem в cold/runtime path.")]
+        [SerializeField] private float soundscapeResolveRetryInterval = 1f;
+
+        [Tooltip("Множитель громкости подводного loop в shallow tier.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float shallowTierAmbientVolumeScale = 1f;
+
+        [Tooltip("Множитель громкости подводного loop в twilight tier.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float twilightTierAmbientVolumeScale = 0.94f;
+
+        [Tooltip("Множитель громкости подводного loop в darkness tier.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float darknessTierAmbientVolumeScale = 0.88f;
+
+        [Tooltip("Множитель громкости подводного loop в abyss tier.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float abyssTierAmbientVolumeScale = 0.82f;
+
+        [Tooltip("Множитель громкости подводного loop в deep abyss tier.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float deepAbyssTierAmbientVolumeScale = 0.74f;
+
+        [Tooltip("Множитель громкости подводного loop в thermal tier.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float thermalTierAmbientVolumeScale = 0.86f;
+
+        [Tooltip("Множитель pitch подводного loop в shallow tier.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float shallowTierAmbientPitchScale = 1f;
+
+        [Tooltip("Множитель pitch подводного loop в twilight tier.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float twilightTierAmbientPitchScale = 0.97f;
+
+        [Tooltip("Множитель pitch подводного loop в darkness tier.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float darknessTierAmbientPitchScale = 0.93f;
+
+        [Tooltip("Множитель pitch подводного loop в abyss tier.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float abyssTierAmbientPitchScale = 0.88f;
+
+        [Tooltip("Множитель pitch подводного loop в deep abyss tier.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float deepAbyssTierAmbientPitchScale = 0.82f;
+
+        [Tooltip("Множитель pitch подводного loop в thermal tier.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float thermalTierAmbientPitchScale = 0.9f;
+
+        [Header("── Listener Fallback Processing ─────────────")]
+        [Tooltip("If mixer snapshot authoring is incomplete, apply listener-level low-pass/reverb fallback so underwater/interior contrast still exists.")]
+        [SerializeField] private bool enableSourceLevelAcousticFallback = true;
+
+        [Tooltip("Fallback low-pass cutoff for underwater listener processing.")]
+        [SerializeField, Range(500f, 22000f)] private float underwaterFallbackLowPassCutoff = 1100f;
+
+        [Tooltip("Fallback low-pass cutoff for interior listener processing.")]
+        [SerializeField, Range(5000f, 22000f)] private float interiorFallbackLowPassCutoff = 16000f;
+
+        [Tooltip("Fallback reverb preset for interior listener processing.")]
+        [SerializeField] private AudioReverbPreset interiorFallbackReverbPreset = AudioReverbPreset.Room;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -193,6 +303,15 @@ namespace Hecton8.Audio
         [SerializeField] private bool _debugIsUnderwater;
         [SerializeField] private bool _debugPlayerFound;
         [SerializeField] private int  _debugTransitionCount;
+        [SerializeField] private string _debugFaunaMood;
+        [SerializeField] private string _debugAmbientSummary;
+        [SerializeField] private string _debugSnapshotCoverage;
+        [SerializeField] private string _debugMixerCoverage;
+        [SerializeField] private float _debugAmbientVolume;
+        [SerializeField] private float _debugAmbientPitch;
+        [SerializeField] private string _debugSoundscapeTier;
+        [SerializeField] private float _debugSoundscapeVolumeScale = 1f;
+        [SerializeField] private float _debugSoundscapePitchScale = 1f;
 #pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
@@ -219,14 +338,53 @@ namespace Hecton8.Audio
         private bool _registeredToTickManager;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
+        private float _nextBiomeMatrixResolveTime;
+        private float _nextSoundscapeResolveTime;
         private HectonAtmosphereManager _atmosphereManager;
         private HectonPlayerMovement _playerMovement;
         private bool _fallbackUnderwaterState;
+        private bool _acousticUnderwaterState;
+        private bool _hasPendingExteriorZone;
+        private float _pendingExteriorZoneResolveTime;
+        private AcousticZoneState _pendingExteriorZone;
+        private float _nextExteriorTransitionAllowedTime;
         private bool _hasCachedExteriorZone;
         private AcousticZoneState _cachedExteriorZone;
         private List<AudioSource> _playerAudioSources;
+        private AudioSource _cachedAmbientSource;
+        private AudioListener _cachedPlayerAudioListener;
+        private AudioLowPassFilter _listenerLowPassFilter;
+        private AudioReverbFilter _listenerReverbFilter;
+        private bool _ambientSourceDefaultsCaptured;
+        private bool _listenerFallbackDefaultsCaptured;
+        private float _ambientSourceBaseVolume = 1f;
+        private float _ambientSourceBasePitch = 1f;
+        private float _listenerLowPassBaseCutoff = 22000f;
+        private float _listenerLowPassBaseResonance = 1f;
+        private AudioReverbPreset _listenerReverbBasePreset = AudioReverbPreset.Off;
+        private float _listenerReverbBaseDryLevel;
+        private HectonBiomeMatrixProfile _lastBiomeProfileForAmbient;
+        private int _currentAmbientSurvivalPressure;
+        private int _currentAmbientRewardPull;
+        private string _currentAmbientSummary;
+        private float _currentAmbientVolumeScale = 1f;
+        private float _currentAmbientPitchScale = 1f;
+        private SoundscapeTier _currentSoundscapeTier = SoundscapeTier.Shallow;
+        private float _currentSoundscapeVolumeScale = 1f;
+        private float _currentSoundscapePitchScale = 1f;
         private float _surfacePrecipitationIntensity;
         private float _surfaceElectricalActivity;
+        private bool _snapshotBindingsResolved;
+        private bool _warnedMissingInteriorSnapshot;
+        private bool _warnedMissingUnderwaterSnapshot;
+        private bool _warnedMissingSurfaceSnapshotSet;
+        private bool _warnedMissingSnapshotCoverage;
+        private bool _warnedIncompleteMixerSnapshotAuthoring;
+        private bool _warnedMissingMixerEffectGraph;
+        private int _validatedMixerSnapshotCount;
+        private bool _validatedMixerHasNamedCoverage;
+        private bool _validatedMixerHasEffectGraph;
+        private bool _usingSourceLevelAcousticFallback;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -252,18 +410,24 @@ namespace Hecton8.Audio
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
 
             _stateInitialized = false;
             _registeredToTickManager = false;
-            // COLD ALLOC: reused player audio scan buffer, bounded to player-local hierarchy.
+            // COLD ALLOC: List<AudioSource>[8] — reused player-local audio scan buffer — owner: AcousticZoneController
             _playerAudioSources = new List<AudioSource>(8);
+
+#if UNITY_EDITOR
+            TryAssignEditorAuthoringDefaults();
+#endif
         }
 
         private void OnEnable()
         {
             TryRegister();
             HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
+            SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
+            ResolveBiomeMatrixDirector(true);
+            RefreshSoundscapeTierContext(true);
         }
 
         private void Start()
@@ -288,6 +452,11 @@ namespace Hecton8.Audio
             }
 
             ResolvePlayerAmbientSource();
+            ResolvePlayerListenerFilters();
+            ResolveBiomeMatrixDirector(true);
+            RefreshBiomeAmbientContext();
+            RefreshSoundscapeTierContext(true);
+            EnsureSnapshotBindings();
             RefreshAtmosphereZoneCache();
 
             // ── Установка начального snapshot без перехода ──
@@ -297,19 +466,17 @@ namespace Hecton8.Audio
         private void OnDisable()
         {
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
-
-            if (GameTickManager.Instance == null) return;
-
-            if (_registeredToTickManager)
-            {
-                GameTickManager.Instance.Unregister((ITickable)this);
-                _registeredToTickManager = false;
-            }
+            SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            ResetSourceLevelAcousticFallback();
+            TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregister();
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
+            SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            ResetSourceLevelAcousticFallback();
 
             if (_instance == this)
             {
@@ -327,6 +494,18 @@ namespace Hecton8.Audio
 
             gtm.Register((ITickable)this);
             _registeredToTickManager = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager gtm = GameTickManager.Instance;
+            if (gtm != null)
+                gtm.Unregister((ITickable)this);
+
+            _registeredToTickManager = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -366,6 +545,10 @@ namespace Hecton8.Audio
 
             // ── Текущее состояние ──
             AcousticZoneState currentZone = ResolveCurrentZone();
+            currentZone = ResolveStableZone(currentZone);
+            RefreshBiomeAmbientContext();
+            RefreshSoundscapeTierContext(false);
+            UpdateAmbientLoopMix(currentZone);
 
             // ── Первый кадр: установить начальное состояние без перехода ──
             if (!_stateInitialized)
@@ -383,6 +566,9 @@ namespace Hecton8.Audio
             // ══════════════════════════════════════════════
 
             _lastZone = currentZone;
+            if (currentZone != AcousticZoneState.Interior)
+                _nextExteriorTransitionAllowedTime = Time.unscaledTime + exteriorTransitionHoldTime;
+
             ApplyZoneTransition(currentZone);
 
             // ── Событие для внешних систем ──
@@ -412,19 +598,12 @@ namespace Hecton8.Audio
         private void TransitionToInterior()
         {
             ApplyAmbientLoopState(AcousticZoneState.Interior);
-
-            // ── Snapshot transition ──
-            if (baseInteriorSnapshot != null)
-            {
-                baseInteriorSnapshot.TransitionTo(transitionDuration);
-            }
+            TransitionToResolvedSnapshot(AcousticZoneState.Interior, transitionDuration);
 
             // ── Переходный звук ──
             PlayTransitionSound(waterDrainSound);
 
-            Debug.Log(
-                $"[AcousticZoneController] 🏠 → Interior (dry zone). " +
-                $"Transition: {transitionDuration}s");
+            LogDiagnostic($"[AcousticZoneController] Interior (dry zone). Transition: {transitionDuration}s");
         }
 
         /// <summary>
@@ -439,35 +618,20 @@ namespace Hecton8.Audio
         private void TransitionToSurface()
         {
             ApplyAmbientLoopState(AcousticZoneState.Surface);
+            TransitionToResolvedSnapshot(AcousticZoneState.Surface, transitionDuration);
 
-            AudioMixerSnapshot targetSnapshot = ResolveSurfaceSnapshot();
-
-            if (targetSnapshot != null)
-            {
-                targetSnapshot.TransitionTo(transitionDuration);
-            }
-
-            Debug.Log(
-                $"[AcousticZoneController] Surface/open air. " +
-                $"Transition: {transitionDuration}s");
+            LogDiagnostic($"[AcousticZoneController] Surface/open air. Transition: {transitionDuration}s");
         }
 
         private void TransitionToUnderwater()
         {
             ApplyAmbientLoopState(AcousticZoneState.Underwater);
-
-            // ── Snapshot transition ──
-            if (underwaterSnapshot != null)
-            {
-                underwaterSnapshot.TransitionTo(underwaterTransitionDuration);
-            }
+            TransitionToResolvedSnapshot(AcousticZoneState.Underwater, underwaterTransitionDuration);
 
             // ── Переходный звук ──
             PlayTransitionSound(waterFillSound);
 
-            Debug.Log(
-                $"[AcousticZoneController] 🌊 → Underwater. " +
-                $"Transition: {underwaterTransitionDuration}s");
+            LogDiagnostic($"[AcousticZoneController] Underwater. Transition: {underwaterTransitionDuration}s");
         }
 
         /// <summary>
@@ -487,31 +651,14 @@ namespace Hecton8.Audio
         {
             _lastZone = zone;
             _stateInitialized = true;
+            _hasPendingExteriorZone = false;
+            _nextExteriorTransitionAllowedTime = 0f;
             ApplyAmbientLoopState(zone);
-
-            if (zone == AcousticZoneState.Interior)
-            {
-                if (baseInteriorSnapshot != null)
-                    baseInteriorSnapshot.TransitionTo(0f);
-            }
-            else if (zone == AcousticZoneState.Surface)
-            {
-                AudioMixerSnapshot targetSnapshot = ResolveSurfaceSnapshot();
-
-                if (targetSnapshot != null)
-                    targetSnapshot.TransitionTo(0f);
-            }
-            else
-            {
-                if (underwaterSnapshot != null)
-                    underwaterSnapshot.TransitionTo(0f);
-            }
+            TransitionToResolvedSnapshot(zone, 0f);
 
             UpdateDiagnostics(zone);
 
-            Debug.Log(
-                $"[AcousticZoneController] Initial zone: " +
-                $"{zone}");
+            LogDiagnostic($"[AcousticZoneController] Initial zone: {zone}");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -536,6 +683,11 @@ namespace Hecton8.Audio
 
         private AudioMixerSnapshot ResolveSurfaceSnapshot()
         {
+            EnsureSnapshotBindings();
+
+            if (!HasAnyResolvedSnapshotCoverage())
+                return null;
+
             if (_surfaceElectricalActivity >= 0.55f && surfaceStormSnapshot != null)
                 return surfaceStormSnapshot;
 
@@ -545,7 +697,26 @@ namespace Hecton8.Audio
             if (surfaceSnapshot != null)
                 return surfaceSnapshot;
 
-            return baseInteriorSnapshot;
+            if (baseInteriorSnapshot != null)
+            {
+                LogSnapshotFallbackWarningOnce(
+                    ref _warnedMissingSurfaceSnapshotSet,
+                    "[AcousticZoneController] Surface snapshot set missing. Falling back to BaseInteriorSnapshot. Author Surface/SurfaceRain/SurfaceStorm snapshots in MasterMixer.");
+                return baseInteriorSnapshot;
+            }
+
+            if (underwaterSnapshot != null)
+            {
+                LogSnapshotFallbackWarningOnce(
+                    ref _warnedMissingSurfaceSnapshotSet,
+                    "[AcousticZoneController] Surface snapshot set missing. Falling back to UnderwaterSnapshot because no dry/exterior snapshot is authored.");
+                return underwaterSnapshot;
+            }
+
+            LogSnapshotFallbackWarningOnce(
+                ref _warnedMissingSurfaceSnapshotSet,
+                "[AcousticZoneController] Surface snapshot set missing and no fallback snapshot exists. Surface acoustic transitions will keep the previous mixer state.");
+            return null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -571,6 +742,7 @@ namespace Hecton8.Audio
                 playerTransform.TryGetComponent(out playerBuoyancy);
                 playerTransform.TryGetComponent(out _playerMovement);
                 ResolvePlayerAmbientSource(playerTransform);
+                ResolvePlayerListenerFilters(playerTransform);
             }
 
             UpdatePlayerFoundDiagnostic();
@@ -598,6 +770,10 @@ namespace Hecton8.Audio
 
             _lastZone = forcedZone;
             _stateInitialized = true;
+            _hasPendingExteriorZone = false;
+            _nextExteriorTransitionAllowedTime = forcedZone == AcousticZoneState.Interior
+                ? 0f
+                : Time.unscaledTime + exteriorTransitionHoldTime;
 
             ApplyZoneTransition(forcedZone);
 
@@ -614,10 +790,16 @@ namespace Hecton8.Audio
             playerBuoyancy = buoyancy;
             _playerMovement = null;
             playerUnderwaterAmbientSource = null;
+            _cachedPlayerAudioListener = null;
+            _listenerLowPassFilter = null;
+            _listenerReverbFilter = null;
+            _listenerFallbackDefaultsCaptured = false;
+            _hasPendingExteriorZone = false;
             if (buoyancy != null)
             {
                 buoyancy.TryGetComponent(out _playerMovement);
                 ResolvePlayerAmbientSource(buoyancy.transform);
+                ResolvePlayerListenerFilters(buoyancy.transform);
             }
             _stateInitialized = false; // Переинициализация при следующем Tick
             UpdatePlayerFoundDiagnostic();
@@ -633,6 +815,17 @@ namespace Hecton8.Audio
             _debugIsInterior = zone == AcousticZoneState.Interior;
             _debugIsUnderwater = zone == AcousticZoneState.Underwater;
             _debugTransitionCount++;
+            _debugFaunaMood = ResolveAmbientMoodLabel();
+            _debugAmbientSummary = string.IsNullOrWhiteSpace(_currentAmbientSummary) ? "None" : _currentAmbientSummary;
+            _debugSnapshotCoverage = BuildSnapshotCoverageSummary();
+            _debugMixerCoverage = BuildMixerCoverageSummary();
+            _debugAmbientVolume = _ambientSourceBaseVolume * _currentAmbientVolumeScale * _currentSoundscapeVolumeScale;
+            _debugAmbientPitch = _ambientSourceBasePitch * _currentAmbientPitchScale * _currentSoundscapePitchScale;
+            _debugSoundscapeTier = _currentSoundscapeTier.ToString();
+            _debugSoundscapeVolumeScale = _currentSoundscapeVolumeScale;
+            _debugSoundscapePitchScale = _currentSoundscapePitchScale;
+            if (_usingSourceLevelAcousticFallback)
+                _debugMixerCoverage += " | ListenerFallback";
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -641,10 +834,27 @@ namespace Hecton8.Audio
             _debugPlayerFound = playerBuoyancy != null;
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogDiagnostic(string message)
+        {
+            Debug.Log(message, this);
+        }
+
         private AcousticZoneState ResolveCurrentZone()
         {
             if (playerBuoyancy != null && playerBuoyancy.IsInDryZone)
                 return AcousticZoneState.Interior;
+
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            if (movement != null)
+            {
+                _acousticUnderwaterState = ResolveMovementDrivenExteriorState(movement);
+
+                return _acousticUnderwaterState
+                    ? AcousticZoneState.Underwater
+                    : AcousticZoneState.Surface;
+            }
 
             if (_hasCachedExteriorZone)
                 return _cachedExteriorZone;
@@ -660,20 +870,91 @@ namespace Hecton8.Audio
                 return zone;
             }
 
-            HectonPlayerMovement movement = ResolvePlayerMovement();
-            if (movement != null)
-            {
-                _fallbackUnderwaterState =
-                    SurfaceStateUtility.ResolveUnderwaterFromDepth(
-                        movement.CurrentDepth,
-                        _fallbackUnderwaterState);
+            _fallbackUnderwaterState =
+                SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                    ResolvePlayerDepthFallback(),
+                    _fallbackUnderwaterState,
+                    acousticEnterUnderwaterDepth,
+                    acousticExitUnderwaterDepth);
 
-                return _fallbackUnderwaterState
-                    ? AcousticZoneState.Underwater
-                    : AcousticZoneState.Surface;
+            return _fallbackUnderwaterState
+                ? AcousticZoneState.Underwater
+                : AcousticZoneState.Surface;
+        }
+
+        private bool ResolveMovementDrivenExteriorState(HectonPlayerMovement movement)
+        {
+            float depth = Mathf.Max(0f, movement.CurrentDepth);
+            float immersion = Mathf.Clamp01(movement.WaterImmersionRatio);
+            bool headSubmerged = movement.IsPlayerSubmerged;
+
+            if (headSubmerged || depth >= acousticForceUnderwaterDepth)
+                return true;
+
+            if (_acousticUnderwaterState)
+            {
+                if (immersion <= acousticExitImmersionRatio && depth <= acousticExitUnderwaterDepth)
+                    return false;
+
+                return depth > acousticExitUnderwaterDepth || immersion > acousticExitImmersionRatio;
             }
 
-            return AcousticZoneState.Underwater;
+            if (depth < acousticEnterUnderwaterDepth)
+                return false;
+
+            return immersion >= acousticEnterImmersionRatio;
+        }
+
+        private AcousticZoneState ResolveStableZone(AcousticZoneState candidateZone)
+        {
+            if (!_stateInitialized)
+                return candidateZone;
+
+            if (candidateZone == AcousticZoneState.Interior || _lastZone == AcousticZoneState.Interior)
+            {
+                _hasPendingExteriorZone = false;
+                return candidateZone;
+            }
+
+            if (candidateZone == _lastZone)
+            {
+                _hasPendingExteriorZone = false;
+                return candidateZone;
+            }
+
+            float now = Time.unscaledTime;
+            if (now < _nextExteriorTransitionAllowedTime)
+            {
+                _hasPendingExteriorZone = false;
+                return _lastZone;
+            }
+
+            if (!_hasPendingExteriorZone || _pendingExteriorZone != candidateZone)
+            {
+                _pendingExteriorZone = candidateZone;
+                _pendingExteriorZoneResolveTime = now + exteriorTransitionDebounce;
+                _hasPendingExteriorZone = true;
+                return _lastZone;
+            }
+
+            if (now < _pendingExteriorZoneResolveTime)
+                return _lastZone;
+
+            _hasPendingExteriorZone = false;
+            return candidateZone;
+        }
+
+        private float ResolvePlayerDepthFallback()
+        {
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            if (movement != null)
+                return movement.CurrentDepth;
+
+            HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
+            if (atmosphere != null && atmosphere.CurrentState == EnvironmentState.UNDERWATER)
+                return acousticEnterUnderwaterDepth;
+
+            return 0f;
         }
 
         private void HandleAtmosphereStateChanged(EnvironmentState state)
@@ -682,6 +963,145 @@ namespace Hecton8.Audio
                 ? AcousticZoneState.Underwater
                 : AcousticZoneState.Surface;
             _hasCachedExteriorZone = true;
+        }
+
+        private void ResolveBiomeMatrixDirector(bool force)
+        {
+            if (biomeMatrixDirector != null)
+                return;
+
+            float currentTime = Time.unscaledTime;
+            if (!force && currentTime < _nextBiomeMatrixResolveTime)
+                return;
+
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+            _nextBiomeMatrixResolveTime = currentTime + biomeMatrixResolveRetryInterval;
+        }
+
+        private void ResolveSoundscapeSystem(bool force)
+        {
+            if (soundscapeSystem != null)
+                return;
+
+            float currentTime = Time.unscaledTime;
+            if (!force && currentTime < _nextSoundscapeResolveTime)
+                return;
+
+            soundscapeSystem = SoundscapeSystem.Instance;
+            _nextSoundscapeResolveTime = currentTime + soundscapeResolveRetryInterval;
+        }
+
+        private void RefreshSoundscapeTierContext(bool force)
+        {
+            ResolveSoundscapeSystem(force);
+
+            SoundscapeTier tier = soundscapeSystem != null
+                ? soundscapeSystem.CurrentTier
+                : SoundscapeTier.Shallow;
+
+            ApplySoundscapeTierContext(tier);
+        }
+
+        private void ApplySoundscapeTierContext(SoundscapeTier tier)
+        {
+            _currentSoundscapeTier = tier;
+            _currentSoundscapeVolumeScale = shallowTierAmbientVolumeScale;
+            _currentSoundscapePitchScale = shallowTierAmbientPitchScale;
+
+            switch (tier)
+            {
+                case SoundscapeTier.Twilight:
+                    _currentSoundscapeVolumeScale = twilightTierAmbientVolumeScale;
+                    _currentSoundscapePitchScale = twilightTierAmbientPitchScale;
+                    break;
+
+                case SoundscapeTier.Darkness:
+                    _currentSoundscapeVolumeScale = darknessTierAmbientVolumeScale;
+                    _currentSoundscapePitchScale = darknessTierAmbientPitchScale;
+                    break;
+
+                case SoundscapeTier.Abyss:
+                    _currentSoundscapeVolumeScale = abyssTierAmbientVolumeScale;
+                    _currentSoundscapePitchScale = abyssTierAmbientPitchScale;
+                    break;
+
+                case SoundscapeTier.DeepAbyss:
+                    _currentSoundscapeVolumeScale = deepAbyssTierAmbientVolumeScale;
+                    _currentSoundscapePitchScale = deepAbyssTierAmbientPitchScale;
+                    break;
+
+                case SoundscapeTier.Thermal:
+                    _currentSoundscapeVolumeScale = thermalTierAmbientVolumeScale;
+                    _currentSoundscapePitchScale = thermalTierAmbientPitchScale;
+                    break;
+
+                case SoundscapeTier.Surface:
+                case SoundscapeTier.Shallow:
+                default:
+                    break;
+            }
+        }
+
+        private void HandleSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
+        {
+            ApplySoundscapeTierContext(newTier);
+        }
+
+        private void RefreshBiomeAmbientContext()
+        {
+            ResolveBiomeMatrixDirector(false);
+
+            HectonBiomeMatrixProfile profile = biomeMatrixDirector != null
+                ? biomeMatrixDirector.CurrentProfile
+                : null;
+
+            if (ReferenceEquals(profile, _lastBiomeProfileForAmbient))
+                return;
+
+            _lastBiomeProfileForAmbient = profile;
+            _currentAmbientSurvivalPressure = 0;
+            _currentAmbientRewardPull = 0;
+            _currentAmbientSummary = null;
+            _currentAmbientVolumeScale = 1f;
+            _currentAmbientPitchScale = 1f;
+
+            if (profile == null)
+                return;
+
+            _currentAmbientSurvivalPressure = profile.survivalPressure;
+            _currentAmbientRewardPull = profile.rewardPull;
+
+            HectonBiomeFamilyProfile familyProfile = profile.familyProfile;
+            if (familyProfile != null)
+            {
+                HectonFaunaFamilyProfile faunaFamilyProfile = familyProfile.faunaFamilyProfile;
+                if (faunaFamilyProfile != null)
+                    _currentAmbientSummary = faunaFamilyProfile.ambienceSummary;
+            }
+
+            if (_currentAmbientSurvivalPressure >= 4)
+            {
+                _currentAmbientVolumeScale = hostileAmbientVolumeScale;
+                _currentAmbientPitchScale = hostileAmbientPitchScale;
+                return;
+            }
+
+            if (_currentAmbientRewardPull >= 4 && _currentAmbientSurvivalPressure <= 2)
+            {
+                _currentAmbientVolumeScale = livelyAmbientVolumeScale;
+                _currentAmbientPitchScale = livelyAmbientPitchScale;
+                return;
+            }
+
+            if (_currentAmbientSurvivalPressure <= 2 && _currentAmbientRewardPull <= 2)
+            {
+                _currentAmbientVolumeScale = calmAmbientVolumeScale;
+                _currentAmbientPitchScale = calmAmbientPitchScale;
+                return;
+            }
+
+            _currentAmbientVolumeScale = mixedAmbientVolumeScale;
+            _currentAmbientPitchScale = mixedAmbientPitchScale;
         }
 
         private void ApplyZoneTransition(AcousticZoneState zone)
@@ -733,7 +1153,10 @@ namespace Hecton8.Audio
         private AudioSource ResolvePlayerAmbientSource()
         {
             if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
+            {
+                CacheAmbientSourceDefaults(playerUnderwaterAmbientSource);
                 return playerUnderwaterAmbientSource;
+            }
 
             playerUnderwaterAmbientSource = null;
 
@@ -768,8 +1191,111 @@ namespace Hecton8.Audio
                     continue;
 
                 playerUnderwaterAmbientSource = candidate;
+                CacheAmbientSourceDefaults(candidate);
                 return;
             }
+        }
+
+        private void CacheAmbientSourceDefaults(AudioSource ambientSource)
+        {
+            if (ambientSource == null)
+                return;
+
+            if (_cachedAmbientSource == ambientSource && _ambientSourceDefaultsCaptured)
+                return;
+
+            _cachedAmbientSource = ambientSource;
+            _ambientSourceBaseVolume = ambientSource.volume;
+            _ambientSourceBasePitch = ambientSource.pitch;
+            _ambientSourceDefaultsCaptured = true;
+        }
+
+        private void ResolvePlayerListenerFilters()
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+                ResolvePlayerListenerFilters(playerTransform);
+        }
+
+        private void ResolvePlayerListenerFilters(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return;
+
+            AudioListener listener = _cachedPlayerAudioListener;
+            if ((object)listener == null || listener == null)
+            {
+                if (!playerTransform.TryGetComponent(out listener))
+                    listener = playerTransform.GetComponentInChildren<AudioListener>(true);
+
+                _cachedPlayerAudioListener = listener;
+            }
+
+            if ((object)listener == null || listener == null)
+                return;
+
+            if (!_listenerFallbackDefaultsCaptured)
+            {
+                if (!listener.TryGetComponent(out _listenerLowPassFilter))
+                {
+                    _listenerLowPassFilter = listener.gameObject.AddComponent<AudioLowPassFilter>(); // COLD ALLOC: AudioLowPassFilter[1] — listener fallback acoustic filtering — owner: AcousticZoneController
+                    _listenerLowPassFilter.enabled = false;
+                }
+
+                if (!listener.TryGetComponent(out _listenerReverbFilter))
+                {
+                    _listenerReverbFilter = listener.gameObject.AddComponent<AudioReverbFilter>(); // COLD ALLOC: AudioReverbFilter[1] — listener fallback acoustic reverb — owner: AcousticZoneController
+                    _listenerReverbFilter.enabled = false;
+                }
+
+                _listenerLowPassBaseCutoff = _listenerLowPassFilter.cutoffFrequency;
+                _listenerLowPassBaseResonance = _listenerLowPassFilter.lowpassResonanceQ;
+                _listenerReverbBasePreset = _listenerReverbFilter.reverbPreset;
+                _listenerReverbBaseDryLevel = _listenerReverbFilter.dryLevel;
+                _listenerFallbackDefaultsCaptured = true;
+            }
+        }
+
+        private void UpdateAmbientLoopMix(AcousticZoneState zone)
+        {
+            AudioSource ambientSource = ResolvePlayerAmbientSource();
+            if (ambientSource == null)
+                return;
+
+            CacheAmbientSourceDefaults(ambientSource);
+
+            float targetVolume = _ambientSourceBaseVolume;
+            float targetPitch = _ambientSourceBasePitch;
+
+            if (zone == AcousticZoneState.Underwater)
+            {
+                targetVolume *= _currentAmbientVolumeScale;
+                targetPitch *= _currentAmbientPitchScale;
+                targetVolume *= _currentSoundscapeVolumeScale;
+                targetPitch *= _currentSoundscapePitchScale;
+            }
+
+            if (Mathf.Abs(ambientSource.volume - targetVolume) > 0.01f)
+                ambientSource.volume = targetVolume;
+
+            if (Mathf.Abs(ambientSource.pitch - targetPitch) > 0.01f)
+                ambientSource.pitch = targetPitch;
+        }
+
+        private string ResolveAmbientMoodLabel()
+        {
+            if (_currentAmbientSurvivalPressure >= 4)
+                return "Hostile";
+
+            if (_currentAmbientRewardPull >= 4 && _currentAmbientSurvivalPressure <= 2)
+                return "Lively";
+
+            if (_currentAmbientSurvivalPressure <= 2 && _currentAmbientRewardPull <= 2)
+                return "Calm";
+
+            if (_currentAmbientSurvivalPressure <= 0 && _currentAmbientRewardPull <= 0)
+                return "None";
+
+            return "Mixed";
         }
 
         internal void SetSurfaceWeatherMix(float precipitationIntensity, float electricalActivity)
@@ -778,11 +1304,7 @@ namespace Hecton8.Audio
             _surfaceElectricalActivity = Mathf.Clamp01(electricalActivity);
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
-            {
-                AudioMixerSnapshot snapshot = ResolveSurfaceSnapshot();
-                if (snapshot != null)
-                    snapshot.TransitionTo(transitionDuration);
-            }
+                TransitionToResolvedSnapshot(AcousticZoneState.Surface, transitionDuration);
         }
 
         internal void ClearSurfaceWeatherMix()
@@ -791,18 +1313,17 @@ namespace Hecton8.Audio
             _surfaceElectricalActivity = 0f;
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
-            {
-                AudioMixerSnapshot snapshot = ResolveSurfaceSnapshot();
-                if (snapshot != null)
-                    snapshot.TransitionTo(transitionDuration);
-            }
+                TransitionToResolvedSnapshot(AcousticZoneState.Surface, transitionDuration);
         }
 
         private void ApplyAmbientLoopState(AcousticZoneState zone)
         {
             AudioSource ambientSource = ResolvePlayerAmbientSource();
             if (ambientSource == null)
+            {
+                ApplySourceLevelAcousticFallback(zone);
                 return;
+            }
 
             bool shouldBeAudible = zone == AcousticZoneState.Underwater;
             bool shouldMute = !shouldBeAudible;
@@ -812,13 +1333,258 @@ namespace Hecton8.Audio
 
             if (shouldBeAudible && !ambientSource.isPlaying && ambientSource.clip != null)
                 ambientSource.Play();
+
+            UpdateAmbientLoopMix(zone);
+            ApplySourceLevelAcousticFallback(zone);
+        }
+
+        private void ApplySourceLevelAcousticFallback(AcousticZoneState zone)
+        {
+            if (!ShouldUseSourceLevelAcousticFallback())
+            {
+                ResetSourceLevelAcousticFallback();
+                return;
+            }
+
+            ResolvePlayerListenerFilters();
+            if (!_listenerFallbackDefaultsCaptured ||
+                (object)_listenerLowPassFilter == null || _listenerLowPassFilter == null ||
+                (object)_listenerReverbFilter == null || _listenerReverbFilter == null)
+            {
+                return;
+            }
+
+            _usingSourceLevelAcousticFallback = true;
+
+            switch (zone)
+            {
+                case AcousticZoneState.Underwater:
+                    _listenerLowPassFilter.enabled = true;
+                    _listenerLowPassFilter.cutoffFrequency = ResolveUnderwaterFallbackCutoff();
+                    _listenerLowPassFilter.lowpassResonanceQ = 1.1f;
+                    _listenerReverbFilter.enabled = false;
+                    _listenerReverbFilter.reverbPreset = _listenerReverbBasePreset;
+                    _listenerReverbFilter.dryLevel = _listenerReverbBaseDryLevel;
+                    break;
+
+                case AcousticZoneState.Interior:
+                    _listenerLowPassFilter.enabled = true;
+                    _listenerLowPassFilter.cutoffFrequency = interiorFallbackLowPassCutoff;
+                    _listenerLowPassFilter.lowpassResonanceQ = 1f;
+                    _listenerReverbFilter.enabled = true;
+                    _listenerReverbFilter.reverbPreset = interiorFallbackReverbPreset;
+                    _listenerReverbFilter.dryLevel = _listenerReverbBaseDryLevel;
+                    break;
+
+                default:
+                    ResetSourceLevelAcousticFallback();
+                    break;
+            }
+        }
+
+        private bool ShouldUseSourceLevelAcousticFallback()
+        {
+            if (!enableSourceLevelAcousticFallback)
+                return false;
+
+            EnsureSnapshotBindings();
+            return !_validatedMixerHasEffectGraph || _validatedMixerSnapshotCount <= 1;
+        }
+
+        private float ResolveUnderwaterFallbackCutoff()
+        {
+            switch (_currentSoundscapeTier)
+            {
+                case SoundscapeTier.DeepAbyss:
+                    return 650f;
+
+                case SoundscapeTier.Abyss:
+                    return 800f;
+
+                case SoundscapeTier.Darkness:
+                    return 950f;
+
+                case SoundscapeTier.Twilight:
+                    return 1250f;
+
+                case SoundscapeTier.Thermal:
+                    return 900f;
+
+                default:
+                    return underwaterFallbackLowPassCutoff;
+            }
+        }
+
+        private void ResetSourceLevelAcousticFallback()
+        {
+            if (!_listenerFallbackDefaultsCaptured)
+            {
+                _usingSourceLevelAcousticFallback = false;
+                return;
+            }
+
+            if ((object)_listenerLowPassFilter != null && _listenerLowPassFilter != null)
+            {
+                _listenerLowPassFilter.cutoffFrequency = _listenerLowPassBaseCutoff;
+                _listenerLowPassFilter.lowpassResonanceQ = _listenerLowPassBaseResonance;
+                _listenerLowPassFilter.enabled = false;
+            }
+
+            if ((object)_listenerReverbFilter != null && _listenerReverbFilter != null)
+            {
+                _listenerReverbFilter.reverbPreset = _listenerReverbBasePreset;
+                _listenerReverbFilter.dryLevel = _listenerReverbBaseDryLevel;
+                _listenerReverbFilter.enabled = false;
+            }
+
+            _usingSourceLevelAcousticFallback = false;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EDITOR
+        //  SNAPSHOT BINDING / FALLBACKS
         // ══════════════════════════════════════════════════════════
 
+        private void EnsureSnapshotBindings()
+        {
+            if (_snapshotBindingsResolved)
+                return;
+
+            _snapshotBindingsResolved = true;
+
+            if (masterMixer == null)
+                return;
+
+            ResolveSnapshotBinding(ref underwaterSnapshot, "Underwater", "UnderwaterSnapshot");
+            ResolveSnapshotBinding(ref baseInteriorSnapshot, "BaseInterior", "BaseInteriorSnapshot");
+            ResolveSnapshotBinding(ref surfaceSnapshot, "Surface", "SurfaceSnapshot");
+            ResolveSnapshotBinding(ref surfaceRainSnapshot, "SurfaceRain", "SurfaceRainSnapshot");
+            ResolveSnapshotBinding(ref surfaceStormSnapshot, "SurfaceStorm", "SurfaceStormSnapshot");
+
+            if (underwaterSnapshot == null &&
+                baseInteriorSnapshot == null &&
+                surfaceSnapshot == null &&
+                surfaceRainSnapshot == null &&
+                surfaceStormSnapshot == null)
+            {
+                LogSnapshotFallbackWarningOnce(
+                    ref _warnedMissingSnapshotCoverage,
+                    "[AcousticZoneController] MasterMixer is assigned but no authored acoustic snapshots were resolved by name. Expected names include Underwater/UnderwaterSnapshot, BaseInterior/BaseInteriorSnapshot, Surface/SurfaceSnapshot, SurfaceRain/SurfaceRainSnapshot, SurfaceStorm/SurfaceStormSnapshot.");
+            }
+
 #if UNITY_EDITOR
+            ValidateMixerAuthoringCoverage();
+#endif
+        }
+
+        private void ResolveSnapshotBinding(
+            ref AudioMixerSnapshot snapshot,
+            string primaryName,
+            string alternateName)
+        {
+            if (snapshot != null || masterMixer == null)
+                return;
+
+            snapshot = masterMixer.FindSnapshot(primaryName);
+            if (snapshot == null && !string.IsNullOrEmpty(alternateName))
+                snapshot = masterMixer.FindSnapshot(alternateName);
+        }
+
+        private void TransitionToResolvedSnapshot(AcousticZoneState zone, float duration)
+        {
+            EnsureSnapshotBindings();
+
+            AudioMixerSnapshot snapshot = ResolveSnapshotForZone(zone);
+            if (snapshot == null)
+            {
+                LogSnapshotFallbackWarningOnce(
+                    ref _warnedMissingSnapshotCoverage,
+                    "[AcousticZoneController] No valid snapshot could be resolved for the requested acoustic zone. Mixer state will remain unchanged.");
+                return;
+            }
+
+            snapshot.TransitionTo(Mathf.Max(0f, duration));
+        }
+
+        private AudioMixerSnapshot ResolveSnapshotForZone(AcousticZoneState zone)
+        {
+            switch (zone)
+            {
+                case AcousticZoneState.Interior:
+                    if (baseInteriorSnapshot != null)
+                        return baseInteriorSnapshot;
+
+                    if (!HasAnyResolvedSnapshotCoverage())
+                        return null;
+
+                    LogSnapshotFallbackWarningOnce(
+                        ref _warnedMissingInteriorSnapshot,
+                        "[AcousticZoneController] BaseInteriorSnapshot missing. Falling back to exterior snapshot coverage.");
+                    return ResolveSurfaceSnapshot() ?? underwaterSnapshot;
+
+                case AcousticZoneState.Surface:
+                    return ResolveSurfaceSnapshot();
+
+                default:
+                    if (underwaterSnapshot != null)
+                        return underwaterSnapshot;
+
+                    if (!HasAnyResolvedSnapshotCoverage())
+                        return null;
+
+                    LogSnapshotFallbackWarningOnce(
+                        ref _warnedMissingUnderwaterSnapshot,
+                        "[AcousticZoneController] UnderwaterSnapshot missing. Falling back to surface/interior snapshot coverage.");
+                    return ResolveSurfaceSnapshot() ?? baseInteriorSnapshot;
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogSnapshotFallbackWarningOnce(ref bool warnedFlag, string message)
+        {
+            if (warnedFlag)
+                return;
+
+            warnedFlag = true;
+            Debug.LogWarning(message, this);
+        }
+
+        private bool HasAnyResolvedSnapshotCoverage()
+        {
+            return underwaterSnapshot != null ||
+                   baseInteriorSnapshot != null ||
+                   surfaceSnapshot != null ||
+                   surfaceRainSnapshot != null ||
+                   surfaceStormSnapshot != null;
+        }
+
+        private string BuildSnapshotCoverageSummary()
+        {
+            return string.Concat(
+                underwaterSnapshot != null ? "UW " : "uw- ",
+                baseInteriorSnapshot != null ? "INT " : "int- ",
+                surfaceSnapshot != null ? "SURF " : "surf- ",
+                surfaceRainSnapshot != null ? "RAIN " : "rain- ",
+                surfaceStormSnapshot != null ? "STORM" : "storm-");
+        }
+
+        private string BuildMixerCoverageSummary()
+        {
+            if (masterMixer == null)
+                return "Mixer: None";
+
+            return string.Concat(
+                "Mixer snapshots=", _validatedMixerSnapshotCount.ToString(),
+                " named=", _validatedMixerHasNamedCoverage ? "yes" : "no",
+                " fx=", _validatedMixerHasEffectGraph ? "yes" : "no");
+        }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            TryAssignEditorAuthoringDefaults();
+        }
+
         private void OnValidate()
         {
             if (UnityEditor.EditorApplication.isCompiling ||
@@ -828,8 +1594,128 @@ namespace Hecton8.Audio
 
             if (transitionDuration < 0f) transitionDuration = 0f;
             if (underwaterTransitionDuration < 0f) underwaterTransitionDuration = 0f;
+            if (acousticEnterUnderwaterDepth < 0f) acousticEnterUnderwaterDepth = 0f;
+            if (acousticExitUnderwaterDepth < 0f) acousticExitUnderwaterDepth = 0f;
+            if (acousticExitUnderwaterDepth > acousticEnterUnderwaterDepth) acousticExitUnderwaterDepth = acousticEnterUnderwaterDepth;
+            if (acousticEnterImmersionRatio < 0.1f) acousticEnterImmersionRatio = 0.1f;
+            if (acousticEnterImmersionRatio > 1f) acousticEnterImmersionRatio = 1f;
+            if (acousticExitImmersionRatio < 0.05f) acousticExitImmersionRatio = 0.05f;
+            if (acousticExitImmersionRatio > acousticEnterImmersionRatio) acousticExitImmersionRatio = acousticEnterImmersionRatio;
+            if (acousticForceUnderwaterDepth < acousticEnterUnderwaterDepth) acousticForceUnderwaterDepth = acousticEnterUnderwaterDepth;
+            if (exteriorTransitionDebounce < 0f) exteriorTransitionDebounce = 0f;
+            if (exteriorTransitionHoldTime < 0f) exteriorTransitionHoldTime = 0f;
             if (transitionVolume < 0f) transitionVolume = 0f;
             if (transitionVolume > 1f) transitionVolume = 1f;
+            _snapshotBindingsResolved = false;
+            ResetAuthoringWarnings();
+            TryAssignEditorAuthoringDefaults();
+            EnsureSnapshotBindings();
+        }
+
+        private void TryAssignEditorAuthoringDefaults()
+        {
+            if (masterMixer == null)
+                masterMixer = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioMixer>(DefaultMasterMixerPath);
+
+            if (waterDrainSound == null)
+                waterDrainSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultWaterDrainSoundPath);
+
+            if (waterFillSound == null)
+                waterFillSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultWaterFillSoundPath);
+        }
+
+        private void ResetAuthoringWarnings()
+        {
+            _warnedMissingInteriorSnapshot = false;
+            _warnedMissingUnderwaterSnapshot = false;
+            _warnedMissingSurfaceSnapshotSet = false;
+            _warnedMissingSnapshotCoverage = false;
+            _warnedIncompleteMixerSnapshotAuthoring = false;
+            _warnedMissingMixerEffectGraph = false;
+            _validatedMixerSnapshotCount = 0;
+            _validatedMixerHasNamedCoverage = false;
+            _validatedMixerHasEffectGraph = false;
+        }
+
+        private void ValidateMixerAuthoringCoverage()
+        {
+            if (masterMixer == null)
+                return;
+
+            string mixerAssetPath = UnityEditor.AssetDatabase.GetAssetPath(masterMixer);
+            if (string.IsNullOrEmpty(mixerAssetPath))
+                return;
+
+            UnityEngine.Object[] mixerSubAssets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(mixerAssetPath);
+            if (mixerSubAssets == null || mixerSubAssets.Length <= 0)
+                return;
+
+            int snapshotCount = 0;
+            bool hasNamedCoverage = false;
+            bool hasNonAttenuationEffect = false;
+
+            for (int i = 0; i < mixerSubAssets.Length; i++)
+            {
+                UnityEngine.Object subAsset = mixerSubAssets[i];
+                if (subAsset == null)
+                    continue;
+
+                Type subAssetType = subAsset.GetType();
+                if (subAssetType == null)
+                    continue;
+
+                string typeName = subAssetType.Name;
+                if (typeName == "AudioMixerSnapshotController")
+                {
+                    snapshotCount++;
+                    string snapshotName = subAsset.name;
+                    if (snapshotName == "Underwater" ||
+                        snapshotName == "UnderwaterSnapshot" ||
+                        snapshotName == "BaseInterior" ||
+                        snapshotName == "BaseInteriorSnapshot" ||
+                        snapshotName == "Surface" ||
+                        snapshotName == "SurfaceSnapshot" ||
+                        snapshotName == "SurfaceRain" ||
+                        snapshotName == "SurfaceRainSnapshot" ||
+                        snapshotName == "SurfaceStorm" ||
+                        snapshotName == "SurfaceStormSnapshot")
+                    {
+                        hasNamedCoverage = true;
+                    }
+
+                    continue;
+                }
+
+                if (typeName != "AudioMixerEffectController")
+                    continue;
+
+                SerializedObject effectSerializedObject = new SerializedObject(subAsset);
+                SerializedProperty effectNameProperty = effectSerializedObject.FindProperty("m_EffectName");
+                if (effectNameProperty == null)
+                    continue;
+
+                string effectName = effectNameProperty.stringValue;
+                if (!string.IsNullOrEmpty(effectName) && effectName != "Attenuation")
+                    hasNonAttenuationEffect = true;
+            }
+
+            _validatedMixerSnapshotCount = snapshotCount;
+            _validatedMixerHasNamedCoverage = hasNamedCoverage;
+            _validatedMixerHasEffectGraph = hasNonAttenuationEffect;
+
+            if (snapshotCount <= 1 || !hasNamedCoverage)
+            {
+                LogSnapshotFallbackWarningOnce(
+                    ref _warnedIncompleteMixerSnapshotAuthoring,
+                    $"[AcousticZoneController] MasterMixer snapshot authoring is incomplete. Snapshot count={snapshotCount}. Expected named coverage includes Underwater, BaseInterior, Surface, SurfaceRain, and SurfaceStorm.");
+            }
+
+            if (!hasNonAttenuationEffect)
+            {
+                LogSnapshotFallbackWarningOnce(
+                    ref _warnedMissingMixerEffectGraph,
+                    "[AcousticZoneController] MasterMixer effect graph has no authored acoustic processing beyond Attenuation. Underwater/interior transitions need LPF/reverb-style processing to create real contrast.");
+            }
         }
 #endif
     }

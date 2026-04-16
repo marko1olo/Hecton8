@@ -50,13 +50,20 @@ namespace Hecton8.Core
         private static PrefabRegistry _instance;
         private static bool _isShuttingDown;
         private static bool _isResolvingRuntimeInstance;
+#if UNITY_EDITOR
+        private static bool _editorHooksInstalled;
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ReleaseStaticNativeState();
             _instance = null;
             _isShuttingDown = false;
             _isResolvingRuntimeInstance = false;
+#if UNITY_EDITOR
+            _editorHooksInstalled = false;
+#endif
         }
 
         /// <summary>Global access to the registry.</summary>
@@ -106,6 +113,9 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+#if UNITY_EDITOR
+            EnsureEditorHooks();
+#endif
             if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
@@ -121,10 +131,8 @@ namespace Hecton8.Core
             if (_instance == this)
             {
                 _isShuttingDown = true;
+                ReleaseNativeMap();
                 _instance = null;
-
-                if (_nativeMap.IsCreated)
-                    _nativeMap.Dispose();
             }
         }
 
@@ -133,6 +141,57 @@ namespace Hecton8.Core
             if (_instance == this)
                 _isShuttingDown = true;
         }
+
+        private void ReleaseNativeMap()
+        {
+            lock (_nativeMapLock)
+            {
+                if (_nativeMap.IsCreated)
+                    _nativeMap.Dispose();
+            }
+        }
+
+        private static void ReleaseStaticNativeState()
+        {
+            if (_instance != null)
+                _instance.ReleaseNativeMap();
+
+#if UNITY_EDITOR
+            ReleaseEditorHooks();
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static void EnsureEditorHooks()
+        {
+            if (_editorHooksInstalled)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting += HandleEditorQuitting;
+            _editorHooksInstalled = true;
+        }
+
+        private static void ReleaseEditorHooks()
+        {
+            if (!_editorHooksInstalled)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
+            _editorHooksInstalled = false;
+        }
+
+        private static void HandleBeforeAssemblyReload()
+        {
+            ReleaseStaticNativeState();
+        }
+
+        private static void HandleEditorQuitting()
+        {
+            ReleaseStaticNativeState();
+        }
+#endif
 
         private static PrefabRegistry EnsureRuntimeInstance()
         {

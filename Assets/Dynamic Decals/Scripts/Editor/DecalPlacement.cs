@@ -48,7 +48,7 @@ namespace LlockhamIndustries.Decals
             Undo.undoRedoPerformed += UndoRedo;
 
             //Register onSceneGUI
-            SceneView.onSceneGUIDelegate += OnSceneGUI;
+            SceneView.duringSceneGui += OnSceneGUI;
         }
         private void OnDisable()
         {
@@ -56,7 +56,7 @@ namespace LlockhamIndustries.Decals
             Undo.undoRedoPerformed -= UndoRedo;
 
             //De-register onSceneGUI
-            SceneView.onSceneGUIDelegate -= OnSceneGUI;
+            SceneView.duringSceneGui -= OnSceneGUI;
         }
 
         private void OnGUI()

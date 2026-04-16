@@ -191,7 +191,7 @@ namespace Hecton.UI.MainMenu
                 return;
 
             text.textWrappingMode = TextWrappingModes.Normal;
-            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.overflowMode = TextOverflowModes.Truncate;
             text.alignment = TextAlignmentOptions.Left;
             text.fontSize = Mathf.Min(text.fontSize, 52f);
             text.lineSpacing = -10f;

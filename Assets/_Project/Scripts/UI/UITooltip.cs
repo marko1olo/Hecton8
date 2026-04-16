@@ -86,26 +86,19 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
-
+            TryUnregister();
             Hide();
         }
 
         private void OnDestroy()
         {
+            TryUnregister();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -170,6 +163,31 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         // PRIVATE
         // ══════════════════════════════════════════════════════════
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
+        }
 
         private void ShowInternal(string text)
         {

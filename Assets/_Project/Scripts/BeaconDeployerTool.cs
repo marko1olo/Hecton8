@@ -1,4 +1,7 @@
+using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Environment;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -24,6 +27,11 @@ namespace Hecton8.Gameplay
                 return $"{label} - {Role} | {Summary} | {Recommendation}";
             }
         }
+
+        private const string DefaultBeaconPrefix = "BEACON";
+        private const string DefaultToolName = "BEACON TOOL";
+        private const string DefaultNoActiveMarkers = "BEACON NET - NO ACTIVE MARKERS";
+        private const string DefaultNoBeaconLabel = "NO BEACON";
 
         [Header("Deployment")]
         [SerializeField] private float deployRange = 12f;
@@ -53,6 +61,8 @@ namespace Hecton8.Gameplay
         private int _cachedOperationalTextFrame = -1;
         private string _cachedOperationalSummary;
         private string _cachedOperationalDirective;
+        private BiomeMatrixDirector _biomeMatrixDirector;
+        private WorldZoneDirector _worldZoneDirector;
 
         private void Awake()
         {
@@ -92,11 +102,24 @@ namespace Hecton8.Gameplay
                 out string label))
             {
                 BeaconAssessment assessment = BuildDeploymentAssessment(spawnPosition, label);
-                ToolHitUtility.ShowInfo($"BEACON DEPLOYED - {assessment.BuildHudMessage(label)} // GRID {BeaconNetworkSystem.Instance.ActiveCount}");
+                ToolHitUtility.ShowInfo(string.Format(
+                    ResolveLocalized(LocalizationKeys.BEACON_HUD_DEPLOYED, "BEACON DEPLOYED - {0} // GRID {1}"),
+                    assessment.BuildHudMessage(label),
+                    BeaconNetworkSystem.Instance.ActiveCount));
                 FieldOperationLogSystem.RecordOperation(
-                    "BEACON",
-                    "FIELD BEACON DEPLOYED",
-                    $"{label} established at {spawnPosition.x:0.0}, {spawnPosition.y:0.0}, {spawnPosition.z:0.0}. {assessment.Summary} Recommendation: {assessment.Recommendation}. Active marker count: {BeaconNetworkSystem.Instance.ActiveCount}.",
+                    ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
+                    ResolveLocalized(LocalizationKeys.BEACON_LOG_DEPLOYED_TITLE, "FIELD BEACON DEPLOYED"),
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_LOG_DEPLOYED_MESSAGE,
+                            "{0} established at {1:0.0}, {2:0.0}, {3:0.0}. {4} Recommendation: {5}. Active marker count: {6}."),
+                        label,
+                        spawnPosition.x,
+                        spawnPosition.y,
+                        spawnPosition.z,
+                        assessment.Summary,
+                        assessment.Recommendation,
+                        BeaconNetworkSystem.Instance.ActiveCount),
                     "INFO");
                 InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
@@ -114,7 +137,7 @@ namespace Hecton8.Gameplay
             {
                 if (Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowWarning("BEACON NET - NO ACTIVE MARKERS");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.BEACON_HUD_NO_ACTIVE, DefaultNoActiveMarkers));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 return;
@@ -128,11 +151,23 @@ namespace Hecton8.Gameplay
                 if (Time.time >= _nextFeedbackAt)
                 {
                     BeaconAssessment assessment = BuildExistingBeaconAssessment(nearestSnapshot, nearestDistance);
-                    ToolHitUtility.ShowInfo($"NEAREST BEACON - {assessment.BuildHudMessage(nearestSnapshot.Label)} // {nearestDistance:0.0}M // GRID {BeaconNetworkSystem.Instance.ActiveCount}");
+                    ToolHitUtility.ShowInfo(string.Format(
+                        ResolveLocalized(LocalizationKeys.BEACON_HUD_NEAREST, "NEAREST BEACON - {0} // {1:0.0}M // GRID {2}"),
+                        assessment.BuildHudMessage(nearestSnapshot.Label),
+                        nearestDistance,
+                        BeaconNetworkSystem.Instance.ActiveCount));
                     FieldOperationLogSystem.RecordOperation(
-                        "BEACON",
-                        "BEACON GRID CHECK",
-                        $"{nearestSnapshot.Label} is the nearest active field marker at {nearestDistance:0.0} m. {assessment.Summary} Recommendation: {assessment.Recommendation}. Close within {retractRange:0.0} m to retract.",
+                        ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
+                        ResolveLocalized(LocalizationKeys.BEACON_LOG_CHECK_TITLE, "BEACON GRID CHECK"),
+                        string.Format(
+                            ResolveLocalized(
+                                LocalizationKeys.BEACON_LOG_CHECK_MESSAGE,
+                                "{0} is the nearest active field marker at {1:0.0} m. {2} Recommendation: {3}. Close within {4:0.0} m to retract."),
+                            nearestSnapshot.Label,
+                            nearestDistance,
+                            assessment.Summary,
+                            assessment.Recommendation,
+                            retractRange),
                         "INFO");
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
@@ -143,11 +178,23 @@ namespace Hecton8.Gameplay
             {
                 Vector3 position = nearest.transform.position;
                 string label = nearest.Label;
-                ToolHitUtility.ShowInfo($"BEACON RETRACTED - {label} // GRID {BeaconNetworkSystem.Instance.ActiveCount}");
+                ToolHitUtility.ShowInfo(string.Format(
+                    ResolveLocalized(LocalizationKeys.BEACON_HUD_RETRACTED, "BEACON RETRACTED - {0} // GRID {1}"),
+                    label,
+                    BeaconNetworkSystem.Instance.ActiveCount));
                 FieldOperationLogSystem.RecordOperation(
-                    "BEACON",
-                    "FIELD BEACON RETRACTED",
-                    $"{label} was retracted from {position.x:0.0}, {position.y:0.0}, {position.z:0.0} at {distance:0.0} m. Active marker count: {BeaconNetworkSystem.Instance.ActiveCount}.",
+                    ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
+                    ResolveLocalized(LocalizationKeys.BEACON_LOG_RETRACTED_TITLE, "FIELD BEACON RETRACTED"),
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_LOG_RETRACTED_MESSAGE,
+                            "{0} was retracted from {1:0.0}, {2:0.0}, {3:0.0} at {4:0.0} m. Active marker count: {5}."),
+                        label,
+                        position.x,
+                        position.y,
+                        position.z,
+                        distance,
+                        BeaconNetworkSystem.Instance.ActiveCount),
                     "INFO");
                 InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
@@ -182,33 +229,54 @@ namespace Hecton8.Gameplay
             {
                 return new BeaconAssessment(
                     routeAssessment.Role,
-                    $"{label} aligned with authored route guidance. {routeAssessment.Summary}",
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_ROUTE_GUIDE,
+                            "{0} sits on authored route guidance. {1}"),
+                        label,
+                        routeAssessment.Summary),
                     routeAssessment.Recommendation);
             }
 
             if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount <= 1)
             {
                 return new BeaconAssessment(
-                    "ANCHOR",
-                    $"{label} is acting as the first navigation anchor in the current sector.",
-                    "Build the network outward from this point.");
+                    ResolveLocalized(LocalizationKeys.BEACON_ROLE_ANCHOR, "ANCHOR"),
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_FIRST_ANCHOR,
+                            "{0} is acting as the first navigation anchor in the current sector."),
+                        label),
+                    ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_BUILD_OUTWARD, "Build the network outward from this point."));
             }
 
             if (!TryGetNearestNeighbor(spawnPosition, label, out BeaconNetworkSystem.BeaconSnapshot nearest, out float nearestDistance))
             {
                 return new BeaconAssessment(
-                    "ANCHOR",
-                    $"{label} could not resolve a neighbor and is acting as a standalone anchor.",
-                    "Confirm line of travel before extending the grid.");
+                    ResolveLocalized(LocalizationKeys.BEACON_ROLE_ANCHOR, "ANCHOR"),
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_STANDALONE_ANCHOR,
+                            "{0} could not resolve a neighbor and is acting as a standalone anchor."),
+                        label),
+                    ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_CONFIRM_ROUTE, "Confirm line of travel before extending the grid."));
             }
 
             string role = ClassifyRole(nearestDistance);
-            string summary = $"{label} extends the grid from {nearest.Label} by {nearestDistance:0.0} m.";
+            string summary = string.Format(
+                ResolveLocalized(
+                    LocalizationKeys.BEACON_SUMMARY_EXTENDS_GRID,
+                    "{0} extends the grid from {1} by {2:0.0} m."),
+                label,
+                nearest.Label,
+                nearestDistance);
             string recommendation = role switch
             {
-                "LOCAL MARK" => "Use it to tag dense loot, cave turns, or salvage clusters.",
-                "RELAY" => "Use it to bridge a travel lane or a return path.",
-                _ => "Use it as a frontier marker for deep progression or retreat routing."
+                var localMark when localMark == ResolveLocalized(LocalizationKeys.BEACON_ROLE_LOCAL_MARK, "LOCAL MARK")
+                    => ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_LOCAL_MARK, "Use it to tag dense loot, cave turns, or salvage clusters."),
+                var relay when relay == ResolveLocalized(LocalizationKeys.BEACON_ROLE_RELAY, "RELAY")
+                    => ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_RELAY, "Use it to bridge a travel lane or a return path."),
+                _ => ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_FRONTIER, "Use it as a frontier marker for deep progression or retreat routing.")
             };
             return new BeaconAssessment(role, summary, recommendation);
         }
@@ -238,25 +306,44 @@ namespace Hecton8.Gameplay
             if (TryReadRouteMarkerAssessment(snapshot.Position, out BeaconAssessment routeAssessment))
             {
                 string routeRecommendation = distance <= retractRange
-                    ? "You are inside recovery distance and can retract or reposition this route marker now."
+                    ? ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_RETRACT_ROUTE_NOW, "You are inside recovery distance and can retract or reposition this route marker now.")
                     : routeAssessment.Recommendation;
 
                 return new BeaconAssessment(
                     routeAssessment.Role,
-                    $"{snapshot.Label} sits on authored route guidance. {routeAssessment.Summary}",
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_ROUTE_GUIDE,
+                            "{0} sits on authored route guidance. {1}"),
+                        snapshot.Label,
+                        routeAssessment.Summary),
                     routeRecommendation);
             }
 
             string role = ClassifyRole(distance);
             string summary = role switch
             {
-                "LOCAL MARK" => $"{snapshot.Label} is a close-range marker for nearby loot, turns, or hazards.",
-                "RELAY" => $"{snapshot.Label} is holding a mid-range travel lane through the sector.",
-                _ => $"{snapshot.Label} is acting as a frontier marker deeper into the field."
+                var localMark when localMark == ResolveLocalized(LocalizationKeys.BEACON_ROLE_LOCAL_MARK, "LOCAL MARK")
+                    => string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_LOCAL_MARK,
+                            "{0} is a close-range marker for nearby loot, turns, or hazards."),
+                        snapshot.Label),
+                var relay when relay == ResolveLocalized(LocalizationKeys.BEACON_ROLE_RELAY, "RELAY")
+                    => string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_RELAY,
+                            "{0} is holding a mid-range travel lane through the sector."),
+                        snapshot.Label),
+                _ => string.Format(
+                    ResolveLocalized(
+                        LocalizationKeys.BEACON_SUMMARY_FRONTIER,
+                        "{0} is acting as a frontier marker deeper into the field."),
+                    snapshot.Label)
             };
             string recommendation = distance <= retractRange
-                ? "You are inside recovery distance and can retract it now."
-                : "Leave it active unless you are collapsing this route.";
+                ? ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_RETRACT_NOW, "You are inside recovery distance and can retract it now.")
+                : ResolveLocalized(LocalizationKeys.BEACON_RECOMMEND_LEAVE_ACTIVE, "Leave it active unless you are collapsing this route.");
             return new BeaconAssessment(role, summary, recommendation);
         }
 
@@ -269,7 +356,13 @@ namespace Hecton8.Gameplay
 
             assessment = new BeaconAssessment(
                 FieldTargetSemantics.BuildRouteRoleLabel(nearest.Role),
-                FieldTargetSemantics.BuildDescriptorSummary(nearest, $"{nearest.name} is the nearest authored route guide."),
+                FieldTargetSemantics.BuildDescriptorSummary(
+                    nearest,
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_SUMMARY_ROUTE_ALIGNED,
+                            "{0} is the nearest authored route guide."),
+                        nearest.name)),
                 FieldTargetSemantics.BuildRouteRecommendation(nearest.Role));
             return true;
         }
@@ -277,10 +370,10 @@ namespace Hecton8.Gameplay
         private string ClassifyRole(float distance)
         {
             if (distance <= 12f)
-                return "LOCAL MARK";
+                return ResolveLocalized(LocalizationKeys.BEACON_ROLE_LOCAL_MARK, "LOCAL MARK");
             if (distance <= 35f)
-                return "RELAY";
-            return "FRONTIER";
+                return ResolveLocalized(LocalizationKeys.BEACON_ROLE_RELAY, "RELAY");
+            return ResolveLocalized(LocalizationKeys.BEACON_ROLE_FRONTIER, "FRONTIER");
         }
 
         private bool TryGetNearestNeighbor(Vector3 origin, string excludeLabel, out BeaconNetworkSystem.BeaconSnapshot snapshot, out float distance)
@@ -322,7 +415,7 @@ namespace Hecton8.Gameplay
 
         private bool TryReadNearestAssessment(out string label, out float distance, out BeaconAssessment assessment)
         {
-            label = "NO BEACON";
+            label = ResolveLocalized(LocalizationKeys.BEACON_LABEL_NONE, DefaultNoBeaconLabel);
             distance = 0f;
             assessment = default;
 
@@ -378,23 +471,119 @@ namespace Hecton8.Gameplay
             int activeCount = BeaconNetworkSystem.Instance != null ? BeaconNetworkSystem.Instance.ActiveCount : 0;
             if (_cooldown > 0f)
             {
-                _cachedOperationalSummary = $"BEACON TOOL // GRID {activeCount} // CYCLING {_cooldown:0.0}S";
-                _cachedOperationalDirective = "Wait for deployment hardware to reset.";
+                _cachedOperationalSummary = string.Format(
+                    ResolveLocalized(LocalizationKeys.BEACON_OPERATIONAL_COOLDOWN, "BEACON TOOL // GRID {0} // CYCLING {1:0.0}S"),
+                    activeCount,
+                    _cooldown);
+                _cachedOperationalDirective = ResolveLocalized(
+                    LocalizationKeys.BEACON_OPERATIONAL_COOLDOWN_DIRECTIVE,
+                    "Wait for deployment hardware to reset.");
                 _cachedOperationalTextFrame = currentFrame;
                 return;
             }
 
             if (TryGetNearestAssessmentCached(out string label, out float distance, out BeaconAssessment assessment))
             {
-                _cachedOperationalSummary = $"BEACON TOOL // {assessment.Role} // {label} {distance:0.0}M";
+                _cachedOperationalSummary = string.Format(
+                    ResolveLocalized(LocalizationKeys.BEACON_OPERATIONAL_NEAREST, "BEACON TOOL // {0} // {1} {2:0.0}M"),
+                    assessment.Role,
+                    label,
+                    distance);
                 _cachedOperationalDirective = assessment.Recommendation;
                 _cachedOperationalTextFrame = currentFrame;
                 return;
             }
 
-            _cachedOperationalSummary = $"BEACON TOOL // GRID {activeCount} // READY";
-            _cachedOperationalDirective = "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.";
+            ResolveRuntimeContext();
+            if (TryBuildContextualReadyAssessment(out BeaconAssessment contextualAssessment))
+            {
+                _cachedOperationalSummary = string.Format(
+                    "BEACON TOOL // {0} // READY",
+                    contextualAssessment.Role);
+                _cachedOperationalDirective = contextualAssessment.Recommendation;
+                _cachedOperationalTextFrame = currentFrame;
+                return;
+            }
+
+            _cachedOperationalSummary = string.Format(
+                ResolveLocalized(LocalizationKeys.BEACON_OPERATIONAL_READY, "BEACON TOOL // GRID {0} // READY"),
+                activeCount);
+            _cachedOperationalDirective = ResolveLocalized(
+                LocalizationKeys.BEACON_OPERATIONAL_READY_DIRECTIVE,
+                "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.");
             _cachedOperationalTextFrame = currentFrame;
+        }
+
+        private void ResolveRuntimeContext()
+        {
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
+        }
+
+        private bool TryBuildContextualReadyAssessment(out BeaconAssessment assessment)
+        {
+            assessment = default;
+
+            WorldZoneAnchor zone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
+            HectonBiomeMatrixProfile biome = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentProfile : null;
+
+            if (zone != null &&
+                zone.RouteCritical &&
+                biome != null &&
+                biome.survivalPressure >= 3 &&
+                !string.IsNullOrWhiteSpace(biome.safePocketIdentity))
+            {
+                assessment = new BeaconAssessment(
+                    ResolveLocalized(LocalizationKeys.BEACON_ROLE_RELAY, "RELAY"),
+                    biome.safePocketIdentity,
+                    biome.safePocketIdentity);
+                return true;
+            }
+
+            if (zone != null &&
+                (zone.Kind == WorldZoneAnchor.ZoneKind.Navigation || zone.Kind == WorldZoneAnchor.ZoneKind.Progression) &&
+                biome != null &&
+                !string.IsNullOrWhiteSpace(biome.landmarkGuidance))
+            {
+                assessment = new BeaconAssessment(
+                    zone.RouteCritical
+                        ? ResolveLocalized(LocalizationKeys.BEACON_ROLE_RELAY, "RELAY")
+                        : ResolveLocalized(LocalizationKeys.BEACON_ROLE_FRONTIER, "FRONTIER"),
+                    string.IsNullOrWhiteSpace(zone.GameplayIntent) ? biome.landmarkGuidance : zone.GameplayIntent,
+                    biome.landmarkGuidance);
+                return true;
+            }
+
+            if (biome != null &&
+                biome.rewardPull >= 4 &&
+                !string.IsNullOrWhiteSpace(biome.rareRewardHook))
+            {
+                assessment = new BeaconAssessment(
+                    ResolveLocalized(LocalizationKeys.BEACON_ROLE_FRONTIER, "FRONTIER"),
+                    biome.rareRewardHook,
+                    biome.rareRewardHook);
+                return true;
+            }
+
+            if (biome != null &&
+                !string.IsNullOrWhiteSpace(biome.commonRewardHook))
+            {
+                assessment = new BeaconAssessment(
+                    ResolveLocalized(LocalizationKeys.BEACON_ROLE_LOCAL_MARK, "LOCAL MARK"),
+                    biome.commonRewardHook,
+                    biome.commonRewardHook);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

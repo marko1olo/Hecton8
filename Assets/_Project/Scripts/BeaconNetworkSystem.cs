@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
@@ -272,9 +273,11 @@ namespace Hecton8.Gameplay
                 {
                     oldest.DespawnSelf();
                     FieldOperationLogSystem.RecordOperation(
-                        "BEACON",
-                        "BEACON GRID TRIMMED",
-                        "Oldest beacon anchor was retired to preserve the active field-marker cap.",
+                        ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON"),
+                        ResolveLocalized(LocalizationKeys.BEACON_LOG_TRIMMED_TITLE, "BEACON GRID TRIMMED"),
+                        ResolveLocalized(
+                            LocalizationKeys.BEACON_LOG_TRIMMED_MESSAGE,
+                            "Oldest beacon anchor was retired to preserve the active field-marker cap."),
                         "WARN");
                 }
             }
@@ -460,10 +463,20 @@ namespace Hecton8.Gameplay
 
         private string BuildNextLabel()
         {
-            string prefix = string.IsNullOrWhiteSpace(defaultLabelPrefix) ? "BEACON" : CachedToUpperInvariant(defaultLabelPrefix.Trim());
+            string prefix = string.IsNullOrWhiteSpace(defaultLabelPrefix)
+                ? ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON")
+                : CachedToUpperInvariant(defaultLabelPrefix.Trim());
             string label = $"{prefix}-{_nextSequence:00}";
             _nextSequence++;
             return label;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         // ══════════════════════════════════════════════════════════

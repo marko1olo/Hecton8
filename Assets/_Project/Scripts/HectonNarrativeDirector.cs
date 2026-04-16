@@ -100,11 +100,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
@@ -119,11 +115,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
@@ -132,6 +124,39 @@ namespace Hecton8.Gameplay
             NarrativeEvents.OnNarrativePOIRegistered -= HandlePOIRegistered;
             NarrativeEvents.OnNarrativePOIDisposed -= HandlePOIDisposed;
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequest;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (_instance == this)
+                _instance = null;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)
@@ -215,20 +240,30 @@ namespace Hecton8.Gameplay
         {
             _rareDiscoveryRequested = true;
 
-            // Публикуем сигнал Атлас-6 как "редкую находку" рядом с позицией
-            // AtlasSignalSystem реагирует на близость к ядру — Director усиливает сигнал
-            if (AtlasSignalSystem.Instance != null)
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector != null &&
+                !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule))
             {
-                float strength = AtlasSignalSystem.Instance.CurrentStrength;
-                if (strength > 0f)
-                    AtlasSignalEvents.RaisePulse(strength);
+                return;
             }
+
+            AtlasSignalSystem atlasSignalSystem = AtlasSignalSystem.Instance;
+            bool rebroadcastedPulse = CanRebroadcastAtlasRareDiscoveryPulse(atlasSignalSystem);
+            if (rebroadcastedPulse)
+                AtlasSignalEvents.RaisePulse(atlasSignalSystem.CurrentStrength);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Narrative] Rare Discovery requested near {hintPosition}. " +
-                      $"Atlas-6 signal pulse triggered (strength: " +
+                      $"Atlas-6 signal {(rebroadcastedPulse ? "pulse triggered" : "pulse skipped")} (strength: " +
                       $"{(AtlasSignalSystem.Instance != null ? AtlasSignalSystem.Instance.CurrentStrength : 0f):F2}).");
 #endif
+        }
+
+        private static bool CanRebroadcastAtlasRareDiscoveryPulse(AtlasSignalSystem atlasSignalSystem)
+        {
+            return atlasSignalSystem != null &&
+                   atlasSignalSystem.CurrentRevealStage >= 2 &&
+                   atlasSignalSystem.CurrentStrength > 0f;
         }
 
         private bool ResolvePlayerTransform()

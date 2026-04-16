@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bbfa2ce707120c4bb74b57f629ad5ab, type: 3}
+  m_Name: Expression_Abyss_Pathfinder
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerExpressionProfile
+  profileId: expression.abyss.pathfinder
+  displayName: ABYSS PATHFINDER
+  hudLabelOverride: ABYSS PATHFINDER
+  summary: Fast-reading deep-water survey profile for navigation, beacon placement,
+    and silent route carving.
+  unlockedByDefault: 1
+  hudProfile: {fileID: 11400000, guid: 49a063767bd46e046877bc68194c8042, type: 2}
+  recommendedSuit: {fileID: 11400000, guid: 0ac4df6679641f2488e9fb8e11c34d5b, type: 2}
+  recommendedLoadout: {fileID: 11400000, guid: 9f4fc749b6c0fa2488c4a25f4dd58516, type: 2}

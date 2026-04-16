@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4175917846482470324}
   - component: {fileID: 6004958319615135013}
+  - component: {fileID: 5696904576137478195}
   m_Layer: 0
   m_Name: Tool_HarpoonLauncher_Held
   m_TagString: Untagged
@@ -139,6 +140,8 @@ MonoBehaviour:
   _toolMetadata: {fileID: 11400000, guid: 80a993c16dbe8dd49bc67910a0963519, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  _swimContract: {fileID: 0}
   range: 36
   damage: 42
   impulse: 18
@@ -148,5 +151,40 @@ MonoBehaviour:
   targetMask:
     serializedVersion: 2
     m_Bits: 524287
+  feedbackInterval: 0.35
+  tetherDuration: 5
+  tetherPullBonus: 1.35
   tracer: {fileID: 0}
   tracerLifetime: 0.08
+--- !u!114 &5696904576137478195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4612592341407459497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9fb1903b49f6e428d8fc12ce0a4103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerToolSwimContract
+  toolHand: 0
+  swimRootPresentationWeight: 0.33
+  swimSupportHandWeight: 0.56
+  swimToolHandWeight: 0.04
+  activeUseSupportHandBoost: 0.1
+  swimRootPoseBias:
+    localPositionOffset: {x: 0.03, y: -0.02, z: -0.054}
+    localEulerOffset: {x: 6, y: 6, z: 5}
+  swimSupportHandPoseBias:
+    localPositionOffset: {x: -0.05, y: 0.028, z: 0.022}
+    localEulerOffset: {x: 8, y: -20, z: -12}
+  swimToolHandPoseBias:
+    localPositionOffset: {x: 0.03, y: -0.018, z: -0.052}
+    localEulerOffset: {x: 8, y: 14, z: 10}
+  activeUseRootPoseBias:
+    localPositionOffset: {x: 0.01, y: -0.016, z: -0.024}
+    localEulerOffset: {x: 4, y: 3, z: 3}
+  activeUseSupportHandPoseBias:
+    localPositionOffset: {x: -0.016, y: 0.026, z: 0.02}
+    localEulerOffset: {x: 8, y: -12, z: -10}

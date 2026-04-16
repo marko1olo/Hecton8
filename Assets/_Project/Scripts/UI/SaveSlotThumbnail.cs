@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
+using Hecton8.Bootstrap;
 
 namespace Hecton8.UI
 {
@@ -39,6 +40,7 @@ namespace Hecton8.UI
 
         private Texture2D _thumbnailTexture;
         private RenderTexture _captureRT;
+        private Texture2D _captureTexture;
         private CanvasGroup _thumbnailCanvasGroup;
         private CanvasGroup _placeholderCanvasGroup;
         private Camera _fallbackCaptureCamera;
@@ -57,6 +59,7 @@ namespace Hecton8.UI
         {
             ReleaseThumbnailTexture();
             ReleaseCaptureRT();
+            ReleaseCaptureTexture();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -99,9 +102,15 @@ namespace Hecton8.UI
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture.active = _captureRT;
 
-            Texture2D screenshot = new Texture2D(ThumbnailWidth, ThumbnailHeight, TextureFormat.RGB24, false);
+            Texture2D screenshot = GetOrCreateCaptureTexture();
+            if (screenshot == null)
+            {
+                RenderTexture.active = previousActive;
+                return;
+            }
+
             screenshot.ReadPixels(new Rect(0, 0, ThumbnailWidth, ThumbnailHeight), 0, 0);
-            screenshot.Apply();
+            screenshot.Apply(false, false);
 
             RenderTexture.active = previousActive;
 
@@ -126,11 +135,6 @@ namespace Hecton8.UI
                 Debug.LogError($"[SaveSlotThumbnail] Failed to save thumbnail for {slotName}: {ex.Message}");
             }
 
-            // Cleanup temp texture
-            if (Application.isPlaying)
-                Destroy(screenshot);
-            else
-                DestroyImmediate(screenshot);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -159,12 +163,10 @@ namespace Hecton8.UI
             try
             {
                 byte[] pngData = File.ReadAllBytes(thumbnailPath);
-                ReleaseThumbnailTexture();
-
-                _thumbnailTexture = new Texture2D(2, 2, TextureFormat.RGB24, false);
-                if (_thumbnailTexture.LoadImage(pngData))
+                Texture2D thumbnailTexture = GetOrCreateThumbnailTexture();
+                if (thumbnailTexture != null && thumbnailTexture.LoadImage(pngData, true))
                 {
-                    ShowThumbnail(_thumbnailTexture);
+                    ShowThumbnail(thumbnailTexture);
                 }
                 else
                 {
@@ -232,8 +234,45 @@ namespace Hecton8.UI
             if (_fallbackCaptureCamera != null)
                 return _fallbackCaptureCamera;
 
-            _fallbackCaptureCamera = Camera.main;
-            return _fallbackCaptureCamera;
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
+                {
+                    _fallbackCaptureCamera = playerOwnedCamera;
+                    return _fallbackCaptureCamera;
+                }
+
+                Camera playerChildCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                if (playerChildCamera != null)
+                {
+                    _fallbackCaptureCamera = playerChildCamera;
+                    return _fallbackCaptureCamera;
+                }
+            }
+
+            if (TryGetComponent(out Camera localCamera))
+            {
+                _fallbackCaptureCamera = localCamera;
+                return _fallbackCaptureCamera;
+            }
+
+            Camera childCamera = GetComponentInChildren<Camera>(true);
+            if (childCamera != null)
+            {
+                _fallbackCaptureCamera = childCamera;
+                return _fallbackCaptureCamera;
+            }
+
+            Camera parentCamera = GetComponentInParent<Camera>();
+            if (parentCamera != null)
+            {
+                _fallbackCaptureCamera = parentCamera;
+                return _fallbackCaptureCamera;
+            }
+
+            _fallbackCaptureCamera = null;
+            return null;
         }
 
         private static void SetCanvasVisible(CanvasGroup canvasGroup, bool visible)
@@ -259,6 +298,16 @@ namespace Hecton8.UI
             _thumbnailTexture = null;
         }
 
+        private Texture2D GetOrCreateThumbnailTexture()
+        {
+            if (_thumbnailTexture != null)
+                return _thumbnailTexture;
+
+            // COLD ALLOC: Texture2D[1] — reusable save-slot thumbnail display texture — owner: SaveSlotThumbnail
+            _thumbnailTexture = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            return _thumbnailTexture;
+        }
+
         private void ReleaseCaptureRT()
         {
             if (_captureRT == null)
@@ -272,6 +321,34 @@ namespace Hecton8.UI
                 DestroyImmediate(_captureRT);
 
             _captureRT = null;
+        }
+
+        private Texture2D GetOrCreateCaptureTexture()
+        {
+            if (_captureTexture != null &&
+                _captureTexture.width == ThumbnailWidth &&
+                _captureTexture.height == ThumbnailHeight)
+            {
+                return _captureTexture;
+            }
+
+            ReleaseCaptureTexture();
+            // COLD ALLOC: Texture2D[1] — reusable save-slot thumbnail capture buffer — owner: SaveSlotThumbnail
+            _captureTexture = new Texture2D(ThumbnailWidth, ThumbnailHeight, TextureFormat.RGB24, false);
+            return _captureTexture;
+        }
+
+        private void ReleaseCaptureTexture()
+        {
+            if (_captureTexture == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_captureTexture);
+            else
+                DestroyImmediate(_captureTexture);
+
+            _captureTexture = null;
         }
 
         private static string GetThumbnailPath(string slotName)

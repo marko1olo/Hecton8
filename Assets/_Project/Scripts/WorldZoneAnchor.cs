@@ -119,6 +119,9 @@ namespace Hecton8.World
                 if (go == null || !go.scene.IsValid())
                     continue;
 
+                if (WorldShippingContentFilter.IsSuppressedZone(anchor))
+                    continue;
+
                 destination.Add(anchor);
             }
         }
@@ -279,7 +282,7 @@ namespace Hecton8.World
                 zoneId = "zone.generic";
 
             if (string.IsNullOrWhiteSpace(zoneLabel))
-                zoneLabel = gameObject.name;
+                zoneLabel = "Generic Zone";
 
             if (dominantMatrixBiome != null && dominantBiomeFamily == null)
                 dominantBiomeFamily = dominantMatrixBiome.familyProfile;

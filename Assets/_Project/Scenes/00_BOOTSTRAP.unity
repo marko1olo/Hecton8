@@ -148,12 +148,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4be802b6ffe150647ac599638e2a1f75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.ShellVerificationRuntimeSmokeTester
-  runOnStart: 1
+  runOnStart: 0
+  suppressAutoStartWhileRuntimeProfilerActive: 1
   startupDelay: 0.75
   actionTimeout: 20
   settleDelay: 0.25
   runLoadSlotIfAvailable: 1
-  verboseLogging: 1
+  verboseLogging: 0
   _debugRunCount: 0
   _debugLastPhase: Idle
   _debugLastPass: 0

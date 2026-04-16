@@ -24,6 +24,7 @@
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -52,6 +53,25 @@ namespace Hecton8.AtlasSignal
         [Tooltip("Минимальная сила сигнала для обнаружения сканером.")]
         [SerializeField, Range(0f, 1f)] private float detectionThreshold = 0.05f;
 
+        [Header("── Late Manifestation ─────────────────────")]
+        [Tooltip("Atlas stays dormant until the first-hour spine has already handed the player to deeper route/module play.")]
+        [SerializeField] private FirstHourMilestone minimumMilestoneToManifest = FirstHourMilestone.FirstModule;
+
+        [Tooltip("Before full manifestation, Atlas may leak only a weak rhythmic ghost-beat once the player has already proven deeper commitment.")]
+        [SerializeField] private FirstHourMilestone minimumMilestoneToGhostManifest = FirstHourMilestone.FirstCraft;
+
+        [Tooltip("Depth where the first rhythmic Atlas beat can cut through the water.")]
+        [SerializeField] private float revealStage1Depth = 180f;
+
+        [Tooltip("Depth where the rhythm stops reading as noise and starts reading as pattern.")]
+        [SerializeField] private float revealStage2Depth = 450f;
+
+        [Tooltip("Depth where the signal starts yielding content fragments instead of pure rhythm.")]
+        [SerializeField] private float revealStage3Depth = 1200f;
+
+        [Tooltip("Depth where the carrier becomes stable enough for a true late-game lock on the source.")]
+        [SerializeField] private float revealStage4Depth = 2600f;
+
         [Header("── Shader Integration ────────────────────")]
         [Tooltip("Публиковать силу сигнала в шейдер для биолюминесцентного отклика.")]
         [SerializeField] private bool publishToShader = true;
@@ -74,7 +94,11 @@ namespace Hecton8.AtlasSignal
         private float _currentStrength;
         private float _lastPublishedStrength;
         private bool _signalEverDetected;
+        private int _maxRevealStageUnlocked;
         private bool _registered;
+        private bool _ghostManifestationAnnounced;
+
+        private const int FormalDetectionRevealStage = 2;
 
         private static readonly int _ShaderSignalStrength =
             Shader.PropertyToID("_AtlasSignalStrength");
@@ -89,8 +113,11 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
 
         public float CurrentStrength => _currentStrength;
-        public bool IsDetected => _currentStrength >= detectionThreshold;
+        public bool IsDetected =>
+            _maxRevealStageUnlocked >= FormalDetectionRevealStage &&
+            _currentStrength >= detectionThreshold;
         public Vector3 AtlasCorePosition => atlasCorePosWorld;
+        public int CurrentRevealStage => _maxRevealStageUnlocked;
 
         /// <summary>
         /// Направление к ядру Атлас-6 от текущей позиции игрока.
@@ -130,11 +157,7 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
@@ -144,14 +167,18 @@ namespace Hecton8.AtlasSignal
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -168,12 +195,13 @@ namespace Hecton8.AtlasSignal
 
             _pulseTimer += 0.5f; // SlowTick ~0.5s
 
-            // Обновляем силу сигнала
-            float dist = Vector3.Distance(_playerTransform.position, atlasCorePosWorld);
-            float newStrength = 0f;
+            float rawStrength = CalculateRawStrength();
+            int previousRevealStage = _maxRevealStageUnlocked;
+            int desiredRevealStage = ResolveDesiredRevealStage(ResolveCurrentDepthMeters());
+            if (desiredRevealStage > _maxRevealStageUnlocked)
+                _maxRevealStageUnlocked = desiredRevealStage;
 
-            if (dist < maxSignalRange)
-                newStrength = 1f - (dist / maxSignalRange);
+            float newStrength = Mathf.Min(rawStrength, ResolveRevealStrengthCap(_maxRevealStageUnlocked));
 
             // Публикуем изменение силы
             if (Mathf.Abs(newStrength - _lastPublishedStrength) > StrengthEpsilon)
@@ -183,12 +211,12 @@ namespace Hecton8.AtlasSignal
                 AtlasSignalEvents.RaiseStrengthChanged(newStrength);
 
                 // Первое обнаружение
-                if (!_signalEverDetected && newStrength >= detectionThreshold)
+                if (!_signalEverDetected &&
+                    newStrength >= detectionThreshold &&
+                    _maxRevealStageUnlocked >= FormalDetectionRevealStage)
                 {
                     _signalEverDetected = true;
                     AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
-                    NotificationEvents.PushWarning("НЕИЗВЕСТНЫЙ СИГНАЛ ОБНАРУЖЕН — ИСТОЧНИК: НЕИЗВЕСТЕН");
-
                     LogSignalFirstDetected(newStrength);
                 }
 
@@ -197,7 +225,13 @@ namespace Hecton8.AtlasSignal
                     Shader.SetGlobalFloat(_ShaderSignalStrength, newStrength);
             }
 
+            if (_maxRevealStageUnlocked > previousRevealStage)
+                HandleRevealStageUnlocked(_maxRevealStageUnlocked, newStrength);
+
             // Пульс
+            if (_maxRevealStageUnlocked <= 0)
+                return;
+
             if (_pulseTimer < pulsePeriodSeconds)
                 return;
 
@@ -232,6 +266,149 @@ namespace Hecton8.AtlasSignal
             SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
+        private float ResolveCurrentDepthMeters()
+        {
+            BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            if (biomeMatrixDirector != null)
+                return biomeMatrixDirector.CurrentDepthMeters;
+
+            return Mathf.Max(0f, -_playerTransform.position.y);
+        }
+
+        private float CalculateRawStrength()
+        {
+            float dist = Vector3.Distance(_playerTransform.position, atlasCorePosWorld);
+            if (dist >= maxSignalRange)
+                return 0f;
+
+            return 1f - (dist / maxSignalRange);
+        }
+
+        private int ResolveDesiredRevealStage(float currentDepthMeters)
+        {
+            if (CanManifestAtlas())
+            {
+                if (currentDepthMeters >= revealStage4Depth)
+                    return 4;
+
+                if (currentDepthMeters >= revealStage3Depth)
+                    return 3;
+
+                if (currentDepthMeters >= revealStage2Depth)
+                    return 2;
+
+                if (currentDepthMeters >= revealStage1Depth)
+                    return 1;
+
+                return 0;
+            }
+
+            if (CanManifestGhostBeat() && currentDepthMeters >= revealStage1Depth)
+                return 1;
+
+            return 0;
+        }
+
+        private float ResolveRevealStrengthCap(int revealStage)
+        {
+            return revealStage switch
+            {
+                1 => 0.08f,
+                2 => 0.34f,
+                3 => 0.78f,
+                4 => 1f,
+                _ => 0f
+            };
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
+        }
+
+        private bool CanManifestAtlas()
+        {
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector == null)
+                return true;
+
+            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToManifest);
+        }
+
+        private bool CanManifestGhostBeat()
+        {
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector == null)
+                return false;
+
+            if (firstHourDirector.IsMilestoneComplete(minimumMilestoneToManifest))
+                return false;
+
+            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToGhostManifest);
+        }
+
+        private void HandleRevealStageUnlocked(int revealStage, float manifestedStrength)
+        {
+            if (manifestedStrength <= 0f)
+                return;
+
+            _pulseTimer = 0f;
+            AtlasSignalEvents.RaisePulse(manifestedStrength);
+
+            switch (revealStage)
+            {
+                case 1:
+                    if (!CanManifestAtlas() && !_ghostManifestationAnnounced)
+                    {
+                        _ghostManifestationAnnounced = true;
+                    }
+                    break;
+
+                case 2:
+                    if (!_signalEverDetected && manifestedStrength >= detectionThreshold)
+                    {
+                        _signalEverDetected = true;
+                        AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
+                    }
+
+                    NotificationEvents.PushInfo(
+                        "СЛАБЫЙ РИТМИЧЕСКИЙ ПАТТЕРН ПОДТВЕРЖДЁН. КОНТАКТ ЕЩЁ НЕСТАБИЛЕН.");
+                    break;
+
+                case 3:
+                    NotificationEvents.PushWarning(
+                        "СИГНАЛ НАЧАЛ ОТДАВАТЬ ФРАГМЕНТЫ СОДЕРЖАНИЯ. ГЛУБИНА ДАЁТ ПЕЛЕНГ ЧИЩЕ.");
+                    break;
+
+                case 4:
+                    NotificationEvents.PushWarning(
+                        "НЕСУЩАЯ СТАБИЛЬНА. ТЕПЕРЬ СИГНАЛ МОЖНО ДОЖИМАТЬ ДО ИСТОЧНИКА.");
+                    break;
+            }
+
+            LogRevealStageUnlocked(revealStage, manifestedStrength);
+        }
+
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogSignalFirstDetected(float strength)
         {
@@ -254,6 +431,12 @@ namespace Hecton8.AtlasSignal
             Debug.Log($"[AtlasSignal] Signal decoded: {messageId}");
         }
 
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogRevealStageUnlocked(int revealStage, float manifestedStrength)
+        {
+            Debug.Log($"[AtlasSignal] Reveal stage {revealStage} unlocked. Manifested strength: {manifestedStrength:F2}");
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ISaveable
         // ══════════════════════════════════════════════════════════
@@ -263,6 +446,7 @@ namespace Hecton8.AtlasSignal
             if (data == null) return;
             data.atlasSignalDetected = _signalEverDetected;
             data.atlasSignalPulseTimer = _pulseTimer;
+            data.atlasSignalRevealStage = _maxRevealStageUnlocked;
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -270,6 +454,13 @@ namespace Hecton8.AtlasSignal
             if (data == null) return;
             _signalEverDetected = data.atlasSignalDetected;
             _pulseTimer = data.atlasSignalPulseTimer;
+            _maxRevealStageUnlocked = Mathf.Clamp(data.atlasSignalRevealStage, 0, 4);
+            _ghostManifestationAnnounced = _maxRevealStageUnlocked > 0 && !_signalEverDetected;
+            if (_signalEverDetected && _maxRevealStageUnlocked < FormalDetectionRevealStage)
+                _maxRevealStageUnlocked = FormalDetectionRevealStage;
+
+            if (_maxRevealStageUnlocked >= FormalDetectionRevealStage)
+                _signalEverDetected = true;
         }
     }
 }

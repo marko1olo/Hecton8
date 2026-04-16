@@ -62,6 +62,7 @@ namespace NASAPunk.Visor
         private bool _tickRegistered;
         private Transform _cachedHudCanvasTransform;
         private Transform _cachedHudRtCompositorTransform;
+        private bool _fallbackToOverlayActive;
         private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
         private const int ProjectionSourceLayer = 17;
 
@@ -120,6 +121,17 @@ namespace NASAPunk.Visor
 
         public void Tick(float deltaTime)
         {
+            AutoResolveReferences();
+            ApplyPresentation(force: _pendingApply);
+            _pendingApply = false;
+            EvaluateTickRegistration();
+        }
+
+        private void Update()
+        {
+            if (!Application.isPlaying || _tickRegistered)
+                return;
+
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
@@ -216,15 +228,19 @@ namespace NASAPunk.Visor
 
         private void ApplyPresentation(bool force)
         {
-            bool projectedMode =
+            bool projectedModeRequested =
                 presentationMode == PresentationMode.ModernProjectedSharedRT ||
                 presentationMode == PresentationMode.ModernProjectedRuntimeRT;
+
+            EnsureProjectionSource(projectedModeRequested);
+            bool projectedMode = projectedModeRequested && IsProjectedPresentationAvailable();
 
             if (!force &&
                 _appliedMode == presentationMode &&
                 ReferenceEquals(_appliedFallbackProfile, standardFallbackProfile) &&
                 ReferenceEquals(_appliedSharedTexture, sharedProjectionTexture) &&
-                (!projectedMode || projectionSourceOverlay != null))
+                (!projectedModeRequested || projectionSourceOverlay != null) &&
+                _fallbackToOverlayActive != (projectedModeRequested && !projectedMode))
             {
                 return;
             }
@@ -238,10 +254,11 @@ namespace NASAPunk.Visor
             if (visorController != null)
             {
                 visorController.SetSharedRenderTexture(sharedProjectionTexture);
-                visorController.SetProjectionMode(ResolveProjectionMode(presentationMode));
+                visorController.SetProjectionMode(ResolveProjectionMode(projectedMode
+                    ? presentationMode
+                    : PresentationMode.ModernOverlay));
             }
 
-            EnsureProjectionSource(projectedMode);
             if (preferCanvasProjectionSource && projectedMode && projectionSourceOverlay != null)
                 useProjectedModern = false;
 
@@ -253,13 +270,16 @@ namespace NASAPunk.Visor
 
             SuppressOverlayPaths(projectedMode);
 
-            debugAppliedModeLabel = presentationMode == PresentationMode.LegacyOverlay
-                ? "ModernOverlay (legacy retired)"
-                : presentationMode.ToString();
+            debugAppliedModeLabel = projectedModeRequested && !projectedMode
+                ? presentationMode + " -> FallbackOverlay"
+                : presentationMode == PresentationMode.LegacyOverlay
+                    ? "ModernOverlay (legacy retired)"
+                    : presentationMode.ToString();
             debugModernEnabled =
                 (overlayModernHud != null && overlayModernHud.enabled) ||
                 (projectedModernHud != null && projectedModernHud.enabled);
             debugProjectedModeActive = projectedMode;
+            _fallbackToOverlayActive = projectedModeRequested && !projectedMode;
 
             _appliedMode = presentationMode;
             _appliedFallbackProfile = standardFallbackProfile;
@@ -285,6 +305,34 @@ namespace NASAPunk.Visor
                 compositorTransform.gameObject.SetActive(showProjectionPreview);
 
             debugOverlaysSuppressed = suppress && !showProjectionPreview;
+        }
+
+        private bool IsProjectedPresentationAvailable()
+        {
+            if (visorProjectionCamera == null || !visorProjectionCamera.isActiveAndEnabled)
+                return false;
+
+            if (visorController == null || !visorController.isActiveAndEnabled)
+                return false;
+
+            if (presentationMode == PresentationMode.ModernProjectedSharedRT && sharedProjectionTexture == null)
+                return false;
+
+            if (!HasProjectedOutputSurface())
+                return false;
+
+            if (preferCanvasProjectionSource && projectionSourceOverlay == null)
+                return false;
+
+            if (previewProjectedSourceOnScreen && screenCompositor == null)
+                return false;
+
+            return true;
+        }
+
+        private bool HasProjectedOutputSurface()
+        {
+            return visorController != null && visorController.CanPresentProjection;
         }
 
         private void EnsureProjectionSource(bool projectedMode)
@@ -491,12 +539,18 @@ namespace NASAPunk.Visor
 
         private bool ShouldTickInPlay()
         {
-            return _pendingApply || NeedsAutoResolve();
+            return _pendingApply || NeedsAutoResolve() || RequiresRuntimePresentationMonitoring();
         }
 
         private bool ShouldTickInEditMode()
         {
-            return isActiveAndEnabled && (_pendingApply || NeedsAutoResolve());
+            return isActiveAndEnabled && (_pendingApply || NeedsAutoResolve() || RequiresRuntimePresentationMonitoring());
+        }
+
+        private bool RequiresRuntimePresentationMonitoring()
+        {
+            return presentationMode == PresentationMode.ModernProjectedSharedRT ||
+                   presentationMode == PresentationMode.ModernProjectedRuntimeRT;
         }
 
         private void EvaluateTickRegistration()

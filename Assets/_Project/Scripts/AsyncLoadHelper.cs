@@ -74,7 +74,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Gets or creates the helper instance for legacy callers that still access the singleton.
+        /// Gets or creates a scene-local helper shell for legacy callers that still access the singleton.
+        /// The helper is intentionally non-persistent because runtime loading is disabled.
         /// </summary>
         public static AsyncLoadHelper Instance
         {
@@ -82,10 +83,10 @@ namespace Hecton8.Core
             {
                 if (_instance == null)
                 {
+                    // COLD ALLOC: GameObject[1] — disabled legacy async helper compatibility shell — owner: AsyncLoadHelper
                     GameObject go = new GameObject("[AsyncLoadHelper]");
                     _instance = go.AddComponent<AsyncLoadHelper>();
                     go.hideFlags = HideFlags.HideInHierarchy;
-                    DontDestroyOnLoad(go);
                 }
 
                 return _instance;
@@ -101,6 +102,14 @@ namespace Hecton8.Core
             }
 
             _instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
         }
 
         /// <summary>

@@ -80,13 +80,6 @@ namespace Hecton8.Optimization
             }
             
             _instance = this;
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
         }
         
         private void OnEnable()
@@ -179,6 +172,9 @@ namespace Hecton8.Optimization
             if (queue.Count >= 16)
             {
                 // Pool full - release immediately
+                if (RenderTextureLifecycleTracker.Instance != null)
+                    RenderTextureLifecycleTracker.Instance.RegisterDisposal(rt);
+
                 rt.Release();
                 return;
             }
@@ -228,7 +224,12 @@ namespace Hecton8.Optimization
                 {
                     RenderTexture rt = kvp.Value.Dequeue();
                     if (rt != null)
+                    {
+                        if (RenderTextureLifecycleTracker.Instance != null)
+                            RenderTextureLifecycleTracker.Instance.RegisterDisposal(rt);
+
                         rt.Release();
+                    }
                 }
             }
             pool.Clear();

@@ -20,7 +20,21 @@ namespace Hecton8.EditorTools
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
         private const string TitaniumPrefabPath = "Assets/_Project/Prefabs/Item_Titanium.prefab";
         private const string DustParticlesPrefabPath = "Assets/VolumetricLightBeam/Resources/DustParticles.prefab";
+        private const string RuinSeepSheenMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_RuinSeepSheen.mat";
+        private const string SupportCreaturePassiveMaterialPath = "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePassive.mat";
+        private const string SupportCreaturePredatorMaterialPath = "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePredator.mat";
+        private const string IndustrialStripeDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/stripes_03.prefab";
+        private const string IndustrialScuffDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/decal_04.prefab";
         private const string LeakVfxChildName = "LeakVfx";
+        private const string LeakWetSheenChildName = "LeakWetSheen";
+        private const string LeakStripeDecalChildName = "LeakStripeDecal";
+        private const string LeakScuffDecalChildName = "LeakScuffDecal";
+        private const string RuinSeepSheenMainChildName = "RuinSeepSheen_Main";
+        private const string RuinSeepSheenCoreChildName = "RuinSeepSheen_Core";
+        private const string RuinSeepSheenBridgeChildName = "RuinSeepSheen_Bridge";
+        private const string RuinIndustrialStripeMainChildName = "RuinIndustrialStripe_Main";
+        private const string RuinIndustrialStripeCoreChildName = "RuinIndustrialStripe_Core";
+        private const string RuinIndustrialStripeBridgeChildName = "RuinIndustrialStripe_Bridge";
         private const string RuinClusterMediumPrefabName = "PFB_Ruin_ClusterMedium.prefab";
         private const string RuinMegastructurePrefabName = "PFB_Ruin_Megastructure.prefab";
 
@@ -64,6 +78,8 @@ namespace Hecton8.EditorTools
                 $"{MaterialFolder}/Mat_Module_CurrentTurbine.mat",
                 new Color(0.22f, 0.68f, 0.34f, 1.00f),
                 false);
+            Material passiveCreatureMat = AssetDatabase.LoadAssetAtPath<Material>(SupportCreaturePassiveMaterialPath) ?? pylonMat;
+            Material predatorCreatureMat = AssetDatabase.LoadAssetAtPath<Material>(SupportCreaturePredatorMaterialPath) ?? corridorMat;
 
             GameObject foundationGhost = CreateGhostPrefab(
                 $"{GhostPrefabFolder}/PFB_Ghost_Foundation.prefab",
@@ -157,14 +173,24 @@ namespace Hecton8.EditorTools
                 new[]
                 {
                     new CompositeLodSpec(
-                        1f,
+                        0.55f,
                         new[]
                         {
                             new VisualPrimitiveSpec("ScrapBeam", PrimitiveType.Cube, new Vector3(1.6f, 0.18f, 0.35f), new Vector3(-0.2f, 0.18f, 0.1f), new Vector3(0f, 18f, -12f), pylonMat),
                             new VisualPrimitiveSpec("CargoFrame", PrimitiveType.Cube, new Vector3(0.9f, 0.55f, 0.75f), new Vector3(0.55f, 0.32f, -0.4f), new Vector3(8f, -24f, 4f), pumpMat),
                             new VisualPrimitiveSpec("BrokenPipe", PrimitiveType.Cylinder, new Vector3(0.28f, 0.75f, 0.28f), new Vector3(-0.65f, 0.28f, -0.35f), new Vector3(90f, 0f, 28f), corridorMat),
                             new VisualPrimitiveSpec("Plate", PrimitiveType.Cube, new Vector3(0.95f, 0.08f, 0.6f), new Vector3(0.15f, 0.08f, 0.45f), new Vector3(0f, -32f, 7f), foundationMat),
-                        })
+                            new VisualPrimitiveSpec("ScavengerA", PrimitiveType.Capsule, new Vector3(0.18f, 0.72f, 0.18f), new Vector3(-0.34f, 0.42f, 0.46f), new Vector3(10f, 0f, 18f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("ScavengerB", PrimitiveType.Capsule, new Vector3(0.16f, 0.62f, 0.16f), new Vector3(0.46f, 0.36f, -0.38f), new Vector3(-8f, 0f, -14f), passiveCreatureMat),
+                        }),
+                    new CompositeLodSpec(
+                        0.12f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("ScrapMass", PrimitiveType.Cube, new Vector3(1.52f, 0.42f, 0.82f), new Vector3(0f, 0.22f, 0.04f), new Vector3(0f, 12f, -6f), pylonMat),
+                            new VisualPrimitiveSpec("PipeStub", PrimitiveType.Cylinder, new Vector3(0.24f, 0.64f, 0.24f), new Vector3(-0.28f, 0.26f, -0.18f), new Vector3(90f, 0f, 18f), corridorMat),
+                            new VisualPrimitiveSpec("ScavengerSilhouette", PrimitiveType.Capsule, new Vector3(0.32f, 0.74f, 0.32f), new Vector3(0.12f, 0.34f, 0.22f), Vector3.zero, passiveCreatureMat),
+                        }),
                 });
             CreateCompositeFinalPrefab(
                 $"{FinalPrefabFolder}/PFB_Debris_WreckField.prefab",
@@ -172,7 +198,7 @@ namespace Hecton8.EditorTools
                 new[]
                 {
                     new CompositeLodSpec(
-                        1f,
+                        0.55f,
                         new[]
                         {
                             new VisualPrimitiveSpec("FieldSpine", PrimitiveType.Cube, new Vector3(3.8f, 0.24f, 0.6f), new Vector3(0f, 0.22f, 0f), new Vector3(0f, 12f, -4f), foundationMat),
@@ -181,7 +207,18 @@ namespace Hecton8.EditorTools
                             new VisualPrimitiveSpec("PipeRun", PrimitiveType.Cylinder, new Vector3(0.32f, 1.4f, 0.32f), new Vector3(0.7f, 0.35f, 0.9f), new Vector3(90f, 0f, -16f), pylonMat),
                             new VisualPrimitiveSpec("MastStub", PrimitiveType.Cylinder, new Vector3(0.28f, 1.8f, 0.28f), new Vector3(-0.35f, 0.85f, -0.95f), new Vector3(6f, 0f, 12f), pylonMat),
                             new VisualPrimitiveSpec("ServicePlate", PrimitiveType.Cube, new Vector3(2.2f, 0.1f, 0.9f), new Vector3(0.2f, 0.12f, -1.15f), new Vector3(0f, -18f, 0f), foundationMat),
-                        })
+                            new VisualPrimitiveSpec("DriftScavengerA", PrimitiveType.Capsule, new Vector3(0.24f, 0.92f, 0.24f), new Vector3(-0.62f, 0.88f, 1.06f), new Vector3(8f, 0f, 16f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("DriftScavengerB", PrimitiveType.Capsule, new Vector3(0.22f, 0.82f, 0.22f), new Vector3(1.54f, 0.72f, -0.86f), new Vector3(-8f, 0f, -14f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("HunterPerchDebris", PrimitiveType.Cylinder, new Vector3(0.12f, 1.0f, 0.12f), new Vector3(-0.12f, 1.08f, -1.18f), new Vector3(0f, 0f, 18f), predatorCreatureMat),
+                        }),
+                    new CompositeLodSpec(
+                        0.12f,
+                        new[]
+                        {
+                            new VisualPrimitiveSpec("FieldMass", PrimitiveType.Cube, new Vector3(3.6f, 0.44f, 1.2f), new Vector3(0f, 0.22f, -0.12f), new Vector3(0f, 10f, -4f), foundationMat),
+                            new VisualPrimitiveSpec("HullMass", PrimitiveType.Cube, new Vector3(2.0f, 1.14f, 1.48f), new Vector3(-0.24f, 0.58f, 0.18f), new Vector3(0f, 14f, 4f), corridorMat),
+                            new VisualPrimitiveSpec("DriftSilhouetteDebris", PrimitiveType.Capsule, new Vector3(0.44f, 1.0f, 0.44f), new Vector3(0.34f, 0.54f, 0.32f), Vector3.zero, passiveCreatureMat),
+                        }),
                 });
             CreateCompositeFinalPrefab(
                 $"{FinalPrefabFolder}/PFB_Ruin_ClusterMedium.prefab",
@@ -197,6 +234,9 @@ namespace Hecton8.EditorTools
                             new VisualPrimitiveSpec("Bridge", PrimitiveType.Cube, new Vector3(1.2f, 0.6f, 2.2f), new Vector3(-0.2f, 1.4f, -0.55f), new Vector3(0f, 8f, 10f), corridorMat),
                             new VisualPrimitiveSpec("Brace", PrimitiveType.Cylinder, new Vector3(0.45f, 2.6f, 0.45f), new Vector3(3.6f, 1.3f, 1.7f), new Vector3(0f, 0f, 8f), pylonMat),
                             new VisualPrimitiveSpec("BaseSlab", PrimitiveType.Cube, new Vector3(7.2f, 0.35f, 5.8f), new Vector3(0f, 0.17f, 0f), new Vector3(0f, 6f, 0f), foundationMat),
+                            new VisualPrimitiveSpec("MicroSchoolA", PrimitiveType.Capsule, new Vector3(0.26f, 1.10f, 0.26f), new Vector3(-0.95f, 1.95f, 1.25f), new Vector3(12f, 0f, 22f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("MicroSchoolB", PrimitiveType.Capsule, new Vector3(0.22f, 0.92f, 0.22f), new Vector3(2.65f, 1.72f, 0.75f), new Vector3(-8f, 0f, -18f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("HunterPerch", PrimitiveType.Cylinder, new Vector3(0.12f, 1.10f, 0.12f), new Vector3(0.85f, 1.86f, -2.15f), new Vector3(0f, 0f, 24f), predatorCreatureMat),
                         }),
                     new CompositeLodSpec(
                         0.15f,
@@ -206,6 +246,7 @@ namespace Hecton8.EditorTools
                             new VisualPrimitiveSpec("MassB", PrimitiveType.Cube, new Vector3(2.0f, 2.0f, 4.4f), new Vector3(2.25f, 1.0f, -0.9f), new Vector3(0f, 16f, 0f), corridorMat),
                             new VisualPrimitiveSpec("Brace", PrimitiveType.Cylinder, new Vector3(0.38f, 2.0f, 0.38f), new Vector3(3.2f, 1.0f, 1.3f), new Vector3(0f, 0f, 8f), pylonMat),
                             new VisualPrimitiveSpec("BaseSlab", PrimitiveType.Cube, new Vector3(6.6f, 0.3f, 5.0f), new Vector3(0f, 0.15f, 0f), new Vector3(0f, 4f, 0f), foundationMat),
+                            new VisualPrimitiveSpec("SchoolSilhouette", PrimitiveType.Capsule, new Vector3(0.62f, 1.24f, 0.62f), new Vector3(1.10f, 1.35f, -0.25f), new Vector3(0f, 0f, 14f), passiveCreatureMat),
                         }),
                     new CompositeLodSpec(
                         0.04f,
@@ -231,6 +272,10 @@ namespace Hecton8.EditorTools
                             new VisualPrimitiveSpec("SideFrameB", PrimitiveType.Cube, new Vector3(1.1f, 5.8f, 1.1f), new Vector3(3.1f, 3.0f, -2.7f), new Vector3(0f, -18f, -6f), pylonMat),
                             new VisualPrimitiveSpec("Bridge", PrimitiveType.Cube, new Vector3(2.4f, 1.0f, 6.8f), new Vector3(0f, 1.2f, 4.6f), new Vector3(0f, 18f, 0f), foundationMat),
                             new VisualPrimitiveSpec("BasePlate", PrimitiveType.Cube, new Vector3(10.2f, 0.45f, 10.2f), new Vector3(0f, 0.22f, 0f), Vector3.zero, foundationMat),
+                            new VisualPrimitiveSpec("DriftSchoolA", PrimitiveType.Capsule, new Vector3(0.38f, 1.80f, 0.38f), new Vector3(-4.15f, 4.55f, 1.85f), new Vector3(6f, 0f, 18f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("DriftSchoolB", PrimitiveType.Capsule, new Vector3(0.32f, 1.50f, 0.32f), new Vector3(4.05f, 3.85f, -1.95f), new Vector3(-10f, 0f, -16f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("PerchSchool", PrimitiveType.Capsule, new Vector3(0.26f, 1.20f, 0.26f), new Vector3(1.45f, 6.95f, 2.95f), new Vector3(10f, 0f, -8f), passiveCreatureMat),
+                            new VisualPrimitiveSpec("HunterMarker", PrimitiveType.Cylinder, new Vector3(0.14f, 1.60f, 0.14f), new Vector3(0.75f, 2.20f, 5.55f), new Vector3(0f, 0f, -20f), predatorCreatureMat),
                         }),
                     new CompositeLodSpec(
                         0.15f,
@@ -241,6 +286,8 @@ namespace Hecton8.EditorTools
                             new VisualPrimitiveSpec("StrutA", PrimitiveType.Cube, new Vector3(1.0f, 5.8f, 1.0f), new Vector3(-3.0f, 3.0f, 2.5f), new Vector3(0f, 8f, 4f), pylonMat),
                             new VisualPrimitiveSpec("StrutB", PrimitiveType.Cube, new Vector3(1.0f, 5.0f, 1.0f), new Vector3(2.8f, 2.6f, -2.3f), new Vector3(0f, -12f, -4f), pylonMat),
                             new VisualPrimitiveSpec("Base", PrimitiveType.Cube, new Vector3(9.4f, 0.35f, 9.4f), new Vector3(0f, 0.18f, 0f), Vector3.zero, foundationMat),
+                            new VisualPrimitiveSpec("DriftSilhouette", PrimitiveType.Capsule, new Vector3(0.95f, 2.10f, 0.95f), new Vector3(0.90f, 4.25f, 1.20f), Vector3.zero, passiveCreatureMat),
+                            new VisualPrimitiveSpec("HunterSilhouette", PrimitiveType.Cylinder, new Vector3(0.18f, 1.50f, 0.18f), new Vector3(-1.60f, 2.20f, 3.25f), new Vector3(0f, 0f, 16f), predatorCreatureMat),
                         }),
                     new CompositeLodSpec(
                         0.04f,
@@ -337,17 +384,18 @@ namespace Hecton8.EditorTools
                 SceneManager.MoveGameObjectToScene(stagingRoot, activeScene);
             }
 
-            GameObject rangeRoot = FindChild(stagingRoot.transform, "Tool_TrialRange");
+            Transform rangeRoot = FindChild(stagingRoot.transform, "Tool_TrialRange");
             if (rangeRoot == null)
             {
-                rangeRoot = new GameObject("Tool_TrialRange");
-                rangeRoot.transform.SetParent(stagingRoot.transform, false);
+                GameObject rangeRootObject = new GameObject("Tool_TrialRange");
+                rangeRoot = rangeRootObject.transform;
+                rangeRoot.SetParent(stagingRoot.transform, false);
             }
 
-            ClearChildren(rangeRoot.transform);
-            rangeRoot.transform.localPosition = new Vector3(10f, 0f, 18f);
-            rangeRoot.transform.localRotation = Quaternion.identity;
-            rangeRoot.transform.localScale = Vector3.one;
+            ClearChildren(rangeRoot);
+            rangeRoot.localPosition = new Vector3(10f, 0f, 18f);
+            rangeRoot.localRotation = Quaternion.identity;
+            rangeRoot.localScale = Vector3.one;
 
             Material trialCargoMat = CreateOrUpdateMaterial(
                 $"{MaterialFolder}/Mat_ToolTrial_Cargo.mat",
@@ -802,13 +850,12 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static GameObject FindChild(Transform parent, string name)
+        private static Transform FindChild(Transform parent, string name)
         {
             if (parent == null)
                 return null;
 
-            Transform child = parent.Find(name);
-            return child != null ? child.gameObject : null;
+            return parent.Find(name);
         }
 
         private static void ClearChildren(Transform parent)
@@ -1385,9 +1432,9 @@ namespace Hecton8.EditorTools
             if (visualRoot == null)
                 visualRoot = root;
 
-            GameObject existingLeak = FindChild(visualRoot, LeakVfxChildName);
+            Transform existingLeak = FindChild(visualRoot, LeakVfxChildName);
             if (existingLeak != null)
-                Object.DestroyImmediate(existingLeak);
+                Object.DestroyImmediate(existingLeak.gameObject);
 
             GameObject leakObject = PrefabUtility.InstantiatePrefab(dustParticlesPrefab, visualRoot) as GameObject;
             if (leakObject == null)
@@ -1399,6 +1446,9 @@ namespace Hecton8.EditorTools
                 return;
 
             ConfigureModuleLeakVfx(leakObject.transform, leakParticleSystem, scale, primitiveType);
+            AttachModuleLeakWetSheen(visualRoot, scale, primitiveType);
+            AttachModuleIndustrialDecals(visualRoot, scale, primitiveType);
+            SyncModuleLeakLodRenderers(root.gameObject, visualRoot);
 
             SerializedObject moduleSo = new SerializedObject(baseModule);
             moduleSo.FindProperty("leakVfx").objectReferenceValue = leakParticleSystem;
@@ -1475,6 +1525,131 @@ namespace Hecton8.EditorTools
                 renderer.sortingFudge = sortingFudge;
                 renderer.maxParticleSize = maxParticleSize;
             }
+        }
+
+        private static void AttachModuleLeakWetSheen(Transform visualRoot, Vector3 scale, PrimitiveType primitiveType)
+        {
+            if (visualRoot == null)
+                return;
+
+            Material seepSheenMaterial = AssetDatabase.LoadAssetAtPath<Material>(RuinSeepSheenMaterialPath);
+            if (seepSheenMaterial == null)
+                return;
+
+            Transform existingSheen = FindChild(visualRoot, LeakWetSheenChildName);
+            if (existingSheen != null)
+                Object.DestroyImmediate(existingSheen.gameObject);
+
+            GameObject sheenObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            sheenObject.name = LeakWetSheenChildName;
+            sheenObject.transform.SetParent(visualRoot, false);
+
+            Collider sheenCollider = sheenObject.GetComponent<Collider>();
+            if (sheenCollider != null)
+                Object.DestroyImmediate(sheenCollider);
+
+            ConfigureModuleLeakWetSheen(sheenObject.transform, sheenObject.GetComponent<MeshRenderer>(), seepSheenMaterial, scale, primitiveType);
+        }
+
+        private static void AttachModuleIndustrialDecals(Transform visualRoot, Vector3 scale, PrimitiveType primitiveType)
+        {
+            if (visualRoot == null)
+                return;
+
+            bool isFlatModule = primitiveType == PrimitiveType.Cube && scale.y <= 0.5f;
+
+            if (isFlatModule)
+            {
+                AttachPrefabDecal(
+                    visualRoot,
+                    LeakStripeDecalChildName,
+                    IndustrialStripeDecalPrefabPath,
+                    new Vector3(scale.x * 0.25f, (scale.y * 0.5f) + 0.011f, scale.z * 0.18f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.24f, 0.12f, 0.24f));
+                AttachPrefabDecal(
+                    visualRoot,
+                    LeakScuffDecalChildName,
+                    IndustrialScuffDecalPrefabPath,
+                    new Vector3(-scale.x * 0.18f, (scale.y * 0.5f) + 0.011f, -scale.z * 0.24f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.18f, 0.14f, 0.18f));
+                return;
+            }
+
+            AttachPrefabDecal(
+                visualRoot,
+                LeakStripeDecalChildName,
+                IndustrialStripeDecalPrefabPath,
+                new Vector3(scale.x * 0.34f, -scale.y * 0.14f, (scale.z * 0.5f) + 0.011f),
+                Vector3.zero,
+                new Vector3(0.18f, 0.34f, 0.18f));
+            AttachPrefabDecal(
+                visualRoot,
+                LeakScuffDecalChildName,
+                IndustrialScuffDecalPrefabPath,
+                new Vector3(-scale.x * 0.31f, 0f, (scale.z * 0.5f) + 0.011f),
+                Vector3.zero,
+                new Vector3(0.24f, 0.3f, 0.24f));
+        }
+
+        private static void ConfigureModuleLeakWetSheen(
+            Transform sheenTransform,
+            MeshRenderer sheenRenderer,
+            Material seepSheenMaterial,
+            Vector3 scale,
+            PrimitiveType primitiveType)
+        {
+            if (sheenTransform == null || sheenRenderer == null || seepSheenMaterial == null)
+                return;
+
+            bool isFlatModule = primitiveType == PrimitiveType.Cube && scale.y <= 0.5f;
+
+            if (isFlatModule)
+            {
+                sheenTransform.localPosition = new Vector3(scale.x * 0.34f, (scale.y * 0.5f) + 0.01f, scale.z * 0.28f);
+                sheenTransform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                sheenTransform.localScale = new Vector3(0.42f, 0.28f, 1f);
+            }
+            else
+            {
+                sheenTransform.localPosition = new Vector3(scale.x * 0.36f, -scale.y * 0.28f, (scale.z * 0.5f) + 0.01f);
+                sheenTransform.localRotation = Quaternion.identity;
+                sheenTransform.localScale = new Vector3(0.34f, 0.72f, 1f);
+            }
+
+            sheenRenderer.sharedMaterial = seepSheenMaterial;
+            sheenRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            sheenRenderer.receiveShadows = false;
+            sheenRenderer.lightProbeUsage = LightProbeUsage.Off;
+            sheenRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            sheenRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            EditorUtility.SetDirty(sheenRenderer);
+        }
+
+        private static void SyncModuleLeakLodRenderers(GameObject prefabRoot, Transform visualRoot)
+        {
+            if (prefabRoot == null || visualRoot == null)
+                return;
+
+            LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
+            if (lodGroup == null)
+                return;
+
+            LOD[] lods = lodGroup.GetLODs();
+            if (lods == null || lods.Length <= 0)
+                return;
+
+            lods[0].renderers = AppendRenderers(
+                lods[0].renderers,
+                ResolveRenderer(visualRoot, LeakVfxChildName),
+                ResolveRenderer(visualRoot, LeakWetSheenChildName),
+                ResolveRenderer(visualRoot, LeakStripeDecalChildName),
+                ResolveRenderer(visualRoot, LeakScuffDecalChildName));
+
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+            EditorUtility.SetDirty(lodGroup);
         }
 
         private static void AddModuleTrimSet(Transform parent, Vector3 scale, Material material, bool includeCrossMembers, List<Renderer> renderers)
@@ -1562,9 +1737,47 @@ namespace Hecton8.EditorTools
 
             Renderer renderer = visual.GetComponent<Renderer>();
             if (renderer != null)
+            {
                 renderer.sharedMaterial = material;
+                if (IsAmbientFaunaPrimitive(name))
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                }
 
+                EditorUtility.SetDirty(renderer);
+            }
+
+            EditorUtility.SetDirty(visual);
             return renderer;
+        }
+
+        private static bool IsAmbientFaunaPrimitive(string name)
+        {
+            switch (name)
+            {
+                case "MicroSchoolA":
+                case "MicroSchoolB":
+                case "HunterPerch":
+                case "SchoolSilhouette":
+                case "ScavengerA":
+                case "ScavengerB":
+                case "ScavengerSilhouette":
+                case "DriftScavengerA":
+                case "DriftScavengerB":
+                case "HunterPerchDebris":
+                case "DriftSilhouetteDebris":
+                case "DriftSchoolA":
+                case "DriftSchoolB":
+                case "PerchSchool":
+                case "HunterMarker":
+                case "DriftSilhouette":
+                case "HunterSilhouette":
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
         private static void AddStructuralCollider(GameObject root, PrimitiveType primitiveType, Vector3 scale)
@@ -1598,6 +1811,8 @@ namespace Hecton8.EditorTools
 
             BuildCompositeVisuals(root.transform, lodSpecs);
             AttachCompositeRuinLeakVfx(root.transform, prefabPath);
+            ApplyAmbientFaunaShadowPolicy(root.transform);
+            EditorUtility.SetDirty(root);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             Object.DestroyImmediate(root);
@@ -1622,6 +1837,9 @@ namespace Hecton8.EditorTools
                     0.055f,
                     1.8f,
                     0.11f);
+                AttachCompositeRuinLeakSheen(root, RuinSeepSheenMainChildName, new Vector3(2.28f, 0.2f, -0.58f), new Vector3(90f, 0f, 0f), new Vector3(0.52f, 0.36f, 1f));
+                AttachCompositeRuinIndustrialDecal(root, RuinIndustrialStripeMainChildName, new Vector3(2.04f, 0.22f, -0.42f), new Vector3(90f, 0f, 0f), new Vector3(0.28f, 0.14f, 0.28f));
+                SyncCompositeRuinLeakLodRenderers(root.gameObject, root.Find("LOD0"), "RuinLeakPlume_Main", RuinSeepSheenMainChildName, RuinIndustrialStripeMainChildName);
                 return;
             }
 
@@ -1649,6 +1867,11 @@ namespace Hecton8.EditorTools
                     0.05f,
                     1.6f,
                     0.1f);
+                AttachCompositeRuinLeakSheen(root, RuinSeepSheenCoreChildName, new Vector3(2.72f, 0.24f, -2.08f), new Vector3(90f, 0f, 0f), new Vector3(0.68f, 0.44f, 1f));
+                AttachCompositeRuinLeakSheen(root, RuinSeepSheenBridgeChildName, new Vector3(-1.08f, 1.01f, 4.42f), new Vector3(90f, 0f, 0f), new Vector3(0.44f, 0.28f, 1f));
+                AttachCompositeRuinIndustrialDecal(root, RuinIndustrialStripeCoreChildName, new Vector3(2.34f, 0.26f, -1.84f), new Vector3(90f, 0f, 0f), new Vector3(0.32f, 0.16f, 0.32f));
+                AttachCompositeRuinIndustrialDecal(root, RuinIndustrialStripeBridgeChildName, new Vector3(-0.96f, 1.02f, 4.28f), new Vector3(90f, 0f, 0f), new Vector3(0.24f, 0.12f, 0.24f));
+                SyncCompositeRuinLeakLodRenderers(root.gameObject, root.Find("LOD0"), "RuinLeakPlume_Core", "RuinLeakPlume_Bridge", RuinSeepSheenCoreChildName, RuinSeepSheenBridgeChildName, RuinIndustrialStripeCoreChildName, RuinIndustrialStripeBridgeChildName);
             }
         }
 
@@ -1675,9 +1898,9 @@ namespace Hecton8.EditorTools
             if (visualRoot == null)
                 visualRoot = root;
 
-            GameObject existingLeak = FindChild(visualRoot, childName);
+            Transform existingLeak = FindChild(visualRoot, childName);
             if (existingLeak != null)
-                Object.DestroyImmediate(existingLeak);
+                Object.DestroyImmediate(existingLeak.gameObject);
 
             GameObject leakObject = PrefabUtility.InstantiatePrefab(dustParticlesPrefab, visualRoot) as GameObject;
             if (leakObject == null)
@@ -1711,6 +1934,181 @@ namespace Hecton8.EditorTools
                 renderer.sortingFudge = sortingFudge;
                 renderer.maxParticleSize = maxParticleSize;
             }
+        }
+
+        private static void AttachCompositeRuinLeakSheen(Transform root, string childName, Vector3 localPosition, Vector3 localEulerAngles, Vector3 localScale)
+        {
+            if (root == null || string.IsNullOrEmpty(childName))
+                return;
+
+            Material seepSheenMaterial = AssetDatabase.LoadAssetAtPath<Material>(RuinSeepSheenMaterialPath);
+            if (seepSheenMaterial == null)
+                return;
+
+            Transform lod0 = root.Find("LOD0");
+            if (lod0 == null)
+                lod0 = root;
+
+            Transform existingSheen = FindChild(lod0, childName);
+            if (existingSheen != null)
+                Object.DestroyImmediate(existingSheen.gameObject);
+
+            GameObject sheenObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            sheenObject.name = childName;
+            sheenObject.transform.SetParent(lod0, false);
+
+            Collider sheenCollider = sheenObject.GetComponent<Collider>();
+            if (sheenCollider != null)
+                Object.DestroyImmediate(sheenCollider);
+
+            sheenObject.transform.localPosition = localPosition;
+            sheenObject.transform.localRotation = Quaternion.Euler(localEulerAngles);
+            sheenObject.transform.localScale = localScale;
+
+            if (sheenObject.TryGetComponent(out MeshRenderer sheenRenderer))
+            {
+                sheenRenderer.sharedMaterial = seepSheenMaterial;
+                sheenRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                sheenRenderer.receiveShadows = false;
+                sheenRenderer.lightProbeUsage = LightProbeUsage.Off;
+                sheenRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                sheenRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+                EditorUtility.SetDirty(sheenRenderer);
+            }
+        }
+
+        private static void AttachCompositeRuinIndustrialDecal(
+            Transform root,
+            string childName,
+            Vector3 localPosition,
+            Vector3 localEulerAngles,
+            Vector3 localScale)
+        {
+            if (root == null || string.IsNullOrEmpty(childName))
+                return;
+
+            Transform lod0 = root.Find("LOD0");
+            if (lod0 == null)
+                lod0 = root;
+
+            AttachPrefabDecal(lod0, childName, IndustrialStripeDecalPrefabPath, localPosition, localEulerAngles, localScale);
+        }
+
+        private static void AttachPrefabDecal(
+            Transform parent,
+            string childName,
+            string prefabPath,
+            Vector3 localPosition,
+            Vector3 localEulerAngles,
+            Vector3 localScale)
+        {
+            if (parent == null || string.IsNullOrEmpty(childName) || string.IsNullOrEmpty(prefabPath))
+                return;
+
+            GameObject decalPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (decalPrefab == null)
+                return;
+
+            Transform existingDecal = FindChild(parent, childName);
+            if (existingDecal != null)
+                Object.DestroyImmediate(existingDecal.gameObject);
+
+            GameObject decalObject = PrefabUtility.InstantiatePrefab(decalPrefab, parent) as GameObject;
+            if (decalObject == null)
+                return;
+
+            decalObject.name = childName;
+            decalObject.transform.localPosition = localPosition;
+            decalObject.transform.localRotation = Quaternion.Euler(localEulerAngles);
+            decalObject.transform.localScale = localScale;
+
+            if (decalObject.TryGetComponent(out Renderer renderer))
+                ConfigureDecalRenderer(renderer);
+        }
+
+        private static void ConfigureDecalRenderer(Renderer renderer)
+        {
+            if (renderer == null)
+                return;
+
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.lightProbeUsage = LightProbeUsage.Off;
+            renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            renderer.allowOcclusionWhenDynamic = false;
+            EditorUtility.SetDirty(renderer);
+        }
+
+        private static void SyncCompositeRuinLeakLodRenderers(GameObject prefabRoot, Transform lod0, params string[] childNames)
+        {
+            if (prefabRoot == null || lod0 == null || childNames == null || childNames.Length <= 0)
+                return;
+
+            LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
+            if (lodGroup == null)
+                return;
+
+            LOD[] lods = lodGroup.GetLODs();
+            if (lods == null || lods.Length <= 0)
+                return;
+
+            Renderer[] additions = new Renderer[childNames.Length];
+            for (int i = 0; i < childNames.Length; i++)
+                additions[i] = ResolveRenderer(lod0, childNames[i]);
+
+            lods[0].renderers = AppendRenderers(lods[0].renderers, additions);
+
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+            EditorUtility.SetDirty(lodGroup);
+        }
+
+        private static Renderer[] AppendRenderers(Renderer[] existing, params Renderer[] additions)
+        {
+            int existingCount = existing != null ? existing.Length : 0;
+            int additionCount = 0;
+            for (int i = 0; i < additions.Length; i++)
+            {
+                if (additions[i] != null && !ContainsRenderer(existing, additions[i]))
+                    additionCount++;
+            }
+
+            if (additionCount <= 0)
+                return existing ?? System.Array.Empty<Renderer>();
+
+            Renderer[] combined = new Renderer[existingCount + additionCount];
+            int writeIndex = 0;
+            for (int i = 0; i < existingCount; i++)
+                combined[writeIndex++] = existing[i];
+
+            for (int i = 0; i < additions.Length; i++)
+            {
+                if (additions[i] != null && !ContainsRenderer(existing, additions[i]))
+                    combined[writeIndex++] = additions[i];
+            }
+
+            return combined;
+        }
+
+        private static bool ContainsRenderer(Renderer[] renderers, Renderer candidate)
+        {
+            if (renderers == null || candidate == null)
+                return false;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] == candidate)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Renderer ResolveRenderer(Transform parent, string childName)
+        {
+            Transform child = FindChild(parent, childName);
+            return child != null ? child.GetComponent<Renderer>() : null;
         }
 
         private static void BuildCompositeVisuals(Transform parent, CompositeLodSpec[] lodSpecs)
@@ -1761,6 +2159,30 @@ namespace Hecton8.EditorTools
 
                 if (renderer != null && renderers != null)
                     renderers.Add(renderer);
+            }
+        }
+
+        private static void ApplyAmbientFaunaShadowPolicy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+                return;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                    continue;
+
+                if (!IsAmbientFaunaPrimitive(renderer.gameObject.name))
+                    continue;
+
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                EditorUtility.SetDirty(renderer);
             }
         }
 

@@ -48,12 +48,8 @@ namespace Hecton8.Atmosphere
 
         private Transform _rainRoot;
         private ParticleSystem _rainParticleSystem;
-        private ParticleSystem.EmissionModule _rainEmission;
-        private ParticleSystem.VelocityOverLifetimeModule _rainVelocity;
         private Transform _surfaceImpactRoot;
         private ParticleSystem _surfaceImpactParticleSystem;
-        private ParticleSystem.EmissionModule _surfaceImpactEmission;
-        private ParticleSystem.VelocityOverLifetimeModule _surfaceImpactVelocity;
         private Light _lightningLight;
         private LineRenderer _boltRenderer;
         private Material _boltMaterial;
@@ -195,6 +191,7 @@ namespace Hecton8.Atmosphere
             if (_surfaceImpactParticleSystem == null || _surfaceImpactRoot == null)
                 return;
 
+            var surfaceImpactVelocity = _surfaceImpactParticleSystem.velocityOverLifetime;
             Vector3 surfacePosition = centerPosition;
             surfacePosition.y = surfaceY + SurfaceImpactHeightOffset;
             _surfaceImpactRoot.position = surfacePosition;
@@ -204,19 +201,19 @@ namespace Hecton8.Atmosphere
             float upwardVelocity = Mathf.Lerp(0.7f, 1.8f, intensity);
             if (Mathf.Abs(_cachedSurfaceImpactVelocityX - windVelocity.x) > VelocityEpsilon)
             {
-                _surfaceImpactVelocity.x = new ParticleSystem.MinMaxCurve(windVelocity.x);
+                surfaceImpactVelocity.x = new ParticleSystem.MinMaxCurve(windVelocity.x);
                 _cachedSurfaceImpactVelocityX = windVelocity.x;
             }
 
             if (Mathf.Abs(_cachedSurfaceImpactVelocityY - upwardVelocity) > VelocityEpsilon)
             {
-                _surfaceImpactVelocity.y = new ParticleSystem.MinMaxCurve(upwardVelocity);
+                surfaceImpactVelocity.y = new ParticleSystem.MinMaxCurve(upwardVelocity);
                 _cachedSurfaceImpactVelocityY = upwardVelocity;
             }
 
             if (Mathf.Abs(_cachedSurfaceImpactVelocityZ - windVelocity.z) > VelocityEpsilon)
             {
-                _surfaceImpactVelocity.z = new ParticleSystem.MinMaxCurve(windVelocity.z);
+                surfaceImpactVelocity.z = new ParticleSystem.MinMaxCurve(windVelocity.z);
                 _cachedSurfaceImpactVelocityZ = windVelocity.z;
             }
 
@@ -234,13 +231,15 @@ namespace Hecton8.Atmosphere
         {
             if (_rainParticleSystem != null)
             {
-                _rainEmission.rateOverTime = 0f;
+                var rainEmission = _rainParticleSystem.emission;
+                rainEmission.rateOverTime = 0f;
                 _rainParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
             if (_surfaceImpactParticleSystem != null)
             {
-                _surfaceImpactEmission.rateOverTime = 0f;
+                var surfaceImpactEmission = _surfaceImpactParticleSystem.emission;
+                surfaceImpactEmission.rateOverTime = 0f;
                 _surfaceImpactParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
@@ -316,16 +315,16 @@ namespace Hecton8.Atmosphere
             main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.82f, 0.9f, 1f, 0.65f));
             main.gravityModifier = 0.65f;
 
-            _rainEmission = _rainParticleSystem.emission;
-            _rainEmission.rateOverTime = 0f;
+            var emission = _rainParticleSystem.emission;
+            emission.rateOverTime = 0f;
 
             var shape = _rainParticleSystem.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = rainVolumeSize;
 
-            _rainVelocity = _rainParticleSystem.velocityOverLifetime;
-            _rainVelocity.enabled = true;
+            var velocity = _rainParticleSystem.velocityOverLifetime;
+            velocity.enabled = true;
 
             var noise = _rainParticleSystem.noise;
             noise.enabled = true;
@@ -360,16 +359,16 @@ namespace Hecton8.Atmosphere
             main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.9f, 0.96f, 1f, 0.38f));
             main.gravityModifier = 0f;
 
-            _surfaceImpactEmission = _surfaceImpactParticleSystem.emission;
-            _surfaceImpactEmission.rateOverTime = 0f;
+            var emission = _surfaceImpactParticleSystem.emission;
+            emission.rateOverTime = 0f;
 
             var shape = _surfaceImpactParticleSystem.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(surfaceImpactRadius * 2f, 0.05f, surfaceImpactRadius * 2f);
 
-            _surfaceImpactVelocity = _surfaceImpactParticleSystem.velocityOverLifetime;
-            _surfaceImpactVelocity.enabled = true;
+            var velocity = _surfaceImpactParticleSystem.velocityOverLifetime;
+            velocity.enabled = true;
 
             var noise = _surfaceImpactParticleSystem.noise;
             noise.enabled = true;
@@ -449,6 +448,8 @@ namespace Hecton8.Atmosphere
             if (_rainParticleSystem == null || _rainRoot == null)
                 return;
 
+            var rainEmission = _rainParticleSystem.emission;
+            var rainVelocity = _rainParticleSystem.velocityOverLifetime;
             float clampedAreaScale = Mathf.Max(0.5f, areaScale);
             if (Mathf.Abs(_cachedRainAreaScale - clampedAreaScale) > RainPropertyEpsilon)
             {
@@ -464,7 +465,7 @@ namespace Hecton8.Atmosphere
             {
                 if (_cachedRainEmissionRate != 0f)
                 {
-                    _rainEmission.rateOverTime = 0f;
+                    rainEmission.rateOverTime = 0f;
                     _cachedRainEmissionRate = 0f;
                 }
 
@@ -491,7 +492,7 @@ namespace Hecton8.Atmosphere
             float emissionRate = Mathf.Lerp(12f, maxRainEmissionRate * Mathf.Max(0.25f, densityMultiplier), clampedIntensity * clampedIntensity);
             if (Mathf.Abs(_cachedRainEmissionRate - emissionRate) > RainPropertyEpsilon)
             {
-                _rainEmission.rateOverTime = emissionRate;
+                rainEmission.rateOverTime = emissionRate;
                 _cachedRainEmissionRate = emissionRate;
             }
 
@@ -499,19 +500,19 @@ namespace Hecton8.Atmosphere
             float verticalVelocity = -1.5f * clampedIntensity;
             if (Mathf.Abs(_cachedRainVelocityX - windVelocity.x) > RainPropertyEpsilon)
             {
-                _rainVelocity.x = new ParticleSystem.MinMaxCurve(windVelocity.x);
+                rainVelocity.x = new ParticleSystem.MinMaxCurve(windVelocity.x);
                 _cachedRainVelocityX = windVelocity.x;
             }
 
             if (Mathf.Abs(_cachedRainVelocityY - verticalVelocity) > RainPropertyEpsilon)
             {
-                _rainVelocity.y = new ParticleSystem.MinMaxCurve(verticalVelocity);
+                rainVelocity.y = new ParticleSystem.MinMaxCurve(verticalVelocity);
                 _cachedRainVelocityY = verticalVelocity;
             }
 
             if (Mathf.Abs(_cachedRainVelocityZ - windVelocity.z) > RainPropertyEpsilon)
             {
-                _rainVelocity.z = new ParticleSystem.MinMaxCurve(windVelocity.z);
+                rainVelocity.z = new ParticleSystem.MinMaxCurve(windVelocity.z);
                 _cachedRainVelocityZ = windVelocity.z;
             }
 
@@ -533,6 +534,8 @@ namespace Hecton8.Atmosphere
             if (_surfaceImpactParticleSystem == null || _surfaceImpactRoot == null)
                 return;
 
+            var surfaceImpactEmission = _surfaceImpactParticleSystem.emission;
+            var surfaceImpactVelocity = _surfaceImpactParticleSystem.velocityOverLifetime;
             float clampedRadiusScale = Mathf.Max(0.5f, radiusScale);
             float resolvedRadius = surfaceImpactRadius * clampedRadiusScale;
             Vector2 normalizedWindDirection = windDirection;
@@ -562,7 +565,7 @@ namespace Hecton8.Atmosphere
             {
                 if (_cachedSurfaceImpactEmissionRate != 0f)
                 {
-                    _surfaceImpactEmission.rateOverTime = 0f;
+                    surfaceImpactEmission.rateOverTime = 0f;
                     _cachedSurfaceImpactEmissionRate = 0f;
                 }
 
@@ -574,7 +577,7 @@ namespace Hecton8.Atmosphere
             float emissionRate = Mathf.Lerp(10f, maxSurfaceImpactEmissionRate * _currentSurfaceImpactDensityMultiplier, clampedIntensity * clampedIntensity);
             if (Mathf.Abs(_cachedSurfaceImpactEmissionRate - emissionRate) > SurfaceImpactEpsilon)
             {
-                _surfaceImpactEmission.rateOverTime = emissionRate;
+                surfaceImpactEmission.rateOverTime = emissionRate;
                 _cachedSurfaceImpactEmissionRate = emissionRate;
             }
 
@@ -582,19 +585,19 @@ namespace Hecton8.Atmosphere
             float upwardVelocity = Mathf.Lerp(0.45f, 1.15f, clampedIntensity);
             if (Mathf.Abs(_cachedSurfaceImpactVelocityX - windVelocity.x) > SurfaceImpactEpsilon)
             {
-                _surfaceImpactVelocity.x = new ParticleSystem.MinMaxCurve(windVelocity.x);
+                surfaceImpactVelocity.x = new ParticleSystem.MinMaxCurve(windVelocity.x);
                 _cachedSurfaceImpactVelocityX = windVelocity.x;
             }
 
             if (Mathf.Abs(_cachedSurfaceImpactVelocityY - upwardVelocity) > SurfaceImpactEpsilon)
             {
-                _surfaceImpactVelocity.y = new ParticleSystem.MinMaxCurve(upwardVelocity);
+                surfaceImpactVelocity.y = new ParticleSystem.MinMaxCurve(upwardVelocity);
                 _cachedSurfaceImpactVelocityY = upwardVelocity;
             }
 
             if (Mathf.Abs(_cachedSurfaceImpactVelocityZ - windVelocity.z) > SurfaceImpactEpsilon)
             {
-                _surfaceImpactVelocity.z = new ParticleSystem.MinMaxCurve(windVelocity.z);
+                surfaceImpactVelocity.z = new ParticleSystem.MinMaxCurve(windVelocity.z);
                 _cachedSurfaceImpactVelocityZ = windVelocity.z;
             }
 

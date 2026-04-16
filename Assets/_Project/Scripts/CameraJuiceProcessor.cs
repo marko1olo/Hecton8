@@ -30,6 +30,7 @@ namespace Hecton8.Gameplay
     public struct CameraJuiceInput
     {
         public bool isWalking;
+        public PlayerLocomotionMode locomotionMode;
         public bool isGrounded;
         public bool hasMovementInput;
         public float inputH;
@@ -46,6 +47,11 @@ namespace Hecton8.Gameplay
         public float depth;
         public float swimSpeed;
         public float cameraPitch;    // still passed in, but pitch inertia disabled
+        public PlayerSwimPresentationMode swimPresentationMode;
+        public float swimStrokePhase;
+        public float swimPropulsionPulse;
+        public float swimGuideWeight;
+        public float swimVerticalInput;
     }
 
     public sealed class CameraJuiceProcessor
@@ -125,6 +131,10 @@ namespace Hecton8.Gameplay
         private const float TURN_SWAY_MAX_OFFSET = 0.012f;
         private const float TURN_SWAY_SENSITIVITY = 0.002f;
         private const float SPLASH_DIP_RECOVERY_OMEGA = 8f;
+        private const float SWIM_PRESENTATION_VERTICAL_ASCEND_OFFSET = 0.0045f;
+        private const float SWIM_PRESENTATION_VERTICAL_DESCEND_OFFSET = 0.0035f;
+        private const float SWIM_PRESENTATION_ASCEND_PITCH = 0.28f;
+        private const float SWIM_PRESENTATION_DESCEND_PITCH = 0.4f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC — EVENTS (polled, zero GC)
@@ -254,42 +264,58 @@ namespace Hecton8.Gameplay
             // ── FOV compression ──
             ProcessDepthFovCompression(in input, suit);
 
-            if (input.isWalking)
+            switch (input.locomotionMode)
             {
-                ProcessHeadBob(in input, suit, dt);
-                ProcessLandingImpact(in input, suit, dt);
-                DecaySwimEffects(dt, suit);
-            }
-            else
-            {
-                float deepFactor = math.saturate((input.immersionRatio - 0.75f) * 4f);
-                float surfaceFactor = 1f - deepFactor;
+                case PlayerLocomotionMode.DryGroundWalk:
+                    ProcessHeadBob(in input, suit, dt, 1f, 1f);
+                    ProcessLandingImpact(in input, suit, dt, 1f);
+                    DecaySwimEffects(dt, suit);
+                    break;
 
-                float depthSwayMul = ComputeDepthMultiplier(
-                    input.depth, suit.depthSwayStart, suit.depthSwayEnd, suit.depthSwayMultiplierMax);
-                float depthRollMul = ComputeDepthMultiplier(
-                    input.depth, suit.depthSwayStart, suit.depthSwayEnd, suit.depthRollMultiplierMax);
+                case PlayerLocomotionMode.DryInteriorWalk:
+                    ProcessHeadBob(in input, suit, dt, 0.82f, 0.9f);
+                    ProcessLandingImpact(in input, suit, dt, 0.75f);
+                    DecaySwimEffects(dt, suit);
+                    break;
 
-                if (surfaceFactor > 0.01f)
-                    ProcessSurfaceBob(in input, suit, dt, surfaceFactor);
+                case PlayerLocomotionMode.ShallowWadeWalk:
+                    ProcessHeadBob(in input, suit, dt, 0.62f, 0.78f);
+                    ProcessLandingImpact(in input, suit, dt, 0.7f);
+                    ProcessSurfaceBob(in input, suit, dt, math.saturate(input.immersionRatio) * 0.18f);
+                    DecaySwimEffects(dt, suit);
+                    break;
 
-                ProcessSwimBob(in input, suit, dt);
+                case PlayerLocomotionMode.SurfaceSwim:
+                    ProcessSurfaceBob(in input, suit, dt, 1f);
+                    ProcessSwimBob(in input, suit, dt);
+                    ProcessSwimRoll(in input, suit, dt, 0.3f);
+                    ProcessTurnSway(in input, dt, 0.5f);
+                    DecayWalkEffects(dt, suit);
+                    break;
 
-                if (deepFactor > 0.01f)
+                default:
+                    float deepFactor = math.max(
+                        math.saturate((input.immersionRatio - 0.75f) * 4f),
+                        0.2f);
+
+                    float depthSwayMul = ComputeDepthMultiplier(
+                        input.depth, suit.depthSwayStart, suit.depthSwayEnd, suit.depthSwayMultiplierMax);
+                    float depthRollMul = ComputeDepthMultiplier(
+                        input.depth, suit.depthSwayStart, suit.depthSwayEnd, suit.depthRollMultiplierMax);
+
+                    ProcessSwimBob(in input, suit, dt);
                     ProcessIdleSway(in input, suit, dt, deepFactor * depthSwayMul);
 
-                float rollScale = (0.3f + 0.7f * deepFactor) * depthRollMul;
-                ProcessSwimRoll(in input, suit, dt, rollScale);
-
-                if (deepFactor > 0.1f)
+                    float rollScale = (0.3f + 0.7f * deepFactor) * depthRollMul;
+                    ProcessSwimRoll(in input, suit, dt, rollScale);
                     ProcessMomentumPitch(in input, suit, dt, deepFactor);
 
-                float turnScale = 0.5f + 0.5f * deepFactor;
-                ProcessTurnSway(in input, dt, turnScale);
+                    float turnScale = 0.5f + 0.5f * deepFactor;
+                    ProcessTurnSway(in input, dt, turnScale);
+                    ProcessExhaleRhythm(in input, suit, dt);
 
-                ProcessExhaleRhythm(in input, suit, dt);
-
-                DecayWalkEffects(dt, suit);
+                    DecayWalkEffects(dt, suit);
+                    break;
             }
 
             // ── Accumulate offsets ──
@@ -447,6 +473,13 @@ namespace Hecton8.Gameplay
 
             float scale = _swimBobIntensity * speedFactor;
 
+            if (input.swimPresentationMode != PlayerSwimPresentationMode.None &&
+                input.swimGuideWeight > DEAD_ZONE)
+            {
+                ProcessPresentationSynchronizedSwimBob(in input, suit, scale);
+                return;
+            }
+
             float verticalBob = math.sin(_swimBobTimer) * suit.swimBobVerticalAmplitude * scale;
             float forwardBob = math.sin(_swimBobTimer * 0.5f) * suit.swimBobForwardAmplitude * scale;
             float rollBob = math.sin(_swimBobTimer * 0.5f + 1.57f) * suit.swimBobRollAmplitude * scale;
@@ -454,6 +487,66 @@ namespace Hecton8.Gameplay
             _output.localPositionOffset.y += verticalBob;
             _output.localPositionOffset.z += forwardBob;
             _output.rollOffset += rollBob;
+        }
+
+        private void ProcessPresentationSynchronizedSwimBob(in CameraJuiceInput input, SuitData suit, float scale)
+        {
+            float modeScale = ResolvePresentationCameraScale(input.swimPresentationMode);
+            float guideScale = math.saturate(input.swimGuideWeight);
+            float propulsionScale = math.lerp(0.65f, 1f, math.saturate(input.swimPropulsionPulse));
+            float finalScale = scale * modeScale * guideScale * propulsionScale;
+            if (finalScale < DEAD_ZONE)
+                return;
+
+            float cycle = input.swimStrokePhase * TWO_PI;
+            float verticalBob = math.sin(cycle) * suit.swimBobVerticalAmplitude * finalScale;
+            float forwardBob = math.sin(cycle * 0.5f - 0.35f) * suit.swimBobForwardAmplitude * finalScale;
+            float rollBob = math.sin(cycle + 1.57f) * suit.swimBobRollAmplitude * finalScale;
+            float pull = math.saturate(input.swimPropulsionPulse);
+            float ascend = math.max(0f, input.swimVerticalInput);
+            float descend = math.max(0f, -input.swimVerticalInput);
+
+            _output.localPositionOffset.y += verticalBob;
+            _output.localPositionOffset.z += forwardBob;
+            _output.rollOffset += rollBob;
+            _output.localPositionOffset.y +=
+                (descend * SWIM_PRESENTATION_VERTICAL_DESCEND_OFFSET -
+                 ascend * SWIM_PRESENTATION_VERTICAL_ASCEND_OFFSET) *
+                pull * modeScale;
+            _output.pitchOffset +=
+                (descend * SWIM_PRESENTATION_DESCEND_PITCH -
+                 ascend * SWIM_PRESENTATION_ASCEND_PITCH) *
+                pull * modeScale;
+        }
+
+        private static float ResolvePresentationCameraScale(PlayerSwimPresentationMode mode)
+        {
+            switch (mode)
+            {
+                case PlayerSwimPresentationMode.ShallowWade:
+                    return 0.18f;
+
+                case PlayerSwimPresentationMode.SurfaceTread:
+                    return 0.34f;
+
+                case PlayerSwimPresentationMode.SurfaceStroke:
+                    return 0.58f;
+
+                case PlayerSwimPresentationMode.UnderwaterNeutral:
+                    return 0.42f;
+
+                case PlayerSwimPresentationMode.UnderwaterStroke:
+                    return 0.92f;
+
+                case PlayerSwimPresentationMode.UnderwaterGlide:
+                    return 0.46f;
+
+                case PlayerSwimPresentationMode.UnderwaterSprint:
+                    return 1.08f;
+
+                default:
+                    return 0f;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -513,7 +606,7 @@ namespace Hecton8.Gameplay
         //  HEAD BOB
         // ══════════════════════════════════════════════════════════
 
-        private void ProcessHeadBob(in CameraJuiceInput input, SuitData suit, float dt)
+        private void ProcessHeadBob(in CameraJuiceInput input, SuitData suit, float dt, float amplitudeScale, float cadenceScale)
         {
             float targetIntensity = (input.isGrounded && input.hasMovementInput) ? 1f : 0f;
             float blendT = 1f - math.exp(-suit.bobTransitionSpeed * dt);
@@ -524,14 +617,14 @@ namespace Hecton8.Gameplay
             float speedFactor = suit.maxWalkSpeed > 0f
                 ? math.clamp(input.horizontalSpeed / suit.maxWalkSpeed, 0f, 1f) : 0f;
 
-            _bobTimer += suit.bobFrequency * TWO_PI * dt * speedFactor;
+            _bobTimer += suit.bobFrequency * cadenceScale * TWO_PI * dt * speedFactor;
             if (_bobTimer > 100000f) _bobTimer -= 100000f;
 
             float sinVal = math.sin(_bobTimer);
             float cosVal = math.cos(_bobTimer * 0.5f);
 
-            _output.localPositionOffset.x += cosVal * suit.bobHorizontalAmplitude * _bobIntensity;
-            _output.localPositionOffset.y += sinVal * suit.bobVerticalAmplitude * _bobIntensity;
+            _output.localPositionOffset.x += cosVal * suit.bobHorizontalAmplitude * amplitudeScale * _bobIntensity;
+            _output.localPositionOffset.y += sinVal * suit.bobVerticalAmplitude * amplitudeScale * _bobIntensity;
 
             bool inLowPhase = sinVal < BOB_STEP_PHASE_THRESHOLD;
             if (inLowPhase && !_wasInLowPhase && _bobIntensity > 0.5f)
@@ -543,7 +636,7 @@ namespace Hecton8.Gameplay
         //  LANDING IMPACT
         // ══════════════════════════════════════════════════════════
 
-        private void ProcessLandingImpact(in CameraJuiceInput input, SuitData suit, float dt)
+        private void ProcessLandingImpact(in CameraJuiceInput input, SuitData suit, float dt, float dipScale)
         {
             if (input.isGrounded && !input.wasGroundedLastFrame)
             {
@@ -554,8 +647,9 @@ namespace Hecton8.Gameplay
                         (fallSpeed - suit.impactVelocityThreshold) /
                         math.max(suit.impactVelocityMax - suit.impactVelocityThreshold, 0.1f),
                         0f, 1f);
-                    _impactDipCurrent = -norm * suit.impactDipMaxDistance;
-                    _impactDipVelocity = norm * suit.impactDipMaxDistance * 2f;
+                    float scaledDip = suit.impactDipMaxDistance * dipScale;
+                    _impactDipCurrent = -norm * scaledDip;
+                    _impactDipVelocity = norm * scaledDip * 2f;
                 }
             }
 

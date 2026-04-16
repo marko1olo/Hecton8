@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Hecton.UI.MainMenu;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Optimization;
 using Hecton8.Tools;
@@ -20,6 +21,7 @@ using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Compilation;
+using UnityEditor.SceneManagement;
 #endif
 
 namespace Hecton8.Dev
@@ -34,6 +36,17 @@ namespace Hecton8.Dev
         private const int RecorderCapacity = 1;
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const string AutoBootstrapObjectName = "__DEV_RuntimePerformanceProfiler";
+        private const string BootstrapSceneName = "00_BOOTSTRAP";
+        private const string DefaultGameplaySceneName = "02_HECTON_WORLD";
+#if UNITY_EDITOR
+        private const double DirtyPlayRetryStableWindowSeconds = 0.75d;
+        private const double DirtyPlayRetryBudgetSeconds = 20d;
+        private const int MaxDirtyPlayRetryAttempts = 3;
+        private const int FrozenFallbackStallWarningWindowThreshold = 5;
+        private const string DirtyPlayRetryPendingKey = "Hecton8.RuntimeProfiler.DirtyPlayRetryPending";
+        private const string DirtyPlayRetryCountKey = "Hecton8.RuntimeProfiler.DirtyPlayRetryCount";
+        private const string DirtyPlayRetryReasonKey = "Hecton8.RuntimeProfiler.DirtyPlayRetryReason";
+#endif
         private static readonly string[] _FrameTimeCandidates =
         {
             "CPU Total Frame Time",
@@ -67,6 +80,8 @@ namespace Hecton8.Dev
         [SerializeField] private bool logBudgetViolations = true;
         [SerializeField] private bool logEveryWindow = false;
         [SerializeField] private float sampleWindowSeconds = 5f;
+        [SerializeField, Tooltip("Cooldown between repeated budget warnings while the same runtime breach remains active.")]
+        private float budgetViolationLogCooldownSeconds = 30f;
 
         [Header("File Trace")]
         [SerializeField] private bool writeTraceToFile = true;
@@ -85,6 +100,8 @@ namespace Hecton8.Dev
         [SerializeField] private bool autoStartNewGameFromMainMenu = true;
         [SerializeField] private float autoStartNewGameDelaySeconds = 2.5f;
         [SerializeField] private string autoStartMainMenuSceneName = "01_MAIN_MENU";
+        [SerializeField] private bool profileGameplaySceneOnly = true;
+        [SerializeField] private string gameplaySceneName = DefaultGameplaySceneName;
 
         [Header("Budgets")]
         [SerializeField] private float frameTimeBudgetMs = 16.67f;
@@ -145,6 +162,10 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugLastRenderTextureMB;
         [SerializeField] private float _debugLastTotalVRAMMB;
         [SerializeField] private string _debugLastVRAMWarning = "None";
+        [SerializeField] private string _debugLastWindowCadence = "Unknown";
+        [SerializeField] private int _debugLastWindowFrameDelta;
+        [SerializeField] private bool _debugLastWindowUsedTickDrive;
+        [SerializeField] private bool _debugLastWindowUsedFallbackDrive;
 
         private readonly List<ProfilerRecorderHandle> _availableHandles = new List<ProfilerRecorderHandle>(256);
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -186,6 +207,8 @@ namespace Hecton8.Dev
         private int _peakSetPassCalls;
         private int _peakBatches;
         private float _nextOwnershipAuditAllowedTime;
+        private float _nextBudgetViolationLogTime;
+        private float _nextVramWarningLogTime;
         private float _peakScatterDispatchMs;
         private float _peakScatterSamplingBeginMs;
         private float _peakScatterSamplingBuildInputsMs;
@@ -202,10 +225,13 @@ namespace Hecton8.Dev
         private float _peakScatterBackendShadowPumpMs;
         private bool _pendingSceneSnapshot;
         private float _pendingSceneSnapshotDelay;
+        private float _pendingSceneSnapshotDueRealtime;
         private string _pendingSceneSnapshotSceneName = string.Empty;
         private string _pendingSceneSnapshotReason = string.Empty;
+        private bool _suppressSamplingForCurrentScene;
         private bool _pendingAutoStartNewGame;
         private float _pendingAutoStartDelay;
+        private float _pendingAutoStartDueRealtime;
         private bool _autoStartNewGameTriggered;
         private bool _hasScatterSnapshot;
         private ScatterRebuildProfileSnapshot _lastScatterSnapshot;
@@ -216,9 +242,24 @@ namespace Hecton8.Dev
         private float _editorFallbackPumpThresholdSeconds;
         private float _nextEditorFallbackTraceTime;
         private bool _loggedFirstDrive;
+        private int _invalidFrozenWindowCount;
+        private int _suppressedFrozenFallbackSkipCount;
+        private float _nextFrozenFallbackTraceTime;
+        private bool _loggedPausedFrozenFallback;
+        private int _sampleWindowStartFrame;
+        private bool _sampleWindowUsedTickDrive;
+        private bool _sampleWindowUsedFallbackDrive;
 
 #if UNITY_EDITOR
         private static bool _editorHooksRegistered;
+        private static bool _dirtyPlayRetryPending;
+        private static double _dirtyPlayRetryRequestedAt;
+        private static double _dirtyPlayStableSince;
+        private static int _dirtyPlayRetryCount;
+        private static string _dirtyPlayLastReason = "None";
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static bool _developmentProfilerEnsureCompleted;
 #endif
 
         internal static RuntimePerformanceProfiler Instance => _instance;
@@ -232,17 +273,31 @@ namespace Hecton8.Dev
         private static void ResetStaticState()
         {
             _instance = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _developmentProfilerEnsureCompleted = false;
+#endif
         }
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void RestoreEditorRetryStateAfterReload()
+        {
+            RegisterEditorDiagnosticsHooks();
+
+            if (!SessionState.GetBool(DirtyPlayRetryPendingKey, false))
+                return;
+
+            _dirtyPlayRetryPending = true;
+            _dirtyPlayRetryCount = SessionState.GetInt(DirtyPlayRetryCountKey, 0);
+            _dirtyPlayLastReason = SessionState.GetString(DirtyPlayRetryReasonKey, "Reload");
+            _dirtyPlayRetryRequestedAt = EditorApplication.timeSinceStartup;
+            _dirtyPlayStableSince = 0d;
+        }
+#endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureDevelopmentRuntimeProfiler()
-        {
-            EnsureDevelopmentRuntimeProfilerInstance();
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsureDevelopmentRuntimeProfilerAfterSceneLoad()
         {
             EnsureDevelopmentRuntimeProfilerInstance();
         }
@@ -252,21 +307,84 @@ namespace Hecton8.Dev
             if (!Application.isPlaying)
                 return;
 
-            if (_instance != null)
+            if (ShouldYieldToBootstrapProfilerOwner())
+            {
+                LogAutoBootstrapDecision("yield-bootstrap-owner");
                 return;
+            }
+
+            if (_developmentProfilerEnsureCompleted)
+            {
+                LogAutoBootstrapDecision("yield-one-shot");
+                return;
+            }
+
+            _developmentProfilerEnsureCompleted = true;
+
+            if (_instance != null)
+            {
+                LogAutoBootstrapDecision("yield-instance");
+                return;
+            }
 
             RuntimePerformanceProfiler existing = UnityEngine.Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 _instance = existing;
+                LogAutoBootstrapDecision("yield-existing");
                 return;
             }
 
+            LogAutoBootstrapDecision("create-auto-bootstrap");
             GameObject profilerObject = new GameObject(AutoBootstrapObjectName);
             DontDestroyOnLoad(profilerObject);
 
             RuntimePerformanceProfiler profiler = profilerObject.AddComponent<RuntimePerformanceProfiler>();
             profiler.ApplyAutoBootstrapDefaults();
+        }
+
+        private static bool ShouldYieldToBootstrapProfilerOwner()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() &&
+                string.Equals(activeScene.name, BootstrapSceneName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (BootstrapController.Instance != null)
+                return true;
+
+            BootstrapController bootstrapController =
+                UnityEngine.Object.FindAnyObjectByType<BootstrapController>(FindObjectsInactive.Include);
+            return bootstrapController != null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogAutoBootstrapDecision(string action)
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            string sceneName = activeScene.IsValid() ? activeScene.name : "InvalidScene";
+            bool hasBootstrapInstance = BootstrapController.Instance != null;
+            bool hasProfilerInstance = _instance != null;
+            bool hasExistingProfiler =
+                UnityEngine.Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include) != null;
+
+            string message =
+                $"[RuntimeProfilerBootstrap] action={action} scene={sceneName} frame={Time.frameCount} " +
+                $"bootstrapInstance={hasBootstrapInstance} profilerInstance={hasProfilerInstance} " +
+                $"existingProfiler={hasExistingProfiler} ensureCompleted={_developmentProfilerEnsureCompleted}";
+
+            Debug.Log(message);
+
+            if (RuntimeDiagnosticsTrace.IsActive)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "runtime.bootstrap",
+                    $"action={action} scene={sceneName} frame={Time.frameCount} " +
+                    $"bootstrapInstance={hasBootstrapInstance} profilerInstance={hasProfilerInstance} " +
+                    $"existingProfiler={hasExistingProfiler} ensureCompleted={_developmentProfilerEnsureCompleted}");
+            }
         }
 #endif
 
@@ -377,7 +495,8 @@ namespace Hecton8.Dev
             StopProfiling();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
 #if UNITY_EDITOR
-            UnregisterEditorDiagnosticsHooks();
+            if (!_dirtyPlayRetryPending)
+                UnregisterEditorDiagnosticsHooks();
 #endif
             UnregisterFromTickManager();
         }
@@ -450,12 +569,17 @@ namespace Hecton8.Dev
             _lastEditorUpdateTime = 0d;
             _editorFallbackPumpThresholdSeconds = Mathf.Max(0.25f, sceneSnapshotDelaySeconds);
             _nextEditorFallbackTraceTime = 0f;
+            _nextFrozenFallbackTraceTime = 0f;
             _loggedFirstDrive = false;
+            _invalidFrozenWindowCount = 0;
+            _suppressedFrozenFallbackSkipCount = 0;
+            _loggedPausedFrozenFallback = false;
             _nextDriveHeartbeatTime = 0f;
             _pendingAutoStartNewGame = false;
             _pendingAutoStartDelay = 0f;
             _autoStartNewGameTriggered = false;
             _debugPendingAutoStart = "None";
+            _suppressSamplingForCurrentScene = ShouldSuppressSceneSampling(SceneManager.GetActiveScene().name);
             QueueSceneSnapshot(SceneManager.GetActiveScene().name, "profiling-start");
 
             if (!_debugProfilingActive)
@@ -509,13 +633,19 @@ namespace Hecton8.Dev
             _debugProfilingActive = false;
             _debugLastOwnershipAudit = "None";
             _pendingSceneSnapshot = false;
+            _pendingSceneSnapshotDueRealtime = 0f;
             _debugPendingSceneSnapshot = "None";
             _pendingAutoStartNewGame = false;
             _pendingAutoStartDelay = 0f;
+            _pendingAutoStartDueRealtime = 0f;
             _debugPendingAutoStart = "None";
             _lastEditorUpdateTime = 0d;
             _editorFallbackPumpThresholdSeconds = 0f;
             _nextEditorFallbackTraceTime = 0f;
+            _nextFrozenFallbackTraceTime = 0f;
+            _invalidFrozenWindowCount = 0;
+            _suppressedFrozenFallbackSkipCount = 0;
+            _loggedPausedFrozenFallback = false;
 
             if (writeTraceToFile && RuntimeDiagnosticsTrace.IsActive)
             {
@@ -584,7 +714,8 @@ namespace Hecton8.Dev
                 $"setPass={_debugLastSetPassCalls} batches={_debugLastBatches} " +
                 $"scatter={_debugLastScatterTotalMs:0.00}ms shadowSchedule={_debugLastScatterShadowScheduleMs:0.00}ms shadowPump={_debugLastScatterShadowPumpMs:0.00}ms " +
                 $"ticks={_debugTickCount} fallback={_debugFallbackUpdateCount} " +
-                $"fallbackActive={_debugUsingFallbackUpdate} dt={_debugLastDeltaTime:0.000}";
+                $"fallbackActive={_debugUsingFallbackUpdate} dt={_debugLastDeltaTime:0.000} " +
+                $"cadence={_debugLastWindowCadence} frameDelta={_debugLastWindowFrameDelta}";
         }
 
         [ContextMenu("Log Runtime Performance Profiling Status")]
@@ -761,7 +892,14 @@ namespace Hecton8.Dev
             _debugUsingFallbackUpdate = usingFallbackUpdate;
             _debugLastDriveSource = usingFallbackUpdate ? "Update" : "Tick";
             if (usingFallbackUpdate)
+            {
                 _debugFallbackUpdateCount++;
+                _sampleWindowUsedFallbackDrive = true;
+            }
+            else
+            {
+                _sampleWindowUsedTickDrive = true;
+            }
 
             if (!_loggedFirstDrive && RuntimeDiagnosticsTrace.IsActive)
             {
@@ -779,10 +917,14 @@ namespace Hecton8.Dev
                     $"scene={SceneManager.GetActiveScene().name} frame={Time.frameCount} source={_debugLastDriveSource} dt={effectiveDeltaTime:0.0000} elapsed={_sampleElapsed:0.0000} active={_debugProfilingActive}");
             }
 
-            _sampleElapsed += effectiveDeltaTime;
-            SampleRecorders();
             UpdatePendingSceneSnapshot(effectiveDeltaTime);
             UpdatePendingAutoStart(effectiveDeltaTime);
+
+            if (_suppressSamplingForCurrentScene)
+                return;
+
+            _sampleElapsed += effectiveDeltaTime;
+            SampleRecorders();
 
             if (_sampleElapsed >= sampleWindowSeconds)
                 FlushSampleWindow();
@@ -790,6 +932,9 @@ namespace Hecton8.Dev
 
         private void FlushSampleWindow()
         {
+            int recoveredFrozenWindowCount = _invalidFrozenWindowCount;
+            int recoveredSuppressedFrozenSkipCount = _suppressedFrozenFallbackSkipCount;
+
             _debugWindowCount++;
             _debugLastWindowExceededBudget =
                 _peakFrameTimeMs > frameTimeBudgetMs ||
@@ -798,10 +943,54 @@ namespace Hecton8.Dev
                 _peakSystemMemoryMb > systemMemoryBudgetMb ||
                 _peakSetPassCalls > setPassBudget ||
                 _peakBatches > batchesBudget;
+            _debugLastWindowFrameDelta = Mathf.Max(0, Time.frameCount - _sampleWindowStartFrame);
+            _debugLastWindowUsedTickDrive = _sampleWindowUsedTickDrive;
+            _debugLastWindowUsedFallbackDrive = _sampleWindowUsedFallbackDrive;
+            _debugLastWindowCadence = DescribeWindowCadence(
+                _debugLastWindowFrameDelta,
+                _sampleWindowUsedTickDrive,
+                _sampleWindowUsedFallbackDrive);
+
+            if (ShouldSuppressFrozenFallbackWindow())
+            {
+                _invalidFrozenWindowCount++;
+                LogFrozenFallbackSkip();
+
+#if UNITY_EDITOR
+                if (_invalidFrozenWindowCount == FrozenFallbackStallWarningWindowThreshold && !EditorApplication.isPaused)
+                {
+                    FlushSuppressedFrozenFallbackSkips();
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "runtime.stall",
+                        $"reason=fallback-frozen-threshold scene={SceneManager.GetActiveScene().name} " +
+                        $"frozenCount={_invalidFrozenWindowCount} frameDelta={_debugLastWindowFrameDelta}");
+                }
+#endif
+
+                ResetSampleWindow();
+                return;
+            }
+
+            FlushSuppressedFrozenFallbackSkips();
+            if (recoveredFrozenWindowCount > 0)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "runtime.resume",
+                    $"reason=fallback-recovered scene={SceneManager.GetActiveScene().name} " +
+                    $"frozenCount={recoveredFrozenWindowCount} suppressed={recoveredSuppressedFrozenSkipCount} " +
+                    $"window={_debugWindowCount} cadence={_debugLastWindowCadence} frameDelta={_debugLastWindowFrameDelta}");
+            }
+
+            _invalidFrozenWindowCount = 0;
+            _loggedPausedFrozenFallback = false;
 
             _reportBuilder.Clear();
             _reportBuilder.Append("[RuntimeProfiler] window=")
                 .Append(_debugWindowCount)
+                .Append(" cadence=")
+                .Append(_debugLastWindowCadence)
+                .Append(" frameDelta=")
+                .Append(_debugLastWindowFrameDelta)
                 .Append(" frame=")
                 .Append(_peakFrameTimeMs.ToString("0.00"))
                 .Append("ms main=")
@@ -871,12 +1060,20 @@ namespace Hecton8.Dev
             _debugLastReport = _reportBuilder.ToString();
             RuntimeDiagnosticsTrace.WriteEvent("runtime", _debugLastReport);
 
-            if (logEveryWindow || (_debugLastWindowExceededBudget && logBudgetViolations))
+            bool shouldLogWindow = logEveryWindow;
+            if (!shouldLogWindow && _debugLastWindowExceededBudget && logBudgetViolations)
+                shouldLogWindow = TryConsumeBudgetWarningCooldown(ref _nextBudgetViolationLogTime);
+
+            if (shouldLogWindow)
             {
                 if (_debugLastWindowExceededBudget)
                     Debug.LogWarning(_debugLastReport, this);
                 else
                     Debug.Log(_debugLastReport, this);
+            }
+            else if (!_debugLastWindowExceededBudget)
+            {
+                _nextBudgetViolationLogTime = 0f;
             }
 
             if (traceRendererOwnershipOnSpike && ShouldCaptureRendererOwnershipAudit())
@@ -888,6 +1085,9 @@ namespace Hecton8.Dev
         private void ResetSampleWindow()
         {
             _sampleElapsed = 0f;
+            _sampleWindowStartFrame = Time.frameCount;
+            _sampleWindowUsedTickDrive = false;
+            _sampleWindowUsedFallbackDrive = false;
             _debugTickCount = 0;
             _debugFallbackUpdateCount = 0;
             _debugLastDeltaTime = 0f;
@@ -912,6 +1112,132 @@ namespace Hecton8.Dev
             _peakScatterReconcileFaunaMs = 0f;
             _peakScatterBackendShadowScheduleMs = 0f;
             _peakScatterBackendShadowPumpMs = 0f;
+        }
+
+        private void ResetSceneTransitionDiagnostics()
+        {
+            _debugLastFrameTimeMs = 0f;
+            _debugLastMainThreadMs = 0f;
+            _debugLastGcAllocBytes = 0;
+            _debugLastSystemMemoryMb = 0f;
+            _debugLastSetPassCalls = 0;
+            _debugLastBatches = 0;
+            _debugLastScatterTotalMs = 0f;
+            _debugLastScatterSamplingMs = 0f;
+            _debugLastScatterRescueMs = 0f;
+            _debugLastScatterRestoreMs = 0f;
+            _debugLastScatterReconcileMs = 0f;
+            _debugLastScatterShadowScheduleMs = 0f;
+            _debugLastScatterShadowPumpMs = 0f;
+            _debugLastWindowCadence = "SceneTransition";
+            _debugLastWindowFrameDelta = 0;
+            _debugLastWindowUsedTickDrive = false;
+            _debugLastWindowUsedFallbackDrive = false;
+            _debugLastWindowExceededBudget = false;
+        }
+
+        private void LogFrozenFallbackSkip()
+        {
+            if (!RuntimeDiagnosticsTrace.IsActive)
+                return;
+
+            bool isPaused = false;
+#if UNITY_EDITOR
+            isPaused = EditorApplication.isPaused;
+#endif
+            if (isPaused)
+            {
+                if (_loggedPausedFrozenFallback)
+                {
+                    _suppressedFrozenFallbackSkipCount++;
+                    return;
+                }
+
+                _loggedPausedFrozenFallback = true;
+            }
+
+            float realtimeNow = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+            bool shouldEmit =
+                _invalidFrozenWindowCount == 1 ||
+                isPaused ||
+                realtimeNow >= _nextFrozenFallbackTraceTime;
+
+            if (!shouldEmit)
+            {
+                _suppressedFrozenFallbackSkipCount++;
+                return;
+            }
+
+            _nextFrozenFallbackTraceTime = realtimeNow + 10f;
+
+            _reportBuilder.Clear();
+            _reportBuilder.Append("reason=fallback-frozen window=")
+                .Append(_debugWindowCount + 1)
+                .Append(" frozenCount=")
+                .Append(_invalidFrozenWindowCount)
+                .Append(" scene=")
+                .Append(SceneManager.GetActiveScene().name)
+                .Append(" frameDelta=")
+                .Append(_debugLastWindowFrameDelta);
+
+            if (_suppressedFrozenFallbackSkipCount > 0)
+            {
+                _reportBuilder.Append(" suppressed=")
+                    .Append(_suppressedFrozenFallbackSkipCount);
+            }
+
+            if (isPaused)
+                _reportBuilder.Append(" paused=true");
+
+            RuntimeDiagnosticsTrace.WriteEvent("runtime.skip", _reportBuilder.ToString());
+            _suppressedFrozenFallbackSkipCount = 0;
+        }
+
+        private void FlushSuppressedFrozenFallbackSkips()
+        {
+            if (_suppressedFrozenFallbackSkipCount <= 0 || !RuntimeDiagnosticsTrace.IsActive)
+                return;
+
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "runtime.skip",
+                $"reason=fallback-frozen-summary count={_suppressedFrozenFallbackSkipCount} " +
+                $"scene={SceneManager.GetActiveScene().name}");
+            _suppressedFrozenFallbackSkipCount = 0;
+        }
+
+        private static string DescribeWindowCadence(int frameDelta, bool usedTickDrive, bool usedFallbackDrive)
+        {
+            if (frameDelta <= 0)
+            {
+                if (usedFallbackDrive && usedTickDrive)
+                    return "mixed-frozen";
+
+                if (usedFallbackDrive)
+                    return "fallback-frozen";
+
+                if (usedTickDrive)
+                    return "tick-frozen";
+
+                return "frozen";
+            }
+
+            if (usedTickDrive && usedFallbackDrive)
+                return "mixed";
+
+            if (usedTickDrive)
+                return "tick";
+
+            if (usedFallbackDrive)
+                return "fallback";
+
+            return "unknown";
+        }
+
+        private bool ShouldSuppressFrozenFallbackWindow()
+        {
+            return _debugLastWindowFrameDelta == 0 &&
+                   _sampleWindowUsedFallbackDrive &&
+                   !_sampleWindowUsedTickDrive;
         }
 
         private void UpdateWorldDiagnostics()
@@ -959,19 +1285,22 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (logBudgetViolations)
                 {
-                    Debug.LogWarning($"[RuntimeProfiler] {_debugLastVRAMWarning} | Texture: {_debugLastTextureMB:0.0} MB | RT: {_debugLastRenderTextureMB:0.0} MB | Total: {_debugLastTotalVRAMMB:0.0} MB");
+                    if (TryConsumeBudgetWarningCooldown(ref _nextVramWarningLogTime))
+                        Debug.LogWarning($"[RuntimeProfiler] {_debugLastVRAMWarning} | Texture: {_debugLastTextureMB:0.0} MB | RT: {_debugLastRenderTextureMB:0.0} MB | Total: {_debugLastTotalVRAMMB:0.0} MB");
                 }
 #endif
             }
             else
             {
                 _debugLastVRAMWarning = "None";
+                _nextVramWarningLogTime = 0f;
             }
         }
 
         private void ClampSettings()
         {
             sampleWindowSeconds = Mathf.Clamp(sampleWindowSeconds, 0.5f, 60f);
+            budgetViolationLogCooldownSeconds = Mathf.Clamp(budgetViolationLogCooldownSeconds, 0f, 300f);
             frameTimeBudgetMs = Mathf.Clamp(frameTimeBudgetMs, 1f, 100f);
             mainThreadBudgetMs = Mathf.Clamp(mainThreadBudgetMs, 1f, 100f);
             gcAllocBudgetBytes = Mathf.Clamp(gcAllocBudgetBytes, 0, 4 * 1024 * 1024);
@@ -993,14 +1322,46 @@ namespace Hecton8.Dev
             logBudgetViolations = true;
             logEveryWindow = false;
             sampleWindowSeconds = 2f;
+            budgetViolationLogCooldownSeconds = 30f;
             traceSessionLabel = "scatter_baseline";
             autoStartNewGameFromMainMenu = true;
             ClampSettings();
         }
 
+        private bool TryConsumeBudgetWarningCooldown(ref float nextAllowedTime)
+        {
+            if (budgetViolationLogCooldownSeconds <= 0f)
+                return true;
+
+            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            if (now < nextAllowedTime)
+                return false;
+
+            nextAllowedTime = now + budgetViolationLogCooldownSeconds;
+            return true;
+        }
+
+        private bool ShouldSuppressSceneSampling(string sceneName)
+        {
+            if (!profileGameplaySceneOnly)
+                return false;
+
+            string resolvedGameplaySceneName = string.IsNullOrWhiteSpace(gameplaySceneName)
+                ? DefaultGameplaySceneName
+                : gameplaySceneName.Trim();
+            return !string.Equals(sceneName, resolvedGameplaySceneName, StringComparison.Ordinal);
+        }
+
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _debugCurrentScene = scene.name;
+            _suppressSamplingForCurrentScene = ShouldSuppressSceneSampling(scene.name);
+            FlushSuppressedFrozenFallbackSkips();
+            _invalidFrozenWindowCount = 0;
+            _loggedPausedFrozenFallback = false;
+            _nextFrozenFallbackTraceTime = 0f;
+            ResetSampleWindow();
+            ResetSceneTransitionDiagnostics();
             if (RuntimeDiagnosticsTrace.IsActive)
             {
                 RuntimeDiagnosticsTrace.WriteEvent(
@@ -1022,6 +1383,7 @@ namespace Hecton8.Dev
 
             _pendingSceneSnapshot = true;
             _pendingSceneSnapshotDelay = sceneSnapshotDelaySeconds;
+            _pendingSceneSnapshotDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingSceneSnapshotDelay;
             _pendingSceneSnapshotSceneName = string.IsNullOrWhiteSpace(sceneName) ? "Unknown" : sceneName;
             _pendingSceneSnapshotReason = string.IsNullOrWhiteSpace(reason) ? "runtime" : reason;
             _debugPendingSceneSnapshot = $"{_pendingSceneSnapshotSceneName}@{_pendingSceneSnapshotDelay:0.0}s";
@@ -1032,11 +1394,15 @@ namespace Hecton8.Dev
             if (!_pendingSceneSnapshot)
                 return;
 
+            if (TryCapturePendingSceneSnapshotByRealtime(Application.isPlaying ? Time.realtimeSinceStartup : 0f))
+                return;
+
             _pendingSceneSnapshotDelay -= Mathf.Max(0f, deltaTime);
             if (_pendingSceneSnapshotDelay > 0f)
                 return;
 
             _pendingSceneSnapshot = false;
+            _pendingSceneSnapshotDueRealtime = 0f;
             CaptureSceneSnapshot(_pendingSceneSnapshotSceneName, _pendingSceneSnapshotReason);
         }
 
@@ -1050,12 +1416,16 @@ namespace Hecton8.Dev
 
             _pendingAutoStartNewGame = true;
             _pendingAutoStartDelay = Mathf.Max(sceneSnapshotDelaySeconds, autoStartNewGameDelaySeconds);
+            _pendingAutoStartDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingAutoStartDelay;
             _debugPendingAutoStart = $"{sceneName}@{_pendingAutoStartDelay:0.0}s";
         }
 
         private void UpdatePendingAutoStart(float deltaTime)
         {
             if (!_pendingAutoStartNewGame || _autoStartNewGameTriggered)
+                return;
+
+            if (TryProcessPendingAutoStartByRealtime(Application.isPlaying ? Time.realtimeSinceStartup : 0f))
                 return;
 
             _pendingAutoStartDelay -= Mathf.Max(0f, deltaTime);
@@ -1076,6 +1446,7 @@ namespace Hecton8.Dev
             if (!string.Equals(SceneManager.GetActiveScene().name, autoStartMainMenuSceneName, StringComparison.Ordinal))
             {
                 _pendingAutoStartNewGame = false;
+                _pendingAutoStartDueRealtime = 0f;
                 _debugPendingAutoStart = "None";
                 return;
             }
@@ -1083,6 +1454,7 @@ namespace Hecton8.Dev
             if (ShouldYieldMenuRouteToShellSmoke())
             {
                 _pendingAutoStartNewGame = false;
+                _pendingAutoStartDueRealtime = 0f;
                 _debugPendingAutoStart = "Deferred:ShellSmoke";
                 RuntimeDiagnosticsTrace.WriteEvent("menu.auto_start", "deferred reason=ShellSmokeOwner");
                 return;
@@ -1091,6 +1463,7 @@ namespace Hecton8.Dev
             if (GameStartContextHolder.Current.IsValid)
             {
                 _pendingAutoStartNewGame = false;
+                _pendingAutoStartDueRealtime = 0f;
                 _autoStartNewGameTriggered = true;
                 _debugPendingAutoStart = "Skipped:ContextAlreadyValid";
                 return;
@@ -1101,12 +1474,14 @@ namespace Hecton8.Dev
             {
                 _pendingAutoStartDelay = 0.5f;
                 _pendingAutoStartNewGame = true;
+                _pendingAutoStartDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingAutoStartDelay;
                 _debugPendingAutoStart = $"{autoStartMainMenuSceneName}@retry";
                 RuntimeDiagnosticsTrace.WriteEvent("menu.auto_start", "retry reason=MainMenuControllerMissing");
                 return;
             }
 
             _pendingAutoStartNewGame = false;
+            _pendingAutoStartDueRealtime = 0f;
             _autoStartNewGameTriggered = true;
             _debugPendingAutoStart = "Triggered";
             RuntimeDiagnosticsTrace.WriteEvent("menu.auto_start", "StartGame(slot=NewGame)");
@@ -1121,6 +1496,32 @@ namespace Hecton8.Dev
                 return false;
 
             return shellSmoke.WantsAutoStart() || ShellVerificationRuntimeSmokeTester.HasPersistedResumeState();
+        }
+
+        private bool TryCapturePendingSceneSnapshotByRealtime(float realtimeNow)
+        {
+            if (!_pendingSceneSnapshot)
+                return false;
+
+            if (realtimeNow < _pendingSceneSnapshotDueRealtime)
+                return false;
+
+            _pendingSceneSnapshot = false;
+            _pendingSceneSnapshotDueRealtime = 0f;
+            CaptureSceneSnapshot(_pendingSceneSnapshotSceneName, _pendingSceneSnapshotReason);
+            return true;
+        }
+
+        private bool TryProcessPendingAutoStartByRealtime(float realtimeNow)
+        {
+            if (!_pendingAutoStartNewGame || _autoStartNewGameTriggered)
+                return false;
+
+            if (realtimeNow < _pendingAutoStartDueRealtime)
+                return false;
+
+            TryAutoStartNewGameFromMenu();
+            return true;
         }
 
 #if UNITY_EDITOR
@@ -1152,6 +1553,8 @@ namespace Hecton8.Dev
 
         private static void HandleEditorCompilationStarted(object context)
         {
+            TryAbortDirtyPlayEntry("CompilationStarted");
+
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
@@ -1185,9 +1588,44 @@ namespace Hecton8.Dev
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
+            if (state == PlayModeStateChange.EnteredEditMode || state == PlayModeStateChange.ExitingPlayMode)
+            {
+                if (!_dirtyPlayRetryPending)
+                    _dirtyPlayRetryCount = 0;
+
+                if (RuntimeDiagnosticsTrace.IsActive)
+                {
+                    EditorPlayModeDiagnostics.TracePlayModeStateChange(state, nameof(RuntimePerformanceProfiler));
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "editor.playmode",
+                        $"state={state} isPlaying={Application.isPlaying} isPaused={EditorApplication.isPaused} compiling={EditorApplication.isCompiling}");
+                }
+
+                return;
+            }
+
+            if (state == PlayModeStateChange.ExitingEditMode)
+            {
+                TryAbortDirtyScenePlayEntry();
+
+                if (RuntimeDiagnosticsTrace.IsActive)
+                {
+                    EditorPlayModeDiagnostics.TracePlayModeStateChange(state, nameof(RuntimePerformanceProfiler));
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "editor.playmode",
+                        $"state={state} isPlaying={Application.isPlaying} isPaused={EditorApplication.isPaused} compiling={EditorApplication.isCompiling}");
+                }
+
+                return;
+            }
+
+            if (state == PlayModeStateChange.EnteredPlayMode)
+                TryAbortDirtyPlayEntry("EnteredPlayMode");
+
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
+            EditorPlayModeDiagnostics.TracePlayModeStateChange(state, nameof(RuntimePerformanceProfiler));
             RuntimeDiagnosticsTrace.WriteEvent(
                 "editor.playmode",
                 $"state={state} isPlaying={Application.isPlaying} isPaused={EditorApplication.isPaused} compiling={EditorApplication.isCompiling}");
@@ -1195,6 +1633,8 @@ namespace Hecton8.Dev
 
         private static void HandleEditorUpdate()
         {
+            UpdateDirtyPlayRetry();
+
             RuntimePerformanceProfiler instance = _instance;
             if (instance == null || !Application.isPlaying || !instance._debugProfilingActive)
                 return;
@@ -1210,6 +1650,175 @@ namespace Hecton8.Dev
 
             instance.SampleRecorders();
             instance.CaptureSceneSnapshot(SceneManager.GetActiveScene().name, reason);
+        }
+
+        private static void TryAbortDirtyPlayEntry(string reason)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_dirtyPlayRetryPending)
+                return;
+
+            if (!EditorApplication.isCompiling && !EditorApplication.isUpdating)
+            {
+                ClearDirtyPlayRetryState();
+                return;
+            }
+
+            if (ShouldContinueDirtyPlayMeasurement(reason))
+                return;
+
+            if (!ShouldGuardDirtyPlayScene())
+                return;
+
+            if (_dirtyPlayRetryCount >= MaxDirtyPlayRetryAttempts)
+            {
+                Debug.LogWarning(
+                    $"[RuntimeProfilerDirtyPlayGate] Dirty play entry persisted after {_dirtyPlayRetryCount} retries. " +
+                    $"scene={SceneManager.GetActiveScene().name} reason={reason} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
+                return;
+            }
+
+            _dirtyPlayRetryPending = true;
+            _dirtyPlayRetryRequestedAt = EditorApplication.timeSinceStartup;
+            _dirtyPlayStableSince = 0d;
+            _dirtyPlayRetryCount++;
+            _dirtyPlayLastReason = reason;
+            SessionState.SetBool(DirtyPlayRetryPendingKey, true);
+            SessionState.SetInt(DirtyPlayRetryCountKey, _dirtyPlayRetryCount);
+            SessionState.SetString(DirtyPlayRetryReasonKey, _dirtyPlayLastReason);
+
+            Debug.LogWarning(
+                $"[RuntimeProfilerDirtyPlayGate] Aborting dirty play entry. " +
+                $"scene={SceneManager.GetActiveScene().name} reason={reason} retry={_dirtyPlayRetryCount} " +
+                $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
+
+            EditorPlayModeDiagnostics.RequestStopPlayMode(
+                nameof(RuntimePerformanceProfiler),
+                $"DirtyPlayGate:{reason}");
+        }
+
+        private static bool ShouldContinueDirtyPlayMeasurement(string reason)
+        {
+            RuntimePerformanceProfiler instance = _instance;
+            if (instance == null || !instance._debugProfilingActive)
+                return false;
+
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "play.dirty_entry",
+                $"owner={nameof(RuntimePerformanceProfiler)} reason={reason} action=continue " +
+                $"scene={SceneManager.GetActiveScene().name} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
+            return true;
+        }
+
+        private static void UpdateDirtyPlayRetry()
+        {
+            if (!_dirtyPlayRetryPending)
+                return;
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isPlaying)
+                return;
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                _dirtyPlayStableSince = 0d;
+                return;
+            }
+
+            double now = EditorApplication.timeSinceStartup;
+            if (_dirtyPlayStableSince <= 0d)
+            {
+                _dirtyPlayStableSince = now;
+                return;
+            }
+
+            if ((now - _dirtyPlayRetryRequestedAt) > DirtyPlayRetryBudgetSeconds)
+            {
+                Debug.LogWarning($"[RuntimeProfilerDirtyPlayGate] Retry window expired. lastReason={_dirtyPlayLastReason}");
+                ClearDirtyPlayRetryState();
+                return;
+            }
+
+            if ((now - _dirtyPlayStableSince) < DirtyPlayRetryStableWindowSeconds)
+                return;
+
+            Debug.Log($"[RuntimeProfilerDirtyPlayGate] Retrying play after stable editor window. retry={_dirtyPlayRetryCount}");
+            _dirtyPlayRetryPending = false;
+            SessionState.SetBool(DirtyPlayRetryPendingKey, false);
+            EditorPlayModeDiagnostics.RequestStartPlayMode(
+                nameof(RuntimePerformanceProfiler),
+                "DirtyPlayRetryStableWindow");
+        }
+
+        private static void TryAbortDirtyScenePlayEntry()
+        {
+            if (!ShouldGuardDirtyPlayScene())
+                return;
+
+            if (!TryCollectDirtyLoadedSceneNames(out string dirtySceneNames))
+                return;
+
+            Debug.LogWarning(
+                $"[RuntimeProfilerDirtySceneGate] Aborting play entry because loaded verification scenes are dirty. " +
+                $"scenes={dirtySceneNames}");
+
+            ClearDirtyPlayRetryState();
+            EditorPlayModeDiagnostics.RequestStopPlayMode(
+                nameof(RuntimePerformanceProfiler),
+                $"DirtySceneGate:{dirtySceneNames}");
+        }
+
+        private static bool ShouldGuardDirtyPlayScene()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid())
+                return false;
+
+            string sceneName = activeScene.name;
+            return string.Equals(sceneName, BootstrapSceneName, StringComparison.Ordinal) ||
+                   string.Equals(sceneName, "01_MAIN_MENU", StringComparison.Ordinal);
+        }
+
+        private static bool TryCollectDirtyLoadedSceneNames(out string dirtySceneNames)
+        {
+            dirtySceneNames = string.Empty;
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return false;
+
+            StringBuilder dirtyScenes = new StringBuilder(64);
+            bool hasDirtyScene = false;
+            int loadedSceneCount = SceneManager.sceneCount;
+            for (int sceneIndex = 0; sceneIndex < loadedSceneCount; sceneIndex++)
+            {
+                Scene loadedScene = SceneManager.GetSceneAt(sceneIndex);
+                if (!loadedScene.IsValid() || !loadedScene.isLoaded || !loadedScene.isDirty)
+                    continue;
+
+                if (hasDirtyScene)
+                    dirtyScenes.Append(',');
+
+                dirtyScenes.Append(string.IsNullOrWhiteSpace(loadedScene.name) ? "<unnamed>" : loadedScene.name);
+                hasDirtyScene = true;
+            }
+
+            if (!hasDirtyScene)
+                return false;
+
+            dirtySceneNames = dirtyScenes.ToString();
+            return true;
+        }
+
+        private static void ClearDirtyPlayRetryState()
+        {
+            _dirtyPlayRetryPending = false;
+            _dirtyPlayRetryRequestedAt = 0d;
+            _dirtyPlayStableSince = 0d;
+            _dirtyPlayRetryCount = 0;
+            _dirtyPlayLastReason = "None";
+            SessionState.EraseBool(DirtyPlayRetryPendingKey);
+            SessionState.EraseInt(DirtyPlayRetryCountKey);
+            SessionState.EraseString(DirtyPlayRetryReasonKey);
         }
 #endif
 
@@ -1231,6 +1840,8 @@ namespace Hecton8.Dev
                 return;
 
             float realtimeNow = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+            TryCapturePendingSceneSnapshotByRealtime(realtimeNow);
+            TryProcessPendingAutoStartByRealtime(realtimeNow);
             float silenceDuration = realtimeNow - _lastDriveRealtimeSinceStartup;
             if (silenceDuration < _editorFallbackPumpThresholdSeconds)
                 return;
@@ -1580,4 +2191,101 @@ namespace Hecton8.Dev
             return false;
         }
     }
+
+#if UNITY_EDITOR
+    internal static class EditorPlayModeDiagnostics
+    {
+        private static string _lastStopOwner = "None";
+        private static string _lastStopReason = "None";
+        private static double _lastStopRequestTime;
+        private static string _lastStartOwner = "None";
+        private static string _lastStartReason = "None";
+        private static double _lastStartRequestTime;
+
+        internal static void RequestStopPlayMode(string owner, string reason, UnityEngine.Object context = null)
+        {
+            string safeOwner = Sanitize(owner, "UnknownOwner");
+            string safeReason = Sanitize(reason, "None");
+            _lastStopOwner = safeOwner;
+            _lastStopReason = safeReason;
+            _lastStopRequestTime = EditorApplication.timeSinceStartup;
+
+            WriteTraceEvent(
+                "play.exit_request",
+                $"owner={safeOwner} reason={safeReason} scene={GetActiveSceneName()} " +
+                $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
+
+            if (context != null)
+                Debug.Log($"[PlayModeExit] owner={safeOwner} reason={safeReason}", context);
+            else
+                Debug.Log($"[PlayModeExit] owner={safeOwner} reason={safeReason}");
+
+            EditorApplication.isPlaying = false;
+        }
+
+        internal static void RequestStartPlayMode(string owner, string reason)
+        {
+            string safeOwner = Sanitize(owner, "UnknownOwner");
+            string safeReason = Sanitize(reason, "None");
+            _lastStartOwner = safeOwner;
+            _lastStartReason = safeReason;
+            _lastStartRequestTime = EditorApplication.timeSinceStartup;
+
+            WriteTraceEvent(
+                "play.enter_request",
+                $"owner={safeOwner} reason={safeReason} scene={GetActiveSceneName()} " +
+                $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
+
+            Debug.Log($"[PlayModeEnter] owner={safeOwner} reason={safeReason}");
+            EditorApplication.isPlaying = true;
+        }
+
+        internal static void TracePlayModeStateChange(PlayModeStateChange state, string observer)
+        {
+            string safeObserver = Sanitize(observer, "UnknownObserver");
+            WriteTraceEvent(
+                "play.state",
+                $"observer={safeObserver} state={state} scene={GetActiveSceneName()} " +
+                $"lastStopOwner={_lastStopOwner} lastStopReason={_lastStopReason} " +
+                $"lastStopAge={FormatAgeSeconds(_lastStopRequestTime)} " +
+                $"lastStartOwner={_lastStartOwner} lastStartReason={_lastStartReason} " +
+                $"lastStartAge={FormatAgeSeconds(_lastStartRequestTime)} " +
+                $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
+        }
+
+        private static void WriteTraceEvent(string channel, string message)
+        {
+            if (!RuntimeDiagnosticsTrace.IsActive)
+                return;
+
+            RuntimeDiagnosticsTrace.WriteEvent(channel, message);
+        }
+
+        private static string GetActiveSceneName()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            return activeScene.IsValid() ? activeScene.name : "InvalidScene";
+        }
+
+        private static string FormatAgeSeconds(double requestTime)
+        {
+            if (requestTime <= 0d)
+                return "n/a";
+
+            double age = EditorApplication.timeSinceStartup - requestTime;
+            if (age < 0d)
+                age = 0d;
+
+            return age.ToString("0.000");
+        }
+
+        private static string Sanitize(string value, string fallback)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return fallback;
+
+            return value.Trim().Replace('\r', ' ').Replace('\n', ' ');
+        }
+    }
+#endif
 }

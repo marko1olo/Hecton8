@@ -355,6 +355,11 @@ namespace VLB
 
         public int GetRaymarchingQualityIndexForUniqueID(int id)
         {
+            if (m_RaymarchingQualities == null || m_RaymarchingQualities.Length == 0)
+            {
+                CreateDefaultRaymarchingQualityPreset(true);
+            }
+
             for (int i = 0; i < m_RaymarchingQualities.Length; ++i)
             {
                 var qual = m_RaymarchingQualities[i];
@@ -362,8 +367,19 @@ namespace VLB
                     return i;
             }
 
-            Debug.LogErrorFormat("Failed to find RaymarchingQualityIndex for Unique ID {0}", id);
-            return -1;
+            int fallbackIndex = 0;
+
+            if (m_DefaultRaymarchingQualityUniqueID > 0)
+            {
+                for (int i = 0; i < m_RaymarchingQualities.Length; ++i)
+                {
+                    var qual = m_RaymarchingQualities[i];
+                    if (qual != null && qual.uniqueID == m_DefaultRaymarchingQualityUniqueID)
+                        return i;
+                }
+            }
+
+            return fallbackIndex;
         }
 
         public bool IsRaymarchingQualityUniqueIDValid(int id) { return GetRaymarchingQualityIndexForUniqueID(id) >= 0; }

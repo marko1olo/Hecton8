@@ -21,7 +21,7 @@
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Core;
-using Hecton8.Quest;
+using Hecton8.Gameplay;
 using Hecton8.UI;
 using UnityEngine;
 
@@ -31,6 +31,8 @@ namespace Hecton8.AtlasSignal
     [DefaultExecutionOrder(-90)]
     public sealed class AtlasSignalDecoder : MonoBehaviour, ISlowTickable
     {
+        private const int MaximumSynchronizedPhase = 3;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -41,12 +43,9 @@ namespace Hecton8.AtlasSignal
         [SerializeField, Range(0f, 1f)] private float phase3Threshold = 0.70f;
         [SerializeField, Range(0f, 1f)] private float fullDecodeThreshold = 0.95f;
 
-        [Header("── Quest IDs ───────────────────────────────")]
-        [Tooltip("ID квеста для активации при обнаружении сигнала.")]
-        [SerializeField] private string signalDetectedQuestId = "quest_atlas_signal_detected";
-
-        [Tooltip("ID квеста для активации при полной расшифровке.")]
-        [SerializeField] private string signalDecodedQuestId = "quest_atlas_signal_decoded";
+        [Header("── First-Hour Gate ─────────────────────────")]
+        [Tooltip("Do not decode or surface Atlas phases before the first-hour spine reaches module-route play.")]
+        [SerializeField] private FirstHourMilestone minimumMilestoneToDecode = FirstHourMilestone.FirstModule;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -97,24 +96,25 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             AtlasSignalEvents.OnSignalPulse += HandleSignalPulse;
+            TrySynchronizePhaseFromSignal();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             AtlasSignalEvents.OnSignalPulse -= HandleSignalPulse;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -127,6 +127,9 @@ namespace Hecton8.AtlasSignal
 
             AtlasSignalSystem sys = AtlasSignalSystem.Instance;
             if (sys == null) return;
+            if (!CanDecodeSignal(sys)) return;
+
+            SynchronizePhaseFromSignal(sys);
 
             float strength = sys.CurrentStrength;
             int newPhase = CalculatePhase(strength);
@@ -150,35 +153,40 @@ namespace Hecton8.AtlasSignal
             return 0;
         }
 
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
+        }
+
         private void OnPhaseAdvanced(int phase, float strength)
         {
             string msg = phase < PhaseMessages.Length ? PhaseMessages[phase] : string.Empty;
-
-            if (!string.IsNullOrEmpty(msg))
-                NotificationEvents.PushWarning(msg);
-
-            // Активируем квест при первом обнаружении
-            if (phase == 1)
-            {
-                QuestManager qm = QuestManager.Instance;
-                if (qm != null && !string.IsNullOrEmpty(signalDetectedQuestId))
-                    qm.ActivateQuest(signalDetectedQuestId);
-            }
 
             // Полная расшифровка
             if (phase >= 4 && !_fullyDecoded)
             {
                 _fullyDecoded = true;
                 AtlasSignalEvents.RaiseDecoded("atlas6_core_message");
-
-                QuestManager qm = QuestManager.Instance;
-                if (qm != null)
-                {
-                    if (!string.IsNullOrEmpty(signalDetectedQuestId))
-                        qm.CompleteQuest(signalDetectedQuestId);
-                    if (!string.IsNullOrEmpty(signalDecodedQuestId))
-                        qm.ActivateQuest(signalDecodedQuestId);
-                }
 
                 NarrativeEvents.RaiseDiscoveryMade("atlas6_signal_fully_decoded");
 
@@ -195,6 +203,9 @@ namespace Hecton8.AtlasSignal
 
             AtlasSignalSystem sys = AtlasSignalSystem.Instance;
             if (sys == null) return;
+            if (!CanDecodeSignal(sys)) return;
+
+            SynchronizePhaseFromSignal(sys);
 
             int newPhase = CalculatePhase(sys.CurrentStrength);
             if (newPhase > _currentPhase)
@@ -202,6 +213,43 @@ namespace Hecton8.AtlasSignal
                 _currentPhase = newPhase;
                 OnPhaseAdvanced(newPhase, sys.CurrentStrength);
             }
+        }
+
+        private void TrySynchronizePhaseFromSignal()
+        {
+            if (_fullyDecoded)
+                return;
+
+            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
+            if (sys == null)
+                return;
+
+            if (!CanDecodeSignal(sys))
+                return;
+
+            SynchronizePhaseFromSignal(sys);
+        }
+
+        private void SynchronizePhaseFromSignal(AtlasSignalSystem sys)
+        {
+            if (sys == null || _fullyDecoded)
+                return;
+
+            int synchronizedPhase = Mathf.Min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentStrength));
+            if (synchronizedPhase > _currentPhase)
+                _currentPhase = synchronizedPhase;
+        }
+
+        private bool CanDecodeSignal(AtlasSignalSystem sys)
+        {
+            if (sys == null || sys.CurrentRevealStage <= 0)
+                return false;
+
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector == null)
+                return true;
+
+            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToDecode);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

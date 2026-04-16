@@ -9,6 +9,7 @@ namespace MoreMountains.Feedbacks
 	/// <summary>
 	/// This feedback will request the load of a new scene, using the method of your choice
 	/// </summary>
+	[global::System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will request the load of a new scene, using the method of your choice")]
 	[FeedbackPath("Scene/Load Scene")]

@@ -126,10 +126,14 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
+            if (!_registered)
             {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
+                GameTickManager gameTickManager = GameTickManager.Instance;
+                if (gameTickManager != null)
+                {
+                    gameTickManager.Register(this);
+                    _registered = true;
+                }
             }
 
             ResolveSurvivalSystem();
@@ -139,14 +143,32 @@ namespace Hecton8.Visor
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
+            if (_registered)
             {
-                GameTickManager.Instance.Unregister(this);
+                GameTickManager gameTickManager = GameTickManager.Instance;
+                if (gameTickManager != null)
+                    gameTickManager.Unregister(this);
+
                 _registered = false;
             }
 
             // Сбрасываем в Normal при отключении
             Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
+        }
+
+        private void OnDestroy()
+        {
+            if (_registered)
+            {
+                GameTickManager gameTickManager = GameTickManager.Instance;
+                if (gameTickManager != null)
+                    gameTickManager.Unregister(this);
+
+                _registered = false;
+            }
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════

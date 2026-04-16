@@ -1,5 +1,6 @@
 using UnityEngine;
 using Hecton8.Items;
+using Hecton.Localization;
 
 namespace Hecton8.Gameplay
 {
@@ -7,7 +8,7 @@ namespace Hecton8.Gameplay
     public sealed class SalvageSamplerTool : PlayerTool
     {
         private const int RecoveredItemMessageCacheSize = 16;
-        private const string RecoveredItemMessagePrefix = "SAMPLER - RECOVERED ";
+        private const string SamplerCategory = "SALVAGE";
         private const string SamplerNoTargetHeadline = "NO TARGET";
         private const string SamplerRecoveryReadyHeadline = "RECOVERY READY";
         private const string SamplerNodeDepletedHeadline = "NODE DEPLETED";
@@ -65,18 +66,18 @@ namespace Hecton8.Gameplay
 
                 if (!applied && Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowWarning("SAMPLER - NO VIABLE TARGET");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_VIABLE_TARGET, "SAMPLER - NO VIABLE TARGET"));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 else if (applied && Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowInfo("SAMPLER - EXTRACTION IN PROGRESS");
+                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_EXTRACTION_IN_PROGRESS, "SAMPLER - EXTRACTION IN PROGRESS"));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning("SAMPLER - NO TARGET LOCK");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_TARGET_LOCK, "SAMPLER - NO TARGET LOCK"));
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
@@ -103,16 +104,22 @@ namespace Hecton8.Gameplay
                 {
                     ArchiveRecoveredItem(recoveredItem);
                     FieldOperationLogSystem.RecordOperation(
-                        "SALVAGE",
-                        "SALVAGE PACKAGE RECOVERED",
+                        ResolveLocalized(LocalizationKeys.SAMPLER_CATEGORY, SamplerCategory),
+                        ResolveLocalized(LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_TITLE, "SALVAGE PACKAGE RECOVERED"),
                         recoveredItem != null
-                            ? $"Sampler retrieved {recoveredItem.itemName} from a recoverable field target."
-                            : "Sampler retrieved an unidentified salvage package.",
+                            ? string.Format(
+                                ResolveLocalized(
+                                    LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_MESSAGE,
+                                    "Sampler retrieved {0} from a recoverable field target."),
+                                recoveredItem.itemName)
+                            : ResolveLocalized(
+                                LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_UNKNOWN_MESSAGE,
+                                "Sampler retrieved an unidentified salvage package."),
                         "INFO");
                     ToolHitUtility.ShowInfo(
                         recoveredItem != null
                             ? GetRecoveredItemMessage(recoveredItem.itemName)
-                            : "SAMPLER - SALVAGE RECOVERED");
+                            : ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED"));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 else
@@ -120,7 +127,7 @@ namespace Hecton8.Gameplay
                     SamplerDiagnosis diagnosis = BuildDiagnosis(hit.collider);
                     PublishDiagnosis(diagnosis);
                     FieldOperationLogSystem.RecordOperation(
-                        "SALVAGE",
+                        ResolveLocalized(LocalizationKeys.SAMPLER_CATEGORY, SamplerCategory),
                         GetDiagnosisLogTitle(diagnosis.headline),
                         diagnosis.summary,
                         diagnosis.severity);
@@ -128,7 +135,7 @@ namespace Hecton8.Gameplay
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning("SAMPLER - NO SALVAGE LOCK");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_SALVAGE_LOCK, "SAMPLER - NO SALVAGE LOCK"));
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
@@ -149,23 +156,31 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_cooldown > 0f)
-                return $"SAMPLER // CYCLING {_cooldown:0.0}S";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_CYCLING, "SAMPLER // CYCLING {0:0.0}S"),
+                    _cooldown);
 
             if (TryGetDiagnosisCached(out SamplerDiagnosis diagnosis))
-                return $"SAMPLER // {diagnosis.headline}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_DIAGNOSIS, "SAMPLER // {0}"),
+                    diagnosis.headline);
 
-            return "SAMPLER // READY";
+            return ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_READY, "SAMPLER // READY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_cooldown > 0f)
-                return "Hold position while the sampling head resets.";
+                return ResolveLocalized(
+                    LocalizationKeys.SAMPLER_OPERATIONAL_CYCLING_DIRECTIVE,
+                    "Hold position while the sampling head resets.");
 
             if (TryGetDiagnosisCached(out SamplerDiagnosis diagnosis))
                 return diagnosis.summary;
 
-            return "Primary extracts. Secondary checks or recovers salvage packages.";
+            return ResolveLocalized(
+                LocalizationKeys.SAMPLER_OPERATIONAL_READY_DIRECTIVE,
+                "Primary extracts. Secondary checks or recovers salvage packages.");
         }
 
         private static void ArchiveRecoveredItem(ItemData item)
@@ -174,9 +189,15 @@ namespace Hecton8.Gameplay
                 return;
 
             string entryId = $"recovery.{item.name.ToLowerInvariant()}";
-            string title = $"{item.itemName} RECOVERY";
+            string title = string.Format(
+                ResolveLocalized(LocalizationKeys.SAMPLER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
+                item.itemName);
             string category = item.category.ToString();
-            string summary = $"Recovered field salvage package containing {item.itemName}. Archive updated from sampler retrieval.";
+            string summary = string.Format(
+                ResolveLocalized(
+                    LocalizationKeys.SAMPLER_ARCHIVE_RECOVERY_SUMMARY,
+                    "Recovered field salvage package containing {0}. Archive updated from sampler retrieval."),
+                item.itemName);
             ScanLogSystem.Instance.ArchiveEntry(entryId, title, category, summary);
         }
 
@@ -222,8 +243,10 @@ namespace Hecton8.Gameplay
             {
                 return new SamplerDiagnosis
                 {
-                    headline = "NO TARGET",
-                    summary = "No salvage contact was detected inside sampler range.",
+                    headline = ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_NO_TARGET, SamplerNoTargetHeadline),
+                    summary = ResolveLocalized(
+                        LocalizationKeys.SAMPLER_SUMMARY_NO_TARGET,
+                        "No salvage contact was detected inside sampler range."),
                     severity = "WARN"
                 };
             }
@@ -232,11 +255,16 @@ namespace Hecton8.Gameplay
             {
                 string itemLabel = recoverableItem != null
                     ? CachedToUpperInvariant(recoverableItem.itemName)
-                    : "UNKNOWN PACKAGE";
+                    : ResolveLocalized(LocalizationKeys.SAMPLER_UNKNOWN_PACKAGE, "UNKNOWN PACKAGE");
                 return new SamplerDiagnosis
                 {
-                    headline = "RECOVERY READY",
-                    summary = $"{itemLabel} is ready for collection. Cached quantity: {Mathf.Max(1, quantity)}.",
+                    headline = ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_RECOVERY_READY, SamplerRecoveryReadyHeadline),
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.SAMPLER_SUMMARY_RECOVERY_READY,
+                            "{0} is ready for collection. Cached quantity: {1}."),
+                        itemLabel,
+                        Mathf.Max(1, quantity)),
                     severity = "INFO"
                 };
             }
@@ -249,14 +277,26 @@ namespace Hecton8.Gameplay
                 float integrityPercent = node.HealthNormalized * 100f;
                 return new SamplerDiagnosis
                 {
-                    headline = node.IsDepleted ? "NODE DEPLETED" : $"RESOURCE NODE {integrityPercent:0}%",
+                    headline = node.IsDepleted
+                        ? ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_NODE_DEPLETED, SamplerNodeDepletedHeadline)
+                        : string.Format(
+                            ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_RESOURCE_NODE, "RESOURCE NODE {0:0}%"),
+                            integrityPercent),
                     summary = node.IsDepleted
-                        ? "Resource node is already exhausted. No further salvage packet is expected."
+                        ? ResolveLocalized(
+                            LocalizationKeys.SAMPLER_SUMMARY_NODE_DEPLETED,
+                            "Resource node is already exhausted. No further salvage packet is expected.")
                         : integrityPercent <= 30f
-                            ? "Resource node is fragile and close to opening. Finish sampling now for a fast recovery window."
+                            ? ResolveLocalized(
+                                LocalizationKeys.SAMPLER_SUMMARY_NODE_CRITICAL,
+                                "Resource node is fragile and close to opening. Finish sampling now for a fast recovery window.")
                             : integrityPercent <= 65f
-                                ? "Resource node is weakened. Another controlled extraction pass is worthwhile."
-                                : "Resource node is still active. Use primary action to continue sampling.",
+                                ? ResolveLocalized(
+                                    LocalizationKeys.SAMPLER_SUMMARY_NODE_WEAKENED,
+                                    "Resource node is weakened. Another controlled extraction pass is worthwhile.")
+                                : ResolveLocalized(
+                                    LocalizationKeys.SAMPLER_SUMMARY_NODE_ACTIVE,
+                                    "Resource node is still active. Use primary action to continue sampling."),
                     severity = node.IsDepleted ? "WARN" : "INFO"
                 };
             }
@@ -265,16 +305,20 @@ namespace Hecton8.Gameplay
             {
                 return new SamplerDiagnosis
                 {
-                    headline = "PROCESS TARGET",
-                    summary = "Target can be processed, but no recoverable package is ready yet.",
+                    headline = ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_PROCESS_TARGET, SamplerProcessTargetHeadline),
+                    summary = ResolveLocalized(
+                        LocalizationKeys.SAMPLER_SUMMARY_PROCESS_TARGET,
+                        "Target can be processed, but no recoverable package is ready yet."),
                     severity = "WARN"
                 };
             }
 
             return new SamplerDiagnosis
             {
-                headline = "INVALID TARGET",
-                summary = "Target is inside sampler range but does not support salvage recovery.",
+                headline = ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_INVALID_TARGET, SamplerInvalidTargetHeadline),
+                summary = ResolveLocalized(
+                    LocalizationKeys.SAMPLER_SUMMARY_INVALID_TARGET,
+                    "Target is inside sampler range but does not support salvage recovery."),
                 severity = "WARN"
             };
         }
@@ -320,14 +364,16 @@ namespace Hecton8.Gameplay
         private static string GetRecoveredItemMessage(string itemName)
         {
             if (string.IsNullOrWhiteSpace(itemName))
-                return "SAMPLER - SALVAGE RECOVERED";
+                return ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED");
 
             int cacheIndex = (itemName.GetHashCode() & int.MaxValue) % RecoveredItemMessageCacheSize;
             string cachedItemName = _recoveredItemNameCache[cacheIndex];
             if (!string.IsNullOrEmpty(cachedItemName) && string.Equals(cachedItemName, itemName, System.StringComparison.Ordinal))
                 return _recoveredItemMessageCache[cacheIndex];
 
-            string message = RecoveredItemMessagePrefix + CachedToUpperInvariant(itemName);
+            string message = string.Format(
+                ResolveLocalized(LocalizationKeys.SAMPLER_HUD_RECOVERED_ITEM, "SAMPLER - RECOVERED {0}"),
+                CachedToUpperInvariant(itemName));
             _recoveredItemNameCache[cacheIndex] = itemName;
             _recoveredItemMessageCache[cacheIndex] = message;
             return message;
@@ -338,17 +384,19 @@ namespace Hecton8.Gameplay
             switch (headline)
             {
                 case SamplerNoTargetHeadline:
-                    return "SAMPLER DIAG - NO TARGET";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NO_TARGET, "SAMPLER DIAG - NO TARGET");
                 case SamplerRecoveryReadyHeadline:
-                    return "SAMPLER DIAG - RECOVERY READY";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_RECOVERY_READY, "SAMPLER DIAG - RECOVERY READY");
                 case SamplerNodeDepletedHeadline:
-                    return "SAMPLER DIAG - NODE DEPLETED";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NODE_DEPLETED, "SAMPLER DIAG - NODE DEPLETED");
                 case SamplerProcessTargetHeadline:
-                    return "SAMPLER DIAG - PROCESS TARGET";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_PROCESS_TARGET, "SAMPLER DIAG - PROCESS TARGET");
                 case SamplerInvalidTargetHeadline:
-                    return "SAMPLER DIAG - INVALID TARGET";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_INVALID_TARGET, "SAMPLER DIAG - INVALID TARGET");
                 default:
-                    return "SAMPLER DIAG - " + headline;
+                    return string.Format(
+                        ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_GENERIC, "SAMPLER DIAG - {0}"),
+                        headline);
             }
         }
 
@@ -357,18 +405,27 @@ namespace Hecton8.Gameplay
             switch (headline)
             {
                 case SamplerNoTargetHeadline:
-                    return "SAMPLER DIAG - NO TARGET";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NO_TARGET, "SAMPLER DIAG - NO TARGET");
                 case SamplerRecoveryReadyHeadline:
-                    return "SAMPLER DIAG - RECOVERY READY";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_RECOVERY_READY, "SAMPLER DIAG - RECOVERY READY");
                 case SamplerNodeDepletedHeadline:
-                    return "SAMPLER DIAG - NODE DEPLETED";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NODE_DEPLETED, "SAMPLER DIAG - NODE DEPLETED");
                 case SamplerProcessTargetHeadline:
-                    return "SAMPLER DIAG - PROCESS TARGET";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_PROCESS_TARGET, "SAMPLER DIAG - PROCESS TARGET");
                 case SamplerInvalidTargetHeadline:
-                    return "SAMPLER DIAG - INVALID TARGET";
+                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_INVALID_TARGET, "SAMPLER DIAG - INVALID TARGET");
                 default:
-                    return "SAMPLER DIAG - " + headline;
+                    return string.Format(
+                        ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_GENERIC, "SAMPLER DIAG - {0}"),
+                        headline);
             }
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            return LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private static string CachedToUpperInvariant(string input)

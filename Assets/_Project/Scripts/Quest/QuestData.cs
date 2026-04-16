@@ -1,87 +1,84 @@
-// ============================================================================
-// HECTON-8 — QuestData.cs
-// ScriptableObject: данные одного квеста (stateless, data-driven).
-//
-// Лор: квесты не квест-маркеры — это органические цели.
-// Игрок видит структуру на горизонте → квест активируется.
-// Нет стрелок. Нет туториала. Только мир.
-// ============================================================================
-
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Quest
 {
     /// <summary>
-    /// Тип триггера активации квеста.
+    /// Activation trigger for a quest asset.
     /// </summary>
     public enum QuestTriggerType
     {
-        OnItemCollected     = 0,   // Подобран предмет с указанным itemId
-        OnDepthReached      = 1,   // Достигнута глубина (метры)
-        OnBiomeEntered      = 2,   // Вход в биом с указанным biomeId
-        OnDiscoveryMade     = 3,   // Обнаружен нарративный объект с discoveryId
-        OnAudioLogFound     = 4,   // Найден аудиодневник с logId
-        OnEclipseStart      = 5,   // Началось Великое Затмение
-        OnSignalDetected    = 6,   // Обнаружен сигнал Атлас-6
-        Manual              = 99   // Активируется только через QuestManager.ActivateQuest()
+        OnItemCollected = 0,
+        OnDepthReached = 1,
+        OnBiomeEntered = 2,
+        OnDiscoveryMade = 3,
+        OnAudioLogFound = 4,
+        OnEclipseStart = 5,
+        OnSignalDetected = 6,
+        Manual = 99,
     }
 
     /// <summary>
-    /// Тип условия завершения квеста.
+    /// Completion condition for a quest asset.
     /// </summary>
     public enum QuestCompletionType
     {
-        OnItemCollected     = 0,
-        OnDepthReached      = 1,
-        OnBiomeEntered      = 2,
-        OnDiscoveryMade     = 3,
-        OnAudioLogFound     = 4,
-        OnSignalDecoded     = 5,
-        Manual              = 99
+        OnItemCollected = 0,
+        OnDepthReached = 1,
+        OnBiomeEntered = 2,
+        OnDiscoveryMade = 3,
+        OnAudioLogFound = 4,
+        OnSignalDecoded = 5,
+        Manual = 99,
     }
 
-    [CreateAssetMenu(
-        fileName = "Quest_",
-        menuName  = "Hecton8/Quest/Quest Data",
-        order     = 20)]
+    [CreateAssetMenu(fileName = "Quest_", menuName = "Hecton8/Quest/Quest Data", order = 20)]
     public sealed class QuestData : ScriptableObject
     {
-        [Header("── Identity ────────────────────────────────")]
-        [Tooltip("Уникальный ID квеста.")]
+        [Header("── Identity ─────────────────────────────")]
+        [Tooltip("Unique quest ID.")]
         [SerializeField] public string questId;
 
-        [Tooltip("Отображаемое название.")]
-        [SerializeField] public string displayTitle = "НЕИЗВЕСТНАЯ ЦЕЛЬ";
+        [Tooltip("Legacy display title fallback.")]
+        [SerializeField] public string displayTitle = "UNKNOWN OBJECTIVE";
 
-        [Tooltip("Краткое описание для PDA.")]
+        [Tooltip("Localized quest title.")]
+        [SerializeField] private LocalizedTextReference localizedDisplayTitle;
+
+        [Tooltip("Legacy PDA description fallback.")]
         [SerializeField, TextArea(2, 5)] public string description;
 
-        [Header("── Activation ──────────────────────────────")]
-        [Tooltip("Тип триггера активации.")]
+        [Tooltip("Localized PDA description.")]
+        [SerializeField] private LocalizedTextReference localizedDescription;
+
+        [Header("── Activation ───────────────────────────")]
         [SerializeField] public QuestTriggerType triggerType = QuestTriggerType.Manual;
-
-        [Tooltip("ID для триггера (itemId / discoveryId / logId / signalId).")]
         [SerializeField] public string triggerId;
-
-        [Tooltip("Числовое значение для триггера (глубина в метрах / biomeId / quantity).")]
         [SerializeField] public float triggerValue;
 
-        [Header("── Completion ──────────────────────────────")]
-        [Tooltip("Тип условия завершения.")]
+        [Header("── Completion ───────────────────────────")]
         [SerializeField] public QuestCompletionType completionType = QuestCompletionType.Manual;
-
-        [Tooltip("ID для условия завершения.")]
         [SerializeField] public string completionId;
-
-        [Tooltip("Числовое значение для завершения (глубина в метрах / biomeId / quantity).")]
         [SerializeField] public float completionValue;
 
-        [Header("── Flags ────────────────────────────────────")]
-        [Tooltip("Квест активируется автоматически при старте игры.")]
+        [Header("── Flags ────────────────────────────────")]
         [SerializeField] public bool autoActivateOnStart;
-
-        [Tooltip("Квест можно выполнить только один раз.")]
         [SerializeField] public bool oneTimeOnly = true;
+
+        /// <summary>
+        /// Localized display title for the active language.
+        /// </summary>
+        public string DisplayTitleOrFallback => localizedDisplayTitle.ResolveOrFallback(FallbackOrDefault(displayTitle, "UNKNOWN OBJECTIVE"));
+
+        /// <summary>
+        /// Localized description for the active language.
+        /// </summary>
+        public string DescriptionOrFallback => localizedDescription.ResolveOrFallback(description);
+
+        private static string FallbackOrDefault(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()

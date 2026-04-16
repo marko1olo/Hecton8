@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b0e780d1b4e94f4c8b2b1c6ca6d63f5, type: 3}
+  m_Name: SwimPresentationProfileLibrary_Main
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SwimPresentationProfileLibrary
+  suitBindings:
+  - suit: {fileID: 11400000, guid: 0ac4df6679641f2488e9fb8e11c34d5b, type: 2}
+    profile: {fileID: 11400000, guid: 96eb787cc1d26b54ca76282d1826016e, type: 2}
+  - suit: {fileID: 11400000, guid: f4883a5936c63ea4691f64213da4ce96, type: 2}
+    profile: {fileID: 11400000, guid: 3bc6b9492acbc7e46ab13a14d915d90d, type: 2}
+  fallbackLightProfile: {fileID: 11400000, guid: 96eb787cc1d26b54ca76282d1826016e, type: 2}
+  fallbackUtilityProfile: {fileID: 11400000, guid: 6846cc36daeb1db4eb1da05b7fc1f789, type: 2}
+  fallbackHeavyProfile: {fileID: 11400000, guid: 3bc6b9492acbc7e46ab13a14d915d90d, type: 2}

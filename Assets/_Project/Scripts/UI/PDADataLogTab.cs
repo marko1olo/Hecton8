@@ -1,26 +1,27 @@
-// ============================================================================
-// HECTON-8 — PDADataLogTab.cs
-// Вкладка PDA: архив аудиодневников колонии.
+﻿// ============================================================================
+// HECTON-8 â€” PDADataLogTab.cs
+// Ð’ÐºÐ»Ð°Ð´ÐºÐ° PDA: Ð°Ñ€Ñ…Ð¸Ð² Ð°ÑƒÐ´Ð¸Ð¾Ð´Ð½ÐµÐ²Ð½Ð¸ÐºÐ¾Ð² ÐºÐ¾Ð»Ð¾Ð½Ð¸Ð¸.
 //
-// РОЛЬ:
-//   • Отображает список обнаруженных AudioLogData.
-//   • Позволяет переслушать любую запись.
-//   • Показывает субтитры текущей воспроизводимой записи.
-//   • Обновляется при открытии PDA (не в реальном времени — zero GC).
+// Ð ÐžÐ›Ð¬:
+//   â€¢ ÐžÑ‚Ð¾Ð±Ñ€Ð°Ð¶Ð°ÐµÑ‚ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¾Ð±Ð½Ð°Ñ€ÑƒÐ¶ÐµÐ½Ð½Ñ‹Ñ… AudioLogData.
+//   â€¢ ÐŸÐ¾Ð·Ð²Ð¾Ð»ÑÐµÑ‚ Ð¿ÐµÑ€ÐµÑÐ»ÑƒÑˆÐ°Ñ‚ÑŒ Ð»ÑŽÐ±ÑƒÑŽ Ð·Ð°Ð¿Ð¸ÑÑŒ.
+//   â€¢ ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÑ‚ ÑÑƒÐ±Ñ‚Ð¸Ñ‚Ñ€Ñ‹ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ¹ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ð¼Ð¾Ð¹ Ð·Ð°Ð¿Ð¸ÑÐ¸.
+//   â€¢ ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¸Ð¸ PDA (Ð½Ðµ Ð² Ñ€ÐµÐ°Ð»ÑŒÐ½Ð¾Ð¼ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ â€” zero GC).
 //
-// АРХИТЕКТУРА:
-//   • Процедурный UI (без UXML/USS) — в стиле PDAInventoryTab.
-//   • ITickable — только для обновления таймера воспроизведения.
-//   • Слушает AudioLogEvents для обновления состояния.
-//   • Каталог логов: назначается в инспекторе (AudioLogData[]).
+// ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
+//   â€¢ ÐŸÑ€Ð¾Ñ†ÐµÐ´ÑƒÑ€Ð½Ñ‹Ð¹ UI (Ð±ÐµÐ· UXML/USS) â€” Ð² ÑÑ‚Ð¸Ð»Ðµ PDAInventoryTab.
+//   â€¢ ITickable â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð° Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ.
+//   â€¢ Ð¡Ð»ÑƒÑˆÐ°ÐµÑ‚ AudioLogEvents Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ.
+//   â€¢ ÐšÐ°Ñ‚Ð°Ð»Ð¾Ð³ Ð»Ð¾Ð³Ð¾Ð²: Ð½Ð°Ð·Ð½Ð°Ñ‡Ð°ÐµÑ‚ÑÑ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ (AudioLogData[]).
 //
 // ZERO GC:
-//   • Pre-allocated список строк для отображения.
-//   • Dirty-flag обновление текста.
-//   • Никаких new/LINQ в Tick.
+//   â€¢ Pre-allocated ÑÐ¿Ð¸ÑÐ¾Ðº ÑÑ‚Ñ€Ð¾Ðº Ð´Ð»Ñ Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ.
+//   â€¢ Dirty-flag Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ‚ÐµÐºÑÑ‚Ð°.
+//   â€¢ ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… new/LINQ Ð² Tick.
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Narrative;
 using TMPro;
@@ -33,19 +34,19 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
     public sealed class PDADataLogTab : MonoBehaviour, ITickable
     {
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Catalog ──────────────────────────────────")]
-        [Tooltip("Все AudioLogData в игре. Назначить в инспекторе.")]
+        [Header("â”€â”€ Catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð’ÑÐµ AudioLogData Ð² Ð¸Ð³Ñ€Ðµ. ÐÐ°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ.")]
         [SerializeField] private AudioLogData[] allLogs = new AudioLogData[0];
 
-        [Header("── Font ─────────────────────────────────────")]
-        [Tooltip("Шрифт с кириллицей. Если null — используется TMP default.")]
+        [Header("â”€â”€ Font â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð¨Ñ€Ð¸Ñ„Ñ‚ Ñ ÐºÐ¸Ñ€Ð¸Ð»Ð»Ð¸Ñ†ÐµÐ¹. Ð•ÑÐ»Ð¸ null â€” Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
 
-        [Header("── Colors ───────────────────────────────────")]
+        [Header("â”€â”€ Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private Color colorBackground  = new Color(0.04f, 0.06f, 0.10f, 0.95f);
         [SerializeField] private Color colorAccent      = new Color(0.20f, 0.80f, 0.60f, 1f);
         [SerializeField] private Color colorText        = new Color(0.85f, 0.90f, 0.85f, 1f);
@@ -53,19 +54,11 @@ namespace Hecton8.UI
         [SerializeField] private Color colorSelected    = new Color(0.10f, 0.25f, 0.18f, 1f);
         [SerializeField] private Color colorPlaying     = new Color(0.05f, 0.35f, 0.20f, 1f);
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Кэшированные строки для AudioLogCategory enum (избегает Enum.ToString() даже в COLD path)</summary>
-        private static readonly string[] _cachedCategoryStrings = new string[]
-        {
-            "PERSONAL",   // AudioLogCategory.Personal = 0
-            "TECHNICAL",  // AudioLogCategory.Technical = 1
-            "EMERGENCY",  // AudioLogCategory.Emergency = 2
-            "ATLAS6",     // AudioLogCategory.Atlas6 = 3
-            "UNKNOWN"     // AudioLogCategory.Unknown = 4
-        };
+        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ ÑÑ‚Ñ€Ð¾ÐºÐ¸ Ð´Ð»Ñ AudioLogCategory enum (Ð¸Ð·Ð±ÐµÐ³Ð°ÐµÑ‚ Enum.ToString() Ð´Ð°Ð¶Ðµ Ð² COLD path)</summary>
 
         // UI roots
         private RectTransform _root;
@@ -82,7 +75,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _countLabel;
         private TextMeshProUGUI _emptyStateLabel;
 
-        // List rows — pre-allocated
+        // List rows â€” pre-allocated
         private readonly List<LogRow> _rows = new List<LogRow>(32);
 
         // State
@@ -97,12 +90,20 @@ namespace Hecton8.UI
         private string _prevSubtitleText;
 
         private const float TICK_DT = 1f / 60f;
+        private const string PlayAudioLabel = "PLAY AUDIO";
+        private const string OpenTextLogLabel = "OPEN LOG";
+        private const string StopAudioLabel = "STOP";
+        private const string CloseTextLogLabel = "CLOSE LOG";
+        private const string LockedLogLabel = "DISCOVERY REQUIRED";
+        private const string NoPayloadLabel = "NO PLAYBACK";
+        private const string TextOnlySummaryPrefix = "TEXT LOG\n";
+        private const string ArchiveOnlySummaryPrefix = "ARCHIVE FRAGMENT\n";
 
         private int CatalogCount => allLogs != null ? allLogs.Length : 0;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  NESTED TYPE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private struct LogRow
         {
@@ -115,9 +116,9 @@ namespace Hecton8.UI
             public int LogIndex; // index into allLogs
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
@@ -130,39 +131,38 @@ namespace Hecton8.UI
         {
             if (!_built) EnsureBuilt();
 
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             AudioLogEvents.OnLogDiscovered       += HandleLogDiscovered;
             AudioLogEvents.OnLogPlaybackStarted  += HandlePlaybackStarted;
             AudioLogEvents.OnLogPlaybackStopped  += HandlePlaybackStopped;
             AudioLogEvents.OnLogPlaybackCompleted += HandlePlaybackCompleted;
             PDAEvents.OnOpened += HandlePDAOpened;
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
             _dirty = true;
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             AudioLogEvents.OnLogDiscovered       -= HandleLogDiscovered;
             AudioLogEvents.OnLogPlaybackStarted  -= HandlePlaybackStarted;
             AudioLogEvents.OnLogPlaybackStopped  -= HandlePlaybackStopped;
             AudioLogEvents.OnLogPlaybackCompleted -= HandlePlaybackCompleted;
             PDAEvents.OnOpened -= HandlePDAOpened;
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
         }
 
-        // ══════════════════════════════════════════════════════════
+        private void OnDestroy()
+        {
+            TryUnregister();
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  ITickable
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float deltaTime)
         {
@@ -172,7 +172,7 @@ namespace Hecton8.UI
                 _dirty = false;
             }
 
-            // Обновляем таймер воспроизведения
+            // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ‚Ð°Ð¹Ð¼ÐµÑ€ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ
             if (_playbackRemaining > 0f)
             {
                 _playbackRemaining -= deltaTime;
@@ -181,11 +181,11 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Выбрать запись по индексу в allLogs.</summary>
+        /// <summary>Ð’Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ Ð¿Ð¾ Ð¸Ð½Ð´ÐµÐºÑÑƒ Ð² allLogs.</summary>
         public void SelectLog(int logIndex)
         {
             if (logIndex < 0 || logIndex >= CatalogCount) return;
@@ -195,7 +195,7 @@ namespace Hecton8.UI
             RefreshRowHighlights();
         }
 
-        /// <summary>Воспроизвести выбранную запись.</summary>
+        /// <summary>Ð’Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÑÑ‚Ð¸ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½ÑƒÑŽ Ð·Ð°Ð¿Ð¸ÑÑŒ.</summary>
         public void PlaySelected()
         {
             if (_selectedIndex < 0 || _selectedIndex >= CatalogCount) return;
@@ -206,12 +206,15 @@ namespace Hecton8.UI
             AudioLogData log = GetLog(_selectedIndex);
             if (log == null) return;
 
+            if (!system.IsDiscovered(log.logId)) return;
+            if (!log.HasPlaybackPayload) return;
+
             system.PlayLog(log);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EVENT HANDLERS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void HandleLogDiscovered(string logId) => _dirty = true;
 
@@ -225,14 +228,15 @@ namespace Hecton8.UI
                 _subtitleLabel.text = data.SubtitleOrFallback;
                 _prevSubtitleText = data.SubtitleOrFallback;
             }
-            RefreshPlayButton(true);
+
+            RefreshPlayButton();
         }
 
         private void HandlePlaybackStopped(string logId)
         {
             _playbackRemaining = 0f;
             ResetPlaybackTimerDisplay();
-            RefreshPlayButton(false);
+            RefreshPlayButton();
             if (_subtitleLabel != null)
             {
                 _subtitleLabel.text = string.Empty;
@@ -244,26 +248,45 @@ namespace Hecton8.UI
         {
             _playbackRemaining = 0f;
             ResetPlaybackTimerDisplay();
-            RefreshPlayButton(false);
+            RefreshPlayButton();
         }
 
-        // ══════════════════════════════════════════════════════════
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BUILD UI
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void EnsureBuilt()
         {
             if (_built) return;
             _built = true;
 
-            // Auto-resolve font with Cyrillic support
             if (_labelFont == null)
-            {
-                // Try to load текст SDF which has Cyrillic
-                _labelFont = UnityEngine.Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/текст SDF");
-                if (_labelFont == null)
-                    _labelFont = TMPro.TMP_Settings.defaultFontAsset;
-            }
+                _labelFont = TMPro.TMP_Settings.defaultFontAsset;
 
             // Background
             Image bg = gameObject.GetComponent<Image>();
@@ -291,7 +314,7 @@ namespace Hecton8.UI
                 new Vector2(-8, 0), new Vector2(-12, 0));
 
             TextMeshProUGUI title = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            title.text = "АРХИВ ДАННЫХ — КОЛОНИЯ ГЕКТОН-8";
+            title.text = ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE, "DATA ARCHIVE - HECTON-8 COLONY");
             title.fontStyle = FontStyles.Bold;
             Anchor(title.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
@@ -306,7 +329,7 @@ namespace Hecton8.UI
             Image lBg = _listPanel.gameObject.AddComponent<Image>();
             lBg.color = new Color(0.03f, 0.05f, 0.04f, 1f);
 
-            // Scroll view would be ideal but for minimal impl – static rows
+            // Scroll view would be ideal but for minimal impl â€“ static rows
             // COLD ALLOC: up to 32 rows
             BuildLogRows();
 
@@ -346,10 +369,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI catLabel = CreateText("Cat", rowRoot, 8f, colorDim, TextAlignmentOptions.MidlineRight);
                 Anchor(catLabel.rectTransform, new Vector2(0.75f, 0), new Vector2(1, 1),
                     new Vector2(0, 0), new Vector2(-6, 0));
-                int categoryIndex = (int)log.category;
-                catLabel.text = categoryIndex >= 0 && categoryIndex < _cachedCategoryStrings.Length
-                    ? _cachedCategoryStrings[categoryIndex]
-                    : "UNKNOWN";
+                catLabel.text = GetLocalizedCategoryLabel(log.category);
 
                 // Button component
                 LogRowButton btn = rowRoot.gameObject.AddComponent<LogRowButton>();
@@ -382,7 +402,7 @@ namespace Hecton8.UI
 
             _emptyStateLabel = CreateText("EmptyStateLabel", emptyState, 10f, colorDim, TextAlignmentOptions.Center);
             _emptyStateLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-            _emptyStateLabel.text = "АРХИВ ПУСТ\nНазначь AudioLogData в allLogs.";
+            _emptyStateLabel.text = GetEmptyStateText();
             Stretch(_emptyStateLabel.rectTransform, 16, 16, 16, 16);
         }
 
@@ -438,7 +458,7 @@ namespace Hecton8.UI
 
             _playButtonLabel = CreateText("PlayLabel", playBtn, 11f, colorBackground, TextAlignmentOptions.Midline);
             _playButtonLabel.fontStyle = FontStyles.Bold;
-            _playButtonLabel.text = "▶  ВОСПРОИЗВЕСТИ";
+            _playButtonLabel.text = PlayAudioLabel;
             Stretch(_playButtonLabel.rectTransform);
 
             PlayButtonHandler pbh = playBtn.gameObject.AddComponent<PlayButtonHandler>();
@@ -448,9 +468,9 @@ namespace Hecton8.UI
             SetDetailVisible(false);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  REFRESH
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void RefreshList()
         {
@@ -459,10 +479,16 @@ namespace Hecton8.UI
             int logCount = CatalogCount;
 
             if (_countLabel != null)
-                _countLabel.text = $"{discovered}/{logCount} ЗАПИСЕЙ";
+            {
+                string countTemplate = ResolveLocalized(LocalizationKeys.AUDIOLOG_COUNT, "{0}/{1} LOGS");
+                _countLabel.text = string.Format(countTemplate, discovered, logCount);
+            }
 
             if (_emptyStateLabel != null)
+            {
                 _emptyStateLabel.gameObject.SetActive(logCount == 0);
+                _emptyStateLabel.text = GetEmptyStateText();
+            }
 
             if (logCount == 0)
             {
@@ -480,11 +506,15 @@ namespace Hecton8.UI
                 Color textColor = isDiscovered ? colorText : colorDim;
                 if (row.TitleLabel != null) row.TitleLabel.color = textColor;
                 if (row.IndexLabel != null) row.IndexLabel.color = colorDim;
+                if (row.CategoryLabel != null)
+                    row.CategoryLabel.text = log != null
+                        ? GetLocalizedCategoryLabel(log.category)
+                        : ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN");
                 if (row.CategoryLabel != null) row.CategoryLabel.color = isDiscovered ? colorDim : new Color(colorDim.r, colorDim.g, colorDim.b, 0.3f);
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    row.TitleLabel.text = isDiscovered ? log.DisplayTitleOrFallback : "??? ЗАШИФРОВАНО ???";
+                    row.TitleLabel.text = isDiscovered ? log.DisplayTitleOrFallback : ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???");
             }
 
             RefreshRowHighlights();
@@ -507,20 +537,24 @@ namespace Hecton8.UI
             SetDetailVisible(true);
 
             if (_titleLabel != null)
-                _titleLabel.text = isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : "??? ЗАШИФРОВАНО ???";
+                _titleLabel.text = isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???");
 
             if (_authorLabel != null)
-                _authorLabel.text = isDiscovered ? $"АВТОР: {log.AuthorOrFallback}" : "АВТОР: НЕИЗВЕСТЕН";
+                _authorLabel.text = isDiscovered
+                    ? ResolveLocalized(LocalizationKeys.INTERACT_AUTHOR, "AUTHOR") + ": " + log.AuthorOrFallback
+                    : ResolveLocalized(LocalizationKeys.INTERACT_AUTHOR, "AUTHOR") + ": " + ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR, "UNKNOWN");
 
             if (_dateLabel != null)
-                _dateLabel.text = isDiscovered ? log.RecordDateOrFallback : "ДАТА: НЕИЗВЕСТНА";
+                _dateLabel.text = isDiscovered
+                    ? log.RecordDateOrFallback
+                    : ResolveLocalized(LocalizationKeys.INTERACT_DATE, "DATE") + ": " + ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE, "DATE UNKNOWN");
 
             if (_summaryLabel != null)
-                _summaryLabel.text = isDiscovered ? log.ArchiveSummaryOrFallback : "Запись зашифрована. Требуется взаимодействие с источником.";
+                _summaryLabel.text = isDiscovered
+                    ? GetLocalizedSummaryText(log)
+                    : ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY, "Entry encrypted. Discovery required before archive access.");
 
-            // Play button — только для обнаруженных
-            if (_playButtonBg != null)
-                _playButtonBg.color = isDiscovered ? colorAccent : colorDim;
+            RefreshPlayButton();
         }
 
         private void RefreshRowHighlights()
@@ -549,10 +583,23 @@ namespace Hecton8.UI
             }
         }
 
-        private void RefreshPlayButton(bool isPlaying)
+        private void RefreshPlayButton()
         {
+            AudioLogSystem system = AudioLogSystem.Instance;
+            AudioLogData selectedLog = GetSelectedLog();
+            bool isDiscovered = system != null && selectedLog != null && system.IsDiscovered(selectedLog.logId);
+            bool isPlaying = system != null && system.IsPlaying;
+            bool canStartPlayback = isDiscovered && selectedLog != null && selectedLog.HasPlaybackPayload;
+            bool buttonEnabled = isPlaying || canStartPlayback;
+
+            if (_playButtonBg != null)
+            {
+                _playButtonBg.color = buttonEnabled ? colorAccent : colorDim;
+                _playButtonBg.raycastTarget = buttonEnabled;
+            }
+
             if (_playButtonLabel != null)
-                _playButtonLabel.text = isPlaying ? "■  СТОП" : "▶  ВОСПРОИЗВЕСТИ";
+                _playButtonLabel.text = GetLocalizedPlayButtonLabel(system, selectedLog, isDiscovered);
 
             RefreshRowHighlights();
         }
@@ -598,9 +645,137 @@ namespace Hecton8.UI
             return allLogs[index];
         }
 
-        // ══════════════════════════════════════════════════════════
+        private AudioLogData GetSelectedLog()
+        {
+            return GetLog(_selectedIndex);
+        }
+
+        internal bool TryGetLogById(string logId, out AudioLogData log)
+        {
+            if (allLogs != null && !string.IsNullOrEmpty(logId))
+            {
+                for (int i = 0; i < allLogs.Length; i++)
+                {
+                    AudioLogData candidate = allLogs[i];
+                    if (candidate != null &&
+                        string.Equals(candidate.logId, logId, System.StringComparison.Ordinal))
+                    {
+                        log = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            log = null;
+            return false;
+        }
+
+        private static string GetSummaryText(AudioLogData log)
+        {
+            if (log == null)
+                return string.Empty;
+
+            if (log.IsTextOnlyPlayback)
+                return TextOnlySummaryPrefix + log.ArchiveSummaryOrFallback;
+
+            if (!log.HasPlaybackPayload && log.HasArchiveSummary)
+                return ArchiveOnlySummaryPrefix + log.ArchiveSummaryOrFallback;
+
+            return log.ArchiveSummaryOrFallback;
+        }
+
+        private static string ResolvePlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
+        {
+            if (system != null && system.IsPlaying)
+            {
+                AudioLogData playingLog = system.CurrentLog;
+                return playingLog != null && playingLog.IsTextOnlyPlayback
+                    ? CloseTextLogLabel
+                    : StopAudioLabel;
+            }
+
+            if (!isDiscovered)
+                return LockedLogLabel;
+
+            if (selectedLog == null || !selectedLog.HasPlaybackPayload)
+                return NoPayloadLabel;
+
+            return selectedLog.HasAudioClip ? PlayAudioLabel : OpenTextLogLabel;
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  UI HELPERS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            _dirty = true;
+            RefreshList();
+            RefreshDetail();
+            RefreshPlayButton();
+        }
+
+        private static string GetLocalizedSummaryText(AudioLogData log)
+        {
+            if (log == null)
+                return string.Empty;
+
+            if (log.IsTextOnlyPlayback)
+                return ResolveLocalized(LocalizationKeys.AUDIOLOG_TEXT_ONLY_PREFIX, TextOnlySummaryPrefix) + log.ArchiveSummaryOrFallback;
+
+            if (!log.HasPlaybackPayload && log.HasArchiveSummary)
+                return ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_ONLY_PREFIX, ArchiveOnlySummaryPrefix) + log.ArchiveSummaryOrFallback;
+
+            return log.ArchiveSummaryOrFallback;
+        }
+
+        private static string GetLocalizedPlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
+        {
+            if (system != null && system.IsPlaying)
+            {
+                AudioLogData playingLog = system.CurrentLog;
+                return playingLog != null && playingLog.IsTextOnlyPlayback
+                    ? ResolveLocalized(LocalizationKeys.AUDIOLOG_CLOSE_TEXT, CloseTextLogLabel)
+                    : ResolveLocalized(LocalizationKeys.AUDIOLOG_STOP, StopAudioLabel);
+            }
+
+            if (!isDiscovered)
+                return ResolveLocalized(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel);
+
+            if (selectedLog == null || !selectedLog.HasPlaybackPayload)
+                return ResolveLocalized(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel);
+
+            return selectedLog.HasAudioClip
+                ? ResolveLocalized(LocalizationKeys.AUDIOLOG_PLAY, PlayAudioLabel)
+                : ResolveLocalized(LocalizationKeys.AUDIOLOG_OPEN_TEXT, OpenTextLogLabel);
+        }
+
+        private static string GetLocalizedCategoryLabel(AudioLogCategory category)
+        {
+            return category switch
+            {
+                AudioLogCategory.Personal => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL, "PERSONAL"),
+                AudioLogCategory.Technical => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL, "TECHNICAL"),
+                AudioLogCategory.Emergency => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY, "EMERGENCY"),
+                AudioLogCategory.Atlas6 => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6, "ATLAS6"),
+                _ => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN")
+            };
+        }
+
+        private static string GetEmptyStateText()
+        {
+            string archiveLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY");
+            string hintLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE_HINT, "Assign AudioLogData assets in allLogs.");
+            return archiveLabel + "\n" + hintLabel;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
+        }
 
         private RectTransform CreateRect(string name, RectTransform parent)
         {
@@ -620,7 +795,7 @@ namespace Hecton8.UI
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = alignment;
-            tmp.overflowMode = TextOverflowModes.Ellipsis;
+            tmp.overflowMode = TextOverflowModes.Truncate;
             return tmp;
         }
 
@@ -641,9 +816,9 @@ namespace Hecton8.UI
             r.offsetMax = offsetMax;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  NESTED BUTTON HANDLERS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private sealed class LogRowButton : MonoBehaviour,
             UnityEngine.EventSystems.IPointerClickHandler,
@@ -703,3 +878,4 @@ namespace Hecton8.UI
         }
     }
 }
+

@@ -60,6 +60,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Включить подробные lifecycle-логи для диагностики.")]
         [SerializeField] private bool lifecycleDebugLogging = false;
 
+        [Tooltip("Optional swim-presentation contract for near-camera hand ownership while this tool is equipped.")]
+        [SerializeField] private PlayerToolSwimContract _swimContract;
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
@@ -81,6 +84,20 @@ namespace Hecton8.Gameplay
         /// Устанавливается <see cref="PlayerToolManager"/> при Equip/Unequip.
         /// </summary>
         public bool IsEquipped { get; private set; }
+
+        /// <summary>
+        /// Optional near-camera swim-presentation contract for this tool.
+        /// </summary>
+        public PlayerToolSwimContract SwimContract
+        {
+            get
+            {
+                if (!_swimContractResolved)
+                    ResolveSwimContract();
+
+                return _swimContract;
+            }
+        }
 
         /// <summary>
         /// Текущая прочность инструмента (0-maxDurability). v2.0 ENTERPRISE
@@ -141,6 +158,7 @@ namespace Hecton8.Gameplay
 
         private HectonSurvivalSystem _survivalSystem;
         private bool _lowDurabilityWarningFired;
+        private bool _swimContractResolved;
         private string _cachedOperationalToolName;
 
         // ══════════════════════════════════════════════════════════
@@ -161,6 +179,7 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             RefreshOperationalToolNameCache();
+            ResolveSwimContract();
 
             // Auto-resolve SurvivalSystem
             if (_survivalSystem == null && enableEnergyConsumption)
@@ -188,6 +207,13 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _cachedOperationalToolName = null;
+        }
+
+        private void ResolveSwimContract()
+        {
+            _swimContractResolved = true;
+            if (_swimContract == null)
+                TryGetComponent(out _swimContract);
         }
 
         // ══════════════════════════════════════════════════════════

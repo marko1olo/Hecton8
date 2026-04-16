@@ -122,6 +122,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3683751894882094989}
   - component: {fileID: 7841641569469116022}
+  - component: {fileID: 7496772142262572279}
   m_Layer: 0
   m_Name: Tool_LaserCutter_Held
   m_TagString: Untagged
@@ -161,6 +162,8 @@ MonoBehaviour:
   _toolMetadata: {fileID: 11400000, guid: df71d5913dec85341a823c2a137074fe, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
+  lifecycleDebugLogging: 0
+  _swimContract: {fileID: 0}
   maxRange: 5
   damagePerSecond: 25
   cuttableLayer:
@@ -179,3 +182,35 @@ MonoBehaviour:
   overheatErrorClip: {fileID: 0}
   basePitch: 1
   maxPitch: 1.3
+--- !u!114 &7496772142262572279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5076310524989112150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9fb1903b49f6e428d8fc12ce0a4103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerToolSwimContract
+  toolHand: 0
+  swimRootPresentationWeight: 0.36
+  swimSupportHandWeight: 0.64
+  swimToolHandWeight: 0.06
+  activeUseSupportHandBoost: 0.12
+  swimRootPoseBias:
+    localPositionOffset: {x: 0.028, y: -0.018, z: -0.052}
+    localEulerOffset: {x: 5, y: 6, z: 4}
+  swimSupportHandPoseBias:
+    localPositionOffset: {x: -0.052, y: 0.038, z: 0.034}
+    localEulerOffset: {x: 10, y: -22, z: -14}
+  swimToolHandPoseBias:
+    localPositionOffset: {x: 0.032, y: -0.016, z: -0.05}
+    localEulerOffset: {x: 6, y: 12, z: 8}
+  activeUseRootPoseBias:
+    localPositionOffset: {x: 0.008, y: -0.014, z: -0.026}
+    localEulerOffset: {x: 4, y: 2, z: 3}
+  activeUseSupportHandPoseBias:
+    localPositionOffset: {x: -0.02, y: 0.036, z: 0.028}
+    localEulerOffset: {x: 10, y: -16, z: -12}

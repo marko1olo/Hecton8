@@ -122,6 +122,9 @@ namespace Hecton8.World
                 if (go == null || !go.scene.IsValid())
                     continue;
 
+                if (WorldShippingContentFilter.IsSuppressedSocket(socket))
+                    continue;
+
                 destination.Add(socket);
             }
         }
@@ -351,7 +354,7 @@ namespace Hecton8.World
                 socketId = "socket.generic";
 
             if (string.IsNullOrWhiteSpace(socketLabel))
-                socketLabel = gameObject.name;
+                socketLabel = "Generic Socket";
 
             interactionRadius = Mathf.Max(1f, interactionRadius);
             weight = Mathf.Clamp(weight, 1, 20);

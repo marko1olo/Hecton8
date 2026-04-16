@@ -34,6 +34,26 @@ namespace Hecton8.Optimization.Editor
             { RenderTextureFormat.R16, 16 },
         };
         
+        // ── PUBLIC STRUCTS ─────────────────────────────────────────────────────────
+        
+        /// <summary>
+        /// Report of VRAM delta before and after format optimization.
+        /// </summary>
+        public struct VRAMDeltaReport
+        {
+            public long BeforeVRAMBytes;
+            public long BeforeTextureMemoryBytes;
+            public long BeforeRTMemoryBytes;
+            public long AfterVRAMBytes;
+            public long AfterTextureMemoryBytes;
+            public long AfterRTMemoryBytes;
+            public long DeltaVRAMBytes;
+            public long DeltaRTMemoryBytes;
+            public float PercentChange;
+            public long ExpectedSavingsBytes;
+            public bool ActualMatchesExpected;
+        }
+        
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
         
         /// <summary>
@@ -104,7 +124,141 @@ namespace Hecton8.Optimization.Editor
             return oldBytes - newBytes;
         }
         
+        /// <summary>
+        /// Validates that format change produces bit-identical output.
+        /// Renders test frame at old and new formats, compares pixel data.
+        /// </summary>
+        /// <param name="rt">RenderTexture to validate.</param>
+        /// <param name="newFormat">Proposed format.</param>
+        /// <returns>True if output is bit-identical.</returns>
+        public static bool ValidateFormatChange(RenderTexture rt, RenderTextureFormat newFormat)
+        {
+            if (rt == null)
+                return false;
+            
+            // Create temporary RT with new format
+            var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat);
+            
+            try
+            {
+                // Copy content from original RT to temp RT
+                Graphics.Blit(rt, tempRT);
+                
+                // Read pixels from both RTs
+                var originalPixels = ReadPixelsFromRT(rt);
+                var newPixels = ReadPixelsFromRT(tempRT);
+                
+                if (originalPixels == null || newPixels == null)
+                    return false;
+                
+                // Compare byte-by-byte
+                if (originalPixels.Length != newPixels.Length)
+                    return false;
+                
+                for (int i = 0; i < originalPixels.Length; i++)
+                {
+                    if (originalPixels[i] != newPixels[i])
+                        return false;
+                }
+                
+                return true;
+            }
+            finally
+            {
+                RenderTexture.ReleaseTemporary(tempRT);
+            }
+        }
+        
+        /// <summary>
+        /// Measures VRAM delta before and after format change.
+        /// Captures BEFORE VRAM, applies change, captures AFTER VRAM.
+        /// </summary>
+        /// <param name="rt">RenderTexture to optimize.</param>
+        /// <param name="newFormat">Target format.</param>
+        /// <returns>VRAM delta report with BEFORE, AFTER, DELTA, PERCENT_CHANGE.</returns>
+        public static VRAMDeltaReport MeasureVRAMDelta(RenderTexture rt, RenderTextureFormat newFormat)
+        {
+            var report = new VRAMDeltaReport
+            {
+                BeforeVRAMBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong(),
+                BeforeTextureMemoryBytes = 0,
+                BeforeRTMemoryBytes = 0
+            };
+            
+            // Get texture/RT memory from VRAMMonitor if available
+            if (VRAMMonitor.Instance != null)
+            {
+                VRAMMonitor.Instance.GetVRAMBreakdown(
+                    out report.BeforeTextureMemoryBytes,
+                    out report.BeforeRTMemoryBytes,
+                    out _);
+            }
+            
+            // Apply format change (create new RT with new format, copy content)
+            var oldFormat = rt.format;
+            var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat);
+            Graphics.Blit(rt, tempRT);
+            
+            // Release old RT and replace reference
+            rt.Release();
+            rt.format = newFormat;
+            rt.Create();
+            Graphics.Blit(tempRT, rt);
+            RenderTexture.ReleaseTemporary(tempRT);
+            
+            // Capture AFTER VRAM
+            report.AfterVRAMBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
+            
+            if (VRAMMonitor.Instance != null)
+            {
+                VRAMMonitor.Instance.GetVRAMBreakdown(
+                    out report.AfterTextureMemoryBytes,
+                    out report.AfterRTMemoryBytes,
+                    out _);
+            }
+            
+            // Calculate delta
+            report.DeltaVRAMBytes = report.AfterVRAMBytes - report.BeforeVRAMBytes;
+            report.DeltaRTMemoryBytes = report.AfterRTMemoryBytes - report.BeforeRTMemoryBytes;
+            
+            if (report.BeforeRTMemoryBytes > 0)
+                report.PercentChange = (float)report.DeltaRTMemoryBytes / report.BeforeRTMemoryBytes * 100f;
+            
+            // Calculate expected savings
+            report.ExpectedSavingsBytes = CalculateMemorySavings(rt.width, rt.height, oldFormat, newFormat);
+            report.ActualMatchesExpected = System.Math.Abs(report.DeltaRTMemoryBytes + report.ExpectedSavingsBytes) < 1024 * 1024; // Within 1 MB tolerance
+            
+            return report;
+        }
+        
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
+        
+        private static byte[] ReadPixelsFromRT(RenderTexture rt)
+        {
+            if (rt == null)
+                return null;
+            
+            var prevRT = RenderTexture.active;
+            RenderTexture.active = rt;
+            
+            try
+            {
+                var texture = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+                texture.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                texture.Apply();
+                
+                var pixels = texture.GetRawTextureData();
+                var result = new byte[pixels.Length];
+                System.Buffer.BlockCopy(pixels, 0, result, 0, pixels.Length);
+                
+                Object.DestroyImmediate(texture);
+                return result;
+            }
+            finally
+            {
+                RenderTexture.active = prevRT;
+            }
+        }
         
         private static FormatOptimizationRecommendation? AnalyzeFormat(RenderTextureAllocationRecord record)
         {

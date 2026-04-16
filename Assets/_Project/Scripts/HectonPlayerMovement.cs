@@ -33,6 +33,14 @@ namespace Hecton8.Gameplay
     public sealed class HectonPlayerMovement : MonoBehaviour, ITickable, IFixedTickable
     {
         private const float GroundCheckSkin = 0.02f;
+        private static readonly string[] _locomotionModeLabels =
+        {
+            "DryGroundWalk",
+            "DryInteriorWalk",
+            "ShallowWadeWalk",
+            "SurfaceSwim",
+            "UnderwaterSwim"
+        }; // COLD ALLOC: string[5] — editor diagnostics labels — owner: HectonPlayerMovement
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
@@ -57,6 +65,30 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.3f, 0.95f)]
         [Tooltip("Immersion ratio above which player switches from walking to swimming.")]
         private float swimTransitionThreshold = 0.7f;
+
+        [Header("── Surface Swim Realism ─────────────────────────")]
+        [Tooltip("Depth band near the waterline treated as surface swim instead of deep 3D swim.")]
+        [SerializeField, Range(0.1f, 2.5f)] private float surfaceSwimDepthBand = 0.85f;
+        [Tooltip("How strongly forward swim is flattened near the surface. 1 = strongly planar.")]
+        [SerializeField, Range(0f, 1f)] private float surfaceForwardPitchSuppression = 0.85f;
+        [Tooltip("Forward swim force multiplier while surface swimming.")]
+        [SerializeField, Range(0.1f, 1f)] private float surfaceForwardForceMultiplier = 0.82f;
+        [Tooltip("Strafe swim force multiplier while surface swimming.")]
+        [SerializeField, Range(0.1f, 1f)] private float surfaceStrafeForceMultiplier = 0.72f;
+        [Tooltip("Vertical swim force multiplier while surface swimming.")]
+        [SerializeField, Range(0.1f, 1f)] private float surfaceVerticalForceMultiplier = 0.4f;
+        [Tooltip("Extra drag applied while surface swimming.")]
+        [SerializeField, Range(1f, 3f)] private float surfaceDragMultiplier = 1.35f;
+        [Tooltip("Max speed multiplier while surface swimming.")]
+        [SerializeField, Range(0.2f, 1f)] private float surfaceMaxSpeedMultiplier = 0.72f;
+        [Tooltip("Depth window where upward surface escape is strongly damped.")]
+        [SerializeField, Range(0.02f, 0.6f)] private float surfaceAscendReleaseDepth = 0.18f;
+        [Tooltip("Damping applied to upward velocity at the top of the water.")]
+        [SerializeField, Range(0f, 20f)] private float surfaceAscendVelocityDamping = 5f;
+        [Tooltip("Minimum pitch-down angle that counts as deliberate surface dive intent.")]
+        [SerializeField, Range(0f, 80f)] private float surfaceDivePitchCommit = 24f;
+        [Tooltip("Minimum forward input that counts as deliberate surface dive intent.")]
+        [SerializeField, Range(0f, 1f)] private float surfaceDiveForwardCommit = 0.35f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CREST OCEAN INTEGRATION
@@ -121,8 +153,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 0.6f)] private float jumpHeadClearanceDistance = 0.18f;
         [SerializeField, Range(0.02f, 0.3f)] private float surfaceBreachDepthWindow = 0.12f;
         [SerializeField, Range(0.3f, 0.95f)] private float surfaceBreachMinImmersion = 0.45f;
-        [SerializeField, Range(0.5f, 2f)] private float surfaceBreachImpulseMultiplier = 1f;
-        [SerializeField, Range(0f, 0.4f)] private float surfaceBreachSurfaceLockoutTime = 0.2f;
         [SerializeField, Range(0.05f, 1f)] private float dryAirControlMultiplier = 0.4f;
         [SerializeField, Range(0f, 1f)] private float dryAirDampingMultiplier = 0.18f;
 
@@ -140,6 +170,7 @@ namespace Hecton8.Gameplay
 
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private bool _debugIsWalking;
+        [SerializeField] private string _debugLocomotionMode;
         [SerializeField] private bool _debugIsGrounded;
         [SerializeField] private float _debugImmersionRatio;
         [SerializeField] private float _debugSmoothedImmersion;
@@ -173,6 +204,7 @@ namespace Hecton8.Gameplay
         private Camera _cameraComponent;
         private InputManager _inputManager;
         private InputManager _subscribedInputManager;
+        private PlayerSwimPresentationController _swimPresentationController;
 
         // ══════════════════════════════════════════════════════════
         //  CREST OCEAN — runtime state
@@ -233,6 +265,8 @@ namespace Hecton8.Gameplay
         private float _gravityScale;
         private float _snapScale;
         private float _currentDepth;  // v7.0: meters below water surface
+        private bool _isSurfaceSwimming;
+        private PlayerLocomotionMode _currentLocomotionMode = PlayerLocomotionMode.DryGroundWalk;
         private float _surfaceBreachLockTimer;
 
         // ══════════════════════════════════════════════════════════
@@ -318,6 +352,8 @@ namespace Hecton8.Gameplay
         public float WaterImmersionRatio => _waterImmersionRatio;
         public bool IsGrounded => _isGrounded && _isWalking;
         public bool IsWalking => _isWalking;
+        /// <summary>Resolved locomotion mode for movement, camera, audio, and VFX consumers.</summary>
+        public PlayerLocomotionMode CurrentLocomotionMode => _currentLocomotionMode;
         public float CurrentRoll => _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
         public float BodyYaw => _bodyYaw;
         public float CameraYaw => _cameraYaw;
@@ -336,6 +372,7 @@ namespace Hecton8.Gameplay
             _rb = GetComponent<Rigidbody>();
             TryGetComponent(out _capsuleCollider);
             TryGetComponent(out _buoyancy);
+            TryGetComponent(out _swimPresentationController);
 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
@@ -384,6 +421,12 @@ namespace Hecton8.Gameplay
             _waterImmersionRatio = ComputeImmersionRatio();
             _smoothedImmersionRatio = _waterImmersionRatio;
             _currentDepth = ComputeDepth();
+            if (IsInDryInterior())
+            {
+                _waterImmersionRatio = 0f;
+                _smoothedImmersionRatio = 0f;
+                _currentDepth = 0f;
+            }
             _isWalking = _waterImmersionRatio < swimTransitionThreshold;
             _prevSpeed = 0f;
             _prevYawForMomentum = _cameraYaw;
@@ -559,6 +602,13 @@ namespace Hecton8.Gameplay
             SubscribeToInput();
         }
 
+        // ══════════════════════════════════════════════════════════
+        //  SPRINT EVENTS (for CameraJuiceSystem integration)
+        // ══════════════════════════════════════════════════════════
+
+        public event System.Action OnSprintStarted;
+        public event System.Action OnSprintEnded;
+
         private void HandleJumpInput()
         {
             _jumpRequested = true;
@@ -568,11 +618,13 @@ namespace Hecton8.Gameplay
         private void HandleSprintStarted()
         {
             _isSprinting = true;
+            OnSprintStarted?.Invoke();
         }
 
         private void HandleSprintCanceled()
         {
             _isSprinting = false;
+            OnSprintEnded?.Invoke();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -682,6 +734,7 @@ namespace Hecton8.Gameplay
         {
             _velocity = _rb.linearVelocity;
             _juiceInput.isWalking = _isWalking;
+            _juiceInput.locomotionMode = _currentLocomotionMode;
             _juiceInput.isGrounded = _isGrounded;
             _juiceInput.hasMovementInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
             _juiceInput.inputH = _inputH;
@@ -699,6 +752,22 @@ namespace Hecton8.Gameplay
                 _velocity.y * _velocity.y +
                 _velocity.z * _velocity.z);
             _juiceInput.cameraPitch = _cameraPitch;
+            _juiceInput.swimVerticalInput = _inputVertical;
+
+            if (_swimPresentationController != null)
+            {
+                _juiceInput.swimPresentationMode = _swimPresentationController.CurrentMode;
+                _juiceInput.swimStrokePhase = _swimPresentationController.CurrentStrokePhase;
+                _juiceInput.swimPropulsionPulse = _swimPresentationController.CurrentPropulsionPulse;
+                _juiceInput.swimGuideWeight = _swimPresentationController.CurrentGuideWeight;
+            }
+            else
+            {
+                _juiceInput.swimPresentationMode = PlayerSwimPresentationMode.None;
+                _juiceInput.swimStrokePhase = 0f;
+                _juiceInput.swimPropulsionPulse = 0f;
+                _juiceInput.swimGuideWeight = 0f;
+            }
         }
 
         private float ResolveVerticalInput()
@@ -861,6 +930,13 @@ namespace Hecton8.Gameplay
             _waterImmersionRatio = ComputeImmersionRatio();
             _currentDepth = ComputeDepth();
 
+            if (IsInDryInterior())
+            {
+                _waterImmersionRatio = 0f;
+                _smoothedImmersionRatio = 0f;
+                _currentDepth = 0f;
+            }
+
             // ═══════════════════════════════════════════════
             //  6. SMOOTHED IMMERSION + GROUNDED OVERRIDE
             // ═══════════════════════════════════════════════
@@ -928,7 +1004,6 @@ namespace Hecton8.Gameplay
             bool hasShoreGroundSupport = _isGrounded || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
             bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
             bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
-            bool canSurfaceBreach = CanTriggerSurfaceBreach(groundedOnShore);
 
             // ═══════════════════════════════════════════════
             //  7A. GRADUATED GRAVITY
@@ -975,6 +1050,10 @@ namespace Hecton8.Gameplay
                 UpdateModeDiagnostics();
             }
 
+            _isSurfaceSwimming = !_isWalking && IsSurfaceSwimBand(physicsImmersion);
+            _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
+            UpdateModeDiagnostics();
+
             // ═══════════════════════════════════════════════
             //  9. DAMPING TRANSITION
             // ═══════════════════════════════════════════════
@@ -993,14 +1072,6 @@ namespace Hecton8.Gameplay
                         _dryGroundGraceTimer = 0f;
                         _shoreGroundGraceTimer = 0f;
                         _surfaceBreachLockTimer = 0f;
-                    }
-                }
-                else if (canSurfaceBreach && _jumpBufferTimer > 0f)
-                {
-                    if (TryApplyJumpImpulse(suit.jumpImpulse * surfaceBreachImpulseMultiplier))
-                    {
-                        ConsumeJumpRequest();
-                        _surfaceBreachLockTimer = surfaceBreachSurfaceLockoutTime;
                     }
                 }
             }
@@ -1023,7 +1094,7 @@ namespace Hecton8.Gameplay
             {
                 SwimPhysics(suit, fixedDeltaTime);
 
-                if (_waterImmersionRatio > 0.3f && _waterImmersionRatio < 0.98f)
+                if (_isSurfaceSwimming)
                     ApplySurfaceLock(suit);
 
                 if (_waterImmersionRatio > 0.3f)
@@ -1063,6 +1134,48 @@ namespace Hecton8.Gameplay
             float eyeY = GetBodyEyeY();
             float depth = surfaceY - eyeY;
             return depth > 0f ? depth : 0f;
+        }
+
+        private bool IsInDryInterior()
+        {
+            return _buoyancy != null && _buoyancy.IsInDryZone;
+        }
+
+        private bool IsSurfaceSwimBand(float physicsImmersion)
+        {
+            if (IsInDryInterior())
+                return false;
+
+            if (physicsImmersion < 0.3f || physicsImmersion >= 0.999f)
+                return false;
+
+            return _currentDepth <= surfaceSwimDepthBand;
+        }
+
+        private PlayerLocomotionMode ResolveLocomotionMode(float physicsImmersion)
+        {
+            if (IsInDryInterior())
+                return PlayerLocomotionMode.DryInteriorWalk;
+
+            if (_isWalking)
+            {
+                if (physicsImmersion > 0.01f)
+                    return PlayerLocomotionMode.ShallowWadeWalk;
+
+                return PlayerLocomotionMode.DryGroundWalk;
+            }
+
+            return _isSurfaceSwimming
+                ? PlayerLocomotionMode.SurfaceSwim
+                : PlayerLocomotionMode.UnderwaterSwim;
+        }
+
+        private bool HasSurfaceDiveIntent()
+        {
+            if (_inputVertical < -0.1f)
+                return true;
+
+            return _inputV > surfaceDiveForwardCommit && _cameraPitch >= surfaceDivePitchCommit;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1249,10 +1362,10 @@ namespace Hecton8.Gameplay
         {
             if (suit.surfaceLockStrength <= 0f) return;
             if (_surfaceBreachLockTimer > 0f) return;
+            if (!_isSurfaceSwimming) return;
+            if (IsInDryInterior()) return;
 
-            bool isDiving = _inputV > 0.1f && _cameraPitch > 20f;
-            bool isDescending = _inputVertical < -0.1f;
-            if (isDiving || isDescending) return;
+            if (HasSurfaceDiveIntent()) return;
 
             if (_isGrounded) return;
             if (_shoreGroundGraceTimer > 0f && _smoothedImmersionRatio < swimTransitionThreshold) return;
@@ -1360,16 +1473,6 @@ namespace Hecton8.Gameplay
 
             _rb.AddForce(Vector3.up * impulse, ForceMode.VelocityChange);
             return true;
-        }
-
-        private bool CanTriggerSurfaceBreach(bool groundedOnShore)
-        {
-            if (groundedOnShore) return false;
-            if (_isGrounded) return false;
-            if (_surfaceBreachLockTimer > 0f) return false;
-            if (_waterImmersionRatio < surfaceBreachMinImmersion || _waterImmersionRatio >= 0.98f) return false;
-
-            return _currentDepth <= surfaceBreachDepthWindow;
         }
 
         private bool HasJumpHeadClearance()
@@ -1602,6 +1705,8 @@ namespace Hecton8.Gameplay
                 _velocity.x * _velocity.x +
                 _velocity.y * _velocity.y +
                 _velocity.z * _velocity.z);
+            bool isSurfaceSwim = _isSurfaceSwimming;
+            bool hasSurfaceDiveIntent = isSurfaceSwim && HasSurfaceDiveIntent();
 
             // ── Depth-based drag increase (v7.0) ──
             float depthDragAdd = 0f;
@@ -1614,6 +1719,8 @@ namespace Hecton8.Gameplay
             }
 
             float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
+            if (isSurfaceSwim)
+                effectiveDragCoeff *= surfaceDragMultiplier;
 
             // ── Quadratic drag ──
             if (speed > 0.01f)
@@ -1655,16 +1762,27 @@ namespace Hecton8.Gameplay
             float sinPitch = math.sin(pitchRad);
             float cosPitch = math.cos(pitchRad);
 
-            float fwdX = sinBodyYaw * cosPitch;
-            float fwdY = -sinPitch;
-            float fwdZ = cosBodyYaw * cosPitch;
+            float surfaceDepthT = isSurfaceSwim
+                ? math.saturate(_currentDepth / math.max(surfaceSwimDepthBand, 0.01f))
+                : 1f;
+            float surfacePitchBlend = isSurfaceSwim
+                ? math.lerp(1f - surfaceForwardPitchSuppression, 1f, surfaceDepthT)
+                : 1f;
+
+            float fwdPlanarScale = math.lerp(1f, cosPitch, surfacePitchBlend);
+            float fwdX = sinBodyYaw * fwdPlanarScale;
+            float fwdY = (!isSurfaceSwim || hasSurfaceDiveIntent) ? -sinPitch : 0f;
+            float fwdZ = cosBodyYaw * fwdPlanarScale;
 
             float rightX = cosBodyYaw;
             float rightZ = -sinBodyYaw;
 
-            float dirX = fwdX * _inputV + rightX * _inputH;
-            float dirY = fwdY * _inputV;
-            float dirZ = fwdZ * _inputV + rightZ * _inputH;
+            float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
+            float strafeScale = isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f;
+
+            float dirX = fwdX * (_inputV * forwardScale) + rightX * (_inputH * strafeScale);
+            float dirY = fwdY * (_inputV * forwardScale);
+            float dirZ = fwdZ * (_inputV * forwardScale) + rightZ * (_inputH * strafeScale);
 
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
@@ -1673,12 +1791,31 @@ namespace Hecton8.Gameplay
                 dirX *= invMag; dirY *= invMag; dirZ *= invMag;
             }
 
+            float verticalInput = _inputVertical;
+            if (isSurfaceSwim && verticalInput > 0f)
+            {
+                float ascendGate = math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));
+                verticalInput *= ascendGate;
+            }
+
             _forceVector.x = dirX * effectiveSwimForce;
             _forceVector.y = dirY * effectiveSwimForce;
             _forceVector.z = dirZ * effectiveSwimForce;
-            _forceVector.y += _inputVertical * effectiveVerticalForce;
+            _forceVector.y += verticalInput * effectiveVerticalForce * (isSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
 
             _rb.AddForce(_forceVector, ForceMode.Force);
+
+            if (isSurfaceSwim && surfaceAscendVelocityDamping > 0f && _velocity.y > 0f)
+            {
+                float upwardDampingT = 1f - math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));
+                if (upwardDampingT > 0f)
+                {
+                    _forceVector.x = 0f;
+                    _forceVector.y = -_velocity.y * _rb.mass * surfaceAscendVelocityDamping * upwardDampingT;
+                    _forceVector.z = 0f;
+                    _rb.AddForce(_forceVector, ForceMode.Force);
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1734,6 +1871,9 @@ namespace Hecton8.Gameplay
 
         private bool ShouldUseLandLocomotion(float physicsImmersion, bool hasShoreGroundSupport)
         {
+            if (IsInDryInterior())
+                return true;
+
             if (physicsImmersion <= 0.01f)
                 return true;
 
@@ -1844,6 +1984,7 @@ namespace Hecton8.Gameplay
             else
             {
                 float maxSpd = suit.maxSwimSpeed;
+                if (_isSurfaceSwimming) maxSpd *= surfaceMaxSpeedMultiplier;
                 if (_isSprinting) maxSpd *= suit.sprintMultiplier;
                 if (maxSpd > 0f)
                 {
@@ -1876,7 +2017,14 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void UpdateModeDiagnostics() { _debugIsWalking = _isWalking; }
+        private void UpdateModeDiagnostics()
+        {
+            _debugIsWalking = _isWalking;
+            int modeIndex = (int)_currentLocomotionMode;
+            _debugLocomotionMode = (uint)modeIndex < (uint)_locomotionModeLabels.Length
+                ? _locomotionModeLabels[modeIndex]
+                : "Unknown";
+        }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateGroundDiagnostics() { _debugIsGrounded = _isGrounded; }
@@ -1943,6 +2091,12 @@ namespace Hecton8.Gameplay
             if (playerHeight < 0.5f) playerHeight = 0.5f;
             if (baseFov < 30f) baseFov = 30f;
             if (baseFov > 120f) baseFov = 120f;
+            if (surfaceSwimDepthBand < 0.1f) surfaceSwimDepthBand = 0.1f;
+            if (surfaceAscendReleaseDepth < 0.02f) surfaceAscendReleaseDepth = 0.02f;
+            if (surfaceDivePitchCommit < 0f) surfaceDivePitchCommit = 0f;
+            if (surfaceDivePitchCommit > 80f) surfaceDivePitchCommit = 80f;
+            if (surfaceDiveForwardCommit < 0f) surfaceDiveForwardCommit = 0f;
+            if (surfaceDiveForwardCommit > 1f) surfaceDiveForwardCommit = 1f;
             if (surfaceBreachDepthWindow < SurfaceStateUtility.ExitUnderwaterDepth)
                 surfaceBreachDepthWindow = SurfaceStateUtility.ExitUnderwaterDepth;
             if (surfaceBreachMinImmersion >= 0.98f)

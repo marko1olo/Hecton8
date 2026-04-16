@@ -15,11 +15,11 @@ MonoBehaviour:
   questId: quest_copper_sample
   displayTitle: "МЕДНЫЙ ОБРАЗЕЦ"
   description: "Подобрать первый медный образец."
-  triggerType: 0
-  triggerId: Data_Copper
+  triggerType: 99
+  triggerId: 
   triggerValue: 1
-  completionType: 99
-  completionId: 
-  completionValue: 0
+  completionType: 0
+  completionId: Data_Copper
+  completionValue: 1
   autoActivateOnStart: 0
   oneTimeOnly: 1

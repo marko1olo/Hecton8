@@ -360,8 +360,24 @@ namespace VLB
 
         public int raymarchingQualityIndex
         {
-            get { return Config.Instance.GetRaymarchingQualityIndexForUniqueID(raymarchingQualityID); }
-            set { raymarchingQualityID = Config.Instance.GetRaymarchingQualityForIndex(raymarchingQualityIndex).uniqueID; }
+            get
+            {
+                var config = Config.Instance;
+                if (config == null)
+                    return 0;
+
+                return config.GetRaymarchingQualityIndexForUniqueID(raymarchingQualityID);
+            }
+            set
+            {
+                var config = Config.Instance;
+                if (config == null)
+                    return;
+
+                var quality = config.GetRaymarchingQualityForIndex(Mathf.Max(0, value));
+                if (quality != null)
+                    raymarchingQualityID = quality.uniqueID;
+            }
         }
 
         public override BeamGeometryAbstractBase GetBeamGeometry() { return m_BeamGeom; }
@@ -492,10 +508,6 @@ namespace VLB
 
             if (!Config.Instance.IsRaymarchingQualityUniqueIDValid(raymarchingQualityID))
             {
-                Debug.LogErrorFormat(gameObject, "HD Beam '{0}': fallback to default quality '{1}'"
-                    , name
-                    , Config.Instance.GetRaymarchingQualityForUniqueID(Config.Instance.defaultRaymarchingQualityUniqueID).name
-                    );
                 raymarchingQualityID = Config.Instance.defaultRaymarchingQualityUniqueID;
                 Utils.MarkCurrentSceneDirty();
             }
@@ -563,6 +575,12 @@ namespace VLB
 
         void Update() // EDITOR ONLY
         {
+            var config = Config.Instance;
+            if (config != null && raymarchingQualityID < 0)
+            {
+                raymarchingQualityID = config.defaultRaymarchingQualityUniqueID;
+            }
+
             EditorHandleLightPropertiesUpdate();    // Handle edition of light properties in Editor
 
             if (m_EditorDirtyFlags == EditorDirtyFlags.Clean)

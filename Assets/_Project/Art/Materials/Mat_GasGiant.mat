@@ -71,7 +71,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BacklitIntensity: 0.08
+    - _BacklitIntensity: 0.11
     - _CelestialOcclusionDetailFade: 0.75
     - _CelestialOcclusionHorizonBoost: 1.25
     - _CelestialOcclusionScrollSpeed: 0.001
@@ -81,20 +81,20 @@ Material:
     - _CelestialOcclusionVeilBoost: 0.65
     - _DetailSpeed: 0.005
     - _DetailSpeedMult: 1.249
-    - _DetailStrength: 0.181
+    - _DetailStrength: 0.22
     - _DistanceAirMassDarken: 0.096
     - _DistanceAirMassDesaturate: 0.16
     - _DistanceAirMassDetailFade: 0.32
     - _DistanceAirMassEnd: 0.5
     - _DistanceAirMassHazeBlend: 0.12
     - _DistanceAirMassStart: 0.02
-    - _DistanceAirMassVeilBoost: 0.2
+    - _DistanceAirMassVeilBoost: 0.24
     - _DistanceBottomArcDesaturate: 0.22
     - _DistanceBottomArcDetailFade: 0.36
     - _DistanceBottomArcEnd: 0.16
     - _DistanceBottomArcHazeBlend: 0.748
     - _DistanceBottomArcStart: 0.08
-    - _DistanceBottomArcVeilBoost: 0.38
+    - _DistanceBottomArcVeilBoost: 0.44
     - _DistanceHorizonBandEnd: 0.35
     - _DistanceHorizonBandStart: 0.01
     - _DistanceHorizonDesaturate: 0
@@ -105,7 +105,7 @@ Material:
     - _DistanceMediumHazePeak: 0.1
     - _DistanceMediumHazeStart: 0.02
     - _DistanceMediumHazeVeilBoost: 0.34
-    - _DistanceMediumHazeWhiten: 0.7
+    - _DistanceMediumHazeWhiten: 0.63
     - _DistanceNightDarken: 0.56
     - _DistanceUpperHazeBlend: 0.82
     - _DistanceUpperHazeDarken: 0
@@ -114,12 +114,12 @@ Material:
     - _DistanceUpperHazeEnd: 0.98
     - _DistanceUpperHazePeak: 0.738
     - _DistanceUpperHazeStart: 0.24
-    - _DistanceUpperHazeVeilBoost: 0.361
-    - _DistanceUpperHazeWhiten: 0.552
-    - _DistanceVeilHorizonStrength: 1.55
+    - _DistanceUpperHazeVeilBoost: 0.395
+    - _DistanceUpperHazeWhiten: 0.48
+    - _DistanceVeilHorizonStrength: 1.72
     - _DistanceVeilPower: 0.95
-    - _DistanceVeilRimStrength: 0.7
-    - _DistanceVeilStrength: 0.44
+    - _DistanceVeilRimStrength: 0.8
+    - _DistanceVeilStrength: 0.465
     - _EclipseRimIntensity: 5
     - _EclipseRimPower: 6
     - _EquatorialSpeed: 0.02
@@ -135,7 +135,7 @@ Material:
     - _StormEmission: 5
     - _StormSpeed: 0.01
     - _SunBacklitFactor: 0.445
-    - _TerminatorTintStrength: 0.31
+    - _TerminatorTintStrength: 0.34
     - _TerminatorWidth: 0.15
     - _VerticalWiggleAmp: 0.003
     - _VerticalWiggleFreq: 10

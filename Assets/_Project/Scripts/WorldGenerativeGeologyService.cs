@@ -525,6 +525,9 @@ namespace Hecton8.World
             if (lodGroup == null)
                 lodGroup = generatedRoot.gameObject.AddComponent<LODGroup>();
 
+            lodGroup.fadeMode = LODFadeMode.CrossFade;
+            lodGroup.animateCrossFading = true;
+
             if (runtimeState == null)
                 runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
 

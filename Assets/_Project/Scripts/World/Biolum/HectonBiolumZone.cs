@@ -93,10 +93,6 @@ namespace Hecton8.Biolum
         // DIRTY-FLAG CACHING (Avoid redundant property updates)
         // ───────────────────────────────────────────────────────────────────────────────
 
-        private float _lastIntensity = 0f;
-        private float _lastRange = 0f;
-        private Color _lastColor = Color.white;
-
         #if UNITY_EDITOR
         [SerializeField] protected bool _debugLogSpawn = false;
         [SerializeField] private int _debugTickInvocations = 0;
@@ -112,7 +108,8 @@ namespace Hecton8.Biolum
         protected virtual void Awake()
         {
             _cachedTransform = transform;
-            _activeLights = new Light[_maxLights]; // ONE-TIME COLD ALLOC
+            _activeLights = new Light[_maxLights]; // COLD ALLOC: Light[_maxLights] — pooled biolum light references — owner: HectonBiolumZone
+            PrewarmLightPool();
         }
 
         protected virtual void OnEnable()
@@ -122,18 +119,6 @@ namespace Hecton8.Biolum
                 GameTickManager.Instance.Register(this as ITickable);
                 _isRegistered = true;
             }
-            if (HectonBiolumManager.Instance != null)
-                HectonBiolumManager.Instance.RegisterZone(this);
-        }
-
-        protected virtual void Start()
-        {
-            if (GameTickManager.Instance != null && !_isRegistered)
-            {
-                GameTickManager.Instance.Register(this as ITickable);
-                _isRegistered = true;
-            }
-
             if (HectonBiolumManager.Instance != null)
                 HectonBiolumManager.Instance.RegisterZone(this);
         }
@@ -257,16 +242,10 @@ namespace Hecton8.Biolum
             Light light = _activeLights[_activeLightCount];
             if (light == null)
             {
-                // Create only once per pool slot
-                GameObject go = new GameObject($"BiolumLight_{_activeLightCount}");
-                go.transform.SetParent(_cachedTransform);
-                light = go.AddComponent<Light>();
-                light.type = LightType.Point;
-                light.shadows = LightShadows.None;
-                light.renderingLayerMask = 1;
-                _activeLights[_activeLightCount] = light;
+                return null;
             }
-            else if (!light.gameObject.activeSelf)
+
+            if (!light.gameObject.activeSelf)
             {
                 light.gameObject.SetActive(true);
             }
@@ -291,22 +270,9 @@ namespace Hecton8.Biolum
         {
             if (light == null) return;
 
-            // DIRTY-FLAG: only update if value changed
-            if (!Approximately(intensity, _lastIntensity))
-            {
-                light.intensity = intensity;
-                _lastIntensity = intensity;
-            }
-            if (!Approximately(range, _lastRange))
-            {
-                light.range = range;
-                _lastRange = range;
-            }
-            if (color != _lastColor)
-            {
-                light.color = color;
-                _lastColor = color;
-            }
+            light.intensity = intensity;
+            light.range = range;
+            light.color = color;
         }
 
         /// <summary>
@@ -318,6 +284,28 @@ namespace Hecton8.Biolum
                 if (_activeLights[i] != null)
                     _activeLights[i].gameObject.SetActive(false);
             _activeLightCount = 0;
+        }
+
+        private void PrewarmLightPool()
+        {
+            for (int i = 0; i < _maxLights; i++)
+            {
+                if (_activeLights[i] != null)
+                {
+                    continue;
+                }
+
+                // COLD ALLOC: pooled Light GameObject slot — prewarmed biolum light owner — owner: HectonBiolumZone
+                GameObject lightObject = new GameObject($"BiolumLight_{i}");
+                lightObject.transform.SetParent(_cachedTransform, false);
+                lightObject.SetActive(false);
+
+                Light light = lightObject.AddComponent<Light>();
+                light.type = LightType.Point;
+                light.shadows = LightShadows.None;
+                light.renderingLayerMask = 1;
+                _activeLights[i] = light;
+            }
         }
 
         // ───────────────────────────────────────────────────────────────────────────────

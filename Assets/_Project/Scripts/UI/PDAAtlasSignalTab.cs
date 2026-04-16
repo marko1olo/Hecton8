@@ -18,7 +18,9 @@
 // ============================================================================
 
 using Hecton8.AtlasSignal;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,6 +31,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
     public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable
     {
+        private const float MainCameraResolveRetryInterval = 1f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -48,6 +52,10 @@ namespace Hecton8.UI
         [SerializeField] private Color colorPhase2    = new Color(0.50f, 0.50f, 0.60f, 1f);
         [SerializeField] private Color colorPhase3    = new Color(0.60f, 0.70f, 0.80f, 1f);
         [SerializeField] private Color colorPhase4    = new Color(0.20f, 0.80f, 0.60f, 1f);
+
+        [Header("── First-Hour Gate ─────────────────────")]
+        [Tooltip("Do not expose stable Atlas telemetry in the PDA before the first-hour spine reaches module-route play.")]
+        [SerializeField] private FirstHourMilestone minimumMilestoneToReveal = FirstHourMilestone.FirstModule;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -75,9 +83,11 @@ namespace Hecton8.UI
         private int _currentPhase = -1;
         private float _pulseCountdown;
         private bool _signalDetected;
+        private bool _atlasTelemetryVisible;
         private bool _dirty;
         private int _lastCountdownSeconds = int.MinValue;
         private UnityEngine.Camera _mainCamera;
+        private float _mainCameraResolveRetryTimer;
 
         // Pre-cached strings — zero GC
         private static readonly string[] PhaseNames =
@@ -107,19 +117,13 @@ namespace Hecton8.UI
             _root = GetComponent<RectTransform>();
             if (_root == null)
                 _root = gameObject.AddComponent<RectTransform>();
-                
-            _mainCamera = UnityEngine.Camera.main;
         }
 
         private void OnEnable()
         {
             if (!_built) EnsureBuilt();
 
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             AtlasSignalEvents.OnSignalStrengthChanged += HandleStrengthChanged;
             AtlasSignalEvents.OnSignalPulse          += HandleSignalPulse;
@@ -132,11 +136,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             AtlasSignalEvents.OnSignalStrengthChanged -= HandleStrengthChanged;
             AtlasSignalEvents.OnSignalPulse          -= HandleSignalPulse;
@@ -145,12 +145,20 @@ namespace Hecton8.UI
             PDAEvents.OnOpened                       -= HandlePDAOpened;
         }
 
+        private void OnDestroy()
+        {
+            TryUnregister();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ITickable
         // ══════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
         {
+            if (_mainCamera == null && _mainCameraResolveRetryTimer > 0f)
+                _mainCameraResolveRetryTimer -= deltaTime;
+
             if (_dirty)
             {
                 RefreshAll();
@@ -204,18 +212,38 @@ namespace Hecton8.UI
         //  BUILD UI
         // ══════════════════════════════════════════════════════════
 
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
+        }
+
         private void EnsureBuilt()
         {
             if (_built) return;
             _built = true;
 
-            // Auto-resolve font with Cyrillic support
             if (_labelFont == null)
-            {
-                _labelFont = UnityEngine.Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/текст SDF");
-                if (_labelFont == null)
-                    _labelFont = TMPro.TMP_Settings.defaultFontAsset;
-            }
+                _labelFont = TMPro.TMP_Settings.defaultFontAsset;
 
             // Background
             Image bg = gameObject.GetComponent<Image>();
@@ -367,11 +395,21 @@ namespace Hecton8.UI
         {
             AtlasSignalSystem sys = AtlasSignalSystem.Instance;
             AtlasSignalDecoder decoder = AtlasSignalDecoder.Instance;
+            _atlasTelemetryVisible = CanRevealAtlasTelemetry(sys);
 
-            // Get current state
-            _currentStrength = sys != null ? sys.CurrentStrength : 0f;
-            _signalDetected = sys != null && sys.IsDetected;
-            _currentPhase = decoder != null ? decoder.CurrentPhase : 0;
+            if (_atlasTelemetryVisible)
+            {
+                _currentStrength = sys != null ? sys.CurrentStrength : 0f;
+                _signalDetected = sys != null && sys.IsDetected;
+                _currentPhase = decoder != null ? decoder.CurrentPhase : 0;
+            }
+            else
+            {
+                _currentStrength = 0f;
+                _signalDetected = false;
+                _currentPhase = 0;
+                _pulseCountdown = 0f;
+            }
 
             RefreshStrength();
             RefreshPhase();
@@ -398,7 +436,14 @@ namespace Hecton8.UI
 
             // Update value
             if (_strengthValue != null)
-                _strengthValue.text = $"{(_currentStrength * 100f):F0}%";
+            {
+                _strengthValue.text = _currentPhase switch
+                {
+                    1 => "ШУМ",
+                    2 => "ПАТТЕРН",
+                    _ => $"{(_currentStrength * 100f):F0}%"
+                };
+            }
         }
 
         private void RefreshPhase()
@@ -423,6 +468,12 @@ namespace Hecton8.UI
         {
             if (_messageLabel == null) return;
 
+            if (!_atlasTelemetryVisible)
+            {
+                _messageLabel.text = "ФОНОВЫЙ ШУМ\n\nСтабильной телеметрии нет.\nСеть не держит решение направления.\n\nПродолжайте маршрут и сбор.";
+                _messageLabel.color = colorDim;
+                return;
+            }
             if (_currentPhase >= 4)
             {
                 _messageLabel.text = "АТЛАС-6 — РАСШИФРОВКА ЗАВЕРШЕНА\n\nИсточник: глубина -5000м\nЯдро активно. Программа посева активна.\n\n847 дней поиска решения. Колония мертва.";
@@ -454,22 +505,31 @@ namespace Hecton8.UI
         {
             if (_directionLabel == null) return;
 
+            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
+            int revealStage = sys != null ? sys.CurrentRevealStage : 0;
+
             if (!_signalDetected)
             {
-
                 _directionLabel.text = "НАПРАВЛЕНИЕ: —";
                 _directionLabel.color = colorDim;
                 return;
             }
 
-            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
             if (sys == null)
             {
                 _directionLabel.text = "НАПРАВЛЕНИЕ: ОШИБКА ДАННЫХ";
                 return;
             }
 
+            if (revealStage < 3)
+            {
+                _directionLabel.text = "НАПРАВЛЕНИЕ: ПЕЛЕНГ ЕЩЁ НЕ УДЕРЖИВАЕТСЯ";
+                _directionLabel.color = colorDim;
+                return;
+            }
+
             Vector3 dir = sys.DirectionToCore;
+            TryResolveMainCamera();
             float dist = Vector3.Distance(sys.AtlasCorePosition, 
                 _mainCamera != null ? _mainCamera.transform.position : Vector3.zero);
 
@@ -501,6 +561,48 @@ namespace Hecton8.UI
             int mins = totalSecs / 60;
             int secs = totalSecs % 60;
             _pulseTimerLabel.SetText("{0:D2}:{1:D2}", mins, secs);
+        }
+
+        private bool CanRevealAtlasTelemetry(AtlasSignalSystem sys)
+        {
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector != null)
+            {
+                return firstHourDirector.IsMilestoneComplete(minimumMilestoneToReveal) &&
+                    sys != null &&
+                    sys.CurrentRevealStage >= 2;
+            }
+
+            return sys != null && sys.IsDetected;
+        }
+
+        private void TryResolveMainCamera()
+        {
+            if (_mainCamera != null)
+                return;
+
+            if (_mainCameraResolveRetryTimer > 0f)
+                return;
+
+            _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                if (!playerTransform.TryGetComponent(out _mainCamera))
+                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+            }
+
+            if (_mainCamera == null && TryGetComponent(out Camera localCamera))
+            {
+                _mainCamera = localCamera;
+                return;
+            }
+
+            if (_mainCamera == null)
+                _mainCamera = GetComponentInChildren<Camera>(true);
+
+            if (_mainCamera == null)
+                _mainCamera = GetComponentInParent<Camera>();
         }
 
         private static string GetCompassDirection(Vector3 dir)
@@ -545,7 +647,7 @@ namespace Hecton8.UI
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = alignment;
-            tmp.overflowMode = TextOverflowModes.Ellipsis;
+            tmp.overflowMode = TextOverflowModes.Truncate;
             tmp.raycastTarget = false;
             return tmp;
         }

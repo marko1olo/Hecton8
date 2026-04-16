@@ -10,6 +10,7 @@ namespace MoreMountains.Feedbacks
 	/// <summary>
 	/// This feedback will animate the scale of the target object over time when played
 	/// </summary>
+	[global::System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackPath("Transform/Scale")]
 	[FeedbackHelp("This feedback will animate the target's scale on the 3 specified animation curves, for the specified duration (in seconds). You can apply a multiplier, that will multiply each animation curve value.")]

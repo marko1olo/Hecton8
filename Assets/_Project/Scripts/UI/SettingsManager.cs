@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
+using Hecton8.Bootstrap;
 using Hecton8.Input;
 
 namespace Hecton8.UI
@@ -94,8 +96,9 @@ namespace Hecton8.UI
         private Volume urpVolume;
 
         private UserOptionsPersistence _persistence;
-        private Camera _cachedMainCamera; // Cache Camera.main lookup
+        private Camera _cachedMainCamera; // Cache resolved gameplay camera
         private VolumeProfile _cachedVolumeProfile; // Cache Volume profile lookup
+        private bool _pendingFieldOfViewApply;
         private int _cachedQualityLevel = -1;
         private float _cachedMasterVolume = -1f;
         private float _cachedMusicVolume = -1f;
@@ -128,6 +131,7 @@ namespace Hecton8.UI
 
             _instance = this;
             _isShuttingDown = false;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
             if (Application.isPlaying)
             {
                 if (transform.parent != null)
@@ -147,6 +151,8 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+
             if (_instance == this)
             {
                 _instance = null;
@@ -632,9 +638,6 @@ namespace Hecton8.UI
             _cachedMotionBlur = LoadBool(MotionBlurKey, false);
             _cachedTextureQuality = ValidateTextureQuality(LoadInt(TextureQualityKey, 2));
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[SettingsManager] Settings loaded and validated successfully.");
-#endif
         }
 
         // ══════════════════════════════════════════════════════════
@@ -793,11 +796,11 @@ namespace Hecton8.UI
             // Camera FOV
             if (!ApplyCameraFOV(_cachedFieldOfView))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] FOV setting unavailable (Camera not found)");
-#endif
-                success = false;
-                failureCount++;
+                _pendingFieldOfViewApply = true;
+            }
+            else
+            {
+                _pendingFieldOfViewApply = false;
             }
 
             // Post-Processing
@@ -828,10 +831,6 @@ namespace Hecton8.UI
             if (failureCount > 0)
             {
                 Debug.LogWarning($"[SettingsManager] Applied settings with {failureCount} failure(s). Check warnings above.");
-            }
-            else
-            {
-                Debug.Log("[SettingsManager] All settings applied successfully.");
             }
 #endif
 
@@ -935,6 +934,16 @@ namespace Hecton8.UI
             return true;
         }
 
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!_pendingFieldOfViewApply)
+                return;
+
+            _cachedMainCamera = null;
+            if (ApplyCameraFOV(_cachedFieldOfView))
+                _pendingFieldOfViewApply = false;
+        }
+
         private bool ApplyPostProcessing()
         {
             if (!TryResolveVolumeProfileReference())
@@ -966,19 +975,45 @@ namespace Hecton8.UI
                 return true;
             }
 
-            _cachedMainCamera = Camera.main;
-            if (_cachedMainCamera != null)
-                return true;
-
-            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
-            for (int i = 0; i < cameras.Length; i++)
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
             {
-                Camera candidate = cameras[i];
-                if (candidate == null || !candidate.gameObject.scene.IsValid())
-                    continue;
+                if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
+                {
+                    mainCamera = playerOwnedCamera;
+                    _cachedMainCamera = playerOwnedCamera;
+                    return true;
+                }
 
-                mainCamera = candidate;
-                _cachedMainCamera = candidate;
+                Camera playerChildCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                if (playerChildCamera != null)
+                {
+                    mainCamera = playerChildCamera;
+                    _cachedMainCamera = playerChildCamera;
+                    return true;
+                }
+            }
+
+            if (TryGetComponent(out Camera localCamera))
+            {
+                mainCamera = localCamera;
+                _cachedMainCamera = localCamera;
+                return true;
+            }
+
+            Camera childCamera = GetComponentInChildren<Camera>(true);
+            if (childCamera != null)
+            {
+                mainCamera = childCamera;
+                _cachedMainCamera = childCamera;
+                return true;
+            }
+
+            Camera parentCamera = GetComponentInParent<Camera>();
+            if (parentCamera != null)
+            {
+                mainCamera = parentCamera;
+                _cachedMainCamera = parentCamera;
                 return true;
             }
 

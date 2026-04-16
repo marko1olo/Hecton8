@@ -149,6 +149,19 @@ namespace Hecton8.Audio
         [SerializeField, Range(0.1f, 1f)]
         private float minSpeedVolumeScale = 0.4f;
 
+        [Header("── Locomotion Mode Mix ──────────────────────")]
+        [Tooltip("Volume multiplier for dry interior footsteps. Interiors should feel tighter and calmer than exterior walk.")]
+        [SerializeField, Range(0.1f, 1f)]
+        private float dryInteriorVolumeMultiplier = 0.88f;
+
+        [Tooltip("Volume multiplier for shallow wading footsteps. Water should soften the step impact.")]
+        [SerializeField, Range(0.1f, 1f)]
+        private float shallowWadeVolumeMultiplier = 0.7f;
+
+        [Tooltip("Pitch offset applied while shallow wading. Slightly lower pitch sells weight in water.")]
+        [SerializeField, Range(-0.3f, 0.3f)]
+        private float shallowWadePitchOffset = -0.04f;
+
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private string _debugLastSurface = "none";
         [SerializeField] private int _debugLastBiomeIndex = -1;
@@ -203,8 +216,12 @@ namespace Hecton8.Audio
         {
             // ── Guard: only play when walking on ground ──
             if (playerMovement == null) return;
-            if (!playerMovement.IsWalking) return;
             if (!playerMovement.IsGrounded) return;
+
+            PlayerLocomotionMode locomotionMode = playerMovement.CurrentLocomotionMode;
+            if (locomotionMode == PlayerLocomotionMode.SurfaceSwim ||
+                locomotionMode == PlayerLocomotionMode.UnderwaterSwim)
+                return;
 
             // ── Cooldown ──
             float currentTime = Time.time;
@@ -249,7 +266,22 @@ namespace Hecton8.Audio
             if (clip == null) return;
 
             // ── Volume: base × surface × speed ──
-            float finalVolume = baseVolume * surfaceVolumeMult;
+            float locomotionVolumeMultiplier = 1f;
+            float locomotionPitchOffset = 0f;
+
+            switch (locomotionMode)
+            {
+                case PlayerLocomotionMode.DryInteriorWalk:
+                    locomotionVolumeMultiplier = dryInteriorVolumeMultiplier;
+                    break;
+
+                case PlayerLocomotionMode.ShallowWadeWalk:
+                    locomotionVolumeMultiplier = shallowWadeVolumeMultiplier;
+                    locomotionPitchOffset = shallowWadePitchOffset;
+                    break;
+            }
+
+            float finalVolume = baseVolume * surfaceVolumeMult * locomotionVolumeMultiplier;
 
             if (scaleVolumeBySpeed && _playerRb != null)
             {
@@ -265,7 +297,7 @@ namespace Hecton8.Audio
                 finalVolume *= speedVolume;
             }
 
-            float pitch = 1f + UnityEngine.Random.Range(-pitchVariation, pitchVariation);
+            float pitch = 1f + locomotionPitchOffset + UnityEngine.Random.Range(-pitchVariation, pitchVariation);
             Vector3 playPosition = _surfaceHitValid ? _surfaceHit.point : transform.position;
 
             SpatialAudioManager sam = SpatialAudioManager.Instance;

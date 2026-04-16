@@ -299,6 +299,9 @@ namespace Hecton8.Gameplay
         /// <summary>Текущий активный инструмент (может быть null).</summary>
         public PlayerTool CurrentTool => _currentTool;
 
+        /// <summary>Optional swim-presentation contract of the current tool.</summary>
+        public PlayerToolSwimContract CurrentToolSwimContract => _currentTool != null ? _currentTool.SwimContract : null;
+
         /// <summary>Индекс текущего слота (-1 = нет инструмента).</summary>
         public int CurrentSlotIndex => _currentSlotIndex;
 

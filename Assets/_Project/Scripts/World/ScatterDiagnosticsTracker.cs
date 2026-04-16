@@ -7,6 +7,15 @@ namespace Hecton8.World
 {
     internal static class ScatterDiagnosticsTracker
     {
+        private const float RuntimeReportLogIntervalSeconds = 5f;
+        private static float _nextRuntimeReportLogTime;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeLogState()
+        {
+            _nextRuntimeReportLogTime = 0f;
+        }
+
         public static ScatterRebuildProfileSnapshot BuildRebuildProfileSnapshot(
             in WorldProceduralScatterDirector.ScatterDiagnosticsCommitContext context)
         {
@@ -75,8 +84,24 @@ namespace Hecton8.World
             if (traceActive)
                 RuntimeDiagnosticsTrace.WriteEvent("scatter", report);
 
-            if (shouldLog)
+            if (ShouldEmitRuntimeReportLog(shouldLog))
                 UnityEngine.Debug.Log(report, context);
+        }
+
+        private static bool ShouldEmitRuntimeReportLog(bool shouldLog)
+        {
+            if (!shouldLog)
+                return false;
+
+            if (!Application.isPlaying)
+                return true;
+
+            float now = Time.unscaledTime;
+            if (now < _nextRuntimeReportLogTime)
+                return false;
+
+            _nextRuntimeReportLogTime = now + RuntimeReportLogIntervalSeconds;
+            return true;
         }
 
         private static float GetElapsedMilliseconds(long startTimestamp, long endTimestamp)

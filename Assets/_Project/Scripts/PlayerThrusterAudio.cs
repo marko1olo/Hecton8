@@ -72,6 +72,19 @@ namespace Hecton8.Audio
         [SerializeField, Range(1f, 15f)]
         private float modeFadeSpeed = 4f;
 
+        [Header("── Surface Swim Mix ─────────────────────────")]
+        [Tooltip("How strong the thruster loop remains while surface swimming. 1 = same as deep swim.")]
+        [SerializeField, Range(0f, 1f)]
+        private float surfaceSwimModeBlend = 0.58f;
+
+        [Tooltip("Volume multiplier applied while surface swimming.")]
+        [SerializeField, Range(0.1f, 1f)]
+        private float surfaceSwimVolumeMultiplier = 0.72f;
+
+        [Tooltip("Pitch multiplier applied while surface swimming.")]
+        [SerializeField, Range(0.5f, 1.2f)]
+        private float surfaceSwimPitchMultiplier = 0.9f;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED
         // ══════════════════════════════════════════════════════════
@@ -112,11 +125,7 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             if (thrusterLoopClip != null && _audioSource != null)
             {
@@ -126,16 +135,17 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (_audioSource != null && _audioSource.isPlaying)
             {
                 _audioSource.Stop();
             }
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -153,8 +163,32 @@ namespace Hecton8.Audio
             float dt = deltaTime;
             if (dt <= 0f) return;
 
-            // ── Mode blend: swim=1, walk=0 ──
-            float targetModeBlend = playerMovement.IsWalking ? 0f : 1f;
+            PlayerLocomotionMode locomotionMode = playerMovement.CurrentLocomotionMode;
+            float targetModeBlend;
+            float modeVolumeMultiplier;
+            float modePitchMultiplier;
+
+            switch (locomotionMode)
+            {
+                case PlayerLocomotionMode.SurfaceSwim:
+                    targetModeBlend = surfaceSwimModeBlend;
+                    modeVolumeMultiplier = surfaceSwimVolumeMultiplier;
+                    modePitchMultiplier = surfaceSwimPitchMultiplier;
+                    break;
+
+                case PlayerLocomotionMode.UnderwaterSwim:
+                    targetModeBlend = 1f;
+                    modeVolumeMultiplier = 1f;
+                    modePitchMultiplier = 1f;
+                    break;
+
+                default:
+                    targetModeBlend = 0f;
+                    modeVolumeMultiplier = 1f;
+                    modePitchMultiplier = 1f;
+                    break;
+            }
+
             float modeT = 1f - math.exp(-modeFadeSpeed * dt);
             _modeBlend = math.lerp(_modeBlend, targetModeBlend, modeT);
 
@@ -168,14 +202,20 @@ namespace Hecton8.Audio
                 float maxSpeed = playerMovement.CurrentSuit != null
                     ? playerMovement.CurrentSuit.maxSwimSpeed
                     : 12f;
+
+                if (locomotionMode == PlayerLocomotionMode.SurfaceSwim)
+                {
+                    speed = math.sqrt(vel.x * vel.x + vel.z * vel.z);
+                }
+
                 speedFactor = maxSpeed > 0f
                     ? math.clamp(speed / maxSpeed, 0f, 1f)
                     : 0f;
             }
 
             // ── Target volume and pitch ──
-            float targetVolume = math.lerp(idleVolume, maxVolume, speedFactor) * _modeBlend;
-            float targetPitch = math.lerp(idlePitch, maxPitch, speedFactor);
+            float targetVolume = math.lerp(idleVolume, maxVolume, speedFactor) * _modeBlend * modeVolumeMultiplier;
+            float targetPitch = math.lerp(idlePitch, maxPitch, speedFactor) * modePitchMultiplier;
 
             // ── Smooth interpolation ──
             float volT = 1f - math.exp(-volumeResponseSpeed * dt);
@@ -187,6 +227,31 @@ namespace Hecton8.Audio
             // ── Apply ──
             _audioSource.volume = _currentVolume;
             _audioSource.pitch = _currentPitch;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
     }
 }

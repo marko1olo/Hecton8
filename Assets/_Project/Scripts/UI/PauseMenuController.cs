@@ -19,6 +19,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
     public sealed class PauseMenuController : MonoBehaviour, ITickable
     {
+        private const string PauseMenuRootName = "PauseMenu_Root";
+
         private enum PauseSection
         {
             Main = 0,
@@ -126,6 +128,31 @@ namespace Hecton8.UI
             return upper;
         }
 
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
+        }
+
         private void Awake()
         {
             AutoResolve();
@@ -135,11 +162,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
             SaveEvents.OnSaveStarted += HandleSaveStarted;
@@ -157,11 +180,7 @@ namespace Hecton8.UI
             SaveEvents.OnSaveCompleted -= HandleSaveCompleted;
             SaveEvents.OnSaveFailed -= HandleSaveFailed;
 
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
 
             if (_exitToMainMenuInFlight)
             {
@@ -171,6 +190,11 @@ namespace Hecton8.UI
 
             bool restorePlayerInput = _isOpen && ShouldRestorePlayerInputOnDisable();
             ApplyClosedState(restorePlayerInput: restorePlayerInput);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
         }
 
         private void OnValidate()
@@ -404,43 +428,47 @@ namespace Hecton8.UI
             if (self == null)
                 return;
 
-            _root = self;
+            _root = ResolveOrCreateMenuRoot(self);
+            if (_root == null)
+                return;
+
             Stretch(_root, 0f, 0f, 0f, 0f);
 
-            // Ensure Canvas for UI rendering and cursor
-            Canvas canvas = gameObject.GetComponent<Canvas>();
+            Canvas canvas = GetComponentInParent<Canvas>();
             if (canvas == null)
             {
-                canvas = gameObject.AddComponent<Canvas>();
+                canvas = gameObject.GetComponent<Canvas>();
+                if (canvas == null)
+                    canvas = gameObject.AddComponent<Canvas>();
+
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvas.sortingOrder = 1000; // High order to appear on top
-            }
 
-            // Ensure CanvasScaler for proper scaling
-            UnityEngine.UI.CanvasScaler scaler = gameObject.GetComponent<UnityEngine.UI.CanvasScaler>();
-            if (scaler == null)
-            {
-                scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
+                UnityEngine.UI.CanvasScaler scaler = gameObject.GetComponent<UnityEngine.UI.CanvasScaler>();
+                if (scaler == null)
+                    scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
+
                 scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920f, 1080f);
                 scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 0.5f;
+
+                UnityEngine.UI.GraphicRaycaster raycaster = gameObject.GetComponent<UnityEngine.UI.GraphicRaycaster>();
+                if (raycaster == null)
+                    raycaster = gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             }
 
-            // Ensure GraphicRaycaster for input
-            UnityEngine.UI.GraphicRaycaster raycaster = gameObject.GetComponent<UnityEngine.UI.GraphicRaycaster>();
-            if (raycaster == null)
-                raycaster = gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
-
-            _canvasGroup = gameObject.GetComponent<CanvasGroup>();
+            _canvasGroup = _root.gameObject.GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
-                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                _canvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
 
-            _background = gameObject.GetComponent<Image>();
+            _background = _root.gameObject.GetComponent<Image>();
             if (_background == null)
-                _background = gameObject.AddComponent<Image>();
+                _background = _root.gameObject.AddComponent<Image>();
             _background.color = ShellBg;
             _background.raycastTarget = true;
+
+            NeutralizeHostCanvasArtifacts(self);
 
             ClearChildren(_root);
 
@@ -501,6 +529,44 @@ namespace Hecton8.UI
             _footerHint.SetText("ESC = back / resume  |  SETTINGS hosts controls and rebinds");
 
             _built = true;
+        }
+
+        private RectTransform ResolveOrCreateMenuRoot(RectTransform self)
+        {
+            if (self.name == PauseMenuRootName)
+                return self;
+
+            Transform existing = self.Find(PauseMenuRootName);
+            if (existing is RectTransform existingRect)
+                return existingRect;
+
+            GameObject go = new GameObject(PauseMenuRootName, typeof(RectTransform));
+            go.layer = gameObject.layer;
+            RectTransform root = go.GetComponent<RectTransform>();
+            root.SetParent(self, false);
+            root.localScale = Vector3.one;
+            return root;
+        }
+
+        private void NeutralizeHostCanvasArtifacts(RectTransform self)
+        {
+            if (ReferenceEquals(_root, self))
+                return;
+
+            CanvasGroup hostCanvasGroup = self.GetComponent<CanvasGroup>();
+            if (hostCanvasGroup != null)
+            {
+                hostCanvasGroup.alpha = 1f;
+                hostCanvasGroup.interactable = false;
+                hostCanvasGroup.blocksRaycasts = false;
+            }
+
+            Image hostImage = self.GetComponent<Image>();
+            if (hostImage != null)
+            {
+                hostImage.enabled = false;
+                hostImage.raycastTarget = false;
+            }
         }
 
         private void BuildMainPanel(RectTransform panel)
@@ -601,10 +667,13 @@ namespace Hecton8.UI
         private void BuildSettingsPanel(RectTransform panel)
         {
             CreateSectionTitle(panel, "SETTINGS").SetText("SETTINGS");
-            CreateSectionSub(panel, "Controls were moved out of the PDA. Rebind them here. Language cycling is also available.")
+            CreateSectionSub(panel, ResolveLocalized(LocalizationKeys.SETTINGS_LANGUAGE_HINT,
+                "Controls were moved out of the PDA. Rebind them here. Language cycling is also available."))
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
-            RectTransform languageButton = CreateButton(panel, "LanguageButton", "CYCLE LANGUAGE", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            RectTransform languageButton = CreateButton(panel, "LanguageButton",
+                ResolveLocalized(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE, "CYCLE LANGUAGE"),
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -98f), new Vector2(420f, 38f), CycleLanguage);
             _settingsLanguageButton = languageButton.GetComponent<Button>();
 
@@ -952,7 +1021,10 @@ namespace Hecton8.UI
                 Time.timeScale = 1f;
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+            Hecton8.Dev.EditorPlayModeDiagnostics.RequestStopPlayMode(
+                nameof(PauseMenuController),
+                "PauseMenu Quit",
+                this);
 #else
             Application.Quit();
 #endif
@@ -1306,11 +1378,50 @@ namespace Hecton8.UI
             LocalizationManager localization = LocalizationManager.Instance;
             if (localization == null)
             {
-                _settingsLanguageStatus.SetText("LANGUAGE OWNER UNAVAILABLE.");
+                _settingsLanguageStatus.text = ResolveLocalized(
+                    LocalizationKeys.SETTINGS_LANGUAGE_OWNER_UNAVAILABLE,
+                    "LANGUAGE OWNER UNAVAILABLE.");
                 return;
             }
 
-            _settingsLanguageStatus.SetText($"CURRENT LANGUAGE: {CachedToUpperInvariant(localization.CurrentLanguage.ToString())}");
+            _settingsLanguageStatus.text = string.Format(
+                ResolveLocalized(
+                    LocalizationKeys.SETTINGS_CURRENT_LANGUAGE,
+                    "CURRENT LANGUAGE: {0}"),
+                CachedToUpperInvariant(GetLanguageDisplayName(localization.CurrentLanguage)));
+        }
+
+        private static string GetLanguageDisplayName(GameLanguage language)
+        {
+            switch (language)
+            {
+                case GameLanguage.English: return "English";
+                case GameLanguage.Russian: return "Русский";
+                case GameLanguage.German: return "Deutsch";
+                case GameLanguage.French: return "Français";
+                case GameLanguage.Spanish: return "Español";
+                case GameLanguage.Italian: return "Italiano";
+                case GameLanguage.PortugueseBrazilian: return "Português (Brasil)";
+                case GameLanguage.Polish: return "Polski";
+                case GameLanguage.Turkish: return "Türkçe";
+                case GameLanguage.Ukrainian: return "Українська";
+                case GameLanguage.ChineseSimplified: return "简体中文";
+                case GameLanguage.ChineseTraditional: return "繁體中文";
+                case GameLanguage.Japanese: return "日本語";
+                case GameLanguage.Korean: return "한국어";
+                case GameLanguage.Hindi: return "हिन्दी";
+                case GameLanguage.Indonesian: return "Bahasa Indonesia";
+                case GameLanguage.Arabic: return "العربية";
+                default: return "English";
+            }
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private void ClearPauseSelection()

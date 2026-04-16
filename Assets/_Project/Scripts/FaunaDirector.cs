@@ -47,6 +47,7 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.World;
 using UnityEngine;
 
@@ -126,6 +127,70 @@ namespace Hecton8.AI
         [SerializeField] private WorldProceduralStateRegistry proceduralStateRegistry;
         [SerializeField] private float ordinaryAnchorReuseCooldownSeconds = 90f;
         [SerializeField] private float largeThreatZoneReuseCooldownSeconds = 300f;
+        [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
+        [SerializeField] private WorldZoneDirector worldZoneDirector;
+
+        [Header("── Ecology Cadence ─────────────────────")]
+        [Tooltip("Global fauna budget scale when the active matrix biome reads as calm.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float calmFaunaBudgetScale = 0.9f;
+        [Tooltip("Global fauna budget scale when the active matrix biome reads as lively.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float livelyFaunaBudgetScale = 1.2f;
+        [Tooltip("Global fauna budget scale when the active matrix biome reads as mixed.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float mixedFaunaBudgetScale = 1f;
+        [Tooltip("Global fauna budget scale when the active matrix biome reads as hostile.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float hostileFaunaBudgetScale = 0.78f;
+        [Tooltip("Per-biome fauna cap scale when the active matrix biome reads as calm.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float calmBiomeCapScale = 0.92f;
+        [Tooltip("Per-biome fauna cap scale when the active matrix biome reads as lively.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float livelyBiomeCapScale = 1.25f;
+        [Tooltip("Per-biome fauna cap scale when the active matrix biome reads as mixed.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float mixedBiomeCapScale = 1f;
+        [Tooltip("Per-biome fauna cap scale when the active matrix biome reads as hostile.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float hostileBiomeCapScale = 0.82f;
+
+        [Header("── Ecology Composition ────────────────────")]
+        [Tooltip("Passive fauna weight multiplier when the active matrix biome reads as calm.")]
+        [SerializeField, Range(0.25f, 2f)] private float calmPassiveSelectionScale = 1.25f;
+        [Tooltip("Aggressive fauna weight multiplier when the active matrix biome reads as calm.")]
+        [SerializeField, Range(0.1f, 2f)] private float calmAggressiveSelectionScale = 0.58f;
+        [Tooltip("Passive fauna weight multiplier when the active matrix biome reads as lively.")]
+        [SerializeField, Range(0.25f, 2f)] private float livelyPassiveSelectionScale = 1.15f;
+        [Tooltip("Aggressive fauna weight multiplier when the active matrix biome reads as lively.")]
+        [SerializeField, Range(0.1f, 2f)] private float livelyAggressiveSelectionScale = 0.82f;
+        [Tooltip("Passive fauna weight multiplier when the active matrix biome reads as mixed.")]
+        [SerializeField, Range(0.25f, 2f)] private float mixedPassiveSelectionScale = 1f;
+        [Tooltip("Aggressive fauna weight multiplier when the active matrix biome reads as mixed.")]
+        [SerializeField, Range(0.1f, 2f)] private float mixedAggressiveSelectionScale = 1f;
+        [Tooltip("Passive fauna weight multiplier when the active matrix biome reads as hostile.")]
+        [SerializeField, Range(0.25f, 2f)] private float hostilePassiveSelectionScale = 0.72f;
+        [Tooltip("Aggressive fauna weight multiplier when the active matrix biome reads as hostile.")]
+        [SerializeField, Range(0.1f, 2f)] private float hostileAggressiveSelectionScale = 1.35f;
+        [Tooltip("Passive fauna weight multiplier inside fabrication/service/support safe pockets.")]
+        [SerializeField, Range(0.25f, 2f)] private float safePocketPassiveSelectionScale = 1.4f;
+        [Tooltip("Aggressive fauna weight multiplier inside fabrication/service/support safe pockets.")]
+        [SerializeField, Range(0.05f, 2f)] private float safePocketAggressiveSelectionScale = 0.4f;
+        [Tooltip("Large-threat weight multiplier inside fabrication/service/support safe pockets.")]
+        [SerializeField, Range(0f, 2f)] private float safePocketLargeThreatSelectionScale = 0.08f;
+        [Tooltip("Passive fauna weight multiplier inside combat/trial water.")]
+        [SerializeField, Range(0.1f, 2f)] private float hostileZonePassiveSelectionScale = 0.68f;
+        [Tooltip("Aggressive fauna weight multiplier inside combat/trial water.")]
+        [SerializeField, Range(0.1f, 2f)] private float hostileZoneAggressiveSelectionScale = 1.4f;
+        [Tooltip("Large-threat weight multiplier inside combat/trial water.")]
+        [SerializeField, Range(0f, 2f)] private float hostileZoneLargeThreatSelectionScale = 1.45f;
+        [Tooltip("Large-threat weight multiplier while the player is on a route-critical lane. Keeps navigation legible.")]
+        [SerializeField, Range(0f, 2f)] private float routeCriticalLargeThreatSelectionScale = 0.72f;
+
+        [Header("── Adaptive Perf Budget ───────────────────")]
+        [Tooltip("Scales fauna density from DynamicResolutionScaler render scale so weak devices shed live-world pressure before frame time collapses.")]
+        [SerializeField] private bool enableAdaptivePerfBudget = true;
+        [Tooltip("Render scale floor where fauna density reaches its lowest adaptive budget.")]
+        [SerializeField, Range(0.5f, 1f)] private float adaptiveBudgetFloorRenderScale = 0.72f;
+        [Tooltip("Minimum global fauna budget scale when adaptive perf response is fully engaged.")]
+        [SerializeField, Range(0.2f, 1f)] private float adaptiveGlobalFaunaBudgetFloor = 0.58f;
+        [Tooltip("Minimum per-biome fauna cap scale when adaptive perf response is fully engaged.")]
+        [SerializeField, Range(0.2f, 1f)] private float adaptiveBiomeCapBudgetFloor = 0.62f;
+        [Tooltip("Minimum spawn-burst scale when adaptive perf response is fully engaged.")]
+        [SerializeField, Range(0.2f, 1f)] private float adaptiveSpawnBurstBudgetFloor = 0.4f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — LIMITS
@@ -204,6 +269,21 @@ namespace Hecton8.AI
         [SerializeField] private int _debugSpawnValidationSuccesses;
         [SerializeField] private int _debugAnchorBasedSpawns;
         [SerializeField] private int _debugFallbackRingSpawns;
+        [SerializeField] private string _debugMatrixFaunaMood = "None";
+        [SerializeField] private int _debugEffectiveGlobalMaxCount = 30;
+        [SerializeField] private int _debugEffectiveSpawnsPerTick = 3;
+        [SerializeField] private int _debugEffectiveBiomeMaxCount = 10;
+        [SerializeField] private float _debugAdaptiveRenderScale = 1f;
+        [SerializeField] private float _debugAdaptiveBudgetNormalized = 1f;
+        [SerializeField] private float _debugAdaptiveGlobalBudgetScale = 1f;
+        [SerializeField] private float _debugAdaptiveBiomeBudgetScale = 1f;
+        [SerializeField] private float _debugAdaptiveSpawnBudgetScale = 1f;
+        [SerializeField] private string _debugCurrentZone = "None";
+        [SerializeField] private bool _debugCurrentZoneRouteCritical;
+        [SerializeField] private bool _debugCurrentZoneSafePocket;
+        [SerializeField] private float _debugPassiveSelectionScale = 1f;
+        [SerializeField] private float _debugAggressiveSelectionScale = 1f;
+        [SerializeField] private float _debugLargeThreatSelectionScale = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
@@ -283,6 +363,19 @@ namespace Hecton8.AI
         private float _nextPlayerResolveTime = float.NegativeInfinity;
         private float _nextRuntimeSettingsRefreshTime = float.NegativeInfinity;
         private bool _runtimeSettingsDirty = true;
+        private WorldProceduralFaunaMood _currentMatrixFaunaMood;
+        private int _currentEffectiveGlobalMaxCount = 30;
+        private int _currentEffectiveSpawnsPerTick = 3;
+        private int _currentEffectiveBiomeMaxCount = 10;
+        private float _adaptiveBudgetNormalized = 1f;
+        private float _adaptiveGlobalBudgetScale = 1f;
+        private float _adaptiveBiomeBudgetScale = 1f;
+        private float _adaptiveSpawnBudgetScale = 1f;
+        private float _currentPassiveSelectionScale = 1f;
+        private float _currentAggressiveSelectionScale = 1f;
+        private float _currentLargeThreatSelectionScale = 1f;
+        private WorldZoneAnchor _currentZone;
+        private bool _currentZoneIsSafePocket;
 
         // ══════════════════════════════════════════════════════════
         //  PREDATOR PRESSURE STATE
@@ -311,6 +404,8 @@ namespace Hecton8.AI
             ActiveRuntimeInstance = this;
             EnsureRuntimeStateInitialized();
             ResolveSpawnRegistry();
+            ResolveBiomeMatrixDirector();
+            ResolveWorldZoneDirector();
             RefreshRuntimeStreamingSettings();
             TryWarmupCreaturePools();
             _runtimeSettingsDirty = false;
@@ -326,6 +421,12 @@ namespace Hecton8.AI
 
             if (spawnRegistry == null)
                 ResolveSpawnRegistry();
+
+            if (biomeMatrixDirector == null)
+                ResolveBiomeMatrixDirector();
+
+            if (worldZoneDirector == null)
+                ResolveWorldZoneDirector();
 
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
@@ -359,6 +460,8 @@ namespace Hecton8.AI
         public void SlowTick()
         {
             EnsureRuntimeStateInitialized();
+            ResolveBiomeMatrixDirector();
+            ResolveWorldZoneDirector();
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
             if (_runtimeSettingsDirty || Time.time >= _nextRuntimeSettingsRefreshTime)
@@ -433,12 +536,24 @@ namespace Hecton8.AI
             // ══════════════════════════════════════════════════════
 
             int spawnAttempts = 0;
+            _currentMatrixFaunaMood = biomeMatrixDirector != null && biomeMatrixDirector.CurrentProfile != null
+                ? biomeMatrixDirector.CurrentProfile.faunaMood
+                : WorldProceduralFaunaMood.None;
+            _currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
+            _currentZoneIsSafePocket = IsSafePocketZone(_currentZone);
 
-            if (_activeCreatures.Count < _runtimeGlobalMaxCount)
+            RefreshAdaptiveBudgetResponse();
+            RefreshEcologyCompositionResponse(_currentMatrixFaunaMood, _currentZone);
+            _currentEffectiveGlobalMaxCount = ResolveEffectiveGlobalMaxCount(_currentMatrixFaunaMood);
+            _currentEffectiveSpawnsPerTick = ResolveEffectiveSpawnsPerTick(_currentMatrixFaunaMood);
+            _currentEffectiveBiomeMaxCount = 0;
+
+            if (_activeCreatures.Count < _currentEffectiveGlobalMaxCount)
             {
                 // Ищем данные биома
                 if (_biomeLookup.TryGetValue(currentBiome, out FaunaBiomeData biomeData))
                 {
+                    _currentEffectiveBiomeMaxCount = ResolveEffectiveBiomeMaxCount(biomeData, _currentMatrixFaunaMood);
                     spawnAttempts = TrySpawnCreatures(
                         biomeData,
                         playerPos,
@@ -564,7 +679,7 @@ namespace Hecton8.AI
                 ? _countsPerBiome[biomeIdx]
                 : 0;
 
-            if (biomeAlive >= biomeData.biomeMaxCreatures)
+            if (biomeAlive >= _currentEffectiveBiomeMaxCount)
                 return 0;
 
             // Массив per-type counts для этого биома (ссылка, не копия)
@@ -593,17 +708,25 @@ namespace Hecton8.AI
 
             int spawned = 0;
 
-            for (int attempt = 0; attempt < _runtimeMaxSpawnsPerTick; attempt++)
+            for (int attempt = 0; attempt < _currentEffectiveSpawnsPerTick; attempt++)
             {
                 // Global limit
-                if (_activeCreatures.Count >= _runtimeGlobalMaxCount)
+                if (_activeCreatures.Count >= _currentEffectiveGlobalMaxCount)
                     break;
 
                 // Biome limit
-                if (biomeAlive >= biomeData.biomeMaxCreatures)
+                if (biomeAlive >= _currentEffectiveBiomeMaxCount)
                     break;
 
-                if (!TrySelectResolvedEntry(resolvedEntries, creatureTypeCounts, availablePoolCounts, _pressureEnabled, out ResolvedFaunaEntry selectedEntry))
+                if (!TrySelectResolvedEntry(
+                    resolvedEntries,
+                    creatureTypeCounts,
+                    availablePoolCounts,
+                    _pressureEnabled,
+                    _currentPassiveSelectionScale,
+                    _currentAggressiveSelectionScale,
+                    _currentLargeThreatSelectionScale,
+                    out ResolvedFaunaEntry selectedEntry))
                 {
                     // Все типы на лимите — прекращаем
                     break;
@@ -910,6 +1033,9 @@ namespace Hecton8.AI
             int[] currentCounts,
             int[] availablePoolCounts,
             bool pressureEnabled,
+            float passiveSelectionScale,
+            float aggressiveSelectionScale,
+            float largeThreatSelectionScale,
             out ResolvedFaunaEntry selectedEntry)
         {
             selectedEntry = default;
@@ -938,7 +1064,11 @@ namespace Hecton8.AI
                 if (availablePoolCounts[i] <= 0)
                     continue;
 
-                availableWeight += entry.spawnWeight;
+                float selectionWeight = ResolveSelectionWeight(entry, passiveSelectionScale, aggressiveSelectionScale, largeThreatSelectionScale);
+                if (selectionWeight <= 0f)
+                    continue;
+
+                availableWeight += selectionWeight;
                 fallbackIndex = i;
             }
 
@@ -966,7 +1096,11 @@ namespace Hecton8.AI
                 if (availablePoolCounts[i] <= 0)
                     continue;
 
-                roll -= entry.spawnWeight;
+                float selectionWeight = ResolveSelectionWeight(entry, passiveSelectionScale, aggressiveSelectionScale, largeThreatSelectionScale);
+                if (selectionWeight <= 0f)
+                    continue;
+
+                roll -= selectionWeight;
                 if (roll <= 0f)
                 {
                     selectedEntry = entry;
@@ -1227,6 +1361,241 @@ namespace Hecton8.AI
 
             if (spawnRegistry != null && proceduralStateRegistry != null)
                 spawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
+        }
+
+        private void ResolveBiomeMatrixDirector()
+        {
+            if (biomeMatrixDirector == null)
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+        }
+
+        private void ResolveWorldZoneDirector()
+        {
+            if (worldZoneDirector == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+        }
+
+        private int ResolveEffectiveGlobalMaxCount(WorldProceduralFaunaMood faunaMood)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(_runtimeGlobalMaxCount * ResolveGlobalBudgetScale(faunaMood) * _adaptiveGlobalBudgetScale));
+        }
+
+        private int ResolveEffectiveSpawnsPerTick(WorldProceduralFaunaMood faunaMood)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(_runtimeMaxSpawnsPerTick * ResolveGlobalBudgetScale(faunaMood) * _adaptiveSpawnBudgetScale));
+        }
+
+        private int ResolveEffectiveBiomeMaxCount(FaunaBiomeData biomeData, WorldProceduralFaunaMood faunaMood)
+        {
+            if (biomeData == null)
+                return 0;
+
+            return Mathf.Max(1, Mathf.RoundToInt(biomeData.biomeMaxCreatures * ResolveBiomeCapScale(faunaMood) * _adaptiveBiomeBudgetScale));
+        }
+
+        private void RefreshAdaptiveBudgetResponse()
+        {
+            if (!enableAdaptivePerfBudget)
+            {
+                ApplyAdaptiveBudgetResponse(1f, 1f);
+                return;
+            }
+
+            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            if (scaler == null || !scaler.Enabled)
+            {
+                ApplyAdaptiveBudgetResponse(1f, 1f);
+                return;
+            }
+
+            float renderScale = Mathf.Clamp01(scaler.CurrentRenderScale);
+            float normalized = Mathf.Clamp01(
+                (renderScale - adaptiveBudgetFloorRenderScale) /
+                Mathf.Max(0.0001f, 1f - adaptiveBudgetFloorRenderScale));
+
+            ApplyAdaptiveBudgetResponse(renderScale, normalized);
+        }
+
+        private void ApplyAdaptiveBudgetResponse(float renderScale, float normalized)
+        {
+            _adaptiveBudgetNormalized = normalized;
+            _adaptiveGlobalBudgetScale = Mathf.Lerp(adaptiveGlobalFaunaBudgetFloor, 1f, normalized);
+            _adaptiveBiomeBudgetScale = Mathf.Lerp(adaptiveBiomeCapBudgetFloor, 1f, normalized);
+            _adaptiveSpawnBudgetScale = Mathf.Lerp(adaptiveSpawnBurstBudgetFloor, 1f, normalized);
+
+#if UNITY_EDITOR
+            _debugAdaptiveRenderScale = renderScale;
+            _debugAdaptiveBudgetNormalized = normalized;
+            _debugAdaptiveGlobalBudgetScale = _adaptiveGlobalBudgetScale;
+            _debugAdaptiveBiomeBudgetScale = _adaptiveBiomeBudgetScale;
+            _debugAdaptiveSpawnBudgetScale = _adaptiveSpawnBudgetScale;
+#endif
+        }
+
+        private void RefreshEcologyCompositionResponse(WorldProceduralFaunaMood faunaMood, WorldZoneAnchor currentZone)
+        {
+            _currentPassiveSelectionScale = ResolvePassiveSelectionScale(faunaMood, currentZone);
+            _currentAggressiveSelectionScale = ResolveAggressiveSelectionScale(faunaMood, currentZone);
+            _currentLargeThreatSelectionScale = ResolveLargeThreatSelectionScale(currentZone);
+        }
+
+        private float ResolvePassiveSelectionScale(WorldProceduralFaunaMood faunaMood, WorldZoneAnchor currentZone)
+        {
+            float scale;
+            switch (faunaMood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    scale = calmPassiveSelectionScale;
+                    break;
+                case WorldProceduralFaunaMood.Lively:
+                    scale = livelyPassiveSelectionScale;
+                    break;
+                case WorldProceduralFaunaMood.Hostile:
+                    scale = hostilePassiveSelectionScale;
+                    break;
+                case WorldProceduralFaunaMood.Mixed:
+                default:
+                    scale = mixedPassiveSelectionScale;
+                    break;
+            }
+
+            if (IsSafePocketZone(currentZone))
+                scale *= safePocketPassiveSelectionScale;
+            else if (IsHostileZone(currentZone))
+                scale *= hostileZonePassiveSelectionScale;
+
+            return Mathf.Max(0f, scale);
+        }
+
+        private float ResolveAggressiveSelectionScale(WorldProceduralFaunaMood faunaMood, WorldZoneAnchor currentZone)
+        {
+            float scale;
+            switch (faunaMood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    scale = calmAggressiveSelectionScale;
+                    break;
+                case WorldProceduralFaunaMood.Lively:
+                    scale = livelyAggressiveSelectionScale;
+                    break;
+                case WorldProceduralFaunaMood.Hostile:
+                    scale = hostileAggressiveSelectionScale;
+                    break;
+                case WorldProceduralFaunaMood.Mixed:
+                default:
+                    scale = mixedAggressiveSelectionScale;
+                    break;
+            }
+
+            if (IsSafePocketZone(currentZone))
+                scale *= safePocketAggressiveSelectionScale;
+            else if (IsHostileZone(currentZone))
+                scale *= hostileZoneAggressiveSelectionScale;
+
+            return Mathf.Max(0f, scale);
+        }
+
+        private float ResolveLargeThreatSelectionScale(WorldZoneAnchor currentZone)
+        {
+            float scale = 1f;
+
+            if (IsSafePocketZone(currentZone))
+                scale *= safePocketLargeThreatSelectionScale;
+            else if (IsHostileZone(currentZone))
+                scale *= hostileZoneLargeThreatSelectionScale;
+
+            if (currentZone != null && currentZone.RouteCritical)
+                scale *= routeCriticalLargeThreatSelectionScale;
+
+            scale *= _adaptiveSpawnBudgetScale;
+            return Mathf.Max(0f, scale);
+        }
+
+        private static float ResolveSelectionWeight(
+            in ResolvedFaunaEntry entry,
+            float passiveSelectionScale,
+            float aggressiveSelectionScale,
+            float largeThreatSelectionScale)
+        {
+            float weight = entry.spawnWeight;
+            if (weight <= 0f)
+                return 0f;
+
+            CreatureArchetypeData archetype = entry.archetype;
+            bool aggressive = (archetype != null && archetype.isAggressive) ||
+                              (archetype != null && (archetype.roleType == CreatureRoleType.Hunter || archetype.roleType == CreatureRoleType.Leviathan));
+
+            weight *= aggressive ? aggressiveSelectionScale : passiveSelectionScale;
+            if (entry.isLargeThreat)
+                weight *= largeThreatSelectionScale;
+
+            return Mathf.Max(0f, weight);
+        }
+
+        private static bool IsSafePocketZone(WorldZoneAnchor currentZone)
+        {
+            if (currentZone == null)
+                return false;
+
+            switch (currentZone.Kind)
+            {
+                case WorldZoneAnchor.ZoneKind.Fabrication:
+                case WorldZoneAnchor.ZoneKind.Service:
+                case WorldZoneAnchor.ZoneKind.Construction:
+                case WorldZoneAnchor.ZoneKind.Power:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsHostileZone(WorldZoneAnchor currentZone)
+        {
+            if (currentZone == null)
+                return false;
+
+            switch (currentZone.Kind)
+            {
+                case WorldZoneAnchor.ZoneKind.Combat:
+                case WorldZoneAnchor.ZoneKind.Trial:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private float ResolveGlobalBudgetScale(WorldProceduralFaunaMood faunaMood)
+        {
+            switch (faunaMood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    return calmFaunaBudgetScale;
+                case WorldProceduralFaunaMood.Lively:
+                    return livelyFaunaBudgetScale;
+                case WorldProceduralFaunaMood.Mixed:
+                    return mixedFaunaBudgetScale;
+                case WorldProceduralFaunaMood.Hostile:
+                    return hostileFaunaBudgetScale;
+                default:
+                    return 1f;
+            }
+        }
+
+        private float ResolveBiomeCapScale(WorldProceduralFaunaMood faunaMood)
+        {
+            switch (faunaMood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    return calmBiomeCapScale;
+                case WorldProceduralFaunaMood.Lively:
+                    return livelyBiomeCapScale;
+                case WorldProceduralFaunaMood.Mixed:
+                    return mixedBiomeCapScale;
+                case WorldProceduralFaunaMood.Hostile:
+                    return hostileBiomeCapScale;
+                default:
+                    return 1f;
+            }
         }
 
         private void TryWarmupCreaturePools()
@@ -1611,6 +1980,21 @@ namespace Hecton8.AI
             _debugSpawnValidationSuccesses = spawnValidationSuccesses;
             _debugAnchorBasedSpawns = anchorBasedSpawns;
             _debugFallbackRingSpawns = fallbackRingSpawns;
+            _debugMatrixFaunaMood = _currentMatrixFaunaMood.ToString();
+            _debugEffectiveGlobalMaxCount = _currentEffectiveGlobalMaxCount;
+            _debugEffectiveSpawnsPerTick = _currentEffectiveSpawnsPerTick;
+            _debugEffectiveBiomeMaxCount = _cachedBiomeIndex >= 0 ? _currentEffectiveBiomeMaxCount : 0;
+            _debugAdaptiveRenderScale = DynamicResolutionScaler.Instance != null ? DynamicResolutionScaler.Instance.CurrentRenderScale : 1f;
+            _debugAdaptiveBudgetNormalized = _adaptiveBudgetNormalized;
+            _debugAdaptiveGlobalBudgetScale = _adaptiveGlobalBudgetScale;
+            _debugAdaptiveBiomeBudgetScale = _adaptiveBiomeBudgetScale;
+            _debugAdaptiveSpawnBudgetScale = _adaptiveSpawnBudgetScale;
+            _debugCurrentZone = _currentZone != null ? _currentZone.ZoneLabel : "None";
+            _debugCurrentZoneRouteCritical = _currentZone != null && _currentZone.RouteCritical;
+            _debugCurrentZoneSafePocket = _currentZoneIsSafePocket;
+            _debugPassiveSelectionScale = _currentPassiveSelectionScale;
+            _debugAggressiveSelectionScale = _currentAggressiveSelectionScale;
+            _debugLargeThreatSelectionScale = _currentLargeThreatSelectionScale;
 
             if (_playerTransform != null)
             {
@@ -1841,6 +2225,9 @@ namespace Hecton8.AI
 
         private bool CanSpawnLargeThreatNearPlayer(WorldMacroZoneCoordinate spawnMacroZone, Vector3 playerPos)
         {
+            if (_currentLargeThreatSelectionScale <= 0.01f || _currentZoneIsSafePocket)
+                return false;
+
             if (GetMacroZoneLargeThreatCount(spawnMacroZone) > 0)
                 return false;
 

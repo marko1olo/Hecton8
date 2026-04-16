@@ -198,6 +198,7 @@ namespace Hecton8.Atmosphere
         private EnvironmentState _currentState = EnvironmentState.SURFACE_DAY;
 
         private float _cycleTimer;
+        private double _elapsedCycleTimeSeconds;
         private float _sunAngleDegrees;
         private float _sunElevationDot;
 
@@ -248,6 +249,7 @@ namespace Hecton8.Atmosphere
         public float TimeOfDay                 => _cycleTimer / _cycleDuration;
         public float SunAngle                  => _sunAngleDegrees;
         public float SunElevation              => _sunElevationDot;
+        public double ElapsedCycleTimeSeconds  => _elapsedCycleTimeSeconds;
         public float CurrentSkyExposure        => _currentValues.skyExposure;
         public bool  IsEclipseActive           => _eclipseActive;
         public float EclipseRemainingTime      => _eclipseRemainingTime;
@@ -322,11 +324,7 @@ namespace Hecton8.Atmosphere
         {
             if (Application.isPlaying)
             {
-                if (!_registeredToTickManager && GameTickManager.Instance != null)
-                {
-                    GameTickManager.Instance.Register((ITickable)this);
-                    _registeredToTickManager = true;
-                }
+                TryRegister();
 
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
@@ -346,18 +344,15 @@ namespace Hecton8.Atmosphere
         {
             if (!Application.isPlaying) return;
 
-            if (_registeredToTickManager) return;
-
-            if (GameTickManager.Instance != null)
+            if (!_registeredToTickManager)
             {
-                GameTickManager.Instance.Register((ITickable)this);
-                _registeredToTickManager = true;
-            }
-            else
-            {
-                Debug.LogError(
-                    "[HectonAtmosphere] GameTickManager.Instance == null in Start(). " +
-                    "Atmosphere will NOT update.", this);
+                TryRegister();
+                if (!_registeredToTickManager)
+                {
+                    Debug.LogError(
+                        "[HectonAtmosphere] GameTickManager.Instance == null in Start(). " +
+                        "Atmosphere will NOT update.", this);
+                }
             }
 
             if (_biomeMatrixDirector == null)
@@ -372,11 +367,7 @@ namespace Hecton8.Atmosphere
 
             if (Application.isPlaying)
             {
-                if (_registeredToTickManager && GameTickManager.Instance != null)
-                {
-                    GameTickManager.Instance.Unregister((ITickable)this);
-                    _registeredToTickManager = false;
-                }
+                TryUnregister();
 
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
@@ -391,11 +382,39 @@ namespace Hecton8.Atmosphere
 
         private void OnDestroy()
         {
+            if (Application.isPlaying)
+                TryUnregister();
+
             if (_instance != this) return;
             _instance = null;
 
             if (Application.isPlaying)
                 OnStateChanged = null;
+        }
+
+        private void TryRegister()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register((ITickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister((ITickable)this);
+
+            _registeredToTickManager = false;
         }
 
 #if UNITY_EDITOR
@@ -509,6 +528,7 @@ namespace Hecton8.Atmosphere
         private void InitializeCycleTimer()
         {
             _cycleTimer = _initialTimeOfDay * _cycleDuration;
+            _elapsedCycleTimeSeconds = _cycleTimer;
         }
 
         private void InitializeAtmosphereValues()
@@ -530,6 +550,7 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AdvanceCycleTimer(float deltaTime)
         {
+            _elapsedCycleTimeSeconds += deltaTime;
             _cycleTimer += deltaTime;
             _cycleTimer  = math.fmod(_cycleTimer, _cycleDuration);
         }
@@ -612,6 +633,12 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
+            if (_playerMovement != null)
+            {
+                _autoUnderwaterState = ResolveMovementUnderwaterState();
+                return _autoUnderwaterState;
+            }
+
             float depth = ResolvePlayerDepth();
             _autoUnderwaterState =
                 SurfaceStateUtility.ResolveUnderwaterFromDepth(
@@ -621,6 +648,22 @@ namespace Hecton8.Atmosphere
                     VisualExitUnderwaterDepth);
 
             return _autoUnderwaterState;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool ResolveMovementUnderwaterState()
+        {
+            switch (_playerMovement.CurrentLocomotionMode)
+            {
+                case PlayerLocomotionMode.UnderwaterSwim:
+                    return true;
+
+                case PlayerLocomotionMode.SurfaceSwim:
+                    return _playerMovement.IsPlayerSubmerged;
+
+                default:
+                    return false;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -782,6 +825,8 @@ namespace Hecton8.Atmosphere
         public void SetTimeOfDay(float normalized)
         {
             _cycleTimer = math.saturate(normalized) * _cycleDuration;
+            double completedCycles = math.floor(_elapsedCycleTimeSeconds / _cycleDuration);
+            _elapsedCycleTimeSeconds = completedCycles * _cycleDuration + _cycleTimer;
         }
 
         public void SetWaterSurfaceLevel(float worldY)
@@ -797,7 +842,14 @@ namespace Hecton8.Atmosphere
 
         public void SetCycleDuration(float seconds)
         {
+            float normalized = _cycleDuration > 0f ? _cycleTimer / _cycleDuration : 0f;
+            double completedCycles = _cycleDuration > 0f
+                ? math.floor(_elapsedCycleTimeSeconds / _cycleDuration)
+                : 0d;
+
             _cycleDuration = math.max(seconds, 1f);
+            _cycleTimer = normalized * _cycleDuration;
+            _elapsedCycleTimeSeconds = completedCycles * _cycleDuration + _cycleTimer;
         }
 
         public void SetTransitionSpeed(float speed)
@@ -808,11 +860,11 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolvePlayerDepth()
         {
-            if (_playerCameraTransform != null)
-                return math.max(0f, _waterSurfaceY - _playerCameraTransform.position.y);
-
             if (_playerMovement != null)
                 return _playerMovement.CurrentDepth;
+
+            if (_playerCameraTransform != null)
+                return math.max(0f, _waterSurfaceY - _playerCameraTransform.position.y);
 
             if (_playerTransform != null)
                 return math.max(0f, _waterSurfaceY - _playerTransform.position.y);

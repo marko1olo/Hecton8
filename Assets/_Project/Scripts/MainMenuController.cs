@@ -62,6 +62,7 @@ namespace Hecton.UI.MainMenu
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
 
         private const int SlotCount = 3;
+        private const float CancelInputDebounceSeconds = 0.35f;
         private static readonly string[] SlotNames = { "slot_1", "slot_2", "slot_3" };
 
         private bool _isTransitioning;
@@ -74,6 +75,7 @@ namespace Hecton.UI.MainMenu
         private bool _lastLoadUsedBackup;
         private int _lastLoadingPercent = -1;
         private float _lastUnscaledTickTime;
+        private float _cancelInputBlockedUntil;
         private float _transitionElapsed;
         private float _transitionStartAlpha;
         private string _loadingPercentTemplate = "{0}%";
@@ -101,6 +103,7 @@ namespace Hecton.UI.MainMenu
             ValidateReferences();
             BindButtons();
             InitializePanelStates();
+            BlockCancelInputBriefly();
         }
 
         private void Start()
@@ -123,6 +126,7 @@ namespace Hecton.UI.MainMenu
         {
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
+            BlockCancelInputBriefly();
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
             
             // Subscribe to save/load events for UI feedback
@@ -248,7 +252,10 @@ namespace Hecton.UI.MainMenu
                 () =>
                 {
 #if UNITY_EDITOR
-                    UnityEditor.EditorApplication.isPlaying = false;
+                    Hecton8.Dev.EditorPlayModeDiagnostics.RequestStopPlayMode(
+                        nameof(MainMenuController),
+                        "MainMenu Quit",
+                        this);
 #else
                     Application.Quit();
 #endif
@@ -707,6 +714,7 @@ namespace Hecton.UI.MainMenu
             from.blocksRaycasts = false;
             to.interactable = false;
             to.blocksRaycasts = false;
+            BlockCancelInputBriefly();
         }
 
         public void Tick(float dt)
@@ -724,7 +732,11 @@ namespace Hecton.UI.MainMenu
         private void HandleCancelInput()
         {
             // Input spam protection: ignore input during transitions or scene loading
-            if (_isTransitioning || _isSceneLoadInFlight || _isSaveLoadBusy || !Input.GetKeyDown(KeyCode.Escape))
+            if (_isTransitioning ||
+                _isSceneLoadInFlight ||
+                _isSaveLoadBusy ||
+                Time.unscaledTime < _cancelInputBlockedUntil ||
+                !Input.GetKeyDown(KeyCode.Escape))
                 return;
 
             if (_currentPanel == settingsGroup)
@@ -767,6 +779,11 @@ namespace Hecton.UI.MainMenu
 
             if (selected != target.gameObject)
                 eventSystem.SetSelectedGameObject(target.gameObject);
+        }
+
+        private void BlockCancelInputBriefly()
+        {
+            _cancelInputBlockedUntil = Time.unscaledTime + CancelInputDebounceSeconds;
         }
 
         private void RequestSelectionRefresh()

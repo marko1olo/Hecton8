@@ -28,8 +28,16 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _CoreIntensity: 6.6
+    - _CoronaIntensity: 6.2
+    - _CoronaPower: 1.15
+    - _DiscSoftness: 0.42
+    - _GlowIntensity: 9.2
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CoreColor: {r: 1.08, g: 1.02, b: 0.9, a: 1}
+    - _CoronaColor: {r: 0.62, g: 0.34, b: 0.12, a: 1}
+    - _SunColor: {r: 1, g: 0.8, b: 0.44, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

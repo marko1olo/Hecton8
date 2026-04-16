@@ -92,6 +92,7 @@ namespace Hecton8.Core
         // ── Cached squared radii (avoid sqrt in Job) ──
         private float _activateRadiusSq;
         private float _deactivateRadiusSq;
+        private float _nextPlayerResolveWarningTime;
 
         // ── Point count ──
         private int _pointCount;
@@ -305,10 +306,7 @@ namespace Hecton8.Core
         {
             ActiveRuntimeInstance = this;
             // ── Авто-resolve игрока через bootstrap, если ссылка не задана ──
-            if (playerTransform == null)
-            {
-                SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform);
-            }
+            TryResolvePlayerTransform();
 
             // ── Валидация ──
             if (colliderPrefab == null)
@@ -321,10 +319,7 @@ namespace Hecton8.Core
 
             if (playerTransform == null)
             {
-                Debug.LogError("[ProximityColliderSystem] playerTransform is not assigned " +
-                               "and bootstrap player transform could not be resolved!");
-                enabled = false;
-                return;
+                Debug.LogWarning("[ProximityColliderSystem] playerTransform is not ready during OnEnable. Runtime retry will continue.");
             }
 
             // ── Валидация радиусов ──
@@ -376,7 +371,20 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             if (!_initialized) return;
-            if (playerTransform == null) return;
+            if (playerTransform == null)
+            {
+                TryResolvePlayerTransform();
+                if (playerTransform == null)
+                {
+                    if (Time.unscaledTime >= _nextPlayerResolveWarningTime)
+                    {
+                        _nextPlayerResolveWarningTime = Time.unscaledTime + 5f;
+                        Debug.LogWarning("[ProximityColliderSystem] playerTransform still unresolved after runtime retry.");
+                    }
+
+                    return;
+                }
+            }
 
             // ═══════════════════════════════════════════════════
             //  STEP 1: Обработка результатов предыдущей Job
@@ -653,6 +661,14 @@ namespace Hecton8.Core
         public void SetPlayerTransform(Transform newPlayer)
         {
             playerTransform = newPlayer;
+        }
+
+        private void TryResolvePlayerTransform()
+        {
+            if (playerTransform != null)
+                return;
+
+            SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform);
         }
 
         /// <summary>

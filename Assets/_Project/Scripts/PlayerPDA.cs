@@ -253,25 +253,22 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance == null) return;
-            if (_registered) return;
-            GameTickManager.Instance.Register(this);
-            _registered = true;
-
+            TryRegister();
             SubscribeToInputManager();
         }
 
         private void Start()
         {
             AutoResolveTabs();
-            if (_registered) return;
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
 
             SubscribeToInputManager();
+
+            if (!_registered)
+            {
+                Debug.LogError(
+                    "[PlayerPDA] GameTickManager.Instance is null at Start(). PDA tick loop will not run.");
+            }
 
             if (InputManager.Instance == null)
             {
@@ -378,16 +375,17 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
-
+            TryUnregister();
             UnsubscribeFromInputManager();
 
             // Закрываем при отключении компонента
             if (IsOpen) ForceClose();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            UnsubscribeFromInputManager();
         }
 
         private void SubscribeToInputManager()
@@ -426,6 +424,31 @@ namespace Hecton8.UI
 
             _subscribedInputManager = null;
             _inputSubscribed = false;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister(this);
+
+            _registered = false;
         }
 
         // ══════════════════════════════════════════════════════════
