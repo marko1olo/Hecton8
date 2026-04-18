@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Blockout Rig")]
-    public sealed class PlayerSwimBlockoutRig : MonoBehaviour, ITickable
+    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ITickable
     {
         private const string LeftShoulderName = "Swim_LeftShoulder";
         private const string RightShoulderName = "Swim_RightShoulder";
@@ -207,6 +207,7 @@ namespace Hecton8.Gameplay
             ApplyAttachmentPose(rightForearmAttachment, rightForearm);
             ApplyAttachmentPose(leftHandAttachment, leftGlove);
             ApplyAttachmentPose(rightHandAttachment, rightGlove);
+            ForceSyncFullBodyAttachmentPoints();
             RefreshAttachmentDebugState();
         }
 
@@ -452,6 +453,7 @@ namespace Hecton8.Gameplay
                 suitScale * upperArmThicknessScale,
                 sprintBoost,
                 verticalCompression);
+            ApplyFullBodyPose(mode, profile, suitScale, sprintBoost, verticalCompression, dt);
 
             ForceSyncAttachmentPoints();
 
@@ -550,6 +552,8 @@ namespace Hecton8.Gameplay
             if (rightHandAttachment == null)
                 rightHandAttachment = FindTransformRecursive(root, RightHandAttachmentName);
 
+            AutoResolveFullBodyReferences(root);
+
             if (leftForearmRenderer == null && leftForearm != null)
                 leftForearm.TryGetComponent(out leftForearmRenderer);
 
@@ -614,7 +618,8 @@ namespace Hecton8.Gameplay
                 leftForearmAttachment != null &&
                 rightForearmAttachment != null &&
                 leftHandAttachment != null &&
-                rightHandAttachment != null;
+                rightHandAttachment != null &&
+                AreFullBodyAttachmentsResolved();
 #endif
         }
 
@@ -649,6 +654,8 @@ namespace Hecton8.Gameplay
 
             if (rightGlove != null)
                 _rightGloveBaseScale = rightGlove.localScale;
+
+            CacheFullBodyBaseScales();
         }
 
         private float ResolveTargetWeight(PlayerSwimPresentationMode mode, float guideWeight)

@@ -81,19 +81,41 @@ namespace Hecton8.Environment
         private const float VisualExitUnderwaterDepth = 0.005f;
         private const float VisualForcedUnderwaterDepth = 0.12f;
         private const float VisualCameraDepthOverrideThreshold = 0.15f;
-        private const float MaxSurfaceFogBlendDepth = 1.5f;
+        private const float MaxSurfaceFogBlendDepth = 3f;
         private const float UnderwaterFogDensityFloorNearSurface = 0.012f;
         private const float UnderwaterFogDensityFloorAtDepth = 0.0045f;
         private const float UnderwaterFogDensityFloorDepth = 8f;
-        private const float DaylightReadableDepth = 280f;
-        private const float DaylightReadableLightFloor = 0.18f;
-        private const float DaylightReadableExtinctionReduction = 0.42f;
-        private const float FogBlackoutStartDepthDay = 260f;
+        private const float DaylightReadableDepth = 380f;
+        private const float DaylightReadableLightFloor = 0.24f;
+        private const float DaylightReadableExtinctionReduction = 0.3f;
+        private const float FogBlackoutStartDepthDay = 340f;
         private const float FogBlackoutStartDepthNight = 90f;
         private const float FogBlackBlendIntensity = 0.68f;
+        private const float UnderwaterFarHazeStartDepth = 1.5f;
+        private const float UnderwaterFarHazeFullDepth = 14f;
+        private const float UnderwaterFarHazeDensityBoost = 0.00135f;
+        private const float UnderwaterBaselineDistanceHaze = 0.00085f;
+        private const float UnderwaterMediumFogColorBlend = 0.58f;
+        private const float UnderwaterDepthColumnHazeFullDepth = 36f;
+        private const float UnderwaterDepthColumnHazeDensityBoost = 0.0009f;
+        private const float UnderwaterBiomeFogInfluenceShallow = 0.18f;
+        private const float UnderwaterBiomeFogInfluenceDeep = 0.34f;
+        private const float UnderwaterBiomeFogInfluenceDepth = 90f;
+        private const float UnderwaterSunlitTintDepth = 32f;
+        private const float UnderwaterSunlitTintStrength = 0.3f;
+        private const float UnderwaterSunlitAmbientDepth = 42f;
+        private const float UnderwaterSunlitAmbientStrength = 0.24f;
+        private const float UnderwaterShallowColumnColorDepth = 56f;
+        private const float UnderwaterShallowColumnColorStrength = 0.12f;
+        private const float UnderwaterDaylightSeaTintDepth = 96f;
+        private const float UnderwaterDaylightSeaTintStrength = 0.24f;
+        private const float UnderwaterDaylightAmbientTintStrength = 0.18f;
+        private const float UnderwaterClearWaterMotesStrength = 0.2f;
         private const string UnderwaterSuspendedMotesChildName = "Underwater_SuspendedMotes";
         private const string UnderwaterExhaleBubblesChildName = "Underwater_ExhaleBubbles";
         private const string UnderwaterShallowSunBeamChildName = "Underwater_ShallowSunBeam";
+        private static readonly Color UnderwaterDaylightSeaTintShallow = new Color(0.078f, 0.286f, 0.328f, 1f);
+        private static readonly Color UnderwaterDaylightSeaTintMid = new Color(0.02f, 0.125f, 0.18f, 1f);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -936,12 +958,16 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // Keep Crest's fullscreen underwater pass off on the authored gameplay
-            // camera while in edit mode. It renders the below-water half-space as a
-            // dark band in Game view when the runtime stack is not active.
-            SuspendEditorWaterRendering();
-
             ResolveEditorCamera();
+
+            if (ShouldSuppressEditorGameplayCrest())
+            {
+                SuspendEditorWaterRendering();
+            }
+            else
+            {
+                ResumeEditorWaterRendering();
+            }
 
             float dt = Time.unscaledDeltaTime;
             if (dt <= 0f) dt = 0.016f;
@@ -968,6 +994,8 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying) return;
 
+            var sv = SceneView.lastActiveSceneView;
+            Camera sceneViewCamera = sv != null ? sv.camera : null;
             Camera authoredGameplayCamera = null;
             if (IsRuntimeMainCamera(mainCamera))
             {
@@ -984,6 +1012,28 @@ namespace Hecton8.Environment
             // wired to the gameplay camera. SceneView fallback is only for unwired preview.
             if (authoredGameplayCamera != null)
             {
+                if (sceneViewCamera != null)
+                {
+                    float authoredDepth = math.max(
+                        0f,
+                        ResolveWaterLevel() - authoredGameplayCamera.transform.position.y);
+                    float sceneViewDepth = math.max(
+                        0f,
+                        ResolveWaterLevel() - sceneViewCamera.transform.position.y);
+
+                    if (sceneViewDepth >= VisualForcedUnderwaterDepth &&
+                        sceneViewDepth > authoredDepth + VisualCameraDepthOverrideThreshold)
+                    {
+                        if (mainCamera != sceneViewCamera)
+                            mainCamera = sceneViewCamera;
+                        if (playerCamera == null || playerCamera == authoredGameplayCamera.transform)
+                            playerCamera = sceneViewCamera.transform;
+
+                        _nextEditorCameraResolveTime = float.NegativeInfinity;
+                        return;
+                    }
+                }
+
                 if (!ReferenceEquals(mainCamera, authoredGameplayCamera))
                     mainCamera = authoredGameplayCamera;
                 if (playerCamera == null || !ReferenceEquals(playerCamera, authoredGameplayCamera.transform))
@@ -993,10 +1043,8 @@ namespace Hecton8.Environment
                 return;
             }
 
-            var sv = SceneView.lastActiveSceneView;
-            if (sv != null && sv.camera != null)
+            if (sceneViewCamera != null)
             {
-                Camera sceneViewCamera = sv.camera;
                 if (mainCamera != sceneViewCamera)
                     mainCamera = sceneViewCamera;
                 if (playerCamera == null || playerCamera == mainCamera.transform)
@@ -1023,6 +1071,24 @@ namespace Hecton8.Environment
 
             mainCamera = _gameplayMainCamera;
             playerCamera = _gameplayMainCamera.transform;
+        }
+
+        private bool ShouldSuppressEditorGameplayCrest()
+        {
+            if (Application.isPlaying)
+                return false;
+
+            ResolveGameplayMainCameraForEditor();
+            if (_gameplayMainCamera == null)
+                return false;
+
+            if (!ReferenceEquals(mainCamera, _gameplayMainCamera))
+                return false;
+
+            float cameraDepth = math.max(
+                0f,
+                ResolveWaterLevel() - _gameplayMainCamera.transform.position.y);
+            return cameraDepth < VisualForcedUnderwaterDepth;
         }
 
         private void SuspendEditorWaterRendering()
@@ -1159,14 +1225,25 @@ namespace Hecton8.Environment
                 // (both values would be at their defaults = 1.0, which is fine).
                 if (sunLight != null)
                 {
-                    float baseSun = ResolveProfileSunIntensity();
-                    float horizon = ResolveHorizonFade();
-                    sunLight.intensity = baseSun * horizon * ResolveSurfaceSunMultiplier();
+                    if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState surfaceState))
+                    {
+                        sunLight.intensity = surfaceState.DirectionalLightIntensity;
+                        UpdateSurfaceLightDiagnostics(
+                            surfaceState.DirectionalLightIntensity,
+                            1f,
+                            surfaceState.DirectionalLightIntensity);
+                    }
+                    else
+                    {
+                        float baseSun = ResolveProfileSunIntensity();
+                        float horizon = ResolveHorizonFade();
+                        sunLight.intensity = baseSun * horizon * ResolveSurfaceSunMultiplier();
 
-                    UpdateSurfaceLightDiagnostics(
-                        baseSun,
-                        horizon,
-                        baseSun * horizon * ResolveSurfaceSunMultiplier());
+                        UpdateSurfaceLightDiagnostics(
+                            baseSun,
+                            horizon,
+                            baseSun * horizon * ResolveSurfaceSunMultiplier());
+                    }
                 }
 
                 return;
@@ -1251,10 +1328,21 @@ namespace Hecton8.Environment
                 CacheAtmosphereManager();
 
             if (_cachedAtmoManager != null)
-                return _cachedAtmoManager.ProfileSunIntensity;
+            {
+                float profileSunIntensity = _cachedAtmoManager.ProfileSunIntensity;
+                if (profileSunIntensity > 0.0001f)
+                    return profileSunIntensity;
+
+                float currentSunIntensity = _cachedAtmoManager.CurrentSunIntensity;
+                if (currentSunIntensity > 0.0001f)
+                    return currentSunIntensity;
+            }
 
             // Fallback: no atmosphere manager = sun at full intensity
-            return sunLight != null ? sunLight.intensity : 1f;
+            if (sunLight != null && sunLight.intensity > 0.0001f)
+                return sunLight.intensity;
+
+            return 1f;
         }
 
         /// <summary>
@@ -1613,6 +1701,16 @@ namespace Hecton8.Environment
                 UnderwaterFogDensityFloorAtDepth,
                 math.saturate(currentDepth / UnderwaterFogDensityFloorDepth));
             targetDensity = math.max(targetDensity, shallowDensityFloor);
+            targetDensity += UnderwaterBaselineDistanceHaze * math.max(0.85f, _currentTurbidity);
+            float farHazeBlend = math.saturate(
+                (currentDepth - UnderwaterFarHazeStartDepth) /
+                math.max(0.01f, UnderwaterFarHazeFullDepth - UnderwaterFarHazeStartDepth));
+            targetDensity += UnderwaterFarHazeDensityBoost * _currentTurbidity * farHazeBlend;
+            float depthColumnHazeBlend = math.saturate(currentDepth / UnderwaterDepthColumnHazeFullDepth);
+            targetDensity += UnderwaterDepthColumnHazeDensityBoost *
+                Mathf.Lerp(0.75f, 1f, ResolveSurfaceDaylightVisibility()) *
+                _currentTurbidity *
+                depthColumnHazeBlend;
 
             float smoothSubmerge = math.saturate(currentDepth / 0.5f);
             float surfDensity = enableSurfaceFog ? surfaceFogDensity : 0.0001f;
@@ -1648,7 +1746,9 @@ namespace Hecton8.Environment
                 }
             }
 
-            if (_wasUnderwater)
+            bool renderUnderwater = ShouldRenderUnderwaterFogForCamera();
+
+            if (renderUnderwater)
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogColor = _cachedUnderwaterFogColor;
@@ -1712,6 +1812,42 @@ namespace Hecton8.Environment
             ambientColor.g *= _soundscapeAmbientScale;
             ambientColor.b *= _soundscapeAmbientScale;
 
+            float currentDepth = ResolveCurrentDepth();
+            float daylightVisibility = ResolveSurfaceDaylightVisibility();
+            float sunlitAmbientBlend =
+                daylightVisibility *
+                (1f - math.saturate(currentDepth / UnderwaterSunlitAmbientDepth));
+            if (sunlitAmbientBlend > 0.0001f)
+            {
+                Color skylitWaterAmbient = Color.Lerp(
+                    _currentScatterShallow,
+                    ResolveSurfaceSkyZenithColor(),
+                    0.18f);
+                skylitWaterAmbient.a = 1f;
+                ambientColor = Color.Lerp(
+                    ambientColor,
+                    skylitWaterAmbient,
+                    sunlitAmbientBlend * UnderwaterSunlitAmbientStrength);
+            }
+
+            float daylightSeaAmbientBlend = daylightVisibility *
+                (1f - math.saturate(currentDepth / UnderwaterDaylightSeaTintDepth));
+            if (daylightSeaAmbientBlend > 0.0001f)
+            {
+                float shallowSeaBlend = 1f - math.saturate(currentDepth / UnderwaterSunlitAmbientDepth);
+                Color daylightSeaAmbient = Color.Lerp(
+                    UnderwaterDaylightSeaTintMid,
+                    UnderwaterDaylightSeaTintShallow,
+                    shallowSeaBlend);
+                daylightSeaAmbient = MaxColorRgb(
+                    daylightSeaAmbient,
+                    ScaleColorRgb(_currentScatterShallow, 0.72f));
+                ambientColor = Color.Lerp(
+                    ambientColor,
+                    daylightSeaAmbient,
+                    daylightSeaAmbientBlend * UnderwaterDaylightAmbientTintStrength);
+            }
+
             if (_soundscapeThermalTintBlend > 0.001f)
                 ambientColor = Color.Lerp(ambientColor, thermalTierTintColor, _soundscapeThermalTintBlend);
 
@@ -1723,6 +1859,21 @@ namespace Hecton8.Environment
         {
             Color fogColor = ResolveBaseUnderwaterFogColor();
             float daylightVisibility = ResolveSurfaceDaylightVisibility();
+            float shallowColumnBlend = daylightVisibility *
+                (1f - math.saturate(currentDepth / UnderwaterShallowColumnColorDepth));
+            if (shallowColumnBlend > 0.0001f)
+            {
+                Color shallowColumnColor = Color.Lerp(
+                    _currentScatterShallow,
+                    ResolveSurfaceSkyZenithColor(),
+                    0.18f);
+                shallowColumnColor.a = 1f;
+                fogColor = Color.Lerp(
+                    fogColor,
+                    shallowColumnColor,
+                    shallowColumnBlend * UnderwaterShallowColumnColorStrength);
+            }
+
             float fogBlackoutStartDepth = Mathf.Lerp(
                 FogBlackoutStartDepthNight,
                 FogBlackoutStartDepthDay,
@@ -1758,18 +1909,81 @@ namespace Hecton8.Environment
         private float ResolveSurfaceDaylightVisibility()
         {
             float directSunFactor = Mathf.Clamp01(ResolveProfileSunIntensity() * ResolveHorizonFade());
-            float skyFactor = ResolvePerceivedLuminance(ResolveSurfaceFogColor());
-            return Mathf.Clamp01(Mathf.Max(directSunFactor, skyFactor * 0.75f));
+            Color zenithColor = ResolveSurfaceSkyZenithColor();
+            Color horizonColor = ResolveSurfaceFogColor();
+            Color daylightColor = Color.Lerp(zenithColor, horizonColor, 0.25f);
+            float skyFactor = ResolvePerceivedLuminance(daylightColor);
+            return Mathf.Clamp01(Mathf.Max(directSunFactor, skyFactor * 0.82f));
         }
 
         private Color ResolveBaseUnderwaterFogColor()
         {
-            if (_soundscapeThermalTintBlend <= 0.001f)
-                return _currentFogColor;
+            float currentDepth = ResolveCurrentDepth();
+            float daylightVisibility = ResolveSurfaceDaylightVisibility();
+            Color waterMediumColor = Color.Lerp(_currentScatterBase, _currentScatterShallow, 0.62f);
+            waterMediumColor.a = 1f;
+            Color fogColor = Color.Lerp(_currentFogColor, waterMediumColor, UnderwaterMediumFogColorBlend);
 
-            Color fogColor = Color.Lerp(_currentFogColor, thermalTierTintColor, _soundscapeThermalTintBlend);
+            float biomeInfluence = Mathf.Lerp(
+                UnderwaterBiomeFogInfluenceShallow,
+                UnderwaterBiomeFogInfluenceDeep,
+                math.saturate(currentDepth / UnderwaterBiomeFogInfluenceDepth));
+            fogColor = Color.Lerp(waterMediumColor, fogColor, biomeInfluence);
+
+            float daylightSeaTintBlend = daylightVisibility *
+                (1f - math.saturate(currentDepth / UnderwaterDaylightSeaTintDepth));
+            if (daylightSeaTintBlend > 0.0001f)
+            {
+                float shallowSeaBlend = 1f - math.saturate(currentDepth / UnderwaterSunlitTintDepth);
+                Color daylightSeaTint = Color.Lerp(
+                    UnderwaterDaylightSeaTintMid,
+                    UnderwaterDaylightSeaTintShallow,
+                    shallowSeaBlend);
+                daylightSeaTint = MaxColorRgb(
+                    daylightSeaTint,
+                    ScaleColorRgb(_currentScatterShallow, 0.84f));
+                fogColor = Color.Lerp(
+                    fogColor,
+                    daylightSeaTint,
+                    daylightSeaTintBlend * UnderwaterDaylightSeaTintStrength);
+            }
+
+            float sunlitShallowBlend =
+                daylightVisibility *
+                (1f - math.saturate(currentDepth / UnderwaterSunlitTintDepth));
+            if (sunlitShallowBlend > 0.0001f)
+            {
+                Color sunlitWaterColor = Color.Lerp(
+                    _currentScatterShallow,
+                    ResolveSurfaceSkyZenithColor(),
+                    0.16f);
+                sunlitWaterColor.a = 1f;
+                fogColor = Color.Lerp(
+                    fogColor,
+                    sunlitWaterColor,
+                    sunlitShallowBlend * UnderwaterSunlitTintStrength);
+            }
+
+            if (_soundscapeThermalTintBlend > 0.001f)
+                fogColor = Color.Lerp(fogColor, thermalTierTintColor, _soundscapeThermalTintBlend);
+
             fogColor.a = 1f;
             return fogColor;
+        }
+
+        private bool ShouldRenderUnderwaterFogForCamera()
+        {
+            float cameraDepth = playerCamera != null
+                ? math.max(0f, ResolveWaterLevel() - playerCamera.position.y)
+                : 0f;
+            if (cameraDepth <= VisualExitUnderwaterDepth)
+                return false;
+
+            if (!_wasUnderwater && cameraDepth < VisualForcedUnderwaterDepth)
+                return false;
+
+            float depth = ResolveCurrentDepth();
+            return ResolveUnderwaterVisualState(depth);
         }
 
         private Color ResolveSurfaceSkyZenithColor()
@@ -2149,7 +2363,7 @@ namespace Hecton8.Environment
             if (sharedOceanFeedsUnderwater)
             {
                 Vector3 underwaterDensityFloor = ResolveFallbackDepthFogDensity(oceanUnderwaterMaterial);
-                float densityFloorScale = _cachedVisualIsUnderwater ? 0.72f : 0.5f;
+                float densityFloorScale = _cachedVisualIsUnderwater ? 1f : 0.68f;
                 depthFogDensity = new Vector3(
                     Mathf.Max(depthFogDensity.x, underwaterDensityFloor.x * densityFloorScale),
                     Mathf.Max(depthFogDensity.y, underwaterDensityFloor.y * densityFloorScale),
@@ -3104,10 +3318,13 @@ namespace Hecton8.Environment
                 float turbidityFactor = math.saturate(
                     (_currentTurbidity - 0.5f) * suspendedMotesTurbidityWeight);
                 float darknessFactor = 1f - lightFactor;
+                float daylightVisibility = ResolveSurfaceDaylightVisibility();
+                float clearWaterPresence = daylightVisibility * (1f - turbidityFactor);
                 float densityFactor = math.saturate(
                     depthFactor * 0.45f +
                     turbidityFactor * 0.35f +
-                    darknessFactor * 0.2f);
+                    darknessFactor * 0.2f +
+                    clearWaterPresence * UnderwaterClearWaterMotesStrength);
 
                 targetEmission = math.lerp(
                     suspendedMotesMinEmission,
@@ -3714,6 +3931,10 @@ namespace Hecton8.Environment
             float cameraDepth = playerCamera != null
                 ? math.max(0f, ResolveWaterLevel() - playerCamera.position.y)
                 : depth;
+
+            if (cameraDepth <= VisualExitUnderwaterDepth)
+                return false;
+
             if (_playerMovement != null)
             {
                 if (cameraDepth >= VisualForcedUnderwaterDepth)

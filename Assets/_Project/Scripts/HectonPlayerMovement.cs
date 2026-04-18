@@ -19,6 +19,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.Input;
@@ -90,6 +91,10 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 80f)] private float surfaceDivePitchCommit = 24f;
         [Tooltip("Minimum forward input that counts as deliberate surface dive intent.")]
         [SerializeField, Range(0f, 1f)] private float surfaceDiveForwardCommit = 0.35f;
+        [Tooltip("How long a committed surface dive keeps the player out of surface-lock locomotion.")]
+        [SerializeField, Range(0.04f, 0.5f)] private float surfaceDiveAssistDuration = 0.18f;
+        [Tooltip("Extra downward swim-force multiplier applied while breaking through the surface into a dive.")]
+        [SerializeField, Range(0f, 3f)] private float surfaceDiveAssistForceMultiplier = 1.15f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CREST OCEAN INTEGRATION
@@ -164,6 +169,8 @@ namespace Hecton8.Gameplay
         [Header("── FOV ───────────────────────────────────────")]
         [Tooltip("Base FOV of the camera. FOV compression applies relative to this.")]
         [SerializeField] private float baseFov = 70f;
+        [Tooltip("How much underwater body-yaw responsiveness remains while dragging the heaviest heavy-carry object.")]
+        [SerializeField, Range(0.1f, 1f)] private float maxHeavyCarryBodyYawSpringMultiplier = 0.58f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
@@ -195,6 +202,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugIsSubmerged;
         [SerializeField] private bool _debugHasSwimPresentationController;
         [SerializeField] private int _debugLastSwimPresentationDriveFrame = -1;
+#pragma warning disable CS0414
+        [SerializeField] private bool _debugHeavyCarryActive;
+        [SerializeField] private float _debugHeavyCarryForceMultiplier = 1f;
+        [SerializeField] private float _debugHeavyCarrySpeedMultiplier = 1f;
+#pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
         //  CACHED REFERENCES
@@ -209,6 +221,8 @@ namespace Hecton8.Gameplay
         private InputManager _subscribedInputManager;
         private PlayerToolManager _playerToolManager;
         private PlayerSwimPresentationController _swimPresentationController;
+        private PhysicalInteractionHandler _physicalInteractionHandler;
+        private bool _resolvedPhysicalInteractionHandler;
 
         // ══════════════════════════════════════════════════════════
         //  CREST OCEAN — runtime state
@@ -272,6 +286,7 @@ namespace Hecton8.Gameplay
         private bool _isSurfaceSwimming;
         private PlayerLocomotionMode _currentLocomotionMode = PlayerLocomotionMode.DryGroundWalk;
         private float _surfaceBreachLockTimer;
+        private float _surfaceDiveAssistTimer;
 
         // ══════════════════════════════════════════════════════════
         //  AMBIENT CURRENT
@@ -364,6 +379,8 @@ namespace Hecton8.Gameplay
         public float CurrentWaterSurfaceY => EffectiveWaterSurfaceY;
         public float CurrentDepth => _currentDepth;
         public bool IsPlayerSubmerged => _juiceProcessor != null && _juiceProcessor.IsSubmerged;
+        public bool IsDraggingHeavyCargo => IsHeavyCarryActive();
+        public float HeavyCarryLoad => ResolveHeavyCarryLoad01();
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -377,6 +394,8 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _capsuleCollider);
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _swimPresentationController);
+            TryGetComponent(out _physicalInteractionHandler);
+            _resolvedPhysicalInteractionHandler = true;
             ResolvePlayerToolManager();
 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -509,6 +528,50 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             return mantaScooter.GetPropulsionForce();
+        }
+
+        private bool IsHeavyCarryActive()
+        {
+            if (!_resolvedPhysicalInteractionHandler)
+            {
+                TryGetComponent(out _physicalInteractionHandler);
+                _resolvedPhysicalInteractionHandler = true;
+            }
+
+            return _physicalInteractionHandler != null && _physicalInteractionHandler.IsDraggingHeavyObject;
+        }
+
+        private float ResolveHeavyCarryForceMultiplier()
+        {
+            if (!IsHeavyCarryActive())
+                return 1f;
+
+            return _physicalInteractionHandler.ResolveHeavyCarryForceMultiplier();
+        }
+
+        private float ResolveHeavyCarrySpeedMultiplier()
+        {
+            if (!IsHeavyCarryActive())
+                return 1f;
+
+            return _physicalInteractionHandler.ResolveHeavyCarrySpeedMultiplier();
+        }
+
+        private float ResolveHeavyCarryLoad01()
+        {
+            if (!IsHeavyCarryActive())
+                return 0f;
+
+            return _physicalInteractionHandler.HeavyCarryLoad01;
+        }
+
+        private float ResolveHeavyCarryBodyYawSpringMultiplier()
+        {
+            float heavyCarryLoad = ResolveHeavyCarryLoad01();
+            if (heavyCarryLoad <= 0f)
+                return 1f;
+
+            return math.lerp(1f, maxHeavyCarryBodyYawSpringMultiplier, heavyCarryLoad);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -791,6 +854,8 @@ namespace Hecton8.Gameplay
                 _velocity.z * _velocity.z);
             _juiceInput.cameraPitch = _cameraPitch;
             _juiceInput.swimVerticalInput = _inputVertical;
+            _juiceInput.heavyCarryLoad = ResolveHeavyCarryLoad01();
+            _juiceInput.transportBoost01 = math.saturate(ResolveActiveMantaPropulsionForce() / 800f);
 
             if (_swimPresentationController != null)
             {
@@ -948,8 +1013,9 @@ namespace Hecton8.Gameplay
             }
             else
             {
+                float bodyYawOmega = suit.bodyYawSpringOmega * ResolveHeavyCarryBodyYawSpringMultiplier();
                 _bodyYaw = SpringDamp(_bodyYaw, _cameraYaw, ref _bodyYawVelocity,
-                    suit.bodyYawSpringOmega, fixedDeltaTime);
+                    bodyYawOmega, fixedDeltaTime);
             }
 
             // ═══════════════════════════════════════════════
@@ -1033,6 +1099,13 @@ namespace Hecton8.Gameplay
                     _surfaceBreachLockTimer = 0f;
             }
 
+            if (_surfaceDiveAssistTimer > 0f)
+            {
+                _surfaceDiveAssistTimer -= fixedDeltaTime;
+                if (_surfaceDiveAssistTimer < 0f)
+                    _surfaceDiveAssistTimer = 0f;
+            }
+
             if (_stepAssistCooldownTimer > 0f)
             {
                 _stepAssistCooldownTimer -= fixedDeltaTime;
@@ -1082,6 +1155,21 @@ namespace Hecton8.Gameplay
             //  8. MODE DETECTION
             // ═══════════════════════════════════════════════
             bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport);
+            bool shouldStartSurfaceDiveAssist =
+                !shouldWalk &&
+                !IsInDryInterior() &&
+                physicsImmersion >= surfaceBreachMinImmersion &&
+                _currentDepth <= surfaceSwimDepthBand &&
+                HasSurfaceDiveIntent();
+
+            if (shouldWalk)
+            {
+                _surfaceDiveAssistTimer = 0f;
+            }
+            else if (shouldStartSurfaceDiveAssist && _surfaceDiveAssistTimer <= 0f)
+            {
+                _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
+            }
 
             if (shouldWalk != _isWalking)
             {
@@ -1184,6 +1272,9 @@ namespace Hecton8.Gameplay
         private bool IsSurfaceSwimBand(float physicsImmersion)
         {
             if (IsInDryInterior())
+                return false;
+
+            if (_surfaceDiveAssistTimer > 0f)
                 return false;
 
             if (physicsImmersion < 0.3f || physicsImmersion >= 0.999f)
@@ -1779,7 +1870,8 @@ namespace Hecton8.Gameplay
             // ── Swim thrust ──
             float mantaPropulsionForce = ResolveActiveMantaPropulsionForce();
             bool hasInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
-            if (!hasInput && mantaPropulsionForce <= 0f)
+            bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
+            if (!hasInput && mantaPropulsionForce <= 0f && !surfaceDiveAssistActive)
                 return;
 
             // ── Depth-based swim force reduction (v7.0) ──
@@ -1792,9 +1884,13 @@ namespace Hecton8.Gameplay
                 depthSlowdown = 1f - slowT * suit.depthSwimSlowdownMax;
             }
 
-            float sprintMult = _isSprinting ? suit.sprintMultiplier : 1f;
+            bool heavyCarryActive = IsHeavyCarryActive();
+            float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult;
+            float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
+            effectiveSwimForce *= heavyCarryForceMultiplier;
+            effectiveVerticalForce *= heavyCarryForceMultiplier;
 
             float bodyYawRad = _bodyYaw * DEG_TO_RAD;
             float pitchRad = _cameraPitch * DEG_TO_RAD;
@@ -1844,6 +1940,12 @@ namespace Hecton8.Gameplay
             _forceVector.y = dirY * effectiveSwimForce;
             _forceVector.z = dirZ * effectiveSwimForce;
             _forceVector.y += verticalInput * effectiveVerticalForce * (isSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
+
+            if (surfaceDiveAssistActive)
+            {
+                float diveAssistT = math.saturate(_surfaceDiveAssistTimer / math.max(surfaceDiveAssistDuration, 0.01f));
+                _forceVector.y -= effectiveVerticalForce * surfaceDiveAssistForceMultiplier * diveAssistT;
+            }
 
             if (mantaPropulsionForce > 0f)
             {
@@ -1922,7 +2024,7 @@ namespace Hecton8.Gameplay
             float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
             wadeMultiplier = math.max(wadeMultiplier, 0.2f);
             float sprintMult = CanUseLandSprint() ? suit.sprintMultiplier : 1f;
-            float force = suit.walkForce * wadeMultiplier * sprintMult;
+            float force = suit.walkForce * wadeMultiplier * sprintMult * ResolveHeavyCarryForceMultiplier();
 
             if (IsDryLandAirborne())
                 force *= dryAirControlMultiplier;
@@ -1964,6 +2066,9 @@ namespace Hecton8.Gameplay
         private bool CanUseLandSprint()
         {
             if (!_isSprinting || !_isWalking)
+                return false;
+
+            if (IsHeavyCarryActive())
                 return false;
 
             if (_isGrounded)
@@ -2014,6 +2119,7 @@ namespace Hecton8.Gameplay
                 float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
+                maxSpd *= ResolveHeavyCarrySpeedMultiplier();
 
                 if (maxSpd > 0f)
                 {
@@ -2049,7 +2155,8 @@ namespace Hecton8.Gameplay
             {
                 float maxSpd = suit.maxSwimSpeed;
                 if (_isSurfaceSwimming) maxSpd *= surfaceMaxSpeedMultiplier;
-                if (_isSprinting) maxSpd *= suit.sprintMultiplier;
+                if (_isSprinting && !IsHeavyCarryActive()) maxSpd *= suit.sprintMultiplier;
+                maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 if (maxSpd > 0f)
                 {
                     float fullSqr = _velocity.x * _velocity.x + _velocity.y * _velocity.y + _velocity.z * _velocity.z;
@@ -2129,6 +2236,9 @@ namespace Hecton8.Gameplay
             _debugSplashThisFrame = _juiceProcessor != null && _juiceProcessor.SplashThisFrame;
             _debugExhaleThisFrame = _juiceProcessor != null && _juiceProcessor.ExhaleThisFrame;
             _debugIsSubmerged = _juiceProcessor != null && _juiceProcessor.IsSubmerged;
+            _debugHeavyCarryActive = IsHeavyCarryActive();
+            _debugHeavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
+            _debugHeavyCarrySpeedMultiplier = ResolveHeavyCarrySpeedMultiplier();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2161,10 +2271,14 @@ namespace Hecton8.Gameplay
             if (surfaceDivePitchCommit > 80f) surfaceDivePitchCommit = 80f;
             if (surfaceDiveForwardCommit < 0f) surfaceDiveForwardCommit = 0f;
             if (surfaceDiveForwardCommit > 1f) surfaceDiveForwardCommit = 1f;
+            if (surfaceDiveAssistDuration < 0.04f) surfaceDiveAssistDuration = 0.04f;
+            if (surfaceDiveAssistForceMultiplier < 0f) surfaceDiveAssistForceMultiplier = 0f;
             if (surfaceBreachDepthWindow < SurfaceStateUtility.ExitUnderwaterDepth)
                 surfaceBreachDepthWindow = SurfaceStateUtility.ExitUnderwaterDepth;
             if (surfaceBreachMinImmersion >= 0.98f)
                 surfaceBreachMinImmersion = 0.97f;
+            if (maxHeavyCarryBodyYawSpringMultiplier < 0.1f) maxHeavyCarryBodyYawSpringMultiplier = 0.1f;
+            if (maxHeavyCarryBodyYawSpringMultiplier > 1f) maxHeavyCarryBodyYawSpringMultiplier = 1f;
 
             RefreshGroundSlopeCache();
         }

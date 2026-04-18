@@ -15,10 +15,14 @@ namespace Hecton8.Atmosphere
         public float AmbientIntensity;
         public float SunIntensityMultiplier;
         public float DirectionalLightIntensity;
+        public float HorizonHazeIntensity;
+        public float HorizonHazeFalloff;
+        public float HorizonHazeSunTintStrength;
         public Color SkyZenithColor;
         public Color SkyHorizonColor;
         public Color SkyNadirColor;
         public Color FogColor;
+        public Color HorizonHazeColor;
         public Color AmbientSkyColor;
         public Color AmbientEquatorColor;
         public Color AmbientGroundColor;
@@ -32,10 +36,14 @@ namespace Hecton8.Atmosphere
             AmbientIntensity = 1f,
             SunIntensityMultiplier = 1f,
             DirectionalLightIntensity = 1f,
+            HorizonHazeIntensity = 0f,
+            HorizonHazeFalloff = 4f,
+            HorizonHazeSunTintStrength = 0f,
             SkyZenithColor = Color.black,
             SkyHorizonColor = Color.black,
             SkyNadirColor = Color.black,
             FogColor = Color.black,
+            HorizonHazeColor = Color.black,
             AmbientSkyColor = Color.black,
             AmbientEquatorColor = Color.black,
             AmbientGroundColor = Color.black,

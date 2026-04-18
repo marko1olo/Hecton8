@@ -172,6 +172,7 @@ namespace Hecton8.Core
         /// Retry gate for recovering lost scene bindings after reload.
         /// </summary>
         private float _nextSceneBindingRefreshTime = float.NegativeInfinity;
+        private bool _runtimeTerrainResolutionRepairPending;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -212,8 +213,10 @@ namespace Hecton8.Core
                 mapMagicObject = FindMapMagicObjectIncludingInactive();
             }
 
+            _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
             EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
+            RepairRuntimeTerrainResolutionMismatchIfNeeded();
 
             // ── Поиск игрока ──
             if (playerTransform == null)
@@ -736,6 +739,9 @@ namespace Hecton8.Core
                 resolutionChanged = true;
             }
 
+            if (topologyChanged || resolutionChanged)
+                _runtimeTerrainResolutionRepairPending = true;
+
             EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: topologyChanged || resolutionChanged);
 
             if (!draftsInPlaymode)
@@ -1002,6 +1008,7 @@ namespace Hecton8.Core
                 mapMagicObject = FindMapMagicObjectIncludingInactive(); // COLD ALLOC: recovery search only when MapMagic binding is missing
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
+                _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
 
                 if (mapMagicObject != null)
                     EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
@@ -1010,6 +1017,7 @@ namespace Hecton8.Core
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
+            RepairRuntimeTerrainResolutionMismatchIfNeeded();
             UpdateDiagnostics();
         }
 
@@ -1080,7 +1088,10 @@ namespace Hecton8.Core
                 return;
 
             if (NormalizeRuntimeDraftResolution())
+            {
                 forceApplyToCachedTerrains = true;
+                _runtimeTerrainResolutionRepairPending = true;
+            }
 
             bool incompatibleDraftConnectivity =
                 Application.isPlaying &&
@@ -1089,10 +1100,8 @@ namespace Hecton8.Core
 
             bool desiredAllowAutoConnect = !incompatibleDraftConnectivity;
             TerrainSettings terrainSettings = mapMagicObject.terrainSettings;
-            if (terrainSettings.allowAutoConnect == desiredAllowAutoConnect)
-                return;
-
-            terrainSettings.allowAutoConnect = desiredAllowAutoConnect;
+            if (terrainSettings.allowAutoConnect != desiredAllowAutoConnect)
+                terrainSettings.allowAutoConnect = desiredAllowAutoConnect;
 
             if (forceApplyToCachedTerrains)
                 ApplyTerrainSettingsToCachedTerrains();
@@ -1114,6 +1123,61 @@ namespace Hecton8.Core
 
             mapMagicObject.draftResolution = mapMagicObject.tileResolution;
             return true;
+        }
+
+        private void RepairRuntimeTerrainResolutionMismatchIfNeeded()
+        {
+            if (!_runtimeTerrainResolutionRepairPending ||
+                !Application.isPlaying ||
+                mapMagicObject == null ||
+                mapMagicObject.graph == null)
+            {
+                return;
+            }
+
+            RefreshTerrainTileCache(force: true);
+            if (!HasRuntimeTerrainResolutionMismatch())
+            {
+                _runtimeTerrainResolutionRepairPending = false;
+                return;
+            }
+
+            int rebuildRange = Mathf.Max(1, Mathf.Max(mapMagicObject.mainRange, mapMagicObject.tiles.generateRange));
+            RefreshTerrainTilesForStreaming(rebuildRange, rebuildInRange: true);
+            _runtimeTerrainResolutionRepairPending = false;
+        }
+
+        private bool HasRuntimeTerrainResolutionMismatch()
+        {
+            if (mapMagicObject == null)
+                return false;
+
+            int expectedMainResolution = (int)mapMagicObject.tileResolution;
+            int expectedDraftResolution = (int)mapMagicObject.draftResolution;
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Length;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null)
+                    continue;
+
+                if (HasTerrainResolutionMismatch(tile.GetTerrain(false), expectedMainResolution) ||
+                    HasTerrainResolutionMismatch(tile.GetTerrain(true), expectedDraftResolution))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasTerrainResolutionMismatch(Terrain terrain, int expectedResolution)
+        {
+            return terrain != null &&
+                   terrain.terrainData != null &&
+                   terrain.terrainData.heightmapResolution != expectedResolution;
         }
 
         /// <summary>

@@ -5,19 +5,19 @@ Date: `2026-04-16`
 
 ## Hard Verdict
 
-The project has swim physics and camera feel.
-It does not yet have a believable first-person swim body.
+The project has swim physics, camera feel, and a procedural first-person swim body blockout layer.
 
-Right now the player moves through water as a force-driven capsule with camera juice.
-That is materially better than placeholder swim.
-It is not enough for "I believe a suited human is propelling this mass through water."
+Right now the player no longer reads as just a force-driven capsule with camera juice.
+There is now a real first-person blockout body contract for torso, pelvis, legs, and fins.
+That is materially better than hands-only presentation.
+It is still not final art and still needs live feel validation.
 
 The missing layer is:
 - first-person swim presentation owner
 - stroke cadence
 - propulsion pulse
 - suit-specific swim style
-- future hands / forearms / equipment viewmodel rig
+- future hands / forearms / torso / lower-body equipment viewmodel rig
 
 Without that, speed exists but effort does not.
 Direction exists but bodily cause does not.
@@ -57,6 +57,12 @@ The swim stack must stay split:
    - resolves first-person swim presentation mode
    - drives future viewmodel root / animator / arm rig
    - publishes stroke phase and propulsion pulse for audio/VFX sync
+
+4. `PlayerSwimBlockoutRig`
+   - render-layer slave only
+   - owns no locomotion truth
+   - visualizes hands plus full blockout torso / pelvis / legs / fins
+   - publishes stable art-facing attachment transforms for replacement meshes or future shadow proxies
 
 If camera, hands, oxygen, and underwater VFX all keep inferring state differently, realism dies in transitions.
 
@@ -238,9 +244,12 @@ Current code foundation does:
 - apply data-owned root/support/tool-hand brace pose biases from `PlayerToolSwimContract` instead of treating all armed tools as the same pose family
 - support light / utility / heavy family fallback selection
 - scale and hide/show cheap near-camera swim blockout geometry from the same presentation truth
+- extend that same blockout layer beyond arms so the player can look down and still read torso / pelvis / legs / fins instead of floating wrists only
 - connect blockout geometry back toward the body with shoulder and upper-arm segments instead of wrist-only floating cubes
+- pose torso, pelvis, thighs, calves, and fins from the same swim owner instead of inventing a second full-body state machine
 - preserve some shoulder/upper-arm visibility even when hand weights get reduced, so the fake body still reads as attached to the torso
 - let shoulders partially follow hand-guide pose deltas so the arm chain breathes with framing changes instead of staying nailed to the chest
+- keep lower-body visibility alive in dry, shallow, surface, and underwater modes so the player can look down and still see a believable lower silhouette
 - drive asymmetric correction posing from strafe intent, lateral swim velocity, and body-to-camera yaw disagreement so one hand can subtly lead while the other braces during steering
 - feed that same steering effort into a small root lateral / yaw / roll bias so the swim body reads as actively correcting course instead of waving symmetrically in all directions
 - add camera-yaw inertial sway so hands and root lag slightly behind sharp look turns instead of snapping with the camera as if the suit had no mass in water
@@ -269,16 +278,22 @@ Current authored data/prefab state:
 - `Player.prefab` contains `Swim_ViewmodelRoot` plus left/right guide transforms
 - `Player.prefab` now points `PlayerSwimPresentationController` at the profile library instead of treating the prefab as the only binding owner
 - `Player.prefab` now also contains `Swim_LeftShoulder`, `Swim_RightShoulder`, `Swim_LeftUpperArm`, `Swim_RightUpperArm`, `Swim_LeftForearm`, `Swim_LeftGlove`, `Swim_RightForearm`, `Swim_RightGlove`
+- `Player.prefab` now also contains `Swim_Torso`, `Swim_Pelvis`, `Swim_LeftThigh`, `Swim_RightThigh`, `Swim_LeftCalf`, `Swim_RightCalf`, `Swim_LeftFin`, `Swim_RightFin`
 - `Player.prefab` now also contains stable art-facing attachment transforms for shoulder / upper-arm / forearm / hand replacement meshes on both sides
+- `Player.prefab` now also contains stable art-facing attachment transforms for torso / pelvis / thigh / calf / fin replacement meshes on both sides
 - those blockout meshes have no colliders and use `MAT_PlayerSwimBlockout`
 - those blockout renderers no longer cast or receive scene shadows and no longer sample light/reflection probes, because this is near-camera fake-body presentation, not world geometry
 - those blockout renderers also no longer emit motion vectors, so the fake first-person arms do not contaminate world motion blur
 - `Player.prefab` now binds `PlayerSwimBlockoutRig` on the player root
 - `PlayerSwimBlockoutRig` now exposes stable attachment getters plus a `showDebugCubes` authoring toggle so final art can replace the cubes without replacing the rig math
 - `PlayerSwimBlockoutRig` now also exposes a runtime setter so debug cubes can be disabled in one call while attachments keep moving for replacement art
+- `PlayerSwimBlockoutRig` now also owns full-body blockout pose math for torso / pelvis / legs / fins, instead of leaving lower-body visibility to a future unknown system
 - the current visual layer is intentionally blockout-grade: it proves ownership, silhouette, and cadence before final authored arms
+- the current visual layer is intentionally blockout-grade for the whole body: it proves ownership, silhouette, and pose cadence before final authored suit meshes
 - all swim presentation profiles were reframed lower and wider so the arms sit nearer the lower screen corners and read as attached to the torso instead of floating in front of the visor
 - all currently shipped held-tool prefabs now author `PlayerToolSwimContract` pose biases for root/support/tool-hand brace families instead of only weight suppression
+- lower-body blockout now has explicit `UnderwaterStroke` pose separation instead of collapsing stroke cadence into the generic underwater default
+- look-down framing now boosts body visibility before smoothing, so torso / pelvis / legs / fins are actually allowed to stay readable when the player pitches the camera downward
 
 ## Immediate Next Steps
 
@@ -287,19 +302,23 @@ Current authored data/prefab state:
    - surface stroke
    - underwater cruise
    - underwater sprint
+   - look-down feet read
+   - dry / shallow lower-body read
 2. Replace blockout cubes with authored glove / forearm viewmodel meshes per suit family.
-3. Validate the authored tool brace families in runtime so cutter / scanner / flashlight / knife / ranged tools do not fight the swim rig.
-4. Validate suit switching against light / utility / heavy profiles in live runtime.
-5. Prove zero-GC hot path and no camera/viewmodel double-bob under play-mode logs.
-6. Replace generic right-hand tool assumption with authored per-tool handedness / brace metadata if the tool family diverges.
-7. When the first powered-assist suit exists, bind it in the profile library instead of touching `Player.prefab`.
-8. Validate art replacement flow by disabling `showDebugCubes` and mounting temporary replacement meshes to the new attachment transforms.
+3. Replace torso / pelvis / leg / fin blockout cubes with authored suit body meshes or a dedicated shadow/body proxy driven from the same attachments.
+4. Validate the authored tool brace families in runtime so cutter / scanner / flashlight / knife / ranged tools do not fight the swim rig.
+5. Validate suit switching against light / utility / heavy profiles in live runtime.
+6. Prove zero-GC hot path and no camera/viewmodel double-bob under play-mode logs.
+7. Replace generic right-hand tool assumption with authored per-tool handedness / brace metadata if the tool family diverges.
+8. When the first powered-assist suit exists, bind it in the profile library instead of touching `Player.prefab`.
+9. Validate art replacement flow by disabling `showDebugCubes` and mounting temporary replacement meshes to the new attachment transforms.
 
 ## Failure Modes To Avoid
 
 - hands constantly waving while player is nearly motionless
 - same swim style for all suits
 - giant arm sweeps blocking horizon at surface
+- look-down framing overshooting so hard that legs or fins flood the near-clip instead of staying readable
 - tool viewmodel and swim blockout both staying visible at full weight
 - both hands disappearing when only one hand should be owned by the tool
 - every armed tool collapsing to the same generic right-hand swim pose
@@ -314,6 +333,7 @@ Current authored data/prefab state:
 - obstacle response that always pushes hands downward, which lies near the seabed and makes cave swimming feel broken
 - obstacle response that only affects hand guides while the viewmodel root stays inert, because that makes cave contact read like detached wrists instead of the whole suit compressing against water and rock
 - tool swim where the busy tool hand and the free support hand still pull with the same cadence and amplitude
+- lower body reading as a second disconnected puppet instead of inheriting the same steering / obstacle / vertical truth as the torso and hands
 - attachment points drifting from their source transforms when debug cubes are hidden
 - edit-mode / scene-instance debug state falsely claiming attachments are unresolved when the authored references already exist
 
@@ -333,6 +353,29 @@ Current authored data/prefab state:
   - `handObstacleWallLiftBias = 0.28`
 - armed-tool support emphasis:
   - `equippedToolSupportHandMotionBoost = 0.22`
+- full-body visibility:
+  - `dryBodyVisibility = 0.46`
+  - `shallowBodyVisibility = 0.64`
+  - `surfaceBodyVisibility = 0.82`
+  - `underwaterBodyVisibility = 0.96`
+- full-body lower-body shaping:
+  - `hipLateralOffset = 0.12`
+  - `hipVerticalOffset = -0.04`
+  - `hipForwardOffset = 0.025`
+  - `obstacleKneeTuck = 0.085`
+  - `obstacleLegLift = 0.052`
+  - `obstacleFinRearBias = 0.074`
+  - `ascendKneeTuck = 0.068`
+  - `descendLegExtend = 0.094`
+  - `sprintStreamlineBias = 0.082`
+- look-down body framing:
+  - `lookDownBodyVisibilityBoost = 0.14`
+  - `lookDownTorsoDrop = 0.032`
+  - `lookDownPelvisDrop = 0.05`
+  - `lookDownLegForwardBias = 0.068`
+  - `lookDownLegSpreadTighten = 0.32`
+  - `lookDownKneeTuck = 0.042`
+  - `lookDownFinLift = 0.038`
 
 ## Verification Status
 

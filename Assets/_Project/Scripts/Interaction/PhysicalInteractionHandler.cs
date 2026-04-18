@@ -67,9 +67,48 @@ namespace Hecton8.Interaction
         [Tooltip("Suit energy drained per second while dragging heavy cargo.")]
         [SerializeField, Range(0f, 20f)] private float heavyCarryEnergyDrainPerSecond = 3.5f;
 
+        [Header("── Heavy Carry Movement Feel ──────────────────")]
+        [Tooltip("Movement-force multiplier while dragging the lightest valid heavy object.")]
+        [SerializeField, Range(0.1f, 1f)] private float lightHeavyCarryForceMultiplier = 0.76f;
+
+        [Tooltip("Movement-force multiplier while dragging the heaviest valid heavy object.")]
+        [SerializeField, Range(0.1f, 1f)] private float maxHeavyCarryForceMultiplier = 0.42f;
+
+        [Tooltip("Max-speed multiplier while dragging the lightest valid heavy object.")]
+        [SerializeField, Range(0.1f, 1f)] private float lightHeavyCarrySpeedMultiplier = 0.82f;
+
+        [Tooltip("Max-speed multiplier while dragging the heaviest valid heavy object.")]
+        [SerializeField, Range(0.1f, 1f)] private float maxHeavyCarrySpeedMultiplier = 0.52f;
+
+        [Tooltip("Cargo follow-speed multiplier while dragging the lightest valid heavy object.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float lightHeavyCarryFollowSpeedMultiplier = 1.08f;
+
+        [Tooltip("Cargo follow-speed multiplier while dragging the heaviest valid heavy object.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float maxHeavyCarryFollowSpeedMultiplier = 0.72f;
+
+        [Tooltip("Extra catch-up boost applied when dragged cargo falls behind the anchor point.")]
+        [SerializeField, Range(1f, 3f)] private float heavyCarryCatchUpSpeedMultiplier = 1.65f;
+
+        [Tooltip("Base vertical offset for dragged cargo relative to the interaction anchor.")]
+        [SerializeField, Range(-2f, 1f)] private float heavyCarryVerticalOffset = -0.34f;
+
+        [Tooltip("How strongly camera pitch is allowed to raise or lower dragged cargo.")]
+        [SerializeField, Range(0f, 1f)] private float heavyCarryPitchInfluence = 0.28f;
+
+        [Tooltip("Maximum extra vertical offset contributed by camera pitch while dragging cargo.")]
+        [SerializeField, Range(0f, 2f)] private float heavyCarryMaxVerticalPitchOffset = 0.72f;
+
+        [Tooltip("How much the heaviest draggable cargo sags downward instead of locking to a flat anchor line.")]
+        [SerializeField, Range(0f, 1.5f)] private float heavyCarryLoadSag = 0.3f;
+
+        [Tooltip("How much the heaviest draggable cargo trails behind the anchor instead of sitting on a perfect distance ring.")]
+        [SerializeField, Range(0f, 1f)] private float heavyCarryRearLagDistance = 0.24f;
+
         [Header("── Diagnostics ──────────────────")]
+#pragma warning disable CS0414
         [SerializeField] private string _debugState = "Idle";
         [SerializeField] private string _debugTargetName;
+#pragma warning restore CS0414
 
         private Transform _cachedTransform;
         private Camera _playerCamera;
@@ -90,6 +129,27 @@ namespace Hecton8.Interaction
         private bool _activeBodyWasKinematic;
         private bool _activeBodyDetectCollisions;
         private bool _activeColliderWasEnabled;
+        private float _activeHeavyCarryMass;
+
+        /// <summary>
+        /// True while the player is actively dragging a heavy rigidbody object.
+        /// </summary>
+        public bool IsDraggingHeavyObject => _state == InteractionState.DraggingHeavyObject && _activeBody != null;
+
+        /// <summary>
+        /// Normalized 0-1 load factor for the currently dragged heavy object.
+        /// </summary>
+        public float HeavyCarryLoad01
+        {
+            get
+            {
+                if (!IsDraggingHeavyObject)
+                    return 0f;
+
+                float massRange = Mathf.Max(heavyCarryMaxMass - heavyCarryMinMass, 0.01f);
+                return Mathf.Clamp01((_activeHeavyCarryMass - heavyCarryMinMass) / massRange);
+            }
+        }
 
         private void Awake()
         {
@@ -283,6 +343,7 @@ namespace Hecton8.Interaction
             _activeTargetLocalScale = _activeOriginalLocalScale;
             _stateTimer = 0f;
             _pullSmoothDampVelocity = Vector3.zero;
+            _activeHeavyCarryMass = carryBody.mass;
             _activeHeavyCarry.SetDraggedState(true);
 
             _state = InteractionState.DraggingHeavyObject;
@@ -359,7 +420,9 @@ namespace Hecton8.Interaction
 
             Vector3 targetPosition = GetAnchorTargetPosition();
             Vector3 currentPosition = _activeBody.position;
-            Vector3 nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, heavyCarryMoveSpeed * fixedDeltaTime);
+            float separationDistance = Vector3.Distance(currentPosition, targetPosition);
+            float followSpeed = ResolveHeavyCarryFollowSpeed(separationDistance);
+            Vector3 nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, followSpeed * fixedDeltaTime);
             _activeBody.MovePosition(nextPosition);
             _activeBody.angularVelocity = Vector3.zero;
         }
@@ -406,8 +469,43 @@ namespace Hecton8.Interaction
             _activeBody = null;
             _activeCollider = null;
             _activeHeavyCarry = null;
+            _activeHeavyCarryMass = 0f;
             _debugState = "Idle";
             _debugTargetName = null;
+        }
+
+        /// <summary>
+        /// Resolves the player movement-force multiplier imposed by the current heavy carry load.
+        /// </summary>
+        public float ResolveHeavyCarryForceMultiplier()
+        {
+            if (!IsDraggingHeavyObject)
+                return 1f;
+
+            return Mathf.Lerp(lightHeavyCarryForceMultiplier, maxHeavyCarryForceMultiplier, HeavyCarryLoad01);
+        }
+
+        /// <summary>
+        /// Resolves the player max-speed multiplier imposed by the current heavy carry load.
+        /// </summary>
+        public float ResolveHeavyCarrySpeedMultiplier()
+        {
+            if (!IsDraggingHeavyObject)
+                return 1f;
+
+            return Mathf.Lerp(lightHeavyCarrySpeedMultiplier, maxHeavyCarrySpeedMultiplier, HeavyCarryLoad01);
+        }
+
+        private float ResolveHeavyCarryFollowSpeed(float separationDistance)
+        {
+            float loadSpeedMultiplier = Mathf.Lerp(
+                lightHeavyCarryFollowSpeedMultiplier,
+                maxHeavyCarryFollowSpeedMultiplier,
+                HeavyCarryLoad01);
+
+            float catchUpRatio = Mathf.Clamp01(separationDistance / Mathf.Max(heavyCarryDistance, 0.01f));
+            float catchUpMultiplier = Mathf.Lerp(1f, heavyCarryCatchUpSpeedMultiplier, catchUpRatio);
+            return heavyCarryMoveSpeed * loadSpeedMultiplier * catchUpMultiplier;
         }
 
         private Vector3 GetAnchorTargetPosition()
@@ -418,7 +516,20 @@ namespace Hecton8.Interaction
             Vector3 offset = interactionAnchor.TransformDirection(pocketPickupAnchorOffset);
             if (_state == InteractionState.DraggingHeavyObject)
             {
-                offset = interactionAnchor.forward * heavyCarryDistance;
+                Vector3 planarForward = Vector3.ProjectOnPlane(interactionAnchor.forward, Vector3.up);
+                if (planarForward.sqrMagnitude < 0.0001f)
+                    planarForward = Vector3.ProjectOnPlane(_cachedTransform.forward, Vector3.up);
+                if (planarForward.sqrMagnitude < 0.0001f)
+                    planarForward = Vector3.forward;
+
+                planarForward.Normalize();
+
+                float load = HeavyCarryLoad01;
+                float carriedDistance = Mathf.Max(0.1f, heavyCarryDistance - load * heavyCarryRearLagDistance);
+                float pitchOffset = Mathf.Clamp(interactionAnchor.forward.y, -1f, 1f) * heavyCarryMaxVerticalPitchOffset * heavyCarryPitchInfluence;
+
+                offset = planarForward * carriedDistance;
+                offset.y = heavyCarryVerticalOffset + pitchOffset - load * heavyCarryLoadSag;
             }
 
             return interactionAnchor.position + offset;
@@ -469,6 +580,18 @@ namespace Hecton8.Interaction
 
             if (heavyCarryMaxMass < heavyCarryMinMass)
                 heavyCarryMaxMass = heavyCarryMinMass;
+            if (lightHeavyCarryFollowSpeedMultiplier < 0.25f)
+                lightHeavyCarryFollowSpeedMultiplier = 0.25f;
+            if (maxHeavyCarryFollowSpeedMultiplier < 0.25f)
+                maxHeavyCarryFollowSpeedMultiplier = 0.25f;
+            if (heavyCarryCatchUpSpeedMultiplier < 1f)
+                heavyCarryCatchUpSpeedMultiplier = 1f;
+            if (heavyCarryMaxVerticalPitchOffset < 0f)
+                heavyCarryMaxVerticalPitchOffset = 0f;
+            if (heavyCarryLoadSag < 0f)
+                heavyCarryLoadSag = 0f;
+            if (heavyCarryRearLagDistance < 0f)
+                heavyCarryRearLagDistance = 0f;
         }
 #endif
     }

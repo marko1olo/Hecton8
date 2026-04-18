@@ -356,6 +356,7 @@ namespace Hecton8.Audio
         private bool _registeredToTickManager;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
+        private const float SurfaceWeatherStateEpsilon = 0.001f;
         private float _nextBiomeMatrixResolveTime;
         private float _nextSoundscapeResolveTime;
         private HectonAtmosphereManager _atmosphereManager;
@@ -407,6 +408,15 @@ namespace Hecton8.Audio
         private readonly AudioMixerSnapshot[] _surfaceBlendSnapshots = new AudioMixerSnapshot[3];
         // COLD ALLOC: float[3] — surface weather snapshot blend weights — owner: AcousticZoneController
         private readonly float[] _surfaceBlendWeights = new float[3];
+        private bool _hasActiveResolvedSnapshotState;
+        private bool _activeSurfaceBlendState;
+        private AcousticZoneState _activeResolvedZone;
+        private AudioMixerSnapshot _activeResolvedSnapshot;
+        private int _activeSurfaceBlendSnapshotCount;
+        // COLD ALLOC: AudioMixerSnapshot[3] — last applied surface weather snapshot blend targets — owner: AcousticZoneController
+        private readonly AudioMixerSnapshot[] _activeSurfaceBlendSnapshots = new AudioMixerSnapshot[3];
+        // COLD ALLOC: float[3] — last applied surface weather snapshot blend weights — owner: AcousticZoneController
+        private readonly float[] _activeSurfaceBlendWeights = new float[3];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -620,7 +630,8 @@ namespace Hecton8.Audio
         private void TransitionToInterior()
         {
             ApplyAmbientLoopState(AcousticZoneState.Interior);
-            TransitionToResolvedSnapshot(AcousticZoneState.Interior, interiorTransitionDuration);
+            if (!TransitionToResolvedSnapshot(AcousticZoneState.Interior, interiorTransitionDuration))
+                return;
 
             // ── Переходный звук ──
             PlayTransitionSound(waterDrainSound);
@@ -640,7 +651,8 @@ namespace Hecton8.Audio
         private void TransitionToSurface()
         {
             ApplyAmbientLoopState(AcousticZoneState.Surface);
-            TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceTransitionDuration);
+            if (!TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceTransitionDuration))
+                return;
 
             LogDiagnostic($"[AcousticZoneController] Surface/open air. Transition: {surfaceTransitionDuration}s");
         }
@@ -648,7 +660,8 @@ namespace Hecton8.Audio
         private void TransitionToUnderwater()
         {
             ApplyAmbientLoopState(AcousticZoneState.Underwater);
-            TransitionToResolvedSnapshot(AcousticZoneState.Underwater, underwaterTransitionDuration);
+            if (!TransitionToResolvedSnapshot(AcousticZoneState.Underwater, underwaterTransitionDuration))
+                return;
 
             // ── Переходный звук ──
             PlayTransitionSound(waterFillSound);
@@ -1322,8 +1335,16 @@ namespace Hecton8.Audio
 
         internal void SetSurfaceWeatherMix(float precipitationIntensity, float electricalActivity)
         {
-            _surfacePrecipitationIntensity = Mathf.Clamp01(precipitationIntensity);
-            _surfaceElectricalActivity = Mathf.Clamp01(electricalActivity);
+            float clampedPrecipitation = Mathf.Clamp01(precipitationIntensity);
+            float clampedElectrical = Mathf.Clamp01(electricalActivity);
+            if (ApproximatelyEqual(_surfacePrecipitationIntensity, clampedPrecipitation) &&
+                ApproximatelyEqual(_surfaceElectricalActivity, clampedElectrical))
+            {
+                return;
+            }
+
+            _surfacePrecipitationIntensity = clampedPrecipitation;
+            _surfaceElectricalActivity = clampedElectrical;
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
                 TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
@@ -1331,6 +1352,12 @@ namespace Hecton8.Audio
 
         internal void ClearSurfaceWeatherMix()
         {
+            if (ApproximatelyEqual(_surfacePrecipitationIntensity, 0f) &&
+                ApproximatelyEqual(_surfaceElectricalActivity, 0f))
+            {
+                return;
+            }
+
             _surfacePrecipitationIntensity = 0f;
             _surfaceElectricalActivity = 0f;
 
@@ -1511,15 +1538,21 @@ namespace Hecton8.Audio
                 snapshot = masterMixer.FindSnapshot(alternateName);
         }
 
-        private void TransitionToResolvedSnapshot(AcousticZoneState zone, float duration)
+        private bool TransitionToResolvedSnapshot(AcousticZoneState zone, float duration)
         {
             EnsureSnapshotBindings();
+            bool blendResolved = false;
 
             if (zone == AcousticZoneState.Surface &&
-                TryTransitionSurfaceSnapshotBlend(duration))
+                TryTransitionSurfaceSnapshotBlend(duration, out blendResolved))
             {
                 LogDiagnostic("[AcousticZoneController] Snapshot activated: SurfaceBlend");
-                return;
+                return true;
+            }
+
+            if (zone == AcousticZoneState.Surface && blendResolved)
+            {
+                return false;
             }
 
             AudioMixerSnapshot snapshot = ResolveSnapshotForZone(zone);
@@ -1528,15 +1561,22 @@ namespace Hecton8.Audio
                 LogSnapshotFallbackWarningOnce(
                     ref _warnedMissingSnapshotCoverage,
                     "[AcousticZoneController] No valid snapshot could be resolved for the requested acoustic zone. Mixer state will remain unchanged.");
-                return;
+                return false;
             }
 
+            if (IsResolvedSnapshotAlreadyActive(zone, snapshot))
+                return false;
+
             snapshot.TransitionTo(Mathf.Max(0f, duration));
+            CacheResolvedSnapshotState(zone, snapshot);
             LogDiagnostic($"[AcousticZoneController] Snapshot activated: {snapshot.name}");
+            return true;
         }
 
-        private bool TryTransitionSurfaceSnapshotBlend(float duration)
+        private bool TryTransitionSurfaceSnapshotBlend(float duration, out bool blendResolved)
         {
+            blendResolved = false;
+
             if (masterMixer == null || surfaceSnapshot == null)
                 return false;
 
@@ -1578,15 +1618,87 @@ namespace Hecton8.Audio
             for (int i = 0; i < snapshotCount; i++)
                 _surfaceBlendWeights[i] /= totalWeight;
 
-            for (int i = snapshotCount; i < _surfaceBlendSnapshots.Length; i++)
-            {
-                _surfaceBlendSnapshots[i] = null;
-                _surfaceBlendWeights[i] = 0f;
-            }
+            ClearBlendTail(_surfaceBlendSnapshots, _surfaceBlendWeights, snapshotCount);
+
+            blendResolved = true;
+            if (IsActiveSurfaceBlendEquivalent(snapshotCount))
+                return false;
 
             float transitionTime = Mathf.Max(0f, surfaceWeatherTransitionDuration > 0f ? surfaceWeatherTransitionDuration : duration);
             masterMixer.TransitionToSnapshots(_surfaceBlendSnapshots, _surfaceBlendWeights, transitionTime);
+            CacheSurfaceBlendState(snapshotCount);
             return true;
+        }
+
+        private static bool ApproximatelyEqual(float a, float b)
+        {
+            return Mathf.Abs(a - b) <= SurfaceWeatherStateEpsilon;
+        }
+
+        private static void ClearBlendTail(AudioMixerSnapshot[] snapshots, float[] weights, int startIndex)
+        {
+            for (int i = startIndex; i < snapshots.Length; i++)
+            {
+                snapshots[i] = null;
+                weights[i] = 0f;
+            }
+        }
+
+        private bool IsResolvedSnapshotAlreadyActive(AcousticZoneState zone, AudioMixerSnapshot snapshot)
+        {
+            return _hasActiveResolvedSnapshotState &&
+                   !_activeSurfaceBlendState &&
+                   _activeResolvedZone == zone &&
+                   _activeResolvedSnapshot == snapshot;
+        }
+
+        private bool IsActiveSurfaceBlendEquivalent(int snapshotCount)
+        {
+            if (!_hasActiveResolvedSnapshotState ||
+                !_activeSurfaceBlendState ||
+                _activeResolvedZone != AcousticZoneState.Surface ||
+                _activeSurfaceBlendSnapshotCount != snapshotCount)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < snapshotCount; i++)
+            {
+                if (_activeSurfaceBlendSnapshots[i] != _surfaceBlendSnapshots[i] ||
+                    !ApproximatelyEqual(_activeSurfaceBlendWeights[i], _surfaceBlendWeights[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void CacheResolvedSnapshotState(AcousticZoneState zone, AudioMixerSnapshot snapshot)
+        {
+            _hasActiveResolvedSnapshotState = true;
+            _activeSurfaceBlendState = false;
+            _activeResolvedZone = zone;
+            _activeResolvedSnapshot = snapshot;
+            _activeSurfaceBlendSnapshotCount = 0;
+            ClearBlendTail(_activeSurfaceBlendSnapshots, _activeSurfaceBlendWeights, 0);
+        }
+
+        private void CacheSurfaceBlendState(int snapshotCount)
+        {
+            _hasActiveResolvedSnapshotState = true;
+            _activeSurfaceBlendState = true;
+            _activeResolvedZone = AcousticZoneState.Surface;
+            _activeResolvedSnapshot = null;
+            _activeSurfaceBlendSnapshotCount = snapshotCount;
+
+            for (int i = 0; i < snapshotCount; i++)
+            {
+                _activeSurfaceBlendSnapshots[i] = _surfaceBlendSnapshots[i];
+                _activeSurfaceBlendWeights[i] = _surfaceBlendWeights[i];
+            }
+
+            ClearBlendTail(_activeSurfaceBlendSnapshots, _activeSurfaceBlendWeights, snapshotCount);
         }
 
         private AudioMixerSnapshot ResolveSnapshotForZone(AcousticZoneState zone)

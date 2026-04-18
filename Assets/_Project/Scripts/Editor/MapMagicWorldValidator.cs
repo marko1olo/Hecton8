@@ -296,6 +296,14 @@ namespace Hecton8.EditorTools
                 warningCount++;
             }
 
+            if (mapMagic.draftsInPlaymode && mapMagic.tileResolution != mapMagic.draftResolution)
+            {
+                Debug.LogError(
+                    $"[MapMagicWorldValidation] draftsInPlaymode is enabled but tileResolution ({(int)mapMagic.tileResolution}) does not match draftResolution ({(int)mapMagic.draftResolution}). This breaks Unity terrain neighboring and causes seam warnings.",
+                    mapMagic);
+                errorCount++;
+            }
+
             if (mapMagic.tiles.generateRange < mapMagic.mainRange)
             {
                 Debug.LogWarning($"[MapMagicWorldValidation] DraftRange ({mapMagic.tiles.generateRange}) is lower than mainRange ({mapMagic.mainRange}); terrain streaming rings are inconsistent.", mapMagic);

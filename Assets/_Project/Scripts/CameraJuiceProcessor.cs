@@ -53,6 +53,8 @@ namespace Hecton8.Gameplay
         public float swimStrokeImpulse;
         public float swimGuideWeight;
         public float swimVerticalInput;
+        public float heavyCarryLoad;
+        public float transportBoost01;
     }
 
     public sealed class CameraJuiceProcessor
@@ -149,6 +151,14 @@ namespace Hecton8.Gameplay
         private const float SWIM_PRESENTATION_PROPULSION_IMPULSE_FOV_KICK = 0.42f;
         private const float SWIM_PRESENTATION_MAX_POSITION_KICK = 0.0085f;
         private const float SWIM_PRESENTATION_MAX_FOV_KICK = 0.46f;
+        private const float HEAVY_CARRY_MAX_HEADBOB_AMPLITUDE_SCALE = 1.16f;
+        private const float HEAVY_CARRY_MAX_HEADBOB_CADENCE_SCALE = 0.76f;
+        private const float HEAVY_CARRY_MAX_LANDING_DIP_SCALE = 1.12f;
+        private const float HEAVY_CARRY_MAX_SURFACE_BOB_SCALE = 0.78f;
+        private const float HEAVY_CARRY_MAX_TURN_SWAY_SCALE = 1.18f;
+        private const float MANTA_TRANSPORT_PROPULSION_FLOOR = 0.62f;
+        private const float MANTA_TRANSPORT_POSITION_KICK = 0.0038f;
+        private const float MANTA_TRANSPORT_FOV_KICK = 0.22f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC — EVENTS (polled, zero GC)
@@ -308,32 +318,39 @@ namespace Hecton8.Gameplay
             // ── FOV compression ──
             ProcessDepthFovCompression(in input, suit);
 
+            float heavyCarryAmplitudeScale = math.lerp(1f, HEAVY_CARRY_MAX_HEADBOB_AMPLITUDE_SCALE, input.heavyCarryLoad);
+            float heavyCarryCadenceScale = math.lerp(1f, HEAVY_CARRY_MAX_HEADBOB_CADENCE_SCALE, input.heavyCarryLoad);
+            float heavyCarryLandingScale = math.lerp(1f, HEAVY_CARRY_MAX_LANDING_DIP_SCALE, input.heavyCarryLoad);
+            float heavyCarrySurfaceScale = math.lerp(1f, HEAVY_CARRY_MAX_SURFACE_BOB_SCALE, input.heavyCarryLoad);
+            float heavyCarryTurnScale = math.lerp(1f, HEAVY_CARRY_MAX_TURN_SWAY_SCALE, input.heavyCarryLoad);
+            float transportTurnScale = math.lerp(1f, 0.9f, input.transportBoost01);
+
             switch (input.locomotionMode)
             {
                 case PlayerLocomotionMode.DryGroundWalk:
-                    ProcessHeadBob(in input, suit, dt, 1f, 1f);
-                    ProcessLandingImpact(in input, suit, dt, 1f);
+                    ProcessHeadBob(in input, suit, dt, heavyCarryAmplitudeScale, heavyCarryCadenceScale);
+                    ProcessLandingImpact(in input, suit, dt, heavyCarryLandingScale);
                     DecaySwimEffects(dt, suit);
                     break;
 
                 case PlayerLocomotionMode.DryInteriorWalk:
-                    ProcessHeadBob(in input, suit, dt, 0.82f, 0.9f);
-                    ProcessLandingImpact(in input, suit, dt, 0.75f);
+                    ProcessHeadBob(in input, suit, dt, 0.82f * heavyCarryAmplitudeScale, 0.9f * heavyCarryCadenceScale);
+                    ProcessLandingImpact(in input, suit, dt, 0.75f * heavyCarryLandingScale);
                     DecaySwimEffects(dt, suit);
                     break;
 
                 case PlayerLocomotionMode.ShallowWadeWalk:
-                    ProcessHeadBob(in input, suit, dt, 0.62f, 0.78f);
-                    ProcessLandingImpact(in input, suit, dt, 0.7f);
-                    ProcessSurfaceBob(in input, suit, dt, math.saturate(input.immersionRatio) * 0.18f);
+                    ProcessHeadBob(in input, suit, dt, 0.62f * heavyCarryAmplitudeScale, 0.78f * heavyCarryCadenceScale);
+                    ProcessLandingImpact(in input, suit, dt, 0.7f * heavyCarryLandingScale);
+                    ProcessSurfaceBob(in input, suit, dt, math.saturate(input.immersionRatio) * 0.18f * heavyCarrySurfaceScale);
                     DecaySwimEffects(dt, suit);
                     break;
 
                 case PlayerLocomotionMode.SurfaceSwim:
-                    ProcessSurfaceBob(in input, suit, dt, 1f);
+                    ProcessSurfaceBob(in input, suit, dt, heavyCarrySurfaceScale);
                     ProcessSwimBob(in input, suit, dt);
                     ProcessSwimRoll(in input, suit, dt, 0.3f);
-                    ProcessTurnSway(in input, dt, 0.5f);
+                    ProcessTurnSway(in input, dt, 0.5f * heavyCarryTurnScale * transportTurnScale);
                     DecayWalkEffects(dt, suit);
                     break;
 
@@ -354,7 +371,7 @@ namespace Hecton8.Gameplay
                     ProcessSwimRoll(in input, suit, dt, rollScale);
                     ProcessMomentumPitch(in input, suit, dt, deepFactor);
 
-                    float turnScale = 0.5f + 0.5f * deepFactor;
+                    float turnScale = (0.5f + 0.5f * deepFactor) * heavyCarryTurnScale * transportTurnScale;
                     ProcessTurnSway(in input, dt, turnScale);
                     ProcessExhaleRhythm(in input, suit, dt);
 
@@ -530,7 +547,7 @@ namespace Hecton8.Gameplay
         {
             if (suit == null || !suit.enableSwimBob) return;
 
-            float targetIntensity = input.hasMovementInput ? 1f : 0f;
+            float targetIntensity = math.max(input.hasMovementInput ? 1f : 0f, input.transportBoost01 * 0.85f);
             float blendT = 1f - math.exp(-suit.swimBobTransitionSpeed * dt);
             _swimBobIntensity = math.lerp(_swimBobIntensity, targetIntensity, blendT);
 
@@ -565,7 +582,10 @@ namespace Hecton8.Gameplay
         {
             float modeScale = ResolvePresentationCameraScale(input.swimPresentationMode);
             float guideScale = math.saturate(input.swimGuideWeight);
-            float propulsionScale = math.lerp(0.65f, 1f, math.saturate(input.swimPropulsionPulse));
+            float transportBoost = math.saturate(input.transportBoost01);
+            float propulsionScale = math.max(
+                math.lerp(0.65f, 1f, math.saturate(input.swimPropulsionPulse)),
+                math.lerp(0.72f, 1.08f, transportBoost));
             float finalScale = scale * modeScale * guideScale * propulsionScale;
             if (finalScale < DEAD_ZONE)
                 return;
@@ -574,7 +594,7 @@ namespace Hecton8.Gameplay
             float verticalBob = math.sin(cycle) * suit.swimBobVerticalAmplitude * finalScale;
             float forwardBob = math.sin(cycle * 0.5f - 0.35f) * suit.swimBobForwardAmplitude * finalScale;
             float rollBob = math.sin(cycle + 1.57f) * suit.swimBobRollAmplitude * finalScale;
-            float pull = math.saturate(input.swimPropulsionPulse);
+            float pull = math.max(math.saturate(input.swimPropulsionPulse), transportBoost * MANTA_TRANSPORT_PROPULSION_FLOOR);
             float pullKick = pull * pull;
             float pullImpulse = math.saturate(input.swimStrokeImpulse);
             float ascend = math.max(0f, input.swimVerticalInput);
@@ -588,11 +608,13 @@ namespace Hecton8.Gameplay
                 (pullKick * SWIM_PRESENTATION_PROPULSION_FOV_KICK +
                  pullImpulse * SWIM_PRESENTATION_PROPULSION_IMPULSE_FOV_KICK) * modeScale,
                 SWIM_PRESENTATION_MAX_FOV_KICK * sprintClampScale);
+            float transportPositionKick = transportBoost * MANTA_TRANSPORT_POSITION_KICK * modeScale;
+            float transportFovKick = transportBoost * MANTA_TRANSPORT_FOV_KICK * modeScale;
 
             _output.localPositionOffset.y += verticalBob;
             _output.localPositionOffset.z += forwardBob;
             _output.rollOffset += rollBob;
-            _output.localPositionOffset.z += propulsionPositionKick;
+            _output.localPositionOffset.z += propulsionPositionKick + transportPositionKick;
             _output.localPositionOffset.y +=
                 (descend * SWIM_PRESENTATION_VERTICAL_DESCEND_OFFSET -
                  ascend * SWIM_PRESENTATION_VERTICAL_ASCEND_OFFSET) *
@@ -601,7 +623,7 @@ namespace Hecton8.Gameplay
                 (descend * SWIM_PRESENTATION_DESCEND_PITCH -
                  ascend * SWIM_PRESENTATION_ASCEND_PITCH) *
                 pull * modeScale;
-            _output.fovOffset += propulsionFovKick;
+            _output.fovOffset += propulsionFovKick + transportFovKick;
         }
 
         private static float ResolvePresentationCameraScale(PlayerSwimPresentationMode mode)

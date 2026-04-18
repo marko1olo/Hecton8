@@ -937,6 +937,9 @@ namespace Hecton8.World
             if (playerTransform == null || fieldSampler == null || rules == null || rules.Count == 0)
                 return false;
 
+            if (!CanPrimeBootstrapScatterFromCurrentTerrainSource())
+                return false;
+
             bool previousAllowBootstrapPrimePass = _bootstrapRuntimeState.AllowPrimePass;
             _bootstrapRuntimeState.AllowPrimePass = true;
 
@@ -952,6 +955,21 @@ namespace Hecton8.World
             {
                 _bootstrapRuntimeState.AllowPrimePass = previousAllowBootstrapPrimePass;
             }
+        }
+
+        private bool CanPrimeBootstrapScatterFromCurrentTerrainSource()
+        {
+            if (playerTransform == null || fieldSampler == null)
+                return false;
+
+            if (!fieldSampler.TryResolveSeafloorSource(
+                    playerTransform.position,
+                    out WorldProceduralFieldSampler.SeafloorSource seafloorSource))
+            {
+                return false;
+            }
+
+            return seafloorSource != WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic;
         }
 
         internal bool TryPrewarmBootstrapSamplingPipeline()

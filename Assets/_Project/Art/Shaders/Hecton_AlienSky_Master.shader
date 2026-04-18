@@ -511,19 +511,21 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // =======================================
                 // LAYER 3: HORIZON HAZE
                 // =======================================
-                half hazeRaw = 1.0h - abs(horizonFactor);
-                half hazeMask = pow(hazeRaw, _HazeFalloff) * _HazeIntensity;
+                half hazeRaw = saturate(1.0h - abs(horizonFactor));
+                half hazeSoft = smoothstep(0.0h, 1.0h, hazeRaw);
+                half hazeMask = saturate(pow(hazeSoft, _HazeFalloff) * _HazeIntensity);
 
                 half3 hazeSunTint = lerp(
                     HALF_ONE,
                     _SunScatterColor.rgb,
                     sunViewDot * _HazeSunTintStrength);
 
-                half3 hazeColor = _HazeColor.rgb * hazeSunTint * hazeMask;
-
+                half3 hazeColor = _HazeColor.rgb * hazeSunTint;
                 hazeColor *= skyDimFactor * lerp(1.0h, 0.14h, nightFactor);
 
-                skyColor += hazeColor;
+                half hazeVeil = saturate(hazeMask * lerp(0.62h, 0.42h, nightFactor));
+                skyColor = lerp(skyColor, hazeColor, hazeVeil * 0.32h);
+                skyColor += hazeColor * hazeMask * 0.68h;
 
                 // =======================================
                 // v5.3: ATMOSPHERIC PERSPECTIVE

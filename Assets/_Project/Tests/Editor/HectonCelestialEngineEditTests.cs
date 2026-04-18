@@ -176,6 +176,48 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void UpdateMoonMaterialOverridesUsesMoonSpecificAtmosphereMultipliers()
+    {
+        Shader moonShader = Shader.Find("HECTON/Celestial/Hecton_CelestialMoon");
+        Assert.IsNotNull(moonShader, "Expected HECTON/Celestial/Hecton_CelestialMoon shader to exist.");
+
+        GameObject moonObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Material moonMaterial = new Material(moonShader);
+        MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+
+        try
+        {
+            Renderer renderer = moonObject.GetComponent<Renderer>();
+            renderer.sharedMaterial = moonMaterial;
+
+            SetPrivateField("_moonMPB", propertyBlock);
+            SetPrivateField("_atmosphereTransmittanceWeight", 0.92f);
+            SetPrivateField("_atmosphereInscatterWeight", 0.78f);
+            SetPrivateField("_moonAtmosphereTransmittanceMultiplier", 0.78f);
+            SetPrivateField("_moonAtmosphereInscatterMultiplier", 0.42f);
+
+            var moonRenderers = (System.Collections.Generic.List<Renderer>)GetPrivateField(_engine, "_moonRenderers");
+            moonRenderers.Clear();
+            moonRenderers.Add(renderer);
+
+            InvokePrivateMethod("UpdateMoonMaterialOverrides");
+
+            renderer.GetPropertyBlock(propertyBlock);
+            Assert.That(
+                propertyBlock.GetFloat(Shader.PropertyToID("_AtmosphereTransmittanceWeight")),
+                Is.EqualTo(0.7176f).Within(0.0001f));
+            Assert.That(
+                propertyBlock.GetFloat(Shader.PropertyToID("_AtmosphereInscatterWeight")),
+                Is.EqualTo(0.3276f).Within(0.0001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(moonMaterial);
+            Object.DestroyImmediate(moonObject);
+        }
+    }
+
+    [Test]
     public void ApplyBestVisualDefaultsSetsNightInscatterFloorAndReadableDayHaze()
     {
         _engine.ApplyBestVisualDefaults();
@@ -190,6 +232,58 @@ public class HectonCelestialEngineEditTests
         Assert.That(zenithTransparency, Is.EqualTo(0.84f).Within(0.0001f));
         Assert.That(dayDensity.Evaluate(0f), Is.LessThan(0.7f));
         Assert.That(dayDensity.Evaluate(0f), Is.GreaterThan(dayDensity.Evaluate(1f)));
+    }
+
+    [Test]
+    public void BuildSurfaceAtmosphericLightingStateHonorsManualFogColorOverride()
+    {
+        Color manualFog = new Color(0.64f, 0.66f, 0.68f, 1f);
+
+        SetPrivateField("_resolvedSkyZenith", new Color(0.08f, 0.14f, 0.24f, 1f));
+        SetPrivateField("_resolvedSkyHorizon", new Color(0.16f, 0.21f, 0.3f, 1f));
+        SetPrivateField("_resolvedSkyNadir", new Color(0.03f, 0.04f, 0.06f, 1f));
+        SetPrivateField("_currentSunAngle", 24f);
+        SetPrivateField("_surfaceFogManualColor", manualFog);
+        SetPrivateField("_surfaceFogManualColorBlend", 1f);
+        SetPrivateField("_surfaceFogSkyColorInfluence", 0f);
+        SetPrivateField("_surfaceFogAmbientColorInfluence", 0f);
+        SetPrivateField("_surfaceHazeSkyTintInfluence", 0f);
+
+        AtmosphericLightingState state =
+            (AtmosphericLightingState)InvokePrivateMethod("BuildSurfaceAtmosphericLightingState");
+
+        Assert.That(state.IsValid, Is.True);
+        Assert.That(state.FogColor.r, Is.EqualTo(manualFog.r).Within(0.03f));
+        Assert.That(state.FogColor.g, Is.EqualTo(manualFog.g).Within(0.03f));
+        Assert.That(state.FogColor.b, Is.EqualTo(manualFog.b).Within(0.03f));
+        Assert.That(state.HorizonHazeColor.grayscale, Is.EqualTo(state.FogColor.grayscale).Within(0.06f));
+    }
+
+    [Test]
+    public void ApplySkyMaterialHazePropertiesUsesAtmosphericLightingStateAsSingleSourceOfTruth()
+    {
+        AtmosphericLightingState state = new AtmosphericLightingState
+        {
+            IsValid = true,
+            FogDensity = 0.0024f,
+            FogColor = new Color(0.42f, 0.45f, 0.5f, 1f),
+            AmbientEquatorColor = new Color(0.31f, 0.34f, 0.38f, 1f),
+            SkyZenithColor = new Color(0.08f, 0.14f, 0.24f, 1f),
+            SkyHorizonColor = new Color(0.26f, 0.28f, 0.34f, 1f),
+            HorizonHazeIntensity = 0.37f,
+            HorizonHazeFalloff = 2.15f,
+            HorizonHazeSunTintStrength = 0.29f,
+            HorizonHazeColor = new Color(0.44f, 0.47f, 0.52f, 1f)
+        };
+
+        SetPrivateField("_surfaceAtmosphericLightingState", state);
+
+        InvokePrivateMethod("ApplySkyMaterialHazeProperties", _skyMaterial);
+
+        Assert.That(_skyMaterial.GetFloat("_HazeIntensity"), Is.EqualTo(0.37f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetFloat("_HazeFalloff"), Is.EqualTo(2.15f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetFloat("_HazeSunTintStrength"), Is.EqualTo(0.29f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetColor("_HazeColor"), Is.EqualTo(state.HorizonHazeColor));
     }
 
     [Test]

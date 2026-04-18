@@ -374,6 +374,59 @@ namespace Hecton8.Gameplay
         [Tooltip("How much nearby wall pressure amplifies hand lag. This makes blocked hands feel displaced by water and body mass instead of snapping instantly.")]
         [SerializeField, Range(1f, 1.6f)] private float obstaclePoseLagMultiplier = 1.18f;
 
+        [Header("-- Locomotion Feel --------------------")]
+        [Tooltip("Stroke cadence multiplier while dragging the heaviest heavy-carry load.")]
+        [SerializeField, Range(0.25f, 1f)] private float heavyCarryCadenceMultiplier = 0.68f;
+
+        [Tooltip("Propulsion pulse multiplier while dragging the heaviest heavy-carry load.")]
+        [SerializeField, Range(0.2f, 1f)] private float heavyCarryPropulsionMultiplier = 0.56f;
+
+        [Tooltip("Overall swim pose lag multiplier while dragging the heaviest heavy-carry load.")]
+        [SerializeField, Range(1f, 1.75f)] private float heavyCarryPoseLagMultiplier = 1.24f;
+
+        [Tooltip("How much heavy carry pulls the swim root rearward at full load.")]
+        [SerializeField, Range(0f, 0.06f)] private float heavyCarryRootRearBias = 0.028f;
+
+        [Tooltip("How much heavy carry lowers the swim root at full load.")]
+        [SerializeField, Range(0f, 0.05f)] private float heavyCarryRootDownBias = 0.016f;
+
+        [Tooltip("How much heavy carry pitches the swim root downward at full load.")]
+        [SerializeField, Range(0f, 6f)] private float heavyCarryRootPitchBias = 1.4f;
+
+        [Tooltip("How much heavy carry tucks the hands rearward at full load.")]
+        [SerializeField, Range(0f, 0.08f)] private float heavyCarryGuideRearBias = 0.036f;
+
+        [Tooltip("How much heavy carry lowers the hands at full load.")]
+        [SerializeField, Range(0f, 0.05f)] private float heavyCarryGuideDownBias = 0.012f;
+
+        [Tooltip("How much heavy carry suppresses hand stroke motion at full load.")]
+        [SerializeField, Range(0.2f, 1f)] private float heavyCarryGuideMotionMultiplier = 0.72f;
+
+        [Header("-- Transport Feel ---------------------")]
+        [Tooltip("Propulsion-force reference used to normalize active Manta transport boost.")]
+        [SerializeField, Range(100f, 1200f)] private float mantaTransportForceReference = 800f;
+
+        [Tooltip("Minimum propulsion floor injected by active Manta transport.")]
+        [SerializeField, Range(0f, 1f)] private float mantaTransportPropulsionFloor = 0.62f;
+
+        [Tooltip("Stroke cadence multiplier while Manta transport is actively pulling the player.")]
+        [SerializeField, Range(0.2f, 1f)] private float mantaTransportCadenceMultiplier = 0.74f;
+
+        [Tooltip("Pose lag multiplier while Manta transport is actively pulling the player.")]
+        [SerializeField, Range(0.5f, 1.2f)] private float mantaTransportPoseLagMultiplier = 0.9f;
+
+        [Tooltip("How much active Manta transport restores root presentation visibility.")]
+        [SerializeField, Range(0f, 1f)] private float mantaTransportRootPresentationWeight = 0.58f;
+
+        [Tooltip("How much active Manta transport restores support-hand presentation visibility.")]
+        [SerializeField, Range(0f, 1f)] private float mantaTransportSupportHandWeight = 0.84f;
+
+        [Tooltip("How much active Manta transport pulls the swim root forward.")]
+        [SerializeField, Range(0f, 0.06f)] private float mantaTransportRootForwardBias = 0.018f;
+
+        [Tooltip("How much active Manta transport lets the hands commit forward instead of reading like a full stroke.")]
+        [SerializeField, Range(0f, 0.08f)] private float mantaTransportGuideForwardBias = 0.028f;
+
         [Tooltip("How much a blocked hand loses stroke drive while it is crowding geometry. This keeps the arm from reading like a full power stroke while the cave is physically pushing it back.")]
         [SerializeField, Range(0f, 1f)] private float blockedHandStrokeSuppression = 0.42f;
 
@@ -514,6 +567,11 @@ namespace Hecton8.Gameplay
         private float _strokePowerPulseCooldownRemaining;
         private float _strokePowerImpulseCurrent;
         private float _strokePowerImpulseVelocity;
+        private float _currentVerticalPoseBias;
+        private float _heavyCarryLoadCurrent;
+        private float _heavyCarryLoadVelocity;
+        private float _transportBoostCurrent;
+        private float _transportBoostVelocity;
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
         private bool _hasInitializedActiveBlend;
@@ -566,6 +624,30 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current normalized right-hand-guide presentation weight.</summary>
         public float CurrentRightGuideWeight => _currentRightGuideWeight;
+
+        /// <summary>Current overall presentation blend after tool suppression.</summary>
+        public float CurrentPresentationBlend => _presentationBlend * _toolSuppressionWeight;
+
+        /// <summary>Current normalized vertical swim pose bias. Positive = ascend, negative = descend.</summary>
+        public float CurrentVerticalPoseBias => _currentVerticalPoseBias;
+
+        /// <summary>Current normalized directional steering correction read.</summary>
+        public float CurrentDirectionalCorrection => _directionalCorrectionCurrent;
+
+        /// <summary>Current normalized camera-turn sway read.</summary>
+        public float CurrentCameraTurnSway => _cameraTurnSwayCurrent;
+
+        /// <summary>Current averaged obstacle pressure compressing the swim root.</summary>
+        public float CurrentObstacleRootPressure => _rootObstacleAverageCurrent;
+
+        /// <summary>Current signed left/right obstacle difference affecting the swim root.</summary>
+        public float CurrentObstacleRootDifference => _rootObstacleDifferenceCurrent;
+
+        /// <summary>Current normalized upward obstacle escape bias affecting the swim root.</summary>
+        public float CurrentObstacleRootVerticalBias => _rootObstacleVerticalCurrent;
+
+        /// <summary>Current normalized equipped-tool blend suppressing swim presentation.</summary>
+        public float CurrentToolBlend => _equippedToolBlendCurrent;
 
         private void Awake()
         {
@@ -657,8 +739,10 @@ namespace Hecton8.Gameplay
             float speed = math.length(velocity);
             float planarSpeed = math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
             float speedDelta = speed - _previousSpeed;
+            _currentVerticalPoseBias = math.clamp(velocity.y * 0.18f * verticalPoseInfluence, -1f, 1f);
             _previousSpeed = speed;
 
+            UpdateLocomotionFeelState(dt);
             _currentMode = ResolveMode(profile, planarSpeed, speedDelta, dt);
 
             bool activeSwimPresentation =
@@ -859,7 +943,8 @@ namespace Hecton8.Gameplay
                         : PlayerSwimPresentationMode.SurfaceStroke;
 
                 case PlayerLocomotionMode.UnderwaterSwim:
-                    if (planarSpeed >= profile.UnderwaterSprintStartSpeed)
+                    if (_heavyCarryLoadCurrent < 0.05f &&
+                        planarSpeed >= profile.UnderwaterSprintStartSpeed)
                         return PlayerSwimPresentationMode.UnderwaterSprint;
 
                     if (planarSpeed < profile.UnderwaterStrokeStartSpeed)
@@ -915,6 +1000,8 @@ namespace Hecton8.Gameplay
 
             if (cadence > 0f)
             {
+                cadence *= math.lerp(1f, heavyCarryCadenceMultiplier, _heavyCarryLoadCurrent);
+                cadence *= math.lerp(1f, mantaTransportCadenceMultiplier, _transportBoostCurrent);
                 float speedFactor = math.saturate(planarSpeed / math.max(0.01f, profile.UnderwaterSprintStartSpeed));
                 cadence *= 1f + speedFactor * profile.SpeedCadenceInfluence;
                 _strokePhase += cadence * dt;
@@ -931,6 +1018,9 @@ namespace Hecton8.Gameplay
             float accelerationBias = math.saturate(speedDelta * 0.2f);
             float propulsionPulse = math.saturate(pullPulse + accelerationBias - glidePulse * 0.35f);
             ApplyObstaclePropulsionDamping(ref propulsionPulse);
+            propulsionPulse *= math.lerp(1f, heavyCarryPropulsionMultiplier, _heavyCarryLoadCurrent);
+            if (_transportBoostCurrent > 0.0001f)
+                propulsionPulse = math.max(propulsionPulse, _transportBoostCurrent * mantaTransportPropulsionFloor);
             _propulsionPulse = propulsionPulse * _presentationBlend * _toolSuppressionWeight;
         }
 
@@ -1051,12 +1141,15 @@ namespace Hecton8.Gameplay
             localPosition.y += strokeSin * profile.StrokeVerticalAmplitude * presentationWeight;
             localPosition.y -= math.saturate(math.abs(velocity.y)) * profile.InertialSinkAmplitude * presentationWeight;
             localPosition.y += velocity.y * verticalVelocityInfluence * presentationWeight;
+            localPosition.y -= _heavyCarryLoadCurrent * heavyCarryRootDownBias * presentationWeight;
             localPosition.y += math.max(0f, _rootObstacleVerticalCurrent) * obstacleRootUpwardBias * presentationWeight;
             localPosition.y -= surfaceRootLowering * surfaceFramingWeight * presentationWeight;
             localPosition.y -= toolRootLowering * toolFramingWeight * presentationWeight;
             localPosition.z += strokeCos * profile.StrokeSurgeAmplitude * presentationWeight;
             localPosition.z += surfaceBreathSin * surfaceBreathAmplitude * 0.22f * surfaceIdleWeight * presentationWeight;
+            localPosition.z += _transportBoostCurrent * mantaTransportRootForwardBias * presentationWeight;
             localPosition.z -= accelKick;
+            localPosition.z -= _heavyCarryLoadCurrent * heavyCarryRootRearBias * presentationWeight;
             localPosition.z -= _rootObstacleAverageCurrent * obstacleRootRearBias * presentationWeight;
             localPosition.z -= surfaceRootRearBias * surfaceFramingWeight * presentationWeight;
             localPosition.z -= toolRootRearBias * toolFramingWeight * presentationWeight;
@@ -1065,6 +1158,7 @@ namespace Hecton8.Gameplay
             Vector3 localEuler = profile.BaseLocalEuler;
             localEuler.x += strokeSin * profile.StrokePitchAmplitude * presentationWeight;
             localEuler.x += surfaceBreathSin * surfaceWavePitchAmplitude * surfaceIdleWeight * presentationWeight;
+            localEuler.x += _heavyCarryLoadCurrent * heavyCarryRootPitchBias * presentationWeight;
             localEuler.x += _rootObstacleAverageCurrent * obstacleRootPitchCompression * presentationWeight;
             localEuler.y += _turnLagYawCurrent * presentationWeight;
             localEuler.y -= _directionalCorrectionCurrent * steeringRootYawBias * presentationWeight;
@@ -1388,12 +1482,19 @@ namespace Hecton8.Gameplay
                 strokePowerScale *= compensationBoost;
             }
 
+            if (_heavyCarryLoadCurrent > 0.0001f)
+            {
+                float heavyCarryMotionScale = math.lerp(1f, heavyCarryGuideMotionMultiplier, _heavyCarryLoadCurrent);
+                toolMotionScale *= heavyCarryMotionScale;
+                strokePowerScale *= heavyCarryMotionScale;
+            }
+
             float sprintTuck = _currentMode == PlayerSwimPresentationMode.UnderwaterSprint
                 ? profile.SprintHandTuckDistance
                 : 0f;
             float speedBias = math.saturate(planarSpeed / math.max(0.01f, profile.UnderwaterSprintStartSpeed));
             float verticalBias = math.clamp(velocity.y * 0.02f, -0.03f, 0.03f);
-            float verticalPose = math.clamp(velocity.y * 0.18f * verticalPoseInfluence, -1f, 1f);
+            float verticalPose = _currentVerticalPoseBias;
             float ascendBias = math.max(0f, verticalPose);
             float descendBias = math.max(0f, -verticalPose);
             float framingOutwardBias = surfaceFramingWeight * surfaceFramingOutwardBias + toolFramingWeight * toolFramingOutwardBias;
@@ -1417,12 +1518,15 @@ namespace Hecton8.Gameplay
             localPosition.y += descendBias * profile.HandRecoveryLift * 0.24f * guideWeight * toolMotionScale;
             localPosition.y += correctionBias * profile.HandRecoveryLift * steeringVerticalBias * guideWeight * toolMotionScale;
             localPosition.y -= framingDownBias * guideWeight;
+            localPosition.y -= _heavyCarryLoadCurrent * heavyCarryGuideDownBias * guideWeight;
             localPosition.z += recover * profile.HandReachDistance * reachScale * strokePowerScale;
             localPosition.z -= pull * profile.HandPullDistance * pullScale * strokePowerScale;
             localPosition.z -= sprintTuck * guideWeight;
             localPosition.z -= ascendBias * profile.HandPullDistance * ascendPullbackBias * guideWeight * toolMotionScale;
             localPosition.z += descendBias * profile.HandReachDistance * descendReachBias * guideWeight * toolMotionScale;
             localPosition.z += correctionBias * profile.HandReachDistance * steeringReachBias * guideWeight * toolMotionScale;
+            localPosition.z += _transportBoostCurrent * mantaTransportGuideForwardBias * guideWeight;
+            localPosition.z -= _heavyCarryLoadCurrent * heavyCarryGuideRearBias * guideWeight;
             localPosition.z -= framingRearBias * guideWeight;
             localPosition += toolPositionBias * guideWeight;
 
@@ -1563,6 +1667,16 @@ namespace Hecton8.Gameplay
                     ? toolSwimContract.ActiveUseSupportHandBoost
                     : equippedToolActiveUseSupportBoost;
                 targetSupportHandWeight = math.saturate(targetSupportHandWeight + supportBoost);
+            }
+
+            if (_transportBoostCurrent > 0.0001f)
+            {
+                targetWeight = math.max(
+                    targetWeight,
+                    math.lerp(targetWeight, mantaTransportRootPresentationWeight, _transportBoostCurrent));
+                targetSupportHandWeight = math.max(
+                    targetSupportHandWeight,
+                    math.lerp(targetSupportHandWeight, mantaTransportSupportHandWeight, _transportBoostCurrent));
             }
 
             _toolSuppressionWeight = SmoothDampValue(
@@ -2134,7 +2248,43 @@ namespace Hecton8.Gameplay
             if (_equippedToolBlendCurrent > 0.0001f)
                 multiplier *= math.lerp(1f, equippedToolPoseLagMultiplier, _equippedToolBlendCurrent);
 
+            if (_heavyCarryLoadCurrent > 0.0001f)
+                multiplier *= math.lerp(1f, heavyCarryPoseLagMultiplier, _heavyCarryLoadCurrent);
+
+            if (_transportBoostCurrent > 0.0001f)
+                multiplier *= math.lerp(1f, mantaTransportPoseLagMultiplier, _transportBoostCurrent);
+
             return math.max(0.0001f, multiplier);
+        }
+
+        private void UpdateLocomotionFeelState(float dt)
+        {
+            float targetHeavyCarryLoad = playerMovement != null && playerMovement.IsDraggingHeavyCargo
+                ? playerMovement.HeavyCarryLoad
+                : 0f;
+
+            float targetTransportBoost = 0f;
+            if (playerToolManager != null &&
+                !playerToolManager.IsSwapping &&
+                playerToolManager.CurrentTool is MantaScooter mantaScooter)
+            {
+                targetTransportBoost = math.saturate(
+                    mantaScooter.GetPropulsionForce() /
+                    math.max(mantaTransportForceReference, 0.01f));
+            }
+
+            _heavyCarryLoadCurrent = SmoothDampValue(
+                _heavyCarryLoadCurrent,
+                targetHeavyCarryLoad,
+                ref _heavyCarryLoadVelocity,
+                toolTransitionSmoothTime,
+                dt);
+            _transportBoostCurrent = SmoothDampValue(
+                _transportBoostCurrent,
+                targetTransportBoost,
+                ref _transportBoostVelocity,
+                toolTransitionSmoothTime,
+                dt);
         }
 
         private float ResolveGuidePoseLagMultiplier(
