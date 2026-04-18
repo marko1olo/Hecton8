@@ -16,6 +16,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Hecton.Localization;
     using Hecton8.Audio;
     using Hecton8.Bootstrap;
     using Hecton8.Core;
@@ -106,10 +107,39 @@ namespace Hecton8.Gameplay
         private bool _lastSummaryActive;
         private int _lastSummaryBatteryPercent = int.MinValue;
         private string _cachedOperationalSummary = "MANTA // NO BATTERY";
+        private string _cachedOperationalDirective = "Insert a battery to activate propulsion.";
+        private bool _directiveStateInitialized;
+        private bool _lastDirectiveHasBattery;
+        private bool _lastDirectiveActive;
+        private bool _lastDirectiveBatteryLow;
+        private string _localizedNoBatteryWarning = "MANTA - NO BATTERY";
+        private string _localizedBatteryDepletedWarning = "MANTA - BATTERY DEPLETED";
+        private string _localizedSummaryNoBattery = "MANTA // NO BATTERY";
+        private string _localizedSummaryActiveFormat = "MANTA // ACTIVE // BAT {0}%";
+        private string _localizedSummaryStandbyFormat = "MANTA // STANDBY // BAT {0}%";
+        private string _localizedDirectiveInsertBattery = "Insert a battery to activate propulsion.";
+        private string _localizedDirectiveSwapRecharge = "Battery depleted. Swap or recharge.";
+        private string _localizedDirectiveHoldForward = "Hold forward to propel. Release to coast.";
+        private string _localizedDirectiveHoldPrimary = "Hold primary to activate propulsion while swimming.";
+        [SerializeField] private string _debugActivationState = ActivationStateIdle;
 
         // MaterialPropertyBlock for power indicator
         private MaterialPropertyBlock _mpb;
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private const string ActivationStateIdle = "Idle";
+        private const string ActivationStateSpawned = "Spawned";
+        private const string ActivationStateEquipped = "Equipped";
+        private const string ActivationStateUnequipped = "Unequipped";
+        private const string ActivationStateNotEquipped = "NotEquipped";
+        private const string ActivationStateNoBattery = "NoBattery";
+        private const string ActivationStateBatteryTooLow = "BatteryTooLow";
+        private const string ActivationStateMissingPlayerMovement = "MissingPlayerMovement";
+        private const string ActivationStateMissingRigidbody = "MissingRigidbody";
+        private const string ActivationStateNotUnderwater = "NotUnderwater";
+        private const string ActivationStateActivated = "Activated";
+        private const string ActivationStateMoving = "ActiveMoving";
+        private const string ActivationStateIdleInWater = "ActiveIdle";
+        private const string ActivationStateBatteryDepleted = "BatteryDepleted";
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -123,6 +153,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _batteryItem;
+
+        /// <summary>Latest deterministic activation state for runtime verification.</summary>
+        public string DebugActivationState => _debugActivationState;
 
         /// <summary>
         /// Removes the battery from the tool.
@@ -169,6 +202,7 @@ namespace Hecton8.Gameplay
         {
             _cachedTransform = transform;
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: MantaScooter
+            RefreshMantaLocalizationCache();
 
             // Setup motor audio
             TryGetComponent(out _motorAudioSource);
@@ -181,11 +215,23 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void OnEnable()
+        {
+            LocalizationManager.OnLanguageChanged += HandleMantaLanguageChanged;
+            RefreshMantaLocalizationCache();
+        }
+
+        private void OnDisable()
+        {
+            LocalizationManager.OnLanguageChanged -= HandleMantaLanguageChanged;
+        }
+
         public override void OnSpawn()
         {
             base.OnSpawn();
             _isActive = false;
             _registeredTick = false;
+            _debugActivationState = ActivationStateSpawned;
             ResolvePlayerReferences();
             ResetHudStateCache();
             UpdateBatteryVisuals();
@@ -204,6 +250,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             ResolvePlayerReferences();
+            _debugActivationState = ActivationStateEquipped;
             ResetHudStateCache();
             RegisterToTick();
             UpdateBatteryVisuals();
@@ -214,6 +261,7 @@ namespace Hecton8.Gameplay
         {
             DeactivateScooter();
             UnregisterFromTick();
+            _debugActivationState = ActivationStateUnequipped;
             ResetHudStateCache();
             base.OnUnequip();
         }
@@ -224,26 +272,51 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
+            ResolvePlayerReferences();
+
             if (!IsEquipped)
+            {
+                _debugActivationState = ActivationStateNotEquipped;
                 return;
+            }
 
             // Check battery
-            if (!_hasBattery || _currentCharge < minChargeToActivate)
+            if (!_hasBattery)
             {
                 if (_isActive)
                     DeactivateScooter();
 
-                ToolHitUtility.ShowWarning("MANTA - NO BATTERY");
+                _debugActivationState = ActivationStateNoBattery;
+                ToolHitUtility.ShowWarning(_localizedNoBatteryWarning);
+                return;
+            }
+
+            if (_currentCharge < minChargeToActivate)
+            {
+                if (_isActive)
+                    DeactivateScooter();
+
+                _debugActivationState = ActivationStateBatteryTooLow;
+                ToolHitUtility.ShowWarning(_localizedNoBatteryWarning);
                 return;
             }
 
             // Check if player is swimming
-            if (_playerMovement == null || 
-                _playerMovement.CurrentLocomotionMode != PlayerLocomotionMode.UnderwaterSwim)
+            if (_playerMovement == null)
             {
                 if (_isActive)
                     DeactivateScooter();
 
+                _debugActivationState = ActivationStateMissingPlayerMovement;
+                return;
+            }
+
+            if (_playerMovement.CurrentLocomotionMode != PlayerLocomotionMode.UnderwaterSwim)
+            {
+                if (_isActive)
+                    DeactivateScooter();
+
+                _debugActivationState = ActivationStateNotUnderwater;
                 return;
             }
 
@@ -253,6 +326,7 @@ namespace Hecton8.Gameplay
 
             // Check if player is moving
             _isMoving = IsPlayerMoving();
+            _debugActivationState = _isMoving ? ActivationStateMoving : ActivationStateIdleInWater;
 
             if (_isMoving)
             {
@@ -264,7 +338,8 @@ namespace Hecton8.Gameplay
                 if (_currentCharge <= 0f)
                 {
                     DeactivateScooter();
-                    ToolHitUtility.ShowWarning("MANTA - BATTERY DEPLETED");
+                    _debugActivationState = ActivationStateBatteryDepleted;
+                    ToolHitUtility.ShowWarning(_localizedBatteryDepletedWarning);
                 }
             }
         }
@@ -304,10 +379,10 @@ namespace Hecton8.Gameplay
                 _lastSummaryBatteryPercent != batteryPercent)
             {
                 _cachedOperationalSummary = !_hasBattery
-                    ? "MANTA // NO BATTERY"
+                    ? _localizedSummaryNoBattery
                     : _isActive
-                        ? "MANTA // ACTIVE // BAT " + batteryPercent + "%"
-                        : "MANTA // STANDBY // BAT " + batteryPercent + "%";
+                        ? string.Format(_localizedSummaryActiveFormat, batteryPercent)
+                        : string.Format(_localizedSummaryStandbyFormat, batteryPercent);
 
                 _lastSummaryHasBattery = _hasBattery;
                 _lastSummaryActive = _isActive;
@@ -320,16 +395,27 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalDirective()
         {
-            if (!_hasBattery)
-                return "Insert a battery to activate propulsion.";
+            bool batteryLow = _hasBattery && _currentCharge < minChargeToActivate;
+            if (!_directiveStateInitialized ||
+                _lastDirectiveHasBattery != _hasBattery ||
+                _lastDirectiveActive != _isActive ||
+                _lastDirectiveBatteryLow != batteryLow)
+            {
+                _cachedOperationalDirective = !_hasBattery
+                    ? _localizedDirectiveInsertBattery
+                    : batteryLow
+                        ? _localizedDirectiveSwapRecharge
+                        : _isActive
+                            ? _localizedDirectiveHoldForward
+                            : _localizedDirectiveHoldPrimary;
 
-            if (_currentCharge < minChargeToActivate)
-                return "Battery depleted. Swap or recharge.";
+                _lastDirectiveHasBattery = _hasBattery;
+                _lastDirectiveActive = _isActive;
+                _lastDirectiveBatteryLow = batteryLow;
+                _directiveStateInitialized = true;
+            }
 
-            if (_isActive)
-                return "Hold forward to propel. Release to coast.";
-
-            return "Hold primary to activate propulsion while swimming.";
+            return _cachedOperationalDirective;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -339,6 +425,7 @@ namespace Hecton8.Gameplay
         private void ActivateScooter()
         {
             _isActive = true;
+            _debugActivationState = ActivationStateActivated;
 
             // Start motor sound
             if (_motorAudioSource != null && motorLoopClip != null && !_motorAudioSource.isPlaying)
@@ -355,6 +442,7 @@ namespace Hecton8.Gameplay
         {
             _isActive = false;
             _isMoving = false;
+            _debugActivationState = ActivationStateIdle;
 
             // Stop motor sound
             if (_motorAudioSource != null && _motorAudioSource.isPlaying)
@@ -366,7 +454,10 @@ namespace Hecton8.Gameplay
         private bool IsPlayerMoving()
         {
             if (_playerRigidbody == null)
+            {
+                _debugActivationState = ActivationStateMissingRigidbody;
                 return false;
+            }
 
             return _playerRigidbody.linearVelocity.sqrMagnitude > 0.25f;
         }
@@ -520,7 +611,14 @@ namespace Hecton8.Gameplay
             _lastSummaryHasBattery = false;
             _lastSummaryActive = false;
             _lastSummaryBatteryPercent = int.MinValue;
-            _cachedOperationalSummary = "MANTA // NO BATTERY";
+            _cachedOperationalSummary = _localizedSummaryNoBattery;
+            _directiveStateInitialized = false;
+            _lastDirectiveHasBattery = false;
+            _lastDirectiveActive = false;
+            _lastDirectiveBatteryLow = false;
+            _cachedOperationalDirective = _localizedDirectiveInsertBattery;
+            if (!_isActive)
+                _debugActivationState = ActivationStateIdle;
         }
 
         private void RegisterToTick()
@@ -545,6 +643,33 @@ namespace Hecton8.Gameplay
                 GameTickManager.Instance.Unregister(this);
                 _registeredTick = false;
             }
+        }
+
+        private void HandleMantaLanguageChanged(GameLanguage language)
+        {
+            RefreshMantaLocalizationCache();
+            ResetHudStateCache();
+        }
+
+        private void RefreshMantaLocalizationCache()
+        {
+            _localizedNoBatteryWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_NO_BATTERY, "MANTA - NO BATTERY");
+            _localizedBatteryDepletedWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_BATTERY_DEPLETED, "MANTA - BATTERY DEPLETED");
+            _localizedSummaryNoBattery = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_NO_BATTERY, "MANTA // NO BATTERY");
+            _localizedSummaryActiveFormat = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_ACTIVE, "MANTA // ACTIVE // BAT {0}%");
+            _localizedSummaryStandbyFormat = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_STANDBY, "MANTA // STANDBY // BAT {0}%");
+            _localizedDirectiveInsertBattery = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_INSERT_BATTERY, "Insert a battery to activate propulsion.");
+            _localizedDirectiveSwapRecharge = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.");
+            _localizedDirectiveHoldForward = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.");
+            _localizedDirectiveHoldPrimary = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.");
+        }
+
+        private static string ResolveMantaLocalizedLabel(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

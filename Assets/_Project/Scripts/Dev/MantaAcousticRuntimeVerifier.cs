@@ -47,6 +47,7 @@ namespace Hecton8.Dev
         [SerializeField] private float measurementDelay = 0.75f;
         [SerializeField] private float simulatedDeltaTime = 0.05f;
         [SerializeField] private float minimumSpeedDelta = 0.5f;
+        [SerializeField] private int maxSwapSettleTicks = 8;
         [SerializeField] private Vector3 underwaterVerificationLocalPosition = new Vector3(-7623.9f, 4897.2f, 5858.2f);
 
         [Header("Diagnostics")]
@@ -59,6 +60,7 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugSpeedDelta;
         [SerializeField] private string _debugLastIssue = string.Empty;
         [SerializeField] private string _debugLocomotionMode = "Unknown";
+        [SerializeField] private string _debugMantaActivationState = "Unknown";
 
         private void Awake()
         {
@@ -102,6 +104,7 @@ namespace Hecton8.Dev
             _debugSpeedAfter = 0f;
             _debugSpeedDelta = 0f;
             _debugLastIssue = string.Empty;
+            _debugMantaActivationState = "Unknown";
 
             GameObject[] originalAssignments = null;
             int originalSlot = -1;
@@ -137,6 +140,9 @@ namespace Hecton8.Dev
 
             ForceUnderwaterSnapshot();
             EquipMantaIntoSlotZero();
+            AdvanceToolSwapToIdle();
+            SimulatePlayerFixedTicks(1);
+            _debugLocomotionMode = playerMovement.CurrentLocomotionMode.ToString();
 
             MantaScooter manta = toolManager.CurrentTool as MantaScooter;
             if (manta == null)
@@ -159,15 +165,19 @@ namespace Hecton8.Dev
             // First activation pass happens only after locomotion has already been forced
             // into UnderwaterSwim, avoiding the false zero-propulsion path seen earlier.
             manta.UsePrimary(simulatedDeltaTime);
+            _debugMantaActivationState = manta.DebugActivationState;
             _debugMeasuredPropulsionForce = manta.GetPropulsionForce();
             if (_debugMeasuredPropulsionForce <= 0f)
             {
+                AdvanceToolSwapToIdle();
                 SimulatePlayerFixedTicks(2);
                 manta.UsePrimary(simulatedDeltaTime);
+                _debugMantaActivationState = manta.DebugActivationState;
                 _debugMeasuredPropulsionForce = manta.GetPropulsionForce();
             }
 
             SimulatePlayerFixedTicks(Mathf.Max(1, Mathf.CeilToInt(measurementDelay / simulatedDeltaTime)));
+            _debugMantaActivationState = manta.DebugActivationState;
 
             _debugSpeedAfter = playerRigidbody.linearVelocity.magnitude;
             _debugSpeedDelta = _debugSpeedAfter - _debugSpeedBefore;
@@ -176,7 +186,8 @@ namespace Hecton8.Dev
             Debug.Log(
                 $"[MantaVerify] ScooterSpeed before={_debugSpeedBefore:F3} after={_debugSpeedAfter:F3} " +
                 $"delta={_debugSpeedDelta:F3} mode={_debugLocomotionMode} propulsion={_debugMeasuredPropulsionForce:F3} " +
-                $"equipped={_debugEquippedManta} forcedUnderwater={_debugForcedUnderwaterSnapshot}");
+                $"equipped={_debugEquippedManta} forcedUnderwater={_debugForcedUnderwaterSnapshot} " +
+                $"mantaState={_debugMantaActivationState} swapping={toolManager.IsSwapping}");
 
             if (_debugMeasuredPropulsionForce <= 0f)
                 FinishWithFailure("MantaScooter never reached active propulsion state.");
@@ -295,6 +306,19 @@ namespace Hecton8.Dev
                 originalAssignments[originalSlot] != null)
             {
                 toolManager.SwitchToSlot(originalSlot);
+            }
+        }
+
+        private void AdvanceToolSwapToIdle()
+        {
+            if (toolManager == null || maxSwapSettleTicks <= 0)
+                return;
+
+            for (int i = 0; i < maxSwapSettleTicks; i++)
+            {
+                toolManager.Tick(simulatedDeltaTime);
+                if (!toolManager.IsSwapping)
+                    break;
             }
         }
 

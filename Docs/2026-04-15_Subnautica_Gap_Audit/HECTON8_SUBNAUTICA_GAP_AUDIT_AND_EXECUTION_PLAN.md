@@ -1031,3 +1031,33 @@ Status:
 
 - sampled reload path is log-backed clean for two consecutive forced domain reloads
 - world/play-mode runtime proof remains separate and still `PENDING VERIFICATION`
+
+### Runtime Snapshot Logging Hardening
+
+- `SubnauticaSystemsDebugUI` now emits a one-shot runtime snapshot log when all target adaptive systems are genuinely resolved inside `02_HECTON_WORLD`
+- snapshot payload includes:
+  - `renderScale`
+  - `pressure`
+  - `faunaBiome`
+  - `faunaBias`
+  - `faunaCaps`
+  - `tension`
+  - `musicProfile`
+  - `soundscape`
+  - `underwater`
+  - `camera`
+  - `stress`
+- scene changes now reset the one-shot log latch so a fresh world entry can produce a fresh proof line
+- static YAML scan across `Assets` for ordinary serialized missing-script markers returned no matches for:
+  - `m_Script: {fileID: 0}`
+
+Why:
+
+- current MCP session still does not expose a stable direct play-toggle route
+- runtime proof therefore needs to self-report from inside the existing debug owner when play actually occurs
+- static YAML evidence also says ordinary first-party asset serialization is no longer the likely source of any future `Unknown Behaviour` spam
+
+Status:
+
+- compile/reload path was already clean before this pass
+- this pass strengthens runtime proof collection, but live world-phase playback is still `PENDING VERIFICATION`

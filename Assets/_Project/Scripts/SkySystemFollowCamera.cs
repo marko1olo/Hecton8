@@ -22,10 +22,10 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
     [SerializeField] private bool followInEditMode = true;
     [Tooltip("Follow the resolved gameplay camera while the game is running.")]
     [SerializeField] private bool followInPlayMode = true;
-    [Tooltip("When disabled, the sky rig keeps its authored world-space Y and only follows camera X/Z so celestial bodies stay locked against the sea horizon.")]
-    [SerializeField] private bool followVerticalPosition = false;
-    [Tooltip("When Y follow is disabled, hard-lock the sky rig to the resolved sea-level Y instead of the camera height.")]
-    [SerializeField] private bool lockToSeaLevel = true;
+    [Tooltip("Follow camera Y as well as X/Z. Sky rig must move 1:1 with the active observer so celestial bodies never reveal themselves as world geometry.")]
+    [SerializeField] private bool followVerticalPosition = true;
+    [Tooltip("Legacy sea-level lock. Disabled by default because it exposes celestial bodies inside the world when the observer climbs in height.")]
+    [SerializeField] private bool lockToSeaLevel = false;
     [Tooltip("Fallback world Y used only when no live sea-level owner is available.")]
     [SerializeField] private float fallbackSeaLevelY = 0f;
     [Tooltip("Manual Y trim applied after resolving the live sea level. Use this only if the authored sky horizon needs a small scene-specific offset.")]
@@ -42,6 +42,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
     {
         CaptureFixedYPosition();
         ResolveSeaLevelOwners();
+        ApplyFollowImmediately();
 
 #if UNITY_EDITOR
         if (!Application.isPlaying)
@@ -74,12 +75,25 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
             return;
 
         Vector3 targetPosition = target.transform.position + positionOffset;
-        if (!followVerticalPosition)
+        if (!ShouldFollowVerticalPosition())
         {
             targetPosition.y = ResolveLockedY();
         }
 
         transform.position = targetPosition;
+    }
+
+    private void ApplyFollowImmediately()
+    {
+        if (Application.isPlaying)
+        {
+            if (followInPlayMode)
+                ApplyFollow();
+            return;
+        }
+
+        if (followInEditMode)
+            ApplyFollow();
     }
 
     private float ResolveLockedY()
@@ -89,6 +103,14 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
 
         CaptureFixedYPosition();
         return _fixedYPosition + positionOffset.y;
+    }
+
+    private bool ShouldFollowVerticalPosition()
+    {
+        if (followVerticalPosition)
+            return true;
+
+        return false;
     }
 
     private void CaptureFixedYPosition()
@@ -118,27 +140,35 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
             return runtimeCamera;
         }
 
-        if (_cachedResolvedCamera != null &&
-            _cachedResolvedCamera.enabled &&
-            _cachedResolvedCamera.gameObject.activeInHierarchy)
+        if (Application.isPlaying)
         {
-            CachePlayerMovementFromCamera(_cachedResolvedCamera);
-            return _cachedResolvedCamera;
-        }
-
-        if (Application.isPlaying &&
-            SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-            playerTransform != null)
-        {
-            CachePlayerMovement(playerTransform);
-            Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
-            if (playerCamera != null)
+            if (IsRuntimeGameplayCamera(_cachedResolvedCamera))
             {
-                _cachedResolvedCamera = playerCamera;
+                CachePlayerMovementFromCamera(_cachedResolvedCamera);
+                return _cachedResolvedCamera;
+            }
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                CachePlayerMovement(playerTransform);
+
+                Camera playerCamera = ResolveTaggedRuntimeMainCamera(playerTransform);
+                if (playerCamera != null)
+                {
+                    _cachedResolvedCamera = playerCamera;
+                    return _cachedResolvedCamera;
+                }
+            }
+
+            Camera runtimeMainCamera = ResolveTaggedRuntimeMainCamera();
+            if (runtimeMainCamera != null)
+            {
+                _cachedResolvedCamera = runtimeMainCamera;
+                CachePlayerMovementFromCamera(runtimeMainCamera);
                 return _cachedResolvedCamera;
             }
         }
-
 #if UNITY_EDITOR
         if (!Application.isPlaying)
         {
@@ -147,6 +177,15 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
                 return sceneView.camera;
         }
 #endif
+
+        if (!Application.isPlaying &&
+            _cachedResolvedCamera != null &&
+            _cachedResolvedCamera.enabled &&
+            _cachedResolvedCamera.gameObject.activeInHierarchy)
+        {
+            CachePlayerMovementFromCamera(_cachedResolvedCamera);
+            return _cachedResolvedCamera;
+        }
 
         int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
         for (int i = 0; i < cameraCount; i++)
@@ -157,6 +196,51 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
                 _cachedResolvedCamera = candidate;
                 CachePlayerMovementFromCamera(candidate);
                 return _cachedResolvedCamera;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsRuntimeGameplayCamera(Camera camera)
+    {
+        return camera != null &&
+               camera.cameraType != CameraType.SceneView &&
+               camera.enabled &&
+               camera.gameObject.activeInHierarchy &&
+               camera.CompareTag("MainCamera");
+    }
+
+    private static Camera ResolveTaggedRuntimeMainCamera()
+    {
+        int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
+        for (int i = 0; i < cameraCount; i++)
+        {
+            Camera candidate = _runtimeCameraBuffer[i];
+            if (IsRuntimeGameplayCamera(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    private static Camera ResolveTaggedRuntimeMainCamera(Transform playerTransform)
+    {
+        if (playerTransform == null)
+            return null;
+
+        int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
+        for (int i = 0; i < cameraCount; i++)
+        {
+            Camera candidate = _runtimeCameraBuffer[i];
+            if (!IsRuntimeGameplayCamera(candidate))
+                continue;
+
+            Transform candidateTransform = candidate.transform;
+            if (ReferenceEquals(candidateTransform, playerTransform) ||
+                candidateTransform.IsChildOf(playerTransform))
+            {
+                return candidate;
             }
         }
 

@@ -15,6 +15,7 @@
 
 namespace Hecton8.UI
 {
+    using Hecton.Localization;
     using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Gameplay;
@@ -90,6 +91,22 @@ namespace Hecton8.UI
         private bool _registered;
         private string _currentPrompt;
         private bool _isVisible;
+        private string _localizedDefaultPromptFormat;
+        private string _localizedNoBatteryPrompt;
+        private string _localizedSwapBatteryPrompt;
+        private string _localizedDepositFuelPrompt;
+        private string _localizedTakeItemPrompt;
+        private string _localizedConsumableWithDurationFormat;
+        private string _localizedActionInProgressPrompt;
+        private string _localizedInsertBatteryPrompt;
+        private string _localizedBioReactorPrompt;
+        private string _localizedEmptyCratePrompt;
+        private string _localizedVerbApply;
+        private string _localizedVerbDrink;
+        private string _localizedVerbEat;
+        private string _localizedVerbInhale;
+        private string _localizedVerbUse;
+        private string _localizedVerbTake;
 
         // Pre-allocated raycast buffer
         private readonly RaycastHit[] _hitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe — owner: InteractionUI
@@ -112,17 +129,21 @@ namespace Hecton8.UI
         {
             _cachedTransform = transform;
             _mainCamera = Camera.main;
+            RefreshLocalizedPromptCache();
             SetVisible(false);
         }
 
         private void OnEnable()
         {
             ResolvePlayerReferences();
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            RefreshLocalizedPromptCache();
             RegisterToTick();
         }
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             UnregisterFromTick();
             SetVisible(false);
         }
@@ -138,7 +159,7 @@ namespace Hecton8.UI
             if (actionController != null && actionController.IsActionInProgress)
             {
                 // Show action in progress prompt, hide interaction prompt
-                UpdatePrompt(actionInProgressPrompt);
+                UpdatePrompt(_localizedActionInProgressPrompt);
                 SetVisible(true);
                 return;
             }
@@ -246,32 +267,32 @@ namespace Hecton8.UI
                 return null;
 
             // Check if this is a consumable with use duration
-            if (item.isConsumable && item.useDuration > 0f)
+            if (item.isConsumable && item.UseDuration > 0f)
             {
                 // Determine verb based on item type
                 string verb = GetConsumableVerb(item);
                 // Note: string.Format is acceptable here (not in hot path - only when looking at new item)
-                return string.Format(consumableWithDurationFormat, verb, item.useDuration);
+                return string.Format(_localizedConsumableWithDurationFormat, verb, item.UseDuration);
             }
 
-            return string.Format(defaultPromptFormat, "Take", item.itemName);
+            return string.Format(_localizedDefaultPromptFormat, _localizedVerbTake, item.itemName);
         }
 
         /// <summary>
         /// Gets the verb for a consumable item (Eat, Drink, Apply, etc.).
         /// Pre-cached strings for zero GC.
         /// </summary>
-        private static string GetConsumableVerb(ItemData item)
+        private string GetConsumableVerb(ItemData item)
         {
             if (item.integrityRestore > 0f)
-                return "Apply";
+                return _localizedVerbApply;
             if (item.thirstRestore > 0f)
-                return "Drink";
+                return _localizedVerbDrink;
             if (item.hungerRestore > 0f)
-                return "Eat";
+                return _localizedVerbEat;
             if (item.oxygenRestore > 0f)
-                return "Inhale";
-            return "Use";
+                return _localizedVerbInhale;
+            return _localizedVerbUse;
         }
 
         private string BuildInteractablePrompt(IInteractable interactable, Collider collider)
@@ -293,10 +314,10 @@ namespace Hecton8.UI
         {
             if (!tool.HasBattery)
             {
-                return noBatteryPrompt;
+                return _localizedNoBatteryPrompt;
             }
 
-            return string.Format(swapBatteryPrompt);
+            return _localizedSwapBatteryPrompt;
         }
 
         private string BuildBatteryChargerPrompt(BatteryCharger charger)
@@ -309,11 +330,11 @@ namespace Hecton8.UI
                 {
                     if (batteryTool.HasBattery)
                     {
-                        return swapBatteryPrompt;
+                        return _localizedSwapBatteryPrompt;
                     }
                     else
                     {
-                        return noBatteryPrompt;
+                        return _localizedNoBatteryPrompt;
                     }
                 }
             }
@@ -321,10 +342,10 @@ namespace Hecton8.UI
             // Check if charger has a battery to take
             if (charger.HasBatteryInSlot(0) || charger.HasBatteryInSlot(1))
             {
-                return takeItemPrompt;
+                return _localizedTakeItemPrompt;
             }
 
-            return "Insert Battery";
+            return _localizedInsertBatteryPrompt;
         }
 
         private string BuildBioReactorPrompt(BioReactor reactor)
@@ -335,21 +356,21 @@ namespace Hecton8.UI
                 int fuelCount = CountOrganicFuel(_inventory);
                 if (fuelCount > 0)
                 {
-                    return string.Format("{0} ({1})", depositFuelPrompt, fuelCount);
+                    return string.Format("{0} ({1})", _localizedDepositFuelPrompt, fuelCount);
                 }
             }
 
-            return "Bio Reactor";
+            return _localizedBioReactorPrompt;
         }
 
         private string BuildStorageCratePrompt(StorageCrate crate)
         {
             if (crate.IsEmpty())
             {
-                return "Empty Crate";
+                return _localizedEmptyCratePrompt;
             }
 
-            return "[E] Open Crate";
+            return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_CRATE, "[E] Open Crate");
         }
 
         private int CountOrganicFuel(PlayerInventory inventory)
@@ -407,6 +428,39 @@ namespace Hecton8.UI
 
             if (_inventory == null)
                 _inventory = playerTransform.GetComponent<PlayerInventory>();
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RefreshLocalizedPromptCache();
+        }
+
+        private void RefreshLocalizedPromptCache()
+        {
+            _localizedDefaultPromptFormat = defaultPromptFormat;
+            _localizedNoBatteryPrompt = ResolveLocalized(LocalizationKeys.INTERACT_NO_BATTERY_TO_SWAP, noBatteryPrompt);
+            _localizedSwapBatteryPrompt = ResolveLocalized(LocalizationKeys.INTERACT_SWAP_BATTERY, swapBatteryPrompt);
+            _localizedDepositFuelPrompt = ResolveLocalized(LocalizationKeys.INTERACT_DEPOSIT_FUEL, depositFuelPrompt);
+            _localizedTakeItemPrompt = ResolveLocalized(LocalizationKeys.INTERACT_TAKE_ITEM, takeItemPrompt);
+            _localizedConsumableWithDurationFormat = consumableWithDurationFormat;
+            _localizedActionInProgressPrompt = ResolveLocalized(LocalizationKeys.ACTION_USING, actionInProgressPrompt);
+            _localizedInsertBatteryPrompt = ResolveLocalized(LocalizationKeys.INTERACT_INSERT_BATTERY, "Insert Battery");
+            _localizedBioReactorPrompt = ResolveLocalized(LocalizationKeys.INTERACT_BIO_REACTOR, "Bio Reactor");
+            _localizedEmptyCratePrompt = ResolveLocalized(LocalizationKeys.INTERACT_EMPTY_CRATE, "Empty Crate");
+            _localizedVerbApply = ResolveLocalized(LocalizationKeys.INTERACT_VERB_APPLY, "Apply");
+            _localizedVerbDrink = ResolveLocalized(LocalizationKeys.INTERACT_VERB_DRINK, "Drink");
+            _localizedVerbEat = ResolveLocalized(LocalizationKeys.INTERACT_VERB_EAT, "Eat");
+            _localizedVerbInhale = ResolveLocalized(LocalizationKeys.INTERACT_VERB_INHALE, "Inhale");
+            _localizedVerbUse = ResolveLocalized(LocalizationKeys.INTERACT_VERB_USE, "Use");
+            _localizedVerbTake = ResolveLocalized("ITEM_INTERACT_TAKE", "Take");
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            return localization != null
+                ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private void RegisterToTick()

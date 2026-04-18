@@ -162,8 +162,6 @@ namespace Hecton8.Core
         /// MapMagic hierarchy has not structurally changed.
         /// </summary>
         private int _cachedTerrainTileRootCount = -1;
-        private bool _terrainConnectivityFallbackLogged;
-
         /// <summary>
         /// Last tile resolved for height/biome sampling. Scatter samples cluster
         /// spatially, so this avoids full tile scans on repeated queries.
@@ -708,26 +706,8 @@ namespace Hecton8.Core
 
             int clampedMainRange = Mathf.Max(1, mainRange);
             int clampedDraftRange = Mathf.Max(clampedMainRange, draftRange);
-            bool incompatibleDraftContinuum =
-                Application.isPlaying &&
-                draftsInPlaymode &&
-                mapMagicObject.tileResolution != draftResolution;
-            if (incompatibleDraftContinuum)
-            {
-                draftsInPlaymode = false;
-                clampedDraftRange = clampedMainRange;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (!_terrainConnectivityFallbackLogged)
-                {
-                    _terrainConnectivityFallbackLogged = true;
-                    Debug.LogWarning(
-                        "[MapMagicBridge] Falling back to main-only runtime terrain streaming because draft/main tiles use different heightmap resolutions. " +
-                        "This avoids Unity terrain neighbor errors at the cost of far-field draft continuity.",
-                        this);
-                }
-#endif
-            }
+            if (Application.isPlaying && draftsInPlaymode)
+                draftResolution = mapMagicObject.tileResolution;
 
             bool topologyChanged = false;
             bool resolutionChanged = false;
@@ -1099,6 +1079,9 @@ namespace Hecton8.Core
             if (mapMagicObject == null || mapMagicObject.terrainSettings == null)
                 return;
 
+            if (NormalizeRuntimeDraftResolution())
+                forceApplyToCachedTerrains = true;
+
             bool incompatibleDraftConnectivity =
                 Application.isPlaying &&
                 mapMagicObject.draftsInPlaymode &&
@@ -1111,19 +1094,26 @@ namespace Hecton8.Core
 
             terrainSettings.allowAutoConnect = desiredAllowAutoConnect;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (incompatibleDraftConnectivity && !_terrainConnectivityFallbackLogged)
-            {
-                _terrainConnectivityFallbackLogged = true;
-                Debug.LogWarning(
-                    "[MapMagicBridge] Disabled Terrain auto-connect at runtime because draft/main tiles use different heightmap resolutions. " +
-                    "This prevents Unity neighbor-connect errors while runtime draft streaming is active.",
-                    this);
-            }
-#endif
-
             if (forceApplyToCachedTerrains)
                 ApplyTerrainSettingsToCachedTerrains();
+        }
+
+        /// <summary>
+        /// Normalizes runtime draft terrain resolution to the main-tile
+        /// heightmap so Unity terrain connectivity can stay enabled.
+        /// </summary>
+        private bool NormalizeRuntimeDraftResolution()
+        {
+            if (mapMagicObject == null ||
+                !Application.isPlaying ||
+                !mapMagicObject.draftsInPlaymode ||
+                mapMagicObject.tileResolution == mapMagicObject.draftResolution)
+            {
+                return false;
+            }
+
+            mapMagicObject.draftResolution = mapMagicObject.tileResolution;
+            return true;
         }
 
         /// <summary>
@@ -1288,13 +1278,13 @@ namespace Hecton8.Core
             if (tile == null)
                 return null;
 
-            Terrain activeTerrain = tile.ActiveTerrain;
-            if (activeTerrain != null && activeTerrain.terrainData != null)
-                return activeTerrain;
-
             Terrain mainTerrain = tile.GetTerrain(false);
             if (mainTerrain != null && mainTerrain.terrainData != null)
                 return mainTerrain;
+
+            Terrain activeTerrain = tile.ActiveTerrain;
+            if (activeTerrain != null && activeTerrain.terrainData != null)
+                return activeTerrain;
 
             Terrain draftTerrain = tile.GetTerrain(true);
             if (draftTerrain != null && draftTerrain.terrainData != null)

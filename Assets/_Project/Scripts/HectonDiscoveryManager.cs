@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton.Localization;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -134,7 +135,9 @@ namespace Hecton8.Gameplay
 
             OnBiomeDiscovered?.Invoke(biomeId);
 
-            NotificationEvents.PushInfo($"ИЗУЧЕН НОВЫЙ БИОМ: {biomeName}");
+            NotificationEvents.PushInfo(string.Format(
+                ResolveLocalized(LocalizationKeys.DISCOVERY_NEW_BIOME, "NEW BIOME DISCOVERED: {0}"),
+                biomeName));
         }
 
         /// <summary>
@@ -224,6 +227,14 @@ namespace Hecton8.Gameplay
         private static bool IsValidBiomeId(int biomeId)
         {
             return biomeId >= MinBiomeId && biomeId <= MaxBiomeId;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private int ResolveFallbackLastDiscoveredId()

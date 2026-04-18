@@ -59,7 +59,7 @@ namespace Hecton8.AI
             transform.position = spawnPoint;
         }
 
-        public void ForceState(AIState state)
+        public void ForceState(FaunaBrain.AIState state)
         {
             _stateMachine.currentState = state;
         }

@@ -114,6 +114,10 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _CelestialSunFade ("Sun Fade", Range(0, 1)) = 0.65
         _CelestialHaloFade ("Halo Fade", Range(0, 1)) = 0.55
 
+        [Header(Shared Celestial Atmosphere)]
+        _AtmosphereTransmittanceWeight ("Atmosphere Transmittance Weight", Range(0, 1.5)) = 1.0
+        _AtmosphereInscatterWeight ("Atmosphere Inscatter Weight", Range(0, 2.0)) = 1.0
+
         [Header(Wind and Timing)]
         _GameTime ("Game Time (set from C#)", Float) = 0.0
         _NightBlend ("Night Blend (set from C#)", Range(0, 1)) = 0.0
@@ -157,6 +161,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Hecton_CelestialAtmosphere.hlsl"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
             TEXTURE2D(_StarTex);            SAMPLER(sampler_StarTex);
@@ -225,6 +230,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _CelestialStarFade;
                 half   _CelestialSunFade;
                 half   _CelestialHaloFade;
+                half   _AtmosphereTransmittanceWeight;
+                half   _AtmosphereInscatterWeight;
 
                 float  _GameTime;
                 float  _NightBlend;
@@ -275,18 +282,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 out half3 horizonColor,
                 out half3 nadirColor)
             {
-                zenithColor = lerp(
-                    _SkyColorZenith.rgb,
-                    lerp(_SkyColorZenith.rgb, _SkyColorNadir.rgb, 0.12h) * half3(0.18h, 0.20h, 0.24h),
-                    nightFactor);
-                horizonColor = lerp(
-                    _SkyColorHorizon.rgb,
-                    lerp(_SkyColorNadir.rgb, _SkyColorZenith.rgb, 0.08h) * half3(0.14h, 0.16h, 0.22h),
-                    nightFactor);
-                nadirColor = lerp(
-                    _SkyColorNadir.rgb,
-                    _SkyColorNadir.rgb * half3(0.22h, 0.24h, 0.30h),
-                    nightFactor);
+                zenithColor = _SkyColorZenith.rgb;
+                horizonColor = _SkyColorHorizon.rgb;
+                nadirColor = _SkyColorNadir.rgb;
             }
 
             float hash(float2 p)
@@ -609,10 +607,11 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 // v5.3: Aegir cloud glow fades at horizon (no purple streaks)
                 half aegirDotForClouds = saturate(dot(V, aegirDir));
-                half3 aegirCloudGlow   = half3(0.4h, 0.2h, 0.8h)
+                half aegirGlowIntensity = max(_AegirGlowIntensity, 0.0h);
+                half3 aegirCloudGlow   = _AegirHaloColor.rgb
                                        * aegirDotForClouds
                                        * eclipseNight
-                                       * _AegirGlowIntensity
+                                       * aegirGlowIntensity
                                        * cloudMask
                                        * atmosClarity
                                        * lerp(0.02h, 1.0h, cloudDayReturn);
@@ -659,6 +658,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                     * lerp(0.01h, 1.0h, cloudDayReturn);
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
 
+                float4 sharedAtmosphereSample = SampleHectonCelestialAtmosphere(
+                    Vf,
+                    _SkyColorHorizon.rgb,
+                    _SkyColorZenith.rgb);
+                skyColor = (half3)ApplyHectonCelestialAtmosphere(
+                    skyColor,
+                    sharedAtmosphereSample,
+                    _AtmosphereTransmittanceWeight,
+                    _AtmosphereInscatterWeight);
+
                 // =======================================
                 // SUN DISC
                 // =======================================
@@ -672,8 +681,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half sunDisc = exp2(-normalizedSunDistSq * 6.5h);
                 half sunCorona = exp2(-normalizedSunDistSq * 0.95h);
                 half sunOuterCorona = exp2(-normalizedSunDistSq * 0.28h);
+                half sunAboveHorizon = smoothstep(-0.04h, 0.08h, _SunElevation);
 
-                half sunVisibility = (1.0h - finalCloudMask) * eclipseVis;
+                half sunVisibility = (1.0h - finalCloudMask) * eclipseVis * sunAboveHorizon;
                 sunVisibility *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);
                 half3 softDiscColor = lerp(_SunScatterColor.rgb, _SunDiscColor.rgb, 0.55h);
                 half3 sunDiscColor = softDiscColor * (sunDisc * 0.55h + sunCore * 0.65h);
@@ -692,7 +702,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                               * _SunScatterIntensity;
                 sunGlow += skyScatterTint * sunOuterCorona * (_SunScatterIntensity * 0.12h);
 
-                sunGlow *= (1.0h - finalCloudMask * 0.7h) * eclipseVis;
+                sunGlow *= (1.0h - finalCloudMask * 0.7h) * eclipseVis * sunAboveHorizon;
                 sunGlow *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);
                 skyColor += sunGlow;
 
@@ -701,11 +711,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // =======================================
                 half aegirDot = saturate(dot(V, aegirDir));
 
-                half nightBoost = 1.0h + eclipseNight * _AegirGlowIntensity;
-
                 half aegirHalo = pow(aegirDot, _AegirHaloPower)
                                * _AegirHaloIntensity
-                               * nightBoost;
+                               * aegirGlowIntensity;
 
                 aegirHalo *= (1.0h - finalCloudMask * 0.5h);
                 aegirHalo *= lerp(1.0h, celestialTransmittance, _CelestialHaloFade);

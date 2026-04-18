@@ -4,6 +4,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Inventory;
@@ -36,16 +37,6 @@ namespace Hecton8.Gameplay
         private PlayerInventory _playerInventory;
         private bool _registeredWithSaveManager;
 
-        private const string MsgMissionStartedPrefix = "НОВАЯ МИССИЯ: ";
-        private const string MsgMissionCompletedPrefix = "МИССИЯ ЗАВЕРШЕНА: ";
-        private const string MsgMissionRewardPrefix = "ПОЛУЧЕНА НАГРАДА: ";
-        private const string MsgMissionRewardPendingPrefix = "НАГРАДА ОЖИДАЕТ ВЫДАЧИ: ";
-        private const string MsgMissionRewardMissingCatalog = "МИССИЯ: КАТАЛОГ ПРЕДМЕТОВ НЕДОСТУПЕН";
-        private const string MsgMissionRewardStorageOffline = "МИССИЯ: ИНВЕНТАРЬ НЕДОСТУПЕН";
-        private const string MsgMissionRewardExperiencePrefix = "МИССИЯ: ОПЫТ ЗАЧТЁН ";
-        private const string MsgMissionRewardUnlockPrefix = "МИССИЯ: РАЗБЛОКИРОВАНО ";
-        private const string MsgMissionRewardUnknownItemPrefix = "МИССИЯ: ПРЕДМЕТ НАГРАДЫ НЕ НАЙДЕН ";
-        private const string MsgMissionRewardNoCapacityPrefix = "МИССИЯ: НЕТ МЕСТА ДЛЯ НАГРАДЫ ";
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -276,7 +267,9 @@ namespace Hecton8.Gameplay
             if (data == null)
                 return;
 
-            NotificationEvents.PushInfo(MsgMissionStartedPrefix + data.title);
+            NotificationEvents.PushInfo(string.Format(
+                ResolveLocalized(LocalizationKeys.MISSION_STARTED, "NEW MISSION: {0}"),
+                ResolveMissionTitle(data)));
         }
 
         private void NotifyMissionCompleted(MissionData data)
@@ -284,7 +277,9 @@ namespace Hecton8.Gameplay
             if (data == null)
                 return;
 
-            NotificationEvents.PushInfo(MsgMissionCompletedPrefix + data.title);
+            NotificationEvents.PushInfo(string.Format(
+                ResolveLocalized(LocalizationKeys.MISSION_COMPLETED, "MISSION COMPLETED: {0}"),
+                ResolveMissionTitle(data)));
         }
 
         private void GrantRewards(MissionData data)
@@ -307,12 +302,16 @@ namespace Hecton8.Gameplay
                         break;
 
                     case RewardData.RewardType.Experience:
-                        NotificationEvents.PushInfo(MsgMissionRewardExperiencePrefix + Mathf.Max(0f, reward.experience));
+                        NotificationEvents.PushInfo(string.Format(
+                            ResolveLocalized(LocalizationKeys.MISSION_REWARD_EXPERIENCE, "MISSION: EXPERIENCE LOGGED {0}"),
+                            Mathf.Max(0f, reward.experience)));
                         break;
 
                     case RewardData.RewardType.Unlock:
                         if (!string.IsNullOrEmpty(reward.itemId))
-                            NotificationEvents.PushInfo(MsgMissionRewardUnlockPrefix + reward.itemId.ToUpperInvariant());
+                            NotificationEvents.PushInfo(string.Format(
+                                ResolveLocalized(LocalizationKeys.MISSION_REWARD_UNLOCK, "MISSION: UNLOCKED {0}"),
+                                reward.itemId.ToUpperInvariant()));
                         break;
                 }
             }
@@ -325,20 +324,26 @@ namespace Hecton8.Gameplay
 
             if (itemCatalog == null)
             {
-                NotificationEvents.PushWarning(MsgMissionRewardMissingCatalog);
+                NotificationEvents.PushWarning(ResolveLocalized(
+                    LocalizationKeys.MISSION_REWARD_MISSING_CATALOG,
+                    "MISSION: ITEM CATALOG UNAVAILABLE"));
                 return;
             }
 
             if (_playerInventory == null)
             {
-                NotificationEvents.PushWarning(MsgMissionRewardStorageOffline);
+                NotificationEvents.PushWarning(ResolveLocalized(
+                    LocalizationKeys.MISSION_REWARD_STORAGE_OFFLINE,
+                    "MISSION: INVENTORY OFFLINE"));
                 return;
             }
 
             ItemData item = itemCatalog.FindById(reward.itemId);
             if (item == null)
             {
-                NotificationEvents.PushWarning(MsgMissionRewardUnknownItemPrefix + reward.itemId.ToUpperInvariant());
+                NotificationEvents.PushWarning(string.Format(
+                    ResolveLocalized(LocalizationKeys.MISSION_REWARD_UNKNOWN_ITEM, "MISSION: REWARD ITEM NOT FOUND {0}"),
+                    reward.itemId.ToUpperInvariant()));
                 return;
             }
 
@@ -348,12 +353,33 @@ namespace Hecton8.Gameplay
 
             if (granted)
             {
-                NotificationEvents.PushInfo(MsgMissionRewardPrefix + itemName);
+                NotificationEvents.PushInfo(string.Format(
+                    ResolveLocalized(LocalizationKeys.MISSION_REWARD_ITEM, "REWARD RECEIVED: {0}"),
+                    itemName));
                 return;
             }
 
-            NotificationEvents.PushWarning(MsgMissionRewardNoCapacityPrefix + itemName);
-            NotificationEvents.PushWarning(MsgMissionRewardPendingPrefix + itemName);
+            NotificationEvents.PushWarning(string.Format(
+                ResolveLocalized(LocalizationKeys.MISSION_REWARD_NO_CAPACITY, "MISSION: NO SPACE FOR REWARD {0}"),
+                itemName));
+            NotificationEvents.PushWarning(string.Format(
+                ResolveLocalized(LocalizationKeys.MISSION_REWARD_PENDING, "REWARD PENDING DELIVERY: {0}"),
+                itemName));
+        }
+
+        private static string ResolveMissionTitle(MissionData data)
+        {
+            return data != null && !string.IsNullOrWhiteSpace(data.title)
+                ? data.title
+                : "UNKNOWN MISSION";
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

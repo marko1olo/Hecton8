@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton.Localization;
 using Hecton8.SaveSystem;
 
 namespace Hecton8.UI
@@ -30,13 +31,25 @@ namespace Hecton8.UI
         private void HandleSaveCompleted(string slotName)
         {
             if (notificationSystem != null)
-                notificationSystem.ShowInfo("GAME DATA SYNCHRONIZED — SECURE");
+                notificationSystem.ShowInfo(ResolveLocalized(
+                    LocalizationKeys.SAVE_NOTIFICATION_SYNCHRONIZED,
+                    "GAME DATA SYNCHRONIZED - SECURE"));
         }
 
         private void HandleSaveFailed(string slotName, string error)
         {
             if (notificationSystem != null)
-                notificationSystem.ShowCritical("SAVE ERROR — CHECK LOGS");
+                notificationSystem.ShowCritical(ResolveLocalized(
+                    LocalizationKeys.SAVE_NOTIFICATION_FAILED,
+                    "SAVE ERROR - CHECK LOGS"));
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

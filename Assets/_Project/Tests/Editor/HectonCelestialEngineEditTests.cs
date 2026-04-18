@@ -1,6 +1,8 @@
 using System.Reflection;
+using Hecton8.Atmosphere;
 using Hecton8.Celestial;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -19,11 +21,7 @@ public class HectonCelestialEngineEditTests
         _mainCameraObject.AddComponent<Camera>();
 
         _gameObject = new GameObject("CelestialEngineTestGO");
-
-        LogAssert.Expect(LogType.Error, "[HectonCelestialEngine] Sun Light is not assigned!");
         LogAssert.Expect(LogType.Error, "[HectonCelestialEngine] Aegir Transform is not assigned!");
-        LogAssert.Expect(LogType.Warning, "[HectonCelestialEngine] Player not assigned, using SceneBootstrap player transform.");
-        LogAssert.Expect(LogType.Warning, "[HectonCelestialEngine] Sky Material is not assigned!");
 
         _engine = _gameObject.AddComponent<HectonCelestialEngine>();
 
@@ -91,11 +89,17 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
-    public void ResolveSkyColorsReadsLiveSkyMaterialAsSourceOfTruth()
+    public void ResolveSkyColorsReadsScriptProfilesAsSourceOfTruth()
     {
         Color expectedZenith = new Color(0.12f, 0.34f, 0.56f, 1f);
         Color expectedHorizon = new Color(0.65f, 0.43f, 0.21f, 1f);
         Color expectedNadir = new Color(0.07f, 0.08f, 0.11f, 1f);
+
+        SetPrivateField("_dayProfile", SkyColorProfile.Default(expectedZenith, expectedHorizon, expectedNadir));
+        SetPrivateField("_horizonZenithBlend", 0f);
+        SetPrivateField("_horizonBrightnessScale", 1f);
+        SetPrivateField("_currentSunAngle", 35f);
+        SetPrivateField("_smoothedOcclusionFactor", 0f);
 
         _skyMaterial.SetColor("_SkyColorZenith", expectedZenith);
         _skyMaterial.SetColor("_SkyColorHorizon", expectedHorizon);
@@ -116,11 +120,15 @@ public class HectonCelestialEngineEditTests
         Color baseHorizon = new Color(0.42f, 0.56f, 0.74f, 1f);
         Color baseNadir = new Color(0.03f, 0.05f, 0.12f, 1f);
 
-        _skyMaterial.SetColor("_SkyColorZenith", baseZenith);
-        _skyMaterial.SetColor("_SkyColorHorizon", baseHorizon);
-        _skyMaterial.SetColor("_SkyColorNadir", baseNadir);
-
-        InvokePrivateMethod("UpdateSkyboxBlend", -24f);
+        SetPrivateField("_dayProfile", SkyColorProfile.Default(baseZenith, baseHorizon, baseNadir));
+        SetPrivateField("_nightProfile", SkyColorProfile.Default(
+            new Color(0.02f, 0.04f, 0.08f, 1f),
+            new Color(0.08f, 0.09f, 0.14f, 1f),
+            new Color(0.01f, 0.015f, 0.03f, 1f)));
+        SetPrivateField("_horizonZenithBlend", 0f);
+        SetPrivateField("_horizonBrightnessScale", 1f);
+        SetPrivateField("_currentSunAngle", -24f);
+        SetPrivateField("_smoothedOcclusionFactor", 0f);
 
         object[] args = { null, null, null };
         InvokePrivateMethod("ResolveSkyColors", args);
@@ -131,6 +139,40 @@ public class HectonCelestialEngineEditTests
         Assert.That(resolvedZenith.maxColorComponent, Is.LessThan(baseZenith.maxColorComponent));
         Assert.That(resolvedHorizon.maxColorComponent, Is.LessThan(baseHorizon.maxColorComponent));
         Assert.That(resolvedHorizon.grayscale, Is.LessThan(resolvedZenith.grayscale));
+    }
+
+    [Test]
+    public void ApplySkyMaterialPropertiesPushesScriptOwnedSkyStateIntoMaterial()
+    {
+        Color resolvedZenith = new Color(0.11f, 0.22f, 0.44f, 1f);
+        Color resolvedHorizon = new Color(0.55f, 0.33f, 0.2f, 1f);
+        Color resolvedNadir = new Color(0.04f, 0.05f, 0.08f, 1f);
+
+        SetPrivateField("_resolvedSkyZenith", resolvedZenith);
+        SetPrivateField("_resolvedSkyHorizon", resolvedHorizon);
+        SetPrivateField("_resolvedSkyNadir", resolvedNadir);
+        SetPrivateField("_currentBlend", 0.42f);
+        SetPrivateField("_currentStarIntensity", 0.35f);
+        SetPrivateField("_smoothedOcclusionFactor", 0.18f);
+        SetPrivateField("_gameTime", 12.5f);
+        SetPrivateField("_atmosphereTransmittanceWeight", 0.67f);
+        SetPrivateField("_atmosphereInscatterWeight", 1.12f);
+        SetPrivateField("_currentBacklitFactor", 0.5f);
+        SetPrivateField("_sunsetProfile", SkyColorProfile.Default(resolvedZenith, resolvedHorizon, resolvedNadir));
+
+        InvokePrivateMethod(
+            "ApplySkyMaterialProperties",
+            _skyMaterial,
+            0.25f,
+            new Vector4(0f, 1f, 0f, 0f),
+            new Vector4(0f, 0f, 1f, 0f));
+
+        Assert.That(_skyMaterial.GetColor("_SkyColorZenith"), Is.EqualTo(resolvedZenith));
+        Assert.That(_skyMaterial.GetColor("_SkyColorHorizon"), Is.EqualTo(resolvedHorizon));
+        Assert.That(_skyMaterial.GetColor("_SkyColorNadir"), Is.EqualTo(resolvedNadir));
+        Assert.That(_skyMaterial.GetFloat("_AtmosphereTransmittanceWeight"), Is.EqualTo(0.67f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetFloat("_AtmosphereInscatterWeight"), Is.EqualTo(1.12f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetFloat("_AegirGlowIntensity"), Is.EqualTo(0.56f).Within(0.0001f));
     }
 
     [Test]
@@ -172,6 +214,44 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void SkySystemFollowCameraPrefersSceneViewCameraOverCachedGameplayCameraInEditMode()
+    {
+        GameObject followObject = new GameObject("SkyFollowEditModeTest");
+        GameObject cachedCameraObject = new GameObject("CachedGameplayCamera");
+        SceneView sceneView = null;
+
+        try
+        {
+            Camera cachedCamera = cachedCameraObject.AddComponent<Camera>();
+            cachedCamera.transform.position = new Vector3(900f, 900f, 900f);
+
+            sceneView = EditorWindow.CreateWindow<SceneView>("CodexSceneViewTest");
+            sceneView.ShowUtility();
+            sceneView.Focus();
+            sceneView.camera.transform.position = new Vector3(12f, 34f, 56f);
+
+            SkySystemFollowCamera followCamera = followObject.AddComponent<SkySystemFollowCamera>();
+            SetPrivateField(followCamera, "_cachedResolvedCamera", cachedCamera);
+            SetPrivateField(followCamera, "followVerticalPosition", true);
+            SetPrivateField(followCamera, "positionOffset", Vector3.zero);
+
+            Camera resolvedCamera = (Camera)InvokePrivateMethod(followCamera, "ResolveTargetCamera");
+
+            Assert.That(SceneView.lastActiveSceneView, Is.Not.Null);
+            Assert.That(resolvedCamera, Is.EqualTo(SceneView.lastActiveSceneView.camera));
+            Assert.That(resolvedCamera.transform.position, Is.EqualTo(new Vector3(12f, 34f, 56f)));
+        }
+        finally
+        {
+            if (sceneView != null)
+                sceneView.Close();
+
+            Object.DestroyImmediate(cachedCameraObject);
+            Object.DestroyImmediate(followObject);
+        }
+    }
+
+    [Test]
     public void ObserverRelativeCelestialBodyPrefersParentLocalDirectionCapture()
     {
         GameObject parentObject = new GameObject("SkyRig");
@@ -198,6 +278,123 @@ public class HectonCelestialEngineEditTests
             Object.DestroyImmediate(bodyObject);
             Object.DestroyImmediate(observerObject);
             Object.DestroyImmediate(parentObject);
+        }
+    }
+
+    [Test]
+    public void ObserverRelativeCelestialBodyFixedDirectionFollowsObserverOneToOneWithConstantOffset()
+    {
+        GameObject observerObject = new GameObject("Observer");
+        GameObject bodyObject = new GameObject("AegirBody");
+
+        try
+        {
+            ObserverRelativeCelestialBody body = bodyObject.AddComponent<ObserverRelativeCelestialBody>();
+            SetPrivateField(body, "observerTransform", observerObject.transform);
+            SetPrivateField(body, "captureInitialDirectionOnEnable", false);
+            SetPrivateField(body, "fixedDirection", new Vector3(0.92f, 0.04f, 0.31f));
+            SetPrivateField(body, "fixedVerticalOffset", 0.0564f);
+            SetPrivateField(body, "anchorDistance", 21000f);
+
+            observerObject.transform.position = new Vector3(120f, 4900f, -45f);
+            InvokePrivateMethod(body, "ApplyPlacement");
+
+            Vector3 baseDirection = new Vector3(0.92f, 0.04f, 0.31f).normalized;
+            Vector3 horizontalDirection = Vector3.ProjectOnPlane(baseDirection, Vector3.up).normalized;
+            Vector3 expectedOffsetDirection = (horizontalDirection + (Vector3.up * 0.0564f)).normalized;
+            Vector3 expectedWorldPosition = observerObject.transform.position + (expectedOffsetDirection * 50000f);
+
+            Assert.That(bodyObject.transform.position.x, Is.EqualTo(expectedWorldPosition.x).Within(0.01f));
+            Assert.That(bodyObject.transform.position.y, Is.EqualTo(expectedWorldPosition.y).Within(0.01f));
+            Assert.That(bodyObject.transform.position.z, Is.EqualTo(expectedWorldPosition.z).Within(0.01f));
+
+            Vector3 previousOffset = bodyObject.transform.position - observerObject.transform.position;
+
+            observerObject.transform.position = new Vector3(120f, 6000f, -45f);
+            InvokePrivateMethod(body, "LateUpdate");
+
+            Vector3 nextOffset = bodyObject.transform.position - observerObject.transform.position;
+            Assert.That(nextOffset.x, Is.EqualTo(previousOffset.x).Within(0.01f));
+            Assert.That(nextOffset.y, Is.EqualTo(previousOffset.y).Within(0.01f));
+            Assert.That(nextOffset.z, Is.EqualTo(previousOffset.z).Within(0.01f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(observerObject);
+            Object.DestroyImmediate(bodyObject);
+        }
+    }
+
+    [Test]
+    public void AtmosphereManagerSyncEditorPreviewFromSunTransformUpdatesTimeOfDay()
+    {
+        GameObject sunObject = new GameObject("EditorSun");
+        GameObject atmosphereObject = new GameObject("AtmosphereManager");
+
+        try
+        {
+            Light sunLight = sunObject.AddComponent<Light>();
+            sunLight.type = LightType.Directional;
+
+            HectonAtmosphereManager atmosphereManager = atmosphereObject.AddComponent<HectonAtmosphereManager>();
+            SetPrivateField(atmosphereManager, "_sunLight", sunLight);
+            SetPrivateField(atmosphereManager, "_sunOrbitalYAngle", 0f);
+            SetPrivateField(atmosphereManager, "_orbitalInclination", 0f);
+            SetPrivateField(atmosphereManager, "_cycleDuration", 3600f);
+
+            sunLight.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            sunLight.transform.hasChanged = true;
+
+            bool changed = atmosphereManager.SyncEditorPreviewFromSunTransform();
+
+            Assert.That(changed, Is.True);
+            Assert.That(atmosphereManager.SunAngle, Is.EqualTo(90f).Within(0.01f));
+            Assert.That(atmosphereManager.TimeOfDay, Is.EqualTo(0.25f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(atmosphereObject);
+            Object.DestroyImmediate(sunObject);
+        }
+    }
+
+    [Test]
+    public void CelestialEngineConsumesAtmosphereDirtySignalAfterManualSunMove()
+    {
+        GameObject sunObject = new GameObject("EditorSun");
+        GameObject atmosphereObject = new GameObject("AtmosphereManager");
+
+        try
+        {
+            Light sunLight = sunObject.AddComponent<Light>();
+            sunLight.type = LightType.Directional;
+
+            HectonAtmosphereManager atmosphereManager = atmosphereObject.AddComponent<HectonAtmosphereManager>();
+            SetPrivateField(atmosphereManager, "_sunLight", sunLight);
+            SetPrivateField(atmosphereManager, "_sunOrbitalYAngle", 0f);
+            SetPrivateField(atmosphereManager, "_orbitalInclination", 0f);
+
+            SetPrivateField("_atmosphereManager", atmosphereManager);
+            SetPrivateField("sunLight", sunLight);
+            SetPrivateField("_smoothedOcclusionFactor", 0f);
+
+            sunLight.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            sunLight.transform.hasChanged = true;
+
+            Assert.That(atmosphereManager.SyncEditorPreviewFromSunTransform(), Is.True);
+
+            bool consumed = (bool)InvokePrivateMethod("TryConsumeEditorSunTransformChange");
+            _engine.Tick(0f);
+
+            Assert.That(consumed, Is.True);
+            Assert.That(_engine.DayNightBlend, Is.LessThan(0.01f));
+            Assert.That(_skyMaterial.GetFloat("_NightBlend"), Is.LessThan(0.01f));
+            Assert.That(_skyMaterial.GetFloat("_SunElevation"), Is.GreaterThan(0.99f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(atmosphereObject);
+            Object.DestroyImmediate(sunObject);
         }
     }
 

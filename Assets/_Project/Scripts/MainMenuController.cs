@@ -451,7 +451,7 @@ namespace Hecton.UI.MainMenu
                     message,
                     () => SwitchPanel(saveLoadGroup, mainMenuGroup), // Return to main menu
                     null,
-                    "Return to Menu",
+                    ResolveCommonLabel(loc, LocalizationKeys.UI_RETURN_TO_MENU, "Return to Menu"),
                     null);
 
                 // Disable load game button to prevent future attempts
@@ -604,7 +604,7 @@ namespace Hecton.UI.MainMenu
                         message,
                         () => OpenSaveLoadMenu(), // Return to save/load menu
                         null,
-                        "OK",
+                        ResolveCommonLabel(loc, LocalizationKeys.UI_OK, "OK"),
                         null);
                     return;
                 }
@@ -622,7 +622,7 @@ namespace Hecton.UI.MainMenu
                         message,
                         () => OpenSaveLoadMenu(), // Return to save/load menu
                         null,
-                        "OK",
+                        ResolveCommonLabel(loc, LocalizationKeys.UI_OK, "OK"),
                         null);
                     return;
                 }
@@ -678,8 +678,8 @@ namespace Hecton.UI.MainMenu
                     message,
                     () => StartGame(slotName), // Retry
                     () => { SetPanelImmediate(loadingGroup, false); SetPanelImmediate(mainMenuGroup, true); }, // Cancel
-                    "Retry",
-                    "Return to Menu");
+                    ResolveCommonLabel(loc, LocalizationKeys.UI_RETRY, "Retry"),
+                    ResolveCommonLabel(loc, LocalizationKeys.UI_RETURN_TO_MENU, "Return to Menu"));
 
                 return;
             }
@@ -1029,7 +1029,7 @@ namespace Hecton.UI.MainMenu
                 message,
                 null, // No retry in main menu (only in pause menu)
                 null,
-                "OK",
+                ResolveCommonLabel(loc, LocalizationKeys.UI_OK, "OK"),
                 null);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1078,7 +1078,7 @@ namespace Hecton.UI.MainMenu
                     message,
                     null,
                     null,
-                    "OK",
+                    ResolveCommonLabel(loc, LocalizationKeys.UI_OK, "OK"),
                     null);
             }
 
@@ -1124,8 +1124,8 @@ namespace Hecton.UI.MainMenu
                 message,
                 () => StartGame(slotName), // Retry
                 () => SwitchPanel(saveLoadGroup, mainMenuGroup), // Return to menu
-                "Retry",
-                "Return to Menu");
+                ResolveCommonLabel(loc, LocalizationKeys.UI_RETRY, "Retry"),
+                ResolveCommonLabel(loc, LocalizationKeys.UI_RETURN_TO_MENU, "Return to Menu"));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[MainMenuController] Load failed: {slotName} - {error}");
@@ -1168,6 +1168,13 @@ namespace Hecton.UI.MainMenu
             float delta = currentTime - _lastUnscaledTickTime;
             _lastUnscaledTickTime = currentTime;
             return delta > 0f ? delta : 0f;
+        }
+
+        private static string ResolveCommonLabel(LocalizationManager loc, string key, string fallback)
+        {
+            return loc != null
+                ? loc.GetOrFallback(loc.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private void TryRegisterToTickManager()

@@ -103,6 +103,9 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Enable dynamic resolution scaling")]
         private bool _enabled = true;
 
+        [SerializeField, Min(0f), Tooltip("Startup grace window before dynamic resolution is allowed to reduce render scale. Prevents first-frame spikes from blurring the scene immediately on Play.")]
+        private float _startupGraceSeconds = 3f;
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -112,6 +115,7 @@ namespace Hecton8.World
         private int _consecutiveSlowFrames = 0;
         private int _consecutiveFastFrames = 0;
         private int _recoveryHoldFramesRemaining = 0;
+        private float _startupGraceRemainingSeconds;
         private bool _registered;
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
         private float _smoothedFrameTimeMs;
@@ -214,6 +218,7 @@ namespace Hecton8.World
 
             _minRenderScale = GetMinimumRenderScaleForPreset(_qualityPreset);
             _currentRenderScale = Mathf.Clamp(_defaultRenderScale, _minRenderScale, _maxRenderScale);
+            _startupGraceRemainingSeconds = Mathf.Max(0f, _startupGraceSeconds);
             _smoothedFrameTimeMs = _targetFrameTime;
             _peakFrameTimeMs = _targetFrameTime;
             UpdatePressureDiagnostics();
@@ -355,6 +360,9 @@ namespace Hecton8.World
                 return;
             }
 
+            if (HandleStartupGrace(dt, observedFrameTime))
+                return;
+
             float effectiveFrameTime = Mathf.Max(observedFrameTime, _smoothedFrameTimeMs);
             bool criticalPressure = effectiveFrameTime >= _criticalFrameTime;
             bool pressured = effectiveFrameTime > _targetFrameTime;
@@ -421,6 +429,9 @@ namespace Hecton8.World
         {
             _enabled = enabled;
 
+            if (_enabled)
+                _startupGraceRemainingSeconds = Mathf.Max(0f, _startupGraceSeconds);
+
             if (!_enabled && _urpAsset != null)
             {
                 _currentRenderScale = _defaultRenderScale;
@@ -476,6 +487,31 @@ namespace Hecton8.World
         {
             _debugRenderScaleOverrideActive = false;
             _debugRenderScaleOverrideValue = 0f;
+        }
+
+        private bool HandleStartupGrace(float dt, float observedFrameTime)
+        {
+            if (_startupGraceRemainingSeconds <= 0f)
+                return false;
+
+            _startupGraceRemainingSeconds = Mathf.Max(
+                0f,
+                _startupGraceRemainingSeconds - Mathf.Max(0f, dt));
+
+            float startupScale = Mathf.Clamp(_defaultRenderScale, _minRenderScale, _maxRenderScale);
+            if (Mathf.Abs(_currentRenderScale - startupScale) > 0.0001f)
+            {
+                _currentRenderScale = startupScale;
+                ApplyRenderScale();
+            }
+
+            _consecutiveSlowFrames = 0;
+            _consecutiveFastFrames = 0;
+            _recoveryHoldFramesRemaining = 0;
+            _peakFrameTimeMs = Mathf.Max(_peakFrameTimeMs, observedFrameTime);
+            _pressureState = RenderPressureState.Stable;
+            UpdatePressureDiagnostics();
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════

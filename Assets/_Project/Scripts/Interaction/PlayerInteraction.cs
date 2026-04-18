@@ -116,6 +116,7 @@ namespace Hecton8.Interaction
         private IInteractable _currentHovered;
         private float         _raycastTimer;
         private Transform     _cameraTransform;
+        private PhysicalInteractionHandler _physicalInteractionHandler;
         private Ray           _ray;
         private RaycastHit    _hitInfo;
         private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe buffer.
@@ -175,6 +176,7 @@ namespace Hecton8.Interaction
             _cameraTransform = playerCamera.transform;
             _raycastTimer    = 0f;
             _registeredToTickManager = false;
+            TryGetComponent(out _physicalInteractionHandler);
 
             // ────────────────────────────────────────────────────
             // Layer mask validation — catch misconfiguration early.
@@ -426,6 +428,14 @@ namespace Hecton8.Interaction
             {
                 SpatialAudioManager.Instance.PlayStatic2D(
                     interactSound, 0.6f);
+            }
+
+            if (_physicalInteractionHandler != null &&
+                _physicalInteractionHandler.TryHandleInteraction(_currentHovered, transform))
+            {
+                InteractionEvents.RaiseInteractionStarted(
+                    _currentHovered, transform);
+                return;
             }
 
             _currentHovered.Interact(transform);

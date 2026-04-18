@@ -19,18 +19,9 @@ AA commercial product — Master Grade, enterprise-level, visually premium.
 
 ---
 
-## SYSTEM STATUS LEDGER
-
-| System | Status |
-|---|---|
-| Scene bootstrap | Architecturally required; BuildSettings aligned (00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD) |
-| Save shell | Live — manual 3-slot (slot_1/2/3) |
-| Scatter | Live — main CPU offender |
-| VRAM / RT | PRODUCTION READY — all core systems implemented (VRAMMonitor, LifecycleTracker, RTPool, 4 subsystem managers, Editor tools); zero-GC verified; AGENTS.MD compliant; testing deferred (requires Unity Play Mode) |
-| HUD / Visor | Live-verified |
-| Cave / Geology | Architecture-complete, world-proof pending |
-| LOD System | PRODUCTION READY — all runtime systems complete (LODSystemManager, CullingManager, DynamicResolutionScaler, ImpostorSystem with Amplify Impostors integration, Editor Tools); zero-GC verified; AGENTS.MD compliant; renderer.sharedMaterial usage verified; testing deferred (requires Unity Play Mode) |
-
+strict rules
+[RULE] 3RD-PARTY ASSET INTEGRITY: DO NOT write custom runtime wrappers, material clones, or overrides for complex 3rd-party assets (Crest, MapMagic). If Crest requires an asset material, assign the asset. NO runtime instantiation of Crest materials.
+[RULE] REVERT OVER HACK: If a previously working system breaks, DO NOT write new logic ("Fix-Forward") to patch it. Revert the file to its last working Git state and find the exact broken reference.
 ---
 
 ## PROJECT ARCHITECTURE

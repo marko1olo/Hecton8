@@ -473,7 +473,7 @@ MonoBehaviour:
   panelSize: {x: 448, y: 246}
   refreshInterval: 0.2
   persistAcrossSceneLoads: 0
-  enableStressTest: 1
+  enableStressTest: 0
   forcedFrameTimeMs: 33
   debugCanvasResolved: 0
   debugRenderPressure: Stable

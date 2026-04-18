@@ -21,6 +21,7 @@
 // ============================================================================
 
 using System;
+using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.UI;
@@ -228,7 +229,9 @@ namespace Hecton8.Gameplay
 
             StartEvent(RandomEventType.BiolumStorm, biolumStormDuration, 0.8f);
             Shader.SetGlobalFloat(_ShaderBiolumStorm, 1f);
-            NotificationEvents.PushInfo("БИОЛЮМИНЕСЦЕНТНЫЙ ШТОРМ — ВИДИМОСТЬ +30%. ФАУНА АКТИВИЗИРУЕТСЯ.");
+            NotificationEvents.PushInfo(ResolveLocalized(
+                LocalizationKeys.RANDOM_EVENT_BIOLUM_STORM,
+                "BIOLUMINESCENT STORM - VISIBILITY +30%. FAUNA AGITATED."));
         }
 
         private void TryTriggerThermalEruption(float depth)
@@ -238,7 +241,9 @@ namespace Hecton8.Gameplay
             if (UnityEngine.Random.value > thermalEruptionChance) return;
 
             StartEvent(RandomEventType.ThermalEruption, thermalEruptionDuration, 1f);
-            NotificationEvents.PushWarning("ТЕРМАЛЬНЫЙ ВЫБРОС — ОПАСНОСТЬ ОЖОГА. РЕДКИЕ МИНЕРАЛЫ ДОСТУПНЫ.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.RANDOM_EVENT_THERMAL_ERUPTION,
+                "THERMAL ERUPTION - BURN HAZARD. RARE MINERALS EXPOSED."));
 
             // Урон оборудованию
             if (survivalSystem != null)
@@ -251,7 +256,9 @@ namespace Hecton8.Gameplay
             if (UnityEngine.Random.value > faunaMigrationChance) return;
 
             StartEvent(RandomEventType.FaunaMigration, faunaMigrationDuration, 0.5f);
-            NotificationEvents.PushInfo("МИГРАЦИЯ СТАИ — ПОВЕДЕНИЕ ФАУНЫ ИЗМЕНИЛОСЬ.");
+            NotificationEvents.PushInfo(ResolveLocalized(
+                LocalizationKeys.RANDOM_EVENT_FAUNA_MIGRATION,
+                "PACK MIGRATION - FAUNA BEHAVIOR SHIFT DETECTED."));
         }
 
         private void TryTriggerGlitch(float depth)
@@ -262,7 +269,9 @@ namespace Hecton8.Gameplay
 
             StartEvent(RandomEventType.HectonOSGlitch, glitchDuration, 0.6f);
             Shader.SetGlobalFloat(_ShaderGlitchActive, 1f);
-            NotificationEvents.PushWarning("HECTON-OS: СБОЙ — РАДИАЦИОННЫЕ ПОМЕХИ. ПОКАЗАНИЯ МОГУТ БЫТЬ НЕТОЧНЫМИ.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.RANDOM_EVENT_HECTON_OS_GLITCH,
+                "HECTON-OS GLITCH - RADIATION INTERFERENCE. READINGS MAY BE INACCURATE."));
         }
 
         private void TryTriggerCaveCollapse(float depth)
@@ -272,7 +281,9 @@ namespace Hecton8.Gameplay
             if (UnityEngine.Random.value > caveCollapseChance) return;
 
             StartEvent(RandomEventType.CaveCollapse, caveCollapseDuration, 1f);
-            NotificationEvents.PushWarning("ОБРУШЕНИЕ ПЕЩЕРЫ — ПУТЬ ЗАБЛОКИРОВАН. ВОЗМОЖЕН НОВЫЙ ПРОХОД.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.RANDOM_EVENT_CAVE_COLLAPSE,
+                "CAVE COLLAPSE - ROUTE BLOCKED. POSSIBLE NEW OPENING."));
         }
 
         private void StartEvent(RandomEventType type, float duration, float intensity)
@@ -327,6 +338,14 @@ namespace Hecton8.Gameplay
             }
 
             return playerTransform.TryGetComponent(out survivalSystem);
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

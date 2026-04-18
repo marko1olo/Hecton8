@@ -116,11 +116,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
-    - _AegirGlowIntensity: 1.5
+    - _AegirGlowIntensity: 0
     - _AegirHaloIntensity: 0.58
     - _AegirHaloPower: 2.9
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _AtmosphereInscatterWeight: 2
+    - _AtmosphereTransmittanceWeight: 0.05
     - _BacklitIntensity: 1.25
     - _BacklitPower: 4
     - _Blend: 0
@@ -138,23 +140,23 @@ Material:
     - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CloudDensityThreshold: 0.16
+    - _CloudDensityThreshold: 0
     - _CloudOverlayMode: 0
-    - _CloudSoftness: 0.3
+    - _CloudSoftness: 0.01
     - _CloudSpeedMult: 0
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DetailStrength: 0.42
+    - _DetailStrength: 0.66
     - _DitherScale: 4
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EclipseOcclusion: 0
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
-    - _FlowStrength: 0.178
-    - _GameTime: 0.15994275
+    - _FlowStrength: 0
+    - _GameTime: 0
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -186,9 +188,9 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.30311775
-    - _SunScatterIntensity: 1.35
-    - _SunScatterPower: 2.35
+    - _SunElevation: 0.5960179
+    - _SunScatterIntensity: 1.1
+    - _SunScatterPower: 10.4
     - _SunSize: 0.002
     - _Surface: 0
     - _WorkflowMode: 1
@@ -201,17 +203,17 @@ Material:
     - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
     - _CirrusColor: {r: 0.82, g: 0.84, b: 0.9, a: 1}
     - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
-    - _CloudColorLit: {r: 0.7, g: 0.74, b: 0.8, a: 1}
-    - _CloudColorShadow: {r: 0.32, g: 0.36, b: 0.44, a: 1}
+    - _CloudColorLit: {r: 0, g: 0, b: 0, a: 0}
+    - _CloudColorShadow: {r: 0, g: 0, b: 0, a: 0}
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HazeColor: {r: 0.46, g: 0.53, b: 0.62, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
-    - _NightCloudColor: {r: 0.049999982, g: 0.049999982, b: 0.079999976, a: 1}
+    - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.4248, g: 0.38736, b: 0.61200005, a: 1}
+    - _SkyColorHorizon: {r: 0.45220003, g: 0.40684, b: 0.62299997, a: 1}
     - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
     - _SkyColorZenith: {r: 0.1, g: 0.16, b: 0.5, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
@@ -219,8 +221,8 @@ Material:
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
     - _SunDiscColor: {r: 19.428722, g: 17.485851, b: 11.657234, a: 1}
     - _SunScatterColor: {r: 0.97143614, g: 0.6800053, b: 0.29143086, a: 1}
-    - _SunsetCloudColor: {r: 0.9, g: 0.46, b: 0.24, a: 1}
-    - _SunsetHorizonColor: {r: 1.78, g: 0.64, b: 0.14, a: 1}
+    - _SunsetCloudColor: {r: 1.18, g: 0.534193, b: 0.06735849, a: 1}
+    - _SunsetHorizonColor: {r: 1.18, g: 0.534193, b: 0.06735849, a: 1}
     - _WindDirection: {r: 0.8, g: 0.6, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

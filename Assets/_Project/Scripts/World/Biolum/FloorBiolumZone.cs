@@ -234,9 +234,14 @@ namespace Hecton8.Biolum
         #if UNITY_EDITOR
         protected override void OnDrawGizmosSelected()
         {
+            if (_clusterCenters == null || _clusterCenters.Length == 0 || _clusterCount <= 0)
+                return;
+
+            int clusterCount = Mathf.Min(_clusterCount, _clusterCenters.Length);
+
             // Draw cluster centers
             Gizmos.color = GetBiolumColor();
-            for (int i = 0; i < _clusterCount; i++)
+            for (int i = 0; i < clusterCount; i++)
             {
                 Vector3 center = transform.position + _clusterCenters[i];
                 Gizmos.DrawWireSphere(center, _clusterSize);

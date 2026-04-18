@@ -151,9 +151,24 @@ namespace Hecton8.Audio
                  "0.5 = быстрый переход для тестирования.")]
         [SerializeField] private float transitionDuration = 2.0f;
 
+        [Tooltip("Время перехода в интерьер базы. Даёт отдельный control над dry-zone LPF/reverb response.")]
+        [SerializeField] private float interiorTransitionDuration = 2.0f;
+
+        [Tooltip("Время перехода к обычному surface snapshot без погодного перебленда.")]
+        [SerializeField] private float surfaceTransitionDuration = 2.0f;
+
         [Tooltip("Время перехода при входе в воду (может быть быстрее,\n" +
                  "т.к. 'вода заполняет шлюз' мгновеннее, чем 'откачка').")]
         [SerializeField] private float underwaterTransitionDuration = 1.5f;
+
+        [Tooltip("Время weather-перебленда для Surface/Rain/Storm snapshots.")]
+        [SerializeField] private float surfaceWeatherTransitionDuration = 1.0f;
+
+        [Tooltip("Вес Rain snapshot в Surface weather mix. Управляет perceived wet layer без правки кода.")]
+        [SerializeField, Range(0f, 1f)] private float surfaceRainSnapshotWeight = 0.55f;
+
+        [Tooltip("Вес Storm snapshot в Surface weather mix. Управляет интенсивностью storm wet layer.")]
+        [SerializeField, Range(0f, 1f)] private float surfaceStormSnapshotWeight = 0.8f;
 
         [Header("── Exterior State Stability ───────────────────────")]
         [Tooltip("Глубина входа в подводное акустическое состояние.\n" +
@@ -293,6 +308,9 @@ namespace Hecton8.Audio
         [Tooltip("Fallback reverb preset for interior listener processing.")]
         [SerializeField] private AudioReverbPreset interiorFallbackReverbPreset = AudioReverbPreset.Room;
 
+        [Tooltip("Fallback interior reverb dry level. Exposed so sound design can retune dry/wet balance without code changes.")]
+        [SerializeField, Range(-10000f, 0f)] private float interiorFallbackReverbDryLevel = 0f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -385,6 +403,10 @@ namespace Hecton8.Audio
         private bool _validatedMixerHasNamedCoverage;
         private bool _validatedMixerHasEffectGraph;
         private bool _usingSourceLevelAcousticFallback;
+        // COLD ALLOC: AudioMixerSnapshot[3] — surface weather snapshot blend targets — owner: AcousticZoneController
+        private readonly AudioMixerSnapshot[] _surfaceBlendSnapshots = new AudioMixerSnapshot[3];
+        // COLD ALLOC: float[3] — surface weather snapshot blend weights — owner: AcousticZoneController
+        private readonly float[] _surfaceBlendWeights = new float[3];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -598,12 +620,12 @@ namespace Hecton8.Audio
         private void TransitionToInterior()
         {
             ApplyAmbientLoopState(AcousticZoneState.Interior);
-            TransitionToResolvedSnapshot(AcousticZoneState.Interior, transitionDuration);
+            TransitionToResolvedSnapshot(AcousticZoneState.Interior, interiorTransitionDuration);
 
             // ── Переходный звук ──
             PlayTransitionSound(waterDrainSound);
 
-            LogDiagnostic($"[AcousticZoneController] Interior (dry zone). Transition: {transitionDuration}s");
+            LogDiagnostic($"[AcousticZoneController] Interior (dry zone). Transition: {interiorTransitionDuration}s");
         }
 
         /// <summary>
@@ -618,9 +640,9 @@ namespace Hecton8.Audio
         private void TransitionToSurface()
         {
             ApplyAmbientLoopState(AcousticZoneState.Surface);
-            TransitionToResolvedSnapshot(AcousticZoneState.Surface, transitionDuration);
+            TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceTransitionDuration);
 
-            LogDiagnostic($"[AcousticZoneController] Surface/open air. Transition: {transitionDuration}s");
+            LogDiagnostic($"[AcousticZoneController] Surface/open air. Transition: {surfaceTransitionDuration}s");
         }
 
         private void TransitionToUnderwater()
@@ -1304,7 +1326,7 @@ namespace Hecton8.Audio
             _surfaceElectricalActivity = Mathf.Clamp01(electricalActivity);
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
-                TransitionToResolvedSnapshot(AcousticZoneState.Surface, transitionDuration);
+                TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
         }
 
         internal void ClearSurfaceWeatherMix()
@@ -1313,7 +1335,7 @@ namespace Hecton8.Audio
             _surfaceElectricalActivity = 0f;
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
-                TransitionToResolvedSnapshot(AcousticZoneState.Surface, transitionDuration);
+                TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
         }
 
         private void ApplyAmbientLoopState(AcousticZoneState zone)
@@ -1373,7 +1395,7 @@ namespace Hecton8.Audio
                     _listenerLowPassFilter.lowpassResonanceQ = 1f;
                     _listenerReverbFilter.enabled = true;
                     _listenerReverbFilter.reverbPreset = interiorFallbackReverbPreset;
-                    _listenerReverbFilter.dryLevel = _listenerReverbBaseDryLevel;
+                    _listenerReverbFilter.dryLevel = interiorFallbackReverbDryLevel;
                     break;
 
                 default:
@@ -1493,6 +1515,13 @@ namespace Hecton8.Audio
         {
             EnsureSnapshotBindings();
 
+            if (zone == AcousticZoneState.Surface &&
+                TryTransitionSurfaceSnapshotBlend(duration))
+            {
+                LogDiagnostic("[AcousticZoneController] Snapshot activated: SurfaceBlend");
+                return;
+            }
+
             AudioMixerSnapshot snapshot = ResolveSnapshotForZone(zone);
             if (snapshot == null)
             {
@@ -1504,6 +1533,60 @@ namespace Hecton8.Audio
 
             snapshot.TransitionTo(Mathf.Max(0f, duration));
             LogDiagnostic($"[AcousticZoneController] Snapshot activated: {snapshot.name}");
+        }
+
+        private bool TryTransitionSurfaceSnapshotBlend(float duration)
+        {
+            if (masterMixer == null || surfaceSnapshot == null)
+                return false;
+
+            int snapshotCount = 0;
+            float totalWeight = 0f;
+
+            _surfaceBlendSnapshots[snapshotCount] = surfaceSnapshot;
+            _surfaceBlendWeights[snapshotCount] = 1f;
+            totalWeight += 1f;
+            snapshotCount++;
+
+            if (surfaceRainSnapshot != null && _surfacePrecipitationIntensity >= 0.2f)
+            {
+                float rainWeight = Mathf.Clamp01(_surfacePrecipitationIntensity) * surfaceRainSnapshotWeight;
+                if (rainWeight > 0.001f)
+                {
+                    _surfaceBlendSnapshots[snapshotCount] = surfaceRainSnapshot;
+                    _surfaceBlendWeights[snapshotCount] = rainWeight;
+                    totalWeight += rainWeight;
+                    snapshotCount++;
+                }
+            }
+
+            if (surfaceStormSnapshot != null && _surfaceElectricalActivity >= 0.55f)
+            {
+                float stormWeight = Mathf.Clamp01(_surfaceElectricalActivity) * surfaceStormSnapshotWeight;
+                if (stormWeight > 0.001f)
+                {
+                    _surfaceBlendSnapshots[snapshotCount] = surfaceStormSnapshot;
+                    _surfaceBlendWeights[snapshotCount] = stormWeight;
+                    totalWeight += stormWeight;
+                    snapshotCount++;
+                }
+            }
+
+            if (snapshotCount <= 1 || totalWeight <= 0.001f)
+                return false;
+
+            for (int i = 0; i < snapshotCount; i++)
+                _surfaceBlendWeights[i] /= totalWeight;
+
+            for (int i = snapshotCount; i < _surfaceBlendSnapshots.Length; i++)
+            {
+                _surfaceBlendSnapshots[i] = null;
+                _surfaceBlendWeights[i] = 0f;
+            }
+
+            float transitionTime = Mathf.Max(0f, surfaceWeatherTransitionDuration > 0f ? surfaceWeatherTransitionDuration : duration);
+            masterMixer.TransitionToSnapshots(_surfaceBlendSnapshots, _surfaceBlendWeights, transitionTime);
+            return true;
         }
 
         private AudioMixerSnapshot ResolveSnapshotForZone(AcousticZoneState zone)
@@ -1594,7 +1677,10 @@ namespace Hecton8.Audio
                 return;
 
             if (transitionDuration < 0f) transitionDuration = 0f;
+            if (interiorTransitionDuration < 0f) interiorTransitionDuration = 0f;
+            if (surfaceTransitionDuration < 0f) surfaceTransitionDuration = 0f;
             if (underwaterTransitionDuration < 0f) underwaterTransitionDuration = 0f;
+            if (surfaceWeatherTransitionDuration < 0f) surfaceWeatherTransitionDuration = 0f;
             if (acousticEnterUnderwaterDepth < 0f) acousticEnterUnderwaterDepth = 0f;
             if (acousticExitUnderwaterDepth < 0f) acousticExitUnderwaterDepth = 0f;
             if (acousticExitUnderwaterDepth > acousticEnterUnderwaterDepth) acousticExitUnderwaterDepth = acousticEnterUnderwaterDepth;
@@ -1607,6 +1693,8 @@ namespace Hecton8.Audio
             if (exteriorTransitionHoldTime < 0f) exteriorTransitionHoldTime = 0f;
             if (transitionVolume < 0f) transitionVolume = 0f;
             if (transitionVolume > 1f) transitionVolume = 1f;
+            if (interiorFallbackReverbDryLevel < -10000f) interiorFallbackReverbDryLevel = -10000f;
+            if (interiorFallbackReverbDryLevel > 0f) interiorFallbackReverbDryLevel = 0f;
             _snapshotBindingsResolved = false;
             ResetAuthoringWarnings();
             TryAssignEditorAuthoringDefaults();

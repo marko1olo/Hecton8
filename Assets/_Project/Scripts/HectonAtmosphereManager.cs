@@ -71,14 +71,20 @@ namespace Hecton8.Atmosphere
 
         private struct AtmosphereSnapshot
         {
+            public Color  fogColor;
+            public float  fogDensity;
             public float  skyExposure;
+            public Color  ambientColor;
             public float  sunIntensity;
             public float  temperature;
             public float  radiation;
 
             public static AtmosphereSnapshot Default => new AtmosphereSnapshot
             {
+                fogColor      = new Color(0.75f, 0.78f, 0.85f, 1f),
+                fogDensity    = 0.008f,
                 skyExposure  = 1f,
+                ambientColor = new Color(0.45f, 0.45f, 0.55f, 1f),
                 sunIntensity = 1f,
                 temperature  = 20f,
                 radiation    = 0f
@@ -89,7 +95,10 @@ namespace Hecton8.Atmosphere
             {
                 return new AtmosphereSnapshot
                 {
+                    fogColor      = p.fogColor,
+                    fogDensity    = p.fogDensity,
                     skyExposure  = p.skyExposure,
+                    ambientColor = p.ambientColor,
                     sunIntensity = p.sunIntensity,
                     temperature  = p.temperature,
                     radiation    = p.radiation
@@ -104,7 +113,10 @@ namespace Hecton8.Atmosphere
             {
                 return new AtmosphereSnapshot
                 {
+                    fogColor      = Color.Lerp(from.fogColor, to.fogColor, t),
+                    fogDensity    = math.lerp(from.fogDensity, to.fogDensity, t),
                     skyExposure  = math.lerp(from.skyExposure,  to.skyExposure,  t),
+                    ambientColor = Color.Lerp(from.ambientColor, to.ambientColor, t),
                     sunIntensity = math.lerp(from.sunIntensity, to.sunIntensity, t),
                     temperature  = math.lerp(from.temperature,  to.temperature,  t),
                     radiation    = math.lerp(from.radiation,    to.radiation,    t)
@@ -220,6 +232,7 @@ namespace Hecton8.Atmosphere
         private AtmosphereProfile _activeMatrixProfile;
         private int _currentBiomeID = -1;
         private bool _editorInitialized;
+        private bool _editorPreviewDirty;
 
         private float _computedHorizonFade;
         private float _computedSunIntensity;
@@ -250,7 +263,10 @@ namespace Hecton8.Atmosphere
         public float SunAngle                  => _sunAngleDegrees;
         public float SunElevation              => _sunElevationDot;
         public double ElapsedCycleTimeSeconds  => _elapsedCycleTimeSeconds;
+        public Color CurrentFogColor           => _currentValues.fogColor;
+        public float CurrentFogDensity         => _currentValues.fogDensity;
         public float CurrentSkyExposure        => _currentValues.skyExposure;
+        public Color CurrentAmbientColor       => _currentValues.ambientColor;
         public bool  IsEclipseActive           => _eclipseActive;
         public float EclipseRemainingTime      => _eclipseRemainingTime;
         public float CycleDuration             => _cycleDuration;
@@ -335,6 +351,7 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
             else
             {
+                _editorPreviewDirty = true;
                 EditorApplication.update -= EditorTick;
                 EditorApplication.update += EditorTick;
             }
@@ -432,19 +449,104 @@ namespace Hecton8.Atmosphere
                 InitializeCycleTimer();
                 InitializeAtmosphereValues();
                 _editorInitialized = true;
+                _editorPreviewDirty = true;
             }
 
-            float dt = Time.deltaTime;
-            if (dt <= 0f) dt = 0.016f;
-
-            Tick(dt);
+            SyncEditorPreviewFromSunTransform();
         }
 #endif
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// Synchronizes edit-mode atmosphere state from the live directional-light rotation.
+        /// </summary>
+        /// <remarks>
+        /// Scene View time-of-day authoring must treat the sun transform as the source of truth
+        /// while the editor is not playing; otherwise preview visuals drift away from runtime.
+        /// </remarks>
+        public bool SyncEditorPreviewFromSunTransform()
+        {
+            if (Application.isPlaying || _sunLight == null)
+                return false;
+
+            Transform sunTransform = _sunLight.transform;
+            if (sunTransform == null || !sunTransform.hasChanged)
+                return false;
+
+            _editorInitialized = true;
+            SyncCycleFromEditorSunTransform();
+            sunTransform.hasChanged = false;
+            _editorPreviewDirty = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Consumes the edit-mode preview dirty flag set by atmosphere authoring changes.
+        /// </summary>
+        public bool ConsumeEditorPreviewDirty()
+        {
+            if (Application.isPlaying)
+                return false;
+
+            bool wasDirty = _editorPreviewDirty;
+            _editorPreviewDirty = false;
+            return wasDirty;
+        }
+
+        private void SyncCycleFromEditorSunTransform()
+        {
+            float3 sunForward = math.normalizesafe(
+                (float3)_sunLight.transform.forward,
+                new float3(0f, 0f, 1f));
+
+            quaternion qInclination = quaternion.RotateZ(math.radians(_orbitalInclination));
+            quaternion qAzimuth = quaternion.RotateY(math.radians(_sunOrbitalYAngle));
+            quaternion orbitFrame = math.mul(qAzimuth, qInclination);
+            float3 localForward = math.mul(math.inverse(orbitFrame), sunForward);
+            localForward = math.normalizesafe(localForward, new float3(0f, 0f, 1f));
+
+            float resolvedSunAngle = math.degrees(
+                math.atan2(-localForward.y, localForward.z));
+            if (resolvedSunAngle < 0f)
+                resolvedSunAngle += 360f;
+
+            _sunAngleDegrees = resolvedSunAngle;
+            _cycleTimer = (_sunAngleDegrees / 360f) * _cycleDuration;
+
+            double completedCycles = _cycleDuration > 0f
+                ? math.floor(_elapsedCycleTimeSeconds / _cycleDuration)
+                : 0d;
+            _elapsedCycleTimeSeconds = completedCycles * _cycleDuration + _cycleTimer;
+
+            _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
+
+            if (!sunForward.Equals(_cachedShaderSunDirection))
+            {
+                _cachedShaderSunDirection = sunForward;
+                Shader.SetGlobalVector(
+                    _shaderID_SunDirection,
+                    new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
+            }
+
+            SyncWaterSurfaceFromPlayerMovement();
+
+            EnvironmentState resolvedState = ResolveState();
+            AtmosphereProfile resolvedProfile = ResolveProfile(resolvedState);
+
+            _currentState = resolvedState;
+            _currentValues = resolvedProfile != null
+                ? AtmosphereSnapshot.FromProfile(resolvedProfile)
+                : AtmosphereSnapshot.Default;
+            _transitionOrigin = _currentValues;
+            _transitionProgress = 1f;
+
+            ComputeSunValues();
+        }
+
         private void OnValidate()
         {
             _editorInitialized = false;
+            _editorPreviewDirty = true;
             _cycleDuration = math.max(_cycleDuration, 1f);
 
             if (_sunLight == null)

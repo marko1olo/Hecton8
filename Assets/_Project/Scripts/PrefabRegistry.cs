@@ -136,6 +136,17 @@ namespace Hecton8.Core
             }
         }
 
+        private void OnDisable()
+        {
+            if (_instance != this)
+                return;
+
+            ReleaseNativeMap();
+
+            if (!Application.isPlaying)
+                _instance = null;
+        }
+
         private void OnApplicationQuit()
         {
             if (_instance == this)

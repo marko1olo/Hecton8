@@ -45,6 +45,8 @@ namespace Hecton8.Celestial
         private const float MinMeshRadius = 0.0001f;
         private const float MinOrbitPeriodSeconds = 0.01f;
         private const float DirectionEpsilon = 0.0001f;
+        private const float FixedPlacementBackgroundDistance = 50000f;
+        private const float DefaultFixedVerticalOffset = 0.0564f;
 
         [Header("── Placement ──────────────────")]
         [Tooltip("How the body resolves its apparent direction in the sky.")]
@@ -61,6 +63,8 @@ namespace Hecton8.Celestial
         [SerializeField] private bool captureInitialDirectionOnEnable = true;
         [Tooltip("Fallback fixed sky direction when no capture data exists.")]
         [SerializeField] private Vector3 fixedDirection = new Vector3(0.9f, 0.2f, 0.35f);
+        [Tooltip("Constant vertical offset applied to fixed-direction bodies after observer-relative X/Z lock. Default value keeps roughly 40% of Aegir's disc below the horizon at sea level.")]
+        [SerializeField, Range(-0.5f, 0.5f)] private float fixedVerticalOffset = DefaultFixedVerticalOffset;
         [Tooltip("Anchor distance from the sky rig origin. This is not physical distance. It only defines stable render placement.")]
         [SerializeField, Min(MinAnchorDistance)] private float anchorDistance = 20000f;
         [Tooltip("Target apparent angular diameter in degrees as seen by the observer.")]
@@ -163,6 +167,14 @@ namespace Hecton8.Celestial
             ApplyPlacement();
         }
 
+        private void LateUpdate()
+        {
+            if (placementMode != CelestialPlacementMode.FixedDirection)
+                return;
+
+            ApplyFixedObserverPlacement();
+        }
+
         /// <summary>
         /// Overrides the captured fixed direction from external code.
         /// </summary>
@@ -205,6 +217,12 @@ namespace Hecton8.Celestial
 
         private void ApplyPlacement()
         {
+            if (placementMode == CelestialPlacementMode.FixedDirection)
+            {
+                ApplyFixedObserverPlacement();
+                return;
+            }
+
             float timeSeconds = ResolveTimeSeconds();
             Vector3 direction = ResolvePlacementDirection(timeSeconds);
             if (direction.sqrMagnitude <= DirectionEpsilon)
@@ -216,6 +234,35 @@ namespace Hecton8.Celestial
             transform.localPosition = direction * safeAnchorDistance;
             transform.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
             transform.localRotation = ResolveLocalRotation(timeSeconds);
+        }
+
+        private void ApplyFixedObserverPlacement()
+        {
+            Vector3 direction = ResolveFixedDirection();
+            if (direction.sqrMagnitude <= DirectionEpsilon)
+                return;
+
+            Vector3 observerPosition = ResolveObserverWorldPosition();
+            Vector3 horizontalDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (horizontalDirection.sqrMagnitude <= DirectionEpsilon)
+                horizontalDirection = Vector3.forward;
+
+            horizontalDirection.Normalize();
+
+            Vector3 screenLockedDirection = horizontalDirection + (Vector3.up * fixedVerticalOffset);
+            if (screenLockedDirection.sqrMagnitude <= DirectionEpsilon)
+                screenLockedDirection = horizontalDirection;
+
+            screenLockedDirection.Normalize();
+
+            float safeAnchorDistance = Mathf.Max(
+                Mathf.Max(MinAnchorDistance, anchorDistance),
+                FixedPlacementBackgroundDistance);
+            float uniformScale = ResolveUniformScale(safeAnchorDistance);
+
+            transform.position = observerPosition + (screenLockedDirection * safeAnchorDistance);
+            transform.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
+            transform.localRotation = ResolveLocalRotation(ResolveTimeSeconds());
         }
 
         private Vector3 ResolvePlacementDirection(float timeSeconds)
@@ -376,9 +423,10 @@ namespace Hecton8.Celestial
                     return localDirection.normalized;
             }
 
-            if (observerTransform != null)
+            Vector3 observerPosition = ResolveObserverWorldPosition();
+            if (observerPosition.sqrMagnitude > DirectionEpsilon || observerTransform != null)
             {
-                Vector3 worldDirection = parentBodyTransform.position - observerTransform.position;
+                Vector3 worldDirection = parentBodyTransform.position - observerPosition;
                 if (worldDirection.sqrMagnitude > DirectionEpsilon)
                     return worldDirection.normalized;
             }
@@ -417,7 +465,7 @@ namespace Hecton8.Celestial
 
         private void TryCaptureInitialDirection()
         {
-            if (!captureInitialDirectionOnEnable || _hasCapturedDirection || observerTransform == null)
+            if (!captureInitialDirectionOnEnable || _hasCapturedDirection)
                 return;
 
             if (transform.parent != null)
@@ -432,7 +480,8 @@ namespace Hecton8.Celestial
                 }
             }
 
-            Vector3 worldDirection = transform.position - observerTransform.position;
+            Vector3 observerPosition = ResolveObserverWorldPosition();
+            Vector3 worldDirection = transform.position - observerPosition;
             if (worldDirection.sqrMagnitude <= DirectionEpsilon)
                 return;
 
@@ -454,6 +503,29 @@ namespace Hecton8.Celestial
         {
             if (atmosphereManager == null)
                 atmosphereManager = HectonAtmosphereManager.Instance;
+        }
+
+        private Vector3 ResolveObserverWorldPosition()
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                SceneView sceneView = SceneView.lastActiveSceneView;
+                if (sceneView != null && sceneView.camera != null)
+                    return sceneView.camera.transform.position;
+            }
+#endif
+
+            if (observerTransform == null)
+            {
+                Camera mainCamera = Camera.main;
+                if (mainCamera != null)
+                    observerTransform = mainCamera.transform;
+            }
+
+            return observerTransform != null
+                ? observerTransform.position
+                : Vector3.zero;
         }
 
         private void CacheMeshRadius()

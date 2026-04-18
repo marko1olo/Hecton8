@@ -263,8 +263,8 @@ namespace Hecton.UI.MainMenu
             }
 
             string formattedPlaytime = FormatPlaytime(_playtime);
-            string compactSceneName = GetCompactSceneName(_sceneName);
-            string compactStatus = GetCompactStatusLabel(_integrityState, _statusLabel);
+            string compactSceneName = GetCompactSceneName(loc, _sceneName);
+            string compactStatus = GetCompactStatusLabel(loc, _integrityState, _statusLabel);
 
             string details = string.IsNullOrEmpty(compactSceneName)
                 ? formattedPlaytime
@@ -276,13 +276,17 @@ namespace Hecton.UI.MainMenu
             return string.Concat("<size=52%>", details, "</size>");
         }
 
-        private static string GetCompactSceneName(string sceneName)
+        private static string GetCompactSceneName(LocalizationManager loc, string sceneName)
         {
             if (string.IsNullOrEmpty(sceneName))
                 return string.Empty;
 
             if (string.Equals(sceneName, "02_HECTON_WORLD", StringComparison.Ordinal))
-                return "WORLD";
+            {
+                return loc != null
+                    ? loc.Get(LocalizationKeys.SLOT_SCENE_WORLD)
+                    : "WORLD";
+            }
 
             const int CompactSceneNameLimit = 16;
             if (sceneName.Length <= CompactSceneNameLimit)
@@ -292,6 +296,7 @@ namespace Hecton.UI.MainMenu
         }
 
         private static string GetCompactStatusLabel(
+            LocalizationManager loc,
             SaveSlotIntegrityState integrityState,
             string fallbackStatusLabel)
         {
@@ -300,20 +305,27 @@ namespace Hecton.UI.MainMenu
                 case SaveSlotIntegrityState.Healthy:
                     return string.Empty;
                 case SaveSlotIntegrityState.HealthyWithBackup:
-                    return "BACKUP";
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
                 case SaveSlotIntegrityState.BackupOnly:
-                    return "BACKUP ONLY";
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
                 case SaveSlotIntegrityState.MissingMetadata:
-                    return "NO META";
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
                 case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
-                    return "META RESTORED";
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
                 case SaveSlotIntegrityState.MetadataSynthesized:
-                    return "META SYNTH";
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
                 case SaveSlotIntegrityState.CorruptedMetadata:
-                    return "CORRUPT";
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
                 default:
                     return string.IsNullOrEmpty(fallbackStatusLabel) ? string.Empty : fallbackStatusLabel;
             }
+        }
+
+        private static string ResolveCompactLabel(LocalizationManager loc, string key, string fallback)
+        {
+            return loc != null
+                ? loc.GetOrFallback(loc.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private static Color GetStatusColor(SaveSlotIntegrityState integrityState, Color fallback)

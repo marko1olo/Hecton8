@@ -22,6 +22,7 @@
 
 using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton.Localization;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.UI;
@@ -214,7 +215,9 @@ namespace Hecton8.Gameplay
             _predatorsRisen = false;
 
             EclipseGameplayEvents.RaisePhaseChanged(true);
-            NotificationEvents.PushWarning("ВЕЛИКОЕ ЗАТМЕНИЕ — ТЕМПЕРАТУРА ПАДАЕТ. НОЧНЫЕ ХИЩНИКИ ПОДНИМАЮТСЯ.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.ECLIPSE_EVENT_STARTED,
+                "GREAT ECLIPSE - TEMPERATURE FALLING. NIGHT PREDATORS ASCENDING."));
 
             // Биолюминесценция усиливается
             Shader.SetGlobalFloat(_ShaderBiolumMultiplier, biolumMultiplier);
@@ -227,7 +230,9 @@ namespace Hecton8.Gameplay
             _eclipseActive = false;
 
             EclipseGameplayEvents.RaisePhaseChanged(false);
-            NotificationEvents.PushInfo("ЗАТМЕНИЕ ЗАВЕРШЕНО — ТЕМПЕРАТУРА ВОССТАНАВЛИВАЕТСЯ.");
+            NotificationEvents.PushInfo(ResolveLocalized(
+                LocalizationKeys.ECLIPSE_EVENT_ENDED,
+                "ECLIPSE ENDED - TEMPERATURE RECOVERING."));
 
             // Биолюминесценция возвращается к норме
             Shader.SetGlobalFloat(_ShaderBiolumMultiplier, 1f);
@@ -270,6 +275,14 @@ namespace Hecton8.Gameplay
                 tickManager.Unregister(this);
 
             _registered = false;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

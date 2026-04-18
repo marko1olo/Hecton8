@@ -56,6 +56,7 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -64,6 +65,7 @@ using UnityEngine.Rendering;
 using Unity.Mathematics;
 using Hecton8.Atmosphere;
 using Hecton8.World;
+using CrestOceanRenderer = global::Crest.OceanRenderer;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -102,6 +104,18 @@ namespace Hecton8.Celestial
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
     public class HectonCelestialEngine : MonoBehaviour, ITickable
     {
+        private static AtmosphericLightingState _currentAtmosphericLightingState = AtmosphericLightingState.Default;
+        private static bool _hasAtmosphericLightingState;
+
+        /// <summary>
+        /// Returns the latest surface-atmosphere snapshot authored by the celestial pipeline.
+        /// Consumers use this instead of re-deriving surface fog, ambient, or light tint.
+        /// </summary>
+        public static bool TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state)
+        {
+            state = _currentAtmosphericLightingState;
+            return _hasAtmosphericLightingState && state.IsValid;
+        }
         // ─────────────────────────────────────────────
         // КОНФИГУРАЦИЯ
         // ─────────────────────────────────────────────
@@ -117,8 +131,6 @@ namespace Hecton8.Celestial
         [Header("═══ SKY MATERIAL ═══")]
         [SerializeField] private Material _skyMaterial;
         [SerializeField] private float _cloudSpeed = 0.01f;
-        [Tooltip("Optional explicit material source for celestial LUT colors. When empty, the engine samples the live sky dome material first and then the active skybox.")]
-        [SerializeField] private Material _skyColorSourceMaterial;
 
         [Header("═══ SKY COLOR PROFILES ═══")]
         [HideInInspector]
@@ -274,6 +286,7 @@ namespace Hecton8.Celestial
         private GameObject _planetShineLightGO;
 
         private MaterialPropertyBlock _aegirMPB;
+        private MaterialPropertyBlock _moonMPB;
         private MaterialPropertyBlock _sunDiscMPB;
 
         private float _currentSunAngle;
@@ -300,6 +313,8 @@ namespace Hecton8.Celestial
         private float _smoothedOcclusionFactor;
         private float _baseSunIntensity;
         private bool _baseSunIntensityCaptured;
+        private Color _baseSunColor = Color.white;
+        private bool _baseSunColorCaptured;
         private float _baseFlareIntensity;
         private float _baseFlareScale;
         private bool _baseFlareValuesCaptured;
@@ -325,6 +340,7 @@ namespace Hecton8.Celestial
 
         private float _cachedAegirRadius;
         private Material _aegirSharedMaterial;
+        private CrestOceanRenderer _crestOceanRenderer;
         private bool _deepTextureResidencyReduced;
         private float _currentDepthMeters;
         private float _currentAdaptiveRenderScale = 1f;
@@ -370,10 +386,20 @@ namespace Hecton8.Celestial
         private Color _surfaceWeatherCloudShadowColor = Color.white;
         private Color _surfaceWeatherSunsetCloudColor = Color.white;
         private Color _surfaceWeatherNightCloudColor = Color.white;
+        private bool _surfaceWeatherFogOverrideActive;
+        private Color _surfaceWeatherFogColor = Color.white;
+        private float _surfaceWeatherFogDensity;
+        private Color _surfaceWeatherAmbientColor = Color.white;
+        private float _surfaceWeatherSunMultiplier = 1f;
+        private AtmosphericLightingState _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
+        private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
         private const int CelestialAtmosphereLutResolution = 512;
         private const int BestVisualDefaultsVersion = 1;
         private const float NightAtmosphereInscatterFloor = 0.001f;
+        private bool _editorPreviewDirty;
+        private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
+        private readonly List<Renderer> _moonRenderers = new List<Renderer>(CelestialBodyCacheCapacity); // COLD ALLOC: List<Renderer>[8] - cached moon renderers for shared atmosphere overrides - owner: HectonCelestialEngine
         private readonly Color[] _celestialAtmosphereLutPixels = new Color[CelestialAtmosphereLutResolution]; // COLD ALLOC: Color[512] — celestial atmosphere LUT bake buffer — owner: HectonCelestialEngine
 
         // ─────────────────────────────────────────────
@@ -415,8 +441,10 @@ namespace Hecton8.Celestial
         private static readonly int _ID_CloudSpeedMult = Shader.PropertyToID("_CloudSpeedMult");
         private static readonly int _ID_CloudColorLit = Shader.PropertyToID("_CloudColorLit");
         private static readonly int _ID_CloudColorShadow = Shader.PropertyToID("_CloudColorShadow");
+        private static readonly int _ID_SunsetHorizonColor = Shader.PropertyToID("_SunsetHorizonColor");
         private static readonly int _ID_SunsetCloudColor = Shader.PropertyToID("_SunsetCloudColor");
         private static readonly int _ID_NightCloudColor = Shader.PropertyToID("_NightCloudColor");
+        private static readonly int _ID_AegirGlowIntensity = Shader.PropertyToID("_AegirGlowIntensity");
         private static readonly int _ID_SunDiscColor = Shader.PropertyToID("_SunDiscColor");
         private static readonly int _ID_SunScatterColor = Shader.PropertyToID("_SunScatterColor");
         private static readonly int _ID_SkyLuminanceMultiplier = Shader.PropertyToID("_SkyLuminanceMultiplier");
@@ -529,14 +557,17 @@ namespace Hecton8.Celestial
             ValidateReferences();
             EnsureCelestialAtmosphereLutReady();
             InitializeMaterialPropertyBlocks();
+            _moonMPB ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - moon shader state bridge - owner: HectonCelestialEngine
             InitializePlanetShineLight();
             CacheCelestialTextureDefaults();
+            CacheMoonRenderers();
 
             _accumulatedOrbitalAngle = sunStartAngle;
             _currentBacklitFactor = 0f;
             _smoothedOcclusionFactor = 0f;
             _sunOcclusionFactor = 0f;
             _baseSunIntensityCaptured = false;
+            _baseSunColorCaptured = false;
             _baseFlareValuesCaptured = false;
             _eclipseRadiusCalculated = false;
             _sunDiscRendererCached = false;
@@ -549,6 +580,7 @@ namespace Hecton8.Celestial
             _lastAppliedSkyZenith = default;
             _lastAppliedSkyHorizon = default;
             _lastAppliedSkyNadir = default;
+            _editorPreviewDirty = true;
 
             // v5.1: Base sun intensity only for standalone mode (no AtmosphereManager)
             if (sunLight != null && _atmosphereManager == null)
@@ -557,7 +589,14 @@ namespace Hecton8.Celestial
                 _baseSunIntensityCaptured = true;
             }
 
+            if (sunLight != null)
+            {
+                _baseSunColor = sunLight.color;
+                _baseSunColorCaptured = true;
+            }
+
             CaptureBaseFlareValues();
+            SyncCrestPrimaryLight();
 
             if (blendedSkyboxMaterial != null)
                 RenderSettings.skybox = blendedSkyboxMaterial;
@@ -593,6 +632,11 @@ namespace Hecton8.Celestial
 
         private void OnDisable()
         {
+            _editorPreviewDirty = false;
+            _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
+            _currentAtmosphericLightingState = AtmosphericLightingState.Default;
+            _hasAtmosphericLightingState = false;
+
             if (Application.isPlaying)
                 BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
 
@@ -633,13 +677,77 @@ namespace Hecton8.Celestial
             if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
                 return;
 
-            float dt = Time.deltaTime > 0f ? Time.deltaTime : 0.016f;
-            Tick(dt);
+            bool sunMoved = TryConsumeEditorSunTransformChange();
+            if (!_editorPreviewDirty && !sunMoved)
+                return;
+
+            Tick(0f);
+            _editorPreviewDirty = false;
+            SceneView.RepaintAll();
         }
 
         private void OnValidate()
         {
             EnsureCelestialAtmosphereLutReady();
+            CacheMoonRenderers();
+            _editorPreviewDirty = true;
+
+            if (Application.isPlaying)
+                return;
+
+            InitializeMaterialPropertyBlocks();
+            UpdateGlobalShaderData();
+            UpdateSkyMaterial();
+            UpdateAegirMaterial();
+            UpdateMoonMaterialOverrides();
+
+#if UNITY_EDITOR
+            EditorApplication.QueuePlayerLoopUpdate();
+            SceneView.RepaintAll();
+#endif
+        }
+
+        private bool TryConsumeEditorSunTransformChange()
+        {
+            if (sunLight == null)
+                return false;
+
+            if (_atmosphereManager != null)
+            {
+                bool sunSynced = _atmosphereManager.SyncEditorPreviewFromSunTransform();
+                bool previewDirty = _atmosphereManager.ConsumeEditorPreviewDirty();
+                return sunSynced || previewDirty;
+            }
+
+            Transform sunTransform = sunLight.transform;
+            if (sunTransform == null || !sunTransform.hasChanged)
+                return false;
+
+            SyncEditorOrbitFromSunTransform();
+            sunTransform.hasChanged = false;
+            return true;
+        }
+
+        private void SyncEditorOrbitFromSunTransform()
+        {
+            float3 orbitAxis = math.normalizesafe((float3)sunOrbitAxis, new float3(1f, 0f, 0f));
+            Vector3 worldOrbitAxis = new Vector3(orbitAxis.x, orbitAxis.y, orbitAxis.z);
+            Vector3 referenceForward = Vector3.ProjectOnPlane(Vector3.forward, worldOrbitAxis);
+            Vector3 currentForward = Vector3.ProjectOnPlane(sunLight.transform.forward, worldOrbitAxis);
+
+            if (referenceForward.sqrMagnitude <= 0.0001f ||
+                currentForward.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            _accumulatedOrbitalAngle = Vector3.SignedAngle(
+                referenceForward,
+                currentForward,
+                worldOrbitAxis);
+
+            if (_accumulatedOrbitalAngle < 0f)
+                _accumulatedOrbitalAngle += 360f;
         }
 #endif
 
@@ -667,6 +775,7 @@ namespace Hecton8.Celestial
 
             UpdateSunPosition(deltaTime);
             ResolveSunDirection();
+            SyncCrestPrimaryLight();
             UpdateSunVisualPosition();
 
             float sunElevation = CalculateSunElevation();
@@ -685,6 +794,7 @@ namespace Hecton8.Celestial
             UpdateSkyMaterial();
 
             UpdateAegirMaterial();
+            UpdateMoonMaterialOverrides();
             UpdatePlanetShine();
             UpdateDeepTextureResidencyState();
 
@@ -710,7 +820,7 @@ namespace Hecton8.Celestial
         }
 
         /// <summary>
-        /// Forces an immediate celestial atmosphere LUT rebuild from the current sky material colors without waiting for sun movement.
+        /// Forces an immediate celestial atmosphere LUT rebuild from the current script-owned sky authoring without waiting for sun movement.
         /// </summary>
         [ContextMenu("Manual Re-bake LUT")]
         public void ManualRebakeLut()
@@ -718,7 +828,9 @@ namespace Hecton8.Celestial
             InvalidateCelestialAtmosphereLutCache();
             EnsureCelestialAtmosphereLutReady();
             UpdateGlobalShaderData();
+            UpdateSkyMaterial();
             UpdateAegirMaterial();
+            UpdateMoonMaterialOverrides();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
                 EditorUtility.SetDirty(this);
@@ -731,6 +843,9 @@ namespace Hecton8.Celestial
 
         private void ValidateReferences()
         {
+            if (sunLight == null && RenderSettings.sun != null)
+                sunLight = RenderSettings.sun;
+
             if (sunLight == null)
                 Debug.LogError("[HectonCelestialEngine] Sun Light is not assigned!", this);
 
@@ -750,9 +865,24 @@ namespace Hecton8.Celestial
 
             if (_skyMaterial == null)
                 Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
+        }
 
-            if (_skyColorSourceMaterial == null && HasSkyColorProperties(_skyMaterial))
-                _skyColorSourceMaterial = _skyMaterial;
+        private void SyncCrestPrimaryLight()
+        {
+            if (sunLight == null)
+                return;
+
+            if (!ReferenceEquals(RenderSettings.sun, sunLight))
+                RenderSettings.sun = sunLight;
+
+            if (_crestOceanRenderer == null)
+                _crestOceanRenderer = CrestOceanRenderer.Instance;
+
+            if (_crestOceanRenderer == null)
+                return;
+
+            if (!ReferenceEquals(_crestOceanRenderer._primaryLight, sunLight))
+                _crestOceanRenderer._primaryLight = sunLight;
         }
 
         private void EnsureCelestialAtmosphereLutReady()
@@ -760,6 +890,7 @@ namespace Hecton8.Celestial
             EnsureCelestialAtmosphereAuthoring();
             EnsureCelestialAtmosphereTexture();
             float sunElevation = GetCurrentSunElevationForAtmosphere();
+            _currentSunAngle = sunElevation;
             UpdateSkyboxBlend(sunElevation);
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
             UpdateDynamicCelestialAtmosphere(sunElevation, true);
@@ -1071,6 +1202,22 @@ namespace Hecton8.Celestial
                    Mathf.Abs(a.b - b.b) >= 0.01f;
         }
 
+        private static float ComputePerceivedLuminance(Color color)
+        {
+            return color.r * 0.2126f +
+                   color.g * 0.7152f +
+                   color.b * 0.0722f;
+        }
+
+        private static Color DesaturateColor(Color color, float amount)
+        {
+            float luminance = ComputePerceivedLuminance(color);
+            Color grayscale = new Color(luminance, luminance, luminance, 1f);
+            Color result = Color.Lerp(color, grayscale, Mathf.Clamp01(amount));
+            result.a = 1f;
+            return result;
+        }
+
         private void PublishCelestialAtmosphereLut()
         {
             if (_celestialAtmosphereLutTexture != null)
@@ -1081,7 +1228,7 @@ namespace Hecton8.Celestial
                 Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, horizonDensity);
                 Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, zenithTransparency);
                 Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);
-                UpdateGlobalFog();
+                PushSkyToRenderSettings();
             }
         }
 
@@ -1112,26 +1259,249 @@ namespace Hecton8.Celestial
             _lastAtmosphereBakeSkyNadir = default;
         }
 
-        private void UpdateGlobalFog()
+        private void PushSkyToRenderSettings()
         {
-            Color horizonFogColor = _resolvedSkyHorizon;
+            AtmosphericLightingState state = BuildSurfaceAtmosphericLightingState();
+            ApplySurfaceAtmosphericLightingState(state);
+        }
+
+        private AtmosphericLightingState BuildSurfaceAtmosphericLightingState()
+        {
+            EvaluateCelestialAtmosphereProfileWeights(
+                _currentSunAngle,
+                out float dayWeight,
+                out float sunsetWeight,
+                out float nightWeight);
+
+            Color fogBaseColor = _surfaceWeatherFogOverrideActive
+                ? _surfaceWeatherFogColor
+                : (_atmosphereManager != null ? _atmosphereManager.CurrentFogColor : _resolvedSkyHorizon);
+            float horizonTransmittance = EvaluateAtmosphereTransmittance(
+                0f,
+                dayWeight,
+                sunsetWeight,
+                nightWeight);
+            float horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
+            float lowSunFactor = 1f - Mathf.Clamp01((_currentSunAngle + 8f) / 88f);
+            float hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
+            Color ambientBaseColor = ResolveSurfaceAmbientBaseColor();
+            Color horizonSkyTint = Color.Lerp(_resolvedSkyZenith, _resolvedSkyHorizon, 0.58f);
             if (_celestialAtmosphereLutPixels.Length > 0)
             {
-                horizonFogColor = _celestialAtmosphereLutPixels[0];
-                horizonFogColor.a = 1f;
+                horizonSkyTint = Color.Lerp(horizonSkyTint, _celestialAtmosphereLutPixels[0], 0.22f);
+                horizonTransmittance = Mathf.Clamp01(_celestialAtmosphereLutPixels[0].a);
+                horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
+                hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
             }
 
-            if (HasMeaningfulColorShift(horizonFogColor, RenderSettings.fogColor))
-                RenderSettings.fogColor = horizonFogColor;
+            float baseFogDensity = ResolveSurfaceBaseFogDensity();
+            float fogDensity = Mathf.Max(
+                0.0001f,
+                baseFogDensity * Mathf.Lerp(0.72f, 1.65f, hazeResponse));
 
-            if (HasMeaningfulColorShift(horizonFogColor, RenderSettings.ambientSkyColor))
-                RenderSettings.ambientSkyColor = horizonFogColor;
+            float skyTintWeight = Mathf.Lerp(0.08f, 0.24f, hazeResponse);
+            skyTintWeight = Mathf.Lerp(skyTintWeight, skyTintWeight * 1.25f, sunsetWeight);
+            skyTintWeight = Mathf.Lerp(skyTintWeight, skyTintWeight * 0.72f, nightWeight);
+
+            Color horizonFogColor = Color.Lerp(fogBaseColor, horizonSkyTint, skyTintWeight);
+            horizonFogColor = Color.Lerp(horizonFogColor, ambientBaseColor, 0.38f);
+            horizonFogColor = DesaturateColor(horizonFogColor, Mathf.Lerp(0.22f, 0.48f, hazeResponse));
+            horizonFogColor.a = 1f;
+
+            Color ambientSkyColor = Color.Lerp(ambientBaseColor, _resolvedSkyZenith, 0.58f);
+            Color ambientEquatorColor = Color.Lerp(ambientBaseColor, horizonFogColor, 0.74f);
+            Color ambientGroundColor = Color.Lerp(_resolvedSkyNadir, ambientEquatorColor, 0.35f);
+            ambientSkyColor.a = 1f;
+            ambientEquatorColor.a = 1f;
+            ambientGroundColor.a = 1f;
+
+            float exposureBase = _atmosphereManager != null
+                ? _atmosphereManager.CurrentSkyExposure
+                : _currentAtmosphereExposure;
+            float ambientIntensity = Mathf.Clamp(
+                Mathf.Max(0.15f, exposureBase) *
+                Mathf.Max(0.2f, ResolveSkyLuminanceMultiplier()) *
+                Mathf.Lerp(0.8f, 1.1f, 1f - nightWeight * 0.25f),
+                0.15f,
+                2f);
+            float sunIntensityMultiplier = ResolveSurfaceSunMultiplier();
+            float directionalLightIntensity = ResolveSurfaceDirectionalLightIntensity(sunIntensityMultiplier);
+
+            return new AtmosphericLightingState
+            {
+                IsValid = true,
+                SunElevationDegrees = _currentSunAngle,
+                SkyExposure = Mathf.Max(0f, exposureBase),
+                FogDensity = fogDensity,
+                AmbientIntensity = ambientIntensity,
+                SunIntensityMultiplier = sunIntensityMultiplier,
+                DirectionalLightIntensity = directionalLightIntensity,
+                SkyZenithColor = _resolvedSkyZenith,
+                SkyHorizonColor = _resolvedSkyHorizon,
+                SkyNadirColor = _resolvedSkyNadir,
+                FogColor = horizonFogColor,
+                AmbientSkyColor = ambientSkyColor,
+                AmbientEquatorColor = ambientEquatorColor,
+                AmbientGroundColor = ambientGroundColor,
+                DirectionalLightColor = ResolveSurfaceSunLightColor(horizonFogColor, sunsetWeight, horizonHaze)
+            };
+        }
+
+        private void ApplySurfaceAtmosphericLightingState(AtmosphericLightingState state)
+        {
+            _surfaceAtmosphericLightingState = state;
+            _currentAtmosphericLightingState = state;
+            _hasAtmosphericLightingState = state.IsValid;
+
+            if (!state.IsValid)
+                return;
+
+            if (!RenderSettings.fog || RenderSettings.fogMode != FogMode.ExponentialSquared)
+            {
+                RenderSettings.fog = true;
+                RenderSettings.fogMode = FogMode.ExponentialSquared;
+            }
+
+            if (HasMeaningfulColorShift(state.FogColor, RenderSettings.fogColor))
+                RenderSettings.fogColor = state.FogColor;
+
+            if (Mathf.Abs(RenderSettings.fogDensity - state.FogDensity) >= 0.0001f)
+                RenderSettings.fogDensity = state.FogDensity;
+
+            if (RenderSettings.ambientMode != AmbientMode.Trilight)
+                RenderSettings.ambientMode = AmbientMode.Trilight;
+
+            if (HasMeaningfulColorShift(state.AmbientSkyColor, RenderSettings.ambientSkyColor))
+                RenderSettings.ambientSkyColor = state.AmbientSkyColor;
+
+            if (HasMeaningfulColorShift(state.AmbientEquatorColor, RenderSettings.ambientEquatorColor))
+                RenderSettings.ambientEquatorColor = state.AmbientEquatorColor;
+
+            if (HasMeaningfulColorShift(state.AmbientGroundColor, RenderSettings.ambientGroundColor))
+                RenderSettings.ambientGroundColor = state.AmbientGroundColor;
+
+            if (Mathf.Abs(RenderSettings.ambientIntensity - state.AmbientIntensity) >= 0.0001f)
+                RenderSettings.ambientIntensity = state.AmbientIntensity;
+
+            if (sunLight == null)
+                return;
+
+            bool allowSurfaceDirectionalLight =
+                HectonUnderwaterVisuals.ActiveRuntimeInstance == null ||
+                !HectonUnderwaterVisuals.ActiveRuntimeInstance.IsUnderwater;
+
+            if (!allowSurfaceDirectionalLight)
+                return;
+
+            if (_baseSunColorCaptured && HasMeaningfulColorShift(state.DirectionalLightColor, sunLight.color))
+                sunLight.color = state.DirectionalLightColor;
+
+            if (Mathf.Abs(sunLight.intensity - state.DirectionalLightIntensity) >= 0.0001f)
+                sunLight.intensity = state.DirectionalLightIntensity;
+        }
+
+        private float ResolveSurfaceBaseFogDensity()
+        {
+            if (_surfaceWeatherFogOverrideActive)
+                return Mathf.Max(0.0001f, _surfaceWeatherFogDensity);
+
+            if (_atmosphereManager != null)
+                return Mathf.Max(0.0001f, _atmosphereManager.CurrentFogDensity);
+
+            return 0.008f;
+        }
+
+        private Color ResolveSurfaceAmbientBaseColor()
+        {
+            Color ambientBase = _surfaceWeatherFogOverrideActive
+                ? _surfaceWeatherAmbientColor
+                : (_atmosphereManager != null ? _atmosphereManager.CurrentAmbientColor : _resolvedSkyHorizon);
+            ambientBase.a = 1f;
+            return ambientBase;
+        }
+
+        private float ResolveSurfaceSunMultiplier()
+        {
+            return _surfaceWeatherFogOverrideActive
+                ? Mathf.Max(0f, _surfaceWeatherSunMultiplier)
+                : 1f;
+        }
+
+        private float ResolveSurfaceDirectionalLightIntensity(float sunMultiplier)
+        {
+            if (_atmosphereManager != null)
+            {
+                return Mathf.Max(
+                    0f,
+                    _atmosphereManager.ProfileSunIntensity *
+                    _atmosphereManager.ComputedHorizonFade *
+                    sunMultiplier);
+            }
+
+            if (sunLight != null)
+                return Mathf.Max(0f, sunLight.intensity * sunMultiplier);
+
+            return sunMultiplier;
+        }
+
+        private Color ResolveSurfaceSunLightColor(Color horizonFogColor, float sunsetWeight, float horizonHaze)
+        {
+            Color baseSunColor = _baseSunColorCaptured ? _baseSunColor : Color.white;
+            Color sunsetTint = ResolveScriptSunsetHorizonColor();
+            Color sunColor = Color.Lerp(
+                baseSunColor,
+                sunsetTint,
+                Mathf.Clamp01(sunsetWeight * 0.85f));
+            sunColor = Color.Lerp(
+                sunColor,
+                horizonFogColor,
+                Mathf.Clamp01(horizonHaze * 0.16f));
+            sunColor.a = 1f;
+            return sunColor;
         }
 
         private void InitializeMaterialPropertyBlocks()
         {
             _aegirMPB = new MaterialPropertyBlock();   // COLD ALLOC: MaterialPropertyBlock[1] — gas giant shader state bridge — owner: HectonCelestialEngine
             _sunDiscMPB = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — sun-disc shader state bridge — owner: HectonCelestialEngine
+        }
+
+        private void CacheMoonRenderers()
+        {
+            _observerBodyCache.Clear();
+            _moonRenderers.Clear();
+
+            Transform searchRoot = aegirTransform != null
+                ? aegirTransform.root
+                : transform.root;
+            if (searchRoot == null)
+                return;
+
+            searchRoot.GetComponentsInChildren(true, _observerBodyCache);
+            for (int i = 0; i < _observerBodyCache.Count; i++)
+            {
+                ObserverRelativeCelestialBody body = _observerBodyCache[i];
+                if (body == null || body == aegirObserverRelativeBody)
+                    continue;
+
+                if (!body.TryGetComponent(out Renderer renderer) || renderer == null || renderer == aegirRenderer)
+                    continue;
+
+                Material sharedMaterial = renderer.sharedMaterial;
+                if (sharedMaterial == null || sharedMaterial.shader == null)
+                    continue;
+
+                if (!sharedMaterial.HasProperty(_ID_AtmosphereTransmittanceWeight) ||
+                    !sharedMaterial.HasProperty(_ID_AtmosphereInscatterWeight))
+                {
+                    continue;
+                }
+
+                if (!string.Equals(sharedMaterial.shader.name, "HECTON/Celestial/Hecton_CelestialMoon", StringComparison.Ordinal))
+                    continue;
+
+                _moonRenderers.Add(renderer);
+            }
         }
 
         private void CacheCelestialTextureDefaults()
@@ -1574,8 +1944,8 @@ namespace Hecton8.Celestial
                 targetMaterial.SetVector(_ID_WindDirection, _defaultWindDirection);
                 targetMaterial.SetColor(_ID_CloudColorLit, _defaultCloudLitColor);
                 targetMaterial.SetColor(_ID_CloudColorShadow, _defaultCloudShadowColor);
-                targetMaterial.SetColor(_ID_SunsetCloudColor, _defaultSunsetCloudColor);
-                targetMaterial.SetColor(_ID_NightCloudColor, _defaultNightCloudColor);
+                targetMaterial.SetColor(_ID_SunsetCloudColor, ResolveScriptSunsetCloudColor());
+                targetMaterial.SetColor(_ID_NightCloudColor, ResolveScriptNightCloudColor());
                 targetMaterial.SetColor(_ID_SunDiscColor, _defaultSunDiscColor);
                 targetMaterial.SetColor(_ID_SunScatterColor, _defaultSunScatterColor);
                 return;
@@ -1591,6 +1961,41 @@ namespace Hecton8.Celestial
             targetMaterial.SetColor(_ID_NightCloudColor, _surfaceWeatherNightCloudColor);
             targetMaterial.SetColor(_ID_SunDiscColor, _defaultSunDiscColor * Mathf.Max(0f, _surfaceWeatherSunDiscMultiplier));
             targetMaterial.SetColor(_ID_SunScatterColor, _defaultSunScatterColor * Mathf.Max(0f, _surfaceWeatherSunScatterMultiplier));
+        }
+
+        private Color ResolveScriptSunsetCloudColor()
+        {
+            Color sunsetAtmosphereColor = sunsetAtmosphere != null
+                ? sunsetAtmosphere.Evaluate(0f)
+                : Color.white;
+            Color sunsetCloudColor = MultiplyRgb(_sunsetProfile.horizonColor, sunsetAtmosphereColor);
+            sunsetCloudColor.a = 1f;
+            return sunsetCloudColor;
+        }
+
+        private Color ResolveScriptNightCloudColor()
+        {
+            Color nightAtmosphereColor = nightAtmosphere != null
+                ? nightAtmosphere.Evaluate(0f)
+                : Color.white;
+            Color nightCloudColor = MultiplyRgb(_nightProfile.horizonColor, nightAtmosphereColor);
+            nightCloudColor.a = 1f;
+            return nightCloudColor;
+        }
+
+        private Color ResolveScriptSunsetHorizonColor()
+        {
+            Color sunsetAtmosphereColor = sunsetAtmosphere != null
+                ? sunsetAtmosphere.Evaluate(0f)
+                : Color.white;
+            Color sunsetHorizonColor = MultiplyRgb(_sunsetProfile.horizonColor, sunsetAtmosphereColor);
+            sunsetHorizonColor.a = 1f;
+            return sunsetHorizonColor;
+        }
+
+        private float ResolveScriptAegirNightGlow()
+        {
+            return Mathf.Max(0f, _currentBacklitFactor * _atmosphereInscatterWeight);
         }
 
         private void ApplySurfaceWeatherSkyLuminance(ref Color zenith, ref Color horizon, ref Color nadir)
@@ -1648,76 +2053,74 @@ namespace Hecton8.Celestial
             targetMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
             targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
             targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+            targetMaterial.SetFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
+            targetMaterial.SetFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
             targetMaterial.SetVector(_ID_SunDirection, sunDirection);
             targetMaterial.SetVector(_ID_AegirDirection, aegirDirection);
+            targetMaterial.SetColor(_ID_SkyColorZenith, _resolvedSkyZenith);
+            targetMaterial.SetColor(_ID_SkyColorHorizon, _resolvedSkyHorizon);
+            targetMaterial.SetColor(_ID_SkyColorNadir, _resolvedSkyNadir);
+            targetMaterial.SetColor(_ID_SunsetHorizonColor, ResolveScriptSunsetHorizonColor());
+            targetMaterial.SetFloat(_ID_AegirGlowIntensity, ResolveScriptAegirNightGlow());
             ApplySurfaceWeatherSkyProperties(targetMaterial);
         }
 
         private void ResolveSkyColors(out Color zenith, out Color horizon, out Color nadir)
         {
-            Material sourceMaterial = ResolveSkyColorSourceMaterial();
-            if (sourceMaterial != null)
+            EvaluateCelestialAtmosphereProfileWeights(
+                _currentSunAngle,
+                out float dayWeight,
+                out float sunsetWeight,
+                out float nightWeight);
+
+            zenith = ResolveSkyProfileColor(
+                _dayProfile.zenithColor,
+                _sunsetProfile.zenithColor,
+                _nightProfile.zenithColor,
+                dayWeight,
+                sunsetWeight,
+                nightWeight);
+            horizon = ResolveSkyProfileColor(
+                _dayProfile.horizonColor,
+                _sunsetProfile.horizonColor,
+                _nightProfile.horizonColor,
+                dayWeight,
+                sunsetWeight,
+                nightWeight);
+            nadir = ResolveSkyProfileColor(
+                _dayProfile.nadirColor,
+                _sunsetProfile.nadirColor,
+                _nightProfile.nadirColor,
+                dayWeight,
+                sunsetWeight,
+                nightWeight);
+
+            if (_smoothedOcclusionFactor > 0f)
             {
-                zenith = GetMaterialColor(sourceMaterial, _ID_SkyColorZenith, _dayProfile.zenithColor);
-                horizon = GetMaterialColor(sourceMaterial, _ID_SkyColorHorizon, _dayProfile.horizonColor);
-                nadir = GetMaterialColor(sourceMaterial, _ID_SkyColorNadir, _dayProfile.nadirColor);
-            }
-            else
-            {
-                zenith = _dayProfile.zenithColor;
-                horizon = _dayProfile.horizonColor;
-                nadir = _dayProfile.nadirColor;
+                float eclipseNight = Mathf.Clamp01(_smoothedOcclusionFactor);
+                zenith = Color.Lerp(zenith, _nightProfile.zenithColor, eclipseNight);
+                horizon = Color.Lerp(horizon, _nightProfile.horizonColor, eclipseNight);
+                nadir = Color.Lerp(nadir, _nightProfile.nadirColor, eclipseNight);
             }
 
-            ApplyDayNightSkyPhase(ref zenith, ref horizon, ref nadir);
+            horizon = CompressHorizonColor(horizon, zenith);
             ApplySurfaceWeatherSkyLuminance(ref zenith, ref horizon, ref nadir);
         }
 
-        private void ApplyDayNightSkyPhase(ref Color zenith, ref Color horizon, ref Color nadir)
+        private static Color ResolveSkyProfileColor(
+            Color dayColor,
+            Color sunsetColor,
+            Color nightColor,
+            float dayWeight,
+            float sunsetWeight,
+            float nightWeight)
         {
-            float nightFactor = Mathf.Clamp01(_currentBlend);
-            if (nightFactor <= 0f)
-                return;
-
-            Color deepNightZenith = MultiplyRgb(
-                Color.Lerp(zenith, nadir, 0.12f),
-                new Color(0.18f, 0.2f, 0.24f, 1f));
-            Color deepNightHorizon = MultiplyRgb(
-                Color.Lerp(nadir, zenith, 0.08f),
-                new Color(0.14f, 0.16f, 0.22f, 1f));
-            Color deepNightNadir = MultiplyRgb(
-                nadir,
-                new Color(0.22f, 0.24f, 0.3f, 1f));
-
-            zenith = Color.Lerp(zenith, deepNightZenith, nightFactor);
-            horizon = Color.Lerp(horizon, deepNightHorizon, nightFactor);
-            nadir = Color.Lerp(nadir, deepNightNadir, nightFactor);
-        }
-
-        private Material ResolveSkyColorSourceMaterial()
-        {
-            if (HasSkyColorProperties(_skyColorSourceMaterial))
-                return _skyColorSourceMaterial;
-
-            if (HasSkyColorProperties(_skyMaterial))
-                return _skyMaterial;
-
-            if (HasSkyColorProperties(blendedSkyboxMaterial))
-                return blendedSkyboxMaterial;
-
-            Material activeSkybox = RenderSettings.skybox;
-            if (HasSkyColorProperties(activeSkybox))
-                return activeSkybox;
-
-            return null;
-        }
-
-        private static bool HasSkyColorProperties(Material material)
-        {
-            return material != null &&
-                   material.HasProperty(_ID_SkyColorZenith) &&
-                   material.HasProperty(_ID_SkyColorHorizon) &&
-                   material.HasProperty(_ID_SkyColorNadir);
+            Color blendedColor =
+                dayColor * dayWeight +
+                sunsetColor * sunsetWeight +
+                nightColor * nightWeight;
+            blendedColor.a = 1f;
+            return blendedColor;
         }
 
         private Color CompressHorizonColor(Color horizon, Color zenith)
@@ -1737,6 +2140,13 @@ namespace Hecton8.Celestial
             if (_isEclipseActive)
             {
                 _sunOcclusionFactor = 1.0f;
+#if UNITY_EDITOR
+                if (!Application.isPlaying && dt <= 0f)
+                {
+                    _smoothedOcclusionFactor = 1.0f;
+                    return;
+                }
+#endif
                 _smoothedOcclusionFactor = math.lerp(
                     _smoothedOcclusionFactor, 1.0f, math.saturate(flareFadeSpeed * dt));
                 return;
@@ -1745,6 +2155,13 @@ namespace Hecton8.Celestial
             if (!TryResolveAegirSkyDirection(out float3 toAegir))
             {
                 _sunOcclusionFactor = 0f;
+#if UNITY_EDITOR
+                if (!Application.isPlaying && dt <= 0f)
+                {
+                    _smoothedOcclusionFactor = 0f;
+                    return;
+                }
+#endif
                 _smoothedOcclusionFactor = math.lerp(
                     _smoothedOcclusionFactor, 0f, math.saturate(flareFadeSpeed * dt));
                 return;
@@ -1775,6 +2192,13 @@ namespace Hecton8.Celestial
                 _sunOcclusionFactor = 0f;
             }
 
+#if UNITY_EDITOR
+            if (!Application.isPlaying && dt <= 0f)
+            {
+                _smoothedOcclusionFactor = _sunOcclusionFactor;
+                return;
+            }
+#endif
             _smoothedOcclusionFactor = math.lerp(
                 _smoothedOcclusionFactor,
                 _sunOcclusionFactor,
@@ -1892,6 +2316,9 @@ namespace Hecton8.Celestial
             if (sunLight != null && _baseSunIntensityCaptured && _atmosphereManager == null)
                 sunLight.intensity = _baseSunIntensity;
 
+            if (sunLight != null && _baseSunColorCaptured)
+                sunLight.color = _baseSunColor;
+
             if (_sunLensFlare != null && _baseFlareValuesCaptured)
             {
                 _sunLensFlare.intensity = _baseFlareIntensity;
@@ -1967,6 +2394,8 @@ namespace Hecton8.Celestial
             Shader.SetGlobalColor(_ID_SkyColorNadir, _resolvedSkyNadir);
             Shader.SetGlobalFloat(_ID_NightBlend, _currentBlend);
             Shader.SetGlobalFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+            Shader.SetGlobalFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
+            Shader.SetGlobalFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, _celestialAtmosphereLutTexture != null ? 1f : 0f);
             Shader.SetGlobalFloat(_ID_AtmosphereExposure, _currentAtmosphereExposure);
             Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, horizonDensity);
@@ -2054,6 +2483,24 @@ namespace Hecton8.Celestial
         // PLANET-SHINE
         // ─────────────────────────────────────────────
 
+        private void UpdateMoonMaterialOverrides()
+        {
+            if (_moonMPB == null)
+                return;
+
+            for (int i = 0; i < _moonRenderers.Count; i++)
+            {
+                Renderer moonRenderer = _moonRenderers[i];
+                if (moonRenderer == null)
+                    continue;
+
+                moonRenderer.GetPropertyBlock(_moonMPB);
+                _moonMPB.SetFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
+                _moonMPB.SetFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
+                moonRenderer.SetPropertyBlock(_moonMPB);
+            }
+        }
+
         private void UpdatePlanetShine()
         {
             if (_planetShineLight == null || !TryResolveAegirSkyDirection(out float3 playerToAegir))
@@ -2131,6 +2578,10 @@ namespace Hecton8.Celestial
             float cloudSoftness,
             float cloudSpeedMultiplier,
             Vector2 windDirection,
+            Color fogColor,
+            float fogDensity,
+            Color ambientColor,
+            float sunMultiplier,
             float starVisibilityMultiplier,
             float stormEmissionMultiplier,
             float skyLuminanceMultiplier,
@@ -2148,10 +2599,17 @@ namespace Hecton8.Celestial
                 : new Vector2(_defaultWindDirection.x, _defaultWindDirection.y).normalized;
 
             _surfaceWeatherOverrideActive = true;
+            _surfaceWeatherFogOverrideActive = true;
             _surfaceWeatherCloudDensityThreshold = Mathf.Clamp01(cloudDensityThreshold);
             _surfaceWeatherCloudSoftness = Mathf.Clamp(cloudSoftness, 0.01f, 0.5f);
             _surfaceWeatherCloudSpeedMultiplier = Mathf.Max(0f, cloudSpeedMultiplier);
             _surfaceWeatherWindDirection = new Vector4(resolvedDirection.x, resolvedDirection.y, 0f, 0f);
+            _surfaceWeatherFogColor = fogColor;
+            _surfaceWeatherFogColor.a = 1f;
+            _surfaceWeatherFogDensity = Mathf.Max(0.0001f, fogDensity);
+            _surfaceWeatherAmbientColor = ambientColor;
+            _surfaceWeatherAmbientColor.a = 1f;
+            _surfaceWeatherSunMultiplier = Mathf.Max(0f, sunMultiplier);
             _surfaceWeatherStarVisibilityMultiplier = Mathf.Clamp01(starVisibilityMultiplier);
             _surfaceWeatherStormEmissionMultiplier = Mathf.Max(0f, stormEmissionMultiplier);
             _surfaceWeatherSkyLuminanceMultiplier = Mathf.Max(0f, skyLuminanceMultiplier);
@@ -2166,12 +2624,14 @@ namespace Hecton8.Celestial
         internal void ClearSurfaceWeatherOverride()
         {
             _surfaceWeatherOverrideActive = false;
+            _surfaceWeatherFogOverrideActive = false;
             _surfaceWeatherCloudSpeedMultiplier = 1f;
             _surfaceWeatherStarVisibilityMultiplier = 1f;
             _surfaceWeatherStormEmissionMultiplier = 1f;
             _surfaceWeatherSkyLuminanceMultiplier = 1f;
             _surfaceWeatherSunDiscMultiplier = 1f;
             _surfaceWeatherSunScatterMultiplier = 1f;
+            _surfaceWeatherSunMultiplier = 1f;
         }
 
         public float SunElevation => _currentSunAngle;

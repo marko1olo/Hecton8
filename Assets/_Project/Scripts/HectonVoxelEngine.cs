@@ -1659,27 +1659,12 @@ public class HectonVoxelEngine : MonoBehaviour
 
     void OnDisable()
     {
-        if (!Application.isPlaying)
-            return;
-
-        ClearAllVolumes();
+        TeardownRuntimeState();
     }
 
     void OnDestroy()
     {
-        if (!Application.isPlaying)
-            return;
-
-        ClearAllVolumes();
-        if (ReferenceEquals(ActiveRuntimeInstance, this))
-            ActiveRuntimeInstance = null;
-
-        if (_registeredLiveEngine)
-        {
-            _registeredLiveEngine = false;
-            if (Interlocked.Decrement(ref _liveEngineCount) <= 0)
-                RequestSharedTableShutdown();
-        }
+        TeardownRuntimeState();
     }
 
     // ╔═══════════════════════════════════════════════╗
@@ -2434,6 +2419,29 @@ public class HectonVoxelEngine : MonoBehaviour
     }
 
     public int ActiveVolumeCount => _activeVolumes.Count;
+
+    void TeardownRuntimeState()
+    {
+        bool runtimeStateWasLive =
+            _registeredLiveEngine ||
+            ReferenceEquals(ActiveRuntimeInstance, this) ||
+            _activeVolumes.Count > 0;
+
+        if (!Application.isPlaying && !runtimeStateWasLive)
+            return;
+
+        ClearAllVolumes();
+
+        if (ReferenceEquals(ActiveRuntimeInstance, this))
+            ActiveRuntimeInstance = null;
+
+        if (_registeredLiveEngine)
+        {
+            _registeredLiveEngine = false;
+            if (Interlocked.Decrement(ref _liveEngineCount) <= 0)
+                RequestSharedTableShutdown();
+        }
+    }
 
     static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct)
     {

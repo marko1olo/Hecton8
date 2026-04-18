@@ -49,6 +49,7 @@
 using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
+using Hecton8.Celestial;
 using Hecton8.Gameplay;
 using Hecton8.VFX;
 using Hecton8.World;
@@ -405,34 +406,74 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_ScatterColourBase");
         private static readonly int _ID_ScatterColourShallow =
             Shader.PropertyToID("_ScatterColourShallow");
+        private static readonly int _ID_DepthFogDensity =
+            Shader.PropertyToID("_DepthFogDensity");
         private static readonly int _ID_Diffuse =
             Shader.PropertyToID("_Diffuse");
         private static readonly int _ID_DiffuseGrazing =
             Shader.PropertyToID("_DiffuseGrazing");
+        private static readonly int _ID_DiffuseShadow =
+            Shader.PropertyToID("_DiffuseShadow");
+        private static readonly int _ID_SubSurfaceColour =
+            Shader.PropertyToID("_SubSurfaceColour");
         private static readonly int _ID_SubSurfaceShallowCol =
             Shader.PropertyToID("_SubSurfaceShallowCol");
-        private static readonly int _ID_DepthFogDensity =
-            Shader.PropertyToID("_DepthFogDensity");
-        private static readonly int _ID_SunSize =
-            Shader.PropertyToID("_SunSize");
-        private static readonly int _ID_SunEdgeSoftness =
-            Shader.PropertyToID("_SunEdgeSoftness");
+        private static readonly int _ID_SubSurfaceShallowColShadow =
+            Shader.PropertyToID("_SubSurfaceShallowColShadow");
+        private static readonly int _ID_SubSurfaceBase =
+            Shader.PropertyToID("_SubSurfaceBase");
+        private static readonly int _ID_SubSurfaceSun =
+            Shader.PropertyToID("_SubSurfaceSun");
+        private static readonly int _ID_SubSurfaceSunFallOff =
+            Shader.PropertyToID("_SubSurfaceSunFallOff");
+        private static readonly int _ID_SubSurfaceDepthMax =
+            Shader.PropertyToID("_SubSurfaceDepthMax");
+        private static readonly int _ID_SubSurfaceDepthPower =
+            Shader.PropertyToID("_SubSurfaceDepthPower");
+        private static readonly int _ID_SubSurfaceScattering =
+            Shader.PropertyToID("_SubSurfaceScattering");
+        private static readonly int _ID_SubSurfaceShallowColour =
+            Shader.PropertyToID("_SubSurfaceShallowColour");
+        private static readonly int _ID_Underwater =
+            Shader.PropertyToID("_Underwater");
+        private static readonly int _ID_CullMode =
+            Shader.PropertyToID("_CullMode");
         private static readonly int _ID_Caustics =
             Shader.PropertyToID("_Caustics");
         private static readonly int _ID_CausticsStrength =
             Shader.PropertyToID("_CausticsStrength");
+        private static readonly int _ID_SunSize =
+            Shader.PropertyToID("_SunSize");
+        private static readonly int _ID_SunEdgeSoftness =
+            Shader.PropertyToID("_SunEdgeSoftness");
         private static readonly int _ID_SunDiscColor =
             Shader.PropertyToID("_SunDiscColor");
         private static readonly int _ID_SunScatterColor =
             Shader.PropertyToID("_SunScatterColor");
+        private static readonly int _ID_SkyColorZenith =
+            Shader.PropertyToID("_SkyColorZenith");
         private static readonly int _ID_SkyColorHorizon =
             Shader.PropertyToID("_SkyColorHorizon");
+        private static readonly int _ID_SkyBase =
+            Shader.PropertyToID("_SkyBase");
+        private static readonly int _ID_SkyTowardsSun =
+            Shader.PropertyToID("_SkyTowardsSun");
+        private static readonly int _ID_SkyAwayFromSun =
+            Shader.PropertyToID("_SkyAwayFromSun");
+        private static readonly int _ID_SkyDirectionality =
+            Shader.PropertyToID("_SkyDirectionality");
+        private static readonly int _ID_ProceduralSky =
+            Shader.PropertyToID("_ProceduralSky");
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
         // ══════════════════════════════════════════════════════════
 
         private static readonly Color MIN_AMBIENT = new Color(0.01f, 0.02f, 0.03f, 1f);
+        private const string ProceduralSkyKeyword = "_PROCEDURALSKY_ON";
+        private const float SurfaceScatterLuminanceFloor = 0.24f;
+        private const float UnderwaterScatterLuminanceFloor = 0.06f;
+        private const float CrestSkyDirectionality = 0.78f;
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
@@ -483,6 +524,7 @@ namespace Hecton8.Environment
 
         private float _transitionProgress;
         private float _cachedFogDensity;
+        private Color _cachedUnderwaterFogColor = new Color(0.06f, 0.18f, 0.28f, 1f);
 
         private float _baseFlareIntensity;
         private bool  _baseValuesCaptured;
@@ -522,6 +564,8 @@ namespace Hecton8.Environment
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeReferenceWarningTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
+        private const int RuntimeCameraBufferSize = 8;
+        private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize]; // COLD ALLOC: Camera[8] — reusable runtime main-camera resolve buffer to avoid hierarchy array allocations — owner: HectonUnderwaterVisuals
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
         private Camera _capturedCompositionMainCamera;
@@ -530,8 +574,6 @@ namespace Hecton8.Environment
         private Transform _shallowSunBeamTransform;
         private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
         private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
-        private Material _lastRuntimeOceanMaterial;
-        private bool _pendingRuntimeCrestMaterialSync;
         private bool _cameraCompositionDefaultsCaptured;
         private bool _runtimeCameraStackFallbackActive;
         private int _spaceCameraOriginalCullingMask;
@@ -585,7 +627,6 @@ namespace Hecton8.Environment
             CaptureBaseValues();
             CaptureSkyBaseColors();
             InitializeCurrentValues();
-            _pendingRuntimeCrestMaterialSync = true;
             EnsureCrestUnderwaterPassOwnership();
             ApplyCrestMaterial();
 
@@ -845,8 +886,6 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             ResumeEditorWaterRendering();
 #endif
-            _pendingRuntimeCrestMaterialSync = true;
-            _lastRuntimeOceanMaterial = null;
             _cachedBottomDistance = float.PositiveInfinity;
             _cachedBottomSiltBoost = 0f;
             _nextBottomSiltProbeTime = float.NegativeInfinity;
@@ -1057,7 +1096,6 @@ namespace Hecton8.Environment
         public void Tick(float deltaTime)
         {
             EnsureRuntimeVisualOwners();
-            TryApplyRuntimeCrestMaterialSync();
 
             if (playerCamera == null)
             {
@@ -1449,6 +1487,13 @@ namespace Hecton8.Environment
 
         private Color ResolveSurfaceFogColor()
         {
+            if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
+            {
+                Color stateFogColor = state.FogColor;
+                stateFogColor.a = 1f;
+                return stateFogColor;
+            }
+
             Color skyHorizonColor = Shader.GetGlobalColor(_ID_SkyColorHorizon);
             if (skyHorizonColor.maxColorComponent > 0.0001f)
             {
@@ -1463,6 +1508,9 @@ namespace Hecton8.Environment
 
         private float ResolveSurfaceFogDensity()
         {
+            if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
+                return Mathf.Max(0.0001f, state.FogDensity);
+
             return _surfaceWeatherOverrideActive
                 ? _surfaceWeatherFogDensity
                 : surfaceFogDensity;
@@ -1470,9 +1518,26 @@ namespace Hecton8.Environment
 
         private Color ResolveSurfaceAmbientColor()
         {
-            return _surfaceWeatherOverrideActive
-                ? _surfaceWeatherAmbientColor
-                : surfaceAmbientColor;
+            if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
+            {
+                Color surfaceAmbient = Color.Lerp(state.AmbientEquatorColor, state.AmbientSkyColor, 0.35f);
+                surfaceAmbient.a = 1f;
+                return surfaceAmbient;
+            }
+
+            if (_surfaceWeatherOverrideActive)
+                return _surfaceWeatherAmbientColor;
+
+            Color skyAmbient = RenderSettings.ambientSkyColor;
+            if (skyAmbient.maxColorComponent <= 0.0001f)
+                skyAmbient = ResolveSurfaceSkyZenithColor();
+
+            if (skyAmbient.maxColorComponent <= 0.0001f)
+                return surfaceAmbientColor;
+
+            Color blendedAmbient = Color.Lerp(surfaceAmbientColor, skyAmbient, 0.72f);
+            blendedAmbient.a = 1f;
+            return blendedAmbient;
         }
 
         private float ResolveSurfaceSunMultiplier()
@@ -1484,7 +1549,7 @@ namespace Hecton8.Environment
 
         private void ApplyUnderwaterFog(float lightFactor, float currentDepth, float submergeImpulse)
         {
-            Color fogColor = ResolveUnderwaterFogColor();
+            Color fogColor = ResolveUnderwaterFogColor(lightFactor, currentDepth);
             float surfaceBlend = 1f - math.saturate(
                 currentDepth / math.max(0.01f, surfaceFogBlendDepth));
             if (surfaceBlend > 0f)
@@ -1493,6 +1558,7 @@ namespace Hecton8.Environment
                 fogColor.a = 1f;
             }
 
+            _cachedUnderwaterFogColor = fogColor;
             RenderSettings.fogColor = fogColor;
 
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
@@ -1527,8 +1593,7 @@ namespace Hecton8.Environment
 
                 if (mainCamera == null ||
                     !IsRuntimeMainCamera(mainCamera) ||
-                    _spaceCamera == null ||
-                    _spaceCameraUnderwaterRenderer == null)
+                    _mainCameraUnderwaterRenderer == null)
                 {
                     EnsureRuntimeVisualOwners();
                     EnsureGameplayCameraStackEnabled();
@@ -1538,8 +1603,15 @@ namespace Hecton8.Environment
             if (_wasUnderwater)
             {
                 RenderSettings.fog = true;
-                RenderSettings.fogColor = ResolveUnderwaterFogColor();
+                RenderSettings.fogColor = _cachedUnderwaterFogColor;
                 RenderSettings.fogDensity = _cachedFogDensity;
+            }
+            else if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
+            {
+                RenderSettings.fog = true;
+                RenderSettings.fogMode = FogMode.ExponentialSquared;
+                RenderSettings.fogColor = state.FogColor;
+                RenderSettings.fogDensity = state.FogDensity;
             }
             else
             {
@@ -1577,7 +1649,7 @@ namespace Hecton8.Environment
         private void ApplyUnderwaterCamera()
         {
             if (mainCamera == null) return;
-            mainCamera.backgroundColor = ResolveUnderwaterFogColor();
+            mainCamera.backgroundColor = _cachedUnderwaterFogColor;
             ApplyRuntimeMainCameraClearFlags(CameraClearFlags.SolidColor);
         }
 
@@ -1595,7 +1667,35 @@ namespace Hecton8.Environment
             return ambientColor;
         }
 
-        private Color ResolveUnderwaterFogColor()
+        private Color ResolveUnderwaterFogColor(float lightFactor, float currentDepth)
+        {
+            Color fogColor = ResolveBaseUnderwaterFogColor();
+
+            float blackoutRange = math.max(
+                1f,
+                beerLambertBlackoutDepth - beerLambertSurfaceClarityDepth);
+            float depthBlackBlend = math.saturate(
+                (currentDepth - beerLambertSurfaceClarityDepth) / blackoutRange);
+            depthBlackBlend *= depthBlackBlend;
+
+            float extinctionBlend =
+                math.saturate(1f - lightFactor) *
+                math.saturate(currentDepth / math.max(1f, beerLambertBlackoutDepth));
+
+            float deepBlackBlend = math.max(depthBlackBlend, extinctionBlend);
+            if (deepBlackBlend <= 0.0001f)
+            {
+                fogColor.a = 1f;
+                return fogColor;
+            }
+
+            Color abyssColor = new Color(0.004f, 0.008f, 0.016f, 1f);
+            fogColor = Color.Lerp(fogColor, abyssColor, deepBlackBlend * 0.92f);
+            fogColor.a = 1f;
+            return fogColor;
+        }
+
+        private Color ResolveBaseUnderwaterFogColor()
         {
             if (_soundscapeThermalTintBlend <= 0.001f)
                 return _currentFogColor;
@@ -1603,6 +1703,83 @@ namespace Hecton8.Environment
             Color fogColor = Color.Lerp(_currentFogColor, thermalTierTintColor, _soundscapeThermalTintBlend);
             fogColor.a = 1f;
             return fogColor;
+        }
+
+        private Color ResolveSurfaceSkyZenithColor()
+        {
+            Color zenithColor = Shader.GetGlobalColor(_ID_SkyColorZenith);
+            if (zenithColor.maxColorComponent <= 0.0001f)
+                zenithColor = RenderSettings.ambientSkyColor;
+
+            if (zenithColor.maxColorComponent <= 0.0001f)
+                zenithColor = surfaceFogColor;
+
+            zenithColor.a = 1f;
+            return zenithColor;
+        }
+
+        private Color ResolveCrestSkyTowardsSunColor()
+        {
+            Color sunScatterColor = skyMaterial != null && skyMaterial.HasProperty(_ID_SunScatterColor)
+                ? skyMaterial.GetColor(_ID_SunScatterColor)
+                : _baseSunScatterColor;
+
+            if (sunScatterColor.maxColorComponent <= 0.0001f)
+                sunScatterColor = ResolveSurfaceFogColor();
+
+            sunScatterColor.a = 1f;
+            return sunScatterColor;
+        }
+
+        private float ResolveSurfaceMaterialLightFactor()
+        {
+            float directSunFactor = Mathf.Clamp01(ResolveProfileSunIntensity() * ResolveHorizonFade());
+            float skyFactor = ResolvePerceivedLuminance(ResolveSurfaceFogColor());
+            return Mathf.Clamp01(Mathf.Max(directSunFactor, skyFactor));
+        }
+
+        private void ApplyCrestSkyBinding(Material targetMaterial)
+        {
+            if (targetMaterial == null)
+                return;
+
+            if (targetMaterial.HasProperty(_ID_ProceduralSky))
+                targetMaterial.SetFloat(_ID_ProceduralSky, 1f);
+
+            targetMaterial.EnableKeyword(ProceduralSkyKeyword);
+
+            SetMaterialColorIfPresent(targetMaterial, _ID_SkyBase, ResolveSurfaceFogColor());
+            SetMaterialColorIfPresent(targetMaterial, _ID_SkyAwayFromSun, ResolveSurfaceSkyZenithColor());
+            SetMaterialColorIfPresent(targetMaterial, _ID_SkyTowardsSun, ResolveCrestSkyTowardsSunColor());
+            SetMaterialFloatIfPresent(targetMaterial, _ID_SkyDirectionality, CrestSkyDirectionality);
+        }
+
+        private static float ResolvePerceivedLuminance(Color color)
+        {
+            float luminance =
+                (color.r * 0.2126f) +
+                (color.g * 0.7152f) +
+                (color.b * 0.0722f);
+            return Mathf.Clamp01(luminance);
+        }
+
+        private static Color ScaleColorRgb(Color color, float multiplier)
+        {
+            Color scaled = color;
+            scaled.r *= multiplier;
+            scaled.g *= multiplier;
+            scaled.b *= multiplier;
+            scaled.a = 1f;
+            return scaled;
+        }
+
+        private static Color MaxColorRgb(Color left, Color right)
+        {
+            return new Color(
+                Mathf.Max(left.r, right.r),
+                Mathf.Max(left.g, right.g),
+                Mathf.Max(left.b, right.b),
+                1f);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1615,12 +1792,21 @@ namespace Hecton8.Environment
 
         private void ApplySurfaceDefaults()
         {
+            bool hasSurfaceAtmosphereState = HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState surfaceState);
+
             // ── Sun intensity: base for CelestialEngine to multiply ──
             if (sunLight != null)
             {
-                float baseSun = ResolveProfileSunIntensity();
-                float horizon = ResolveHorizonFade();
-                sunLight.intensity = baseSun * horizon * ResolveSurfaceSunMultiplier();
+                if (hasSurfaceAtmosphereState)
+                {
+                    sunLight.intensity = surfaceState.DirectionalLightIntensity;
+                }
+                else
+                {
+                    float baseSun = ResolveProfileSunIntensity();
+                    float horizon = ResolveHorizonFade();
+                    sunLight.intensity = baseSun * horizon * ResolveSurfaceSunMultiplier();
+                }
             }
 
             if (_baseValuesCaptured && sunFlare != null)
@@ -1632,20 +1818,33 @@ namespace Hecton8.Environment
 
             HideSunVisualAboveWater();
 
-            if (enableSurfaceFog)
+            if (hasSurfaceAtmosphereState)
+            {
+                RenderSettings.fog = true;
+                RenderSettings.fogMode = FogMode.ExponentialSquared;
+                RenderSettings.fogColor = surfaceState.FogColor;
+                RenderSettings.fogDensity = surfaceState.FogDensity;
+                RenderSettings.ambientMode = AmbientMode.Trilight;
+                RenderSettings.ambientSkyColor = surfaceState.AmbientSkyColor;
+                RenderSettings.ambientEquatorColor = surfaceState.AmbientEquatorColor;
+                RenderSettings.ambientGroundColor = surfaceState.AmbientGroundColor;
+                RenderSettings.ambientIntensity = surfaceState.AmbientIntensity;
+            }
+            else if (enableSurfaceFog)
             {
                 RenderSettings.fog        = true;
                 RenderSettings.fogMode    = FogMode.ExponentialSquared;
                 RenderSettings.fogColor   = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveSurfaceFogDensity();
+                RenderSettings.ambientMode  = AmbientMode.Flat;
+                RenderSettings.ambientLight = ResolveSurfaceAmbientColor();
             }
             else
             {
                 RenderSettings.fog = false;
+                RenderSettings.ambientMode  = AmbientMode.Flat;
+                RenderSettings.ambientLight = ResolveSurfaceAmbientColor();
             }
-
-            RenderSettings.ambientMode  = AmbientMode.Flat;
-            RenderSettings.ambientLight = ResolveSurfaceAmbientColor();
 
             ApplyRuntimeMainCameraClearFlags(CameraClearFlags.Skybox);
 
@@ -1720,43 +1919,78 @@ namespace Hecton8.Environment
 
         private void ApplyCrestMaterial()
         {
-            Material runtimeOceanMaterial = CrestOceanRenderer.Instance != null
+            ApplyCrestMaterial(oceanUnderwaterMaterial, true);
+
+            Material oceanMaterial = CrestOceanRenderer.Instance != null
                 ? CrestOceanRenderer.Instance.OceanMaterial
                 : null;
-            Material primaryTarget = runtimeOceanMaterial != null
-                ? runtimeOceanMaterial
-                : oceanUnderwaterMaterial;
 
-            ApplyCrestMaterial(primaryTarget);
-
-            if (runtimeOceanMaterial == null &&
-                oceanUnderwaterMaterial != null &&
-                !ReferenceEquals(primaryTarget, oceanUnderwaterMaterial))
+            if (oceanMaterial != null &&
+                !ReferenceEquals(oceanMaterial, oceanUnderwaterMaterial))
             {
-                ApplyCrestMaterial(oceanUnderwaterMaterial);
+                ApplyCrestMaterial(oceanMaterial, false);
             }
-
-            _lastRuntimeOceanMaterial = runtimeOceanMaterial;
-            _pendingRuntimeCrestMaterialSync = false;
         }
 
-        private void ApplyCrestMaterial(Material targetMaterial)
+        private void ApplyCrestMaterial(Material targetMaterial, bool underwaterMaterial)
         {
             if (targetMaterial == null)
                 return;
 
-            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourBase, _currentScatterBase);
-            SetMaterialColorIfPresent(targetMaterial, _ID_Diffuse, _currentScatterBase);
-            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseGrazing, _currentScatterBase);
-            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourShallow, _currentScatterShallow);
-            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowCol, _currentScatterShallow);
+            float materialLightFactor = underwaterMaterial
+                ? Mathf.Clamp01(_cachedLightFactor)
+                : ResolveSurfaceMaterialLightFactor();
+            float scatterLuminanceFloor = underwaterMaterial
+                ? UnderwaterScatterLuminanceFloor
+                : SurfaceScatterLuminanceFloor;
+            float scatterIntensity = Mathf.Lerp(scatterLuminanceFloor, 1f, materialLightFactor);
+            Color horizonSkyColor = ResolveSurfaceFogColor();
+            Color zenithSkyColor = ResolveSurfaceSkyZenithColor();
+            Color sunSkyColor = ResolveCrestSkyTowardsSunColor();
+
+            Color scatterBase = ResolveSafeCrestColor(
+                _currentScatterBase,
+                ReadMaterialColorOrDefault(targetMaterial, _ID_Diffuse, new Color(0f, 0.03f, 0.07f, 1f)));
+            Color scatterShallow = ResolveSafeCrestColor(
+                _currentScatterShallow,
+                ReadMaterialColorOrDefault(targetMaterial, _ID_SubSurfaceShallowCol, new Color(0f, 0.15f, 0.12f, 1f)));
+            scatterBase = ScaleColorRgb(scatterBase, scatterIntensity);
+            scatterShallow = ScaleColorRgb(scatterShallow, Mathf.Lerp(scatterLuminanceFloor * 1.15f, 1f, materialLightFactor));
+
+            if (!underwaterMaterial)
+            {
+                Color surfaceBaseFloor = ScaleColorRgb(zenithSkyColor, 0.12f + (materialLightFactor * 0.16f));
+                Color surfaceShallowFloor = ScaleColorRgb(Color.Lerp(horizonSkyColor, sunSkyColor, 0.38f), 0.24f + (materialLightFactor * 0.24f));
+                scatterBase = MaxColorRgb(scatterBase, surfaceBaseFloor);
+                scatterShallow = MaxColorRgb(scatterShallow, surfaceShallowFloor);
+            }
+
+            Color diffuseShadow = ReadMaterialColorOrDefault(
+                targetMaterial,
+                _ID_DiffuseShadow,
+                Color.Lerp(scatterBase, Color.black, 0.45f));
+            Color shallowShadow = ReadMaterialColorOrDefault(
+                targetMaterial,
+                _ID_SubSurfaceShallowColShadow,
+                Color.Lerp(scatterShallow, scatterBase, 0.35f));
+            Vector3 depthFogDensity = ResolveSafeDepthFogDensity(targetMaterial);
+            ApplyCrestSkyBinding(targetMaterial);
+
+            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourBase, scatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_Diffuse, scatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseGrazing, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseShadow, diffuseShadow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceColour, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourShallow, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowCol, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowColShadow, shallowShadow);
             SetMaterialVectorIfPresent(
                 targetMaterial,
                 _ID_DepthFogDensity,
                 new Vector4(
-                    _currentDepthFogDensity.x,
-                    _currentDepthFogDensity.y,
-                    _currentDepthFogDensity.z,
+                    depthFogDensity.x,
+                    depthFogDensity.y,
+                    depthFogDensity.z,
                     0f));
             SetMaterialFloatIfPresent(
                 targetMaterial,
@@ -1766,6 +2000,24 @@ namespace Hecton8.Environment
                 targetMaterial,
                 _ID_CausticsStrength,
                 _cachedCausticsStrength);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceScattering,
+                1f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceShallowColour,
+                1f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_Underwater,
+                underwaterMaterial ? 1f : 0f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_CullMode,
+                underwaterMaterial
+                    ? (float)UnityEngine.Rendering.CullMode.Off
+                    : (float)UnityEngine.Rendering.CullMode.Back);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1981,10 +2233,11 @@ namespace Hecton8.Environment
                 {
                     CachePlayerMovement(playerTransform);
 
-                    Camera playerOwnedCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    Camera playerOwnedCamera = ResolveRuntimeMainCamera(playerTransform);
                     if (playerOwnedCamera != null)
                     {
                         playerCamera = playerOwnedCamera.transform;
+                        mainCamera = playerOwnedCamera;
                         return;
                     }
 
@@ -2028,9 +2281,20 @@ namespace Hecton8.Environment
                 _nextRuntimeMainCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 {
-                    mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
-                    if (mainCamera != null)
+                    Camera playerOwnedCamera = ResolveRuntimeMainCamera(playerTransform);
+                    if (playerOwnedCamera != null)
+                    {
+                        mainCamera = playerOwnedCamera;
+                        playerCamera = playerOwnedCamera.transform;
                         return;
+                    }
+                }
+
+                mainCamera = ResolveRuntimeMainCamera();
+                if (mainCamera != null)
+                {
+                    playerCamera = mainCamera.transform;
+                    return;
                 }
 
                 if (TryGetComponent(out Camera localCamera) && IsRuntimeMainCamera(localCamera))
@@ -2039,11 +2303,19 @@ namespace Hecton8.Environment
                     return;
                 }
 
-                Camera childCamera = GetComponentInChildren<Camera>(true);
-                if (IsRuntimeMainCamera(childCamera))
+                Transform root = transform.root;
+                if (root != null)
                 {
-                    mainCamera = childCamera;
-                    return;
+                    Transform rootMainCameraTransform = root.Find("Main Camera");
+                    if (rootMainCameraTransform != null)
+                    {
+                        Camera rootMainCamera = rootMainCameraTransform.GetComponent<Camera>();
+                        if (IsRuntimeMainCamera(rootMainCamera))
+                        {
+                            mainCamera = rootMainCamera;
+                            return;
+                        }
+                    }
                 }
 
                 Camera parentCamera = GetComponentInParent<Camera>();
@@ -2159,44 +2431,39 @@ namespace Hecton8.Environment
             if (!mainCamera.TryGetComponent(out _mainCameraUnderwaterRenderer) ||
                 _mainCameraUnderwaterRenderer == null)
             {
-                _mainCameraUnderwaterRenderer = null;
-                return;
+                // COLD ALLOC: UnderwaterRenderer[1] — restore Crest underwater pass on the gameplay camera when authoring data lost it — owner: HectonUnderwaterVisuals
+                _mainCameraUnderwaterRenderer =
+                    mainCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
             }
+
+            if (!_mainCameraUnderwaterRenderer.enabled)
+                _mainCameraUnderwaterRenderer.enabled = true;
+
+            _mainCameraUnderwaterRenderer._copyOceanMaterialParamsEachFrame = true;
 
             ResolveSpaceCamera();
-            if (_spaceCamera == null)
-                return;
-
-            if (!_spaceCamera.TryGetComponent(out _spaceCameraUnderwaterRenderer) ||
-                _spaceCameraUnderwaterRenderer == null)
-            {
-                // COLD ALLOC: UnderwaterRenderer[1] — ensure Crest fullscreen underwater pass is present on the base camera stack owner — owner: HectonUnderwaterVisuals
-                _spaceCameraUnderwaterRenderer =
-                    _spaceCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
-            }
-
-            CopyUnderwaterRendererSettings(
-                _mainCameraUnderwaterRenderer,
-                _spaceCameraUnderwaterRenderer);
-
+            PurgeSecondaryUnderwaterRenderers();
             EnsureCrestOceanCameraOwnership();
         }
 
         private void EnsureCrestOceanCameraOwnership()
         {
-            if (!Application.isPlaying || _spaceCamera == null)
+            if (!Application.isPlaying)
+                return;
+
+            if (mainCamera == null || !IsRuntimeMainCamera(mainCamera))
+                ResolveMainCamera();
+
+            if (mainCamera == null)
                 return;
 
             _oceanRenderer = CrestOceanRenderer.Instance;
             if (_oceanRenderer == null)
                 return;
 
-            if (!ReferenceEquals(_oceanRenderer.ViewCamera, _spaceCamera))
-                _oceanRenderer.ViewCamera = _spaceCamera;
-
-            Transform spaceCameraTransform = _spaceCamera.transform;
-            if (!ReferenceEquals(_oceanRenderer.Viewpoint, spaceCameraTransform))
-                _oceanRenderer.Viewpoint = spaceCameraTransform;
+            Transform mainCameraTransform = mainCamera.transform;
+            _oceanRenderer.ViewCamera = mainCamera;
+            _oceanRenderer.Viewpoint = mainCameraTransform;
         }
 
         private void EnsureRuntimeVisualOwners()
@@ -2225,36 +2492,10 @@ namespace Hecton8.Environment
             if (_spaceCamera == null)
                 ResolveSpaceCamera();
 
-            if (_spaceCamera != null)
-                EnsureCrestOceanCameraOwnership();
+            EnsureCrestOceanCameraOwnership();
 
-            if (_spaceCameraUnderwaterRenderer == null || _mainCameraUnderwaterRenderer == null)
+            if (_mainCameraUnderwaterRenderer == null)
                 EnsureCrestUnderwaterPassOwnership();
-        }
-
-        private void TryApplyRuntimeCrestMaterialSync()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            CrestOceanRenderer oceanRenderer = CrestOceanRenderer.Instance;
-            Material runtimeOceanMaterial = oceanRenderer != null ? oceanRenderer.OceanMaterial : null;
-            if (runtimeOceanMaterial == null)
-                return;
-
-            bool densityLooksStale =
-                oceanRenderer != null &&
-                oceanRenderer.UnderwaterDepthFogDensity.sqrMagnitude <= 0.000001f &&
-                _currentDepthFogDensity.sqrMagnitude > 0.000001f;
-
-            if (!_pendingRuntimeCrestMaterialSync &&
-                !densityLooksStale &&
-                ReferenceEquals(runtimeOceanMaterial, _lastRuntimeOceanMaterial))
-            {
-                return;
-            }
-
-            ApplyCrestMaterial();
         }
 
         private static bool IsRuntimeMainCamera(Camera camera)
@@ -2262,6 +2503,78 @@ namespace Hecton8.Environment
             return camera != null &&
                    camera.cameraType != CameraType.SceneView &&
                    camera.CompareTag("MainCamera");
+        }
+
+        private static Camera ResolveRuntimeMainCamera()
+        {
+            int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
+            for (int i = 0; i < cameraCount; i++)
+            {
+                Camera candidate = _runtimeCameraBuffer[i];
+                if (IsRuntimeMainCamera(candidate) &&
+                    candidate.enabled &&
+                    candidate.gameObject.activeInHierarchy)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private static Camera ResolveRuntimeMainCamera(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return null;
+
+            int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
+            for (int i = 0; i < cameraCount; i++)
+            {
+                Camera candidate = _runtimeCameraBuffer[i];
+                if (!IsRuntimeMainCamera(candidate) ||
+                    !candidate.enabled ||
+                    !candidate.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Transform candidateTransform = candidate.transform;
+                if (ReferenceEquals(candidateTransform, playerTransform) ||
+                    candidateTransform.IsChildOf(playerTransform))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private void PurgeSecondaryUnderwaterRenderers()
+        {
+            int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
+            for (int i = 0; i < cameraCount; i++)
+            {
+                Camera candidate = _runtimeCameraBuffer[i];
+                if (candidate == null)
+                    continue;
+
+                if (!candidate.TryGetComponent(out CrestUnderwaterRenderer candidateRenderer) ||
+                    candidateRenderer == null)
+                {
+                    continue;
+                }
+
+                if (ReferenceEquals(candidate, mainCamera))
+                {
+                    _mainCameraUnderwaterRenderer = candidateRenderer;
+                    continue;
+                }
+
+                if (ReferenceEquals(candidate, _spaceCamera))
+                    _spaceCameraUnderwaterRenderer = candidateRenderer;
+
+                Destroy(candidateRenderer);
+            }
         }
 
         private static void CopyUnderwaterRendererSettings(
@@ -2296,6 +2609,81 @@ namespace Hecton8.Environment
         {
             if (targetMaterial != null && targetMaterial.HasProperty(propertyId))
                 targetMaterial.SetFloat(propertyId, value);
+        }
+
+        private static float ReadMaterialFloatOrDefault(Material material, int propertyId, float fallback)
+        {
+            return material != null && material.HasProperty(propertyId)
+                ? material.GetFloat(propertyId)
+                : fallback;
+        }
+
+        private static Color ReadMaterialColorOrDefault(Material material, int propertyId, Color fallback)
+        {
+            return material != null && material.HasProperty(propertyId)
+                ? material.GetColor(propertyId)
+                : fallback;
+        }
+
+        private static Vector3 ReadMaterialVector3OrDefault(Material material, int propertyId, Vector3 fallback)
+        {
+            if (material == null || !material.HasProperty(propertyId))
+                return fallback;
+
+            Vector4 value = material.GetVector(propertyId);
+            return new Vector3(value.x, value.y, value.z);
+        }
+
+        private static bool IsNearlyBlack(Color color)
+        {
+            return color.r <= 0.0001f &&
+                   color.g <= 0.0001f &&
+                   color.b <= 0.0001f;
+        }
+
+        private Color ResolveSafeCrestColor(Color preferred, Color fallback)
+        {
+            Color resolved = IsNearlyBlack(preferred) ? fallback : preferred;
+            if (IsNearlyBlack(resolved))
+                resolved = fallback;
+
+            resolved.a = 1f;
+            return resolved;
+        }
+
+        private Vector3 ResolveSafeDepthFogDensity(Material targetMaterial)
+        {
+            Vector3 fallback = ResolveFallbackDepthFogDensity(targetMaterial);
+            Vector3 source = _currentDepthFogDensity;
+
+            return new Vector3(
+                Mathf.Clamp(source.x > 0f ? source.x : fallback.x, minFogDensity, maxFogDensity),
+                Mathf.Clamp(source.y > 0f ? source.y : fallback.y, minFogDensity, maxFogDensity),
+                Mathf.Clamp(source.z > 0f ? source.z : fallback.z, minFogDensity, maxFogDensity));
+        }
+
+        private Vector3 ResolveFallbackDepthFogDensity(Material preferredMaterial)
+        {
+            Vector3 fallback = new Vector3(0.0125f, 0.009f, 0.01f);
+            fallback = ReadMaterialVector3OrDefault(preferredMaterial, _ID_DepthFogDensity, fallback);
+            fallback = ReadMaterialVector3OrDefault(oceanUnderwaterMaterial, _ID_DepthFogDensity, fallback);
+
+            Material oceanMaterial = CrestOceanRenderer.Instance != null
+                ? CrestOceanRenderer.Instance.OceanMaterial
+                : null;
+            fallback = ReadMaterialVector3OrDefault(oceanMaterial, _ID_DepthFogDensity, fallback);
+
+            return new Vector3(
+                Mathf.Clamp(fallback.x, minFogDensity, maxFogDensity),
+                Mathf.Clamp(fallback.y, minFogDensity, maxFogDensity),
+                Mathf.Clamp(fallback.z, minFogDensity, maxFogDensity));
+        }
+
+        private Color ResolveFallbackFogColor()
+        {
+            Color fallback = new Color(0.0567818f, 0.28103185f, 0.41509432f, 1f);
+            fallback = ReadMaterialColorOrDefault(oceanUnderwaterMaterial, _ID_ScatterColourShallow, fallback);
+            return ResolveSafeCrestColor(fallback, new Color(0f, 0.15f, 0.12f, 1f));
         }
 
         private void TriggerSubmergeImpulse()
@@ -3210,10 +3598,14 @@ namespace Hecton8.Environment
             }
             else
             {
-                _currentScatterBase     = new Color(0f, 0.03f, 0.07f, 1f);
-                _currentScatterShallow  = new Color(0f, 0.15f, 0.12f, 1f);
-                _currentDepthFogDensity = new Vector3(0.5f, 0.25f, 0.15f);
-                _currentFogColor        = new Color(0f, 0.05f, 0.1f, 1f);
+                _currentScatterBase     = ResolveSafeCrestColor(
+                    ReadMaterialColorOrDefault(oceanUnderwaterMaterial, _ID_Diffuse, new Color(0f, 0.03f, 0.07f, 1f)),
+                    new Color(0f, 0.03f, 0.07f, 1f));
+                _currentScatterShallow  = ResolveSafeCrestColor(
+                    ReadMaterialColorOrDefault(oceanUnderwaterMaterial, _ID_SubSurfaceShallowCol, new Color(0f, 0.15f, 0.12f, 1f)),
+                    new Color(0f, 0.15f, 0.12f, 1f));
+                _currentDepthFogDensity = ResolveFallbackDepthFogDensity(oceanUnderwaterMaterial);
+                _currentFogColor        = ResolveFallbackFogColor();
                 _currentTurbidity       = 1.0f;
                 _currentAmbientColor    = underwaterAmbientColor;
 

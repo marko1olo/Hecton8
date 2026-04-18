@@ -386,6 +386,12 @@ namespace Hecton8.Gameplay
         [Tooltip("How much the freer hand is allowed to lead the stroke while the opposite hand is crowded by geometry.")]
         [SerializeField, Range(0f, 0.08f)] private float blockedSupportHandPhaseLeadBoost = 0.018f;
 
+        [Tooltip("How strongly nearby obstacle pressure suppresses propulsion read. This keeps a blocked stroke from still feeling like a full-power camera kick.")]
+        [SerializeField, Range(0f, 1f)] private float obstaclePropulsionSuppression = 0.38f;
+
+        [Tooltip("How much the freer hand can recover propulsion when only one arm is crowded by geometry. This preserves one-handed sculling instead of collapsing all forward drive.")]
+        [SerializeField, Range(0f, 0.5f)] private float obstaclePropulsionCompensation = 0.16f;
+
         [Header("-- Root Obstacle Response -------------")]
         [Tooltip("How much nearby wall pressure shifts the swim root sideways away from the blocked hand.")]
         [SerializeField, Range(0f, 0.05f)] private float obstacleRootLateralBias = 0.012f;
@@ -395,6 +401,9 @@ namespace Hecton8.Gameplay
 
         [Tooltip("How much nearby obstacle pressure lifts the swim root when the hands are being forced upward by walls, seabed edges, or floor contact.")]
         [SerializeField, Range(0f, 0.04f)] private float obstacleRootUpwardBias = 0.008f;
+
+        [Tooltip("How much tight-space pressure compresses the swim root in pitch. This is subtle torso hunch, not a camera shove.")]
+        [SerializeField, Range(0f, 6f)] private float obstacleRootPitchCompression = 1.15f;
 
         [Tooltip("How much nearby obstacle pressure yaws the swim root away from the blocked side.")]
         [SerializeField, Range(0f, 6f)] private float obstacleRootYawBias = 1.35f;
@@ -418,6 +427,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugRightObstacleWeight;
         [SerializeField] private float _debugStrokePowerImpulse;
         [SerializeField] private float _debugObstacleRootPressure;
+        [SerializeField] private float _debugPropulsionObstruction;
         [SerializeField] private int _debugLastDrivenFrame = -1;
         [SerializeField] private string _debugProfile;
         [SerializeField] private string _debugProfileSource;
@@ -499,6 +509,7 @@ namespace Hecton8.Gameplay
         private float _rootObstacleDifferenceVelocity;
         private float _rootObstacleVerticalCurrent;
         private float _rootObstacleVerticalVelocity;
+        private float _propulsionObstructionCurrent;
         private float _previousPropulsionPulse;
         private float _strokePowerPulseCooldownRemaining;
         private float _strokePowerImpulseCurrent;
@@ -918,7 +929,23 @@ namespace Hecton8.Gameplay
             float pullPulse = math.max(0f, rawCycle);
             float glidePulse = math.max(0f, -rawCycle) * profile.GlideBias;
             float accelerationBias = math.saturate(speedDelta * 0.2f);
-            _propulsionPulse = math.saturate(pullPulse + accelerationBias - glidePulse * 0.35f) * _presentationBlend * _toolSuppressionWeight;
+            float propulsionPulse = math.saturate(pullPulse + accelerationBias - glidePulse * 0.35f);
+            ApplyObstaclePropulsionDamping(ref propulsionPulse);
+            _propulsionPulse = propulsionPulse * _presentationBlend * _toolSuppressionWeight;
+        }
+
+        private void ApplyObstaclePropulsionDamping(ref float propulsionPulse)
+        {
+            float leftObstacle = _leftObstacleWeightCurrent * _currentLeftGuideWeight;
+            float rightObstacle = _rightObstacleWeightCurrent * _currentRightGuideWeight;
+            float obstacleAverage = (leftObstacle + rightObstacle) * 0.5f;
+            float obstacleDifference = math.abs(leftObstacle - rightObstacle);
+            float obstructionPenalty = math.max(0f, obstacleAverage - obstacleDifference * 0.32f);
+            float suppressionScale = 1f - obstaclePropulsionSuppression * obstructionPenalty;
+            float compensationScale = 1f + obstaclePropulsionCompensation * obstacleDifference * (1f - obstacleAverage * 0.5f);
+            float finalScale = math.clamp(suppressionScale * compensationScale, 0.18f, 1f);
+            _propulsionObstructionCurrent = 1f - finalScale;
+            propulsionPulse *= finalScale;
         }
 
         private void UpdateStrokePowerPulse(bool activeSwimPresentation, float dt)
@@ -1038,6 +1065,7 @@ namespace Hecton8.Gameplay
             Vector3 localEuler = profile.BaseLocalEuler;
             localEuler.x += strokeSin * profile.StrokePitchAmplitude * presentationWeight;
             localEuler.x += surfaceBreathSin * surfaceWavePitchAmplitude * surfaceIdleWeight * presentationWeight;
+            localEuler.x += _rootObstacleAverageCurrent * obstacleRootPitchCompression * presentationWeight;
             localEuler.y += _turnLagYawCurrent * presentationWeight;
             localEuler.y -= _directionalCorrectionCurrent * steeringRootYawBias * presentationWeight;
             localEuler.y -= _cameraTurnSwayCurrent * cameraTurnSwayRootYawBias * presentationWeight;
@@ -2235,6 +2263,7 @@ namespace Hecton8.Gameplay
             _debugRightObstacleWeight = _rightObstacleWeightCurrent;
             _debugStrokePowerImpulse = _strokePowerImpulseCurrent;
             _debugObstacleRootPressure = math.max(_leftObstacleWeightCurrent, _rightObstacleWeightCurrent);
+            _debugPropulsionObstruction = _propulsionObstructionCurrent;
             _debugProfile = profile != null ? profile.name : "None";
             _debugProfileSource = profileLibrary != null ? "ProfileLibrary" : "PrefabFallback";
         }

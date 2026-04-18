@@ -7,6 +7,7 @@ namespace Hecton.Localization
         public const string MENU_LOAD_GAME = "MENU_LOAD_GAME";
         public const string MENU_SETTINGS = "MENU_SETTINGS";
         public const string MENU_QUIT = "MENU_QUIT";
+        public const string MENU_TITLE_SUBMERGE = "MENU_TITLE_SUBMERGE";
         public const string MODAL_CONFIRM = "MODAL_CONFIRM";
         public const string MODAL_CANCEL = "MODAL_CANCEL";
         public const string MODAL_NEW_GAME_TITLE = "MODAL_NEW_GAME_TITLE";
@@ -24,9 +25,19 @@ namespace Hecton.Localization
         public const string ERROR_LOAD_FAILED_TITLE = "ERROR_LOAD_FAILED_TITLE";
         public const string ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE = "ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE";
         public const string ERROR_LOAD_FAILED_MESSAGE = "ERROR_LOAD_FAILED_MESSAGE";
+        public const string UI_OK = "UI_OK";
+        public const string UI_RETRY = "UI_RETRY";
+        public const string UI_RETURN_TO_MENU = "UI_RETURN_TO_MENU";
         public const string SLOT_PREFIX = "SLOT_PREFIX";
         public const string SLOT_NO_DATA = "SLOT_NO_DATA";
         public const string SLOT_PLAYTIME = "SLOT_PLAYTIME";
+        public const string SLOT_SCENE_WORLD = "SLOT_SCENE_WORLD";
+        public const string SLOT_STATUS_BACKUP = "SLOT_STATUS_BACKUP";
+        public const string SLOT_STATUS_BACKUP_ONLY = "SLOT_STATUS_BACKUP_ONLY";
+        public const string SLOT_STATUS_NO_META = "SLOT_STATUS_NO_META";
+        public const string SLOT_STATUS_META_RESTORED = "SLOT_STATUS_META_RESTORED";
+        public const string SLOT_STATUS_META_SYNTH = "SLOT_STATUS_META_SYNTH";
+        public const string SLOT_STATUS_CORRUPT = "SLOT_STATUS_CORRUPT";
         public const string LOADING_PERCENT = "LOADING_PERCENT";
         public const string SETTINGS_LANGUAGE_HINT = "SETTINGS_LANGUAGE_HINT";
         public const string SETTINGS_CYCLE_LANGUAGE = "SETTINGS_CYCLE_LANGUAGE";
@@ -65,6 +76,10 @@ namespace Hecton.Localization
         public const string ERROR_SETTINGS_UNAVAILABLE = "ERROR_SETTINGS_UNAVAILABLE";
         public const string ITEM_DESCRIPTION_FALLBACK = "ITEM_DESCRIPTION_FALLBACK";
         public const string ITEM_SCANNER_SUMMARY_FALLBACK = "ITEM_SCANNER_SUMMARY_FALLBACK";
+        public const string ACTION_EATING = "ACTION_EATING";
+        public const string ACTION_HEALING = "ACTION_HEALING";
+        public const string ACTION_OXYGEN = "ACTION_OXYGEN";
+        public const string ACTION_USING = "ACTION_USING";
 
         // Save System Errors
         public const string ERROR_SAVE_MANAGER_UNAVAILABLE = "ERROR_SAVE_MANAGER_UNAVAILABLE";
@@ -177,6 +192,16 @@ namespace Hecton.Localization
         public const string INTERACT_REACTOR_FULL = "INTERACT_REACTOR_FULL";
         public const string INTERACT_ACCESS_CHARGER = "INTERACT_ACCESS_CHARGER";
         public const string INTERACT_SWAP_BATTERY = "INTERACT_SWAP_BATTERY";
+        public const string INTERACT_NO_BATTERY_TO_SWAP = "INTERACT_NO_BATTERY_TO_SWAP";
+        public const string INTERACT_TAKE_ITEM = "INTERACT_TAKE_ITEM";
+        public const string INTERACT_INSERT_BATTERY = "INTERACT_INSERT_BATTERY";
+        public const string INTERACT_BIO_REACTOR = "INTERACT_BIO_REACTOR";
+        public const string INTERACT_EMPTY_CRATE = "INTERACT_EMPTY_CRATE";
+        public const string INTERACT_VERB_APPLY = "INTERACT_VERB_APPLY";
+        public const string INTERACT_VERB_DRINK = "INTERACT_VERB_DRINK";
+        public const string INTERACT_VERB_EAT = "INTERACT_VERB_EAT";
+        public const string INTERACT_VERB_INHALE = "INTERACT_VERB_INHALE";
+        public const string INTERACT_VERB_USE = "INTERACT_VERB_USE";
         public const string INTERACT_CONFIGURE_BEACON = "INTERACT_CONFIGURE_BEACON";
         public const string INTERACT_OPEN_CRATE = "INTERACT_OPEN_CRATE";
         public const string INTERACT_ACCESS_CRATE = "INTERACT_ACCESS_CRATE";
@@ -232,6 +257,35 @@ namespace Hecton.Localization
         public const string DEPTH_ZONE_ENTER = "DEPTH_ZONE_ENTER";
         public const string DEPTH_ZONE_UNKNOWN = "DEPTH_ZONE_UNKNOWN";
         public const string DEPTH_ZONE_HULL_WARNING = "DEPTH_ZONE_HULL_WARNING";
+        public const string MISSION_STARTED = "MISSION_STARTED";
+        public const string MISSION_COMPLETED = "MISSION_COMPLETED";
+        public const string MISSION_REWARD_ITEM = "MISSION_REWARD_ITEM";
+        public const string MISSION_REWARD_PENDING = "MISSION_REWARD_PENDING";
+        public const string MISSION_REWARD_MISSING_CATALOG = "MISSION_REWARD_MISSING_CATALOG";
+        public const string MISSION_REWARD_STORAGE_OFFLINE = "MISSION_REWARD_STORAGE_OFFLINE";
+        public const string MISSION_REWARD_EXPERIENCE = "MISSION_REWARD_EXPERIENCE";
+        public const string MISSION_REWARD_UNLOCK = "MISSION_REWARD_UNLOCK";
+        public const string MISSION_REWARD_UNKNOWN_ITEM = "MISSION_REWARD_UNKNOWN_ITEM";
+        public const string MISSION_REWARD_NO_CAPACITY = "MISSION_REWARD_NO_CAPACITY";
+        public const string DISCOVERY_NEW_BIOME = "DISCOVERY_NEW_BIOME";
+        public const string ECLIPSE_EVENT_STARTED = "ECLIPSE_EVENT_STARTED";
+        public const string ECLIPSE_EVENT_ENDED = "ECLIPSE_EVENT_ENDED";
+        public const string RANDOM_EVENT_BIOLUM_STORM = "RANDOM_EVENT_BIOLUM_STORM";
+        public const string RANDOM_EVENT_THERMAL_ERUPTION = "RANDOM_EVENT_THERMAL_ERUPTION";
+        public const string RANDOM_EVENT_FAUNA_MIGRATION = "RANDOM_EVENT_FAUNA_MIGRATION";
+        public const string RANDOM_EVENT_HECTON_OS_GLITCH = "RANDOM_EVENT_HECTON_OS_GLITCH";
+        public const string RANDOM_EVENT_CAVE_COLLAPSE = "RANDOM_EVENT_CAVE_COLLAPSE";
+        public const string SAVE_NOTIFICATION_SYNCHRONIZED = "SAVE_NOTIFICATION_SYNCHRONIZED";
+        public const string SAVE_NOTIFICATION_FAILED = "SAVE_NOTIFICATION_FAILED";
+        public const string MANTA_HUD_NO_BATTERY = "MANTA_HUD_NO_BATTERY";
+        public const string MANTA_HUD_BATTERY_DEPLETED = "MANTA_HUD_BATTERY_DEPLETED";
+        public const string MANTA_SUMMARY_NO_BATTERY = "MANTA_SUMMARY_NO_BATTERY";
+        public const string MANTA_SUMMARY_ACTIVE = "MANTA_SUMMARY_ACTIVE";
+        public const string MANTA_SUMMARY_STANDBY = "MANTA_SUMMARY_STANDBY";
+        public const string MANTA_DIRECTIVE_INSERT_BATTERY = "MANTA_DIRECTIVE_INSERT_BATTERY";
+        public const string MANTA_DIRECTIVE_SWAP_OR_RECHARGE = "MANTA_DIRECTIVE_SWAP_OR_RECHARGE";
+        public const string MANTA_DIRECTIVE_HOLD_FORWARD = "MANTA_DIRECTIVE_HOLD_FORWARD";
+        public const string MANTA_DIRECTIVE_HOLD_PRIMARY = "MANTA_DIRECTIVE_HOLD_PRIMARY";
 
         // Beacon tool / network
         public const string BEACON_PREFIX = "BEACON_PREFIX";

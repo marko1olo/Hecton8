@@ -121,7 +121,7 @@ namespace Hecton8.UI
 
         [Header("── Stress Harness ─────────────────────────")]
         [SerializeField, Tooltip("Development-only override that forces DynamicResolutionScaler into a pressured state.")]
-        private bool enableStressTest = true;
+        private bool enableStressTest = false;
 
         [SerializeField, Tooltip("Forced frame time used by the development stress harness.")]
         [Range(16.67f, 80f)]
@@ -183,6 +183,8 @@ namespace Hecton8.UI
         private string _lastUnderwaterBudgetValue = string.Empty;
         private string _lastCameraBudgetValue = string.Empty;
         private string _lastStressValue = string.Empty;
+        private bool _runtimeSnapshotLogged;
+        private string _runtimeSnapshotScene = string.Empty;
 
         private void Awake()
         {
@@ -305,6 +307,8 @@ namespace Hecton8.UI
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
         {
             debugSceneName = nextScene.IsValid() ? nextScene.name : MissingLabel;
+            _runtimeSnapshotLogged = false;
+            _runtimeSnapshotScene = string.Empty;
             InvalidateResolvedManagers();
             BootstrapRuntimeOverlay();
         }
@@ -583,6 +587,18 @@ namespace Hecton8.UI
             {
                 SetDynamicText(_stressValue, DisabledLabel, ref _lastStressValue);
             }
+
+            TryEmitRuntimeSnapshot(
+                activeScene,
+                scaler,
+                fauna,
+                music,
+                soundscape,
+                underwaterBudgetLabel,
+                cameraBudgetLabel,
+                pressureLabel,
+                faunaBiome,
+                faunaBias);
         }
 
         private void ApplyStressHarness()
@@ -866,6 +882,96 @@ namespace Hecton8.UI
                 return "WORLD PRIME";
 
             return ReadyLabel;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void TryEmitRuntimeSnapshot(
+            Scene activeScene,
+            DynamicResolutionScaler scaler,
+            FaunaDirector fauna,
+            HectonMusicDirector music,
+            SoundscapeSystem soundscape,
+            string underwaterBudgetLabel,
+            string cameraBudgetLabel,
+            string pressureLabel,
+            string faunaBiome,
+            string faunaBias)
+        {
+            if (!activeScene.IsValid() ||
+                !string.Equals(activeScene.name, "02_HECTON_WORLD", System.StringComparison.Ordinal) ||
+                !AllResolvedManagersReady() ||
+                scaler == null ||
+                fauna == null ||
+                music == null ||
+                soundscape == null ||
+                !IsSnapshotRuntimeReady(scaler, fauna, music, pressureLabel, faunaBiome, underwaterBudgetLabel, cameraBudgetLabel))
+            {
+                return;
+            }
+
+            if (_runtimeSnapshotLogged &&
+                string.Equals(_runtimeSnapshotScene, activeScene.name, System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _runtimeSnapshotLogged = true;
+            _runtimeSnapshotScene = activeScene.name;
+
+            Debug.Log(
+                "[SubnauticaSystemsDebugUI] runtime-snapshot " +
+                "scene=" + activeScene.name +
+                " renderScale=" + scaler.CurrentRenderScale.ToString("0.00") +
+                " pressure=" + pressureLabel +
+                " faunaBiome=" + faunaBiome +
+                " faunaBias=" + faunaBias +
+                " faunaCaps=" +
+                fauna.DebugEffectiveSpawnsPerTick.ToString("0") + "/" +
+                fauna.DebugEffectiveBiomeMaxCount.ToString("0") + "/" +
+                fauna.DebugEffectiveGlobalMaxCount.ToString("0") +
+                " tension=" + music.CurrentTension01.ToString("0.00") +
+                " musicProfile=" + (music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel) +
+                " soundscape=" + ResolveSoundscapeLabel(soundscape.CurrentTier) +
+                " underwater=" + underwaterBudgetLabel +
+                " camera=" + cameraBudgetLabel +
+                " stress=" + (enableStressTest ? EnabledLabel : DisabledLabel),
+                this);
+        }
+
+        private bool IsSnapshotRuntimeReady(
+            DynamicResolutionScaler scaler,
+            FaunaDirector fauna,
+            HectonMusicDirector music,
+            string pressureLabel,
+            string faunaBiome,
+            string underwaterBudgetLabel,
+            string cameraBudgetLabel)
+        {
+            if (scaler == null || fauna == null || music == null)
+                return false;
+
+            if (string.IsNullOrEmpty(pressureLabel) ||
+                string.Equals(pressureLabel, MissingLabel, System.StringComparison.Ordinal) ||
+                string.IsNullOrEmpty(faunaBiome) ||
+                string.Equals(faunaBiome, MissingLabel, System.StringComparison.Ordinal) ||
+                string.Equals(faunaBiome, "-1", System.StringComparison.Ordinal) ||
+                string.IsNullOrEmpty(underwaterBudgetLabel) ||
+                string.Equals(underwaterBudgetLabel, MissingLabel, System.StringComparison.Ordinal) ||
+                string.IsNullOrEmpty(cameraBudgetLabel) ||
+                string.Equals(cameraBudgetLabel, MissingLabel, System.StringComparison.Ordinal) ||
+                music.ActiveResolvedProfile == null)
+            {
+                return false;
+            }
+
+            if (enableStressTest &&
+                Mathf.Abs(scaler.CurrentRenderScale - forcedRenderScale) > 0.02f)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
