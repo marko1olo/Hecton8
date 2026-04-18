@@ -116,7 +116,7 @@ namespace Hecton8.Interaction
         private IInteractable _currentHovered;
         private float         _raycastTimer;
         private Transform     _cameraTransform;
-        private PhysicalInteractionHandler _physicalInteractionHandler;
+        private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
         private Ray           _ray;
         private RaycastHit    _hitInfo;
         private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe buffer.

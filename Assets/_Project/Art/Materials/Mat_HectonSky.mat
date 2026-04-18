@@ -140,9 +140,9 @@ Material:
     - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CloudDensityThreshold: 0
+    - _CloudDensityThreshold: 0.16
     - _CloudOverlayMode: 0
-    - _CloudSoftness: 0.01
+    - _CloudSoftness: 0.3
     - _CloudSpeedMult: 0
     - _Cull: 2
     - _Cutoff: 0.5
@@ -188,7 +188,7 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.5960179
+    - _SunElevation: 0.5960178
     - _SunScatterIntensity: 1.1
     - _SunScatterPower: 10.4
     - _SunSize: 0.002
@@ -203,8 +203,8 @@ Material:
     - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
     - _CirrusColor: {r: 0.82, g: 0.84, b: 0.9, a: 1}
     - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
-    - _CloudColorLit: {r: 0, g: 0, b: 0, a: 0}
-    - _CloudColorShadow: {r: 0, g: 0, b: 0, a: 0}
+    - _CloudColorLit: {r: 0.7, g: 0.74, b: 0.8, a: 1}
+    - _CloudColorShadow: {r: 0.32, g: 0.36, b: 0.44, a: 1}
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

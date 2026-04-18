@@ -28,6 +28,8 @@ namespace Hecton8.Gameplay
         private const string RightForearmAttachmentName = "Swim_RightForearmAttachment";
         private const string LeftHandAttachmentName = "Swim_LeftHandAttachment";
         private const string RightHandAttachmentName = "Swim_RightHandAttachment";
+        private const string ViewmodelRootName = "Swim_ViewmodelRoot";
+        private const string FirstPersonToolsLayerName = "FirstPersonTools";
 
         [Header("── References ─────────────────────────")]
         [Tooltip("Primary swim presentation owner publishing guide pose truth.")]
@@ -108,6 +110,9 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Stable right hand attachment for future authored art.")]
         [SerializeField] private Transform rightHandAttachment;
+
+        [Tooltip("Optional explicit swim viewmodel root. If missing, auto-resolved by name.")]
+        [SerializeField] private Transform viewmodelRoot;
 
         [Header("── Visibility ─────────────────────────")]
         [Tooltip("How quickly blockout visibility follows swim presentation.")]
@@ -230,6 +235,7 @@ namespace Hecton8.Gameplay
         public Transform RightHandAttachment => rightHandAttachment != null ? rightHandAttachment : rightGlove;
 
         private bool _registered;
+        private int _firstPersonToolsLayer = -1;
         private float _visualWeight;
         private float _leftVisualWeight;
         private float _rightVisualWeight;
@@ -248,6 +254,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            _firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -260,6 +267,9 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            if (_firstPersonToolsLayer < 0)
+                _firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
+
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -287,6 +297,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            _firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -488,6 +499,9 @@ namespace Hecton8.Gameplay
                 ? swimPresentationController.transform
                 : transform;
 
+            if (viewmodelRoot == null)
+                viewmodelRoot = FindTransformRecursive(root, ViewmodelRootName);
+
             if (leftShoulder == null)
                 leftShoulder = FindTransformRecursive(root, LeftShoulderName);
 
@@ -560,7 +574,33 @@ namespace Hecton8.Gameplay
             if (rightGloveRenderer == null && rightGlove != null)
                 rightGlove.TryGetComponent(out rightGloveRenderer);
 
+            EnforceViewmodelLayer();
             RefreshAttachmentDebugState();
+        }
+
+        private void EnforceViewmodelLayer()
+        {
+            if (_firstPersonToolsLayer < 0)
+                return;
+
+            Transform root = viewmodelRoot;
+            if (root == null)
+                root = leftForearm != null ? leftForearm.parent != null ? leftForearm.parent.parent : null : null;
+            if (root == null)
+                return;
+
+            ApplyLayerRecursive(root, _firstPersonToolsLayer);
+        }
+
+        private static void ApplyLayerRecursive(Transform root, int layer)
+        {
+            if (root == null)
+                return;
+
+            root.gameObject.layer = layer;
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+                ApplyLayerRecursive(root.GetChild(i), layer);
         }
 
         private void RefreshAttachmentDebugState()
