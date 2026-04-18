@@ -269,7 +269,7 @@ namespace Hecton8.AI
                  "для префаба, веса спавна и лимитов по биому.")]
         public CreatureArchetypeData archetype;
 
-        [Tooltip("Префаб существа (должен иметь HectonBaseAI + быть в пуле).")]
+        [Tooltip("Префаб существа (должен иметь FaunaBrain + быть в пуле).")]
         public GameObject prefab;
 
         [Tooltip("Вес спавна. Больше = чаще появляется. " +
@@ -307,3 +307,4 @@ namespace Hecton8.AI
         }
     }
 }
+

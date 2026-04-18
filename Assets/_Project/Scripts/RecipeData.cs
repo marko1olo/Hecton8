@@ -77,6 +77,11 @@ namespace Hecton8.Crafting
         [Min(0.1f)]
         public float craftTime = 3f;
 
+        [Header("Power")]
+        [Tooltip("Энергия, потребляемая при завершении крафта (Вт·ч). 0 = бесплатно.")]
+        [Min(0f)]
+        public float powerCost = 5f;
+
         [Header("Unlock")]
         [Tooltip("Необязательная scan-log запись, которая открывает этот чертёж. Пусто = чертёж доступен сразу.")]
         public string requiredScanEntryId = "";

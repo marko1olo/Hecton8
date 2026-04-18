@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_CircuitBoard
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Circuit Board
+  localizedItemName:
+    tableKey: ITEM_CIRCUIT_BOARD_NAME
+    fallbackText: "Circuit Board"
+    variants: []
   icon: {fileID: 0}
   description: Core logic board for analyzer, scanner, and precision electronics.
+  localizedDescription:
+    tableKey: ITEM_CIRCUIT_BOARD_DESCRIPTION
+    fallbackText: "Core logic board for analyzer, scanner, and precision electronics."
+    variants: []
   weight: 0.3
   stackable: 1
   maxStack: 16
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

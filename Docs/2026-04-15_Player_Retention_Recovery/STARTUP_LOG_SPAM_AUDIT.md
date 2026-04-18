@@ -624,3 +624,99 @@ Interpretation:
 - the current input fix removed one confirmed stale-map churn source and the runtime input spam was not reproduced in this capture window
 - the current tick-path scatter fix removed at least one redundant startup same-state rebuild path, but longer capture is still required before claiming the catastrophic stall is gone
 - the allocator issue is now the primary live blocker in the observed session
+
+## 6. New verified fix: `VRAMMonitor` was reporting CPU memory as VRAM
+
+Fresh code audit on `Assets/_Project/Scripts/Optimization/VRAMMonitor.cs` found a real source-of-truth bug:
+
+- `TotalVRAMBytes` was populated from `Profiler.GetTotalAllocatedMemoryLong()`
+- that API reports total allocated managed/native memory, not GPU graphics-driver memory
+- the monitor also hard-coded a single recorder name for texture and RenderTexture counters:
+  - `Texture Memory`
+  - `RenderTexture Memory`
+
+Why this matters:
+
+- the fresh user log showed:
+  - `[VRAMMonitor] BUDGET EXCEEDED: Texture=0.0MB RT=0.0MB Total=2074.6MB`
+- that exact shape is consistent with:
+  - texture / RT recorders failing to resolve
+  - total value coming from system memory instead of VRAM
+
+Applied change:
+
+- `VRAMMonitor` now resolves memory counters from candidate names at startup instead of assuming one counter name
+- texture candidates:
+  - `Texture Memory`
+  - `Texture Used Memory`
+- RenderTexture candidates:
+  - `RenderTexture Memory`
+  - `Render Textures Bytes`
+  - `Render Textures Memory`
+- total GPU-side memory now comes from `Profiler.GetAllocatedMemoryForGraphicsDriver()`
+- if the RenderTexture profiler counter is unavailable or returns zero, the monitor falls back to `RenderTextureLifecycleTracker.TrackedRenderTextureMemoryBytes`
+- pressure state now includes texture-budget utilization as a first-class signal instead of only RT + total utilization
+
+Unity-verified:
+
+- first compile failed once with:
+  - `VRAMMonitor.cs(56,31): error CS0246: ProfilerRecorderHandle`
+- the missing namespace import was fixed
+- the next clean script compile returned `0` console errors
+
+This does **not** prove the VRAM leak itself is gone. It proves the monitor is no longer obviously using the wrong top-level memory source.
+
+## 7. New verified runtime state after the VRAMMonitor slice
+
+Fresh clean cycle:
+
+1. `clear console`
+2. clean script compile
+3. Play Mode runtime capture
+4. targeted console filters
+
+Observed facts:
+
+- compile after the final `VRAMMonitor` patch returned `0` console entries
+- a fresh 10-second Play Mode window returned `0` general console entries
+- targeted filtered console queries returned `0` entries for:
+  - `Starter_ReefField`
+  - `TLS Allocator`
+  - `Map must be contained in state`
+  - `Map index on InputActionMap is out of range`
+  - `WorldScatterProfiler`
+- live rendering stats in Play Mode reported:
+  - `render_textures = 371`
+  - `render_textures_bytes = 83522206` (~79.7 MiB)
+  - `used_textures_bytes = 0`
+
+Interpretation:
+
+- this is the strongest clean runtime window so far: the previously dominant input spam, scatter profiler spam, and `Starter_ReefField` allocator spam did not reproduce in this capture
+- `render_textures_bytes` being non-zero proves the runtime now has at least one GPU-memory source that is not lying as total zero
+- `used_textures_bytes = 0` means the broader texture-memory telemetry story is still not fully trustworthy across all counters; more runtime evidence is still required
+
+WARNING: Regression risk in the MCP tooling containment patch. A temporary editor-only change was made in `Library/PackageCache/com.coplaydev.unity-mcp.../GameObjectLookup.cs` so hierarchy churn no longer clears cached names on every change. That helped isolate allocator spam under controlled MCP queries, but it lives in an immutable package cache and is not a durable product-side fix.
+
+## 8. Missing-script status after direct owner passes
+
+Two direct owner passes were executed:
+
+- `Tools/Hecton/Dev/Scene/Remove Missing Scripts In Loaded Scenes`
+- `Tools/Hecton/Dev/Scene/Remove Missing Scripts In _Project Prefabs`
+
+Verified results:
+
+- loaded scenes owner reported:
+  - `[Hecton Dev] No missing scripts found in loaded scenes.`
+- prefab owner pass did **not** report removed prefab entries
+- generic console spam still reproduced during prefab-side scanning:
+  - `The referenced script (Unknown) on this Behaviour is missing!` repeated many times
+
+Interpretation:
+
+- the current missing-script issue is **not** in the loaded `02_HECTON_WORLD` scene graph
+- it is likely asset-side and may involve prefab dependencies outside the `_Project` root or script assets whose GUID still resolves but whose `MonoScript` type no longer resolves cleanly in Unity
+- static YAML scans for broken `m_Script` GUIDs did not find an obvious first-party deleted-script case
+
+This remains unresolved.

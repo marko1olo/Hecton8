@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -6,6 +7,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class HarpoonLauncherTool : PlayerTool
     {
+        private const string HarpoonCategory = "HARPOON";
         private readonly struct HarpoonAssessment
         {
             public readonly string Headline;
@@ -23,7 +25,11 @@ namespace Hecton8.Gameplay
 
             public string BuildHudMessage()
             {
-                return $"{Headline} | {Summary} | {Recommendation}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.HARPOON_HUD_ASSESSMENT, "{0} | {1} | {2}"),
+                    Headline,
+                    Summary,
+                    Recommendation);
             }
         }
 
@@ -98,30 +104,35 @@ namespace Hecton8.Gameplay
                     HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, _tetheredBody != null);
                     PublishAssessment(_tetheredBody != null
                         ? new HarpoonAssessment(
-                            $"HARPOON - TETHER LOCK [{_tetheredNameUpper ?? "TARGET"}]",
+                            string.Format(
+                                ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TETHER_LOCK, "HARPOON - TETHER LOCK [{0}]"),
+                                _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")),
                             assessment.Summary,
                             assessment.Recommendation,
                             assessment.Severity)
                         : new HarpoonAssessment(
-                            "HARPOON - TARGET PINNED",
+                            ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_PINNED, "HARPOON - TARGET PINNED"),
                             assessment.Summary,
                             assessment.Recommendation,
                             assessment.Severity));
                     FieldOperationLogSystem.RecordOperation(
-                        "HARPOON",
+                        ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
                         assessment.Headline,
-                        $"{assessment.Summary} | {assessment.Recommendation}",
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.HARPOON_LOG_ASSESSMENT, "{0} | {1}"),
+                            assessment.Summary,
+                            assessment.Recommendation),
                         assessment.Severity);
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning("HARPOON - SHOT RETURNED CLEAR");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.HARPOON_HUD_SHOT_CLEAR, "HARPOON - SHOT RETURNED CLEAR"));
                 FieldOperationLogSystem.RecordOperation(
-                    "HARPOON",
-                    "HARPOON SHOT RETURNED CLEAR",
-                    "No target intersected the last harpoon firing lane.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                    ResolveLocalized(LocalizationKeys.HARPOON_LOG_SHOT_CLEAR_TITLE, "HARPOON SHOT RETURNED CLEAR"),
+                    ResolveLocalized(LocalizationKeys.HARPOON_LOG_SHOT_CLEAR_MESSAGE, "No target intersected the last harpoon firing lane."),
                     "WARN");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -143,7 +154,7 @@ namespace Hecton8.Gameplay
 
             if (!TryGetTargetHit(out RaycastHit hit))
             {
-                WarnReel("HARPOON - NO REEL LOCK");
+                WarnReel(ResolveLocalized(LocalizationKeys.HARPOON_HUD_NO_REEL_LOCK, "HARPOON - NO REEL LOCK"));
                 return;
             }
 
@@ -163,7 +174,7 @@ namespace Hecton8.Gameplay
                 }
                 else
                 {
-                    WarnReel("HARPOON - REEL LOCK INVALID");
+                    WarnReel(ResolveLocalized(LocalizationKeys.HARPOON_HUD_REEL_LOCK_INVALID, "HARPOON - REEL LOCK INVALID"));
                 }
                 return;
             }
@@ -174,14 +185,20 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextFeedbackAt)
             {
                 PublishAssessment(new HarpoonAssessment(
-                    "HARPOON - REEL IMPULSE APPLIED",
-                    $"{body.gameObject.name} is inside safe reel mass at {body.mass:0.0} kg.",
-                    "Pull it into reach or keep pressure until it drifts clear.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, "HARPOON - REEL IMPULSE APPLIED"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_REEL_IMPULSE, "{0} is inside safe reel mass at {1:0.0} kg."),
+                        body.gameObject.name,
+                        body.mass),
+                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_REEL_IMPULSE, "Pull it into reach or keep pressure until it drifts clear."),
                     "INFO"));
                 FieldOperationLogSystem.RecordOperation(
-                    "HARPOON",
-                    "HARPOON REEL IMPULSE",
-                    $"{body.gameObject.name} reeled with impulse on {body.mass:0.0} kg target mass.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                    ResolveLocalized(LocalizationKeys.HARPOON_LOG_REEL_IMPULSE_TITLE, "HARPOON REEL IMPULSE"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_LOG_REEL_IMPULSE_MESSAGE, "{0} reeled with impulse on {1:0.0} kg target mass."),
+                        body.gameObject.name,
+                        body.mass),
                     "INFO");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -214,29 +231,35 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_cooldown > 0f)
-                return $"HARPOON // RECHARGING {_cooldown:0.0}S";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_RECHARGING, "HARPOON // RECHARGING {0:0.0}S"),
+                    _cooldown);
 
             if (IsTetherValid())
-                return $"HARPOON // TETHER LOCK // {_tetheredNameUpper ?? "TARGET"}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_TETHER_LOCK, "HARPOON // TETHER LOCK // {0}"),
+                    _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET"));
 
             if (TryGetAssessmentCached(out HarpoonAssessment assessment))
-                return $"HARPOON // {assessment.Headline}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_ASSESSMENT, "HARPOON // {0}"),
+                    assessment.Headline);
 
-            return "HARPOON // READY";
+            return ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_READY, "HARPOON // READY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_cooldown > 0f)
-                return "Winch and launcher are resetting for the next shot.";
+                return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_RECHARGING, "Winch and launcher are resetting for the next shot.");
 
             if (IsTetherValid())
-                return "Secondary reels the tethered target. Keep distance or break the line if needed.";
+                return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_TETHERED, "Secondary reels the tethered target. Keep distance or break the line if needed.");
 
             if (TryGetAssessmentCached(out HarpoonAssessment assessment))
                 return assessment.Recommendation;
 
-            return "Primary fires and tags a lane. Secondary reels a light target or an active tether.";
+            return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_READY, "Primary fires and tags a lane. Secondary reels a light target or an active tether.");
         }
 
         private void SetTracer(bool active, Vector3 endPoint)
@@ -298,9 +321,9 @@ namespace Hecton8.Gameplay
 
             ToolHitUtility.ShowWarning(message);
             FieldOperationLogSystem.RecordOperation(
-                "HARPOON",
+                ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
                 message,
-                "Secondary reel command failed for the current target.",
+                ResolveLocalized(LocalizationKeys.HARPOON_LOG_REEL_FAILED_MESSAGE, "Secondary reel command failed for the current target."),
                 "WARN");
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -336,7 +359,7 @@ namespace Hecton8.Gameplay
             _tetheredCollider = hit.collider;
             _tetheredName = body.gameObject.name;
             _tetheredNameUpper = string.IsNullOrWhiteSpace(_tetheredName)
-                ? "TARGET"
+                ? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")
                 : _tetheredName.ToUpperInvariant();
             InvalidateAssessmentCache();
             _tetherRemaining = tetherDuration;
@@ -354,14 +377,20 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextFeedbackAt)
             {
                 PublishAssessment(new HarpoonAssessment(
-                    $"HARPOON - TETHER REEL [{_tetheredNameUpper ?? "TARGET"}]",
-                    $"{_tetheredName} remains inside tether control range.",
-                    "Keep reeling for control or release to reset the lane.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TETHER_REEL, "HARPOON - TETHER REEL [{0}]"),
+                        _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_TETHER_REEL, "{0} remains inside tether control range."),
+                        _tetheredName),
+                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TETHER_REEL, "Keep reeling for control or release to reset the lane."),
                     "INFO"));
                 FieldOperationLogSystem.RecordOperation(
-                    "HARPOON",
-                    "HARPOON TETHER REEL",
-                    $"{_tetheredName} reeled through active tether lock.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                    ResolveLocalized(LocalizationKeys.HARPOON_LOG_TETHER_REEL_TITLE, "HARPOON TETHER REEL"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_LOG_TETHER_REEL_MESSAGE, "{0} reeled through active tether lock."),
+                        _tetheredName),
                     "INFO");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -440,64 +469,88 @@ namespace Hecton8.Gameplay
             if (target == null)
             {
                 return new HarpoonAssessment(
-                    "HARPOON - NO TARGET DATA",
-                    "Contact data collapsed before assessment completed.",
-                    "Sweep a new lane and reacquire.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_NO_TARGET_DATA, "HARPOON - NO TARGET DATA"),
+                    ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_NO_TARGET_DATA, "Contact data collapsed before assessment completed."),
+                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_NO_TARGET_DATA, "Sweep a new lane and reacquire."),
                     "WARN");
             }
 
-            HectonBaseAI ai = target.GetComponent<HectonBaseAI>() ?? target.GetComponentInParent<HectonBaseAI>();
+            FaunaBrain ai = target.GetComponent<FaunaBrain>() ?? target.GetComponentInParent<FaunaBrain>();
             if (ai != null)
             {
                 if (ai.IsDead || ai.CurrentHealth <= 0.01f)
                 {
                     return new HarpoonAssessment(
-                        "HARPOON - TARGET DOWN",
-                        $"{ai.gameObject.name} is no longer an active threat.",
-                        "Use the line for recovery or switch to salvage.",
+                        ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_DOWN, "HARPOON - TARGET DOWN"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_TARGET_DOWN, "{0} is no longer an active threat."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TARGET_DOWN, "Use the line for recovery or switch to salvage."),
                         "INFO");
                 }
 
-                if (ai.CurrentState == HectonBaseAI.AIState.Aggressive)
+                if (ai.CurrentState == FaunaBrain.AIState.Aggressive)
                 {
                     return new HarpoonAssessment(
-                        tetherReady ? "HARPOON - HOSTILE TETHERED" : "HARPOON - HOSTILE CONTACT",
-                        $"{ai.gameObject.name} is aggressive at {distance:0.0} m.",
-                        tetherReady ? "Control its movement before it closes distance." : "Confirm the line and prepare to reel or disengage.",
+                        tetherReady
+                            ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_HOSTILE_TETHERED, "HARPOON - HOSTILE TETHERED")
+                            : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_HOSTILE_CONTACT, "HARPOON - HOSTILE CONTACT"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_HOSTILE_CONTACT, "{0} is aggressive at {1:0.0} m."),
+                            ai.gameObject.name,
+                            distance),
+                        tetherReady
+                            ? ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_HOSTILE_TETHERED, "Control its movement before it closes distance.")
+                            : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_HOSTILE_CONTACT, "Confirm the line and prepare to reel or disengage."),
                         "CRITICAL");
                 }
 
                 if (ai.HealthNormalized <= 0.35f)
                 {
                     return new HarpoonAssessment(
-                        tetherReady ? "HARPOON - FRACTURED TARGET TETHERED" : "HARPOON - FRACTURED TARGET",
-                        $"{ai.gameObject.name} is weakened and likely to lose control under pressure.",
-                        "Reel if you need control, or finish the target quickly.",
+                        tetherReady
+                            ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_FRACTURED_TETHERED, "HARPOON - FRACTURED TARGET TETHERED")
+                            : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_FRACTURED_TARGET, "HARPOON - FRACTURED TARGET"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_FRACTURED_TARGET, "{0} is weakened and likely to lose control under pressure."),
+                            ai.gameObject.name),
+                        ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_FRACTURED_TARGET, "Reel if you need control, or finish the target quickly."),
                         "WARN");
                 }
 
                 return new HarpoonAssessment(
-                    tetherReady ? "HARPOON - BIOFORM TETHERED" : "HARPOON - BIOFORM CONTACT",
-                    $"{ai.gameObject.name} is under line pressure at {distance:0.0} m.",
-                    tetherReady ? "Use the tether to manage spacing and movement." : "Strike cleanly before reeling.",
+                    tetherReady
+                        ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_BIOFORM_TETHERED, "HARPOON - BIOFORM TETHERED")
+                        : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_BIOFORM_CONTACT, "HARPOON - BIOFORM CONTACT"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_BIOFORM_CONTACT, "{0} is under line pressure at {1:0.0} m."),
+                        ai.gameObject.name,
+                        distance),
+                    tetherReady
+                        ? ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_BIOFORM_TETHERED, "Use the tether to manage spacing and movement.")
+                        : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_BIOFORM_CONTACT, "Strike cleanly before reeling."),
                     "INFO");
             }
 
             if (!ToolHitUtility.TryGetRigidbody(target, out Rigidbody body))
             {
                 return new HarpoonAssessment(
-                    "HARPOON - TARGET CANNOT BE REELED",
-                    $"{target.gameObject.name} has no valid mass body for tether control.",
-                    "Use cutter, builder, or move on.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, "HARPOON - TARGET CANNOT BE REELED"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_CANNOT_REEL, "{0} has no valid mass body for tether control."),
+                        target.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, "Use cutter, builder, or move on."),
                     "WARN");
             }
 
             if (body == null || body.isKinematic)
             {
                 return new HarpoonAssessment(
-                    "HARPOON - TARGET LOCKED TO STRUCTURE",
-                    $"{target.gameObject.name} is fixed in place and will not reel.",
-                    "Do not waste reel force on anchored structures.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, "HARPOON - TARGET LOCKED TO STRUCTURE"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_LOCKED_STRUCTURE, "{0} is fixed in place and will not reel."),
+                        target.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, "Do not waste reel force on anchored structures."),
                     "WARN");
             }
 
@@ -507,9 +560,13 @@ namespace Hecton8.Gameplay
                     return descriptorAssessment;
 
                 return new HarpoonAssessment(
-                    "HARPOON - MASS EXCEEDS REEL LIMIT",
-                    $"{target.gameObject.name} weighs {body.mass:0.0} kg at {distance:0.0} m.",
-                    "Use propulsion or another route; reel force is not enough.",
+                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, "HARPOON - MASS EXCEEDS REEL LIMIT"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_MASS_EXCEEDS, "{0} weighs {1:0.0} kg at {2:0.0} m."),
+                        target.gameObject.name,
+                        body.mass,
+                        distance),
+                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, "Use propulsion or another route; reel force is not enough."),
                     "WARN");
             }
 
@@ -517,9 +574,16 @@ namespace Hecton8.Gameplay
                 return authoredAssessment;
 
             return new HarpoonAssessment(
-                tetherReady ? "HARPOON - CARGO TETHERED" : "HARPOON - CARGO CONTACT",
-                $"{target.gameObject.name} is reel-safe at {body.mass:0.0} kg.",
-                tetherReady ? "Pull it into position or keep it off your path." : "Fire again only if you need a tether lock.",
+                tetherReady
+                    ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CARGO_TETHERED, "HARPOON - CARGO TETHERED")
+                    : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CARGO_CONTACT, "HARPOON - CARGO CONTACT"),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_CARGO_CONTACT, "{0} is reel-safe at {1:0.0} kg."),
+                    target.gameObject.name,
+                    body.mass),
+                tetherReady
+                    ? ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CARGO_TETHERED, "Pull it into position or keep it off your path.")
+                    : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CARGO_CONTACT, "Fire again only if you need a tether lock."),
                 "INFO");
         }
 
@@ -548,6 +612,14 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowWarning(assessment.BuildHudMessage());
             else
                 ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -579,3 +651,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

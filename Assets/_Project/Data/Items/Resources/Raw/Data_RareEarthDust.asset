@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_RareEarthDust
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Rare Earth Dust
+  localizedItemName:
+    tableKey: ITEM_RARE_EARTH_DUST_NAME
+    fallbackText: "Rare Earth Dust"
+    variants: []
   icon: {fileID: 0}
   description: Fine precision mineral used in guidance, stabilization, and advanced
     relays.
+  localizedDescription:
+    tableKey: ITEM_RARE_EARTH_DUST_DESCRIPTION
+    fallbackText: "Fine precision mineral used in guidance, stabilization, and advanced relays."
+    variants: []
   weight: 0.5
   stackable: 1
   maxStack: 24
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Collect"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

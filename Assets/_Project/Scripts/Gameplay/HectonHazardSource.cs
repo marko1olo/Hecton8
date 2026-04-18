@@ -63,24 +63,19 @@ namespace Hecton8.Gameplay
             InternalUpdateRegistry();
 
             if (!_isStatic)
-            {
-                if (GameTickManager.Instance != null && !_isRegisteredInTick)
-                {
-                    GameTickManager.Instance.Register(this);
-                    _isRegisteredInTick = true;
-                }
-            }
+                TryRegisterToTickManager();
         }
 
         private void OnDisable()
         {
             HectonHazardManager.Unregister(_instanceID);
+            TryUnregisterFromTickManager();
+        }
 
-            if (_isRegisteredInTick && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _isRegisteredInTick = false;
-            }
+        private void OnDestroy()
+        {
+            HectonHazardManager.Unregister(_instanceID);
+            TryUnregisterFromTickManager();
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -106,6 +101,31 @@ namespace Hecton8.Gameplay
         private void InternalUpdateRegistry()
         {
             HectonHazardManager.Register(_instanceID, _tr.position, _intensity, _radius, _type);
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_isRegisteredInTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _isRegisteredInTick = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_isRegisteredInTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _isRegisteredInTick = false;
         }
 
         // ══════════════════════════════════════════════════════════════════

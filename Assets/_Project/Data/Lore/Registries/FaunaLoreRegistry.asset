@@ -16,9 +16,17 @@ MonoBehaviour:
   - creatureId: creature.reef_glider
     displayName: "\u0420\u0438\u0444\u043E\u0441\u043F\u0438\u043D\u043D\u0435\u0440
       (Reef Glider)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_REEF_GLIDER_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 0
     habitatZone: "\u041C\u0435\u043B\u043A\u043E\u0432\u043E\u0434\u044C\u0435, \u0448\u0435\u043B\u044C\u0444
       (0-500\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_REEF_GLIDER_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 25
     codexDescription: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0438\u0439
       \u0441\u043A\u0430\u0442 \u0441 \u043A\u043E\u0440\u0430\u043B\u043B\u0430\u043C\u0438
@@ -28,21 +36,45 @@ MonoBehaviour:
       \u0418\u0433\u043D\u043E\u0440\u0438\u0440\u0443\u0435\u0442 \u0438\u0433\u0440\u043E\u043A\u0430.
       \u041C\u043E\u0436\u043D\u043E \u043A\u0430\u0442\u0430\u0442\u044C\u0441\u044F
       \u043D\u0430 \u0441\u043F\u0438\u043D\u0435."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_REEF_GLIDER_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u043C\u0430\u0441\u0448\u0442\u0430\u0431.
       \u041A\u0440\u0430\u0441\u0438\u0432\u044B\u0435 \u0441\u043A\u0440\u0438\u043D\u0448\u043E\u0442\u044B.
       \u041E\u0449\u0443\u0449\u0435\u043D\u0438\u0435 \u0436\u0438\u0432\u043E\u0433\u043E
       \u043C\u0438\u0440\u0430."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_REEF_GLIDER_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0438\u0435
       \u0441\u043A\u0430\u0442\u044B \u0440\u0435\u0430\u043B\u044C\u043D\u044B.
       \u0421\u0438\u043C\u0431\u0438\u043E\u0437 \u0441 \u043A\u043E\u0440\u0430\u043B\u043B\u0430\u043C\u0438
       \u2014 \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0435 \u044F\u0432\u043B\u0435\u043D\u0438\u0435."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_REEF_GLIDER_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.glassworm
     displayName: "\u0421\u0442\u0435\u043A\u043B\u043E\u043E\u0447\u0438\u0441\u0442\u0438\u0442\u0435\u043B\u044C
       (Glassworm)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_GLASSWORM_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 0
     habitatZone: "\u0422\u043E\u043B\u0449\u0430 \u0432\u043E\u0434\u044B (200-800\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_GLASSWORM_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 40
     codexDescription: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0438\u0439
       \u043F\u043E\u043B\u0443\u043F\u0440\u043E\u0437\u0440\u0430\u0447\u043D\u044B\u0439
@@ -51,19 +83,43 @@ MonoBehaviour:
       \u0432 \u0442\u043E\u043B\u0449\u0435 \u0432\u043E\u0434\u044B. \u0415\u0441\u043B\u0438
       \u0437\u0430\u043F\u043B\u044B\u0442\u044C \u0432\u043D\u0443\u0442\u0440\u044C
       \u2014 \u0432\u044B\u043F\u043B\u044E\u043D\u0435\u0442 (\u043D\u0435 \u0441\u043C\u0435\u0440\u0442\u0435\u043B\u044C\u043D\u043E)."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_GLASSWORM_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0412\u0438\u0437\u0443\u0430\u043B\u044C\u043D\u043E\u0435 \u0440\u0430\u0437\u043D\u043E\u043E\u0431\u0440\u0430\u0437\u0438\u0435.
       \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \xAB\u0447\u0443\u0434\u0430\xBB."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_GLASSWORM_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u0424\u0438\u043B\u044C\u0442\u0440\u0430\u0442\u043E\u0440\u044B
       \u0440\u0435\u0430\u043B\u044C\u043D\u044B (\u0441\u0430\u043B\u044C\u043F\u044B,
       \u043F\u0438\u0440\u043E\u0441\u043E\u043C\u044B). \u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0430\u044F
       \u0432\u0435\u0440\u0441\u0438\u044F."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_GLASSWORM_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.titan_leviathan
     displayName: "\u0422\u0438\u0442\u0430\u043D\u043E\u0432\u044B\u0439 \u041B\u0435\u0432\u0438\u0430\u0444\u0430\u043D"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_TITAN_LEVIATHAN_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 1
     habitatZone: "\u0412\u043E\u0441\u0442\u043E\u0447\u043D\u0430\u044F \u0441\u0442\u0435\u043D\u0430,
       \u0411\u0435\u0437\u0434\u043D\u0430 (1000\u043C+)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_TITAN_LEVIATHAN_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 55
     codexDescription: "\u041E\u0433\u0440\u043E\u043C\u043D\u044B\u0439 \u0443\u0433\u043E\u0440\u044C
       \u0441 \u043C\u0435\u0442\u0430\u043B\u043B\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0439
@@ -74,42 +130,90 @@ MonoBehaviour:
       \u0442\u0435\u0440\u0440\u0438\u0442\u043E\u0440\u0438\u044E. \u0418\u0437\u0434\u0430\u0451\u0442
       \u043D\u0438\u0437\u043A\u043E\u0447\u0430\u0441\u0442\u043E\u0442\u043D\u044B\u0439
       \u0433\u0443\u043B."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_TITAN_LEVIATHAN_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0413\u043B\u0430\u0432\u043D\u044B\u0439 \u0445\u0438\u0449\u043D\u0438\u043A.
       \u0412\u0438\u0434\u0435\u043D \u0438\u0437\u0434\u0430\u043B\u0435\u043A\u0430.
       \u0421\u043E\u0437\u0434\u0430\u0451\u0442 anticipation."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_TITAN_LEVIATHAN_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u041E\u0433\u0440\u043E\u043C\u043D\u044B\u0435 \u0443\u0433\u0440\u0438
       \u0440\u0435\u0430\u043B\u044C\u043D\u044B. \u042D\u043B\u0435\u043A\u0442\u0440\u0438\u0447\u0435\u0441\u043A\u0438\u0435
       \u043E\u0440\u0433\u0430\u043D\u044B \u2014 \u0440\u0435\u0430\u043B\u044C\u043D\u044B."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_TITAN_LEVIATHAN_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 1
     nightBehaviorDescription: "\u041F\u043E\u0434\u043D\u0438\u043C\u0430\u0435\u0442\u0441\u044F
       \u0432\u044B\u0448\u0435 (\u0434\u043E 500\u043C). \u0410\u043A\u0442\u0438\u0432\u043D\u043E
       \u043E\u0445\u043E\u0442\u0438\u0442\u0441\u044F."
+    localizedNightBehaviorDescription:
+      tableKey: FAUNA_CREATURE_TITAN_LEVIATHAN_NIGHT
+      fallbackText: ""
+      variants: []
   - creatureId: creature.volt_manta
     displayName: "\u042D\u043B\u0435\u043A\u0442\u0440\u0438\u0447\u0435\u0441\u043A\u0438\u0439
       \u0421\u043A\u0430\u0442-\u041F\u0435\u0440\u0435\u0440\u043E\u0441\u0442\u043E\u043A
       (Volt Manta)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_VOLT_MANTA_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 1
     habitatZone: "\u0417\u0430\u043F\u0430\u0434\u043D\u044B\u0439 \u0448\u0435\u043B\u044C\u0444,
       \u0443 \u0440\u0443\u0438\u043D (100-800\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_VOLT_MANTA_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 30
     codexDescription: "\u041E\u0433\u0440\u043E\u043C\u043D\u044B\u0439 \u0441\u043A\u0430\u0442
       \u0441 \u0434\u043B\u0438\u043D\u043D\u044B\u043C \u0445\u0432\u043E\u0441\u0442\u043E\u043C-\u044D\u043B\u0435\u043A\u0442\u0440\u043E\u0433\u0435\u043D\u0435\u0440\u0430\u0442\u043E\u0440\u043E\u043C.
       \u041E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0446\u0435\u043D\u043D\u044B\u0435
       \u043E\u0431\u043B\u043E\u043C\u043A\u0438. \u041D\u0435 \u0443\u0431\u0438\u0432\u0430\u0435\u0442,
       \u043D\u043E \u043E\u0433\u043B\u0443\u0448\u0430\u0435\u0442 \u0440\u0430\u0437\u0440\u044F\u0434\u043E\u043C."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_VOLT_MANTA_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u041E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0440\u0435\u0441\u0443\u0440\u0441\u044B.
       \u0417\u0430\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442 \u0434\u0443\u043C\u0430\u0442\u044C,
       \u043D\u0435 \u043F\u0440\u043E\u0441\u0442\u043E \u0441\u0442\u0440\u0435\u043B\u044F\u0442\u044C."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_VOLT_MANTA_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u042D\u043B\u0435\u043A\u0442\u0440\u0438\u0447\u0435\u0441\u043A\u0438\u0435
       \u0441\u043A\u0430\u0442\u044B \u0440\u0435\u0430\u043B\u044C\u043D\u044B."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_VOLT_MANTA_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 1
     nightBehaviorDescription: "\u0410\u043A\u0442\u0438\u0432\u043D\u043E \u043F\u0430\u0442\u0440\u0443\u043B\u0438\u0440\u0443\u0435\u0442.
       \u0410\u0433\u0440\u0435\u0441\u0441\u0438\u0432\u043D\u0435\u0435."
+    localizedNightBehaviorDescription:
+      tableKey: FAUNA_CREATURE_VOLT_MANTA_NIGHT
+      fallbackText: ""
+      variants: []
   - creatureId: creature.abyssal_nightmare
     displayName: "\u041A\u043E\u0448\u043C\u0430\u0440 \u0438\u0437 \u0411\u0435\u0437\u0434\u043D\u044B"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 1
     habitatZone: "\u0413\u043B\u0443\u0431\u043E\u043A\u0438\u0435 \u043F\u0435\u0449\u0435\u0440\u044B
       (1000\u043C+)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 8
     codexDescription: "\u041F\u043E\u043B\u0443\u043F\u0440\u043E\u0437\u0440\u0430\u0447\u043D\u044B\u0439,
       \u043F\u043E\u0447\u0442\u0438 \u043D\u0435\u0432\u0438\u0434\u0438\u043C\u044B\u0439
@@ -120,18 +224,42 @@ MonoBehaviour:
       \u041F\u0440\u0438 \u043F\u0440\u0438\u0431\u043B\u0438\u0436\u0435\u043D\u0438\u0438
       \u2014 \u0440\u0435\u0437\u043A\u043E \xAB\u0441\u0445\u043B\u043E\u043F\u044B\u0432\u0430\u0435\u0442\u0441\u044F\xBB
       \u043A \u0438\u0433\u0440\u043E\u043A\u0443."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0421\u043A\u0440\u0438\u043C\u0435\u0440. \u0420\u0430\u0431\u043E\u0442\u0430\u0435\u0442
       \u043D\u0430 \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442\u0435 \u0441
       \u0442\u0438\u0448\u0438\u043D\u043E\u0439."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u0413\u043B\u0443\u0431\u043E\u043A\u043E\u0432\u043E\u0434\u043D\u044B\u0435
       \u0440\u044B\u0431\u044B \u0440\u0435\u0430\u043B\u044C\u043D\u043E \u043F\u043E\u043B\u0443\u043F\u0440\u043E\u0437\u0440\u0430\u0447\u043D\u044B."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.thermal_phantom
     displayName: "\u041F\u0440\u0438\u0437\u0440\u0430\u043A \u0422\u0435\u0440\u043C\u043E\u043A\u043B\u0438\u043D\u0430"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_THERMAL_PHANTOM_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 2
     habitatZone: "\u0413\u0440\u0430\u043D\u0438\u0446\u0430 \u0442\u0435\u0440\u043C\u043E\u043A\u043B\u0438\u043D\u0430
       (1000-1200\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_THERMAL_PHANTOM_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 40
     codexDescription: "\u041F\u043E\u043B\u0443\u043F\u0440\u043E\u0437\u0440\u0430\u0447\u043D\u0430\u044F
       \u043C\u0435\u0434\u0443\u0437\u043E\u043E\u0431\u0440\u0430\u0437\u043D\u0430\u044F
@@ -141,18 +269,42 @@ MonoBehaviour:
       \u0438 \u0432\u044B\u0442\u0430\u043B\u043A\u0438\u0432\u0430\u0435\u0442 \u043D\u0430\u0432\u0435\u0440\u0445
       \u2014 \u043D\u0435 \u0441\u043C\u0435\u0440\u0442\u0435\u043B\u044C\u043D\u043E,
       \u043D\u043E \u0431\u043E\u043B\u044C\u043D\u043E."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_THERMAL_PHANTOM_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u041C\u0430\u0440\u043A\u0435\u0440 \xAB\u0434\u0430\u043B\u044C\u0448\u0435
       \u043E\u043F\u0430\u0441\u043D\u043E, \u043D\u0443\u0436\u0435\u043D \u0430\u043F\u0433\u0440\u0435\u0439\u0434\xBB."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_THERMAL_PHANTOM_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u0422\u0435\u0440\u043C\u043E\u043A\u043B\u0438\u043D \u0440\u0435\u0430\u043B\u0435\u043D.
       \u041C\u0435\u0434\u0443\u0437\u044B \u0441 \u0442\u0435\u0440\u043C\u0430\u043B\u044C\u043D\u044B\u043C\u0438
       \u043B\u0438\u043D\u0437\u0430\u043C\u0438 \u2014 \u0433\u0438\u043F\u043E\u0442\u0435\u0437\u0430."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_THERMAL_PHANTOM_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.root_dragon
     displayName: "\u041A\u043E\u0440\u043D\u0435\u0432\u043E\u0439 \u0414\u0440\u0430\u043A\u043E\u043D"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_ROOT_DRAGON_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 2
     habitatZone: "\u041F\u0435\u0449\u0435\u0440\u044B, \u0443 \u0432\u044B\u0445\u043E\u0434\u043E\u0432
       (\u043B\u044E\u0431\u0430\u044F \u0433\u043B\u0443\u0431\u0438\u043D\u0430)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_ROOT_DRAGON_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 60
     codexDescription: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0438\u0439
       \u043E\u0440\u0433\u0430\u043D\u0438\u0437\u043C, \u043D\u0430\u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0443
@@ -165,21 +317,45 @@ MonoBehaviour:
       \u043F\u043E\u0432\u043E\u0440\u0430\u0447\u0438\u0432\u0430\u0435\u0442\u0441\u044F.
       \u041D\u0435 \u0430\u0442\u0430\u043A\u0443\u0435\u0442, \u043D\u043E \u0432\u0437\u0433\u043B\u044F\u0434
       \u043F\u0430\u0440\u0430\u043B\u0438\u0437\u0443\u0435\u0442."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_ROOT_DRAGON_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u041F\u0441\u0438\u0445\u043E\u043B\u043E\u0433\u0438\u0447\u0435\u0441\u043A\u0438\u0439
       \u0431\u0430\u0440\u044C\u0435\u0440. \u0418\u0433\u0440\u043E\u043A \u043D\u0435
       \u0437\u043D\u0430\u0435\u0442, \u043F\u0440\u043E\u0441\u043D\u0451\u0442\u0441\u044F
       \u043E\u043D \u0438\u043B\u0438 \u043D\u0435\u0442."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_ROOT_DRAGON_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u041E\u0440\u0433\u0430\u043D\u0438\u0437\u043C\u044B, \u0432\u0440\u043E\u0441\u0448\u0438\u0435
       \u0432 \u0441\u0443\u0431\u0441\u0442\u0440\u0430\u0442 \u2014 \u0440\u0435\u0430\u043B\u044C\u043D\u044B
       (\u043C\u043E\u0440\u0441\u043A\u0438\u0435 \u043B\u0438\u043B\u0438\u0438,
       \u0430\u0441\u0446\u0438\u0434\u0438\u0438)."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_ROOT_DRAGON_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.termite_worm
     displayName: "\u0422\u0435\u0440\u043C\u0438\u0442\u043D\u044B\u0439 \u0427\u0435\u0440\u0432\u044C"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_TERMITE_WORM_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 3
     habitatZone: "\u0413\u043B\u0443\u0431\u043E\u043A\u0438\u0435 \u0437\u043E\u043D\u044B
       (2000\u043C+)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_TERMITE_WORM_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 100
     codexDescription: "\u041E\u0433\u0440\u043E\u043C\u043D\u044B\u0439 \u0447\u0435\u0440\u0432\u044C,
       \u043F\u0440\u043E\u0440\u044B\u0432\u0430\u044E\u0449\u0438\u0439 \u0442\u043E\u043D\u043D\u0435\u043B\u0438
@@ -190,19 +366,43 @@ MonoBehaviour:
       \u0418\u0437\u043D\u0430\u0447\u0430\u043B\u044C\u043D\u043E \u043D\u0435\u0439\u0442\u0440\u0430\u043B\u0435\u043D.
       \u041C\u043E\u0436\u0435\u0442 \u0440\u0430\u0437\u0440\u0443\u0448\u0430\u0442\u044C
       \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0438\u0433\u0440\u043E\u043A\u0430."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_TERMITE_WORM_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0414\u0438\u043D\u0430\u043C\u0438\u0447\u0435\u0441\u043A\u043E\u0435
       \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435 \u043C\u0438\u0440\u0430.
       \u041E\u0442\u043A\u0440\u044B\u0432\u0430\u0435\u0442 \u043D\u043E\u0432\u044B\u0435
       \u043F\u0440\u043E\u0445\u043E\u0434\u044B \u0438\u043B\u0438 \u0443\u043D\u0438\u0447\u0442\u043E\u0436\u0430\u0435\u0442
       \u0431\u0430\u0437\u0443."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_TERMITE_WORM_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u0427\u0435\u0440\u0432\u0438-\u0431\u0443\u0440\u0438\u043B\u044C\u0449\u0438\u043A\u0438
       \u0440\u0435\u0430\u043B\u044C\u043D\u044B (Eunice aphroditois)."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_TERMITE_WORM_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.atlas_dreadnought
     displayName: "\u0414\u0440\u0435\u0434\u043D\u043E\u0443\u0442 (Atlas Dreadnought)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 3
     habitatZone: "\u042F\u0434\u0440\u043E \u0410\u0442\u043B\u0430\u0441\u0430 (-5000\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 30
     codexDescription: "\u0411\u0438\u043E\u043C\u0435\u0445\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0439
       \u0433\u0438\u0431\u0440\u0438\u0434 \u2014 \u043F\u043E\u043C\u0435\u0441\u044C
@@ -213,19 +413,43 @@ MonoBehaviour:
       \u043F\u043B\u0430\u0437\u043C\u043E\u0439. \u041E\u0445\u0440\u0430\u043D\u044F\u0435\u0442
       \u044F\u0434\u0440\u043E. \u0424\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0439
       \u0431\u043E\u0441\u0441."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0424\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0439 \u0431\u043E\u0441\u0441.
       \u0422\u0440\u0435\u0431\u0443\u0435\u0442 \u0442\u0430\u043A\u0442\u0438\u043A\u0438
       \u0438 \u0432\u0441\u0435\u0433\u043E \u0430\u0440\u0441\u0435\u043D\u0430\u043B\u0430."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u0411\u0438\u043E\u043C\u0435\u0445\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0435
       \u0433\u0438\u0431\u0440\u0438\u0434\u044B \u2014 \u043A\u043E\u043D\u0446\u0435\u043F\u0446\u0438\u044F
       \u0410\u0442\u043B\u0430\u0441-6."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.atlas_builder
     displayName: "\u0421\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044C (Atlas Builder
       Drone)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_ATLAS_BUILDER_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 4
     habitatZone: "\u0412\u0435\u0437\u0434\u0435 (80-3000\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_ATLAS_BUILDER_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 3
     codexDescription: "\u041C\u0435\u0442\u0430\u043B\u043B\u0438\u0447\u0435\u0441\u043A\u0438\u0439
       \u043A\u043E\u0440\u043F\u0443\u0441 \u0441 \u043E\u0440\u0433\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u043C\u0438
@@ -236,35 +460,83 @@ MonoBehaviour:
       \u041F\u0440\u0438 \u0443\u0433\u0440\u043E\u0437\u0435 \u2014 \u0432\u044B\u0441\u043E\u043A\u043E\u0447\u0430\u0441\u0442\u043E\u0442\u043D\u044B\u0439
       \u043F\u0438\u0441\u043A, \u0432\u044B\u0437\u044B\u0432\u0430\u0435\u0442
       \u0417\u0430\u0449\u0438\u0442\u043D\u0438\u043A\u0430."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_ATLAS_BUILDER_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u041F\u0435\u0440\u0432\u0430\u044F \u0432\u0441\u0442\u0440\u0435\u0447\u0430
       \u0441 \u0434\u0440\u043E\u043D\u0430\u043C\u0438. \u041D\u0435\u043E\u043F\u0440\u0435\u0434\u0435\u043B\u0451\u043D\u043D\u043E\u0441\u0442\u044C
       \u0441\u0442\u0440\u0430\u0448\u043D\u0435\u0435 \u0443\u0433\u0440\u043E\u0437\u044B."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_ATLAS_BUILDER_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430 \u041F\u043E\u0441\u0435\u0432\u0430
       \u0410\u0442\u043B\u0430\u0441-6."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_ATLAS_BUILDER_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.atlas_defender
     displayName: "\u0417\u0430\u0449\u0438\u0442\u043D\u0438\u043A (Atlas Defender
       Drone)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_ATLAS_DEFENDER_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 4
     habitatZone: "\u0417\u043E\u043D\u044B \u0441\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430
       (200-4000\u043C)"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_ATLAS_DEFENDER_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 5
     codexDescription: "\u0411\u043E\u0435\u0432\u043E\u0439 \u0434\u0440\u043E\u043D.
       \u0420\u0435\u0430\u0433\u0438\u0440\u0443\u0435\u0442 \u043D\u0430 \u043F\u0438\u0441\u043A
       \u0421\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044F. \u0410\u0433\u0440\u0435\u0441\u0441\u0438\u0432\u0435\u043D.
       \u041E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0441\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435
       \u0437\u043E\u043D\u044B \u0438 \u044F\u0434\u0440\u043E \u0410\u0442\u043B\u0430\u0441-6."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_ATLAS_DEFENDER_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0423\u0433\u0440\u043E\u0437\u0430 \u043F\u0440\u0438 \u043D\u0430\u0440\u0443\u0448\u0435\u043D\u0438\u0438
       \u0440\u0430\u0431\u043E\u0442\u044B \u0421\u0442\u0440\u043E\u0438\u0442\u0435\u043B\u0435\u0439."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_ATLAS_DEFENDER_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430 \u041F\u043E\u0441\u0435\u0432\u0430
       \u0410\u0442\u043B\u0430\u0441-6."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_ATLAS_DEFENDER_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []
   - creatureId: creature.atlas_courier
     displayName: "\u041A\u0443\u0440\u044C\u0435\u0440 (Atlas Courier Drone)"
+    localizedDisplayName:
+      tableKey: FAUNA_CREATURE_ATLAS_COURIER_NAME
+      fallbackText: ""
+      variants: []
     faunaType: 4
     habitatZone: "\u041C\u0430\u044F\u043A\u0438 \u0441\u0432\u044F\u0437\u0438"
+    localizedHabitatZone:
+      tableKey: FAUNA_CREATURE_ATLAS_COURIER_HABITAT
+      fallbackText: ""
+      variants: []
     sizeMeters: 1.5
     codexDescription: "\u041C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0439 \u0431\u044B\u0441\u0442\u0440\u044B\u0439
       \u0434\u0440\u043E\u043D. \u0414\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442
@@ -272,10 +544,26 @@ MonoBehaviour:
       \u043A \u043C\u0430\u044F\u043A\u0430\u043C. \u041D\u0438\u043A\u0430\u043A\u043E\u0433\u043E
       \u0432\u0437\u0430\u0438\u043C\u043E\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u044F.
       \u041F\u0440\u043E\u0441\u0442\u043E \u2014 \u0434\u043E\u0441\u0442\u0430\u0432\u043A\u0430."
+    localizedCodexDescription:
+      tableKey: FAUNA_CREATURE_ATLAS_COURIER_DESCRIPTION
+      fallbackText: ""
+      variants: []
     gameplayRole: "\u0410\u0442\u043C\u043E\u0441\u0444\u0435\u0440\u0430: \u0410\u0442\u043B\u0430\u0441-6
       \u2014 \u043D\u0435 \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u0436, \u0430
       \u0441\u0438\u0441\u0442\u0435\u043C\u0430."
+    localizedGameplayRole:
+      tableKey: FAUNA_CREATURE_ATLAS_COURIER_ROLE
+      fallbackText: ""
+      variants: []
     scientificBasis: "\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430 \u041F\u043E\u0441\u0435\u0432\u0430
       \u0410\u0442\u043B\u0430\u0441-6."
+    localizedScientificBasis:
+      tableKey: FAUNA_CREATURE_ATLAS_COURIER_SCIENCE
+      fallbackText: ""
+      variants: []
     hasNightBehavior: 0
     nightBehaviorDescription: 
+    localizedNightBehaviorDescription:
+      tableKey: 
+      fallbackText: ""
+      variants: []

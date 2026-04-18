@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # MCP Console Notes
 
 These recurring console messages are currently coming from **MCP-for-Unity serialization / inspection**, not from the gameplay HUD/PDA feature itself:

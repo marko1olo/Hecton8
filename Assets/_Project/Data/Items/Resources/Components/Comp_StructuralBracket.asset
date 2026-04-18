@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_StructuralBracket
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Structural Bracket
+  localizedItemName:
+    tableKey: ITEM_STRUCTURAL_BRACKET_NAME
+    fallbackText: "Structural Bracket"
+    variants: []
   icon: {fileID: 0}
   description: Load-bearing brace for sockets, pylons, pump mounts, and frame junctions.
+  localizedDescription:
+    tableKey: ITEM_STRUCTURAL_BRACKET_DESCRIPTION
+    fallbackText: "Load-bearing brace for sockets, pylons, pump mounts, and frame junctions."
+    variants: []
   weight: 0.8
   stackable: 1
   maxStack: 12
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

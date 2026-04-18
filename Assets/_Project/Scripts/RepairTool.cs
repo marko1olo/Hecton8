@@ -26,12 +26,14 @@
 
 using Hecton.Localization;
 using Hecton8.Gameplay;
+using Hecton8.Items;
+using Hecton8.Tools;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class RepairTool : PlayerTool
+    public sealed class RepairTool : PlayerTool, IBatteryTool
     {
         private const string RepairToolNoPowerHeadline = "NO POWER";
         private const string RepairToolDrainingHeadline = "DRAINING";
@@ -72,6 +74,9 @@ namespace Hecton8.Gameplay
         [SerializeField] private Light weldLight;
         [SerializeField] private AudioSource repairLoopAudio;
 
+        [Header("── Battery ───────────────────────────────────")]
+        [Tooltip("Optional battery item type accepted by the repair tool.")]
+
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
@@ -88,7 +93,109 @@ namespace Hecton8.Gameplay
         private bool _secondaryLatched;
         private int _cachedDiagnosisFrame = -1;
         private bool _cachedDiagnosisValid;
+
+        // ══════════════════════════════════════════════════════════
+        //  IBatteryTool STATE
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Battery Settings ─────────────────────────")]
+        [Tooltip("Battery item type this tool uses.")]
+        [SerializeField] private ItemData _batteryItemType;
+
+        [Header("── Battery Visuals ──────────────────────────")]
+        [Tooltip("Mesh to hide when battery is removed.")]
+        [SerializeField] private GameObject _batteryMesh;
+
+        [Tooltip("Renderer for power indicator light.")]
+        [SerializeField] private Renderer _powerIndicatorRenderer;
+
+        [Tooltip("Emission color when powered.")]
+        [SerializeField] private Color _powerOnColor = new Color(0f, 0.9f, 1f);
+
+        private ItemData _installedBattery;
+        private float _batteryCharge;
         private ServiceDiagnosis _cachedDiagnosis;
+
+        // MaterialPropertyBlock for power indicator
+        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: RepairTool
+        private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+
+        // ══════════════════════════════════════════════════════════
+        //  IBatteryTool IMPLEMENTATION
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>True if the tool currently has a battery installed.</summary>
+        public bool HasBattery => _installedBattery != null;
+
+        /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
+        public float BatteryCharge => _installedBattery != null ? _batteryCharge : 0f;
+
+        /// <summary>The battery item currently installed (null if none).</summary>
+        public ItemData BatteryItem => _installedBattery;
+
+        /// <summary>
+        /// Removes the battery from the tool.
+        /// </summary>
+        public ItemData RemoveBattery()
+        {
+            if (_installedBattery == null)
+                return null;
+
+            ItemData removed = _installedBattery;
+            _installedBattery = null;
+            _batteryCharge = 0f;
+
+            UpdateBatteryVisuals();
+            UpdatePowerIndicator();
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Inserts a battery into the tool.
+        /// </summary>
+        public bool InsertBattery(ItemData battery, float charge)
+        {
+            if (battery == null)
+                return false;
+
+            _installedBattery = battery;
+            _batteryCharge = Mathf.Clamp01(charge);
+
+            UpdateBatteryVisuals();
+            UpdatePowerIndicator();
+
+            return true;
+        }
+
+        private void UpdateBatteryVisuals()
+        {
+            if (_batteryMesh != null)
+                _batteryMesh.SetActive(_installedBattery != null);
+        }
+
+        private void UpdatePowerIndicator()
+        {
+            if (_powerIndicatorRenderer == null)
+                return;
+
+            _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+
+            if (_installedBattery == null || _batteryCharge <= 0f)
+            {
+                _mpb.SetColor(_EmissionColorID, Color.black);
+            }
+            else if (_batteryCharge <= 0.2f)
+            {
+                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f));
+            }
+            else
+            {
+                _mpb.SetColor(_EmissionColorID, _powerOnColor);
+            }
+
+            _powerIndicatorRenderer.SetPropertyBlock(_mpb);
+        }
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -96,6 +203,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: RepairTool
             _cachedTransform = transform;
             SetRepairVisuals(false);
         }
@@ -690,5 +798,10 @@ namespace Hecton8.Gameplay
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
         }
+
+        // ══════════════════════════════════════════════════════════
+        //  IBatteryTool IMPLEMENTATION
+        // ══════════════════════════════════════════════════════════
+
     }
 }

@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Code Analysis Findings - HECTON-8 Project
 
 Based on review of key systems against AGENTS.md guidelines:

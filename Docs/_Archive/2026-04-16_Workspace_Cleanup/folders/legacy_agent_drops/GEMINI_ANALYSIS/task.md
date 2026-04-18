@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Task List — Master Grade Hecton8 Transition
 
 - `[ ]` **Phase 1: Flora Master Grade Polish**

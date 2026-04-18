@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_CoolingCartridge
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Cooling Cartridge
+  localizedItemName:
+    tableKey: ITEM_COOLING_CARTRIDGE_NAME
+    fallbackText: "Cooling Cartridge"
+    variants: []
   icon: {fileID: 0}
   description: Field-swappable heat sink cartridge for lamps, cutters, and power
     regulators.
+  localizedDescription:
+    tableKey: ITEM_COOLING_CARTRIDGE_DESCRIPTION
+    fallbackText: "Field-swappable heat sink cartridge for lamps, cutters, and power regulators."
+    variants: []
   weight: 0.5
   stackable: 1
   maxStack: 12
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

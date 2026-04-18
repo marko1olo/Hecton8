@@ -613,6 +613,11 @@ namespace Hecton8.VFX
         public float CurrentFOVOffset => _currentFOVOffset;
         public FOVState CurrentFOVState => _fovState;
         public bool IsPostProcessingEnabled => _postProcessingEnabled;
+        internal float DebugAdaptiveShakeScale => _debugAdaptiveShakeScale;
+        internal float DebugAdaptiveFOVScale => _debugAdaptiveFOVScale;
+        internal float DebugAdaptivePostFxScale => _debugAdaptivePostFxScale;
+        internal int DebugAdaptiveMaxActiveShakes => _debugAdaptiveMaxActiveShakes;
+        internal bool DebugAdaptiveDisableInteractionDoF => _adaptiveDisableInteractionDoF;
 
         // ═══ PRIVATE METHODS ═══
 

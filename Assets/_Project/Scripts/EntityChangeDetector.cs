@@ -329,20 +329,20 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (!_registered && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (_registered && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            TryUnregister();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (_instance == this)
+                _instance = null;
         }
 
         public void Tick(float deltaTime)
@@ -350,6 +350,31 @@ namespace Hecton8.Core
             // This Tick is a placeholder.
             // Individual systems call detector.FlushChanges() when needed.
             // The manager just provides singleton + caching.
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
         }
 
         /// <summary>

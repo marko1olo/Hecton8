@@ -1,4 +1,6 @@
-﻿# Unity Reload Findings
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Unity Reload Findings
 
 - Generated: 2026-03-30 22:45:57
 - Source: C:\Users\danat\AppData\Local\Unity\Editor\Editor.log

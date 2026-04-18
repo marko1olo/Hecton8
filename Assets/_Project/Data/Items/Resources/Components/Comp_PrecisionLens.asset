@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_PrecisionLens
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Precision Lens
+  localizedItemName:
+    tableKey: ITEM_PRECISION_LENS_NAME
+    fallbackText: "Precision Lens"
+    variants: []
   icon: {fileID: 0}
   description: Optics-grade lens for analyzers, scanners, and advanced targeting
     packages.
+  localizedDescription:
+    tableKey: ITEM_PRECISION_LENS_DESCRIPTION
+    fallbackText: "Optics-grade lens for analyzers, scanners, and advanced targeting packages."
+    variants: []
   weight: 0.3
   stackable: 1
   maxStack: 12
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

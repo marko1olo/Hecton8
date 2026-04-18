@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 18; // v18: AtlasRevealStage
+        public const int CurrentVersion = 19; // v19: Hunger/Thirst persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -216,6 +216,8 @@ namespace Hecton8.SaveSystem
         public float energy;
         public float integrity;
         public float weight;
+        public float hunger;
+        public float thirst;
 
         public float posX;
         public float posY;

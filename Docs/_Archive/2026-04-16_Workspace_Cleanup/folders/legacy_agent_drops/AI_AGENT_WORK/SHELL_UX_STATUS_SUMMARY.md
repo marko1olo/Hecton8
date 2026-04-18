@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Shell/UX Production System — Status Summary
 
 **DATE:** 2026-04-14  

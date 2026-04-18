@@ -56,6 +56,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Core;
     using Hecton8.Inventory;
     using Hecton8.Input;
+    using Hecton.Localization;
     using Hecton8.Scavenging;
     using Unity.Mathematics;
     using UnityEngine;
@@ -63,6 +64,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class LaserCutter : PlayerTool
     {
+        private const string CutterCategory = "CUTTER";
         private const int RecoveryProgressMessageCount = 101;
 
         private struct CutterDiagnosis
@@ -72,7 +74,9 @@ namespace Hecton8.Gameplay
             public string severity;
         }
 
-        private static readonly string[] _recoveryProgressMessages = BuildRecoveryProgressMessages();
+        // COLD ALLOC: String[101] — localized recovery progress HUD cache — owner: LaserCutter
+        private static string[] _recoveryProgressMessages = BuildRecoveryProgressMessages();
+        private static GameLanguage _recoveryProgressLanguage = (GameLanguage)(-1);
 
         // ══════════════════════════════════════════════════════════
         //  EVENTS
@@ -248,11 +252,15 @@ namespace Hecton8.Gameplay
             EnsurePlayerInventory();
             module.Deconstruct(_cachedInventory);
             ArchiveRecoveredModule(module);
-            ToolHitUtility.ShowInfo("LASER CUTTER - MODULE RECOVERED");
+            ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
             FieldOperationLogSystem.RecordOperation(
-                "CUTTER",
-                "MODULE RECOVERY COMPLETED",
-                $"Laser-assisted deconstruction completed on {module.name}.",
+                ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
+                ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_TITLE, "MODULE RECOVERY COMPLETED"),
+                string.Format(
+                    ResolveLocalized(
+                        LocalizationKeys.LASER_LOG_MODULE_RECOVERY_MESSAGE,
+                        "Laser-assisted deconstruction completed on {0}."),
+                    module.name),
                 "INFO");
             ResetDeconstructState();
             return true;
@@ -328,7 +336,7 @@ namespace Hecton8.Gameplay
                             overheatErrorClip, 0.5f);
                     }
                     _lockoutSoundPlayed = true;
-                    ToolHitUtility.ShowWarning("LASER CUTTER - OVERHEAT LOCKOUT");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_OVERHEAT_LOCKOUT, "LASER CUTTER - OVERHEAT LOCKOUT"));
                 }
                 return;
             }
@@ -396,16 +404,18 @@ namespace Hecton8.Gameplay
                 ? BuildDiagnosisImpl(diagHit)
                 : new CutterDiagnosis
                 {
-                    headline = "NO TARGET",
-                    summary = "No cuttable contact inside cutter range.",
+                    headline = ResolveLocalized(LocalizationKeys.LASER_HEADLINE_NO_TARGET, "NO TARGET"),
+                    summary = ResolveLocalized(LocalizationKeys.LASER_SUMMARY_NO_TARGET, "No cuttable contact inside cutter range."),
                     severity = "WARN"
                 };
             _diagnosisCached = true;
             
             PublishDiagnosis(_cachedDiagnosis);
             FieldOperationLogSystem.RecordOperation(
-                "CUTTER",
-                $"CUTTER DIAG - {_cachedDiagnosis.headline}",
+                ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.LASER_LOG_DIAG_TITLE, "CUTTER DIAG - {0}"),
+                    _cachedDiagnosis.headline),
                 _cachedDiagnosis.summary,
                 _cachedDiagnosis.severity);
         }
@@ -425,7 +435,7 @@ namespace Hecton8.Gameplay
                     _lockoutSoundPlayed = false;
                     _heatLevel = math.min(_heatLevel, 0.8f);
                     PublishHeat();
-                    ToolHitUtility.ShowInfo("LASER CUTTER - CORE STABLE");
+                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
                 }
             }
             // ── Heat decay when not firing ──
@@ -459,12 +469,16 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_isLockedOut)
-                return $"LASER CUTTER // LOCKOUT {_heatLevel * 100f:0}%";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_LOCKOUT, "LASER CUTTER // LOCKOUT {0:0}%"),
+                    _heatLevel * 100f);
 
             if (_cachedDeconstructModule != null)
             {
                 float progress = Mathf.Clamp01(_deconstructProgress / math.max(0.01f, deconstructThreshold));
-                return $"LASER CUTTER // RECOVERY {progress * 100f:0}%";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_RECOVERY, "LASER CUTTER // RECOVERY {0:0}%"),
+                    progress * 100f);
             }
 
             // Reuse cached diagnosis if available (from UseSecondary), otherwise make fresh
@@ -472,20 +486,24 @@ namespace Hecton8.Gameplay
                 _cachedDiagnosis = ReadDiagnosisNow();
             
             if (!string.IsNullOrEmpty(_cachedDiagnosis.headline))
-                return $"LASER CUTTER // {_cachedDiagnosis.headline}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_DIAGNOSIS, "LASER CUTTER // {0}"),
+                    _cachedDiagnosis.headline);
 
             return _heatLevel > 0.01f
-                ? $"LASER CUTTER // HEAT {_heatLevel * 100f:0}%"
-                : "LASER CUTTER // READY";
+                ? string.Format(
+                    ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_HEAT, "LASER CUTTER // HEAT {0:0}%"),
+                    _heatLevel * 100f)
+                : ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_READY, "LASER CUTTER // READY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_isLockedOut)
-                return "Wait for the core to cool before firing again.";
+                return ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_LOCKOUT, "Wait for the core to cool before firing again.");
 
             if (_cachedDeconstructModule != null)
-                return "Hold the beam steady to finish recovery on the locked module.";
+                return ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_RECOVERY, "Hold the beam steady to finish recovery on the locked module.");
 
             // Reuse cached diagnosis if available
             if (!_diagnosisCached)
@@ -495,9 +513,9 @@ namespace Hecton8.Gameplay
                 return _cachedDiagnosis.summary;
 
             if (_heatLevel >= 0.75f)
-                return "Core is running hot. Finish the cut or vent heat before lockout.";
+                return ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_HOT, "Core is running hot. Finish the cut or vent heat before lockout.");
 
-            return "Primary cuts. Secondary diagnoses and holds recovery mode on modules.";
+            return ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_READY, "Primary cuts. Secondary diagnoses and holds recovery mode on modules.");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -516,11 +534,13 @@ namespace Hecton8.Gameplay
             _isFiring = false;
             SetVisualsActive(false);
             ResetDeconstructState();
-            ToolHitUtility.ShowWarning("LASER CUTTER - CORE OVERHEATED");
+            ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_OVERHEATED, "LASER CUTTER - CORE OVERHEATED"));
             FieldOperationLogSystem.RecordOperation(
-                "CUTTER",
-                "LASER CORE OVERHEATED",
-                "Cutter entered forced thermal lockout. Reduce sustained beam exposure before the next recovery pass.",
+                ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
+                ResolveLocalized(LocalizationKeys.LASER_LOG_OVERHEAT_TITLE, "LASER CORE OVERHEATED"),
+                ResolveLocalized(
+                    LocalizationKeys.LASER_LOG_OVERHEAT_MESSAGE,
+                    "Cutter entered forced thermal lockout. Reduce sustained beam exposure before the next recovery pass."),
                 "CRITICAL");
         }
 
@@ -593,7 +613,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_deconstructBlockedReported)
                 {
-                    ToolHitUtility.ShowWarning("RECOVERY MODE - NO MODULE");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_NO_MODULE, "RECOVERY MODE - NO MODULE"));
                     _deconstructBlockedReported = true;
                 }
                 ApplyCutDamage(deltaTime);
@@ -605,7 +625,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_deconstructBlockedReported)
                 {
-                    ToolHitUtility.ShowWarning("RECOVERY MODE - MODULE LOCKED");
+                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
                     _deconstructBlockedReported = true;
                 }
                 ApplyCutDamage(deltaTime);
@@ -616,7 +636,7 @@ namespace Hecton8.Gameplay
             _deconstructProgress += deltaTime;
             if (!_deconstructStartReported)
             {
-                ToolHitUtility.ShowInfo("RECOVERY MODE - HOLD CUT");
+                ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_HOLD, "RECOVERY MODE - HOLD CUT"));
                 _deconstructStartReported = true;
             }
 
@@ -633,11 +653,15 @@ namespace Hecton8.Gameplay
                 EnsurePlayerInventory();
                 _cachedDeconstructModule.Deconstruct(_cachedInventory);
                 ArchiveRecoveredModule(_cachedDeconstructModule);
-                ToolHitUtility.ShowInfo("LASER CUTTER - MODULE RECOVERED");
+                ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
                 FieldOperationLogSystem.RecordOperation(
-                    "CUTTER",
-                    "MODULE RECOVERY COMPLETED",
-                    $"Laser-assisted deconstruction completed on {_cachedDeconstructModule.name}.",
+                    ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
+                    ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_TITLE, "MODULE RECOVERY COMPLETED"),
+                    string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.LASER_LOG_MODULE_RECOVERY_MESSAGE,
+                            "Laser-assisted deconstruction completed on {0}."),
+                        _cachedDeconstructModule.name),
                     "INFO");
                 ResetDeconstructState();
             }
@@ -655,16 +679,29 @@ namespace Hecton8.Gameplay
 
         private static string GetRecoveryProgressMessage(float progress01)
         {
+            EnsureRecoveryProgressMessages();
             int percent = (int)(math.saturate(progress01) * 100f + 0.5f);
             percent = math.clamp(percent, 0, RecoveryProgressMessageCount - 1);
             return _recoveryProgressMessages[percent];
         }
 
+        private static void EnsureRecoveryProgressMessages()
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            if (_recoveryProgressMessages != null && _recoveryProgressMessages.Length == RecoveryProgressMessageCount && _recoveryProgressLanguage == language)
+                return;
+
+            _recoveryProgressMessages = BuildRecoveryProgressMessages();
+            _recoveryProgressLanguage = language;
+        }
+
         private static string[] BuildRecoveryProgressMessages()
         {
             string[] messages = new string[RecoveryProgressMessageCount];
+            string template = ResolveLocalized(LocalizationKeys.LASER_RECOVERY_PROGRESS, "RECOVERY PROGRESS - {0}%");
             for (int i = 0; i < RecoveryProgressMessageCount; i++)
-                messages[i] = "RECOVERY PROGRESS - " + i + "%";
+                messages[i] = string.Format(template, i);
 
             return messages;
         }
@@ -694,9 +731,15 @@ namespace Hecton8.Gameplay
                 return;
 
             string entryId = $"recovery.module.{data.name.ToLowerInvariant()}";
-            string title = $"{data.moduleName} RECOVERY";
-            string category = "Construction";
-            string summary = $"Laser-assisted recovery completed for {data.moduleName}. Structural blueprint and salvage profile archived.";
+            string title = string.Format(
+                ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
+                data.moduleName);
+            string category = ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_CATEGORY, "Construction");
+            string summary = string.Format(
+                ResolveLocalized(
+                    LocalizationKeys.LASER_ARCHIVE_RECOVERY_SUMMARY,
+                    "Laser-assisted recovery completed for {0}. Structural blueprint and salvage profile archived."),
+                data.moduleName);
             ScanLogSystem.Instance.ArchiveEntry(entryId, title, category, summary);
         }
 
@@ -864,8 +907,8 @@ namespace Hecton8.Gameplay
             {
                 return new CutterDiagnosis
                 {
-                    headline = "NO TARGET",
-                    summary = "No cuttable contact inside cutter range.",
+                    headline = ResolveLocalized(LocalizationKeys.LASER_HEADLINE_NO_TARGET, "NO TARGET"),
+                    summary = ResolveLocalized(LocalizationKeys.LASER_SUMMARY_NO_TARGET, "No cuttable contact inside cutter range."),
                     severity = "WARN"
                 };
             }
@@ -883,8 +926,8 @@ namespace Hecton8.Gameplay
             {
                 return new CutterDiagnosis
                 {
-                    headline = "NO TARGET",
-                    summary = "No cuttable contact inside cutter range.",
+                    headline = ResolveLocalized(LocalizationKeys.LASER_HEADLINE_NO_TARGET, "NO TARGET"),
+                    summary = ResolveLocalized(LocalizationKeys.LASER_SUMMARY_NO_TARGET, "No cuttable contact inside cutter range."),
                     severity = "WARN"
                 };
             }
@@ -914,8 +957,12 @@ namespace Hecton8.Gameplay
                 {
                     return new CutterDiagnosis
                     {
-                        headline = "RECOVERY READY",
-                        summary = $"{moduleName} can be recovered. Hold primary while secondary is held to complete recovery.",
+                        headline = ResolveLocalized(LocalizationKeys.LASER_HEADLINE_RECOVERY_READY, "RECOVERY READY"),
+                        summary = string.Format(
+                            ResolveLocalized(
+                                LocalizationKeys.LASER_SUMMARY_RECOVERY_READY,
+                                "{0} can be recovered. Hold primary while secondary is held to complete recovery."),
+                            moduleName),
                         severity = "INFO"
                     };
                 }
@@ -924,11 +971,17 @@ namespace Hecton8.Gameplay
                 {
                     _diagnosisSB.Clear();
                     _diagnosisSB.Append(moduleName);
-                    _diagnosisSB.Append(" is flooded. Cutter work is not the first fix here; stabilize or repair before recovery planning.");
+                    _diagnosisSB.Append(string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.LASER_SUMMARY_MODULE_FLOODED,
+                            "{0} is flooded. Cutter work is not the first fix here; stabilize or repair before recovery planning."),
+                        moduleName));
                     
                     return new CutterDiagnosis
                     {
-                        headline = $"MODULE FLOODED {integrityPercent:0}%",
+                        headline = string.Format(
+                            ResolveLocalized(LocalizationKeys.LASER_HEADLINE_MODULE_FLOODED, "MODULE FLOODED {0:0}%"),
+                            integrityPercent),
                         summary = _diagnosisSB.ToString(),
                         severity = "WARN"
                     };
@@ -938,11 +991,17 @@ namespace Hecton8.Gameplay
                 {
                     _diagnosisSB.Clear();
                     _diagnosisSB.Append(moduleName);
-                    _diagnosisSB.Append(" is already compromised. Use repair or controlled recovery, not blind cutting.");
+                    _diagnosisSB.Append(string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.LASER_SUMMARY_MODULE_BREACHED,
+                            "{0} is already compromised. Use repair or controlled recovery, not blind cutting."),
+                        moduleName));
                     
                     return new CutterDiagnosis
                     {
-                        headline = $"MODULE BREACHED {integrityPercent:0}%",
+                        headline = string.Format(
+                            ResolveLocalized(LocalizationKeys.LASER_HEADLINE_MODULE_BREACHED, "MODULE BREACHED {0:0}%"),
+                            integrityPercent),
                         summary = _diagnosisSB.ToString(),
                         severity = "WARN"
                     };
@@ -950,8 +1009,14 @@ namespace Hecton8.Gameplay
 
                 return new CutterDiagnosis
                 {
-                    headline = $"MODULE LOCKED {integrityPercent:0}%",
-                    summary = $"{moduleName} is sealed and not available for recovery. Satisfy the module conditions first.",
+                    headline = string.Format(
+                        ResolveLocalized(LocalizationKeys.LASER_HEADLINE_MODULE_LOCKED, "MODULE LOCKED {0:0}%"),
+                        integrityPercent),
+                    summary = string.Format(
+                        ResolveLocalized(
+                            LocalizationKeys.LASER_SUMMARY_MODULE_LOCKED,
+                            "{0} is sealed and not available for recovery. Satisfy the module conditions first."),
+                        moduleName),
                     severity = "WARN"
                 };
             }
@@ -964,14 +1029,18 @@ namespace Hecton8.Gameplay
                 float integrityPercent = node.HealthNormalized * 100f;
                 return new CutterDiagnosis
                 {
-                    headline = node.IsDepleted ? "NODE DEPLETED" : $"RESOURCE CONTACT {integrityPercent:0}%",
+                    headline = node.IsDepleted
+                        ? ResolveLocalized(LocalizationKeys.LASER_HEADLINE_NODE_DEPLETED, "NODE DEPLETED")
+                        : string.Format(
+                            ResolveLocalized(LocalizationKeys.LASER_HEADLINE_RESOURCE_CONTACT, "RESOURCE CONTACT {0:0}%"),
+                            integrityPercent),
                     summary = node.IsDepleted
-                        ? "Resource node is exhausted. Cutter yield will be negligible."
+                        ? ResolveLocalized(LocalizationKeys.LASER_SUMMARY_NODE_DEPLETED, "Resource node is exhausted. Cutter yield will be negligible.")
                         : integrityPercent <= 30f
-                            ? "Resource node shell is nearly breached. Hold the beam to finish extraction."
+                            ? ResolveLocalized(LocalizationKeys.LASER_SUMMARY_RESOURCE_CONTACT_LOW, "Resource node shell is nearly breached. Hold the beam to finish extraction.")
                             : integrityPercent <= 65f
-                                ? "Resource node shell is weakened. Another controlled cutter pass should open it."
-                                : "Resource node is live. Primary beam can process this target.",
+                                ? ResolveLocalized(LocalizationKeys.LASER_SUMMARY_RESOURCE_CONTACT_MID, "Resource node shell is weakened. Another controlled cutter pass should open it.")
+                                : ResolveLocalized(LocalizationKeys.LASER_SUMMARY_RESOURCE_CONTACT_HIGH, "Resource node is live. Primary beam can process this target."),
                     severity = node.IsDepleted ? "WARN" : "INFO"
                 };
             }
@@ -980,16 +1049,16 @@ namespace Hecton8.Gameplay
             {
                 return new CutterDiagnosis
                 {
-                    headline = "CUTTABLE CONTACT",
-                    summary = "Target accepts thermal damage but is not recoverable as a base module.",
+                    headline = ResolveLocalized(LocalizationKeys.LASER_HEADLINE_CUTTABLE_CONTACT, "CUTTABLE CONTACT"),
+                    summary = ResolveLocalized(LocalizationKeys.LASER_SUMMARY_CUTTABLE_CONTACT, "Target accepts thermal damage but is not recoverable as a base module."),
                     severity = "INFO"
                 };
             }
 
             return new CutterDiagnosis
             {
-                headline = "INVALID TARGET",
-                summary = "Target is inside beam range but does not respond to cutter operations.",
+                headline = ResolveLocalized(LocalizationKeys.LASER_HEADLINE_INVALID_TARGET, "INVALID TARGET"),
+                summary = ResolveLocalized(LocalizationKeys.LASER_SUMMARY_INVALID_TARGET, "Target is inside beam range but does not respond to cutter operations."),
                 severity = "WARN"
             };
         }
@@ -1027,11 +1096,21 @@ namespace Hecton8.Gameplay
 
         private static void PublishDiagnosis(CutterDiagnosis diagnosis)
         {
-            string message = $"LASER DIAG - {diagnosis.headline}";
+            string message = string.Format(
+                ResolveLocalized(LocalizationKeys.LASER_DIAG_MESSAGE, "LASER DIAG - {0}"),
+                diagnosis.headline);
             if (diagnosis.severity == "WARN" || diagnosis.severity == "CRITICAL")
                 ToolHitUtility.ShowWarning(message);
             else
                 ToolHitUtility.ShowInfo(message);
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
     }
 }

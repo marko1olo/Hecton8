@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Item_Tool_Knife
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Survival Blade
+  localizedItemName:
+    tableKey: ITEM_TOOL_KNIFE_NAME
+    fallbackText: "Survival Blade"
+    variants: []
   icon: {fileID: 0}
   description: Compact industrial dive blade for close defense, harvesting and emergency
     cutting.
+  localizedDescription:
+    tableKey: ITEM_TOOL_KNIFE_DESCRIPTION
+    fallbackText: "Compact industrial dive blade for close defense, harvesting and emergency cutting."
+    variants: []
   weight: 0.7
   stackable: 0
   maxStack: 1
@@ -27,6 +35,10 @@ MonoBehaviour:
   energyRestore: 0
   integrityRestore: 0
   useSound: {fileID: 0}
-  interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 100100000, guid: 774f5752cc67c7f49916466b60350a64, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

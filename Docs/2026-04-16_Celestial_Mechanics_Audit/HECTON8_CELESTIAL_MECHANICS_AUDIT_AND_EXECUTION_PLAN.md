@@ -61,6 +61,11 @@ Current sun state is intentionally split across three systems:
 
 This split is valid. It should not be replaced casually.
 
+What changed in the current pass:
+- `Sky_System` no longer follows gameplay camera height; `followVerticalPosition = false` keeps the authored sky-rig Y fixed while still following camera X/Z
+- celestial bodies now have a shared atmosphere-veil contract in shader space instead of relying only on per-body manual wash
+- moon day/night readability is now pushed by the same sky-owned veil logic that also influences the gas giant
+
 ### 2.3 Sun visual model
 
 Current implementation combines:
@@ -256,6 +261,8 @@ Implemented:
 - replaced the old `Sun.shader` output with a softer disc/core/corona model and authored explicit `Mat_Sun` values so the geometry sun is no longer just a hard white additive sphere
 - aligned `Mat_HectonSky.mat` and `Mat_HectonSky_CloudOverlay.mat` toward a smaller, softer sky-disc with lower raw HDR disc energy and broader warm scattering
 - disabled `Sun_Body` as an above-water runtime owner when `HectonAtmosphereManager` is present so the sky-disc is now the sole surface sun path
+- added a shared celestial atmosphere veil contract in `HectonCelestialEngine` for giant + moons, with shader-side fallbacks so the veil logic still works while unrelated project compile errors remain
+- fixed `Sky_System` follow ownership so giant horizon anchoring now follows camera X/Z but not gameplay height Y
 - added a mid-disc belt recovery step to `SG_GasGiant_Master.shader` so Aegir can keep atmospheric edges while recovering cloud-band readability inside the disc
 - adjusted `Hecton_CelestialMoon.shader` so daytime crescents keep faint sky-lit shadow-side visibility instead of collapsing into black cutout discs
 - fixed `Game Preview` celestial visibility by ensuring the active `Main Camera` scene instance includes the `Celestial` layer when camera stacking is unavailable

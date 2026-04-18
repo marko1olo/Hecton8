@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_StabilizerCoil
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Stabilizer Coil
+  localizedItemName:
+    tableKey: ITEM_STABILIZER_COIL_NAME
+    fallbackText: "Stabilizer Coil"
+    variants: []
   icon: {fileID: 0}
   description: Field coil for propulsion balance, stunner output, and recoil damping.
+  localizedDescription:
+    tableKey: ITEM_STABILIZER_COIL_DESCRIPTION
+    fallbackText: "Field coil for propulsion balance, stunner output, and recoil damping."
+    variants: []
   weight: 0.45
   stackable: 1
   maxStack: 10
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

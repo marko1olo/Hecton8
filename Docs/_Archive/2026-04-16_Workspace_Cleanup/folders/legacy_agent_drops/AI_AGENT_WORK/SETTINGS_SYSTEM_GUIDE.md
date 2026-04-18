@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Settings System Guide — HECTON-8
 
 **VERSION:** 1.0  

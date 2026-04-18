@@ -88,7 +88,12 @@ namespace Hecton8.AtlasSignal
     [DefaultExecutionOrder(-80)]
     public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable
     {
-        private const int MinimumRevealStageForDirectiveContact = 2;
+        private const int MinimumRevealStageForDirectiveIdentity = 3;
+        private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
+        private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
+        private const string TerminalSectorDiscoveryId = "atlas6_terminal_sector3";
+        private const string CoreReachedDiscoveryId = "atlas6_core_reached";
+        private const string CoreDataAccessedDiscoveryId = "atlas6_core_data_accessed";
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -179,8 +184,6 @@ namespace Hecton8.AtlasSignal
 
             NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
             Atlas6Events.OnBarterAccepted   += HandleBarterAccepted;
-            AtlasSignalEvents.OnSignalDetected += HandleSignalDetected;
-
             ResolvePlayer();
         }
 
@@ -193,7 +196,6 @@ namespace Hecton8.AtlasSignal
 
             NarrativeEvents.OnDiscoveryMade    -= HandleDiscovery;
             Atlas6Events.OnBarterAccepted      -= HandleBarterAccepted;
-            AtlasSignalEvents.OnSignalDetected -= HandleSignalDetected;
         }
 
         private void OnDestroy()
@@ -317,29 +319,32 @@ namespace Hecton8.AtlasSignal
                 SetStatus(Atlas6PlayerStatus.Neutral);
         }
 
-        private void HandleSignalDetected(Vector3 sourcePos)
-        {
-            if (_playerStatus == Atlas6PlayerStatus.Unknown)
-                SetStatus(Atlas6PlayerStatus.Detected);
-        }
-
         private bool CanAdoptAtlasStatusFromDiscovery(string discoveryId)
         {
             if (_playerStatus != Atlas6PlayerStatus.Unknown)
                 return false;
 
-            if (string.IsNullOrEmpty(discoveryId) || !discoveryId.StartsWith("atlas6_"))
+            if (!IsDirectiveIdentityDiscovery(discoveryId))
                 return false;
 
             AtlasSignalSystem signal = AtlasSignalSystem.Instance;
             if (signal != null)
-                return signal.CurrentRevealStage >= MinimumRevealStageForDirectiveContact;
+                return signal.CurrentRevealStage >= MinimumRevealStageForDirectiveIdentity;
 
             FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
             if (firstHourDirector != null)
-                return firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule);
+                return firstHourDirector.IsMilestoneComplete(FirstHourMilestone.HumCloser);
 
             return true;
+        }
+
+        private static bool IsDirectiveIdentityDiscovery(string discoveryId)
+        {
+            return discoveryId == SignalIdentityDiscoveryId ||
+                   discoveryId == SignalFullyDecodedDiscoveryId ||
+                   discoveryId == TerminalSectorDiscoveryId ||
+                   discoveryId == CoreReachedDiscoveryId ||
+                   discoveryId == CoreDataAccessedDiscoveryId;
         }
 
         private void ResolvePlayer()

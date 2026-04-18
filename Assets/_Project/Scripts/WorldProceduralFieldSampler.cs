@@ -6,6 +6,9 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -30,6 +33,9 @@ namespace Hecton8.World
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
         private const int MaxSeafloorHeightCacheEntries = 4096;
         private const int MaxBiomeIndexCacheEntries = 4096;
+#if UNITY_EDITOR
+        private static bool _assemblyReloadHookRegistered;
+#endif
 
         public enum SeafloorSource
         {
@@ -1506,12 +1512,18 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+#if UNITY_EDITOR
+            EnsureAssemblyReloadHook();
+#endif
         }
 
         private void OnEnable()
         {
             BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
             _isDataDirty = true;
+#if UNITY_EDITOR
+            EnsureAssemblyReloadHook();
+#endif
         }
 
         private void OnDisable()
@@ -1521,6 +1533,9 @@ namespace Hecton8.World
             DisposeBurstData();
             _isDataDirty = true;
             _samplingFramePrepared = false;
+#if UNITY_EDITOR
+            ReleaseAssemblyReloadHook();
+#endif
         }
 
         private void OnDestroy()
@@ -1532,6 +1547,59 @@ namespace Hecton8.World
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+#if UNITY_EDITOR
+            ReleaseAssemblyReloadHook();
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static void EnsureAssemblyReloadHook()
+        {
+            if (_assemblyReloadHookRegistered)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting += HandleEditorQuitting;
+            _assemblyReloadHookRegistered = true;
+        }
+
+        private static void ReleaseAssemblyReloadHook()
+        {
+            if (!_assemblyReloadHookRegistered)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
+            _assemblyReloadHookRegistered = false;
+        }
+
+        private static void HandleBeforeAssemblyReload()
+        {
+            TeardownActiveRuntimeInstanceForEditorReload();
+        }
+
+        private static void HandleEditorQuitting()
+        {
+            TeardownActiveRuntimeInstanceForEditorReload();
+        }
+
+        private static void TeardownActiveRuntimeInstanceForEditorReload()
+        {
+            if (ActiveRuntimeInstance == null)
+                return;
+
+            ActiveRuntimeInstance.PrepareForEditorReload();
+            ActiveRuntimeInstance = null;
+        }
+#endif
+
+        internal void PrepareForEditorReload()
+        {
+            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            CompletePendingSamplingJob();
+            DisposeBurstData();
+            _isDataDirty = true;
+            _samplingFramePrepared = false;
         }
 
         public void BeginScatterSamplingFrame()

@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Hecton8 Input System Migration Walkthrough
 
 I have successfully completed the migration of the Hecton8 player-centric systems from legacy `UnityEngine.Input` polling to a unified, event-driven, and zero-GC architecture managed by the [InputManager](file:///c:/hades/Hecton8/Assets/_Project/Scripts/Input/InputManager.cs#22-384) singleton.

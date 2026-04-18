@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Data_TungstenChunk
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Tungsten Chunk
+  localizedItemName:
+    tableKey: ITEM_TUNGSTEN_CHUNK_NAME
+    fallbackText: "Tungsten Chunk"
+    variants: []
   icon: {fileID: 0}
   description: Heavy tool metal for cutters, launchers, and impact-rated mechanisms.
+  localizedDescription:
+    tableKey: ITEM_TUNGSTEN_CHUNK_DESCRIPTION
+    fallbackText: "Heavy tool metal for cutters, launchers, and impact-rated mechanisms."
+    variants: []
   weight: 1.6
   stackable: 1
   maxStack: 12
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

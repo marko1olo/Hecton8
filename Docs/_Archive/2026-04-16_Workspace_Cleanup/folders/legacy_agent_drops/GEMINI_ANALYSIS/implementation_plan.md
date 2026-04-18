@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Master Grade Hecton8 — Systematic Polish & Optimization
 
 This plan outlines the steps required to transition the Hecton8 project from technical stability to "Master Grade" AA commercial fidelity. The primary targets are VRAM/RT footprint reduction, a complete architectural overhaul of the procedural scatter system, and strict enforcement of Zero-GC and Job-driven directives.

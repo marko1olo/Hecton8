@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Shell/UX Production System — Quick Start
 
 **STATUS:** ✅ Code 100% Complete — Ready for Inspector Wiring  

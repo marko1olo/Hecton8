@@ -992,7 +992,7 @@ P0 rules:
       - `LandmarkCorridor / Sea-Stack Forest` -> top/dominant `Coral Plate`
     - existing fauna owner is now verified to support the transferred flora layer instead of leaving reef life abstract:
       - `Build Fauna Biome Datasets` rebuilt `108` biome datasets
-      - `AI_FAUNA_WORLD_INTEGRATION_REPORT.md` now includes a dedicated `Reef And Littoral Flora Biomes` section with `None` warnings
+      - `Docs/AI_Fauna/AI_FAUNA_WORLD_INTEGRATION_REPORT.md` now includes a dedicated `Reef And Littoral Flora Biomes` section with `None` warnings
       - representative reef/littoral flora biomes now read with concrete passive/threat mixes rather than empty ecology placeholders
     - hard corridor reads stayed intact:
       - `LandmarkCorridor / Table-Land Benches` -> top/dominant `Landmark Spire`

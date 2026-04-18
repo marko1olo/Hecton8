@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_PowerCoupler
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Power Coupler
+  localizedItemName:
+    tableKey: ITEM_POWER_COUPLER_NAME
+    fallbackText: "Power Coupler"
+    variants: []
   icon: {fileID: 0}
   description: Sealed high-load coupler for routing generated power into habitat
     and utility lines.
+  localizedDescription:
+    tableKey: ITEM_POWER_COUPLER_DESCRIPTION
+    fallbackText: "Sealed high-load coupler for routing generated power into habitat and utility lines."
+    variants: []
   weight: 0.6
   stackable: 1
   maxStack: 10
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

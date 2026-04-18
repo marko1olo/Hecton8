@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_MembraneTissue
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Membrane Tissue
+  localizedItemName:
+    tableKey: ITEM_MEMBRANE_TISSUE_NAME
+    fallbackText: "Membrane Tissue"
+    variants: []
   icon: {fileID: 0}
   description: Pressure-flexible organic tissue used in filters, seals, and bladder
     systems.
+  localizedDescription:
+    tableKey: ITEM_MEMBRANE_TISSUE_DESCRIPTION
+    fallbackText: "Pressure-flexible organic tissue used in filters, seals, and bladder systems."
+    variants: []
   weight: 0.5
   stackable: 1
   maxStack: 24
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Harvest
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Harvest"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

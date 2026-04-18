@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # 01_MAIN_MENU — Production Shell Finalization Checklist
 
 **Target**: 01_MAIN_MENU is production-ready, all UI works, no broken references, proper architecture.

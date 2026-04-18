@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Claude Master Prompt - HECTON-8 Kelp Shader
 
 You are editing a real production shader for HECTON-8, a Unity 6 URP AA game targeting NVIDIA MX350 2GB VRAM.

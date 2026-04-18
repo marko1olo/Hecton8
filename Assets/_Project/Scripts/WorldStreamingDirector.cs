@@ -14,6 +14,13 @@ namespace Hecton8.World
         private const string DepthZoneDeepLabel = "Deep";
         private const string MotionModeSurveyLabel = "Survey";
         private const string MotionModeTraverseLabel = "Traverse";
+        private const string TerrainResolution33Label = "33";
+        private const string TerrainResolution65Label = "65";
+        private const string TerrainResolution129Label = "129";
+        private const string TerrainResolution257Label = "257";
+        private const string TerrainResolution513Label = "513";
+        private const string TerrainResolution1025Label = "1025";
+        private const string TerrainResolution2049Label = "2049";
 
         private enum DepthZone
         {
@@ -38,6 +45,10 @@ namespace Hecton8.World
             public float colliderOpsScale;
             public float nearSliceScale;
             public float midSliceScale;
+            public int terrainPixelError;
+            public int terrainBaseMapDistance;
+            public float terrainDetailDistance;
+            public float terrainDetailDensity;
         }
 
         [Header("References")]
@@ -57,6 +68,18 @@ namespace Hecton8.World
         [SerializeField] private float traverseSpeedStart = 4.5f;
         [SerializeField] private float speedSmoothing = 0.2f;
 
+        [Header("Terrain Runtime LOD")]
+        [SerializeField] private bool terrainDraftsInPlaymode = true;
+        [SerializeField] private MapMagicObject.Resolution terrainDraftResolution = MapMagicObject.Resolution._65;
+        [SerializeField] private int terrainMainRange = 2;
+        [SerializeField] private int terrainDraftRange = 2;
+        [SerializeField] private int terrainMainTeardownRange = 3;
+        [SerializeField] private int terrainMainPixelError = 2;
+        [SerializeField] private int terrainMainBaseMapDistance = 1000;
+        [SerializeField] private int terrainDraftPixelError = 6;
+        [SerializeField] private int terrainDraftBaseMapDistance = 384;
+        [SerializeField] private int terrainHeightmapMaximumLod;
+
         [Header("Profiles")]
         [SerializeField] private StreamingProfile surfaceSurveyProfile;
         [SerializeField] private StreamingProfile surfaceTraverseProfile;
@@ -75,6 +98,13 @@ namespace Hecton8.World
         [SerializeField] private int _debugMapMagicObjectsPerFrame;
         [SerializeField] private float _debugNearSliceScale = 1f;
         [SerializeField] private float _debugMidSliceScale = 1f;
+        [SerializeField] private bool _debugTerrainDraftsInPlaymode;
+        [SerializeField] private string _debugTerrainDraftResolution = "65";
+        [SerializeField] private int _debugTerrainMainRange = 1;
+        [SerializeField] private int _debugTerrainDraftRange = 2;
+        [SerializeField] private int _debugTerrainPixelError = 4;
+        [SerializeField] private int _debugTerrainBaseMapDistance = 1600;
+        [SerializeField] private float _debugTerrainDetailDistance = 96f;
         [SerializeField] private bool _debugApplied;
         [SerializeField] private bool _debugPlayerReady;
         [SerializeField] private bool _debugBridgeReady;
@@ -88,6 +118,10 @@ namespace Hecton8.World
         private DepthZone _lastDepthZone = (DepthZone)(-1);
         private MotionMode _lastMotionMode = (MotionMode)(-1);
         private int _lastObjectsPerFrame = -1;
+        private int _lastTerrainPixelError = -1;
+        private int _lastTerrainBaseMapDistance = -1;
+        private float _lastTerrainDetailDistance = -1f;
+        private float _lastTerrainDetailDensity = -1f;
         private HectonPlayerMovement _playerMovement;
 
         private void Reset()
@@ -100,7 +134,11 @@ namespace Hecton8.World
                 colliderRadiusScale = 1f,
                 colliderOpsScale = 1f,
                 nearSliceScale = 1.06f,
-                midSliceScale = 1f
+                midSliceScale = 1f,
+                terrainPixelError = 3,
+                terrainBaseMapDistance = 2200,
+                terrainDetailDistance = 120f,
+                terrainDetailDensity = 1f
             };
 
             surfaceTraverseProfile = new StreamingProfile
@@ -111,7 +149,11 @@ namespace Hecton8.World
                 colliderRadiusScale = 0.9f,
                 colliderOpsScale = 0.82f,
                 nearSliceScale = 0.86f,
-                midSliceScale = 1.16f
+                midSliceScale = 1.16f,
+                terrainPixelError = 4,
+                terrainBaseMapDistance = 1800,
+                terrainDetailDistance = 100f,
+                terrainDetailDensity = 0.92f
             };
 
             midSurveyProfile = new StreamingProfile
@@ -122,7 +164,11 @@ namespace Hecton8.World
                 colliderRadiusScale = 0.86f,
                 colliderOpsScale = 0.84f,
                 nearSliceScale = 1f,
-                midSliceScale = 0.96f
+                midSliceScale = 0.96f,
+                terrainPixelError = 4,
+                terrainBaseMapDistance = 2000,
+                terrainDetailDistance = 108f,
+                terrainDetailDensity = 0.96f
             };
 
             midTraverseProfile = new StreamingProfile
@@ -133,7 +179,11 @@ namespace Hecton8.World
                 colliderRadiusScale = 0.78f,
                 colliderOpsScale = 0.72f,
                 nearSliceScale = 0.82f,
-                midSliceScale = 1.12f
+                midSliceScale = 1.12f,
+                terrainPixelError = 5,
+                terrainBaseMapDistance = 1600,
+                terrainDetailDistance = 92f,
+                terrainDetailDensity = 0.88f
             };
 
             deepSurveyProfile = new StreamingProfile
@@ -144,7 +194,11 @@ namespace Hecton8.World
                 colliderRadiusScale = 0.72f,
                 colliderOpsScale = 0.72f,
                 nearSliceScale = 0.94f,
-                midSliceScale = 0.92f
+                midSliceScale = 0.92f,
+                terrainPixelError = 5,
+                terrainBaseMapDistance = 1700,
+                terrainDetailDistance = 96f,
+                terrainDetailDensity = 0.88f
             };
 
             deepTraverseProfile = new StreamingProfile
@@ -155,7 +209,11 @@ namespace Hecton8.World
                 colliderRadiusScale = 0.62f,
                 colliderOpsScale = 0.58f,
                 nearSliceScale = 0.74f,
-                midSliceScale = 1.06f
+                midSliceScale = 1.06f,
+                terrainPixelError = 6,
+                terrainBaseMapDistance = 1400,
+                terrainDetailDistance = 80f,
+                terrainDetailDensity = 0.78f
             };
         }
 
@@ -228,8 +286,34 @@ namespace Hecton8.World
             RefreshRuntimeProfilesFromChunkProfile();
             ClampSettings();
 
+            StreamingProfile activeProfile = surfaceSurveyProfile;
+
+            if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
+            {
+                mapMagicBridge.ConfigureRuntimeTerrainStreaming(
+                    terrainDraftsInPlaymode,
+                    terrainMainRange,
+                    terrainDraftRange,
+                    terrainDraftResolution);
+            }
+
             if (playerTransform == null || scatterBudgetController == null || !TryResolveCurrentDepth(out float depth))
             {
+                if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
+                {
+                    mapMagicBridge.MaintainRuntimeTerrainDetailLevels(
+                        terrainMainRange,
+                        terrainMainTeardownRange,
+                        terrainMainPixelError,
+                        terrainMainBaseMapDistance,
+                        terrainDraftPixelError,
+                        terrainDraftBaseMapDistance,
+                        activeProfile.terrainDetailDistance,
+                        activeProfile.terrainDetailDensity,
+                        terrainHeightmapMaximumLod);
+                }
+
+                ApplyMapMagicTerrainProfile(surfaceSurveyProfile);
                 _debugApplied = false;
                 UpdateDiagnostics();
                 return;
@@ -241,6 +325,21 @@ namespace Hecton8.World
             DepthZone depthZone = GetDepthZone(depth);
             MotionMode motionMode = _smoothedSpeed >= traverseSpeedStart ? MotionMode.Traverse : MotionMode.Survey;
             StreamingProfile profile = GetProfile(depthZone, motionMode);
+            activeProfile = profile;
+
+            if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
+            {
+                mapMagicBridge.MaintainRuntimeTerrainDetailLevels(
+                    terrainMainRange,
+                    terrainMainTeardownRange,
+                    terrainMainPixelError,
+                    terrainMainBaseMapDistance,
+                    terrainDraftPixelError,
+                    terrainDraftBaseMapDistance,
+                    activeProfile.terrainDetailDistance,
+                    activeProfile.terrainDetailDensity,
+                    terrainHeightmapMaximumLod);
+            }
 
             _debugDepth = depth;
             _debugSpeed = _smoothedSpeed;
@@ -251,7 +350,11 @@ namespace Hecton8.World
                 force ||
                 depthZone != _lastDepthZone ||
                 motionMode != _lastMotionMode ||
-                profile.mapMagicObjectsPerFrame != _lastObjectsPerFrame;
+                profile.mapMagicObjectsPerFrame != _lastObjectsPerFrame ||
+                profile.terrainPixelError != _lastTerrainPixelError ||
+                profile.terrainBaseMapDistance != _lastTerrainBaseMapDistance ||
+                !Mathf.Approximately(profile.terrainDetailDistance, _lastTerrainDetailDistance) ||
+                !Mathf.Approximately(profile.terrainDetailDensity, _lastTerrainDetailDensity);
 
             if (!changed)
             {
@@ -267,26 +370,68 @@ namespace Hecton8.World
             if (worldSliceDirector != null)
                 worldSliceDirector.SetDistanceScales(profile.nearSliceScale, profile.midSliceScale);
 
-            MapMagicObject mapMagicObject = mapMagicBridge != null && mapMagicBridge.IsAvailable
-                ? mapMagicBridge.RuntimeMapMagicObject
-                : null;
-            if (mapMagicObject != null && mapMagicObject.globals != null)
-            {
-                mapMagicObject.globals.objectsNumPerFrame = profile.mapMagicObjectsPerFrame;
-                _debugMapMagicObjectsPerFrame = mapMagicObject.globals.objectsNumPerFrame;
-            }
-            else
-            {
-                _debugMapMagicObjectsPerFrame = -1;
-            }
+            ApplyMapMagicTerrainProfile(profile);
 
             _lastDepthZone = depthZone;
             _lastMotionMode = motionMode;
             _lastObjectsPerFrame = profile.mapMagicObjectsPerFrame;
+            _lastTerrainPixelError = profile.terrainPixelError;
+            _lastTerrainBaseMapDistance = profile.terrainBaseMapDistance;
+            _lastTerrainDetailDistance = profile.terrainDetailDistance;
+            _lastTerrainDetailDensity = profile.terrainDetailDensity;
             _debugNearSliceScale = profile.nearSliceScale;
             _debugMidSliceScale = profile.midSliceScale;
             _debugApplied = true;
             UpdateDiagnostics();
+        }
+
+        private void ApplyMapMagicTerrainProfile(StreamingProfile profile)
+        {
+            if (mapMagicBridge == null || !mapMagicBridge.IsAvailable)
+            {
+                _debugMapMagicObjectsPerFrame = -1;
+                return;
+            }
+
+            mapMagicBridge.SetRuntimeObjectsPerFrame(profile.mapMagicObjectsPerFrame);
+            mapMagicBridge.ApplyRuntimeTerrainQuality(
+                profile.terrainPixelError,
+                profile.terrainBaseMapDistance,
+                profile.terrainDetailDistance,
+                profile.terrainDetailDensity,
+                terrainHeightmapMaximumLod);
+
+            _debugMapMagicObjectsPerFrame = profile.mapMagicObjectsPerFrame;
+            _debugTerrainDraftsInPlaymode = terrainDraftsInPlaymode;
+            _debugTerrainDraftResolution = GetTerrainResolutionLabel(terrainDraftResolution);
+            _debugTerrainMainRange = terrainMainRange;
+            _debugTerrainDraftRange = terrainDraftRange;
+            _debugTerrainPixelError = profile.terrainPixelError;
+            _debugTerrainBaseMapDistance = profile.terrainBaseMapDistance;
+            _debugTerrainDetailDistance = profile.terrainDetailDistance;
+        }
+
+        private static string GetTerrainResolutionLabel(MapMagicObject.Resolution resolution)
+        {
+            switch (resolution)
+            {
+                case MapMagicObject.Resolution._33:
+                    return TerrainResolution33Label;
+                case MapMagicObject.Resolution._65:
+                    return TerrainResolution65Label;
+                case MapMagicObject.Resolution._129:
+                    return TerrainResolution129Label;
+                case MapMagicObject.Resolution._257:
+                    return TerrainResolution257Label;
+                case MapMagicObject.Resolution._513:
+                    return TerrainResolution513Label;
+                case MapMagicObject.Resolution._1025:
+                    return TerrainResolution1025Label;
+                case MapMagicObject.Resolution._2049:
+                    return TerrainResolution2049Label;
+                default:
+                    return TerrainResolution65Label;
+            }
         }
 
         private float GetCurrentSpeed()
@@ -386,6 +531,14 @@ namespace Hecton8.World
             deepDepthStart = Mathf.Max(midDepthStart + 20f, deepDepthStart);
             traverseSpeedStart = Mathf.Max(0.5f, traverseSpeedStart);
             speedSmoothing = Mathf.Clamp01(speedSmoothing);
+            terrainMainRange = Mathf.Clamp(terrainMainRange, 2, 4);
+            terrainDraftRange = Mathf.Max(terrainMainRange, terrainDraftRange);
+            terrainMainTeardownRange = Mathf.Max(terrainMainRange + 1, terrainMainTeardownRange);
+            terrainMainPixelError = Mathf.Clamp(terrainMainPixelError, 1, 3);
+            terrainMainBaseMapDistance = Mathf.Clamp(terrainMainBaseMapDistance, 512, 2000);
+            terrainDraftPixelError = Mathf.Clamp(terrainDraftPixelError, terrainMainPixelError + 1, 12);
+            terrainDraftBaseMapDistance = Mathf.Clamp(terrainDraftBaseMapDistance, 256, terrainMainBaseMapDistance);
+            terrainHeightmapMaximumLod = Mathf.Clamp(terrainHeightmapMaximumLod, 0, 3);
 
             surfaceSurveyProfile = ClampProfile(surfaceSurveyProfile);
             surfaceTraverseProfile = ClampProfile(surfaceTraverseProfile);
@@ -441,7 +594,11 @@ namespace Hecton8.World
                 colliderRadiusScale = Mathf.Clamp(((debrisLayer.nearRadiusScale + terrainLayer.nearRadiusScale) * 0.5f) * depthScale * traverseCompression, 0.55f, 1.5f),
                 colliderOpsScale = Mathf.Clamp((debrisLayer.maxActivationsPerTick / 18f) * depthScale * (traverse ? 0.88f : 1f), 0.55f, 1.6f),
                 nearSliceScale = Mathf.Clamp(terrainLayer.nearRadiusScale * (traverse ? 0.82f : 1f), 0.6f, 1.6f),
-                midSliceScale = Mathf.Clamp(terrainLayer.midRadiusScale * (traverse ? 1.08f : 1f), 0.6f, 1.7f)
+                midSliceScale = Mathf.Clamp(terrainLayer.midRadiusScale * (traverse ? 1.08f : 1f), 0.6f, 1.7f),
+                terrainPixelError = Mathf.Clamp(Mathf.RoundToInt((traverse ? 3.5f : 2.5f) + (1f - depthScale) * 6f), 3, 8),
+                terrainBaseMapDistance = Mathf.RoundToInt(Mathf.Clamp(1400f * terrainLayer.farRadiusScale * depthScale * (traverse ? 0.95f : 1.15f), 1200f, 2400f)),
+                terrainDetailDistance = Mathf.Clamp(96f * terrainLayer.nearRadiusScale * depthScale * (traverse ? 0.94f : 1.08f), 72f, 128f),
+                terrainDetailDensity = Mathf.Clamp(depthScale * (traverse ? 0.92f : 1f), 0.72f, 1f)
             };
         }
 
@@ -454,6 +611,10 @@ namespace Hecton8.World
             profile.colliderOpsScale = Mathf.Clamp(profile.colliderOpsScale, 0.4f, 1.5f);
             profile.nearSliceScale = Mathf.Clamp(profile.nearSliceScale, 0.6f, 1.4f);
             profile.midSliceScale = Mathf.Clamp(profile.midSliceScale, 0.6f, 1.5f);
+            profile.terrainPixelError = Mathf.Clamp(profile.terrainPixelError <= 0 ? 4 : profile.terrainPixelError, 1, 12);
+            profile.terrainBaseMapDistance = Mathf.Clamp(profile.terrainBaseMapDistance <= 0 ? 1600 : profile.terrainBaseMapDistance, 512, 4000);
+            profile.terrainDetailDistance = Mathf.Clamp(profile.terrainDetailDistance <= 0f ? 96f : profile.terrainDetailDistance, 0f, 160f);
+            profile.terrainDetailDensity = Mathf.Clamp(profile.terrainDetailDensity <= 0f ? 1f : profile.terrainDetailDensity, 0.4f, 1.2f);
             return profile;
         }
 

@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Data_IronComposite
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Iron Composite
+  localizedItemName:
+    tableKey: ITEM_IRON_COMPOSITE_NAME
+    fallbackText: "Iron Composite"
+    variants: []
   icon: {fileID: 0}
   description: Dense structural alloy for braces, frames, and heavy platform work.
+  localizedDescription:
+    tableKey: ITEM_IRON_COMPOSITE_DESCRIPTION
+    fallbackText: "Dense structural alloy for braces, frames, and heavy platform work."
+    variants: []
   weight: 1.4
   stackable: 1
   maxStack: 24
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

@@ -1,0 +1,289 @@
+using System;
+using Hecton8.Bootstrap;
+using Hecton8.Core;
+using Hecton8.World;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Hecton8.UI
+{
+    /// <summary>
+    /// HUD element that renders the active service-relay handoff target on screen.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(RectTransform))]
+    [RequireComponent(typeof(CanvasGroup))]
+    public sealed class RelayHUDElement : MonoBehaviour, ITickable
+    {
+        private enum RelayMarkerVisibilityState : byte
+        {
+            Hidden_NoCamera = 0,
+            Hidden_NoRouteTarget = 1,
+            Hidden_TooFar = 2,
+            Hidden_BehindCamera = 3,
+            Visible_OnScreen = 4,
+            Visible_ClampedToEdge = 5
+        }
+
+        // COLD ALLOC: Camera[16] — fallback camera resolution buffer for relay HUD owner — owner: RelayHUDElement
+        private static readonly Camera[] s_CameraBuffer = new Camera[16];
+
+        [Header("── References ──────────────────")]
+        [Tooltip("Icon used for the relay route marker.")]
+        [SerializeField] private Image markerIcon;
+
+        [Tooltip("Distance readout for the current relay target.")]
+        [SerializeField] private TMP_Text distanceText;
+
+        [Tooltip("Label for the current relay target.")]
+        [SerializeField] private TMP_Text labelText;
+
+        [Header("── Routing ──────────────────────")]
+        [Tooltip("Hide the marker when the route target is farther away than this distance.")]
+        [SerializeField, Min(10f)] private float maxDisplayDistance = 450f;
+
+        [Tooltip("Hide the marker when the target is behind the camera instead of clamping to the screen edge.")]
+        [SerializeField] private bool hideWhenBehindCamera = false;
+
+        [Tooltip("Margin in pixels used when clamping the marker to the screen edge.")]
+        [SerializeField, Min(0f)] private float screenMargin = 64f;
+
+        [Header("── Visual ───────────────────────")]
+        [Tooltip("Marker color while the relay target is on-screen and inside comfortable range.")]
+        [SerializeField] private Color onScreenColor = new Color(0.26f, 0.86f, 1f, 0.95f);
+
+        [Tooltip("Marker color while the relay target is off-screen or far away.")]
+        [SerializeField] private Color edgeColor = new Color(0.18f, 0.6f, 0.88f, 0.82f);
+
+        private Camera _mainCamera;
+        private CanvasGroup _canvasGroup;
+        private RectTransform _rectTransform;
+        private Transform _playerTransform;
+        private EmergencyServiceRelay _trackedRelay;
+        private bool _registered;
+        private int _lastDistanceMeters = int.MinValue;
+        private string _lastLabel = string.Empty;
+        private RelayMarkerVisibilityState _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
+        private float _lastObservedDistance;
+
+        private void Awake()
+        {
+            _rectTransform = GetComponent<RectTransform>();
+            _canvasGroup = GetComponent<CanvasGroup>();
+            SetVisible(false);
+        }
+
+        private void OnEnable()
+        {
+            TryCacheCamera();
+
+            if (GameTickManager.Instance != null && !_registered)
+            {
+                GameTickManager.Instance.Register(this);
+                _registered = true;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (GameTickManager.Instance != null && _registered)
+            {
+                GameTickManager.Instance.Unregister(this);
+                _registered = false;
+            }
+
+            _trackedRelay = null;
+            _lastDistanceMeters = int.MinValue;
+            _lastLabel = string.Empty;
+            SetVisible(false);
+        }
+
+        /// <summary>
+        /// Binds runtime-created UI references when the marker is injected as a fail-safe.
+        /// </summary>
+        public void ConfigureRuntimeBindings(Image icon, TMP_Text distance, TMP_Text label)
+        {
+            markerIcon = icon;
+            distanceText = distance;
+            labelText = label;
+        }
+
+        /// <summary>Returns the latest relay marker visibility state for diagnostics.</summary>
+        public string DescribeDebugState()
+        {
+            return _lastVisibilityState + " distance=" + _lastObservedDistance.ToString("0.0");
+        }
+
+        /// <inheritdoc />
+        public void Tick(float dt)
+        {
+            if (!TryCacheCamera())
+            {
+                _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoCamera;
+                SetVisible(false);
+                return;
+            }
+
+            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelay routeTarget = relayDirector != null
+                ? relayDirector.GetActiveRouteTarget()
+                : null;
+            if (routeTarget == null || !routeTarget.isActiveAndEnabled)
+            {
+                _trackedRelay = null;
+                _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
+                SetVisible(false);
+                return;
+            }
+
+            _trackedRelay = routeTarget;
+
+            Vector3 playerPosition = _playerTransform.position;
+            Vector3 relayPosition = routeTarget.transform.position;
+            float distance = Vector3.Distance(playerPosition, relayPosition);
+            _lastObservedDistance = distance;
+            if (distance > maxDisplayDistance)
+            {
+                _lastVisibilityState = RelayMarkerVisibilityState.Hidden_TooFar;
+                SetVisible(false);
+                return;
+            }
+
+            Vector3 screenPosition = _mainCamera.WorldToScreenPoint(relayPosition);
+            bool behindCamera = screenPosition.z < 0f;
+            if (behindCamera && hideWhenBehindCamera)
+            {
+                _lastVisibilityState = RelayMarkerVisibilityState.Hidden_BehindCamera;
+                SetVisible(false);
+                return;
+            }
+
+            bool clampedToEdge = behindCamera;
+            if (behindCamera)
+            {
+                screenPosition.x = Screen.width - screenPosition.x;
+                screenPosition.y = Screen.height - screenPosition.y;
+            }
+
+            float minX = screenMargin;
+            float maxX = Screen.width - screenMargin;
+            float minY = screenMargin;
+            float maxY = Screen.height - screenMargin;
+
+            if (screenPosition.x < minX || screenPosition.x > maxX || screenPosition.y < minY || screenPosition.y > maxY)
+            {
+                clampedToEdge = true;
+                screenPosition.x = Mathf.Clamp(screenPosition.x, minX, maxX);
+                screenPosition.y = Mathf.Clamp(screenPosition.y, minY, maxY);
+            }
+
+            _rectTransform.position = screenPosition;
+            UpdateLabel(routeTarget.RelayLabel);
+            UpdateDistance(distance);
+            UpdateColor(clampedToEdge);
+            _lastVisibilityState = clampedToEdge
+                ? RelayMarkerVisibilityState.Visible_ClampedToEdge
+                : RelayMarkerVisibilityState.Visible_OnScreen;
+            SetVisible(true);
+        }
+
+        private bool TryCacheCamera()
+        {
+            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
+                _mainCamera = ResolveWorldCamera();
+
+            if (_mainCamera == null)
+                return false;
+
+            if (_playerTransform == null)
+            {
+                if (!SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform) || _playerTransform == null)
+                    _playerTransform = _mainCamera.transform;
+            }
+
+            return _playerTransform != null;
+        }
+
+        private static Camera ResolveWorldCamera()
+        {
+            Camera taggedMainCamera = Camera.main;
+            if (taggedMainCamera != null && taggedMainCamera.isActiveAndEnabled)
+                return taggedMainCamera;
+
+            int cameraCount = Camera.GetAllCameras(s_CameraBuffer);
+            Camera fallbackCamera = null;
+
+            for (int i = 0; i < cameraCount; i++)
+            {
+                Camera candidate = s_CameraBuffer[i];
+                if (candidate == null || !candidate.isActiveAndEnabled)
+                    continue;
+
+                string candidateName = candidate.name ?? string.Empty;
+                if (candidateName.IndexOf("Main", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return candidate;
+
+                if (candidateName.IndexOf("HUD", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    candidateName.IndexOf("UI", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    fallbackCamera ??= candidate;
+                    continue;
+                }
+
+                return candidate;
+            }
+
+            return fallbackCamera;
+        }
+
+        private void UpdateLabel(string relayLabel)
+        {
+            if (labelText == null)
+                return;
+
+            relayLabel ??= string.Empty;
+            if (string.Equals(_lastLabel, relayLabel))
+                return;
+
+            _lastLabel = relayLabel;
+            labelText.text = relayLabel;
+        }
+
+        private void UpdateDistance(float distance)
+        {
+            if (distanceText == null)
+                return;
+
+            int distanceMeters = Mathf.RoundToInt(distance);
+            if (_lastDistanceMeters == distanceMeters)
+                return;
+
+            _lastDistanceMeters = distanceMeters;
+            distanceText.SetText("{0}M", distanceMeters);
+        }
+
+        private void UpdateColor(bool clampedToEdge)
+        {
+            if (markerIcon != null)
+                markerIcon.color = clampedToEdge ? edgeColor : onScreenColor;
+
+            Color textColor = clampedToEdge ? edgeColor : onScreenColor;
+            if (distanceText != null)
+                distanceText.color = textColor;
+
+            if (labelText != null)
+                labelText.color = textColor;
+        }
+
+        private void SetVisible(bool visible)
+        {
+            if (_canvasGroup == null)
+                return;
+
+            _canvasGroup.alpha = visible ? 1f : 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable = false;
+        }
+    }
+}

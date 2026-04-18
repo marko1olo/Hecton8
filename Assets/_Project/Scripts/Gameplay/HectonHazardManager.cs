@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
 {
     /// <summary>
     /// Управляет всеми локальными источниками опасности (радиация, тепло).
-    /// Используется SurvivalSystem (игрок) и HectonBaseAI (существа) для 
+    /// Используется SurvivalSystem (игрок) и FaunaBrain (существа) для 
     /// получения данных об опасности в конкретной точке мира.
     /// </summary>
     public sealed class HectonHazardManager : MonoBehaviour
@@ -213,3 +213,4 @@ namespace Hecton8.Gameplay
         public static implicit operator Vector3(HazardFloat3 v) => new Vector3(v.x, v.y, v.z);
     }
 }
+

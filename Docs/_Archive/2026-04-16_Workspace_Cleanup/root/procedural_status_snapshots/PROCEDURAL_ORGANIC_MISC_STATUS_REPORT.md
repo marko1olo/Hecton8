@@ -1,4 +1,6 @@
-﻿# Procedural Organic Misc Status Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Organic Misc Status Report
 
 - Root: `Assets/_Project/Data/World/ProceduralFamilies`
 - Scope: organic procedural families outside the main kelp/coral baked pipeline (`Egg`, `Plant`).

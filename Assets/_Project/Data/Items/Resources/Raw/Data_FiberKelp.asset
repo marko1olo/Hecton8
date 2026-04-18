@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Data_FiberKelp
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Fiber Kelp
+  localizedItemName:
+    tableKey: ITEM_FIBER_KELP_NAME
+    fallbackText: "Fiber Kelp"
+    variants: []
   icon: {fileID: 0}
   description: Flexible organic ribbon used for mesh, binding, and early suit work.
+  localizedDescription:
+    tableKey: ITEM_FIBER_KELP_DESCRIPTION
+    fallbackText: "Flexible organic ribbon used for mesh, binding, and early suit work."
+    variants: []
   weight: 0.4
   stackable: 1
   maxStack: 32
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Collect"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_LubricantResin
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Lubricant Resin
+  localizedItemName:
+    tableKey: ITEM_LUBRICANT_RESIN_NAME
+    fallbackText: "Lubricant Resin"
+    variants: []
   icon: {fileID: 0}
   description: Refined slick polymer used in moving seals, actuators, and heavy tools.
+  localizedDescription:
+    tableKey: ITEM_LUBRICANT_RESIN_DESCRIPTION
+    fallbackText: "Refined slick polymer used in moving seals, actuators, and heavy tools."
+    variants: []
   weight: 0.25
   stackable: 1
   maxStack: 16
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

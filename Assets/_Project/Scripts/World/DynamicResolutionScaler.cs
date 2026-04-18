@@ -129,6 +129,14 @@ namespace Hecton8.World
         private string _debugPressureState = "Stable";
         [SerializeField, Tooltip("Remaining recovery-lock frames before upscale is allowed again.")]
         private int _debugRecoveryHoldFramesRemaining;
+        [SerializeField, Tooltip("Development-only forced frame time override used by the runtime debug harness.")]
+        private bool _debugFrameTimeOverrideActive;
+        [SerializeField, Tooltip("Development-only forced frame time override value in milliseconds.")]
+        private float _debugFrameTimeOverrideMs;
+        [SerializeField, Tooltip("Development-only direct render-scale override used by the runtime debug harness.")]
+        private bool _debugRenderScaleOverrideActive;
+        [SerializeField, Tooltip("Development-only direct render-scale override value.")]
+        private float _debugRenderScaleOverrideValue;
 
         private enum RenderPressureState
         {
@@ -151,6 +159,18 @@ namespace Hecton8.World
         /// Whether dynamic resolution scaling is enabled.
         /// </summary>
         public bool Enabled => _enabled;
+
+        internal string DebugPressureStateLabel => _debugPressureState;
+
+        internal float DebugSmoothedFrameTimeMs => _debugSmoothedFrameTimeMs;
+
+        internal bool DebugFrameTimeOverrideActive => _debugFrameTimeOverrideActive;
+
+        internal float DebugFrameTimeOverrideMs => _debugFrameTimeOverrideMs;
+
+        internal bool DebugRenderScaleOverrideActive => _debugRenderScaleOverrideActive;
+
+        internal float DebugRenderScaleOverrideValue => _debugRenderScaleOverrideValue;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -310,13 +330,32 @@ namespace Hecton8.World
         /// <param name="dt">Delta time from GameTickManager</param>
         public void Tick(float dt)
         {
-            if (!_enabled || _urpAsset == null) return;
+            if (_urpAsset == null)
+                return;
+
+            if (!_enabled && !_debugRenderScaleOverrideActive)
+                return;
 
             // Convert dt to milliseconds
-            float frameTime = dt * 1000f;
-            UpdateFrameTrend(frameTime);
+            float observedFrameTime = ResolveObservedFrameTime(dt);
+            UpdateFrameTrend(observedFrameTime);
 
-            float effectiveFrameTime = Mathf.Max(frameTime, _smoothedFrameTimeMs);
+            if (_debugRenderScaleOverrideActive)
+            {
+                float overrideScale = Mathf.Clamp(_debugRenderScaleOverrideValue, 0.1f, _maxRenderScale);
+                if (!Mathf.Approximately(_currentRenderScale, overrideScale))
+                {
+                    _currentRenderScale = overrideScale;
+                    ApplyRenderScale();
+                }
+
+                float debugEffectiveFrameTime = Mathf.Max(observedFrameTime, _smoothedFrameTimeMs);
+                UpdatePressureState(debugEffectiveFrameTime);
+                UpdatePressureDiagnostics();
+                return;
+            }
+
+            float effectiveFrameTime = Mathf.Max(observedFrameTime, _smoothedFrameTimeMs);
             bool criticalPressure = effectiveFrameTime >= _criticalFrameTime;
             bool pressured = effectiveFrameTime > _targetFrameTime;
             bool fastEnoughForRecovery = effectiveFrameTime < _targetFrameTime * 0.9f;
@@ -411,6 +450,34 @@ namespace Hecton8.World
             UpdatePressureDiagnostics();
         }
 
+        internal void SetDebugFrameTimeOverride(float frameTimeMs)
+        {
+            _debugFrameTimeOverrideActive = frameTimeMs > 0f;
+            _debugFrameTimeOverrideMs = _debugFrameTimeOverrideActive
+                ? Mathf.Max(0.01f, frameTimeMs)
+                : 0f;
+        }
+
+        internal void ClearDebugFrameTimeOverride()
+        {
+            _debugFrameTimeOverrideActive = false;
+            _debugFrameTimeOverrideMs = 0f;
+        }
+
+        internal void SetDebugRenderScaleOverride(float renderScale)
+        {
+            _debugRenderScaleOverrideActive = renderScale > 0f;
+            _debugRenderScaleOverrideValue = _debugRenderScaleOverrideActive
+                ? Mathf.Clamp(renderScale, 0.1f, _maxRenderScale)
+                : 0f;
+        }
+
+        internal void ClearDebugRenderScaleOverride()
+        {
+            _debugRenderScaleOverrideActive = false;
+            _debugRenderScaleOverrideValue = 0f;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE METHODS
         // ══════════════════════════════════════════════════════════
@@ -420,6 +487,15 @@ namespace Hecton8.World
             if (_urpAsset == null) return;
 
             _urpAsset.renderScale = _currentRenderScale;
+        }
+
+        private float ResolveObservedFrameTime(float dt)
+        {
+            float frameTime = dt * 1000f;
+            if (_debugFrameTimeOverrideActive)
+                return Mathf.Max(frameTime, _debugFrameTimeOverrideMs);
+
+            return frameTime;
         }
 
         private void UpdateFrameTrend(float frameTimeMs)

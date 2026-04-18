@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3756683997080362042}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_LeftGuide
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -153,8 +153,7 @@ MonoBehaviour:
   m_RequiresDepthTextureOption: 1
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
-  m_Cameras:
-  - {fileID: 4738717749101629275}
+  m_Cameras: []
   m_RendererIndex: -1
   m_VolumeLayerMask:
     serializedVersion: 2
@@ -365,7 +364,7 @@ GameObject:
   - component: {fileID: 8779374126866260918}
   - component: {fileID: 2429290650533630788}
   - component: {fileID: 3776052627006601248}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_LeftShoulder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -403,13 +402,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2340452029704280060}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -455,7 +454,7 @@ GameObject:
   - component: {fileID: 283251443285089866}
   - component: {fileID: 7998403618479179902}
   - component: {fileID: 733710296372098531}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_RightShoulder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -493,13 +492,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3823599482383762508}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -942,6 +941,8 @@ MonoBehaviour:
   _debugSplashThisFrame: 0
   _debugExhaleThisFrame: 0
   _debugIsSubmerged: 0
+  _debugHasSwimPresentationController: 0
+  _debugLastSwimPresentationDriveFrame: -1
 --- !u!114 &8339093750577122443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1516,6 +1517,7 @@ MonoBehaviour:
   playerMovement: {fileID: 4126722323519124583}
   playerRigidbody: {fileID: 6324429111755348568}
   playerToolManager: {fileID: 3954223694506301739}
+  swimBlockoutRig: {fileID: 6473731280857570575}
   viewModelRoot: {fileID: 5991790254714940880}
   leftHandGuide: {fileID: 3756683997080362042}
   rightHandGuide: {fileID: 8803757626452626870}
@@ -1541,10 +1543,114 @@ MonoBehaviour:
   equippedToolSupportHandWeight: 0.68
   equippedToolActiveUseSupportBoost: 0.16
   equippedToolHand: 0
+  surfaceFramingOutwardBias: 0.016
+  surfaceFramingDownBias: 0.012
+  surfaceFramingRearBias: 0.018
+  toolFramingOutwardBias: 0.026
+  toolFramingDownBias: 0.02
+  toolFramingRearBias: 0.012
+  framingCenterClearance: 0.026
+  surfaceRootLowering: 0.002
+  surfaceRootRearBias: 0.01
+  toolRootLowering: 0.01
+  toolRootRearBias: 0.008
+  presentationBlendSmoothTime: 0.1
+  toolTransitionSmoothTime: 0.09
+  steeringResponseSmoothTime: 0.11
+  surfaceBreathAmplitude: 0.009
+  surfaceBreathFrequency: 0.18
+  surfaceWaveBobAmplitude: 0.013
+  surfaceWaveBobFrequency: 0.31
+  surfaceWavePitchAmplitude: 0.55
+  surfaceWaveRollAmplitude: 0.8
+  strokePullSharpness: 1.35
+  strokeRecoverySharpness: 1.12
+  steeringStrokePhaseLead: 0.045
+  cameraTurnStrokePhaseLead: 0.03
+  verticalStrokePhaseBias: 0.018
+  surfaceStrokePhaseSuppression: 0.55
+  rootPosePositionSmoothTime: 0.05
+  rootPoseRotationSmoothTime: 0.065
+  guidePosePositionSmoothTime: 0.06
+  guidePoseRotationSmoothTime: 0.075
+  surfacePoseLagMultiplier: 0.78
+  sprintPoseLagMultiplier: 0.9
+  heavyPoseLagMultiplier: 1.18
+  poweredAssistPoseLagMultiplier: 0.88
+  strafeCorrectionInfluence: 0.8
+  turnCorrectionInfluence: 0.55
+  lateralVelocityCorrectionInfluence: 0.42
+  surfaceCorrectionSuppression: 0.48
+  steeringReachBias: 0.34
+  steeringOutwardBias: 0.26
+  steeringVerticalBias: 0.18
+  steeringYawBias: 0.28
+  steeringRollBias: 0.22
+  steeringRootLateralBias: 0.012
+  steeringRootYawBias: 2.6
+  steeringRootRollBias: 2.1
+  cameraTurnSwayInfluence: 0.65
+  cameraTurnSwayMaxDegreesPerSecond: 720
+  cameraTurnSwaySurfaceSuppression: 0.35
+  cameraTurnSwayHandInfluence: 0.48
+  cameraTurnSwayRootYawBias: 1.85
+  cameraTurnSwayRootRollBias: 2.8
+  handObstacleMask:
+    serializedVersion: 2
+    m_Bits: 1048575
+  handObstacleSphereRadius: 0.06
+  handObstacleForwardLookahead: 0.22
+  handObstacleSideLookahead: 0.11
+  handObstacleVerticalLookahead: 0.08
+  handObstacleMultiProbeBlend: 0.58
+  handObstacleRetractDistance: 0.085
+  handObstacleBodyRetractDistance: 0.028
+  handObstacleInwardDistance: 0.03
+  handObstacleDownwardDistance: 0.018
+  handObstacleUpwardDistance: 0.024
+  handObstacleWallLiftBias: 0.28
+  handObstacleYawBias: 8
+  handObstacleRollBias: 6
+  handObstacleSmoothTime: 0.045
+  onStrokePowerPulse:
+    m_PersistentCalls:
+      m_Calls: []
+  strokePowerPulseThreshold: 0.84
+  strokePowerPulseCooldown: 0.09
+  strokePowerImpulseDecayTime: 0.1
+  equippedToolSupportHandPhaseLeadBoost: 0.024
+  equippedToolToolHandPhaseLeadSuppression: 0.55
+  equippedToolSupportHandMotionBoost: 0.22
+  equippedToolToolHandMotionSuppression: 0.32
+  equippedToolToolHandObstacleResponseScale: 0.58
+  equippedToolSupportHandObstacleBoost: 0.18
+  equippedToolPoseLagMultiplier: 1.08
+  equippedToolToolHandPoseLagMultiplier: 1.14
+  equippedToolSupportHandPoseLagMultiplier: 0.92
+  cameraTurnPoseLagMultiplier: 1.22
+  obstaclePoseLagMultiplier: 1.18
+  blockedHandStrokeSuppression: 0.42
+  blockedSupportHandCompensationBoost: 0.18
+  blockedHandPhaseLeadSuppression: 0.35
+  blockedSupportHandPhaseLeadBoost: 0.018
+  obstacleRootLateralBias: 0.012
+  obstacleRootRearBias: 0.01
+  obstacleRootUpwardBias: 0.008
+  obstacleRootYawBias: 1.35
+  obstacleRootRollBias: 1.1
+  obstacleRootSmoothTime: 0.085
   _debugMode: None
   _debugStrokePhase: 0
   _debugPropulsionPulse: 0
   _debugSpeed: 0
+  _debugSteeringCorrection: 0
+  _debugCameraTurnSway: 0
+  _debugStrokePhaseLead: 0
+  _debugLeftObstacleWeight: 0
+  _debugRightObstacleWeight: 0
+  _debugStrokePowerImpulse: 0
+  _debugObstacleRootPressure: 0
+  _debugLastDrivenFrame: -1
   _debugProfile: 
   _debugProfileSource: 
 --- !u!114 &6473731280857570575
@@ -1576,11 +1682,22 @@ MonoBehaviour:
   rightUpperArmRenderer: {fileID: 7801604195443663973}
   leftGloveRenderer: {fileID: 6614023990326015750}
   rightGloveRenderer: {fileID: 6272142085226454529}
+  showDebugCubes: 1
+  leftShoulderAttachment: {fileID: 9011000000000000002}
+  rightShoulderAttachment: {fileID: 9011000000000000004}
+  leftUpperArmAttachment: {fileID: 9011000000000000006}
+  rightUpperArmAttachment: {fileID: 9011000000000000008}
+  leftForearmAttachment: {fileID: 9011000000000000010}
+  rightForearmAttachment: {fileID: 9011000000000000012}
+  leftHandAttachment: {fileID: 9011000000000000014}
+  rightHandAttachment: {fileID: 9011000000000000016}
   visibilityBlendSpeed: 9
   rendererDisableThreshold: 0.035
   shallowWadeVisibility: 0.16
-  surfaceVisibility: 0.72
-  lightSuitScale: 0.92
+  surfaceVisibility: 1
+  surfaceTreadVisibilityFloor: 0.14
+  surfaceStrokeVisibilityFloor: 0.12
+  lightSuitScale: 1.08
   utilitySuitScale: 1
   heavySuitScale: 1.14
   poweredAssistScale: 0.96
@@ -1588,11 +1705,18 @@ MonoBehaviour:
   surfaceVerticalCompression: 0.12
   upperArmThicknessScale: 1.08
   shoulderThicknessScale: 1.18
+  shoulderConnectionVisibilityFloor: 0.16
+  upperArmConnectionVisibilityFloor: 0.12
+  shoulderGuideHorizontalFollow: 0.24
+  shoulderGuideVerticalFollow: 0.18
+  shoulderGuideDepthFollow: 0.14
   _debugVisualWeight: 0
   _debugLeftVisualWeight: 0
   _debugRightVisualWeight: 0
   _debugSuitScale: 1
   _debugRenderersVisible: 0
+  _debugAttachmentsResolved: 1
+  _debugLastDrivenFrame: -1
 --- !u!1 &6786399830664702900
 GameObject:
   m_ObjectHideFlags: 0
@@ -1952,7 +2076,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8803757626452626870}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_RightGuide
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1987,7 +2111,7 @@ GameObject:
   - component: {fileID: 2756344468308586617}
   - component: {fileID: 2170384008388573125}
   - component: {fileID: 8618476938130961525}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_RightForearm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2025,13 +2149,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7262418954629483237}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -2077,7 +2201,7 @@ GameObject:
   - component: {fileID: 1521995015782274429}
   - component: {fileID: 6339166336169411081}
   - component: {fileID: 7801604195443663973}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_RightUpperArm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2115,13 +2239,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7305805392546400613}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -2570,7 +2694,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7350136928691967875}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 3
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
@@ -2629,7 +2753,7 @@ MonoBehaviour:
   m_RenderShadows: 0
   m_RequiresDepthTextureOption: 0
   m_RequiresOpaqueTextureOption: 0
-  m_CameraType: 1
+  m_CameraType: 0
   m_Cameras: []
   m_RendererIndex: -1
   m_VolumeLayerMask:
@@ -2737,7 +2861,7 @@ GameObject:
   - component: {fileID: 7056199296721419562}
   - component: {fileID: 6906720917638595000}
   - component: {fileID: 6614023990326015750}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_LeftGlove
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2775,13 +2899,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7419416505414915904}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -2827,7 +2951,7 @@ GameObject:
   - component: {fileID: 1595104624455265598}
   - component: {fileID: 7954890519977625061}
   - component: {fileID: 3727383016379298853}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_LeftUpperArm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2865,13 +2989,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7943536597616436250}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -2917,7 +3041,7 @@ GameObject:
   - component: {fileID: 103415553366325537}
   - component: {fileID: 4810301015210524384}
   - component: {fileID: 6272142085226454529}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_RightGlove
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2955,13 +3079,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8029621536452061891}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
@@ -3005,7 +3129,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5991790254714940880}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_ViewmodelRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3031,6 +3155,14 @@ Transform:
   - {fileID: 283251443285089866}
   - {fileID: 1595104624455265598}
   - {fileID: 1521995015782274429}
+  - {fileID: 9011000000000000002}
+  - {fileID: 9011000000000000004}
+  - {fileID: 9011000000000000006}
+  - {fileID: 9011000000000000008}
+  - {fileID: 9011000000000000010}
+  - {fileID: 9011000000000000012}
+  - {fileID: 9011000000000000014}
+  - {fileID: 9011000000000000016}
   m_Father: {fileID: 198848781283951679}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8926901773051591129
@@ -3245,6 +3377,254 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05c9c09d0366bdb43b3d087e6ca2aadc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VolumetricLightBeam::VLB.TrackRealtimeChangesOnLightHD
+--- !u!1 &9011000000000000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000002}
+  m_Layer: 17
+  m_Name: Swim_LeftShoulderAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000003
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000004}
+  m_Layer: 17
+  m_Name: Swim_RightShoulderAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000003}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000005
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000006}
+  m_Layer: 17
+  m_Name: Swim_LeftUpperArmAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000006
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000005}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000007
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000008}
+  m_Layer: 17
+  m_Name: Swim_RightUpperArmAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000008
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000007}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000009
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000010}
+  m_Layer: 17
+  m_Name: Swim_LeftForearmAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000010
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000009}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000011
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000012}
+  m_Layer: 17
+  m_Name: Swim_RightForearmAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000012
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000011}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000013
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000014}
+  m_Layer: 17
+  m_Name: Swim_LeftHandAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000014
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000013}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9011000000000000015
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9011000000000000016}
+  m_Layer: 17
+  m_Name: Swim_RightHandAttachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9011000000000000016
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011000000000000015}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9079822816623876576
 GameObject:
   m_ObjectHideFlags: 0
@@ -3256,7 +3636,7 @@ GameObject:
   - component: {fileID: 122226659804208616}
   - component: {fileID: 3553238204870060482}
   - component: {fileID: 8812658537976713933}
-  m_Layer: 0
+  m_Layer: 17
   m_Name: Swim_LeftForearm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3294,13 +3674,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9079822816623876576}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0

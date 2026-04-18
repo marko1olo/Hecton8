@@ -139,6 +139,11 @@ namespace Hecton8.UI
             _lastUnscaledTickTime = 0f;
         }
 
+        private void OnDestroy()
+        {
+            UnregisterFromTickManager();
+        }
+
         /// <summary>
         /// Shows the loading screen with fade animation.
         /// </summary>
@@ -331,10 +336,15 @@ namespace Hecton8.UI
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTickManager || GameTickManager.Instance == null)
+            if (!_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Unregister(this);
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+            {
+                tickManager.Unregister(this);
+            }
+
             _registeredToTickManager = false;
         }
 

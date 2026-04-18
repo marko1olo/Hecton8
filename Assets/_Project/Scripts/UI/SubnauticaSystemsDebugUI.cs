@@ -1,0 +1,871 @@
+using System.Collections.Generic;
+using Hecton8;
+using Hecton8.AI;
+using Hecton8.Audio;
+using Hecton8.Bootstrap;
+using Hecton8.Core;
+using Hecton8.World;
+using Hecton8.Environment;
+using Hecton8.VFX;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+namespace Hecton8.UI
+{
+    /// <summary>
+    /// Temporary runtime overlay that surfaces the core Subnautica-gap systems during play mode.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable
+    {
+        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) — overlay canvas resolution buffer — owner: SubnauticaSystemsDebugUI
+        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
+        private static SubnauticaSystemsDebugUI s_activeRuntimeInstance;
+
+        internal static SubnauticaSystemsDebugUI ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntimeInstance = null;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureRuntimeOverlayInstances()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            // COLD ALLOC: SubnauticaSystemsDebugUI[] — runtime overlay recovery after scene load — owner: SubnauticaSystemsDebugUI
+            SubnauticaSystemsDebugUI[] overlays =
+                FindObjectsByType<SubnauticaSystemsDebugUI>(FindObjectsInactive.Include);
+
+            if (overlays != null && overlays.Length > 0)
+            {
+                SubnauticaSystemsDebugUI primaryOverlay = s_activeRuntimeInstance;
+                if (primaryOverlay == null)
+                {
+                    for (int i = 0; i < overlays.Length; i++)
+                    {
+                        if (overlays[i] == null)
+                            continue;
+
+                        primaryOverlay = overlays[i];
+                        break;
+                    }
+                }
+
+                for (int i = 0; i < overlays.Length; i++)
+                {
+                    SubnauticaSystemsDebugUI overlay = overlays[i];
+                    if (overlay == null)
+                        continue;
+
+                    if (primaryOverlay != null && overlay != primaryOverlay)
+                    {
+                        Destroy(overlay.gameObject);
+                        continue;
+                    }
+
+                    if (!overlay.enabled)
+                        overlay.enabled = true;
+
+                    s_activeRuntimeInstance = overlay;
+                    overlay.BootstrapRuntimeOverlay();
+                }
+
+                return;
+            }
+
+            // COLD ALLOC: GameObject[1] — runtime debug overlay fallback when the scene instance is missing — owner: SubnauticaSystemsDebugUI
+            GameObject runtimeRoot = new GameObject("SubnauticaSystemsDebugUI_Auto");
+            SubnauticaSystemsDebugUI runtimeOverlay = runtimeRoot.AddComponent<SubnauticaSystemsDebugUI>();
+            runtimeOverlay.BootstrapRuntimeOverlay();
+        }
+
+        private const string RootObjectName = "SubnauticaSystemsDebugUI_Panel";
+        private const string CanvasObjectName = "SubnauticaSystemsDebugUI_Canvas";
+        private const string MissingLabel = "MISSING";
+        private const string DisabledLabel = "OFF";
+        private const string EnabledLabel = "ON";
+        private const string ReadyLabel = "READY";
+        private const string PendingLabel = "PENDING";
+
+        [Header("── References ─────────────────────────────")]
+        [SerializeField, Tooltip("Optional explicit HUD canvas. If null, the overlay resolves the active suit HUD canvas at runtime.")]
+        private Canvas targetCanvas;
+
+        [SerializeField, Tooltip("Optional TMP font asset. If null, TMP default font is used.")]
+        private TMP_FontAsset fontAsset;
+
+        [Header("── Layout ─────────────────────────────────")]
+        [SerializeField, Tooltip("Top-left anchored position for the debug panel.")]
+        private Vector2 anchoredPosition = new Vector2(26f, -28f);
+
+        [SerializeField, Tooltip("Panel size in canvas pixels.")]
+        private Vector2 panelSize = new Vector2(448f, 388f);
+
+        [SerializeField, Tooltip("Refresh cadence for the overlay text.")]
+        [Range(0.1f, 2f)]
+        private float refreshInterval = 0.2f;
+
+        [SerializeField, Tooltip("Cold-path retry cadence for manager resolution when the world is still bootstrapping.")]
+        [Range(0.1f, 2f)]
+        private float managerResolveRetryInterval = 0.5f;
+
+        [SerializeField, Tooltip("Keeps the temporary debug owner alive through bootstrap scene transitions.")]
+        private bool persistAcrossSceneLoads = false;
+
+        [Header("── Stress Harness ─────────────────────────")]
+        [SerializeField, Tooltip("Development-only override that forces DynamicResolutionScaler into a pressured state.")]
+        private bool enableStressTest = true;
+
+        [SerializeField, Tooltip("Forced frame time used by the development stress harness.")]
+        [Range(16.67f, 80f)]
+        private float forcedFrameTimeMs = 33f;
+
+        [SerializeField, Tooltip("Direct render-scale clamp used by the stress harness so adaptive consumers can be proofed at 0.50 without changing quality presets.")]
+        [Range(0.1f, 1f)]
+        private float forcedRenderScale = 0.5f;
+
+        [Header("── Diagnostics ────────────────────────────")]
+        [SerializeField] private bool debugCanvasResolved;
+        [SerializeField] private string debugSceneName = "None";
+        [SerializeField] private string debugBootstrapState = "PENDING";
+        [SerializeField] private string debugTickCounts = "MISSING";
+        [SerializeField] private string debugRenderPressure = "Stable";
+        [SerializeField] private string debugFaunaBiome = "None";
+        [SerializeField] private string debugFaunaBias = "None";
+        [SerializeField] private string debugMusicProfile = "None";
+        [SerializeField] private string debugSoundscapeTier = "Surface";
+        [SerializeField] private string debugUnderwaterBudget = "MISSING";
+        [SerializeField] private string debugCameraBudget = "MISSING";
+
+        private RectTransform _root;
+        private Canvas _runtimeCanvas;
+        private CanvasGroup _canvasGroup;
+        private TextMeshProUGUI _titleValue;
+        private TextMeshProUGUI _sceneValue;
+        private TextMeshProUGUI _bootstrapValue;
+        private TextMeshProUGUI _tickCountsValue;
+        private TextMeshProUGUI _renderScaleValue;
+        private TextMeshProUGUI _renderPressureValue;
+        private TextMeshProUGUI _faunaBiomeValue;
+        private TextMeshProUGUI _faunaBiasValue;
+        private TextMeshProUGUI _faunaLimitValue;
+        private TextMeshProUGUI _musicTensionValue;
+        private TextMeshProUGUI _musicProfileValue;
+        private TextMeshProUGUI _soundscapeTierValue;
+        private TextMeshProUGUI _underwaterBudgetValue;
+        private TextMeshProUGUI _cameraBudgetValue;
+        private TextMeshProUGUI _stressValue;
+        private bool _registered;
+        private bool _stressApplied;
+        private float _refreshTimer;
+        private float _nextManagerResolveAttemptTime = float.NegativeInfinity;
+        private DynamicResolutionScaler _resolvedScaler;
+        private FaunaDirector _resolvedFaunaDirector;
+        private HectonMusicDirector _resolvedMusicDirector;
+        private SoundscapeSystem _resolvedSoundscapeSystem;
+        private HectonUnderwaterVisuals _resolvedUnderwaterVisuals;
+        private CameraJuiceSystem _resolvedCameraJuiceSystem;
+        private string _lastSceneValue = string.Empty;
+        private string _lastBootstrapValue = string.Empty;
+        private string _lastTickCountsValue = string.Empty;
+        private string _lastRenderPressureValue = string.Empty;
+        private string _lastFaunaBiomeValue = string.Empty;
+        private string _lastFaunaBiasValue = string.Empty;
+        private string _lastMusicProfileValue = string.Empty;
+        private string _lastSoundscapeTierValue = string.Empty;
+        private string _lastUnderwaterBudgetValue = string.Empty;
+        private string _lastCameraBudgetValue = string.Empty;
+        private string _lastStressValue = string.Empty;
+
+        private void Awake()
+        {
+            if (Application.isPlaying)
+            {
+                if (s_activeRuntimeInstance != null && s_activeRuntimeInstance != this)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[SubnauticaSystemsDebugUI] Destroying duplicate runtime owner '{name}' id={EntityId.ToULong(GetEntityId())} active={gameObject.activeSelf}.", this);
+#endif
+                    Destroy(gameObject);
+                    return;
+                }
+
+                s_activeRuntimeInstance = this;
+            }
+
+            if (Application.isPlaying && persistAcrossSceneLoads)
+                DontDestroyOnLoad(gameObject);
+
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[SubnauticaSystemsDebugUI] Awake '{name}' id={EntityId.ToULong(GetEntityId())} persist={persistAcrossSceneLoads}.", this);
+#endif
+            BootstrapRuntimeOverlay();
+        }
+
+        private void OnEnable()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Application.isPlaying)
+                Debug.Log($"[SubnauticaSystemsDebugUI] OnEnable '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
+#endif
+            SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+            TryRegister();
+            EnsureCanvasResolved();
+            EnsureVisualTree();
+            ResolveManagers(force: true);
+            ApplyStressHarness();
+            RefreshDiagnostics();
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            ClearStressHarness();
+            TryUnregister();
+            SetVisible(false);
+
+            if (!Application.isPlaying && s_activeRuntimeInstance == this)
+                s_activeRuntimeInstance = null;
+        }
+
+        private void OnDestroy()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Application.isPlaying)
+                Debug.Log($"[SubnauticaSystemsDebugUI] OnDestroy '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
+#endif
+            if (s_activeRuntimeInstance == this)
+                s_activeRuntimeInstance = null;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void Update()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            Tick(Time.unscaledDeltaTime);
+        }
+#endif
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registered = false;
+        }
+
+        public void Tick(float dt)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            TryRegister();
+            EnsureCanvasResolved();
+            EnsureVisualTree();
+            ResolveManagers(force: false);
+            ApplyStressHarness();
+
+            _refreshTimer += dt;
+            if (_refreshTimer < refreshInterval)
+                return;
+
+            _refreshTimer = 0f;
+            RefreshDiagnostics();
+        }
+
+        private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
+        {
+            debugSceneName = nextScene.IsValid() ? nextScene.name : MissingLabel;
+            InvalidateResolvedManagers();
+            BootstrapRuntimeOverlay();
+        }
+
+        private void BootstrapRuntimeOverlay()
+        {
+            EnsureCanvasResolved();
+            EnsureVisualTree();
+            ResolveManagers(force: true);
+            ApplyStressHarness();
+            RefreshDiagnostics();
+        }
+
+        private void EnsureCanvasResolved()
+        {
+            if (targetCanvas == null)
+            {
+                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
+                for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+                {
+                    SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                    Canvas candidate = overlay != null ? overlay.TargetCanvas : null;
+                    if (candidate == null)
+                        continue;
+
+                    if (candidate.name == "Suit_HUD_Canvas")
+                    {
+                        targetCanvas = candidate;
+                        break;
+                    }
+
+                    if (targetCanvas == null)
+                        targetCanvas = candidate;
+                }
+            }
+
+            if (targetCanvas != null && _runtimeCanvas != null)
+            {
+                ResetVisualTreeState();
+                Destroy(_runtimeCanvas.gameObject);
+                _runtimeCanvas = null;
+            }
+
+            if (targetCanvas == null && _runtimeCanvas == null)
+                _runtimeCanvas = ResolveOrCreateRuntimeCanvas();
+
+            debugCanvasResolved = _runtimeCanvas != null || targetCanvas != null;
+        }
+
+        private void EnsureVisualTree()
+        {
+            Canvas canvas = ResolveCanvas();
+            if (canvas == null)
+                return;
+
+            if (_root != null && _root.parent != canvas.transform)
+                ResetVisualTreeState();
+
+            if (_root == null)
+            {
+                Transform existing = canvas.transform.Find(RootObjectName);
+                _root = existing as RectTransform;
+            }
+
+            if (_root != null && _titleValue == null)
+            {
+                Destroy(_root.gameObject);
+                _root = null;
+            }
+
+            if (_root == null)
+                BuildVisualTree();
+
+            if (_root != null)
+                _root.SetAsLastSibling();
+
+            SetVisible(_root != null);
+        }
+
+        private void BuildVisualTree()
+        {
+            Canvas canvas = ResolveCanvas();
+            if (canvas == null)
+                return;
+
+            GameObject rootObject = new GameObject(RootObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+            rootObject.transform.SetParent(canvas.transform, false);
+            _root = rootObject.GetComponent<RectTransform>();
+            _root.anchorMin = new Vector2(0f, 1f);
+            _root.anchorMax = new Vector2(0f, 1f);
+            _root.pivot = new Vector2(0f, 1f);
+            _root.anchoredPosition = anchoredPosition;
+            _root.sizeDelta = panelSize;
+
+            Image background = rootObject.GetComponent<Image>();
+            background.color = new Color(0.02f, 0.07f, 0.10f, 0.94f);
+
+            _canvasGroup = rootObject.GetComponent<CanvasGroup>();
+            _canvasGroup.alpha = 1f;
+            _canvasGroup.interactable = false;
+            _canvasGroup.blocksRaycasts = false;
+
+            CreateLabel("HeaderLabel", "SUBNAUTICA SYSTEMS DEBUG", new Vector2(16f, -14f), new Vector2(172f, 20f), 12f, FontStyles.Bold);
+            _titleValue = CreateValue("HeaderValue", new Vector2(224f, -14f), new Vector2(192f, 20f), 12f, FontStyles.Bold);
+
+            CreateLabel("SceneLabel", "ACTIVE SCENE", new Vector2(16f, -48f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _sceneValue = CreateValue("SceneValue", new Vector2(224f, -48f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("BootstrapLabel", "BOOTSTRAP", new Vector2(16f, -70f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _bootstrapValue = CreateValue("BootstrapValue", new Vector2(224f, -70f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("TickCountsLabel", "TICK COUNTS", new Vector2(16f, -92f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _tickCountsValue = CreateValue("TickCountsValue", new Vector2(224f, -92f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("RenderScaleLabel", "RENDER SCALE", new Vector2(16f, -124f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _renderScaleValue = CreateValue("RenderScaleValue", new Vector2(224f, -124f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("RenderPressureLabel", "PRESSURE", new Vector2(16f, -146f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _renderPressureValue = CreateValue("RenderPressureValue", new Vector2(224f, -146f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("FaunaBiomeLabel", "FAUNA BIOME", new Vector2(16f, -178f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _faunaBiomeValue = CreateValue("FaunaBiomeValue", new Vector2(224f, -178f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("FaunaBiasLabel", "FAUNA BIAS", new Vector2(16f, -200f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _faunaBiasValue = CreateValue("FaunaBiasValue", new Vector2(224f, -200f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("FaunaLimitLabel", "FAUNA LIMITS", new Vector2(16f, -222f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _faunaLimitValue = CreateValue("FaunaLimitValue", new Vector2(224f, -222f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("MusicTensionLabel", "MUSIC TENSION", new Vector2(16f, -254f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _musicTensionValue = CreateValue("MusicTensionValue", new Vector2(224f, -254f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("MusicProfileLabel", "MUSIC PROFILE", new Vector2(16f, -276f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _musicProfileValue = CreateValue("MusicProfileValue", new Vector2(224f, -276f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("SoundscapeTierLabel", "SOUNDSCAPE", new Vector2(16f, -298f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _soundscapeTierValue = CreateValue("SoundscapeTierValue", new Vector2(224f, -298f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("UnderwaterBudgetLabel", "UNDERWATER FX", new Vector2(16f, -320f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _underwaterBudgetValue = CreateValue("UnderwaterBudgetValue", new Vector2(224f, -320f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("CameraBudgetLabel", "CAMERA FX", new Vector2(16f, -342f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _cameraBudgetValue = CreateValue("CameraBudgetValue", new Vector2(224f, -342f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("StressLabel", "STRESS HARNESS", new Vector2(16f, -364f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _stressValue = CreateValue("StressValue", new Vector2(224f, -364f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+        }
+
+        private void RefreshDiagnostics()
+        {
+            if (_titleValue == null ||
+                _sceneValue == null ||
+                _bootstrapValue == null ||
+                _tickCountsValue == null ||
+                _renderScaleValue == null ||
+                _renderPressureValue == null ||
+                _faunaBiomeValue == null ||
+                _faunaBiasValue == null ||
+                _faunaLimitValue == null ||
+                _musicTensionValue == null ||
+                _musicProfileValue == null ||
+                _soundscapeTierValue == null ||
+                _underwaterBudgetValue == null ||
+                _cameraBudgetValue == null ||
+                _stressValue == null)
+            {
+                return;
+            }
+
+            ResolveManagers(force: false);
+
+            DynamicResolutionScaler scaler = _resolvedScaler;
+            FaunaDirector fauna = _resolvedFaunaDirector;
+            HectonMusicDirector music = _resolvedMusicDirector;
+            SoundscapeSystem soundscape = _resolvedSoundscapeSystem;
+            HectonUnderwaterVisuals underwaterVisuals = _resolvedUnderwaterVisuals;
+            CameraJuiceSystem cameraJuice = _resolvedCameraJuiceSystem;
+            Scene activeScene = SceneManager.GetActiveScene();
+            GameTickManager tickManager = GameTickManager.Instance;
+
+            _titleValue.text = enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE";
+
+            string sceneLabel = activeScene.IsValid() ? activeScene.name : MissingLabel;
+            SetDynamicText(_sceneValue, sceneLabel, ref _lastSceneValue);
+            debugSceneName = sceneLabel;
+
+            string bootstrapLabel = ResolveBootstrapLabel();
+            SetDynamicText(_bootstrapValue, bootstrapLabel, ref _lastBootstrapValue);
+            debugBootstrapState = bootstrapLabel;
+
+            string tickCountsLabel = tickManager != null
+                ? string.Concat(
+                    "T ", tickManager.TickableCount.ToString(),
+                    " | F ", tickManager.FixedTickableCount.ToString(),
+                    " | S ", tickManager.SlowTickableCount.ToString())
+                : MissingLabel;
+            SetDynamicText(_tickCountsValue, tickCountsLabel, ref _lastTickCountsValue);
+            debugTickCounts = tickCountsLabel;
+
+            if (scaler != null)
+            {
+                _renderScaleValue.SetText("{0:0.00}", scaler.CurrentRenderScale);
+            }
+            else
+            {
+                _renderScaleValue.text = MissingLabel;
+            }
+
+            string pressureLabel = scaler != null ? scaler.DebugPressureStateLabel : MissingLabel;
+            SetDynamicText(_renderPressureValue, pressureLabel, ref _lastRenderPressureValue);
+            debugRenderPressure = pressureLabel;
+
+            string faunaBiome = fauna != null ? fauna.DebugBiomeLabel : MissingLabel;
+            SetDynamicText(_faunaBiomeValue, faunaBiome, ref _lastFaunaBiomeValue);
+            debugFaunaBiome = faunaBiome;
+
+            string faunaBias = fauna != null ? fauna.DebugEcologyBiasLabel : MissingLabel;
+            SetDynamicText(_faunaBiasValue, faunaBias, ref _lastFaunaBiasValue);
+            debugFaunaBias = faunaBias;
+
+            if (fauna != null)
+            {
+                _faunaLimitValue.SetText(
+                    "Burst {0:0} | Biome {1:0} | Global {2:0}",
+                    fauna.DebugEffectiveSpawnsPerTick,
+                    fauna.DebugEffectiveBiomeMaxCount,
+                    fauna.DebugEffectiveGlobalMaxCount);
+            }
+            else
+            {
+                _faunaLimitValue.text = MissingLabel;
+            }
+
+            if (music != null)
+            {
+                _musicTensionValue.SetText("{0:0.00}", music.CurrentTension01);
+                string profileLabel = music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel;
+                SetDynamicText(_musicProfileValue, profileLabel, ref _lastMusicProfileValue);
+                debugMusicProfile = profileLabel;
+            }
+            else
+            {
+                _musicTensionValue.text = MissingLabel;
+                SetDynamicText(_musicProfileValue, MissingLabel, ref _lastMusicProfileValue);
+                debugMusicProfile = MissingLabel;
+            }
+
+            string soundscapeLabel = soundscape != null ? ResolveSoundscapeLabel(soundscape.CurrentTier) : MissingLabel;
+            SetDynamicText(_soundscapeTierValue, soundscapeLabel, ref _lastSoundscapeTierValue);
+            debugSoundscapeTier = soundscapeLabel;
+
+            string underwaterBudgetLabel = underwaterVisuals != null
+                ? string.Concat(
+                    "M ", underwaterVisuals.DebugAdaptiveMotesScale.ToString("0.00"),
+                    " | B ", underwaterVisuals.DebugAdaptiveBubbleScale.ToString("0.00"),
+                    " | E ", underwaterVisuals.DebugSuspendedMotesEmission.ToString("0.0"))
+                : MissingLabel;
+            SetDynamicText(_underwaterBudgetValue, underwaterBudgetLabel, ref _lastUnderwaterBudgetValue);
+            debugUnderwaterBudget = underwaterBudgetLabel;
+
+            string cameraBudgetLabel = cameraJuice != null
+                ? string.Concat(
+                    "S ", cameraJuice.DebugAdaptiveShakeScale.ToString("0.00"),
+                    " | F ", cameraJuice.DebugAdaptiveFOVScale.ToString("0.00"),
+                    " | P ", cameraJuice.DebugAdaptivePostFxScale.ToString("0.00"))
+                : MissingLabel;
+            SetDynamicText(_cameraBudgetValue, cameraBudgetLabel, ref _lastCameraBudgetValue);
+            debugCameraBudget = cameraBudgetLabel;
+
+            if (enableStressTest)
+            {
+                _stressValue.SetText("ACTIVE / RS {0:0.00} / {1:0.0} MS", forcedRenderScale, forcedFrameTimeMs);
+                _lastStressValue = EnabledLabel;
+            }
+            else
+            {
+                SetDynamicText(_stressValue, DisabledLabel, ref _lastStressValue);
+            }
+        }
+
+        private void ApplyStressHarness()
+        {
+            ResolveManagers(force: false);
+            DynamicResolutionScaler scaler = _resolvedScaler;
+            if (scaler == null)
+                return;
+
+            if (!enableStressTest)
+            {
+                ClearStressHarness();
+                return;
+            }
+
+            scaler.SetDebugFrameTimeOverride(forcedFrameTimeMs);
+            scaler.SetDebugRenderScaleOverride(forcedRenderScale);
+            _stressApplied = true;
+        }
+
+        private void ClearStressHarness()
+        {
+            if (!_stressApplied)
+                return;
+
+            DynamicResolutionScaler scaler = _resolvedScaler != null ? _resolvedScaler : DynamicResolutionScaler.Instance;
+            if (scaler != null)
+            {
+                scaler.ClearDebugFrameTimeOverride();
+                scaler.ClearDebugRenderScaleOverride();
+            }
+
+            _stressApplied = false;
+        }
+
+        private void SetVisible(bool visible)
+        {
+            if (_canvasGroup == null)
+                return;
+
+            _canvasGroup.alpha = visible ? 1f : 0f;
+            _canvasGroup.enabled = visible;
+            _canvasGroup.interactable = false;
+            _canvasGroup.blocksRaycasts = false;
+        }
+
+        private void ResetVisualTreeState()
+        {
+            _root = null;
+            _canvasGroup = null;
+            _titleValue = null;
+            _sceneValue = null;
+            _bootstrapValue = null;
+            _tickCountsValue = null;
+            _renderScaleValue = null;
+            _renderPressureValue = null;
+            _faunaBiomeValue = null;
+            _faunaBiasValue = null;
+            _faunaLimitValue = null;
+            _musicTensionValue = null;
+            _musicProfileValue = null;
+            _soundscapeTierValue = null;
+            _underwaterBudgetValue = null;
+            _cameraBudgetValue = null;
+            _stressValue = null;
+            ResetDynamicTextCache();
+        }
+
+        private void ResetDynamicTextCache()
+        {
+            _lastSceneValue = string.Empty;
+            _lastBootstrapValue = string.Empty;
+            _lastTickCountsValue = string.Empty;
+            _lastRenderPressureValue = string.Empty;
+            _lastFaunaBiomeValue = string.Empty;
+            _lastFaunaBiasValue = string.Empty;
+            _lastMusicProfileValue = string.Empty;
+            _lastSoundscapeTierValue = string.Empty;
+            _lastUnderwaterBudgetValue = string.Empty;
+            _lastCameraBudgetValue = string.Empty;
+            _lastStressValue = string.Empty;
+        }
+
+        private TextMeshProUGUI CreateLabel(string name, string text, Vector2 anchoredPos, Vector2 size, float fontSize, FontStyles fontStyle)
+        {
+            TextMeshProUGUI label = CreateText(name, anchoredPos, size, fontSize, fontStyle);
+            label.text = text;
+            label.color = new Color(0.50f, 0.86f, 0.92f, 0.82f);
+            return label;
+        }
+
+        private TextMeshProUGUI CreateValue(string name, Vector2 anchoredPos, Vector2 size, float fontSize, FontStyles fontStyle)
+        {
+            TextMeshProUGUI value = CreateText(name, anchoredPos, size, fontSize, fontStyle);
+            value.alignment = TextAlignmentOptions.TopRight;
+            value.color = new Color(0.87f, 0.97f, 1f, 0.96f);
+            return value;
+        }
+
+        private TextMeshProUGUI CreateText(string name, Vector2 anchoredPos, Vector2 size, float fontSize, FontStyles fontStyle)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(_root, false);
+
+            RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(0f, 1f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = anchoredPos;
+            rectTransform.sizeDelta = size;
+
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = fontAsset != null ? fontAsset : TMP_Settings.defaultFontAsset;
+            text.fontSize = fontSize;
+            text.fontStyle = fontStyle;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Truncate;
+            text.alignment = TextAlignmentOptions.TopLeft;
+            return text;
+        }
+
+        private void ResolveManagers(bool force)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (AllResolvedManagersReady())
+                return;
+
+            float now = Time.unscaledTime;
+            if (!force && now < _nextManagerResolveAttemptTime)
+                return;
+
+            _nextManagerResolveAttemptTime = now + Mathf.Max(0.1f, managerResolveRetryInterval);
+
+            if (_resolvedScaler == null)
+            {
+                _resolvedScaler = DynamicResolutionScaler.Instance;
+                if (_resolvedScaler == null)
+                    _resolvedScaler = FindAnyObjectByType<DynamicResolutionScaler>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedFaunaDirector == null)
+            {
+                WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref _resolvedFaunaDirector);
+                if (_resolvedFaunaDirector == null)
+                    _resolvedFaunaDirector = FindAnyObjectByType<FaunaDirector>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedMusicDirector == null)
+            {
+                if (!HectonMusicDirector.TryGetInstance(out _resolvedMusicDirector))
+                    _resolvedMusicDirector = FindAnyObjectByType<HectonMusicDirector>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedSoundscapeSystem == null)
+            {
+                _resolvedSoundscapeSystem = SoundscapeSystem.Instance;
+                if (_resolvedSoundscapeSystem == null)
+                    _resolvedSoundscapeSystem = FindAnyObjectByType<SoundscapeSystem>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedUnderwaterVisuals == null)
+            {
+                _resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
+                if (_resolvedUnderwaterVisuals == null)
+                    _resolvedUnderwaterVisuals = FindAnyObjectByType<HectonUnderwaterVisuals>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedCameraJuiceSystem == null)
+            {
+                _resolvedCameraJuiceSystem = CameraJuiceSystem.Instance;
+                if (_resolvedCameraJuiceSystem == null)
+                    _resolvedCameraJuiceSystem = FindAnyObjectByType<CameraJuiceSystem>(FindObjectsInactive.Include);
+            }
+        }
+
+        private bool AllResolvedManagersReady()
+        {
+            return _resolvedScaler != null &&
+                   _resolvedFaunaDirector != null &&
+                   _resolvedMusicDirector != null &&
+                   _resolvedSoundscapeSystem != null &&
+                   _resolvedUnderwaterVisuals != null &&
+                   _resolvedCameraJuiceSystem != null;
+        }
+
+        private void InvalidateResolvedManagers()
+        {
+            _resolvedScaler = null;
+            _resolvedFaunaDirector = null;
+            _resolvedMusicDirector = null;
+            _resolvedSoundscapeSystem = null;
+            _resolvedUnderwaterVisuals = null;
+            _resolvedCameraJuiceSystem = null;
+            _nextManagerResolveAttemptTime = float.NegativeInfinity;
+        }
+
+        private Canvas ResolveCanvas()
+        {
+            if (targetCanvas != null)
+                return targetCanvas;
+
+            return _runtimeCanvas;
+        }
+
+        private Canvas ResolveOrCreateRuntimeCanvas()
+        {
+            Transform existing = transform.Find(CanvasObjectName);
+            Canvas canvas = existing != null ? existing.GetComponent<Canvas>() : null;
+            if (canvas != null)
+                return canvas;
+
+            GameObject canvasObject = new GameObject(
+                CanvasObjectName,
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
+            canvasObject.transform.SetParent(transform, false);
+
+            canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 32000;
+
+            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            GraphicRaycaster raycaster = canvasObject.GetComponent<GraphicRaycaster>();
+            raycaster.enabled = false;
+
+            return canvas;
+        }
+
+        private static void SetDynamicText(TMP_Text label, string value, ref string cache)
+        {
+            string safeValue = string.IsNullOrEmpty(value) ? MissingLabel : value;
+            if (cache == safeValue)
+                return;
+
+            cache = safeValue;
+            label.text = safeValue;
+        }
+
+        private static string ResolveSoundscapeLabel(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Surface:
+                    return "SURFACE";
+                case SoundscapeTier.Shallow:
+                    return "SHALLOW";
+                case SoundscapeTier.Twilight:
+                    return "TWILIGHT";
+                case SoundscapeTier.Darkness:
+                    return "DARKNESS";
+                case SoundscapeTier.Abyss:
+                    return "ABYSS";
+                case SoundscapeTier.DeepAbyss:
+                    return "DEEP ABYSS";
+                case SoundscapeTier.Thermal:
+                    return "THERMAL";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        private static string ResolveBootstrapLabel()
+        {
+            if (!BootstrapController.AreAllSystemsReady())
+                return PendingLabel;
+
+            if (SceneBootstrap.IsGameReady)
+                return "WORLD READY";
+
+            if (SceneBootstrap.HasActiveInstance)
+                return "WORLD PRIME";
+
+            return ReadyLabel;
+        }
+    }
+}

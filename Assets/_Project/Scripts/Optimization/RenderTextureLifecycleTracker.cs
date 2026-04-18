@@ -74,24 +74,18 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registeredSlowTick)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredSlowTick = true;
-            }
+            TryRegister();
         }
         
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registeredSlowTick)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredSlowTick = false;
-            }
+            TryUnregister();
         }
         
         private void OnDestroy()
         {
+            TryUnregister();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -292,6 +286,33 @@ namespace Hecton8.Optimization
         
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
         
+        private void TryRegister()
+        {
+            if (_registeredSlowTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _registeredSlowTick = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+            {
+                tickManager.Unregister((ISlowTickable)this);
+            }
+
+            _registeredSlowTick = false;
+        }
+
         private void CheckForLeaks()
         {
             _leakQueryResults.Clear();

@@ -13,11 +13,23 @@ MonoBehaviour:
   m_Name: Data_Copper
   m_EditorClassIdentifier: Assembly-CSharp::Hecton.Items.ItemData
   itemName: Copper
+  localizedItemName:
+    tableKey: ITEM_COPPER_NAME
+    fallbackText: Copper
+    variants: []
   icon: {fileID: 21300000, guid: 16eff720c37c08d4fb83b68b0dd3d821, type: 3}
   description: "\u041E\u043A\u0438\u0441\u043B\u0435\u043D\u043D\u044B\u0439 \u043A\u0443\u0441\u043E\u043A
     \u043E\u0431\u0448\u0438\u0432\u043A\u0438 \u0410\u0442\u043B\u0430\u0441\u0430-6"
+  localizedDescription:
+    tableKey: ITEM_COPPER_DESCRIPTION
+    fallbackText: Common conductive ore used in wiring, signal parts, and entry-grade tools.
+    variants: []
   weight: 1
   stackable: 1
   maxStack: 64
-  interactVerb: "\u0412\u0437\u044F\u0442\u044C"
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: Take
+    variants: []
   worldPrefab: {fileID: 0}

@@ -36,6 +36,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.Scavenging;
@@ -98,6 +99,8 @@ namespace Hecton8.World
 
         /// <summary>Количество уничтоженных узлов.</summary>
         public int DepletedCount => _depletedNodeIds != null ? _depletedNodeIds.Count : 0;
+
+        public Transform PlayerTransform => SceneBootstrap.CurrentPlayerTransform;
 
         /// <summary>
         /// Проверяет, был ли узел с данным ID уже уничтожен/собран.

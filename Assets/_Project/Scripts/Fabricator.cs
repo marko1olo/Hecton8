@@ -31,6 +31,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
@@ -45,7 +46,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IPowerComponent
+    public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IPowerComponent, IFabricator
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -104,6 +105,7 @@ namespace Hecton8.Crafting
         private ScanLogSystem _scanLogSystem;
         private readonly List<RecipeData> _visibleRecipes = new List<RecipeData>(16);
         private bool _recipeCacheDirty = true;
+        private bool _tickRegistered;
         private int _lockedRecipeCount;
 
         // ── Craft State ──
@@ -228,7 +230,7 @@ namespace Hecton8.Crafting
 
         private void Awake()
         {
-            _interactText = $"Использовать {fabricatorName}";
+            RebuildInteractText();
 
             // Кэшируем PowerNode для мгновенного уведомления сети.
             // PowerNode должен быть на том же GameObject, что и Fabricator.
@@ -239,19 +241,27 @@ namespace Hecton8.Crafting
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ITickable)this);
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            RebuildInteractText();
+            TryRegister();
             EnsureScanLogSystem();
             SubscribeToScanLog();
         }
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             UnsubscribeFromScanLog();
 
             if (_isCrafting)
                 CancelCraft();
 
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            TryUnregister();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -336,6 +346,11 @@ namespace Hecton8.Crafting
             PlaySound(craftStartSound);
 
             return true;
+        }
+
+        void IFabricator.StartCraft(RecipeData recipe)
+        {
+            StartCraft(recipe);
         }
 
         /// <summary>
@@ -447,6 +462,12 @@ namespace Hecton8.Crafting
 
             // ── Уведомляем энергосеть: PowerRating изменился (-craftPowerDraw → 0) ──
             NotifyGridBalanceChanged();
+
+            // ── Потребляем энергию из сети при завершении крафта ──
+            if (recipe.powerCost > 0f && _powerNode != null && _powerNode.Grid != null)
+            {
+                _powerNode.Grid.ConsumePower(recipe.powerCost);
+            }
 
             if (result != null && _playerInventory != null)
             {
@@ -736,6 +757,55 @@ namespace Hecton8.Crafting
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
+
+        private void TryRegister()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _tickRegistered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _tickRegistered = false;
+        }
+
+        private void RebuildInteractText()
+        {
+            string fallbackName = string.IsNullOrWhiteSpace(fabricatorName)
+                ? ResolveLocalized(LocalizationKeys.UI_FABRICATOR, "FABRICATOR")
+                : fabricatorName;
+            string pattern = ResolveLocalized(LocalizationKeys.INTERACT_USE_FABRICATOR, "Use {0}");
+            _interactText = string.Format(pattern, fallbackName);
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RebuildInteractText();
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null)
+                return fallback;
+
+            string localized = manager.Get(key);
+            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()

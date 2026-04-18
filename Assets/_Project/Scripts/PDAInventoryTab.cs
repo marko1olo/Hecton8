@@ -10,6 +10,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
 using UnityEngine;
@@ -1193,7 +1194,7 @@ namespace Hecton8.UI
             if (_detailDesc != null)
             {
                 string desc = string.IsNullOrEmpty(_selectedItem.description)
-                    ? "No description available."
+                    ? ResolveLocalized(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.")
                     : _selectedItem.description;
                 string cat = CachedToUpperInvariant(_selectedItem.category.ToString());
                 _detailDesc.text = $"<color=#7FBFBA>[{cat}]</color>\n{desc}";
@@ -2212,6 +2213,14 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private static readonly string[] _upperCache = new string[16];
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            return LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+                : fallback;
+        }
+
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;

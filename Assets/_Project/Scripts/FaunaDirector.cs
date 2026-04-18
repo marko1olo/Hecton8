@@ -64,6 +64,8 @@ namespace Hecton8.AI
         private const string SmallPassiveProxyPrefabName = "SmallPassiveProxy";
         private const float PlayerResolveRetryInterval = 1f;
         private const float RuntimeSettingsRefreshInterval = 5f;
+        private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
+        private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
 
         // ══════════════════════════════════════════════════════════
         //  ACTIVE CREATURE — struct tracker
@@ -109,6 +111,9 @@ namespace Hecton8.AI
             public int creatureTypeIndex;
             public bool isLargeThreat;
             public bool blockedWhenPressureDisabled;
+            public bool prefersClaustrophobicZone;
+            public bool prefersThermalZone;
+            public bool prefersHighPressureZone;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -129,6 +134,7 @@ namespace Hecton8.AI
         [SerializeField] private float largeThreatZoneReuseCooldownSeconds = 300f;
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
         [SerializeField] private WorldZoneDirector worldZoneDirector;
+        [SerializeField] private DepthZoneDirector depthZoneDirector;
 
         [Header("── Ecology Cadence ─────────────────────")]
         [Tooltip("Global fauna budget scale when the active matrix biome reads as calm.")]
@@ -179,6 +185,32 @@ namespace Hecton8.AI
         [SerializeField, Range(0f, 2f)] private float hostileZoneLargeThreatSelectionScale = 1.45f;
         [Tooltip("Large-threat weight multiplier while the player is on a route-critical lane. Keeps navigation legible.")]
         [SerializeField, Range(0f, 2f)] private float routeCriticalLargeThreatSelectionScale = 0.72f;
+
+        [Header("── Depth-Zone Ecology ──────────────────")]
+        [Tooltip("Overall fauna-budget scale inside cave-tagged depth zones. Reduces live density so cramped water reads clearer.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float caveDepthZoneBudgetScale = 0.84f;
+        [Tooltip("Overall fauna-budget scale inside thermal depth zones. Keeps hot water dense enough to feel alive without flooding weak hardware.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float thermalDepthZoneBudgetScale = 0.9f;
+        [Tooltip("Overall fauna-budget scale inside high-danger or high-hull-pressure depth zones.")]
+        [SerializeField, Range(0.25f, 1.5f)] private float highPressureDepthZoneBudgetScale = 0.82f;
+        [Tooltip("Passive fauna weight multiplier inside cave-tagged depth zones.")]
+        [SerializeField, Range(0.1f, 2f)] private float caveDepthZonePassiveSelectionScale = 0.74f;
+        [Tooltip("Aggressive fauna weight multiplier inside cave-tagged depth zones.")]
+        [SerializeField, Range(0.1f, 2f)] private float caveDepthZoneAggressiveSelectionScale = 1.28f;
+        [Tooltip("Large-threat weight multiplier inside cave-tagged depth zones.")]
+        [SerializeField, Range(0f, 2f)] private float caveDepthZoneLargeThreatSelectionScale = 0.86f;
+        [Tooltip("Passive fauna weight multiplier inside thermal depth zones.")]
+        [SerializeField, Range(0.1f, 2f)] private float thermalDepthZonePassiveSelectionScale = 0.82f;
+        [Tooltip("Aggressive fauna weight multiplier inside thermal depth zones.")]
+        [SerializeField, Range(0.1f, 2f)] private float thermalDepthZoneAggressiveSelectionScale = 1.18f;
+        [Tooltip("Large-threat weight multiplier inside thermal depth zones.")]
+        [SerializeField, Range(0f, 2f)] private float thermalDepthZoneLargeThreatSelectionScale = 1.08f;
+        [Tooltip("Bonus weight for entries whose authored traits read as cave / ambush ecology when the current depth zone has caves.")]
+        [SerializeField, Range(0.5f, 2f)] private float caveSpecialistSelectionScale = 1.35f;
+        [Tooltip("Bonus weight for entries whose authored traits read as thermal / brine ecology when the current depth zone is thermal.")]
+        [SerializeField, Range(0.5f, 2f)] private float thermalSpecialistSelectionScale = 1.4f;
+        [Tooltip("Bonus weight for entries whose authored traits read as high-pressure hunters when the current depth zone is dangerous.")]
+        [SerializeField, Range(0.5f, 2f)] private float highPressureHunterSelectionScale = 1.22f;
 
         [Header("── Adaptive Perf Budget ───────────────────")]
         [Tooltip("Scales fauna density from DynamicResolutionScaler render scale so weak devices shed live-world pressure before frame time collapses.")]
@@ -284,6 +316,12 @@ namespace Hecton8.AI
         [SerializeField] private float _debugPassiveSelectionScale = 1f;
         [SerializeField] private float _debugAggressiveSelectionScale = 1f;
         [SerializeField] private float _debugLargeThreatSelectionScale = 1f;
+        [SerializeField] private string _debugCurrentDepthZone = "None";
+        [SerializeField] private bool _debugCurrentDepthZoneThermal;
+        [SerializeField] private bool _debugCurrentDepthZoneCaves;
+        [SerializeField] private float _debugCurrentDepthZoneDanger;
+        [SerializeField] private float _debugDepthZoneBudgetScale = 1f;
+        [SerializeField] private float _debugDepthZoneSpecialistScale = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
@@ -375,7 +413,10 @@ namespace Hecton8.AI
         private float _currentAggressiveSelectionScale = 1f;
         private float _currentLargeThreatSelectionScale = 1f;
         private WorldZoneAnchor _currentZone;
+        private DepthZoneProfile _currentDepthZone;
         private bool _currentZoneIsSafePocket;
+        private float _currentDepthZoneBudgetScale = 1f;
+        private float _currentDepthZoneSpecialistScale = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  PREDATOR PRESSURE STATE
@@ -394,6 +435,13 @@ namespace Hecton8.AI
         private int _smallPassiveCreaturePoolWarmupReserve;
         private readonly HashSet<GameObject> _warmupPrefabs = new HashSet<GameObject>(128); // COLD ALLOC: dedupe fauna pool warmup prefabs across biome datasets
         internal static FaunaDirector ActiveRuntimeInstance { get; private set; }
+        internal int DebugEffectiveSpawnsPerTick => _debugEffectiveSpawnsPerTick;
+        internal int DebugEffectiveBiomeMaxCount => _debugEffectiveBiomeMaxCount;
+        internal int DebugEffectiveGlobalMaxCount => _debugEffectiveGlobalMaxCount;
+        internal string DebugBiomeLabel => biomeMatrixDirector != null && biomeMatrixDirector.CurrentProfile != null
+            ? biomeMatrixDirector.CurrentProfile.name
+            : _debugCurrentBiome.ToString();
+        internal string DebugEcologyBiasLabel => ResolveDebugEcologyBiasLabel();
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -406,6 +454,7 @@ namespace Hecton8.AI
             ResolveSpawnRegistry();
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
+            ResolveDepthZoneDirector();
             RefreshRuntimeStreamingSettings();
             TryWarmupCreaturePools();
             _runtimeSettingsDirty = false;
@@ -427,6 +476,9 @@ namespace Hecton8.AI
 
             if (worldZoneDirector == null)
                 ResolveWorldZoneDirector();
+
+            if (depthZoneDirector == null)
+                ResolveDepthZoneDirector();
 
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
@@ -462,6 +514,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
+            ResolveDepthZoneDirector();
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
             if (_runtimeSettingsDirty || Time.time >= _nextRuntimeSettingsRefreshTime)
@@ -540,12 +593,13 @@ namespace Hecton8.AI
                 ? biomeMatrixDirector.CurrentProfile.faunaMood
                 : WorldProceduralFaunaMood.None;
             _currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
+            _currentDepthZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
             _currentZoneIsSafePocket = IsSafePocketZone(_currentZone);
 
             RefreshAdaptiveBudgetResponse();
-            RefreshEcologyCompositionResponse(_currentMatrixFaunaMood, _currentZone);
-            _currentEffectiveGlobalMaxCount = ResolveEffectiveGlobalMaxCount(_currentMatrixFaunaMood);
-            _currentEffectiveSpawnsPerTick = ResolveEffectiveSpawnsPerTick(_currentMatrixFaunaMood);
+            RefreshEcologyCompositionResponse(_currentMatrixFaunaMood, _currentZone, _currentDepthZone);
+            _currentEffectiveGlobalMaxCount = ResolveEffectiveGlobalMaxCount(_currentMatrixFaunaMood, _currentDepthZone);
+            _currentEffectiveSpawnsPerTick = ResolveEffectiveSpawnsPerTick(_currentMatrixFaunaMood, _currentDepthZone);
             _currentEffectiveBiomeMaxCount = 0;
 
             if (_activeCreatures.Count < _currentEffectiveGlobalMaxCount)
@@ -553,7 +607,7 @@ namespace Hecton8.AI
                 // Ищем данные биома
                 if (_biomeLookup.TryGetValue(currentBiome, out FaunaBiomeData biomeData))
                 {
-                    _currentEffectiveBiomeMaxCount = ResolveEffectiveBiomeMaxCount(biomeData, _currentMatrixFaunaMood);
+                    _currentEffectiveBiomeMaxCount = ResolveEffectiveBiomeMaxCount(biomeData, _currentMatrixFaunaMood, _currentDepthZone);
                     spawnAttempts = TrySpawnCreatures(
                         biomeData,
                         playerPos,
@@ -726,6 +780,8 @@ namespace Hecton8.AI
                     _currentPassiveSelectionScale,
                     _currentAggressiveSelectionScale,
                     _currentLargeThreatSelectionScale,
+                    _currentDepthZone,
+                    _currentDepthZoneSpecialistScale,
                     out ResolvedFaunaEntry selectedEntry))
                 {
                     // Все типы на лимите — прекращаем
@@ -797,7 +853,7 @@ namespace Hecton8.AI
 
 
                 // ── Настройка спавн-поинта для AI ──
-                if (instance.TryGetComponent(out HectonBaseAI ai))
+                if (instance.TryGetComponent(out FaunaBrain ai))
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
@@ -1036,6 +1092,8 @@ namespace Hecton8.AI
             float passiveSelectionScale,
             float aggressiveSelectionScale,
             float largeThreatSelectionScale,
+            DepthZoneProfile currentDepthZone,
+            float depthZoneSpecialistScale,
             out ResolvedFaunaEntry selectedEntry)
         {
             selectedEntry = default;
@@ -1064,7 +1122,13 @@ namespace Hecton8.AI
                 if (availablePoolCounts[i] <= 0)
                     continue;
 
-                float selectionWeight = ResolveSelectionWeight(entry, passiveSelectionScale, aggressiveSelectionScale, largeThreatSelectionScale);
+                float selectionWeight = ResolveSelectionWeight(
+                    in entry,
+                    passiveSelectionScale,
+                    aggressiveSelectionScale,
+                    largeThreatSelectionScale,
+                    currentDepthZone,
+                    depthZoneSpecialistScale);
                 if (selectionWeight <= 0f)
                     continue;
 
@@ -1096,7 +1160,13 @@ namespace Hecton8.AI
                 if (availablePoolCounts[i] <= 0)
                     continue;
 
-                float selectionWeight = ResolveSelectionWeight(entry, passiveSelectionScale, aggressiveSelectionScale, largeThreatSelectionScale);
+                float selectionWeight = ResolveSelectionWeight(
+                    in entry,
+                    passiveSelectionScale,
+                    aggressiveSelectionScale,
+                    largeThreatSelectionScale,
+                    currentDepthZone,
+                    depthZoneSpecialistScale);
                 if (selectionWeight <= 0f)
                     continue;
 
@@ -1242,7 +1312,10 @@ namespace Hecton8.AI
                                 maxAlive = Mathf.Max(1, faunaEntry.GetResolvedMaxAlive()),
                                 creatureTypeIndex = creatureIndex,
                                 isLargeThreat = IsLargeThreatEntry(data, faunaEntry),
-                                blockedWhenPressureDisabled = ShouldBlockEntryWhenPressureDisabled(faunaEntry.archetype)
+                                blockedWhenPressureDisabled = ShouldBlockEntryWhenPressureDisabled(faunaEntry.archetype),
+                                prefersClaustrophobicZone = DoesEntryPreferClaustrophobicZone(faunaEntry.archetype),
+                                prefersThermalZone = DoesEntryPreferThermalZone(faunaEntry.archetype),
+                                prefersHighPressureZone = DoesEntryPreferHighPressureZone(data, faunaEntry)
                             };
 
                             if (resolvedPrefab == null || prefabLookup.ContainsKey(resolvedPrefab))
@@ -1375,22 +1448,40 @@ namespace Hecton8.AI
                 WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
         }
 
-        private int ResolveEffectiveGlobalMaxCount(WorldProceduralFaunaMood faunaMood)
+        private void ResolveDepthZoneDirector()
         {
-            return Mathf.Max(1, Mathf.RoundToInt(_runtimeGlobalMaxCount * ResolveGlobalBudgetScale(faunaMood) * _adaptiveGlobalBudgetScale));
+            if (depthZoneDirector == null)
+                depthZoneDirector = DepthZoneDirector.Instance;
         }
 
-        private int ResolveEffectiveSpawnsPerTick(WorldProceduralFaunaMood faunaMood)
+        private int ResolveEffectiveGlobalMaxCount(WorldProceduralFaunaMood faunaMood, DepthZoneProfile depthZone)
         {
-            return Mathf.Max(1, Mathf.RoundToInt(_runtimeMaxSpawnsPerTick * ResolveGlobalBudgetScale(faunaMood) * _adaptiveSpawnBudgetScale));
+            return Mathf.Max(1, Mathf.RoundToInt(
+                _runtimeGlobalMaxCount *
+                ResolveGlobalBudgetScale(faunaMood) *
+                ResolveDepthZoneBudgetScale(depthZone) *
+                _adaptiveGlobalBudgetScale));
         }
 
-        private int ResolveEffectiveBiomeMaxCount(FaunaBiomeData biomeData, WorldProceduralFaunaMood faunaMood)
+        private int ResolveEffectiveSpawnsPerTick(WorldProceduralFaunaMood faunaMood, DepthZoneProfile depthZone)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(
+                _runtimeMaxSpawnsPerTick *
+                ResolveGlobalBudgetScale(faunaMood) *
+                ResolveDepthZoneBudgetScale(depthZone) *
+                _adaptiveSpawnBudgetScale));
+        }
+
+        private int ResolveEffectiveBiomeMaxCount(FaunaBiomeData biomeData, WorldProceduralFaunaMood faunaMood, DepthZoneProfile depthZone)
         {
             if (biomeData == null)
                 return 0;
 
-            return Mathf.Max(1, Mathf.RoundToInt(biomeData.biomeMaxCreatures * ResolveBiomeCapScale(faunaMood) * _adaptiveBiomeBudgetScale));
+            return Mathf.Max(1, Mathf.RoundToInt(
+                biomeData.biomeMaxCreatures *
+                ResolveBiomeCapScale(faunaMood) *
+                ResolveDepthZoneBudgetScale(depthZone) *
+                _adaptiveBiomeBudgetScale));
         }
 
         private void RefreshAdaptiveBudgetResponse()
@@ -1432,14 +1523,22 @@ namespace Hecton8.AI
 #endif
         }
 
-        private void RefreshEcologyCompositionResponse(WorldProceduralFaunaMood faunaMood, WorldZoneAnchor currentZone)
+        private void RefreshEcologyCompositionResponse(
+            WorldProceduralFaunaMood faunaMood,
+            WorldZoneAnchor currentZone,
+            DepthZoneProfile currentDepthZone)
         {
-            _currentPassiveSelectionScale = ResolvePassiveSelectionScale(faunaMood, currentZone);
-            _currentAggressiveSelectionScale = ResolveAggressiveSelectionScale(faunaMood, currentZone);
-            _currentLargeThreatSelectionScale = ResolveLargeThreatSelectionScale(currentZone);
+            _currentDepthZoneBudgetScale = ResolveDepthZoneBudgetScale(currentDepthZone);
+            _currentPassiveSelectionScale = ResolvePassiveSelectionScale(faunaMood, currentZone, currentDepthZone);
+            _currentAggressiveSelectionScale = ResolveAggressiveSelectionScale(faunaMood, currentZone, currentDepthZone);
+            _currentLargeThreatSelectionScale = ResolveLargeThreatSelectionScale(currentZone, currentDepthZone);
+            _currentDepthZoneSpecialistScale = ResolveDepthZoneSpecialistScale(currentDepthZone);
         }
 
-        private float ResolvePassiveSelectionScale(WorldProceduralFaunaMood faunaMood, WorldZoneAnchor currentZone)
+        private float ResolvePassiveSelectionScale(
+            WorldProceduralFaunaMood faunaMood,
+            WorldZoneAnchor currentZone,
+            DepthZoneProfile currentDepthZone)
         {
             float scale;
             switch (faunaMood)
@@ -1464,10 +1563,22 @@ namespace Hecton8.AI
             else if (IsHostileZone(currentZone))
                 scale *= hostileZonePassiveSelectionScale;
 
+            if (currentDepthZone != null)
+            {
+                if (currentDepthZone.hasCaves)
+                    scale *= caveDepthZonePassiveSelectionScale;
+
+                if (currentDepthZone.isThermal)
+                    scale *= thermalDepthZonePassiveSelectionScale;
+            }
+
             return Mathf.Max(0f, scale);
         }
 
-        private float ResolveAggressiveSelectionScale(WorldProceduralFaunaMood faunaMood, WorldZoneAnchor currentZone)
+        private float ResolveAggressiveSelectionScale(
+            WorldProceduralFaunaMood faunaMood,
+            WorldZoneAnchor currentZone,
+            DepthZoneProfile currentDepthZone)
         {
             float scale;
             switch (faunaMood)
@@ -1492,10 +1603,22 @@ namespace Hecton8.AI
             else if (IsHostileZone(currentZone))
                 scale *= hostileZoneAggressiveSelectionScale;
 
+            if (currentDepthZone != null)
+            {
+                if (currentDepthZone.hasCaves)
+                    scale *= caveDepthZoneAggressiveSelectionScale;
+
+                if (currentDepthZone.isThermal)
+                    scale *= thermalDepthZoneAggressiveSelectionScale;
+
+                if (currentDepthZone.requiredHullTier >= 2 || currentDepthZone.dangerLevel >= 0.72f)
+                    scale *= highPressureHunterSelectionScale;
+            }
+
             return Mathf.Max(0f, scale);
         }
 
-        private float ResolveLargeThreatSelectionScale(WorldZoneAnchor currentZone)
+        private float ResolveLargeThreatSelectionScale(WorldZoneAnchor currentZone, DepthZoneProfile currentDepthZone)
         {
             float scale = 1f;
 
@@ -1507,6 +1630,18 @@ namespace Hecton8.AI
             if (currentZone != null && currentZone.RouteCritical)
                 scale *= routeCriticalLargeThreatSelectionScale;
 
+            if (currentDepthZone != null)
+            {
+                if (currentDepthZone.hasCaves)
+                    scale *= caveDepthZoneLargeThreatSelectionScale;
+
+                if (currentDepthZone.isThermal)
+                    scale *= thermalDepthZoneLargeThreatSelectionScale;
+
+                if (currentDepthZone.requiredHullTier >= 2 || currentDepthZone.dangerLevel >= 0.72f)
+                    scale *= 1.08f;
+            }
+
             scale *= _adaptiveSpawnBudgetScale;
             return Mathf.Max(0f, scale);
         }
@@ -1515,7 +1650,9 @@ namespace Hecton8.AI
             in ResolvedFaunaEntry entry,
             float passiveSelectionScale,
             float aggressiveSelectionScale,
-            float largeThreatSelectionScale)
+            float largeThreatSelectionScale,
+            DepthZoneProfile currentDepthZone,
+            float depthZoneSpecialistScale)
         {
             float weight = entry.spawnWeight;
             if (weight <= 0f)
@@ -1529,7 +1666,158 @@ namespace Hecton8.AI
             if (entry.isLargeThreat)
                 weight *= largeThreatSelectionScale;
 
+            if (currentDepthZone != null)
+            {
+                if (currentDepthZone.hasCaves && entry.prefersClaustrophobicZone)
+                    weight *= depthZoneSpecialistScale;
+
+                if (currentDepthZone.isThermal && entry.prefersThermalZone)
+                    weight *= depthZoneSpecialistScale;
+
+                if ((currentDepthZone.requiredHullTier >= 2 || currentDepthZone.dangerLevel >= 0.72f) &&
+                    entry.prefersHighPressureZone)
+                {
+                    weight *= depthZoneSpecialistScale;
+                }
+            }
+
             return Mathf.Max(0f, weight);
+        }
+
+        private float ResolveDepthZoneBudgetScale(DepthZoneProfile currentDepthZone)
+        {
+            float scale = 1f;
+
+            if (currentDepthZone != null)
+            {
+                if (currentDepthZone.hasCaves)
+                    scale *= caveDepthZoneBudgetScale;
+
+                if (currentDepthZone.isThermal)
+                    scale *= thermalDepthZoneBudgetScale;
+
+                if (currentDepthZone.requiredHullTier >= 2 || currentDepthZone.dangerLevel >= 0.72f)
+                    scale *= highPressureDepthZoneBudgetScale;
+            }
+
+#if UNITY_EDITOR
+            _debugDepthZoneBudgetScale = scale;
+#endif
+            return Mathf.Max(0.25f, scale);
+        }
+
+        private float ResolveDepthZoneSpecialistScale(DepthZoneProfile currentDepthZone)
+        {
+            if (currentDepthZone == null)
+                return 1f;
+
+            float scale = 1f;
+            if (currentDepthZone.hasCaves)
+                scale = Mathf.Max(scale, caveSpecialistSelectionScale);
+            if (currentDepthZone.isThermal)
+                scale = Mathf.Max(scale, thermalSpecialistSelectionScale);
+            if (currentDepthZone.requiredHullTier >= 2 || currentDepthZone.dangerLevel >= 0.72f)
+                scale = Mathf.Max(scale, highPressureHunterSelectionScale);
+
+#if UNITY_EDITOR
+            _debugDepthZoneSpecialistScale = scale;
+#endif
+            return Mathf.Max(1f, scale);
+        }
+
+        private static bool DoesEntryPreferClaustrophobicZone(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+                return false;
+
+            if (archetype.defendNest || archetype.useHomeTerritory || archetype.useFeintRush)
+                return true;
+
+            switch (archetype.roleType)
+            {
+                case CreatureRoleType.Territorial:
+                case CreatureRoleType.Hunter:
+                    return true;
+            }
+
+            return ContainsAnyToken(archetype.creatureId, CaveHabitatTokens) ||
+                   ContainsAnyToken(archetype.displayName, CaveHabitatTokens) ||
+                   ContainsAnyToken(archetype.gameplayPurpose, CaveHabitatTokens) ||
+                   ContainsAnyToken(archetype.biomeNotes, CaveHabitatTokens) ||
+                   ContainsAnyToken(archetype.behaviorTreeHint, CaveHabitatTokens) ||
+                   ContainsAnyToken(archetype.recommendedFaunaFamilyIds, CaveHabitatTokens) ||
+                   ContainsAnyToken(archetype.recommendedBiomeFamilyIds, CaveHabitatTokens);
+        }
+
+        private static bool DoesEntryPreferThermalZone(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+                return false;
+
+            return ContainsAnyToken(archetype.creatureId, ThermalHabitatTokens) ||
+                   ContainsAnyToken(archetype.displayName, ThermalHabitatTokens) ||
+                   ContainsAnyToken(archetype.gameplayPurpose, ThermalHabitatTokens) ||
+                   ContainsAnyToken(archetype.biomeNotes, ThermalHabitatTokens) ||
+                   ContainsAnyToken(archetype.behaviorTreeHint, ThermalHabitatTokens) ||
+                   ContainsAnyToken(archetype.recommendedFaunaFamilyIds, ThermalHabitatTokens) ||
+                   ContainsAnyToken(archetype.recommendedBiomeFamilyIds, ThermalHabitatTokens);
+        }
+
+        private static bool DoesEntryPreferHighPressureZone(FaunaBiomeData biomeData, FaunaEntry faunaEntry)
+        {
+            CreatureArchetypeData archetype = faunaEntry.archetype;
+            if (archetype == null)
+                return biomeData != null && biomeData.useLargeThreatMacroZone;
+
+            if (archetype.roleType == CreatureRoleType.Hunter || archetype.roleType == CreatureRoleType.Leviathan)
+                return true;
+
+            if (archetype.useLeviathanPresence || archetype.isAggressive && archetype.maxHealth >= 90f)
+                return true;
+
+            if (biomeData != null &&
+                (biomeData.largeThreatEncounterType == LeviathanEncounterType.AmbushBurst ||
+                 biomeData.largeThreatEncounterType == LeviathanEncounterType.SentinelPressure))
+            {
+                return true;
+            }
+
+            if (biomeData != null && biomeData.useLargeThreatMacroZone)
+                return true;
+
+            return false;
+        }
+
+        private static bool ContainsAnyToken(string value, string[] tokens)
+        {
+            if (string.IsNullOrEmpty(value) || tokens == null)
+                return false;
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string token = tokens[i];
+                if (!string.IsNullOrEmpty(token) &&
+                    value.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsAnyToken(string[] values, string[] tokens)
+        {
+            if (values == null || tokens == null)
+                return false;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (ContainsAnyToken(values[i], tokens))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsSafePocketZone(WorldZoneAnchor currentZone)
@@ -1561,6 +1849,37 @@ namespace Hecton8.AI
                     return true;
                 default:
                     return false;
+            }
+        }
+
+        private string ResolveDebugEcologyBiasLabel()
+        {
+            if (_currentZoneIsSafePocket)
+                return "SAFE";
+
+            if (IsHostileZone(_currentZone))
+                return "COMBAT";
+
+            if (_currentDepthZone != null &&
+                (_currentDepthZone.hasCaves ||
+                 _currentDepthZone.isThermal ||
+                 _currentDepthZone.requiredHullTier >= 2 ||
+                 _currentDepthZone.dangerLevel >= 0.72f))
+            {
+                return "DEEP";
+            }
+
+            switch (_currentMatrixFaunaMood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    return "CALM";
+                case WorldProceduralFaunaMood.Lively:
+                    return "LIVELY";
+                case WorldProceduralFaunaMood.Hostile:
+                    return "HOSTILE";
+                case WorldProceduralFaunaMood.Mixed:
+                default:
+                    return "BALANCED";
             }
         }
 
@@ -1732,7 +2051,7 @@ namespace Hecton8.AI
         /// при смене фаз (BuildUp/Peak → true, Relax → false).
         ///
         /// При enabled == false:
-        ///   • Все активные существа с HectonBaseAI переводятся
+        ///   • Все активные существа с FaunaBrain переводятся
         ///     в состояние Wander (отступление от игрока).
         ///   • ForceSpawnHorde блокируется до повторного включения.
         ///
@@ -1762,9 +2081,9 @@ namespace Hecton8.AI
                     if (!creature.gameObject.activeInHierarchy)
                         continue;
 
-                    if (creature.gameObject.TryGetComponent(out HectonBaseAI ai))
+                    if (creature.gameObject.TryGetComponent(out FaunaBrain ai))
                     {
-                        ai.ForceState(HectonBaseAI.AIState.Wander);
+                        ai.ForceState(FaunaBrain.AIState.Wander);
                     }
                 }
             }
@@ -1928,11 +2247,11 @@ namespace Hecton8.AI
                 IncrementChunkCount(spawnChunk);
 
                 // ── Настройка AI: спавн-поинт + принудительное Aggressive ──
-                if (instance.TryGetComponent(out HectonBaseAI ai))
+                if (instance.TryGetComponent(out FaunaBrain ai))
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
-                    ai.ForceState(HectonBaseAI.AIState.Aggressive);
+                    ai.ForceState(FaunaBrain.AIState.Aggressive);
                 }
 
                 if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
@@ -1992,6 +2311,10 @@ namespace Hecton8.AI
             _debugCurrentZone = _currentZone != null ? _currentZone.ZoneLabel : "None";
             _debugCurrentZoneRouteCritical = _currentZone != null && _currentZone.RouteCritical;
             _debugCurrentZoneSafePocket = _currentZoneIsSafePocket;
+            _debugCurrentDepthZone = _currentDepthZone != null ? _currentDepthZone.displayName : "None";
+            _debugCurrentDepthZoneThermal = _currentDepthZone != null && _currentDepthZone.isThermal;
+            _debugCurrentDepthZoneCaves = _currentDepthZone != null && _currentDepthZone.hasCaves;
+            _debugCurrentDepthZoneDanger = _currentDepthZone != null ? _currentDepthZone.dangerLevel : 0f;
             _debugPassiveSelectionScale = _currentPassiveSelectionScale;
             _debugAggressiveSelectionScale = _currentAggressiveSelectionScale;
             _debugLargeThreatSelectionScale = _currentLargeThreatSelectionScale;
@@ -2350,3 +2673,4 @@ namespace Hecton8.AI
         }
     }
 }
+

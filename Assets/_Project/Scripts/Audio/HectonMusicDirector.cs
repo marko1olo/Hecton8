@@ -71,6 +71,9 @@ namespace Hecton8.Audio
         [Tooltip("Optional explicit biome matrix director. If null, runtime instance is used.")]
         [SerializeField] private BiomeMatrixDirector _biomeMatrixDirector;
 
+        [Tooltip("Optional explicit depth-zone director. If null, runtime instance is used when available.")]
+        [SerializeField] private DepthZoneDirector _depthZoneDirector;
+
         [Tooltip("Optional explicit AI director reference. If null, runtime instance is used when available.")]
         [SerializeField] private HectonDirectorAI _directorAI;
 
@@ -122,6 +125,34 @@ namespace Hecton8.Audio
         [Tooltip("Tension threshold used to pick tense exploration pools outside the combat latch.")]
         [SerializeField, Range(0f, 1f)] private float _tenseExplorationThreshold = 0.50f;
 
+        [Tooltip("Release threshold for tense exploration routing. Keeps calm/tense pool choice from thrashing near the boundary.")]
+        [SerializeField, Range(0f, 1f)] private float _tenseExplorationReleaseThreshold = 0.36f;
+
+        [Header("World Tension Model")]
+        [Tooltip("Weight of DirectorAI tension inside the final music-tension blend.")]
+        [SerializeField, Range(0f, 1.5f)] private float _aiTensionWeight = 0.78f;
+
+        [Tooltip("Weight of authored biome survival/route pressure inside the final music-tension blend.")]
+        [SerializeField, Range(0f, 0.8f)] private float _biomePressureWeight = 0.28f;
+
+        [Tooltip("Weight of zone-kind pressure inside the final music-tension blend.")]
+        [SerializeField, Range(0f, 0.8f)] private float _zonePressureWeight = 0.24f;
+
+        [Tooltip("Weight of depth-zone danger and deep-environment pressure inside the final music-tension blend.")]
+        [SerializeField, Range(0f, 0.8f)] private float _depthZonePressureWeight = 0.26f;
+
+        [Tooltip("Small exploration unease contributed by strong reward-pull biomes.")]
+        [SerializeField, Range(0f, 0.5f)] private float _rewardUneaseWeight = 0.12f;
+
+        [Tooltip("Tension suppressed while the context reads as a safe pocket, service node, or other recovery space.")]
+        [SerializeField, Range(0f, 0.8f)] private float _safePocketSuppressionWeight = 0.22f;
+
+        [Tooltip("Additional tension used during the early spine so deeper, riskier water reads less emotionally flat before the first module route lands.")]
+        [SerializeField, Range(0f, 0.5f)] private float _firstHourPressureBoostWeight = 0.18f;
+
+        [Tooltip("Maximum tension scale applied while music is explicitly in an interior/base context.")]
+        [SerializeField, Range(0.1f, 1f)] private float _baseContextTensionScale = 0.42f;
+
         [Header("Ducking")]
         [Tooltip("Bed attenuation while a stinger is playing.")]
         [SerializeField, Range(0.05f, 1f)] private float _stingerDuckFactor = 0.40f;
@@ -168,8 +199,16 @@ namespace Hecton8.Audio
         [SerializeField] private string _debugActiveCueId = "None";
         [SerializeField] private float _debugTension01;
         [SerializeField] private bool _debugCombatLatched;
+        [SerializeField] private bool _debugTenseExplorationLatched;
         [SerializeField] private float _debugWaitTimer;
         [SerializeField] private string _debugLastSelectionReason = "None";
+        [SerializeField] private float _debugAiTension01;
+        [SerializeField] private float _debugBiomePressure01;
+        [SerializeField] private float _debugZonePressure01;
+        [SerializeField] private float _debugDepthZonePressure01;
+        [SerializeField] private float _debugRewardUnease01;
+        [SerializeField] private float _debugSafePocketSuppression01;
+        [SerializeField] private float _debugFirstHourPressureBoost01;
 
         private AudioSource[] _musicSources;
         private HectonMusicBiomeProfile[] _voiceProfiles;
@@ -230,6 +269,7 @@ namespace Hecton8.Audio
         private int _forceCalmSelectionsRemaining;
         private bool _selectionUsedCrossTension;
         private bool _selectionUsedDepthBlend;
+        private bool _tenseExplorationLatched;
         private bool _lastAcousticInteriorState;
         private bool _hasLastAcousticInteriorState;
 
@@ -315,6 +355,8 @@ namespace Hecton8.Audio
             AcousticZoneController.OnAcousticZoneChanged += HandleAcousticZoneChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
             BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
+            DepthZoneEvents.OnZoneEntered += HandleDepthZoneEntered;
+            DepthZoneEvents.OnZoneExited += HandleDepthZoneExited;
             HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequested;
             HectonDirectorAI.OnRequestSpawnHorde += HandleSpawnHordeRequested;
             HectonDirectorAI.OnPredatorPressureChanged += HandlePredatorPressureChanged;
@@ -335,6 +377,8 @@ namespace Hecton8.Audio
             HectonDirectorAI.OnPredatorPressureChanged -= HandlePredatorPressureChanged;
             HectonDirectorAI.OnRequestSpawnHorde -= HandleSpawnHordeRequested;
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequested;
+            DepthZoneEvents.OnZoneExited -= HandleDepthZoneExited;
+            DepthZoneEvents.OnZoneEntered -= HandleDepthZoneEntered;
             BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             AcousticZoneController.OnAcousticZoneChanged -= HandleAcousticZoneChanged;
@@ -660,6 +704,9 @@ namespace Hecton8.Audio
             if (_biomeMatrixDirector == null)
                 _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
 
+            if (_depthZoneDirector == null)
+                _depthZoneDirector = DepthZoneDirector.Instance;
+
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
 
@@ -706,9 +753,10 @@ namespace Hecton8.Audio
         {
             ResolveDependencies();
 
+            bool previousCombatLatched = _combatLatched;
+            bool previousTenseExplorationLatched = _tenseExplorationLatched;
             float nextTension01 = ResolveTension01();
             bool baseContext = ResolveBaseContext();
-            bool previousCombatLatched = _combatLatched;
             _currentBaseContext = baseContext;
 
             if (_combatLatched)
@@ -721,11 +769,26 @@ namespace Hecton8.Audio
                 _combatLatched = true;
             }
 
+            if (_combatLatched || baseContext)
+            {
+                _tenseExplorationLatched = false;
+            }
+            else if (_tenseExplorationLatched)
+            {
+                if (nextTension01 <= _tenseExplorationReleaseThreshold)
+                    _tenseExplorationLatched = false;
+            }
+            else if (nextTension01 >= _tenseExplorationThreshold)
+            {
+                _tenseExplorationLatched = true;
+            }
+
             _resolvedTension01 = nextTension01;
 
             HectonMusicBiomeProfile nextProfile = ResolveProfile(baseContext);
             bool profileChanged = nextProfile != _resolvedProfile;
             bool combatChanged = previousCombatLatched != _combatLatched;
+            bool tenseChanged = previousTenseExplorationLatched != _tenseExplorationLatched;
             _resolvedProfile = nextProfile;
 
             if (!previousCombatLatched && _combatLatched)
@@ -743,7 +806,10 @@ namespace Hecton8.Audio
             if (combatChanged)
                 TraceEvent(_combatLatched ? "Context:CombatEnter" : "Context:CombatExit", nextProfile, null);
 
-            if (forceImmediateSelection || profileChanged || combatChanged)
+            if (tenseChanged)
+                TraceEvent(_tenseExplorationLatched ? "Context:TenseEnter" : "Context:TenseExit", nextProfile, null);
+
+            if (forceImmediateSelection || profileChanged || combatChanged || tenseChanged)
                 _pendingImmediateSelection = true;
 
             WriteDebugState();
@@ -792,10 +858,41 @@ namespace Hecton8.Audio
             if (_manualTensionOverride)
                 return _manualTension01;
 
-            if (_directorAI != null)
-                return Mathf.Clamp01(_directorAI.TensionScore * 0.01f);
+            HectonBiomeMatrixProfile matrixProfile = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentProfile : null;
+            WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
+            DepthZoneProfile depthZone = _depthZoneDirector != null ? _depthZoneDirector.CurrentZone : null;
 
-            return 0f;
+            float aiTension01 = _directorAI != null
+                ? Mathf.Clamp01(_directorAI.TensionScore * 0.01f)
+                : 0f;
+            float biomePressure01 = ResolveBiomePressure01(matrixProfile);
+            float zonePressure01 = ResolveZonePressure01(currentZone);
+            float depthZonePressure01 = ResolveDepthZonePressure01(depthZone);
+            float rewardUnease01 = ResolveRewardUnease01(matrixProfile);
+            float safePocketSuppression01 = ResolveSafePocketSuppression01(matrixProfile, currentZone);
+            float firstHourPressureBoost01 = ResolveFirstHourPressureBoost01(matrixProfile, currentZone);
+
+            float tension01 =
+                aiTension01 * _aiTensionWeight +
+                biomePressure01 * _biomePressureWeight +
+                zonePressure01 * _zonePressureWeight +
+                depthZonePressure01 * _depthZonePressureWeight +
+                rewardUnease01 * _rewardUneaseWeight +
+                firstHourPressureBoost01 * _firstHourPressureBoostWeight -
+                safePocketSuppression01 * _safePocketSuppressionWeight;
+
+            if (ResolveBaseContext())
+                tension01 *= _baseContextTensionScale;
+
+            _debugAiTension01 = aiTension01;
+            _debugBiomePressure01 = biomePressure01;
+            _debugZonePressure01 = zonePressure01;
+            _debugDepthZonePressure01 = depthZonePressure01;
+            _debugRewardUnease01 = rewardUnease01;
+            _debugSafePocketSuppression01 = safePocketSuppression01;
+            _debugFirstHourPressureBoost01 = firstHourPressureBoost01;
+
+            return Mathf.Clamp01(tension01);
         }
 
         private bool ResolveBaseContext()
@@ -857,7 +954,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            bool highTension = _combatLatched || _resolvedTension01 >= _tenseExplorationThreshold;
+            bool highTension = _combatLatched || _tenseExplorationLatched;
             if (_forceCalmSelectionsRemaining > 0)
             {
                 highTension = false;
@@ -1761,6 +1858,37 @@ namespace Hecton8.Audio
             ReevaluateContext(true);
         }
 
+        private void HandleDepthZoneEntered(DepthZoneProfile zone)
+        {
+            ReevaluateContext(true);
+
+            if (zone == null || _currentBaseContext)
+                return;
+
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector != null && !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.Orientation))
+                return;
+
+            if (ShouldPlayDepthDangerStinger(zone))
+            {
+                PlayDangerStinger();
+                return;
+            }
+
+            if (ShouldPlayDepthDiscoveryStinger(zone))
+                PlayDiscoveryStinger();
+        }
+
+        private void HandleDepthZoneExited(DepthZoneProfile zone)
+        {
+            ReevaluateContext(true);
+
+            if (zone == null || _currentBaseContext || !ShouldPlayDepthRecoveryStinger(zone))
+                return;
+
+            PlayRecoveryStinger();
+        }
+
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
             FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
@@ -1819,6 +1947,56 @@ namespace Hecton8.Audio
             return false;
         }
 
+        private bool ShouldPlayDepthDiscoveryStinger(DepthZoneProfile zone)
+        {
+            if (zone == null || _combatLatched || _overrideActive)
+                return false;
+
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector != null &&
+                !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(zone.discoveryId))
+                return true;
+
+            if (zone.isThermal || zone.hasCaves)
+                return zone.minDepth >= 180f;
+
+            return zone.minDepth >= 600f && zone.dangerLevel < 0.72f;
+        }
+
+        private static bool ShouldPlayDepthDangerStinger(DepthZoneProfile zone)
+        {
+            if (zone == null)
+                return false;
+
+            if (zone.dangerLevel >= 0.72f)
+                return true;
+
+            if (zone.requiredHullTier >= 2 && zone.minDepth >= 600f)
+                return true;
+
+            return zone.isThermal && zone.dangerLevel >= 0.45f;
+        }
+
+        private bool ShouldPlayDepthRecoveryStinger(DepthZoneProfile exitedZone)
+        {
+            if (exitedZone == null || _combatLatched || _overrideActive)
+                return false;
+
+            if (!ShouldPlayDepthDangerStinger(exitedZone))
+                return false;
+
+            DepthZoneProfile currentZone = _depthZoneDirector != null ? _depthZoneDirector.CurrentZone : null;
+            if (currentZone == null)
+                return true;
+
+            return ResolveDepthZonePressure01(currentZone) + 0.18f < ResolveDepthZonePressure01(exitedZone);
+        }
+
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void TraceSelection(HectonMusicBiomeProfile rootProfile, HectonMusicBiomeProfile playbackProfile, HectonMusicClip selectedCue, bool highTension, bool preferShort)
         {
@@ -1868,8 +2046,180 @@ namespace Hecton8.Audio
 
             _debugTension01 = _resolvedTension01;
             _debugCombatLatched = _combatLatched;
+            _debugTenseExplorationLatched = _tenseExplorationLatched;
             _debugWaitTimer = _waitTimerSeconds;
 #endif
+        }
+
+        private static float ResolvePressure01(int authoredValue)
+        {
+            return Mathf.Clamp01((authoredValue - 1f) / 4f);
+        }
+
+        private static bool ReadsAsSafeZoneKind(WorldZoneAnchor.ZoneKind kind)
+        {
+            switch (kind)
+            {
+                case WorldZoneAnchor.ZoneKind.Service:
+                case WorldZoneAnchor.ZoneKind.Power:
+                case WorldZoneAnchor.ZoneKind.Fabrication:
+                case WorldZoneAnchor.ZoneKind.Construction:
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static float ResolveZoneKindPressure01(WorldZoneAnchor.ZoneKind kind)
+        {
+            switch (kind)
+            {
+                case WorldZoneAnchor.ZoneKind.Trial:
+                case WorldZoneAnchor.ZoneKind.Combat:
+                    return 1f;
+                case WorldZoneAnchor.ZoneKind.Progression:
+                    return 0.72f;
+                case WorldZoneAnchor.ZoneKind.Navigation:
+                    return 0.42f;
+                case WorldZoneAnchor.ZoneKind.Resources:
+                    return 0.20f;
+                case WorldZoneAnchor.ZoneKind.Service:
+                case WorldZoneAnchor.ZoneKind.Power:
+                case WorldZoneAnchor.ZoneKind.Fabrication:
+                case WorldZoneAnchor.ZoneKind.Construction:
+                    return 0.08f;
+            }
+
+            return 0.18f;
+        }
+
+        private static float ResolveBiomePressure01(HectonBiomeMatrixProfile matrixProfile)
+        {
+            if (matrixProfile == null)
+                return 0f;
+
+            float survivalPressure01 = ResolvePressure01(matrixProfile.survivalPressure);
+            float routePressure01 = ResolvePressure01(matrixProfile.routePressure);
+            float pressure01 = survivalPressure01 * 0.72f + routePressure01 * 0.28f;
+            return Mathf.Clamp01(pressure01);
+        }
+
+        private static float ResolveRewardUnease01(HectonBiomeMatrixProfile matrixProfile)
+        {
+            if (matrixProfile == null)
+                return 0f;
+
+            float rewardPull01 = ResolvePressure01(matrixProfile.rewardPull);
+            if (rewardPull01 <= 0f)
+                return 0f;
+
+            float rareRewardBonus = matrixProfile.rewardPull >= 4 && !string.IsNullOrWhiteSpace(matrixProfile.rareRewardHook)
+                ? 0.18f
+                : 0f;
+            return Mathf.Clamp01(rewardPull01 * 0.68f + rareRewardBonus);
+        }
+
+        private static float ResolveZonePressure01(WorldZoneAnchor currentZone)
+        {
+            if (currentZone == null)
+                return 0f;
+
+            float zonePressure01 = ResolveZoneKindPressure01(currentZone.Kind);
+            if (currentZone.RouteCritical)
+                zonePressure01 = Mathf.Max(zonePressure01, 0.46f);
+
+            if (!string.IsNullOrWhiteSpace(currentZone.GameplayIntent))
+            {
+                if (ContainsAnyToken(currentZone.GameplayIntent, ThermalTokens))
+                    zonePressure01 = Mathf.Max(zonePressure01, 0.62f);
+                else if (ContainsAnyToken(currentZone.GameplayIntent, CaveTokens))
+                    zonePressure01 = Mathf.Max(zonePressure01, 0.52f);
+            }
+
+            return Mathf.Clamp01(zonePressure01);
+        }
+
+        private static float ResolveDepthZonePressure01(DepthZoneProfile depthZone)
+        {
+            if (depthZone == null)
+                return 0f;
+
+            float pressure01 = Mathf.Clamp01(depthZone.dangerLevel);
+
+            if (depthZone.requiredHullTier > 0)
+                pressure01 = Mathf.Max(pressure01, Mathf.Clamp01(depthZone.requiredHullTier * 0.24f));
+
+            if (depthZone.hasCaves)
+                pressure01 = Mathf.Max(pressure01, 0.44f);
+
+            if (depthZone.isThermal)
+                pressure01 = Mathf.Max(pressure01, 0.58f);
+
+            if (depthZone.minDepth >= 600f)
+                pressure01 = Mathf.Max(pressure01, 0.36f);
+
+            if (depthZone.minDepth >= 3500f)
+                pressure01 = Mathf.Max(pressure01, 0.62f);
+
+            return Mathf.Clamp01(pressure01);
+        }
+
+        private static float ResolveSafePocketSuppression01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
+        {
+            float suppression01 = 0f;
+
+            if (currentZone != null)
+            {
+                if (ReadsAsSafeZoneKind(currentZone.Kind))
+                    suppression01 = 1f;
+                else if (currentZone.RouteCritical)
+                    suppression01 = Mathf.Max(suppression01, 0.18f);
+            }
+
+            if (matrixProfile != null)
+            {
+                if (!string.IsNullOrWhiteSpace(matrixProfile.safePocketIdentity))
+                    suppression01 = Mathf.Max(suppression01, matrixProfile.survivalPressure >= 4 ? 0.35f : 0.55f);
+
+                if (matrixProfile.survivalPressure <= 2 && matrixProfile.rewardPull <= 2)
+                    suppression01 = Mathf.Max(suppression01, 0.14f);
+            }
+
+            return Mathf.Clamp01(suppression01);
+        }
+
+        private static float ResolveFirstHourPressureBoost01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
+        {
+            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            if (firstHourDirector == null || firstHourDirector.IsFirstHourComplete)
+                return 0f;
+
+            float boost01 = 0f;
+            if (matrixProfile != null)
+            {
+                if (matrixProfile.depthTier >= 4)
+                    boost01 = Mathf.Max(boost01, 0.42f);
+
+                if (matrixProfile.survivalPressure >= 4)
+                    boost01 = Mathf.Max(boost01, 0.58f);
+            }
+
+            if (currentZone != null)
+            {
+                if (currentZone.Kind == WorldZoneAnchor.ZoneKind.Progression || currentZone.Kind == WorldZoneAnchor.ZoneKind.Navigation)
+                    boost01 = Mathf.Max(boost01, 0.34f);
+
+                if (currentZone.RouteCritical)
+                    boost01 = Mathf.Max(boost01, 0.26f);
+            }
+
+            if (!firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+                boost01 = Mathf.Max(boost01, 0.18f);
+
+            if (!firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule))
+                boost01 = Mathf.Max(boost01, 0.32f);
+
+            return Mathf.Clamp01(boost01);
         }
 
 #if UNITY_EDITOR
@@ -1882,6 +2232,12 @@ namespace Hecton8.Audio
                 _tenseExplorationThreshold = 0f;
             else if (_tenseExplorationThreshold > 1f)
                 _tenseExplorationThreshold = 1f;
+
+            if (_tenseExplorationReleaseThreshold > _tenseExplorationThreshold)
+                _tenseExplorationReleaseThreshold = _tenseExplorationThreshold;
+
+            if (_tenseExplorationReleaseThreshold < 0f)
+                _tenseExplorationReleaseThreshold = 0f;
 
             if (_fallbackPauseSeconds < 0f)
                 _fallbackPauseSeconds = 0f;

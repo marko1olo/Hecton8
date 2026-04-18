@@ -14,6 +14,7 @@
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using UnityEngine;
@@ -39,9 +40,9 @@ namespace Hecton8.Gameplay
         private bool _choiceOpen;
 
         // Pre-cached interact texts — zero GC
-        private static readonly string TextInactive = "ТЕРМИНАЛ АТЛАС-6 — НЕДОСТУПЕН";
-        private static readonly string TextActive   = "ВЗАИМОДЕЙСТВОВАТЬ С ЯДРОМ АТЛАС-6";
-        private static readonly string TextComplete = "РЕШЕНИЕ ПРИНЯТО";
+        private const string TextInactive = "ATLAS-6 TERMINAL UNAVAILABLE";
+        private const string TextActive = "INTERACT WITH ATLAS-6 CORE";
+        private const string TextComplete = "DECISION RECORDED";
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -101,10 +102,10 @@ namespace Hecton8.Gameplay
         public string GetInteractText()
         {
             EndingSystem ending = EndingSystem.Instance;
-            if (ending == null) return TextInactive;
-            if (ending.IsEndingComplete) return TextComplete;
-            if (!ending.IsConditionMet)  return TextInactive;
-            return TextActive;
+            if (ending == null) return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
+            if (ending.IsEndingComplete) return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_COMPLETE, TextComplete);
+            if (!ending.IsConditionMet)  return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
+            return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_ACTIVE, TextActive);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -160,6 +161,16 @@ namespace Hecton8.Gameplay
         {
             Debug.Log("[EndingTerminal] Choice UI opened. " +
                       "Use EndingSystem.Instance.ChooseEnding(EndingChoice.X) to select.");
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null)
+                return fallback;
+
+            string localized = manager.Get(key);
+            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
         }
     }
 }

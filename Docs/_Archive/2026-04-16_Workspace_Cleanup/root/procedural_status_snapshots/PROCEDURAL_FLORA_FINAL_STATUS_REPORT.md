@@ -1,4 +1,6 @@
-﻿# Procedural Flora Final Status Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Flora Final Status Report
 
 - Root: `Assets/_Project/Prefabs/Nature/Flora/Baked`
 - Generated: `GEN_` prefabs are starter finals only.

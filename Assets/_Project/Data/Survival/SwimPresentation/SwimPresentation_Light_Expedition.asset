@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: SwimPresentation_Light_Expedition
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SwimPresentationProfile
   strokeStyle: 0
-  baseLocalPosition: {x: 0, y: -0.232, z: 0.335}
+  baseLocalPosition: {x: 0, y: -0.182, z: 0.348}
   baseLocalEuler: {x: 6, y: 0, z: 0}
-  leftGuideBaseLocalPosition: {x: -0.185, y: -0.105, z: 0.018}
+  leftGuideBaseLocalPosition: {x: -0.158, y: -0.054, z: 0.034}
   leftGuideBaseLocalEuler: {x: 16, y: -30, z: -18}
-  rightGuideBaseLocalPosition: {x: 0.185, y: -0.105, z: 0.018}
+  rightGuideBaseLocalPosition: {x: 0.158, y: -0.054, z: 0.034}
   rightGuideBaseLocalEuler: {x: 16, y: 30, z: 18}
   surfaceTreadCadence: 0.72
   surfaceStrokeCadence: 1.22

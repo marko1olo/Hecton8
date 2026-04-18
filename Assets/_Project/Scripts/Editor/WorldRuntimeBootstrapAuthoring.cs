@@ -1,15 +1,18 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.AI;
+using Hecton8.UI;
 using Hecton8.World;
 using Hecton8.Dev;
 using Hecton8.Environment;
 using Hecton8.Biolum;
 using System;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Hecton8.EditorTools
 {
@@ -40,6 +43,9 @@ namespace Hecton8.EditorTools
         private const string BiolumRootName = "Biolum_Deep";
         private const string StarterReefFieldName = "Starter_ReefField";
         private const string StarterReefFieldPath = "--- WORLD ---/" + StarterReefFieldName;
+        private const string HudRootName = "HUD_V4_CanvasRoot";
+        private const string RelayMarkerLayerName = "HUD_RouteMarkerLayer";
+        private const string RelayRouteMarkerName = "RelayRouteMarker";
 
         [MenuItem("Hecton/Authoring/Rebuild World Runtime Stack", priority = 177)]
         public static void RebuildWorldRuntimeStack()
@@ -109,6 +115,7 @@ namespace Hecton8.EditorTools
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
             WorldReadabilityDirector readabilityDirector = GetOrAddComponent<WorldReadabilityDirector>(managersRoot);
+            GetOrAddComponent<EmergencyServiceRelayDirector>(managersRoot);
             WorldCaveDirector caveDirector = GetOrAddComponent<WorldCaveDirector>(managersRoot);
             ProximityColliderSystem proximityColliderSystem = GetOrAddComponent<ProximityColliderSystem>(managersRoot);
             HectonBiolumManager biolumManager = GetOrAddComponent<HectonBiolumManager>(managersRoot);
@@ -172,6 +179,7 @@ namespace Hecton8.EditorTools
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>());
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
             ConfigureWorldReadabilityDirector(readabilityDirector, zoneDirector, biomeMatrixDirector);
+            EnsureRelayHudMarker();
             ConfigureWorldCaveDirector(
                 caveDirector,
                 playerTransform,
@@ -2875,6 +2883,158 @@ namespace Hecton8.EditorTools
             newEntry.FindPropertyRelative("count").intValue = count;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(objectPoolManager);
+        }
+
+        private static void EnsureRelayHudMarker()
+        {
+            SuitHUDV4CanvasOverlay overlay = FindSceneObjectIncludingInactive<SuitHUDV4CanvasOverlay>();
+            if (overlay == null)
+                return;
+
+            RectTransform parent = ResolveRelayMarkerParent(overlay.transform);
+            RelayHUDElement marker = overlay.GetComponentInChildren<RelayHUDElement>(true);
+            if (marker != null && marker.transform.parent != parent)
+                marker.transform.SetParent(parent, false);
+
+            if (marker != null)
+                return;
+
+            if (parent == null)
+                return;
+
+            CreateRelayMarker(parent);
+            EditorUtility.SetDirty(overlay.gameObject);
+        }
+
+        private static RelayHUDElement CreateRelayMarker(RectTransform parent)
+        {
+            GameObject markerRoot = new GameObject(
+                RelayRouteMarkerName,
+                typeof(RectTransform),
+                typeof(CanvasGroup),
+                typeof(Image),
+                typeof(RelayHUDElement));
+            markerRoot.transform.SetParent(parent, false);
+
+            RectTransform rootRect = markerRoot.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.sizeDelta = new Vector2(260f, 72f);
+
+            CanvasGroup canvasGroup = markerRoot.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+
+            Image background = markerRoot.GetComponent<Image>();
+            background.color = new Color(0.02f, 0.08f, 0.12f, 0.18f);
+            background.raycastTarget = false;
+
+            Image markerIcon = CreateRelayMarkerIcon(markerRoot.transform);
+            TMP_Text labelText = CreateRelayText(markerRoot.transform, "Label", new Vector2(200f, 28f), new Vector2(16f, 12f), 20f, new Color(0.72f, 0.92f, 1f, 0.96f));
+            TMP_Text distanceText = CreateRelayText(markerRoot.transform, "Distance", new Vector2(160f, 24f), new Vector2(16f, -14f), 16f, new Color(0.52f, 0.82f, 0.96f, 0.9f));
+
+            labelText.text = "EMERGENCY SERVICE RELAY";
+            distanceText.text = "0M";
+
+            RelayHUDElement marker = markerRoot.GetComponent<RelayHUDElement>();
+            marker.ConfigureRuntimeBindings(markerIcon, distanceText, labelText);
+            return marker;
+        }
+
+        private static RectTransform ResolveRelayMarkerParent(Transform overlayTransform)
+        {
+            if (overlayTransform == null)
+                return null;
+
+            RectTransform markerLayer = overlayTransform.Find(RelayMarkerLayerName) as RectTransform;
+            if (markerLayer != null)
+                return markerLayer;
+
+            RectTransform overlayRect = overlayTransform as RectTransform;
+            if (overlayRect == null)
+                return null;
+
+            markerLayer = CreateRelayMarkerLayer(overlayRect);
+
+            RectTransform legacyRoot = overlayTransform.Find(HudRootName) as RectTransform;
+            if (legacyRoot != null)
+            {
+                RelayHUDElement legacyMarker = legacyRoot.GetComponentInChildren<RelayHUDElement>(true);
+                if (legacyMarker != null)
+                    legacyMarker.transform.SetParent(markerLayer, false);
+            }
+
+            return markerLayer;
+        }
+
+        private static RectTransform CreateRelayMarkerLayer(RectTransform overlayRect)
+        {
+            GameObject markerLayerObject = new GameObject(RelayMarkerLayerName, typeof(RectTransform));
+            markerLayerObject.transform.SetParent(overlayRect, false);
+
+            RectTransform markerLayer = markerLayerObject.GetComponent<RectTransform>();
+            markerLayer.anchorMin = Vector2.zero;
+            markerLayer.anchorMax = Vector2.one;
+            markerLayer.offsetMin = Vector2.zero;
+            markerLayer.offsetMax = Vector2.zero;
+            markerLayer.anchoredPosition = Vector2.zero;
+            markerLayer.localScale = Vector3.one;
+            markerLayer.SetAsLastSibling();
+            return markerLayer;
+        }
+
+        private static Image CreateRelayMarkerIcon(Transform parent)
+        {
+            GameObject iconObject = CreateRelayChild(parent, "MarkerIcon", new Vector2(18f, 18f), new Vector2(-96f, 0f));
+            iconObject.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            Image image = iconObject.AddComponent<Image>();
+            image.color = new Color(0.22f, 0.86f, 1f, 0.95f);
+            image.raycastTarget = false;
+            return image;
+        }
+
+        private static TMP_Text CreateRelayText(
+            Transform parent,
+            string name,
+            Vector2 size,
+            Vector2 anchoredPosition,
+            float fontSize,
+            Color color)
+        {
+            GameObject textObject = CreateRelayChild(parent, name, size, anchoredPosition);
+            TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
+            text.font = ResolveRelayFont(parent);
+            text.fontSize = fontSize;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = color;
+            return text;
+        }
+
+        private static GameObject CreateRelayChild(Transform parent, string name, Vector2 size, Vector2 anchoredPosition)
+        {
+            GameObject child = new GameObject(name, typeof(RectTransform));
+            child.transform.SetParent(parent, false);
+
+            RectTransform rect = child.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPosition;
+            return child;
+        }
+
+        private static TMP_FontAsset ResolveRelayFont(Transform parent)
+        {
+            TMP_FontAsset font = TMP_Settings.defaultFontAsset;
+            if (font != null)
+                return font;
+
+            TextMeshProUGUI existingText = parent.GetComponentInChildren<TextMeshProUGUI>(true);
+            return existingText != null ? existingText.font : null;
         }
 
         private static GameObject CreateOrUpdateColliderProxyPrefab()

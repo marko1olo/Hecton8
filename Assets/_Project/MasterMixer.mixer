@@ -11,6 +11,10 @@ AudioMixerController:
   m_MasterGroup: {fileID: 24300002}
   m_Snapshots:
   - {fileID: 24500006}
+  - {fileID: 24500007}
+  - {fileID: 24500008}
+  - {fileID: 24500009}
+  - {fileID: 24500010}
   m_StartSnapshot: {fileID: 24500006}
   m_SuspendThreshold: -80
   m_EnableSuspend: 1
@@ -174,8 +178,52 @@ AudioMixerSnapshotController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Snapshot
+  m_Name: Surface
   m_AudioMixer: {fileID: 24100000}
   m_SnapshotID: 4bedb79c0558e5c4c9556ded3d285454
+  m_FloatValues: {}
+  m_TransitionOverrides: {}
+--- !u!245 &24500007
+AudioMixerSnapshotController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Underwater
+  m_AudioMixer: {fileID: 24100000}
+  m_SnapshotID: e5632291e1af40faa3ebd9c1863c768a
+  m_FloatValues: {}
+  m_TransitionOverrides: {}
+--- !u!245 &24500008
+AudioMixerSnapshotController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: BaseInterior
+  m_AudioMixer: {fileID: 24100000}
+  m_SnapshotID: 2bac1ba9ff17499291704a247031d8c4
+  m_FloatValues: {}
+  m_TransitionOverrides: {}
+--- !u!245 &24500009
+AudioMixerSnapshotController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SurfaceRain
+  m_AudioMixer: {fileID: 24100000}
+  m_SnapshotID: bc34ae193230415888fa727aef29e6fc
+  m_FloatValues: {}
+  m_TransitionOverrides: {}
+--- !u!245 &24500010
+AudioMixerSnapshotController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SurfaceStorm
+  m_AudioMixer: {fileID: 24100000}
+  m_SnapshotID: a6a70cea1623450c9fb3910e63a2a79f
   m_FloatValues: {}
   m_TransitionOverrides: {}

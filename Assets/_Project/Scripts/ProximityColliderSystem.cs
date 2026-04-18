@@ -36,12 +36,19 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     public sealed class ProximityColliderSystem : MonoBehaviour, ITickable
     {
         internal static ProximityColliderSystem ActiveRuntimeInstance { get; private set; }
+#if UNITY_EDITOR
+        private static bool _assemblyReloadHookRegistered;
+#endif
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -305,6 +312,9 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+#if UNITY_EDITOR
+            EnsureAssemblyReloadHook();
+#endif
             // ── Авто-resolve игрока через bootstrap, если ссылка не задана ──
             TryResolvePlayerTransform();
 
@@ -339,6 +349,9 @@ namespace Hecton8.Core
             CompleteCurrentJob();
 
             GameTickManager.Instance?.Unregister((ITickable)this);
+#if UNITY_EDITOR
+            ReleaseAssemblyReloadHook();
+#endif
         }
 
         private void OnDestroy()
@@ -368,6 +381,47 @@ namespace Hecton8.Core
         ///
         /// ZERO GC: никаких аллокаций. Все массивы кэшированы.
         /// </summary>
+#if UNITY_EDITOR
+        private static void EnsureAssemblyReloadHook()
+        {
+            if (_assemblyReloadHookRegistered)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting += HandleEditorQuitting;
+            _assemblyReloadHookRegistered = true;
+        }
+
+        private static void ReleaseAssemblyReloadHook()
+        {
+            if (!_assemblyReloadHookRegistered)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
+            _assemblyReloadHookRegistered = false;
+        }
+
+        private static void HandleBeforeAssemblyReload()
+        {
+            TeardownActiveRuntimeInstanceForEditorReload();
+        }
+
+        private static void HandleEditorQuitting()
+        {
+            TeardownActiveRuntimeInstanceForEditorReload();
+        }
+
+        private static void TeardownActiveRuntimeInstanceForEditorReload()
+        {
+            if (ActiveRuntimeInstance == null)
+                return;
+
+            ActiveRuntimeInstance.PrepareForReinitialize();
+            ActiveRuntimeInstance = null;
+        }
+#endif
+
         public void Tick(float deltaTime)
         {
             if (!_initialized) return;

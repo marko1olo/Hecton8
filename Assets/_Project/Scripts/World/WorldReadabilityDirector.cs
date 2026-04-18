@@ -23,6 +23,8 @@ namespace Hecton8.World
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
         [Tooltip("Live zone owner used for route and landmark guidance reads.")]
         [SerializeField] private WorldZoneDirector worldZoneDirector;
+        [Tooltip("Live depth-zone owner used for hazard and hull-readability cues.")]
+        [SerializeField] private DepthZoneDirector depthZoneDirector;
 
         [Header("Runtime Auto Resolve")]
         [Tooltip("Retry cadence for runtime auto-resolve when authoring references are absent.")]
@@ -41,6 +43,8 @@ namespace Hecton8.World
         [SerializeField] private string _debugBiome = "None";
         [Tooltip("Last observed world zone label for runtime readback.")]
         [SerializeField] private string _debugZone = "None";
+        [Tooltip("Last observed depth-zone label for runtime readback.")]
+        [SerializeField] private string _debugDepthZone = "None";
         [Tooltip("Pending message held back by cadence gating.")]
         [SerializeField] private string _debugPendingMessage = "None";
         [Tooltip("Severity of the pending message.")]
@@ -64,6 +68,7 @@ namespace Hecton8.World
         private bool _hasObservedContext;
         private HectonBiomeMatrixProfile _lastBiomeProfile;
         private WorldZoneAnchor _lastZone;
+        private DepthZoneProfile _lastDepthZone;
         private int _lastDepthTier = -1;
         private bool _lastRouteLegible;
         private bool _lastSafePocket;
@@ -160,13 +165,14 @@ namespace Hecton8.World
 
             HectonBiomeMatrixProfile currentBiome = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
             WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
+            DepthZoneProfile currentDepthZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
             int currentDepthTier = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthTier : 1;
             float currentDepthMeters = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthMeters : 0f;
 
             if (!CanPublishReadability())
             {
                 ClearPendingMessage();
-                CaptureObservedContext(currentBiome, currentZone, currentDepthTier);
+                CaptureObservedContext(currentBiome, currentZone, currentDepthZone, currentDepthTier);
                 UpdateDiagnostics();
                 return;
             }
@@ -183,13 +189,19 @@ namespace Hecton8.World
                 TryQueueZoneGuidance(currentZone);
             }
 
+            if (!_hasObservedContext || currentDepthZone != _lastDepthZone)
+            {
+                _lastDepthZone = currentDepthZone;
+                TryQueueDepthZoneGuidance(currentBiome, currentZone, currentDepthZone);
+            }
+
             if (!_hasObservedContext || currentDepthTier != _lastDepthTier)
             {
                 _lastDepthTier = currentDepthTier;
-                TryQueueDepthGuidance(currentBiome, currentZone, currentDepthTier, currentDepthMeters);
+                TryQueueDepthGuidance(currentBiome, currentZone, currentDepthZone, currentDepthTier, currentDepthMeters);
             }
 
-            TryQueueRouteStateGuidance(currentBiome, currentZone, currentDepthTier);
+            TryQueueRouteStateGuidance(currentBiome, currentZone, currentDepthZone, currentDepthTier);
 
             _hasObservedContext = true;
             TryPublishPending();
@@ -207,7 +219,7 @@ namespace Hecton8.World
 
         private void ResolveReferences(bool force = false)
         {
-            if (!force && biomeMatrixDirector != null && worldZoneDirector != null)
+            if (!force && biomeMatrixDirector != null && worldZoneDirector != null && depthZoneDirector != null)
                 return;
 
             float now = Time.realtimeSinceStartup;
@@ -218,6 +230,8 @@ namespace Hecton8.World
 
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+            if (depthZoneDirector == null)
+                depthZoneDirector = DepthZoneDirector.Instance;
         }
 
         private void ResetObservedState()
@@ -225,6 +239,7 @@ namespace Hecton8.World
             _hasObservedContext = false;
             _lastBiomeProfile = null;
             _lastZone = null;
+            _lastDepthZone = null;
             _lastDepthTier = -1;
             _lastRouteLegible = false;
             _lastSafePocket = false;
@@ -242,10 +257,12 @@ namespace Hecton8.World
         private void CaptureObservedContext(
             HectonBiomeMatrixProfile currentBiome,
             WorldZoneAnchor currentZone,
+            DepthZoneProfile currentDepthZone,
             int currentDepthTier)
         {
             _lastBiomeProfile = currentBiome;
             _lastZone = currentZone;
+            _lastDepthZone = currentDepthZone;
             _lastDepthTier = currentDepthTier;
             _lastRouteLegible = IsRouteLegible(currentBiome, currentZone);
             _lastSafePocket = IsSafePocket(currentZone);
@@ -264,19 +281,30 @@ namespace Hecton8.World
             QueueOrPublish(message, severity);
         }
 
+        private void TryQueueDepthZoneGuidance(
+            HectonBiomeMatrixProfile profile,
+            WorldZoneAnchor zone,
+            DepthZoneProfile depthZone)
+        {
+            string message = ResolveDepthZoneGuidanceMessage(profile, zone, depthZone, out int severity);
+            QueueOrPublish(message, severity);
+        }
+
         private void TryQueueDepthGuidance(
             HectonBiomeMatrixProfile profile,
             WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
             int depthTier,
             float depthMeters)
         {
-            string message = ResolveDepthGuidanceMessage(profile, zone, depthTier, depthMeters, out int severity);
+            string message = ResolveDepthGuidanceMessage(profile, zone, depthZone, depthTier, depthMeters, out int severity);
             QueueOrPublish(message, severity);
         }
 
         private void TryQueueRouteStateGuidance(
             HectonBiomeMatrixProfile profile,
             WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
             int depthTier)
         {
             bool routeLegible = IsRouteLegible(profile, zone);
@@ -285,8 +313,8 @@ namespace Hecton8.World
             if (_hasObservedContext && routeLegible != _lastRouteLegible)
             {
                 string message = routeLegible
-                    ? ResolveRouteRecoveryMessage(profile, zone)
-                    : ResolveRouteLossMessage(profile, zone, depthTier);
+                    ? ResolveRouteRecoveryMessage(profile, zone, depthZone)
+                    : ResolveRouteLossMessage(profile, zone, depthZone, depthTier);
                 int severity = routeLegible ? SeverityInfo : SeverityWarning;
                 QueueOrPublish(message, severity);
             }
@@ -440,9 +468,51 @@ namespace Hecton8.World
             return null;
         }
 
+        private static string ResolveDepthZoneGuidanceMessage(
+            HectonBiomeMatrixProfile profile,
+            WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
+            out int severity)
+        {
+            severity = SeverityInfo;
+
+            if (depthZone == null)
+                return null;
+
+            if (depthZone.dangerLevel >= 0.72f)
+            {
+                severity = SeverityWarning;
+                return !string.IsNullOrWhiteSpace(depthZone.description)
+                    ? depthZone.description
+                    : profile != null
+                        ? profile.riskSummary
+                        : null;
+            }
+
+            if (depthZone.requiredHullTier >= 2)
+            {
+                severity = SeverityWarning;
+                return !string.IsNullOrWhiteSpace(depthZone.description)
+                    ? depthZone.description
+                    : "Hull margin is narrowing. Respect the descent envelope.";
+            }
+
+            if (depthZone.isThermal || depthZone.hasCaves)
+            {
+                if (!string.IsNullOrWhiteSpace(depthZone.description))
+                    return depthZone.description;
+
+                if (zone != null && !string.IsNullOrWhiteSpace(zone.GameplayIntent))
+                    return zone.GameplayIntent;
+            }
+
+            return null;
+        }
+
         private static string ResolveDepthGuidanceMessage(
             HectonBiomeMatrixProfile profile,
             WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
             int depthTier,
             float depthMeters,
             out int severity)
@@ -451,6 +521,18 @@ namespace Hecton8.World
 
             if (profile == null || depthTier <= 1 || depthMeters <= 0f)
                 return null;
+
+            if (depthZone != null)
+            {
+                if (depthZone.requiredHullTier >= 2 && !string.IsNullOrWhiteSpace(depthZone.description))
+                {
+                    severity = SeverityWarning;
+                    return depthZone.description;
+                }
+
+                if ((depthZone.isThermal || depthZone.hasCaves) && !string.IsNullOrWhiteSpace(depthZone.description))
+                    return depthZone.description;
+            }
 
             if (profile.survivalPressure >= 4 && !string.IsNullOrWhiteSpace(profile.safePocketIdentity))
             {
@@ -528,13 +610,47 @@ namespace Hecton8.World
             return null;
         }
 
+        private static string ResolveRouteRecoveryMessage(
+            HectonBiomeMatrixProfile profile,
+            WorldZoneAnchor zone,
+            DepthZoneProfile depthZone)
+        {
+            if (zone != null && !string.IsNullOrWhiteSpace(zone.GameplayIntent))
+                return zone.GameplayIntent;
+
+            if (depthZone != null &&
+                (depthZone.isThermal || depthZone.hasCaves) &&
+                !string.IsNullOrWhiteSpace(depthZone.description))
+            {
+                return depthZone.description;
+            }
+
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.landmarkGuidance))
+                return profile.landmarkGuidance;
+
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.visitPurpose))
+                return profile.visitPurpose;
+
+            return null;
+        }
+
         private static string ResolveRouteLossMessage(
             HectonBiomeMatrixProfile profile,
             WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
             int depthTier)
         {
             if (profile == null || depthTier <= 1)
                 return null;
+
+            if (depthZone != null)
+            {
+                if (depthZone.requiredHullTier >= 2 && !string.IsNullOrWhiteSpace(depthZone.description))
+                    return depthZone.description;
+
+                if (depthZone.dangerLevel >= 0.72f && !string.IsNullOrWhiteSpace(depthZone.description))
+                    return depthZone.description;
+            }
 
             if (!string.IsNullOrWhiteSpace(profile.safePocketIdentity))
                 return profile.safePocketIdentity;
@@ -566,6 +682,9 @@ namespace Hecton8.World
                 : "None";
             _debugZone = _lastZone != null && !string.IsNullOrWhiteSpace(_lastZone.ZoneLabel)
                 ? _lastZone.ZoneLabel
+                : "None";
+            _debugDepthZone = _lastDepthZone != null && !string.IsNullOrWhiteSpace(_lastDepthZone.displayName)
+                ? _lastDepthZone.displayName
                 : "None";
             _debugDepthTier = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthTier : 1;
             _debugDepthMeters = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthMeters : 0f;

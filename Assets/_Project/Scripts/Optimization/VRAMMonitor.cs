@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
 using Unity.Profiling;
+using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Profiling;
 using Hecton8.Core;
@@ -50,6 +53,21 @@ namespace Hecton8.Optimization
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VRAMMonitor
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
+        // COLD ALLOC: List<ProfilerRecorderHandle>[128] — profiler counter discovery at startup only — owner: VRAMMonitor
+        private readonly List<ProfilerRecorderHandle> _availableHandles = new List<ProfilerRecorderHandle>(128);
+
+        private static readonly string[] _textureMemoryCandidates =
+        {
+            "Texture Memory",
+            "Texture Used Memory"
+        };
+
+        private static readonly string[] _renderTextureMemoryCandidates =
+        {
+            "RenderTexture Memory",
+            "Render Textures Bytes",
+            "Render Textures Memory"
+        };
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextLogTime;
@@ -96,6 +114,11 @@ namespace Hecton8.Optimization
         /// Normalized total VRAM budget utilization.
         /// </summary>
         public float TotalVRAMBudgetUtilization { get; private set; }
+
+        /// <summary>
+        /// Normalized texture budget utilization.
+        /// </summary>
+        public float TextureBudgetUtilization { get; private set; }
         
         /// <summary>
         /// Current high-level VRAM pressure state.
@@ -119,24 +142,17 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registeredSlowTick)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredSlowTick = true;
-            }
+            TryRegister();
         }
         
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registeredSlowTick)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredSlowTick = false;
-            }
+            TryUnregister();
         }
         
         private void OnDestroy()
         {
+            TryUnregister();
             _textureMemoryRecorder.Dispose();
             _renderTextureMemoryRecorder.Dispose();
             
@@ -175,34 +191,48 @@ namespace Hecton8.Optimization
         
         private void StartRecorders()
         {
-            // Texture memory recorder
-            _textureMemoryRecorder = ProfilerRecorder.StartNew(
-                ProfilerCategory.Memory,
-                "Texture Memory",
-                1,
-                ProfilerRecorderOptions.Default);
-            
-            // RenderTexture memory recorder
-            _renderTextureMemoryRecorder = ProfilerRecorder.StartNew(
-                ProfilerCategory.Memory,
-                "RenderTexture Memory",
-                1,
-                ProfilerRecorderOptions.Default);
+            _textureMemoryRecorder = TryStartMemoryRecorder(_textureMemoryCandidates);
+            _renderTextureMemoryRecorder = TryStartMemoryRecorder(_renderTextureMemoryCandidates);
+        }
+
+        private void TryRegister()
+        {
+            if (_registeredSlowTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _registeredSlowTick = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+            {
+                tickManager.Unregister((ISlowTickable)this);
+            }
+
+            _registeredSlowTick = false;
         }
         
         private void MeasureVRAM()
         {
-            if (_textureMemoryRecorder.Valid)
-            {
-                TextureMemoryBytes = _textureMemoryRecorder.LastValue;
-            }
-            
-            if (_renderTextureMemoryRecorder.Valid)
-            {
-                RenderTextureMemoryBytes = _renderTextureMemoryRecorder.LastValue;
-            }
-            
-            TotalVRAMBytes = Profiler.GetTotalAllocatedMemoryLong();
+            TextureMemoryBytes = ReadRecorderValue(_textureMemoryRecorder);
+            RenderTextureMemoryBytes = ReadRenderTextureMemoryBytes();
+            TotalVRAMBytes = ReadTotalGraphicsMemoryBytes();
+            if (TotalVRAMBytes < TextureMemoryBytes + RenderTextureMemoryBytes)
+                TotalVRAMBytes = TextureMemoryBytes + RenderTextureMemoryBytes;
+
+            TextureBudgetUtilization = CalculateBudgetUtilization(
+                TextureMemoryBytes,
+                _budgetThresholds.TextureMemoryBudgetBytes);
             RenderTextureBudgetUtilization = CalculateBudgetUtilization(
                 RenderTextureMemoryBytes,
                 _budgetThresholds.RenderTextureMemoryBudgetBytes);
@@ -236,11 +266,13 @@ namespace Hecton8.Optimization
 
         private void UpdatePressureState()
         {
-            float maxUtilization = RenderTextureBudgetUtilization > TotalVRAMBudgetUtilization
-                ? RenderTextureBudgetUtilization
-                : TotalVRAMBudgetUtilization;
+            float maxUtilization = TextureBudgetUtilization;
+            if (RenderTextureBudgetUtilization > maxUtilization)
+                maxUtilization = RenderTextureBudgetUtilization;
+            if (TotalVRAMBudgetUtilization > maxUtilization)
+                maxUtilization = TotalVRAMBudgetUtilization;
 
-            if (IsRenderTextureMemoryOverBudget || IsTotalVRAMOverBudget || maxUtilization >= _criticalBudgetFraction)
+            if (IsTextureMemoryOverBudget || IsRenderTextureMemoryOverBudget || IsTotalVRAMOverBudget || maxUtilization >= _criticalBudgetFraction)
             {
                 PressureState = VRAMPressureState.Critical;
                 return;
@@ -249,6 +281,67 @@ namespace Hecton8.Optimization
             PressureState = maxUtilization >= _warningBudgetFraction
                 ? VRAMPressureState.Warning
                 : VRAMPressureState.Stable;
+        }
+
+        private ProfilerRecorder TryStartMemoryRecorder(string[] candidates)
+        {
+            if (candidates == null || candidates.Length == 0)
+                return default;
+
+            _availableHandles.Clear();
+            ProfilerRecorderHandle.GetAvailable(_availableHandles);
+            for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+            {
+                string candidate = candidates[candidateIndex];
+                for (int handleIndex = 0; handleIndex < _availableHandles.Count; handleIndex++)
+                {
+                    ProfilerRecorderDescription description = ProfilerRecorderHandle.GetDescription(_availableHandles[handleIndex]);
+                    if (!string.Equals(description.Name, candidate, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    try
+                    {
+                        return ProfilerRecorder.StartNew(
+                            description.Category,
+                            description.Name,
+                            1,
+                            ProfilerRecorderOptions.Default);
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                }
+            }
+
+            return default;
+        }
+
+        private static long ReadRecorderValue(ProfilerRecorder recorder)
+        {
+            if (!recorder.Valid)
+                return 0L;
+
+            long value = recorder.LastValue;
+            return value > 0L ? value : 0L;
+        }
+
+        private long ReadRenderTextureMemoryBytes()
+        {
+            long recorderValue = ReadRecorderValue(_renderTextureMemoryRecorder);
+            if (recorderValue > 0L)
+                return recorderValue;
+
+            RenderTextureLifecycleTracker tracker = RenderTextureLifecycleTracker.Instance;
+            if (tracker != null)
+                return tracker.TrackedRenderTextureMemoryBytes;
+
+            return 0L;
+        }
+
+        private static long ReadTotalGraphicsMemoryBytes()
+        {
+            long graphicsDriverBytes = Profiler.GetAllocatedMemoryForGraphicsDriver();
+            return graphicsDriverBytes > 0L ? graphicsDriverBytes : 0L;
         }
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

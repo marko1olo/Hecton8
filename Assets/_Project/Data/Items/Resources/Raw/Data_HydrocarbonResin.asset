@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_HydrocarbonResin
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Hydrocarbon Resin
+  localizedItemName:
+    tableKey: ITEM_HYDROCARBON_RESIN_NAME
+    fallbackText: "Hydrocarbon Resin"
+    variants: []
   icon: {fileID: 0}
   description: Sticky deep-sea resin for polymers, lubricants, and pressure-safe
     seal mixes.
+  localizedDescription:
+    tableKey: ITEM_HYDROCARBON_RESIN_DESCRIPTION
+    fallbackText: "Sticky deep-sea resin for polymers, lubricants, and pressure-safe seal mixes."
+    variants: []
   weight: 0.8
   stackable: 1
   maxStack: 24
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Collect"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

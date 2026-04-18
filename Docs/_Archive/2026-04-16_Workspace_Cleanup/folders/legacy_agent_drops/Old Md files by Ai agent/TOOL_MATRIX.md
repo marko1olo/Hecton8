@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Tool Matrix
 
 ## 2026-03-29 - Environmental Analyzer Upgrade

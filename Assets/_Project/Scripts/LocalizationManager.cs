@@ -39,7 +39,7 @@ namespace Hecton.Localization
     [DisallowMultipleComponent]
     public sealed class LocalizationManager : MonoBehaviour
     {
-        // COLD ALLOC: Regex[1] — flat JSON key/value extraction for localization tables — owner: LocalizationManager
+        // COLD ALLOC: Regex[1] â€” flat JSON key/value extraction for localization tables â€” owner: LocalizationManager
         private static readonly Regex FlatJsonEntryRegex = new Regex(
             "\"(?<key>(?:\\\\.|[^\"\\\\])*)\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"\\\\])*)\"",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -59,7 +59,7 @@ namespace Hecton.Localization
         // Shared user-options key owned by UserOptionsPersistence.
         private const string PrefsLanguageKey = UserOptionsPersistence.LanguageKey;
 
-        // COLD ALLOC: Dictionary[20] — language tables for UI/content lookup — owner: LocalizationManager
+        // COLD ALLOC: Dictionary[20] â€” language tables for UI/content lookup â€” owner: LocalizationManager
         private readonly Dictionary<GameLanguage, Dictionary<string, string>> _tables =
             new Dictionary<GameLanguage, Dictionary<string, string>>(20);
 
@@ -248,7 +248,7 @@ namespace Hecton.Localization
 
         private static Dictionary<string, string> ParseJsonTable(string json)
         {
-            // COLD ALLOC: Dictionary[128] — parsed localization table entries — owner: LocalizationManager
+            // COLD ALLOC: Dictionary[128] â€” parsed localization table entries â€” owner: LocalizationManager
             var result = new Dictionary<string, string>(128);
             if (string.IsNullOrWhiteSpace(json))
                 return result;
@@ -304,7 +304,7 @@ namespace Hecton.Localization
                 };
             }
 
-            if (!_tables.ContainsKey(GameLanguage.Russian))
+                        if (!_tables.ContainsKey(GameLanguage.Russian))
             {
                 _tables[GameLanguage.Russian] = new Dictionary<string, string>(160)
                 {

@@ -106,6 +106,23 @@ namespace Hecton8.Power
         public HashSet<PowerNode> Nodes => _nodes;
 
         // ══════════════════════════════════════════════════════════
+        //  POWER CONSUMPTION API
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Потребляет указанное количество энергии из накопленного баланса.
+        /// Используется для разовых операций (крафт, зарядка).
+        /// Уменьшает _totalGeneration на указанное значение.
+        /// </summary>
+        /// <param name="amount">Количество энергии для потребления (Вт·ч).</param>
+        public void ConsumePower(float amount)
+        {
+            if (amount <= 0f) return;
+            _totalGeneration = System.Math.Max(0f, _totalGeneration - amount);
+            _balance = _totalGeneration - _totalConsumption;
+        }
+
+        // ══════════════════════════════════════════════════════════
         //  CONSTRUCTOR
         // ══════════════════════════════════════════════════════════
 

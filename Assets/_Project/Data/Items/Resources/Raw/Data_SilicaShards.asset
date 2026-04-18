@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Data_SilicaShards
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Silica Shards
+  localizedItemName:
+    tableKey: ITEM_SILICA_SHARDS_NAME
+    fallbackText: "Silica Shards"
+    variants: []
   icon: {fileID: 0}
   description: Fragmented mineral glass used for panels, optics, and sealed viewports.
+  localizedDescription:
+    tableKey: ITEM_SILICA_SHARDS_DESCRIPTION
+    fallbackText: "Fragmented mineral glass used for panels, optics, and sealed viewports."
+    variants: []
   weight: 0.7
   stackable: 1
   maxStack: 32
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

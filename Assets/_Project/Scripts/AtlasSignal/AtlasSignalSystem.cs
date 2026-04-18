@@ -11,8 +11,8 @@
 // МЕХАНИКА:
 //   • Пульс каждые 683 секунды (11 мин 23 сек).
 //   • Сила сигнала = 1 - (dist / maxSignalRange).
-//   • Сканер может "настроиться" → показывает направление к ядру.
-//   • Интегрируется с QuestManager (QuestTriggerType.OnSignalDetected).
+//   • Сканер получает usable bearing only after late identity-stage lock.
+//   • Quest handoff идёт через discovery-chain, а не через ранний raw detect.
 //   • Интегрируется с HectonDirectorAI (narrative beat).
 //
 // ZERO GC:
@@ -97,8 +97,11 @@ namespace Hecton8.AtlasSignal
         private int _maxRevealStageUnlocked;
         private bool _registered;
         private bool _ghostManifestationAnnounced;
+        private bool _identityDiscoverySynchronized;
 
         private const int FormalDetectionRevealStage = 2;
+        private const int IdentityRevealStage = 3;
+        private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
 
         private static readonly int _ShaderSignalStrength =
             Shader.PropertyToID("_AtlasSignalStrength");
@@ -227,6 +230,8 @@ namespace Hecton8.AtlasSignal
 
             if (_maxRevealStageUnlocked > previousRevealStage)
                 HandleRevealStageUnlocked(_maxRevealStageUnlocked, newStrength);
+
+            TryEnsureIdentityDiscoveryPublished();
 
             // Пульс
             if (_maxRevealStageUnlocked <= 0)
@@ -396,6 +401,7 @@ namespace Hecton8.AtlasSignal
                     break;
 
                 case 3:
+                    TryEnsureIdentityDiscoveryPublished();
                     NotificationEvents.PushWarning(
                         "СИГНАЛ НАЧАЛ ОТДАВАТЬ ФРАГМЕНТЫ СОДЕРЖАНИЯ. ГЛУБИНА ДАЁТ ПЕЛЕНГ ЧИЩЕ.");
                     break;
@@ -407,6 +413,21 @@ namespace Hecton8.AtlasSignal
             }
 
             LogRevealStageUnlocked(revealStage, manifestedStrength);
+        }
+
+        private void TryEnsureIdentityDiscoveryPublished()
+        {
+            if (_identityDiscoverySynchronized || _maxRevealStageUnlocked < IdentityRevealStage)
+                return;
+
+            HectonNarrativeDirector narrativeDirector = HectonNarrativeDirector.Instance;
+            if (narrativeDirector == null)
+                return;
+
+            if (!narrativeDirector.HasDiscovery(SignalIdentityDiscoveryId))
+                NarrativeEvents.RaiseDiscoveryMade(SignalIdentityDiscoveryId);
+
+            _identityDiscoverySynchronized = true;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -456,6 +477,7 @@ namespace Hecton8.AtlasSignal
             _pulseTimer = data.atlasSignalPulseTimer;
             _maxRevealStageUnlocked = Mathf.Clamp(data.atlasSignalRevealStage, 0, 4);
             _ghostManifestationAnnounced = _maxRevealStageUnlocked > 0 && !_signalEverDetected;
+            _identityDiscoverySynchronized = _maxRevealStageUnlocked < IdentityRevealStage;
             if (_signalEverDetected && _maxRevealStageUnlocked < FormalDetectionRevealStage)
                 _maxRevealStageUnlocked = FormalDetectionRevealStage;
 

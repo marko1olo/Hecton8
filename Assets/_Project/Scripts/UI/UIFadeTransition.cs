@@ -53,6 +53,11 @@ namespace Hecton8.UI
             Unregister();
         }
 
+        private void OnDestroy()
+        {
+            Unregister();
+        }
+
         // ══════════════════════════════════════════════════════════
         // ITICKABLE
         // ══════════════════════════════════════════════════════════
@@ -155,10 +160,15 @@ namespace Hecton8.UI
 
         private void Unregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister(this);
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+            {
+                tickManager.Unregister(this);
+            }
+
             _registered = false;
         }
     }

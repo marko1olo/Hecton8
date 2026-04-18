@@ -284,9 +284,21 @@ namespace Hecton8.EditorTools
                 warningCount++;
             }
 
-            if (mapMagic.draftsInPlaymode)
+            if (!mapMagic.draftsInPlaymode)
             {
-                Debug.LogWarning("[MapMagicWorldValidation] draftsInPlaymode is enabled; this is expensive for runtime streaming.", mapMagic);
+                Debug.LogWarning("[MapMagicWorldValidation] draftsInPlaymode is disabled; runtime terrain loses the draft-to-main detail continuum and far terrain will stay visibly coarse or disappear.", mapMagic);
+                warningCount++;
+            }
+
+            if (mapMagic.draftsInPlaymode && (int)mapMagic.draftResolution < 65)
+            {
+                Debug.LogWarning($"[MapMagicWorldValidation] draftResolution is low ({(int)mapMagic.draftResolution}); expected >= 65 to avoid visibly blurry mid-field terrain.", mapMagic);
+                warningCount++;
+            }
+
+            if (mapMagic.tiles.generateRange < mapMagic.mainRange)
+            {
+                Debug.LogWarning($"[MapMagicWorldValidation] DraftRange ({mapMagic.tiles.generateRange}) is lower than mainRange ({mapMagic.mainRange}); terrain streaming rings are inconsistent.", mapMagic);
                 warningCount++;
             }
 

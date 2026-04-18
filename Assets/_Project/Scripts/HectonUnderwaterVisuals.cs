@@ -72,6 +72,8 @@ namespace Hecton8.Environment
     [ExecuteAlways]
     public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, ISlowTickable
     {
+        internal static HectonUnderwaterVisuals ActiveRuntimeInstance { get; private set; }
+
         private const float RuntimeCameraResolveRetryInterval = 1f;
         private const float EditorCameraResolveRetryInterval = 0.25f;
         private const float VisualEnterUnderwaterDepth = 0.01f;
@@ -79,6 +81,12 @@ namespace Hecton8.Environment
         private const string UnderwaterSuspendedMotesChildName = "Underwater_SuspendedMotes";
         private const string UnderwaterExhaleBubblesChildName = "Underwater_ExhaleBubbles";
         private const string UnderwaterShallowSunBeamChildName = "Underwater_ShallowSunBeam";
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
@@ -131,11 +139,28 @@ namespace Hecton8.Environment
         );
 
         [Header("═══ FOG DENSITY RANGE ═══")]
+        [Header("Beer-Lambert Depth Attenuation")]
+        [Tooltip("Uses Crest depth-fog coefficients as Beer-Lambert extinction instead of the legacy authored depth curve.")]
+        [SerializeField] private bool useBeerLambertDepthAttenuation = true;
+        [Tooltip("Keeps the upper water column readable before full extinction ramps in.")]
+        [SerializeField, UnityEngine.Range(0f, 80f)] private float beerLambertSurfaceClarityDepth = 35f;
+        [Tooltip("Global multiplier on extinction derived from Crest _DepthFogDensity.")]
+        [SerializeField, UnityEngine.Range(0.1f, 4f)] private float beerLambertExtinctionScale = 1f;
+        [Tooltip("Treat deep water as effectively black once transmittance falls below this threshold.")]
+        [SerializeField, UnityEngine.Range(0f, 0.05f)] private float beerLambertBlackoutThreshold = 0.0025f;
+        [Tooltip("Depth gate for the deep-black clamp so the upper column stays readable.")]
+        [SerializeField, UnityEngine.Range(100f, 1000f)] private float beerLambertBlackoutDepth = 450f;
+
+        [Header("Fog Density Range")]
         [UnityEngine.Range(0.0001f, 0.05f)]
         [SerializeField] private float minFogDensity = 0.002f;
 
         [UnityEngine.Range(0.01f, 0.5f)]
         [SerializeField] private float maxFogDensity = 0.08f;
+
+        [Header("Horizon Weld")]
+        [Tooltip("Blends underwater fog back toward the sky-owned horizon color near the surface to avoid a hard seam.")]
+        [SerializeField, UnityEngine.Range(0.5f, 40f)] private float surfaceFogBlendDepth = 16f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CONFIGURATION
@@ -400,6 +425,8 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_SunDiscColor");
         private static readonly int _ID_SunScatterColor =
             Shader.PropertyToID("_SunScatterColor");
+        private static readonly int _ID_SkyColorHorizon =
+            Shader.PropertyToID("_SkyColorHorizon");
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -539,6 +566,7 @@ namespace Hecton8.Environment
 
             if (Application.isPlaying)
             {
+                ActiveRuntimeInstance = this;
                 _debugEditorDriven = false;
                 if (mainCamera != null && !IsRuntimeMainCamera(mainCamera))
                     mainCamera = null;
@@ -785,6 +813,9 @@ namespace Hecton8.Environment
 
             if (Application.isPlaying)
             {
+                if (ActiveRuntimeInstance == this)
+                    ActiveRuntimeInstance = null;
+
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
                 SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
@@ -838,8 +869,13 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
         private void EditorUpdate()
         {
-            if (Application.isPlaying) return;
             if (this == null) return;
+
+            if (Application.isPlaying)
+            {
+                ResumeEditorWaterRendering();
+                return;
+            }
 
             if (!IsEditorPreviewActive())
             {
@@ -847,7 +883,10 @@ namespace Hecton8.Environment
                 return;
             }
 
-            ResumeEditorWaterRendering();
+            // Keep Crest's fullscreen underwater pass off on the authored gameplay
+            // camera while in edit mode. It renders the below-water half-space as a
+            // dark band in Game view when the runtime stack is not active.
+            SuspendEditorWaterRendering();
 
             ResolveEditorCamera();
 
@@ -1097,7 +1136,7 @@ namespace Hecton8.Environment
             //  UNDERWATER — DEPTH-DRIVEN
             // ══════════════════════════════════════════════
 
-            float lightFactor = math.saturate(globalLightCurve.Evaluate(depth));
+            float lightFactor = ResolveDepthLightFactor(depth);
             float submergeImpulse = EvaluateSubmergeImpulse(depth);
             lightFactor *= 1f - (submergeDarkenStrength * submergeImpulse);
             _cachedLightFactor = lightFactor;
@@ -1187,6 +1226,44 @@ namespace Hecton8.Environment
                 return _cachedAtmoManager.ComputedHorizonFade;
 
             return 1f;
+        }
+
+        private float ResolveDepthLightFactor(float depth)
+        {
+            if (depth <= 0f)
+                return 1f;
+
+            if (!useBeerLambertDepthAttenuation)
+                return math.saturate(globalLightCurve.Evaluate(depth));
+
+            float effectiveDepth = math.max(0f, depth - beerLambertSurfaceClarityDepth);
+            if (effectiveDepth <= 0f)
+                return 1f;
+
+            float extinction = ResolveBeerLambertExtinction();
+            float transmittance = math.exp(-extinction * effectiveDepth);
+
+            if (depth >= beerLambertBlackoutDepth &&
+                transmittance <= beerLambertBlackoutThreshold)
+            {
+                return 0f;
+            }
+
+            return math.saturate(transmittance);
+        }
+
+        private float ResolveBeerLambertExtinction()
+        {
+            Vector3 depthFogDensity = _currentDepthFogDensity;
+            float luminance =
+                (depthFogDensity.x * 0.2126f) +
+                (depthFogDensity.y * 0.7152f) +
+                (depthFogDensity.z * 0.0722f);
+
+            float extinction = luminance * math.max(0.1f, beerLambertExtinctionScale);
+            extinction *= math.max(0.5f, _currentTurbidity);
+
+            return math.max(0.0001f, extinction);
         }
 
         private void CacheAtmosphereManager()
@@ -1372,6 +1449,13 @@ namespace Hecton8.Environment
 
         private Color ResolveSurfaceFogColor()
         {
+            Color skyHorizonColor = Shader.GetGlobalColor(_ID_SkyColorHorizon);
+            if (skyHorizonColor.maxColorComponent > 0.0001f)
+            {
+                skyHorizonColor.a = 1f;
+                return skyHorizonColor;
+            }
+
             return _surfaceWeatherOverrideActive
                 ? _surfaceWeatherFogColor
                 : surfaceFogColor;
@@ -1401,6 +1485,14 @@ namespace Hecton8.Environment
         private void ApplyUnderwaterFog(float lightFactor, float currentDepth, float submergeImpulse)
         {
             Color fogColor = ResolveUnderwaterFogColor();
+            float surfaceBlend = 1f - math.saturate(
+                currentDepth / math.max(0.01f, surfaceFogBlendDepth));
+            if (surfaceBlend > 0f)
+            {
+                fogColor = Color.Lerp(fogColor, ResolveSurfaceFogColor(), surfaceBlend);
+                fogColor.a = 1f;
+            }
+
             RenderSettings.fogColor = fogColor;
 
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
@@ -1628,16 +1720,20 @@ namespace Hecton8.Environment
 
         private void ApplyCrestMaterial()
         {
-            ApplyCrestMaterial(oceanUnderwaterMaterial);
-
             Material runtimeOceanMaterial = CrestOceanRenderer.Instance != null
                 ? CrestOceanRenderer.Instance.OceanMaterial
                 : null;
+            Material primaryTarget = runtimeOceanMaterial != null
+                ? runtimeOceanMaterial
+                : oceanUnderwaterMaterial;
 
-            if (runtimeOceanMaterial != null &&
-                !ReferenceEquals(runtimeOceanMaterial, oceanUnderwaterMaterial))
+            ApplyCrestMaterial(primaryTarget);
+
+            if (runtimeOceanMaterial == null &&
+                oceanUnderwaterMaterial != null &&
+                !ReferenceEquals(primaryTarget, oceanUnderwaterMaterial))
             {
-                ApplyCrestMaterial(runtimeOceanMaterial);
+                ApplyCrestMaterial(oceanUnderwaterMaterial);
             }
 
             _lastRuntimeOceanMaterial = runtimeOceanMaterial;
@@ -1821,7 +1917,7 @@ namespace Hecton8.Environment
             {
                 float d = CurrentDepth;
                 if (d <= 0f) return 1f;
-                return math.saturate(globalLightCurve.Evaluate(d));
+                return ResolveDepthLightFactor(d);
             }
         }
 
@@ -1858,6 +1954,11 @@ namespace Hecton8.Environment
         public float CurrentTurbidity => _currentTurbidity;
         public int TargetBiomeIndex => _targetBiomeIndex;
         public float TransitionProgress => _transitionProgress;
+        internal float DebugAdaptiveMotesScale => _debugAdaptiveMotesScale;
+        internal float DebugAdaptiveBubbleScale => _debugAdaptiveBubbleScale;
+        internal float DebugAdaptiveBeamScale => _debugAdaptiveBeamScale;
+        internal float DebugSuspendedMotesEmission => _debugSuspendedMotesEmission;
+        internal int DebugExhaleBubbleBurstCount => _debugExhaleBubbleBurstCount;
 
         public void SetTargetBiome(int biomeIndex) => HandleBiomeChanged(biomeIndex);
         public void SetPlayerCamera(Transform camera) => playerCamera = camera;
@@ -3241,9 +3342,7 @@ namespace Hecton8.Environment
 
             if (depth > 0f)
             {
-                float lf = globalLightCurve != null
-                    ? Mathf.Clamp01(globalLightCurve.Evaluate(depth))
-                    : 1f;
+                float lf = ResolveDepthLightFactor(depth);
 
                 Gizmos.color = Color.Lerp(Color.black, Color.cyan, lf);
                 Gizmos.DrawLine(
@@ -3280,7 +3379,11 @@ namespace Hecton8.Environment
             if (globalLightCurve == null || globalLightCurve.length < 2)
                 return 0f;
 
-            float maxTime = globalLightCurve[globalLightCurve.length - 1].time;
+            float maxTime = useBeerLambertDepthAttenuation
+                ? Mathf.Max(
+                    beerLambertBlackoutDepth,
+                    globalLightCurve[globalLightCurve.length - 1].time)
+                : globalLightCurve[globalLightCurve.length - 1].time;
             const float threshold = 0.005f;
             const int samples = 100;
             float step = maxTime / samples;
@@ -3288,7 +3391,7 @@ namespace Hecton8.Environment
             for (int i = 1; i <= samples; i++)
             {
                 float t = i * step;
-                float v = globalLightCurve.Evaluate(t);
+                float v = ResolveDepthLightFactor(t);
                 if (v <= threshold)
                     return t;
             }

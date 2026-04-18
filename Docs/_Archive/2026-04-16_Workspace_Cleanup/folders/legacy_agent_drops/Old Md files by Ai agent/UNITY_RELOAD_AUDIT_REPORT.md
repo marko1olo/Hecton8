@@ -1,4 +1,6 @@
-﻿# Unity Reload Audit Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Unity Reload Audit Report
 
 Generated: 2026-04-04 21:03:25
 

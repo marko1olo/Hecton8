@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 Приветствую. Я переключаюсь в режим Senior Unity/C# Architect согласно твоим инструкциям (строгий подход, Zero-GC, Enterprise-ready, атомарность, профилирование).
 
 Проект Hecton8 выглядит как масштабная игра (судя по WorldProceduralScatterDirector — это подводный/sci-fi выживач с процедурной генерацией, пещерами, биомами и MapMagic). Код массивный, в нем вложено много сил, но с архитектурной точки зрения это типичный "God Object" (Божественный объект), который рано или поздно убьет производительность и возможность расширения.

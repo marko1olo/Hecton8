@@ -470,13 +470,20 @@ namespace Hecton8.Dev
 
         private void Update()
         {
-            if (!Application.isPlaying || !_debugProfilingActive)
+            if (!Application.isPlaying)
                 return;
+
+            float deltaTime = Time.unscaledDeltaTime;
+            if (!_debugProfilingActive)
+            {
+                PumpPendingRuntimeRoutes(deltaTime);
+                return;
+            }
 
             if (_lastDrivenFrame == Time.frameCount)
                 return;
 
-            DriveSampling(Time.unscaledDeltaTime, true);
+            DriveSampling(deltaTime, true);
         }
 
         private void OnDisable()
@@ -508,8 +515,16 @@ namespace Hecton8.Dev
                 "runtime.lifecycle",
                 $"on-destroy id={GetEntityId()} scene={SceneManager.GetActiveScene().name} active={_debugProfilingActive} instanceMatch={(_instance == this)}");
 #endif
-            if (_instance == this)
-                _instance = null;
+            if (_instance != this)
+                return;
+
+            StopProfiling();
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+#if UNITY_EDITOR
+            UnregisterEditorDiagnosticsHooks();
+#endif
+            UnregisterFromTickManager();
+            _instance = null;
         }
 
 #if UNITY_EDITOR
@@ -683,10 +698,13 @@ namespace Hecton8.Dev
 
         public void Tick(float deltaTime)
         {
-            if (!_debugProfilingActive)
-                return;
-
             float sampleDeltaTime = deltaTime > 0f ? deltaTime : Time.unscaledDeltaTime;
+            if (!_debugProfilingActive)
+            {
+                PumpPendingRuntimeRoutes(sampleDeltaTime);
+                return;
+            }
+
             DriveSampling(sampleDeltaTime, false);
         }
 
@@ -722,6 +740,12 @@ namespace Hecton8.Dev
         public void LogStatusToConsole()
         {
             Debug.Log("[RuntimeProfiler] " + DescribeStatus(), this);
+        }
+
+        private void PumpPendingRuntimeRoutes(float deltaTime)
+        {
+            UpdatePendingSceneSnapshot(deltaTime);
+            UpdatePendingAutoStart(deltaTime);
         }
 
         private void RegisterWithTickManager()
@@ -1577,6 +1601,15 @@ namespace Hecton8.Dev
 
         private static void HandleBeforeAssemblyReload()
         {
+            RuntimePerformanceProfiler instance = _instance;
+            if (instance != null)
+            {
+                instance.StopProfiling();
+                instance.UnregisterFromTickManager();
+            }
+
+            UnregisterEditorDiagnosticsHooks();
+
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 

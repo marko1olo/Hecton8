@@ -13,7 +13,7 @@ In-progress code slice already started:
 - `HectonUnderwaterVisuals` now owns a camera-local suspended particulate layer (`Underwater_SuspendedMotes`) and drives its emission from depth / turbidity / submerge impulse instead of leaving the camera volume visually empty underwater.
 - `Assets/_Project/Prefabs/Player.prefab` is now the source of truth for the underwater particulate child under `Player/Main Camera`, instead of relying on scene-only dressing.
 - `Assets/_Project/Prefabs/Player.prefab` now also contains an inactive `Underwater_ShallowSunBeam` child with `VLB.VolumetricLightBeamHD` + driver light, and `HectonUnderwaterVisuals` now gates it by shallow depth / light factor instead of leaving god rays entirely absent near camera.
-- Separate asset-authoring ledger now exists here: [2026-04-15_UNDERWATER_ASSET_REQUIREMENTS.md](/abs/path/c:/hades/Hecton8/Docs/2026-04-15_UNDERWATER_ASSET_REQUIREMENTS.md:1)
+- Separate asset-authoring ledger now exists here: [2026-04-15_UNDERWATER_ASSET_REQUIREMENTS.md](./2026-04-15_UNDERWATER_ASSET_REQUIREMENTS.md)
 - `wet visor / runoff` is now being implemented on the existing `Suit_Visor` shader + `VisorHUDController` path instead of adding a second fullscreen overlay stack.
 - `HectonUnderwaterVisuals` now also boosts the existing near-camera suspended motes when the player moves close to the seafloor, using sampled seafloor distance + player body speed instead of spawning a second bottom-silt particle owner.
 - `PlayerFlashlight` now auto-resolves a VLB owner on `DiveLamp_Light`, and `Player.prefab` now gives that light its own `VLB.VolumetricLightBeamHD` + `TrackRealtimeChangesOnLightHD` so the flashlight shaft can thicken underwater from depth instead of staying visually flat.
@@ -54,11 +54,11 @@ This document is facts first. No “looks good”. No “probably works”.
 
 ### 1.1 Runtime owners already present
 
-- Underwater visual owner exists: [Assets/_Project/Scripts/HectonUnderwaterVisuals.cs](/abs/path/c:/hades/Hecton8/Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:69)
-- Surface weather owner exists and already writes back into underwater visuals: [Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs](/abs/path/c:/hades/Hecton8/Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:248)
-- Underwater audio transition owner exists: [Assets/_Project/Scripts/AcousticZoneController.cs](/abs/path/c:/hades/Hecton8/Assets/_Project/Scripts/AcousticZoneController.cs:131)
-- Camera impact post-process controller already exists and can be repurposed for submerge impulse: [Assets/_Project/Scripts/LandingImpactVFX.cs](/abs/path/c:/hades/Hecton8/Assets/_Project/Scripts/LandingImpactVFX.cs:26)
-- Flashlight already has optional Volumetric Light Beam integration hook: [Assets/_Project/Scripts/PlayerFlashlight.cs](/abs/path/c:/hades/Hecton8/Assets/_Project/Scripts/PlayerFlashlight.cs:172)
+- Underwater visual owner exists: [Assets/_Project/Scripts/HectonUnderwaterVisuals.cs](../Assets/_Project/Scripts/HectonUnderwaterVisuals.cs)
+- Surface weather owner exists and already writes back into underwater visuals: [Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs](../Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs)
+- Underwater audio transition owner exists: [Assets/_Project/Scripts/AcousticZoneController.cs](../Assets/_Project/Scripts/AcousticZoneController.cs)
+- Camera impact post-process controller already exists and can be repurposed for submerge impulse: [Assets/_Project/Scripts/LandingImpactVFX.cs](../Assets/_Project/Scripts/LandingImpactVFX.cs)
+- Flashlight already has optional Volumetric Light Beam integration hook: [Assets/_Project/Scripts/PlayerFlashlight.cs](../Assets/_Project/Scripts/PlayerFlashlight.cs)
 
 Conclusion: there is no need to invent a second underwater owner. The existing owner stack is incomplete, not absent.
 
@@ -73,7 +73,7 @@ Conclusion: there is no need to invent a second underwater owner. The existing o
   - LOD resolution `256`
   - geometry downsample `2`
   - lod count `6`
-  - source: [Assets/_Project/Prefabs/Ocean_Crest.prefab](/abs/path/c:/hades/Hecton8/Assets/_Project/Prefabs/Ocean_Crest.prefab:50)
+  - source: [Assets/_Project/Prefabs/Ocean_Crest.prefab](../Assets/_Project/Prefabs/Ocean_Crest.prefab)
 - Global world post stack exists in `SampleSceneProfile`:
   - Tonemapping
   - Bloom
@@ -82,11 +82,11 @@ Conclusion: there is no need to invent a second underwater owner. The existing o
   - WhiteBalance
   - ShadowsMidtonesHighlights
   - MotionBlur disabled
-  - source: [Assets/_Project/Data/SampleSceneProfile.asset](/abs/path/c:/hades/Hecton8/Assets/_Project/Data/SampleSceneProfile.asset:13)
+  - source: [Assets/_Project/Data/SampleSceneProfile.asset](../Assets/_Project/Data/SampleSceneProfile.asset)
 - Camera-local post stack exists on player camera:
   - Chromatic Aberration
   - Vignette
-  - source: [Assets/_Project/Scenes/02_HECTON_WORLD/Main Camera Profile.asset](/abs/path/c:/hades/Hecton8/Assets/_Project/Scenes/02_HECTON_WORLD/Main Camera Profile.asset:13)
+  - source: [Assets/_Project/Scenes/02_HECTON_WORLD/Main Camera Profile.asset](<../Assets/_Project/Scenes/02_HECTON_WORLD/Main Camera Profile.asset>)
 
 ### 1.3 What is missing in live world right now
 
@@ -116,7 +116,7 @@ The packages exist. The runtime layer does not.
 - `_CausticsStrength: 3.2`
 - `_CausticsTextureScale: 5`
 - `_CausticsDistortionScale: 25`
-- source: [Assets/Crest/Crest/Materials/Ocean-Underwater.mat](/abs/path/c:/hades/Hecton8/Assets/Crest/Crest/Materials/Ocean-Underwater.mat:38)
+- source: [Assets/Crest/Crest/Materials/Ocean-Underwater.mat](../Assets/Crest/Crest/Materials/Ocean-Underwater.mat)
 
 Conclusion: the seabed light pattern is not missing from the project. It is present in Crest and explicitly disabled.
 
@@ -127,7 +127,7 @@ Project inventory:
 - `Assets/Dynamic Decals` package exists.
 - `Assets/ScifiFacility/Prefabs/decals/*.prefab` exists.
 - Example sci-fi “decal” prefab is a mesh + mesh renderer, not URP `DecalProjector`:
-  - [Assets/ScifiFacility/Prefabs/decals/decal_01.prefab](/abs/path/c:/hades/Hecton8/Assets/ScifiFacility/Prefabs/decals/decal_01.prefab:1)
+  - [Assets/ScifiFacility/Prefabs/decals/decal_01.prefab](../Assets/ScifiFacility/Prefabs/decals/decal_01.prefab)
 
 Conclusion:
 
@@ -141,7 +141,7 @@ Found:
 
 - bubble audio set: `Assets/_Project/Audio/SFX/bubble sound (1-4).wav`
 - proxy prefab `PFB_family_pocket_safe__bubble`, but this is static sphere geometry, not VFX:
-  - [Assets/_Project/Prefabs/WorldProceduralProxy/PFB_family_pocket_safe__bubble.prefab](/abs/path/c:/hades/Hecton8/Assets/_Project/Prefabs/WorldProceduralProxy/PFB_family_pocket_safe__bubble.prefab:1)
+  - [Assets/_Project/Prefabs/WorldProceduralProxy/PFB_family_pocket_safe__bubble.prefab](../Assets/_Project/Prefabs/WorldProceduralProxy/PFB_family_pocket_safe__bubble.prefab)
 
 Conclusion:
 
@@ -153,7 +153,7 @@ Conclusion:
 Code path exists:
 
 - `PlayerFlashlight` has serialized `volumetricBeam` field and runtime update path.
-- source: [Assets/_Project/Scripts/PlayerFlashlight.cs](/abs/path/c:/hades/Hecton8/Assets/_Project/Scripts/PlayerFlashlight.cs:172)
+- source: [Assets/_Project/Scripts/PlayerFlashlight.cs](../Assets/_Project/Scripts/PlayerFlashlight.cs)
 
 Live player state:
 

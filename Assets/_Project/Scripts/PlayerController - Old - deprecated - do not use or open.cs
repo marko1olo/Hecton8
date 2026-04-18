@@ -1,7 +1,7 @@
 using Hecton8.Input;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerControllerDeprecated : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 10f;

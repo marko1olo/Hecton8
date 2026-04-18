@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_EnzymeCoral
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Enzyme Coral
+  localizedItemName:
+    tableKey: ITEM_ENZYME_CORAL_NAME
+    fallbackText: "Enzyme Coral"
+    variants: []
   icon: {fileID: 0}
   description: Catalytic coral growth used in bonding compounds and advanced bio
     mixes.
+  localizedDescription:
+    tableKey: ITEM_ENZYME_CORAL_DESCRIPTION
+    fallbackText: "Catalytic coral growth used in bonding compounds and advanced bio mixes."
+    variants: []
   weight: 0.6
   stackable: 1
   maxStack: 20
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Harvest
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Harvest"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

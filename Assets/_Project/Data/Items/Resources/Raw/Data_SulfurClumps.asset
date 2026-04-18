@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_SulfurClumps
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Sulfur Clumps
+  localizedItemName:
+    tableKey: ITEM_SULFUR_CLUMPS_NAME
+    fallbackText: "Sulfur Clumps"
+    variants: []
   icon: {fileID: 0}
   description: Reactive chemical lumps used in energetic packs, cutters, and seal
     compounds.
+  localizedDescription:
+    tableKey: ITEM_SULFUR_CLUMPS_DESCRIPTION
+    fallbackText: "Reactive chemical lumps used in energetic packs, cutters, and seal compounds."
+    variants: []
   weight: 0.9
   stackable: 1
   maxStack: 24
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Collect"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

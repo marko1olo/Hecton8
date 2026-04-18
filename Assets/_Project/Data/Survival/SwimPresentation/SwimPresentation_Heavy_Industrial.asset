@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: SwimPresentation_Heavy_Industrial
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SwimPresentationProfile
   strokeStyle: 2
-  baseLocalPosition: {x: 0, y: -0.24, z: 0.36}
+  baseLocalPosition: {x: 0, y: -0.198, z: 0.365}
   baseLocalEuler: {x: 4, y: 0, z: 0}
-  leftGuideBaseLocalPosition: {x: -0.162, y: -0.082, z: 0.005}
+  leftGuideBaseLocalPosition: {x: -0.146, y: -0.044, z: 0.022}
   leftGuideBaseLocalEuler: {x: 12, y: -18, z: -9}
-  rightGuideBaseLocalPosition: {x: 0.162, y: -0.082, z: 0.005}
+  rightGuideBaseLocalPosition: {x: 0.146, y: -0.044, z: 0.022}
   rightGuideBaseLocalEuler: {x: 12, y: 18, z: 9}
   surfaceTreadCadence: 0.42
   surfaceStrokeCadence: 0.74

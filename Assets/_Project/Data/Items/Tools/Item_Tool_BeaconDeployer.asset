@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Item_Tool_BeaconDeployer
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Beacon Deployer
+  localizedItemName:
+    tableKey: ITEM_TOOL_BEACON_DEPLOYER_NAME
+    fallbackText: "Beacon Deployer"
+    variants: []
   icon: {fileID: 0}
   description: Navigation support unit used to deploy tracking beacons and survey
     markers.
+  localizedDescription:
+    tableKey: ITEM_TOOL_BEACON_DEPLOYER_DESCRIPTION
+    fallbackText: "Navigation support unit used to deploy tracking beacons and survey markers."
+    variants: []
   weight: 1.2
   stackable: 0
   maxStack: 1
@@ -27,6 +35,10 @@ MonoBehaviour:
   energyRestore: 0
   integrityRestore: 0
   useSound: {fileID: 0}
-  interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 100100000, guid: d174d546f879a4742bc018eb043e67b7, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: 3d11ab4b6f12cac4a9410e735e06e486, type: 2}

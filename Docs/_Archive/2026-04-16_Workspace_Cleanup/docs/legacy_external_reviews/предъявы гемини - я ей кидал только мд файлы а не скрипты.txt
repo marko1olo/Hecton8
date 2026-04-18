@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 Садись. Я изучил твои документы (это монументальный труд, уважаю за системный подход) и посмотрел видео про Parallax Occlusion Mapping (POM) с обрезкой силуэта (SPOM), которое ты скинул.
 
 Давай без соплей и сразу к делу. Разложим по полкам видео, а затем пройдемся по твоему проекту: где ты гений, а где мы сейчас с разбегу летим в стену.

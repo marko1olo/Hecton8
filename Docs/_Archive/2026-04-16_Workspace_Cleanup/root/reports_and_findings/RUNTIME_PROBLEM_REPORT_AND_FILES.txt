@@ -1,4 +1,6 @@
-﻿RUNTIME_PROBLEM_REPORT_AND_FILES
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+RUNTIME_PROBLEM_REPORT_AND_FILES
 Status: PENDING VERIFICATION
 Generated: 2026-04-03
 Workspace: c:\hades\Hecton8

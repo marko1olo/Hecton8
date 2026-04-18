@@ -159,8 +159,10 @@ namespace Hecton8.UI
             if (!_initialized)
                 Initialize();
 
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             LoadCurrentSettings();
             RefreshAllUI();
+            RefreshLocalizedLabels();
 
             // Play fade-in animation
             if (panelAnimator != null)
@@ -173,6 +175,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             UnbindSliders();
 
             // Fade out animation (if supported)
@@ -411,7 +414,7 @@ namespace Hecton8.UI
 
             string[] qualityNames = QualitySettings.names;
             if (_cachedQualityLevel >= 0 && _cachedQualityLevel < qualityNames.Length)
-                txtQualityLevel.SetText(qualityNames[_cachedQualityLevel]);
+                txtQualityLevel.SetText(ResolveLocalizedQualityName(qualityNames[_cachedQualityLevel]));
             else
                 txtQualityLevel.SetText("--");
         }
@@ -504,7 +507,7 @@ namespace Hecton8.UI
             }
 
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                txtShadowQuality.SetText(ShadowQualityNames[_cachedShadowQuality]);
+                txtShadowQuality.SetText(ResolveLocalizedShadowQualityName(_cachedShadowQuality));
 
             if (sliderShadowDistance != null)
                 sliderShadowDistance.SetValueWithoutNotify(_cachedShadowDistance);
@@ -523,7 +526,7 @@ namespace Hecton8.UI
             }
 
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                txtAntiAliasing.SetText(AntiAliasingNames[_cachedAntiAliasing]);
+                txtAntiAliasing.SetText(ResolveLocalizedAntiAliasingName(_cachedAntiAliasing));
 
             if (toggleAmbientOcclusion != null)
                 toggleAmbientOcclusion.SetIsOnWithoutNotify(_cachedAmbientOcclusion);
@@ -535,7 +538,7 @@ namespace Hecton8.UI
                 toggleMotionBlur.SetIsOnWithoutNotify(_cachedMotionBlur);
 
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                txtTextureQuality.SetText(TextureQualityNames[_cachedTextureQuality]);
+                txtTextureQuality.SetText(ResolveLocalizedTextureQualityName(_cachedTextureQuality));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -654,14 +657,14 @@ namespace Hecton8.UI
         {
             _cachedShadowQuality = Mathf.Clamp(_cachedShadowQuality - 1, 0, 3);
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                txtShadowQuality.SetText(ShadowQualityNames[_cachedShadowQuality]);
+                txtShadowQuality.SetText(ResolveLocalizedShadowQualityName(_cachedShadowQuality));
         }
 
         private void OnShadowQualityIncrease()
         {
             _cachedShadowQuality = Mathf.Clamp(_cachedShadowQuality + 1, 0, 3);
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                txtShadowQuality.SetText(ShadowQualityNames[_cachedShadowQuality]);
+                txtShadowQuality.SetText(ResolveLocalizedShadowQualityName(_cachedShadowQuality));
         }
 
         private void OnShadowDistanceChanged(float value)
@@ -692,14 +695,14 @@ namespace Hecton8.UI
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing - 1, 0, 3);
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                txtAntiAliasing.SetText(AntiAliasingNames[_cachedAntiAliasing]);
+                txtAntiAliasing.SetText(ResolveLocalizedAntiAliasingName(_cachedAntiAliasing));
         }
 
         private void OnAntiAliasingIncrease()
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing + 1, 0, 3);
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                txtAntiAliasing.SetText(AntiAliasingNames[_cachedAntiAliasing]);
+                txtAntiAliasing.SetText(ResolveLocalizedAntiAliasingName(_cachedAntiAliasing));
         }
 
         private void OnAmbientOcclusionChanged(bool value)
@@ -748,14 +751,115 @@ namespace Hecton8.UI
         {
             _cachedTextureQuality = Mathf.Clamp(_cachedTextureQuality - 1, 0, 3);
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                txtTextureQuality.SetText(TextureQualityNames[_cachedTextureQuality]);
+                txtTextureQuality.SetText(ResolveLocalizedTextureQualityName(_cachedTextureQuality));
         }
 
         private void OnTextureQualityIncrease()
         {
             _cachedTextureQuality = Mathf.Clamp(_cachedTextureQuality + 1, 0, 3);
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                txtTextureQuality.SetText(TextureQualityNames[_cachedTextureQuality]);
+                txtTextureQuality.SetText(ResolveLocalizedTextureQualityName(_cachedTextureQuality));
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RefreshAllUI();
+            RefreshLocalizedLabels();
+        }
+
+        private void RefreshLocalizedLabels()
+        {
+            ApplyLocalizedLabel("Container/Section_Presets/Label_Presets", LocalizationKeys.SETTINGS_PRESETS, "PRESETS");
+            ApplyLocalizedLabel("Container/Section_Graphics/Label_Graphics", LocalizationKeys.SETTINGS_GRAPHICS, "GRAPHICS");
+            ApplyLocalizedLabel("Container/Section_Audio/Label_Audio", LocalizationKeys.SETTINGS_AUDIO, "AUDIO");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_QualityLevel/Label_Row_QualityLevel", LocalizationKeys.SETTINGS_QUALITY_LEVEL, "QUALITY LEVEL");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_FOV/Label_Row_FOV", LocalizationKeys.SETTINGS_FOV, "FIELD OF VIEW");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowDistance/Label_Row_ShadowDistance", LocalizationKeys.SETTINGS_SHADOW_DISTANCE, "SHADOW DISTANCE");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowQuality/Label_Row_ShadowQuality", LocalizationKeys.SETTINGS_SHADOW_QUALITY, "SHADOW QUALITY");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_AntiAliasing/Label_Row_AntiAliasing", LocalizationKeys.SETTINGS_ANTI_ALIASING, "ANTI-ALIASING");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_TextureQuality/Label_Row_TextureQuality", LocalizationKeys.SETTINGS_TEXTURE_QUALITY, "TEXTURE QUALITY");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Vsync/Label", LocalizationKeys.SETTINGS_VSYNC, "V-SYNC");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Fullscreen/Label", LocalizationKeys.SETTINGS_FULLSCREEN, "FULLSCREEN");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_AO/Label", LocalizationKeys.SETTINGS_AO, "AMBIENT OCCLUSION");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Bloom/Label", LocalizationKeys.SETTINGS_BLOOM, "BLOOM");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_MotionBlur/Label", LocalizationKeys.SETTINGS_MOTION_BLUR, "MOTION BLUR");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_MasterVolume/Label_Row_MasterVolume", LocalizationKeys.SETTINGS_MASTER_VOLUME, "MASTER");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_MusicVolume/Label_Row_MusicVolume", LocalizationKeys.SETTINGS_MUSIC_VOLUME, "MUSIC");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_SfxVolume/Label_Row_SfxVolume", LocalizationKeys.SETTINGS_SFX_VOLUME, "SFX");
+            ApplyLocalizedLabel("Container/Section_Audio/Row_AmbientVolume/Label_Row_AmbientVolume", LocalizationKeys.SETTINGS_AMBIENT_VOLUME, "AMBIENT");
+            ApplyLocalizedLabel("Container/Row_Actions/Btn_ResetDefaults/Text", LocalizationKeys.SETTINGS_RESET_DEFAULTS, "RESET");
+            ApplyLocalizedLabel("Container/Row_Actions/Btn_Apply/Text", LocalizationKeys.SETTINGS_APPLY, "APPLY");
+            ApplyLocalizedLabel("Container/Row_Actions/Btn_Cancel/Text", LocalizationKeys.SETTINGS_CANCEL, "CANCEL");
+        }
+
+        private void ApplyLocalizedLabel(string relativePath, string key, string fallback)
+        {
+            Transform target = transform.Find(relativePath);
+            if (target == null)
+                return;
+
+            if (!target.TryGetComponent(out TMP_Text label))
+                return;
+
+            label.SetText(ResolveLocalized(key, fallback));
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null)
+                return fallback;
+
+            return manager.GetOrFallback(manager.CurrentLanguage, key, fallback);
+        }
+
+        private static string ResolveLocalizedShadowQualityName(int shadowQualityIndex)
+        {
+            return shadowQualityIndex switch
+            {
+                0 => ResolveLocalized(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF"),
+                1 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
+                2 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
+                3 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
+                _ => ResolveLocalized(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF")
+            };
+        }
+
+        private static string ResolveLocalizedTextureQualityName(int textureQualityIndex)
+        {
+            return textureQualityIndex switch
+            {
+                0 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
+                1 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
+                2 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
+                3 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA"),
+                _ => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW")
+            };
+        }
+
+        private static string ResolveLocalizedAntiAliasingName(int antiAliasingIndex)
+        {
+            if (antiAliasingIndex <= 0)
+                return ResolveLocalized(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF");
+
+            return AntiAliasingNames[Mathf.Clamp(antiAliasingIndex, 0, AntiAliasingNames.Length - 1)];
+        }
+
+        private static string ResolveLocalizedQualityName(string qualityName)
+        {
+            if (string.IsNullOrWhiteSpace(qualityName))
+                return "--";
+
+            if (qualityName.IndexOf("Low", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW");
+            if (qualityName.IndexOf("Medium", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM");
+            if (qualityName.IndexOf("High", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH");
+            if (qualityName.IndexOf("Ultra", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA");
+
+            return qualityName;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -105,13 +105,9 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HazeDesaturate: 0.24
-    - _HazeEnd: 0.96
-    - _HazeLitPreserve: 0.88
-    - _HazeStart: 0.16
-    - _HazeStrength: 0.24
     - _Metallic: 0
-    - _NightDarken: 0.24
+    - _AtmosphereTransmittanceWeight: 1.12
+    - _AtmosphereInscatterWeight: 1.06
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0

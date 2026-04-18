@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # План задач C/HADES/HECTON8 (рабочий каталог `C:\hades\Hecton8`)
 
 > Это основной трек задач для проекта Submerge (HECTON-8) на базе текущего репозитория. 

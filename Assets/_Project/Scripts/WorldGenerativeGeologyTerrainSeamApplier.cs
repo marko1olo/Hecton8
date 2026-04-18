@@ -53,32 +53,24 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ResolveReferences();
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
+            TryRegisterToTickManager();
         }
 
         private void Start()
         {
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
-
+            TryRegisterToTickManager();
             ReconcileTerrainSeams();
         }
 
         private void OnDisable()
         {
-            if (_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredToTickManager = false;
-            }
+            TryUnregisterFromTickManager();
+            RestoreAllTerrains();
+        }
 
+        private void OnDestroy()
+        {
+            TryUnregisterFromTickManager();
             RestoreAllTerrains();
         }
 
@@ -158,6 +150,31 @@ namespace Hecton8.World
 
             RestoreUntouchedTerrains();
             _debugReady = _debugAppliedPlans > 0;
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _registeredToTickManager = false;
         }
 
         private void ApplyTerrainPlans(TerrainApplyState state, List<WorldGenerativeGeologySeamPlan> plans)

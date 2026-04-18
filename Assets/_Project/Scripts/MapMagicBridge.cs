@@ -162,6 +162,7 @@ namespace Hecton8.Core
         /// MapMagic hierarchy has not structurally changed.
         /// </summary>
         private int _cachedTerrainTileRootCount = -1;
+        private bool _terrainConnectivityFallbackLogged;
 
         /// <summary>
         /// Last tile resolved for height/biome sampling. Scatter samples cluster
@@ -213,6 +214,7 @@ namespace Hecton8.Core
                 mapMagicObject = FindMapMagicObjectIncludingInactive();
             }
 
+            EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
 
             // ── Поиск игрока ──
@@ -654,6 +656,7 @@ namespace Hecton8.Core
             mapMagicObject = target;
             _cachedTerrainTileRootCount = -1;
             _lastResolvedTerrainTile = null;
+            EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
             _nextSceneBindingRefreshTime = float.NegativeInfinity;
             UpdateDiagnostics();
@@ -665,6 +668,279 @@ namespace Hecton8.Core
         public void SetWaterSurfaceLevel(float y)
         {
             waterSurfaceLevel = y;
+        }
+
+        /// <summary>
+        /// Applies the runtime object-generation budget to the bound
+        /// MapMagicObject.
+        /// </summary>
+        /// <param name="objectsPerFrame">Target per-frame object apply budget.</param>
+        /// <returns>True when the serialized runtime value changed.</returns>
+        public bool SetRuntimeObjectsPerFrame(int objectsPerFrame)
+        {
+            if (mapMagicObject == null || mapMagicObject.globals == null)
+                return false;
+
+            int clampedObjectsPerFrame = Mathf.Clamp(objectsPerFrame, 32, 512);
+            if (mapMagicObject.globals.objectsNumPerFrame == clampedObjectsPerFrame)
+                return false;
+
+            mapMagicObject.globals.objectsNumPerFrame = clampedObjectsPerFrame;
+            return true;
+        }
+
+        /// <summary>
+        /// Configures the runtime terrain draft/main continuum for MapMagic tiles.
+        /// </summary>
+        /// <param name="draftsInPlaymode">Whether draft terrains remain active in play mode.</param>
+        /// <param name="mainRange">Main-terrain ring radius around the observer.</param>
+        /// <param name="draftRange">Draft-terrain ring radius around the observer.</param>
+        /// <param name="draftResolution">Draft terrain height resolution.</param>
+        /// <returns>True when topology-affecting settings changed.</returns>
+        public bool ConfigureRuntimeTerrainStreaming(
+            bool draftsInPlaymode,
+            int mainRange,
+            int draftRange,
+            MapMagicObject.Resolution draftResolution)
+        {
+            if (mapMagicObject == null)
+                return false;
+
+            int clampedMainRange = Mathf.Max(1, mainRange);
+            int clampedDraftRange = Mathf.Max(clampedMainRange, draftRange);
+            bool incompatibleDraftContinuum =
+                Application.isPlaying &&
+                draftsInPlaymode &&
+                mapMagicObject.tileResolution != draftResolution;
+            if (incompatibleDraftContinuum)
+            {
+                draftsInPlaymode = false;
+                clampedDraftRange = clampedMainRange;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_terrainConnectivityFallbackLogged)
+                {
+                    _terrainConnectivityFallbackLogged = true;
+                    Debug.LogWarning(
+                        "[MapMagicBridge] Falling back to main-only runtime terrain streaming because draft/main tiles use different heightmap resolutions. " +
+                        "This avoids Unity terrain neighbor errors at the cost of far-field draft continuity.",
+                        this);
+                }
+#endif
+            }
+
+            bool topologyChanged = false;
+            bool resolutionChanged = false;
+
+            if (mapMagicObject.draftsInPlaymode != draftsInPlaymode)
+            {
+                mapMagicObject.draftsInPlaymode = draftsInPlaymode;
+                topologyChanged = true;
+            }
+
+            if (mapMagicObject.mainRange != clampedMainRange)
+            {
+                mapMagicObject.mainRange = clampedMainRange;
+                topologyChanged = true;
+            }
+
+            if (mapMagicObject.tiles.generateRange != clampedDraftRange)
+            {
+                mapMagicObject.tiles.generateRange = clampedDraftRange;
+                topologyChanged = true;
+            }
+
+            if (mapMagicObject.draftResolution != draftResolution)
+            {
+                mapMagicObject.draftResolution = draftResolution;
+                resolutionChanged = true;
+            }
+
+            EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: topologyChanged || resolutionChanged);
+
+            if (!draftsInPlaymode)
+            {
+                RefreshTerrainTilesForStreaming(clampedMainRange, rebuildInRange: resolutionChanged);
+                return topologyChanged || resolutionChanged;
+            }
+
+            RefreshTerrainTileCache(force: true);
+
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Length;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null || tile.draft != null)
+                    continue;
+
+                // COLD ALLOC: TerrainTile.DetailLevel[1] — enable runtime draft terrain continuum — owner: MapMagicBridge
+                tile.draft = CreateRuntimeDetailLevel(tile, isDraft: true);
+                topologyChanged = true;
+            }
+
+            RefreshTerrainTilesForStreaming(clampedDraftRange, rebuildInRange: topologyChanged || resolutionChanged);
+            return topologyChanged || resolutionChanged;
+        }
+
+        /// <summary>
+        /// Applies runtime terrain visual fidelity to current MapMagic tiles.
+        /// </summary>
+        /// <param name="pixelError">Unity terrain pixel error for geometry tessellation.</param>
+        /// <param name="baseMapDistance">Distance before terrain falls back to basemap shading.</param>
+        /// <param name="detailDistance">Distance for terrain detail instances.</param>
+        /// <param name="detailDensity">Density multiplier for terrain detail instances.</param>
+        /// <param name="heightmapMaximumLod">Maximum heightmap LOD simplification.</param>
+        /// <returns>True when the terrain settings changed and were re-applied.</returns>
+        public bool ApplyRuntimeTerrainQuality(
+            int pixelError,
+            int baseMapDistance,
+            float detailDistance,
+            float detailDensity,
+            int heightmapMaximumLod)
+        {
+            if (mapMagicObject == null)
+                return false;
+
+            MapMagic.Terrains.TerrainSettings terrainSettings = mapMagicObject.terrainSettings;
+            if (terrainSettings == null)
+                return false;
+
+            int clampedPixelError = Mathf.Clamp(pixelError, 1, 12);
+            int clampedBaseMapDistance = Mathf.Clamp(baseMapDistance, 512, 4000);
+            float clampedDetailDistance = Mathf.Clamp(detailDistance, 0f, 160f);
+            float clampedDetailDensity = Mathf.Clamp(detailDensity, 0.4f, 1.2f);
+            int clampedHeightmapMaximumLod = Mathf.Clamp(heightmapMaximumLod, 0, 3);
+
+            bool changed = false;
+
+            if (terrainSettings.pixelError != clampedPixelError)
+            {
+                terrainSettings.pixelError = clampedPixelError;
+                changed = true;
+            }
+
+            if (terrainSettings.baseMapDist != clampedBaseMapDistance)
+            {
+                terrainSettings.baseMapDist = clampedBaseMapDistance;
+                changed = true;
+            }
+
+            if (!terrainSettings.showBaseMap)
+            {
+                terrainSettings.showBaseMap = true;
+                changed = true;
+            }
+
+            if (!Mathf.Approximately(terrainSettings.detailDistance, clampedDetailDistance))
+            {
+                terrainSettings.detailDistance = clampedDetailDistance;
+                changed = true;
+            }
+
+            if (!Mathf.Approximately(terrainSettings.detailDensity, clampedDetailDensity))
+            {
+                terrainSettings.detailDensity = clampedDetailDensity;
+                changed = true;
+            }
+
+            if (terrainSettings.heightmapMaximumLOD != clampedHeightmapMaximumLod)
+            {
+                terrainSettings.heightmapMaximumLOD = clampedHeightmapMaximumLod;
+                changed = true;
+            }
+
+            if (!changed)
+                return false;
+
+            ApplyTerrainSettingsToCachedTerrains();
+            return true;
+        }
+
+        /// <summary>
+        /// Ensures tiles near the player have a live main-detail terrain while
+        /// far tiles release their main-detail payload back to draft-only.
+        /// </summary>
+        public void MaintainRuntimeTerrainDetailLevels(
+            int mainRange,
+            int teardownRange,
+            int mainPixelError,
+            int mainBaseMapDistance,
+            int draftPixelError,
+            int draftBaseMapDistance,
+            float detailDistance,
+            float detailDensity,
+            int heightmapMaximumLod)
+        {
+            if (mapMagicObject == null || !Application.isPlaying)
+                return;
+
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            if (playerTransform == null)
+                return;
+
+            RefreshTerrainTileCache(force: true);
+
+            int clampedMainRange = Mathf.Max(1, mainRange);
+            int clampedTeardownRange = Mathf.Max(clampedMainRange + 1, teardownRange);
+            int clampedMainPixelError = Mathf.Clamp(mainPixelError, 1, 4);
+            int clampedMainBaseMapDistance = Mathf.Clamp(mainBaseMapDistance, 512, 4000);
+            int clampedDraftPixelError = Mathf.Clamp(draftPixelError, clampedMainPixelError + 1, 12);
+            int clampedDraftBaseMapDistance = Mathf.Clamp(draftBaseMapDistance, 256, clampedMainBaseMapDistance);
+            float clampedDetailDistance = Mathf.Clamp(detailDistance, 0f, 160f);
+            float clampedDetailDensity = Mathf.Clamp(detailDensity, 0.4f, 1.2f);
+            int clampedHeightmapMaximumLod = Mathf.Clamp(heightmapMaximumLod, 0, 3);
+            Vector3 playerPosition = playerTransform.position;
+            int playerTileX = Mathf.FloorToInt(playerPosition.x / Mathf.Max(1f, mapMagicObject.tileSize.x));
+            int playerTileZ = Mathf.FloorToInt(playerPosition.z / Mathf.Max(1f, mapMagicObject.tileSize.z));
+
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Length;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null)
+                    continue;
+
+                int tileDistance = Mathf.Max(
+                    Mathf.Abs(tile.coord.x - playerTileX),
+                    Mathf.Abs(tile.coord.z - playerTileZ));
+
+                if (!Mathf.Approximately(tile.distance, tileDistance))
+                    tile.Dist(tileDistance);
+
+                if (tileDistance <= clampedMainRange)
+                {
+                    if (tile.main == null)
+                    {
+                        tile.main = CreateRuntimeDetailLevel(tile, isDraft: false);
+                        tile.Dist(tileDistance);
+                    }
+                    else if (!tile.main.generateStarted)
+                    {
+                        tile.Dist(tileDistance);
+                    }
+                }
+                else if (tileDistance >= clampedTeardownRange && CanReleaseMainDetailLevel(tile))
+                {
+                    ReleaseMainDetailLevel(tile);
+                }
+
+                ApplyPerTileTerrainQuality(
+                    tile,
+                    clampedMainRange,
+                    clampedMainPixelError,
+                    clampedMainBaseMapDistance,
+                    clampedDraftPixelError,
+                    clampedDraftBaseMapDistance,
+                    clampedDetailDistance,
+                    clampedDetailDensity,
+                    clampedHeightmapMaximumLod);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -746,6 +1022,9 @@ namespace Hecton8.Core
                 mapMagicObject = FindMapMagicObjectIncludingInactive(); // COLD ALLOC: recovery search only when MapMagic binding is missing
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
+
+                if (mapMagicObject != null)
+                    EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             }
 
             if (playerTransform == null)
@@ -779,6 +1058,225 @@ namespace Hecton8.Core
             _cachedTerrainTiles = mapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: refresh only on MapMagic hierarchy change
             _cachedTerrainTileRootCount = rootChildCount;
             _lastResolvedTerrainTile = null;
+        }
+
+        /// <summary>
+        /// Re-applies current MapMagic terrain settings to all cached terrain
+        /// instances without rebuilding the graph.
+        /// </summary>
+        private void ApplyTerrainSettingsToCachedTerrains()
+        {
+            if (mapMagicObject == null || mapMagicObject.terrainSettings == null)
+                return;
+
+            RefreshTerrainTileCache(force: true);
+
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Length;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null)
+                    continue;
+
+                Terrain mainTerrain = tile.GetTerrain(false);
+                if (mainTerrain != null)
+                    mapMagicObject.terrainSettings.ApplySettings(mainTerrain);
+
+                Terrain draftTerrain = tile.GetTerrain(true);
+                if (draftTerrain != null)
+                    mapMagicObject.terrainSettings.ApplySettings(draftTerrain);
+            }
+        }
+
+        /// <summary>
+        /// Disables Unity Terrain auto-connect at runtime when MapMagic keeps
+        /// main and draft tiles alive with incompatible heightmap resolutions.
+        /// </summary>
+        private void EnsureRuntimeTerrainConnectivityCompatibility(bool forceApplyToCachedTerrains)
+        {
+            if (mapMagicObject == null || mapMagicObject.terrainSettings == null)
+                return;
+
+            bool incompatibleDraftConnectivity =
+                Application.isPlaying &&
+                mapMagicObject.draftsInPlaymode &&
+                mapMagicObject.tileResolution != mapMagicObject.draftResolution;
+
+            bool desiredAllowAutoConnect = !incompatibleDraftConnectivity;
+            TerrainSettings terrainSettings = mapMagicObject.terrainSettings;
+            if (terrainSettings.allowAutoConnect == desiredAllowAutoConnect)
+                return;
+
+            terrainSettings.allowAutoConnect = desiredAllowAutoConnect;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (incompatibleDraftConnectivity && !_terrainConnectivityFallbackLogged)
+            {
+                _terrainConnectivityFallbackLogged = true;
+                Debug.LogWarning(
+                    "[MapMagicBridge] Disabled Terrain auto-connect at runtime because draft/main tiles use different heightmap resolutions. " +
+                    "This prevents Unity neighbor-connect errors while runtime draft streaming is active.",
+                    this);
+            }
+#endif
+
+            if (forceApplyToCachedTerrains)
+                ApplyTerrainSettingsToCachedTerrains();
+        }
+
+        /// <summary>
+        /// Re-evaluates tile draft/main activation after runtime streaming
+        /// topology changes. In-range tiles optionally rebuild using the new
+        /// resolution settings.
+        /// </summary>
+        private void RefreshTerrainTilesForStreaming(int activeRange, bool rebuildInRange)
+        {
+            if (mapMagicObject == null)
+                return;
+
+            RefreshTerrainTileCache(force: true);
+
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Length;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null)
+                    continue;
+
+                if (tile.distance < 0f)
+                    continue;
+
+                if (rebuildInRange &&
+                    mapMagicObject.graph != null &&
+                    (int)tile.distance <= activeRange)
+                {
+                    tile.Refresh(mapMagicObject.graph, clearAll: true);
+                    continue;
+                }
+
+                tile.Dist(tile.distance);
+            }
+        }
+
+        /// <summary>
+        /// Creates a runtime terrain detail level and marks it as pending
+        /// generation so the next Dist pass can enqueue MapMagic work.
+        /// </summary>
+        private static TerrainTile.DetailLevel CreateRuntimeDetailLevel(TerrainTile tile, bool isDraft)
+        {
+            // COLD ALLOC: TerrainTile.DetailLevel[1] — runtime terrain detail level promotion — owner: MapMagicBridge
+            TerrainTile.DetailLevel detailLevel = new TerrainTile.DetailLevel(tile, isDraft);
+            detailLevel.generateStarted = false;
+            detailLevel.generateReady = false;
+            detailLevel.applyReady = false;
+            return detailLevel;
+        }
+
+        /// <summary>
+        /// Returns true when a main-detail level can be safely removed without
+        /// interrupting an active MapMagic task or the currently visible terrain.
+        /// </summary>
+        private static bool CanReleaseMainDetailLevel(TerrainTile tile)
+        {
+            if (tile == null || tile.main == null)
+                return false;
+
+            if (tile.ActiveTerrain == tile.main.terrain)
+                return false;
+
+            TerrainTile.DetailLevel mainDetail = tile.main;
+            if (mainDetail.task != null && (mainDetail.task.Active || mainDetail.task.Enqueued))
+                return false;
+
+            if (mainDetail.coroutine != null)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Removes a far-away main-detail terrain and leaves the tile operating
+        /// on draft-only data again.
+        /// </summary>
+        private static void ReleaseMainDetailLevel(TerrainTile tile)
+        {
+            if (tile == null || tile.main == null)
+                return;
+
+            tile.main.Remove();
+            tile.main = null;
+            tile.Dist(tile.distance);
+        }
+
+        /// <summary>
+        /// Applies sharper terrain settings to near-field main terrains and a
+        /// coarser budget to draft terrains that remain as the far-field shell.
+        /// </summary>
+        private static void ApplyPerTileTerrainQuality(
+            TerrainTile tile,
+            int mainRange,
+            int mainPixelError,
+            int mainBaseMapDistance,
+            int draftPixelError,
+            int draftBaseMapDistance,
+            float detailDistance,
+            float detailDensity,
+            int heightmapMaximumLod)
+        {
+            if (tile == null)
+                return;
+
+            Terrain mainTerrain = tile.GetTerrain(false);
+            Terrain draftTerrain = tile.GetTerrain(true);
+
+            if (mainTerrain != null)
+            {
+                bool highDetailMain = Mathf.RoundToInt(tile.distance) <= mainRange;
+                ApplyTerrainQuality(
+                    mainTerrain,
+                    highDetailMain ? mainPixelError : draftPixelError,
+                    highDetailMain ? mainBaseMapDistance : draftBaseMapDistance,
+                    detailDistance,
+                    detailDensity,
+                    heightmapMaximumLod);
+            }
+
+            if (draftTerrain != null)
+            {
+                ApplyTerrainQuality(
+                    draftTerrain,
+                    draftPixelError,
+                    draftBaseMapDistance,
+                    detailDistance,
+                    detailDensity,
+                    heightmapMaximumLod);
+            }
+        }
+
+        /// <summary>
+        /// Applies explicit runtime quality overrides directly to a Unity terrain
+        /// instance without mutating ScriptableObject authoring state.
+        /// </summary>
+        private static void ApplyTerrainQuality(
+            Terrain terrain,
+            int pixelError,
+            int baseMapDistance,
+            float detailDistance,
+            float detailDensity,
+            int heightmapMaximumLod)
+        {
+            if (terrain == null || terrain.terrainData == null)
+                return;
+
+            terrain.heightmapPixelError = pixelError;
+            terrain.basemapDistance = baseMapDistance;
+            terrain.heightmapMaximumLOD = heightmapMaximumLod;
+            terrain.detailObjectDistance = detailDistance;
+            terrain.detailObjectDensity = detailDensity;
         }
 
         /// <summary>

@@ -44,6 +44,36 @@ public class SurvivalStats : ScriptableObject
     [Min(1f)]
     [SerializeField] private float maxIntegrity = 100f;
 
+    // ─── Hunger ──────────────────────────────────────────────
+
+    [Header("Hunger")]
+    [Tooltip("Maximum hunger capacity (absolute units).")]
+    [Min(1f)]
+    [SerializeField] private float maxHunger = 100f;
+
+    [Tooltip("Hunger drain per second (slow drain).")]
+    [Min(0f)]
+    [SerializeField] private float hungerDrainRate = 0.1f;
+
+    [Tooltip("Integrity damage per second when hunger reaches 0.")]
+    [Min(0f)]
+    [SerializeField] private float starvationDamageRate = 1f;
+
+    // ─── Thirst ──────────────────────────────────────────────
+
+    [Header("Thirst")]
+    [Tooltip("Maximum thirst capacity (absolute units).")]
+    [Min(1f)]
+    [SerializeField] private float maxThirst = 100f;
+
+    [Tooltip("Thirst drain per second (slow drain).")]
+    [Min(0f)]
+    [SerializeField] private float thirstDrainRate = 0.15f;
+
+    [Tooltip("Integrity damage per second when thirst reaches 0.")]
+    [Min(0f)]
+    [SerializeField] private float dehydrationDamageRate = 1.5f;
+
     // ─── Pressure ────────────────────────────────────────────
 
     [Header("Pressure & Depth")]
@@ -88,6 +118,7 @@ public class SurvivalStats : ScriptableObject
     [Tooltip("Integrity damage per Rem/h above threshold.")]
     [Min(0f)]
     [SerializeField] private float radiationDamageRate = 5f;
+
     // ─── Public read-only accessors (inlined by JIT) ─────────
 
     public virtual float MaxOxygen              => maxOxygen;
@@ -95,6 +126,15 @@ public class SurvivalStats : ScriptableObject
     public virtual float MaxEnergy              => maxEnergy;
     public virtual float EnergyConsumptionRate  => energyConsumptionRate;
     public virtual float MaxIntegrity           => maxIntegrity;
+
+    public virtual float MaxHunger              => maxHunger;
+    public virtual float HungerDrainRate        => hungerDrainRate;
+    public virtual float StarvationDamageRate   => starvationDamageRate;
+
+    public virtual float MaxThirst              => maxThirst;
+    public virtual float ThirstDrainRate        => thirstDrainRate;
+    public virtual float DehydrationDamageRate  => dehydrationDamageRate;
+
     public virtual float SafeDepth              => safeDepth;
     public virtual float PressureDamageRate     => pressureDamageRate;
     public virtual float PressureScalePerMeter  => pressureScalePerMeter;
@@ -121,8 +161,14 @@ public class SurvivalStats : ScriptableObject
         maxOxygen              = Mathf.Max(1f,  maxOxygen);
         maxEnergy              = Mathf.Max(1f,  maxEnergy);
         maxIntegrity           = Mathf.Max(1f,  maxIntegrity);
+        maxHunger              = Mathf.Max(1f,  maxHunger);
+        maxThirst              = Mathf.Max(1f,  maxThirst);
         oxygenConsumptionRate  = Mathf.Max(0f,  oxygenConsumptionRate);
         energyConsumptionRate  = Mathf.Max(0f,  energyConsumptionRate);
+        hungerDrainRate        = Mathf.Max(0f,  hungerDrainRate);
+        thirstDrainRate        = Mathf.Max(0f,  thirstDrainRate);
+        starvationDamageRate   = Mathf.Max(0f,  starvationDamageRate);
+        dehydrationDamageRate  = Mathf.Max(0f,  dehydrationDamageRate);
         pressureDamageRate     = Mathf.Max(0f,  pressureDamageRate);
         pressureScalePerMeter  = Mathf.Max(0f,  pressureScalePerMeter);
         safeDepth              = Mathf.Max(0f,  safeDepth);

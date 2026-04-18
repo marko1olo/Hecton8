@@ -94,7 +94,7 @@ namespace Hecton8.AI.Editor
             rigidbody.angularDamping = 4f;
             rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
 
-            root.AddComponent<HectonBaseAI>();
+            root.AddComponent<FaunaBrain>();
             addCollider(root);
 
             GameObject visual = GameObject.CreatePrimitive(visualType);
@@ -211,3 +211,4 @@ namespace Hecton8.AI.Editor
         }
     }
 }
+

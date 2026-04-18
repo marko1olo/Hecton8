@@ -1,4 +1,6 @@
-﻿# Procedural Geology Status Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Geology Status Report
 
 - Root: `Assets/_Project/Data/World/ProceduralFamilies`
 - Scope: geological procedural families only (`Rock`, `RockCluster`, `RockArch`, `RockShelf`, `CaveEntrance`, `Landmark`).

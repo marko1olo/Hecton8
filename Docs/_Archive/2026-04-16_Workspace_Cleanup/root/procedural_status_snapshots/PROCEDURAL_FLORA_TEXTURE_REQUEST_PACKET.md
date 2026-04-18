@@ -1,4 +1,6 @@
-﻿# Procedural Flora Texture Request Packet
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Flora Texture Request Packet
 
 Generated: 2026-04-10 19:54:10
 

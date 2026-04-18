@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SuitUpgradeData
   upgradeId: suit_hull_t4_thermal_shell
   displayName: "\u041A\u043E\u0440\u043F\u0443\u0441 IV \u2014 Thermal Shell"
+  localizedDisplayName:
+    tableKey: SUIT_UPGRADE_SUIT_HULL_T4_THERMAL_SHELL_NAME
+    fallbackText: ""
+    variants: []
   category: 0
   tier: 4
   deltaMaxOxygen: 20
@@ -29,3 +33,7 @@ MonoBehaviour:
     \u043A\u043E\u043D\u0442\u0443\u0440. \u0414\u0435\u0440\u0436\u0438\u0442 \u0442\u0435\u0440\u043C\u0430\u043B\u044C\u043D\u044B\u0439
     \u0440\u0438\u0444 \u0438 \u0433\u043B\u0443\u0431\u0438\u043D\u044B \u0434\u043E
     -5000 \u043C."
+  localizedDescription:
+    tableKey: SUIT_UPGRADE_SUIT_HULL_T4_THERMAL_SHELL_DESCRIPTION
+    fallbackText: ""
+    variants: []

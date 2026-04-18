@@ -14,11 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.DepthZoneProfile
   zoneId: zone_deep_abyss
   displayName: "DEEP ABYSS \u2014 THE VOID"
+  localizedDisplayName:
+    tableKey: DEPTH_ZONE_ZONE_DEEP_ABYSS_NAME
+    fallbackText: ""
+    variants: []
   description: "\u0410\u0431\u0438\u0441\u0441\u0430\u043B\u044C\u043D\u0430\u044F
     \u0440\u0430\u0432\u043D\u0438\u043D\u0430. \u041C\u043E\u043D\u043E\u0442\u043E\u043D\u043D\u044B\u0439
     \u0440\u0435\u043B\u044C\u0435\u0444. \u0418\u0437\u043E\u043B\u044F\u0446\u0438\u044F.
     \u041E\u0442\u043A\u0430\u0437 \u043E\u0431\u043E\u0440\u0443\u0434\u043E\u0432\u0430\u043D\u0438\u044F
     \u0441\u043C\u0435\u0440\u0442\u0435\u043B\u0435\u043D."
+  localizedDescription:
+    tableKey: DEPTH_ZONE_ZONE_DEEP_ABYSS_DESCRIPTION
+    fallbackText: ""
+    variants: []
   minDepth: 2500
   maxDepth: 4000
   ambience:

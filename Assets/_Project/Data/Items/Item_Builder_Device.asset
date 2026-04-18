@@ -13,12 +13,24 @@ MonoBehaviour:
   m_Name: Item_Builder_Device
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Fabrication Tool
+  localizedItemName:
+    tableKey: ITEM_BUILDER_DEVICE_NAME
+    fallbackText: "Fabrication Tool"
+    variants: []
   icon: {fileID: 0}
-  description: 
+  description: Handheld fabrication device used to place, rotate, and dismantle field structures.
+  localizedDescription:
+    tableKey: ITEM_BUILDER_DEVICE_DESCRIPTION
+    fallbackText: "Handheld fabrication device used to place, rotate, and dismantle field structures."
+    variants: []
   weight: 2.5
   stackable: 0
   maxStack: 1
   width: 2
   height: 2
-  interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}

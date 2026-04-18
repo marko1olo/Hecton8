@@ -73,10 +73,8 @@ namespace Hecton8.Gameplay
 
         [Header("── Timing (seconds) ────────────────────────")]
         [SerializeField] private float orientationTime   = 300f;   // 5 мин
-        [SerializeField] private float firstAnxietyTime  = 900f;   // 15 мин
         [SerializeField] private float shadowTime        = 2400f;  // 40 мин
         [SerializeField] private float firstModuleTime   = 4200f;  // 70 мин
-        [SerializeField] private float humCloserTime     = 5400f;  // 90 мин
 
         [Header("── Shadow Trigger ──────────────────────────")]
         [Tooltip("Минимальная глубина для появления тени (метры).")]
@@ -161,10 +159,6 @@ namespace Hecton8.Gameplay
             "ТЕПЕРЬ ИЩИ НЕ РОССЫПЬ, А СЛЕД. РУИНЫ, МОДУЛИ И СЛУЖЕБНЫЕ ОСТАНОВКИ ДАДУТ НАСТОЯЩИЙ ВЕКТОР.";
         private const string MsgStarterBackslideRead =
             "МЕЛКОВОДЬЕ ТЕПЕРЬ ДАЁТ ТЕБЕ ПЕРЕДЫШКУ, НЕ ПРОГРЕСС. СОБЕРИСЬ И ВЕРНИСЬ К ГЛУБИННОМУ МАРШРУТУ.";
-        private const string MsgFirstAnxietyRead =
-            "ГУЛ БОЛЬШЕ НЕ ФОН. ДЕРЖИ В ПАМЯТИ ОБРАТНЫЙ МАРШРУТ И НЕ РВИСЬ В ТЁМНОЕ БЕЗ ЧИТАЕМОЙ ОПОРЫ.";
-        private const string MsgHumCloserRead =
-            "ГУЛ СТАЛ БЛИЖЕ. ДАЛЬШЕ ЦЕННО НЕ ВСЁ ПОДРЯД, А ТО, ЧТО ВЕДЁТ К РУИНАМ, МОДУЛЯМ И ЖИВОМУ СЛЕДУ.";
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -178,12 +172,18 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         public float SessionTime => _sessionTime;
-        public bool IsFirstHourComplete =>
-            IsMilestoneComplete(FirstHourMilestone.HumCloser) ||
-            _sessionTime >= humCloserTime;
+        public bool IsFirstHourComplete => IsMilestoneComplete(FirstHourMilestone.HumCloser);
 
         public bool IsMilestoneComplete(FirstHourMilestone m)
             => (_completedMilestones & (1 << (int)m)) != 0;
+
+        /// <summary>
+        /// Registers a confirmed service-relay route contact for first-hour pacing.
+        /// </summary>
+        public void RegisterServiceRelayRouteContact()
+        {
+            _hasLoreRouteContact = true;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -290,7 +290,7 @@ namespace Hecton8.Gameplay
                 _sessionTime >= orientationTime || IsOrientationEarned(currentZone));
             CheckMilestone(
                 FirstHourMilestone.FirstAnxiety,
-                ShouldTriggerFirstAnxiety(atlasRevealStage, currentDepthTier, depth));
+                ShouldTriggerFirstAnxiety(atlasRevealStage));
 
             // Тень — только если игрок под водой на нужной глубине
             CheckMilestone(FirstHourMilestone.TheShadow,
@@ -315,7 +315,7 @@ namespace Hecton8.Gameplay
 
             CheckMilestone(
                 FirstHourMilestone.HumCloser,
-                ShouldTriggerHumCloser(atlasRevealStage, currentDepthTier, depth));
+                ShouldTriggerHumCloser(atlasRevealStage));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -343,10 +343,6 @@ namespace Hecton8.Gameplay
                     TryAdvanceFirstResourceGoalFromRuntimeInventory();
                     break;
 
-                case FirstHourMilestone.FirstAnxiety:
-                    NotificationEvents.PushWarning(MsgFirstAnxietyRead);
-                    break;
-
                 case FirstHourMilestone.TheShadow:
                     // ТЕНЬ — большая, быстрая, слева
                     // Director AI получает narrative bonus (снижение tension после страха)
@@ -357,9 +353,6 @@ namespace Hecton8.Gameplay
                     NarrativeEvents.RaiseDiscoveryMade("first_colony_module_spotted");
                     break;
 
-                case FirstHourMilestone.HumCloser:
-                    NotificationEvents.PushWarning(MsgHumCloserRead);
-                    break;
             }
 
             LogMilestoneTriggered(milestone, _sessionTime);
@@ -378,6 +371,10 @@ namespace Hecton8.Gameplay
         {
             if (string.IsNullOrEmpty(discoveryId))
                 return;
+
+            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            if (relayDirector != null && relayDirector.IsRelayDiscoveryId(discoveryId))
+                _hasLoreRouteContact = true;
 
             if (!IsMilestoneComplete(FirstHourMilestone.FirstModule) &&
                 string.Equals(discoveryId, firstModuleZoneDiscoveryId, StringComparison.Ordinal))
@@ -465,6 +462,10 @@ namespace Hecton8.Gameplay
         {
             AudioLogSystem audioLogSystem = AudioLogSystem.Instance;
             if (audioLogSystem != null && audioLogSystem.DiscoveredCount > 0)
+                _hasLoreRouteContact = true;
+
+            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            if (relayDirector != null && relayDirector.HasDiscoveredRelayInDrivenChain())
                 _hasLoreRouteContact = true;
         }
 
@@ -602,32 +603,14 @@ namespace Hecton8.Gameplay
             return atlasSignalSystem != null ? atlasSignalSystem.CurrentRevealStage : 0;
         }
 
-        private bool ShouldTriggerFirstAnxiety(int atlasRevealStage, int currentDepthTier, float depth)
+        private static bool ShouldTriggerFirstAnxiety(int atlasRevealStage)
         {
-            if (atlasRevealStage >= 1)
-                return true;
-
-            if (_sessionTime < firstAnxietyTime)
-                return false;
-
-            return currentDepthTier > 1 ||
-                   depth >= shadowMinDepth * 0.6f ||
-                   _hasLoreRouteContact;
+            return atlasRevealStage >= 1;
         }
 
-        private bool ShouldTriggerHumCloser(int atlasRevealStage, int currentDepthTier, float depth)
+        private static bool ShouldTriggerHumCloser(int atlasRevealStage)
         {
-            if (atlasRevealStage >= 2)
-                return true;
-
-            if (_sessionTime < humCloserTime)
-                return false;
-
-            if (currentDepthTier >= 3 || depth >= shadowMinDepth + 15f)
-                return true;
-
-            return currentDepthTier > 1 &&
-                   (_hasLoreRouteContact || IsMilestoneComplete(FirstHourMilestone.FirstModule));
+            return atlasRevealStage >= 2;
         }
 
         private void SynchronizeFirstResourceQuestFromSaveData(SaveData data)
@@ -756,6 +739,9 @@ namespace Hecton8.Gameplay
 
             SynchronizeContextFromRuntimeSystems();
 
+            if (TryIssueServiceRelayGuidance())
+                return;
+
             WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
             if (currentZone == null)
                 return;
@@ -793,6 +779,19 @@ namespace Hecton8.Gameplay
                 return;
 
             TryIssueModuleRouteGuidance(questManager, currentZone, currentBiome, currentDepthTier);
+        }
+
+        private bool TryIssueServiceRelayGuidance()
+        {
+            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            if (relayDirector == null ||
+                !relayDirector.TryBuildContextualGuidanceMessage(out string relayMessage))
+            {
+                return false;
+            }
+
+            PublishContextualInfo(relayMessage);
+            return true;
         }
 
         private bool TryIssueEarlyResourceZoneGuidance(

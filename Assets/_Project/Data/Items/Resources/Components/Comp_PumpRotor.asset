@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_PumpRotor
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Pump Rotor
+  localizedItemName:
+    tableKey: ITEM_PUMP_ROTOR_NAME
+    fallbackText: "Pump Rotor"
+    variants: []
   icon: {fileID: 0}
   description: Corrosion-safe rotor assembly for flood pumps, ballast service, and
     fluid control hardware.
+  localizedDescription:
+    tableKey: ITEM_PUMP_ROTOR_DESCRIPTION
+    fallbackText: "Corrosion-safe rotor assembly for flood pumps, ballast service, and fluid control hardware."
+    variants: []
   weight: 0.7
   stackable: 1
   maxStack: 10
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

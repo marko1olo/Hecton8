@@ -279,10 +279,10 @@ namespace Hecton8.Gameplay
                 return BuildModuleAssessment(module, hit.distance);
             }
 
-            if (collider.TryGetComponent(out HectonBaseAI ai))
+            if (collider.TryGetComponent(out FaunaBrain ai))
                 return BuildBioformAssessment(ai, hit.distance);
 
-            HectonBaseAI aiParent = collider.GetComponentInParent<HectonBaseAI>();
+            FaunaBrain aiParent = collider.GetComponentInParent<FaunaBrain>();
             if (aiParent != null)
                 return BuildBioformAssessment(aiParent, hit.distance);
 
@@ -468,9 +468,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            HectonBaseAI ai = null;
+            FaunaBrain ai = null;
             if (!collider.TryGetComponent(out ai))
-                ai = collider.GetComponentInParent<HectonBaseAI>();
+                ai = collider.GetComponentInParent<FaunaBrain>();
 
             if (ai != null)
             {
@@ -708,18 +708,18 @@ namespace Hecton8.Gameplay
                     : "Reconnect power before assigning work.");
         }
 
-        private static AnalyzerAssessment BuildBioformAssessment(HectonBaseAI ai, float distance)
+        private static AnalyzerAssessment BuildBioformAssessment(FaunaBrain ai, float distance)
         {
             float healthPercent = ai.MaxHealth > 0.001f
                 ? ai.HealthNormalized * 100f
                 : 0f;
             bool lethalWindow = ai.HealthNormalized <= 0.3f;
-            bool hostile = ai.CurrentState == HectonBaseAI.AIState.Aggressive;
-            bool warning = ai.CurrentState == HectonBaseAI.AIState.Threaten;
-            bool stalking = ai.CurrentState == HectonBaseAI.AIState.Stalk;
-            bool looming = ai.CurrentState == HectonBaseAI.AIState.Loom;
-            bool feinting = ai.CurrentState == HectonBaseAI.AIState.Feint;
-            bool evasive = ai.CurrentState == HectonBaseAI.AIState.Escape;
+            bool hostile = ai.CurrentState == FaunaBrain.AIState.Aggressive;
+            bool warning = ai.CurrentState == FaunaBrain.AIState.Threaten;
+            bool stalking = ai.CurrentState == FaunaBrain.AIState.Stalk;
+            bool looming = ai.CurrentState == FaunaBrain.AIState.Loom;
+            bool feinting = ai.CurrentState == FaunaBrain.AIState.Feint;
+            bool evasive = ai.CurrentState == FaunaBrain.AIState.Escape;
             bool sleeping = ai.IsSleeping;
             bool packHunt = ai.UsesPackHuntBehavior && (hostile || stalking);
             bool feintCapable = ai.UsesFeintRushBehavior && (stalking || looming || feinting);
@@ -854,3 +854,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

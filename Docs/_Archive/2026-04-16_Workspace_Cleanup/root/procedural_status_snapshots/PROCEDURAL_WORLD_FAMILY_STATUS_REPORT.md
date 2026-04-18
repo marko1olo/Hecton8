@@ -1,4 +1,6 @@
-﻿# Procedural World Family Status Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural World Family Status Report
 
 - Root: `Assets/_Project/Data/World/ProceduralFamilies`
 - Purpose: shared readiness view for flora, geology, structure, interior-decor, and colony expansion.

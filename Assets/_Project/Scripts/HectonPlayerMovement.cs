@@ -22,6 +22,7 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.Input;
+using Hecton8.Tools;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -192,6 +193,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugSplashThisFrame;
         [SerializeField] private bool _debugExhaleThisFrame;
         [SerializeField] private bool _debugIsSubmerged;
+        [SerializeField] private bool _debugHasSwimPresentationController;
+        [SerializeField] private int _debugLastSwimPresentationDriveFrame = -1;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED REFERENCES
@@ -204,6 +207,7 @@ namespace Hecton8.Gameplay
         private Camera _cameraComponent;
         private InputManager _inputManager;
         private InputManager _subscribedInputManager;
+        private PlayerToolManager _playerToolManager;
         private PlayerSwimPresentationController _swimPresentationController;
 
         // ══════════════════════════════════════════════════════════
@@ -373,6 +377,7 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _capsuleCollider);
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _swimPresentationController);
+            ResolvePlayerToolManager();
 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
@@ -451,6 +456,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable() 
         { 
+            ResolvePlayerToolManager();
             RefreshInputManagerBinding();
             TryRegisterToTickManager(); 
         }
@@ -482,6 +488,27 @@ namespace Hecton8.Gameplay
             if (inst == null) return;
             if (!_registeredTick) { inst.Register((ITickable)this); _registeredTick = true; }
             if (!_registeredFixedTick) { inst.Register((IFixedTickable)this); _registeredFixedTick = true; }
+        }
+
+        private void ResolvePlayerToolManager()
+        {
+            if (_playerToolManager != null)
+                return;
+
+            if (!TryGetComponent(out _playerToolManager))
+                _playerToolManager = GetComponentInChildren<PlayerToolManager>(true);
+        }
+
+        private float ResolveActiveMantaPropulsionForce()
+        {
+            if (_playerToolManager == null)
+                ResolvePlayerToolManager();
+
+            PlayerTool activeTool = _playerToolManager != null ? _playerToolManager.CurrentTool : null;
+            if (!(activeTool is IBatteryTool) || !(activeTool is MantaScooter mantaScooter))
+                return 0f;
+
+            return mantaScooter.GetPropulsionForce();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -640,6 +667,11 @@ namespace Hecton8.Gameplay
 
             RefreshInputManagerBinding();
 
+            if (_swimPresentationController == null)
+                TryGetComponent(out _swimPresentationController);
+
+            _debugHasSwimPresentationController = _swimPresentationController != null;
+
             if (IsGameplayInputBlockedByMenu())
             {
                 _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
@@ -695,6 +727,12 @@ namespace Hecton8.Gameplay
                 _velocity.y * _velocity.y +
                 _velocity.z * _velocity.z);
             float yawDelta = _cameraYaw - _prevYawForMomentum;
+
+            if (_swimPresentationController != null)
+            {
+                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+                _debugLastSwimPresentationDriveFrame = Time.frameCount;
+            }
 
             BuildJuiceInput(deltaTime, suit);
             _juiceInput.speedDelta = currentSpeed - _prevSpeed;
@@ -759,6 +797,7 @@ namespace Hecton8.Gameplay
                 _juiceInput.swimPresentationMode = _swimPresentationController.CurrentMode;
                 _juiceInput.swimStrokePhase = _swimPresentationController.CurrentStrokePhase;
                 _juiceInput.swimPropulsionPulse = _swimPresentationController.CurrentPropulsionPulse;
+                _juiceInput.swimStrokeImpulse = _swimPresentationController.CurrentStrokePowerImpulse;
                 _juiceInput.swimGuideWeight = _swimPresentationController.CurrentGuideWeight;
             }
             else
@@ -766,6 +805,7 @@ namespace Hecton8.Gameplay
                 _juiceInput.swimPresentationMode = PlayerSwimPresentationMode.None;
                 _juiceInput.swimStrokePhase = 0f;
                 _juiceInput.swimPropulsionPulse = 0f;
+                _juiceInput.swimStrokeImpulse = 0f;
                 _juiceInput.swimGuideWeight = 0f;
             }
         }
@@ -1737,8 +1777,10 @@ namespace Hecton8.Gameplay
             }
 
             // ── Swim thrust ──
+            float mantaPropulsionForce = ResolveActiveMantaPropulsionForce();
             bool hasInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
-            if (!hasInput) return;
+            if (!hasInput && mantaPropulsionForce <= 0f)
+                return;
 
             // ── Depth-based swim force reduction (v7.0) ──
             float depthSlowdown = 1f;
@@ -1802,6 +1844,28 @@ namespace Hecton8.Gameplay
             _forceVector.y = dirY * effectiveSwimForce;
             _forceVector.z = dirZ * effectiveSwimForce;
             _forceVector.y += verticalInput * effectiveVerticalForce * (isSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
+
+            if (mantaPropulsionForce > 0f)
+            {
+                float propulsionDirSqr =
+                    _forceVector.x * _forceVector.x +
+                    _forceVector.y * _forceVector.y +
+                    _forceVector.z * _forceVector.z;
+
+                if (propulsionDirSqr <= 0.0001f)
+                {
+                    _forceVector.x = fwdX * mantaPropulsionForce;
+                    _forceVector.y = fwdY * mantaPropulsionForce;
+                    _forceVector.z = fwdZ * mantaPropulsionForce;
+                }
+                else
+                {
+                    float propulsionScale = mantaPropulsionForce / math.sqrt(propulsionDirSqr);
+                    _forceVector.x += _forceVector.x * propulsionScale;
+                    _forceVector.y += _forceVector.y * propulsionScale;
+                    _forceVector.z += _forceVector.z * propulsionScale;
+                }
+            }
 
             _rb.AddForce(_forceVector, ForceMode.Force);
 

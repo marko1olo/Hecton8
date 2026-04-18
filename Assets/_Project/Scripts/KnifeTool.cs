@@ -1,5 +1,6 @@
 using Hecton8.AI;
 using Hecton8.Scavenging;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -7,6 +8,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class KnifeTool : PlayerTool
     {
+        private const string KnifeCategory = "KNIFE";
         private readonly struct KnifeAssessment
         {
             public readonly string Headline;
@@ -24,7 +26,11 @@ namespace Hecton8.Gameplay
 
             public string BuildHudMessage()
             {
-                return $"{Headline} | {Summary} | {Recommendation}";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_HUD_ASSESSMENT, "{0} | {1} | {2}"),
+                    Headline,
+                    Summary,
+                    Recommendation);
             }
         }
 
@@ -97,22 +103,25 @@ namespace Hecton8.Gameplay
                 bool applied = ToolHitUtility.ApplyDamage(bestCollider, effectiveDamage, bestPoint, direction, impulse);
                 if (applied && Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowInfo("SURVIVAL BLADE - CONTACT");
+                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.KNIFE_HUD_CONTACT, "SURVIVAL BLADE - CONTACT"));
                     FieldOperationLogSystem.RecordOperation(
-                        "KNIFE",
-                        "MELEE CONTACT REGISTERED",
-                        $"{bestCollider.gameObject.name} engaged at {bestDistance:0.0} m.",
+                        ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                        ResolveLocalized(LocalizationKeys.KNIFE_LOG_CONTACT_TITLE, "MELEE CONTACT REGISTERED"),
+                        string.Format(
+                            ResolveLocalized(LocalizationKeys.KNIFE_LOG_CONTACT_MESSAGE, "{0} engaged at {1:0.0} m."),
+                            bestCollider.gameObject.name,
+                            bestDistance),
                         "INFO");
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning("SURVIVAL BLADE - NO CONTACT");
+                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.KNIFE_HUD_NO_CONTACT, "SURVIVAL BLADE - NO CONTACT"));
                 FieldOperationLogSystem.RecordOperation(
-                    "KNIFE",
-                    "MELEE SWING RETURNED CLEAR",
-                    "No valid target entered the blade envelope during the last swing.",
+                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_CLEAR_TITLE, "MELEE SWING RETURNED CLEAR"),
+                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_CLEAR_MESSAGE, "No valid target entered the blade envelope during the last swing."),
                     "WARN");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -132,28 +141,32 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             if (_cooldown > 0f)
-                return $"SURVIVAL BLADE // RECOVERING {_cooldown:0.0}S";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_OPERATIONAL_RECOVERING, "SURVIVAL BLADE // RECOVERING {0:0.0}S"),
+                    _cooldown);
 
             if (TryGetBestHitCached(out _, out _, out float distance))
-                return $"SURVIVAL BLADE // CONTACT {distance:0.0}M";
+                return string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_OPERATIONAL_CONTACT, "SURVIVAL BLADE // CONTACT {0:0.0}M"),
+                    distance);
 
-            return "SURVIVAL BLADE // READY";
+            return ResolveLocalized(LocalizationKeys.KNIFE_OPERATIONAL_READY, "SURVIVAL BLADE // READY");
         }
 
         public override string GetOperationalDirective()
         {
             if (_cooldown > 0f)
-                return "Reset your stance before the next strike.";
+                return ResolveLocalized(LocalizationKeys.KNIFE_DIRECTIVE_RECOVERING, "Reset your stance before the next strike.");
 
             if (TryGetBestHitCached(out Collider target, out _, out float distance))
             {
                 if (TryBuildAssessment(target, distance, out KnifeAssessment assessment))
                     return assessment.Recommendation;
 
-                return "Target is inside blade range. Strike or switch tools if the contact is armored.";
+                return ResolveLocalized(LocalizationKeys.KNIFE_DIRECTIVE_CONTACT, "Target is inside blade range. Strike or switch tools if the contact is armored.");
             }
 
-            return "Primary swings. Secondary reads the contact before you commit.";
+            return ResolveLocalized(LocalizationKeys.KNIFE_DIRECTIVE_READY, "Primary swings. Secondary reads the contact before you commit.");
         }
 
         public override void UseSecondary(float deltaTime)
@@ -165,7 +178,7 @@ namespace Hecton8.Gameplay
 
             if (!TryFindBestHit(out Collider target, out Vector3 point, out float distance))
             {
-                WarnNoContact("SURVIVAL BLADE - NO TARGET READ");
+                WarnNoContact(ResolveLocalized(LocalizationKeys.KNIFE_HUD_NO_TARGET_READ, "SURVIVAL BLADE - NO TARGET READ"));
                 _cooldown = swingCooldown * 0.5f;
                 return;
             }
@@ -250,11 +263,14 @@ namespace Hecton8.Gameplay
 
             if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowInfo("SURVIVAL BLADE - PRECISION STRIKE");
+                ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.KNIFE_HUD_PRECISION_STRIKE, "SURVIVAL BLADE - PRECISION STRIKE"));
                 FieldOperationLogSystem.RecordOperation(
-                    "KNIFE",
-                    "PRECISION STRIKE CONFIRMED",
-                    $"{target.gameObject.name} finished or weakened at {distance:0.0} m.",
+                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_PRECISION_TITLE, "PRECISION STRIKE CONFIRMED"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_LOG_PRECISION_MESSAGE, "{0} finished or weakened at {1:0.0} m."),
+                        target.gameObject.name,
+                        distance),
                     "INFO");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -267,12 +283,19 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return;
 
-            if (target.TryGetComponent(out Hecton8.AI.HectonBaseAI ai) || target.GetComponentInParent<Hecton8.AI.HectonBaseAI>() != null)
+            if (target.TryGetComponent(out Hecton8.AI.FaunaBrain ai) || target.GetComponentInParent<Hecton8.AI.FaunaBrain>() != null)
             {
-                ai = ai != null ? ai : target.GetComponentInParent<Hecton8.AI.HectonBaseAI>();
+                ai = ai != null ? ai : target.GetComponentInParent<Hecton8.AI.FaunaBrain>();
                 KnifeAssessment assessment = BuildBioformAssessment(ai, distance);
                 PublishAssessment(assessment);
-                FieldOperationLogSystem.RecordOperation("KNIFE", assessment.Headline, $"{assessment.Summary} | {assessment.Recommendation}", assessment.Severity);
+                FieldOperationLogSystem.RecordOperation(
+                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    assessment.Headline,
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_LOG_ASSESSMENT, "{0} | {1}"),
+                        assessment.Summary,
+                        assessment.Recommendation),
+                    assessment.Severity);
                 _nextFeedbackAt = Time.time + feedbackInterval;
                 return;
             }
@@ -282,7 +305,14 @@ namespace Hecton8.Gameplay
                 node = node != null ? node : target.GetComponentInParent<ResourceNode>();
                 KnifeAssessment assessment = BuildResourceAssessment(node, distance);
                 PublishAssessment(assessment);
-                FieldOperationLogSystem.RecordOperation("KNIFE", assessment.Headline, $"{assessment.Summary} | {assessment.Recommendation}", assessment.Severity);
+                FieldOperationLogSystem.RecordOperation(
+                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    assessment.Headline,
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_LOG_ASSESSMENT, "{0} | {1}"),
+                        assessment.Summary,
+                        assessment.Recommendation),
+                    assessment.Severity);
                 _nextFeedbackAt = Time.time + feedbackInterval;
                 return;
             }
@@ -292,18 +322,27 @@ namespace Hecton8.Gameplay
                 module = module != null ? module : target.GetComponentInParent<BaseModule>();
                 KnifeAssessment assessment = BuildModuleAssessment(module, distance);
                 PublishAssessment(assessment);
-                FieldOperationLogSystem.RecordOperation("KNIFE", assessment.Headline, $"{assessment.Summary} | {assessment.Recommendation}", assessment.Severity);
+                FieldOperationLogSystem.RecordOperation(
+                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    assessment.Headline,
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_LOG_ASSESSMENT, "{0} | {1}"),
+                        assessment.Summary,
+                        assessment.Recommendation),
+                    assessment.Severity);
                 _nextFeedbackAt = Time.time + feedbackInterval;
                 return;
             }
 
             if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowInfo("SURVIVAL BLADE - TARGET PROFILE UNKNOWN");
+                ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.KNIFE_HUD_TARGET_PROFILE_UNKNOWN, "SURVIVAL BLADE - TARGET PROFILE UNKNOWN"));
                 FieldOperationLogSystem.RecordOperation(
-                    "KNIFE",
-                    "UNKNOWN TARGET PROFILE",
-                    $"{target.gameObject.name} does not expose a tactical vitality profile.",
+                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_UNKNOWN_PROFILE_TITLE, "UNKNOWN TARGET PROFILE"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_LOG_UNKNOWN_PROFILE_MESSAGE, "{0} does not expose a tactical vitality profile."),
+                        target.gameObject.name),
                     "WARN");
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -314,9 +353,9 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return -1f;
 
-            Hecton8.AI.HectonBaseAI ai = target.GetComponent<Hecton8.AI.HectonBaseAI>();
+            Hecton8.AI.FaunaBrain ai = target.GetComponent<Hecton8.AI.FaunaBrain>();
             if (ai == null)
-                ai = target.GetComponentInParent<Hecton8.AI.HectonBaseAI>();
+                ai = target.GetComponentInParent<Hecton8.AI.FaunaBrain>();
             if (ai != null)
                 return ai.HealthNormalized;
 
@@ -342,9 +381,9 @@ namespace Hecton8.Gameplay
 
             ToolHitUtility.ShowWarning(message);
             FieldOperationLogSystem.RecordOperation(
-                "KNIFE",
+                ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
                 message,
-                "No valid target entered the blade envelope during the tactical read.",
+                ResolveLocalized(LocalizationKeys.KNIFE_LOG_NO_TARGET_READ_MESSAGE, "No valid target entered the blade envelope during the tactical read."),
                 "WARN");
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
@@ -353,7 +392,7 @@ namespace Hecton8.Gameplay
         {
             assessment = default;
 
-            HectonBaseAI ai = target.GetComponent<HectonBaseAI>() ?? target.GetComponentInParent<HectonBaseAI>();
+            FaunaBrain ai = target.GetComponent<FaunaBrain>() ?? target.GetComponentInParent<FaunaBrain>();
             if (ai != null)
             {
                 assessment = BuildBioformAssessment(ai, distance);
@@ -380,83 +419,118 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private KnifeAssessment BuildBioformAssessment(HectonBaseAI ai, float distance)
+        private KnifeAssessment BuildBioformAssessment(FaunaBrain ai, float distance)
         {
             float healthPercent = ai.HealthNormalized * 100f;
             if (ai.IsSleeping)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - DORMANT BIOFORM {healthPercent:0}%",
-                    $"{ai.gameObject.name} is dormant at {distance:0.0} m and has not committed to attack.",
-                    "Strike only if you need a silent opener or a clean sample window.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_DORMANT_BIOFORM, "BLADE READ - DORMANT BIOFORM {0:0}%"),
+                        healthPercent),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_DORMANT_BIOFORM, "{0} is dormant at {1:0.0} m and has not committed to attack."),
+                        ai.gameObject.name,
+                        distance),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_DORMANT_BIOFORM, "Strike only if you need a silent opener or a clean sample window."),
                     "INFO");
             }
 
-            if (ai.CurrentState == HectonBaseAI.AIState.Aggressive)
+            if (ai.CurrentState == FaunaBrain.AIState.Aggressive)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - HOSTILE {healthPercent:0}%",
-                    $"{ai.gameObject.name} is already aggressive and inside close-quarters danger range.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_HOSTILE, "BLADE READ - HOSTILE {0:0}%"),
+                        healthPercent),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_HOSTILE, "{0} is already aggressive and inside close-quarters danger range."),
+                        ai.gameObject.name),
                     ai.HealthNormalized <= criticalHealthThreshold
-                        ? "Precision strike is viable, but commit fast."
-                        : "Use stun or create space before relying on the blade.",
+                        ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_HOSTILE_CRITICAL, "Precision strike is viable, but commit fast.")
+                        : ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_HOSTILE, "Use stun or create space before relying on the blade."),
                     "WARN");
             }
 
-            if (ai.CurrentState == HectonBaseAI.AIState.Threaten || ai.CurrentState == HectonBaseAI.AIState.Stalk || ai.CurrentState == HectonBaseAI.AIState.Loom || ai.CurrentState == HectonBaseAI.AIState.Feint)
+            if (ai.CurrentState == FaunaBrain.AIState.Threaten || ai.CurrentState == FaunaBrain.AIState.Stalk || ai.CurrentState == FaunaBrain.AIState.Loom || ai.CurrentState == FaunaBrain.AIState.Feint)
             {
-                bool packHunt = ai.UsesPackHuntBehavior && ai.CurrentState == HectonBaseAI.AIState.Stalk;
-                bool feintCapable = ai.UsesFeintRushBehavior && (ai.CurrentState == HectonBaseAI.AIState.Stalk || ai.CurrentState == HectonBaseAI.AIState.Loom || ai.CurrentState == HectonBaseAI.AIState.Feint);
+                bool packHunt = ai.UsesPackHuntBehavior && ai.CurrentState == FaunaBrain.AIState.Stalk;
+                bool feintCapable = ai.UsesFeintRushBehavior && (ai.CurrentState == FaunaBrain.AIState.Stalk || ai.CurrentState == FaunaBrain.AIState.Loom || ai.CurrentState == FaunaBrain.AIState.Feint);
                 bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
                 bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
                 return new KnifeAssessment(
-                    $"BLADE READ - PRESSURE CONTACT {healthPercent:0}%",
-                    ai.CurrentState == HectonBaseAI.AIState.Feint
-                        ? $"{ai.gameObject.name} is in a false-charge pass and can swing back into a real hit if you misread the opening."
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_PRESSURE_CONTACT, "BLADE READ - PRESSURE CONTACT {0:0}%"),
+                        healthPercent),
+                    ai.CurrentState == FaunaBrain.AIState.Feint
+                        ? string.Format(
+                            ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_FEINT, "{0} is in a false-charge pass and can swing back into a real hit if you misread the opening."),
+                            ai.gameObject.name)
                         :
-                    ai.CurrentState == HectonBaseAI.AIState.Loom
+                    ai.CurrentState == FaunaBrain.AIState.Loom
                         ? (ambushLeviathan
-                            ? $"{ai.gameObject.name} is setting up a burst ambush and can snap into close range with little warning."
+                            ? string.Format(
+                                ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_AMBUSH, "{0} is setting up a burst ambush and can snap into close range with little warning."),
+                                ai.gameObject.name)
                             : (sentinelLeviathan
-                                ? $"{ai.gameObject.name} is holding a guarded route and pushing you out of its corridor."
-                                : $"{ai.gameObject.name} is holding a heavy pressure circle and can crash into close range fast."))
-                        : ai.CurrentState == HectonBaseAI.AIState.Threaten
-                        ? $"{ai.gameObject.name} is warning and pressuring you around its protected space."
+                                ? string.Format(
+                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_SENTINEL, "{0} is holding a guarded route and pushing you out of its corridor."),
+                                    ai.gameObject.name)
+                                : string.Format(
+                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_LOOM, "{0} is holding a heavy pressure circle and can crash into close range fast."),
+                                    ai.gameObject.name)))
+                        : ai.CurrentState == FaunaBrain.AIState.Threaten
+                        ? string.Format(
+                            ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_THREATEN, "{0} is warning and pressuring you around its protected space."),
+                            ai.gameObject.name)
                         : (packHunt
-                            ? $"{ai.gameObject.name} is shadowing you as part of a group hunt and may rush from the flank."
+                            ? string.Format(
+                                ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_PACK, "{0} is shadowing you as part of a group hunt and may rush from the flank."),
+                                ai.gameObject.name)
                             : (feintCapable
-                                ? $"{ai.gameObject.name} is shadowing you and may throw a fake entry before the real bite."
-                                : $"{ai.gameObject.name} is shadowing you and may commit to attack soon.")),
-                    ai.CurrentState == HectonBaseAI.AIState.Feint
-                        ? "Do not knife into the pass. Sidestep the fake run and wait for the turn."
+                                ? string.Format(
+                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_TRACKING_FEINT, "{0} is shadowing you and may throw a fake entry before the real bite."),
+                                    ai.gameObject.name)
+                                : string.Format(
+                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_TRACKING, "{0} is shadowing you and may commit to attack soon."),
+                                    ai.gameObject.name))),
+                    ai.CurrentState == FaunaBrain.AIState.Feint
+                        ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_FEINT, "Do not knife into the pass. Sidestep the fake run and wait for the turn.")
                         :
-                    ai.CurrentState == HectonBaseAI.AIState.Loom
+                    ai.CurrentState == FaunaBrain.AIState.Loom
                         ? (ambushLeviathan
-                            ? "Do not trust a knife opener here. Break the angle before it bursts."
+                            ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_AMBUSH, "Do not trust a knife opener here. Break the angle before it bursts.")
                             : (sentinelLeviathan
-                                ? "This is a bad knife lane. Leave the corridor or force a hard opening first."
-                                : "Do not trust a knife opener here. Break distance first."))
+                                ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_SENTINEL, "This is a bad knife lane. Leave the corridor or force a hard opening first.")
+                                : ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_LOOM, "Do not trust a knife opener here. Break distance first.")))
                         : packHunt
-                        ? "Do not trust a knife opener here unless you have already broken the group shape."
+                        ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_PACK, "Do not trust a knife opener here unless you have already broken the group shape.")
                         : (feintCapable
-                            ? "Do not bite on the fake entry. Hold the blade for the real commit window."
-                            : "Do not rely on a knife opener here unless you are forcing a close-range break."),
+                            ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_TRACKING_FEINT, "Do not bite on the fake entry. Hold the blade for the real commit window.")
+                            : ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_TRACKING, "Do not rely on a knife opener here unless you are forcing a close-range break.")),
                     "WARN");
             }
 
             if (ai.HealthNormalized <= criticalHealthThreshold)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - FRACTURED TARGET {healthPercent:0}%",
-                    $"{ai.gameObject.name} is close to collapse and vulnerable to a finishing strike.",
-                    "Go for a precision hit if you need the target down now.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_FRACTURED_TARGET, "BLADE READ - FRACTURED TARGET {0:0}%"),
+                        healthPercent),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_FRACTURED_TARGET, "{0} is close to collapse and vulnerable to a finishing strike."),
+                        ai.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_FRACTURED_TARGET, "Go for a precision hit if you need the target down now."),
                     "INFO");
             }
 
             return new KnifeAssessment(
-                $"BLADE READ - BIOFORM STABLE {healthPercent:0}%",
-                $"{ai.gameObject.name} is alive, mobile, and not yet in an easy finish window.",
-                "Observe, soften it first, or disengage.",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_BIOFORM_STABLE, "BLADE READ - BIOFORM STABLE {0:0}%"),
+                    healthPercent),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_BIOFORM_STABLE, "{0} is alive, mobile, and not yet in an easy finish window."),
+                    ai.gameObject.name),
+                ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_BIOFORM_STABLE, "Observe, soften it first, or disengage."),
                 "INFO");
         }
 
@@ -465,9 +539,12 @@ namespace Hecton8.Gameplay
             if (node.IsDepleted)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - NODE DEPLETED 0%",
-                    $"{node.gameObject.name} is exhausted at {distance:0.0} m and will not pay back another strike.",
-                    "Leave it and move to a fresh resource lane.",
+                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_DEPLETED, "BLADE READ - NODE DEPLETED 0%"),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_DEPLETED, "{0} is exhausted at {1:0.0} m and will not pay back another strike."),
+                        node.gameObject.name,
+                        distance),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_DEPLETED, "Leave it and move to a fresh resource lane."),
                     "WARN");
             }
 
@@ -475,25 +552,39 @@ namespace Hecton8.Gameplay
             if (node.HealthNormalized <= criticalHealthThreshold)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - NODE READY TO BREAK {nodePercent:0}%",
-                    $"{node.gameObject.name} is one clean strike away from opening at {distance:0.0} m.",
-                    "Finish it now if you want a fast recovery window.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_READY, "BLADE READ - NODE READY TO BREAK {0:0}%"),
+                        nodePercent),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_READY, "{0} is one clean strike away from opening at {1:0.0} m."),
+                        node.gameObject.name,
+                        distance),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_READY, "Finish it now if you want a fast recovery window."),
                     "INFO");
             }
 
             if (node.HealthNormalized <= 0.65f)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - NODE WEAKENED {nodePercent:0}%",
-                    $"{node.gameObject.name} is partially cracked and reacting to tool pressure.",
-                    "Another strike or a dedicated extraction tool is worthwhile.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_WEAKENED, "BLADE READ - NODE WEAKENED {0:0}%"),
+                        nodePercent),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_WEAKENED, "{0} is partially cracked and reacting to tool pressure."),
+                        node.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_WEAKENED, "Another strike or a dedicated extraction tool is worthwhile."),
                     "INFO");
             }
 
             return new KnifeAssessment(
-                $"BLADE READ - NODE DENSE {nodePercent:0}%",
-                $"{node.gameObject.name} still has a dense shell at {distance:0.0} m.",
-                "Use repeated strikes only if no better extraction tool is available.",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_DENSE, "BLADE READ - NODE DENSE {0:0}%"),
+                    nodePercent),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_DENSE, "{0} still has a dense shell at {1:0.0} m."),
+                    node.gameObject.name,
+                    distance),
+                ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_DENSE, "Use repeated strikes only if no better extraction tool is available."),
                 "INFO");
         }
 
@@ -503,25 +594,38 @@ namespace Hecton8.Gameplay
             if (module.IsBreached)
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - MODULE BREACHED {normalized * 100f:0}%",
-                    $"{module.gameObject.name} is already compromised and unsafe at {distance:0.0} m.",
-                    "Repair, salvage, or leave it. The blade is not the main tool here.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_MODULE_BREACHED, "BLADE READ - MODULE BREACHED {0:0}%"),
+                        normalized * 100f),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_MODULE_BREACHED, "{0} is already compromised and unsafe at {1:0.0} m."),
+                        module.gameObject.name,
+                        distance),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_MODULE_BREACHED, "Repair, salvage, or leave it. The blade is not the main tool here."),
                     "WARN");
             }
 
             if (module.CanDeconstruct())
             {
                 return new KnifeAssessment(
-                    $"BLADE READ - MODULE SALVAGEABLE {normalized * 100f:0}%",
-                    $"{module.gameObject.name} exposes reclaim paths, but not for blade work.",
-                    "Swap to the cutter if recovery is the goal.",
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_MODULE_SALVAGEABLE, "BLADE READ - MODULE SALVAGEABLE {0:0}%"),
+                        normalized * 100f),
+                    string.Format(
+                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_MODULE_SALVAGEABLE, "{0} exposes reclaim paths, but not for blade work."),
+                        module.gameObject.name),
+                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_MODULE_SALVAGEABLE, "Swap to the cutter if recovery is the goal."),
                     "INFO");
             }
 
             return new KnifeAssessment(
-                $"BLADE READ - MODULE SEALED {normalized * 100f:0}%",
-                $"{module.gameObject.name} is structurally sealed and not a valid blade target.",
-                "Use repair, builder, or cutter tools instead.",
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_MODULE_SEALED, "BLADE READ - MODULE SEALED {0:0}%"),
+                    normalized * 100f),
+                string.Format(
+                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_MODULE_SEALED, "{0} is structurally sealed and not a valid blade target."),
+                    module.gameObject.name),
+                ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_MODULE_SEALED, "Use repair, builder, or cutter tools instead."),
                 "INFO");
         }
 
@@ -549,5 +653,14 @@ namespace Hecton8.Gameplay
             else
                 ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
         }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
+        }
     }
 }
+

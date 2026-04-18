@@ -45,6 +45,8 @@ namespace Hecton8.Gameplay
         private float integrity;
         private float pressure;
         private float weight;
+        private float hunger;
+        private float thirst;
         private bool  alive = true;
 
         private float _slowTickDt = 0.5f;
@@ -57,6 +59,8 @@ namespace Hecton8.Gameplay
         private float lastPubPressure;
         private float lastPubTemp;
         private float lastPubRad;
+        private float lastPubHunger;
+        private float lastPubThirst;
 
         // Hazard Grace Periods
         private float _tempGraceTimer;
@@ -81,6 +85,10 @@ namespace Hecton8.Gameplay
         public event Action<float> OnOxygenCritical;
         public event Action<float> OnTemperatureChanged;
         public event Action<float> OnRadiationChanged;
+        public event Action<float> OnHungerChanged;
+        public event Action<float> OnThirstChanged;
+        public event Action<float> OnHungerCritical;
+        public event Action<float> OnThirstCritical;
         public event Action        OnDeath;
 
         // ═════════════════════════════════════════════════════════
@@ -93,13 +101,19 @@ namespace Hecton8.Gameplay
         public float Integrity           => integrity;
         public float Pressure            => pressure;
         public float Weight              => weight;
+        public float Hunger              => hunger;
+        public float Thirst              => thirst;
         public bool  IsAlive             => alive;
         public SurvivalStats Stats       => stats;
 
         public float OxygenNormalized    => oxygen    / stats.MaxOxygen;
         public float EnergyNormalized    => energy    / stats.MaxEnergy;
         public float IntegrityNormalized => integrity / stats.MaxIntegrity;
+        public float HungerNormalized    => hunger    / stats.MaxHunger;
+        public float ThirstNormalized    => thirst    / stats.MaxThirst;
         public float EnergyPercent       => EnergyNormalized * 100f;
+        public float HungerPercent       => HungerNormalized * 100f;
+        public float ThirstPercent       => ThirstNormalized * 100f;
 
         // ═════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -158,6 +172,7 @@ namespace Hecton8.Gameplay
             ApplyPressureDamage(dt);
             HandleTemperature(dt);
             HandleRadiation(dt);
+            UpdateHungerAndThirst(dt);
         }
 
         // ═════════════════════════════════════════════════════════
@@ -288,6 +303,27 @@ namespace Hecton8.Gameplay
             integrity = math.max(0f, integrity - damage);
         }
 
+        private void UpdateHungerAndThirst(float dt)
+        {
+            // Drain hunger
+            hunger = math.max(0f, hunger - stats.HungerDrainRate * dt);
+
+            // Drain thirst (slightly faster)
+            thirst = math.max(0f, thirst - stats.ThirstDrainRate * dt);
+
+            // Apply starvation damage if hunger is 0
+            if (hunger <= 0f)
+            {
+                integrity = math.max(0f, integrity - stats.StarvationDamageRate * dt);
+            }
+
+            // Apply dehydration damage if thirst is 0
+            if (thirst <= 0f)
+            {
+                integrity = math.max(0f, integrity - stats.DehydrationDamageRate * dt);
+            }
+        }
+
         // ═════════════════════════════════════════════════════════
         //  EVENT PUBLISHING
         // ═════════════════════════════════════════════════════════
@@ -344,6 +380,22 @@ namespace Hecton8.Gameplay
                 lastPubRad = totalRad;
                 OnRadiationChanged?.Invoke(totalRad);
             }
+
+            // Hunger Publishing
+            if (math.abs(hunger - lastPubHunger) > Epsilon)
+            {
+                lastPubHunger = hunger;
+                OnHungerChanged?.Invoke(hunger);
+                if (HungerNormalized < 0.15f) OnHungerCritical?.Invoke(HungerNormalized);
+            }
+
+            // Thirst Publishing
+            if (math.abs(thirst - lastPubThirst) > Epsilon)
+            {
+                lastPubThirst = thirst;
+                OnThirstChanged?.Invoke(thirst);
+                if (ThirstNormalized < 0.15f) OnThirstCritical?.Invoke(ThirstNormalized);
+            }
         }
 
         private void CheckLethalConditions()
@@ -399,6 +451,24 @@ namespace Hecton8.Gameplay
             ForceDirty(ref lastPubIntegrity);
         }
 
+        /// <summary>
+        /// Restores hunger by the specified amount.
+        /// </summary>
+        public void AddHunger(float amount)
+        {
+            hunger = math.min(stats.MaxHunger, hunger + math.max(0f, amount));
+            ForceDirty(ref lastPubHunger);
+        }
+
+        /// <summary>
+        /// Restores thirst by the specified amount.
+        /// </summary>
+        public void AddThirst(float amount)
+        {
+            thirst = math.min(stats.MaxThirst, thirst + math.max(0f, amount));
+            ForceDirty(ref lastPubThirst);
+        }
+
         public void SetWeight(float kg)
         {
             weight = math.max(0f, kg);
@@ -428,6 +498,8 @@ namespace Hecton8.Gameplay
             dto.energy = energy;
             dto.integrity = integrity;
             dto.weight = weight;
+            dto.hunger = hunger;
+            dto.thirst = thirst;
             dto.SetPosition(transform.position);
             dto.SetRotation(transform.rotation);
         }
@@ -439,6 +511,8 @@ namespace Hecton8.Gameplay
             energy    = Mathf.Clamp(dto.energy,    0f, stats.MaxEnergy);
             integrity = Mathf.Clamp(dto.integrity, 0f, stats.MaxIntegrity);
             weight    = Mathf.Max(0f, dto.weight);
+            hunger    = Mathf.Clamp(dto.hunger,    0f, stats.MaxHunger);
+            thirst    = Mathf.Clamp(dto.thirst,    0f, stats.MaxThirst);
             alive     = oxygen > 0f && integrity > 0f;
 
             Vector3 pos = dto.GetPosition();
@@ -456,6 +530,8 @@ namespace Hecton8.Gameplay
             oxygen    = stats.MaxOxygen;
             energy    = stats.MaxEnergy;
             integrity = stats.MaxIntegrity;
+            hunger    = stats.MaxHunger;
+            thirst    = stats.MaxThirst;
             depth     = 0f;
             pressure  = 1f;
             weight    = 0f;
@@ -476,6 +552,8 @@ namespace Hecton8.Gameplay
             lastPubPressure  = DirtySentinel;
             lastPubTemp      = DirtySentinel;
             lastPubRad       = DirtySentinel;
+            lastPubHunger    = DirtySentinel;
+            lastPubThirst    = DirtySentinel;
         }
 
         private static void ForceDirty(ref float lastPub) => lastPub = DirtySentinel;

@@ -137,35 +137,24 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ResolveReferences();
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
+            TryRegisterToTickManager();
         }
 
         private void Start()
         {
-            if (!_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registeredToTickManager = true;
-            }
-
+            TryRegisterToTickManager();
             ReconcileExecutedSeams();
         }
 
         private void OnDisable()
         {
-            if (_registeredToTickManager && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registeredToTickManager = false;
-            }
+            TryUnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterFromTickManager();
+
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -183,6 +172,31 @@ namespace Hecton8.World
         public void SetPlayerTransform(Transform target)
         {
             playerTransform = target;
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _registeredToTickManager = false;
         }
 
         public void CopyVoxelRequestsTo(List<WorldGenerativeGeologyVoxelBlendRequest> destination)

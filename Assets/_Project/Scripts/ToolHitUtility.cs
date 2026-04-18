@@ -33,7 +33,7 @@ namespace Hecton8.Gameplay
                 cuttable.ApplyCutDamage(damage, hitPoint);
                 applied = true;
             }
-            else if (hitCollider.TryGetComponent(out HectonBaseAI ai))
+            else if (hitCollider.TryGetComponent(out FaunaBrain ai))
             {
                 ai.TakeDamage(damage);
                 applied = true;
@@ -45,7 +45,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                HectonBaseAI aiParent = hitCollider.GetComponentInParent<HectonBaseAI>();
+                FaunaBrain aiParent = hitCollider.GetComponentInParent<FaunaBrain>();
                 if (aiParent != null)
                 {
                     aiParent.TakeDamage(damage);
@@ -179,3 +179,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

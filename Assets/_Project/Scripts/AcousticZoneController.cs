@@ -675,8 +675,8 @@ namespace Hecton8.Audio
         {
             if (clip == null) return;
 
-            SpatialAudioManager sam = SpatialAudioManager.Instance;
-            if (sam == null) return;
+            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
 
             sam.PlayStatic2D(clip, transitionVolume);
         }
@@ -1503,6 +1503,7 @@ namespace Hecton8.Audio
             }
 
             snapshot.TransitionTo(Mathf.Max(0f, duration));
+            LogDiagnostic($"[AcousticZoneController] Snapshot activated: {snapshot.name}");
         }
 
         private AudioMixerSnapshot ResolveSnapshotForZone(AcousticZoneState zone)

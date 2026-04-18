@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_ElectrolyteSalts
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Electrolyte Salts
+  localizedItemName:
+    tableKey: ITEM_ELECTROLYTE_SALTS_NAME
+    fallbackText: "Electrolyte Salts"
+    variants: []
   icon: {fileID: 0}
   description: Reactive salt clusters used in cells, coolant chemistry, and power
     balance.
+  localizedDescription:
+    tableKey: ITEM_ELECTROLYTE_SALTS_DESCRIPTION
+    fallbackText: "Reactive salt clusters used in cells, coolant chemistry, and power balance."
+    variants: []
   weight: 0.7
   stackable: 1
   maxStack: 24
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Collect"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

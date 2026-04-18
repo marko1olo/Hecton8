@@ -185,8 +185,10 @@ namespace Hecton8.Editor
                 "First Breath",
                 "Take your first breath under water.",
                 Hecton8.Quest.QuestTriggerType.OnDepthReached,
+                string.Empty,
                 10f,
                 Hecton8.Quest.QuestCompletionType.OnDepthReached,
+                string.Empty,
                 50f,
                 true);
 
@@ -196,8 +198,10 @@ namespace Hecton8.Editor
                 "Arrival",
                 "Survey the landing zone.",
                 Hecton8.Quest.QuestTriggerType.Manual,
+                string.Empty,
                 0f,
                 Hecton8.Quest.QuestCompletionType.OnDiscoveryMade,
+                string.Empty,
                 0f,
                 false);
 
@@ -206,9 +210,11 @@ namespace Hecton8.Editor
                 "Quest_SignalDetected",
                 "Signal Detected",
                 "Locate the source of the anomalous signal.",
-                Hecton8.Quest.QuestTriggerType.OnSignalDetected,
+                Hecton8.Quest.QuestTriggerType.OnDiscoveryMade,
+                "atlas6_signal_identified",
                 0f,
                 Hecton8.Quest.QuestCompletionType.OnSignalDecoded,
+                "atlas6_signal_fully_decoded",
                 0f,
                 false);
 
@@ -222,8 +228,10 @@ namespace Hecton8.Editor
             string title, 
             string description,
             Hecton8.Quest.QuestTriggerType triggerType,
+            string triggerId,
             float triggerValue,
             Hecton8.Quest.QuestCompletionType completionType,
+            string completionId,
             float completionValue,
             bool autoActivate)
         {
@@ -238,8 +246,10 @@ namespace Hecton8.Editor
             quest.displayTitle = title;
             quest.description = description;
             quest.triggerType = triggerType;
+            quest.triggerId = triggerId;
             quest.triggerValue = triggerValue;
             quest.completionType = completionType;
+            quest.completionId = completionId;
             quest.completionValue = completionValue;
             quest.autoActivateOnStart = autoActivate;
 

@@ -27,14 +27,10 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
         [Header(Daylight Presence)]
         _DayDiskLift ("Day Disk Lift", Range(0, 1)) = 0.18
         _DayShadowSkyLift ("Day Shadow Sky Lift", Range(0, 1)) = 0.32
-        _HazeLitPreserve ("Haze Lit Preserve", Range(0, 1)) = 0.65
 
-        [Header(Distance Haze)]
-        _HazeStrength ("Haze Strength", Range(0, 1)) = 0.32
-        _HazeStart ("Haze Start", Range(0, 1)) = 0.2
-        _HazeEnd ("Haze End", Range(0, 1)) = 0.9
-        _HazeDesaturate ("Haze Desaturate", Range(0, 1)) = 0.18
-        _NightDarken ("Night Darken", Range(0, 1)) = 0.18
+        [Header(Atmosphere)]
+        _AtmosphereTransmittanceWeight ("Atmosphere Transmittance Weight", Range(0, 1.5)) = 1.0
+        _AtmosphereInscatterWeight ("Atmosphere Inscatter Weight", Range(0, 2.0)) = 1.0
     }
 
     SubShader
@@ -67,6 +63,7 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
             #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Hecton_CelestialAtmosphere.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -87,12 +84,8 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                 half _AegirFillWrap;
                 half _DayDiskLift;
                 half _DayShadowSkyLift;
-                half _HazeLitPreserve;
-                half _HazeStrength;
-                half _HazeStart;
-                half _HazeEnd;
-                half _HazeDesaturate;
-                half _NightDarken;
+                half _AtmosphereTransmittanceWeight;
+                half _AtmosphereInscatterWeight;
             CBUFFER_END
 
             float4 _SunDirection;
@@ -142,12 +135,6 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                        _SkyColorNadir.rgb * downMask;
             }
 
-            float3 DesaturateColor(float3 color, float amount)
-            {
-                float luma = dot(color, float3(0.299, 0.587, 0.114));
-                return lerp(color, luma.xxx, amount);
-            }
-
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -186,12 +173,13 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                 float terminatorBand = 1.0 - saturate(abs(rawSun) / max(_TerminatorWidth, 0.001));
                 terminatorBand *= terminatorBand;
 
-                float3 skyAmbient = GetSkyColor(N);
+                float3 viewSkyColor = GetSkyColor(viewRay);
+                float3 skyAmbient = max(GetSkyColor(N), viewSkyColor * 0.8);
                 float3 shadowColor = albedo * _ShadowTint.rgb * _ShadowStrength;
                 float3 dayColor = albedo * litMask;
                 float dayAmbientBlend = saturate(1.0 - _NightBlend);
-                float3 daytimeDiskLift = albedo * skyAmbient * _DayDiskLift * dayAmbientBlend * saturate(0.35 + shadowMask * 0.65);
-                float3 daylightShadowFill = skyAmbient * lerp(0.18, 0.42, dayAmbientBlend);
+                float3 daytimeDiskLift = albedo * viewSkyColor * _DayDiskLift * dayAmbientBlend * saturate(0.35 + shadowMask * 0.65);
+                float3 daylightShadowFill = max(skyAmbient, viewSkyColor * 0.75) * lerp(0.18, 0.42, dayAmbientBlend);
                 float3 darkColor = lerp(shadowColor, daylightShadowFill, lerp(0.35, 0.68, dayAmbientBlend)) * shadowMask;
                 darkColor += skyAmbient * shadowMask * _DayShadowSkyLift * dayAmbientBlend * saturate(0.45 + 0.55 * (1.0 - litMask));
                 float3 terminatorColor = _TerminatorTintColor.rgb * terminatorBand * _TerminatorTintStrength;
@@ -204,16 +192,27 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                 float rimNightBoost = saturate(0.35 + _NightBlend + _EclipseOcclusion);
                 float3 rimColor = _RimColor.rgb * rim * _RimStrength * rimNightBoost;
 
-                float hazeView = 1.0 - saturate(abs(viewRay.y));
-                float hazeMask = smoothstep(_HazeStart, _HazeEnd, hazeView) * _HazeStrength;
-                float3 hazeColor = GetSkyColor(viewRay);
-
-                float litPreserve = lerp(1.0 - _HazeLitPreserve, 1.0, saturate(litMask + terminatorBand * 0.65));
-                float hazePresence = lerp(1.0, litPreserve, dayAmbientBlend);
                 float3 shaded = dayColor + darkColor + daytimeDiskLift + terminatorColor + aegirFill + rimColor;
-                shaded = lerp(shaded, DesaturateColor(shaded, _HazeDesaturate), hazeMask);
-                shaded = lerp(shaded, hazeColor, hazeMask * lerp(0.55, 0.72, dayAmbientBlend) * hazePresence);
-                shaded *= lerp(1.0, 1.0 - _NightDarken, _NightBlend * shadowMask);
+                float4 atmosphereSample = SampleHectonCelestialAtmosphere(
+                    viewRay,
+                    _SkyColorHorizon.rgb,
+                    _SkyColorZenith.rgb);
+                float horizonDissolve = 1.0 - atmosphereSample.a;
+                float nightAtmosphereFade = lerp(1.0, 0.12, _NightBlend);
+                float transmittanceWeight = saturate(
+                    (_AtmosphereTransmittanceWeight +
+                    shadowMask * 0.28 +
+                    terminatorBand * 0.12 +
+                    horizonDissolve * 0.55) *
+                    lerp(1.0, 0.42, _NightBlend));
+                float inscatteringWeight = max(
+                    _AtmosphereInscatterWeight * (0.65 + shadowMask * 0.75 + horizonDissolve * 0.7) * nightAtmosphereFade,
+                    shadowMask * 0.18 * nightAtmosphereFade + horizonDissolve * lerp(1.35, 0.16, _NightBlend));
+                shaded = ApplyHectonCelestialAtmosphere(
+                    shaded,
+                    atmosphereSample,
+                    transmittanceWeight,
+                    inscatteringWeight);
 
                 return half4(shaded, 1.0);
             }

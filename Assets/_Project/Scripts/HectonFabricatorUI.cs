@@ -116,6 +116,8 @@ namespace Hecton8.UI
         private string LabelBlueprintLocked = "SCAN DATA REQUIRED";
         private string LabelInsufficient = "INSUFFICIENT";
         private string LabelReady       = "READY";
+        private string LabelPowerOffline = "POWER OFFLINE";
+        private string LabelPowerRequired = "POWER REQUIRED";
         private const string LabelSeconds     = "s";
         private const string LabelSlash       = "/";
         private const string LabelDot         = "\u2022"; // bullet •
@@ -455,6 +457,10 @@ namespace Hecton8.UI
                 return;
 
             if (!_canCraftCurrent || _currentFabricator == null)
+                return;
+
+            // Power check - cannot craft without power
+            if (!_currentFabricator.HasPower)
                 return;
 
             RecipeData recipe = _recipes[_selectedIndex];
@@ -1103,9 +1109,22 @@ namespace Hecton8.UI
 
             if (!_isCrafting)
             {
-                Draw.Color    = _canCraftCurrent ? ColorSuccess : ColorWarning;
-                Draw.FontSize = FontW(fontSizeBody);
-                Draw.Text(Scr(x, y), _canCraftCurrent ? LabelReady : LabelInsufficient);
+                // Check power status first
+                bool hasPower = _currentFabricator != null && _currentFabricator.HasPower;
+                
+                if (!hasPower)
+                {
+                    // Power offline - show warning
+                    Draw.Color = ColorWarning;
+                    Draw.FontSize = FontW(fontSizeBody);
+                    Draw.Text(Scr(x, y), LabelPowerOffline);
+                }
+                else
+                {
+                    Draw.Color    = _canCraftCurrent ? ColorSuccess : ColorWarning;
+                    Draw.FontSize = FontW(fontSizeBody);
+                    Draw.Text(Scr(x, y), _canCraftCurrent ? LabelReady : LabelInsufficient);
+                }
             }
         }
 
@@ -1191,12 +1210,26 @@ namespace Hecton8.UI
             Draw.FontSize  = FontW(fontSizeHint);
             Draw.TextAlign = TextAlign.Center;
 
+            // ── Power status indicator ──
+            bool hasPower = _currentFabricator != null && _currentFabricator.HasPower;
+            if (!hasPower)
+            {
+                Draw.Color = ColorWarning;
+                Draw.Text(Scr(centerX, y), LabelPowerRequired);
+                y += fontSizeHint * 1.5f;
+            }
+
             // ── Hint line ──
             // Concatenation avoided: draw each hint separately with spacing
             float hintSpacing = PanelW * 0.25f;
 
+            Draw.Color = ColorTextDim;
             Draw.Text(Scr(centerX - hintSpacing, y), LabelHintNav);
-            Draw.Text(Scr(centerX, y), _canCraftCurrent ? LabelHintCraft : "");
+            
+            // Only show craft hint if has power and can craft
+            if (hasPower && _canCraftCurrent)
+                Draw.Text(Scr(centerX, y), LabelHintCraft);
+            
             Draw.Text(Scr(centerX + hintSpacing, y), LabelHintClose);
 
             // ── Separator above hints ──

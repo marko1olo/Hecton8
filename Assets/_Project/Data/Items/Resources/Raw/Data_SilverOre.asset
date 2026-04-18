@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_SilverOre
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Silver Ore
+  localizedItemName:
+    tableKey: ITEM_SILVER_ORE_NAME
+    fallbackText: "Silver Ore"
+    variants: []
   icon: {fileID: 0}
   description: Higher-grade conductive ore for stable contacts, boards, and fine
     signal paths.
+  localizedDescription:
+    tableKey: ITEM_SILVER_ORE_DESCRIPTION
+    fallbackText: "Higher-grade conductive ore for stable contacts, boards, and fine signal paths."
+    variants: []
   weight: 0.9
   stackable: 1
   maxStack: 24
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

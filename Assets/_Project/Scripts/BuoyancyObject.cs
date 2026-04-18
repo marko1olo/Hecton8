@@ -308,11 +308,12 @@ namespace Hecton8.Physics
             if (engine != null)
                 engine.Unregister(this);
 
-            if (GameTickManager.Instance != null && _registeredToFixedTick)
-            {
-                GameTickManager.Instance.Unregister((IFixedTickable)this);
-                _registeredToFixedTick = false;
-            }
+            TryUnregisterFromFixedTick();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterFromFixedTick();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -349,6 +350,18 @@ namespace Hecton8.Physics
 
             GameTickManager.Instance.Register((IFixedTickable)this);
             _registeredToFixedTick = true;
+        }
+
+        private void TryUnregisterFromFixedTick()
+        {
+            if (!_registeredToFixedTick)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((IFixedTickable)this);
+
+            _registeredToFixedTick = false;
         }
 
         /// <summary>

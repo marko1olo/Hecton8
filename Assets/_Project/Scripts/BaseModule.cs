@@ -192,6 +192,7 @@ namespace Hecton8.Gameplay
         private bool _isDraining;
         private float _drainTimer;
         private float _basePowerRating;
+        private bool _tickRegistered;
 
         private ModuleMarker _moduleMarker;
 
@@ -436,16 +437,21 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ISlowTickable)this);
+            TryRegister();
             ResyncInteriorOccupants(true);
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ISlowTickable)this);
+            TryUnregister();
 
             NotifyModuleExitIfNeeded();
             ReleaseAllTrackedObjects();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1166,6 +1172,31 @@ namespace Hecton8.Gameplay
         private void UpdateTrackedDiagnostics()
         {
             _debugTrackedObjectCount = _trackedObjects.Count;
+        }
+
+        private void TryRegister()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _tickRegistered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _tickRegistered = false;
         }
 
 #if UNITY_EDITOR

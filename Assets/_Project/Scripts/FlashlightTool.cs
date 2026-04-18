@@ -9,13 +9,15 @@ namespace Hecton8.Gameplay
     using Hecton8.Bootstrap;
     using Hecton8.Input;
     using Hecton8.Interaction;
+    using Hecton8.Items;
     using Hecton8.Scavenging;
+    using Hecton8.Tools;
     using Hecton8.UI;
     using UnityEngine;
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Flashlight Tool")]
-    public sealed class FlashlightTool : PlayerTool
+    public sealed class FlashlightTool : PlayerTool, IBatteryTool
     {
         private readonly struct LampAssessment
         {
@@ -44,6 +46,104 @@ namespace Hecton8.Gameplay
         [SerializeField] private float contextProbeRange = 18f;
         [SerializeField] private LayerMask contextMask = ~0;
 
+        [Header("── Battery Settings ─────────────────────────")]
+        [Tooltip("Battery item type this tool uses.")]
+        [SerializeField] private ItemData _batteryItemType;
+
+        [Header("── Battery Visuals ──────────────────────────")]
+        [Tooltip("Mesh to hide when battery is removed.")]
+        [SerializeField] private GameObject _batteryMesh;
+
+        [Tooltip("Renderer for power indicator light.")]
+        [SerializeField] private Renderer _powerIndicatorRenderer;
+
+        [Tooltip("Emission color when powered.")]
+        [SerializeField] private Color _powerOnColor = new Color(1f, 0.9f, 0.5f);
+
+        private ItemData _installedBattery;
+        private float _batteryCharge;
+
+        // MaterialPropertyBlock for power indicator
+        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
+        private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+
+        // ══════════════════════════════════════════════════════════
+        //  IBatteryTool IMPLEMENTATION
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>True if the tool currently has a battery installed.</summary>
+        public bool HasBattery => _installedBattery != null;
+
+        /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
+        public float BatteryCharge => _installedBattery != null ? _batteryCharge : 0f;
+
+        /// <summary>The battery item currently installed (null if none).</summary>
+        public ItemData BatteryItem => _installedBattery;
+
+        /// <summary>
+        /// Removes the battery from the tool.
+        /// </summary>
+        public ItemData RemoveBattery()
+        {
+            if (_installedBattery == null)
+                return null;
+
+            ItemData removed = _installedBattery;
+            _installedBattery = null;
+            _batteryCharge = 0f;
+
+            UpdateBatteryVisuals();
+            UpdatePowerIndicator();
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Inserts a battery into the tool.
+        /// </summary>
+        public bool InsertBattery(ItemData battery, float charge)
+        {
+            if (battery == null)
+                return false;
+
+            _installedBattery = battery;
+            _batteryCharge = Mathf.Clamp01(charge);
+
+            UpdateBatteryVisuals();
+            UpdatePowerIndicator();
+
+            return true;
+        }
+
+        private void UpdateBatteryVisuals()
+        {
+            if (_batteryMesh != null)
+                _batteryMesh.SetActive(_installedBattery != null);
+        }
+
+        private void UpdatePowerIndicator()
+        {
+            if (_powerIndicatorRenderer == null)
+                return;
+
+            _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+
+            if (_installedBattery == null || _batteryCharge <= 0f)
+            {
+                _mpb.SetColor(_EmissionColorID, Color.black);
+            }
+            else if (_batteryCharge <= 0.2f)
+            {
+                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f));
+            }
+            else
+            {
+                _mpb.SetColor(_EmissionColorID, _powerOnColor);
+            }
+
+            _powerIndicatorRenderer.SetPropertyBlock(_mpb);
+        }
+
         private PlayerFlashlight _flashlight;
         private HUDNotification _hudNotification;
         private bool _stateBeforeEquip;
@@ -57,6 +157,15 @@ namespace Hecton8.Gameplay
         private bool _cachedHasContextDirective;
         private string _cachedContextDirective;
         private readonly RaycastHit[] _contextRaycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit flashlight context probe buffer.
+
+        // ══════════════════════════════════════════════════════════
+        //  IBatteryTool STATE
+        // ══════════════════════════════════════════════════════════
+
+        private void Awake()
+        {
+            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
+        }
 
         public override void OnEquip()
         {
@@ -458,5 +567,10 @@ namespace Hecton8.Gameplay
 
             Debug.Log(assessment.BuildHudMessage());
         }
+
+        // ══════════════════════════════════════════════════════════
+        //  IBatteryTool IMPLEMENTATION
+        // ══════════════════════════════════════════════════════════
+
     }
 }

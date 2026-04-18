@@ -156,7 +156,7 @@ namespace Hecton8.Gameplay
         //  PRIVATE STATE — v2.0 ENTERPRISE
         // ══════════════════════════════════════════════════════════
 
-        private HectonSurvivalSystem _survivalSystem;
+        [NonSerialized] private HectonSurvivalSystem _survivalSystem;
         private bool _lowDurabilityWarningFired;
         private bool _swimContractResolved;
         private string _cachedOperationalToolName;

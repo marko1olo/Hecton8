@@ -262,7 +262,7 @@ namespace Hecton8.Gameplay
         private static bool CanRebroadcastAtlasRareDiscoveryPulse(AtlasSignalSystem atlasSignalSystem)
         {
             return atlasSignalSystem != null &&
-                   atlasSignalSystem.CurrentRevealStage >= 2 &&
+                   atlasSignalSystem.CurrentRevealStage >= 3 &&
                    atlasSignalSystem.CurrentStrength > 0f;
         }
 

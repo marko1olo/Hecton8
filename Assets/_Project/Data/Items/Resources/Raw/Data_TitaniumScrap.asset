@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_TitaniumScrap
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Titanium Scrap
+  localizedItemName:
+    tableKey: ITEM_TITANIUM_SCRAP_NAME
+    fallbackText: "Titanium Scrap"
+    variants: []
   icon: {fileID: 0}
   description: Recovered structural scrap used for hull work, brackets, and basic
     fabrication.
+  localizedDescription:
+    tableKey: ITEM_TITANIUM_SCRAP_DESCRIPTION
+    fallbackText: "Recovered structural scrap used for hull work, brackets, and basic fabrication."
+    variants: []
   weight: 1.2
   stackable: 1
   maxStack: 32
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

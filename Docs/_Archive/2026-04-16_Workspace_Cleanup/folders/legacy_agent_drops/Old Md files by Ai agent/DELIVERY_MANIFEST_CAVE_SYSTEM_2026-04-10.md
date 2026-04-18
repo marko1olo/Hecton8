@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # DELIVERY MANIFEST — CAVE SYSTEM v1.0
 **Project:** HECTON-8  
 **Date:** April 10, 2026  

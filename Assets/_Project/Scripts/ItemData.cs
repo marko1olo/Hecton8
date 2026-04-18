@@ -1,208 +1,278 @@
-// ============================================================================
-// HECTON-8 — ItemData.cs
-// Чистые данные предмета. Никакой логики — только описание.
-// Создаётся через контекстное меню: Hecton → Item Data.
-// ============================================================================
-
 namespace Hecton8.Items
 {
+    using Hecton.Localization;
     using Hecton8.Physics;
     using UnityEngine;
-    /// <summary>
-    /// Категория предмета. Используется для фильтрации,
-    /// отображения в UI и будущих крафт-правил.
-    /// </summary>
+    using UnityEngine.Serialization;
+
     public enum ItemCategory
     {
         Miscellaneous = 0,
-        Material      = 1,
-        Tool          = 2,
-        Equipment     = 3,
-        Consumable    = 4,
-        Component     = 5
+        Material = 1,
+        Tool = 2,
+        Equipment = 3,
+        Consumable = 4,
+        Component = 5,
+        Organic = 6
     }
 
     public enum ResourceFamily
     {
-        None              = 0,
-        StructuralMetal   = 1,
-        ElectronicsMetal  = 2,
-        Chemical          = 3,
-        Organic           = 4,
-        Crystal           = 5,
-        DeepMaterial      = 6,
-        Component         = 7,
-        Power             = 8
+        None = 0,
+        StructuralMetal = 1,
+        ElectronicsMetal = 2,
+        Chemical = 3,
+        Organic = 4,
+        Crystal = 5,
+        DeepMaterial = 6,
+        Component = 7,
+        Power = 8
     }
 
     public enum ProgressionTier
     {
-        None  = 0,
+        None = 0,
         Tier0 = 1,
         Tier1 = 2,
         Tier2 = 3,
         Tier3 = 4
     }
-    /// <summary>
-    /// Чистые данные предмета. Никакой логики — только описание.
-    /// Создаётся через контекстное меню: Hecton → Item Data.
-    /// </summary>
-    [CreateAssetMenu(
-        fileName = "NewItem",
-        menuName = "Hecton/Item Data",
-        order    = 0)]
-    public class ItemData : ScriptableObject
-    {
-        // ─────────────────────── Identity ────────────────────────
-        [Header("Identity")]
-        public string     itemName    = "Unnamed Item";
-        public Sprite     icon;
-        [TextArea(2, 5)]
-        public string     description = "";
 
-        // ─────────────────────── Properties ──────────────────────
+    /// <summary>
+    /// Data-only item asset with localization-aware display fields.
+    /// </summary>
+    [CreateAssetMenu(fileName = "NewItem", menuName = "Hecton/Item Data", order = 0)]
+    public sealed class ItemData : ScriptableObject
+    {
+        [Header("Identity")]
+        [Tooltip("Legacy fallback item name used when no localization key is configured.")]
+        [FormerlySerializedAs("itemName")]
+        [SerializeField] private string legacyItemName = "Unnamed Item";
+        [Tooltip("Localized display name reference.")]
+        [SerializeField] private LocalizedTextReference localizedItemName;
+        public Sprite icon;
+        [Tooltip("Legacy fallback description used when no localization key is configured.")]
+        [FormerlySerializedAs("description")]
+        [SerializeField, TextArea(2, 5)] private string legacyDescription = string.Empty;
+        [Tooltip("Localized description reference.")]
+        [SerializeField] private LocalizedTextReference localizedDescription;
+
         [Header("Properties")]
-        public float      weight    = 1f;
-        public bool       stackable = true;
-        public int        maxStack  = 64;
+        public float weight = 1f;
+        public bool stackable = true;
+        public int maxStack = 64;
+
         [Header("Classification")]
-        [Tooltip("Категория предмета для UI фильтрации и крафт-правил")]
+        [Tooltip("Category used by UI filters and fabrication rules.")]
         public ItemCategory category = ItemCategory.Miscellaneous;
-        [Tooltip("Семейство ресурса/компонента для экономики, скан-логики и будущего крафт-дерева")]
+        [Tooltip("Resource family used by economy and scan logic.")]
         public ResourceFamily resourceFamily = ResourceFamily.None;
-        [Tooltip("Прогрессионный уровень: ранний, средний, поздний, глубоководный")]
+        [Tooltip("Progression band for world placement and crafting.")]
         public ProgressionTier progressionTier = ProgressionTier.None;
-        [Tooltip("Если true — это базовый добываемый ресурс мира, а не собранный компонент")]
-        public bool isRawResource = false;
+        [Tooltip("True when the item is a raw world resource.")]
+        public bool isRawResource;
 
         [Header("Vertical Economy")]
-        [Tooltip("Минимальная глубина (м), на которой встречается предмет")]
-        public float minDepth = 0f;
-        [Tooltip("Максимальная глубина (м), на которой встречается предмет (0 = нет лимита)")]
-        public float maxDepth = 0f;
+        [Tooltip("Minimum authored depth in meters.")]
+        public float minDepth;
+        [Tooltip("Maximum authored depth in meters. Zero means no authored cap.")]
+        public float maxDepth;
 
-
-        // ─────────────────────── Grid ────────────────────────────
-        // ◆ NEW — габариты для тетрис-инвентаря
         [Header("Grid")]
-        [Tooltip("Ширина предмета в ячейках сетки инвентаря (≥ 1)")]
-        public int        width  = 1;
-        [Tooltip("Высота предмета в ячейках сетки инвентаря (≥ 1)")]
-        public int        height = 1;
+        [Tooltip("Grid width in inventory cells.")]
+        public int width = 1;
+        [Tooltip("Grid height in inventory cells.")]
+        public int height = 1;
 
-        // ─────────────────────── Consumable ──────────────────────
         [Header("Consumable")]
-        [Tooltip("Можно ли использовать (потребить) этот предмет")]
-        public bool isConsumable = false;
-
-        [Tooltip("Количество кислорода при использовании")]
-        public float oxygenRestore = 0f;
-
-        [Tooltip("Количество энергии при использовании")]
-        public float energyRestore = 0f;
-
-        [Tooltip("Количество прочности костюма при использовании")]
-        public float integrityRestore = 0f;
-
-        [Tooltip("Звук при использовании")]
+        [Tooltip("Whether the item can be consumed.")]
+        public bool isConsumable;
+        [Tooltip("Time in seconds to consume this item (0 = instant).")]
+        [SerializeField, Range(0f, 10f)] private float useDuration;
+        [Tooltip("Oxygen restored on use.")]
+        public float oxygenRestore;
+        [Tooltip("Energy restored on use.")]
+        public float energyRestore;
+        [Tooltip("Suit integrity restored on use.")]
+        public float integrityRestore;
+        [Tooltip("Hunger restored on use.")]
+        public float hungerRestore;
+        [Tooltip("Thirst restored on use.")]
+        public float thirstRestore;
+        [Tooltip("Audio clip played when the item is consumed.")]
         public AudioClip useSound;
 
-        // ─────────────────────── Interaction ─────────────────────
         [Header("Interaction")]
-        [Tooltip("Глагол для подсказки: 'Забрать', 'Подобрать', 'Взять'")]
-        public string     interactVerb = "Забрать";
+        [Tooltip("Legacy fallback interaction verb used when no localization key is configured.")]
+        [FormerlySerializedAs("interactVerb")]
+        [SerializeField] private string legacyInteractVerb = "Take";
+        [Tooltip("Localized interaction verb reference.")]
+        [SerializeField] private LocalizedTextReference localizedInteractVerb;
 
-        // ─────────────────────── World ───────────────────────────
         [Header("World")]
-        [Tooltip("Префаб для выбрасывания в мир (опционально)")]
+        [Tooltip("Optional world prefab for dropping the item into the scene.")]
         public GameObject worldPrefab;
-        [Tooltip("Profile applied to worldPrefab buoyancy when this item exists in the world.")]
+        [Tooltip("Buoyancy profile applied when this item exists in the world.")]
         public BuoyancyProfile worldBuoyancyProfile;
 
-        // ─────────────────────── Cache ───────────────────────────
-        // Built once in OnEnable — zero allocation at runtime.
-        private string _cachedInteractText;
+        private GameLanguage _cachedLanguage = (GameLanguage)(-1);
+        private string _cachedItemName = string.Empty;
+        private string _cachedDescription = string.Empty;
+        private string _cachedInteractVerb = string.Empty;
+        private string _cachedInteractText = string.Empty;
 
-        // ═════════════════════════════════════════════════════════
-        // ScriptableObject Lifecycle
-        // ═════════════════════════════════════════════════════════
+        public string itemName
+        {
+            get
+            {
+                EnsureLocalizedCache();
+                return _cachedItemName;
+            }
+            set
+            {
+                legacyItemName = value ?? string.Empty;
+                InvalidateLocalizedCache();
+            }
+        }
+
+        public string description
+        {
+            get
+            {
+                EnsureLocalizedCache();
+                return _cachedDescription;
+            }
+            set
+            {
+                legacyDescription = value ?? string.Empty;
+                InvalidateLocalizedCache();
+            }
+        }
+
+        public string interactVerb
+        {
+            get
+            {
+                EnsureLocalizedCache();
+                return _cachedInteractVerb;
+            }
+            set
+            {
+                legacyInteractVerb = value ?? string.Empty;
+                InvalidateLocalizedCache();
+            }
+        }
 
         /// <summary>
-        /// Called by Unity when the asset is loaded into memory.
-        /// Builds the interact-text cache exactly once per session.
+        /// Localized description with fallback to legacy text.
         /// </summary>
+        public string DescriptionOrFallback
+        {
+            get
+            {
+                EnsureLocalizedCache();
+                return _cachedDescription;
+            }
+        }
+
+        /// <summary>
+        /// Localized interaction verb with fallback to legacy text.
+        /// </summary>
+        public string InteractVerbOrFallback
+        {
+            get
+            {
+                EnsureLocalizedCache();
+                return _cachedInteractVerb;
+            }
+        }
+
+        public int CellArea => width * height;
+
+        /// <summary>Time in seconds to consume this item. 0 = instant.</summary>
+        public float UseDuration => useDuration;
+
         private void OnEnable()
         {
-            RebuildCache();
+            InvalidateLocalizedCache();
+            EnsureLocalizedCache();
         }
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// Editor-only: rebuilds the cache whenever a field is changed
-        /// in the Inspector so GetInteractText() stays accurate during
-        /// design time without waiting for a domain reload.
-        /// Also clamps grid dimensions to sane minimums.
-        /// Stripped from builds — zero overhead in production.
-        /// </summary>
         private void OnValidate()
         {
-#if UNITY_EDITOR
             if (UnityEditor.EditorApplication.isCompiling ||
                 UnityEditor.EditorApplication.isUpdating ||
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
                 return;
-#endif
-            // ◆ NEW — не допускаем нулевые/отрицательные габариты
-            if (width  < 1) width  = 1;
-            if (height < 1) height = 1;
+            }
 
-            RebuildCache();
+            if (width < 1)
+                width = 1;
+
+            if (height < 1)
+                height = 1;
+
+            InvalidateLocalizedCache();
+            EnsureLocalizedCache();
         }
 #endif
 
-        // ═════════════════════════════════════════════════════════
-        // Public API
-        // ═════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Returns the pre-built interaction prompt.
-        /// Zero allocation — safe to call every frame.
-        /// Example: "Забрать Медаптечка"
+        /// Returns the cached interaction prompt.
         /// </summary>
-        /// <returns>Cached string: "{interactVerb} {itemName}"</returns>
         public string GetInteractText()
         {
-            // Defensive fallback: if somehow called before OnEnable fires
-            // (e.g. direct asset instantiation in tests), rebuild on demand.
-            if (string.IsNullOrEmpty(_cachedInteractText))
-                RebuildCache();
-
+            EnsureLocalizedCache();
             return _cachedInteractText;
         }
 
-        /// <summary>
-        /// ◆ NEW — Площадь предмета в ячейках сетки.
-        /// Удобно для быстрых проверок вместимости.
-        /// </summary>
-        public int CellArea => width * height;
-
-        // ═════════════════════════════════════════════════════════
-        // Private Helpers
-        // ═════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Single source of truth for the cached string.
-        /// One allocation, stored for the lifetime of the asset.
-        /// </summary>
-        private void RebuildCache()
+        private void EnsureLocalizedCache()
         {
-            _cachedInteractText = $"{interactVerb} {itemName}";
+            GameLanguage language = LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.CurrentLanguage
+                : GameLanguage.English;
+
+            if (_cachedLanguage == language &&
+                !string.IsNullOrEmpty(_cachedItemName) &&
+                !string.IsNullOrEmpty(_cachedInteractText))
+            {
+                return;
+            }
+
+            _cachedLanguage = language;
+            _cachedItemName = ResolveLocalized(localizedItemName, language, legacyItemName, "Unnamed Item");
+            _cachedDescription = ResolveLocalized(localizedDescription, language, legacyDescription, string.Empty);
+            _cachedInteractVerb = ResolveLocalized(localizedInteractVerb, language, legacyInteractVerb, "Take");
+            _cachedInteractText = string.IsNullOrWhiteSpace(_cachedInteractVerb)
+                ? _cachedItemName
+                : _cachedInteractVerb + " " + _cachedItemName;
         }
 
-        // ─────────────────────── Future Extensions ───────────────
-        // Готово к интеграции с инвентарём:
-        // public ItemCategory category;
-        // public ItemRarity   rarity;
-        // public AudioClip    pickupSound;
+        private void InvalidateLocalizedCache()
+        {
+            _cachedLanguage = (GameLanguage)(-1);
+            _cachedItemName = string.Empty;
+            _cachedDescription = string.Empty;
+            _cachedInteractVerb = string.Empty;
+            _cachedInteractText = string.Empty;
+        }
+
+        private static string ResolveLocalized(
+            LocalizedTextReference reference,
+            GameLanguage language,
+            string legacyFallback,
+            string hardFallback)
+        {
+            string resolved = reference.Resolve(language);
+            if (!string.IsNullOrWhiteSpace(resolved))
+                return resolved;
+
+            if (!string.IsNullOrWhiteSpace(legacyFallback))
+                return legacyFallback;
+
+            return hardFallback ?? string.Empty;
+        }
     }
 }

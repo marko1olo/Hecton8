@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_Copper
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Copper Ore
+  localizedItemName:
+    tableKey: ITEM_COPPER_NAME
+    fallbackText: "Copper Ore"
+    variants: []
   icon: {fileID: 0}
   description: Common conductive ore used in wiring, signal parts, and entry-grade
     tools.
+  localizedDescription:
+    tableKey: ITEM_COPPER_DESCRIPTION
+    fallbackText: "Common conductive ore used in wiring, signal parts, and entry-grade tools."
+    variants: []
   weight: 0.8
   stackable: 1
   maxStack: 32
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

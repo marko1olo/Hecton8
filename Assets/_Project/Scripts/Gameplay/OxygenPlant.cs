@@ -1,0 +1,244 @@
+// ============================================================================
+// HECTON-8 — OxygenPlant.cs
+// Brain Coral equivalent — releases oxygen bubbles at regular intervals.
+//
+// ARCHITECTURE:
+//   • Standalone prop — uses ITickable via GameTickManager (no Update).
+//   • Timer-based bubble spawning.
+//   • Integrates with SpatialAudioManager for "bloop" sound.
+//
+// ZERO GC:
+//   • ITickable.Tick() — no Update(), no allocations.
+//   • Cached Transform, spawn point.
+//   • Timer state machine (no coroutines).
+//
+// USAGE:
+//   1. Place on plant GameObject with visual mesh.
+//   2. Assign oxygenBubblePrefab (must have OxygenBubble component).
+//   3. Assign spawnPoint Transform where bubbles appear.
+//   4. Configure release interval and audio.
+// ============================================================================
+
+using Hecton8.Audio;
+using Hecton8.Core;
+using UnityEngine;
+
+namespace Hecton8.Gameplay
+{
+    /// <summary>
+    /// Oxygen-producing plant that releases bubbles at regular intervals.
+    /// Subnautica Brain Coral equivalent.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class OxygenPlant : MonoBehaviour, ITickable
+    {
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — SPAWN SETTINGS
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Spawn Settings ────────────────────────────")]
+        [Tooltip("Prefab with OxygenBubble component to spawn.")]
+        [SerializeField] private GameObject oxygenBubblePrefab;
+
+        [Tooltip("Transform where bubbles spawn. If null, uses self.")]
+        [SerializeField] private Transform spawnPoint;
+
+        [Tooltip("Time between bubble releases in seconds.")]
+        [SerializeField, Range(1f, 30f)] private float releaseInterval = 5f;
+
+        [Tooltip("Random variation in release timing (+/- seconds).")]
+        [SerializeField, Range(0f, 3f)] private float releaseVariation = 0.5f;
+
+        [Tooltip("Should bubbles spawn on Start?")]
+        [SerializeField] private bool spawnOnEnable = true;
+
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — AUDIO
+        // ══════════════════════════════════════════════════════════
+
+        [Header("── Audio ─────────────────────────────────────")]
+        [Tooltip("Sound played when bubble is released.")]
+        [SerializeField] private AudioClip releaseSound;
+
+        [Tooltip("Volume for release sound.")]
+        [SerializeField, Range(0f, 1f)] private float releaseVolume = 0.5f;
+
+        // ══════════════════════════════════════════════════════════
+        //  RUNTIME STATE
+        // ══════════════════════════════════════════════════════════
+
+        private Transform _transform;
+        private float _releaseTimer;
+        private float _nextReleaseTime;
+        private bool _isRegistered;
+
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
+
+        private void Awake()
+        {
+            _transform = transform;
+
+            // Use self as spawn point if not assigned
+            if (spawnPoint == null)
+            {
+                spawnPoint = _transform;
+            }
+
+            // Initialize timer
+            CalculateNextReleaseTime();
+        }
+
+        private void OnEnable()
+        {
+            if (spawnOnEnable)
+            {
+                _releaseTimer = 0f;
+            }
+
+            RegisterToTick();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterFromTick();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ITickable
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Called by GameTickManager every frame.
+        /// Handles release timer countdown.
+        /// </summary>
+        /// <param name="deltaTime">Time.deltaTime.</param>
+        public void Tick(float deltaTime)
+        {
+            _releaseTimer += deltaTime;
+
+            if (_releaseTimer >= _nextReleaseTime)
+            {
+                ReleaseBubble();
+                _releaseTimer = 0f;
+                CalculateNextReleaseTime();
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  BUBBLE RELEASE
+        // ══════════════════════════════════════════════════════════
+
+        private void ReleaseBubble()
+        {
+            if (oxygenBubblePrefab == null) return;
+
+            Vector3 spawnPos = spawnPoint.position;
+
+            // Spawn bubble via ObjectPoolManager if available, else Instantiate
+            GameObject bubble;
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool != null)
+            {
+                bubble = pool.Spawn(oxygenBubblePrefab, spawnPos, Quaternion.identity);
+            }
+            else
+            {
+                bubble = Instantiate(oxygenBubblePrefab, spawnPos, Quaternion.identity);
+            }
+
+            if (bubble == null) return;
+
+            // Play release sound
+            if (releaseSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            {
+                audio.PlayAtPoint(releaseSound, spawnPos, releaseVolume);
+            }
+        }
+
+        private void CalculateNextReleaseTime()
+        {
+            // Base interval + random variation
+            _nextReleaseTime = releaseInterval + Random.Range(-releaseVariation, releaseVariation);
+            _nextReleaseTime = Mathf.Max(0.5f, _nextReleaseTime); // Minimum 0.5s
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC API
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Immediately releases a bubble (for external triggers).
+        /// </summary>
+        public void ForceRelease()
+        {
+            ReleaseBubble();
+            _releaseTimer = 0f;
+            CalculateNextReleaseTime();
+        }
+
+        /// <summary>
+        /// Resets the release timer.
+        /// </summary>
+        public void ResetTimer()
+        {
+            _releaseTimer = 0f;
+            CalculateNextReleaseTime();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE — TICK REGISTRATION
+        // ══════════════════════════════════════════════════════════
+
+        private void RegisterToTick()
+        {
+            if (_isRegistered) return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+            {
+                tickManager.Register(this);
+                _isRegistered = true;
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            else
+            {
+                Debug.LogError("[OxygenPlant] GameTickManager.Instance is null. Cannot register for tick.", this);
+            }
+#endif
+        }
+
+        private void UnregisterFromTick()
+        {
+            if (!_isRegistered) return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+            {
+                tickManager.Unregister(this);
+                _isRegistered = false;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  EDITOR
+        // ══════════════════════════════════════════════════════════
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            // Draw spawn point
+            Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
+            Gizmos.color = new Color(0.3f, 0.7f, 1f, 0.5f);
+            Gizmos.DrawWireSphere(pos, 0.15f);
+            Gizmos.color = new Color(0.3f, 0.7f, 1f, 0.2f);
+            Gizmos.DrawSphere(pos, 0.1f);
+
+            // Draw upward arrow
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawRay(pos, Vector3.up * 0.5f);
+        }
+#endif
+    }
+}

@@ -138,7 +138,7 @@ Transform:
   m_GameObject: {fileID: 6915635413066332390}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 26.09885, y: 4945.2544, z: 1722.9836}
+  m_LocalPosition: {x: 26.09885, y: 0, z: 1722.9836}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -160,4 +160,7 @@ MonoBehaviour:
   runtimeCamera: {fileID: 0}
   followInEditMode: 1
   followInPlayMode: 1
+  followVerticalPosition: 0
+  lockToSeaLevel: 1
+  fallbackSeaLevelY: 0
   positionOffset: {x: 0, y: 0, z: 0}

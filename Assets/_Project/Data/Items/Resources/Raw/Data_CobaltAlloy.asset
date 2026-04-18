@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Data_CobaltAlloy
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Cobalt Alloy
+  localizedItemName:
+    tableKey: ITEM_COBALT_ALLOY_NAME
+    fallbackText: "Cobalt Alloy"
+    variants: []
   icon: {fileID: 0}
   description: Durable alloy body stock for late housings, coils, and weapon frames.
+  localizedDescription:
+    tableKey: ITEM_COBALT_ALLOY_DESCRIPTION
+    fallbackText: "Durable alloy body stock for late housings, coils, and weapon frames."
+    variants: []
   weight: 1.4
   stackable: 1
   maxStack: 16
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

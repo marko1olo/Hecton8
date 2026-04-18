@@ -11,6 +11,9 @@ using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Profiling;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using CandidateMap = Hecton8.World.WorldProceduralScatterDirector.FastCandidateMap;
 
 namespace Hecton8.World
@@ -46,6 +49,9 @@ namespace Hecton8.World
         private const int ScatterPlacementSyncSignatureVersion = 1;
         private static bool _candidateMapCapacityExceededWarningLogged;
         private static bool _candidateMapNearCapacityWarningLogged;
+#if UNITY_EDITOR
+        private static bool _assemblyReloadHookRegistered;
+#endif
         private static readonly int _ClusterAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.ClusterAccentRole)).Length;
         private static readonly int _StructureAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.StructureAccentRole)).Length;
         private static readonly WorldPrefabFamilyProfile.StructureAccentRole[] _PatternAccentPriorityDefault =
@@ -608,6 +614,9 @@ namespace Hecton8.World
             EnsureScatterBackendFacadeInitialized();
 
             EnsureCandidateMapsInitialized();
+#if UNITY_EDITOR
+            EnsureAssemblyReloadHook();
+#endif
 
             if (!Application.isPlaying && !ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
@@ -621,6 +630,9 @@ namespace Hecton8.World
             SubscribeToBootstrap();
             TryEnsureTickRegistration();
             EnsureScatterBackendFacadeInitialized();
+#if UNITY_EDITOR
+            EnsureAssemblyReloadHook();
+#endif
         }
 
         private void Start()
@@ -658,6 +670,9 @@ namespace Hecton8.World
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _lifecycleRuntimeState.RegisteredToTickManager = false;
             }
+#if UNITY_EDITOR
+            ReleaseAssemblyReloadHook();
+#endif
         }
 
         private void OnDestroy()
@@ -669,6 +684,61 @@ namespace Hecton8.World
             ClearFloraGpuiVisibility();
 
             DisposeCellSamplingArrays();
+#if UNITY_EDITOR
+            ReleaseAssemblyReloadHook();
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static void EnsureAssemblyReloadHook()
+        {
+            if (_assemblyReloadHookRegistered)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting += HandleEditorQuitting;
+            _assemblyReloadHookRegistered = true;
+        }
+
+        private static void ReleaseAssemblyReloadHook()
+        {
+            if (!_assemblyReloadHookRegistered)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
+            _assemblyReloadHookRegistered = false;
+        }
+
+        private static void HandleBeforeAssemblyReload()
+        {
+            TeardownActiveRuntimeInstanceForEditorReload();
+        }
+
+        private static void HandleEditorQuitting()
+        {
+            TeardownActiveRuntimeInstanceForEditorReload();
+        }
+
+        private static void TeardownActiveRuntimeInstanceForEditorReload()
+        {
+            if (ActiveRuntimeInstance == null)
+                return;
+
+            ActiveRuntimeInstance.PrepareForEditorReload();
+            ActiveRuntimeInstance = null;
+        }
+#endif
+
+        internal void PrepareForEditorReload()
+        {
+            UnsubscribeFromBootstrap();
+            UnregisterProceduralStateRegistryCallbacks();
+            CompleteSamplingJobIfNeeded();
+            DisposeScatterBackendFacade();
+            ClearFloraGpuiVisibility();
+            DisposeCellSamplingArrays();
+            _lifecycleRuntimeState.RegisteredToTickManager = false;
         }
 
         private void EnsureCellSamplingArrayCapacity(int requiredCapacity)

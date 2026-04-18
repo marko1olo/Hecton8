@@ -45,7 +45,6 @@ namespace Hecton8.Celestial
         private const float MinMeshRadius = 0.0001f;
         private const float MinOrbitPeriodSeconds = 0.01f;
         private const float DirectionEpsilon = 0.0001f;
-        private const float MinHorizontalDirection = 0.0001f;
 
         [Header("── Placement ──────────────────")]
         [Tooltip("How the body resolves its apparent direction in the sky.")]
@@ -66,14 +65,6 @@ namespace Hecton8.Celestial
         [SerializeField, Min(MinAnchorDistance)] private float anchorDistance = 20000f;
         [Tooltip("Target apparent angular diameter in degrees as seen by the observer.")]
         [SerializeField, Range(MinAngularDiameter, 40f)] private float angularDiameterDegrees = 12f;
-        [Tooltip("Keeps the body visually anchored lower against the sea horizon when the observer gains altitude.")]
-        [SerializeField] private bool compensateObserverHeightAgainstHorizon;
-        [Tooltip("World-space sea level used as the vertical reference for horizon compensation.")]
-        [SerializeField] private float horizonReferenceHeight;
-        [Tooltip("Downward compensation in apparent degrees per world-space height unit above the reference horizon.")]
-        [SerializeField, Min(0f)] private float horizonCompensationDegreesPerUnit = 0.015f;
-        [Tooltip("Maximum downward compensation applied by observer-height horizon anchoring.")]
-        [SerializeField, Range(0f, 12f)] private float maxHorizonCompensationDegrees = 5f;
 
         [Header("── Orbit Around Parent ──────────────────")]
         [Tooltip("Apparent orbit radius around the parent body in degrees.")]
@@ -88,6 +79,12 @@ namespace Hecton8.Celestial
         [SerializeField, Range(0f, 360f)] private float orbitPhaseOffsetDegrees = 0f;
         [Tooltip("Reference vector used to construct the orbit tangent basis around the parent body.")]
         [SerializeField] private Vector3 orbitPoleReference = Vector3.up;
+        [Tooltip("Keeps orbiting bodies in an observer-relative equatorial panorama band instead of letting them climb into the zenith.")]
+        [SerializeField] private bool keepOrbitInEquatorialBand = true;
+        [Tooltip("Lifts or lowers the equatorial panorama band relative to the sea horizon.")]
+        [SerializeField, Range(-0.25f, 0.25f)] private float equatorialBandVerticalBias = 0.06f;
+        [Tooltip("Scales how much orbital inclination is allowed to pull bodies above or below the equatorial panorama band.")]
+        [SerializeField, Range(0f, 1f)] private float equatorialBandInclinationScale = 0.35f;
 
         [Header("── Rotation ──────────────────")]
         [Tooltip("Static axial tilt applied before spin.")]
@@ -213,8 +210,6 @@ namespace Hecton8.Celestial
             if (direction.sqrMagnitude <= DirectionEpsilon)
                 return;
 
-            direction = ApplyObserverHeightHorizonCompensation(direction);
-
             float safeAnchorDistance = Mathf.Max(MinAnchorDistance, anchorDistance);
             float uniformScale = ResolveUniformScale(safeAnchorDistance);
 
@@ -262,6 +257,12 @@ namespace Hecton8.Celestial
 
             parentDirection.Normalize();
 
+            if (keepOrbitInEquatorialBand &&
+                TryResolveEquatorialParentDirection(parentDirection, out Vector3 equatorialParentDirection))
+            {
+                return ResolveEquatorialOrbitDirection(timeSeconds, equatorialParentDirection);
+            }
+
             Vector3 basisReference = orbitPoleReference.sqrMagnitude > DirectionEpsilon
                 ? orbitPoleReference.normalized
                 : Vector3.up;
@@ -306,33 +307,51 @@ namespace Hecton8.Celestial
             return orbitDirection.normalized;
         }
 
-        private Vector3 ApplyObserverHeightHorizonCompensation(Vector3 direction)
+        private Vector3 ResolveEquatorialOrbitDirection(float timeSeconds, Vector3 equatorialParentDirection)
         {
-            if (!compensateObserverHeightAgainstHorizon || observerTransform == null)
-                return direction;
+            Vector3 horizonParentDirection = equatorialParentDirection;
+            if (orbitPlaneLongitudeDegrees != 0f)
+            {
+                Quaternion longitudeRotation = Quaternion.AngleAxis(orbitPlaneLongitudeDegrees, Vector3.up);
+                horizonParentDirection = longitudeRotation * horizonParentDirection;
+            }
 
-            float observerHeightDelta = observerTransform.position.y - horizonReferenceHeight;
-            if (observerHeightDelta <= 0f || horizonCompensationDegreesPerUnit <= 0f || maxHorizonCompensationDegrees <= 0f)
-                return direction;
+            Vector3 horizonTangent = Vector3.Cross(Vector3.up, horizonParentDirection);
+            if (horizonTangent.sqrMagnitude <= DirectionEpsilon)
+                return horizonParentDirection;
 
-            Vector3 horizontalDirection = new Vector3(direction.x, 0f, direction.z);
-            if (horizontalDirection.sqrMagnitude <= MinHorizontalDirection)
-                return direction;
+            horizonTangent.Normalize();
 
-            float compensationDegrees = Mathf.Min(
-                maxHorizonCompensationDegrees,
-                observerHeightDelta * horizonCompensationDegreesPerUnit);
+            float orbitAngleDegrees = orbitPhaseOffsetDegrees;
+            if (orbitalPeriodSeconds > MinOrbitPeriodSeconds)
+                orbitAngleDegrees += (timeSeconds / orbitalPeriodSeconds) * 360f;
 
-            if (compensationDegrees <= 0f)
-                return direction;
+            float orbitAngleRad = orbitAngleDegrees * Mathf.Deg2Rad;
+            float orbitRadiusTan = Mathf.Tan(apparentOrbitRadiusDegrees * Mathf.Deg2Rad);
+            float inclinationAmplitude = Mathf.Sin(orbitalInclinationDegrees * Mathf.Deg2Rad) * equatorialBandInclinationScale;
 
-            horizontalDirection.Normalize();
-            Vector3 rightAxis = Vector3.Cross(Vector3.up, horizontalDirection);
-            if (rightAxis.sqrMagnitude <= DirectionEpsilon)
-                return direction;
+            Vector3 orbitDirection =
+                horizonParentDirection +
+                horizonTangent * (Mathf.Cos(orbitAngleRad) * orbitRadiusTan) +
+                Vector3.up * ((Mathf.Sin(orbitAngleRad) * orbitRadiusTan * inclinationAmplitude) + (equatorialBandVerticalBias * orbitRadiusTan));
 
-            Quaternion compensationRotation = Quaternion.AngleAxis(-compensationDegrees, rightAxis.normalized);
-            return (compensationRotation * direction).normalized;
+            if (orbitDirection.sqrMagnitude <= DirectionEpsilon)
+                return horizonParentDirection;
+
+            return orbitDirection.normalized;
+        }
+
+        private static bool TryResolveEquatorialParentDirection(Vector3 parentDirection, out Vector3 equatorialParentDirection)
+        {
+            equatorialParentDirection = Vector3.ProjectOnPlane(parentDirection, Vector3.up);
+            if (equatorialParentDirection.sqrMagnitude <= DirectionEpsilon)
+            {
+                equatorialParentDirection = Vector3.zero;
+                return false;
+            }
+
+            equatorialParentDirection.Normalize();
+            return true;
         }
 
         private Vector3 ResolveParentDirection()
@@ -400,6 +419,18 @@ namespace Hecton8.Celestial
         {
             if (!captureInitialDirectionOnEnable || _hasCapturedDirection || observerTransform == null)
                 return;
+
+            if (transform.parent != null)
+            {
+                Vector3 localDirection = transform.localPosition;
+                if (localDirection.sqrMagnitude > DirectionEpsilon)
+                {
+                    _capturedDirection = localDirection.normalized;
+                    fixedDirection = _capturedDirection;
+                    _hasCapturedDirection = true;
+                    return;
+                }
+            }
 
             Vector3 worldDirection = transform.position - observerTransform.position;
             if (worldDirection.sqrMagnitude <= DirectionEpsilon)

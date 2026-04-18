@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Item_Tool_HarpoonLauncher
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Harpoon Launcher
+  localizedItemName:
+    tableKey: ITEM_TOOL_HARPOON_LAUNCHER_NAME
+    fallbackText: "Harpoon Launcher"
+    variants: []
   icon: {fileID: 0}
   description: High-pressure launcher for hunting, tethering and emergency lethal
     response underwater.
+  localizedDescription:
+    tableKey: ITEM_TOOL_HARPOON_LAUNCHER_DESCRIPTION
+    fallbackText: "High-pressure launcher for hunting, tethering and emergency lethal response underwater."
+    variants: []
   weight: 2.8
   stackable: 0
   maxStack: 1
@@ -27,6 +35,10 @@ MonoBehaviour:
   energyRestore: 0
   integrityRestore: 0
   useSound: {fileID: 0}
-  interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 100100000, guid: 2f2aaf08a7039d74ab54a9f41530b73c, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

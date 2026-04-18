@@ -71,55 +71,19 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AtmosphereInscatterWeight: 0.78
+    - _AtmosphereTransmittanceWeight: 0.92
     - _BacklitIntensity: 0.11
     - _CelestialOcclusionDetailFade: 0.75
-    - _CelestialOcclusionHorizonBoost: 1.25
+    - _CelestialOcclusionHorizonBoost: 1.4
     - _CelestialOcclusionScrollSpeed: 0.001
     - _CelestialOcclusionSoftness: 0.24
     - _CelestialOcclusionStrength: 0.42
     - _CelestialOcclusionThreshold: 0.5
-    - _CelestialOcclusionVeilBoost: 0.65
+    - _CelestialOcclusionVeilBoost: 0.42
     - _DetailSpeed: 0.005
     - _DetailSpeedMult: 1.249
-    - _DetailStrength: 0.22
-    - _DistanceAirMassDarken: 0.096
-    - _DistanceAirMassDesaturate: 0.16
-    - _DistanceAirMassDetailFade: 0.32
-    - _DistanceAirMassEnd: 0.5
-    - _DistanceAirMassHazeBlend: 0.12
-    - _DistanceAirMassStart: 0.02
-    - _DistanceAirMassVeilBoost: 0.24
-    - _DistanceBottomArcDesaturate: 0.22
-    - _DistanceBottomArcDetailFade: 0.36
-    - _DistanceBottomArcEnd: 0.16
-    - _DistanceBottomArcHazeBlend: 0.748
-    - _DistanceBottomArcStart: 0.08
-    - _DistanceBottomArcVeilBoost: 0.44
-    - _DistanceHorizonBandEnd: 0.35
-    - _DistanceHorizonBandStart: 0.01
-    - _DistanceHorizonDesaturate: 0
-    - _DistanceHorizonDetailFade: 0
-    - _DistanceHorizonVeilBoost: 0.28
-    - _DistanceMediumHazeBlend: 1
-    - _DistanceMediumHazeEnd: 0.415
-    - _DistanceMediumHazePeak: 0.1
-    - _DistanceMediumHazeStart: 0.02
-    - _DistanceMediumHazeVeilBoost: 0.34
-    - _DistanceMediumHazeWhiten: 0.63
-    - _DistanceNightDarken: 0.56
-    - _DistanceUpperHazeBlend: 0.82
-    - _DistanceUpperHazeDarken: 0
-    - _DistanceUpperHazeDesaturate: 0
-    - _DistanceUpperHazeDetailFade: 0
-    - _DistanceUpperHazeEnd: 0.98
-    - _DistanceUpperHazePeak: 0.738
-    - _DistanceUpperHazeStart: 0.24
-    - _DistanceUpperHazeVeilBoost: 0.395
-    - _DistanceUpperHazeWhiten: 0.48
-    - _DistanceVeilHorizonStrength: 1.72
-    - _DistanceVeilPower: 0.95
-    - _DistanceVeilRimStrength: 0.8
-    - _DistanceVeilStrength: 0.465
+    - _DetailStrength: 0.34
     - _EclipseRimIntensity: 5
     - _EclipseRimPower: 6
     - _EquatorialSpeed: 0.02
@@ -132,25 +96,26 @@ Material:
     - _PolarMultiplier: 0
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _StormEmission: 5
+    - _StormEmission: 3.1
     - _StormSpeed: 0.01
     - _SunBacklitFactor: 0.445
-    - _TerminatorTintStrength: 0.34
+    - _SurfaceDetailContrast: 0.82
+    - _TerminatorTintStrength: 0.4
     - _TerminatorWidth: 0.15
     - _VerticalWiggleAmp: 0.003
     - _VerticalWiggleFreq: 10
+    - _ZenithHazeFade: 0.7
     m_Colors:
     - _AtmosColorInner: {r: 0.19463302, g: 0.18115878, b: 0.6509434, a: 1}
     - _AtmosColorOuter: {r: 0.0013177982, g: 0, b: 0.16037738, a: 0.98039216}
     - _CelestialOcclusionTiling: {r: 0.05, g: 0.08, b: 0, a: 0}
     - _DetailTiling: {r: 3, g: 3, b: 0, a: 0}
     - _EclipseRimColor: {r: 0.8, g: 0.85, b: 1, a: 1}
-    - _EmissionColor: {r: 0.5, g: 0.3, b: 0.8, a: 1}
-    - _EmissionMapColor: {r: 0.3, g: 0.25, b: 0.5, a: 1}
+    - _EmissionColor: {r: 0.24, g: 0.33, b: 0.62, a: 1}
+    - _EmissionMapColor: {r: 0.17, g: 0.21, b: 0.38, a: 1}
     - _SkyColorHorizon: {r: 0.56, g: 0.52, b: 0.7, a: 1}
     - _SkyColorNadir: {r: 0.02, g: 0.03, b: 0.08, a: 1}
     - _SkyColorZenith: {r: 0.05, g: 0.08, b: 0.25, a: 1}
-    - _SkyHazeColor: {r: 0.72, g: 0.74, b: 0.82, a: 1}
     - _StormTiling: {r: 2, g: 2, b: 0, a: 0}
     - _TerminatorTintColor: {r: 1, g: 0.45, b: 0.11999995, a: 1}
     - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}

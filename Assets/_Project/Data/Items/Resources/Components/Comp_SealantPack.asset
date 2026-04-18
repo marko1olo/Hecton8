@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_SealantPack
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Sealant Pack
+  localizedItemName:
+    tableKey: ITEM_SEALANT_PACK_NAME
+    fallbackText: "Sealant Pack"
+    variants: []
   icon: {fileID: 0}
   description: Emergency bonding compound for repairs, sampler seals, and hull patch
     work.
+  localizedDescription:
+    tableKey: ITEM_SEALANT_PACK_DESCRIPTION
+    fallbackText: "Emergency bonding compound for repairs, sampler seals, and hull patch work."
+    variants: []
   weight: 0.35
   stackable: 1
   maxStack: 16
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

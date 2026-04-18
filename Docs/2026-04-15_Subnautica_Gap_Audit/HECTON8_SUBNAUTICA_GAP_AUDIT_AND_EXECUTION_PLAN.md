@@ -738,3 +738,296 @@ Current status:
 - fresh `read_console` after this exact pass returned `0` entries, so this code bundle did not introduce a new live compile error
 - `AcousticZoneController` warnings about incomplete `MasterMixer` authoring still remain, because the authored mixer asset itself is still thin
 - listener-level fallback code is on disk, but perceptual proof in play mode is still `PENDING VERIFICATION`
+
+### World-Authored Music Tension And Tense-Exploration Hysteresis
+
+- `HectonMusicDirector` no longer resolves runtime tension almost exclusively from `HectonDirectorAI`.
+- The existing music owner now blends:
+  - AI tension
+  - authored biome pressure (`survivalPressure`, `routePressure`)
+  - zone-kind pressure and route-critical context
+  - reward-pull unease for high-value, risk-heavy biomes
+  - first-hour pressure boost so early deeper water does not stay emotionally flat
+  - safe-pocket / service-node suppression so recovery spaces do not fake danger
+- The same owner now latches tense-exploration routing with an explicit release threshold instead of using one flat threshold, so calm/tense pool choice does not thrash near the boundary.
+- Tension-mode changes now force immediate cue reselection instead of waiting for the current bed to die naturally.
+
+Why:
+- Before this pass, `HectonMusicDirector` already consumed zone/biome context for profile routing, but almost ignored authored world pressure when deciding whether the music should feel calm or tense.
+- That meant the world could visually and spatially communicate risk while the music stayed emotionally late.
+- Subnautica is stronger here because its music reacts not only to combat events, but to route pressure, depth pressure, and reward temptation before the player is already inside a failure state.
+
+Current status:
+- code path added
+- fresh Unity console readback after this exact pass returned `0` entries
+- no live play-mode proof yet for cadence, cue churn, or perceptual strength of the new world-authored tension blend
+- final status remains `PENDING VERIFICATION`
+
+### Depth-Zone Music Pressure And Stinger Response
+
+- `HectonMusicDirector` now resolves live `DepthZoneDirector.CurrentZone` and folds depth-zone pressure into the same runtime tension blend that already reads biome and route context.
+- The existing owner now reads:
+  - `dangerLevel`
+  - `requiredHullTier`
+  - `hasCaves`
+  - `isThermal`
+  - deep-threshold pressure from `minDepth`
+- The same owner now reacts to `DepthZoneEvents.OnZoneEntered` / `OnZoneExited`:
+  - danger-biased zones can fire `PlayDangerStinger()`
+  - discovery-heavy deep zones can fire `PlayDiscoveryStinger()`
+  - exiting a high-pressure zone into a meaningfully softer one can fire `PlayRecoveryStinger()`
+
+Why:
+- Before this pass, the music owner knew depth tier, but not the authored depth-zone hazard identity actually driving cave / thermal / hull-risk water.
+- That meant the music still lagged behind authored environmental truth in one of the exact places where Subnautica wins: deep-water anticipation before combat.
+
+Current status:
+- code path added
+- later compile repair passes completed with fresh `read_console` returning `0` entries, so this depth-zone music integration is not currently introducing a live compile error
+- no play-mode proof yet for stinger cadence or perceptual strength in real descent flow
+- status remains `PENDING VERIFICATION`
+
+### LocalizationKeys Knife Compile Repair
+
+- `KnifeTool` was left referencing `LocalizationManager.GetText(...)`, which does not exist in the current first-party localization API.
+- `LocalizationKeys.cs` was also left in a broken state where `KNIFE_*` constants were either missing or duplicated across multiple blocks depending on the intermediate branch snapshot.
+- The compile chain was repaired by:
+  - switching `KnifeTool` to `LocalizationManager.GetOrFallback(CurrentLanguage, key, fallback)`
+  - restoring one canonical `KNIFE_*` constant block in `LocalizationKeys`
+  - removing duplicate `KNIFE_*` blocks that were reintroducing oscillating missing/duplicate compile failures
+
+Why:
+- This was not speculative cleanup. Unity compile truth was bouncing because the source of truth for knife localization had been corrupted.
+- Until that was repaired, any further runtime work was being layered on top of an objectively dirty branch.
+
+Current status:
+- fresh Unity compile/readback after the later repair pass returned `0` errors / warnings
+- knife localization compile trust is currently clean
+- play-mode functional proof for every knife localization branch is still `PENDING VERIFICATION`
+
+### Depth-Zone Readability Integration
+
+- `WorldReadabilityDirector` now resolves `DepthZoneDirector` alongside `BiomeMatrixDirector` and `WorldZoneDirector`.
+- The existing readability owner now tracks `DepthZoneProfile` transitions and publishes guidance from authored depth-zone context instead of relying only on biome/route text.
+- Depth guidance and route-state guidance now consider depth-zone hazard identity:
+  - high `dangerLevel` water escalates warning severity
+  - `requiredHullTier >= 2` water pushes hull-risk readability
+  - `isThermal` / `hasCaves` water uses authored depth-zone description when it carries stronger local hazard meaning than the generic biome line
+
+Why:
+- Before this pass, the readability owner could tell the player about biome pressure and route state, but it mostly ignored the authored depth-zone layer that actually names the hazard character of the descent.
+- That makes deep water read flatter than Subnautica, especially at the moment the player crosses into cave/thermal/hull-risk environments.
+
+Current status:
+- code path added
+- the follow-up compile pass was blocked once by an unrelated `VRAMMonitor` missing-using error, which was then repaired
+- fresh Unity console readback after the repair returned `0` entries, so this readability pass currently compiles clean
+- live HUD cadence / perceptual proof in a real descent remains `PENDING VERIFICATION`
+
+### Depth-Zone Ecology Composition In FaunaDirector
+
+- `FaunaDirector` now resolves `DepthZoneDirector` in addition to biome and world-zone context.
+- The existing fauna owner now reacts to depth-zone hazard identity in two layers:
+  - budget layer:
+    - cave water reduces overall fauna mass
+    - thermal water trims budget more lightly
+    - high `dangerLevel` / higher `requiredHullTier` water trims live density further so hard zones stay readable and do not overfill weak hardware
+  - composition layer:
+    - caves suppress passive/open-water weight and favor claustrophobic / ambush / territorial fauna
+    - thermal water favors thermal / brine specialists
+    - high-pressure water favors hunters / leviathans / other high-pressure roles
+- The owner caches per-entry habitat preferences at initialization instead of doing token work during spawn selection.
+
+Why:
+- Before this pass, fauna knew biome mood and route/safe-pocket context, but not the authored depth-zone layer that actually defines whether the water is cave, thermal, or hull-risk.
+- That made deep water composition weaker than Subnautica: the visuals and audio could say “this water is different,” while fauna cadence still felt too broadly biome-level.
+
+Current status:
+- code path added
+- fresh Unity compile after the repair pass no longer reports `FaunaDirector` compile errors
+- live console still reports repeated `The referenced script (Unknown) on this Behaviour is missing!`, so global runtime trust remains dirty
+- live spawn-cadence / frame-time / perceptual proof for the new depth-zone ecology response is still `PENDING VERIFICATION`
+
+### Missing-Script Cleanup Tooling And Runtime Debug Overlay
+
+- `MissingScriptProbe` was upgraded from a passive scanner into an active cleanup tool:
+  - menu item: `Tools/HECTON-8/Maintenance/Cleanup Missing Scripts (_Project + Loaded Scenes)`
+  - menu item: `Tools/HECTON-8/Maintenance/Scan Missing Scripts (_Project + Loaded Scenes)`
+  - prefab cleanup path uses `PrefabUtility.LoadPrefabContents(...)` + `GameObjectUtility.RemoveMonoBehavioursWithMissingScript(...)`
+  - loaded-scene cleanup path removes missing MonoBehaviours from open scene objects and saves dirty scenes
+- A temporary runtime overlay owner was added:
+  - `SubnauticaSystemsDebugUI`
+  - dedicated overlay canvas
+  - stress harness path for `DynamicResolutionScaler`
+  - live telemetry targets:
+    - render scale / pressure
+    - fauna biome / ecology bias / live caps
+    - music tension / active profile
+    - soundscape tier
+- Supporting diagnostics were exposed through internal runtime accessors instead of reflection:
+  - `DynamicResolutionScaler`
+  - `FaunaDirector`
+
+Why:
+- The branch was stuck in a fake `PENDING VERIFICATION` loop because runtime proof was blocked by missing-script noise and no visible telemetry for the systems already implemented.
+- This pass creates the actual verification tooling needed to stop guessing.
+
+Current status:
+- cleanup menu runs and reports counts
+- first cleanup pass reported:
+  - `prefabAssetsChanged=0`
+  - `prefabObjectsChanged=0`
+  - `prefabScriptsRemoved=0`
+  - `sceneObjectsChanged=0`
+  - `sceneScriptsRemoved=0`
+- while loading `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab`, Unity itself logged:
+  - broken text PPtr in `Library/Unused/...`
+  - missing component on `Suit_HUD_Canvas`
+  - component auto-removed on prefab load
+- direct play of `02_HECTON_WORLD` proved:
+  - `SubnauticaSystemsDebugUI_Canvas` and `SubnauticaSystemsDebugUI_Panel` are created at runtime
+  - repeated `The referenced script (Unknown) on this Behaviour is missing!` spam is still present
+  - persistent native leak warning is still present
+  - debug values remained `MISSING`, which means the current direct-play path did not expose the target runtime owners cleanly to the overlay
+- bootstrap play of `00_BOOTSTRAP` proved:
+  - `GameTickManager` exists
+  - bootstrap did not hand off to a camera-bearing gameplay scene during the sampled window
+  - the debug owner persisted, but did not reach a meaningful live telemetry state during the sampled window
+- status remains `PENDING VERIFICATION`
+
+### Missing-Script Forensic Pass And Overlay Hardening
+
+- `MissingScriptProbe` was hardened beyond the `_Project`-only happy path:
+  - added menu item: `Tools/HECTON-8/Maintenance/Scan Missing Scripts (All Assets + Hidden Runtime)`
+  - play-mode rescans now inspect hidden runtime objects instead of silently skipping them
+  - loaded-object reports now include:
+    - `hideFlags`
+    - `activeSelf`
+    - `activeInHierarchy`
+    - `instanceID`
+  - exhaustive prefab scan now walks all `Assets` roots for non-destructive forensics
+- `SubnauticaSystemsDebugUI` was hardened to surface route/runtime truth even when target gameplay owners are absent:
+  - now shows active scene name
+  - now shows bootstrap state (`PENDING` / `READY` / `WORLD PRIME` / `WORLD READY`)
+  - now shows live `GameTickManager` counts
+  - panel height increased so the new route telemetry fits without stomping the old system lines
+  - `RefreshDiagnostics()` now exits cleanly if the visual tree is not resolved, instead of trusting partial UI state
+
+Why:
+- The previous debug pass still left too much ambiguity:
+  - if the overlay said `MISSING`, it did not explain whether gameplay owners were absent, bootstrap had not completed, or the route never left shell state
+  - `MissingScriptProbe` still skipped hidden runtime objects, which is exactly where Unity often hides the context for generic `Unknown Behaviour` spam
+- This pass does not “fix” runtime truth, but it removes another layer of blindness.
+
+Current status:
+- code path added
+- bootstrap scene YAML confirms `BootstrapController` exists, but the branch still lacks live proof of the `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD` handoff in the current sampled environment
+- Unity MCP session became unstable again during follow-up verification, so clean live readback after this pass is absent
+- runtime/asset truth therefore remains `PENDING VERIFICATION`
+
+### Bootstrap Route Recovery And Runtime Menu Auto-Start Repair
+
+- `BootstrapController` was hardened for editor/runtime play entry:
+  - added `EnsureRuntimeBootstrapOwner()` via `RuntimeInitializeOnLoadMethod`
+  - added `EnsureInitializedAfterSceneLoad()` to rebuild bootstrap ownership if frame-0 play enters without a live `_instance`
+  - `Awake()` now exits if bootstrap initialization already completed, to avoid duplicate cold boot
+- compile-chain blockers uncovered during verification were removed:
+  - `BatteryCharger`: duplicate cached reference fields removed
+  - `HectonCelestialEngine`: missing celestial atmosphere serialized fields/property ids restored
+  - `RepairTool`: completed `IBatteryTool` contract
+  - `InteractionUI`: synced to live APIs (`CurrentTool`, `UnityEngine.Physics.RaycastNonAlloc`, `BatteryCharger.FindChargedSlot()`, `BioReactor.CountFuelInInventory(PlayerInventory)`, `StorageCrate.IsEmpty()`)
+  - `ScannerTool` / `RepairTool`: removed dead `_batteryInitialized` noise from touched files
+- `RuntimePerformanceProfiler` route logic was repaired:
+  - pending scene snapshots and `autoStartNewGameFromMainMenu` no longer depend on profiler recorder resolution
+  - `PumpPendingRuntimeRoutes()` now runs from `Update()` / `Tick()` even when `_debugProfilingActive == false`
+
+Why:
+- verification was blocked by two separate debts:
+  - frame-0 bootstrap owner absence during play entry
+  - menu auto-start logic silently stalling when profiler counters failed to resolve
+- this pass fixes the actual route ownership, not just the surrounding diagnostics
+
+Current status:
+- Unity compile is clean on errors after the repair pass; remaining output is warning-only
+- `Editor.log` now proves the route reaches:
+  - `Loaded scene 'Assets/_Project/Scenes/01_MAIN_MENU.unity'`
+  - `Loaded scene 'Assets/_Project/Scenes/02_HECTON_WORLD.unity'`
+- this is the first direct log-backed proof in the current branch that `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD` is recovering under live play
+- `RuntimePerformanceProfiler` still logs `bootstrapInstance=False` on frame 0 bootstrap/world auto-bootstrap paths, so bootstrap ownership timing is improved but not yet fully trustworthy
+- Unity MCP websocket transport still disconnects during the world phase, so live overlay/world-owner readback is still incomplete
+- runtime proof remains `PENDING VERIFICATION`
+
+### Reload Leak Hunt And Mixer Snapshot Authoring
+
+- `HectonWorldGenerator` lifecycle was tightened against editor/domain reload:
+  - `OnDisable()` no longer exits early just because `Application.isPlaying == false`
+  - runtime teardown now still calls `StopStreaming()` when `_streaming`, `_pendingChunks`, or LUT state prove native ownership is live
+  - `OnDestroy()` now only takes the editor-preview fast path when runtime/native state is already cold
+- `ProximityColliderSystem` received explicit editor reload teardown:
+  - added `AssemblyReloadEvents.beforeAssemblyReload` / `EditorApplication.quitting` hooks
+  - active runtime instance now calls `PrepareForReinitialize()` before editor reload tears the domain down
+- `MasterMixer.mixer` snapshot coverage was authored directly in the asset:
+  - `Surface`
+  - `Underwater`
+  - `BaseInterior`
+  - `SurfaceRain`
+  - `SurfaceStorm`
+  - previous anonymous `Snapshot` was renamed to `Surface`
+
+Why:
+- static analysis on first-party persistent alloc owners showed one exact shape match for the live leak:
+  - `HectonWorldGenerator` allocates 8 persistent natives in its async chunk path
+  - its previous `OnDisable()` gate skipped teardown when reload had already flipped the play-state flag
+- `AcousticZoneController` was already resolving snapshots by name, but `MasterMixer.mixer` only contained a single anonymous snapshot
+
+Current status:
+- `MissingScriptProbe` manual cleanup still reports `0/0/0/0/0`; no ordinary `_Project + loaded scene` missing MonoBehaviours were removed in this cycle
+- after `clear console -> force script compile/domain reload -> read console`, the first fresh pass no longer reproduced:
+  - `Leak Detected : Persistent allocates 8 individual allocations`
+- a second `clear console -> force script compile/domain reload -> read console` returned `0` console entries
+- current evidence says the reload leak is no longer reproducing in the sampled reload path
+- `MasterMixer.mixer` now has named snapshot coverage, but its effect graph is still attenuation-only; authored LPF/reverb contrast is still absent
+- runtime/audio perceptual proof remains `PENDING VERIFICATION`
+
+### Reload Compile-Chain Cleanup And Second Leak Sample
+
+- cleared additional hidden compile blockers that were poisoning reload verification:
+  - removed duplicate `IBatteryTool` tails from `RepairTool.cs` and `FlashlightTool.cs`
+  - removed orphaned merge residue from `MantaScooter.cs`
+  - moved `MaterialPropertyBlock` cold allocation from field initializers into `Awake()` for:
+    - `FlashlightTool`
+    - `RepairTool`
+    - `ScannerTool`
+- restored `FaunaBrain` compatibility surface instead of patching every consumer:
+  - nested `FaunaBrain.AIState` enum restored for caller compatibility
+  - archetype/state APIs restored:
+    - `ApplyArchetype(...)`
+    - `SetSpawnPoint(...)`
+    - `ForceState(...)`
+    - `CurrentHealth`
+    - `MaxHealth`
+    - `HealthNormalized`
+    - `IsDead`
+    - `IsSleeping`
+    - `UsesPackHuntBehavior`
+    - `UsesFeintRushBehavior`
+    - `LeviathanEncounter`
+  - `TakeDamage(...)` now updates tracked health instead of hard-kill-only stub behavior
+- restored compatibility around supporting seams:
+  - `WorldStateManager.PlayerTransform`
+  - `FaunaSensorSuite` now explicitly calls `UnityEngine.Physics.SphereCastNonAlloc(...)`
+- `PrefabMaintenanceTool` reserialized `Player.prefab`; sampled console no longer surfaced the old `Failed to convert -1 to a unsigned 32 bit int` import warning in the fresh pass
+
+Current sampled verification:
+
+- first forced `clear console -> force compile/domain reload -> read console` after the fauna/tool compatibility repairs returned `0` console entries
+- second forced `clear console -> force compile/domain reload -> read console` also returned `0` console entries
+- in the current sampled path, neither:
+  - `Leak Detected : Persistent allocates 8 individual allocations`
+  - nor previous compile/runtime warning noise
+  reappeared
+
+Status:
+
+- sampled reload path is log-backed clean for two consecutive forced domain reloads
+- world/play-mode runtime proof remains separate and still `PENDING VERIFICATION`

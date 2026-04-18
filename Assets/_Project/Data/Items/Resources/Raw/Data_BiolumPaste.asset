@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_BiolumPaste
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Biolum Paste
+  localizedItemName:
+    tableKey: ITEM_BIOLUM_PASTE_NAME
+    fallbackText: "Biolum Paste"
+    variants: []
   icon: {fileID: 0}
   description: Compressed glowing biomass for route marks, dark optics, and relay
     IDs.
+  localizedDescription:
+    tableKey: ITEM_BIOLUM_PASTE_DESCRIPTION
+    fallbackText: "Compressed glowing biomass for route marks, dark optics, and relay IDs."
+    variants: []
   weight: 0.6
   stackable: 1
   maxStack: 20
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Harvest
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Harvest"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

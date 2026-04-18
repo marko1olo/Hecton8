@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_ReinforcedPlate
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Reinforced Plate
+  localizedItemName:
+    tableKey: ITEM_REINFORCED_PLATE_NAME
+    fallbackText: "Reinforced Plate"
+    variants: []
   icon: {fileID: 0}
   description: Structural plate for sockets, base frames, and high-load field hardware.
+  localizedDescription:
+    tableKey: ITEM_REINFORCED_PLATE_DESCRIPTION
+    fallbackText: "Structural plate for sockets, base frames, and high-load field hardware."
+    variants: []
   weight: 1.2
   stackable: 1
   maxStack: 8
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

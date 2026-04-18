@@ -25,6 +25,14 @@ namespace Hecton8.Inventory
     public sealed class PlayerInventory : MonoBehaviour, ISaveable
     {
         // ══════════════════════════════════════════════════════════
+        //  SINGLETON
+        // ══════════════════════════════════════════════════════════
+
+        private static PlayerInventory _instance;
+        /// <summary>Singleton instance for external access.</summary>
+        public static PlayerInventory Instance => _instance;
+
+        // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
@@ -92,6 +100,14 @@ namespace Hecton8.Inventory
 
         private void Awake()
         {
+            // Singleton assignment
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            _instance = this;
+
             _grid = new InventoryGrid(columns, rows);
             _stackCounts = new int[columns * rows];
             _sortBuffer = new ItemPlacement[columns * rows];
@@ -111,6 +127,12 @@ namespace Hecton8.Inventory
 
             // ── Отписка от SaveManager ──
             SaveManager.Instance?.Unregister(this);
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+                _instance = null;
         }
 
         // ══════════════════════════════════════════════════════════

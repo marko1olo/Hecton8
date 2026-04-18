@@ -14,12 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.DepthZoneProfile
   zoneId: zone_thermal_fields
   displayName: "THERMAL FIELDS \u2014 THE RIFT"
+  localizedDisplayName:
+    tableKey: DEPTH_ZONE_ZONE_THERMAL_FIELDS_NAME
+    fallbackText: ""
+    variants: []
   description: "\u0420\u0438\u0444\u0442\u043E\u0432\u044B\u0435 \u0437\u043E\u043D\u044B.
     \u0413\u0438\u0434\u0440\u043E\u0442\u0435\u0440\u043C\u0430\u043B\u044C\u043D\u044B\u0435
     \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0438. \u0421\u0430\u043C\u043E\u0435
     \u0433\u043B\u0443\u0431\u043E\u043A\u043E\u0435 \u0438 \u0441\u0430\u043C\u043E\u0435
     \u0436\u0438\u0432\u043E\u0435 \u043C\u0435\u0441\u0442\u043E. \u042F\u0434\u0440\u043E
     \u0410\u0442\u043B\u0430\u0441-6."
+  localizedDescription:
+    tableKey: DEPTH_ZONE_ZONE_THERMAL_FIELDS_DESCRIPTION
+    fallbackText: ""
+    variants: []
   minDepth: 4000
   maxDepth: 5500
   ambience:

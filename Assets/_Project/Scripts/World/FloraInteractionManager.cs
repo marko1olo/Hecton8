@@ -57,20 +57,17 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_isRegistered)
-            {
-                GameTickManager.Instance.Register(this);
-                _isRegistered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _isRegistered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _isRegistered = false;
-            }
+            TryUnregister();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
         }
 
         // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +108,31 @@ namespace Hecton8.World
             Vector4 posRadius = new Vector4(_smoothPosition.x, _smoothPosition.y, _smoothPosition.z, _smoothRadius);
             Shader.SetGlobalVector(_PropWashPosId, posRadius);
             Shader.SetGlobalFloat(_PropWashForceId, _smoothForce);
+        }
+
+        private void TryRegister()
+        {
+            if (_isRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _isRegistered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_isRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _isRegistered = false;
         }
     }
 }

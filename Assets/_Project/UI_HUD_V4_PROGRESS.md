@@ -187,7 +187,7 @@ Temporary enterprise-safe approach:
   - lazy `EnsureInitialized()` now restores tick lists before update/fixed/slow loops
   - duplicate slow-tick coroutine creation is prevented
   - root detachment before `DontDestroyOnLoad` keeps persistent managers valid
-- `GasGiantRotationDriver` no longer throws when renderer/property block is absent.
+- Gas giant material rotation ownership was folded into `HectonCelestialEngine`; `GasGiantRotationDriver` was removed.
 - Crest `OceanBuilder.CleanUp()` was guarded against partially initialized mesh state.
 - `InputManager` no longer hard-fails when only the `Player` action map is available:
   - `Player` map is mandatory

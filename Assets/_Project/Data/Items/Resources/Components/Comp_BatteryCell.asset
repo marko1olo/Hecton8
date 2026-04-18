@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_BatteryCell
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Battery Cell
+  localizedItemName:
+    tableKey: ITEM_BATTERY_CELL_NAME
+    fallbackText: "Battery Cell"
+    variants: []
   icon: {fileID: 0}
   description: Compact power cell for portable tools and entry-grade field devices.
+  localizedDescription:
+    tableKey: ITEM_BATTERY_CELL_DESCRIPTION
+    fallbackText: "Compact power cell for portable tools and entry-grade field devices."
+    variants: []
   weight: 0.6
   stackable: 1
   maxStack: 12
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

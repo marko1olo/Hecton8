@@ -229,6 +229,7 @@ Current code foundation does:
 - compute left/right hand-guide local poses
 - clamp hand reach so the near-camera rig does not spear unrealistically forward
 - bias hand posing differently when ascending versus descending in the water column
+- apply explicit surface/tool framing biases so hands stay lower, more corner-biased, and less horizon-destructive instead of relying only on raw asset offsets
 - feed stroke phase / propulsion pulse / vertical swim intent back into `CameraJuiceProcessor` through `HectonPlayerMovement` instead of letting camera swim bob run on a disconnected rhythm
 - keep camera-only swim offsets inside `CameraJuiceProcessor`, but synchronize their cadence and small ascend/descend pitch bias to the swim presentation owner when that owner exists
 - auto-resolve `Swim_ViewmodelRoot`, `Swim_LeftGuide`, `Swim_RightGuide`
@@ -238,6 +239,18 @@ Current code foundation does:
 - support light / utility / heavy family fallback selection
 - scale and hide/show cheap near-camera swim blockout geometry from the same presentation truth
 - connect blockout geometry back toward the body with shoulder and upper-arm segments instead of wrist-only floating cubes
+- preserve some shoulder/upper-arm visibility even when hand weights get reduced, so the fake body still reads as attached to the torso
+- let shoulders partially follow hand-guide pose deltas so the arm chain breathes with framing changes instead of staying nailed to the chest
+- drive asymmetric correction posing from strafe intent, lateral swim velocity, and body-to-camera yaw disagreement so one hand can subtly lead while the other braces during steering
+- feed that same steering effort into a small root lateral / yaw / roll bias so the swim body reads as actively correcting course instead of waving symmetrically in all directions
+- add camera-yaw inertial sway so hands and root lag slightly behind sharp look turns instead of snapping with the camera as if the suit had no mass in water
+- smooth presentation, tool, steering, and pose-bias transitions with damped math instead of hard linear blends so ascend / descend / surface idle transitions do not read as robotic
+- add micro breathing and low-amplitude surface-wave motion to the root pose during `SurfaceTread`, so idle-on-surface does not freeze like a dead camera mount
+- shape pull and recovery halves of the stroke separately and bias stroke phase from steering / turn sway / vertical intent so the arms stop reading as a perfect sine-wave metronome
+- react to nearby world geometry with per-hand `SphereCastNonAlloc` probes so cave walls, floor, and tight rock pockets retract and lift the hands instead of letting them spear through empty space
+- feed aggregated obstacle pressure back into the viewmodel root with a small lateral / rear / upward / yaw / roll bias, so tight spaces make the whole swim body feel compressed instead of only pinning isolated hands
+- convert strong propulsion peaks into a one-shot stroke impulse channel that drives `OnStrokePowerPulse` and a sharper camera kick, instead of relying only on the continuous sine-like pull curve
+- give the free support hand explicit phase-lead and motion-amplitude priority while a tool owns the opposite hand, so scanner / knife swim reads stay asymmetrical for real instead of only being hidden by visibility weights
 - keep surface modes visually flatter than deep swim so the horizon stays readable
 - keep heavy / utility / light suit silhouettes distinct without touching locomotion physics
 
@@ -256,8 +269,13 @@ Current authored data/prefab state:
 - `Player.prefab` contains `Swim_ViewmodelRoot` plus left/right guide transforms
 - `Player.prefab` now points `PlayerSwimPresentationController` at the profile library instead of treating the prefab as the only binding owner
 - `Player.prefab` now also contains `Swim_LeftShoulder`, `Swim_RightShoulder`, `Swim_LeftUpperArm`, `Swim_RightUpperArm`, `Swim_LeftForearm`, `Swim_LeftGlove`, `Swim_RightForearm`, `Swim_RightGlove`
+- `Player.prefab` now also contains stable art-facing attachment transforms for shoulder / upper-arm / forearm / hand replacement meshes on both sides
 - those blockout meshes have no colliders and use `MAT_PlayerSwimBlockout`
+- those blockout renderers no longer cast or receive scene shadows and no longer sample light/reflection probes, because this is near-camera fake-body presentation, not world geometry
+- those blockout renderers also no longer emit motion vectors, so the fake first-person arms do not contaminate world motion blur
 - `Player.prefab` now binds `PlayerSwimBlockoutRig` on the player root
+- `PlayerSwimBlockoutRig` now exposes stable attachment getters plus a `showDebugCubes` authoring toggle so final art can replace the cubes without replacing the rig math
+- `PlayerSwimBlockoutRig` now also exposes a runtime setter so debug cubes can be disabled in one call while attachments keep moving for replacement art
 - the current visual layer is intentionally blockout-grade: it proves ownership, silhouette, and cadence before final authored arms
 - all swim presentation profiles were reframed lower and wider so the arms sit nearer the lower screen corners and read as attached to the torso instead of floating in front of the visor
 - all currently shipped held-tool prefabs now author `PlayerToolSwimContract` pose biases for root/support/tool-hand brace families instead of only weight suppression
@@ -275,6 +293,7 @@ Current authored data/prefab state:
 5. Prove zero-GC hot path and no camera/viewmodel double-bob under play-mode logs.
 6. Replace generic right-hand tool assumption with authored per-tool handedness / brace metadata if the tool family diverges.
 7. When the first powered-assist suit exists, bind it in the profile library instead of touching `Player.prefab`.
+8. Validate art replacement flow by disabling `showDebugCubes` and mounting temporary replacement meshes to the new attachment transforms.
 
 ## Failure Modes To Avoid
 
@@ -285,18 +304,44 @@ Current authored data/prefab state:
 - both hands disappearing when only one hand should be owned by the tool
 - every armed tool collapsing to the same generic right-hand swim pose
 - hands spearing too far forward during climb / descent transitions
+- perfectly mirrored hands while strafing or steering, which reads as a robot treadmill instead of a swimmer correcting course through water
 - wrist-only geometry that never visually returns into the body
 - full-body realistic swim simulation that destroys control readability
 - arms driven directly from raw velocity with no stroke phase
 - camera swim bob running on a second disconnected timer while hands pull on another cadence
 - camera and hands both trying to own the same bob
+- mathematically perfect mirrored sine strokes that never show a leading hand / bracing hand read even when the player is correcting course
+- obstacle response that always pushes hands downward, which lies near the seabed and makes cave swimming feel broken
+- obstacle response that only affects hand guides while the viewmodel root stays inert, because that makes cave contact read like detached wrists instead of the whole suit compressing against water and rock
+- tool swim where the busy tool hand and the free support hand still pull with the same cadence and amplitude
+- attachment points drifting from their source transforms when debug cubes are hidden
+- edit-mode / scene-instance debug state falsely claiming attachments are unresolved when the authored references already exist
+
+## Locked Tuning
+
+- tool-aware obstacle asymmetry:
+  - `equippedToolToolHandObstacleResponseScale = 0.58`
+  - `equippedToolSupportHandObstacleBoost = 0.18`
+- root obstacle shove:
+  - `obstacleRootLateralBias = 0.012`
+  - `obstacleRootRearBias = 0.01`
+  - `obstacleRootUpwardBias = 0.008`
+  - `obstacleRootYawBias = 1.35`
+  - `obstacleRootRollBias = 1.1`
+  - `obstacleRootSmoothTime = 0.085`
+- obstacle wall lift:
+  - `handObstacleWallLiftBias = 0.28`
+- armed-tool support emphasis:
+  - `equippedToolSupportHandMotionBoost = 0.22`
 
 ## Verification Status
 
 - code architecture: implemented in code review only
 - asset authoring: blockout-only
 - prefab wiring: blockout rig plus placeholder geometry integrated
-- runtime proof: absent
+- compile verification: Unity refresh/compile returned `0 log entries` after current swim and blocker fixes
+- live scene readback: active `Player` instance exposes the new smoothing, camera-turn sway, and art-attachment fields
+- runtime proof: targeted obstacle-reactivity proof captured in play mode; live readback reached `CurrentGuideWeight = 0.55`, `_debugLeftObstacleWeight = 1.0`, `_debugRightObstacleWeight = 1.0`, `_debugObstacleRootPressure = 1.0`
 - editor readback: prefab hierarchy confirms blockout children and `PlayerSwimBlockoutRig`
-- visual readback: limited only; first-person play-mode proof still absent
+- visual readback: limited scene-view/runtime captures only; overlay/game-view tooling remains a weak proof path
 - final status: `PENDING VERIFICATION`

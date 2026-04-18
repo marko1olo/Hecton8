@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 claude-sonnet-4-6
 [ANALYSIS]
 Target: Аудит всех coral/seaweed файлов из предыдущих сообщений на соответствие AGENTS.md. Полная перезапись в production-ready формат для кодер-агента.

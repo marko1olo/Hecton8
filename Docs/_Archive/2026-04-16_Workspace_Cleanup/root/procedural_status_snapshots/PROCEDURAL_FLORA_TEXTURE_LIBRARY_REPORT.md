@@ -1,4 +1,6 @@
-﻿# Procedural Flora Texture Library Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Flora Texture Library Report
 
 Generated: 2026-04-13 12:25:32
 

@@ -14,10 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.DepthZoneProfile
   zoneId: zone_the_drop_upper
   displayName: "THE DROP \u2014 UPPER ABYSS"
+  localizedDisplayName:
+    tableKey: DEPTH_ZONE_ZONE_THE_DROP_UPPER_NAME
+    fallbackText: ""
+    variants: []
   description: "\u0412\u043E\u0441\u0442\u043E\u0447\u043D\u0430\u044F \u0441\u0442\u0435\u043D\u0430.
     \u0420\u0435\u0437\u043A\u0438\u0439 \u0432\u0435\u0440\u0442\u0438\u043A\u0430\u043B\u044C\u043D\u044B\u0439
     \u043E\u0431\u0440\u044B\u0432. \u0410\u0431\u0441\u043E\u043B\u044E\u0442\u043D\u0430\u044F
     \u0442\u044C\u043C\u0430. \u041B\u0435\u0432\u0438\u0430\u0444\u0430\u043D\u044B."
+  localizedDescription:
+    tableKey: DEPTH_ZONE_ZONE_THE_DROP_UPPER_DESCRIPTION
+    fallbackText: ""
+    variants: []
   minDepth: 1000
   maxDepth: 2500
   ambience:

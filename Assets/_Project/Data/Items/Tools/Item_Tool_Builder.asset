@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Item_Tool_Builder
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Fabrication Tool
+  localizedItemName:
+    tableKey: ITEM_TOOL_BUILDER_NAME
+    fallbackText: "Fabrication Tool"
+    variants: []
   icon: {fileID: 0}
   description: Construction and deconstruction device for habitat modules, wiring
     and field equipment.
+  localizedDescription:
+    tableKey: ITEM_TOOL_BUILDER_DESCRIPTION
+    fallbackText: "Construction and deconstruction device for habitat modules, wiring and field equipment."
+    variants: []
   weight: 2.6
   stackable: 0
   maxStack: 1
@@ -27,6 +35,10 @@ MonoBehaviour:
   energyRestore: 0
   integrityRestore: 0
   useSound: {fileID: 0}
-  interactVerb: "\u0417\u0430\u0431\u0440\u0430\u0442\u044C"
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 100100000, guid: a9d920f69f572794da38a80172350742, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

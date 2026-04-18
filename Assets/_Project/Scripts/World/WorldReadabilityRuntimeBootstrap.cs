@@ -12,6 +12,7 @@ namespace Hecton8.World
     internal static class WorldReadabilityRuntimeBootstrap
     {
         private const string ManagersRootName = "[MANAGERS]";
+        private const string SystemsRootName = "--- SYSTEMS ---";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
@@ -19,23 +20,27 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
+            GameObject runtimeOwner = ResolveManagersRoot();
+            EnsureRelayDirector(runtimeOwner);
+
             WorldZoneDirector runtimeWorldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
             BiomeMatrixDirector runtimeBiomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
             if (runtimeWorldZoneDirector == null || runtimeBiomeMatrixDirector == null)
                 return;
 
+            EnsureReadabilityDirector(runtimeOwner, runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
+        }
+
+        private static void EnsureReadabilityDirector(
+            GameObject runtimeOwner,
+            WorldZoneDirector runtimeWorldZoneDirector,
+            BiomeMatrixDirector runtimeBiomeMatrixDirector)
+        {
             WorldReadabilityDirector existingDirector = Object.FindAnyObjectByType<WorldReadabilityDirector>(FindObjectsInactive.Include);
             if (existingDirector != null)
             {
                 existingDirector.ApplyRuntimeDependencies(runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
                 return;
-            }
-
-            GameObject runtimeOwner = GameObject.Find(ManagersRootName);
-            if (runtimeOwner == null)
-            {
-                // COLD ALLOC: GameObject[1] — runtime fail-safe for missing world readability director — owner: WorldReadabilityRuntimeBootstrap
-                runtimeOwner = new GameObject("WorldReadabilityDirector_Root");
             }
 
             WorldReadabilityDirector runtimeDirector = runtimeOwner.AddComponent<WorldReadabilityDirector>();
@@ -46,6 +51,39 @@ namespace Hecton8.World
                 "[WorldReadabilityRuntimeBootstrap] Spawned WorldReadabilityDirector at runtime because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
 #endif
+        }
+
+        private static void EnsureRelayDirector(GameObject runtimeOwner)
+        {
+            EmergencyServiceRelayDirector existingDirector =
+                Object.FindAnyObjectByType<EmergencyServiceRelayDirector>(FindObjectsInactive.Include);
+            if (existingDirector != null)
+                return;
+
+            if (EmergencyServiceRelay.ActiveCount <= 0)
+                return;
+
+            runtimeOwner.AddComponent<EmergencyServiceRelayDirector>();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning(
+                "[WorldReadabilityRuntimeBootstrap] Spawned EmergencyServiceRelayDirector at runtime because the active scene had none. " +
+                "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
+#endif
+        }
+
+        private static GameObject ResolveManagersRoot()
+        {
+            GameObject runtimeOwner = GameObject.Find(ManagersRootName);
+            if (runtimeOwner != null)
+                return runtimeOwner;
+
+            runtimeOwner = GameObject.Find(SystemsRootName);
+            if (runtimeOwner != null)
+                return runtimeOwner;
+
+            // COLD ALLOC: GameObject[1] — runtime fail-safe owner for missing onboarding directors — owner: WorldReadabilityRuntimeBootstrap
+            return new GameObject("WorldReadabilityDirector_Root");
         }
     }
 }

@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Quest_SignalDecoded
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Quest.QuestData
   questId: quest_atlas_signal_decoded
-  displayTitle: "РАСШИФРОВКА"
-  description: "Дождаться полной расшифровки сигнала и продвинуться ниже."
+  displayTitle: "\u0420\u0410\u0421\u0428\u0418\u0424\u0420\u041e\u0412\u041a\u0410"
+  description: "\u0414\u043e\u0436\u0434\u0430\u0442\u044c\u0441\u044f \u043f\u043e\u043b\u043d\u043e\u0439 \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043e\u0432\u043a\u0438 \u0441\u0438\u0433\u043d\u0430\u043b\u0430 \u0438 \u043f\u0440\u043e\u0434\u0432\u0438\u043d\u0443\u0442\u044c\u0441\u044f \u043d\u0438\u0436\u0435."
+  localizedDisplayTitle:
+    tableKey: QUEST_QUEST_ATLAS_SIGNAL_DECODED_TITLE
+    fallbackText: "\u0420\u0410\u0421\u0428\u0418\u0424\u0420\u041e\u0412\u041a\u0410"
+    variants: []
+  localizedDescription:
+    tableKey: QUEST_QUEST_ATLAS_SIGNAL_DECODED_DESCRIPTION
+    fallbackText: "\u0414\u043e\u0436\u0434\u0430\u0442\u044c\u0441\u044f \u043f\u043e\u043b\u043d\u043e\u0439 \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043e\u0432\u043a\u0438 \u0441\u0438\u0433\u043d\u0430\u043b\u0430 \u0438 \u043f\u0440\u043e\u0434\u0432\u0438\u043d\u0443\u0442\u044c\u0441\u044f \u043d\u0438\u0436\u0435."
+    variants: []
   triggerType: 3
   triggerId: atlas6_signal_fully_decoded
   triggerValue: 0

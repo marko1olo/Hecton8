@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_GlassPanel
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Glass Panel
+  localizedItemName:
+    tableKey: ITEM_GLASS_PANEL_NAME
+    fallbackText: "Glass Panel"
+    variants: []
   icon: {fileID: 0}
   description: Cut mineral pane for optics, lamps, and sealed instrumentation faces.
+  localizedDescription:
+    tableKey: ITEM_GLASS_PANEL_DESCRIPTION
+    fallbackText: "Cut mineral pane for optics, lamps, and sealed instrumentation faces."
+    variants: []
   weight: 0.4
   stackable: 1
   maxStack: 16
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

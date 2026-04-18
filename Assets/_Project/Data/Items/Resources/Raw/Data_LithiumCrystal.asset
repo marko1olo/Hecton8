@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_LithiumCrystal
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Lithium Crystal
+  localizedItemName:
+    tableKey: ITEM_LITHIUM_CRYSTAL_NAME
+    fallbackText: "Lithium Crystal"
+    variants: []
   icon: {fileID: 0}
   description: High-density crystal used in reinforced cells and late structural
     parts.
+  localizedDescription:
+    tableKey: ITEM_LITHIUM_CRYSTAL_DESCRIPTION
+    fallbackText: "High-density crystal used in reinforced cells and late structural parts."
+    variants: []
   weight: 1
   stackable: 1
   maxStack: 16
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

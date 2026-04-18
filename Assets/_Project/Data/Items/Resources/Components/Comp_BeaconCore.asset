@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_BeaconCore
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Beacon Core
+  localizedItemName:
+    tableKey: ITEM_BEACON_CORE_NAME
+    fallbackText: "Beacon Core"
+    variants: []
   icon: {fileID: 0}
   description: Self-powered marker kernel for route beacons and long-range return
     lanes.
+  localizedDescription:
+    tableKey: ITEM_BEACON_CORE_DESCRIPTION
+    fallbackText: "Self-powered marker kernel for route beacons and long-range return lanes."
+    variants: []
   weight: 0.4
   stackable: 1
   maxStack: 12
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

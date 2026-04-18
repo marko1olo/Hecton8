@@ -74,9 +74,9 @@ namespace Hecton8.Gameplay
                     _cachedTransform.forward,
                     impulse);
 
-                HectonBaseAI ai = hit.collider.GetComponent<HectonBaseAI>();
+                FaunaBrain ai = hit.collider.GetComponent<FaunaBrain>();
                 if (ai == null)
-                    ai = hit.collider.GetComponentInParent<HectonBaseAI>();
+                    ai = hit.collider.GetComponentInParent<FaunaBrain>();
 
                 if (ai != null)
                 {
@@ -194,9 +194,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            HectonBaseAI ai = hit.collider.GetComponent<HectonBaseAI>();
+            FaunaBrain ai = hit.collider.GetComponent<FaunaBrain>();
             if (ai == null)
-                ai = hit.collider.GetComponentInParent<HectonBaseAI>();
+                ai = hit.collider.GetComponentInParent<FaunaBrain>();
 
             if (ai == null)
             {
@@ -260,9 +260,9 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            HectonBaseAI ai = hit.collider.GetComponent<HectonBaseAI>();
+            FaunaBrain ai = hit.collider.GetComponent<FaunaBrain>();
             if (ai == null)
-                ai = hit.collider.GetComponentInParent<HectonBaseAI>();
+                ai = hit.collider.GetComponentInParent<FaunaBrain>();
 
             if (ai == null)
             {
@@ -325,7 +325,7 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private static StunAssessment BuildAssessment(HectonBaseAI ai, StunTargetRuntime stunState)
+        private static StunAssessment BuildAssessment(FaunaBrain ai, StunTargetRuntime stunState)
         {
             if (ai == null)
             {
@@ -384,7 +384,7 @@ namespace Hecton8.Gameplay
 
             switch (ai.CurrentState)
             {
-                case HectonBaseAI.AIState.Aggressive:
+                case FaunaBrain.AIState.Aggressive:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_AGGRESSIVE_THREAT, "STUN PISTOL - AGGRESSIVE THREAT"),
                         string.Format(
@@ -393,7 +393,7 @@ namespace Hecton8.Gameplay
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_AGGRESSIVE_THREAT, "Fire now, then create distance."),
                         "CRITICAL");
 
-                case HectonBaseAI.AIState.Threaten:
+                case FaunaBrain.AIState.Threaten:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TERRITORIAL_WARNING, "STUN PISTOL - TERRITORIAL WARNING"),
                         string.Format(
@@ -402,7 +402,7 @@ namespace Hecton8.Gameplay
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TERRITORIAL_WARNING, "A disruption shot can break the warning spiral before it becomes a direct attack."),
                         "WARN");
 
-                case HectonBaseAI.AIState.Stalk:
+                case FaunaBrain.AIState.Stalk:
                 {
                     bool packHunt = ai.UsesPackHuntBehavior;
                     bool feintCapable = ai.UsesFeintRushBehavior;
@@ -429,7 +429,7 @@ namespace Hecton8.Gameplay
                         "WARN");
                 }
 
-                case HectonBaseAI.AIState.Loom:
+                case FaunaBrain.AIState.Loom:
                 {
                     bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
                     bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
@@ -458,7 +458,7 @@ namespace Hecton8.Gameplay
                         "CRITICAL");
                 }
 
-                case HectonBaseAI.AIState.Feint:
+                case FaunaBrain.AIState.Feint:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_FALSE_CHARGE, "STUN PISTOL - FALSE CHARGE"),
                         string.Format(
@@ -467,7 +467,7 @@ namespace Hecton8.Gameplay
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_FALSE_CHARGE, "Hold the shot until the pass tightens or the return swing begins."),
                         "CRITICAL");
 
-                case HectonBaseAI.AIState.Escape:
+                case FaunaBrain.AIState.Escape:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PANIC_RESPONSE, "STUN PISTOL - PANIC RESPONSE"),
                         string.Format(
@@ -476,7 +476,7 @@ namespace Hecton8.Gameplay
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PANIC_RESPONSE, "Disrupt if pursuit matters, otherwise hold fire."),
                         "INFO");
 
-                case HectonBaseAI.AIState.Wander:
+                case FaunaBrain.AIState.Wander:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PATROL_CONTACT, "STUN PISTOL - PATROL CONTACT"),
                         string.Format(
@@ -531,7 +531,7 @@ namespace Hecton8.Gameplay
 
     public sealed class StunTargetRuntime : MonoBehaviour, ITickable
     {
-        private HectonBaseAI _target;
+        private FaunaBrain _target;
         private float _remaining;
         private bool _armed;
         private bool _registeredToTickManager;
@@ -539,7 +539,7 @@ namespace Hecton8.Gameplay
         public float RemainingTime => _remaining;
         public bool IsArmed => _armed;
 
-        public void Apply(HectonBaseAI target, float duration)
+        public void Apply(FaunaBrain target, float duration)
         {
             _target = target;
             _remaining = Mathf.Max(_remaining, duration);
@@ -612,3 +612,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

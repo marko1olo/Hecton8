@@ -154,14 +154,14 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0.178
-    - _GameTime: 0.785879
+    - _GameTime: 0.15994275
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HazeFalloff: 3.35
     - _HazeIntensity: 0.68
-    - _HazeSunTintStrength: 0.1
+    - _HazeSunTintStrength: 0.18
     - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
@@ -174,6 +174,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _SkyLuminanceMultiplier: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -185,9 +186,9 @@ Material:
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.001
-    - _SunElevation: 0.35772496
-    - _SunScatterIntensity: 0.62
-    - _SunScatterPower: 5.8
+    - _SunElevation: 0.30311775
+    - _SunScatterIntensity: 1.35
+    - _SunScatterPower: 2.35
     - _SunSize: 0.002
     - _Surface: 0
     - _WorkflowMode: 1

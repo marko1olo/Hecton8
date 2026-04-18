@@ -282,6 +282,7 @@ namespace Hecton8.Atmosphere
 
         public float CurrentTemperature  => _currentValues.temperature;
         public float CurrentRadiation    => _currentValues.radiation;
+        public float SeaLevelY           => ResolveSeaLevelY();
 
         #endregion
 
@@ -508,6 +509,7 @@ namespace Hecton8.Atmosphere
 
         public void Tick(float deltaTime)
         {
+            SyncWaterSurfaceFromPlayerMovement();
             AdvanceCycleTimer(deltaTime);
             RotateSun();
             TickEclipseTimer(deltaTime);
@@ -855,6 +857,24 @@ namespace Hecton8.Atmosphere
         public void SetTransitionSpeed(float speed)
         {
             _transitionSpeed = math.clamp(speed, 0.1f, 10f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SyncWaterSurfaceFromPlayerMovement()
+        {
+            if (_playerMovement == null)
+                return;
+
+            _waterSurfaceY = _playerMovement.CurrentWaterSurfaceY;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveSeaLevelY()
+        {
+            if (_playerMovement != null)
+                return _playerMovement.CurrentWaterSurfaceY;
+
+            return _waterSurfaceY;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

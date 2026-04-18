@@ -1,4 +1,6 @@
-﻿# Procedural Matrix Biome Content Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Matrix Biome Content Report
 
 - Scene: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
 - Generated: `2026-04-07 21:48:19`

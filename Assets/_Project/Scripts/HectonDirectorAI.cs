@@ -266,7 +266,7 @@ namespace Hecton8.Systems.AI
         private static readonly HashSet<Collider> _registeredPredators = new(64);
 
         /// <summary>
-        /// Регистрирует коллайдер как хищник. Вызывается из HectonBaseAI.OnEnable.
+        /// Регистрирует коллайдер как хищник. Вызывается из FaunaBrain.OnEnable.
         /// Zero GC: HashSet.Add на pre-allocated set.
         /// </summary>
         public static void RegisterPredator(Collider c)
@@ -276,7 +276,7 @@ namespace Hecton8.Systems.AI
         }
 
         /// <summary>
-        /// Снимает регистрацию хищника. Вызывается из HectonBaseAI.OnDisable.
+        /// Снимает регистрацию хищника. Вызывается из FaunaBrain.OnDisable.
         /// </summary>
         public static void UnregisterPredator(Collider c)
         {
@@ -1158,3 +1158,4 @@ namespace Hecton8.Systems.AI
 #endif
     }
 }
+

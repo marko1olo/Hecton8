@@ -18,6 +18,7 @@
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton.Localization;
 
 namespace Hecton8.Items
 {
@@ -65,6 +66,7 @@ namespace Hecton8.Items
         private InteractionHighlighter _highlighter;
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
+        private string _cachedInteractText = "???";
 
         // ═════════════════════════════════════════════════════════
         private void Awake()
@@ -81,6 +83,9 @@ namespace Hecton8.Items
         // ─────────────────────── Pool-Safe Settle (v3.1) ─────────
         private void OnEnable()
         {
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            RebuildInteractTextCache();
+
             if (_rb != null)
             {
                 _rb.WakeUp();
@@ -90,6 +95,8 @@ namespace Hecton8.Items
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+
             // Гарантированная отписка при деактивации (пулинг).
             // Сбрасываем фазу — при следующем OnEnable начнём заново.
             StopSettle();
@@ -212,6 +219,7 @@ namespace Hecton8.Items
             itemData = data;
             quantity = qty > 0 ? qty : 1;
             ConfigureWaterDynamicsFromData();
+            RebuildInteractTextCache();
         }
 
         /// <summary>Текущие данные предмета (read-only).</summary>
@@ -260,10 +268,30 @@ namespace Hecton8.Items
 
         public string GetInteractText()
         {
-            if (itemData == null) return "???";
+            return _cachedInteractText;
+        }
 
-            string qtyStr = quantity > 1 ? $" ×{quantity}" : "";
-            return $"{itemData.interactVerb} {itemData.itemName}{qtyStr}";
+        private void RebuildInteractTextCache()
+        {
+            if (itemData == null)
+            {
+                _cachedInteractText = "???";
+                return;
+            }
+
+            string baseText = itemData.GetInteractText();
+            if (quantity > 1)
+            {
+                _cachedInteractText = baseText + " x" + quantity;
+                return;
+            }
+
+            _cachedInteractText = baseText;
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RebuildInteractTextCache();
         }
 
         // ─────────────────────── Editor ──────────────────────────
@@ -285,6 +313,7 @@ namespace Hecton8.Items
                 _rb = GetComponent<Rigidbody>();
                 _buoyancy = GetComponent<BuoyancyObject>();
                 ConfigureWaterDynamicsFromData();
+                RebuildInteractTextCache();
             }
         }
 #endif

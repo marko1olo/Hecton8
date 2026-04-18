@@ -71,29 +71,22 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
-            {
-                GameTickManager.Instance.Register((ITickable)this);
-                _registeredToTickManager = true;
-            }
+            TryRegisterToTickManager();
         }
 
         private void Start()
         {
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
-            {
-                GameTickManager.Instance.Register((ITickable)this);
-                _registeredToTickManager = true;
-            }
+            TryRegisterToTickManager();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registeredToTickManager)
-            {
-                GameTickManager.Instance.Unregister((ITickable)this);
-                _registeredToTickManager = false;
-            }
+            TryUnregisterFromTickManager();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterFromTickManager();
         }
 
         /// <summary>Updates invulnerability timer.</summary>
@@ -206,6 +199,31 @@ namespace Hecton8.Gameplay
         public void LoadFromSaveData(SaveData data)
         {
             currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ITickable)this);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
+            _registeredToTickManager = false;
         }
 
         #endregion

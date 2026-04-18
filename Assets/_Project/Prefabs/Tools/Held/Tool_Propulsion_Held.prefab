@@ -43,28 +43,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 1883046840169899827}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2050f89e33715049a8ce317dd6c79e2, type: 3}
+  m_Script: {fileID: 11500000, guid: eadfb5649729d314aa2f414a239af2f5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.PropulsionTool
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.MantaScooter
   _toolData: {fileID: 11400000, guid: 80236d2aa35d0814782b8cd7b3a0ebcc, type: 2}
   _toolMetadata: {fileID: 11400000, guid: 86a1f3eb4f50a20499706bd5c314cf56, type: 2}
   enableDurabilityDrain: 1
   enableEnergyConsumption: 1
   lifecycleDebugLogging: 0
   _swimContract: {fileID: 0}
-  range: 18
-  pushForce: 85
-  pullForce: 62
-  maxTargetMass: 400
-  targetMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  feedbackInterval: 0.35
-  holdDistance: 3.8
-  holdSpringForce: 92
-  holdDamping: 9
-  maxHoldBreakDistance: 16
-  launchImpulse: 22
+  speedMultiplier: 2.2
+  batteryDrainRate: 2
+  minChargeToActivate: 0.05
+  motorLoopClip: {fileID: 0}
+  motorVolume: 0.6
+  batteryMesh: {fileID: 0}
+  powerIndicatorRenderer: {fileID: 0}
+  powerOnColor: {r: 0, g: 0.9, b: 1, a: 1}
+  lowBatteryColor: {r: 1, g: 0.3, b: 0, a: 1}
+  hudCanvasGroup: {fileID: 0}
+  depthText: {fileID: 0}
+  batteryText: {fileID: 0}
 --- !u!114 &1513402988957420496
 MonoBehaviour:
   m_ObjectHideFlags: 0

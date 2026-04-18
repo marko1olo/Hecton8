@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Comp_HighCapacityCell
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: High-Capacity Cell
+  localizedItemName:
+    tableKey: ITEM_HIGH_CAPACITY_CELL_NAME
+    fallbackText: "High-Capacity Cell"
+    variants: []
   icon: {fileID: 0}
   description: Late portable cell for heavy tools, stunners, and long-haul systems.
+  localizedDescription:
+    tableKey: ITEM_HIGH_CAPACITY_CELL_DESCRIPTION
+    fallbackText: "Late portable cell for heavy tools, stunners, and long-haul systems."
+    variants: []
   weight: 0.8
   stackable: 1
   maxStack: 8
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

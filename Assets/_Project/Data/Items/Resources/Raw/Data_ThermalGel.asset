@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Data_ThermalGel
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Thermal Gel
+  localizedItemName:
+    tableKey: ITEM_THERMAL_GEL_NAME
+    fallbackText: "Thermal Gel"
+    variants: []
   icon: {fileID: 0}
   description: Heat-stable gel used to buffer cutting systems, lamps, and hot circuits.
+  localizedDescription:
+    tableKey: ITEM_THERMAL_GEL_DESCRIPTION
+    fallbackText: "Heat-stable gel used to buffer cutting systems, lamps, and hot circuits."
+    variants: []
   weight: 0.9
   stackable: 1
   maxStack: 16
@@ -30,5 +38,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Collect"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

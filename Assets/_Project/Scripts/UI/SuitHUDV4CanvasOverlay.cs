@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -23,6 +24,14 @@ namespace Hecton8.UI
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
         private static readonly string[] s_headingLabels = BuildHeadingLabels();
         private const string DefaultSuitLabel = "EXPEDITION SUIT";
+        private const string DefaultDepthPattern = "DEPTH: -{0:0} m";
+        private const string DefaultTemperaturePattern = "TEMPERATURE: {0:0.0} C";
+        private const string DefaultPressurePattern = "PRESSURE: {0:0.0} atm";
+        private const string DefaultGaugeO2Label = "O2";
+        private const string DefaultGaugePowerLabel = "PWR";
+        private const string DefaultGaugeHullLabel = "HULL";
+        private const string DefaultPressureLabel = "PRESSURE";
+        private const string DefaultTemperatureLabel = "TEMP";
         private const string StatusPressureLimitExceeded = "PRESSURE LIMIT EXCEEDED";
         private const string StatusApproachingSafeDepth = "APPROACHING SAFE DEPTH LIMIT";
         private const string StatusSuitDamageCritical = "SUIT DAMAGE CRITICAL";
@@ -188,6 +197,22 @@ namespace Hecton8.UI
         private bool _canvasStateApplied;
         private bool _hasAppliedRootVisibility;
         private bool _appliedRootVisible;
+        private string _localizedDepthPattern = DefaultDepthPattern;
+        private string _localizedTemperaturePattern = DefaultTemperaturePattern;
+        private string _localizedPressurePattern = DefaultPressurePattern;
+        private string _localizedGaugeO2Label = DefaultGaugeO2Label;
+        private string _localizedGaugePowerLabel = DefaultGaugePowerLabel;
+        private string _localizedGaugeHullLabel = DefaultGaugeHullLabel;
+        private string _localizedStatusPressureLimitExceeded = StatusPressureLimitExceeded;
+        private string _localizedStatusApproachingSafeDepth = StatusApproachingSafeDepth;
+        private string _localizedStatusSuitDamageCritical = StatusSuitDamageCritical;
+        private string _localizedStatusOxygenReserveLow = StatusOxygenReserveLow;
+        private string _localizedStatusPowerCellsLow = StatusPowerCellsLow;
+        private string _localizedStatusLampThermalLimit = StatusLampThermalLimit;
+        private string _localizedStatusSuitLinkRoutingPda = StatusSuitLinkRoutingPda;
+        private string _localizedStatusLifeSupportNominalStable = StatusLifeSupportNominalStable;
+        private string _localizedStatusLifeSupportNominalAscending = StatusLifeSupportNominalAscending;
+        private string _localizedStatusLifeSupportNominalDescending = StatusLifeSupportNominalDescending;
         private Canvas _appliedCanvasTarget;
         private Camera _appliedProjectionCamera;
         private RenderPath _appliedRenderPath;
@@ -245,10 +270,12 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             SceneBootstrap.OnGameReady += HandleSceneBootstrapReady;
             RegisterActiveOverlay();
             _layoutBuilt = false;
             InvalidateVisualCaches();
+            RebuildLocalizationCache();
             RefreshAll(0.016f, forceResolve: true);
             RefreshDepthSignalSubscription();
             TryRegisterRuntimeTick();
@@ -265,6 +292,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             SceneBootstrap.OnGameReady -= HandleSceneBootstrapReady;
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
@@ -281,6 +309,7 @@ namespace Hecton8.UI
         {
             _layoutBuilt = false;
             InvalidateVisualCaches();
+            RebuildLocalizationCache();
             if (!Application.isPlaying)
                 EvaluateEditorTickRegistration();
         }
@@ -315,6 +344,15 @@ namespace Hecton8.UI
             InvalidateVisualCaches();
             TryRegisterRuntimeTick();
             RefreshAll(0.016f, forceResolve: true);
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RebuildLocalizationCache();
+            InvalidateVisualCaches();
+
+            if (isActiveAndEnabled)
+                RefreshAll(0.016f, forceResolve: false);
         }
 
         private void RefreshAll(float dt, bool forceResolve)
@@ -805,18 +843,18 @@ namespace Hecton8.UI
 
             SetTextIfChanged(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
             SetTextIfChanged(_headingLabel, ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
-            SetMetricIntIfChanged(_depthLabel, "DEPTH: -{0:0} m", Mathf.RoundToInt(depth), Alpha(primary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
-            SetMetricFloatTenthsIfChanged(_temperatureLabel, "TEMPERATURE: {0:0.0} C", _displayTemperature, Alpha(dim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
-            SetMetricFloatTenthsIfChanged(_pressureLabel, "PRESSURE: {0:0.0} atm", pressure, Alpha(dim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+            SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(depth), Alpha(primary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+            SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, _displayTemperature, Alpha(dim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+            SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(dim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
             SetTextIfChanged(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, primary, warning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
 
             Color oxygenAccent = primary;
             Color healthAccent = Color.Lerp(primary, dim, 0.24f);
             Color energyAccent = Color.Lerp(primary, warning, 0.28f);
 
-            UpdateGauge(ref _oxygenGauge, "OXYGEN", string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, dim, warning);
-            UpdateGauge(ref _healthGauge, "HEALTH", string.Empty, health, healthCurrent, healthAccent, secondary, dim, warning);
-            UpdateGauge(ref _powerGauge, "ENERGY", string.Empty, power, energyCurrent, energyAccent, secondary, dim, warning);
+            UpdateGauge(ref _oxygenGauge, _localizedGaugeO2Label, string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, dim, warning);
+            UpdateGauge(ref _healthGauge, _localizedGaugeHullLabel, string.Empty, health, healthCurrent, healthAccent, secondary, dim, warning);
+            UpdateGauge(ref _powerGauge, _localizedGaugePowerLabel, string.Empty, power, energyCurrent, energyAccent, secondary, dim, warning);
         }
 
         private void RefreshDepthSignalSubscription()
@@ -976,25 +1014,58 @@ namespace Hecton8.UI
         private string ResolveStatus(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta)
         {
             if (safeDepthNormalized <= 0.08f || depth >= safeDepth)
-                return StatusPressureLimitExceeded;
+                return _localizedStatusPressureLimitExceeded;
             if (safeDepthNormalized <= 0.22f)
-                return StatusApproachingSafeDepth;
+                return _localizedStatusApproachingSafeDepth;
             if (health <= 0.2f)
-                return StatusSuitDamageCritical;
+                return _localizedStatusSuitDamageCritical;
             if (oxygen <= 0.2f)
-                return StatusOxygenReserveLow;
+                return _localizedStatusOxygenReserveLow;
             if (power <= 0.2f)
-                return StatusPowerCellsLow;
+                return _localizedStatusPowerCellsLow;
             if (flashlight != null && flashlight.IsOverheated)
-                return StatusLampThermalLimit;
+                return _localizedStatusLampThermalLimit;
             if (PlayerPDA.IsOpen)
-                return StatusSuitLinkRoutingPda;
+                return _localizedStatusSuitLinkRoutingPda;
 
             if (depthDelta > 0.04f)
-                return StatusLifeSupportNominalDescending;
+                return _localizedStatusLifeSupportNominalDescending;
             if (depthDelta < -0.04f)
-                return StatusLifeSupportNominalAscending;
-            return StatusLifeSupportNominalStable;
+                return _localizedStatusLifeSupportNominalAscending;
+            return _localizedStatusLifeSupportNominalStable;
+        }
+
+        private void RebuildLocalizationCache()
+        {
+            string depthLabel = ResolveLocalized(LocalizationKeys.HUD_DEPTH, "DEPTH");
+            string temperatureLabel = ResolveLocalized(LocalizationKeys.HUD_TEMP, DefaultTemperatureLabel);
+            string pressureLabel = ResolveLocalized(LocalizationKeys.HUD_PRESSURE, DefaultPressureLabel);
+            string atmLabel = ResolveLocalized(LocalizationKeys.HUD_ATM, "atm");
+
+            _localizedDepthPattern = string.Concat(depthLabel, ": -{0:0} m");
+            _localizedTemperaturePattern = string.Concat(temperatureLabel, ": {0:0.0} C");
+            _localizedPressurePattern = string.Concat(pressureLabel, ": {0:0.0} ", atmLabel);
+            _localizedGaugeO2Label = ResolveLocalized(LocalizationKeys.HUD_O2, DefaultGaugeO2Label);
+            _localizedGaugePowerLabel = ResolveLocalized(LocalizationKeys.HUD_PWR, DefaultGaugePowerLabel);
+            _localizedGaugeHullLabel = ResolveLocalized(LocalizationKeys.HUD_HULL, DefaultGaugeHullLabel);
+            _localizedStatusPressureLimitExceeded = ResolveLocalized(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED, StatusPressureLimitExceeded);
+            _localizedStatusApproachingSafeDepth = ResolveLocalized(LocalizationKeys.HUD_STATUS_APPROACHING_SAFE_DEPTH_LIMIT, StatusApproachingSafeDepth);
+            _localizedStatusSuitDamageCritical = ResolveLocalized(LocalizationKeys.HUD_STATUS_SUIT_DAMAGE_CRITICAL, StatusSuitDamageCritical);
+            _localizedStatusOxygenReserveLow = ResolveLocalized(LocalizationKeys.HUD_STATUS_OXYGEN_RESERVE_LOW, StatusOxygenReserveLow);
+            _localizedStatusPowerCellsLow = ResolveLocalized(LocalizationKeys.HUD_STATUS_POWER_CELLS_LOW, StatusPowerCellsLow);
+            _localizedStatusLampThermalLimit = ResolveLocalized(LocalizationKeys.HUD_STATUS_LAMP_THERMAL_LIMIT, StatusLampThermalLimit);
+            _localizedStatusSuitLinkRoutingPda = ResolveLocalized(LocalizationKeys.HUD_STATUS_SUIT_LINK_ROUTING_PDA, StatusSuitLinkRoutingPda);
+            _localizedStatusLifeSupportNominalStable = ResolveLocalized(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_STABLE, StatusLifeSupportNominalStable);
+            _localizedStatusLifeSupportNominalAscending = ResolveLocalized(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_ASCENDING, StatusLifeSupportNominalAscending);
+            _localizedStatusLifeSupportNominalDescending = ResolveLocalized(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_DESCENDING, StatusLifeSupportNominalDescending);
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                : fallback;
         }
 
         private static Color PickAccent(float oxygen, float power, float health, float safeDepthNormalized, Color primary, Color warning)

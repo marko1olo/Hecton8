@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Data_EmergencyO2Canister
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Emergency O2 Canister
+  localizedItemName:
+    tableKey: ITEM_EMERGENCY_O2_CANISTER_NAME
+    fallbackText: "Emergency O2 Canister"
+    variants: []
   icon: {fileID: 0}
   description: Compressed emergency oxygen reserve for long pushes and bad route
     calls.
+  localizedDescription:
+    tableKey: ITEM_EMERGENCY_O2_CANISTER_DESCRIPTION
+    fallbackText: "Compressed emergency oxygen reserve for long pushes and bad route calls."
+    variants: []
   weight: 0.9
   stackable: 1
   maxStack: 4
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

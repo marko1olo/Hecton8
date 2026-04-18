@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # HectonPlayerMovement Input Migration Plan
 
 Migrate the legacy input polling in [HectonPlayerMovement.cs](file:///c:/hades/Hecton8/Assets/_Project/Scripts/HectonPlayerMovement.cs) to the new Unity Input System via the [InputManager](file:///c:/hades/Hecton8/Assets/_Project/Scripts/Input/InputManager.cs#22-384) singleton. This migration aims for "Master Grade" implementation with zero GC allocations and robust error handling.

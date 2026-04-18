@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_GuidanceModule
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Guidance Module
+  localizedItemName:
+    tableKey: ITEM_GUIDANCE_MODULE_NAME
+    fallbackText: "Guidance Module"
+    variants: []
   icon: {fileID: 0}
   description: Precision guidance core for harpoon heads, autonomous markers, and
     late nav gear.
+  localizedDescription:
+    tableKey: ITEM_GUIDANCE_MODULE_DESCRIPTION
+    fallbackText: "Precision guidance core for harpoon heads, autonomous markers, and late nav gear."
+    variants: []
   weight: 0.45
   stackable: 1
   maxStack: 8
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

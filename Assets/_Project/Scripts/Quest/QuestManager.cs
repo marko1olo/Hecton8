@@ -16,7 +16,7 @@
 //
 // ИНТЕГРАЦИЯ С ЛОРОМ:
 //   • QuestTriggerType.OnEclipseStart → квест "Пережить Великое Затмение"
-//   • QuestTriggerType.OnSignalDetected → квест "Найти источник сигнала"
+//   • NarrativeEvents.OnDiscoveryMade("atlas6_signal_identified") → Atlas quest handoff
 //   • QuestTriggerType.OnAudioLogFound → квест "Собрать записи Chen_M"
 // ============================================================================
 
@@ -292,11 +292,6 @@ namespace Hecton8.Quest
             ProcessTrigger(QuestTriggerType.OnEclipseStart, string.Empty, 0f);
         }
 
-        private void HandleSignalDetected(UnityEngine.Vector3 sourcePos)
-        {
-            ProcessTrigger(QuestTriggerType.OnSignalDetected, string.Empty, 0f);
-        }
-
         private void HandleSignalDecoded(string messageId)
         {
             ProcessCompletion(QuestCompletionType.OnSignalDecoded, messageId, 0f);
@@ -399,7 +394,6 @@ namespace Hecton8.Quest
             NarrativeEvents.OnDepthTierReached   += HandleDepthTierReached;
             AudioLogEvents.OnLogDiscovered       += HandleAudioLogDiscovered;
             HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDetected   += HandleSignalDetected;
             AtlasSignalEvents.OnSignalDecoded    += HandleSignalDecoded;
         }
 
@@ -410,7 +404,6 @@ namespace Hecton8.Quest
             NarrativeEvents.OnDepthTierReached   -= HandleDepthTierReached;
             AudioLogEvents.OnLogDiscovered       -= HandleAudioLogDiscovered;
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDetected   -= HandleSignalDetected;
             AtlasSignalEvents.OnSignalDecoded    -= HandleSignalDecoded;
         }
 

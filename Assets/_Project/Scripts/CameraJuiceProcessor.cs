@@ -50,6 +50,7 @@ namespace Hecton8.Gameplay
         public PlayerSwimPresentationMode swimPresentationMode;
         public float swimStrokePhase;
         public float swimPropulsionPulse;
+        public float swimStrokeImpulse;
         public float swimGuideWeight;
         public float swimVerticalInput;
     }
@@ -88,6 +89,13 @@ namespace Hecton8.Gameplay
         // ── Splash Dip ──
         private float _splashDipCurrent;
         private float _splashDipVelocity;
+
+        // ── Action Bob (eating, healing) ──
+        private float _actionBobY;
+        private float _actionBobYVel;
+        private float _actionBobX;
+        private float _actionBobXVel;
+        private float _actionBobIntensity;
 
         // ── Roll (spring) ──
         private float _currentRoll;
@@ -135,6 +143,12 @@ namespace Hecton8.Gameplay
         private const float SWIM_PRESENTATION_VERTICAL_DESCEND_OFFSET = 0.0035f;
         private const float SWIM_PRESENTATION_ASCEND_PITCH = 0.28f;
         private const float SWIM_PRESENTATION_DESCEND_PITCH = 0.4f;
+        private const float SWIM_PRESENTATION_PROPULSION_POSITION_KICK = 0.0055f;
+        private const float SWIM_PRESENTATION_PROPULSION_FOV_KICK = 0.32f;
+        private const float SWIM_PRESENTATION_PROPULSION_IMPULSE_POSITION_KICK = 0.0075f;
+        private const float SWIM_PRESENTATION_PROPULSION_IMPULSE_FOV_KICK = 0.42f;
+        private const float SWIM_PRESENTATION_MAX_POSITION_KICK = 0.0085f;
+        private const float SWIM_PRESENTATION_MAX_FOV_KICK = 0.46f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC — EVENTS (polled, zero GC)
@@ -222,6 +236,36 @@ namespace Hecton8.Gameplay
             float dip = -intensity * suit.splashCameraDip;
             _splashDipCurrent = dip;
             _splashDipVelocity = -dip * 2f;
+        }
+
+        /// <summary>
+        /// Registers an action camera bob for eating/healing animations.
+        /// Called by PlayerActionController during consumption actions.
+        /// </summary>
+        /// <param name="intensity">Bob intensity (0-1).</param>
+        /// <param name="frequency">Bob frequency hint (affects randomness).</param>
+        public void RegisterActionBob(float intensity, float frequency = 1f)
+        {
+            if (intensity <= 0f) return;
+
+            _actionBobIntensity = intensity;
+
+            // Randomized micro-bob to simulate hand movement
+            float hash = math.frac(Time.time * 13.17f);
+            float signX = hash > 0.5f ? 1f : -1f;
+
+            _actionBobY = intensity * 0.008f;
+            _actionBobYVel = intensity * 0.015f;
+            _actionBobX = signX * intensity * 0.004f;
+            _actionBobXVel = -signX * intensity * 0.008f;
+        }
+
+        /// <summary>
+        /// Clears the action bob when action completes or is cancelled.
+        /// </summary>
+        public void ClearActionBob()
+        {
+            _actionBobIntensity = 0f;
         }
 
         internal void RegisterLandJumpLaunch()
@@ -325,6 +369,11 @@ namespace Hecton8.Gameplay
             _output.localPositionOffset.x += _collisionShakeX;
             _output.pitchOffset += _collisionShakePitch;
             _output.localPositionOffset.y += _exhaleDipCurrent;
+
+            // ── Action bob (eating, healing) ──
+            ProcessActionBob(dt);
+            _output.localPositionOffset.y += _actionBobY;
+            _output.localPositionOffset.x += _actionBobX;
 
             _prevImmersionRatio = input.immersionRatio;
 
@@ -434,6 +483,29 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
+        //  ACTION BOB (EATING, HEALING)
+        // ══════════════════════════════════════════════════════════
+
+        private void ProcessActionBob(float dt)
+        {
+            const float ACTION_BOB_OMEGA = 8f;
+
+            if (math.abs(_actionBobY) > 0.0001f || math.abs(_actionBobYVel) > 0.0001f)
+            {
+                _actionBobY = SpringDamp(_actionBobY, 0f,
+                    ref _actionBobYVel, ACTION_BOB_OMEGA, dt);
+            }
+            else { _actionBobY = 0f; _actionBobYVel = 0f; }
+
+            if (math.abs(_actionBobX) > 0.0001f || math.abs(_actionBobXVel) > 0.0001f)
+            {
+                _actionBobX = SpringDamp(_actionBobX, 0f,
+                    ref _actionBobXVel, ACTION_BOB_OMEGA, dt);
+            }
+            else { _actionBobX = 0f; _actionBobXVel = 0f; }
+        }
+
+        // ══════════════════════════════════════════════════════════
         //  FOV DEPTH COMPRESSION
         // ══════════════════════════════════════════════════════════
 
@@ -503,12 +575,24 @@ namespace Hecton8.Gameplay
             float forwardBob = math.sin(cycle * 0.5f - 0.35f) * suit.swimBobForwardAmplitude * finalScale;
             float rollBob = math.sin(cycle + 1.57f) * suit.swimBobRollAmplitude * finalScale;
             float pull = math.saturate(input.swimPropulsionPulse);
+            float pullKick = pull * pull;
+            float pullImpulse = math.saturate(input.swimStrokeImpulse);
             float ascend = math.max(0f, input.swimVerticalInput);
             float descend = math.max(0f, -input.swimVerticalInput);
+            float sprintClampScale = input.swimPresentationMode == PlayerSwimPresentationMode.UnderwaterSprint ? 0.82f : 1f;
+            float propulsionPositionKick = math.min(
+                (pullKick * SWIM_PRESENTATION_PROPULSION_POSITION_KICK +
+                 pullImpulse * SWIM_PRESENTATION_PROPULSION_IMPULSE_POSITION_KICK) * modeScale,
+                SWIM_PRESENTATION_MAX_POSITION_KICK * sprintClampScale);
+            float propulsionFovKick = math.min(
+                (pullKick * SWIM_PRESENTATION_PROPULSION_FOV_KICK +
+                 pullImpulse * SWIM_PRESENTATION_PROPULSION_IMPULSE_FOV_KICK) * modeScale,
+                SWIM_PRESENTATION_MAX_FOV_KICK * sprintClampScale);
 
             _output.localPositionOffset.y += verticalBob;
             _output.localPositionOffset.z += forwardBob;
             _output.rollOffset += rollBob;
+            _output.localPositionOffset.z += propulsionPositionKick;
             _output.localPositionOffset.y +=
                 (descend * SWIM_PRESENTATION_VERTICAL_DESCEND_OFFSET -
                  ascend * SWIM_PRESENTATION_VERTICAL_ASCEND_OFFSET) *
@@ -517,6 +601,7 @@ namespace Hecton8.Gameplay
                 (descend * SWIM_PRESENTATION_DESCEND_PITCH -
                  ascend * SWIM_PRESENTATION_ASCEND_PITCH) *
                 pull * modeScale;
+            _output.fovOffset += propulsionFovKick;
         }
 
         private static float ResolvePresentationCameraScale(PlayerSwimPresentationMode mode)

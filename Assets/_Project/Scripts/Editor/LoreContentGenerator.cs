@@ -130,7 +130,7 @@ namespace Hecton8.Editor
                 desc: "Погрузитесь на 150м. Почувствуйте давление.");
 
             CreateQuest("Quest_SignalDetected", "quest_atlas_signal_detected", "СИГНАЛ",
-                QuestTriggerType.OnSignalDetected, "",
+                QuestTriggerType.OnDiscoveryMade, "atlas6_signal_identified",
                 desc: "Обнаружен неизвестный сигнал. Ритм 11:23.");
 
             CreateQuest("Quest_SignalDecoded", "quest_atlas_signal_decoded", "РАСШИФРОВКА",

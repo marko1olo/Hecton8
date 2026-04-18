@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # HECTON-8 Runtime Perf Diagnostic Bundle — 2026-04-04
 
 ## Verified runtime history

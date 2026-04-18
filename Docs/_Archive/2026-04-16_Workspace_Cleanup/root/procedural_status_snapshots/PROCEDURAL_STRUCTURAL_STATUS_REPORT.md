@@ -1,4 +1,6 @@
-﻿# Procedural Structural Status Report
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
+# Procedural Structural Status Report
 
 - Root: `Assets/_Project/Data/World/ProceduralFamilies`
 - Scope: structural procedural families only (`Debris`, `RuinModule`, `PowerRoute`, `ServiceScar`).

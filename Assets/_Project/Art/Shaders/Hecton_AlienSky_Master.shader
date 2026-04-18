@@ -52,6 +52,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         [HDR] _SkyColorZenith ("Zenith Color", Color) = (0.05, 0.08, 0.25, 1)
         [HDR] _SkyColorHorizon ("Horizon Color", Color) = (0.4, 0.35, 0.5, 1)
         [HDR] _SkyColorNadir ("Nadir Color", Color) = (0.02, 0.03, 0.08, 1)
+        _SkyLuminanceMultiplier ("Sky Luminance Multiplier", Range(0, 4)) = 1.0
 
         [Header(Sunset and Night Colors)]
         [HDR] _SunsetHorizonColor ("Sunset Horizon Color", Color) = (3.5, 0.6, 0.05, 1)
@@ -172,6 +173,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half4  _SkyColorZenith;
                 half4  _SkyColorHorizon;
                 half4  _SkyColorNadir;
+                half   _SkyLuminanceMultiplier;
 
                 half4  _SunsetHorizonColor;
                 half4  _SunsetCloudColor;
@@ -265,6 +267,26 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return (lenSq < DIR_THRESHOLD * DIR_THRESHOLD)
                     ? fallback
                     : v * rsqrt(lenSq);
+            }
+
+            void ResolvePhaseSkyColors(
+                half nightFactor,
+                out half3 zenithColor,
+                out half3 horizonColor,
+                out half3 nadirColor)
+            {
+                zenithColor = lerp(
+                    _SkyColorZenith.rgb,
+                    lerp(_SkyColorZenith.rgb, _SkyColorNadir.rgb, 0.12h) * half3(0.18h, 0.20h, 0.24h),
+                    nightFactor);
+                horizonColor = lerp(
+                    _SkyColorHorizon.rgb,
+                    lerp(_SkyColorNadir.rgb, _SkyColorZenith.rgb, 0.08h) * half3(0.14h, 0.16h, 0.22h),
+                    nightFactor);
+                nadirColor = lerp(
+                    _SkyColorNadir.rgb,
+                    _SkyColorNadir.rgb * half3(0.22h, 0.24h, 0.30h),
+                    nightFactor);
             }
 
             float hash(float2 p)
@@ -405,10 +427,15 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // =======================================
                 half sunElevation = (half)_SunElevation;
                 half eclipseVis   = 1.0h - (half)_EclipseOcclusion;
+                half nightFactor  = saturate((half)_NightBlend);
+                half eclipseNight = max(nightFactor, (half)_EclipseOcclusion);
+                half solarCloudFade = smoothstep(-0.08h, 0.24h, sunElevation);
+                half cloudDayReturn = solarCloudFade * solarCloudFade;
+                cloudDayReturn *= cloudDayReturn;
+                half nightCloudVisibility = lerp(0.002h, 1.0h, cloudDayReturn);
 
-                half eclipseNight = max((half)_NightBlend, (half)_EclipseOcclusion);
-
-                half skyDimFactor = lerp(1.0h, 0.12h,
+                half skyNightDimFactor = lerp(1.0h, 0.18h, nightFactor);
+                half skyDimFactor = skyNightDimFactor * lerp(1.0h, 0.12h,
                     smoothstep(0.1h, 0.9h, (half)_EclipseOcclusion));
 
                 half sunsetFactor = saturate(1.0h - abs(sunElevation) * 8.0h);
@@ -424,11 +451,20 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half nadirMask   = saturate(-horizonFactor);
                 half horizonMask = 1.0h - zenithMask - nadirMask;
 
-                half3 skyColor = _SkyColorZenith.rgb  * zenithMask
-                               + _SkyColorHorizon.rgb * horizonMask
-                               + _SkyColorNadir.rgb   * nadirMask;
+                half3 phaseZenithColor;
+                half3 phaseHorizonColor;
+                half3 phaseNadirColor;
+                ResolvePhaseSkyColors(
+                    nightFactor,
+                    phaseZenithColor,
+                    phaseHorizonColor,
+                    phaseNadirColor);
 
-                skyColor *= skyDimFactor;
+                half3 skyColor = phaseZenithColor  * zenithMask
+                               + phaseHorizonColor * horizonMask
+                               + phaseNadirColor   * nadirMask;
+
+                skyColor *= skyDimFactor * max(_SkyLuminanceMultiplier, 0.0h);
 
                 half3 sunsetHorizonContrib = _SunsetHorizonColor.rgb
                                            * sunsetSpot
@@ -442,7 +478,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // LAYER 0: STAR FIELD
                 // =======================================
                 half3 starContrib = half3(0.0h, 0.0h, 0.0h);
-                half nightFactor = (half)_NightBlend;
 
                 if (eclipseNight > 0.01h && zenithMask > 0.01h)
                 {
@@ -488,7 +523,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 half3 hazeColor = _HazeColor.rgb * hazeSunTint * hazeMask;
 
-                hazeColor *= skyDimFactor;
+                hazeColor *= skyDimFactor * lerp(1.0h, 0.14h, nightFactor);
 
                 skyColor += hazeColor;
 
@@ -534,7 +569,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 skyColor = lerp(
                     skyColor,
                     skyColor + cirrusColor,
-                    cirrusDensity * _CirrusOpacity * atmosClarity);
+                    cirrusDensity * _CirrusOpacity * atmosClarity * lerp(1.0h, 0.18h, nightFactor) * nightCloudVisibility);
 
                 // =======================================
                 // LAYER 2: MAIN CLOUDS
@@ -579,7 +614,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                        * eclipseNight
                                        * _AegirGlowIntensity
                                        * cloudMask
-                                       * atmosClarity;
+                                       * atmosClarity
+                                       * lerp(0.02h, 1.0h, cloudDayReturn);
 
                 half3 cloudBaseColor = lerp(
                     _CloudColorShadow.rgb,
@@ -587,6 +623,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     cloudNdotL);
 
                 cloudBaseColor += aegirCloudGlow;
+                cloudBaseColor *= max(_SkyLuminanceMultiplier, 0.0h);
+                cloudBaseColor *= nightCloudVisibility;
 
                 half backlitSunsetBoost = 1.0h + sunsetFactor * 1.5h;
                 half backlitFactor = pow(
@@ -600,7 +638,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                   * _BacklitIntensity
                                   * backlitSunsetBoost
                                   * eclipseVis
-                                  * atmosClarity;
+                                  * lerp(1.0h, 0.16h, nightFactor)
+                                  * atmosClarity
+                                  * cloudDayReturn;
 
                 half3 cloudColor = cloudBaseColor + backlitGlow;
 
@@ -614,21 +654,30 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // v5.3: gentle height fade. Since cloudColor = skyColor at horizon,
                 // this is cosmetic — lerp(sky, sky, mask) = sky regardless.
                 // Prevents any residual edge at the very bottom of the dome.
-                half finalCloudMask = cloudMask * saturate(horizonFactor * 4.0h);
+                half finalCloudMask = cloudMask
+                                    * saturate(horizonFactor * 4.0h)
+                                    * lerp(0.01h, 1.0h, cloudDayReturn);
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
 
                 // =======================================
                 // SUN DISC
                 // =======================================
                 half sunDist = 1.0h - sunViewDot;
-                half sunDisc = 1.0h - smoothstep(
-                    _SunSize - _SunEdgeSoftness,
-                    _SunSize + _SunEdgeSoftness,
-                    sunDist);
+                half sunSoftness = max(_SunEdgeSoftness, 0.0001h);
+                half sunRadius = max(_SunSize, 0.0001h);
+                half softRadius = max(sunRadius + sunSoftness * 18.0h, 0.0002h);
+                half normalizedSunDist = sunDist / softRadius;
+                half normalizedSunDistSq = normalizedSunDist * normalizedSunDist;
+                half sunCore = exp2(-normalizedSunDistSq * 18.0h);
+                half sunDisc = exp2(-normalizedSunDistSq * 6.5h);
+                half sunCorona = exp2(-normalizedSunDistSq * 0.95h);
+                half sunOuterCorona = exp2(-normalizedSunDistSq * 0.28h);
 
-                sunDisc *= (1.0h - finalCloudMask) * eclipseVis;
-                sunDisc *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);
-                skyColor += _SunDiscColor.rgb * sunDisc;
+                half sunVisibility = (1.0h - finalCloudMask) * eclipseVis;
+                sunVisibility *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);
+                half3 softDiscColor = lerp(_SunScatterColor.rgb, _SunDiscColor.rgb, 0.55h);
+                half3 sunDiscColor = softDiscColor * (sunDisc * 0.55h + sunCore * 0.65h);
+                skyColor += sunDiscColor * sunVisibility;
 
                 // =======================================
                 // SUN SCATTERING
@@ -636,9 +685,12 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half sunScatter = pow(
                     saturate(sunViewDot),
                     _SunScatterPower);
+                half coronaScatter = sunCorona * 0.75h + sunOuterCorona * 0.35h;
+                half3 skyScatterTint = lerp(_SunScatterColor.rgb, skyColor, 0.18h);
                 half3 sunGlow = _SunScatterColor.rgb
-                              * sunScatter
+                              * (sunScatter * 0.35h + coronaScatter)
                               * _SunScatterIntensity;
+                sunGlow += skyScatterTint * sunOuterCorona * (_SunScatterIntensity * 0.12h);
 
                 sunGlow *= (1.0h - finalCloudMask * 0.7h) * eclipseVis;
                 sunGlow *= lerp(1.0h, celestialTransmittance, _CelestialSunFade);

@@ -15,6 +15,10 @@ MonoBehaviour:
   upgradeId: suit_oxygen_t1_aux_reservoir
   displayName: "\u041A\u0438\u0441\u043B\u043E\u0440\u043E\u0434 I \u2014 Auxiliary
     Reservoir"
+  localizedDisplayName:
+    tableKey: SUIT_UPGRADE_SUIT_OXYGEN_T1_AUX_RESERVOIR_NAME
+    fallbackText: ""
+    variants: []
   category: 1
   tier: 1
   deltaMaxOxygen: 4
@@ -32,3 +36,7 @@ MonoBehaviour:
     \u0423\u0432\u0435\u043B\u0438\u0447\u0438\u0432\u0430\u0435\u0442 \u0437\u0430\u043F\u0430\u0441
     \u0432\u043E\u0437\u0434\u0443\u0445\u0430 \u0431\u0435\u0437 \u043F\u0435\u0440\u0435\u0441\u0442\u0440\u043E\u0439\u043A\u0438
     \u043A\u043E\u0440\u043F\u0443\u0441\u0430."
+  localizedDescription:
+    tableKey: SUIT_UPGRADE_SUIT_OXYGEN_T1_AUX_RESERVOIR_DESCRIPTION
+    fallbackText: ""
+    variants: []

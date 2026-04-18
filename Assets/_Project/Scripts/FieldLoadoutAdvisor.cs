@@ -74,7 +74,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            HectonBaseAI ai = source.GetComponent<HectonBaseAI>() ?? source.GetComponentInParent<HectonBaseAI>();
+            FaunaBrain ai = source.GetComponent<FaunaBrain>() ?? source.GetComponentInParent<FaunaBrain>();
             if (ai != null)
             {
                 presetName = PresetDefense;
@@ -129,12 +129,12 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            HectonBaseAI ai = source.GetComponent<HectonBaseAI>() ?? source.GetComponentInParent<HectonBaseAI>();
+            FaunaBrain ai = source.GetComponent<FaunaBrain>() ?? source.GetComponentInParent<FaunaBrain>();
             if (ai != null)
             {
                 advice = new LoadoutAdvice(
                     PresetDefense,
-                    ai.CurrentState == HectonBaseAI.AIState.Aggressive
+                    ai.CurrentState == FaunaBrain.AIState.Aggressive
                         ? "Aggressive contact ahead. Defense kit gives the safest margin."
                         : "Bioform contact ahead. Defense tools are the safer choice if you want control.");
                 return true;
@@ -292,3 +292,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

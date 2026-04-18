@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # HECTON-8 PostFX Execution Plan
 
 Status: `PENDING VERIFICATION`

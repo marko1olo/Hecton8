@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Comp_PressureSeal
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Pressure Seal
+  localizedItemName:
+    tableKey: ITEM_PRESSURE_SEAL_NAME
+    fallbackText: "Pressure Seal"
+    variants: []
   icon: {fileID: 0}
   description: Layered seal rated for flooded modules, hatch rings, and suit pressure
     joints.
+  localizedDescription:
+    tableKey: ITEM_PRESSURE_SEAL_DESCRIPTION
+    fallbackText: "Layered seal rated for flooded modules, hatch rings, and suit pressure joints."
+    variants: []
   weight: 0.45
   stackable: 1
   maxStack: 12
@@ -31,5 +39,9 @@ MonoBehaviour:
   integrityRestore: 0
   useSound: {fileID: 0}
   interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: "Take"
+    variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # Codex Backlog
 
 # 2026-03-30 - Unity reload cleanup wave 1

@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 # NAMING_CONTRACT_AUDIT_LEDGER.md
 
 ## Batch 2 - Naming contract audit ledger

@@ -183,9 +183,7 @@ namespace Hecton8.World
 
             _instance = this;
 
-            // Pre-allocate NativeArrays
-            _lodGroupPositions = new NativeArray<float3>(_maxLODGroupsPerFrame, Allocator.Persistent);
-            _lodGroupSquaredDistances = new NativeArray<float>(_maxLODGroupsPerFrame, Allocator.Persistent);
+            EnsureNativeBuffersAllocated();
             _defaultLODBias = QualitySettings.lodBias;
             TryResolveMainCamera();
             ApplyQualityPreset(_qualityPreset);
@@ -203,6 +201,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            EnsureNativeBuffersAllocated();
             TryRegister();
         }
 
@@ -218,6 +217,8 @@ namespace Hecton8.World
                 _distanceJobHandle.Complete();
                 _jobScheduled = false;
             }
+
+            ReleaseNativeBuffers();
         }
 
         private void OnDestroy()
@@ -235,12 +236,7 @@ namespace Hecton8.World
                 _jobScheduled = false;
             }
 
-            // Dispose NativeArrays
-            if (_lodGroupPositions.IsCreated)
-                _lodGroupPositions.Dispose();
-
-            if (_lodGroupSquaredDistances.IsCreated)
-                _lodGroupSquaredDistances.Dispose();
+            ReleaseNativeBuffers();
 
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
@@ -249,6 +245,30 @@ namespace Hecton8.World
             // Clear singleton
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void EnsureNativeBuffersAllocated()
+        {
+            if (!_lodGroupPositions.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float3>[maxLODGroupsPerFrame] — LOD job input positions — owner: LODSystemManager
+                _lodGroupPositions = new NativeArray<float3>(_maxLODGroupsPerFrame, Allocator.Persistent);
+            }
+
+            if (!_lodGroupSquaredDistances.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[maxLODGroupsPerFrame] — LOD job output squared distances — owner: LODSystemManager
+                _lodGroupSquaredDistances = new NativeArray<float>(_maxLODGroupsPerFrame, Allocator.Persistent);
+            }
+        }
+
+        private void ReleaseNativeBuffers()
+        {
+            if (_lodGroupPositions.IsCreated)
+                _lodGroupPositions.Dispose();
+
+            if (_lodGroupSquaredDistances.IsCreated)
+                _lodGroupSquaredDistances.Dispose();
         }
 
         private void TryRegister()

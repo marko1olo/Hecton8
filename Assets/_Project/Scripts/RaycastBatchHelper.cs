@@ -78,26 +78,26 @@ namespace Hecton8.Physics
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // Allocate Native persistence
-            _commands = new NativeArray<RaycastCommand>(MaxQueries, Allocator.Persistent);
-            _hits = new NativeArray<RaycastHit>(MaxQueries, Allocator.Persistent);
-            
-            // Managed mirrors for filtering/API
-            _results = new QueryResult[MaxQueries];
-            _excludeColliders = new Collider[MaxQueries];
-            
+            EnsureBuffersAllocated();
             _queryCount = 0;
             _lastFramePrepared = -1;
             _batchExecuted = false;
         }
 
+        private void OnEnable()
+        {
+            EnsureBuffersAllocated();
+        }
+
+        private void OnDisable()
+        {
+            ReleaseBuffers();
+        }
+
         private void OnDestroy()
         {
             if (_instance == this) _instance = null;
-
-            // CRITICAL: Prevent memory leaks in Native memory
-            if (_commands.IsCreated) _commands.Dispose();
-            if (_hits.IsCreated) _hits.Dispose();
+            ReleaseBuffers();
         }
 
         /// <summary>
@@ -219,6 +219,49 @@ namespace Hecton8.Physics
 
             _lastFramePrepared = currentFrame;
             ClearQueries();
+        }
+
+        private void EnsureBuffersAllocated()
+        {
+            if (!_commands.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<RaycastCommand>[512] — persistent batched raycast commands — owner: RaycastBatchHelper
+                _commands = new NativeArray<RaycastCommand>(MaxQueries, Allocator.Persistent);
+            }
+
+            if (!_hits.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<RaycastHit>[512] — persistent batched raycast hits — owner: RaycastBatchHelper
+                _hits = new NativeArray<RaycastHit>(MaxQueries, Allocator.Persistent);
+            }
+
+            if (_results == null || _results.Length != MaxQueries)
+            {
+                // COLD ALLOC: QueryResult[512] — managed result mirror for same-frame API — owner: RaycastBatchHelper
+                _results = new QueryResult[MaxQueries];
+            }
+
+            if (_excludeColliders == null || _excludeColliders.Length != MaxQueries)
+            {
+                // COLD ALLOC: Collider[512] — managed exclude mirror for same-frame API — owner: RaycastBatchHelper
+                _excludeColliders = new Collider[MaxQueries];
+            }
+        }
+
+        private void ReleaseBuffers()
+        {
+            if (_lastJobHandle.IsCompleted == false)
+                _lastJobHandle.Complete();
+
+            if (_commands.IsCreated)
+                _commands.Dispose();
+
+            if (_hits.IsCreated)
+                _hits.Dispose();
+
+            _queryCount = 0;
+            _lastFramePrepared = -1;
+            _batchExecuted = false;
         }
 
 #if UNITY_EDITOR

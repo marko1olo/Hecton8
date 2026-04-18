@@ -579,11 +579,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
 
     void OnDisable()
     {
-        if (!Application.isPlaying)
-            return;
-
         UnregisterFromTickManager();
-        StopStreaming();
+
+        if (Application.isPlaying || _streaming || _pendingChunks.Count > 0 || _lutsReady)
+            StopStreaming();
     }
 
     public void Tick(float deltaTime)
@@ -1696,7 +1695,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
 
     void OnDestroy()
     {
-        if (!Application.isPlaying)
+        if (!Application.isPlaying && !_streaming && _pendingChunks.Count == 0 && !_lutsReady)
         {
             ClearPreview();
             DisposeLUTs();

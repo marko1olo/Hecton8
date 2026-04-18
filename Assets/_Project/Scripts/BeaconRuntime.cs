@@ -76,6 +76,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            UnregisterFromTickManager();
             BeaconNetworkSystem.NotifyRuntimeDestroyed(this);
         }
 
@@ -101,10 +102,13 @@ namespace Hecton8.Gameplay
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTickManager || GameTickManager.Instance == null)
+            if (!_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Unregister((ITickable)this);
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ITickable)this);
+
             _registeredToTickManager = false;
         }
 

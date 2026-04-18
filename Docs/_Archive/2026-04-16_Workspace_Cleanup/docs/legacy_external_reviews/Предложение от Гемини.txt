@@ -1,3 +1,5 @@
+**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
+
 Прочитай AGENTS.md и манифест рефакторинга. Твоя цель — переписать WorldProceduralScatterDirector.cs. 
 
 

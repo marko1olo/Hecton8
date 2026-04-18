@@ -126,10 +126,9 @@ namespace Hecton8.UI
             TryRegister();
 
             AtlasSignalEvents.OnSignalStrengthChanged += HandleStrengthChanged;
-            AtlasSignalEvents.OnSignalPulse          += HandleSignalPulse;
-            AtlasSignalEvents.OnSignalDetected       += HandleSignalDetected;
-            AtlasSignalEvents.OnSignalDecoded        += HandleSignalDecoded;
-            PDAEvents.OnOpened                       += HandlePDAOpened;
+            AtlasSignalEvents.OnSignalPulse += HandleSignalPulse;
+            AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
+            PDAEvents.OnOpened += HandlePDAOpened;
 
             _dirty = true;
         }
@@ -139,10 +138,9 @@ namespace Hecton8.UI
             TryUnregister();
 
             AtlasSignalEvents.OnSignalStrengthChanged -= HandleStrengthChanged;
-            AtlasSignalEvents.OnSignalPulse          -= HandleSignalPulse;
-            AtlasSignalEvents.OnSignalDetected       -= HandleSignalDetected;
-            AtlasSignalEvents.OnSignalDecoded        -= HandleSignalDecoded;
-            PDAEvents.OnOpened                       -= HandlePDAOpened;
+            AtlasSignalEvents.OnSignalPulse -= HandleSignalPulse;
+            AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
+            PDAEvents.OnOpened -= HandlePDAOpened;
         }
 
         private void OnDestroy()
@@ -187,14 +185,6 @@ namespace Hecton8.UI
         private void HandleSignalPulse(float intensity)
         {
             // Reset countdown to 683 seconds (11:23)
-            _pulseCountdown = 683f;
-            _lastCountdownSeconds = int.MinValue;
-            _dirty = true;
-        }
-
-        private void HandleSignalDetected(Vector3 sourcePos)
-        {
-            _signalDetected = true;
             _pulseCountdown = 683f;
             _lastCountdownSeconds = int.MinValue;
             _dirty = true;
@@ -396,11 +386,12 @@ namespace Hecton8.UI
             AtlasSignalSystem sys = AtlasSignalSystem.Instance;
             AtlasSignalDecoder decoder = AtlasSignalDecoder.Instance;
             _atlasTelemetryVisible = CanRevealAtlasTelemetry(sys);
+            bool hasReadableContact = HasReadableAtlasContact(sys);
 
             if (_atlasTelemetryVisible)
             {
                 _currentStrength = sys != null ? sys.CurrentStrength : 0f;
-                _signalDetected = sys != null && sys.IsDetected;
+                _signalDetected = hasReadableContact;
                 _currentPhase = decoder != null ? decoder.CurrentPhase : 0;
             }
             else
@@ -486,7 +477,7 @@ namespace Hecton8.UI
             }
             else if (_currentPhase == 2)
             {
-                _messageLabel.text = "СИГНАЛ АТЛАС-6\n\nЭмоциональный паттерн:\nОтчаяние → Надежда → Безумие\n\nПриблизиться для расшифровки.";
+                _messageLabel.text = "НЕСТАБИЛЬНЫЙ ПАТТЕРН\n\nЭмоциональный отпечаток:\nОтчаяние → Надежда → Безумие\n\nИсточник ещё не удерживается.";
                 _messageLabel.color = colorText;
             }
             else if (_currentPhase == 1)
@@ -569,11 +560,17 @@ namespace Hecton8.UI
             if (firstHourDirector != null)
             {
                 return firstHourDirector.IsMilestoneComplete(minimumMilestoneToReveal) &&
-                    sys != null &&
-                    sys.CurrentRevealStage >= 2;
+                    HasReadableAtlasContact(sys);
             }
 
-            return sys != null && sys.IsDetected;
+            return HasReadableAtlasContact(sys);
+        }
+
+        private static bool HasReadableAtlasContact(AtlasSignalSystem sys)
+        {
+            return sys != null &&
+                sys.CurrentRevealStage >= 2 &&
+                sys.IsDetected;
         }
 
         private void TryResolveMainCamera()

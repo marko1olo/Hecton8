@@ -62,6 +62,11 @@ Recommended art band:
 - current runtime art target: `30 to 33 degrees`
 - hard ceiling before surreal failure: `34 degrees`
 
+Current atmospheric presentation contract:
+- the gas giant and visible moons are intended to read behind the same sky-owned atmosphere veil
+- `Sky_System` follows camera X/Z only; sky-rig height remains authored and no longer climbs with the player
+- near-horizon veil is stronger, zenith veil remains present but weaker, and night veil is intentionally still non-zero so moons do not read as cutout UI discs
+
 ## 3. Visible Secondary Bodies
 
 The current visible family is authored so that Hecton-8 sits in the middle of the broader moon system concept:

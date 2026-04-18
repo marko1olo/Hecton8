@@ -82,12 +82,37 @@ namespace Hecton8.Bootstrap
 
         private bool _initializationComplete;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureRuntimeBootstrapOwner()
+        {
+            if (!Application.isPlaying || _instance != null)
+                return;
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.name.Contains("00_BOOTSTRAP"))
+                return;
+
+            BootstrapController existing =
+                UnityEngine.Object.FindAnyObjectByType<BootstrapController>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                existing.EnsureInitializedAfterSceneLoad();
+                return;
+            }
+
+            GameObject runtimeRoot = new GameObject("[BOOTSTRAPPER]");
+            BootstrapController runtimeBootstrap = runtimeRoot.AddComponent<BootstrapController>();
+            runtimeBootstrap.EnsureInitializedAfterSceneLoad();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
+            if (_initializationComplete)
+                return;
             // ── Проверка что это 00_BOOTSTRAP ──
             Scene currentScene = gameObject.scene;
             if (!currentScene.name.Contains("00_BOOTSTRAP"))
@@ -137,6 +162,37 @@ namespace Hecton8.Bootstrap
         /// <summary>
         /// Инициализирует все требуемые глобальные системы в правильном порядке.
         /// </summary>
+        private void EnsureInitializedAfterSceneLoad()
+        {
+            if (_initializationComplete)
+                return;
+
+            Scene currentScene = gameObject.scene;
+            if (!currentScene.name.Contains("00_BOOTSTRAP"))
+                return;
+
+            if (_instance != null && _instance != this)
+                return;
+
+            _instance = this;
+            EnsureBootstrapAudioListener(currentScene);
+            DontDestroyOnLoad(gameObject);
+
+            Log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+            Log("HECTON-8 Bootstrap Controller â€” Initializing");
+            Log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+
+            InitializeGlobalSystems();
+
+            _initializationComplete = true;
+
+            Log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+            Log("HECTON-8 Bootstrap Controller â€” COMPLETE");
+            Log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+
+            OnBootstrapComplete?.Invoke();
+        }
+
         private void Start()
         {
             if (!_initializationComplete || !Application.isPlaying)
